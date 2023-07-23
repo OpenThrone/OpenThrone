@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["jsonProtocol"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
+}
+
+model users {
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  display_name String @unique
+  password_hash  String
+  race  String
+  class String
+  units Json?
+  experience Int
+  gold  Int
+  gold_in_bank  Int
+  fort_level  Int
+  fort_hitpoints  Int
+  attack_turns  Int
+  salt  String
+  last_active DateTime? @db.Timestamptz(3)
+  rank Int
+  items Json?
+  house_level Int
+  battle_upgrades Json?
+  structure_upgrades Json?
+  bio String
+  colorScheme String?
+
+  // Relations
+  attacksMade   attack_log[] @relation("AttackLogs")
+  attacksDefended attack_log[] @relation("DefenseLogs")
+}
+
+model attack_log {
+  id Int @id @default(autoincrement())
+  attacker_id Int
+  attackerPlayer users @relation("AttackLogs", fields: [attacker_id], references: [id])
+  defender_id Int
+  defenderPlayer users @relation("DefenseLogs", fields: [defender_id], references: [id])
+  timestamp DateTime? @db.Timestamptz(3)
+  winner Int
+  stats Json
+}
+
+model bank_history {
+  id Int @id @default(autoincrement())
+  gold_amount Int
+  from_user_id Int
+  from_user_account_type String
+  to_user_id Int
+  to_user_account_type String
+  date_time DateTime? @db.Timestamptz(3)
+  history_type String
+}
