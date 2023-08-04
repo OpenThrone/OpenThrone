@@ -64,14 +64,12 @@
     "rpg-awesome": "^0.2.0",
     "rxjs": "^7.8.1",
     "superjson": "^1.12.4",
+    "swr": "^2.2.0",
     "tailwindcss": "^3.3.2",
     "use-async-effect": "^2.2.7",
     "yup": "^1.2.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^17.6.5",
-    "@commitlint/config-conventional": "^17.6.5",
-    "@commitlint/cz-commitlint": "^17.5.0",
     "@next/bundle-analyzer": "^13.4.4",
     "@percy/cli": "^1.25.0",
     "@percy/cypress": "^3.1.2",
@@ -131,11 +129,6 @@
     "start-server-and-test": "^2.0.0",
     "storybook": "^7.0.18",
     "typescript": "^4.9.5"
-  },
-  "config": {
-    "commitizen": {
-      "path": "@commitlint/cz-commitlint"
-    }
   },
   "release": {
     "branches": [

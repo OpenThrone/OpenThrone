@@ -18,7 +18,7 @@ const parentLinks = [
   'Home',
   'Battle',
   'Structures',
-  'Alliances',
+  // 'Alliances',
   'Community',
 ] as const;
 
@@ -37,9 +37,15 @@ const subMenus: {
     { text: 'Upgrades', href: '/battle/upgrades' },
     { text: 'War History', href: '/battle/history' },
   ],
-  Structures: [{ text: 'Test', href: '#' }],
-  Alliances: [{ text: 'Test', href: '#' }],
-  Community: [{ text: 'Test', href: '#' }],
+  Structures: [
+    { text: 'Bank', href: '#' },
+    { text: 'Armory', href: '/structures/armory' },
+    { text: 'Upgrades', href: '/structures/upgrades' },
+    { text: 'Housing', href: '#' },
+    { text: 'Repair', href: '#' },
+  ],
+  // Alliances: [{ text: 'Test', href: '#' }],
+  Community: [{ text: 'Discord', href: 'https://discord.gg/j9NYxmBCjA' }],
 };
 
 export const NavLoggedIn: React.FC = () => {
