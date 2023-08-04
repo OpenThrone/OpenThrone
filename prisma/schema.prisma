@@ -36,10 +36,13 @@ model users {
   structure_upgrades Json?
   bio String
   colorScheme String?
+  
 
   // Relations
-  attacksMade   attack_log[] @relation("AttackLogs")
-  attacksDefended attack_log[] @relation("DefenseLogs")
+  sentMessages     messages[] @relation("from_user")
+  receivedMessages messages[] @relation("to_user")
+  attacksMade      attack_log[] @relation("AttackLogs")
+  attacksDefended  attack_log[] @relation("DefenseLogs")
 }
 
 model attack_log {
@@ -62,4 +65,18 @@ model bank_history {
   to_user_account_type String
   date_time DateTime? @db.Timestamptz(3)
   history_type String
+}
+
+model messages {
+  id Int @id @default(autoincrement())
+  subject String
+  from_user_id Int
+  from_user users @relation("from_user", fields: [from_user_id], references: [id])
+  to_user_id Int
+  to_user users @relation("to_user", fields: [to_user_id], references: [id])
+  date_time DateTime? @db.Timestamptz(3)
+  created_date DateTime? @db.Timestamptz(3)
+  updated_date DateTime? @db.Timestamptz(3)
+  body String
+  unread Boolean
 }

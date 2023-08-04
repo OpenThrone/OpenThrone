@@ -49,14 +49,15 @@ export const UserProvider: React.FC = ({ children }) => {
       const regex = new RegExp(`^${path.replace('[id]', '\\d+')}$`);
       return regex.test(asPath);
     });
-
-    if (!userSession && !isPublicPath) {
-      console.log('redirecting to login');
-      router.replace('/account/login');
-    } else if (userSession && asPath === '/') {
-      router.replace('/home/overview');
+    if (!loading) {
+      if (!userSession && !isPublicPath) {
+        console.log('redirecting to login');
+        router.replace('/account/login');
+      } else if (userSession && asPath === '/') {
+        router.replace('/home/overview');
+      }
     }
-  }, [userSession, router]);
+  }, [userSession, router, loading]);
 
   const player = useMemo(
     () => ({ user, loading, userSession }),
