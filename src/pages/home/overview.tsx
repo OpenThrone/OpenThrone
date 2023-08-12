@@ -18,7 +18,7 @@ const Overview = () => {
           <p className="text-center">
             Share this link to gain up to 200 citizens per day:{' '}
             <a
-              href={`https://darkcurse.aioxperts.com/recruit/${user?.recruitingLink}`}
+              href={`https://darkcurse.dev/recruit/${user?.recruitingLink}`}
               className="text-blue-500"
             >
               {user?.recruitingLink}
