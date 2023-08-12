@@ -8,13 +8,22 @@ const Sidebar: React.FC = () => {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   // const { data: session, status } = useSession();
 
-  const { user } = useUser();
+  const { user, refreshUserData } = useUser();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshUserData(); // This will fetch the latest user data every 30 seconds
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [refreshUserData]);
   const [sidebar, setSidebar] = useState({
     gold: 0,
     citizens: 0,
     level: 1,
     xp: 0,
     turns: 0,
+    xpNextLevel: 0,
   });
   useEffect(() => {
     const messagesArray = [
@@ -109,7 +118,8 @@ const Sidebar: React.FC = () => {
               <span id="experience">
                 {sidebar.xp}{' '}
                 <span className="xpNextLevel">
-                  (next level in <span id="xpToNextLevel">{sidebar.xp}</span>)
+                  (next level in{' '}
+                  <span id="xpToNextLevel">{sidebar.xpNextLevel}</span>)
                 </span>
               </span>
             </li>
