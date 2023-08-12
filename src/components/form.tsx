@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { setTimeout } from 'timers';
 
 import LoadingDots from '@/components/loading-dots';
+import { alertService } from '@/services';
 
 const Form = ({
   type,
@@ -18,6 +20,41 @@ const Form = ({
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const [formData, setFormData] = useState({
+    display_name: '',
+    email: '',
+    password: '',
+    race: 'HUMAN',
+    class: 'FIGHTER',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+    console.log(formData);
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Register the user using the provided API endpoint
+    const response = await fetch('/api/auth/register/route', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alertService.success('Registration successful!', true);
+      router.push('/account/login');
+    } else {
+      alertService.error(data.error || 'Registration failed.');
+      setErrorMessage(data.error || 'An error occurred during registration.');
+    }
+  };
   return (
     <form
       onSubmit={(e) => {
@@ -38,15 +75,12 @@ const Form = ({
             }
           });
         } else {
-          fetch('/api/auth/register', {
+          fetch('/api/auth/register/route', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              email: e.currentTarget.email.value,
-              password: e.currentTarget.password.value,
-            }),
+            body: JSON.stringify(formData),
           }).then(async (res) => {
             setLoading(false);
             if (res.status === 200) {
@@ -63,32 +97,116 @@ const Form = ({
       }}
       className="mt-2 flex flex-col space-y-4"
     >
-      <div className="mb-3">
-        <label htmlFor="email" className="mb-1 block">
-          Email Address
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="username@email.com"
-          autoComplete="email"
-          required
-          className="w-full rounded border border-gray-300 px-3 py-2"
-        />
-      </div>
-      <div>
-        <label htmlFor="password" className="mb-1 block">
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          className="w-full rounded border border-gray-300 px-3 py-2"
-        />
-      </div>
+      {type === 'login' ? (
+        <>
+          <div className="mb-3">
+            <label htmlFor="email" className="mb-1 block">
+              Email Address
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="username@email.com"
+              autoComplete="email"
+              required
+              className="w-full rounded border border-gray-300 px-3 py-2"
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="mb-1 block">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              className="w-full rounded border border-gray-300 px-3 py-2"
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="mb-3">
+            <label htmlFor="display_name" className="from-label mb-1 block">
+              User Name
+            </label>
+            <input
+              id="display_name"
+              name="display_name"
+              type="text"
+              placeholder="DisplayName"
+              autoComplete="display_name"
+              onKeyUp={handleChange}
+              required
+              className="w-full rounded border border-gray-300 px-3 py-2"
+            />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="email" className="mb-1 block">
+              Email Address
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="username@email.com"
+              autoComplete="email"
+              onKeyUp={handleChange}
+              required
+              className="w-full rounded border border-gray-300 px-3 py-2"
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="mb-1 block">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              onKeyUp={handleChange}
+              required
+              className="w-full rounded border border-gray-300 px-3 py-2"
+            />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="race" className="mb-1 block">
+              Race
+            </label>
+            <select
+              className="form-select w-full rounded border border-gray-300 px-3 py-2"
+              id="race"
+              name="race"
+              value={formData.race}
+              onChange={handleChange}
+            >
+              <option value="HUMAN">HUMAN</option>
+              <option value="UNDEAD">UNDEAD</option>
+              <option value="GOBLIN">GOBLIN</option>
+              <option value="ELF">ELF</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label htmlFor="class" className="mb-1 block">
+              Class
+            </label>
+            <select
+              className="form-select w-full rounded border border-gray-300 px-3 py-2"
+              id="class"
+              name="class"
+              value={formData.class}
+              onChange={handleChange}
+            >
+              <option value="FIGHTER">FIGHTER</option>
+              <option value="CLERIC">CLERIC</option>
+              <option value="ASSASSIN">ASSASSIN</option>
+              <option value="THIEF">THIEF</option>
+            </select>
+          </div>
+        </>
+      )}
       <button
         disabled={loading}
         className={`${

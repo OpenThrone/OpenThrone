@@ -6,9 +6,18 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import UserModel from '@/models/Users';
 
 const UserContext = createContext(null);
-export const useUser = () => {
-  return useContext(UserContext);
-};
+
+export const useUser = () => useContext(UserContext);
+
+const publicPathsRegex = [
+  /^\/account\/login$/,
+  /^\/account\/register$/,
+  /^\/$/,
+  /^\/userprofile\/\d+$/,
+];
+
+const isPublicPath = (path) =>
+  publicPathsRegex.some((regex) => regex.test(path));
 
 export const UserProvider: React.FC = ({ children }) => {
   const [user, setUser] = useState<UserModel | null>(null);
@@ -16,15 +25,18 @@ export const UserProvider: React.FC = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Fetch user data on component mount only
+  const updateUserData = (session: Session) => {
+    if (session && session.player) {
+      setUser(new UserModel(session.player));
+      setUserSession(session);
+    }
+  };
+
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndSession = async () => {
       try {
         const session = (await getSession()) as Session;
-        if (session && session.player) {
-          setUser(new UserModel(session.player));
-          setUserSession(session);
-        }
+        updateUserData(session);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching session:', error);
@@ -32,26 +44,14 @@ export const UserProvider: React.FC = ({ children }) => {
       }
     };
 
-    fetchUser();
+    fetchUserAndSession();
   }, []);
 
   useEffect(() => {
     const { asPath } = router;
-    const publicPaths = [
-      '/account/login/',
-      '/account/register/',
-      '/',
-      '/userprofile/[id]',
-    ];
 
-    // Check if the current path matches any of the whitelisted public paths
-    const isPublicPath = publicPaths.some((path) => {
-      const regex = new RegExp(`^${path.replace('[id]', '\\d+')}$`);
-      return regex.test(asPath);
-    });
     if (!loading) {
-      if (!userSession && !isPublicPath) {
-        console.log('redirecting to login');
+      if (!userSession && !isPublicPath(asPath)) {
         router.replace('/account/login');
       } else if (userSession && asPath === '/') {
         router.replace('/home/overview');
@@ -59,8 +59,17 @@ export const UserProvider: React.FC = ({ children }) => {
     }
   }, [userSession, router, loading]);
 
+  const refreshUserData = async () => {
+    try {
+      const session = (await getSession()) as Session;
+      updateUserData(session);
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
   const player = useMemo(
-    () => ({ user, loading, userSession }),
+    () => ({ user, loading, userSession, refreshUserData }),
     [user, loading]
   );
 

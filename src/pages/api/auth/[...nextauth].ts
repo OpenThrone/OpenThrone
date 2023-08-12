@@ -9,15 +9,14 @@ import type UserModel from '@/models/Users';
 
 export const authOptions: NextAuthOptions = {
   session: {
-    jwt: true,
     strategy: 'jwt',
     // Seconds - How long until an idle session expires and is no longer valid.
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 1 * 24 * 60 * 60, // 1 days
 
     // Seconds - Throttle how frequently to write to database to extend a session.
     // Use it to limit write operations. Set to 0 to always update the database.
     // Note: This option is ignored if using JSON Web Tokens
-    updateAge: 24 * 60 * 60, // 24 hours
+    updateAge: 1 * 60 * 60, // 1 hours
 
     // The session token is usually either a random UUID or string, however if you
     // need a more customized session token string, you can define your own generate function.
@@ -26,7 +25,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   jwt: {
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: 60 * 60 * 24,
   },
   secret: process.env.JWT_SECRET,
   callbacks: {
