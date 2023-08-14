@@ -12,6 +12,7 @@ const Training = () => {
   const { user } = useUser();
   const [workerUnits, setWorkers] = useState([]); // Define the worker units data here
   const [offensiveUnits, setOffensive] = useState([]); // Define the offensive units data here
+  const [defensiveUnits, setDefensive] = useState([]); // Define the offensive units data here
   const unitMapFunction = (unit, idPrefix: string) => {
     return {
       id: `${idPrefix}_${unit.level}`,
@@ -38,6 +39,12 @@ const Training = () => {
       user?.availableUnitTypes
         .filter((unit) => unit.type === 'OFFENSE')
         .map((unit) => unitMapFunction(unit, 'OFFENSE'))
+    );
+
+    setDefensive(
+      user?.availableUnitTypes
+        .filter((unit) => unit.type === 'DEFENSE')
+        .map((unit) => unitMapFunction(unit, 'DEFENSE'))
     );
     // setWorkers(user.user?.unitTotals?.workers);
     // setOffensive(user.user?.unitTotals?.offense);
@@ -70,7 +77,7 @@ const Training = () => {
 
         <UnitSection heading="Offense" units={offensiveUnits} />
 
-        {/* Add other sections (e.g., unitSection) here */}
+        <UnitSection heading="Defense" units={defensiveUnits} />
       </div>
     </Layout>
   );
