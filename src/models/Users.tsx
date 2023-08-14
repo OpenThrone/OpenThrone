@@ -226,7 +226,7 @@ class UserModel {
   }
 
   get citizens(): number {
-    return this.units?.find((unit) => unit.type === 'CITIZEN').quantity || 0;
+    return this.units?.find((unit) => unit.type === 'CITIZEN')?.quantity || 0;
   }
 
   get goldPerTurn(): number {
