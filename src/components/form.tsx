@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
-import { setTimeout } from 'timers';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { setTimeout } from "timers";
 
-import LoadingDots from '@/components/loading-dots';
-import { alertService } from '@/services';
+import LoadingDots from "@/components/loading-dots";
+import { alertService } from "@/services";
 
 const Form = ({
   type,
@@ -21,11 +21,11 @@ const Form = ({
   const router = useRouter();
 
   const [formData, setFormData] = useState({
-    display_name: '',
-    email: '',
-    password: '',
-    race: 'HUMAN',
-    class: 'FIGHTER',
+    display_name: "",
+    email: "",
+    password: "",
+    race: "HUMAN",
+    class: "FIGHTER",
   });
 
   const handleChange = (e) => {
@@ -33,71 +33,53 @@ const Form = ({
     setFormData((prevData) => ({ ...prevData, [name]: value }));
     console.log(formData);
   };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
 
-    // Register the user using the provided API endpoint
-    const response = await fetch('/api/auth/register/route', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alertService.success('Registration successful!', true);
-      router.push('/account/login');
-    } else {
-      alertService.error(data.error || 'Registration failed.');
-      setErrorMessage(data.error || 'An error occurred during registration.');
-    }
-  };
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         setLoading(true);
-        if (type === 'login') {
-          signIn('credentials', {
-            redirect: false,
-            email: e.currentTarget.email.value,
-            password: e.currentTarget.password.value,
-            // @ts-ignore
-          }).then(({ error }) => {
-            if (error) {
-              setLoading(false);
-              setErrorMessage(error);
+        try {
+          if (type === "login") {
+            const res = await signIn("credentials", {
+              redirect: false,
+              email: e.currentTarget.email.value,
+              password: e.currentTarget.password.value,
+            });
+            if (res?.ok) {
+              setLoading(true);
+              router.push("/home/overview");
             } else {
-              router.push('/home/overview/');
+              setLoading(false);
+              setErrorMessage("Invalid username or password!");
             }
-          });
-        } else {
-          fetch('/api/auth/register/route', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),
-          }).then(async (res) => {
-            setLoading(false);
+          } else {
+            const res = await fetch("/api/auth/register/route", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(formData),
+            });
             if (res.status === 200) {
-              toast.success('Account created! Redirecting to login...');
+              toast.success("Account created! Redirecting to login...");
               setTimeout(() => {
-                router.push('/account/login');
+                router.push("/account/login");
               }, 2000);
             } else {
               const { error } = await res.json();
-              handleError(error);
+              setLoading(false);
+              setErrorMessage(error);
             }
-          });
+          }
+        } catch (error) {
+          setLoading(false);
+          setErrorMessage(error);
         }
       }}
       className="mt-2 flex flex-col space-y-4"
     >
-      {type === 'login' ? (
+      {type === "login" ? (
         <>
           <div className="mb-3">
             <label htmlFor="email" className="mb-1 block">
@@ -211,30 +193,33 @@ const Form = ({
         disabled={loading}
         className={`${
           loading
-            ? 'cursor-not-allowed border-gray-200 bg-gray-100'
-            : 'border-black bg-black text-white hover:bg-white hover:text-black'
+            ? "cursor-not-allowed border-gray-200 bg-gray-100"
+            : "border-black bg-black text-white hover:bg-white hover:text-black"
         } flex h-10 w-full items-center justify-center rounded-md border text-sm transition-all focus:outline-none`}
       >
         {loading ? (
           <LoadingDots color="#808080" />
         ) : (
-          <p>{type === 'login' ? 'Sign In' : 'Sign Up'}</p>
+          <p>{type === "login" ? "Sign In" : "Sign Up"}</p>
         )}
       </button>
-      {type === 'login' ? (
+      {type === "login" ? (
         <p className="text-center text-sm text-gray-600">
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className="font-semibold text-gray-800">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/account/register"
+            className="font-semibold text-gray-800"
+          >
             Sign up
-          </Link>{' '}
+          </Link>{" "}
           for free.
         </p>
       ) : (
         <p className="text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link href="/login" className="font-semibold text-gray-800">
+          Already have an account?{" "}
+          <Link href="/account/login" className="font-semibold text-gray-800">
             Sign in
-          </Link>{' '}
+          </Link>{" "}
           instead.
         </p>
       )}
