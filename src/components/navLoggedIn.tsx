@@ -23,41 +23,51 @@ const parentLinks = [
 ] as const;
 
 const subMenus: {
-  [K in (typeof parentLinks)[number]]?: { text: string; href: string }[];
+  [K in (typeof parentLinks)[number]]?: {
+    text: string;
+    href: string;
+    parent: string;
+  }[];
 } = {
   Home: [
-    { text: 'Overview', href: '/home/overview' },
-    { text: 'Levels', href: '/home/levels' },
-    { text: 'Profile', href: '/home/profile' },
-    { text: 'Settings', href: '/home/settings' },
+    { text: 'Overview', href: '/home/overview', parent: 'Home' },
+    { text: 'Levels', href: '/home/levels', parent: 'Home' },
+    { text: 'Profile', href: '/home/profile', parent: 'Home' },
+    { text: 'Settings', href: '/home/settings', parent: 'Home' },
   ],
   Battle: [
-    { text: 'Attack', href: '/battle/users' },
-    { text: 'Training', href: '/battle/training' },
-    { text: 'Upgrades', href: '/battle/upgrades' },
-    { text: 'War History', href: '/battle/history' },
+    { text: 'Attack', href: '/battle/users', parent: 'Battle' },
+    { text: 'Training', href: '/battle/training', parent: 'Battle' },
+    { text: 'Upgrades', href: '/battle/upgrades', parent: 'Battle' },
+    { text: 'War History', href: '/battle/history', parent: 'Battle' },
   ],
   Structures: [
-    { text: 'Bank', href: '#' },
-    { text: 'Armory', href: '/structures/armory' },
-    { text: 'Upgrades', href: '/structures/upgrades' },
-    { text: 'Housing', href: '#' },
-    { text: 'Repair', href: '#' },
+    { text: 'Bank', href: '#', parent: 'Structures' },
+    { text: 'Armory', href: '/structures/armory', parent: 'Structures' },
+    { text: 'Upgrades', href: '/structures/upgrades', parent: 'Structures' },
+    { text: 'Housing', href: '#', parent: 'Structures' },
+    { text: 'Repair', href: '#', parent: 'Structures' },
   ],
   // Alliances: [{ text: 'Test', href: '#' }],
-  Community: [{ text: 'Discord', href: 'https://discord.gg/j9NYxmBCjA' }],
+  Community: [
+    {
+      text: 'Discord',
+      href: 'https://discord.gg/j9NYxmBCjA',
+      parent: 'Community',
+    },
+  ],
 };
 
 export const NavLoggedIn: React.FC = () => {
   const router = useRouter();
   const [activeSubMenu, setActiveSubMenu] = useState<
-    { text: string; href: string }[]
+    { text: string; href: string; parent: string }[]
   >([]);
   const [activeParentLink, setActiveParentLink] = useState<string>('');
   const [activeSubLink, setActiveSubLink] = useState<string>('');
 
   const [defaultSubMenu, setDefaultSubMenu] = useState<
-    { text: string; href: string }[]
+    { text: string; href: string; parent: string }[]
   >([]);
   const [defaultParentLink, setDefaultParentLink] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -136,9 +146,11 @@ export const NavLoggedIn: React.FC = () => {
   // const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    console.log(activeSubMenu);
+    console.log(activeParentLink);
     // const subscription = userService.user.subscribe((x: User) => setUser(x));
     // return () => subscription.unsubscribe();
-  }, []);
+  }, [activeSubLink]);
 
   // only show nav when logged in
   // if (!user) return null;
@@ -235,7 +247,8 @@ export const NavLoggedIn: React.FC = () => {
                   <Link
                     href={item.href}
                     className={`${
-                      activeSubLink === item.text
+                      activeSubLink === item.text &&
+                      activeParentLink === item.parent
                         ? 'activeLinkClass'
                         : 'text-elfLink-link'
                     } hover:text-elfLink-hover`}
