@@ -68,9 +68,9 @@ const Form = ({
                 router.push("/account/login");
               }, 2000);
             } else {
-              const { error } = await res.json();
+              const { message } = await res.json();
               setLoading(false);
-              setErrorMessage(error.message);
+              setErrorMessage(message);
             }
           }
         } catch (error) {
