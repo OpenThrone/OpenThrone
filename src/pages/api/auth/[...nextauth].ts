@@ -7,7 +7,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/account/login",
   },
-  
   secret: process.env.JWT_SECRET,
   callbacks: {
     async session({ session, token }) {

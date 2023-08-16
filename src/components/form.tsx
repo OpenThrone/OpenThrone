@@ -38,7 +38,7 @@ const Form = ({
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        setLoading(true);
+        setLoading(false);
         try {
           if (type === "login") {
             const res = await signIn("credentials", {
@@ -47,7 +47,7 @@ const Form = ({
               password: e.currentTarget.password.value,
             });
             if (res?.ok) {
-              setLoading(true);
+              setLoading(false);
               router.push("/home/overview");
             } else {
               setLoading(false);
@@ -61,6 +61,7 @@ const Form = ({
               },
               body: JSON.stringify(formData),
             });
+
             if (res.status === 200) {
               toast.success("Account created! Redirecting to login...");
               setTimeout(() => {
@@ -69,12 +70,13 @@ const Form = ({
             } else {
               const { error } = await res.json();
               setLoading(false);
-              setErrorMessage(error);
+              setErrorMessage(error.message);
             }
           }
         } catch (error) {
+          console.error(error);
+          setErrorMessage("Something went wrong!");
           setLoading(false);
-          setErrorMessage(error);
         }
       }}
       className="mt-2 flex flex-col space-y-4"
