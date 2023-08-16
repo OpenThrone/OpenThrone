@@ -49,9 +49,9 @@ const Overview = () => {
               </tr>
               <tr className="odd:bg-table-odd even:bg-table-even">
                 <td>Level</td>
-                <td>{user?.level}</td>
+                <td>{`${user?.level|| ''}`}</td>
                 <td>Gold Per Turn</td>
-                <td>{user?.goldPerTurn}</td>
+                <td>{user?.goldPerTurn || ''}</td>
               </tr>
               <tr className="odd:bg-table-odd even:bg-table-even">
                 <td>XP to Next Level</td>

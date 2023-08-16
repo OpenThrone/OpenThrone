@@ -135,7 +135,7 @@ class UserModel {
   }, []); */
 
   get population() {
-    return this.units.reduce((acc, unit) => acc + unit.quantity, 0);
+    return this.units?.reduce((acc, unit) => acc + unit.quantity, 0);
   }
 
   get playerBonuses() {
@@ -217,20 +217,20 @@ class UserModel {
 
   get armySize(): number {
     return this.units
-      .filter((unit) => unit.type !== 'CITIZEN' && unit.type !== 'WORKER')
+      ?.filter((unit) => unit.type !== 'CITIZEN' && unit.type !== 'WORKER')
       .reduce((acc, unit) => acc + unit.quantity, 0);
   }
 
   get kingdomSize(): number {
-    return this.units.reduce((acc, unit) => acc + unit.quantity, 0);
+    return this.units?.reduce((acc, unit) => acc + unit.quantity, 0);
   }
 
   get citizens(): number {
-    return this.units.find((unit) => unit.type === 'CITIZEN').quantity;
+    return this.units?.find((unit) => unit.type === 'CITIZEN')?.quantity || 0;
   }
 
   get goldPerTurn(): number {
-    const workerUnits = this.units.filter((units) => units.type === 'WORKER');
+    const workerUnits = this.units?.filter((units) => units.type === 'WORKER')||[];
     const workerGoldPerTurn = workerUnits
       .map(
         (unit) =>
@@ -250,7 +250,7 @@ class UserModel {
 
   // TODO: refactor the below Off/Def/Spy/Sentry functions
   getArmyStat(type: UnitType) {
-    const Units = this.units?.filter((units) => units.type === type);
+    const Units = this.units?.filter((units) => units.type === type)||[];
     const Weapons = this.items?.filter((weapon) => weapon.unitType === type);
     const UnitCounts = Units.map((unit) => {
       return (

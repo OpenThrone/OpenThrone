@@ -5,7 +5,7 @@ import Layout from '@/components/Layout';
 import { Meta } from '@/layouts/Meta';
 
 const Register = () => {
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   return (
     <Layout meta={<Meta title="MetaTitle2" description="Meta Description" />}>
