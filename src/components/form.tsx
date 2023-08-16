@@ -38,7 +38,7 @@ const Form = ({
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-
+        setLoading(true)
         try {
           if (type === "login") {
             const res = await signIn("credentials", {
