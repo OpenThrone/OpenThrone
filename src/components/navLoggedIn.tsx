@@ -143,17 +143,6 @@ export const NavLoggedIn: React.FC = () => {
       setResetTimer(null);
     }
   };
-  // const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    console.log(activeSubMenu);
-    console.log(activeParentLink);
-    // const subscription = userService.user.subscribe((x: User) => setUser(x));
-    // return () => subscription.unsubscribe();
-  }, [activeSubLink]);
-
-  // only show nav when logged in
-  // if (!user) return null;
 
   return (
     <>
