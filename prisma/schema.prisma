@@ -20,20 +20,20 @@ model users {
   password_hash  String
   race  String
   class String
-  units Json? @default('[{"type": "CITIZEN", "level": 1, "quantity": 50}, {"type": "WORKER", "level": 1, "quantity": 0}, {"type": "OFFENSE", "level": 1, "quantity": 0}, {"type": "DEFENSE", "level": 1, "quantity": 0}, {"type": "SPY", "level": 1, "quantity": 0}, {"type": "SENTRY", "level": 1, "quantity": 0}]')
+  units Json? @default("[{\"type\": \"CITIZEN\", \"level\": 1, \"quantity\": 50}, {\"type\": \"WORKER\", \"level\": 1, \"quantity\": 0}, {\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}]")
   experience Int @default(0)
   gold  Int @default(1000)
   gold_in_bank  Int @default(0)
   fort_level  Int @default(1)
-  fort_hitpoints  Int @default(50)
+  fort_hitpoints  Int @default(100)
   attack_turns  Int @default(10)
   salt  String
   last_active DateTime? @db.Timestamptz(3)
   rank Int @default(0)
-  items Json? @default('[{"type": "WEAPON", "level": 1, "quantity": 0}]')
+  items Json? @default("[{\"type\": \"WEAPON\", \"level\": 1, \"quantity\": 0}]")
   house_level Int @default(0)
-  battle_upgrades Json? @default('[{"type": "Offense", "level": 1, "quantity": 0}, {"type": "Spy", "level": 1, "quantity": 0}, {"type": "Sentry", "level": 1, "quantity": 0}]')
-  structure_upgrades Json? @default('[{"type": "Offense", "level": 1}, {"type": "Spy", "level": 1}, {"type": "Sentry", "level": 1}]')
+  battle_upgrades Json? @default("[{\"type\": \"Offense\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Spy\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Sentry\", \"level\": 1, \"quantity\": 0}]")
+  structure_upgrades Json? @default("[{\"type\": \"Offense\", \"level\": 1}, {\"type\": \"Spy\", \"level\": 1}, {\"type\": \"Sentry\", \"level\": 1}]")
   bio String @default("")
   colorScheme String?
   
