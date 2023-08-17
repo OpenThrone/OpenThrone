@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
 
-import Layout from '@/components/Layout';
 import UnitSection from '@/components/unitsection';
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
-import { Meta } from '@/layouts/Meta';
 
 const Training = () => {
   // Replace this with actual data fetching
@@ -53,33 +51,28 @@ const Training = () => {
   }, [user]);
 
   return (
-    <Layout meta={<Meta title="Training" description="Train your troops" />}>
-      <div className="mainArea pb-10">
-        <h2 className="text-2xl font-bold">Training</h2>
-        <div className="my-5 flex justify-around">
-          <p className="mb-0">
-            Untrained Citizens:{' '}
-            <span>
-              {
-                user?.units.filter((unit) => unit.type === 'CITIZEN')[0]
-                  .quantity
-              }
-            </span>
-          </p>
-          <p className="mb-0">
-            Gold On Hand: <span>{user?.gold}</span>
-          </p>
-          <p className="mb-0">
-            Banked Gold: <span>{user?.goldInBank}</span>
-          </p>
-        </div>
-        <UnitSection heading="Economy" units={workerUnits} />
-
-        <UnitSection heading="Offense" units={offensiveUnits} />
-
-        <UnitSection heading="Defense" units={defensiveUnits} />
+    <div className="mainArea pb-10">
+      <h2 className="text-2xl font-bold">Training</h2>
+      <div className="my-5 flex justify-around">
+        <p className="mb-0">
+          Untrained Citizens:{' '}
+          <span>
+            {user?.units.filter((unit) => unit.type === 'CITIZEN')[0].quantity}
+          </span>
+        </p>
+        <p className="mb-0">
+          Gold On Hand: <span>{user?.gold}</span>
+        </p>
+        <p className="mb-0">
+          Banked Gold: <span>{user?.goldInBank}</span>
+        </p>
       </div>
-    </Layout>
+      <UnitSection heading="Economy" units={workerUnits} />
+
+      <UnitSection heading="Offense" units={offensiveUnits} />
+
+      <UnitSection heading="Defense" units={defensiveUnits} />
+    </div>
   );
 };
 

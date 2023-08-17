@@ -42,7 +42,7 @@ const subMenus: {
     { text: 'War History', href: '/battle/history', parent: 'Battle' },
   ],
   Structures: [
-    { text: 'Bank', href: '#', parent: 'Structures' },
+    { text: 'Bank', href: '/structures/bank', parent: 'Structures' },
     { text: 'Armory', href: '/structures/armory', parent: 'Structures' },
     { text: 'Upgrades', href: '/structures/upgrades', parent: 'Structures' },
     { text: 'Housing', href: '#', parent: 'Structures' },

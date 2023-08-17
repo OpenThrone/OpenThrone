@@ -4,8 +4,6 @@ import { useState } from 'react';
 import useSWR from 'swr'; // Using SWR for data fetching
 
 import ComposeModal from '@/components/composemodal';
-import Layout from '@/components/Layout';
-import { Meta } from '@/layouts/Meta';
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -74,56 +72,49 @@ const Inbox = () => {
   if (!messages) return <div>Loading...</div>;
 
   return (
-    <Layout meta={<Meta title="Inbox" description="View your messages" />}>
-      <div className="mx-auto w-full py-2">
-        <h1 className="mb-4 text-2xl font-bold">Inbox</h1>
-        <div>
-          <button type="button" onClick={() => setComposeModalOpen(true)}>
-            Compose
-          </button>
-          {composeModalOpen && (
-            <ComposeModal onClose={() => setComposeModalOpen(false)} />
-          )}
+    <div className="mx-auto w-full py-2">
+      <h1 className="mb-4 text-2xl font-bold">Inbox</h1>
+      <div>
+        <button type="button" onClick={() => setComposeModalOpen(true)}>
+          Compose
+        </button>
+        {composeModalOpen && (
+          <ComposeModal onClose={() => setComposeModalOpen(false)} />
+        )}
 
-          <table class="w-full">
-            <thead>
-              <tr>
-                <th>From</th>
-                <th>Subject</th>
-                <th>Date/Time</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody />
-            {messages.map((message) => (
-              <tr key={message.id}>
-                <td>{message.from_user.display_name}</td>
-                <td>
-                  <Link href={`/messages/${message.id}`}>
-                    {message.subject}
-                  </Link>
-                </td>
-                <td>{new Date(message.date_time).toLocaleString()}</td>
-                <td>
-                  <button type="button" onClick={() => handleReply(message)}>
-                    Reply
-                  </button>
-                  <button type="button" onClick={() => handleForward(message)}>
-                    Forward
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(message.id)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </table>
-        </div>
+        <table class="w-full">
+          <thead>
+            <tr>
+              <th>From</th>
+              <th>Subject</th>
+              <th>Date/Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody />
+          {messages.map((message) => (
+            <tr key={message.id}>
+              <td>{message.from_user.display_name}</td>
+              <td>
+                <Link href={`/messages/${message.id}`}>{message.subject}</Link>
+              </td>
+              <td>{new Date(message.date_time).toLocaleString()}</td>
+              <td>
+                <button type="button" onClick={() => handleReply(message)}>
+                  Reply
+                </button>
+                <button type="button" onClick={() => handleForward(message)}>
+                  Forward
+                </button>
+                <button type="button" onClick={() => handleDelete(message.id)}>
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </table>
       </div>
-    </Layout>
+    </div>
   );
 };
 

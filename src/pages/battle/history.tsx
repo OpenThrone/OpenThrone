@@ -1,28 +1,24 @@
 import { getSession } from 'next-auth/react';
 
 import AttackLogTable from '@/components/attacklog';
-import Layout from '@/components/Layout';
-import { Meta } from '@/layouts/Meta';
 import prisma from '@/lib/prisma'; // Assuming this is the path to your prisma client
 
 const WarHistory = ({ attackLogs, defenseLogs }) => {
   return (
-    <Layout title="War History" meta={<Meta title="War History" />}>
-      <div className="container mx-auto p-4">
-        <h1 className="mb-4 text-2xl font-bold">War History</h1>
+    <div className="container mx-auto p-4">
+      <h1 className="mb-4 text-2xl font-bold">War History</h1>
 
-        <section className="mb-8">
-          <h2 className="mb-2 text-xl">Attack Log</h2>
-          <AttackLogTable logs={attackLogs} />
-        </section>
+      <section className="mb-8">
+        <h2 className="mb-2 text-xl">Attack Log</h2>
+        <AttackLogTable logs={attackLogs} />
+      </section>
 
-        <section className="mb-8">
-          <h2 className="mb-2 text-xl">Defense Log</h2>
-          <AttackLogTable logs={defenseLogs} />{' '}
-          {/* Reusing the same table for defense logs */}
-        </section>
-      </div>
-    </Layout>
+      <section className="mb-8">
+        <h2 className="mb-2 text-xl">Defense Log</h2>
+        <AttackLogTable logs={defenseLogs} />{' '}
+        {/* Reusing the same table for defense logs */}
+      </section>
+    </div>
   );
 };
 

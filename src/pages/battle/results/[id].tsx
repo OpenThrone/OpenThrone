@@ -1,7 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
 
-import Layout from '@/components/Layout';
-import { Meta } from '@/layouts/Meta';
 import prisma from '@/lib/prisma';
 
 const results = ({ battle }) => {
@@ -39,29 +37,27 @@ const results = ({ battle }) => {
   };
 
   return (
-    <Layout meta={<Meta title="MetaTitle2" description="Meta Description" />}>
-      <div className="mainArea pb-10">
-        <h2>Battle Results</h2>
-        <AnimatePresence>
-          {lines.map((line, i) => (
-            <motion.h3
-              className="load-screen--message"
-              variants={sentence}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              key={i}
-            >
-              {line.split('').map((char, index) => (
-                <motion.span key={`${char}-${index}`} variants={letter}>
-                  {char}
-                </motion.span>
-              ))}
-            </motion.h3>
-          ))}
-        </AnimatePresence>
-      </div>
-    </Layout>
+    <div className="mainArea pb-10">
+      <h2>Battle Results</h2>
+      <AnimatePresence>
+        {lines.map((line, i) => (
+          <motion.h3
+            className="load-screen--message"
+            variants={sentence}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            key={i}
+          >
+            {line.split('').map((char, index) => (
+              <motion.span key={`${char}-${index}`} variants={letter}>
+                {char}
+              </motion.span>
+            ))}
+          </motion.h3>
+        ))}
+      </AnimatePresence>
+    </div>
   );
 };
 

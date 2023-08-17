@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 import { setTimeout } from 'timers';
 
 import LoadingDots from '@/components/loading-dots';
-import { alertService } from '@/services';
 
 const Form = ({
   type,
@@ -31,68 +30,50 @@ const Form = ({
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
-    console.log(formData);
-  };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Register the user using the provided API endpoint
-    const response = await fetch('/api/auth/register/route', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alertService.success('Registration successful!', true);
-      router.push('/account/login');
-    } else {
-      alertService.error(data.error || 'Registration failed.');
-      setErrorMessage(data.error || 'An error occurred during registration.');
-    }
   };
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         setLoading(true);
-        if (type === 'login') {
-          signIn('credentials', {
-            redirect: false,
-            email: e.currentTarget.email.value,
-            password: e.currentTarget.password.value,
-            // @ts-ignore
-          }).then(({ error }) => {
-            if (error) {
+        try {
+          if (type === 'login') {
+            const res = await signIn('credentials', {
+              redirect: false,
+              email: e.currentTarget.email.value,
+              password: e.currentTarget.password.value,
+            });
+            if (res?.ok) {
               setLoading(false);
-              setErrorMessage(error);
+              router.push('/home/overview');
             } else {
-              router.push('/home/overview/');
+              setLoading(false);
+              setErrorMessage('Invalid username or password!');
             }
-          });
-        } else {
-          fetch('/api/auth/register/route', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData),
-          }).then(async (res) => {
-            setLoading(false);
+          } else {
+            const res = await fetch('/api/auth/register/route', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(formData),
+            });
+
             if (res.status === 200) {
               toast.success('Account created! Redirecting to login...');
               setTimeout(() => {
                 router.push('/account/login');
               }, 2000);
             } else {
-              const { error } = await res.json();
-              handleError(error);
+              const { message } = await res.json();
+              setLoading(false);
+              setErrorMessage(message);
             }
-          });
+          }
+        } catch (error) {
+          console.error(error);
+          setErrorMessage('Something went wrong!');
+          setLoading(false);
         }
       }}
       className="mt-2 flex flex-col space-y-4"
@@ -224,7 +205,10 @@ const Form = ({
       {type === 'login' ? (
         <p className="text-center text-sm text-gray-600">
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="font-semibold text-gray-800">
+          <Link
+            href="/account/register"
+            className="font-semibold text-gray-800"
+          >
             Sign up
           </Link>{' '}
           for free.
@@ -232,7 +216,7 @@ const Form = ({
       ) : (
         <p className="text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <Link href="/login" className="font-semibold text-gray-800">
+          <Link href="/account/login" className="font-semibold text-gray-800">
             Sign in
           </Link>{' '}
           instead.

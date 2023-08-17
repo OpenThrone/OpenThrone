@@ -1,15 +1,25 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import React from 'react';
 
 import Form from '@/components/form';
-import Layout from '@/components/Layout';
-import { Meta } from '@/layouts/Meta';
+import { useLayout } from '@/context/LayoutContext';
 
 const Login = () => {
+  const { setMeta } = useLayout();
+
+  useEffect(() => {
+    if (setMeta) {
+      setMeta({
+        title: 'DarkCurse - Login',
+        description: 'Meta Description',
+      });
+    }
+  }, [setMeta]);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   return (
-    <Layout meta={<Meta title="MetaTitle2" description="Meta Description" />}>
+    <>
       <div className="mainArea pb-10">
         <h2>Login</h2>
       </div>
@@ -25,7 +35,7 @@ const Login = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

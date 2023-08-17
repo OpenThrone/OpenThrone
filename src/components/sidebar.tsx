@@ -8,15 +8,8 @@ const Sidebar: React.FC = () => {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   // const { data: session, status } = useSession();
 
-  const { user, refreshUserData } = useUser();
+  const { user } = useUser();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refreshUserData(); // This will fetch the latest user data every 30 seconds
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [refreshUserData]);
   const [sidebar, setSidebar] = useState({
     gold: 0,
     citizens: 0,
@@ -68,16 +61,12 @@ const Sidebar: React.FC = () => {
   };
 
   useEffect(() => {
-    console.log('executed');
     const interval = setInterval(() => {
       const remaining = getTimeRemaining(getTimeToNextTurn());
       const minutes = String(remaining.minutes).padStart(2, '0');
       const seconds = String(remaining.seconds).padStart(2, '0');
       setTime(`${minutes}:${seconds}`);
 
-      // console.log(user);
-      // console.log(session);
-      // console.log(status);
       setSidebar({
         gold: user?.gold?.toLocaleString(),
         citizens: user?.citizens?.toLocaleString(),

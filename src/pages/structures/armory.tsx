@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import ItemSection from '@/components/itemsection'; // Assuming you have a similar component for items
-import Layout from '@/components/Layout';
 import { useUser } from '@/context/users';
-import { Meta } from '@/layouts/Meta';
 
 const Armory = () => {
   const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
@@ -37,27 +35,22 @@ const Armory = () => {
   }, [user]);
 
   return (
-    <Layout meta={<Meta title="Armory" description="Equip your troops" />}>
-      <div className="mainArea pb-10">
-        <h2 className="text-2xl font-bold">Armory</h2>
-        <div className="my-5 flex justify-around">
-          <p className="mb-0">
-            Citizens: <span>{user?.citizens}</span>
-          </p>
-          <p className="mb-0">
-            Gold On Hand: <span>{user?.gold}</span>
-          </p>
-          <p className="mb-0">
-            Banked Gold: <span>{user?.goldInBank}</span>
-          </p>
-        </div>
-        <ItemSection
-          heading="Offensive Weapons"
-          items={data.offensiveWeapons}
-        />
-        {/* ... (Similarly, render other item sections) */}
+    <div className="mainArea pb-10">
+      <h2 className="text-2xl font-bold">Armory</h2>
+      <div className="my-5 flex justify-around">
+        <p className="mb-0">
+          Citizens: <span>{user?.citizens}</span>
+        </p>
+        <p className="mb-0">
+          Gold On Hand: <span>{user?.gold}</span>
+        </p>
+        <p className="mb-0">
+          Banked Gold: <span>{user?.goldInBank}</span>
+        </p>
       </div>
-    </Layout>
+      <ItemSection heading="Offensive Weapons" items={data.offensiveWeapons} />
+      {/* ... (Similarly, render other item sections) */}
+    </div>
   );
 };
 

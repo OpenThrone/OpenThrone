@@ -1,8 +1,6 @@
-import { Meta } from '@storybook/react';
 import { useState } from 'react';
 
 import DefenseUpgrade from '@/components/defenseupgrade';
-import Layout from '@/components/Layout';
 
 const Upgrades = () => {
   // Sample state for dynamic values (will be replaced with actual data fetching later)
@@ -27,33 +25,31 @@ const Upgrades = () => {
   };
 
   return (
-    <Layout meta={<Meta title="MetaTitle2" description="Meta Description" />}>
-      <div className="mainArea pb-10">
-        <h2>Structure Upgrades</h2>
-        <div
-          className="d-flex justify-content-around my-5"
-          id="alertMSG"
-          style={{ display: 'none' }}
-        >
-          {/* Alert messages will go here */}
-        </div>
-
-        <div className="d-flex justify-content-around my-5">
-          <p>
-            Untrained Citizens: <span>{userData.citizens}</span>
-          </p>
-          {/* ... (similar structure for other data points) */}
-        </div>
-
-        <form className="mb-5">
-          <h3>Defense</h3>
-          <DefenseUpgrade units={defenseUnits} />
-          <button onClick={() => handleUpgradeSubmit('defense')}>
-            Upgrade Defense
-          </button>
-        </form>
+    <div className="mainArea pb-10">
+      <h2>Structure Upgrades</h2>
+      <div
+        className="d-flex justify-content-around my-5"
+        id="alertMSG"
+        style={{ display: 'none' }}
+      >
+        {/* Alert messages will go here */}
       </div>
-    </Layout>
+
+      <div className="d-flex justify-content-around my-5">
+        <p>
+          Untrained Citizens: <span>{userData.citizens}</span>
+        </p>
+        {/* ... (similar structure for other data points) */}
+      </div>
+
+      <form className="mb-5">
+        <h3>Defense</h3>
+        <DefenseUpgrade units={defenseUnits} />
+        <button onClick={() => handleUpgradeSubmit('defense')}>
+          Upgrade Defense
+        </button>
+      </form>
+    </div>
   );
 };
 
