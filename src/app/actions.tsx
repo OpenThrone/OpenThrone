@@ -23,7 +23,7 @@ export async function attackHandler(attackerId, defenderId) {
   return { status: 'failed' };
 }
 
-export async function trainHandler(playerId) {
+export async function trainHandler(playerId: Number) {
   'use server';
 
   const player: UserModel = await prisma?.users.findUnique({
@@ -32,10 +32,6 @@ export async function trainHandler(playerId) {
 
   if (player) {
     const PlayerModelInstance = new UserModel(player);
-
-    // Training logic here...
-    // For example:
-    // PlayerModelInstance.offense += 10;  // Increase offense by 10 for demonstration purposes
 
     // Save the updated player details to the database
     const updatedPlayer = await prisma?.users.update({
