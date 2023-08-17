@@ -66,7 +66,6 @@ const Sidebar: React.FC = () => {
       const minutes = String(remaining.minutes).padStart(2, '0');
       const seconds = String(remaining.seconds).padStart(2, '0');
       setTime(`${minutes}:${seconds}`);
-
       setSidebar({
         gold: user?.gold?.toLocaleString(),
         citizens: user?.citizens?.toLocaleString(),
