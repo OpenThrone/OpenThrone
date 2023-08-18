@@ -108,7 +108,7 @@ class UserModel {
       this.class = userData.class;
       this.experience = userData.experience;
       this.gold = userData.gold;
-
+      this.goldInBank = userData.gold_in_bank;
       this.fortLevel = userData.fort_level;
       this.fortHitpoints = userData.fort_hitpoints;
       this.houseLevel = userData.house_level;
