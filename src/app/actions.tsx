@@ -22,29 +22,3 @@ export async function attackHandler(attackerId, defenderId) {
   }
   return { status: 'failed' };
 }
-
-export async function trainHandler(playerId: Number) {
-  'use server';
-
-  const player: UserModel = await prisma?.users.findUnique({
-    where: { id: playerId },
-  });
-
-  if (player) {
-    const PlayerModelInstance = new UserModel(player);
-
-    // Save the updated player details to the database
-    const updatedPlayer = await prisma?.users.update({
-      where: { id: playerId },
-      data: {
-        offense: PlayerModelInstance.offense, // Update the offense value or any other attributes here
-      },
-    });
-
-    return {
-      status: 'success',
-      player: updatedPlayer,
-    };
-  }
-  return { status: 'failed' };
-}
