@@ -66,11 +66,14 @@ export const UserProvider: React.FC = ({ children }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const player = useMemo(async () => {
-    const updatedUserData = await fetchUserDataFromAPI(data.player.id);
-    setUser(new UserModel(updatedUserData));
+  useMemo(async () => {
+    if (data?.player) {
+      const updatedUserData = await fetchUserDataFromAPI(data.player.id);
+      setUser(new UserModel(updatedUserData));
 
-    return { user, loading: status === 'loading', userSession: data };
+      return { user, loading: status === 'loading', userSession: data };
+    }
+    return { user, loading: status, userSession: data };
   }, [data, status]);
 
   return (

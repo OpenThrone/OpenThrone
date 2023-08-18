@@ -1,6 +1,10 @@
-// components/UnitSection.tsx
+// components/ItemSection.tsx
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+
+import { alertService } from '@/services';
+
+import { useUser } from '../context/users';
 
 type UnitProps = {
   id: string;
@@ -9,7 +13,8 @@ type UnitProps = {
   ownedItems: number;
   cost: string;
   enabled: boolean;
-  fortName?: string;
+  level?: number;
+  usage: string;
 };
 
 type UnitSectionProps = {
@@ -18,10 +23,111 @@ type UnitSectionProps = {
 };
 
 const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
-  if (!items) {
-    return 'nothing';
-  }
-  console.log(items);
+  const { user, forceUpdate } = useUser();
+  const [getItems, setItems] = useState(items || []);
+
+  useEffect(() => {
+    if(items)
+      setItems(items);
+}, [items]);
+  const handleEquip = async () => {
+    const itemsToEquip = getItems
+      .filter((item) => item.enabled)
+      .map((item) => {
+        const inputElement = document.querySelector(`input[name="${item.id}"]`);
+        return {
+          type: item.id.split('_')[0], // Extracting the item type from the id
+          quantity: parseInt(inputElement.value, 10),
+          usage: item.usage,
+        };
+      });
+    console.log(itemsToEquip)
+    console.log(getItems);
+    try {
+      const response = await fetch('/api/armory/equip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          items: itemsToEquip,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alertService.success(data.message);
+        // Update the getItems state with the new quantities
+        setItems((prevItems) => {
+          return prevItems.map((item) => {
+            const updatedItem = data.data.find(
+              (i) => i.type === item.id.split('_')[0]
+            );
+            if (updatedItem) {
+              return { ...item, ownedItems: updatedItem.quantity };
+            }
+            return item;
+          });
+        });
+        forceUpdate();
+      } else {
+        alertService.error(data.error);
+      }
+    } catch (error) {
+      alertService.error('Failed to equip items. Please try again.');
+    }
+  };
+
+  const handleUnequip = async () => {
+    const itemsToUnequip = getItems
+      .filter((item) => item.enabled)
+      .map((item) => {
+        const inputElement = document.querySelector(`input[name="${item.id}"]`);
+        return {
+          type: item.id.split('_')[0], // Extracting the item type from the id
+          quantity: parseInt(inputElement.value, 10),
+          usage: item.usage,
+        };
+      });
+
+    try {
+      const response = await fetch('/api/armory/unequip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          items: itemsToUnequip,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alertService.success(data.message);
+        // Update the getItems state with the new quantities
+        setItems((prevItems) => {
+          return prevItems.map((item) => {
+            const updatedItem = data.data.find(
+              (i) => i.type === item.id.split('_')[0]
+            );
+            if (updatedItem) {
+              return { ...item, ownedItems: updatedItem.quantity };
+            }
+            return item;
+          });
+        });
+        forceUpdate();
+      } else {
+        alertService.error(data.error);
+      }
+    } catch (error) {
+      alertService.error('Failed to unequip items. Please try again.');
+    }
+  };
   return (
     <div className="my-10 rounded-lg bg-gray-800">
       <table className="w-full table-auto">
@@ -35,7 +141,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
           </tr>
         </thead>
         <tbody>
-          {items.map((unit) =>
+          {getItems.map((unit) =>
             unit.enabled ? (
               <tr key={unit.id}>
                 <td className="border px-4 py-2">{unit.name}</td>
@@ -68,6 +174,20 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
           )}
         </tbody>
       </table>
+      <div className="mt-4 flex justify-between">
+        <button
+          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+          onClick={handleEquip}
+        >
+          Equip
+        </button>
+        <button
+          className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+          onClick={handleUnequip}
+        >
+          Unequip
+        </button>
+      </div>
     </div>
   );
 };
