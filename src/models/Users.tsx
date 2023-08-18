@@ -248,34 +248,60 @@ class UserModel {
     return workerGoldPerTurn + fortificationGoldPerTurn;
   }
 
-  // TODO: refactor the below Off/Def/Spy/Sentry functions
   getArmyStat(type: UnitType) {
-    const Units = this.units?.filter((units) => units.type === type);
-    const Weapons = this.items?.filter((weapon) => weapon.unitType === type);
-    const UnitCounts = Units.map((unit) => {
-      return (
+    const Units = this.units?.filter((unit) => unit.type === type) || [];
+
+    let totalStat = 0;
+
+    Units.forEach((unit) => {
+      // Get the unit's bonus
+      const unitBonus =
         UnitTypes.find(
           (unitType) =>
             unitType.type === unit.type && unitType.level === unit.level
-        ).bonus *
-          unit.quantity +
-        Weapons.map((weapon) => {
-          return (
-            WeaponTypes.find(
-              (nweapon) =>
-                nweapon.type === weapon.type &&
-                nweapon.level === unit.level &&
-                nweapon.usage === unit.type
-            ).bonus *
-            (weapon.quantity <= unit.quantity ? weapon.quantity : unit.quantity)
-          );
-        }).reduce((acc, off) => acc + off, 0) *
-          (1 + parseInt(this.attackBonus.toString(), 10) / 100)
-      );
+        )?.bonus || 0;
+
+      // Add the unit's bonus to the total
+      totalStat += unitBonus * unit.quantity;
+
+      // Filter out the weapons that match the unit type and level based on their usage
+      const matchingWeapons =
+        this.items?.filter(
+          (weapon) => weapon.usage === unit.type && weapon.level === unit.level
+        ) || [];
+
+      // Calculate the total bonus from weapons, but only up to the number of units
+      matchingWeapons.forEach((weapon) => {
+        const weaponBonus =
+          WeaponTypes.find(
+            (w) => w.level === weapon.level && w.usage === unit.type
+          )?.bonus || 0;
+
+        // Use the minimum of weapon quantity and unit quantity for the bonus calculation
+        totalStat += weaponBonus * Math.min(weapon.quantity, unit.quantity);
+      });
     });
 
-    const armyStat = UnitCounts.reduce((acc, off) => acc + off, 0);
-    return armyStat;
+    // Apply the appropriate bonus based on the type
+    switch (type) {
+      case 'OFFENSE':
+        totalStat *= 1 + parseInt(this.attackBonus.toString(), 10) / 100;
+        break;
+      case 'DEFENSE':
+        totalStat *= 1 + parseInt(this.defenseBonus.toString(), 10) / 100;
+        break;
+      case 'SPY':
+        totalStat *= 1 + parseInt(this.intelBonus.toString(), 10) / 100;
+        break;
+      case 'SENTRY':
+        totalStat *= 1 + parseInt(this.intelBonus.toString(), 10) / 100;
+        break;
+      default:
+        break;
+    }
+
+    // Round up the final result
+    return Math.ceil(totalStat);
   }
 
   get offense(): number {
