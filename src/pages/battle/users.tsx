@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { getSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react';
 
+import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 
@@ -10,6 +11,7 @@ const ROWS_PER_PAGE = 10;
 
 const Users = ({ players, session, userPage }) => {
   const router = useRouter();
+  const { user, forceUpdate } = useUser();
   const initialPage = parseInt(router.query.page as string) || userPage;
   const [page, setPage] = useState(initialPage);
 
@@ -36,7 +38,7 @@ const Users = ({ players, session, userPage }) => {
           <tbody>
             {players.map((nplayer) => {
               const player = new UserModel(nplayer);
-              if (player.id === session?.player.id) player.is_player = true;
+              if (player.id === user?.id) player.is_player = true;
 
               return (
                 <tr
@@ -97,14 +99,33 @@ const Users = ({ players, session, userPage }) => {
 export const getServerSideProps = async (context: any) => {
   const session = await getSession(context);
 
-  // Find the rank of the current user
-  const userRank = await prisma.users.count({
-    where: {
-      experience: {
-        gte: session?.player.experience,
+  // Fetch all users
+  const allUsers = await prisma.users.findMany({
+    orderBy: [
+      {
+        experience: 'desc',
       },
-    },
+      {
+        fort_level: 'desc',
+      },
+      {
+        house_level: 'desc',
+      },
+    ],
   });
+
+  // Calculate composite score for each user
+  allUsers.forEach((user) => {
+    user.score =
+      0.7 * user.experience + 0.2 * user.fort_level + 0.1 * user.house_level;
+  });
+
+  // Sort users based on composite score
+  allUsers.sort((a, b) => b.score - a.score);
+
+  // Find the rank of the current user
+  const userRank =
+    allUsers.findIndex((user) => user.id === session?.player.id) + 1;
 
   // Calculate the page number based on the user's rank
   const userPage = Math.ceil(userRank / ROWS_PER_PAGE);
