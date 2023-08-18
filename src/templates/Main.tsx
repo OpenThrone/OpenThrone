@@ -49,7 +49,7 @@ const Main = (props: IMainProps) => {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <div className="w-full grow bg-elfBG px-1 text-yellow-400 antialiased">
+      <div className="w-full grow bg-elf-header-bgcolor px-1 text-yellow-400 antialiased">
         {props.meta}
 
         <div className="mx-auto max-w-screen-xl">

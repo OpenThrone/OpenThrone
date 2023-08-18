@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
 import Sidebar from '@/components/sidebar';
+import { useUser } from '@/context/users';
 import { AppConfig } from '@/utils/AppConfig';
 
 interface IMainProps {
@@ -16,6 +17,7 @@ interface IMainProps {
 const Layout = (props: IMainProps) => {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { user } = useUser();
   const [authorized, setAuthorized] = useState(status === 'authenticated');
   function authCheck(_url: string) {
     // redirect to login page if accessing a private page and not logged in
@@ -24,6 +26,20 @@ const Layout = (props: IMainProps) => {
       return <div>Loading</div>;
     }
     return setAuthorized(status === 'authenticated');
+  }
+  function getBgClass(race) {
+    switch (race) {
+      case 'ELF':
+        return 'bg-elf-header-bgcolor';
+      case 'HUMAN':
+        return 'bg-human-header-bgcolor';
+      case 'UNDEAD':
+        return 'bg-undead-header-bgcolor';
+      case 'GOBLIN':
+        return 'bg-goblin-header-bgcolor';
+      default:
+        return 'bg-elf-header-bgcolor';
+    }
   }
   useEffect(() => {
     // on initial load - run auth check
@@ -42,11 +58,19 @@ const Layout = (props: IMainProps) => {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <div className="w-full grow bg-elfBG px-1 text-yellow-400 antialiased">
+      <div
+        className={`w-full grow ${
+          authorized ? getBgClass(user?.race) : 'bg-elf-header-bgcolor'
+        } px-1 text-yellow-400 antialiased`}
+      >
         <div className="mx-auto max-w-screen-xl">
           <header className="mx-auto max-w-screen-xl border-b border-gray-300">
-            <div className="bg-elf-header-bgcolor pb-10 pt-2">
-              <h1 className="title text-center text-6xl font-medium text-title">
+            <div
+              className={`${
+                authorized ? getBgClass(user?.race) : 'bg-elf-header-bgcolor'
+              } pb-10 pt-2`}
+            >
+              <h1 className="title text-title text-center text-6xl font-medium">
                 {AppConfig.title}
               </h1>
               <h2 className="text-center text-xl">{AppConfig.description}</h2>

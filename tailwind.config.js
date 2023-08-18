@@ -1,5 +1,51 @@
 /** @type {import('tailwindcss').Config} */
+const navLinkColor = 'rgb(253, 226, 101)';
+const titleColor = 'rgb(221, 149, 63)';
+
+function generateRaceColors(
+  navActive,
+  navHover,
+  bg,
+  menuPrimary,
+  menuSecondary,
+  sidebarBg,
+  heading,
+  bodyBg,
+  footer
+) {
+  return {
+    link: {
+      current: navActive,
+      hover: navHover,
+      link: navLinkColor,
+    },
+    bg,
+    menu: {
+      primary: menuPrimary,
+      secondary: menuSecondary,
+    },
+    sidebar: {
+      bgcolor: sidebarBg,
+      color: 'yellow',
+    },
+    header: {
+      bgcolor: heading,
+    },
+    advisorColor: 'black',
+    mainAreaBg: 'black',
+    mainAreaColor: 'rgb(255, 255, 92)',
+    bodyBg,
+    footer,
+    title: titleColor,
+  };
+}
 module.exports = {
+  purge: {
+    content: ['./src/**/*.tsx', './src/**/*.ts'],
+    options: {
+      whitelistPatterns: [/^bg-/], // This will whitelist all classes that start with "bg-"
+    },
+  },
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     fontSize: {
@@ -16,26 +62,50 @@ module.exports = {
     },
     extend: {
       colors: {
-        elfBG: '#0B2012',
-        elfLink: {
-          current: 'rgb(13, 97, 46)',
-          hover: 'rgb(13, 97, 46)',
-          link: 'rgb(253,226,101)',
-        },
-        elf: {
-          menu: {
-            primary: 'rgb(10,61,31)',
-            secondary: 'rgb(13,97,46)',
-          },
-          sidebar: {
-            bgcolor: 'rgb(11,32,18)',
-            color: 'yellow',
-          },
-          header: {
-            bgcolor: 'rgb(11,32,18)',
-          },
-        },
-        title: 'rgb(221, 149, 63)',
+        elf: generateRaceColors(
+          'rgb(13, 97, 46)', // navActive
+          'rgb(13, 97, 46)', // navHover
+          '#0B2012', // bg
+          'rgb(10,61,31)', // menuPrimary
+          'rgb(13,97,46)', // menuSecondary
+          'rgb(11,32,18)', // sidebarBg
+          'rgb(11,32,18)', // heading
+          'rgb(11,32,18)', // bodyBg
+          'rgb(11,32,18)' // footer
+        ),
+        goblin: generateRaceColors(
+          '#c0532e', // navActive
+          '#70301a', // navHover
+          'rgb(45, 12, 12)', // bg
+          '#70301a', // menuPrimary
+          'rgb(46, 12, 12)', // menuSecondary
+          '#70301a', // sidebarBg
+          'rgb(45, 12, 12)', // heading
+          'rgb(45, 12, 12)', // bodyBg
+          'rgb(11,32,18)' // footer
+        ),
+        human: generateRaceColors(
+          'rgb(26, 55, 93)', // navActive
+          'rgb(26, 55, 93)', // navHover
+          'rgb(14, 31, 53)', // bg
+          'rgb(14, 31, 53)', // menuPrimary
+          'rgb(26, 55, 93)', // menuSecondary
+          'rgb(14, 31, 53)', // sidebarBg
+          'rgb(26, 55, 93)', // heading
+          'rgb(26, 55, 93)', // bodyBg
+          'rgb(11,32,18)' // footer
+        ),
+        undead: generateRaceColors(
+          'rgb(77, 77, 77)', // navActive
+          'rgb(77, 77, 77)', // navHover
+          'rgb(33, 33, 33)', // bg
+          'rgb(77, 77, 77)', // menuPrimary
+          'rgb(33, 33, 33)', // menuSecondary
+          'rgb(77, 77, 77)', // sidebarBg
+          'rgb(33, 33, 33)', // heading
+          'rgb(77, 77, 77)', // bodyBg
+          'rgb(11,32,18)' // footer
+        ),
         table: {
           odd: '#2c3034',
           even: '#212529',

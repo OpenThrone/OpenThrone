@@ -72,9 +72,9 @@ export const NavLoggedOut: React.FC = () => {
                     href={link.url}
                     className={`border-none ${
                       activeParentLink === link.url
-                        ? 'text-elfLink-current'
-                        : 'text-elfLink-link'
-                    } hover:text-elfLink-hover`}
+                        ? 'text-elf-link-current'
+                        : 'text-elf-link-link'
+                    } hover:text-elf-link-hover`}
                   >
                     {link.title}
                   </Link>

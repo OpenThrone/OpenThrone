@@ -146,7 +146,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
               <tr key={unit.id}>
                 <td className="border px-4 py-2">{unit.name}</td>
                 <td className="border px-4 py-2">
-                  +{unit.bonus} {heading}
+                  +{unit.bonus} {unit.usage}
                 </td>
                 <td className="border px-4 py-2">
                   <span id={`${unit.id}_owned`}>{unit.ownedItems}</span>

@@ -4,15 +4,7 @@ import { useRouter } from 'next/router';
 import { signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
-// import { userService } from 'services';
-/*
-interface User {
-  // Define the shape of your User object here
-  // For example:
-  id: string;
-  name: string;
-  // ...
-} */
+import { useUser } from '@/context/users';
 
 const parentLinks = [
   'Home',
@@ -59,6 +51,7 @@ const subMenus: {
 };
 
 export const NavLoggedIn: React.FC = () => {
+  const { user } = useUser();
   const router = useRouter();
   const [activeSubMenu, setActiveSubMenu] = useState<
     { text: string; href: string; parent: string }[]
@@ -143,7 +136,34 @@ export const NavLoggedIn: React.FC = () => {
       setResetTimer(null);
     }
   };
-
+  function getMenuPrimaryClass(race) {
+    switch (race) {
+      case 'ELF':
+        return 'bg-elf-menu-primary';
+      case 'HUMAN':
+        return 'bg-human-menu-primary';
+      case 'UNDEAD':
+        return 'bg-undead-menu-primary';
+      case 'GOBLIN':
+        return 'bg-goblin-menu-primary';
+      default:
+        return 'bg-elf-menu-primary';
+    }
+  }
+  function getMenuSecondaryClass(race) {
+    switch (race) {
+      case 'ELF':
+        return 'bg-elf-menu-secondary';
+      case 'HUMAN':
+        return 'bg-human-menu-secondary';
+      case 'UNDEAD':
+        return 'bg-undead-menu-secondary';
+      case 'GOBLIN':
+        return 'bg-goblin-menu-secondary';
+      default:
+        return 'bg-elf-menu-secondary';
+    }
+  }
   return (
     <>
       <button
@@ -182,7 +202,7 @@ export const NavLoggedIn: React.FC = () => {
       </nav>
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
         <nav
-          className="hidden h-8 bg-elf-menu-primary md:block"
+          className={`hidden h-8 ${getMenuPrimaryClass(user?.race)} md:block`}
           onMouseEnter={clearReset}
         >
           <div className="mx-auto max-w-screen-md md:block">
@@ -194,9 +214,9 @@ export const NavLoggedIn: React.FC = () => {
                       href="/"
                       className={`border-none ${
                         activeParentLink === link
-                          ? 'text-elfLink-current'
-                          : 'text-elfLink-link'
-                      } hover:text-elfLink-hover `}
+                          ? 'text-elf-link-current'
+                          : 'text-elf-link-link'
+                      } hover:text-elf-link-hover `}
                       onMouseOver={() => {
                         setActiveSubMenu(subMenus[link] || []);
                       }}
@@ -212,9 +232,9 @@ export const NavLoggedIn: React.FC = () => {
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className={`border-none ${
                     activeParentLink === 'signout'
-                      ? 'text-elfLink-current'
-                      : 'text-elfLink-link'
-                  } hover:text-elfLink-hover `}
+                      ? 'text-elf-link-current'
+                      : 'text-elf-link-link'
+                  } hover:text-elf-link-hover `}
                 >
                   Sign Out
                 </button>
@@ -223,7 +243,7 @@ export const NavLoggedIn: React.FC = () => {
           </div>
         </nav>
         <nav
-          className="hidden h-8 bg-elf-menu-secondary md:block"
+          className={`hidden h-8 ${getMenuSecondaryClass(user?.race)} md:block`}
           onMouseEnter={clearReset}
         >
           <div className="mx-auto max-w-screen-md">
@@ -239,8 +259,8 @@ export const NavLoggedIn: React.FC = () => {
                       activeSubLink === item.text &&
                       activeParentLink === item.parent
                         ? 'activeLinkClass'
-                        : 'text-elfLink-link'
-                    } hover:text-elfLink-hover`}
+                        : 'text-elf-link-link'
+                    } hover:text-elf-link-hover`}
                   >
                     {item.text}
                   </Link>
