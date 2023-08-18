@@ -30,7 +30,7 @@ model users {
   salt  String
   last_active DateTime? @db.Timestamptz(3)
   rank Int @default(0)
-  items Json? @default("[{\"type\": \"WEAPON\", \"level\": 1, \"quantity\": 0}]")
+  items Json? @default("[{\"type\": \"WEAPON\", \"level\": 1, \"quantity\": 0, \"usage\": \"OFFENSE\"}]")
   house_level Int @default(0)
   battle_upgrades Json? @default("[{\"type\": \"Offense\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Spy\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Sentry\", \"level\": 1, \"quantity\": 0}]")
   structure_upgrades Json? @default("[{\"type\": \"Offense\", \"level\": 1}, {\"type\": \"Spy\", \"level\": 1}, {\"type\": \"Sentry\", \"level\": 1}]")
