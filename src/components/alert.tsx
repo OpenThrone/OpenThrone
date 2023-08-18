@@ -16,7 +16,9 @@ const Alert: React.FC = () => {
   useEffect(() => {
     // subscribe to new alert notifications
     const subscription = alertService.alert.subscribe(
-      (nAlert: AlertType | null) => setAlert(nAlert)
+      (nAlert: AlertType | null) => {
+        setAlert(nAlert);
+      }
     );
 
     // unsubscribe when the component unmounts
@@ -35,8 +37,10 @@ const Alert: React.FC = () => {
       <div className="my-3">
         <div
           className={`relative rounded px-3 py-2 ${
-            alert.type === 'success' ? 'bg-green-500 text-white' : ''
-          } ${alert.type === 'danger' ? 'bg-red-500 text-white' : ''}`}
+            alert.type === 'alert-success' ? 'bg-green-500 text-white' : ''
+          } ${alert.type === 'alert-error' ? 'bg-red-500 text-white' : ''} ${
+            alert.type
+          }`}
         >
           {alert.message}
           <button
