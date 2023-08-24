@@ -1,6 +1,6 @@
 // components/UnitSection.tsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
@@ -18,9 +18,18 @@ type UnitProps = {
 type UnitSectionProps = {
   heading: string;
   units: UnitProps[];
+  updateTotalCost: (costChange: number) => void; // New prop
+  onTrain; // New prop
+  onUntrain; // New prop
 };
 
-const UnitSection: React.FC<UnitSectionProps> = ({ heading, units }) => {
+const UnitSection: React.FC<UnitSectionProps> = ({
+  heading,
+  units,
+  updateTotalCost,
+  onTrain, // New prop
+  onUntrain, // New prop
+}) => {
   const { user, forceUpdate } = useUser();
   const [getUnits, setUnits] = useState(units || []);
 
@@ -123,6 +132,50 @@ const UnitSection: React.FC<UnitSectionProps> = ({ heading, units }) => {
     }
   };
 
+  const handleTrainClick = () => {
+    handleTrain();
+    onTrain && onTrain(heading); // Use the passed down handler
+    units.forEach((unit) => {
+      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+      inputElement.value = 0;
+    });
+    updateTotalCost(0);
+  };
+
+  const handleUntrainClick = () => {
+    handleUntrain();
+    onUntrain && onUntrain(heading); // Use the passed down handler
+    units.forEach((unit) => {
+      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+      inputElement.value = 0;
+    });
+    updateTotalCost(0);
+  };
+  useEffect(() => {
+    const computeTotalCostForSection = () => {
+      let sectionCost = 0;
+      units.forEach((unit) => {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+        sectionCost +=
+          parseInt(inputElement?.value || '0', 10) *
+          parseInt(unit.cost.replace(/,/g, ''), 10);
+      });
+      updateTotalCost(sectionCost); // Send the total cost for this section
+    };
+
+    units.forEach((unit) => {
+      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+      inputElement?.addEventListener('input', computeTotalCostForSection);
+    });
+
+    return () => {
+      units.forEach((unit) => {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+        inputElement?.removeEventListener('input', computeTotalCostForSection);
+      });
+    };
+  }, [units, updateTotalCost]);
+
   return (
     <div className="my-10 rounded-lg bg-gray-800">
       <table className="w-full table-auto">
@@ -172,7 +225,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({ heading, units }) => {
       <div className="mt-4 flex justify-between">
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          onClick={handleTrain}
+          onClick={handleTrainClick}
         >
           Train
         </button>

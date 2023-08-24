@@ -61,7 +61,7 @@ export default async function handler(
         if (!user.units.some((u) => u.type === unitData.type)) {
           updatedUnits.push({
             type: unitData.type,
-            level: 1, // Assuming level 1 for simplicity
+            level: unitData.level,
             quantity: unitData.quantity,
           });
         }
