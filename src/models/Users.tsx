@@ -71,6 +71,10 @@ class UserModel {
 
   public overallrank: number;
 
+  public attacks_made: number;
+
+  public attacks_defended: number;
+
   constructor(userData: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
@@ -104,6 +108,7 @@ class UserModel {
         this.goldInBank = userData.gold_in_bank;
         this.attackTurns = userData.attack_turns;
       }
+
       this.race = userData.race;
       this.class = userData.class;
       this.experience = userData.experience;
@@ -120,6 +125,8 @@ class UserModel {
       this.colorScheme = userData.colorScheme;
       this.is_player = false;
       this.overallrank = 0;
+      this.attacks_made = userData.attacksMade;
+      this.attacks_defended = userData.attacksDefended;
     }
   }
   /* const [online, setOnline] = useState(false);
