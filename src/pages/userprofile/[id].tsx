@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import { useEffect, useState } from 'react';
@@ -15,6 +16,7 @@ const Index = ({ users }) => {
   const user = context ? context.user : null;
   const [isPlayer, setIsPlayer] = useState(false);
 
+  const router = useRouter();
   const [profile, setUser] = useState<UserModel>(() => new UserModel(users));
   const [canAttack, setCanAttack] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -24,8 +26,21 @@ const Index = ({ users }) => {
   };
 
   const handleSubmit = async (turns) => {
-    const res = await fetch(`/api/attack/${profile.id}`, { method: 'POST' });
-    console.log(await res.json());
+    if (!turns) turns = 1;
+    const res = await fetch(`/api/attack/${profile.id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ turns }),
+    });
+    const results = await res.json();
+
+    if (results.result) {
+      context.forceUpdate();
+      router.push(`/battle/results/${results.attack_log}`);
+    }
+
     // make server request here
     toggleModal();
   };

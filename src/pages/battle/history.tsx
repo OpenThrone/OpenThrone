@@ -10,12 +10,12 @@ const WarHistory = ({ attackLogs, defenseLogs }) => {
 
       <section className="mb-8">
         <h2 className="mb-2 text-xl">Attack Log</h2>
-        <AttackLogTable logs={attackLogs} />
+        <AttackLogTable logs={attackLogs} type="attack" />
       </section>
 
       <section className="mb-8">
         <h2 className="mb-2 text-xl">Defense Log</h2>
-        <AttackLogTable logs={defenseLogs} />{' '}
+        <AttackLogTable logs={defenseLogs} type="defense" />{' '}
         {/* Reusing the same table for defense logs */}
       </section>
     </div>

@@ -12,6 +12,8 @@ const results = ({ battle }) => {
       battle.winner === battle.attacker_id ? 'won!' : 'lost!'
     }`
   );
+  lines.push(`XP Earned: ${battle.stats.xpEarned}`);
+  lines.push(`Gold Pillaged: ${battle.stats.pillagedGold}`);
 
   const sentence = {
     hidden: { opacity: 0 },
@@ -19,7 +21,7 @@ const results = ({ battle }) => {
       opacity: 1,
       transition: {
         delayChildren: 1,
-        staggerChildren: 0.03,
+        staggerChildren: 0.06,
         staggerDirection: -1,
       },
     },
