@@ -4,6 +4,7 @@ const Overview = () => {
   // const router = useRouter();
 
   const { user } = useUser();
+
   return (
     <div className="mainArea pb-10">
       <h2>Overview</h2>
@@ -70,23 +71,23 @@ const Overview = () => {
               <td>Offense</td>
               <td>{user?.offense}</td>
               <td>Attacks Won</td>
-              <td>attacks.won/attacks.total(attacks.percentage%)</td>
+              <td>{user?.attacks_made}</td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Defense</td>
               <td>{user?.defense}</td>
               <td>Defends Won</td>
-              <td>defends.won/defends.total(defends.percentage%)</td>
+              <td />
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Spy Offense</td>
-              <td>{user?.spyOffense}</td>
+              <td>{user?.spy}</td>
               <td>Spy Victories</td>
               <td>{user?.spyVictories}</td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Spy Defense</td>
-              <td>{user?.spyDefense}</td>
+              <td>{user?.sentry}</td>
               <td>Sentry Victories</td>
               <td>{user?.sentryVictories}</td>
             </tr>

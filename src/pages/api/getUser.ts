@@ -1,12 +1,9 @@
-// pages/api/user.ts
-import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth/next';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth';
 
 import { authOptions } from './auth/[...nextauth]';
 
-const prisma = new PrismaClient();
-
-export default async (req, res) => {
+export default async (req: NextApiRequest, res: NextApiResponse) => {
   // Get the session on the server-side
   const session = await getServerSession(req, res, authOptions);
 
@@ -27,8 +24,29 @@ export default async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Count the number of won attacks
+    const wonAttacks = await prisma.attack_log.count({
+      where: {
+        attacker_id: user.id,
+        winner: user.id,
+      },
+    });
+
+    // Count the number of won defends
+    const wonDefends = await prisma.attack_log.count({
+      where: {
+        defender_id: user.id,
+        winner: user.id,
+      },
+    });
+
+    // Add the counts to the user object
+    user.won_attacks = wonAttacks;
+    user.won_defends = wonDefends;
+
     return res.status(200).json(user);
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
