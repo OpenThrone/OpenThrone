@@ -41,7 +41,7 @@ export const UserProvider: React.FC = ({ children }) => {
     try {
       if (data?.player?.id) {
         const updatedUserData = await fetchUserDataFromAPI();
-        setUser(new UserModel(updatedUserData));
+        setUser(new UserModel(updatedUserData, false));
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -69,7 +69,7 @@ export const UserProvider: React.FC = ({ children }) => {
   useMemo(async () => {
     if (data?.player) {
       const updatedUserData = await fetchUserDataFromAPI(data.player.id);
-      setUser(new UserModel(updatedUserData));
+      setUser(new UserModel(updatedUserData, false));
 
       return { user, loading: status === 'loading', userSession: data };
     }
