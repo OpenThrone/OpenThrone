@@ -1,5 +1,6 @@
 // pages/api/tasks.ts
 import { PrismaClient } from '@prisma/client';
+import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import UserModel from '@/models/Users';
@@ -31,6 +32,7 @@ export default async function handler(
         where: { id: user.id },
         data: {
           gold: updatedGold,
+          recruit_link: md5(user.id.toString()),
         },
       });
     });
