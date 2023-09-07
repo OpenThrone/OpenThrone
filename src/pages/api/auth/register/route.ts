@@ -1,4 +1,5 @@
 import { genSalt, hash } from 'bcrypt';
+import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import prisma from '@/lib/prisma';
@@ -37,6 +38,10 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
       race,
       class: req.body.class,
     },
+  });
+  await prisma.users.update({
+    where: { id: user.id },
+    data: { recruit_link: md5(user.id.toString()) },
   });
   return res.json(user);
 }
