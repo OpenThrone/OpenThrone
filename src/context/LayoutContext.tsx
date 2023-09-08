@@ -69,15 +69,15 @@ const raceClasses = {
     'elf-footer' // footer
   ),
   GOBLIN: generateRaceColors(
-    'elf-link-current', // navActive
-    'elf-link-hover', // navHover
-    'elf-bg', // bg
-    'elf-menu-primary', // menuPrimary
-    'elf-menu-secondary', // menuSecondary
-    'elf-sidebar-bgcolor', // sidebarBg
-    'elf-header-bgcolor', // heading
-    'elf-bodyBg', // bodyBg
-    'elf-footer' // footer
+    'goblin-link-current', // navActive
+    'goblin-link-hover', // navHover
+    'goblin-bg', // bg
+    'goblin-menu-primary', // menuPrimary
+    'goblin-menu-secondary', // menuSecondary
+    'goblin-sidebar-bgcolor', // sidebarBg
+    'goblin-header-bgcolor', // heading
+    'goblin-bodyBg', // bodyBg
+    'goblin-footer' // footer
   ),
   HUMAN: generateRaceColors(
     'human-link-current', // navActive
@@ -91,15 +91,15 @@ const raceClasses = {
     'human-footer' // footer
   ),
   UNDEAD: generateRaceColors(
-    'elf-link-current', // navActive
-    'elf-link-hover', // navHover
-    'elf-bg', // bg
-    'elf-menu-primary', // menuPrimary
-    'elf-menu-secondary', // menuSecondary
-    'elf-sidebar-bgcolor', // sidebarBg
-    'elf-header-bgcolor', // heading
-    'elf-bodyBg', // bodyBg
-    'elf-footer' // footer
+    'undead-link-current', // navActive
+    'undead-link-hover', // navHover
+    'undead-bg', // bg
+    'undead-menu-primary', // menuPrimary
+    'undead-menu-secondary', // menuSecondary
+    'undead-sidebar-bgcolor', // sidebarBg
+    'undead-header-bgcolor', // heading
+    'undead-bodyBg', // bodyBg
+    'undead-footer' // footer
   ),
 };
 
