@@ -36,7 +36,7 @@ const Index = ({ users }) => {
     });
     const results = await res.json();
 
-    if (results.result) {
+    if (results.status !== 'failed') {
       context.forceUpdate();
       router.push(`/battle/results/${results.attack_log}`);
     }
