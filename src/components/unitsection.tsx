@@ -136,8 +136,10 @@ const UnitSection: React.FC<UnitSectionProps> = ({
     handleTrain();
     onTrain && onTrain(heading); // Use the passed down handler
     units.forEach((unit) => {
-      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-      inputElement.value = 0;
+      if (unit.enabled) {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+        inputElement.value = 0;
+      }
     });
     updateTotalCost(0);
   };
@@ -146,8 +148,10 @@ const UnitSection: React.FC<UnitSectionProps> = ({
     handleUntrain();
     onUntrain && onUntrain(heading); // Use the passed down handler
     units.forEach((unit) => {
-      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-      inputElement.value = 0;
+      if (unit.enabled) {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+        inputElement.value = 0;
+      }
     });
     updateTotalCost(0);
   };
@@ -231,7 +235,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         </button>
         <button
           className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
-          onClick={handleUntrain}
+          onClick={handleUntrainClick}
         >
           Untrain
         </button>
