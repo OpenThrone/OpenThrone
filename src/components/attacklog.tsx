@@ -27,7 +27,14 @@ const AttackLogTable = ({ logs, type }) => {
                 </td>
               )}
               <td className="border-b px-4 py-2">
-                {new Date(log.timestamp).toLocaleString()}
+                {new Date(log.timestamp).toLocaleString('en-US', {
+                  year: 'numeric',
+                  month: 'numeric',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                })}
               </td>
               <td className="border-b px-4 py-2">
                 {log.winner === log.attacker_id ? 'Attacker' : 'Defender'}
