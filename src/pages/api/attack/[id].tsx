@@ -8,7 +8,11 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (session) {
-    res
+    if (req.body.turns <= 0) {
+      return res.status(400).json({ status: 'failed' });
+    }
+
+    return res
       .status(200)
       .json(
         await attackHandler(
@@ -17,8 +21,7 @@ export default async function handler(req, res) {
           parseInt(req.body.turns)
         )
       );
-  } else {
-    // console.log('failed: ', session);
-    res.status(401).json({ status: 'failed' });
   }
+  // console.log('failed: ', session);
+  return res.status(401).json({ status: 'failed' });
 }
