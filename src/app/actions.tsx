@@ -131,7 +131,7 @@ export async function attackHandler(attackerId, defenderId, attack_turns) {
       where: { id: attackerId },
       data: {
         gold: AttackPlayer.gold,
-        attack_turns,
+        attack_turns: AttackPlayer.attackTurns - attack_turns,
         experience: AttackPlayer.experience,
         // level: AttackPlayer.level,
       },
