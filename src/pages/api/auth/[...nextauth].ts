@@ -12,6 +12,11 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.JWT_SECRET,
   callbacks: {
     async session({ session, token }) {
+      const email = token?.user?.email;
+      await prisma.users.update({
+        where: { email },
+        data: { last_active: new Date().toISOString() },
+      });
       session.accessToken = token.accessToken;
       session.user.id = token.id;
       session.display_name = token.display_name;
