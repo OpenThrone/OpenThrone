@@ -1,6 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 
-interface AlertType {
+export interface AlertType {
   type: 'alert-success' | 'alert-danger';
   message: string;
   showAfterRedirect: boolean;
@@ -8,38 +8,29 @@ interface AlertType {
 
 const alertSubject = new BehaviorSubject<AlertType | null>(null);
 
-function success(message: string, showAfterRedirect = false): void {
-  alertSubject.next({
-    type: 'alert-success',
-    message,
-    showAfterRedirect,
-  });
-}
-
-function error(message: string, showAfterRedirect = false): void {
-  alertSubject.next({
-    type: 'alert-danger',
-    message,
-    showAfterRedirect,
-  });
+function showAlert(
+  type: 'alert-success' | 'alert-danger',
+  message: string,
+  showAfterRedirect = false
+): void {
+  alertSubject.next({ type, message, showAfterRedirect });
 }
 
 // clear alerts
 function clear(): void {
-  // if showAfterRedirect flag is true the alert is not cleared
-  // for one route change (e.g. after successful registration)
-  let alert = alertSubject.value;
+  const alert = alertSubject.value;
   if (alert?.showAfterRedirect) {
     alert.showAfterRedirect = false;
   } else {
-    alert = null;
+    alertSubject.next(null);
   }
-  alertSubject.next(alert);
 }
 
 export const alertService = {
   alert: alertSubject.asObservable(),
-  success,
-  error,
+  success: (message: string, showAfterRedirect?: boolean) =>
+    showAlert('alert-success', message, showAfterRedirect),
+  error: (message: string, showAfterRedirect?: boolean) =>
+    showAlert('alert-danger', message, showAfterRedirect),
   clear,
 };
