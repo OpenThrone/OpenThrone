@@ -50,3 +50,5 @@ local
 
 # vercel
 .vercel
+yarn.lock
+.env

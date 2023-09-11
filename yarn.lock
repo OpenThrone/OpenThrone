@@ -2204,6 +2204,11 @@
     semver "^7.3.5"
     tar "^6.1.11"
 
+"@marsidev/react-turnstile@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@marsidev/react-turnstile/-/react-turnstile-0.3.1.tgz#12de0a26196e5a0574c08d96caba8db8cfe6da60"
+  integrity sha512-XnpIUqufuZp2VoC14fmYztB2/8lSABh8eFG6TWAR7Loipdy0p2lZXzuvUOTcQl69j1XKvWu3WChFCBWx/Cbd1A==
+
 "@mdx-js/mdx@^2.2.1":
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/@mdx-js/mdx/-/mdx-2.3.0.tgz#d65d8c3c28f3f46bb0e7cb3bf7613b39980671a9"
