@@ -36,7 +36,7 @@ model users {
   structure_upgrades Json? @default("[{\"type\": \"Offense\", \"level\": 1}, {\"type\": \"Spy\", \"level\": 1}, {\"type\": \"Sentry\", \"level\": 1}]")
   bio String @default("")
   colorScheme String?
-  recruit_link String @default("")
+  recruit_link String @default("") @unique
   
 
   // Relations
