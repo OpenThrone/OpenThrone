@@ -4,13 +4,13 @@ import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import { useEffect, useState } from 'react';
 
+import Alert from '@/components/alert';
 import Modal from '@/components/modal';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 
 const Index = ({ users }) => {
-  const [messages, setMessages] = useState(null);
   const hideSidebar = false;
   const context = useUser();
   const user = context ? context.user : null;
@@ -50,21 +50,17 @@ const Index = ({ users }) => {
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
     if (profile) {
       const nowdate = new Date();
-      console.log(nowdate);
-      console.log(profile.last_active);
-      console.log(nowdate - profile.last_active);
-      console.log((nowdate - profile.last_active) / (1000 * 60));
+
       setIsOnline((nowdate - profile.last_active) / (1000 * 60) <= 15);
-      console.log(isOnline);
     }
   }, [profile, users, user, isPlayer]);
   return (
     <div className="mainArea pb-10">
       <h2>{profile?.displayName}</h2>
 
-      {messages && (
-        <div className={`alert alert-${messages.type}`}>{messages}</div>
-      )}
+      <div className="my-5 flex justify-between">
+        <Alert />
+      </div>
 
       <div className="my-4 flex justify-around">
         <p className="mb-0">Level: {profile?.level}</p>
@@ -151,7 +147,7 @@ const Index = ({ users }) => {
               {/* <a href="#" className="list-group-item list-group-item-action disabled">Transfer Gold</a> */}
               <Link
                 href={`/recruit/${profile?.recruitingLink}`}
-                className="list-group-item list-group-item-action disabled"
+                className="list-group-item list-group-item-action"
               >
                 Recruit this Player
               </Link>
@@ -193,20 +189,28 @@ const Index = ({ users }) => {
   );
 };
 export const getServerSideProps = async ({ query }) => {
-  const id = parseInt(query.id, 10);
+  let recruitLink;
+  let id;
+  if (isNaN(query.id)) {
+    recruitLink = query.id;
+    id = 0;
+  } else {
+    id = parseInt(query.id, 10);
+    recruitLink = '';
+  }
 
   // Fetch the user's rank from the database
   const rank = await prisma.$queryRaw`
     SELECT overallrank
     FROM (
-      SELECT id, ROW_NUMBER() OVER (ORDER BY experience DESC, display_name, fort_level) AS overallrank
+      SELECT id, ROW_NUMBER() OVER (ORDER BY experience DESC, display_name, fort_level) AS overallrank, recruit_link
       FROM users
     ) AS ranks
-    WHERE id = ${id}
+    WHERE id = ${id} OR recruit_link = ${recruitLink}
   `;
   // Fetch the user data from the database
   const user = await prisma.users.findFirst({
-    where: { id },
+    where: { OR: [{ id }, { recruit_link: recruitLink }] },
   });
 
   // Combine user and rank into a single object
