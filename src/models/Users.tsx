@@ -20,7 +20,6 @@ import {
   Bonuses,
   Fortifications,
   HouseUpgrades,
-  Levels,
   OffenseiveUpgrades,
   SentryUpgrades,
   SpyUpgrades,
@@ -106,9 +105,9 @@ class UserModel {
         this.email = userData.email;
         this.passwordHash = userData.password_hash;
         this.goldInBank = userData.gold_in_bank;
-        this.attackTurns = userData.attack_turns;
       }
 
+      this.attackTurns = userData.attack_turns;
       this.race = userData.race;
       this.class = userData.class;
       this.experience = userData.experience;
@@ -367,11 +366,12 @@ class UserModel {
     };
   }
 
-  getLevelFromXP(xp: number): number {
+  /* getLevelFromXP(xp: number): number {
     const level = Math.floor(-2.5 + Math.sqrt(4.25 + 0.002 * xp));
+    console.log(xp);
     if (level < 1) return 1;
     return level;
-  }
+  } */
 
   get level(): number {
     if (this.experience === 0) return 1;
@@ -379,9 +379,21 @@ class UserModel {
     return this.getLevelFromXP(this.experience);
   }
 
+  xpRequiredForLevel(level: number): number {
+    return Math.floor(level ** 2.5 * 1000); // Adjust the power and multiplier for desired curve
+  }
+
+  getLevelFromXP(xp: number): number {
+    let level = 1;
+    while (this.xpRequiredForLevel(level + 1) <= xp) {
+      level++;
+    }
+    return level;
+  }
+
   get xpToNextLevel(): number {
     const currentLevel = this.level;
-    const nextLevelXP = Levels[currentLevel + 1];
+    const nextLevelXP = this.xpRequiredForLevel(currentLevel + 1);
     return nextLevelXP - this.experience;
   }
 
