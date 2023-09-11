@@ -12,6 +12,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ status: 'failed' });
     }
 
+    if (req.body.turns > 10) {
+      return res.status(400).json({ status: 'failed' });
+    }
+
+    if (req.body.turns > session.user.turns) {
+      return res.status(400).json({ status: 'failed' });
+    }
+
     return res
       .status(200)
       .json(
