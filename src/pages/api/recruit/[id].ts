@@ -38,14 +38,26 @@ export default async function handler(
   }
   if (req.method === 'GET') {
     // Check if the user has clicked on this link in the last 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
     const history = await prisma.recruit_history.findFirst({
       where: {
-        to_user: Number(recruitedUser.id),
-        from_user: Number(recruiterID),
-        ip_addr: req.headers['x-real-ip'] as string,
-        timestamp: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24 hours ago
-        },
+        OR: [
+          {
+            AND: [
+              { to_user: Number(recruitedUser.id) },
+              { from_user: Number(recruiterID) },
+              { timestamp: { gte: twentyFourHoursAgo } },
+            ],
+          },
+          {
+            AND: [
+              { to_user: Number(recruitedUser.id) },
+              { ip_addr: req.headers['x-real-ip'] as string },
+              { timestamp: { gte: twentyFourHoursAgo } },
+            ],
+          },
+        ],
       },
     });
 
@@ -57,6 +69,37 @@ export default async function handler(
     return res.status(200).json({ showCaptcha: true });
   }
   if (req.method === 'POST') {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const history = await prisma.recruit_history.findFirst({
+      where: {
+        OR: [
+          {
+            AND: [
+              { to_user: Number(recruitedUser.id) },
+              { from_user: Number(recruiterID) },
+              { timestamp: { gte: twentyFourHoursAgo } },
+            ],
+          },
+          {
+            AND: [
+              { to_user: Number(recruitedUser.id) },
+              { ip_addr: req.headers['x-real-ip'] as string },
+              { timestamp: { gte: twentyFourHoursAgo } },
+            ],
+          },
+        ],
+      },
+    });
+    console.log(history);
+    console.log('Recruited: ', recruitedUser.id);
+    console.log('recruiterID', recruiterID);
+    console.log(new Date(Date.now() - 24 * 60 * 60 * 1000));
+    if (history) {
+      return res
+        .status(400)
+        .json({ error: 'You can only Recruit once in 24 hours.' });
+    }
     const newRecord = await prisma.recruit_history.create({
       data: {
         from_user: Number(recruiterID),
