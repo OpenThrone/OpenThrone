@@ -61,7 +61,14 @@ const Users = ({ players, session, userPage }) => {
                   <td className="px-4 py-2">{player.gold.toLocaleString()}</td>
                   <td className="px-4 py-2">{player.kingdomSize}</td>
                   <td className="px-4 py-2">{player.level}</td>
-                  <td className="px-4 py-2">{player.race}</td>
+                  <td className="px-4 py-2">
+                    <div className="flex items-center justify-center">
+                      <img
+                        src={`/assets/shields/${player.race}_25x25.webp`}
+                        className="ml-2"
+                      />
+                    </div>
+                  </td>
                 </tr>
               );
             })}
