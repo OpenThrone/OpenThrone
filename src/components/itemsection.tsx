@@ -15,6 +15,7 @@ type UnitProps = {
   enabled: boolean;
   level?: number;
   usage: string;
+  fortName: string;
 };
 
 type UnitSectionProps = {
@@ -27,9 +28,11 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
   const [getItems, setItems] = useState(items || []);
 
   useEffect(() => {
-    if(items)
+    if (items) {
       setItems(items);
-}, [items]);
+    }
+  }, [items]);
+
   const handleEquip = async () => {
     const itemsToEquip = getItems
       .filter((item) => item.enabled)
@@ -41,8 +44,6 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
           usage: item.usage,
         };
       });
-    console.log(itemsToEquip)
-    console.log(getItems);
     try {
       const response = await fetch('/api/armory/equip', {
         method: 'POST',

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import Alert from '@/components/alert';
 import ItemSection from '@/components/itemsection'; // Assuming you have a similar component for items
+import { Fortifications } from '@/constants';
 // Importing the WeaponTypes constant
 import { useUser } from '@/context/users';
 
@@ -16,9 +17,8 @@ const Armory = () => {
   const [DefensiveBracers, setDefensiveBracers] = useState(null);
   const [offensiveShield, setOffensiveShield] = useState(null);
   const [DefensiveShield, setDefensiveShield] = useState(null);
-   const [offensiveBoots, setOffensiveBoots] = useState(null);
+  const [offensiveBoots, setOffensiveBoots] = useState(null);
   const [DefensiveBoots, setDefensiveBoots] = useState(null);
-
 
   const itemMapFunction = (item, idPrefix: string, itemType: string) => {
     return {
@@ -35,7 +35,9 @@ const Armory = () => {
       cost: new Intl.NumberFormat('en-GB').format(item.cost),
       enabled: item.level <= user?.fortLevel,
       level: item.level,
-      usage: item.usage
+      usage: item.usage,
+      fortName: Fortifications.find((f) => f.fortLevel === item.fortLevel)
+        ?.name,
     };
   };
 
@@ -51,19 +53,19 @@ const Armory = () => {
           .filter((unit) => unit.usage === 'OFFENSE' && unit.type == 'HELM')
           .map((unit) => itemMapFunction(unit, 'OFFENSE', 'HELM'))
       );
-      
+
       setOffensiveBracers(
         user.availableItemTypes
           .filter((unit) => unit.usage === 'OFFENSE' && unit.type == 'BRACERS')
           .map((unit) => itemMapFunction(unit, 'OFFENSE', 'BRACERS'))
       );
-      
+
       setOffensiveShield(
         user.availableItemTypes
           .filter((unit) => unit.usage === 'OFFENSE' && unit.type == 'SHIELD')
           .map((unit) => itemMapFunction(unit, 'OFFENSE', 'SHIELD'))
       );
-      
+
       setOffensiveBoots(
         user.availableItemTypes
           .filter((unit) => unit.usage === 'OFFENSE' && unit.type == 'BOOTS')
@@ -79,19 +81,19 @@ const Armory = () => {
           .filter((unit) => unit.usage === 'DEFENSE' && unit.type == 'HELM')
           .map((unit) => itemMapFunction(unit, 'DEFENSE', 'HELM'))
       );
-      
+
       setDefensiveBracers(
         user.availableItemTypes
           .filter((unit) => unit.usage === 'DEFENSE' && unit.type == 'BRACERS')
           .map((unit) => itemMapFunction(unit, 'DEFENSE', 'BRACERS'))
       );
-      
+
       setDefensiveShield(
         user.availableItemTypes
           .filter((unit) => unit.usage === 'DEFENSE' && unit.type == 'SHIELD')
           .map((unit) => itemMapFunction(unit, 'DEFENSE', 'SHIELD'))
       );
-      
+
       setDefensiveBoots(
         user.availableItemTypes
           .filter((unit) => unit.usage === 'DEFENSE' && unit.type == 'BOOTS')

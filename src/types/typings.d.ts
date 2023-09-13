@@ -70,6 +70,7 @@ export type Unit = {
   level: number;
   bonus: number;
   cost: number;
+  fortLevel: number;
 };
 export type Weapon = {
   name: string;
