@@ -66,6 +66,19 @@ export default async function handler(
         .status(400)
         .json({ error: 'You can only Recruit once in 24 hours.' });
     }
+    const toUserHistory = await prisma.recruit_history.findMany({
+      where: {
+        to_user: Number(recruitedUser.id),
+        timestamp: { gte: twentyFourHoursAgo },
+      },
+    });
+
+    if (toUserHistory.length >= 25) {
+      // Handle the scenario when there are 25 or more records for to_user in the last 24 hours
+      return res.status(400).json({
+        error: 'This user has already recruited their 25 soldiers today.',
+      });
+    }
     return res.status(200).json({ showCaptcha: true });
   }
   if (req.method === 'POST') {
@@ -91,10 +104,7 @@ export default async function handler(
         ],
       },
     });
-    console.log(history);
-    console.log('Recruited: ', recruitedUser.id);
-    console.log('recruiterID', recruiterID);
-    console.log(new Date(Date.now() - 24 * 60 * 60 * 1000));
+
     if (history) {
       return res
         .status(400)
@@ -116,11 +126,13 @@ export default async function handler(
         where: { id: recruitedUser.id },
         data: {
           units: updatedUnits,
+          gold: {
+            increment: 250,
+          },
         },
       });
-    } else {
-      console.log(newRecord);
     }
+
     return res.status(200).json({ success: true });
   }
 
