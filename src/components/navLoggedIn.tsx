@@ -38,7 +38,7 @@ const subMenus: {
     { text: 'Armory', href: '/structures/armory', parent: 'Structures' },
     { text: 'Upgrades', href: '/structures/upgrades', parent: 'Structures' },
     { text: 'Housing', href: '#', parent: 'Structures' },
-    { text: 'Repair', href: '#', parent: 'Structures' },
+    { text: 'Repair', href: '/structures/repair', parent: 'Structures' },
   ],
   // Alliances: [{ text: 'Test', href: '#' }],
   Community: [
