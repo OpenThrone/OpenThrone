@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import Alert from '@/components/alert';
 import Modal from '@/components/modal';
@@ -70,23 +70,12 @@ const Index = ({ users }) => {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="col-span-1">
           <div className="card-dark">
-            <svg
-              className="rounded"
-              style={{ textAnchor: 'middle' }}
-              width="100%"
-              height="140"
-              xmlns="http://www.w3.org/2000/svg"
-              role="img"
-              aria-label="Placeholder: Image cap"
-              preserveAspectRatio="xMidYMid slice"
-              focusable="false"
-            >
-              <title>Placeholder</title>
-              <rect width="100%" height="100%" fill="#868e96" />
-              <text x="50%" y="50%" fill="#dee2e6" dy=".3em">
-                {profile?.displayName}
-              </text>
-            </svg>
+            <div className="flex items-center justify-center">
+              <img
+                src={`/assets/shields/${profile?.race}_150x150.webp`}
+                className="ml-2"
+              />
+            </div>
             <div className="my-3 mb-4">
               <MDXRemote {...users.bionew} />
             </div>
@@ -125,6 +114,7 @@ const Index = ({ users }) => {
                 Message this Player
               </Link>
               <button
+                type="button"
                 onClick={toggleModal}
                 className={`list-group-item list-group-item-action w-full text-left ${
                   canAttack ? '' : 'disabled'
@@ -189,29 +179,59 @@ const Index = ({ users }) => {
   );
 };
 export const getServerSideProps = async ({ query }) => {
-  let recruitLink;
+  let recruitLink = '';
   let id;
-  if (isNaN(query.id)) {
+
+  if (Number.isNaN(Number(query.id))) {
     recruitLink = query.id;
-    id = 0;
+    id = null; // Set to null instead of 0
   } else {
     id = parseInt(query.id, 10);
-    recruitLink = '';
+  }
+
+  // Check if neither recruitLink nor id is provided
+  if (!recruitLink && (id === null || id === 0)) {
+    return {
+      notFound: true, // Returns a 404 status
+    };
   }
 
   // Fetch the user's rank from the database
-  const rank = await prisma.$queryRaw`
-    SELECT overallrank
-    FROM (
-      SELECT id, ROW_NUMBER() OVER (ORDER BY experience DESC, display_name, fort_level) AS overallrank, recruit_link
-      FROM users
-    ) AS ranks
-    WHERE id = ${id} OR recruit_link = ${recruitLink}
-  `;
+  let rank;
+  if (id) {
+    rank = await prisma.$queryRaw`
+      SELECT overallrank
+      FROM (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY experience DESC, display_name, fort_level) AS overallrank, recruit_link
+        FROM users
+      ) AS ranks
+      WHERE id = ${id} OR recruit_link = ${recruitLink}
+    `;
+  } else {
+    rank = await prisma.$queryRaw`
+      SELECT overallrank
+      FROM (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY experience DESC, display_name, fort_level) AS overallrank, recruit_link
+        FROM users
+      ) AS ranks
+      WHERE recruit_link = ${recruitLink}
+    `;
+  }
+
   // Fetch the user data from the database
+  const whereCondition = id
+    ? { OR: [{ id }, { recruit_link: recruitLink }] }
+    : { recruit_link: recruitLink };
+
   const user = await prisma.users.findFirst({
-    where: { OR: [{ id }, { recruit_link: recruitLink }] },
+    where: whereCondition,
   });
+
+  if (!user) {
+    return {
+      notFound: true, // Returns a 404 status if user is not found
+    };
+  }
 
   // Combine user and rank into a single object
   const userData = {
