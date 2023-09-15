@@ -16,7 +16,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ status: 'failed' });
     }
 
-    if (req.body.turns > session.user.turns) {
+    const myUser = await prisma?.users.findUnique({
+      where: { id: session.player.id },
+    });
+
+    if (!myUser) {
+      return res.status(400).json({ status: 'failed' });
+    }
+
+    if (req.body.turns > myUser.turns) {
       return res.status(400).json({ status: 'failed' });
     }
 
