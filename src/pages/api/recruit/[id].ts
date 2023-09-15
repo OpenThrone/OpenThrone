@@ -40,7 +40,8 @@ export default async function handler(
     // Check if the user has clicked on this link in the last 24 hours
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const history = await prisma.recruit_history.findFirst({
+    const history = await prisma.recruit_history.count({
+      // changing to count to set a limit of 5 later
       where: {
         OR: [
           {
@@ -61,19 +62,19 @@ export default async function handler(
       },
     });
 
-    if (history) {
+    if (history >= 5) {
       return res
         .status(400)
-        .json({ error: 'You can only Recruit once in 24 hours.' });
+        .json({ error: 'You can only Recruit up to 5x in 24 hours.' });
     }
-    const toUserHistory = await prisma.recruit_history.findMany({
+    const toUserHistory = await prisma.recruit_history.count({
       where: {
         to_user: Number(recruitedUser.id),
         timestamp: { gte: twentyFourHoursAgo },
       },
     });
 
-    if (toUserHistory.length >= 25) {
+    if (toUserHistory >= 25) {
       // Handle the scenario when there are 25 or more records for to_user in the last 24 hours
       return res.status(400).json({
         error: 'This user has already recruited their 25 soldiers today.',
@@ -84,7 +85,8 @@ export default async function handler(
   if (req.method === 'POST') {
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    const history = await prisma.recruit_history.findFirst({
+    const history = await prisma.recruit_history.count({
+      // changing to count to set a limit of 5 later
       where: {
         OR: [
           {
@@ -105,10 +107,10 @@ export default async function handler(
       },
     });
 
-    if (history) {
+    if (history >= 5) {
       return res
         .status(400)
-        .json({ error: 'You can only Recruit once in 24 hours.' });
+        .json({ error: 'You can only Recruit up to 5x in 24 hours.' });
     }
     const newRecord = await prisma.recruit_history.create({
       data: {
