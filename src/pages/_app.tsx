@@ -4,6 +4,7 @@ import 'rpg-awesome/css/rpg-awesome.min.css';
 
 import type { AppProps } from 'next/app';
 import { SessionProvider } from 'next-auth/react';
+import React from 'react';
 
 import Layout from '@/components/Layout'; // Import the Layout component
 import { LayoutProvider } from '@/context/LayoutContext';
