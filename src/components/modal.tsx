@@ -1,4 +1,6 @@
-import { useState, useTransition } from 'react';
+import React, { useState, useTransition } from 'react';
+
+import { useLayout } from '../context/LayoutContext';
 
 const Modal = ({ isOpen, toggleModal, onSubmit }) => {
   const [turns, setTurns] = useState('');
@@ -9,6 +11,8 @@ const Modal = ({ isOpen, toggleModal, onSubmit }) => {
 
     onSubmit(turns);
   };
+
+  const { raceClasses } = useLayout();
   return (
     <div
       className={`fixed inset-0 z-10 overflow-y-auto bg-gray-500 bg-opacity-75 transition-opacity ${
@@ -25,8 +29,10 @@ const Modal = ({ isOpen, toggleModal, onSubmit }) => {
         >
           &#8203;
         </span>
-        <div className="inline-block overflow-hidden bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-          <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+        <div className="inline-block overflow-hidden text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+          <div
+            className={`px-4 pb-4 pt-5 sm:p-6 sm:pb-4 ${raceClasses.bgClass}`}
+          >
             <div className="justify-between sm:flex sm:items-center">
               <h3
                 className="text-lg font-medium leading-6 text-gray-900"
