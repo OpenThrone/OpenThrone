@@ -98,12 +98,12 @@ const Index = ({ users }) => {
         <div className="col-span-1">
           {hideSidebar || isPlayer ? (
             <div className="list-group mb-4">
-              <a
+              <Link
                 href={`/recruit/${profile?.recruitingLink}`}
                 className="list-group-item list-group-item-action"
               >
                 Recruit this Player
-              </a>
+              </Link>
             </div>
           ) : (
             <div className="list-group mb-4">
