@@ -41,12 +41,12 @@ export default async function handler(
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const history = await prisma.recruit_history.count({
-      // changing to count to set a limit of 5 later
       where: {
         OR: [
           {
             AND: [
               { to_user: Number(recruitedUser.id) },
+              { from_user: { not: 0 } }, // Exclude from_user = 0
               { from_user: Number(recruiterID) },
               { timestamp: { gte: twentyFourHoursAgo } },
             ],
@@ -86,12 +86,12 @@ export default async function handler(
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const history = await prisma.recruit_history.count({
-      // changing to count to set a limit of 5 later
       where: {
         OR: [
           {
             AND: [
               { to_user: Number(recruitedUser.id) },
+              { from_user: { not: 0 } }, // Exclude from_user = 0
               { from_user: Number(recruiterID) },
               { timestamp: { gte: twentyFourHoursAgo } },
             ],
