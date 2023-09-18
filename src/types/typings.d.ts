@@ -15,12 +15,13 @@ export type ItemType =
   | 'BRACERS'
   | 'SHIELD';
 export type BonusType =
-  | 'ATTACK'
+  | 'OFFENSE'
   | 'DEFENSE'
   | 'RECRUITING'
   | 'CASUALTY'
   | 'INTEL'
-  | 'INCOME';
+  | 'INCOME'
+  | 'PRICES';
 
 export interface PageAlert {
   type: 'SUCCESS' | 'DANGER' | 'INFO';
@@ -58,6 +59,10 @@ export type PlayerItem = {
   type: ItemType;
   unitType: UnitType;
   quantity: number;
+};
+export type BonusPointsItem = {
+  type: BonusType;
+  level: number;
 };
 export type FortHealth = {
   current: number;
@@ -98,6 +103,13 @@ export type OffensiveUpgradeType = {
   cost: number;
   level: number;
 };
+export type DefensiveUpgradeType = {
+  name: string;
+  fortLevelRequirement: number;
+  defenseBonusPercentage: number;
+  cost: number;
+  level: number;
+};
 export type SpyUpgradeType = {
   name: string;
   fortLevelRequirement: number;
@@ -117,8 +129,9 @@ export type UnitUpgradeType = {
   name: string;
   StructureUpgradeLevelRequired: number;
   level: number;
-  offenseBonus: number;
+  bonus: number;
   cost: number;
+  unitsCovered: number;
 };
 export type PlayerBonus = {
   race: PlayerRace | PlayerClass;

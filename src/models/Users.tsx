@@ -1,6 +1,8 @@
 import md5 from 'md5';
 
 import type {
+  BonusPointsItem,
+  DefensiveUpgradeType,
   FortHealth,
   Fortification,
   OffensiveUpgradeType,
@@ -74,12 +76,14 @@ class UserModel {
 
   public attacks_defended: number;
 
+  public bonus_points: BonusPointsItem[];
+
   constructor(userData: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
     this.email = '';
     this.passwordHash = '';
-    this.race = 'ALL';
+    this.race = 'ELF';
     this.class = 'ASSASSIN';
     this.experience = 0;
     this.gold = 0;
@@ -126,6 +130,7 @@ class UserModel {
       this.overallrank = 0;
       this.attacks_made = userData.attacksMade;
       this.attacks_defended = userData.attacksDefended;
+      this.bonus_points = userData.bonus_points;
     }
   }
   /* const [online, setOnline] = useState(false);
@@ -144,6 +149,13 @@ class UserModel {
     return this.units.reduce((acc, unit) => acc + unit.quantity, 0);
   }
 
+  get availableProficiencyPoints() {
+    return (
+      this.level -
+      this.bonus_points.reduce((acc, bonus) => acc + bonus.level, 0)
+    );
+  }
+
   get playerBonuses() {
     return Bonuses.filter(
       (bonus) => bonus.race === this.race || bonus.race === this.class
@@ -158,7 +170,10 @@ class UserModel {
     ).reduce(function (count, stat) {
       return count + stat.bonusAmount;
     }, 0);
-    return income;
+    const incomeLevelBonus = this.bonus_points
+      .filter((bonus) => bonus.type === 'INCOME')
+      .reduce((acc, bonus) => acc + bonus.level, 0);
+    return income + incomeLevelBonus;
   }
 
   get recruitingLink() {
@@ -169,11 +184,14 @@ class UserModel {
     const attack = Bonuses.filter(
       (bonus) =>
         (bonus.race === this.race || bonus.race === this.class) &&
-        bonus.bonusType === 'ATTACK'
+        bonus.bonusType === 'OFFENSE'
     ).reduce(function (count, stat) {
       return count + stat.bonusAmount;
     }, 0);
-    return attack;
+    const offenseLevelBonus = this.bonus_points
+      .filter((bonus) => bonus.type === 'OFFENSE')
+      .reduce((acc, bonus) => acc + bonus.level, 0);
+    return attack + offenseLevelBonus;
   }
 
   get defenseBonus(): number {
@@ -184,7 +202,10 @@ class UserModel {
     ).reduce(function (count, stat) {
       return count + stat.bonusAmount;
     }, 0);
-    return defense;
+    const defenseLevelBonus = this.bonus_points
+      .filter((bonus) => bonus.type === 'DEFENSE')
+      .reduce((acc, bonus) => acc + bonus.level, 0);
+    return defense + defenseLevelBonus;
   }
 
   get intelBonus() {
@@ -195,7 +216,10 @@ class UserModel {
     ).reduce(function (count, stat) {
       return count + stat.bonusAmount;
     }, 0);
-    return intel;
+    const intelLevelBonus = this.bonus_points
+      .filter((bonus) => bonus.type === 'INTEL')
+      .reduce((acc, bonus) => acc + bonus.level, 0);
+    return intel + intelLevelBonus;
   }
 
   get recruitingBonus() {
@@ -446,8 +470,14 @@ class UserModel {
     );
   }
 
-  get availableDefenseBattleUpgrades(): Fortification[] {
+  get availableFortifications(): Fortification[] {
     return Fortifications.filter((fort) => fort.level <= this.fortLevel + 2);
+  }
+
+  get availableDefenseBattleUpgrades(): DefensiveUpgradeType[] {
+    return DefenseiveUpgrades.filter(
+      (fort) => fort.fortLevelRequirement <= this.fortLevel + 1
+    );
   }
 
   get availableOffenseBattleUpgrades(): OffensiveUpgradeType[] {
