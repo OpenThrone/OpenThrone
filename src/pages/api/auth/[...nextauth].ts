@@ -5,6 +5,29 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 
 import prisma from '@/lib/prisma';
 
+const updateLastActive = async (email: string) => {
+  return prisma.users.update({
+    where: { email },
+    data: { last_active: new Date().toISOString() },
+  });
+};
+
+const validateCredentials = async (email: string, password: string) => {
+  const user = await prisma.users.findUnique({
+    where: {
+      email,
+    },
+  });
+  const passwordMatches = user && (await compare(password, user.password_hash));
+
+  if (!passwordMatches) {
+    throw new Error('Invalid username or password');
+  }
+
+  await updateLastActive(email);
+  return user;
+};
+
 export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/account/login',
@@ -13,10 +36,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       const email = token?.user?.email;
-      await prisma.users.update({
-        where: { email },
-        data: { last_active: new Date().toISOString() },
-      });
+      await updateLastActive(email);
       session.accessToken = token.accessToken;
       session.user.id = token.id;
       session.display_name = token.display_name;
@@ -35,7 +55,6 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
   },
-
   providers: [
     CredentialsProvider({
       credentials: {
@@ -43,26 +62,12 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
         race: { label: 'Race', type: 'text' },
       },
-
       async authorize(credentials) {
         const { email, password } = credentials ?? {};
         if (!email || !password) {
           throw new Error('Missing username or password');
         }
-        const user = await prisma.users.findUnique({
-          where: {
-            email,
-          },
-        });
-        // if user doesn't exist or password doesn't match
-        if (!user || !(await compare(password, user.password_hash))) {
-          throw new Error('Invalid username or password');
-        }
-        await prisma.users.update({
-          where: { email },
-          data: { last_active: new Date().toISOString() },
-        });
-        return user;
+        return validateCredentials(email, password);
       },
     }),
   ],
