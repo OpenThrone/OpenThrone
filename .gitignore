@@ -44,11 +44,11 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+yarn.lock
+bun.lockb
 
 # local folder
 local
 
 # vercel
 .vercel
-yarn.lock
-.env
