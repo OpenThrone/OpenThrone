@@ -112,6 +112,12 @@ export default async function handler(
         .status(400)
         .json({ error: 'You can only Recruit up to 5x in 24 hours.' });
     }
+    console.log({
+      from_user: Number(recruiterID),
+      to_user: Number(recruitedUser.id),
+      ip_addr: req.headers['cf-connecting-ip'] as string,
+      timestamp: new Date(),
+    });
     const newRecord = await prisma.recruit_history.create({
       data: {
         from_user: Number(recruiterID),
@@ -138,5 +144,5 @@ export default async function handler(
     return res.status(200).json({ success: true });
   }
 
-  return res.status(405).end(); // Method not allowed
+  res.status(405).json({ error: 'Method not allowed' }); // Send a proper response
 }

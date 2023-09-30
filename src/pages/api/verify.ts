@@ -3,20 +3,26 @@ const verifyEndpoint =
 const secret = process.env.NEXT_PUBLIC_TURNSTILE_SECRET;
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { token } = req.body;
-    const response = await fetch(verifyEndpoint, {
-      method: 'POST',
-      body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(
-        token
-      )}`,
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-    });
-
-    const data = await response.json();
-    return res.status(data.success ? 200 : 400).json(data);
+  try {
+    if (req.method === 'POST') {
+      const { token } = req.body;
+      const response = await fetch(verifyEndpoint, {
+        method: 'POST',
+        body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+      });
+      
+      if (!response.ok) throw new Error('Verification failed'); // Handle fetch errors
+      
+      const data = await response.json();
+      return res.status(data.success ? 200 : 400).json(data);
+    }
+    return res.status(405).send('Method not allowed'); // Handle any other HTTP methods
+  } catch (error) {
+    console.error('Error in /api/verify:', error);
+    return res.status(500).send('Internal Server Error');
   }
-  res.status(405).send('Method not allowed'); // Handle any other HTTP methods
 }
+
