@@ -1,4 +1,3 @@
-import { genSalt, hash } from 'bcrypt';
 import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -27,13 +26,11 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
   if (exists) {
     return res.json({ error: 'User already exists' }, { status: 400 });
   }
-  const salt = await genSalt(10);
-  const phash = await hash(password, salt);
+  const phash = await Bun.password.hash(password);
   const user = await prisma.users.create({
     data: {
       email,
       password_hash: phash,
-      salt,
       display_name,
       race,
       class: req.body.class,

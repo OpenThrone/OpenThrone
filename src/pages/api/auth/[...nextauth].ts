@@ -1,9 +1,9 @@
-import { compare } from 'bcrypt';
 import type { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 import prisma from '@/lib/prisma';
+import { compare } from 'bcrypt';
 
 const updateLastActive = async (email: string) => {
   return prisma.users.update({
@@ -18,7 +18,7 @@ const validateCredentials = async (email: string, password: string) => {
       email,
     },
   });
-  const passwordMatches = user && (await compare(password, user.password_hash));
+  const passwordMatches = user && (await Bun.password.verify(password, user.password_hash));
 
   if (!passwordMatches) {
     throw new Error('Invalid username or password');
