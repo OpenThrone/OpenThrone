@@ -2,15 +2,17 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
+  
   provider = "prisma-client-js"
   previewFeatures = ["jsonProtocol"]
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
   url = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
-  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING_SHADOW") // used for migrations
 }
 
 model users {
@@ -27,7 +29,6 @@ model users {
   fort_level  Int @default(1)
   fort_hitpoints  Int @default(100)
   attack_turns  Int @default(10)
-  salt  String
   last_active DateTime? @db.Timestamptz(3)
   rank Int @default(0)
   items Json? @default("[{\"type\": \"WEAPON\", \"level\": 1, \"quantity\": 0, \"usage\": \"OFFENSE\"}]")
@@ -45,6 +46,7 @@ model users {
   receivedMessages messages[] @relation("to_user")
   attacksMade      attack_log[] @relation("AttackLogs")
   attacksDefended  attack_log[] @relation("DefenseLogs")
+  recruitHistories recruit_history[]
 }
 
 model attack_log {
@@ -85,7 +87,8 @@ model messages {
 
 model recruit_history {
   id Int @id @default(autoincrement())
-  from_user Int
+  from_user Int?
+  from_userObj users? @relation(fields: [from_user], references: [id])
   to_user Int
   ip_addr String
   timestamp DateTime? @db.Timestamptz(3)
