@@ -4,7 +4,12 @@ const Overview = () => {
   // const router = useRouter();
 
   const { user } = useUser();
-
+  const toLocale = (num: any) => {
+    if (typeof num === 'number') {
+      return num.toLocaleString();
+    }
+    return "0";
+  }
   return (
     <div className="mainArea pb-10">
       <h2>Overview</h2>
@@ -32,7 +37,7 @@ const Overview = () => {
           <tbody>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Population</td>
-              <td>{user?.population}</td>
+              <td>{toLocale(user?.population)}</td>
               <td>Fort Health</td>
               <td>
                 {user?.fortHealth.current}/{user?.fortHealth.max}(
@@ -41,21 +46,21 @@ const Overview = () => {
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Army Size</td>
-              <td>{user?.armySize}</td>
+              <td>{toLocale(user?.armySize.toLocaleString())}</td>
               <td>Gold</td>
-              <td>{user?.gold}</td>
+              <td>{toLocale(user?.gold)}</td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Level</td>
-              <td>{user?.level}</td>
+              <td>{toLocale(user?.level)}</td>
               <td>Gold Per Turn</td>
-              <td>{user?.goldPerTurn}</td>
+              <td>{toLocale(user?.goldPerTurn)}</td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>XP to Next Level</td>
-              <td>{user?.xpToNextLevel}</td>
+              <td>{toLocale(user?.xpToNextLevel)}</td>
               <td>Gold in Bank</td>
-              <td>{user?.goldInBank}</td>
+              <td>{toLocale(user?.goldInBank)}</td>
             </tr>
           </tbody>
         </table>
@@ -69,27 +74,27 @@ const Overview = () => {
           <tbody>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Offense</td>
-              <td>{user?.offense}</td>
+              <td>{toLocale(user?.offense)}</td>
               <td>Attacks Won</td>
-              <td>{user?.attacks_made}</td>
+              <td>{toLocale(user?.attacks_made)}</td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Defense</td>
-              <td>{user?.defense}</td>
+              <td>{toLocale(user?.defense)}</td>
               <td>Defends Won</td>
               <td />
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Spy Offense</td>
-              <td>{user?.spy}</td>
+              <td>{toLocale(user?.spy)}</td>
               <td>Spy Victories</td>
-              <td>{user?.spyVictories}</td>
+              <td>{toLocale(user?.spyVictories)}</td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Spy Defense</td>
-              <td>{user?.sentry}</td>
+              <td>{toLocale(user?.sentry)}</td>
               <td>Sentry Victories</td>
-              <td>{user?.sentryVictories}</td>
+              <td>{toLocale(user?.sentryVictories)}</td>
             </tr>
           </tbody>
         </table>
