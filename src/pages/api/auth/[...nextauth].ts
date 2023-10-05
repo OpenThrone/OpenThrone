@@ -35,26 +35,36 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.JWT_SECRET,
   callbacks: {
     async session({ session, token }) {
-      const email = token?.user?.email;
-      await updateLastActive(email);
-      session.accessToken = token.accessToken;
-      session.user.id = token.id;
-      session.display_name = token.display_name;
-      session.race = token.race;
-      session.player = token.user;
-      return session;
+      try {
+        const email = token?.user?.email;
+        await updateLastActive(email);
+        session.accessToken = token.accessToken;
+        session.user.id = token.id;
+        session.display_name = token.display_name;
+        session.race = token.race;
+        session.player = token.user;
+        return session;
+      } catch (error) {
+        console.error('Session callback error:', error);
+        throw error; // Re-throwing the error after logging it will help in identifying the issue
+      }
     },
     async jwt({ token, account, user }) {
-      if (account) {
-        token.accessToken = account.access_token;
-        token.id = account.id;
-        token.display_name = user.display_name;
-        token.race = user.race;
-        token.user = user;
+      try {
+        if (account) {
+          token.accessToken = account.access_token;
+          token.id = account.id;
+          token.display_name = user.display_name;
+          token.race = user.race;
+          token.user = user;
+        }
+        return token;
+      } catch (error) {
+        console.error('JWT callback error:', error);
+        throw error; // Re-throwing the error after logging it will help in identifying the issue
       }
-      return token;
     },
-  },
+},
   providers: [
     CredentialsProvider({
       credentials: {
