@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ status: 'failed' });
     }
 
-    if (req.body.turns > myUser.turns) {
+    if (req.body.turns > myUser.attack_turns) {
       return res.status(400).json({ status: 'failed' });
     }
 
