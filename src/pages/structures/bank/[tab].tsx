@@ -12,6 +12,7 @@ const Bank = () => {
   const [withdrawAmount, setWithdrawAmount] = useState(0);
   const [bankHistory, setBankHistory] = useState([]);
   const currentPage = tab || 'deposit';
+  const [citizenUnit, setCitizenUnit] = useState(0);
   useEffect(() => {
     if (currentPage === 'history') {
       fetch('/api/bank/history')
@@ -21,8 +22,11 @@ const Bank = () => {
     }
   }, [currentPage]);
 
-  const citizenUnit = user?.units.find((u) => u.type === 'WORKER');
 
+  useEffect(() => {
+    if(user && user.units)
+      setCitizenUnit(user?.units.find((u) => u.type === 'WORKER').quantity);
+  }, [user]);
   const handleDeposit = async () => {
     try {
       const response = await fetch('/api/bank/deposit', {
@@ -126,7 +130,7 @@ const Bank = () => {
                 type="number"
                 name="depositAmount"
                 id="depositAmount"
-                className="w-full border p-2"
+                className="w-full border p-2 bg-black"
                 min="0"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
@@ -156,7 +160,7 @@ const Bank = () => {
                 type="number"
                 name="withdrawAmount"
                 id="withdrawAmount"
-                className="w-full border p-2"
+                className="w-full border p-2 bg-black"
                 min="0"
                 value={withdrawAmount}
                 onChange={(e) => setWithdrawAmount(e.target.value)}
@@ -219,14 +223,14 @@ const Bank = () => {
             <div className="space-y-4">
               <div className="flex justify-between">
                 <strong>Total Workers:</strong>
-                <span>{citizenUnit?.quantity || 0}</span>
+                <span>{citizenUnit || 0}</span>
               </div>
               <div className="mt-6 text-sm text-gray-600">
                 <p>To increase your workforce, visit the training page.</p>
               </div>
               <div className="flex justify-between">
                 <strong>Gold Per Worker:</strong>
-                <span>{citizenUnit?.bonus} gold/turn</span>
+                <span>{user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn</span>
               </div>
               <div className="mt-6 text-sm text-gray-600">
                 <p>
@@ -249,27 +253,29 @@ const Bank = () => {
               </div>
               <div className="flex justify-between">
                 <strong>Fortification Gold Per Turn:</strong>
+                <span>{user?.fortificationGoldPerTurn.toLocaleString()}</span>
               </div>
               <div className="mt-6 text-sm text-gray-600">
-                As the fortification is upgraded, the fortification gold per
-                turn will increase
+                As the fortification is upgraded, the fortification gold per turn will increase
               </div>
               <div className="flex justify-between">
                 <strong>Worker Gold Per Turn:</strong>
+                <span>{user?.workerGoldPerTurn.toLocaleString()}</span>
               </div>
               <div className="mt-6 text-sm text-gray-600">
-                Increase this number by training more workers and upgrading your
-                economy
+                Increase this number by training more workers and upgrading your economy
               </div>
               <div className="flex justify-between">
-                <strong>Total Gold Per Turn:</strong>
+                <strong>Total Gold Per Turn: </strong>
+                <span>{user?.totalGoldPerTurn.toLocaleString()}</span>
               </div>
               <div className="mt-6 text-sm text-gray-600">
-                This includes workers, fort gold, and any additional wealth
-                bonus
+                This includes workers, fort gold, and any additional wealth bonus
               </div>
+
               <div className="flex justify-between">
                 <strong>Daily Income:</strong>
+                <span>{((user?.totalGoldPerTurn || 0)  * 48).toLocaleString()}</span>
                 {/* You can compute and display the daily income here */}
               </div>
             </div>
