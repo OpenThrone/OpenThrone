@@ -135,79 +135,79 @@ const ArmoryTab = () => {
       <div className="mb-4 flex justify-center">
         <div className="flex space-x-2">
           <Link href="/structures/armory/offense" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'offense' ? 'bg-blue-500 text-white' : ''}`}>
-              Offense
-           
+            Offense
+
           </Link>
           <Link href="/structures/armory/defense" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'defense' ? 'bg-blue-500 text-white' : ''}`}>
-              Defense
+            Defense
           </Link>
         </div>
       </div>
       {currentPage === 'offense' && (
         <>
-      <ItemSection
-        heading="Offensive Weapons"
-        items={offensiveWeapons}
-        onEquip={() => handleEquip('OFFENSE')}
-        onUnequip={() => handleUnequip('OFFENSE')}
-      />
-      <ItemSection
-        heading="Offensive Helm"
-        items={offensiveHelm}
-        onEquip={() => handleEquip('OFFENSE')}
-        onUnequip={() => handleUnequip('OFFENSE')}
-      />
-      <ItemSection
-        heading="Offensive Bracers"
-        items={offensiveBracers}
-        onEquip={() => handleEquip('OFFENSE')}
-        onUnequip={() => handleUnequip('OFFENSE')}
-      />
-      <ItemSection
-        heading="Offensive Shield"
-        items={offensiveShield}
-        onEquip={() => handleEquip('OFFENSE')}
-        onUnequip={() => handleUnequip('OFFENSE')}
-      />
-      <ItemSection
-        heading="Offensive Boots"
-        items={offensiveBoots}
-        onEquip={() => handleEquip('OFFENSE')}
-        onUnequip={() => handleUnequip('OFFENSE')}
-      />
-      <ItemSection
-        heading="Defensive Weapons"
-        items={defensiveWeapons}
-        onEquip={() => handleEquip('DEFENSE')}
-        onUnequip={() => handleUnequip('DEFENSE')}
-      />
+          <ItemSection
+            heading="Offensive Weapons"
+            items={offensiveWeapons}
+            onEquip={() => handleEquip('OFFENSE')}
+            onUnequip={() => handleUnequip('OFFENSE')}
+          />
+          <ItemSection
+            heading="Offensive Helm"
+            items={offensiveHelm}
+            onEquip={() => handleEquip('OFFENSE')}
+            onUnequip={() => handleUnequip('OFFENSE')}
+          />
+          <ItemSection
+            heading="Offensive Bracers"
+            items={offensiveBracers}
+            onEquip={() => handleEquip('OFFENSE')}
+            onUnequip={() => handleUnequip('OFFENSE')}
+          />
+          <ItemSection
+            heading="Offensive Shield"
+            items={offensiveShield}
+            onEquip={() => handleEquip('OFFENSE')}
+            onUnequip={() => handleUnequip('OFFENSE')}
+          />
+          <ItemSection
+            heading="Offensive Boots"
+            items={offensiveBoots}
+            onEquip={() => handleEquip('OFFENSE')}
+            onUnequip={() => handleUnequip('OFFENSE')}
+          />
         </>
       )}
       {currentPage === 'defense' && (
         <>
-      <ItemSection
-        heading="Defensive Helm"
-        items={DefensiveHelm}
-        onEquip={() => handleEquip('DEFENSE')}
-        onUnequip={() => handleUnequip('DEFENSE')}
-      />
-      <ItemSection
-        heading="Defensive Bracers"
-        items={DefensiveBracers}
-        onEquip={() => handleEquip('DEFENSE')}
-        onUnequip={() => handleUnequip('DEFENSE')}
-      />
-      <ItemSection
-        heading="Defensive Shield"
-        items={DefensiveShield}
-        onEquip={() => handleEquip('DEFENSE')}
-        onUnequip={() => handleUnequip('DEFENSE')}
-      />
-      <ItemSection
-        heading="Defensive Boots"
-        items={DefensiveBoots}
-        onEquip={() => handleEquip('DEFENSE')}
-        onUnequip={() => handleUnequip('DEFENSE')}
+          <ItemSection
+            heading="Defensive Weapons"
+            items={defensiveWeapons}
+            onEquip={() => handleEquip('DEFENSE')}
+            onUnequip={() => handleUnequip('DEFENSE')}
+          />
+          <ItemSection
+            heading="Defensive Helm"
+            items={DefensiveHelm}
+            onEquip={() => handleEquip('DEFENSE')}
+            onUnequip={() => handleUnequip('DEFENSE')}
+          />
+          <ItemSection
+            heading="Defensive Bracers"
+            items={DefensiveBracers}
+            onEquip={() => handleEquip('DEFENSE')}
+            onUnequip={() => handleUnequip('DEFENSE')}
+          />
+          <ItemSection
+            heading="Defensive Shield"
+            items={DefensiveShield}
+            onEquip={() => handleEquip('DEFENSE')}
+            onUnequip={() => handleUnequip('DEFENSE')}
+          />
+          <ItemSection
+            heading="Defensive Boots"
+            items={DefensiveBoots}
+            onEquip={() => handleEquip('DEFENSE')}
+            onUnequip={() => handleUnequip('DEFENSE')}
           />
         </>
       )}
