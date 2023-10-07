@@ -17,28 +17,41 @@ export default async function handle(
 }
 
 export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
-  const { email, password, race, display_name } = await req.body;
-  const exists = await prisma.users.findUnique({
-    where: {
-      email,
-    },
-  });
-  if (exists) {
-    return res.json({ error: 'User already exists' }, { status: 400 });
+  try {
+    const { email, password, race, display_name } = await req.body;
+    
+    const exists = await prisma.users.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (exists) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
+    
+    const phash = await Bun.password.hash(password);
+    
+    const user = await prisma.users.create({
+      data: {
+        email,
+        password_hash: phash,
+        display_name,
+        race,
+        class: req.body.class,
+      },
+    });
+    
+    await prisma.users.update({
+      where: { id: user.id },
+      data: { recruit_link: md5(user.id.toString()) },
+    });
+
+    return res.json(user);
+
+  } catch (error) {
+    console.error('Error in handlePOST:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
-  const phash = await Bun.password.hash(password);
-  const user = await prisma.users.create({
-    data: {
-      email,
-      password_hash: phash,
-      display_name,
-      race,
-      class: req.body.class,
-    },
-  });
-  await prisma.users.update({
-    where: { id: user.id },
-    data: { recruit_link: md5(user.id.toString()) },
-  });
-  return res.json(user);
 }
+
