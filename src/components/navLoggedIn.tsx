@@ -47,6 +47,8 @@ const subMenus: {
       href: 'https://discord.gg/j9NYxmBCjA',
       parent: 'Community',
     },
+    { text: 'Auto Recruit', href: '/auto-recruit', parent: 'Community' },
+    { text: 'Report Issues', href: 'https://github.com/uaktags/darkcurse-nextjs/issues', parent: 'Community' },
   ],
 };
 

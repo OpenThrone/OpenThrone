@@ -5,6 +5,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { alertService } from '@/services';
 import autoRecruit from '../auto-recruit';
 import Alert from '@/components/alert';
+import { useForceUpdate } from 'framer-motion';
 
 export default function Recruit() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function Recruit() {
   const [error, setError] = useState(null);
   const [showCaptcha, setShowCaptcha] = useState(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
+  const [userInfo, setUserInfo] = useState(null);
 
   
   useEffect(() => {
@@ -30,6 +32,19 @@ export default function Recruit() {
     };
 
     checkRecruitmentHistory();
+    const fetchUserInfo = async () => {
+      const response = await fetch(`/api/getUserInfoByRecruitLink?recruit_link=${id}`);
+      const data = await response.json();
+
+      if (!data.error) {
+        setUserInfo(data);
+      } else {
+        // Handle error, maybe set an error state or alert
+        console.error("Error fetching user info:", data.error);
+      }
+    };
+
+    fetchUserInfo();
   }, [id]);
 
   const autoRecruit = async () => {
@@ -65,7 +80,17 @@ export default function Recruit() {
 
     const data = await res.json();
     if (data.success) {
-      const response = await fetch(`/api/recruit/${id}`, { method: 'POST' });
+      // Set the self_recruit parameter if auto_recruit is active
+      const body = auto_recruit === '1' ? { self_recruit: '1' } : undefined;
+
+      const response = await fetch(`/api/recruit/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
       const recData = await response.json();
 
       if (recData.success) {
@@ -87,6 +112,11 @@ export default function Recruit() {
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
+      {userInfo && (
+        <div className="text-center mb-5">
+          <p>{userInfo.display_name} is a level {userInfo.level} {userInfo.race} {userInfo.class}.</p>
+        </div>
+      )}
       <div className="flex h-screen items-center justify-center">
         <div className="container mx-auto text-center">
           {error ? (

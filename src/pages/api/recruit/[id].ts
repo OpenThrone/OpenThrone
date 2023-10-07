@@ -126,12 +126,15 @@ export default async function handler(
         timestamp: new Date(),
       },
     });
+    const selfRecruit = req.body.self_recruit === '1' || req.body.self_recruit === true;
+
     if (newRecord) {
-      // First increase the number of citizens
-      const updatedUnits = increaseCitizens(recruitedUser.units);
+      let userToUpdate = selfRecruit ? session.player : recruitedUser;
+      // First increase the number of citizens for the appropriate user
+      const updatedUnits = increaseCitizens(userToUpdate.units);
       // Now update in the database
       await prisma.users.update({
-        where: { id: recruitedUser.id },
+        where: { id: userToUpdate.id },
         data: {
           units: updatedUnits,
           gold: {
