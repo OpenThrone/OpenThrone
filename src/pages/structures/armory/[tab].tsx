@@ -5,9 +5,14 @@ import ItemSection from '@/components/itemsection'; // Assuming you have a simil
 import { Fortifications } from '@/constants';
 // Importing the WeaponTypes constant
 import { useUser } from '@/context/users';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 
-const Armory = () => {
+const ArmoryTab = () => {
   const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
+  const router = useRouter();
+  const { tab } = router.query; // You can remove forceUpdate if not used
+  const currentPage = tab || 'offense';
   const { user } = useUser();
   const [offensiveWeapons, setOffensiveWeapons] = useState(null); // Define the offensive units data here
   const [defensiveWeapons, setDefensiveWeapons] = useState(null); // Define the offensive units data here
@@ -127,6 +132,19 @@ const Armory = () => {
           Banked Gold: <span>{user?.goldInBank}</span>
         </p>
       </div>
+      <div className="mb-4 flex justify-center">
+        <div className="flex space-x-2">
+          <Link href="/structures/armory/offense" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'offense' ? 'bg-blue-500 text-white' : ''}`}>
+              Offense
+           
+          </Link>
+          <Link href="/structures/armory/defense" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'defense' ? 'bg-blue-500 text-white' : ''}`}>
+              Defense
+          </Link>
+        </div>
+      </div>
+      {currentPage === 'offense' && (
+        <>
       <ItemSection
         heading="Offensive Weapons"
         items={offensiveWeapons}
@@ -163,15 +181,38 @@ const Armory = () => {
         onEquip={() => handleEquip('DEFENSE')}
         onUnequip={() => handleUnequip('DEFENSE')}
       />
+        </>
+      )}
+      {currentPage === 'defense' && (
+        <>
       <ItemSection
         heading="Defensive Helm"
         items={DefensiveHelm}
         onEquip={() => handleEquip('DEFENSE')}
         onUnequip={() => handleUnequip('DEFENSE')}
       />
-      {/* ... (Similarly, render other item sections) */}
+      <ItemSection
+        heading="Defensive Bracers"
+        items={DefensiveBracers}
+        onEquip={() => handleEquip('DEFENSE')}
+        onUnequip={() => handleUnequip('DEFENSE')}
+      />
+      <ItemSection
+        heading="Defensive Shield"
+        items={DefensiveShield}
+        onEquip={() => handleEquip('DEFENSE')}
+        onUnequip={() => handleUnequip('DEFENSE')}
+      />
+      <ItemSection
+        heading="Defensive Boots"
+        items={DefensiveBoots}
+        onEquip={() => handleEquip('DEFENSE')}
+        onUnequip={() => handleUnequip('DEFENSE')}
+          />
+        </>
+      )}
     </div>
   );
 };
 
-export default Armory;
+export default ArmoryTab;
