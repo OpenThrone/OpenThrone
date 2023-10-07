@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 import { useUser } from '@/context/users';
+import { Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades} from '@/constants';
 
 const UpgradeTab = () => {
   const router = useRouter();
@@ -14,6 +15,47 @@ const UpgradeTab = () => {
     if (currentPage === 'fortifications') {
     }
   }, [currentPage]);
+
+  const renderTable = (data, userLevel) => {
+    return (
+      <>
+        <br />
+      <table className="w-full">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Level</th>
+            <th>Cost</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.values(data)
+            .filter(
+              (item) =>
+                (item.level || item.fortLevel) <= userLevel + 2
+            )
+            .map((item, index) => (
+              <tr key={index}>
+                <td>{item.name} {(item.level || item.fortLevel) === userLevel && ("(Current Upgrade)")}</td>
+                <td>{item.level || item.fortLevel}</td>
+                <td>{item.cost}</td>
+                <td>
+                  {(item.level || item.fortLevel) === userLevel + 1 && (
+                    <button>Buy - Not Implemented Yet</button>
+                  )}
+                  {(item.level || item.fortLevel) === userLevel + 2 && (
+                    <span>Unlock at level {userLevel + 1}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+        </tbody>
+        </table>
+        </>
+    );
+  };
+
   return (
     <div className="mainArea pb-10">
       <h2>Structure Upgrades</h2>
@@ -29,13 +71,21 @@ const UpgradeTab = () => {
             Fortifcations
           </Link>
           <Link
+            href="/structures/upgrades/houses"
+            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${tab === 'houses' ? 'bg-blue-500 text-white' : ''
+              }`}
+            aria-current="page"
+          >
+            Housing
+          </Link>
+          {/*<Link
             href="/structures/upgrades/mining"
             className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
               tab === 'mining' ? 'bg-blue-500 text-white' : ''
             }`}
           >
             Mining Upgrades
-          </Link>
+          </Link>*/}
           <Link
             href="/structures/upgrades/siege"
             className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
@@ -55,10 +105,12 @@ const UpgradeTab = () => {
         </div>
       </div>
       <div className="mb-4 flex justify-center">
-        {tab === 'fortifications' && <>Fortifications</>}
-        {tab === 'mining' && <>Mining Upgrades</>}
-        {tab === 'siege' && <>Siege Upgrades</>}
-        {tab === 'intel' && <>Clandestine Upgrades</>}
+        {currentPage === 'fortifications' && renderTable(Fortifications, user?.fortLevel, "Fortification Upgrades")}
+        {currentPage === 'housing' && renderTable(HouseUpgrades, user?.houseLevel, "Housing Upgrades")}
+
+        {/*currentPage === 'mining' && renderTable(MiningUpgrades, user?.miningLevel, "Mining Upgrades")*/}
+        {currentPage === 'siege' && renderTable(OffenseiveUpgrades, user?.siegeLevel, "Siege Upgrades")}
+        {currentPage === 'intel' && renderTable(SpyUpgrades, user?.intelLevel, "Clandestine Upgrades")}
       </div>
     </div>
   );
