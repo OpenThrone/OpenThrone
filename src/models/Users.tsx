@@ -278,6 +278,57 @@ class UserModel {
     return workerGoldPerTurn + fortificationGoldPerTurn;
   }
 
+  get fortificationGoldPerTurn(): number {
+    // Assuming Fortifications array has a field named 'goldPerTurn' that indicates the gold earned per turn for each level.
+    return Fortifications[this.fortLevel - 1]?.goldPerTurn || 0;
+  }
+
+  get workerGoldPerTurn(): number {
+    const workerUnits = this.units.filter(unit => unit.type === 'WORKER');
+    if (!workerUnits.length) {
+      return 0; // No worker units.
+    }
+
+    // Calculate the total gold
+    let totalGold = 0;
+    for (const unit of workerUnits) {
+      const workerBonus = UnitTypes.find(
+        unitType => unitType.type === unit.type && unitType.level === unit.level
+      ).bonus;
+
+      // Calculate the gold earned by this type of worker after considering incomeBonus.
+      const workerGold = workerBonus * (1 + parseInt(this.incomeBonus.toString(), 10) / 100);
+
+      totalGold += workerGold * unit.quantity;
+    }
+
+    return totalGold;
+  }
+
+  get totalGoldPerTurn(): number {
+    return this.fortificationGoldPerTurn + this.workerGoldPerTurn;
+  }
+
+
+  get goldPerWorkerPerTurn(): number {
+    // This assumes all worker units are of the same type and level.
+    // If there are different types or levels of workers, this will only return the value for the first one.
+    // DT only had 1 type of worker AFAIK
+    const workerUnit = this.units.find(unit => unit.type === 'WORKER');
+    if (!workerUnit) {
+      return 0; // No worker units.
+    }
+
+    const workerBonus = UnitTypes.find(
+      unitType => unitType.type === workerUnit.type && unitType.level === workerUnit.level
+    )?.bonus;
+
+    // Calculate the bonus per worker after considering incomeBonus.
+    const workerGoldPerTurn = workerBonus ? workerBonus * (1 + parseInt(this.incomeBonus.toString(), 10) / 100) : 0;
+
+    return workerGoldPerTurn;
+  }
+
   getArmyStat(type: UnitType) {
     const Units = this.units?.filter((unit) => unit.type === type) || [];
 
