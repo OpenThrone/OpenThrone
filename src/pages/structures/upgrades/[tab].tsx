@@ -104,13 +104,21 @@ const UpgradeTab = () => {
           </Link>
         </div>
       </div>
+      
       <div className="mb-4 flex justify-center">
-        {currentPage === 'fortifications' && renderTable(Fortifications, user?.fortLevel, "Fortification Upgrades")}
-        {currentPage === 'housing' && renderTable(HouseUpgrades, user?.houseLevel, "Housing Upgrades")}
+        {currentPage === 'fortifications' && (<h2>Fortifications</h2>)}
+        {currentPage === 'houses' && (<h2>Housing Upgrades</h2>)}
+        {/*currentPage === 'mining' && (<h2>Mining</h2>)*/}
+        {currentPage === 'siege' && (<h2>Siege Upgrades</h2>)}
+        {currentPage === 'intel' && (<h2>Clandestine Upgrades</h2>)}
+      </div>
+      <div className="mb-4 flex justify-center">
+        {currentPage === 'fortifications' && renderTable(Fortifications, user?.fortLevel)}
+        {currentPage === 'houses' && renderTable(HouseUpgrades, user?.houseLevel)}
 
         {/*currentPage === 'mining' && renderTable(MiningUpgrades, user?.miningLevel, "Mining Upgrades")*/}
-        {currentPage === 'siege' && renderTable(OffenseiveUpgrades, user?.siegeLevel, "Siege Upgrades")}
-        {currentPage === 'intel' && renderTable(SpyUpgrades, user?.intelLevel, "Clandestine Upgrades")}
+        {currentPage === 'siege' && renderTable(OffenseiveUpgrades, user?.siegeLevel)}
+        {currentPage === 'intel' && renderTable(SpyUpgrades, user?.intelLevel)}
       </div>
     </div>
   );
