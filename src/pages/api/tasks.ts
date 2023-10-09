@@ -18,6 +18,9 @@ export default async function handler(
       message: `Unauthorized: ${token} ${process.env.TASK_SECRET}`,
     });
   }
+  const currentTime = new Date();
+  const isCloseToMidnight = currentTime.getHours() === 0 && currentTime.getMinutes() < 30;
+
 
   try {
     // Start your task logic here
@@ -28,12 +31,23 @@ export default async function handler(
     const updatePromises = allUsers.map((user) => {
       const newUser = new UserModel(user);
       const updatedGold = newUser.goldPerTurn + user.gold;
+
+      let updateData = {
+        gold: updatedGold,
+        recruit_link: md5(user.id.toString()),
+        attack_turns: user.attack_turns,
+      };
+
+      if (isCloseToMidnight) {
+        updateData = {
+          ...updateData,
+          attack_turns: user.attack_turns + 1,
+        };
+      }
+
       return prisma.users.update({
         where: { id: user.id },
-        data: {
-          gold: updatedGold,
-          recruit_link: md5(user.id.toString()),
-        },
+        data: updateData,
       });
     });
 
