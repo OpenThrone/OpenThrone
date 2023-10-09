@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 /* eslint-disable import/no-extraneous-dependencies */
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
@@ -5,6 +6,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 
 module.exports = withBundleAnalyzer({
   experimental: {
+    serverActions: true,
     swcPlugins: [
       [
         'next-superjson-plugin',
@@ -20,16 +22,7 @@ module.exports = withBundleAnalyzer({
   poweredByHeader: true,
   trailingSlash: false,
   basePath: '',
-  serverRuntimeConfig: {
-    dbConfig: {
-      host: '192.168.4.4',
-      port: 5432, // 3306
-      user: 'dt',
-      password: 'darkthrone',
-      database: 'darkthrone',
-    },
-    secret: 'TESTSTRING', // 'jfhb2c1viUK85E2YdMZcuNN372OosxZkMtx4cOtPg7mc7QInQkMJOEQag9W7uSs6yTeYStWdjFG89GftA0IfMh5BfPlW0IqYadekqPEgbs2g1SgTNTpH6nTld8le',
-  },
+
   publicRuntimeConfig: {
     apiUrl:
       process.env.NODE_ENV === 'development'

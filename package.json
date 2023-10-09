@@ -28,6 +28,7 @@
     "@types/md5": "^2.3.2",
     "bcrypt": "^5.1.0",
     "bcryptjs": "^2.4.3",
+    "cypress": "^13.3.0",
     "express-jwt": "^8.4.1",
     "framer-motion": "^10.12.20",
     "marked": "^5.1.1",
