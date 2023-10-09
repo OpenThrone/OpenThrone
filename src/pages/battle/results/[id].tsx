@@ -29,11 +29,26 @@ const results = ({ battle }) => {
     },
   };
 
+  const describeLosses = (losses) => {
+    return Object.entries(losses).map(([key, value]) => {
+      const [unitType, unitLevel] = key.split('-');
+      return `${value} ${unitType} level ${unitLevel}`;
+    }).join(', ');
+  };
+
+  const totalLosses = (losses) => {
+    return Object.values(losses).reduce((acc, curr) => acc + curr, 0);
+  };
+
+  const attackerTotalLosses = totalLosses(stats.attacker_losses);
+  const defenderTotalLosses = totalLosses(stats.defender_losses);
+
   lines.push(`In a world of mystique and wonder, ${attackerPlayer.display_name} embarked on a journey to ${scenarios[defenderRace].setting}.`);
   lines.push(`With valor in their heart, ${attackerPlayer.display_name} sought to challenge the might of ${defenderPlayer.display_name}.`);
   lines.push(scenarios[defenderRace].environment);
   lines.push(`The battle ensued, a dance of fate and steel, with ${attackerPlayer.display_name} dealing a total fort damage of ${stats.fortDamage}.`);
-  lines.push(`The forces of destiny collided, shaping the tales of heroes and legends.`);
+  lines.push(`The forces clashed with unparalleled fervor. ${attackerPlayer.display_name} suffered total losses of ${attackerTotalLosses} units, while ${defenderPlayer.display_name} suffered losses of ${defenderTotalLosses} units.`);
+  lines.push(`Despite the losses, the spirits of the warriors remained unbroken, each side determined to claim victory.`);
   lines.push(`When the echoes of battle faded, ${isPlayerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} emerged victorious, a symbol of power and resilience in this epic confrontation!`);
   lines.push(`${attackerPlayer.display_name} garnered ${stats.xpEarned} experience points and ${isPlayerWinner ? `pillaged ${stats.pillagedGold} gold` : `safeguarded their treasures`} from the ravages of war.`);
   lines.push(`This saga will traverse through time, a beacon of the valor and spirit of the warriors, a tale sung by bards in the candlelit nights.`);
@@ -48,6 +63,9 @@ const results = ({ battle }) => {
   summaryLines.push(`Gold Pillaged: ${isPlayerWinner ? stats.pillagedGold.toLocaleString() : 0}`);
   summaryLines.push(`Fort Damage Dealt by Attacker: ${stats.fortDamage}`);
   summaryLines.push(`Attack Turns Used: ${stats.turns}`);
+  summaryLines.push(`Total Units Lost by Attacker: ${attackerTotalLosses}`);
+  summaryLines.push(`Total Units Lost by Defender: ${defenderTotalLosses}`);
+
   const sentence = {
     hidden: { opacity: 0 },
     visible: {
