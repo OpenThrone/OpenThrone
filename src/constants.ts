@@ -253,6 +253,72 @@ export const Fortifications: Fortification[] = [
   },
 ];
 
+export const EconomyUpgrades = {
+  0: {
+    name: "Farm",
+    fortLevel: 1,
+    goldPerWorker: 50,
+    depositsPerDay: 3,
+    goldTransferRec: 0,
+    goldTransferTx: 0,
+    cost: 0
+  },
+  1: {
+    name: "Produce Market",
+    fortLevel: 3,
+    goldPerWorker: 55,
+    depositsPerDay: 4,
+    goldTransferRec: 0,
+    goldTransferTx: 0,
+    cost: 500000
+  },
+  2: {
+    name: "Livestock Market",
+    fortLevel: 7,
+    goldPerWorker: 60,
+    depositsPerDay: 5,
+    goldTransferRec: 0,
+    goldTransferTx: 0,
+    cost: 2000000
+  },
+  3: {
+    name: "Coal Mine",
+    fortLevel: 11, //Fortress Level 2
+    goldPerWorker: 65,
+    depositsPerDay: 6,
+    goldTransferRec: 50000,
+    goldTransferTx: 150000,
+    cost: 5000000
+  },
+  4: {
+    name: "Tavern",
+    fortLevel: 15, //Citadel Level 3
+    goldPerWorker: 70,
+    depositsPerDay: 7,
+    goldTransferRec: 100000,
+    goldTransferTx: 300000,
+    cost: 15000000
+  },
+  5: {
+    name: "Copper Mine",
+    fortLevel: 19, //Kingdom
+    goldPerWorker: 75,
+    depositsPerDay: 8,
+    goldTransferRec: 250000,
+    goldTransferTx: 600000,
+    cost: 37500000
+  },
+  6: {
+    name: "Meat Market",
+    fortLevel: 23, //Empire Level 2
+    goldPerWorker: 80,
+    depositsPerDay: 9,
+    goldTransferRec: 500000,
+    goldTransferTx: 1250000,
+    cost: 100000000
+  }
+}
+
 export const BattleUpgrades: UnitUpgradeType[] = [
   {
     type: 'OFFENSE',
