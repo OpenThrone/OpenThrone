@@ -69,11 +69,11 @@ const AttackLogTable = ({ logs, type }) => {
               <td className="border-b px-4 py-2">
                 <ul>
                   <li>Attacker Losses:
-                    {Object.keys(log.stats.attacker_losses).length === 0 ? (
+                    {log.stats && log.stats.attacker_losses && Object.keys(log.stats.attacker_losses).length === 0 ? (
                       "No losses"
                     ) : (
                       <ul>
-                        {Object.entries(log.stats.attacker_losses).map(([key, value]) => {
+                        {log.stats && log.stats.attacker_losses && Object.entries(log.stats.attacker_losses).map(([key, value]) => {
                           const [type, level] = key.split('-');
                           return (
                             <li key={key}>
@@ -83,14 +83,15 @@ const AttackLogTable = ({ logs, type }) => {
                         })}
                       </ul>
                     )}
+
                   </li>
 
                   <li>Defender Losses:
-                    {Object.keys(log.stats.defender_losses).length === 0 ? (
+                    {log.stats && log.stats.defender_losses && Object.keys(log.stats.defender_losses).length === 0 ? (
                       "No losses"
                     ) : (
                       <ul>
-                        {Object.entries(log.stats.defender_losses).map(([key, value]) => {
+                        {log.stats && log.stats.defender_losses && Object.entries(log.stats.defender_losses).map(([key, value]) => {
                           const [type, level] = key.split('-');
                           return (
                             <li key={key}>
@@ -100,6 +101,7 @@ const AttackLogTable = ({ logs, type }) => {
                         })}
                       </ul>
                     )}
+
                   </li>
 
                 </ul>
