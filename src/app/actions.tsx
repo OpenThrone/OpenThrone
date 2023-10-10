@@ -215,8 +215,8 @@ export async function attackHandler(attackerId, defenderId, attack_turns) {
         turns: attack_turns,
         attacker_units: AttackPlayer.units,
         defender_units: DefensePlayer.units,
-        attacker_losses: battleResults.Results.TotalAttackerLosses,
-        defender_losses: battleResults.Results.TotalDefenderLosses
+        attacker_losses: battleResults.Results.attacker_losses,
+        defender_losses: battleResults.Results.defender_losses
       },
     },
   });

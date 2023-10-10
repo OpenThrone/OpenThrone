@@ -37,7 +37,9 @@ const results = ({ battle }) => {
   };
 
   const totalLosses = (losses) => {
-    return Object.values(losses).reduce((acc, curr) => acc + curr, 0);
+    if (losses)
+      return Object.values(losses).reduce((acc, curr) => acc + curr, 0);
+    else return 0;
   };
 
   const attackerTotalLosses = totalLosses(stats.attacker_losses);
