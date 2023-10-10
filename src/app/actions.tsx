@@ -57,8 +57,8 @@ function simulateBattle(attacker: UserModel, defender: UserModel, attackTurns: n
       let defUnitLoss = Math.min(defUnit.quantity, Math.round(defLoss * defUnit.quantity));
 
       // Apply the losses
-      attUnit.quantity -= attUnitLoss;
-      defUnit.quantity -= defUnitLoss;
+      attUnit.quantity = Math.max(0, attUnit.quantity - attUnitLoss);
+      defUnit.quantity = Math.max(0, defUnit.quantity - defUnitLoss);
 
       // Store the losses in the dictionary
       attackerLosses[`${attUnit.type}-${attUnit.level}`] = (attackerLosses[`${attUnit.type}-${attUnit.level}`] || 0) + attUnitLoss;
@@ -215,8 +215,8 @@ export async function attackHandler(attackerId, defenderId, attack_turns) {
         turns: attack_turns,
         attacker_units: AttackPlayer.units,
         defender_units: DefensePlayer.units,
-        attacker_losses: battleResults.Results.attacker_losses,
-        defender_losses: battleResults.Results.defender_losses
+        attacker_losses: battleResults.Results.TotalAttackerLosses,
+        defender_losses: battleResults.Results.TotalDefenderLosses
       },
     },
   });
