@@ -20,6 +20,7 @@ import type {
 
 import {
   Bonuses,
+  EconomyUpgrades,
   Fortifications,
   HouseUpgrades,
   OffenseiveUpgrades,
@@ -78,6 +79,8 @@ class UserModel {
 
   public bonus_points: BonusPointsItem[];
 
+  public economyLevel: number;
+
   constructor(userData: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
@@ -102,6 +105,7 @@ class UserModel {
     this.is_player = false;
     this.is_online = false;
     this.overallrank = 0;
+    this.economyLevel = 0;
     if (userData) {
       this.id = userData.id;
       this.displayName = userData.display_name;
@@ -110,6 +114,7 @@ class UserModel {
         this.passwordHash = userData.password_hash;
         this.goldInBank = userData.gold_in_bank;
       }
+      this.economyLevel = userData.economy_level;
 
       this.attackTurns = userData.attack_turns;
       this.race = userData.race;
@@ -264,10 +269,7 @@ class UserModel {
     const workerGoldPerTurn = workerUnits
       .map(
         (unit) =>
-          UnitTypes.find(
-            (unitType) =>
-              unitType.type === unit.type && unitType.level === unit.level
-          ).bonus *
+          EconomyUpgrades[this.economyLevel]?.goldPerWorker *
           unit.quantity *
           (1 + parseInt(this.incomeBonus.toString(), 10) / 100)
       )
@@ -292,9 +294,7 @@ class UserModel {
     // Calculate the total gold
     let totalGold = 0;
     for (const unit of workerUnits) {
-      const workerBonus = UnitTypes.find(
-        unitType => unitType.type === unit.type && unitType.level === unit.level
-      ).bonus;
+      const workerBonus = EconomyUpgrades[this.economyLevel]?.goldPerWorker;
 
       // Calculate the gold earned by this type of worker after considering incomeBonus.
       const workerGold = workerBonus * (1 + parseInt(this.incomeBonus.toString(), 10) / 100);
@@ -319,9 +319,7 @@ class UserModel {
       return 0; // No worker units.
     }
 
-    const workerBonus = UnitTypes.find(
-      unitType => unitType.type === workerUnit.type && unitType.level === workerUnit.level
-    )?.bonus;
+    const workerBonus = EconomyUpgrades[this.economyLevel]?.goldPerWorker;
 
     // Calculate the bonus per worker after considering incomeBonus.
     const workerGoldPerTurn = workerBonus ? workerBonus * (1 + parseInt(this.incomeBonus.toString(), 10) / 100) : 0;

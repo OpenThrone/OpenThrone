@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 import Alert from '@/components/alert';
 import UnitSection from '@/components/unitsection';
-import { Fortifications } from '@/constants';
+import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 
@@ -32,10 +32,12 @@ const Training = () => {
     });
   };
   const unitMapFunction = (unit, idPrefix: string) => {
+    const bonus = unit.name === 'Worker' ? EconomyUpgrades[user?.economyLevel]?.goldPerWorker : unit.bonus;
+    
     return {
       id: `${idPrefix}_${unit.level}`,
       name: unit.name,
-      bonus: unit.bonus,
+      bonus: bonus,
       ownedUnits:
         user.units.find((u) => u.type === unit.type && u.level === unit.level)
           ?.quantity || 0,
