@@ -32,16 +32,31 @@ export default async function handler(
       const newUser = new UserModel(user);
       const updatedGold = newUser.goldPerTurn + user.gold;
 
+      // Find the CITIZEN unit
+      let citizenUnit = newUser.units.find(unit => unit.type === 'CITIZEN');
+
+      if (citizenUnit) {
+        // If CITIZEN unit is found, increment its quantity
+        citizenUnit.quantity += newUser.recruitingBonus;
+      } else {
+        // If CITIZEN unit is not found, create one and set its quantity
+        citizenUnit = {
+          type: 'CITIZEN',
+          level: 1,
+          quantity: newUser.recruitingBonus
+        };
+        newUser.units.push(citizenUnit);
+      }
       let updateData = {
         gold: updatedGold,
         recruit_link: md5(user.id.toString()),
-        attack_turns: user.attack_turns,
+        attack_turns: user.attack_turns + 1,
       };
 
       if (isCloseToMidnight) {
         updateData = {
           ...updateData,
-          attack_turns: user.attack_turns + 1,
+          units: newUser.units,
         };
       }
 
