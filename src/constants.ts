@@ -1277,20 +1277,13 @@ export const WeaponTypes: Weapon[] = [
 
 export const UnitTypes: Unit[] = [
   {
-    name: 'Citizen',
-    type: 'CITIZEN',
-    level: 1,
-    bonus: 0,
-    cost: 0,
-    fortLevel: 1,
-  },
-  {
     name: 'Worker',
     type: 'WORKER',
     level: 1,
     bonus: 65,
     cost: 2000,
     fortLevel: 1,
+    hp: 20,
   },
   {
     name: 'Soldier',
@@ -1299,6 +1292,7 @@ export const UnitTypes: Unit[] = [
     bonus: 3,
     cost: 1500,
     fortLevel: 1,
+    hp: 10,
   },
   {
     name: 'Knight',
@@ -1307,6 +1301,7 @@ export const UnitTypes: Unit[] = [
     bonus: 20,
     cost: 10000,
     fortLevel: 4,
+    hp: 20,
   },
   {
     name: 'Berserker',
@@ -1315,6 +1310,7 @@ export const UnitTypes: Unit[] = [
     bonus: 50,
     cost: 25000,
     fortLevel: 7,
+    hp: 30,
   },
   {
     name: 'Guard',
@@ -1323,6 +1319,7 @@ export const UnitTypes: Unit[] = [
     bonus: 3,
     cost: 1500,
     fortLevel: 1,
+    hp: 10,
   },
   {
     name: 'Archer',
@@ -1331,6 +1328,7 @@ export const UnitTypes: Unit[] = [
     bonus: 20,
     cost: 10000,
     fortLevel: 4,
+    hp: 20,
   },
   {
     name: 'Royal Guard',
@@ -1339,6 +1337,7 @@ export const UnitTypes: Unit[] = [
     bonus: 50,
     cost: 25000,
     fortLevel: 7,
+    hp: 30
   },
   { name: 'Spy', type: 'SPY', level: 1, bonus: 3, cost: 1500, fortLevel: 1 },
   {
@@ -1348,6 +1347,7 @@ export const UnitTypes: Unit[] = [
     bonus: 20,
     cost: 10000,
     fortLevel: 4,
+    hp: 20,
   },
   {
     name: 'Assassin',
@@ -1356,6 +1356,7 @@ export const UnitTypes: Unit[] = [
     bonus: 50,
     cost: 25000,
     fortLevel: 7,
+    hp: 30,
   },
   {
     name: 'Sentry',
@@ -1364,6 +1365,7 @@ export const UnitTypes: Unit[] = [
     bonus: 3,
     cost: 1500,
     fortLevel: 1,
+    hp: 10,
   },
   {
     name: 'Sentinel',
@@ -1372,6 +1374,7 @@ export const UnitTypes: Unit[] = [
     bonus: 20,
     cost: 10000,
     fortLevel: 4,
+    hp: 20,
   },
   {
     name: 'Inquisitor',
@@ -1380,6 +1383,7 @@ export const UnitTypes: Unit[] = [
     bonus: 50,
     cost: 25000,
     fortLevel: 7,
+    hp: 30,
   },
 ];
 

@@ -79,9 +79,9 @@ model messages {
   from_user users @relation("from_user", fields: [from_user_id], references: [id])
   to_user_id Int
   to_user users @relation("to_user", fields: [to_user_id], references: [id])
-  date_time DateTime? @db.Timestamptz(3)
-  created_date DateTime? @db.Timestamptz(3)
-  updated_date DateTime? @db.Timestamptz(3)
+  date_time DateTime? @default(now()) @db.Timestamptz(3)
+  created_date DateTime? @default(now()) @db.Timestamptz(3)
+  updated_date DateTime? @default(now()) @db.Timestamptz(3)
   body String
   unread Boolean
 }
