@@ -4,7 +4,6 @@ import { useLayout } from '../context/LayoutContext';
 
 const Modal = ({ isOpen, toggleModal, onSubmit }) => {
   const [turns, setTurns] = useState('');
-
   const [isPending, startTransition] = useTransition();
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -22,7 +21,7 @@ const Modal = ({ isOpen, toggleModal, onSubmit }) => {
       role="dialog"
       aria-modal="true"
     >
-      <div className="flex min-h-screen items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+      <div className="flex min-h-screen  items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
         <span
           className="hidden sm:inline-block sm:h-screen sm:align-middle"
           aria-hidden="true"
@@ -31,11 +30,11 @@ const Modal = ({ isOpen, toggleModal, onSubmit }) => {
         </span>
         <div className="inline-block overflow-hidden text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
           <div
-            className={`px-4 pb-4 pt-5 sm:p-6 sm:pb-4 ${raceClasses.bgClass}`}
+            className={`px-4 pb-4 pt-5 sm:p-6 sm:pb-4 rounded-md ${raceClasses.bgClass}`}
           >
             <div className="justify-between sm:flex sm:items-center">
               <h3
-                className="text-lg font-medium leading-6 text-gray-900"
+                className="text-lg font-medium leading-6"
                 id="modal-title"
               >
                 How many turns?
@@ -70,7 +69,7 @@ const Modal = ({ isOpen, toggleModal, onSubmit }) => {
                   placeholder="1"
                   value={turns}
                   onChange={(e) => setTurns(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  className="block w-full leading-6 rounded-md border-gray-300 bg-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5"
                 />
               </div>
               <div className="mt-4">
