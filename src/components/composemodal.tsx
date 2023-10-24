@@ -22,14 +22,16 @@ export default function ComposeModal({ onClose }) {
       },
     });
     const data = await res.json();
-    setPossibleRecipients(data.exists);
+    setPossibleRecipients(data.possibleMatches);
+
     if (possibleRecipients.length > 0) {
       // Assuming `possibleRecipients` is a list of all displayNames
       const matches = possibleRecipients.filter((name) =>
         name.toLowerCase().includes(value.toLowerCase())
       );
       setPossibleMatches(matches);
-
+      console.log('matches', matches);
+      console.log('value', value);
       if (matches.includes(value)) {
         setRecipientValid(true);
       } else {
@@ -68,44 +70,44 @@ export default function ComposeModal({ onClose }) {
             gap: '10px',
           }}
         >
-          <input
-            list="recipients"
-            value={recipient}
-            onChange={(e) => handleRecipientChange(e.target.value)}
-            placeholder="Recipient"
-            style={{
-              width: '100%',
-              borderColor:
-                recipientValid === true
-                  ? 'green'
-                  : recipientValid === false
-                  ? 'red'
-                  : 'initial',
-            }}
-          />
-          <datalist id="recipients">
-            {possibleMatches.map((name) => (
-              <option key={name} value={name} />
-            ))}
-          </datalist>
-          <input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Subject"
-            style={{ width: '100%' }}
-          />
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Message body"
-            style={{ width: '100%', minHeight: '4em' }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button onClick={handleSubmit} disabled={recipientValid !== true}>
-              Send
-            </button>
-            <button onClick={onClose}>Close</button>
-          </div>
+            <input
+              list="recipients"
+              value={recipient}
+              onChange={(e) => handleRecipientChange(e.target.value)}
+              placeholder="Recipient"
+              style={{
+                width: '100%',
+                borderColor:
+                  recipientValid === true
+                    ? 'green'
+                    : recipientValid === false
+                      ? 'red'
+                      : 'initial',
+              }}
+            />
+            <datalist id="recipients">
+              {possibleMatches.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+            <input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Subject"
+              style={{ width: '100%' }}
+            />
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Message body"
+              style={{ width: '100%', minHeight: '4em' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={handleSubmit} disabled={recipientValid !== true}>
+                Send
+              </button>
+              <button onClick={onClose}>Close</button>
+            </div>
         </div>
       </div>
     </>

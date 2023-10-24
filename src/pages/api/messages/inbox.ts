@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]';
 
 export default async function handle(
   req: NextApiRequest,
@@ -8,13 +10,11 @@ export default async function handle(
 ) {
   if (req.method === 'GET') {
     try {
-      // For demonstration, assuming a user ID of 1 (this should be fetched from the session in a real-world scenario)
-      const userId = 221;
-
+      const session = await getServerSession(req, res, authOptions);
       // Fetch messages for the logged-in user, sorted by date_time in descending order
       const messages = await prisma.messages.findMany({
         where: {
-          to_user_id: userId,
+          to_user_id: session.player?.id,
         },
         orderBy: {
           date_time: 'desc',

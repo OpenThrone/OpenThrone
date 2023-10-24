@@ -1,10 +1,11 @@
 // src/pages/api/messages/send.ts
-import { getSession } from 'next-auth/react';
 
 import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]';
 
 export default async function handle(req, res) {
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
   if (!session) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
@@ -15,7 +16,7 @@ export default async function handle(req, res) {
     try {
       const recipientUser = await prisma.users.findUnique({
         where: {
-          email: recipient, // Assuming recipient input is based on email.
+          display_name: recipient, // Assuming recipient input is based on email.
         },
       });
 
@@ -27,7 +28,7 @@ export default async function handle(req, res) {
         data: {
           subject,
           body,
-          from_user_id: session.user.id,
+          from_user_id: session.player?.id,
           to_user_id: recipientUser.id,
           unread: true,
           // other fields can be filled as required.
@@ -38,7 +39,7 @@ export default async function handle(req, res) {
     } catch (error) {
       return res
         .status(500)
-        .json({ message: 'An error occurred while sending the message.' });
+        .json({ message: 'An error occurred while sending the message.', error: error.message, stats: session });
     }
   }
 

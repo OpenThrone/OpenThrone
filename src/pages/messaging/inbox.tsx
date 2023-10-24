@@ -1,11 +1,8 @@
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { getSession } from 'next-auth/react';
 import { useState } from 'react';
-import useSWR from 'swr'; // Using SWR for data fetching
-
+import prisma from '@/lib/prisma';
 import ComposeModal from '@/components/composemodal';
-
-const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const handleReply = async (message) => {
   // Redirect to a composition page or open a modal
@@ -58,19 +55,11 @@ const handleDelete = async (messageId) => {
   );
 };
 
-const Inbox = () => {
-  const { data: session } = useSession();
+const Inbox = ({ messages, session }) => {
   const [composeModalOpen, setComposeModalOpen] = useState(false);
 
-  // Fetch messages for the logged-in user
-  const { data: messages, error } = useSWR(
-    session ? '/api/messages/inbox' : null,
-    fetcher
-  );
-
-  if (error) return <div>Failed to load messages</div>;
-  if (!messages) return <div>Loading...</div>;
-
+  
+  console.log(messages);
   return (
     <div className="mx-auto w-full py-2">
       <h1 className="mb-4 text-2xl font-bold">Inbox</h1>
@@ -91,12 +80,12 @@ const Inbox = () => {
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody />
-          {messages.map((message) => (
+          <tbody>
+          {messages && messages.map((message) => (
             <tr key={message.id}>
-              <td>{message.from_user.display_name}</td>
+              <td>{message?.from_user?.display_name ?? ''}</td>
               <td>
-                <Link href={`/messages/${message.id}`}>{message.subject}</Link>
+                <Link href={`/messaging/read/${message.id}`}>{message.subject}</Link>
               </td>
               <td>{new Date(message.date_time).toLocaleString()}</td>
               <td>
@@ -112,10 +101,43 @@ const Inbox = () => {
               </td>
             </tr>
           ))}
+            </tbody>
         </table>
       </div>
     </div>
   );
 };
+
+
+export const getServerSideProps = async (context: any) => {
+  const session = await getSession(context);
+
+  if (!session) {
+    // If no user is authenticated, redirect to the login page
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
+
+  // Fetch messages for the logged-in user, including the from_user relation
+  const messages = await prisma.messages.findMany({
+    where: {
+      to_user_id: session.player.id,
+    },
+    include: {
+      from_user: true,  // Include the from_user relation
+    },
+  });
+
+  return {
+    props: {
+      messages,
+      session,
+    },
+  };
+}
 
 export default Inbox;
