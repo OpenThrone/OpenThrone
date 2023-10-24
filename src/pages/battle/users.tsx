@@ -14,6 +14,14 @@ const Users = ({ players, session, userPage }) => {
   const { user, forceUpdate } = useUser();
   const initialPage = parseInt(router.query.page as string) || userPage;
   const [page, setPage] = useState(initialPage);
+  // State to store the formatted gold values
+  const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Format the gold values based on the client's locale
+    const golds = players.map(player => player.gold.toLocaleString());
+    setFormattedGolds(golds);
+  }, [players]);
 
   useEffect(() => {
     const newPage = parseInt(router.query.page as string) || userPage;
@@ -36,7 +44,7 @@ const Users = ({ players, session, userPage }) => {
             </tr>
           </thead>
           <tbody>
-            {players.map((nplayer) => {
+            {players.map((nplayer, index) => {
               const player = new UserModel(nplayer);
               if (player.id === user?.id) player.is_player = true;
 
@@ -58,7 +66,7 @@ const Users = ({ players, session, userPage }) => {
                       {player.displayName}
                     </Link>
                   </td>
-                  <td className="px-4 py-2">{player.gold.toLocaleString()}</td>
+                  <td className="px-4 py-2">{formattedGolds[index]}</td>
                   <td className="px-4 py-2">{player.kingdomSize}</td>
                   <td className="px-4 py-2">{player.level}</td>
                   <td className="px-4 py-2">

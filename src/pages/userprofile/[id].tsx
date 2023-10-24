@@ -9,6 +9,7 @@ import Modal from '@/components/modal';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
+import { alertService } from '@/services';
 
 const Index = ({ users }) => {
   const hideSidebar = false;
@@ -36,14 +37,15 @@ const Index = ({ users }) => {
     });
     const results = await res.json();
 
-    if (results.status !== 'failed') {
+    if (results.status === 'failed') {
+      alertService.error(results.status);
+    } else {
       context.forceUpdate();
       router.push(`/battle/results/${results.attack_log}`);
+      toggleModal();
     }
-
-    // make server request here
-    toggleModal();
   };
+
   useEffect(() => {
     if (profile.id !== users.id) setUser(new UserModel(users));
     if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
@@ -108,8 +110,8 @@ const Index = ({ users }) => {
           ) : (
             <div className="list-group mb-4">
               <Link
-                href={`/inbox/compose/new/user/${profile?.id}`}
-                className="list-group-item list-group-item-action disabled"
+                  href={`/inbox/compose/new/user/${profile?.id}`}
+                  className={`list-group-item list-group-item-action ${profile?.id === 1 || profile?.id === 2 ? '' : 'disabled'}`}
               >
                 Message this Player
               </Link>
@@ -117,7 +119,7 @@ const Index = ({ users }) => {
                 type="button"
                 onClick={toggleModal}
                 className={`list-group-item list-group-item-action w-full text-left ${
-                  canAttack ? '' : 'disabled'
+                  canAttack ? 'disabled' : 'disabled'
                 }`}
               >
                 Attack this Player

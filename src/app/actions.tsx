@@ -2,9 +2,7 @@
 import { Fortifications, UnitTypes, WeaponTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import results from '@/pages/battle/results/[id]';
 import { PlayerUnit, PlayerItem } from '@/types/typings';
-import { number, any } from 'prop-types';
 
 function simulateBattle(attacker: UserModel, defender: UserModel, attackTurns: number): any {
   let results: any = {};
@@ -13,12 +11,30 @@ function simulateBattle(attacker: UserModel, defender: UserModel, attackTurns: n
   let totalAttackerLosses = 0;
   let totalDefenderLosses = 0;
 
+  // Early exit if the attacker's offense is negligible
+  if (attacker.offense <= 0) {
+    return {
+      Results: {
+        attacker_losses: {},
+        defender_losses: {}
+      },
+      Winner: "Defender",
+      TotalAttackerLosses: 0,
+      TotalDefenderLosses: 0
+    };
+  }
+
   // Helper function to calculate total bonus for a unit
-  const calculateTotalBonus = (unit: PlayerUnit, items: PlayerItem[]): number => {
+  const calculateTotalBonus = (
+    unit: PlayerUnit,
+    items: PlayerItem[]
+  ): number => {
     let bonus = 0;
 
     // Get base bonus from the Unit's data
-    const unitData = UnitTypes.find(u => u.type === unit.type && u.level === unit.level);
+    const unitData = UnitTypes.find(
+      u => u.type === unit.type && u.level === unit.level
+    );
     if (unitData) {
       bonus += unitData.bonus;
     }
@@ -26,7 +42,12 @@ function simulateBattle(attacker: UserModel, defender: UserModel, attackTurns: n
     for (let item of items) {
       if (item.unitType === unit.type && item.level === unit.level) {
         // Get bonus from the Weapon's data
-        const weaponData = WeaponTypes.find(w => w.usage === item.unitType && w.type === item.type && w.level === item.level);
+        const weaponData = WeaponTypes.find(
+          w =>
+            w.usage === item.unitType &&
+            w.type === item.type &&
+            w.level === item.level
+        );
         if (weaponData) {
           bonus += weaponData.bonus * item.quantity;
         }
@@ -36,6 +57,9 @@ function simulateBattle(attacker: UserModel, defender: UserModel, attackTurns: n
   };
 
   for (let attUnit of attacker.units) {
+    if (attUnit.hasAttacked) {
+      continue;
+    }
     for (let defUnit of defender.units) {
       if (attUnit.quantity <= 0 || defUnit.quantity <= 0) {
         continue;
@@ -48,41 +72,100 @@ function simulateBattle(attacker: UserModel, defender: UserModel, attackTurns: n
       let attTotalBonus = calculateTotalBonus(attUnit, attacker.items);
       let defTotalBonus = calculateTotalBonus(defUnit, defender.items);
 
-      // Calculate the proportion of losses considering weapon bonuses and multiply by the number of attackTurns
-      let attLoss = attackTurns * (Math.random() * 0.1 + 0.1) * (defTotalBonus * defUnit.quantity) / (attTotalBonus * attUnit.quantity + 1);
-      let defLoss = attackTurns * (Math.random() * 0.1 + 0.1) * (attTotalBonus * attUnit.quantity) / (defTotalBonus * defUnit.quantity + 1);
+      const getRandomMultiplier = (levelDiff: number): number => {
+        // The level difference will have an impact on the randomness of the damage multiplier.
+        const baseRandomness = Math.random() * 0.1 + 0.95; // Between 0.95 and 1.05
+        const levelModifier = 0.01 * levelDiff; // Adjust this value to make level difference have more or less impact.
+        return baseRandomness + levelModifier;
+      };
 
-      // Calculate the actual losses
-      let attUnitLoss = Math.min(attUnit.quantity, Math.round(attLoss * attUnit.quantity));
-      let defUnitLoss = Math.min(defUnit.quantity, Math.round(defLoss * defUnit.quantity));
+      const calculateDamage = (
+        attBonus: number,
+        defBonus: number,
+        attQuantity: number,
+        defQuantity: number
+      ): { attDmg: number; defDmg: number } => {
+        // You can adjust these constants as per the game's requirement
+        const ATT_CONST = 0.5;
+        const DEF_CONST = 0.5;
 
-      // Apply the losses
+        const attRandomMultiplier = getRandomMultiplier(
+          attacker.level - defender.level
+        );
+        const defRandomMultiplier = getRandomMultiplier(
+          defender.level - attacker.level
+        );
+
+        const attDmg = defBonus * DEF_CONST * defQuantity * attRandomMultiplier;
+        const defDmg = attBonus * ATT_CONST * attQuantity * defRandomMultiplier;
+
+        return { attDmg, defDmg };
+      };
+
+      const { attDmg, defDmg } = calculateDamage(
+        attTotalBonus,
+        defTotalBonus,
+        attUnit.quantity,
+        defUnit.quantity
+      );
+
+      const attUnitData = UnitTypes.find(
+        (u) => u.type === attUnit.type && u.level === attUnit.level
+      );
+      const defUnitData = UnitTypes.find(
+        (u) => u.type === defUnit.type && u.level === defUnit.level
+      );
+
+      // Assuming the HP of a unit is static and not modified by any bonus.
+      const totalAttUnitHP = attUnitData?.hp * attUnit.quantity || 0;
+      const totalDefUnitHP = defUnitData?.hp * defUnit.quantity || 0;
+
+      let attUnitLoss = Math.min(
+        attUnit.quantity,
+        Math.ceil((attDmg / totalAttUnitHP) * attUnit.quantity)
+      );
+      let defUnitLoss = Math.min(
+        defUnit.quantity,
+        Math.ceil((defDmg / totalDefUnitHP) * defUnit.quantity)
+      );
+
       attUnit.quantity = Math.max(0, attUnit.quantity - attUnitLoss);
       defUnit.quantity = Math.max(0, defUnit.quantity - defUnitLoss);
 
-      // Store the losses in the dictionary
-      attackerLosses[`${attUnit.type}-${attUnit.level}`] = (attackerLosses[`${attUnit.type}-${attUnit.level}`] || 0) + attUnitLoss;
-      defenderLosses[`${defUnit.type}-${defUnit.level}`] = (defenderLosses[`${defUnit.type}-${defUnit.level}`] || 0) + defUnitLoss;
+      attackerLosses[`${attUnit.type}-${attUnit.level}`] =
+        (attackerLosses[`${attUnit.type}-${attUnit.level}`] || 0) + attUnitLoss;
+      defenderLosses[`${defUnit.type}-${defUnit.level}`] =
+        (defenderLosses[`${defUnit.type}-${defUnit.level}`] || 0) + defUnitLoss;
 
-      // Accumulate the total losses
       totalAttackerLosses += attUnitLoss;
       totalDefenderLosses += defUnitLoss;
+
+      attUnit.hasAttacked = true;
+      break;
     }
   }
 
   // Adjust for CITIZEN or WORKER losses on the defender's side
-  if (defender.fortHitpoints <= 0 || !defender.units.some(unit => unit.type === "DEFENSE" && unit.quantity > 0)) {
+  if (
+    defender.fortHitpoints <= 0 /*||
+    !defender.units.some((unit) => unit.type === "DEFENSE" && unit.quantity > 0)*/
+  ) {
     const civilianUnits = ["CITIZEN", "WORKER"];
     for (let civUnitType of civilianUnits) {
-      const civUnit = defender.units.find(unit => unit.type === civUnitType);
+      const civUnit = defender.units.find((unit) => unit.type === civUnitType);
       if (civUnit && civUnit.quantity > 0) {
-        let loss = attackTurns * Math.round(civUnit.quantity * (Math.random() * 0.1 + 0.05));
+        let loss = Math.min(
+          civUnit.quantity,
+          attackTurns * Math.round(civUnit.quantity * (Math.random() * 0.1 + 0.05))
+        );
         civUnit.quantity -= loss;
-        defenderLosses[`${civUnitType}-${civUnit.level}`] = (defenderLosses[`${civUnitType}-${civUnit.level}`] || 0) + loss;
+        defenderLosses[`${civUnitType}-${civUnit.level}`] =
+          (defenderLosses[`${civUnitType}-${civUnit.level}`] || 0) + loss;
         totalDefenderLosses += loss;
       }
     }
   }
+
 
   results = {
     attacker_losses: attackerLosses,
@@ -121,10 +204,27 @@ export async function attackHandler(attackerId, defenderId, attack_turns) {
 
   const AttackPlayer = new UserModel(attacker);
   const DefensePlayer = new UserModel(defender);
+
+  // Check if attacker's offense is negligible
+  if (AttackPlayer.offense <= 0) {
+    return {
+      status: 'failed',
+      message: 'Attack unsuccessful due to negligible offense.'
+    };
+  }
+
+  const startOfAttack = {
+    Attacker: JSON.parse(JSON.stringify(AttackPlayer)),
+    Defender: JSON.parse(JSON.stringify(DefensePlayer))
+  }
+
+  console.log('Start of Attack - Defender Units', startOfAttack.Defender.units.filter(u => u.type === 'DEFENSE' || u.type === 'WORKER' || u.type === 'CITIZEN'));
+  console.log('Start of Attack - Attacker Units', startOfAttack.Attacker.units.filter(u => u.type === 'OFFENSE'));
+  console.log('Start of Attack - Defender Items', startOfAttack.Defender.items.filter(i => i.usage === 'DEFENSE' || i.usage === 'WORKER' || i.usage === 'CITIZEN'));
+  console.log('Start of Attack - Attacker Items', startOfAttack.Attacker.items.filter(i => i.usage === 'OFFENSE'));
+  console.log('Start of Attack - Defender Fort Health', startOfAttack.Defender.fortHitpoints);
   const startTurns = AttackPlayer.attackTurns;
   let GoldPerTurn = 0.8 / 10;
-  // Fetch max HP for the defender's fort level
-  const maxFortHP = Fortifications[DefensePlayer.fortLevel].hitpoints;
 
   const levelDifference = DefensePlayer.level - AttackPlayer.level;
   switch (levelDifference) {
@@ -154,17 +254,39 @@ export async function attackHandler(attackerId, defenderId, attack_turns) {
 
   const modifiedFortDamagePercentage = fortDamagePercentage * (0.5 + scaledOffenseToDefenseRatio / 4);
   const DmgPerTurn = modifiedFortDamagePercentage / 10;
+
+  // Fetch max HP for the defender's fort level
+  const maxFortHP = Fortifications[DefensePlayer.fortLevel].hitpoints;
   // Calculate the fort damage and round it to the nearest integer
-  const calculatedFortDmg = Math.round(maxFortHP * DmgPerTurn * attack_turns);
-  const maxFortDmg = Math.min(DefensePlayer.fortHitpoints * DmgPerTurn * attack_turns, 40);
+  const calculatedFortDmg = Math.min(Math.round(maxFortHP * DmgPerTurn * attack_turns), DefensePlayer.fortHitpoints);
   const battleResults = simulateBattle(AttackPlayer, DefensePlayer, attack_turns);
 
   if (DefensePlayer.fortHitpoints <= 0) {
     GoldPerTurn *= 1.05;
   }
 
+  console.log('Attacker Losses', battleResults.Results.attacker_losses);
+  console.log('Defender Losses', battleResults.Results.defender_losses);
+
   const isAttackerWinner = AttackPlayer.offense > DefensePlayer.defense;
   const pillagedGold = DefensePlayer.gold * GoldPerTurn * attack_turns;
+  return {
+    status: 'success',
+    result: isAttackerWinner,
+    attacker: AttackPlayer,
+    defender: DefensePlayer,
+    extra_variables: {
+      'pillagedGold': pillagedGold,
+      'GoldPerTurn': GoldPerTurn,
+      'levelDifference': levelDifference,
+      'fortDamagePercentage': modifiedFortDamagePercentage,
+      'fortDmg': calculatedFortDmg,
+      'offenseToDefenseRatio': scaledOffenseToDefenseRatio,
+      'DmgPerTurn': DmgPerTurn,
+      'BattleResults': battleResults
+    }
+  };
+
 
   if (isAttackerWinner) {
     DefensePlayer.gold -= pillagedGold;
@@ -183,10 +305,8 @@ export async function attackHandler(attackerId, defenderId, attack_turns) {
     });
   }
 
-  console.log('Before update:', DefensePlayer.fortHitpoints, defender.fort_hitpoints, maxFortDmg);
-  DefensePlayer.fortHitpoints -= Math.max(defender.fort_hitpoints - maxFortDmg, 0);
-  console.log('After update:', DefensePlayer.fortHitpoints);
-
+  DefensePlayer.fortHitpoints -= calculatedFortDmg;
+  DefensePlayer.fortHitpoints = Math.max(0, DefensePlayer.fortHitpoints);
   const BaseXP = 1000;
   const LevelDifference = DefensePlayer.level - AttackPlayer.level;
   const LevelDifferenceBonus = LevelDifference > 0 ? LevelDifference * 0.05 * BaseXP : 0;
@@ -205,12 +325,17 @@ export async function attackHandler(attackerId, defenderId, attack_turns) {
       timestamp: new Date().toISOString(),
       winner: isAttackerWinner ? attackerId : defenderId,
       stats: {
+        startOfAttack: startOfAttack,
         startTurns: startTurns,
         endTurns: AttackPlayer.attackTurns,
-        offensePoints: AttackPlayer.offense,
-        defensePoints: DefensePlayer.defense,
+        offensePointsAtStart: startOfAttack.Attacker.offense,
+        defensePointsAtStart: startOfAttack.Defender.defense,
+        offensePointsAtEnd: AttackPlayer.offense,
+        defensePointsAtEnd: DefensePlayer.defense,
         pillagedGold: isAttackerWinner ? pillagedGold : 0,
-        fortDamage: maxFortDmg,
+        fortDamage: calculatedFortDmg,
+        forthpAtStart: startOfAttack.Defender.fortHitpoints,
+        forthpAtEnd: DefensePlayer.fortHitpoints,
         xpEarned: XP,
         turns: attack_turns,
         attacker_units: AttackPlayer.units,
@@ -252,7 +377,7 @@ export async function attackHandler(attackerId, defenderId, attack_turns) {
       'GoldPerTurn': GoldPerTurn,
       'levelDifference': levelDifference,
       'fortDamagePercentage': modifiedFortDamagePercentage,
-      'fortDmg': maxFortDmg,
+      'fortDmg': calculatedFortDmg,
       'offenseToDefenseRatio': scaledOffenseToDefenseRatio,
       'DmgPerTurn': DmgPerTurn,
       'BattleResults': battleResults

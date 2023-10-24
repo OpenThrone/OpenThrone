@@ -74,15 +74,16 @@ const Overview = () => {
           <tbody>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Offense</td>
-              <td>{toLocale(user?.offense)}</td>
+              <td>{user ? toLocale(user.offense) : '0'}</td>
               <td>Attacks Won</td>
-              <td>{toLocale(user?.attacks_made)}</td>
+              <td>{user ? toLocale(user.attacksWon) : '0'}</td>
             </tr>
+
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Defense</td>
               <td>{toLocale(user?.defense)}</td>
               <td>Defends Won</td>
-              <td />
+              <td>{toLocale(user?.defendsWon)}</td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Spy Offense</td>

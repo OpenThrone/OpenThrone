@@ -46,6 +46,7 @@ export type PlayerUnit = {
   level: number;
   type: UnitType;
   quantity: number;
+  hasAttacked: boolean;
 };
 
 export type AttackPlayerUnit = {
@@ -76,6 +77,7 @@ export type Unit = {
   bonus: number;
   cost: number;
   fortLevel: number;
+  hp: number;
 };
 export type Weapon = {
   name: string;
