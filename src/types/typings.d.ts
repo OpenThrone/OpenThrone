@@ -23,6 +23,11 @@ export type BonusType =
   | 'INCOME'
   | 'PRICES';
 
+export type BattleUnits = {
+  type: string;
+  quantity: number;
+};
+
 export interface PageAlert {
   type: 'SUCCESS' | 'DANGER' | 'INFO';
   message: string;
