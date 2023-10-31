@@ -119,7 +119,7 @@ const Index = ({ users }) => {
                 type="button"
                 onClick={toggleModal}
                 className={`list-group-item list-group-item-action w-full text-left ${
-                  canAttack ? 'disabled' : 'disabled'
+                  canAttack ? '' : 'disabled'
                 }`}
               >
                 Attack this Player
