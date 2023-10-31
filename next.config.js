@@ -6,7 +6,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 
 module.exports = withBundleAnalyzer({
   experimental: {
-    serverActions: true,
+    // serverActions: true,
     swcPlugins: [
       [
         'next-superjson-plugin',
@@ -33,5 +33,4 @@ module.exports = withBundleAnalyzer({
   // So, the source code is "basePath-ready".
   // You can remove `basePath` if you don't need it.
   reactStrictMode: true,
-  serverActions: true,
 });

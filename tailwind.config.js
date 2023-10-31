@@ -40,12 +40,6 @@ function generateRaceColors(
   };
 }
 module.exports = {
-  purge: {
-    content: ['./src/**/*.tsx', './src/**/*.ts'],
-    options: {
-      whitelistPatterns: [/^bg-/], // This will whitelist all classes that start with "bg-"
-    },
-  },
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     fontSize: {
