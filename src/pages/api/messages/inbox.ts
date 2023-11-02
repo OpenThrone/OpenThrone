@@ -14,7 +14,7 @@ export default async function handle(
       // Fetch messages for the logged-in user, sorted by date_time in descending order
       const messages = await prisma.messages.findMany({
         where: {
-          to_user_id: session.player?.id,
+          to_user_id: session.user?.id,
         },
         orderBy: {
           date_time: 'desc',

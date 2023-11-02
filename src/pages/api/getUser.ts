@@ -16,7 +16,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     // Fetch the user based on the session's user ID
     const user = await prisma.users.findUnique({
       where: {
-        id: parseInt(session.player.id),
+        id: parseInt(session.user.id),
       },
     });
 

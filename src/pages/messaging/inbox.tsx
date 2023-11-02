@@ -125,7 +125,7 @@ export const getServerSideProps = async (context: any) => {
   // Fetch messages for the logged-in user, including the from_user relation
   const messages = await prisma.messages.findMany({
     where: {
-      to_user_id: session.player.id,
+      to_user_id: session.user.id,
     },
     include: {
       from_user: true,  // Include the from_user relation

@@ -97,7 +97,7 @@ export const getServerSideProps = async (context: any) => {
   // Assuming you can get the current user's ID from the request
   // Assuming you can get the current user's ID from the request
   const session = await getSession(context);
-  const userId = session?.player?.id;
+  const userId = session?.user?.id;
 
   const attackPage = parseInt(context.query.attackPage as string) || 1;
   const defensePage = parseInt(context.query.defensePage as string) || 1;

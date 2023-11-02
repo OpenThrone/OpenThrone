@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (repairPoints < 1) return res.status(400).json({ error: 'Invalid repair points' });
 
   // Retrieve user ID from the session
-  const userId = session.player?.id;
+  const userId = session.user?.id;
   if (!userId) return res.status(403).json({ error: 'User ID is missing from session' });
 
   try {

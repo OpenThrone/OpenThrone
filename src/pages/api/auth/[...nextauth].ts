@@ -1,14 +1,12 @@
 import type { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-
 import prisma from '@/lib/prisma';
-import { compare } from 'bcrypt';
 
 const updateLastActive = async (email: string) => {
   return prisma.users.update({
     where: { email },
-    data: { last_active: new Date().toISOString() },
+    data: { last_active: new Date() },
   });
 };
 
@@ -18,6 +16,8 @@ const validateCredentials = async (email: string, password: string) => {
       email,
     },
   });
+
+  
   const passwordMatches = user && (await Bun.password.verify(password, user.password_hash));
 
   if (!passwordMatches) {
@@ -25,37 +25,41 @@ const validateCredentials = async (email: string, password: string) => {
   }
 
   await updateLastActive(email);
-  return user;
+  
+  const {password_hash, ...rest} = user;
+  return rest;
 };
 
 export const authOptions: NextAuthOptions = {
+  // Page configuration
   pages: {
     signIn: '/account/login',
   },
+
+  // Define session expiration time in seconds (optional, default is 1 day)
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, //30 * 24 * 60 * 60, // 1 day
+  },
+
+  // Secret for JWT Signing
   secret: process.env.JWT_SECRET,
+  
   callbacks: {
     async session({ session, token }) {
+      //console.log('session here: ', session, token)
       try {
-        const email = token?.user?.email;
-        await updateLastActive(email);
-        session.accessToken = token.accessToken;
-        session.user.id = token.id;
-        session.display_name = token.display_name;
-        session.race = token.race;
-        session.player = token.user;
+        session.user = token.user;
         return session;
       } catch (error) {
         console.error('Session callback error:', error);
         throw error; // Re-throwing the error after logging it will help in identifying the issue
       }
     },
-    async jwt({ token, account, user }) {
+    async jwt({ token, user }) {
+      console.log('jwt here: ', token, user);
       try {
-        if (account) {
-          token.accessToken = account.access_token;
-          token.id = account.id;
-          token.display_name = user.display_name;
-          token.race = user.race;
+        if (user) {
           token.user = user;
         }
         return token;
@@ -70,7 +74,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
-        race: { label: 'Race', type: 'text' },
+        //race: { label: 'Race', type: 'text' },
       },
       async authorize(credentials) {
         const { email, password } = credentials ?? {};

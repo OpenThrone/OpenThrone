@@ -20,12 +20,12 @@ export default async (req, res) => {
     where: {
       OR: [
         {
-          from_user_id: parseInt(session.player.id),
+          from_user_id: parseInt(session.user.id),
           from_user_account_type: 'HAND',
           to_user_account_type: 'BANK',
         },
         {
-          to_user_id: parseInt(session.player.id),
+          to_user_id: parseInt(session.user.id),
           to_user_account_type: 'HAND',
           from_user_account_type: 'BANK',
         },

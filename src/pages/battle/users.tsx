@@ -140,7 +140,7 @@ export const getServerSideProps = async (context: any) => {
 
   // Find the rank of the current user
   const userRank =
-    allUsers.findIndex((user) => user.id === session?.player.id) + 1;
+    allUsers.findIndex((user) => user.id === session?.user.id) + 1;
 
   // Calculate the page number based on the user's rank
   const userPage = Math.ceil(userRank / ROWS_PER_PAGE);

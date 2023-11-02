@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     }
 
     const myUser = await prisma?.users.findUnique({
-      where: { id: session.player.id },
+      where: { id: session.user.id },
     });
 
     if (!myUser) {
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       .status(200)
       .json(
         await attackHandler(
-          session.player.id,
+          session.user.id,
           parseInt(req.query.id),
           parseInt(req.body.turns)
         )

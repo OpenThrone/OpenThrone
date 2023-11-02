@@ -20,7 +20,7 @@ export default async (req, res) => {
   // Fetch the user based on the session's user ID
   const user = await prisma.users.findUnique({
     where: {
-      id: parseInt(session.player.id),
+      id: parseInt(session.user.id),
     },
   });
   if (depositAmount > user.gold) {
@@ -28,7 +28,7 @@ export default async (req, res) => {
   }
 
   await prisma.users.update({
-    where: { id: parseInt(session.player.id) },
+    where: { id: parseInt(session.user.id) },
     data: {
       gold: user.gold - depositAmount,
       gold_in_bank: user?.gold_in_bank + depositAmount,

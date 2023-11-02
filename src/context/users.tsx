@@ -8,7 +8,8 @@ import UserModel from '@/models/Users';
 // Updated UserContext with forceUpdate function
 const UserContext = createContext({
   user: null,
-  forceUpdate: () => {},
+  forceUpdate: () => { },
+  loading: true
 });
 
 export const useUser = () => useContext(UserContext);
@@ -24,35 +25,45 @@ const isPublicPath = (path) => {
   return publicPathsRegex.some((regex) => regex.test(path));
 };
 
-export const UserProvider: React.FC = ({ children }) => {
+export const UserProvider = ({ children }) => {
   const router = useRouter();
   const { data, status } = useSession();
-
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const fetchUserDataFromAPI = async () => {
-    const response = await fetch(`/api/getUser`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch user data');
-    }
-    return response.json();
-  };
-  // Function to fetch user data
-  const fetchUserData = async (): Promise<void> => {
+  const fetchUserData = async () => {
+    setLoading(true);
     try {
-      if (data?.player?.id) {
-        const updatedUserData = await fetchUserDataFromAPI();
-        setUser(new UserModel(updatedUserData, false));
-      }
+      const response = await fetch(`/api/getUser`);
+      if (!response.ok) throw { message: 'Failed to fetch user data', status: response.status };
+      const userData = await response.json();
+      setUser(new UserModel(userData));
     } catch (error) {
       console.error('Error fetching user data:', error);
+      // Consider setting an error state here as well
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('status: ', status)
+    console.log('data: ', data)
+    if (status === 'authenticated' && data?.user?.id) {
+      fetchUserData(data.user.id);
+    }
+  }, [data?.user?.id, status]);
+
+  useEffect(() => {
+    if (user instanceof UserModel) {
+      setUser(user);
+    }
+  }, [user]);
+
+  useEffect(() => {
     const { asPath } = router;
 
-    if (!(status === 'loading')) {
+    if (status !== 'loading') {
       if (!data && !isPublicPath(asPath)) {
         router.replace('/account/login');
       } else if (data && asPath === '/') {
@@ -61,24 +72,11 @@ export const UserProvider: React.FC = ({ children }) => {
     }
   }, [data, router, status]);
 
-  useEffect(() => {
-    const interval = setInterval(fetchUserData, 30000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useMemo(async () => {
-    if (data?.player) {
-      const updatedUserData = await fetchUserDataFromAPI(data.player.id);
-      setUser(new UserModel(updatedUserData, false));
-
-      return { user, loading: status === 'loading', userSession: data };
-    }
-    return { user, loading: status, userSession: data };
-  }, [data, status]);
+  // Removed the async useMemo and the interval useEffect
+  // Use a dedicated useEffect for recurring updates
 
   return (
-    <UserContext.Provider value={{ user, forceUpdate: fetchUserData }}>
+    <UserContext.Provider value={{ user, forceUpdate: () => fetchUserData(data?.user?.id), loading }}>
       {children}
     </UserContext.Provider>
   );

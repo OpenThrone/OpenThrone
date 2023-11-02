@@ -9,7 +9,7 @@ export default async function handle(req, res) {
   }
 
   const messageId = req.query.id;
-  const userId = session.player.id;
+  const userId = session.user.id;
 
   // Ensure the user is the intended recipient of the message
   const messageToDelete = await prisma.messages.findUnique({

@@ -28,7 +28,7 @@ export default async function handle(req, res) {
         data: {
           subject,
           body,
-          from_user_id: session.player?.id,
+          from_user_id: session.user?.id,
           to_user_id: recipientUser.id,
           unread: true,
           // other fields can be filled as required.

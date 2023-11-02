@@ -26,7 +26,7 @@ export default async function handler(
   let recruiterID = 0;
   const session = await getServerSession(req, res, authOptions);
   if (session) {
-    recruiterID = session.player?.id;
+    recruiterID = session.user?.id;
   }
   const recruitedUser = await prisma.users.findUnique({
     where: {
@@ -129,7 +129,7 @@ export default async function handler(
     const selfRecruit = req.body.self_recruit === '1' || req.body.self_recruit === true;
 
     if (newRecord) {
-      let userToUpdate = selfRecruit ? session.player : recruitedUser;
+      let userToUpdate = selfRecruit ? session.user : recruitedUser;
       // First increase the number of citizens for the appropriate user
       const updatedUnits = increaseCitizens(userToUpdate.units);
       // Now update in the database
