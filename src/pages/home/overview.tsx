@@ -46,7 +46,7 @@ const Overview = () => {
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Army Size</td>
-              <td>{toLocale(user?.armySize.toLocaleString())}</td>
+              <td>{toLocale(user?.armySize)}</td>
               <td>Gold</td>
               <td>{toLocale(user?.gold)}</td>
             </tr>
