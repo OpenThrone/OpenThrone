@@ -6,6 +6,7 @@ import { useUser } from '@/context/users';
 const Levels = () => {
   const { user } = useUser();
   const [levels, setLevels] = useState(user?.bonus_points ?? DefaultLevelBonus);
+  const [proficiencyPoints, setProficiencyPoints] = useState(user?.availableProficiencyPoints ?? 0);
 
   const incrementLevel = (typeToUpdate) => {
     const updatedLevels = levels.map((level) => {
@@ -21,17 +22,50 @@ const Levels = () => {
   useEffect(() => {
     // This will ensure levels are updated whenever user.bonus_points changes
     setLevels(user?.bonus_points ?? DefaultLevelBonus);
-  }, [user?.bonus_points]);
+    setProficiencyPoints(user?.availableProficiencyPoints ?? 0);
+  }, [user?.bonus_points, user?.availableProficiencyPoints]);
 
-  const handleAddBonus = (type) => {
+  const handleAddBonus = async (type) => {
+    // Optimistically update the local state
     incrementLevel(type);
-    // Here you can also send a request to the backend to actually update the level and handle any errors.
+
+    // Prepare the data to send to the API
+    const requestData = { typeToUpdate: type };
+
+    // Send a POST request to the API endpoint
+    try {
+      const response = await fetch('/api/bonusPoints', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        // If the response is not ok, throw an error to catch it below
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // You can choose to update the state with the response if needed
+      // setLevels(data.updatedBonusPoints);
+
+      setProficiencyPoints(user?.availableProficiencyPoints ?? proficiencyPoints - 1);
+
+    } catch (error) {
+      // Handle any errors here
+      console.error('Failed to update bonus points:', error);
+      // Optionally, revert the optimistic update
+      // setLevels(previousLevels);
+    }
   };
   return (
     <div className="mainArea pb-10">
       <h2>Levels</h2>
       <h4>
-        You currently have {user?.availableProficiencyPoints} proficiency points
+        You currently have {proficiencyPoints} proficiency points
         available.
       </h4>
       <div className="flex flex-col items-center">
