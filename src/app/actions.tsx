@@ -514,13 +514,12 @@ export async function attackHandler(
     GoldPerTurn *= 1.05;
   }
   const isAttackerWinner = battleResults.experienceResult.Result === 'Win';
-  console.log('GoldPerTurn', GoldPerTurn * attack_turns);
+  
   const pillagedGold = Math.floor(Math.min(
-    GoldPerTurn * attack_turns,
+    GoldPerTurn * DefensePlayer.gold * attack_turns,
     DefensePlayer.gold
     )
   );
-
   const BaseXP = 1000;
   const LevelDifference = DefensePlayer.level - AttackPlayer.level;
   const LevelDifferenceBonus =
@@ -533,7 +532,6 @@ export async function attackHandler(
   XP *= TurnsUsedMultiplier;
 
   AttackPlayer.experience += XP;
-  console.log('pillaged: ', pillagedGold);
   if (isAttackerWinner) {
     DefensePlayer.gold -= pillagedGold;
     AttackPlayer.gold += pillagedGold;
@@ -566,7 +564,7 @@ export async function attackHandler(
         // fortDamage: calculatedFortDmg,
         forthpAtStart: startOfAttack.Defender.fortHitpoints,
         forthpAtEnd: DefensePlayer.fortHitpoints,
-        xpEarned: XP,
+        xpEarned: XP + battleResults.experienceResult.Experience.Attacker,
         turns: attack_turns,
         attacker_units: AttackPlayer.units,
         defender_units: DefensePlayer.units,
