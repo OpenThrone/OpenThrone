@@ -563,7 +563,7 @@ export async function attackHandler(
         pillagedGold: isAttackerWinner ? pillagedGold : 0,
         // fortDamage: calculatedFortDmg,
         forthpAtStart: startOfAttack.Defender.fortHitpoints,
-        forthpAtEnd: DefensePlayer.fortHitpoints,
+        forthpAtEnd: Math.max(DefensePlayer.fortHitpoints, 0),
         xpEarned: XP + battleResults.experienceResult.Experience.Attacker,
         turns: attack_turns,
         attacker_units: AttackPlayer.units,
@@ -587,7 +587,7 @@ export async function attackHandler(
     where: { id: defenderId },
     data: {
       gold: DefensePlayer.gold,
-      fort_hitpoints: DefensePlayer.fortHitpoints,
+      fort_hitpoints: Math.max(DefensePlayer.fortHitpoints, 0),
       units: DefensePlayer.units,
     },
   });
