@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 import { useUser } from '@/context/users';
-import { Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades} from '@/constants';
+import { EconomyUpgrades, Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades} from '@/constants';
 
 const UpgradeTab = () => {
   const router = useRouter();
@@ -15,6 +15,28 @@ const UpgradeTab = () => {
     if (currentPage === 'fortifications') {
     }
   }, [currentPage]);
+
+  const buyUpgrade = async (currentPage, index) => {
+    const response = await fetch('/api/structures/upgrades', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        currentPage,
+        index
+      }),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      // Handle successful purchase
+      forceUpdate(); // If you have a state update function to re-render the component
+    } else {
+      // Handle errors
+      console.error(data.message);
+    }
+  };
 
   const renderTable = (data, userLevel) => {
     return (
@@ -38,11 +60,11 @@ const UpgradeTab = () => {
             .map((item, index) => (
               <tr key={index}>
                 <td>{item.name} {(item.level || item.fortLevel) === userLevel && ("(Current Upgrade)")}</td>
-                <td>{item.level || item.fortLevel}</td>
+                <td>{(currentPage === "mining" ? index : (item.level || item.fortLevel))}</td>
                 <td>{item.cost}</td>
                 <td>
-                  {(item.level || item.fortLevel) === userLevel + 1 && (
-                    <button>Buy - Not Implemented Yet</button>
+                  {(item.level || item.fortLevel) === userLevel + 1 || (currentPage == 'mining' && index === userLevel + 1) && (
+                    <button type="button" className={"bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"} onClick={() => buyUpgrade(currentPage, index)}>Buy</button>
                   )}
                   {(item.level || item.fortLevel) === userLevel + 2 && (
                     <span>Unlock at level {userLevel + 1}</span>
@@ -78,14 +100,14 @@ const UpgradeTab = () => {
           >
             Housing
           </Link>
-          {/*<Link
+          {<Link
             href="/structures/upgrades/mining"
             className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
               tab === 'mining' ? 'bg-blue-500 text-white' : ''
             }`}
           >
             Mining Upgrades
-          </Link>*/}
+          </Link>}
           <Link
             href="/structures/upgrades/siege"
             className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
@@ -108,7 +130,7 @@ const UpgradeTab = () => {
       <div className="mb-4 flex justify-center">
         {currentPage === 'fortifications' && (<h2>Fortifications</h2>)}
         {currentPage === 'houses' && (<h2>Housing Upgrades</h2>)}
-        {/*currentPage === 'mining' && (<h2>Mining</h2>)*/}
+        {currentPage === 'mining' && (<h2>Mining</h2>)}
         {currentPage === 'siege' && (<h2>Siege Upgrades</h2>)}
         {currentPage === 'intel' && (<h2>Clandestine Upgrades</h2>)}
       </div>
@@ -116,7 +138,7 @@ const UpgradeTab = () => {
         {currentPage === 'fortifications' && renderTable(Fortifications, user?.fortLevel)}
         {currentPage === 'houses' && renderTable(HouseUpgrades, user?.houseLevel)}
 
-        {/*currentPage === 'mining' && renderTable(MiningUpgrades, user?.miningLevel, "Mining Upgrades")*/}
+        {currentPage === 'mining' && renderTable(EconomyUpgrades, user?.economyLevel)}
         {currentPage === 'siege' && renderTable(OffenseiveUpgrades, user?.siegeLevel)}
         {currentPage === 'intel' && renderTable(SpyUpgrades, user?.intelLevel)}
       </div>
