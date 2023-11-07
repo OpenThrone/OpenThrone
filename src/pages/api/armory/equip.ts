@@ -1,87 +1,81 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { WeaponTypes } from "@/constants";
-import prisma from "@/lib/prisma";
+import { WeaponTypes } from '@/constants';
+import prisma from '@/lib/prisma';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method === "POST") {
-    const { userId, items } = req.body;
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-    // Validate the input data
-    if (!userId || !Array.isArray(items)) {
-      return res.status(400).json({ error: "Invalid input data" });
+  const { userId, items: itemsToEquip } = req.body;
+
+  // Validate the input data
+  if (!userId || !Array.isArray(itemsToEquip)) {
+    return res.status(400).json({ error: 'Invalid input data' });
+  }
+
+  try {
+    const user = await prisma.users.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    try {
-      const user = await prisma.users.findUnique({ where: { id: userId } });
-      let totalCost = 0;
+    let totalCost = 0;
 
-      for (const itemData of items) {
-        const item = WeaponTypes.find(
-          (w) => w.type === itemData.type && w.usage === itemData.usage
-        );
-        if (!item) {
-          return res
-            .status(400)
-            .json({
-              error: `Invalid item type: ${itemData.type} with usage: ${itemData.usage}`,
-            });
-        }
-        totalCost += item.cost * itemData.quantity;
+    // Validate the items and calculate total cost
+    for (const itemData of itemsToEquip) {
+      const item = WeaponTypes.find((w) => w.type === itemData.type && w.level === itemData.level);
+      if (!item || item.usage !== itemData.usage) {
+        return res.status(400).json({ error: `Invalid item type, usage, or level` });
       }
-
-      if (user.gold < totalCost) {
-        return res.status(400).json({ error: "Not enough gold" });
-      }
-
-      // Deduct the number of items from user's inventory
-      const updatedItems = user.items.map((i) => {
-        const itemToUpdate = items.find(
-          (item) => item.type === i.type && item.usage === i.usage
-        );
-        if (itemToUpdate) {
-          i.quantity += itemToUpdate.quantity;
-        }
-        return i;
-      });
-
-      // If the user does not have any of the items they want to equip, add that item type to their items array
-      for (const itemData of items) {
-        if (
-          !user.items.some(
-            (i) => i.type === itemData.type && i.usage === itemData.usage
-          )
-        ) {
-          updatedItems.push({
-            type: itemData.type,
-            usage: itemData.usage,
-            level: 1, // Assuming level 1 for simplicity
-            quantity: itemData.quantity,
-          });
-        }
-      }
-
-      await prisma.users.update({
-        where: { id: userId },
-        data: {
-          gold: user.gold - totalCost,
-          items: updatedItems,
-        },
-      });
-      const updatedUser = await prisma.users.findUnique({
-        where: { id: userId },
-      });
-      return res.status(200).json({
-        message: "Items equipped successfully!",
-        data: updatedUser.items,
-      });
-    } catch (error) {
-      return res.status(500).json({ error: "Failed to equip items" });
+      totalCost += item.cost * itemData.quantity;
     }
-  } else {
-    return res.status(405).json({ error: "Method not allowed" });
+
+    // Check if the user has enough gold
+    if (user.gold < totalCost) {
+      return res.status(400).json({ error: 'Not enough gold' });
+    }
+
+    // Deduct gold and equip items
+    const updatedItems = user.items.map((userItem) => {
+      const itemToEquip = itemsToEquip.find((item) => item.type === userItem.type && item.usage === userItem.usage && item.level === userItem.level);
+      if (itemToEquip) {
+        userItem.quantity += itemToEquip.quantity; // Increase the quantity of the item
+      }
+      return userItem;
+    });
+
+    // Add new items to the inventory if they don't exist
+    itemsToEquip.forEach((itemData) => {
+      if (!updatedItems.some((i) => i.type === itemData.type && i.usage === itemData.usage && i.level === itemData.level)) {
+        updatedItems.push({
+          type: itemData.type,
+          usage: itemData.usage,
+          level: itemData.level,
+          quantity: itemData.quantity,
+        });
+      }
+    });
+
+    // Update the user's gold and items in the database
+    await prisma.users.update({
+      where: { id: userId },
+      data: {
+        gold: user.gold - totalCost,
+        items: updatedItems,
+      },
+    });
+
+    return res.status(200).json({
+      message: 'Items equipped successfully',
+      data: updatedItems,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Failed to equip items' });
   }
 }

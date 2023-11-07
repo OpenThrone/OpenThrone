@@ -42,6 +42,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
           type: item.id.split('_')[0], // Extracting the item type from the id
           quantity: parseInt(inputElement.value, 10),
           usage: item.usage,
+          level: parseInt(item.id.split('_')[2], 10),
         };
       });
     try {
@@ -90,6 +91,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
           type: item.id.split('_')[0], // Extracting the item type from the id
           quantity: parseInt(inputElement.value, 10),
           usage: item.usage,
+          level: parseInt(item.id.split('_')[2], 10),
         };
       });
 

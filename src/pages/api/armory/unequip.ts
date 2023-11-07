@@ -19,39 +19,39 @@ export default async function handler(
       const user = await prisma.users.findUnique({ where: { id: userId } });
       let totalRefund = 0;
 
+      // Create a copy of user's items to manipulate
+      let updatedItems = [...user.items];
+
       for (const itemData of items) {
-        const item = WeaponTypes.find(
-          (w) => w.type === itemData.type && w.usage === itemData.usage
+        const itemType = WeaponTypes.find(
+          (w) => w.type === itemData.type && w.usage === itemData.usage && w.level === itemData.level
         );
-        if (!item) {
+        if (!itemType) {
           return res.status(400).json({
-            error: `Invalid item type: ${itemData.type} with usage: ${itemData.usage}`,
+            error: `Invalid item type: ${itemData.type} with usage: ${itemData.usage} and level: ${itemData.level}`,
           });
         }
 
-        const userItem = user.items.find(
-          (i) => i.type === itemData.type && i.usage === itemData.usage
+        const userItemIndex = updatedItems.findIndex(
+          (i) => i.type === itemData.type && i.usage === itemData.usage && i.level === itemData.level
         );
 
-        if (!userItem || userItem.quantity < itemData.quantity) {
+        if (userItemIndex === -1 || updatedItems[userItemIndex].quantity < itemData.quantity) {
           return res
             .status(400)
-            .json({ error: `Not enough ${item.name} to unequip` });
+            .json({ error: `Not enough ${itemType.name} to unequip` });
         }
 
-        totalRefund += item.cost * itemData.quantity;
+        // Update the quantity of the user's item
+        updatedItems[userItemIndex].quantity -= itemData.quantity;
+
+        // Remove the item from updatedItems if quantity becomes 0
+        if (updatedItems[userItemIndex].quantity === 0) {
+          updatedItems.splice(userItemIndex, 1);
+        }
+
+        totalRefund += itemType.cost * itemData.quantity;
       }
-
-      // Add the number of items back to user's inventory
-      const updatedItems = user.items.map((i) => {
-        const itemToUnequip = items.find(
-          (item) => item.type === i.type && item.usage === i.usage
-        );
-        if (itemToUnequip) {
-          i.quantity -= itemToUnequip.quantity;
-        }
-        return i;
-      });
 
       await prisma.users.update({
         where: { id: userId },
@@ -60,12 +60,10 @@ export default async function handler(
           items: updatedItems,
         },
       });
-      const updatedUser = await prisma.users.findUnique({
-        where: { id: userId },
-      });
+
       return res.status(200).json({
         message: "Items unequipped successfully!",
-        data: updatedUser.items,
+        data: updatedItems,
       });
     } catch (error) {
       return res.status(500).json({ error: "Failed to unequip items" });
