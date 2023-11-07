@@ -60,10 +60,10 @@ const UpgradeTab = () => {
             .map((item, index) => (
               <tr key={index}>
                 <td>{item.name} {(item.level || item.fortLevel) === userLevel && ("(Current Upgrade)")}</td>
-                <td>{(currentPage === "mining" ? index : (item.level || item.fortLevel))}</td>
+                <td>{(currentPage === "economy" ? index : (item.level || item.fortLevel))}</td>
                 <td>{item.cost}</td>
                 <td>
-                  {(item.level || item.fortLevel) === userLevel + 1 || (currentPage == 'mining' && index === userLevel + 1) && (
+                  {(item.level || item.fortLevel) === userLevel + 1 || (currentPage == 'economy' && index === userLevel + 1) && (
                     <button type="button" className={"bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"} onClick={() => buyUpgrade(currentPage, index)}>Buy</button>
                   )}
                   {(item.level || item.fortLevel) === userLevel + 2 && (
@@ -101,12 +101,12 @@ const UpgradeTab = () => {
             Housing
           </Link>
           {<Link
-            href="/structures/upgrades/mining"
+            href="/structures/upgrades/economy"
             className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              tab === 'mining' ? 'bg-blue-500 text-white' : ''
+              tab === 'economy' ? 'bg-blue-500 text-white' : ''
             }`}
           >
-            Mining Upgrades
+            Economy Upgrades
           </Link>}
           <Link
             href="/structures/upgrades/siege"
@@ -130,7 +130,7 @@ const UpgradeTab = () => {
       <div className="mb-4 flex justify-center">
         {currentPage === 'fortifications' && (<h2>Fortifications</h2>)}
         {currentPage === 'houses' && (<h2>Housing Upgrades</h2>)}
-        {currentPage === 'mining' && (<h2>Mining</h2>)}
+        {currentPage === 'economy' && (<h2>Economy Upgrades</h2>)}
         {currentPage === 'siege' && (<h2>Siege Upgrades</h2>)}
         {currentPage === 'intel' && (<h2>Clandestine Upgrades</h2>)}
       </div>
@@ -138,7 +138,7 @@ const UpgradeTab = () => {
         {currentPage === 'fortifications' && renderTable(Fortifications, user?.fortLevel)}
         {currentPage === 'houses' && renderTable(HouseUpgrades, user?.houseLevel)}
 
-        {currentPage === 'mining' && renderTable(EconomyUpgrades, user?.economyLevel)}
+        {currentPage === 'economy' && renderTable(EconomyUpgrades, user?.economyLevel)}
         {currentPage === 'siege' && renderTable(OffenseiveUpgrades, user?.siegeLevel)}
         {currentPage === 'intel' && renderTable(SpyUpgrades, user?.intelLevel)}
       </div>
