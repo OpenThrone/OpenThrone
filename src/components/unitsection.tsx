@@ -38,10 +38,11 @@ const UnitSection: React.FC<UnitSectionProps> = ({
       .filter((unit) => unit.enabled)
       .map((unit) => {
         const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-
+        
         return {
           type: unit.id.split('_')[0], // Extracting the unit type from the id
           quantity: parseInt(inputElement.value, 10),
+          level: parseInt(unit.id.split('_')[1], 10),
         };
       });
 
@@ -65,8 +66,9 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         // Update the getUnits state with the new quantities
         setUnits((prevUnits) => {
           return prevUnits.map((unit) => {
+            const unitTypeLevel = unit.id.split('_');
             const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
+              (u) => u.type === unitTypeLevel[0] && u.level.toString() === unitTypeLevel[1]
             );
             if (updatedUnit) {
               return { ...unit, ownedUnits: updatedUnit.quantity };
@@ -91,6 +93,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         return {
           type: unit.id.split('_')[0], // Extracting the unit type from the id
           quantity: parseInt(inputElement.value, 10),
+          level: parseInt(unit.id.split('_')[1], 10),
         };
       });
 
@@ -113,8 +116,9 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         // Update the getUnits state with the new quantities
         setUnits((prevUnits) => {
           return prevUnits.map((unit) => {
+            const unitTypeLevel = unit.id.split('_');
             const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
+              (u) => u.type === unitTypeLevel[0] && u.level.toString() === unitTypeLevel[1]
             );
             if (updatedUnit) {
               return { ...unit, ownedUnits: updatedUnit.quantity };

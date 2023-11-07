@@ -18,60 +18,60 @@ export default async function handler(
     try {
       const user = await prisma.users.findUnique({ where: { id: userId } });
       let totalCost = 0;
+      
+      // Prepare a map for quick lookup of user's current units
+      const userUnitsMap = new Map(user.units.map(u => [`${u.type}_${u.level}`, u]));
 
+      // Calculate total cost and validate each unit type and level
       for (const unitData of units) {
-        const unit = UnitTypes.find((u) => u.type === unitData.type);
-        if (!unit) {
-          return res
-            .status(400)
-            .json({ error: `Invalid unit type: ${unitData.type}` });
+        const unitType = UnitTypes.find(u => u.type === unitData.type && u.level === unitData.level);
+        if (!unitType) {
+          return res.status(400).json({ error: `Invalid unit type or level: ${unitData.type} Level ${unitData.level}` });
         }
-        totalCost += unit.cost * unitData.quantity;
+        totalCost += unitType.cost * unitData.quantity;
       }
 
       if (user.gold < totalCost) {
         return res.status(400).json({ error: 'Not enough gold' });
       }
 
-      // Deduct the number of units from "CITIZENS"
-      const citizenUnit = user.units.find((u) => u.type === 'CITIZEN');
-      if (
-        citizenUnit &&
-        citizenUnit.quantity <
-          units.reduce((acc, unit) => acc + unit.quantity, 0)
-      ) {
+      // Check if user has enough citizens
+      const citizensRequired = units.reduce((acc, unit) => acc + unit.quantity, 0);
+      const citizenUnit = userUnitsMap.get('CITIZEN_1');
+      if (!citizenUnit || citizenUnit.quantity < citizensRequired) {
         return res.status(400).json({ error: 'Not enough citizens to train' });
       }
-      citizenUnit.quantity -= units.reduce(
-        (acc, unit) => acc + unit.quantity,
-        0
-      );
 
-      // Update the user's units
-      const updatedUnits = user.units.map((u) => {
-        const unitToUpdate = units.find((unit) => unit.type === u.type);
-        if (unitToUpdate) {
-          u.quantity += unitToUpdate.quantity;
+      // Iterate over the units that the user is trying to train to update or add the units
+      units.forEach(unitData => {
+        const unitKey = `${unitData.type}_${unitData.level}`;
+        const currentUnit = userUnitsMap.get(unitKey);
+        // If the unit exists, update the quantity, otherwise, set the new unit with the desired quantity.
+        if (currentUnit) {
+          currentUnit.quantity += unitData.quantity;
+        } else {
+          userUnitsMap.set(unitKey, { type: unitData.type, level: unitData.level, quantity: unitData.quantity });
         }
-        return u;
       });
 
-      // If the user does not have any of the units they want to train, add that unit type to their units array
-      for (const unitData of units) {
-        if (!user.units.some((u) => u.type === unitData.type)) {
-          updatedUnits.push({
-            type: unitData.type,
-            level: unitData.level,
-            quantity: unitData.quantity,
-          });
-        }
+      // Deduct the number of units from "CITIZEN"
+      const citizenUnitKey = 'CITIZEN_1';
+      if (userUnitsMap.has(citizenUnitKey)) {
+        userUnitsMap.get(citizenUnitKey).quantity -= citizensRequired;
       }
+
+      // Convert the map back to an array for the response
+      const updatedUnitsArray = Array.from(userUnitsMap.values()).map(u => ({
+        type: u.type,
+        level: u.level,
+        quantity: u.quantity
+      }));
 
       await prisma.users.update({
         where: { id: userId },
         data: {
           gold: user.gold - totalCost,
-          units: updatedUnits,
+          units: updatedUnitsArray,
         },
       });
       const updatedUser = await prisma.users.findUnique({

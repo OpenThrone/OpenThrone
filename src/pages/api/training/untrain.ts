@@ -39,7 +39,7 @@ export default async function handler(
 
       // Update the user's units
       const updatedUnits = user.units.map((u) => {
-        const unitToUpdate = units.find((unit) => unit.type === u.type);
+        const unitToUpdate = units.find((unit) => unit.type === u.type && u.level === unit.level);
         if (unitToUpdate) {
           u.quantity -= unitToUpdate.quantity;
         }
