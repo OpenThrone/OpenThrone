@@ -4,7 +4,7 @@ import { DefaultLevelBonus } from '@/constants';
 import { useUser } from '@/context/users';
 
 const Levels = () => {
-  const { user } = useUser();
+  const { user, forceUpdate } = useUser();
   const [levels, setLevels] = useState(user?.bonus_points ?? DefaultLevelBonus);
   const [proficiencyPoints, setProficiencyPoints] = useState(user?.availableProficiencyPoints ?? 0);
 
@@ -27,6 +27,8 @@ const Levels = () => {
 
   const handleAddBonus = async (type) => {
     // Optimistically update the local state
+    const previousLevels = [...levels];
+    const previousPoints = proficiencyPoints;
     incrementLevel(type);
 
     // Prepare the data to send to the API
@@ -53,12 +55,13 @@ const Levels = () => {
       // setLevels(data.updatedBonusPoints);
 
       setProficiencyPoints(user?.availableProficiencyPoints ?? proficiencyPoints - 1);
-
+      forceUpdate();
     } catch (error) {
       // Handle any errors here
       console.error('Failed to update bonus points:', error);
       // Optionally, revert the optimistic update
-      // setLevels(previousLevels);
+      setLevels(previousLevels);
+      setProficiencyPoints(previousPoints);
     }
   };
   return (
@@ -128,7 +131,7 @@ const Levels = () => {
                 className="inline-block  rounded bg-green-900 px-6 pb-2 pt-2.5 text-xs uppercase leading-normal"
                 data-te-ripple-init
                 data-te-ripple-color="light"
-                // disabled={!user?.availableProficiencyPoints}
+                disabled={!user?.availableProficiencyPoints}
               >
                 Add
               </button>

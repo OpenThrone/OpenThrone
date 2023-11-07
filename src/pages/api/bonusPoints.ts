@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma'; // Adjust the import path to your actual Prisma instance
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth/[...nextauth]';
+import UserModel from '@/models/Users';
 
 // Handler function for the API route
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -27,11 +28,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Retrieve the current user's bonus points
-    const user = await prisma.users.findUnique({ where: { id: userId } });
+    const user = new UserModel(await prisma.users.findUnique({ where: { id: userId } }));
     if (!user || !user.bonus_points) {
       return res.status(404).json({ error: 'User or bonus points not found' });
     }
 
+    if (user.usedProficiencyPoints >= user.level) {
+      return res.status(404).json({ error: 'Not enough proficiency points' });
+    }
+    
     // Increment the level of the specified type
     const updatedBonusPoints = user.bonus_points.map((level) => {
       if (level.type === typeToUpdate) {

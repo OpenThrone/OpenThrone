@@ -172,6 +172,17 @@ class UserModel {
   }
 
   /**
+   * Returns the number of used proficiency points for the user.
+   * This is calculated by subtracting the sum of bonus points' levels from the user's level.
+   * @returns {number} The number of available proficiency points.
+   */
+  get usedProficiencyPoints() {
+    return (
+      this.bonus_points.reduce((acc, bonus) => acc + bonus.level, 0)
+    );
+  }
+
+  /**
    * Returns an array of bonuses that are applicable to the user's race or class.
    * @returns {Array<Bonus>} An array of Bonus objects.
    */
