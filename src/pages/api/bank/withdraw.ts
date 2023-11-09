@@ -48,5 +48,5 @@ export default async (req, res) => {
   });
 
   // Return the updated user data or any other relevant response
-  return res.status(200).json({ message: 'Deposit successful' });
+  return res.status(200).json({ message: 'Withdraw successful' });
 };

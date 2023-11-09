@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth/next';
 
 import { authOptions } from '../auth/[...nextauth]';
+import UserModel from '@/models/Users';
 
 const prisma = new PrismaClient();
 
@@ -23,12 +24,45 @@ export default async (req, res) => {
       id: parseInt(session.user.id),
     },
   });
-  if (depositAmount > user.gold) {
+
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const userMod = new UserModel(user);
+
+  const depositCount = async () => {
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+
+    const transferCount = await prisma.bank_history.count({
+      where: {
+        AND: [
+          { history_type: 'PLAYER_TRANSFER' },
+          { from_user_id: user.id },
+          { to_user_id: user.id },
+          { to_user_account_type: 'BANK' },
+          {
+            date_time: {
+              gte: oneDayAgo,
+            },
+          },
+        ],
+      },
+    });
+    return transferCount;
+  };
+
+  if (await depositCount() >= userMod.maximumBankDeposits) {
+    return res.status(401).json({ error: `You can only deposit ${userMod.maximumBankDeposits} times per day` });
+  }
+
+  if (depositAmount > userMod.gold) {
     return res.status(401).json({ error: `Not enough gold for deposit` });
   }
 
   await prisma.users.update({
-    where: { id: parseInt(session.user.id) },
+    where: { id: parseInt(userMod.id) },
     data: {
       gold: user.gold - depositAmount,
       gold_in_bank: user?.gold_in_bank + depositAmount,
