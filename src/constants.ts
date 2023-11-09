@@ -1277,6 +1277,15 @@ export const WeaponTypes: Weapon[] = [
 
 export const UnitTypes: Unit[] = [
   {
+    name: 'Citizen',
+    type: 'CITIZEN',
+    level: 1,
+    bonus: 0,
+    cost: 0,
+    fortLevel: 1,
+    hp: 10,
+  },
+  {
     name: 'Worker',
     type: 'WORKER',
     level: 1,

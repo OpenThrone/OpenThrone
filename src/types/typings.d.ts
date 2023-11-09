@@ -51,7 +51,6 @@ export type PlayerUnit = {
   level: number;
   type: UnitType;
   quantity: number;
-  hasAttacked: boolean;
 };
 
 export type AttackPlayerUnit = {
