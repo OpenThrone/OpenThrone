@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
-
+import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { useUser } from '@/context/users';
 import { EconomyUpgrades, Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades} from '@/constants';
+import FortificationsTab from '@/components/fortification-upgrades';
+import HousingTab from '@/components/housing-upgrades';
+import EconomyTab from '@/components/economy-upgrades';
 
 const UpgradeTab = () => {
   const router = useRouter();
@@ -16,64 +19,42 @@ const UpgradeTab = () => {
     }
   }, [currentPage]);
 
-  const buyUpgrade = async (currentPage, index) => {
-    const response = await fetch('/api/structures/upgrades', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        currentPage,
-        index
-      }),
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      // Handle successful purchase
-      forceUpdate(); // If you have a state update function to re-render the component
-    } else {
-      // Handle errors
-      console.error(data.message);
-    }
-  };
-
   const renderTable = (data, userLevel) => {
     return (
       <>
         <br />
-      <table className="w-full">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Level</th>
-            <th>Cost</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.values(data)
-            .filter(
-              (item) =>
-                (item.level || item.fortLevel) <= userLevel + 2
-            )
-            .map((item, index) => (
-              <tr key={index}>
-                <td>{item.name} {(item.level || item.fortLevel) === userLevel && ("(Current Upgrade)")}</td>
-                <td>{(currentPage === "economy" ? index : (item.level || item.fortLevel))}</td>
-                <td>{item.cost}</td>
-                <td>
-                  {(item.level || item.fortLevel) === userLevel + 1 || (currentPage == 'economy' && index === userLevel + 1) && (
-                    <button type="button" className={"bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"} onClick={() => buyUpgrade(currentPage, index)}>Buy</button>
-                  )}
-                  {(item.level || item.fortLevel) === userLevel + 2 && (
-                    <span>Unlock at level {userLevel + 1}</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-        </tbody>
-        </table>
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Level</th>
+              <th>Cost</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.values(data)
+              .filter(
+                (item) =>
+                  (item.level || item.fortLevel) <= userLevel + 2
+              )
+              .map((item, index) => (
+                <tr key={index}>
+                  <td>{item.name} {(item.level || item.fortLevel) === userLevel && ("(Current Upgrade)")}</td>
+                  <td>{(currentPage === "economy" ? index : (item.level || item.fortLevel))}</td>
+                  <td>{item.cost}</td>
+                  <td>
+                    {((item.level || item.fortLevel) === userLevel + 1 || (currentPage == 'economy' && index === userLevel + 1)) && (
+                      <button type="button" className={"bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"} onClick={() => buyUpgrade(currentPage, index, forceUpdate)}>Buy</button>
+                    )}
+                    {(item.level || item.fortLevel) === userLevel + 2 && (
+                      <span>Unlock at level {userLevel + 1}</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+          </table>
         </>
     );
   };
@@ -135,10 +116,10 @@ const UpgradeTab = () => {
         {currentPage === 'intel' && (<h2>Clandestine Upgrades</h2>)}
       </div>
       <div className="mb-4 flex justify-center">
-        {currentPage === 'fortifications' && renderTable(Fortifications, user?.fortLevel)}
-        {currentPage === 'houses' && renderTable(HouseUpgrades, user?.houseLevel)}
+        {currentPage === 'fortifications' && <FortificationsTab userLevel={user?.level} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
+        {currentPage === 'houses' && <HousingTab userLevel={user?.houseLevel} forceUpdate={forceUpdate} /> }
 
-        {currentPage === 'economy' && renderTable(EconomyUpgrades, user?.economyLevel)}
+        {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} forceUpdate={forceUpdate}/>}
         {currentPage === 'siege' && renderTable(OffenseiveUpgrades, user?.siegeLevel)}
         {currentPage === 'intel' && renderTable(SpyUpgrades, user?.intelLevel)}
       </div>
