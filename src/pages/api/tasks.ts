@@ -22,16 +22,16 @@ export default async function handler(
   const isCloseToMidnight = currentTime.getHours() === 0 && currentTime.getMinutes() < 30;
 
 
-  try {
-    // Start your task logic here
 
-    // Example: Fetch all users
-    const allUsers = await prisma.users.findMany();
+  // Start your task logic here
 
-    const updatePromises = allUsers.map((user) => {
+  // Example: Fetch all users
+  const allUsers = await prisma.users.findMany();
+
+  const updatePromises = allUsers.map((user) => {
+    try {
       const newUser = new UserModel(user);
       const updatedGold = newUser.goldPerTurn + user.gold;
-
       // Find the CITIZEN unit
       let citizenUnit = newUser.units.find(unit => unit.type === 'CITIZEN');
 
@@ -49,7 +49,6 @@ export default async function handler(
       }
       let updateData = {
         gold: updatedGold,
-        recruit_link: md5(user.id.toString()),
         attack_turns: user.attack_turns + 1,
       };
 
@@ -59,13 +58,23 @@ export default async function handler(
           units: newUser.units,
         };
       }
+      if (!user.recruit_link) {
+        updateData = {
+          ...updateData,
+          recruit_link: md5(user.id.toString()),
+        }
+      }
 
       return prisma.users.update({
         where: { id: user.id },
         data: updateData,
       });
-    });
+    } catch (error) {
+      console.log(`Error updating user ${user.id}: ${error.message}`)
+    }
 
+  });
+  try {
     await Promise.all(updatePromises);
 
     // Finish your task logic
