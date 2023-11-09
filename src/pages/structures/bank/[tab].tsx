@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import React, { useEffect, useState } from 'react';
 
+import { alertService } from '@/services';
 import { useUser } from '@/context/users';
+import Alert from '@/components/alert';
 
 const Bank = () => {
   const router = useRouter();
@@ -13,6 +15,8 @@ const Bank = () => {
   const [bankHistory, setBankHistory] = useState([]);
   const currentPage = tab || 'deposit';
   const [citizenUnit, setCitizenUnit] = useState(0);
+  const [despositsAvailable, setDepositsAvailable] = useState(0);
+  const [depositsMax, setDepositsMax] = useState(0);
   useEffect(() => {
     if (currentPage === 'history') {
       fetch('/api/bank/history')
@@ -24,9 +28,12 @@ const Bank = () => {
 
 
   useEffect(() => {
-    if(user && user.units)
+    if(user && user.units){
       setCitizenUnit(user?.units.find((u) => u.type === 'WORKER').quantity);
+      setDepositsMax(user.maximumBankDeposits);
+    }
   }, [user]);
+
   const handleDeposit = async () => {
     try {
       const response = await fetch('/api/bank/deposit', {
@@ -44,9 +51,11 @@ const Bank = () => {
       } else {
         // Update the user context or fetch new data
         forceUpdate();
+        alertService.success("Successfully deposited gold");
       }
     } catch (error) {
       console.error('Error depositing:', error);
+      alertService.error('Failed to deposit gold. Please try again.');
     }
   };
   const handleWithdraw = async () => {
@@ -66,14 +75,19 @@ const Bank = () => {
       } else {
         // Update the user context or fetch new data
         forceUpdate();
+        alertService.success("Successfully withdrew gold");
       }
     } catch (error) {
-      console.error('Error depositing:', error);
+      console.error('Error withdrawing:', error);
+      alertService.error('Failed to withdraw gold. Please try again.');
     }
   };
   return (
     <div className="mainArea pb-10">
       <h2>Bank</h2>
+      <div className="my-5 flex justify-between">
+        <Alert />
+      </div>
       <div className="my-5 flex justify-around">
         <p className="mb-0">
           Gold On Hand: <span>{parseInt(user?.gold).toLocaleString()}</span>
@@ -81,6 +95,9 @@ const Bank = () => {
         <p className="mb-0">
           Banked Gold:{' '}
           <span>{parseInt(user?.goldInBank).toLocaleString()}</span>
+        </p>
+        <p className="mb-0">
+          Maximum Deposits Per Day: <span>{depositsMax}</span>
         </p>
       </div>
       <div className="mb-4 flex justify-center">
