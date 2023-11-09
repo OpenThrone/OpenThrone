@@ -36,13 +36,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (user.usedProficiencyPoints >= user.level) {
       return res.status(404).json({ error: 'Not enough proficiency points' });
     }
+
+    // Define the template for required bonus points
+    const requiredBonusPoints = [
+      { type: "OFFENSE", level: 0 },
+      { type: "DEFENSE", level: 0 },
+      { type: "INCOME", level: 0 },
+      { type: "INTEL", level: 0 },
+      { type: "PRICES", level: 0 },
+    ];
     
-    // Increment the level of the specified type
-    const updatedBonusPoints = user.bonus_points.map((level) => {
-      if (level.type === typeToUpdate) {
-        return { ...level, level: level.level + 1 };
+    // Initialize updatedBonusPoints with existing bonus points or an empty array if not set
+    let updatedBonusPoints = user.bonus_points || [];
+
+    // Ensure all required bonus point types are present, adding any that are missing
+    requiredBonusPoints.forEach((requiredBonus) => {
+      const existingBonus = updatedBonusPoints.find(bonus => bonus.type === requiredBonus.type);
+      if (!existingBonus) {
+        // If the required type is not found, add it with the default level
+        updatedBonusPoints.push(requiredBonus);
       }
-      return level;
+    });
+
+    // Increment the level of the specified type if present
+    updatedBonusPoints = updatedBonusPoints.map((bonus) => {
+      if (bonus.type === typeToUpdate) {
+        return { ...bonus, level: bonus.level + 1 };
+      }
+      return bonus;
     });
 
     // Update the user's bonus points in the database
