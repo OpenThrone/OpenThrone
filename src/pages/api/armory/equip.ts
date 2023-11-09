@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { WeaponTypes } from '@/constants';
 import prisma from '@/lib/prisma';
+import UserModel from '@/models/Users';
 
 export default async function handler(
   req: NextApiRequest,
@@ -23,7 +24,7 @@ export default async function handler(
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-
+    const uModel = new UserModel(user);
     let totalCost = 0;
 
     // Validate the items and calculate total cost
@@ -32,7 +33,7 @@ export default async function handler(
       if (!item || item.usage !== itemData.usage) {
         return res.status(400).json({ error: `Invalid item type, usage, or level` });
       }
-      totalCost += item.cost * itemData.quantity;
+      totalCost += (item.cost - (uModel?.priceBonus / 100 * item.cost)) * itemData.quantity;
     }
 
     // Check if the user has enough gold

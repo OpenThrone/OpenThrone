@@ -305,6 +305,21 @@ class UserModel {
   }
 
   /**
+   * Returns the total charisma bonus for the user based on their race and class
+   * @returns {number} The total price bonus.
+   */
+  get priceBonus() {
+    const price = Bonuses.filter(
+      (bonus) =>
+        (bonus.race === this.race || bonus.race === this.class) &&
+        bonus.bonusType === 'PRICES'
+    ).reduce(function (count, stat) {
+      return count + stat.bonusAmount;
+    }, 0);
+    return price + this.bonus_points.find((bonus) => bonus.type === 'PRICES')?.level || 0;
+  }
+
+  /**
    * Returns the total number of units in the army, excluding CITIZEN and WORKER units.
    * @returns {number} The total number of units in the army.
    */
@@ -724,8 +739,10 @@ class UserModel {
    * @returns {number}
    */
   get maximumBankDeposits(): number {
-    return 1;
+    const max = EconomyUpgrades[this.houseLevel]?.depositsPerDay || 0;
+    return max;
   }
+
 }
 
 export default UserModel;
