@@ -128,6 +128,9 @@ export const getServerSideProps = async (context: any) => {
     },
     skip: defenseSkip,
     take: ROWS_PER_PAGE,
+    orderBy: {
+      timestamp: 'desc',
+    },
   });
 
   return { props: { attackLogs, defenseLogs, attackPage, defensePage } };
