@@ -77,6 +77,10 @@ class UserModel {
 
   public attacks_defended: number;
 
+  public attacks_won: number;
+
+  public defends_won: number;
+
   public bonus_points: BonusPointsItem[];
 
   public economyLevel: number;
@@ -108,6 +112,8 @@ class UserModel {
     this.is_online = false;
     this.overallrank = 0;
     this.economyLevel = 0;
+    this.attacks_won = 0;
+    this.defends_won = 0;
     if (userData) {
       this.id = userData.id;
       this.displayName = userData.display_name;
@@ -138,17 +144,17 @@ class UserModel {
       this.attacks_made = userData.attacksMade;
       this.attacks_defended = userData.attacksDefended;
       this.bonus_points = userData.bonus_points;
+      this.attacks_won = userData.won_attacks;
+      this.defends_won = userData.won_defends;
     }
   }
 
   get attacksWon(): number {
-    console.log('attacks_made', this.attacks_made);
-    return 0;
+    return this.attacks_won;
   }
 
   get defendsWon(): number {
-    console.log('attacks_defended', this.attacks_defended);
-    return 0;
+    return this.defends_won;
   }
 
   /**
