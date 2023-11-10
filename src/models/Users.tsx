@@ -141,8 +141,8 @@ class UserModel {
       this.colorScheme = userData.colorScheme;
       this.is_player = false;
       this.overallrank = 0;
-      this.attacks_made = userData.attacksMade;
-      this.attacks_defended = userData.attacksDefended;
+      this.attacks_made = userData.totalAttacks;
+      this.attacks_defended = userData.totalDefends;
       this.bonus_points = userData.bonus_points;
       this.attacks_won = userData.won_attacks;
       this.defends_won = userData.won_defends;
@@ -368,7 +368,7 @@ class UserModel {
 
     const fortificationGoldPerTurn =
       Fortifications[this.fortLevel - 1]?.goldPerTurn;
-    return workerGoldPerTurn + fortificationGoldPerTurn;
+    return workerGoldPerTurn + fortificationGoldPerTurn + (this.incomeBonus / 100 * (workerGoldPerTurn + fortificationGoldPerTurn));
   }
 
   /**
