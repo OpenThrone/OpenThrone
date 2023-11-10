@@ -568,8 +568,8 @@ export async function attackHandler(
         turns: attack_turns,
         attacker_units: AttackPlayer.units,
         defender_units: DefensePlayer.units,
-        // attacker_losses: battleResults.Results.attacker_losses,
-        // defender_losses: battleResults.Results.defender_losses
+        attacker_losses: battleResults.Losses.Attacker,
+        defender_losses: battleResults.Losses.Defender
       },
     },
   });
