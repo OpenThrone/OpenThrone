@@ -29,7 +29,7 @@ export default async function handler(
 
     // Validate the items and calculate total cost
     for (const itemData of itemsToEquip) {
-      const item = WeaponTypes.find((w) => w.type === itemData.type && w.level === itemData.level);
+      const item = WeaponTypes.find((w) => w.type === itemData.type && w.level === itemData.level && w.usage === itemData.usage);
       if (!item || item.usage !== itemData.usage) {
         return res.status(400).json({ error: `Invalid item type, usage, or level` });
       }
