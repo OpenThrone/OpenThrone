@@ -40,10 +40,23 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       },
     });
 
+    const totalAttacks = await prisma.attack_log.count({
+      where: {
+        attacker_id: user.id,
+      },
+    });
+
+    const totalDefends = await prisma.attack_log.count({
+      where: {
+        defender_id: user.id,
+      },
+    });
+
     // Add the counts to the user object
     user.won_attacks = wonAttacks;
     user.won_defends = wonDefends;
-
+    user.totalAttacks = totalAttacks;
+    user.totalDefends = totalDefends;
     return res.status(200).json(user);
   } catch (error) {
     console.log(error);
