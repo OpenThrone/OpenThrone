@@ -23,6 +23,8 @@ export default async function handler(
       let updatedItems = [...user.items];
 
       for (const itemData of items) {
+        if (itemData.quantity < 0)
+          return res.status(400).json({ error: "Invalid quantity" });
         const itemType = WeaponTypes.find(
           (w) => w.type === itemData.type && w.usage === itemData.usage && w.level === itemData.level
         );

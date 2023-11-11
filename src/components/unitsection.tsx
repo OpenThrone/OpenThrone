@@ -214,6 +214,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
                     aria-labelledby={unit.id}
                     name={unit.id}
                     defaultValue="0"
+                    min="0"
                     className="w-full rounded-md bg-gray-600 p-2"
                   />
                 </td>

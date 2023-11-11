@@ -25,6 +25,9 @@ export default async function handler(
       // Calculate total cost and validate each unit type and level
       for (const unitData of units) {
         const unitType = UnitTypes.find(u => u.type === unitData.type && u.level === unitData.level);
+        if (unitData.quantity < 0) {
+          res.status(400).json({ error: 'Invalid quantity' });
+        }
         if (!unitType) {
           return res.status(400).json({ error: `Invalid unit type or level: ${unitData.type} Level ${unitData.level}` });
         }

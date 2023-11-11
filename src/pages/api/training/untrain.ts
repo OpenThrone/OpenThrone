@@ -22,6 +22,9 @@ export default async function handler(
       // Validate if the user has enough units to untrain
       for (const unitData of units) {
         const unit = UnitTypes.find((u) => u.type === unitData.type);
+        if (unitData.quantity < 0) {
+          res.status(400).json({ error: 'Invalid quantity' });
+        }
         if (!unit) {
           return res
             .status(400)
