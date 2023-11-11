@@ -754,7 +754,7 @@ class UserModel {
   }
 
   get armoryLevel(): number {
-    return this.structure_upgrades.find((struc)=> struc.type === 'ARMORY').level;
+    return this.structure_upgrades.find((struc)=> struc.type === 'ARMORY').level || 0;
   }
 
 }

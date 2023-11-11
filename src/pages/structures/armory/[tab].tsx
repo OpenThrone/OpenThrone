@@ -26,7 +26,7 @@ const ArmoryTab = () => {
   const [DefensiveBoots, setDefensiveBoots] = useState(null);
   const [totalDefenseCost, setTotalDefenseCost] = useState(0);
   const [totalOffenseCost, setTotalOffenseCost] = useState(0);
-  const [armoryLevel, setArmoryLevel] = useState(0);
+  const [armoryLevel, setArmoryLevel] = useState(user?.armoryLevel || 0);
   const [totalCost, setTotalCost] = useState({
     OFFENSE: {
       WEAPON: 0,
@@ -56,9 +56,6 @@ const ArmoryTab = () => {
     );
     return offenseCost + defenseCost;
   };
-  useEffect(() => {
-    setArmoryLevel(user?.armoryLevel);
-  }, [user]);
 
   useEffect(() => {
     // Calculate the total offense cost
@@ -104,8 +101,6 @@ const ArmoryTab = () => {
 
 
   const itemMapFunction = (item, idPrefix: string, itemType: string) => {
-    console.log('itemLevel: ', item.level)
-    console.log('armoryLevel: ', armoryLevel)
     return {
       id: `${itemType}_${idPrefix}_${item.level}`,
       name: item.name,
@@ -185,7 +180,9 @@ const ArmoryTab = () => {
           .map((unit) => itemMapFunction(unit, 'DEFENSE', 'BOOTS'))
       );
     }
-  }, [user]);
+
+    setArmoryLevel(user?.armoryLevel || 0);
+  }, [user, armoryLevel]);
 
   const handleEquip = (itemType: string) => {
     // Logic to equip items based on itemType
@@ -218,6 +215,9 @@ const ArmoryTab = () => {
         </p>
         <p className="mb-0">
           Banked Gold: <span>{user?.goldInBank}</span>
+        </p>
+        <p>
+          Armory Level: <span>{user?.armoryLevel}</span>
         </p>
       </div>
       <div className="mb-4 flex justify-center">
