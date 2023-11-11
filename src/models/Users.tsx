@@ -752,7 +752,7 @@ class UserModel {
    * @returns {number}
    */
   get maximumBankDeposits(): number {
-    const max = EconomyUpgrades[this.houseLevel]?.depositsPerDay || 0;
+    const max = EconomyUpgrades[this.economyLevel]?.depositsPerDay || 0;
     return max;
   }
 
