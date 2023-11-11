@@ -390,9 +390,7 @@ function simulateBattle(
       AmpFactor,
       OffUnitFactor
     );
-    console.log('Attacker Cas: ', AttCalcCas);
-    console.log('FortHP: ', fortHitpoints);
-    console.log('OffenseToDefenseRatio', offenseToDefenseRatio);
+
     // Attack fort first
     if (fortHitpoints > 0) {
       if (DefCalcCas) fortHitpoints -= DefCalcCas;
@@ -412,10 +410,7 @@ function simulateBattle(
     if (fortHitpoints < 0) {
       fortHitpoints = 0;
     }
-    if(fortHitpoints === 0){
-      fortHitpoints -= Math.floor(mtRand(0, 10));
-    }
-    console.log('FortHP: ', fortHitpoints);
+    
     // Distribute casualties among defense units if fort is destroyed
     result.Losses.Defender.total += distributeCasualties(defenseUnits, DefCalcCas);
     // If all defense units are depleted, attack the citizen units
