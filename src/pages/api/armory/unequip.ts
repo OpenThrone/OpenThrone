@@ -35,7 +35,9 @@ export default async function handler(
         const userItemIndex = updatedItems.findIndex(
           (i) => i.type === itemData.type && i.usage === itemData.usage && i.level === itemData.level
         );
-
+        
+        if (itemData.quantity <= 0)
+          continue;
         if (userItemIndex === -1 || updatedItems[userItemIndex].quantity < itemData.quantity) {
           return res
             .status(400)
@@ -66,7 +68,7 @@ export default async function handler(
         data: updatedItems,
       });
     } catch (error) {
-      return res.status(500).json({ error: "Failed to unequip items" });
+      return res.status(500).json({ error: "Failed to unequip items", message: error.message });
     }
   } else {
     return res.status(405).json({ error: "Method not allowed" });

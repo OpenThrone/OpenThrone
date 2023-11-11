@@ -19,6 +19,7 @@ import type {
 } from '@/types/typings';
 
 import {
+  ArmoryUpgrades,
   Bonuses,
   EconomyUpgrades,
   Fortifications,
@@ -85,6 +86,8 @@ class UserModel {
 
   public economyLevel: number;
 
+  public structure_upgrades: any[];
+
   constructor(userData: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
@@ -114,6 +117,7 @@ class UserModel {
     this.economyLevel = 0;
     this.attacks_won = 0;
     this.defends_won = 0;
+    this.structure_upgrades = [];
     if (userData) {
       this.id = userData.id;
       this.displayName = userData.display_name;
@@ -146,6 +150,7 @@ class UserModel {
       this.bonus_points = userData.bonus_points;
       this.attacks_won = userData.won_attacks;
       this.defends_won = userData.won_defends;
+      this.structure_upgrades = userData.structure_upgrades;
     }
   }
 
@@ -728,7 +733,6 @@ class UserModel {
       (fort) => fort.fortLevelRequirement <= this.fortLevel + 1
     );
   }
-
   
   /**
    * Returns an array of SentryUpgradeType objects that are available for the user to upgrade their sentry battle.
@@ -747,6 +751,10 @@ class UserModel {
   get maximumBankDeposits(): number {
     const max = EconomyUpgrades[this.houseLevel]?.depositsPerDay || 0;
     return max;
+  }
+
+  get armoryLevel(): number {
+    return this.structure_upgrades.find((struc)=> struc.type === 'ARMORY').level;
   }
 
 }

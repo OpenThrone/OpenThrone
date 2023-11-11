@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import Alert from '@/components/alert';
 import ItemSection from '@/components/itemsection'; // Assuming you have a similar component for items
-import { Fortifications } from '@/constants';
+import { ArmoryUpgrades, Fortifications } from '@/constants';
 // Importing the WeaponTypes constant
 import { useUser } from '@/context/users';
 import { useRouter } from 'next/router';
@@ -24,8 +24,88 @@ const ArmoryTab = () => {
   const [DefensiveShield, setDefensiveShield] = useState(null);
   const [offensiveBoots, setOffensiveBoots] = useState(null);
   const [DefensiveBoots, setDefensiveBoots] = useState(null);
+  const [totalDefenseCost, setTotalDefenseCost] = useState(0);
+  const [totalOffenseCost, setTotalOffenseCost] = useState(0);
+  const [armoryLevel, setArmoryLevel] = useState(0);
+  const [totalCost, setTotalCost] = useState({
+    OFFENSE: {
+      WEAPON: 0,
+      HELM: 0,
+      BRACERS: 0,
+      SHIELD: 0,
+      BOOTS: 0,
+    },
+    DEFENSE: {
+      WEAPON: 0,
+      HELM: 0,
+      BRACERS: 0,
+      SHIELD: 0,
+      BOOTS: 0,
+    },
+  });
+
+  const calculateTotalCost = () => {
+
+    const offenseCost = Object.values(totalCost.OFFENSE).reduce(
+      (acc, curr) => acc + curr,
+      0
+    );
+    const defenseCost = Object.values(totalCost.DEFENSE).reduce(
+      (acc, curr) => acc + curr,
+      0
+    );
+    return offenseCost + defenseCost;
+  };
+  useEffect(() => {
+    setArmoryLevel(user?.armoryLevel);
+  }, [user]);
+
+  useEffect(() => {
+    // Calculate the total offense cost
+    const offenseCost = Object.values(totalCost.OFFENSE).reduce(
+      (acc, curr) => acc + curr,
+      0
+    );
+
+    // Calculate the total defense cost
+    const defenseCost = Object.values(totalCost.DEFENSE).reduce(
+      (acc, curr) => acc + curr,
+      0
+    );
+
+    // Update the total offense and defense costs
+    setTotalOffenseCost(offenseCost);
+    setTotalDefenseCost(defenseCost);
+  }, [totalCost]);
+
+  const updateTotalCost = (section: string, item: string, cost: number) => {
+    setTotalCost((prevTotalCost) => {
+      // Create a copy of the previous total cost state
+      const newTotalCost = { ...prevTotalCost };
+
+      // Update the cost for the specified section and item
+      newTotalCost[section][item] = cost;
+
+      // Calculate the total cost for the section
+      const sectionTotalCost = Object.values(newTotalCost[section]).reduce(
+        (acc, curr) => acc + curr,
+        0
+      );
+
+      // Update the total cost for the section
+      newTotalCost[section] = {
+        ...newTotalCost[section],
+        [item]: cost,
+      };
+
+      return newTotalCost;
+    });
+  };
+
 
   const itemMapFunction = (item, idPrefix: string, itemType: string) => {
+    console.log('itemLevel: ', item.level)
+    console.log('armoryLevel: ', armoryLevel)
     return {
       id: `${itemType}_${idPrefix}_${item.level}`,
       name: item.name,
@@ -38,10 +118,10 @@ const ArmoryTab = () => {
             i.usage === item.usage
         )?.quantity || 0,
       cost: new Intl.NumberFormat('en-GB').format(item.cost - (user?.priceBonus/100 * item.cost)),
-      enabled: item.level <= user?.fortLevel,
+      enabled: item.level <= armoryLevel,
       level: item.level,
       usage: item.usage,
-      fortName: Fortifications.find((f) => f.fortLevel === item.fortLevel)
+      fortName: ArmoryUpgrades.find((f) => f.level === item.level)
         ?.name,
     };
   };
@@ -115,6 +195,14 @@ const ArmoryTab = () => {
     // Logic to unequip items based on itemType
   };
 
+  const handleEquipAll = () => {
+    // Logic to equip all items
+  };
+
+  const handleUnequipAll = () => {
+    // Logic to unequip all items
+  };
+
   return (
     <div className="mainArea pb-10">
       <h2 className="text-2xl font-bold">Armory</h2>
@@ -145,72 +233,127 @@ const ArmoryTab = () => {
       </div>
       {currentPage === 'offense' && (
         <>
+          <div className="mt-4">
+            <p>Total Cost: {new Intl.NumberFormat('en-GB').format(totalOffenseCost)}</p>
+          </div>
           <ItemSection
             heading="Offensive Weapons"
             items={offensiveWeapons}
             onEquip={() => handleEquip('OFFENSE')}
             onUnequip={() => handleUnequip('OFFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'WEAPON', cost)}
           />
           <ItemSection
             heading="Offensive Helm"
             items={offensiveHelm}
             onEquip={() => handleEquip('OFFENSE')}
             onUnequip={() => handleUnequip('OFFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'HELM', cost)}
           />
           <ItemSection
             heading="Offensive Bracers"
             items={offensiveBracers}
             onEquip={() => handleEquip('OFFENSE')}
             onUnequip={() => handleUnequip('OFFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'BRACERS', cost)}
           />
           <ItemSection
             heading="Offensive Shield"
             items={offensiveShield}
             onEquip={() => handleEquip('OFFENSE')}
             onUnequip={() => handleUnequip('OFFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'SHIELD', cost)}
           />
           <ItemSection
             heading="Offensive Boots"
             items={offensiveBoots}
             onEquip={() => handleEquip('OFFENSE')}
             onUnequip={() => handleUnequip('OFFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'BOOTS',cost)}
           />
+          <div className="mt-4">
+        <p>Total Cost: {new Intl.NumberFormat('en-GB').format(totalOffenseCost)}</p>
+      </div>
+      <div className="mt-4 flex justify-between">
+        <button
+          type="button"
+          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+          onClick={handleEquipAll}
+        >
+          Train All
+        </button>
+        <button
+          type="button"
+          className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+          onClick={handleUnequipAll}
+        >
+          Untrain All
+        </button>
+      </div>
         </>
       )}
       {currentPage === 'defense' && (
         <>
+          <div className="mt-4">
+            <p>Total Cost: {new Intl.NumberFormat('en-GB').format(totalDefenseCost)}</p>
+          </div>
           <ItemSection
             heading="Defensive Weapons"
             items={defensiveWeapons}
             onEquip={() => handleEquip('DEFENSE')}
             onUnequip={() => handleUnequip('DEFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('DEFENSE', 'WEAPON', cost)}
           />
           <ItemSection
             heading="Defensive Helm"
             items={DefensiveHelm}
             onEquip={() => handleEquip('DEFENSE')}
             onUnequip={() => handleUnequip('DEFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('DEFENSE', 'HELM', cost)}
           />
           <ItemSection
             heading="Defensive Bracers"
             items={DefensiveBracers}
             onEquip={() => handleEquip('DEFENSE')}
             onUnequip={() => handleUnequip('DEFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('DEFENSE', 'BRACERS', cost)}
           />
           <ItemSection
             heading="Defensive Shield"
             items={DefensiveShield}
             onEquip={() => handleEquip('DEFENSE')}
             onUnequip={() => handleUnequip('DEFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('DEFENSE','SHIELD', cost)}
           />
           <ItemSection
             heading="Defensive Boots"
             items={DefensiveBoots}
             onEquip={() => handleEquip('DEFENSE')}
             onUnequip={() => handleUnequip('DEFENSE')}
+            updateTotalCost={(cost) => updateTotalCost('DEFENSE', 'BOOTS', cost)}
           />
+          <div className="mt-4">
+            <p>Total Cost: {new Intl.NumberFormat('en-GB').format(totalDefenseCost)}</p>
+          </div>
+          <div className="mt-4 flex justify-between">
+            <button
+              type="button"
+              className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+              onClick={handleEquipAll}
+            >
+              Train All
+            </button>
+            <button
+              type="button"
+              className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+              onClick={handleUnequipAll}
+            >
+              Untrain All
+            </button>
+          </div>
         </>
       )}
+      
     </div>
   );
 };
