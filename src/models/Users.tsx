@@ -88,6 +88,8 @@ class UserModel {
 
   public structure_upgrades: any[];
 
+  public beenAttacked: boolean;
+
   constructor(userData: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
@@ -117,6 +119,7 @@ class UserModel {
     this.economyLevel = 0;
     this.attacks_won = 0;
     this.defends_won = 0;
+    this.beenAttacked = false;
     this.structure_upgrades = [];
     if (userData) {
       this.id = userData.id;

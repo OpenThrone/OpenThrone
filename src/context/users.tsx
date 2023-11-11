@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import UserModel from '@/models/Users';
+import { alertService } from '@/services';
 
 // Updated UserContext with forceUpdate function
 const UserContext = createContext({
@@ -38,6 +39,9 @@ export const UserProvider = ({ children }) => {
       if (!response.ok) throw { message: 'Failed to fetch user data', status: response.status };
       const userData = await response.json();
       setUser(new UserModel(userData));
+      if (userData?.beenAttacked) {
+        alertService.error('You have been attacked since you were last active!');
+      }
     } catch (error) {
       console.error('Error fetching user data:', error);
       // Consider setting an error state here as well

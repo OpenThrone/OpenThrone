@@ -1,3 +1,4 @@
+import Alert from '@/components/alert';
 import { useUser } from '@/context/users';
 
 const Overview = () => {
@@ -18,6 +19,9 @@ const Overview = () => {
           <span className="text-white">{user?.displayName}</span> is a{' '}
           {user?.race} {user?.class}
         </p>
+        <div className="my-5 flex justify-between">
+          <Alert />
+        </div>
         <p className="text-center">
           Share this link to gain up to 25 citizens per day:{' '}
           <a
