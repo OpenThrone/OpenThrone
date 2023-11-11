@@ -21,9 +21,10 @@ type UnitProps = {
 type UnitSectionProps = {
   heading: string;
   items: UnitProps[];
+  updateTotalCost: (costChange: number) => void; // New prop
 };
 
-const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
+const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCost }) => {
   const { user, forceUpdate } = useUser();
   const [getItems, setItems] = useState(items || []);
 
@@ -32,6 +33,34 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
       setItems(items);
     }
   }, [items]);
+
+  const computeTotalCostForSection = () => {
+    let sectionCost = 0;
+    items.forEach((unit) => {
+      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+      sectionCost +=
+        parseInt(inputElement?.value || '0', 10) *
+        parseInt(unit.cost.replace(/,/g, ''), 10);
+    });
+    updateTotalCost(sectionCost); // Send the total cost for this section
+  };
+  useEffect(() => {
+    if (items) {
+      items.forEach((unit) => {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+        inputElement?.addEventListener('input', computeTotalCostForSection);
+      });
+    }
+
+    return () => {
+      if (items) {
+        items.forEach((unit) => {
+          const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+          inputElement?.removeEventListener('input', computeTotalCostForSection);
+        });
+      }
+    };
+  }, [items, updateTotalCost]);
 
   const handleEquip = async () => {
     const itemsToEquip = getItems
@@ -131,6 +160,8 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
       alertService.error('Failed to unequip items. Please try again.');
     }
   };
+
+
   return (
     <div className="my-10 rounded-lg bg-gray-800">
       <table className="w-full table-auto">
@@ -161,6 +192,8 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
                     aria-labelledby={unit.id}
                     name={unit.id}
                     defaultValue="0"
+                    min={0}
+                    onChange={computeTotalCostForSection}
                     className="w-full rounded-md bg-gray-600 p-2"
                   />
                 </td>
