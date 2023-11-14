@@ -253,71 +253,72 @@ export const Fortifications: Fortification[] = [
   },
 ];
 
-export const EconomyUpgrades = {
-  0: {
+export const EconomyUpgrades = [
+  {
     name: "Farm",
     fortLevel: 1,
     goldPerWorker: 50,
     depositsPerDay: 3,
     goldTransferRec: 0,
     goldTransferTx: 0,
-    cost: 0
-  },
-  1: {
+    cost: 0,
+    index:0
+  },{
     name: "Produce Market",
     fortLevel: 3,
     goldPerWorker: 55,
     depositsPerDay: 4,
     goldTransferRec: 0,
     goldTransferTx: 0,
-    cost: 500000
-  },
-  2: {
+    cost: 500000,
+    index: 1
+  },{
     name: "Livestock Market",
     fortLevel: 7,
     goldPerWorker: 60,
     depositsPerDay: 5,
     goldTransferRec: 0,
     goldTransferTx: 0,
-    cost: 2000000
-  },
-  3: {
+    cost: 2000000,
+    index: 2
+  },{
     name: "Coal Mine",
     fortLevel: 11, //Fortress Level 2
     goldPerWorker: 65,
     depositsPerDay: 6,
     goldTransferRec: 50000,
     goldTransferTx: 150000,
-    cost: 5000000
-  },
-  4: {
+    cost: 5000000,
+    index: 3
+  },{
     name: "Tavern",
     fortLevel: 15, //Citadel Level 3
     goldPerWorker: 70,
     depositsPerDay: 7,
     goldTransferRec: 100000,
     goldTransferTx: 300000,
-    cost: 15000000
-  },
-  5: {
+    cost: 15000000,
+    index: 4
+  },{
     name: "Copper Mine",
     fortLevel: 19, //Kingdom
     goldPerWorker: 75,
     depositsPerDay: 8,
     goldTransferRec: 250000,
     goldTransferTx: 600000,
-    cost: 37500000
-  },
-  6: {
+    cost: 37500000,
+    index: 5
+  },{
     name: "Meat Market",
     fortLevel: 23, //Empire Level 2
     goldPerWorker: 80,
     depositsPerDay: 9,
     goldTransferRec: 500000,
     goldTransferTx: 1250000,
-    cost: 100000000
+    cost: 100000000,
+    index: 6
   }
-}
+]
 
 export const BattleUpgrades: UnitUpgradeType[] = [
   {
@@ -327,7 +328,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     level: 1,
     bonus: 200,
     cost: 100000,
-    unitsCovered: 1,
+    unitsCovered: 1
   },
   {
     type: 'OFFENSE',
@@ -865,42 +866,49 @@ export const HouseUpgrades = {
     fortLevel: 0,
     citizensDaily: 1,
     cost: 0,
+    index: 0
   },
   1: {
     name: 'Housing Level 1',
     fortLevel: 1,
     citizensDaily: 10,
     cost: 500000,
+    index: 1
   },
   2: {
     name: 'Housing Level 2',
     fortLevel: 6, // Outpost Level 3
     citizensDaily: 20,
     cost: 1000000,
+    index:2
   },
   3: {
     name: 'Housing Level 3',
     fortLevel: 10, // Fortress
     citizensDaily: 30,
     cost: 1500000,
+    index:3
   },
   4: {
     name: 'Housing Level 4',
     fortLevel: 14, // Citadel Level 2
     citizensDaily: 40,
     cost: 2500000,
+    index:4
   },
   5: {
     name: 'Housing Level 5',
     fortLevel: 18, // Castle Level 3
     citizensDaily: 50,
     cost: 3500000,
+    index:5
   },
   6: {
     name: 'Housing Level 6',
     fortLevel: 22, // Empire
     citizensDaily: 60,
     cost: 5000000,
+    index:6
   },
 };
 

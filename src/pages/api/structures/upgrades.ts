@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 
 import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
-import { Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
+import { EconomyUpgrades, Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
 
 const prisma = new PrismaClient();
 
@@ -53,9 +53,23 @@ export default async(req, res) => {
         });
         // Logic for buying house upgrades
         break;
-      // Add other cases for 'siege' and 'intel'
+      case 'economy':
+        if (userMod.fortLevel < EconomyUpgrades[index].fortLevel) {
+          return res.status(400).json({ error: 'Invalid Fortification Level to purchase upgrade' });
+        }
+        if (userMod.gold < EconomyUpgrades[index].cost) {
+          return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
+        }
+        await prisma.users.update({
+          where: { id: session.user.id },
+          data: {
+            gold: userMod.gold - EconomyUpgrades[index].cost,
+            economy_level: index + 1,
+          },
+        });
+        break;
       default:
-        return res.status(400).json({ message: 'Invalid upgrade type' });
+        return res.status(400).json({ message: 'Not Implemented' });
     }
 
     // After processing, send a success response

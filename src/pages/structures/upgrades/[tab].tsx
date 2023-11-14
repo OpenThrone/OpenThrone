@@ -115,11 +115,11 @@ const UpgradeTab = () => {
         {currentPage === 'siege' && (<h2>Siege Upgrades</h2>)}
         {currentPage === 'intel' && (<h2>Clandestine Upgrades</h2>)}
       </div>
-      <div className="mb-4 flex justify-center">
+      <div className="mb-4 flex justify-center my-10 rounded-lg bg-gray-800">
         {currentPage === 'fortifications' && <FortificationsTab userLevel={user?.level} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
-        {currentPage === 'houses' && <HousingTab userLevel={user?.houseLevel} forceUpdate={forceUpdate} /> }
+        {currentPage === 'houses' && <HousingTab userLevel={user?.houseLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} /> }
 
-        {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} forceUpdate={forceUpdate}/>}
+        {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
         {currentPage === 'siege' && renderTable(OffenseiveUpgrades, user?.siegeLevel)}
         {currentPage === 'intel' && renderTable(SpyUpgrades, user?.intelLevel)}
       </div>

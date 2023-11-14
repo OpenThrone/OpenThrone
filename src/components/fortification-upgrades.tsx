@@ -23,17 +23,17 @@ const FortificationsTab = ({ userLevel, fortLevel, forceUpdate }) => {
           )
           .map((item, index) => (
             <tr key={index}>
-              <td>{item.name} {(item.level === fortLevel) && ("(Current Upgrade)")}</td>
-              <td>{item.levelRequirement}</td>
-              <td>Gold Per Turn: {item.goldPerTurn}<br />Defense Bonus: {item.defenseBonusPercentage}%</td>
-              <td>{item.cost} Gold</td>
-              <td>
+              <td className="border px-4 py-2">{item.name} {(item.level === fortLevel) && ("(Current Upgrade)")}</td>
+              <td className="border px-4 py-2">{item.levelRequirement}</td>
+              <td className="border px-4 py-2">Gold Per Turn: {item.goldPerTurn}<br />Defense Bonus: {item.defenseBonusPercentage}%</td>
+              <td className="border px-4 py-2">{item.cost} Gold</td>
+              <td className="border px-4 py-2">
                 {item.level === fortLevel + 1 && item.levelRequirement <= userLevel ? (
                   <button
                     type="button"
                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                     disabled={userLevel < item.levelRequirement}
-                    onClick={() => buyUpgrade(currentPage, index, forceUpdate)}
+                    onClick={() => buyUpgrade('fortifications', index, forceUpdate)}
                   >
                     Buy
                   </button>
