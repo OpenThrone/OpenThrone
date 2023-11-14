@@ -14,6 +14,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       recruit_link: true,
       id: true, // Select id as well, as it is needed for further filtering
     },
+    where: {
+      not: [
+        {
+          id: {
+            in:[0]
+          }
+        }
+      ]
+    }
   });
 
   if (!users.length) {
@@ -32,6 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
+
     if (totalRecruitments >= 300) continue; // Skip user if recruited more than 25 times
     
     // Check if the user has been recruited by the same recruiter more than 5 times
@@ -45,8 +55,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    if (sameRecruiterRecruitments < 1) validUsers.push(user); // Add user to validUsers if recruited less than 5 times by the same recruiter
+    if (sameRecruiterRecruitments < 5) validUsers.push(user); // Add user to validUsers if recruited less than 5 times by the same recruiter
   }
+
 
   if (!validUsers.length) {
     return res.status(404).json({ error: 'No valid users available for recruitment.' });

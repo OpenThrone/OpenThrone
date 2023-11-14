@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 
 import { authOptions } from '../auth/[...nextauth]';
+import UserModel from '@/models/Users';
 
 function increaseCitizens(units) {
   // Find the CITIZEN object
@@ -129,7 +130,15 @@ export default async function handler(
     const selfRecruit = req.body.self_recruit === '1' || req.body.self_recruit === true;
 
     if (newRecord) {
-      let userToUpdate = selfRecruit ? session.user : recruitedUser;
+      let userToUpdate = recruitedUser;
+      if (selfRecruit) {
+        userToUpdate = new UserModel(await prisma.users.findUnique({
+          where: {
+            id: Number(session?.user.id),
+          },
+        })); 
+      }
+      
       // First increase the number of citizens for the appropriate user
       const updatedUnits = increaseCitizens(userToUpdate.units);
       // Now update in the database
@@ -142,9 +151,10 @@ export default async function handler(
           },
         },
       });
+      return res.status(200).json({ success: true });
+    } else {
+      return res.status(400).json({ error: 'Failed to update user.' });
     }
-
-    return res.status(200).json({ success: true });
   }
 
   res.status(405).json({ error: 'Method not allowed' }); // Send a proper response
