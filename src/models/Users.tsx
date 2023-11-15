@@ -676,6 +676,19 @@ class UserModel {
     };
   }
 
+  /**
+   * Increases the level of a given stat by 1. Returns the entire object.
+   * @param {string} type - The type of stat to increase.
+   */
+  increaseStatLevel(type: string) {
+    return this.structure_upgrades.map(stat => {
+      if (stat.type === type) {
+        return { ...stat, level: stat.level + 1 };
+      }
+      return stat;
+    });
+  }
+
   // https://www.sitepoint.com/build-javascript-countdown-timer-no-dependencies/
   /**
    * Calculates the time remaining between the current time and a given end time.

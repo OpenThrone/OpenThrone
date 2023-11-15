@@ -1,3 +1,5 @@
+import { alertService } from "@/services";
+
 // utils/buyStructureUpgrade.js
 const buyUpgrade = async (currentPage, index, forceUpdate) => {
   const response = await fetch('/api/structures/upgrades', {
@@ -15,9 +17,11 @@ const buyUpgrade = async (currentPage, index, forceUpdate) => {
   if (response.ok) {
     // Handle successful purchase
     forceUpdate();
+    alertService.success(data.message);
   } else {
     // Handle errors
-    console.error(data.message);
+    console.error(data?.error || data?.message);
+    alertService.error(data?.error || data?.message);
   }
 };
 

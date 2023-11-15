@@ -68,6 +68,29 @@ export default async(req, res) => {
           },
         });
         break;
+      case 'offense':
+        if (userMod.offensiveLevel < OffenseiveUpgrades[index].fortLevel) {
+          return res.status(400).json({ error: 'Invalid Offensive Upgrade Level to purchase upgrade' });
+        }
+        if (userMod.gold < OffenseiveUpgrades[index].cost) {
+          return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
+        }
+        const structure_upgrades = (type: string) => {
+          return userMod.structure_upgrades.map(stat => {
+            if (stat.type === type) {
+              return { ...stat, level: stat.level + 1 };
+            }
+            return stat;
+          });
+    }
+        await prisma.users.update({
+          where: { id: session.user.id },
+          data: {
+            gold: userMod.gold - OffenseiveUpgrades[index].cost,
+            structure_upgrades: structure_upgrades('OFFENSE'),
+          },
+        });
+        break;
       default:
         return res.status(400).json({ message: 'Not Implemented' });
     }

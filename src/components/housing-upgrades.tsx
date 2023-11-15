@@ -1,6 +1,6 @@
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { useUser } from '@/context/users';
-import { EconomyUpgrades, HouseUpgrades } from '@/constants';
+import { EconomyUpgrades, Fortifications, HouseUpgrades } from '@/constants';
 
 const HousingTab = ({ userLevel, fortLevel, forceUpdate }) => {
   return (
@@ -42,13 +42,13 @@ const HousingTab = ({ userLevel, fortLevel, forceUpdate }) => {
                     {fortLevel <= item.fortLevel && (
                       <>
                         <div>Unlocked with:</div>
-                        <div>- Fortification Name, Level {item.fortLevel}</div>
+                        <div>- {Fortifications[item.fortLevel].name}</div>
                       </>
                     )}
                     {userLevel >= item.index && (
                       <>
                         <div>Unlocked with:</div>
-                        <div>- Housing Name, Level {item.index}</div>
+                        <div>- {HouseUpgrades[item.index].name}, Level {item.index}</div>
                       </>
                     )}
                   </>

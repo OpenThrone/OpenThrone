@@ -53,7 +53,7 @@ const OffenseUpgrade = ({ userLevel, fortLevel, forceUpdate }) => {
                       type="button"
                       className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                       disabled={userLevel < item.fortLevelRequirement}
-                      onClick={() => buyUpgrade('fortifications', index, forceUpdate)}
+                      onClick={() => buyUpgrade('offense', index, forceUpdate)}
                     >
                       Buy
                     </button>
