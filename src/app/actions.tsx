@@ -440,6 +440,120 @@ function simulateBattle(
   return result;
 }
 
+function simulateSpy(
+  attacker: UserModel,
+  defender: UserModel,
+  spies: number
+): any {
+  const result = new BattleResult(attacker, defender);
+  // Ensure attack_turns is within [1, 10]
+  spies = Math.max(1, Math.min(spies, 10));
+
+  const fortification = Fortifications[defender.fortLevel];
+  let { fortHitpoints } = defender;
+
+  for (let turn = 1; turn <= spies; turn++) {
+    // Calculate defense boost from fortifications
+    const fortDefenseBoost =
+      (fortHitpoints / fortification?.hitpoints) *
+      fortification?.defenseBonusPercentage;
+
+    const attackerKS = getKillingStrength(attacker, true);
+    const defenderstrength = getDefenseStrength(defender, true);
+    const defenderDS =
+      defenderstrength * (1 + fortDefenseBoost / 100);
+
+    const defenderKS = getKillingStrength(defender, false);
+    const attackerDS = getDefenseStrength(attacker, false);
+
+    console.log('attackerKS: ', attackerKS);
+    console.log('defenderDS: ', defenderDS);
+    const offenseToDefenseRatio =
+      defenderDS === 0 ? 1 : attackerKS / defenderDS;
+    const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
+
+    const TargetPop = Math.max(
+      defender.unitTotals.defense,// + defender.unitTotals.citizens,
+      1
+    );
+    const CharPop = attacker.unitTotals.offense;
+    const AmpFactor = computeAmpFactor(TargetPop);
+
+    const offenseUnits = filterUnitsByType(attacker.units, 'OFFENSE');
+    const defenseUnits = filterUnitsByType(defender.units, 'DEFENSE');
+    const citizenUnits = filterUnitsByType(defender.units, 'CITIZEN');
+
+    const OffUnitFactor = computeUnitFactor(
+      defender.unitTotals.defense,
+      attacker.unitTotals.offense
+    );
+    const DefUnitFactor =
+      attacker.unitTotals.offense === 0 ? 0 : 1 / OffUnitFactor;
+
+    const DefCalcCas = computeCasualties(
+      offenseToDefenseRatio,
+      TargetPop,
+      AmpFactor,
+      DefUnitFactor,
+      defender.fortHitpoints,
+      defenderDS,
+      true
+    );
+
+    const AttCalcCas = computeCasualties(
+      counterAttackRatio,
+      CharPop,
+      AmpFactor,
+      OffUnitFactor);
+  }
+}
+    
+
+export async function spyHandler(attackerId, defenderId, spies: number) { 
+  const attacker: UserModel = await prisma?.users.findUnique({
+    where: { id: attackerId },
+  });
+  const defender: UserModel = await prisma?.users.findUnique({
+    where: { id: defenderId },
+  });
+  if (!attacker || !defender) {
+    return { status: 'failed', message: 'User not found' };
+  }
+  if (attacker.unitTotals.spies < spies) {
+    return { status: 'failed', message: 'Insufficient spies' };
+  }
+
+  const AttackPlayer = new UserModel(attacker);
+  const DefensePlayer = new UserModel(defender);
+
+  const spyResults = simulateSpy(AttackPlayer, DefensePlayer, spies);
+
+  //AttackPlayer.spies -= spies;
+  AttackPlayer.experience += spyResults.experienceResult.Experience.Attacker;
+  AttackPlayer.gold += spyResults.goldStolen;
+  AttackPlayer.units = spyResults.units;
+
+  /*await prisma.users.update({
+    where: { id: attackerId },
+    data: {
+      gold: AttackPlayer.gold,
+      experience: AttackPlayer.experience,
+      units: AttackPlayer.units,
+    },
+  });*/
+
+  return {
+    status: 'success',
+    result: spyResults,
+    attacker: AttackPlayer,
+    defender: DefensePlayer,
+    extra_variables: {
+      spies,
+      spyResults,
+    },
+  };
+}
+
 export async function attackHandler(
   attackerId,
   defenderId,

@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 
 import Alert from '@/components/alert';
 import Modal from '@/components/modal';
+import SpyMissionsModal from '@/components/spyMissionsModal';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -20,10 +21,20 @@ const Index = ({ users }) => {
   const router = useRouter();
   const [profile, setUser] = useState<UserModel>(() => new UserModel(users));
   const [canAttack, setCanAttack] = useState(false);
+  const [canSpy, setCanSpy] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const toggleModal = () => {
     setIsOpen(!isOpen);
+  };
+  const [composeModalOpen, setComposeModalOpen] = useState(false);
+
+  // State to control the Spy Missions Modal
+  const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
+
+  // Function to toggle the Spy Missions Modal
+  const toggleSpyModal = () => {
+    setIsSpyModalOpen(!isSpyModalOpen);
   };
 
   const handleSubmit = async (turns) => {
@@ -50,6 +61,9 @@ const Index = ({ users }) => {
     if (profile.id !== users.id) setUser(new UserModel(users));
     if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
+    if (!isPlayer && user && (user.id === 1 || user.id === 2)) setCanSpy(true);
+    if (!isPlayer && user)
+      console.log((user.id === 1 || user.id === 2));
     if (profile) {
       const nowdate = new Date();
 
@@ -111,7 +125,7 @@ const Index = ({ users }) => {
             <div className="list-group mb-4">
               <Link
                   href={`/inbox/compose/new/user/${profile?.id}`}
-                  className={`list-group-item list-group-item-action ${profile?.id === 1 || profile?.id === 2 ? '' : 'disabled'}`}
+                  className={`list-group-item list-group-item-action ${user?.id === 1 || user?.id === 2 ? '' : 'disabled'}`}
               >
                 Message this Player
               </Link>
@@ -130,12 +144,17 @@ const Index = ({ users }) => {
                 onSubmit={handleSubmit}
               />
 
-              <Link
-                href="#"
-                className="list-group-item list-group-item-action disabled"
+                <button
+                  type='button'
+                  onClick={toggleSpyModal}
+                  className={`list-group-item list-group-item-action w-full text-left ${user?.id === 1 || user?.id === 2 ? '' : 'disabled'}}`}
               >
                 Spy Missions
-              </Link>
+                </button>
+                <SpyMissionsModal
+                  isOpen={isSpyModalOpen}
+                  toggleModal={toggleSpyModal}
+                />
               {/* <a href="#" className="list-group-item list-group-item-action disabled">Transfer Gold</a> */}
               <Link
                 href={`/recruit/${profile?.recruitingLink}`}
