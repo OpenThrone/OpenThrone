@@ -113,7 +113,7 @@ const ArmoryTab = () => {
             i.usage === item.usage
         )?.quantity || 0,
       cost: new Intl.NumberFormat('en-GB').format(item.cost - (user?.priceBonus/100 * item.cost)),
-      enabled: item.level <= armoryLevel,
+      enabled: item.armoryLevel <= armoryLevel,
       level: item.level,
       usage: item.usage,
       fortName: ArmoryUpgrades.find((f) => f.level === item.level)

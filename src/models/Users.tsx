@@ -442,6 +442,21 @@ class UserModel {
     return workerGoldPerTurn;
   }
 
+  getLevelForUnit(type: UnitType) {
+    switch (type) {
+      case 'OFFENSE':
+        return this.offensiveLevel;
+      case 'DEFENSE':
+        return this.fortLevel;
+      case 'SENTRY':
+        return this.fortLevel;
+      case 'SPY':
+        return this.fortLevel;
+      default:
+        return 0;
+    }
+  }
+
   /**
    * Calculates the total army stat for a given unit type, taking into account the units and weapons owned by the user.
    * @param type - The type of unit to calculate the army stat for.
@@ -449,37 +464,54 @@ class UserModel {
    */
   getArmyStat(type: UnitType) {
     const Units = this.units?.filter((unit) => unit.type === type) || [];
-
+    if (type === 'OFFENSE')
+      console.log('LevelForUnit: ', this.getLevelForUnit(type));
     let totalStat = 0;
-
     Units.forEach((unit) => {
       // Get the unit's bonus
-      const unitBonus =
+      const unitFiltered =
         UnitTypes.find(
           (unitType) =>
-            unitType.type === unit.type && unitType.level === unit.level
-        )?.bonus || 0;
+            unitType.type === unit.type && unitType.level === unit.level && unitType.fortLevel <= this.getLevelForUnit(type)
+        );
+      if (unitFiltered === undefined)
+        return 0;
+      
+      if(type === 'OFFENSE')
+      console.log('units: ', unitFiltered);
 
       // Add the unit's bonus to the total
-      totalStat += unitBonus * unit.quantity;
+      totalStat += ((unitFiltered?.bonus || 0) * unit.quantity);
 
+      if (type === 'OFFENSE') {
+        console.log('Stat: ', totalStat);
+        console.log('Qty: ', unit.quantity);
+        console.log('Bonus: ', unitFiltered?.bonus);
+      }
       // Filter out the weapons that match the unit type and level based on their usage
       const matchingWeapons =
         this.items?.filter(
-          (weapon) => weapon.usage === unit.type && weapon.level === unit.level
+          (weapon) => weapon.usage === unit.type && (weapon.level) === unit.level
         ) || [];
-
       // Calculate the total bonus from weapons, but only up to the number of units
+
       matchingWeapons.forEach((weapon) => {
+
+        if (type === 'OFFENSE') {
+          console.log('weapon: ', weapon)
+          console.log('unitType: ', unit.type)
+        }
         const weaponBonus =
           WeaponTypes.find(
-            (w) => w.level === weapon.level && w.usage === unit.type
+            (w) => w.level === weapon.level && w.usage === unit.type && w.type === weapon.type
           )?.bonus || 0;
 
         // Use the minimum of weapon quantity and unit quantity for the bonus calculation
         totalStat += weaponBonus * Math.min(weapon.quantity, unit.quantity);
+
       });
     });
+
 
     // Apply the appropriate bonus based on the type
     switch (type) {
@@ -677,16 +709,15 @@ class UserModel {
     return nextTurn;
   }
 
-  /**
-   * Limited to level one units only for now, until the upgrade system is
-   * implemented.
-   */
+  
   /**
    * Returns an array of available unit types based on the user's fort level.
    * @returns {Unit[]} An array of available unit types.
    */
   get availableUnitTypes(): Unit[] {
-    return UnitTypes.filter((unitType) => unitType.level <= this.fortLevel + 1);
+    return UnitTypes.filter((unitType) => (unitType.type === 'OFFENSE' ? unitType.fortLevel <= this.offensiveLevel + 8 :
+     unitType.type === 'DEFENSE' ? unitType.fortLevel <= this.fortLevel + 8 :
+      unitType.level <= this.fortLevel + 1));
   }
 
   /**
@@ -758,6 +789,10 @@ class UserModel {
 
   get armoryLevel(): number {
     return this.structure_upgrades.find((struc)=> struc.type === 'ARMORY').level || 0;
+  }
+
+  get offensiveLevel(): number {
+    return this.structure_upgrades.find((struc)=> struc.type === 'OFFENSE').level || 0;
   }
 
 }

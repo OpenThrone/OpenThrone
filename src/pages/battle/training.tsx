@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 import Alert from '@/components/alert';
 import UnitSection from '@/components/unitsection';
-import { EconomyUpgrades, Fortifications } from '@/constants';
+import { EconomyUpgrades, Fortifications, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 
@@ -31,6 +31,19 @@ const Training = () => {
       return updatedCosts;
     });
   };
+
+  const isEnabled = (unit, type) => {
+    switch (type) {
+      case 'WORKER':
+        return unit.fortLevel <= user?.fortLevel;
+      case 'OFFENSE':
+        return unit.fortLevel <= user?.offensiveLevel;
+      case 'DEFENSE':
+        return unit.fortLevel <= user?.fortLevel;
+      default:
+        return false;
+    }
+  }
   const unitMapFunction = (unit, idPrefix: string) => {
     const bonus = unit.name === 'Worker' ? EconomyUpgrades[user?.economyLevel]?.goldPerWorker : unit.bonus;
     
@@ -41,11 +54,18 @@ const Training = () => {
       ownedUnits:
         user.units.find((u) => u.type === unit.type && u.level === unit.level)
           ?.quantity || 0,
-      fortName: Fortifications.filter((fort) => {
+      requirement: (unit.type==='OFFENSE'? OffenseiveUpgrades.find((fort) => {
+        return fort.level == unit.fortLevel;
+      }).name + " Training" :
+        unit.type === 'DEFENSE' ? Fortifications.find((fort) => {
+        return fort.level == unit.fortLevel;
+        }).name :
+          unit.type === 'SPY' ? SpyUpgrades.find((fort) => {
         return fort.level == unit.level;
-      })[0].name,
+          }).name :
+            ''),
       cost: new Intl.NumberFormat('en-GB').format(unit.cost),
-      enabled: unit.level <= user?.fortLevel,
+      enabled: isEnabled(unit, unit.type),
       level: unit.level,
     };
   };
