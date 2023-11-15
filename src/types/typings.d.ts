@@ -91,6 +91,7 @@ export type Weapon = {
   bonus: number;
   cost: number;
   race: PlayerRace;
+  armoryLevel: number;
 };
 export type Fortification = {
   name: string;

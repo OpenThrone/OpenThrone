@@ -224,7 +224,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
                 <td className="border px-4 py-2">{unit.name}</td>
                 <td className="border px-4 py-2" />
                 <td colSpan={3} className="border px-4 py-2 text-center">
-                  Unlocked with {unit.fortName}
+                  Unlocked with {unit.requirement}
                 </td>
               </tr>
             )
