@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
+import toLocale from '@/utils/numberFormatting';
 
 const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
@@ -67,12 +68,12 @@ const Sidebar: React.FC = () => {
       const seconds = String(remaining.seconds).padStart(2, '0');
       setTime(`${minutes}:${seconds}`);
       setSidebar({
-        gold: user?.gold?.toLocaleString(),
-        citizens: user?.citizens?.toLocaleString(),
-        level: user?.level?.toLocaleString(),
-        xp: user?.experience?.toLocaleString(),
-        xpNextLevel: user?.xpToNextLevel?.toLocaleString(),
-        turns: user?.attackTurns?.toLocaleString(),
+        gold: toLocale(user?.gold, user?.locale),
+        citizens: toLocale(user?.citizens, user?.locale),
+        level: toLocale(user?.level, user?.locale),
+        xp: toLocale(user?.experience, user?.locale),
+        xpNextLevel: toLocale(user?.xpToNextLevel, user?.locale),
+        turns: toLocale(user?.attackTurns, user?.locale),
       });
     }, 1000);
     return () => clearInterval(interval);

@@ -1,15 +1,16 @@
 import { getSession } from 'next-auth/react';
 
 import prisma from '@/lib/prisma';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handle(req, res) {
+export default async function handle(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req });
   if (!session) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
 
   const messageId = req.query.id;
-  const userId = session.user.id;
+  const userId = session?.user?.id;
 
   // Ensure the user is the intended recipient of the message
   const messageToDelete = await prisma.messages.findUnique({
@@ -22,8 +23,6 @@ export default async function handle(req, res) {
   if (req.method !== 'PUT') {
     return res.status(405).end();
   }
-
-  const messageId = req.query.id;
 
   try {
     const updatedMessage = await prisma.messages.update({

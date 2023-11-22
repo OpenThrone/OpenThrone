@@ -41,6 +41,13 @@ function generateRaceColors(
 }
 module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
+  safelist: {
+    pattern: [
+      /text-(elf|goblin|human|undead)-link-(current|hover|link)/,
+      /bg-(elf|goblin|human|undead)-(header-bgcolor|menu-(primary|secondary)|sidebar-bgcolor|bodyBg|footer)/,
+    ],
+    variants: ['sm', 'md', 'lg', 'xl', '2xl'],
+  },
   theme: {
     fontSize: {
       xs: '0.75rem',

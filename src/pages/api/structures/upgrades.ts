@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 
 import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
-import { EconomyUpgrades, Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
+import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
 
 const prisma = new PrismaClient();
 
@@ -20,6 +20,14 @@ export default async(req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     const userMod = new UserModel(user);
+    const structure_upgrades = (type: string) => {
+      return userMod.structure_upgrades.map(stat => {
+        if (stat.type === type) {
+          return { ...stat, level: stat.level + 1 };
+        }
+        return stat;
+      });
+    };
     // Implement logic based on currentPage and index
     switch (currentPage) {
       case 'fortifications':
@@ -75,19 +83,30 @@ export default async(req, res) => {
         if (userMod.gold < OffenseiveUpgrades[index].cost) {
           return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
         }
-        const structure_upgrades = (type: string) => {
-          return userMod.structure_upgrades.map(stat => {
-            if (stat.type === type) {
-              return { ...stat, level: stat.level + 1 };
-            }
-            return stat;
-          });
-    }
+        
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
             gold: userMod.gold - OffenseiveUpgrades[index].cost,
             structure_upgrades: structure_upgrades('OFFENSE'),
+          },
+        });
+        break;
+      case 'armory':
+        if (userMod.armoryLevel < ArmoryUpgrades[index].level - 1) {
+          return res.status(400).json({ error: 'Invalid Armory Upgrade Level to purchase upgrade' });
+        }
+        if (userMod.gold < ArmoryUpgrades[index].cost) {
+          return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
+        }
+        if (userMod.fortLevel < ArmoryUpgrades[index].fortLevel) {
+          return res.status(400).json({ error: 'Invalid Fortification Level to purchase upgrade' });
+        }
+        await prisma.users.update({
+          where: { id: session.user.id },
+          data: {
+            gold: userMod.gold - ArmoryUpgrades[index].cost,
+            structure_upgrades: structure_upgrades('ARMORY'),
           },
         });
         break;

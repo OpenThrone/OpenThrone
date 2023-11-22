@@ -5,6 +5,7 @@ import type {
   DefensiveUpgradeType,
   FortHealth,
   Fortification,
+  Locales,
   OffensiveUpgradeType,
   PlayerClass,
   PlayerItem,
@@ -20,6 +21,7 @@ import type {
 
 import {
   ArmoryUpgrades,
+  BattleUpgrades,
   Bonuses,
   EconomyUpgrades,
   Fortifications,
@@ -29,6 +31,7 @@ import {
   SpyUpgrades,
   UnitTypes,
   WeaponTypes,
+  levelXPArray,
 } from '../constants';
 
 class UserModel {
@@ -90,6 +93,8 @@ class UserModel {
 
   public beenAttacked: boolean;
 
+  public locale: Locales;
+
   constructor(userData: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
@@ -121,6 +126,7 @@ class UserModel {
     this.defends_won = 0;
     this.beenAttacked = false;
     this.structure_upgrades = [];
+    this.locale = 'en-US';
     if (userData) {
       this.id = userData.id;
       this.displayName = userData.display_name;
@@ -154,6 +160,7 @@ class UserModel {
       this.attacks_won = userData.won_attacks;
       this.defends_won = userData.won_defends;
       this.structure_upgrades = userData.structure_upgrades;
+      this.locale = userData.locale;
     }
   }
 
@@ -445,7 +452,7 @@ class UserModel {
   getLevelForUnit(type: UnitType) {
     switch (type) {
       case 'OFFENSE':
-        return this.offensiveLevel;
+        return this.fortLevel;
       case 'DEFENSE':
         return this.fortLevel;
       case 'SENTRY':
@@ -464,55 +471,42 @@ class UserModel {
    */
   getArmyStat(type: UnitType) {
     const Units = this.units?.filter((unit) => unit.type === type) || [];
-    if (type === 'OFFENSE')
-      console.log('LevelForUnit: ', this.getLevelForUnit(type));
     let totalStat = 0;
+
     Units.forEach((unit) => {
       // Get the unit's bonus
-      const unitFiltered =
-        UnitTypes.find(
-          (unitType) =>
-            unitType.type === unit.type && unitType.level === unit.level && unitType.fortLevel <= this.getLevelForUnit(type)
-        );
-      if (unitFiltered === undefined)
-        return 0;
-      
-      if(type === 'OFFENSE')
-      console.log('units: ', unitFiltered);
-
+      const unitFiltered = UnitTypes.find(
+        (unitType) => unitType.type === unit.type && unitType.fortLevel <= this.getLevelForUnit(type)
+      );
+      if (unitFiltered === undefined) return 0;
       // Add the unit's bonus to the total
-      totalStat += ((unitFiltered?.bonus || 0) * unit.quantity);
+      totalStat += (unitFiltered?.bonus || 0) * unit.quantity;
 
-      if (type === 'OFFENSE') {
-        console.log('Stat: ', totalStat);
-        console.log('Qty: ', unit.quantity);
-        console.log('Bonus: ', unitFiltered?.bonus);
-      }
-      // Filter out the weapons that match the unit type and level based on their usage
-      const matchingWeapons =
-        this.items?.filter(
-          (weapon) => weapon.usage === unit.type && (weapon.level) === unit.level
-        ) || [];
-      // Calculate the total bonus from weapons, but only up to the number of units
+      // Initialize a count object for each item type
+      const itemCounts = {};
+
+      // Filter out the weapons that match the unit type and categorize them by type
+      const matchingWeapons = this.items?.filter(
+        (weapon) => weapon.usage === unit.type
+      ) || [];
 
       matchingWeapons.forEach((weapon) => {
+        // Initialize count for this weapon type if not already done
+        itemCounts[weapon.type] = itemCounts[weapon.type] || 0;
 
-        if (type === 'OFFENSE') {
-          console.log('weapon: ', weapon)
-          console.log('unitType: ', unit.type)
-        }
-        const weaponBonus =
-          WeaponTypes.find(
-            (w) => w.level === weapon.level && w.usage === unit.type && w.type === weapon.type
-          )?.bonus || 0;
+        const weaponBonus = WeaponTypes.find(
+          (w) => w.level === weapon.level && w.usage === unit.type && w.type === weapon.type
+        )?.bonus || 0;
 
-        // Use the minimum of weapon quantity and unit quantity for the bonus calculation
-        totalStat += weaponBonus * Math.min(weapon.quantity, unit.quantity);
+        // Calculate the bonus for this weapon, considering the unit quantity and type count
+        const usableQuantity = Math.min(weapon.quantity, unit.quantity - itemCounts[weapon.type]);
+        totalStat += weaponBonus * usableQuantity;
 
+        // Update the count for this weapon type
+        itemCounts[weapon.type] += usableQuantity;
       });
     });
-
-
+    
     // Apply the appropriate bonus based on the type
     switch (type) {
       case 'OFFENSE':
@@ -531,9 +525,9 @@ class UserModel {
         break;
     }
 
-    // Round up the final result
     return Math.ceil(totalStat);
   }
+
 
   /**
    * Returns the offense army stat of the user.
@@ -627,36 +621,34 @@ class UserModel {
     return this.getLevelFromXP(this.experience);
   }
 
-  /**
-   * Calculates the amount of experience points required to reach a certain level.
-   * @param level The level to calculate the required experience points for.
-   * @returns The amount of experience points required to reach the given level.
-   */
   xpRequiredForLevel(level: number): number {
-    return Math.floor(level ** 2.5 * 1000); // Adjust the power and multiplier for desired curve
+    const levelInfo = levelXPArray.find(l => l.level === level);
+    return levelInfo ? levelInfo.xp : Math.floor(level ** 2.5 * 1000); // Fallback to formula if level not in array
   }
 
   /**
-   * Calculates the level of a user based on their XP.
+   * Calculates the level of a user based on their XP using the levelXPArray.
    * @param xp - The amount of XP the user has.
    * @returns The user's level.
    */
   getLevelFromXP(xp: number): number {
-    let level = 1;
-    while (this.xpRequiredForLevel(level + 1) <= xp) {
-      level++;
+    for (let i = 0; i < levelXPArray.length; i++) {
+      if (xp < levelXPArray[i].xp) {
+        return levelXPArray[i].level - 1;
+      }
     }
-    return level;
+    return levelXPArray[levelXPArray.length - 1].level; // Return max level if XP exceeds all defined levels
   }
 
   /**
-   * Calculates the amount of experience points required to reach the next level.
-   * @returns {number} The amount of experience points required to reach the next level.
+   * Calculates the amount of experience points required to reach the next level using the levelXPArray.
+   * @param currentLevel - The current level of the user.
+   * @param currentXP - The current XP of the user.
+   * @returns The amount of experience points required to reach the next level.
    */
   get xpToNextLevel(): number {
-    const currentLevel = this.level;
-    const nextLevelXP = this.xpRequiredForLevel(currentLevel + 1);
-    return nextLevelXP - this.experience;
+    const nextLevelInfo = levelXPArray.find(l => l.level === this.level + 1);
+    return nextLevelInfo ? nextLevelInfo.xp - this.experience : 0;
   }
 
   /**
@@ -766,8 +758,8 @@ class UserModel {
    * @returns {OffensiveUpgradeType[]} An array of available offensive battle upgrades.
    */
   get availableOffenseBattleUpgrades(): OffensiveUpgradeType[] {
-    return OffenseiveUpgrades.filter(
-      (fort) => fort.fortLevelRequirement <= this.fortLevel + 1
+    return BattleUpgrades.filter(
+      (fort) => fort.StructureUpgradeLevelRequired <= this.offensiveLevel + 5 && fort.type === 'OFFENSE'
     );
   }
 

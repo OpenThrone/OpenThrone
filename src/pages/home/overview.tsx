@@ -1,16 +1,11 @@
 import Alert from '@/components/alert';
 import { useUser } from '@/context/users';
+import toLocale from '@/utils/numberFormatting';
 
 const Overview = () => {
   // const router = useRouter();
 
   const { user } = useUser();
-  const toLocale = (num: any) => {
-    if (typeof num === 'number') {
-      return num.toLocaleString();
-    }
-    return "0";
-  }
   return (
     <div className="mainArea pb-10">
       <h2>Overview</h2>
@@ -41,7 +36,7 @@ const Overview = () => {
           <tbody>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Population</td>
-              <td>{toLocale(user?.population)}</td>
+              <td>{toLocale(user?.population, user?.locale)}</td>
               <td>Fort Health</td>
               <td>
                 {user?.fortHealth.current}/{user?.fortHealth.max}(
@@ -50,21 +45,21 @@ const Overview = () => {
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Army Size</td>
-              <td>{toLocale(user?.armySize)}</td>
+              <td>{toLocale(user?.armySize, user?.locale)}</td>
               <td>Gold</td>
-              <td>{toLocale(user?.gold)}</td>
+              <td>{toLocale(user?.gold, user?.locale)}</td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>Level</td>
-              <td>{toLocale(user?.level)}</td>
+              <td>{toLocale(user?.level, user?.locale)}</td>
               <td>Gold Per Turn</td>
-              <td>{toLocale(user?.goldPerTurn)}</td>
+              <td>{toLocale(user?.goldPerTurn, user?.locale)}</td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>XP to Next Level</td>
-              <td>{toLocale(user?.xpToNextLevel)}</td>
+              <td>{toLocale(user?.xpToNextLevel, user?.locale)}</td>
               <td>Gold in Bank</td>
-              <td>{toLocale(user?.goldInBank)}</td>
+              <td>{toLocale(user?.goldInBank, user?.locale)}</td>
             </tr>
           </tbody>
         </table>

@@ -48,7 +48,7 @@ const Form = ({
               router.push('/home/overview');
             } else {
               setLoading(false);
-              setErrorMessage('Invalid username or password!');
+              setErrorMessage(res?.error ?? 'Something went wrong!');
             }
           } else {
             const res = await fetch('/api/auth/register/route', {

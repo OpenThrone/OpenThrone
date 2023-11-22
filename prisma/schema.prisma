@@ -40,6 +40,7 @@ model users {
   bio String @default("")
   colorScheme String?
   recruit_link String @default("") @unique
+  locale String
   
 
   // Relations
@@ -93,4 +94,29 @@ model recruit_history {
   to_user Int
   ip_addr String
   timestamp DateTime? @db.Timestamptz(3)
+}
+
+model blog_posts {
+  id               Int       @id @default(autoincrement())
+  title            String
+  created_timestamp DateTime @default(now()) @db.Timestamptz(3)
+  updated_timestamp DateTime @updatedAt @db.Timestamptz(3)
+  postedby_id      Int
+  content          String
+
+  // Relations
+  postedBy         users     @relation(fields: [postedby_id], references: [id])
+  postReadStatus   post_read_status[]
+}
+
+model post_read_status {
+  post_id       Int      @id
+  user_id       Int      @id
+  last_read_at  DateTime @db.Timestamptz(3)
+
+  // Relations
+  post          blog_posts @relation(fields: [post_id], references: [id])
+  user          users      @relation(fields: [user_id], references: [id])
+
+  @@unique([post_id, user_id])
 }

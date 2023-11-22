@@ -58,8 +58,6 @@ const handleDelete = async (messageId) => {
 const Inbox = ({ messages, session }) => {
   const [composeModalOpen, setComposeModalOpen] = useState(false);
 
-  
-  console.log(messages);
   return (
     <div className="mx-auto w-full py-2">
       <h1 className="mb-4 text-2xl font-bold">Inbox</h1>

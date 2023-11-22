@@ -4,30 +4,21 @@ const Profile = () => {
   return (
     <div className="mainArea pb-10">
       <h2>Profile</h2>
-      <div className="rounded-lg bg-gray-900 p-4  shadow-lg">
-        <div className="mb-2 text-sm font-bold">Change Bio</div>
-        <div className="p-2">
-          <form id="changeBio">
-            <div className="mb-2">
-              <textarea
-                className="w-full rounded bg-gray-800 p-2 text-white"
-                id="currentBio"
-                name="currentBio"
-                placeholder="Enter Your Bio"
-              />
-            </div>
-            <div className="flex justify-end">
-              <button
-                className="inline-block  rounded bg-green-900 px-6 pb-2 pt-2.5 text-xs uppercase leading-normal"
-                id="submitPassword"
-                name="submitPassword"
-                type="submit"
-              >
-                Save
-              </button>
-            </div>
-          </form>
-        </div>
+      <div className="rounded-lg bg-gray-900 p-4 shadow-lg grid grid-cols-2 gap-4">
+        <div>Current Avatar</div>
+        <div>{/* Avatar-image */}</div>
+        <div>New Avatar</div>
+        <input type="file" accept="image/jpeg, image/jpg, image/gif" />
+        <div>Current Friend Avatar</div>
+        <div>{/* Friend-Avatar-Image */}</div>
+        <div>New Friend Avatar</div>
+        <input type="file" accept="image/jpeg, image/jpg, image/gif" />
+        <div>Comments</div>
+        <textarea className="w-full rounded bg-gray-800 p-2 text-white col-span-2" placeholder="Enter Your Comments" />
+      </div>
+      <div className="flex justify-end space-x-2 mt-4">
+        <button className="bg-green-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Save Profile</button>
+        <button className="bg-green-700 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">View Profile</button>
       </div>
     </div>
   );

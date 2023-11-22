@@ -7,6 +7,7 @@ import { ArmoryUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import toLocale from '@/utils/numberFormatting';
 
 const ArmoryTab = () => {
   const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
@@ -112,11 +113,12 @@ const ArmoryTab = () => {
             i.level === item.level &&
             i.usage === item.usage
         )?.quantity || 0,
-      cost: new Intl.NumberFormat('en-GB').format(item.cost - (user?.priceBonus/100 * item.cost)),
+      cost: toLocale(item.cost - (user?.priceBonus/100 * item.cost), user?.locale),
       enabled: item.armoryLevel <= armoryLevel,
       level: item.level,
       usage: item.usage,
-      fortName: ArmoryUpgrades.find((f) => f.level === item.level)
+      armoryLevel: item.armoryLevel,
+      fortName: ArmoryUpgrades.find((f) => f.level === item.armoryLevel)
         ?.name,
     };
   };
@@ -208,13 +210,13 @@ const ArmoryTab = () => {
       </div>
       <div className="my-5 flex justify-around">
         <p className="mb-0">
-          Citizens: <span>{user?.citizens}</span>
+          Citizens: <span>{toLocale(user?.citizens, user?.locale)}</span>
         </p>
         <p className="mb-0">
-          Gold On Hand: <span>{user?.gold}</span>
+          Gold On Hand: <span>{toLocale(user?.gold, user?.locale)}</span>
         </p>
         <p className="mb-0">
-          Banked Gold: <span>{user?.goldInBank}</span>
+          Banked Gold: <span>{toLocale(user?.goldInBank, user?.locale)}</span>
         </p>
         <p>
           Armory Level: <span>{user?.armoryLevel}</span>

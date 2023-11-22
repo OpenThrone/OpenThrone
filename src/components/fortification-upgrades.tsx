@@ -1,9 +1,10 @@
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { useUser } from '@/context/users';
 import { Fortifications } from '@/constants';
+import toLocale from '@/utils/numberFormatting';
 
-const FortificationsTab = ({ userLevel, fortLevel, forceUpdate }) => {
-  console.log("FortificationsTab", userLevel, fortLevel)
+const FortificationsTab = ({ userLevel, fortLevel }) => {
+  const { forceUpdate, user } = useUser();
   return (
     <><table className="w-full table-fixed">
       <thead className={'text-left'}>
@@ -25,8 +26,8 @@ const FortificationsTab = ({ userLevel, fortLevel, forceUpdate }) => {
             <tr key={index}>
               <td className="border px-4 py-2">{item.name} {(item.level === fortLevel) && ("(Current Upgrade)")}</td>
               <td className="border px-4 py-2">{item.levelRequirement}</td>
-              <td className="border px-4 py-2">Gold Per Turn: {item.goldPerTurn}<br />Defense Bonus: {item.defenseBonusPercentage}%</td>
-              <td className="border px-4 py-2">{item.cost} Gold</td>
+              <td className="border px-4 py-2">Gold Per Turn: {toLocale(item.goldPerTurn, user?.locale)}<br />Defense Bonus: {item.defenseBonusPercentage}%</td>
+              <td className="border px-4 py-2">{toLocale(item.cost, user?.locale)} Gold</td>
               <td className="border px-4 py-2">
                 {item.level === fortLevel + 1 && item.levelRequirement <= userLevel ? (
                   <button

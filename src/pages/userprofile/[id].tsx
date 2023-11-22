@@ -87,10 +87,16 @@ const Index = ({ users }) => {
         <div className="col-span-1">
           <div className="card-dark">
             <div className="flex items-center justify-center">
-              <img
-                src={`/assets/shields/${profile?.race}_150x150.webp`}
-                className="ml-2"
-              />
+              {profile?.id === 6 ? (
+                <img src='/assets/images/santee.webp'
+                  className='ml-2'
+                />
+              ) : (
+                <img
+                  src={`/assets/shields/${profile?.race}_150x150.webp`}
+                  className="ml-2"
+                />
+              )}
             </div>
             <div className="my-3 mb-4">
               <MDXRemote {...users.bionew} />
@@ -154,6 +160,7 @@ const Index = ({ users }) => {
                 <SpyMissionsModal
                   isOpen={isSpyModalOpen}
                   toggleModal={toggleSpyModal}
+                  defenderID={profile?.id}
                 />
               {/* <a href="#" className="list-group-item list-group-item-action disabled">Transfer Gold</a> */}
               <Link

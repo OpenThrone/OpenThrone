@@ -1,6 +1,7 @@
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { useUser } from '@/context/users';
 import { EconomyUpgrades, Fortifications, HouseUpgrades } from '@/constants';
+import toLocale from '@/utils/numberFormatting';
 
 const EconomyTab = ({ userLevel, forceUpdate, fortLevel }) => {
   console.log('Economy: ', userLevel)
@@ -10,7 +11,7 @@ const EconomyTab = ({ userLevel, forceUpdate, fortLevel }) => {
       <thead className='text-left'>
         <tr>
           <th className="w-46">Name</th>
-          <th className='w-20'>Fort Level Req.</th>
+          <th className='w-20'>Fort Req.</th>
           <th className='w-20'>Gold per Worker</th>
           <th className='w-20'>Deposits per Day</th>
           <th>Gold Transfer</th>
@@ -26,11 +27,11 @@ const EconomyTab = ({ userLevel, forceUpdate, fortLevel }) => {
               <td className="border px-4 py-2">
                 {item.name} {index === userLevel && ("(Current Upgrade)")}
               </td>
-              <td className="border px-4 py-2">{item.fortLevel}</td>
+              <td className="border px-4 py-2">{Fortifications.find((fort) => fort.level === item.fortLevel)?.name || 'Manor'}</td>
               <td className="border px-4 py-2">{item.goldPerWorker}</td>
               <td className="border px-4 py-2">{item.depositsPerDay}</td>
-              <td className="border px-4 py-2">{item.goldTransferTx}/{item.goldTransferRec}</td>
-              <td className="border px-4 py-2">{item.cost}</td>
+              <td className="border px-4 py-2">{toLocale(item.goldTransferTx)}/{toLocale(item.goldTransferRec)}</td>
+              <td className="border px-4 py-2">{toLocale(item.cost)}</td>
               <td className="border px-4 py-2">
                 {(item.index === userLevel + 1 && item.fortLevel === fortLevel) && (
                   <button
@@ -46,13 +47,13 @@ const EconomyTab = ({ userLevel, forceUpdate, fortLevel }) => {
                     {fortLevel <= item.fortLevel && (
                       <>
                         <div>Unlocked with Fort:</div>
-                        <div>- {Fortifications.find((fort)=>fort.level === item.fortLevel).name}, Level {item.fortLevel}</div>
+                        <div>- {Fortifications.find((fort)=>fort.level === item.fortLevel).name}</div>
                       </>
                     )}
                     {userLevel >= item.index && (
                       <>
                         <div>Unlocked with Economy:</div>
-                        <div>- {EconomyUpgrades.find((eco)=> eco.index === item.index).name}, Level {item.index}</div>
+                        <div>- {EconomyUpgrades.find((eco)=> eco.index === item.index).name}</div>
                       </>
                     )}
                   </>

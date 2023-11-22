@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: true, // Select id as well, as it is needed for further filtering
     },
     where: {
-      not: [
+      NOT: [
         {
           id: {
             in:[0]

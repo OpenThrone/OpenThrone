@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
+import toLocale from '@/utils/numberFormatting';
 
 const ROWS_PER_PAGE = 10;
 
@@ -19,7 +20,7 @@ const Users = ({ players, session, userPage }) => {
 
   useEffect(() => {
     // Format the gold values based on the client's locale
-    const golds = players.map(player => player.gold.toLocaleString());
+    const golds = players.map(player => toLocale(player.gold, user?.locale));
     setFormattedGolds(golds);
   }, [players]);
 

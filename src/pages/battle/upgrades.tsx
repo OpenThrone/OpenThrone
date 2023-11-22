@@ -1,3 +1,4 @@
+import BattleUpgradesSection from '@/components/battle-upgrade';
 import DefenseUpgrade from '@/components/defenseupgrade';
 import { useUser } from '@/context/users';
 
@@ -18,7 +19,7 @@ const Upgrades = () => {
       Offense - Steed (Only Type 2,3,4) can use War Elephants - Requires Battle
       Upgrade Level 2
       <div className="mb-4 flex justify-around">
-        <DefenseUpgrade units={user?.availableOffenseBattleUpgrades} />
+        <BattleUpgradesSection heading='Offense' type='OFFENSE' items={user?.availableOffenseBattleUpgrades} />
       </div>
     </div>
   );

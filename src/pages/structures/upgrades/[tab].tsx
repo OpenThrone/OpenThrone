@@ -85,14 +85,6 @@ const UpgradeTab = () => {
               tab === 'offense' ? 'bg-blue-500 text-white' : ''
               }`}
             aria-current='page'>
-            Offense Upgrades
-          </Link>
-          <Link
-            href="/structures/upgrades/siege"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              tab === 'siege' ? 'bg-blue-500 text-white' : ''
-            }`}
-          >
             Siege Upgrades
           </Link>
           <Link
@@ -131,18 +123,16 @@ const UpgradeTab = () => {
       <div className="mb-4 flex justify-center">
         {currentPage === 'fortifications' && (<h2>Fortifications</h2>)}
         {currentPage === 'offense' && (<h2>Offense Upgrades</h2>)}
-        {currentPage === 'siege' && (<h2>Siege Upgrades</h2>)}
         {currentPage === 'intel' && (<h2>Clandestine Upgrades</h2>)}
         {currentPage === 'houses' && (<h2>Housing Upgrades</h2>)}
         {currentPage === 'economy' && (<h2>Economy Upgrades</h2>)}
       </div>
       <div className="mb-4 flex justify-center my-10 rounded-lg bg-gray-800">
         {currentPage === 'fortifications' && <FortificationsTab userLevel={user?.level} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
-        {currentPage === 'offense' && <OffenseUpgrade userLevel={user?.level} fortLevel={user?.offensiveLevel} forceUpdate={forceUpdate} />}
+        {currentPage === 'offense' && <OffenseUpgrade userLevel={user?.offensiveLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
         {currentPage === 'houses' && <HousingTab userLevel={user?.houseLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
-        {currentPage === 'armory' && <ArmoryUpgradesTab userLevel={user?.level} fortLevel={user?.armoryLevel} forceUpdate={forceUpdate}/> }
-        {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} fortLevel={user?.level} forceUpdate={forceUpdate}/>}
-        {currentPage === 'siege' && renderTable(OffenseiveUpgrades, user?.siegeLevel)}
+        {currentPage === 'armory' && <ArmoryUpgradesTab userLevel={user?.armoryLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/> }
+        {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
         {currentPage === 'intel' && renderTable(SpyUpgrades, user?.intelLevel)}
       </div>
     </div>

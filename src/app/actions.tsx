@@ -18,125 +18,50 @@ function mtRand(min: number, max: number): number {
 }
 
 /**
- * Calculates the killing strength of a user's units.
+ * Calculates the strength of a user's units.
  * @param user - The user whose units' killing strength will be calculated.
- * @param attacker - A boolean indicating whether the user is the attacker or defender.
+ * @param unitType - Either OFFENSE or DEFENSE.
+ * @param isAttacker - Whether the user is the attacker or defender
  * @returns The total killing strength of the user's units.
  */
-function getKillingStrength(user: UserModel, attacker: boolean): number {
-  let ks = 0;
-  if (attacker) {
-    for (const unit of user.units.filter((u) => u.type === 'OFFENSE')) {
-      const defense = UnitTypes.find(
-        (u) => u.level === unit.level && u.type === unit.type
-      );
-      for (const defenseItem of user.items.filter(
-        (i) => i.type !== 'WEAPON' && i.level === unit.level
-      )) {
-        const protection = WeaponTypes.find(
-          (w) => w.level === defenseItem.level && w.type === defenseItem.type
-        );
-        if (protection) {
-          if (defenseItem.quantity > unit.quantity) {
-            ks += protection.bonus * unit.quantity;
-            break;
-          } else {
-            ks += protection.bonus * defenseItem.quantity;
-          }
-        }
-      }
-      if (defense) {
-        ks += defense.bonus * unit.quantity;
-      }
+function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE', isAttacker: boolean): number {
+  let strength = 0;
+  const unitMultiplier = unitType === 'OFFENSE' ? (1 + parseInt(user.attackBonus.toString(), 10) / 100) :
+    (1 + parseInt(user.defenseBonus.toString(), 10) / 100);
+
+  user.units.filter((u) => u.type === unitType).forEach((unit) => {
+    const unitInfo = UnitTypes.find(
+      (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
+    );
+    if (unitInfo) {
+      strength += (unitInfo.bonus || 0) * unit.quantity;
     }
-  } else {
-    for (const unit of user.units.filter((u) => u.type === 'DEFENSE')) {
-      const defense = UnitTypes.find(
-        (u) => u.level === unit.level && u.type === unit.type
+
+    const itemCounts = {};
+    user.items.filter((item) => item.usage === unit.type).forEach((item) => {
+      itemCounts[item.type] = itemCounts[item.type] || 0;
+
+      const itemInfo = WeaponTypes.find(
+        (w) => w.level === item.level && w.usage === unit.type && w.type === item.type
       );
-      for (const defenseItem of user.items.filter(
-        (i) => i.type !== 'WEAPON' && i.level === unit.level
-      )) {
-        const protection = WeaponTypes.find(
-          (w) => w.level === defenseItem.level && w.type === defenseItem.type
-        );
-        if (protection) {
-          if (defenseItem.quantity > unit.quantity) {
-            ks += protection.bonus * unit.quantity;
-            break;
-          } else {
-            ks += protection.bonus * defenseItem.quantity;
-          }
-        }
+      if (itemInfo) {
+        const usableQuantity = Math.min(item.quantity, unit.quantity - itemCounts[item.type]);
+        strength += itemInfo.bonus * usableQuantity;
+        itemCounts[item.type] += usableQuantity;
       }
-      if (defense) {
-        ks += defense.bonus * unit.quantity;
-      }
-    }
-  }
-  return ks;
+    });
+  });
+
+  strength *= unitMultiplier;
+  return Math.ceil(strength);
 }
 
-/**
- * Calculates the defense strength of a user.
- * @param user - The user for whom to calculate the defense strength.
- * @param defender - A boolean indicating whether the user is a defender or not.
- * @returns The defense strength of the user.
- */
+function getKillingStrength(user: UserModel, attacker: boolean): number {
+  return calculateStrength(user, attacker ? 'OFFENSE' : 'DEFENSE', attacker);
+}
+
 function getDefenseStrength(user: UserModel, defender: boolean): number {
-  let ds = 0;
-  if (defender) {
-    for (const unit of user.units.filter((u) => u.type === 'DEFENSE')) {
-      const defense = UnitTypes.find(
-        (u) => u.level === unit.level && u.type === unit.type
-      );
-      for (const defenseItem of user.items.filter(
-        (i) => i.type !== 'WEAPON' && i.level === unit.level
-      )) {
-        const protection = WeaponTypes.find(
-          (w) => w.level === defenseItem.level && w.type === defenseItem.type
-        );
-        if (protection) {
-          if (unit.quantity) {
-            if (defenseItem.quantity > unit.quantity) {
-              ds += protection.bonus * unit.quantity;
-              break;
-            } else {
-              ds += protection.bonus * defenseItem.quantity;
-            }
-          }
-        }
-      }
-      if (defense) {
-        ds += defense.bonus * unit.quantity;
-      }
-    }
-  } else {
-    for (const unit of user.units.filter((u) => u.type === 'OFFENSE')) {
-      const defense = UnitTypes.find(
-        (u) => u.level === unit.level && u.type === unit.type
-      );
-      for (const defenseItem of user.items.filter(
-        (i) => i.type !== 'WEAPON' && i.level === unit.level
-      )) {
-        const protection = WeaponTypes.find(
-          (w) => w.level === defenseItem.level && w.type === defenseItem.type
-        );
-        if (protection) {
-          if (defenseItem.quantity > unit.quantity) {
-            ds += protection.bonus * unit.quantity;
-            break;
-          } else {
-            ds += protection.bonus * defenseItem.quantity;
-          }
-        }
-      }
-      if (defense) {
-        ds += defense.bonus * unit.quantity;
-      }
-    }
-  }
-  return ds;
+  return calculateStrength(user, defender ? 'DEFENSE' : 'OFFENSE', defender);
 }
 
 /**
@@ -209,6 +134,12 @@ function computeCasualties(
     0,
     mtRand(100000 * ratio - 10, 100000 * ratio - 5) / 100000
   );
+  if (isDefender)
+  {
+    console.log('randMultiplier: ', randMultiplier)
+    console.log('ratio: ', ratio);
+  }
+  
   if (ratio >= 5) {
     baseValue = mtRand(0.0015, 0.0018);
   } else if (ratio >= 4) {
@@ -224,14 +155,17 @@ function computeCasualties(
   } else {
     baseValue = mtRand(0.0004, 0.00045);
   }
-  /*console.log('baseValue: ', baseValue);
-  console.log('population: ', population);
-  console.log('ampFactor: ', ampFactor);
-  console.log('unitFactor: ', unitFactor);*/
+  if (isDefender) {
+    console.log('baseValue: ', baseValue);
+    console.log('population: ', population);
+    console.log('ampFactor: ', ampFactor);
+    console.log('unitFactor: ', unitFactor);
+    console.log('fortHitpoints: ', fortHitpoints);
+  }
   let fortDamageMultiplier = 1;
   let citizenCasualtyMultiplier = 1;
 
-  if (isDefender) {
+  if (isDefender && fortHitpoints) {
     fortDamageMultiplier = defenderDS === 0 && fortHitpoints > 0 ? 1.5 : 1;
     citizenCasualtyMultiplier = fortHitpoints <= 0 ? 1.5 : 1;
   }
@@ -333,13 +267,16 @@ function simulateBattle(
   // Ensure attack_turns is within [1, 10]
   attackTurns = Math.max(1, Math.min(attackTurns, 10));
 
-  const fortification = Fortifications[defender.fortLevel];
+  const fortification = Fortifications[defender.fortLevel || 0];
+  if (!fortification) {
+    return { status: 'failed', message: 'Fortification not found' };
+  }
   let { fortHitpoints } = defender;
 
   for (let turn = 1; turn <= attackTurns; turn++) {
     // Calculate defense boost from fortifications
     const fortDefenseBoost =
-      (fortHitpoints / fortification?.hitpoints) *
+      (fortHitpoints / fortification.hitpoints) *
       fortification?.defenseBonusPercentage;
 
     const attackerKS = getKillingStrength(attacker, true);
@@ -440,7 +377,7 @@ function simulateBattle(
   return result;
 }
 
-function simulateSpy(
+function simulateIntel(
   attacker: UserModel,
   defender: UserModel,
   spies: number
@@ -450,6 +387,9 @@ function simulateSpy(
   spies = Math.max(1, Math.min(spies, 10));
 
   const fortification = Fortifications[defender.fortLevel];
+  if (!fortification) {
+    return { status: 'failed', message: 'Fortification not found' };
+  }
   let { fortHitpoints } = defender;
 
   for (let turn = 1; turn <= spies; turn++) {
@@ -460,6 +400,7 @@ function simulateSpy(
 
     const attackerKS = getKillingStrength(attacker, true);
     const defenderstrength = getDefenseStrength(defender, true);
+    console.log(defenderstrength);
     const defenderDS =
       defenderstrength * (1 + fortDefenseBoost / 100);
 
@@ -478,44 +419,50 @@ function simulateSpy(
     );
     const CharPop = attacker.unitTotals.offense;
     const AmpFactor = computeAmpFactor(TargetPop);
+    
+    // Distribute casualties among defense units if fort is destroyed
+    //result.Losses.Defender.total += distributeCasualties(defenseUnits, DefCalcCas);
+    // If all defense units are depleted, attack the citizen units
+    //if (defenseUnits.every((unit) => unit.quantity === 0)) {
+    //  result.Losses.Defender.total += distributeCasualties(citizenUnits, DefCalcCas);
+    //}
 
-    const offenseUnits = filterUnitsByType(attacker.units, 'OFFENSE');
-    const defenseUnits = filterUnitsByType(defender.units, 'DEFENSE');
-    const citizenUnits = filterUnitsByType(defender.units, 'CITIZEN');
+    //result.Losses.Attacker.total += distributeCasualties(offenseUnits, AttCalcCas);
 
-    const OffUnitFactor = computeUnitFactor(
-      defender.unitTotals.defense,
-      attacker.unitTotals.offense
-    );
-    const DefUnitFactor =
-      attacker.unitTotals.offense === 0 ? 0 : 1 / OffUnitFactor;
+    result.fortHitpoints = Math.floor(fortHitpoints);
+    result.turnsTaken = turn;
+    /*result.experienceResult = computeExperience(
+      attacker,
+      defender,
+      offenseToDefenseRatio
+    );*/
 
-    const DefCalcCas = computeCasualties(
-      offenseToDefenseRatio,
-      TargetPop,
-      AmpFactor,
-      DefUnitFactor,
-      defender.fortHitpoints,
-      defenderDS,
-      true
-    );
+    // Update attacker and defender models with the calculated experience
+    attacker.experience += result.experienceResult.Experience.Attacker;
+    defender.experience += result.experienceResult.Experience.Defender;
 
-    const AttCalcCas = computeCasualties(
-      counterAttackRatio,
-      CharPop,
-      AmpFactor,
-      OffUnitFactor);
+    // Breaking the loop if one side has no units left
+    if (attacker.unitTotals.offense <= 0) {
+      break;
+    }
   }
 }
     
+function simulateAssassination() {
+  
+}
 
-export async function spyHandler(attackerId, defenderId, spies: number) { 
-  const attacker: UserModel = await prisma?.users.findUnique({
+function simulateInfiltration() {
+  
+}
+
+export async function spyHandler(attackerId: number, defenderId: number, spies: number) { 
+  const attacker: UserModel = new UserModel(await prisma?.users.findUnique({
     where: { id: attackerId },
-  });
-  const defender: UserModel = await prisma?.users.findUnique({
+  }));
+  const defender: UserModel = new UserModel(await prisma?.users.findUnique({
     where: { id: defenderId },
-  });
+  }));
   if (!attacker || !defender) {
     return { status: 'failed', message: 'User not found' };
   }
@@ -526,7 +473,7 @@ export async function spyHandler(attackerId, defenderId, spies: number) {
   const AttackPlayer = new UserModel(attacker);
   const DefensePlayer = new UserModel(defender);
 
-  const spyResults = simulateSpy(AttackPlayer, DefensePlayer, spies);
+  const spyResults = simulateIntel(AttackPlayer, DefensePlayer, spies);
 
   //AttackPlayer.spies -= spies;
   AttackPlayer.experience += spyResults.experienceResult.Experience.Attacker;
@@ -555,8 +502,8 @@ export async function spyHandler(attackerId, defenderId, spies: number) {
 }
 
 export async function attackHandler(
-  attackerId,
-  defenderId,
+  attackerId: number,
+  defenderId: number,
   attack_turns: number
 ) {
   const attacker: UserModel = await prisma?.users.findUnique({

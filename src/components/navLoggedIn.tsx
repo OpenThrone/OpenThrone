@@ -5,6 +5,7 @@ import { signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
+import { useLayout } from '@/context/LayoutContext';
 
 const parentLinks = [
   'Home',
@@ -66,6 +67,7 @@ export const NavLoggedIn: React.FC = () => {
   >([]);
   const [defaultParentLink, setDefaultParentLink] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const layoutCont = useLayout();
 
   const handleParentClick = (event: React.MouseEvent, link: string) => {
     event.preventDefault();
@@ -138,34 +140,6 @@ export const NavLoggedIn: React.FC = () => {
       setResetTimer(null);
     }
   };
-  function getMenuPrimaryClass(race) {
-    switch (race) {
-      case 'ELF':
-        return 'bg-elf-menu-primary';
-      case 'HUMAN':
-        return 'bg-human-menu-primary';
-      case 'UNDEAD':
-        return 'bg-undead-menu-primary';
-      case 'GOBLIN':
-        return 'bg-goblin-menu-primary';
-      default:
-        return 'bg-elf-menu-primary';
-    }
-  }
-  function getMenuSecondaryClass(race) {
-    switch (race) {
-      case 'ELF':
-        return 'bg-elf-menu-secondary';
-      case 'HUMAN':
-        return 'bg-human-menu-secondary';
-      case 'UNDEAD':
-        return 'bg-undead-menu-secondary';
-      case 'GOBLIN':
-        return 'bg-goblin-menu-secondary';
-      default:
-        return 'bg-elf-menu-secondary';
-    }
-  }
   return (
     <>
       <button
@@ -204,7 +178,7 @@ export const NavLoggedIn: React.FC = () => {
       </nav>
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
         <nav
-          className={`hidden h-8 ${getMenuPrimaryClass(user?.race)} md:block`}
+          className={`hidden h-8 ${layoutCont.raceClasses.menuPrimaryClass} md:block`}
           onMouseEnter={clearReset}
         >
           <div className="mx-auto max-w-screen-md md:block">
@@ -216,7 +190,7 @@ export const NavLoggedIn: React.FC = () => {
                       href="/"
                       className={`border-none ${
                         activeParentLink === link
-                          ? 'text-elf-link-current'
+                          ? layoutCont.raceClasses.navActiveClass
                           : 'text-elf-link-link'
                       } hover:text-elf-link-hover `}
                       onMouseOver={() => {
@@ -245,7 +219,7 @@ export const NavLoggedIn: React.FC = () => {
           </div>
         </nav>
         <nav
-          className={`hidden h-8 ${getMenuSecondaryClass(user?.race)} md:block`}
+          className={`hidden h-8 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
           onMouseEnter={clearReset}
         >
           <div className="mx-auto max-w-screen-md">
@@ -260,7 +234,7 @@ export const NavLoggedIn: React.FC = () => {
                     className={`${
                       activeSubLink === item.text &&
                       activeParentLink === item.parent
-                        ? 'activeLinkClass'
+                        ? layoutCont.raceClasses.navActiveClass
                         : 'text-elf-link-link'
                     } hover:text-elf-link-hover`}
                   >

@@ -1,6 +1,5 @@
-import Error from 'next/error';
 import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import UserModel from '@/models/Users';
@@ -36,9 +35,15 @@ export const UserProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await fetch(`/api/getUser`);
-      if (!response.ok) throw { message: 'Failed to fetch user data', status: response.status };
+      if (!response.ok) {
+        alertService.error(response.error);
+        signOut();
+        throw { message: 'Failed to fetch user data', status: response.status };
+      }
       const userData = await response.json();
       setUser(new UserModel(userData));
+      if (process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE && process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE !== '')
+        alertService.error(process.env.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE, true);
       if (userData?.beenAttacked) {
         alertService.error('You have been attacked since you were last active!');
       }
@@ -51,8 +56,6 @@ export const UserProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    console.log('status: ', status)
-    console.log('data: ', data)
     if (status === 'authenticated' && data?.user?.id) {
       fetchUserData(data.user.id);
     }

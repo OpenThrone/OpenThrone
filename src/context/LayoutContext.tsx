@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-
 import { useUser } from './users';
 
-interface raceColors {
+// Define interfaces for typing
+interface RaceColors {
   navActiveClass: string;
   navHoverClass: string;
+  navLinkClass: string;
   bgClass: string;
   menuPrimaryClass: string;
   menuSecondaryClass: string;
@@ -19,108 +20,68 @@ interface LayoutContextProps {
   title?: string;
   description?: string;
   setMeta?: (meta: { title?: string; description?: string }) => void;
-  raceClasses: typeof raceClasses;
+  raceClasses: RaceColors;
 }
 
+// Create Context
 const LayoutContext = createContext<LayoutContextProps>({});
 
+// Hook to use context
 export const useLayout = () => useContext(LayoutContext);
 
 interface LayoutProviderProps {
   children: ReactNode;
 }
 
-function generateRaceColors(
-  navActive,
-  navHover,
-  bg,
-  menuPrimary,
-  menuSecondary,
-  sidebarBg,
-  heading,
-  bodyBg,
-  footer
-) {
-  return {
-    navActiveClass: `text-${navActive}`,
-    navHoverClass: `hover:text-${navHover}`,
-    bgClass: `bg-${bg}`,
-    menuPrimaryClass: `bg-${menuPrimary}`,
-    menuSecondaryClass: `bg-${menuSecondary}`,
-    sidebarBgClass: `bg-${sidebarBg}`,
-    headingClass: `bg-${heading}`,
-    bodyBgClass: `bg-${bodyBg}`,
-    footerClass: `bg-${footer}`,
+// Function to generate color classes based on race
+function generateRaceColors(race: string): RaceColors {
+  const colors = {
+    navActiveClass: `text-${race}-link-current`,
+    navHoverClass: `hover:text-${race}-link-hover`,
+    navLinkClass: `text-${race}-link-link`,
+    bgClass: `bg-${race}-header-bgcolor`,
+    menuPrimaryClass: `bg-${race}-menu-primary`,
+    menuSecondaryClass: `bg-${race}-menu-secondary`,
+    sidebarBgClass: `bg-${race}-sidebar-bgcolor`,
+    headingClass: `bg-${race}-header-bgcolor`,
+    bodyBgClass: `bg-${race}-bodyBg`,
+    footerClass: `bg-${race}-footer`,
   };
+  return colors;
 }
 
+// Predefined classes for races
 const raceClasses = {
-  ELF: generateRaceColors(
-    'elf-link-current', // navActive
-    'elf-link-hover', // navHover
-    'elf-header-bg', // bg
-    'elf-menu-primary', // menuPrimary
-    'elf-menu-secondary', // menuSecondary
-    'elf-sidebar-bgcolor', // sidebarBg
-    'elf-header-bgcolor', // heading
-    'elf-bodyBg', // bodyBg
-    'elf-footer' // footer
-  ),
-  GOBLIN: generateRaceColors(
-    'goblin-link-current', // navActive
-    'goblin-link-hover', // navHover
-    'goblin-header-bgcolor', // bg
-    'goblin-menu-primary', // menuPrimary
-    'goblin-menu-secondary', // menuSecondary
-    'goblin-sidebar-bgcolor', // sidebarBg
-    'goblin-header-bgcolor', // heading
-    'goblin-bodyBg', // bodyBg
-    'goblin-footer' // footer
-  ),
-  HUMAN: generateRaceColors(
-    'human-link-current', // navActive
-    'human-link-hover', // navHover
-    'human-header-bgcolor', // bg
-    'human-menu-primary', // menuPrimary
-    'human-menu-secondary', // menuSecondary
-    'human-sidebar-bgcolor', // sidebarBg
-    'human-header-bgcolor', // heading
-    'human-bodyBg', // bodyBg
-    'human-footer' // footer
-  ),
-  UNDEAD: generateRaceColors(
-    'undead-link-current', // navActive
-    'undead-link-hover', // navHover
-    'undead-header-bg', // bg
-    'undead-menu-primary', // menuPrimary
-    'undead-menu-secondary', // menuSecondary
-    'undead-sidebar-bgcolor', // sidebarBg
-    'undead-header-bgcolor', // heading
-    'undead-bodyBg', // bodyBg
-    'undead-footer' // footer
-  ),
+  ELF: generateRaceColors('elf'),
+  GOBLIN: generateRaceColors('goblin'),
+  HUMAN: generateRaceColors('human'),
+  UNDEAD: generateRaceColors('undead'),
 };
 
+// LayoutProvider Component
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const [meta, setMeta] = useState({ title: '', description: '' });
-  const [myRace, setMyRace] = useState('ELF');
   const { user } = useUser();
-  const [deriveRaceClasses, setDerivedRaceClasses] = useState(raceClasses.ELF);
-  useEffect(() => {
-    if (user && user.race) {
-      setMyRace(user.race);
-      setDerivedRaceClasses(raceClasses[myRace]);
-    }
-  }, [user]);
+
+  // Determine the race and corresponding classes
+  const race = user?.colorScheme || user?.race || 'ELF';
+  const derivedRaceClasses = raceClasses[race];
 
   return (
-    <LayoutContext.Provider
-      value={{
-        ...meta,
-        setMeta,
-        raceClasses: deriveRaceClasses,
-      }}
-    >
+    <LayoutContext.Provider value={{ ...meta, setMeta, raceClasses: derivedRaceClasses }}>
+      <div className="hidden">
+        {/* Link Classes */}
+        <div className="text-elf-link-current hover:text-elf-link-hover text-elf-link-link"></div>
+        <div className="text-goblin-link-current hover:text-goblin-link-hover text-goblin-link-link"></div>
+        <div className="text-human-link-current hover:text-human-link-hover text-human-link-link"></div>
+        <div className="text-undead-link-current hover:text-undead-link-hover text-undead-link-link"></div>
+
+        {/* Background Classes */}
+        <div className="bg-elf-header-bgcolor bg-elf-menu-primary bg-elf-menu-secondary bg-elf-sidebar-bgcolor bg-elf-bodyBg bg-elf-footer"></div>
+        <div className="bg-goblin-header-bgcolor bg-goblin-menu-primary bg-goblin-menu-secondary bg-goblin-sidebar-bgcolor bg-goblin-bodyBg bg-goblin-footer"></div>
+        <div className="bg-human-header-bgcolor bg-human-menu-primary bg-human-menu-secondary bg-human-sidebar-bgcolor bg-human-bodyBg bg-human-footer"></div>
+        <div className="bg-undead-header-bgcolor bg-undead-menu-primary bg-undead-menu-secondary bg-undead-sidebar-bgcolor bg-undead-bodyBg bg-undead-footer"></div>
+      </div>
       {children}
     </LayoutContext.Provider>
   );

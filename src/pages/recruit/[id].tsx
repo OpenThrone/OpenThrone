@@ -26,6 +26,10 @@ export default function Recruit() {
 
       if (data.error) {
         setError(data.error);
+        if (auto_recruit === '1') {
+          await autoRecruit();
+          return;
+        }
       } else if (data.showCaptcha) {
         setShowCaptcha(true);
       }
@@ -51,9 +55,12 @@ export default function Recruit() {
     // Fetch the next recruitment link immediately
     const response = await fetch('/api/auto-recruit');
     const data = await response.json();
-    console.log('data', data);
     if (data.error) {
       alertService.error(data.error);
+      if (auto_recruit === '1') {
+        await autoRecruit();
+        return;
+      }
       return;
     }
 
@@ -95,13 +102,19 @@ export default function Recruit() {
 
       if (recData.success) {
         alertService.success("You've recruited into a player's army.", true);
-        console.log(auto_recruit);
+        
         if (auto_recruit === '1') {
           await autoRecruit();
           return;
         }
         router.push(`/userprofile/${id}`);
         // Navigate to the user's profile page which is /userprofile/[id]
+      }if(recData.error){
+        alertService.error(recData.error);
+        if (auto_recruit === '1') {
+          await autoRecruit();
+          return;
+        }
       }
     }
   };

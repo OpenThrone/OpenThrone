@@ -6,6 +6,7 @@ import UnitSection from '@/components/unitsection';
 import { EconomyUpgrades, Fortifications, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
+import toLocale from '@/utils/numberFormatting';
 
 const Training = () => {
   // Replace this with actual data fetching
@@ -14,11 +15,15 @@ const Training = () => {
   const [workerUnits, setWorkers] = useState(null); // Define the worker units data here
   const [offensiveUnits, setOffensive] = useState(null); // Define the offensive units data here
   const [defensiveUnits, setDefensive] = useState(null); // Define the offensive units data here
+  const [spyUnits, setSpyUnits] = useState(null); // Define the spy units data here
+  const [sentryUnits, setSentryUnits] = useState(null); // Define the sentry units data here
   const [totalCost, setTotalCost] = useState(0); // Added state for total cost
   const [sectionCosts, setSectionCosts] = useState({
     WORKER: 0,
     OFFENSE: 0,
     DEFENSE: 0,
+    SPY: 0,
+    SENTRY: 0,
   });
   const updateTotalCost = (section: string, cost: number) => {
     setSectionCosts((prevCosts) => {
@@ -32,18 +37,6 @@ const Training = () => {
     });
   };
 
-  const isEnabled = (unit, type) => {
-    switch (type) {
-      case 'WORKER':
-        return unit.fortLevel <= user?.fortLevel;
-      case 'OFFENSE':
-        return unit.fortLevel <= user?.offensiveLevel;
-      case 'DEFENSE':
-        return unit.fortLevel <= user?.fortLevel;
-      default:
-        return false;
-    }
-  }
   const unitMapFunction = (unit, idPrefix: string) => {
     const bonus = unit.name === 'Worker' ? EconomyUpgrades[user?.economyLevel]?.goldPerWorker : unit.bonus;
     
@@ -54,18 +47,11 @@ const Training = () => {
       ownedUnits:
         user.units.find((u) => u.type === unit.type && u.level === unit.level)
           ?.quantity || 0,
-      requirement: (unit.type==='OFFENSE'? OffenseiveUpgrades.find((fort) => {
+      requirement: Fortifications.find((fort) => {
         return fort.level == unit.fortLevel;
-      }).name + " Training" :
-        unit.type === 'DEFENSE' ? Fortifications.find((fort) => {
-        return fort.level == unit.fortLevel;
-        }).name :
-          unit.type === 'SPY' ? SpyUpgrades.find((fort) => {
-        return fort.level == unit.level;
-          }).name :
-            ''),
-      cost: new Intl.NumberFormat('en-GB').format(unit.cost),
-      enabled: isEnabled(unit, unit.type),
+      }).name,
+      cost: toLocale(unit.cost - (user?.priceBonus / 100 * unit.cost), user?.locale),
+      enabled: unit.fortLevel <= user?.fortLevel,
       level: unit.level,
     };
   };
@@ -85,6 +71,16 @@ const Training = () => {
         user.availableUnitTypes
           .filter((unit) => unit.type === 'DEFENSE')
           .map((unit) => unitMapFunction(unit, 'DEFENSE'))
+      );
+      setSpyUnits(
+        user.availableUnitTypes
+          .filter((unit) => unit.type === 'SPY')
+          .map((unit) => unitMapFunction(unit, 'SPY'))
+      );
+      setSentryUnits(
+        user.availableUnitTypes
+          .filter((unit) => unit.type === 'SENTRY')
+          .map((unit) => unitMapFunction(unit, 'SENTRY'))
       );
     }
   }, [user]);
@@ -255,10 +251,10 @@ const Training = () => {
           </span>
         </p>
         <p className="mb-0">
-          Gold On Hand: <span>{user?.gold}</span>
+          Gold On Hand: <span>{toLocale(user?.gold, user?.locale)}</span>
         </p>
         <p className="mb-0">
-          Banked Gold: <span>{user?.goldInBank}</span>
+          Banked Gold: <span>{toLocale(user?.goldInBank, user?.locale)}</span>
         </p>
       </div>
       {workerUnits && (
@@ -280,6 +276,20 @@ const Training = () => {
           heading="Defense"
           units={defensiveUnits}
           updateTotalCost={(cost) => updateTotalCost('DEFENSE', cost)}
+        />
+      )}
+      {spyUnits && (
+        <UnitSection
+          heading="Spy"
+          units={spyUnits}
+          updateTotalCost={(cost) => updateTotalCost('SPY', cost)}
+        />
+      )}
+      {sentryUnits && (
+        <UnitSection
+          heading="Sentry"
+          units={sentryUnits}
+          updateTotalCost={(cost) => updateTotalCost('SENTRY', cost)}
         />
       )}
       <div className="mt-4">

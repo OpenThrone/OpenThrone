@@ -1,6 +1,7 @@
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { useUser } from '@/context/users';
 import { EconomyUpgrades, Fortifications, HouseUpgrades } from '@/constants';
+import toLocale from '@/utils/numberFormatting';
 
 const HousingTab = ({ userLevel, fortLevel, forceUpdate }) => {
   return (
@@ -8,7 +9,7 @@ const HousingTab = ({ userLevel, fortLevel, forceUpdate }) => {
       <thead className="text-left">
         <tr>
           <th>Name</th>
-          <th>Fort Level Req.</th>
+          <th>Fort Req.</th>
           <th>Citizens Per Day</th>
           <th>Cost</th>
           <th>Action</th>
@@ -22,35 +23,37 @@ const HousingTab = ({ userLevel, fortLevel, forceUpdate }) => {
           )
           .map((item, index) => (
             <tr key={index}>
-              <td className="border px-4 py-2">{item.name} {(index) === userLevel && ("(Current Upgrade)")}</td>
-              <td className="border px-4 py-2">{item.fortLevel}</td>
+              <td className="border px-4 py-2">{item.name} {(index) === userLevel && "(Current Upgrade)"}</td>
+              <td className="border px-4 py-2">{Fortifications.find((fort) => fort.level === item.fortLevel)?.name || 'Manor'}</td>
               <td className="border px-4 py-2">{item.citizensDaily}</td>
-              <td className="border px-4 py-2">{item.cost} Gold</td>
+              <td className="border px-4 py-2">{toLocale(item.cost)} Gold</td>
               <td className="border px-4 py-2">
-                {(item.index) === userLevel + 1 && item.fortLevel === fortLevel && (
-                  <button
-                    type="button"
-                    className={"bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"}
-                    disabled={(item.fortLevel !== fortLevel && item.index !== userLevel)}
-                    onClick={() => buyUpgrade('houses', index, forceUpdate)}
-                  >
-                    Buy
-                  </button>
-                )}
-                {item.index > userLevel && (
+                {/* Check if the item is the next available upgrade */}
+                {item.index === userLevel + 1 && (
                   <>
-                    {fortLevel <= item.fortLevel && (
+                    {item.fortLevel <= fortLevel ? (
+                      // Buy button if fort level requirements are met
+                      <button
+                        type="button"
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        onClick={() => buyUpgrade('houses', index, forceUpdate)}
+                      >
+                        Buy
+                      </button>
+                    ) : (
+                      // Display unlock information if fort level is not enough
                       <>
                         <div>Unlocked with:</div>
-                        <div>- {Fortifications[item.fortLevel].name}</div>
+                          <div>- {Fortifications.find((fort) => fort.level === item.fortLevel).name}</div>
                       </>
                     )}
-                    {userLevel >= item.index && (
-                      <>
-                        <div>Unlocked with:</div>
-                        <div>- {HouseUpgrades[item.index].name}, Level {item.index}</div>
-                      </>
-                    )}
+                  </>
+                )}
+                {/* Display unlock information for future upgrades */}
+                {item.index > userLevel + 1 && (
+                  <>
+                    <div>Unlocked with:</div>
+                    <div>- {Fortifications.find((fort) => fort.level === item.fortLevel).name}</div>
                   </>
                 )}
               </td>

@@ -1,11 +1,11 @@
-import { OffenseiveUpgrades, UnitTypes } from '@/constants';
+import { Fortifications, OffenseiveUpgrades, UnitTypes } from '@/constants';
 import UpgradeTable from './UpgradeTable';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import React from 'react';
+import toLocale from '@/utils/numberFormatting';
+import { useUser } from '@/context/users';
 
-const OffenseUpgrade = ({ userLevel, fortLevel, forceUpdate }) => {
-  console.log("OffenseTab", userLevel, fortLevel)
-  
+const OffenseUpgrade = ({ userLevel, fortLevel }) => {
   const anyUnits = (level) => {
     return Object.values(UnitTypes)
       .filter(
@@ -13,12 +13,15 @@ const OffenseUpgrade = ({ userLevel, fortLevel, forceUpdate }) => {
       );
   }
 
+  console.log(userLevel, fortLevel)
+  const { user, forceUpdate } = useUser();
+
   return (
     <><table className="w-full table-fixed">
       <thead className={'text-left'}>
         <tr>
           <th className='w-60'>Name</th>
-          <th className='w-20'>Level Req.</th>
+          <th className='w-20'>Fort Req.</th>
           <th className='w-60'>Bonus</th>
           <th className='w-40'>Cost</th>
           <th className='w-full'>Action</th>
@@ -34,8 +37,8 @@ const OffenseUpgrade = ({ userLevel, fortLevel, forceUpdate }) => {
             const units = anyUnits(item.level);
             return (
               <tr key={index}>
-                <td className="border px-4 py-2">{item.name} {(item.level === fortLevel) && ("(Current Upgrade)")}</td>
-                <td className="border px-4 py-2">{item.fortLevelRequirement}</td>
+                <td className="border px-4 py-2">{item.name} {(item.level === userLevel) && ("(Current Upgrade)")}</td>
+                <td className="border px-4 py-2">{Fortifications.find((fort)=>fort.level === item.fortLevelRequirement).name}</td>
                 <td className="border px-4 py-2">
                   Offense Bonus: {item.offenseBonusPercentage}%
                   {units.length > 0 && (
@@ -46,19 +49,19 @@ const OffenseUpgrade = ({ userLevel, fortLevel, forceUpdate }) => {
                     ))}</>
                   )}
                 </td>
-                <td className="border px-4 py-2">{item.cost} Gold</td>
+                <td className="border px-4 py-2">{toLocale(item.cost, user?.locale)} Gold</td>
                 <td className="border px-4 py-2">
-                  {item.level === fortLevel + 1 && item.fortLevelRequirement <= userLevel ? (
+                  {item.level === userLevel + 1 && item.fortLevelRequirement <= fortLevel ? (
                     <button
                       type="button"
                       className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                      disabled={userLevel < item.fortLevelRequirement}
+                      disabled={fortLevel < item.fortLevelRequirement}
                       onClick={() => buyUpgrade('offense', index, forceUpdate)}
                     >
                       Buy
                     </button>
                   ) : (
-                    item.level === fortLevel + 1 && <span>Unlock at level {item.levelRequirement}</span>
+                      item.fortLevelRequirement >= fortLevel && <span>Unlock with Fortification: { Fortifications.find((fort)=>fort.level === item.fortLevelRequirement).name }</span>
                   )}
                 </td>
               </tr>

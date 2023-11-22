@@ -13,7 +13,7 @@ export default async (req, res) => {
 
   const user = await prisma.users.findUnique({
     where: {
-      id: session.id,
+      id: session.user.id,
     },
   });
 

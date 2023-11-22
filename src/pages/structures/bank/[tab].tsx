@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { alertService } from '@/services';
 import { useUser } from '@/context/users';
 import Alert from '@/components/alert';
+import toLocale from '@/utils/numberFormatting';
 
 const Bank = () => {
   const router = useRouter();
@@ -24,12 +25,16 @@ const Bank = () => {
         .then((data) => setBankHistory(data))
         .catch((error) => console.error('Error fetching bank history:', error));
     }
+    fetch('/api/bank/getDeposits')
+      .then((response) => response.json())
+      .then((data) => setDepositsAvailable(data))
+      .catch((error) => console.error('Error fetching bank history:', error));
   }, [currentPage]);
 
 
   useEffect(() => {
     if(user && user.units){
-      setCitizenUnit(user?.units.find((u) => u.type === 'WORKER').quantity);
+      setCitizenUnit(user?.units.find((u) => u.type === 'WORKER')?.quantity | 0);
       setDepositsMax(user.maximumBankDeposits);
     }
   }, [user]);
@@ -98,6 +103,9 @@ const Bank = () => {
         </p>
         <p className="mb-0">
           Maximum Deposits Per Day: <span>{depositsMax}</span>
+        </p>
+        <p className="mb-0">
+          Deposits Available Today: <span>{despositsAvailable}</span>
         </p>
       </div>
       <div className="mb-4 flex justify-center">

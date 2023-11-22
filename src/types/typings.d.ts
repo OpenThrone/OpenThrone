@@ -22,7 +22,9 @@ export type BonusType =
   | 'INTEL'
   | 'INCOME'
   | 'PRICES';
-
+export type Locales =
+  | 'en-US'
+  | 'es-ES'
 export type BattleUnits = {
   type: string;
   quantity: number;
@@ -138,6 +140,7 @@ export type UnitUpgradeType = {
   level: number;
   bonus: number;
   cost: number;
+  minUnitLevel: number;
   unitsCovered: number;
 };
 export type PlayerBonus = {

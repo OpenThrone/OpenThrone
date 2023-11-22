@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { alertService } from '@/services';
 
 import { useUser } from '../context/users';
+import toLocale from '@/utils/numberFormatting';
 
 type UnitProps = {
   id: string;
@@ -30,7 +31,8 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
 
   useEffect(() => {
     if (items) {
-      setItems(items);
+      console.log(items);
+      setItems(items.filter((item) => item.armoryLevel <= user?.armoryLevel + 1));
     }
   }, [items]);
 
@@ -38,12 +40,19 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
     let sectionCost = 0;
     items.forEach((unit) => {
       const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-      sectionCost +=
-        parseInt(inputElement?.value || '0', 10) *
-        parseInt(unit.cost.replace(/,/g, ''), 10);
+      // Parse the value to number for calculation
+      const inputValue = parseInt(inputElement?.value.replace(/,/g, '') || '0', 10);
+      sectionCost += inputValue * parseInt(unit.cost.replace(/,/g, ''), 10);
     });
-    updateTotalCost(sectionCost); // Send the total cost for this section
+    updateTotalCost(sectionCost);
   };
+
+  const handleInputChange = (event) => {
+    // Format the number on input
+    const formattedValue = toLocale(parseInt(event.target.value.replace(/,/g, ''), 10), user?.locale);
+    console.log(formattedValue)
+    event.target.value = (formattedValue == 'NaN' ? 0 : formattedValue);
+  }
   useEffect(() => {
     if (items) {
       items.forEach((unit) => {
@@ -188,12 +197,12 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
                 <td className="border px-4 py-2">{unit.cost}</td>
                 <td className="border px-4 py-2">
                   <input
-                    type="number"
+                    type="text"
                     aria-labelledby={unit.id}
                     name={unit.id}
                     defaultValue="0"
                     min={0}
-                    onChange={computeTotalCostForSection}
+                    onChange={handleInputChange}
                     className="w-full rounded-md bg-gray-600 p-2"
                   />
                 </td>
