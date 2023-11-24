@@ -1,8 +1,10 @@
 import { ArmoryUpgrades, Fortifications } from "@/constants";
+import { BattleUpgradeProps } from "@/types/typings";
 import buyUpgrade from "@/utils/buyStructureUpgrade";
 import toLocale from "@/utils/numberFormatting";
+import React from "react";
 
-const ArmoryUpgradesTab = ({ userLevel, fortLevel, forceUpdate }) => {
+const ArmoryUpgradesTab: React.FC<BattleUpgradeProps> = ({ userLevel, fortLevel, forceUpdate }) => {
   console.log("ArmoryTab", userLevel, fortLevel);
   return (
     <table className="w-full table-fixed">
@@ -37,7 +39,7 @@ const ArmoryUpgradesTab = ({ userLevel, fortLevel, forceUpdate }) => {
                       Buy
                     </button>
                   ) : (
-                      <span>Unlock with Fort: {Fortifications.find((fort) => fort.level === item.fortLevel).name}</span>
+                      <span>Unlock with Fort: {Fortifications.find((fort) => fort.level === item.fortLevel)?.name}</span>
                   )
                 )}
               </td>

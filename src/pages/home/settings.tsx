@@ -1,4 +1,5 @@
 import Alert from "@/components/alert";
+import { useLayout } from "@/context/LayoutContext";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services";
 import { Locales, PlayerRace } from "@/types/typings";
@@ -12,6 +13,7 @@ const Settings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { user, forceUpdate } = useUser();
+  const { updateOptions} = useLayout();
   const [colorScheme, setColorScheme] = useState(user?.colorScheme || 'UNDEAD');
   const [locale, setLocale] = useState(user?.locale || 'en-US');
   const [passwordsMatch, setPasswordsMatch] = useState(true);
@@ -62,6 +64,8 @@ const Settings = () => {
     // Handle the response
     if (response.ok) {
       alertService.success('Locale updated successfully, please refresh the page to see the changes.');
+      forceUpdate();
+      updateOptions();
     } else {
       alertService.error(data.error);
     }
@@ -121,7 +125,7 @@ const Settings = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>Locale Formatting</div>
           <select
-            value={'en-US'}
+            value={locale}
             onChange={(e) => setLocale(e.target.value)}
             className="w-full rounded-md bg-gray-600 p-2"
           >

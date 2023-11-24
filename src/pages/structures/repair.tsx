@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
+import toLocale from '@/utils/numberFormatting';
 
 const Repair = () => {
   const { user, forceUpdate } = useUser();
@@ -76,11 +77,11 @@ const Repair = () => {
       <h2>Fort Repair</h2>
       <div className="my-5 flex justify-around">
         <p className="mb-0">
-          Gold On Hand: <span>{parseInt(user?.gold).toLocaleString()}</span>
+          Gold On Hand: <span>{toLocale(user?.gold, user?.locale)}</span>
         </p>
         <p className="mb-0">
           Banked Gold:{' '}
-          <span>{parseInt(user?.goldInBank).toLocaleString()}</span>
+          <span>{toLocale(user?.goldInBank, user?.locale)}</span>
         </p>
       </div>
 
@@ -102,14 +103,14 @@ const Repair = () => {
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>
-                Repair Cost Per HP: {fortification?.costPerRepairPoint} gold
+                Repair Cost Per HP: {toLocale(fortification?.costPerRepairPoint, user?.locale)} gold
               </td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">
               <td>
                 Total Repair Cost:{' '}
-                {fortification?.costPerRepairPoint *
-                  (fortification?.hitpoints - user?.fortHitpoints)}
+                {toLocale(fortification?.costPerRepairPoint *
+                  (fortification?.hitpoints - user?.fortHitpoints), user?.locale)}
               </td>
             </tr>
             <tr className="odd:bg-table-odd even:bg-table-even">

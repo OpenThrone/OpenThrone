@@ -1,8 +1,9 @@
 import { UnitTypes } from '@/constants';
 import { useLayout } from '@/context/LayoutContext';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Alert from './alert';
 import { alertService } from '@/services';
+import { useUser } from '@/context/users';
 const Modal = ({ isOpen, children, toggleModal }) => {
   if (!isOpen) return null;
   const layoutCont = useLayout();
@@ -74,6 +75,17 @@ const SpyMissionsModal = ({ isOpen, toggleModal, defenderID }) => {
   const [assassinateAmount, setAssassinateAmount] = useState(1);
   const [isAssassinateDisabled, setIsAssassinateDisabled] = useState(false);
   const [isInfiltrationDisabled, setIsInfiltrationDisabled] = useState(true);
+  const { user } = useUser();
+  const [units, setUnits] = useState({ SPY: 0, ASSASSIN: 0, INFILTRATOR: 0 });
+  useEffect(() => {
+    if (user) {
+      setUnits({
+        SPY: user.units.find((unit) => unit.type === 'SPY' && unit.level === 1)?.quantity | 0,
+        ASSASSIN: user.units.find((unit) => unit.type === 'SPY' && unit.level === 3)?.quantity | 0,
+        INFILTRATOR: user.units.find((unit) => unit.type === 'SPY' && unit.level === 2)?.quantity | 0,
+      });
+    }
+  }, [user]);
   const handleIntelGathering = () => {
     if(intelSpies > 10) {
       alertService.error('You can only send a maximum of 10 spies per mission.', false);
@@ -116,7 +128,7 @@ const SpyMissionsModal = ({ isOpen, toggleModal, defenderID }) => {
         </div>
 
         <h2 className="text-center">Intelligence Information</h2>
-        <p>Total Spies: </p>
+        <p>Spies Trained: {units.SPY}</p>
         <span>You can send a maximum of 10 spies per mission.</span>
         
       </div>
@@ -167,15 +179,15 @@ const SpyMissionsModal = ({ isOpen, toggleModal, defenderID }) => {
             <span>🔍 Intelligence Gathering</span><br />
             <small>Send up to 10 Spies to collect Intel</small>
           </CustomButton>
+          <CustomButton onClick={() => setCurrentPanel('infiltration')} disabled={isInfiltrationDisabled}>
+            <span>🚧 Infiltration</span><br />
+            <small>Infiltrate and Destroy the Fort</small><br />
+            {isInfiltrationDisabled && <b><small className='text-black'> Requires Fort: ###</small></b>}
+          </CustomButton>
           <CustomButton onClick={() => setCurrentPanel('assassination')} disabled={isAssassinateDisabled}>
             <span>🗡️ Assassination</span><br />
             <small>Attempt to assassinate player's Defenders</small><br/>
             {isAssassinateDisabled && <b><small className='text-black'> Requires Fort: ###</small></b>}
-          </CustomButton>
-          <CustomButton onClick={() => setCurrentPanel('infiltration')} disabled={isInfiltrationDisabled}>
-            <span>🚧 Infiltration</span><br />
-            <small>Infiltrate and Destroy the Fort</small><br/>
-            {isInfiltrationDisabled && <b><small className='text-black'> Requires Fort: ###</small></b>}
           </CustomButton>
         </div>
       ) : (

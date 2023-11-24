@@ -800,6 +800,10 @@ class UserModel {
     return this.structure_upgrades.find((struc)=> struc.type === 'OFFENSE').level || 0;
   }
 
+  get spyLevel(): number {
+    return this.structure_upgrades.find((struc)=> struc.type === 'SPY').level || 0;
+  }
+
 }
 
 export default UserModel;

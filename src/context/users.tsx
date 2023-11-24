@@ -1,20 +1,25 @@
 import { useRouter } from 'next/router';
 import { signOut, useSession } from 'next-auth/react';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import UserModel from '@/models/Users';
 import { alertService } from '@/services';
 
+interface UserContextType {
+  user: UserModel | null;
+  forceUpdate: () => void;
+  loading: boolean;
+}
 // Updated UserContext with forceUpdate function
-const UserContext = createContext({
-  user: null,
+const UserContext = createContext<UserContextType>({
+  user: null, // Default value for user is null
   forceUpdate: () => { },
   loading: true
 });
 
 export const useUser = () => useContext(UserContext);
 
-const isPublicPath = (path) => {
+const isPublicPath = (path: string) => {
   const publicPathsRegex = [
     /^\/account\/login$/,
     /^\/account\/register$/,
@@ -24,8 +29,10 @@ const isPublicPath = (path) => {
   ];
   return publicPathsRegex.some((regex) => regex.test(path));
 };
-
-export const UserProvider = ({ children }) => {
+interface UsersProviderProps {
+  children: ReactNode;
+}
+export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const router = useRouter();
   const { data, status } = useSession();
   const [user, setUser] = useState(null);
@@ -36,14 +43,12 @@ export const UserProvider = ({ children }) => {
     try {
       const response = await fetch(`/api/getUser`);
       if (!response.ok) {
-        alertService.error(response.error);
+        alertService.error(response?.error);
         signOut();
         throw { message: 'Failed to fetch user data', status: response.status };
       }
       const userData = await response.json();
       setUser(new UserModel(userData));
-      if (process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE && process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE !== '')
-        alertService.error(process.env.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE, true);
       if (userData?.beenAttacked) {
         alertService.error('You have been attacked since you were last active!');
       }

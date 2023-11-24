@@ -2,8 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 
-import { alertService } from '@/services';
-
 import { useUser } from '../context/users';
 import toLocale from '@/utils/numberFormatting';
 
@@ -15,7 +13,7 @@ type UnitProps = {
   cost: string;
   enabled: boolean;
   level?: number;
-  usage: string;
+  type: string;
   fortName: string;
 };
 
@@ -23,10 +21,11 @@ type UnitSectionProps = {
   heading: string;
   items: UnitProps[];
   updateTotalCost: (costChange: number) => void; // New prop
+  type: string;
 };
 
-const BattleUpgradesSection: React.FC<UnitSectionProps> = ({ heading, items, type }) => {
-  const { user, forceUpdate } = useUser();
+const BattleUpgradesSection: React.FC<UnitSectionProps> = ({ heading, items }) => {
+  const { user } = useUser();
   const [getItems, setItems] = useState(items || []);
 
   useEffect(() => {
@@ -35,7 +34,6 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({ heading, items, typ
     }
   }, [items]);
 
-  console.log(items);
   return (
     <div className="my-10 rounded-lg bg-gray-800">
       <table className="w-full table-auto">
@@ -54,9 +52,9 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({ heading, items, typ
               <td className="border px-4 py-2">{item.name}</td>
               <td className="border px-4 py-2">{item.ownedItems}</td>
               <td className="border px-4 py-2">{toLocale(item.cost, user?.locale)}</td>
-              <td className="border px-4 py-2">{item.bonus} {item.usage}</td>
+              <td className="border px-4 py-2">+{toLocale(item?.bonus || 0, user?.locale)} {item.type}</td>
               <td className="border px-4 py-2">
-                <input type="number" className="w-10" />
+                <input type="number" className="w-full rounded-md bg-gray-600 p-2" />
               </td>
             </tr>
           ))}

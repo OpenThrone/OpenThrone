@@ -10,6 +10,7 @@ import EconomyTab from '@/components/economy-upgrades';
 import OffenseUpgrade from '@/components/offenseupgrade';
 import Alert from '@/components/alert';
 import ArmoryUpgradesTab from '@/components/armory-upgrades';
+import ClandestineUpgrade from '@/components/clandestineupgrades';
 
 const UpgradeTab = () => {
   const router = useRouter();
@@ -133,7 +134,7 @@ const UpgradeTab = () => {
         {currentPage === 'houses' && <HousingTab userLevel={user?.houseLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
         {currentPage === 'armory' && <ArmoryUpgradesTab userLevel={user?.armoryLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/> }
         {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
-        {currentPage === 'intel' && renderTable(SpyUpgrades, user?.intelLevel)}
+        {currentPage === 'intel' && <ClandestineUpgrade userLevel={user?.spyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
       </div>
     </div>
   );

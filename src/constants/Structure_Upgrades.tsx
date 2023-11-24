@@ -232,6 +232,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 0,
+    level: 0
   },
   {
     name: 'Rope Training',
@@ -240,6 +241,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 50000,
+    level: 1
   },
   {
     name: 'Basic Stealth Training',
@@ -248,6 +250,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 125000,
+    level: 2
   },
   {
     name: 'Basic Disguise Kit Usage',
@@ -256,6 +259,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 250000,
+    level: 3
   },
   {
     name: 'Brass Knuckles Training',
@@ -264,6 +268,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 500000,
+    level: 4
   },
   {
     name: 'Informants',
@@ -272,6 +277,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 1000000,
+    level: 5
   },
   {
     name: 'Infiltration Training',
@@ -280,6 +286,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 1,
     maxAssassinations: 0,
     cost: 1500000,
+    level: 6
   },
   {
     name: 'Grappling Hook Training',
@@ -288,6 +295,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 2,
     maxAssassinations: 0,
     cost: 2000000,
+    level: 7
   },
   {
     name: 'Cudgel Training',
@@ -296,6 +304,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 3,
     maxAssassinations: 0,
     cost: 2500000,
+    level: 8
   },
   {
     name: 'Informant Detection',
@@ -304,6 +313,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 4,
     maxAssassinations: 0,
     cost: 3750000,
+    level: 9
   },
   {
     name: 'Stealth Training',
@@ -312,6 +322,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 5,
     maxAssassinations: 0,
     cost: 5000000,
+    level: 10
   },
   {
     name: 'Poison Usage',
@@ -320,6 +331,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 6,
     maxAssassinations: 0,
     cost: 7500000,
+    level: 11
   },
   {
     name: 'Knife Training',
@@ -328,6 +340,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 7,
     maxAssassinations: 0,
     cost: 10000000,
+    level: 12
   },
   {
     name: 'Languages',
@@ -336,6 +349,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 8,
     maxAssassinations: 0,
     cost: 15000000,
+    level: 13
   },
   {
     name: 'Languages',
@@ -344,6 +358,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 9,
     maxAssassinations: 0,
     cost: 20000000,
+    level: 14
   },
   {
     name: 'Lockpicks Usage',
@@ -352,6 +367,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 10,
     maxAssassinations: 50,
     cost: 20000000,
+    level: 15
   },
   {
     name: 'Hatchet Training',
@@ -360,6 +376,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 11,
     maxAssassinations: 70,
     cost: 37500000,
+    level: 16
   },
   {
     name: 'Translation',
@@ -368,6 +385,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 12,
     maxAssassinations: 90,
     cost: 50000000,
+    level: 17
   },
   {
     name: 'Camouflage Training',
@@ -376,6 +394,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 13,
     maxAssassinations: 110,
     cost: 75000000,
+    level: 18
   },
   {
     name: 'Tripwire Setting',
@@ -384,6 +403,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 14,
     maxAssassinations: 130,
     cost: 100000000,
+    level: 19
   },
   {
     name: 'Dart Gun Training',
@@ -392,6 +412,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 15,
     maxAssassinations: 150,
     cost: 125000000,
+    level: 20
   },
   {
     name: 'Forging',
@@ -400,6 +421,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 16,
     maxAssassinations: 170,
     cost: 150000000,
+    level: 21
   },
 ];
 

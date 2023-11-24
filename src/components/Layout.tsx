@@ -6,9 +6,9 @@ import { useEffect, useState } from 'react';
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
 import Sidebar from '@/components/sidebar';
-import { useUser } from '@/context/users';
 import { AppConfig } from '@/utils/AppConfig';
 import { useLayout } from '@/context/LayoutContext';
+import NewsBulletin from './news-bulletin';
 
 interface IMainProps {
   // eslint-disable-next-line react/no-unused-prop-types
@@ -18,7 +18,6 @@ interface IMainProps {
 const Layout = (props: IMainProps) => {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { user } = useUser();
   const [authorized, setAuthorized] = useState(status === 'authenticated');
   const layoutCont = useLayout();
   function authCheck(_url: string) {
@@ -74,6 +73,7 @@ const Layout = (props: IMainProps) => {
                     <Sidebar />
                   </div>
                   <div className="w-full bg-black px-3 sm:w-9/12">
+                    <NewsBulletin />
                     {props.children}
                   </div>
                 </>

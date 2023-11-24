@@ -88,7 +88,7 @@ export const UnitTypes: Unit[] = [
     level: 2,
     bonus: 20,
     cost: 10000,
-    fortLevel: 4,
+    fortLevel: 8,
     hp: 20,
   },
   {
@@ -97,7 +97,7 @@ export const UnitTypes: Unit[] = [
     level: 3,
     bonus: 50,
     cost: 25000,
-    fortLevel: 7,
+    fortLevel: 12,
     hp: 30,
   },
   {
@@ -115,7 +115,7 @@ export const UnitTypes: Unit[] = [
     level: 2,
     bonus: 20,
     cost: 10000,
-    fortLevel: 4,
+    fortLevel: 8,
     hp: 20,
   },
   {
@@ -124,7 +124,7 @@ export const UnitTypes: Unit[] = [
     level: 3,
     bonus: 50,
     cost: 25000,
-    fortLevel: 7,
+    fortLevel: 12,
     hp: 30,
   },
 ];

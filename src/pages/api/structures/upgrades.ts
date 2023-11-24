@@ -56,7 +56,7 @@ export default async(req, res) => {
           where: { id: session.user.id },
           data: {
             gold: userMod.gold - HouseUpgrades[index].cost,
-            house_level: index + 1,
+            house_level: index,
           },
         });
         // Logic for buying house upgrades
@@ -72,7 +72,7 @@ export default async(req, res) => {
           where: { id: session.user.id },
           data: {
             gold: userMod.gold - EconomyUpgrades[index].cost,
-            economy_level: index + 1,
+            economy_level: index,
           },
         });
         break;
@@ -107,6 +107,24 @@ export default async(req, res) => {
           data: {
             gold: userMod.gold - ArmoryUpgrades[index].cost,
             structure_upgrades: structure_upgrades('ARMORY'),
+          },
+        });
+        break;
+      case 'spy':
+        if (userMod.spyLevel < SpyUpgrades[index].level - 1) {
+          return res.status(400).json({ error: 'Invalid Spy Upgrade Level to purchase upgrade' });
+        }
+        if (userMod.gold < SpyUpgrades[index].cost) {
+          return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
+        }
+        if (userMod.fortLevel < SpyUpgrades[index].fortLevel) {
+          return res.status(400).json({ error: 'Invalid Fortification Level to purchase upgrade' });
+        }
+        await prisma.users.update({
+          where: { id: session.user.id },
+          data: {
+            gold: userMod.gold - SpyUpgrades[index].cost,
+            structure_upgrades: structure_upgrades('SPY'),
           },
         });
         break;

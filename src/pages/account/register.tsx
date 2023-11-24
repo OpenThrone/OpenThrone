@@ -14,7 +14,7 @@ const Register = () => {
         <div className="mx-auto w-3/4 py-2 md:col-span-9">
           <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">
             {errorMessage && (
-              <div className="alert alert-danger">{errorMessage}</div>
+              <div className="alert alert-error">{errorMessage}</div>
             )}
             <div className="flex justify-center">
               <div className="w-5/12">

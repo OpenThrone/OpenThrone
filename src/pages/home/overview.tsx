@@ -11,7 +11,7 @@ const Overview = () => {
       <h2>Overview</h2>
       <div className="container mx-auto">
         <p className="text-center">
-          <span className="text-white">{user?.displayName}</span> is a{' '}
+          <span className="text-white">{user?.displayName}</span> is a{user?.race === 'ELF' || user?.race === 'UNDEAD' ? 'n ' : ' '}
           {user?.race} {user?.class}
         </p>
         <div className="my-5 flex justify-between">

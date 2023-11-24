@@ -62,13 +62,23 @@ const raceClasses = {
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const [meta, setMeta] = useState({ title: '', description: '' });
   const { user } = useUser();
+  const [derivedRaceClasses, setDerivedRaceClasses] = useState<RaceColors>(raceClasses['ELF']);
 
-  // Determine the race and corresponding classes
-  const race = user?.colorScheme || user?.race || 'ELF';
-  const derivedRaceClasses = raceClasses[race];
+  const updateOptions = () => {
+    // Determine the race and corresponding classes
+    console.log('Updating options')
+    const race = user?.colorScheme || user?.race || 'ELF';
+    console.log('race: ', race);
+    setDerivedRaceClasses(raceClasses[race]);
+    console.log(derivedRaceClasses)
+  }
+  
+  useEffect(() => {
+    updateOptions();
+  }, [user]);
 
   return (
-    <LayoutContext.Provider value={{ ...meta, setMeta, raceClasses: derivedRaceClasses }}>
+    <LayoutContext.Provider value={{ ...meta, setMeta, raceClasses: derivedRaceClasses, updateOptions }}>
       <div className="hidden">
         {/* Link Classes */}
         <div className="text-elf-link-current hover:text-elf-link-hover text-elf-link-link"></div>

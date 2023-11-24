@@ -34,6 +34,11 @@ export interface PageAlert {
   type: 'SUCCESS' | 'DANGER' | 'INFO';
   message: string;
 }
+export interface BattleUpgradeProps {
+  userLevel: number; // Assuming userLevel is a number
+  fortLevel: number; // Assuming fortLevel is a number
+  forceUpdate: () => void; // Assuming forceUpdate is a function with no arguments and no return value
+}
 
 export type CasualtiesResult = {
   attackerCasualties: AttackPlayerUnit[];
@@ -126,6 +131,7 @@ export type SpyUpgradeType = {
   maxInfiltrations: number;
   maxAssassinations: number;
   cost: number;
+  level: number;
 };
 export type SentryUpgradeType = {
   name: string;

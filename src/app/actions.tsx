@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import BattleResult from '@/models/BattleResult';
 import BattleSimulationResult from '@/models/BattleSimulationResult';
 import UserModel from '@/models/Users';
-import type { BattleUnits } from '@/types/typings';
+import type { BattleUnits, ItemType } from '@/types/typings';
 
 /**
  * Generates a random number between the given minimum and maximum values (inclusive).
@@ -24,7 +24,7 @@ function mtRand(min: number, max: number): number {
  * @param isAttacker - Whether the user is the attacker or defender
  * @returns The total killing strength of the user's units.
  */
-function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE', isAttacker: boolean): number {
+function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE'): number {
   let strength = 0;
   const unitMultiplier = unitType === 'OFFENSE' ? (1 + parseInt(user.attackBonus.toString(), 10) / 100) :
     (1 + parseInt(user.defenseBonus.toString(), 10) / 100);
@@ -37,8 +37,9 @@ function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE', isA
       strength += (unitInfo.bonus || 0) * unit.quantity;
     }
 
-    const itemCounts = {};
-    user.items.filter((item) => item.usage === unit.type).forEach((item) => {
+    const itemCounts: Record<ItemType, number> = { WEAPON: 0, HELM: 0, BOOTS: 0, BRACERS: 0, SHIELD: 0, ARMOR:0 };
+
+    user.items.filter((item) => item.unitType === unit.type).forEach((item) => {
       itemCounts[item.type] = itemCounts[item.type] || 0;
 
       const itemInfo = WeaponTypes.find(
@@ -57,11 +58,11 @@ function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE', isA
 }
 
 function getKillingStrength(user: UserModel, attacker: boolean): number {
-  return calculateStrength(user, attacker ? 'OFFENSE' : 'DEFENSE', attacker);
+  return calculateStrength(user, attacker ? 'OFFENSE' : 'DEFENSE');
 }
 
 function getDefenseStrength(user: UserModel, defender: boolean): number {
-  return calculateStrength(user, defender ? 'DEFENSE' : 'OFFENSE', defender);
+  return calculateStrength(user, defender ? 'DEFENSE' : 'OFFENSE');
 }
 
 /**
@@ -287,8 +288,6 @@ function simulateBattle(
     const defenderKS = getKillingStrength(defender, false);
     const attackerDS = getDefenseStrength(attacker, false);
 
-    console.log('attackerKS: ', attackerKS);
-    console.log('defenderDS: ', defenderDS);
     const offenseToDefenseRatio =
       defenderDS === 0 ? 1 : attackerKS / defenderDS;
     const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
@@ -413,12 +412,12 @@ function simulateIntel(
       defenderDS === 0 ? 1 : attackerKS / defenderDS;
     const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
 
-    const TargetPop = Math.max(
+    /*const TargetPop = Math.max(
       defender.unitTotals.defense,// + defender.unitTotals.citizens,
       1
     );
-    const CharPop = attacker.unitTotals.offense;
-    const AmpFactor = computeAmpFactor(TargetPop);
+    //const CharPop = attacker.unitTotals.offense;
+    //const AmpFactor = computeAmpFactor(TargetPop);
     
     // Distribute casualties among defense units if fort is destroyed
     //result.Losses.Defender.total += distributeCasualties(defenseUnits, DefCalcCas);
@@ -445,18 +444,21 @@ function simulateIntel(
     if (attacker.unitTotals.offense <= 0) {
       break;
     }
+    return {
+      offenseToDefenseRatio,counterAttackRatio
+    }
   }
 }
     
 function simulateAssassination() {
-  
+  return {}
 }
 
 function simulateInfiltration() {
-  
+  return {};
 }
 
-export async function spyHandler(attackerId: number, defenderId: number, spies: number) { 
+export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string) { 
   const attacker: UserModel = new UserModel(await prisma?.users.findUnique({
     where: { id: attackerId },
   }));
@@ -472,13 +474,19 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
 
   const AttackPlayer = new UserModel(attacker);
   const DefensePlayer = new UserModel(defender);
-
-  const spyResults = simulateIntel(AttackPlayer, DefensePlayer, spies);
+  let spyResults = {}
+  if (type === 'INTEL') {
+    spyResults = simulateIntel(AttackPlayer, DefensePlayer, spies);
+  } else if (type === 'ASSASSINATION') {
+    spyResults = simulateAssassination();
+  } else {
+    spyResults = simulateInfiltration();
+  }
 
   //AttackPlayer.spies -= spies;
-  AttackPlayer.experience += spyResults.experienceResult.Experience.Attacker;
-  AttackPlayer.gold += spyResults.goldStolen;
-  AttackPlayer.units = spyResults.units;
+  //AttackPlayer.experience += spyResults.experienceResult.Experience.Attacker;
+  //AttackPlayer.gold += spyResults.goldStolen;
+  //AttackPlayer.units = spyResults.units;
 
   /*await prisma.users.update({
     where: { id: attackerId },

@@ -11,6 +11,8 @@ import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { alertService } from '@/services';
+import { Fortifications } from '@/constants';
+import toLocale from '@/utils/numberFormatting';
 
 const Index = ({ users }) => {
   const hideSidebar = false;
@@ -78,6 +80,12 @@ const Index = ({ users }) => {
         <Alert />
       </div>
 
+      <div className="container mx-auto">
+        <p className="text-center">
+          <span className="text-white">{profile?.displayName}</span> is a{profile.race === 'ELF' || profile.race === 'UNDEAD' ? 'n ':' '}
+          {profile?.race} {profile?.class}
+        </p>
+      </div>
       <div className="my-4 flex justify-around">
         <p className="mb-0">Level: {profile?.level}</p>
         <p className="mb-0">Overall Rank: {users?.overallrank}</p>
@@ -110,7 +118,7 @@ const Index = ({ users }) => {
                   <h6>Online</h6>
                 </div>
               ) : (
-                <div className="alert alert-danger">
+                <div className="alert alert-error">
                   <h6>Offline</h6>
                 </div>
               )}
@@ -190,11 +198,11 @@ const Index = ({ users }) => {
               </tr>
               <tr className="odd:bg-table-odd even:bg-table-even">
                 <td>Fortification</td>
-                <td>{profile?.fortLevel}</td>
+                <td>{Fortifications.find((fort)=> fort.level === profile?.fortLevel).name}</td>
               </tr>
               <tr className="odd:bg-table-odd even:bg-table-even">
                 <td>Gold</td>
-                <td>{profile?.gold?.toLocaleString()}</td>
+                <td>{toLocale(profile?.gold)}</td>
               </tr>
             </tbody>
           </table>

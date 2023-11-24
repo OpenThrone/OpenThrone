@@ -1,9 +1,9 @@
 import buyUpgrade from '@/utils/buyStructureUpgrade';
-import { useUser } from '@/context/users';
-import { EconomyUpgrades, Fortifications, HouseUpgrades } from '@/constants';
+import { Fortifications, HouseUpgrades } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
+import { BattleUpgradeProps } from '@/types/typings';
 
-const HousingTab = ({ userLevel, fortLevel, forceUpdate }) => {
+const HousingTab: React.FC<BattleUpgradeProps> = ({ userLevel, fortLevel, forceUpdate }) => {
   return (
     <><table className="w-full">
       <thead className="text-left">
@@ -44,7 +44,7 @@ const HousingTab = ({ userLevel, fortLevel, forceUpdate }) => {
                       // Display unlock information if fort level is not enough
                       <>
                         <div>Unlocked with:</div>
-                          <div>- {Fortifications.find((fort) => fort.level === item.fortLevel).name}</div>
+                          <div>- {Fortifications.find((fort) => fort.level === item.fortLevel)?.name}</div>
                       </>
                     )}
                   </>
@@ -53,7 +53,7 @@ const HousingTab = ({ userLevel, fortLevel, forceUpdate }) => {
                 {item.index > userLevel + 1 && (
                   <>
                     <div>Unlocked with:</div>
-                    <div>- {Fortifications.find((fort) => fort.level === item.fortLevel).name}</div>
+                    <div>- {Fortifications.find((fort) => fort.level === item.fortLevel)?.name}</div>
                   </>
                 )}
               </td>

@@ -1,6 +1,7 @@
 import BattleUpgradesSection from '@/components/battle-upgrade';
 import DefenseUpgrade from '@/components/defenseupgrade';
 import { useUser } from '@/context/users';
+import toLocale from '@/utils/numberFormatting';
 
 const Upgrades = () => {
   const { user, forceUpdate } = useUser();
@@ -9,10 +10,10 @@ const Upgrades = () => {
       <h2>Upgrades</h2>
       <div className="my-5 flex justify-around">
         <p className="mb-0">
-          Gold On Hand: <span>{user?.gold.toLocaleString() ?? 0}</span>
+          Gold On Hand: <span>{toLocale(user?.gold)}</span>
         </p>
         <p className="mb-0">
-          Banked Gold: <span>{user?.goldInBank.toLocaleString() ?? 0}</span>
+          Banked Gold: <span>{toLocale(user?.goldInBank)}</span>
         </p>
       </div>
       <br />

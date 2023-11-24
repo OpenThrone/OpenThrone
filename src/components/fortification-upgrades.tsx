@@ -2,8 +2,9 @@ import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { useUser } from '@/context/users';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
+import { BattleUpgradeProps } from '@/types/typings';
 
-const FortificationsTab = ({ userLevel, fortLevel }) => {
+const FortificationsTab: React.FC<BattleUpgradeProps> = ({ userLevel, fortLevel }) => {
   const { forceUpdate, user } = useUser();
   return (
     <><table className="w-full table-fixed">
