@@ -1,15 +1,15 @@
-# DarkCurse - NextJS Project
+# OpenThrone - NextJS Project
 #### Forked from NextJs-Boilerplate by CreativeDesignsGuru
 
 
 ## Background
-DarkCurse is a community project hoping to recreate the TextBased MMORPG called DarkThrone which has gone dark after almost 20years of service. While we are not affiliated with the original DarkThrone project, our community hopes to be able to deliver a game that can pick up where DT left off and bring forth many of the enhancements and hopes that we were patiently waiting for.
+OpenThrone is a community project hoping to recreate the TextBased MMORPG called DarkThrone which has gone dark after almost 20years of service. While we are not affiliated with the original DarkThrone project, our community hopes to be able to deliver a game that can pick up where DT left off and bring forth many of the enhancements and hopes that we were patiently waiting for.
 
 ## Development Notes
-DarkCurse project was originally started by Moppler (Matt Gibney) here: https://github.com/MattGibney/DarkCurse. This project has been archived and is no longer being updated. We've since decided to port it to NextJS/React, while trying to keep alot of the heavy lift that was already done previously from a design perspective. 
+OpenThrone start out as a fork of the Dark Curse project which was originally started by Moppler (Matt Gibney) here: https://github.com/MattGibney/DarkCurse. This project has been archived and is no longer being updated. We've since decided to port it to NextJS/React, while trying to keep a lot of the heavy lift that was already done previously from a design perspective. 
 
-## Game Status - PRE-ALPHA / LIVE DEVELOPMENT
-There's currently a live server running at https://darkcurse.dev, however it should be noted that at this time, this server is a live development server and will be reset often and sometimes without notice. 
+## ~~Game Status - PRE-ALPHA / LIVE DEVELOPMENT~~
+~~There's currently a live server running at , however it should be noted that at this time, this server is a live development server and will be reset often and sometimes without notice. ~~
 
 ## FAQ
 - Is the game still being actively developed?
@@ -41,6 +41,6 @@ Everyone is welcome to contribute to this project. Feel free to open an issue if
 
 ### License
 
-Licensed under the MIT License, Copyright © 2022
+Licensed under the MIT License, Copyright © 2023
 
 See [LICENSE](LICENSE) for more information.

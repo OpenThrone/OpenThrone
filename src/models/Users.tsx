@@ -173,14 +173,6 @@ class UserModel {
   }
 
   /**
-   * Returns the total population of the user, calculated by summing the quantity of all units.
-   * @returns {number} The total population of the user.
-   */
-  get population() {
-    return this.units.reduce((acc, unit) => acc + unit.quantity, 0);
-  }
-
-  /**
    * Returns the number of available proficiency points for the user.
    * This is calculated by subtracting the sum of bonus points' levels from the user's level.
    * @returns {number} The number of available proficiency points.
@@ -294,6 +286,14 @@ class UserModel {
     return intel + intelLevelBonus;
   }
 
+  get spyBonus() {
+    return SpyUpgrades[this?.spyLevel].offenseBonusPercentage + this.intelBonus;
+  }
+
+  get sentryBonus() {
+    return SentryUpgrades[this?.sentryLevel].defenseBonusPercentage + this.intelBonus;
+  }
+
   /**
    * Returns the total recruiting bonus for the user.
    * @returns {number} The total recruiting bonus.
@@ -351,10 +351,10 @@ class UserModel {
   }
 
   /**
-   * Returns the total size of the user's kingdom based on the quantity of units they have.
-   * @returns {number} The total size of the user's kingdom.
+   * Returns the total population of the user, calculated by summing the quantity of all units.
+   * @returns {number} The total population of the user.
    */
-  get kingdomSize(): number {
+  get population() {
     return this.units.reduce((acc, unit) => acc + unit.quantity, 0);
   }
 
@@ -510,16 +510,16 @@ class UserModel {
     // Apply the appropriate bonus based on the type
     switch (type) {
       case 'OFFENSE':
-        totalStat *= 1 + parseInt(this.attackBonus.toString(), 10) / 100;
+        totalStat *= 1 + this.attackBonus / 100;
         break;
       case 'DEFENSE':
-        totalStat *= 1 + parseInt(this.defenseBonus.toString(), 10) / 100;
+        totalStat *= 1 + this.defenseBonus / 100;
         break;
       case 'SPY':
-        totalStat *= 1 + parseInt(this.intelBonus.toString(), 10) / 100;
+        totalStat *= 1 + this.spyBonus / 100;
         break;
       case 'SENTRY':
-        totalStat *= 1 + parseInt(this.intelBonus.toString(), 10) / 100;
+        totalStat *= 1 + this.sentryBonus / 100;
         break;
       default:
         break;
@@ -802,6 +802,10 @@ class UserModel {
 
   get spyLevel(): number {
     return this.structure_upgrades.find((struc)=> struc.type === 'SPY').level || 0;
+  }
+
+  get sentryLevel(): number {
+    return this.structure_upgrades.find((struc)=> struc.type === 'SENTRY').level || 0;
   }
 
 }

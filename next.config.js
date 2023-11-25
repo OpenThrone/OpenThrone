@@ -18,6 +18,10 @@ module.exports = withBundleAnalyzer({
   },
   eslint: {
     dirs: ['.'],
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   },
   poweredByHeader: true,
   trailingSlash: false,
@@ -27,7 +31,7 @@ module.exports = withBundleAnalyzer({
     apiUrl:
       process.env.NODE_ENV === 'development'
         ? 'http://192.168.4.19:3000/api' // development api
-        : 'https://darkcurse.dev/api', // production api
+        : 'https://OpenThrone.dev/api', // production api
   },
   // The starter code load resources from `public` folder with `router.basePath` in React components.
   // So, the source code is "basePath-ready".

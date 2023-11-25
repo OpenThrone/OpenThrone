@@ -66,11 +66,8 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
 
   const updateOptions = () => {
     // Determine the race and corresponding classes
-    console.log('Updating options')
     const race = user?.colorScheme || user?.race || 'ELF';
-    console.log('race: ', race);
     setDerivedRaceClasses(raceClasses[race]);
-    console.log(derivedRaceClasses)
   }
   
   useEffect(() => {

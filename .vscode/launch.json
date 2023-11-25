@@ -8,7 +8,7 @@
       "type": "chrome",
       "request": "launch",
       "name": "Next: Chrome",
-      "url": "https://darkcurse.dev",
+      "url": "https://OpenThrone.dev",
       "webRoot": "${workspaceFolder}"
     },
     {

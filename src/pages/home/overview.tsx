@@ -20,7 +20,7 @@ const Overview = () => {
         <p className="text-center">
           Share this link to gain up to 25 citizens per day:{' '}
           <a
-            href={`https://darkcurse.dev/recruit/${user?.recruitingLink}`}
+            href={`https://OpenThrone.dev/recruit/${user?.recruitingLink}`}
             className="text-blue-500"
           >
             {user?.recruitingLink}

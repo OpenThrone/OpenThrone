@@ -4,7 +4,7 @@ require('dotenv').config();
 
 module.exports = defineConfig({
   e2e: {
-    baseUrl: 'https://darkcurse.dev',
+    baseUrl: 'https://OpenThrone.dev',
     setupNodeEvents(on, config) {
       config.env = {
         ...process.env,

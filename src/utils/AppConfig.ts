@@ -2,7 +2,7 @@
 
 export const AppConfig = {
   site_name: 'Starter',
-  title: 'Dark Curse',
+  title: 'Open Throne',
   description: 'A Massive Online Adventure Reborn',
   locale: 'en',
 };

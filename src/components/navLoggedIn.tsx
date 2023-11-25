@@ -49,7 +49,7 @@ const subMenus: {
       parent: 'Community',
     },
     { text: 'Auto Recruit', href: '/auto-recruit', parent: 'Community' },
-    { text: 'Report Issues', href: 'https://github.com/uaktags/darkcurse-nextjs/issues', parent: 'Community' },
+    { text: 'Report Issues', href: 'https://github.com/uaktags/OpenThrone/issues', parent: 'Community' },
   ],
 };
 

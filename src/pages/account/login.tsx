@@ -11,7 +11,7 @@ const Login = () => {
   useEffect(() => {
     if (setMeta) {
       setMeta({
-        title: 'DarkCurse - Login',
+        title: 'OpenThrone - Login',
         description: 'Meta Description',
       });
     }

@@ -8,7 +8,7 @@ const Index = () => {
   useEffect(() => {
     if (setMeta) {
       setMeta({
-        title: 'DarkCurse',
+        title: 'OpenThrone',
         description: 'Meta Description',
       });
     }
@@ -38,7 +38,7 @@ const Index = () => {
               </span>
             </li>
             <li>
-              Stay in contact with the game&apos;s developers via the DarkCurse
+              Stay in contact with the game&apos;s developers via the OpenThrone
               Discord
             </li>
           </ul>
