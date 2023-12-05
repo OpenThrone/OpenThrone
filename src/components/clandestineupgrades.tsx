@@ -40,7 +40,7 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({ userLevel, fortLevel
                 <td className="border px-2 py-1">{item.name} {(item.level === userLevel) && ("(Current Upgrade)")}</td>
                 <td className="border px-2 py-1">{Fortifications.find((fort)=>fort.level === item.fortLevelRequirement)?.name}</td>
                 <td className="border px-2 py-1">
-                  Offense Bonus: {item.offenseBonusPercentage}%<br />
+                  Spy Bonus: {item.offenseBonusPercentage}%<br />
                   Max Infiltrations: {item.maxInfiltrations}<br />
                   Max Assassinations: {item.maxAssassinations}
                 </td>
@@ -55,10 +55,10 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({ userLevel, fortLevel
                     >
                       Buy
                     </button>
-                  ) : item.fortLevelRequirement <= fortLevel && index > userLevel ? (
-                    <span>Unlock with: <br />{SpyUpgrades[index]?.name}</span>
+                  ) : item.fortLevelRequirement < fortLevel && index > userLevel ? (
+                    <span>Unlock with Upgrade: <br />{SpyUpgrades[index - 1]?.name}</span>
                   ) : (
-                      item.fortLevelRequirement >= fortLevel && <span>Unlock with: <br/>{ Fortifications.find((fort)=>fort.level === item.fortLevelRequirement)?.name }</span>
+                      item.fortLevelRequirement > fortLevel && <span>Unlock with Fort: <br/>{ Fortifications.find((fort)=>fort.level === item.fortLevelRequirement)?.name }</span>
                   )}
                 </td>
               </tr>
