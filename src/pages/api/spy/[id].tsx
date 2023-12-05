@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (session) {
     switch (req.body.type) {
-      case 'intel':
+      case 'INTEL':
         if (req.body.spies <= 0) {
           return res.status(400).json({ status: 'failed' });
         }
@@ -36,7 +36,8 @@ export default async function handler(req, res) {
             await spyHandler(
               session.user.id,
               parseInt(req.query.id),
-              parseInt(req.body.spies)
+              parseInt(req.body.spies),
+              req.body.type
             )
           );
       case 'assassinate':

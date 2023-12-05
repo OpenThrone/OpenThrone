@@ -37,6 +37,7 @@ function generateRaceColors(
     bodyBg,
     footer,
     title: titleColor,
+    border: menuSecondary,
   };
 }
 module.exports = {
@@ -45,6 +46,7 @@ module.exports = {
     pattern: [
       /text-(elf|goblin|human|undead)-link-(current|hover|link)/,
       /bg-(elf|goblin|human|undead)-(header-bgcolor|menu-(primary|secondary)|sidebar-bgcolor|bodyBg|footer)/,
+      /border-(elf|goblin|human|undead)/,
     ],
     variants: ['sm', 'md', 'lg', 'xl', '2xl'],
   },

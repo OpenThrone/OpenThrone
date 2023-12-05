@@ -7,7 +7,7 @@ import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
 import Sidebar from '@/components/sidebar';
 import { AppConfig } from '@/utils/AppConfig';
-import { useLayout } from '@/context/LayoutContext';
+import { raceClasses, useLayout } from '@/context/LayoutContext';
 import NewsBulletin from './news-bulletin';
 
 interface IMainProps {
@@ -51,7 +51,7 @@ const Layout = (props: IMainProps) => {
         } px-1 text-yellow-400 antialiased`}
       >
         <div className="mx-auto max-w-screen-xl">
-          <header className="mx-auto max-w-screen-xl border-b border-gray-300">
+          <header className={`mx-auto max-w-screen-xl ${layoutCont.raceClasses.borderBottomClass}`}>
             <div
               className={`${
                 authorized ? layoutCont.raceClasses.bgClass : 'bg-elf-header-bgcolor'
@@ -72,7 +72,7 @@ const Layout = (props: IMainProps) => {
                   <div className="w-full px-3 sm:w-3/12">
                     <Sidebar />
                   </div>
-                  <div className="w-full bg-black px-3 sm:w-9/12">
+                  <div className={`w-full bg-black ${layoutCont.raceClasses.borderClass} px-3 sm:w-9/12`}>
                     <NewsBulletin />
                     {props.children}
                   </div>

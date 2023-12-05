@@ -376,6 +376,26 @@ function simulateBattle(
   return result;
 }
 
+function getSpyStrength(user: UserModel, attacker: boolean, spies: number): number {
+  /* This should query the user.units where type = 'SPY' if attacker==true or type = 'SENTRY' if false */
+  /* We'll then grab the number of spies and sentries and multiply them by their respective strength */
+  /* This should also query the user.items where type = 'WEAPON' and unitType = 'SPY' if attacker==true or type = 'WEAPON' and unitType = 'SENTRY' if false */
+  /* This should also query the user.items where type != 'WEAPON' and unitType = 'SPY' if attacker==true or type != 'WEAPON' and unitType = 'SENTRY' if false */
+  /* We'll then multiply the items' bonus by the number of 'spies' provided or by the number of items quantity, whichever is less */
+  let strength = 0;
+  let numSpies = 0;
+  const spyUnits = user.units.find((u) => (attacker ? u.type === 'SPY' : u.type === 'SENTRY') && u.level === 1);
+  if (spyUnits) {
+    numSpies = Math.min(spyUnits.quantity, spies);
+    const unitType = UnitTypes.find((unitType) => unitType.type === spyUnits.type && unitType.level === 1);
+    if (unitType) {
+      strength += unitType.bonus * numSpies;
+    }
+    const spyWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.unitType === spyUnits.type);
+    console.log('spy WEapons: ', spyWeapons); 
+  }
+  return strength;
+}
 function simulateIntel(
   attacker: UserModel,
   defender: UserModel,
@@ -384,7 +404,6 @@ function simulateIntel(
   const result = new BattleResult(attacker, defender);
   // Ensure attack_turns is within [1, 10]
   spies = Math.max(1, Math.min(spies, 10));
-
   const fortification = Fortifications[defender.fortLevel];
   if (!fortification) {
     return { status: 'failed', message: 'Fortification not found' };
@@ -397,14 +416,14 @@ function simulateIntel(
       (fortHitpoints / fortification?.hitpoints) *
       fortification?.defenseBonusPercentage;
 
-    const attackerKS = getKillingStrength(attacker, true);
-    const defenderstrength = getDefenseStrength(defender, true);
+    const attackerKS = getSpyStrength(attacker, true, spies);
+    /*const defenderstrength = getSpyDefense(defender, true);
     console.log(defenderstrength);
     const defenderDS =
       defenderstrength * (1 + fortDefenseBoost / 100);
 
-    const defenderKS = getKillingStrength(defender, false);
-    const attackerDS = getDefenseStrength(attacker, false);
+    const defenderKS = getSpyStrength(defender, false);
+    const attackerDS = getSpyDefense(attacker, false);
 
     console.log('attackerKS: ', attackerKS);
     console.log('defenderDS: ', defenderDS);
@@ -445,7 +464,7 @@ function simulateIntel(
       break;
     }
     return {
-      offenseToDefenseRatio,counterAttackRatio
+      //offenseToDefenseRatio,counterAttackRatio
     }
   }
 }
@@ -472,11 +491,10 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     return { status: 'failed', message: 'Insufficient spies' };
   }
 
-  const AttackPlayer = new UserModel(attacker);
-  const DefensePlayer = new UserModel(defender);
   let spyResults = {}
+  console.log('type: ', type)
   if (type === 'INTEL') {
-    spyResults = simulateIntel(AttackPlayer, DefensePlayer, spies);
+    spyResults = simulateIntel(attacker, defender, spies);
   } else if (type === 'ASSASSINATION') {
     spyResults = simulateAssassination();
   } else {
@@ -500,8 +518,8 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
   return {
     status: 'success',
     result: spyResults,
-    attacker: AttackPlayer,
-    defender: DefensePlayer,
+    attacker: attacker,
+    defender: defender,
     extra_variables: {
       spies,
       spyResults,

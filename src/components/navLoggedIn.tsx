@@ -54,7 +54,6 @@ const subMenus: {
 };
 
 export const NavLoggedIn: React.FC = () => {
-  const { user } = useUser();
   const router = useRouter();
   const [activeSubMenu, setActiveSubMenu] = useState<
     { text: string; href: string; parent: string }[]
@@ -185,7 +184,7 @@ export const NavLoggedIn: React.FC = () => {
             <ul className="flex flex-wrap items-center justify-evenly text-center text-xl">
               {parentLinks.map((link) => {
                 return (
-                  <li className="mr-6" key={link}>
+                  <li className="px-6" key={link}>
                     <Link
                       href="/"
                       className={`border-none ${

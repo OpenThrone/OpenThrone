@@ -104,32 +104,32 @@ export const WeaponTypes: Weapon[] = [
   {
     name: 'Padded Armor',
     usage: 'OFFENSE',
-    level: 4,
+    level: 1,
     bonus: 19,
     cost: 9500,
     type: 'ARMOR',
     race: 'ALL',
-    armoryLevel: 3
+    armoryLevel: 0
   },
   {
     name: 'Leather Armor',
     usage: 'OFFENSE',
-    level: 5,
+    level: 2,
     bonus: 38,
     cost: 19000,
     type: 'ARMOR',
     race: 'ALL',
-    armoryLevel: 4
+    armoryLevel: 1
   },
   {
     name: 'Studded Leather Armor',
     usage: 'OFFENSE',
-    level: 6,
+    level: 3,
     bonus: 75,
     cost: 37500,
     type: 'ARMOR',
     race: 'ALL',
-    armoryLevel: 5
+    armoryLevel: 2
   },
   {
     name: 'Padded Boots',
@@ -401,4 +401,252 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     armoryLevel: 2
   },
+  {
+    name: 'Sling',
+    usage: 'SPY',
+    level: 1,
+    bonus: 25,
+    cost: 12500,
+    race: 'ALL',
+    type: 'WEAPON',
+    armoryLevel: 0
+  },
+  {
+    name: 'Brass Knuckles',
+    usage: 'SPY',
+    level: 2,
+    bonus: 50,
+    cost: 25000,
+    race: 'ALL',
+    type: 'WEAPON',
+    armoryLevel: 1
+  },
+  {
+    name: 'Cudgel',
+    usage: 'SPY',
+    level: 3,
+    bonus: 100,
+    cost: 50000,
+    race: 'ALL',
+    type: 'WEAPON',
+    armoryLevel: 2
+  },
+  {
+    name: 'Knife',
+    usage: 'SPY',
+    level: 4,
+    bonus: 225,
+    cost: 100000,
+    race: 'ALL',
+    type: 'WEAPON',
+    armoryLevel: 3
+  },
+  {
+    name: 'Cloth Cap',
+    usage: 'SPY',
+    level: 1,
+    bonus: 6,
+    cost: 3000,
+    race: 'ALL',
+    type: 'HELM',
+    armoryLevel: 0
+  },
+  {
+    name: 'Padded Cap',
+    usage: 'SPY',
+    level: 2,
+    bonus: 12,
+    cost: 6000,
+    race: 'ALL',
+    type: 'HELM',
+    armoryLevel: 1
+  }, {
+    name: 'Leather Cap',
+    usage: 'SPY',
+    level: 3,
+    bonus: 25,
+    cost: 12500,
+    race: 'ALL',
+    type: 'HELM',
+    armoryLevel: 2
+  },
+  {
+    name: 'Cloth Hood',
+    usage: 'SPY',
+    level: 4,
+    bonus: 50,
+    cost: 25000,
+    race: 'ALL',
+    type: 'HELM',
+    armoryLevel: 3
+  },
+  {
+    name: 'Dark Cloth Armor',
+    usage: 'SPY',
+    level: 1,
+    bonus: 19,
+    cost: 9500,
+    race: 'ALL',
+    type: 'ARMOR',
+    armoryLevel: 0
+  },
+  {
+    name: 'Padded Cloth Armor',
+    usage: 'SPY',
+    level: 2,
+    bonus: 38,
+    cost: 19000,
+    race: 'ALL',
+    type: 'ARMOR',
+    armoryLevel: 1
+  }, {
+    name: 'Leather Armor',
+    usage: 'SPY',
+    level: 3,
+    bonus: 75,
+    cost: 37500,
+    race: 'ALL',
+    type: 'ARMOR',
+    armoryLevel: 2
+  },
+  {
+    name: 'Padded Leather Armor',
+    usage: 'SPY',
+    level: 4,
+    bonus: 150,
+    cost: 75000,
+    race: 'ALL',
+    type: 'ARMOR',
+    armoryLevel: 3
+  },
+  {
+    name: 'Cloth Boots',
+    usage: 'SPY',
+    level: 1,
+    bonus: 6,
+    cost: 3000,
+    race: 'ALL',
+    type: 'BOOTS',
+    armoryLevel: 0
+  },
+  {
+    name: 'Padded Boots',
+    usage: 'SPY',
+    level: 2,
+    bonus: 12,
+    cost: 6000,
+    race: 'ALL',
+    type: 'BOOTS',
+    armoryLevel: 1
+  },
+  {
+    name: 'Leather Boots',
+    usage: 'SPY',
+    level: 3,
+    bonus: 25,
+    cost: 12500,
+    race: 'ALL',
+    type: 'BOOTS',
+    armoryLevel: 2
+  },
+  {
+    name: 'Padded Leather Boots',
+    usage: 'SPY',
+    level: 4,
+    bonus: 50,
+    cost: 25000,
+    race: 'ALL',
+    type: 'BOOTS',
+    armoryLevel: 3
+  },
+  {
+    name: 'Cloth Bracers',
+    usage: 'SPY',
+    level: 1,
+    bonus: 3,
+    cost: 1500,
+    race: 'ALL',
+    type: 'BRACERS',
+    armoryLevel: 0
+  },
+  {
+    name: 'Padded Bracers',
+    usage: 'SPY',
+    level: 2,
+    bonus: 5,
+    cost: 2500,
+    race: 'ALL',
+    type: 'BRACERS',
+    armoryLevel: 1
+  },
+  {
+    name: 'Leather Bracers',
+    usage: 'SPY',
+    level: 3,
+    bonus: 10,
+    cost: 5000,
+    race: 'ALL',
+    type: 'BRACERS',
+    armoryLevel: 2
+  },
+  {
+    name: 'Padded Leather Bracers',
+    usage: 'SPY',
+    level: 4,
+    bonus: 20,
+    cost: 10000,
+    race: 'ALL',
+    type: 'BRACERS',
+    armoryLevel: 3
+  },
+  {
+    name: 'Sling',
+    usage: 'SENTRY',
+    level: 1,
+    bonus: 25,
+    cost: 12500,
+    race: 'ALL',
+    type: 'WEAPON',
+    armoryLevel: 0
+  },
+  {
+    name: 'Dagger',
+    usage: 'SENTRY',
+    level: 2,
+    bonus: 50,
+    cost: 25000,
+    race: 'ALL',
+    type: 'WEAPON',
+    armoryLevel: 1
+  },
+  {
+    name: 'Hatchet',
+    usage: 'SENTRY',
+    level: 3,
+    bonus: 100,
+    cost: 50000,
+    race: 'ALL',
+    type: 'WEAPON',
+    armoryLevel: 2
+  },
+  // Need Sentry Helm, Armor, Boots, Bracers, Shield
+  {
+    name: 'Great Sword',
+    usage: 'OFFENSE',
+    level: 6,
+    bonus: 1200,
+    cost: 600000,
+    type: 'WEAPON',
+    race: 'HUMAN',
+    armoryLevel: 5
+  }, {
+    name: 'Elven Longbow',
+    usage: 'OFFENSE',
+    level: 6,
+    bonus: 1200,
+    cost: 600000,
+    type: 'WEAPON',
+    race: 'ELF',
+    armoryLevel: 5
+  }
 ];

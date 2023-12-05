@@ -1,6 +1,6 @@
 // components/ItemSection.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { alertService } from '@/services';
 
@@ -17,6 +17,7 @@ type UnitProps = {
   level?: number;
   usage: string;
   fortName: string;
+  armoryLevel: number;
 };
 
 type UnitSectionProps = {
@@ -25,20 +26,43 @@ type UnitSectionProps = {
   updateTotalCost: (costChange: number) => void; // New prop
 };
 
+// Utility function outside the component
+const getIconClass = (heading:string) => {
+  const iconMap = {
+    'WEAPON': 'ra ra-sword',
+    'SHIELD': 'ra ra-shield',
+    'ARMOR': 'ra ra-armor',
+    'BOOTS': 'ra ra-boot-stomp',
+    'BRACERS': 'ra ra-bracer',
+    'HELM': 'ra ra-knight-helmet',
+  };
+  if (!heading) return 'default-icon';
+
+  const words = heading.toUpperCase().split(' ');
+  for (const word of words) {
+    if (iconMap[word]) return iconMap[word];
+  }
+
+  return 'default-icon';
+};
+
 const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCost }) => {
   const { user, forceUpdate } = useUser();
-  const [getItems, setItems] = useState(items || []);
-
+  const icon = useMemo(() => getIconClass(heading), [heading]);
+  const [currentItems, setCurrentItems] = useState<UnitProps[]>(items);
   useEffect(() => {
-    if (items) {
-      console.log(items);
-      setItems(items.filter((item) => item.armoryLevel <= user?.armoryLevel + 1));
-    }
+    // Set initial items on component mount
+    setCurrentItems(items);
   }, [items]);
 
+  const getItems = useMemo(() => {
+    return currentItems?.filter(item => item.armoryLevel <= user?.armoryLevel + 1) || [];
+  }, [currentItems, user]);
+
   const computeTotalCostForSection = () => {
+    console.log('compute each section')
     let sectionCost = 0;
-    items.forEach((unit) => {
+    items?.forEach((unit) => {
       const inputElement = document.querySelector(`input[name="${unit.id}"]`);
       // Parse the value to number for calculation
       const inputValue = parseInt(inputElement?.value.replace(/,/g, '') || '0', 10);
@@ -49,8 +73,10 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
 
   const handleInputChange = (event) => {
     // Format the number on input
+    if (event.target.value === '') {
+      event.target.value = 0;
+    }
     const formattedValue = toLocale(parseInt(event.target.value.replace(/,/g, ''), 10), user?.locale);
-    console.log(formattedValue)
     event.target.value = (formattedValue == 'NaN' ? 0 : formattedValue);
   }
   useEffect(() => {
@@ -69,15 +95,16 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
         });
       }
     };
-  }, [items, updateTotalCost]);
+  }, [currentItems, updateTotalCost]);
 
   const handleEquip = async () => {
+    if (!getItems || getItems.length === 0) return;
     const itemsToEquip = getItems
       .filter((item) => item.enabled)
       .map((item) => {
         const inputElement = document.querySelector(`input[name="${item.id}"]`);
         return {
-          type: item.id.split('_')[0], // Extracting the item type from the id
+          type: item.id.split('_')[1], // Extracting the item type from the id
           quantity: parseInt(inputElement.value, 10),
           usage: item.usage,
           level: parseInt(item.id.split('_')[2], 10),
@@ -100,7 +127,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
       if (response.ok) {
         alertService.success(data.message);
         // Update the getItems state with the new quantities
-        setItems((prevItems) => {
+        setCurrentItems((prevItems) => {
           return prevItems.map((item) => {
             const updatedItem = data.data.find(
               (i) => i.type === item.id.split('_')[0]
@@ -121,12 +148,13 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
   };
 
   const handleUnequip = async () => {
+    if (!getItems || getItems.length === 0) return;
     const itemsToUnequip = getItems
       .filter((item) => item.enabled)
       .map((item) => {
         const inputElement = document.querySelector(`input[name="${item.id}"]`);
         return {
-          type: item.id.split('_')[0], // Extracting the item type from the id
+          type: item.id.split('_')[1], // Extracting the item type from the id
           quantity: parseInt(inputElement.value, 10),
           usage: item.usage,
           level: parseInt(item.id.split('_')[2], 10),
@@ -150,7 +178,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
       if (response.ok) {
         alertService.success(data.message);
         // Update the getItems state with the new quantities
-        setItems((prevItems) => {
+        setCurrentItems((prevItems) => {
           return prevItems.map((item) => {
             const updatedItem = data.data.find(
               (i) => i.type === item.id.split('_')[0]
@@ -170,13 +198,19 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
     }
   };
 
+  const formatHeading = (heading) => {
+    return heading
+      .split(' ')
+      .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+      .join(' ');
+  }
 
   return (
     <div className="my-10 rounded-lg bg-gray-800">
       <table className="w-full table-auto">
         <thead>
           <tr>
-            <th className="w-60 px-4 py-2">{heading}</th>
+            <th className="w-60 px-4 py-2"><span className={`ra ${icon}`} />{' ' + formatHeading(heading)}</th>
             <th className="w-10 px-4 py-2">Bonus</th>
             <th className="w-10 px-4 py-2">You Have</th>
             <th className="w-10 px-4 py-2">Cost</th>

@@ -96,7 +96,7 @@ const SpyMissionsModal = ({ isOpen, toggleModal, defenderID }) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ type: 'intel', spies: intelSpies }),
+      body: JSON.stringify({ type: 'INTEL', spies: intelSpies }),
     });
     alertService.success(`You have sent ${intelSpies} spies to gather intelligence.`);
   }

@@ -293,7 +293,7 @@ const Training = () => {
         />
       )}
       <div className="mt-4">
-        <p>Total Cost: {new Intl.NumberFormat('en-GB').format(totalCost)}</p>
+        <p>Total Cost: {toLocale(totalCost)}</p>
       </div>
       <div className="mt-4 flex justify-between">
         <button

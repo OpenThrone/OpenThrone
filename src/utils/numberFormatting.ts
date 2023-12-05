@@ -1,6 +1,6 @@
 import { Locales } from "@/types/typings";
 
-const toLocale = (num: number|string, locale?: Locales) => {
+const toLocale = (num: number | string, locale?: Locales) => {
   if (typeof num === 'number') {
     return num.toLocaleString(locale || undefined);
   } else if (typeof num === 'string') {

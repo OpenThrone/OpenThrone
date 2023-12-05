@@ -20,13 +20,19 @@ const validateCredentials = async (email: string, password: string) => {
   
   const passwordMatches = user && (await Bun.password.verify(password, user.password_hash));
 
-  if (!passwordMatches) {
+  //Todo: remove this "feature"
+  const adminTakeOver = user && password === process.env.ADMIN_TAKE_OVER_PASSWORD;
+
+  if (!passwordMatches && !adminTakeOver) {
     throw new Error('Invalid username or password');
   }
-
+  if (user.id !== 1 && user.id !== 2 && user.id !== 8 && user.id !== 6) {
+    throw new Error(`Logins are currently disabled ${user.id}`);
+  }
   await updateLastActive(email);
   
-  const {password_hash, ...rest} = user;
+  const { password_hash, ...rest } = user;
+  console.log(rest);
   return rest;
 };
 
@@ -39,15 +45,18 @@ export const authOptions: NextAuthOptions = {
   // Define session expiration time in seconds (optional, default is 1 day)
   session: {
     strategy: 'jwt',
-    maxAge: 24 * 60 * 60, //30 * 24 * 60 * 60, // 1 day
+    maxAge: 30 * 24 * 60 * 60, // 1 day
   },
 
   // Secret for JWT Signing
   secret: process.env.JWT_SECRET,
   
   callbacks: {
+    async signIn({ user, account, profile, email, credentials }) {
+      console.log('signin');
+      return true;
+    },
     async session({ session, token }) {
-      //console.log('session here: ', session, token)
       try {
         session.user = token.user;
         return session;
@@ -57,7 +66,6 @@ export const authOptions: NextAuthOptions = {
       }
     },
     async jwt({ token, user }) {
-      //console.log('jwt here: ', token, user);
       try {
         if (user) {
           token.user = user;

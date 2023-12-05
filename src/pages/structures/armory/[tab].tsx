@@ -1,50 +1,75 @@
 import { useEffect, useState } from 'react';
-
 import Alert from '@/components/alert';
-import ItemSection from '@/components/itemsection'; // Assuming you have a similar component for items
-import { ArmoryUpgrades, Fortifications } from '@/constants';
-// Importing the WeaponTypes constant
+import ItemSection from '@/components/itemsection';
+import { ArmoryUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import toLocale from '@/utils/numberFormatting';
+const useItems = (user, armoryLevel) => {
+  const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {} });
+
+  useEffect(() => {
+    if (user && user.availableItemTypes) {
+      console.log(user.availableItemTypes)
+      const categories = ['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS','ARMOR'];
+      const types = ['OFFENSE', 'DEFENSE', 'SPY'];
+      types.forEach((type) => {
+        categories.forEach((category) => {
+          setItems((prevItems) => ({
+            ...prevItems,
+            [type]: {
+              ...prevItems[type],
+              [category]: user.availableItemTypes
+                .filter((unit) => unit.usage === type && unit.type === category)
+                .map((unit) => itemMapFunction(unit, type, category, user, armoryLevel)),
+            },
+          }));
+        });
+      });
+    }
+  }, [user, armoryLevel]);
+  console.log(items);
+  return items;
+};
+
+const itemMapFunction = (item, itemType, idPrefix, user, armoryLevel) => {
+  return {
+    id: `${itemType}_${idPrefix}_${item.level}`,
+    name: item.name,
+    bonus: item.bonus,
+    ownedItems:
+      user?.items.find(
+        (i) =>
+          i.type === item.type &&
+          i.level === item.level &&
+          i.usage === item.usage
+      )?.quantity || 0,
+    cost: toLocale(item.cost - (user?.priceBonus / 100 * item.cost), user?.locale),
+    enabled: item.armoryLevel <= armoryLevel,
+    level: item.level,
+    type: item.type,
+    usage: item.usage,
+    armoryLevel: item.armoryLevel,
+    fortName: ArmoryUpgrades.find((f) => f.level === item.armoryLevel)?.name,
+  };
+};
 
 const ArmoryTab = () => {
-  const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
   const router = useRouter();
-  const { tab } = router.query; // You can remove forceUpdate if not used
+  const { tab } = router.query;
   const currentPage = tab || 'offense';
   const { user } = useUser();
-  const [offensiveWeapons, setOffensiveWeapons] = useState(null); // Define the offensive units data here
-  const [defensiveWeapons, setDefensiveWeapons] = useState(null); // Define the offensive units data here
-  const [offensiveHelm, setOffensiveHelm] = useState(null);
-  const [DefensiveHelm, setDefensiveHelm] = useState(null);
-  const [offensiveBracers, setOffensiveBracers] = useState(null);
-  const [DefensiveBracers, setDefensiveBracers] = useState(null);
-  const [offensiveShield, setOffensiveShield] = useState(null);
-  const [DefensiveShield, setDefensiveShield] = useState(null);
-  const [offensiveBoots, setOffensiveBoots] = useState(null);
-  const [DefensiveBoots, setDefensiveBoots] = useState(null);
+  const armoryLevel = user?.armoryLevel || 0;
+  const items = useItems(user, armoryLevel);
   const [totalDefenseCost, setTotalDefenseCost] = useState(0);
   const [totalOffenseCost, setTotalOffenseCost] = useState(0);
-  const [armoryLevel, setArmoryLevel] = useState(user?.armoryLevel || 0);
+  const [totalSpyCost, setTotalSpyCost] = useState(0);
   const [totalCost, setTotalCost] = useState({
-    OFFENSE: {
-      WEAPON: 0,
-      HELM: 0,
-      BRACERS: 0,
-      SHIELD: 0,
-      BOOTS: 0,
-    },
-    DEFENSE: {
-      WEAPON: 0,
-      HELM: 0,
-      BRACERS: 0,
-      SHIELD: 0,
-      BOOTS: 0,
-    },
+    OFFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
+    DEFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
+    SPY: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
   });
-
   const calculateTotalCost = () => {
 
     const offenseCost = Object.values(totalCost.OFFENSE).reduce(
@@ -55,136 +80,43 @@ const ArmoryTab = () => {
       (acc, curr) => acc + curr,
       0
     );
-    return offenseCost + defenseCost;
+    const spyCost = Object.values(totalCost.SPY).reduce(
+      (acc, curr) => acc + curr,
+      0
+    );
+    return offenseCost + defenseCost + spyCost;
   };
 
   useEffect(() => {
-    // Calculate the total offense cost
-    const offenseCost = Object.values(totalCost.OFFENSE).reduce(
-      (acc, curr) => acc + curr,
-      0
-    );
+    setTotalOffenseCost(calculateTotalCost('OFFENSE'));
+    setTotalDefenseCost(calculateTotalCost('DEFENSE'));
+    setTotalSpyCost(calculateTotalCost('SPY'));
+  }, [items]);
 
-    // Calculate the total defense cost
-    const defenseCost = Object.values(totalCost.DEFENSE).reduce(
-      (acc, curr) => acc + curr,
-      0
-    );
+  useEffect(() => {
+    // Calculate the total cost for each category
+    const offenseCost = Object.values(totalCost.OFFENSE).reduce((acc, curr) => acc + curr, 0);
+    const defenseCost = Object.values(totalCost.DEFENSE).reduce((acc, curr) => acc + curr, 0);
+    const spyCost = Object.values(totalCost.SPY).reduce((acc, curr) => acc + curr, 0);
 
-    // Update the total offense and defense costs
+    // Update the total costs
     setTotalOffenseCost(offenseCost);
     setTotalDefenseCost(defenseCost);
-  }, [totalCost]);
+    setTotalSpyCost(spyCost);
+  }, [items,totalCost]);
 
-  const updateTotalCost = (section: string, item: string, cost: number) => {
+  const updateTotalCost = (section, item, cost) => {
     setTotalCost((prevTotalCost) => {
-      // Create a copy of the previous total cost state
       const newTotalCost = { ...prevTotalCost };
 
-      // Update the cost for the specified section and item
-      newTotalCost[section][item] = cost;
+      // Assuming item.cost is available
+      const itemCost = cost;
 
-      // Calculate the total cost for the section
-      const sectionTotalCost = Object.values(newTotalCost[section]).reduce(
-        (acc, curr) => acc + curr,
-        0
-      );
-
-      // Update the total cost for the section
-      newTotalCost[section] = {
-        ...newTotalCost[section],
-        [item]: cost,
-      };
+      newTotalCost[section][item] = itemCost;
 
       return newTotalCost;
     });
   };
-
-
-  const itemMapFunction = (item, idPrefix: string, itemType: string) => {
-    return {
-      id: `${itemType}_${idPrefix}_${item.level}`,
-      name: item.name,
-      bonus: item.bonus,
-      ownedItems:
-        user.items.find(
-          (i) =>
-            i.type === item.type &&
-            i.level === item.level &&
-            i.usage === item.usage
-        )?.quantity || 0,
-      cost: toLocale(item.cost - (user?.priceBonus/100 * item.cost), user?.locale),
-      enabled: item.armoryLevel <= armoryLevel,
-      level: item.level,
-      usage: item.usage,
-      armoryLevel: item.armoryLevel,
-      fortName: ArmoryUpgrades.find((f) => f.level === item.armoryLevel)
-        ?.name,
-    };
-  };
-
-  useEffect(() => {
-    if (user && user.availableItemTypes) {
-      setOffensiveWeapons(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'OFFENSE' && unit.type == 'WEAPON')
-          .map((unit) => itemMapFunction(unit, 'OFFENSE', 'WEAPON'))
-      );
-      setOffensiveHelm(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'OFFENSE' && unit.type == 'HELM')
-          .map((unit) => itemMapFunction(unit, 'OFFENSE', 'HELM'))
-      );
-
-      setOffensiveBracers(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'OFFENSE' && unit.type == 'BRACERS')
-          .map((unit) => itemMapFunction(unit, 'OFFENSE', 'BRACERS'))
-      );
-
-      setOffensiveShield(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'OFFENSE' && unit.type == 'SHIELD')
-          .map((unit) => itemMapFunction(unit, 'OFFENSE', 'SHIELD'))
-      );
-
-      setOffensiveBoots(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'OFFENSE' && unit.type == 'BOOTS')
-          .map((unit) => itemMapFunction(unit, 'OFFENSE', 'BOOTS'))
-      );
-      setDefensiveWeapons(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'DEFENSE' && unit.type == 'WEAPON')
-          .map((unit) => itemMapFunction(unit, 'DEFENSE', 'WEAPON'))
-      );
-      setDefensiveHelm(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'DEFENSE' && unit.type == 'HELM')
-          .map((unit) => itemMapFunction(unit, 'DEFENSE', 'HELM'))
-      );
-
-      setDefensiveBracers(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'DEFENSE' && unit.type == 'BRACERS')
-          .map((unit) => itemMapFunction(unit, 'DEFENSE', 'BRACERS'))
-      );
-
-      setDefensiveShield(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'DEFENSE' && unit.type == 'SHIELD')
-          .map((unit) => itemMapFunction(unit, 'DEFENSE', 'SHIELD'))
-      );
-
-      setDefensiveBoots(
-        user.availableItemTypes
-          .filter((unit) => unit.usage === 'DEFENSE' && unit.type == 'BOOTS')
-          .map((unit) => itemMapFunction(unit, 'DEFENSE', 'BOOTS'))
-      );
-    }
-
-    setArmoryLevel(user?.armoryLevel || 0);
-  }, [user, armoryLevel]);
 
   const handleEquip = (itemType: string) => {
     // Logic to equip items based on itemType
@@ -201,6 +133,8 @@ const ArmoryTab = () => {
   const handleUnequipAll = () => {
     // Logic to unequip all items
   };
+
+ 
 
   return (
     <div className="mainArea pb-10">
@@ -231,129 +165,51 @@ const ArmoryTab = () => {
           <Link href="/structures/armory/defense" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'defense' ? 'bg-blue-500 text-white' : ''}`}>
             Defense
           </Link>
+          <Link href="/structures/armory/spy" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'spy' ? 'bg-blue-500 text-white' : ''}`}>
+            Spy
+          </Link>
         </div>
       </div>
-      {currentPage === 'offense' && (
-        <>
-          <div className="mt-4">
-            <p>Total Cost: {new Intl.NumberFormat('en-GB').format(totalOffenseCost)}</p>
-          </div>
-          <ItemSection
-            heading="Offensive Weapons"
-            items={offensiveWeapons}
-            onEquip={() => handleEquip('OFFENSE')}
-            onUnequip={() => handleUnequip('OFFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'WEAPON', cost)}
-          />
-          <ItemSection
-            heading="Offensive Helm"
-            items={offensiveHelm}
-            onEquip={() => handleEquip('OFFENSE')}
-            onUnequip={() => handleUnequip('OFFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'HELM', cost)}
-          />
-          <ItemSection
-            heading="Offensive Bracers"
-            items={offensiveBracers}
-            onEquip={() => handleEquip('OFFENSE')}
-            onUnequip={() => handleUnequip('OFFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'BRACERS', cost)}
-          />
-          <ItemSection
-            heading="Offensive Shield"
-            items={offensiveShield}
-            onEquip={() => handleEquip('OFFENSE')}
-            onUnequip={() => handleUnequip('OFFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'SHIELD', cost)}
-          />
-          <ItemSection
-            heading="Offensive Boots"
-            items={offensiveBoots}
-            onEquip={() => handleEquip('OFFENSE')}
-            onUnequip={() => handleUnequip('OFFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('OFFENSE', 'BOOTS',cost)}
-          />
-          <div className="mt-4">
-        <p>Total Cost: {new Intl.NumberFormat('en-GB').format(totalOffenseCost)}</p>
-      </div>
-      <div className="mt-4 flex justify-between">
-        <button
-          type="button"
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          onClick={handleEquipAll}
-        >
-          Train All
-        </button>
-        <button
-          type="button"
-          className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
-          onClick={handleUnequipAll}
-        >
-          Untrain All
-        </button>
-      </div>
-        </>
-      )}
-      {currentPage === 'defense' && (
-        <>
-          <div className="mt-4">
-            <p>Total Cost: {new Intl.NumberFormat('en-GB').format(totalDefenseCost)}</p>
-          </div>
-          <ItemSection
-            heading="Defensive Weapons"
-            items={defensiveWeapons}
-            onEquip={() => handleEquip('DEFENSE')}
-            onUnequip={() => handleUnequip('DEFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('DEFENSE', 'WEAPON', cost)}
-          />
-          <ItemSection
-            heading="Defensive Helm"
-            items={DefensiveHelm}
-            onEquip={() => handleEquip('DEFENSE')}
-            onUnequip={() => handleUnequip('DEFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('DEFENSE', 'HELM', cost)}
-          />
-          <ItemSection
-            heading="Defensive Bracers"
-            items={DefensiveBracers}
-            onEquip={() => handleEquip('DEFENSE')}
-            onUnequip={() => handleUnequip('DEFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('DEFENSE', 'BRACERS', cost)}
-          />
-          <ItemSection
-            heading="Defensive Shield"
-            items={DefensiveShield}
-            onEquip={() => handleEquip('DEFENSE')}
-            onUnequip={() => handleUnequip('DEFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('DEFENSE','SHIELD', cost)}
-          />
-          <ItemSection
-            heading="Defensive Boots"
-            items={DefensiveBoots}
-            onEquip={() => handleEquip('DEFENSE')}
-            onUnequip={() => handleUnequip('DEFENSE')}
-            updateTotalCost={(cost) => updateTotalCost('DEFENSE', 'BOOTS', cost)}
-          />
-          <div className="mt-4">
-            <p>Total Cost: {new Intl.NumberFormat('en-GB').format(totalDefenseCost)}</p>
-          </div>
-          <div className="mt-4 flex justify-between">
-            <button
-              type="button"
-              className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-              onClick={handleEquipAll}
-            >
-              Train All
-            </button>
-            <button
-              type="button"
-              className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
-              onClick={handleUnequipAll}
-            >
-              Untrain All
-            </button>
-          </div>
-        </>
+      
+      {['OFFENSE', 'DEFENSE', 'SPY'].map((type) =>
+        currentPage === type.toLowerCase() && (
+          <>
+            {['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'].map((iType) => (
+              <ItemSection
+                key={`${type}_${iType}`}
+                heading={`${type.charAt(0).toUpperCase() + type.slice(1)} ${iType}`}
+                items={items[type] ? items[type][iType] : []}
+                onEquip={() => handleEquip(type, iType)}
+                onUnequip={() => handleUnequip(type, iType)}
+                updateTotalCost={(cost) => updateTotalCost(type.toUpperCase(), iType, cost)}
+              />
+            ))}
+
+            <div className="mt-4">
+              <p>Total Cost: {toLocale(
+                type === 'OFFENSE' ? totalOffenseCost :
+                  type === 'DEFENSE' ? totalDefenseCost :
+                    totalSpyCost,
+              )}</p>
+            </div>
+            <div className="mt-4 flex justify-between">
+              <button
+                type="button"
+                className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+                onClick={handleEquipAll}
+              >
+                Equip All
+              </button>
+              <button
+                type="button"
+                className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+                onClick={handleUnequipAll}
+              >
+                Sell All
+              </button>
+            </div>
+          </>
+        )
       )}
       
     </div>

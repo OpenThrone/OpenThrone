@@ -75,7 +75,7 @@ const Settings = () => {
   useEffect(() => {
     checkPasswordsMatch();
   }, [newPassword, confirmPassword]);
-
+  const { raceClasses } = useLayout();
   return (
     <div className="mainArea pb-10">
       <h2>Settings</h2>
@@ -89,21 +89,21 @@ const Settings = () => {
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full rounded-md bg-gray-600 p-2"
+            className={`w-full rounded-md border border-gray-300 ${raceClasses.bgClass} p-2`}
           />
           <div>New Password</div>
           <input
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full rounded-md bg-gray-600 p-2"
+            className={`w-full rounded-md border border-gray-300 ${raceClasses.bgClass} p-2`}
           />
           <div>Verify Password</div>
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className={`w-full rounded-md p-2 ${!passwordsMatch ? 'bg-red-700' : 'bg-gray-600'}`}
+            className={`w-full rounded-md p-2 border border-gray-300 ${!passwordsMatch ? 'bg-red-700' : raceClasses.bgClass}`}
           />
           {!passwordsMatch && (
             <p className="col-span-2 text-xs text-red-500">
@@ -127,7 +127,7 @@ const Settings = () => {
           <select
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
-            className="w-full rounded-md bg-gray-600 p-2"
+            className={`w-full rounded-md border border-gray-300 ${raceClasses.bgClass} p-2`}
           >
             {locales.map((locale, index) => (
               <option key={index} value={locale}>{locale}</option>
@@ -137,7 +137,7 @@ const Settings = () => {
           <select
             value={colorScheme}
             onChange={(e) => setColorScheme(e.target.value)}
-            className="w-full rounded-md bg-gray-600 p-2">
+            className={`w-full rounded-md border border-gray-300 ${raceClasses.bgClass} p-2`}>
             {colorSchemes.map((color, index) => (
               <option key={index} value={color}>{color}</option>
             ))}

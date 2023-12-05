@@ -34,7 +34,7 @@ a:hover {
   text-decoration: none;
   font-size: 20px;
   margin: 0px;
-  font-family: 'Book Antiqua', Georgia, Serif;
+  font-family: 'Book Antiqua', Serif;
 }
 
 .nav li.current ul {
@@ -89,11 +89,11 @@ a:hover {
 }
 
 h1 {
-  font-family: 'Book Antiqua', Georgia, Serif;
+  font-family: 'Book Antiqua', Serif;
   font-size: 500%;
 }
 .title {
-  font-family: 'Chomsky', 'Book Antiqua', Georgia, Serif !important; 
+  font-family: 'Chomsky', 'Book Antiqua', Serif !important; 
   text-shadow: 3px 0px black;
 }
 .form-control-dark {
@@ -192,7 +192,7 @@ h1 {
 }
 
 body{
-    font-family: 'Book Antiqua', Georgia, Serif
+    font-family: 'Book Antiqua', Serif
 }
 .wrapper {
   min-height: 100vh-50px;
@@ -256,4 +256,44 @@ h2{
 
 .compose-modal button:hover {
   opacity: 0.9;
+}
+
+.elf-double-border {
+  border-left: 3px double rgb(13,97,46); /* First border color */
+  box-shadow: 0 0 0 4px rgb(10,61,31); /* Second border color as shadow */
+  padding-left: 1rem;
+}
+.elf-secondary-menu-current-link {
+  color: rgb(10,61,31);
+}
+.elf-double-border-down {
+  border-bottom: 3px double rgb(13,97,46); /* First border color */
+  //box-shadow: 0 0 0 4px rgb(10,61,31); /* Second border color as shadow */
+}
+.undead-double-border {
+  border-left: 3px double rgb(33, 33, 33); /* First border color */
+  box-shadow: 0 0 0 4px rgb(77, 77, 77); /* Second border color as shadow */
+  padding-left: 1rem;
+}
+.undead-double-border-down {
+  border-bottom: 3px double rgb(33, 33, 33); /* First border color */
+  //box-shadow: 0 0 0 4px rgb(77, 77, 77); /* Second border color as shadow */
+}
+.goblin-double-border {
+  border-left: 3px double rgb(46, 12, 12); /* First border color */
+  box-shadow: 0 0 0 4px #70301a; /* Second border color as shadow */
+  padding-left: 1rem;
+}
+.goblin-double-border-down {
+  border-bottom: 3px double rgb(46, 12, 12); /* First border color */
+  //box-shadow: 0 0 0 4px #70301a; /* Second border color as shadow */
+}
+.human-double-border {
+  border-left: 3px double rgb(26, 55, 93); /* First border color */
+  box-shadow: 0 0 0 4px rgb(14, 31, 53); /* Second border color as shadow */
+  padding-left: 1rem;
+}
+.human-double-border-down {
+  border-bottom: 3px double rgb(26, 55, 93); /* First border color */
+  //box-shadow: 0 0 0 4px rgb(14, 31, 53); /* Second border color as shadow */
 }

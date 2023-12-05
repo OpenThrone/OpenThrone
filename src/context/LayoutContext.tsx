@@ -14,6 +14,8 @@ interface RaceColors {
   headingClass: string;
   bodyBgClass: string;
   footerClass: string;
+  borderClass: string;
+  borderBottomClass: string;
 }
 
 interface LayoutContextProps {
@@ -33,6 +35,7 @@ interface LayoutProviderProps {
   children: ReactNode;
 }
 
+
 // Function to generate color classes based on race
 function generateRaceColors(race: string): RaceColors {
   const colors = {
@@ -46,6 +49,8 @@ function generateRaceColors(race: string): RaceColors {
     headingClass: `bg-${race}-header-bgcolor`,
     bodyBgClass: `bg-${race}-bodyBg`,
     footerClass: `bg-${race}-footer`,
+    borderClass: `${race}-double-border border-${race}`,
+    borderBottomClass: `${race}-double-border-down`
   };
   return colors;
 }
@@ -88,6 +93,12 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
         <div className="bg-goblin-header-bgcolor bg-goblin-menu-primary bg-goblin-menu-secondary bg-goblin-sidebar-bgcolor bg-goblin-bodyBg bg-goblin-footer"></div>
         <div className="bg-human-header-bgcolor bg-human-menu-primary bg-human-menu-secondary bg-human-sidebar-bgcolor bg-human-bodyBg bg-human-footer"></div>
         <div className="bg-undead-header-bgcolor bg-undead-menu-primary bg-undead-menu-secondary bg-undead-sidebar-bgcolor bg-undead-bodyBg bg-undead-footer"></div>
+
+        {/* Border Classes */}
+        <div className="border-elf"></div>
+        <div className="border-goblin"></div>
+        <div className="border-human"></div>
+        <div className="border-undead"></div>
       </div>
       {children}
     </LayoutContext.Provider>
