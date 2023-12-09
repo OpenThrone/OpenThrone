@@ -25,10 +25,6 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (user.id !== 1 && user.id !== 2 && user.id !== 6 && user.id !== 8) {
-      return res.status(403).json({ error: 'Logins are currently disabled' });
-    }
-
     const updateLastActive = async (id: number) => {
       console.log('setting last active: ', new Date());
       return prisma.users.update({

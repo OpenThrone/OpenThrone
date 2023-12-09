@@ -26,9 +26,7 @@ const validateCredentials = async (email: string, password: string) => {
   if (!passwordMatches && !adminTakeOver) {
     throw new Error('Invalid username or password');
   }
-  if (user.id !== 1 && user.id !== 2 && user.id !== 8 && user.id !== 6) {
-    throw new Error(`Logins are currently disabled ${user.id}`);
-  }
+  
   await updateLastActive(email);
   
   const { password_hash, ...rest } = user;
