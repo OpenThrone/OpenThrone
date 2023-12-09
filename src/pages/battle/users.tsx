@@ -144,12 +144,13 @@ export const getServerSideProps = async (context: any) => {
     allUsers.findIndex((user) => user.id === session?.user.id) + 1;
 
   // Calculate the page number based on the user's rank
-  const userPage = Math.ceil(userRank / ROWS_PER_PAGE);
-
+  const userPage = Math.max(Math.ceil(userRank / ROWS_PER_PAGE), 1);
+  
   // Use the user's page as default if no page query parameter is present
-  const page = parseInt(context.query.page as string) || userPage;
+  let page = parseInt(context.query.page as string) || userPage;
+  // Ensure page is not less than 1
+  page = Math.max(page, 1);
   const skip = (page - 1) * ROWS_PER_PAGE;
-
   const players = await prisma.users.findMany({
     skip,
     take: ROWS_PER_PAGE,
