@@ -629,6 +629,246 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     armoryLevel: 2
   },
+  {
+    name: 'Quarterstaff',
+    usage: 'SENTRY',
+    level: 4,
+    bonus: 225,
+    cost: 100000,
+    race: 'ALL',
+    type: 'WEAPON',
+    armoryLevel: 3
+  },
+  {
+    name: 'Mace',
+    usage: 'SENTRY',
+    level: 5,
+    bonus: 700,
+    cost: 200000,
+    race: 'ALL',
+    type: 'WEAPON',
+    armoryLevel: 4
+  },
+
+  {
+    name: 'Padded Hood',
+    usage: 'SENTRY',
+    level: 1,
+    bonus: 6,
+    cost: 3000,
+    race: 'ALL',
+    type: 'HELM',
+    armoryLevel: 0
+  },
+
+  {
+    name: 'Leather Hood',
+    usage: 'SENTRY',
+    level: 2,
+    bonus: 12,
+    cost: 6000,
+    race: 'ALL',
+    type: 'HELM',
+    armoryLevel: 1
+  },
+
+  {
+    name: 'Studded Leather Hood',
+    usage: 'SENTRY',
+    level: 3,
+    bonus: 25,
+    cost: 12500,
+    race: 'ALL',
+    type: 'HELM',
+    armoryLevel: 2
+  },
+
+  {
+    name: 'Bronze Cap',
+    usage: 'SENTRY',
+    level: 4,
+    bonus: 50,
+    cost: 25000,
+    race: 'ALL',
+    type: 'HELM',
+    armoryLevel: 3
+  },
+
+  {
+    name: 'Padded Armor',
+    usage: 'SENTRY',
+    level: 1,
+    bonus: 19,
+    cost: 9500,
+    race: 'ALL',
+    type: 'ARMOR',
+    armoryLevel: 0
+  },
+
+  {
+    name: 'Leather Armor',
+    usage: 'SENTRY',
+    level: 2,
+    bonus: 38,
+    cost: 19000,
+    race: 'ALL',
+    type: 'ARMOR',
+    armoryLevel: 1
+  },
+
+  {
+    name: 'Studded Leather Armor',
+    usage: 'SENTRY',
+    level: 3,
+    bonus: 75,
+    cost: 37500,
+    race: 'ALL',
+    type: 'ARMOR',
+    armoryLevel: 2
+  },
+
+  {
+    name: 'Bronze Chainmail',
+    usage: 'SENTRY',
+    level: 4,
+    bonus: 150,
+    cost: 75000,
+    race: 'ALL',
+    type: 'ARMOR',
+    armoryLevel: 3
+  },
+
+  {
+    name: 'Padded Boots',
+    usage: 'SENTRY',
+    level: 1,
+    bonus: 6,
+    cost: 3000,
+    race: 'ALL',
+    type: 'BOOTS',
+    armoryLevel: 0
+  },
+
+  {
+    name: 'Leather Boots',
+    usage: 'SENTRY',
+    level: 2,
+    bonus: 12,
+    cost: 6000,
+    race: 'ALL',
+    type: 'BOOTS',
+    armoryLevel: 1
+  },
+
+  {
+    name: 'Studded Leather Greaves',
+    usage: 'SENTRY',
+    level: 3,
+    bonus: 25,
+    cost: 12500,
+    race: 'ALL',
+    type: 'BOOTS',
+    armoryLevel: 2
+  },
+
+  {
+    name: 'Bronze Chain Greaves',
+    usage: 'SENTRY',
+    level: 4,
+    bonus: 50,
+    cost: 25000,
+    race: 'ALL',
+    type: 'BOOTS',
+    armoryLevel: 3
+  },
+
+  {
+    name: 'Padded Bracers',
+    usage: 'SENTRY',
+    level: 1,
+    bonus: 3,
+    cost: 1500,
+    race: 'ALL',
+    type: 'BRACERS',
+    armoryLevel: 0
+  },
+
+  {
+    name: 'Leather Bracers',
+    usage: 'SENTRY',
+    level: 2,
+    bonus: 5,
+    cost: 2500,
+    race: 'ALL',
+    type: 'BRACERS',
+    armoryLevel: 1
+  },
+
+  {
+    name: 'Studded Leather Bracers',
+    usage: 'SENTRY',
+    level: 3,
+    bonus: 10,
+    cost: 5000,
+    race: 'ALL',
+    type: 'BRACERS',
+    armoryLevel: 2
+  },
+
+  {
+    name: 'Bronze Chain Bracers',
+    usage: 'SENTRY',
+    level: 4,
+    bonus: 20,
+    cost: 10000,
+    race: 'ALL',
+    type: 'BRACERS',
+    armoryLevel: 3
+  },
+
+  {
+    name: 'Small Wooden Shield',
+    usage: 'SENTRY',
+    level: 1,
+    bonus: 12,
+    cost: 6000,
+    race: 'ALL',
+    type: 'SHIELD',
+    armoryLevel: 0
+  },
+
+  {
+    name: 'Medium Wooden Shield',
+    usage: 'SENTRY',
+    level: 2,
+    bonus: 25,
+    cost: 12500,
+    race: 'ALL',
+    type: 'SHIELD',
+    armoryLevel: 1
+  },
+
+  {
+    name: 'Large Wooden Shield',
+    usage: 'SENTRY',
+    level: 3,
+    bonus: 50,
+    cost: 25000,
+    race: 'ALL',
+    type: 'SHIELD',
+    armoryLevel: 2
+  },
+
+  {
+    name: 'Bronze Studded Shield',
+    usage: 'SENTRY',
+    level: 4,
+    bonus: 100,
+    cost: 50000,
+    race: 'ALL',
+    type: 'SHIELD',
+    armoryLevel: 3
+  },
   // Need Sentry Helm, Armor, Boots, Bracers, Shield
   {
     name: 'Great Sword',
