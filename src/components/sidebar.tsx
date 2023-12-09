@@ -7,7 +7,6 @@ const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
   const [messages, setMessages] = useState(['']);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  // const { data: session, status } = useSession();
 
   const { user } = useUser();
 

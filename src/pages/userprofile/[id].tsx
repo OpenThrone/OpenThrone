@@ -64,8 +64,6 @@ const Index = ({ users }) => {
     if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
     if (!isPlayer && user && (user.id === 1 || user.id === 2)) setCanSpy(true);
-    if (!isPlayer && user)
-      console.log((user.id === 1 || user.id === 2));
     if (profile) {
       const nowdate = new Date();
 

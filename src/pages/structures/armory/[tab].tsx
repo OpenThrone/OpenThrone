@@ -11,9 +11,8 @@ const useItems = (user, armoryLevel) => {
 
   useEffect(() => {
     if (user && user.availableItemTypes) {
-      console.log(user.availableItemTypes)
       const categories = ['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS','ARMOR'];
-      const types = ['OFFENSE', 'DEFENSE', 'SPY'];
+      const types = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
       types.forEach((type) => {
         categories.forEach((category) => {
           setItems((prevItems) => ({
@@ -65,44 +64,56 @@ const ArmoryTab = () => {
   const [totalDefenseCost, setTotalDefenseCost] = useState(0);
   const [totalOffenseCost, setTotalOffenseCost] = useState(0);
   const [totalSpyCost, setTotalSpyCost] = useState(0);
+  const [totalSentryCost, setTotalSentryCost] = useState(0);
   const [totalCost, setTotalCost] = useState({
     OFFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
     DEFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
     SPY: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
+    SENTRY: {WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0}
   });
-  const calculateTotalCost = () => {
-
-    const offenseCost = Object.values(totalCost.OFFENSE).reduce(
-      (acc, curr) => acc + curr,
-      0
-    );
-    const defenseCost = Object.values(totalCost.DEFENSE).reduce(
-      (acc, curr) => acc + curr,
-      0
-    );
-    const spyCost = Object.values(totalCost.SPY).reduce(
-      (acc, curr) => acc + curr,
-      0
-    );
-    return offenseCost + defenseCost + spyCost;
+  const calculateTotalCost = (type: string = 'ALL') => {
+    if (type === 'ALL') {
+      const offenseCost = Object.values(totalCost.OFFENSE).reduce(
+        (acc, curr) => acc + curr,
+        0
+      );
+      const defenseCost = Object.values(totalCost.DEFENSE).reduce(
+        (acc, curr) => acc + curr,
+        0
+      );
+      const spyCost = Object.values(totalCost.SPY).reduce(
+        (acc, curr) => acc + curr,
+        0
+      );
+      const sentryCost = Object.values(totalCost.SENTRY).reduce(
+        (acc, curr) => acc + curr,
+        0
+      );
+      return offenseCost + defenseCost + spyCost + sentryCost;
+    } else {
+      return Object.values(totalCost[type]).reduce((acc, curr) => acc + curr, 0);
+    }
   };
 
   useEffect(() => {
     setTotalOffenseCost(calculateTotalCost('OFFENSE'));
     setTotalDefenseCost(calculateTotalCost('DEFENSE'));
     setTotalSpyCost(calculateTotalCost('SPY'));
+    setTotalSpyCost(calculateTotalCost('SENTRY'));
   }, [items]);
 
   useEffect(() => {
     // Calculate the total cost for each category
-    const offenseCost = Object.values(totalCost.OFFENSE).reduce((acc, curr) => acc + curr, 0);
-    const defenseCost = Object.values(totalCost.DEFENSE).reduce((acc, curr) => acc + curr, 0);
-    const spyCost = Object.values(totalCost.SPY).reduce((acc, curr) => acc + curr, 0);
+    const offenseCost = calculateTotalCost('OFFENSE');
+    const defenseCost = calculateTotalCost('DEFENSE');
+    const spyCost = calculateTotalCost('SPY');
+    const sentryCost = calculateTotalCost('SENTRY');
 
     // Update the total costs
     setTotalOffenseCost(offenseCost);
     setTotalDefenseCost(defenseCost);
     setTotalSpyCost(spyCost);
+    setTotalSentryCost(sentryCost);
   }, [items,totalCost]);
 
   const updateTotalCost = (section, item, cost) => {
@@ -160,7 +171,6 @@ const ArmoryTab = () => {
         <div className="flex space-x-2">
           <Link href="/structures/armory/offense" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'offense' ? 'bg-blue-500 text-white' : ''}`}>
             Offense
-
           </Link>
           <Link href="/structures/armory/defense" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'defense' ? 'bg-blue-500 text-white' : ''}`}>
             Defense
@@ -168,10 +178,13 @@ const ArmoryTab = () => {
           <Link href="/structures/armory/spy" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'spy' ? 'bg-blue-500 text-white' : ''}`}>
             Spy
           </Link>
+          <Link href="/structures/armory/sentry" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'sentry' ? 'bg-blue-500 text-white' : ''}`}>
+            Sentry
+          </Link>
         </div>
       </div>
       
-      {['OFFENSE', 'DEFENSE', 'SPY'].map((type) =>
+      {['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].map((type) =>
         currentPage === type.toLowerCase() && (
           <>
             {['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'].map((iType) => (
@@ -189,7 +202,8 @@ const ArmoryTab = () => {
               <p>Total Cost: {toLocale(
                 type === 'OFFENSE' ? totalOffenseCost :
                   type === 'DEFENSE' ? totalDefenseCost :
-                    totalSpyCost,
+                    type === 'SPY' ? totalSpyCost : 
+                      type === 'SENTRY' ? totalSentryCost : 0,
               )}</p>
             </div>
             <div className="mt-4 flex justify-between">
@@ -198,7 +212,7 @@ const ArmoryTab = () => {
                 className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
                 onClick={handleEquipAll}
               >
-                Equip All
+                Buy All
               </button>
               <button
                 type="button"

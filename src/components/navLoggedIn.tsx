@@ -230,12 +230,9 @@ export const NavLoggedIn: React.FC = () => {
                 >
                   <Link
                     href={item.href}
-                    className={`${
-                      activeSubLink === item.text &&
-                      activeParentLink === item.parent
-                        ? layoutCont.raceClasses.navActiveClass
-                        : 'text-elf-link-link'
-                    } hover:text-elf-link-hover`}
+                    className={`
+                      text-elf-link-link
+                    `}
                   >
                     {item.text}
                   </Link>
