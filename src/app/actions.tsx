@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import BattleResult from '@/models/BattleResult';
 import BattleSimulationResult from '@/models/BattleSimulationResult';
 import UserModel from '@/models/Users';
-import type { BattleUnits, ItemType } from '@/types/typings';
+import type { BattleUnits, ItemType, PlayerItem, PlayerUnit } from '@/types/typings';
 
 /**
  * Generates a random number between the given minimum and maximum values (inclusive).
@@ -90,6 +90,89 @@ function computeAmpFactor(targetPop: number): number {
   }
 
   return ampFactor;
+}
+
+class SpyUserModel {
+  units: PlayerUnit[] | null;
+  items: PlayerItem[] | null;
+  fort_level: number | null;
+  fort_hitpoints: number | null;
+  goldInBank: number | null;
+
+  constructor(defender: UserModel, intelPercentage: number) {
+    // Explicitly set each property based on the defender's properties
+    console.log(intelPercentage)
+    this.units = defender.units
+      ? defender.units.map(unit => ({ ...unit, quantity: Math.ceil(unit.quantity * intelPercentage / 100) }))
+      : null;
+    this.items = defender.items
+      ? defender.items.map(item => ({ ...item, quantity: Math.ceil(item.quantity * intelPercentage / 100) }))
+      : null;
+    this.fort_level = defender.fortLevel
+      ? Math.ceil(defender.fortLevel * intelPercentage / 100)
+      : 0;
+    this.fort_hitpoints = defender.fortHitpoints
+      ? Math.ceil(defender.fortHitpoints * intelPercentage / 100)
+      : 0;
+    this.goldInBank = defender.goldInBank
+      ? Math.ceil(defender.goldInBank * intelPercentage / 100)
+      : 0;
+  }
+}
+
+class IntelResult {
+  //attacker: UserModel;
+  //defender: UserModel;
+  spiesSent: number;
+  spiesLost: number;
+  success: boolean;
+  intelligenceGathered: {
+    units: PlayerUnit[] | null;
+    items: PlayerItem[] | null;
+    fort_level: number | null;
+    fort_hitpoints: number | null;
+    //gold: number;
+    goldInBank: number | null;
+  };
+
+  constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
+    //this.attacker = JSON.parse(JSON.stringify(attacker));  // deep copy
+    //this.defender = JSON.parse(JSON.stringify(defender));  // deep copy
+    this.spiesSent = spiesSent;
+    this.spiesLost = 0;
+    this.success = false;
+    this.intelligenceGathered = {
+      units: [],
+      items: [],
+      fort_level: 0,
+      fort_hitpoints: 0,
+      //gold: 0,
+      goldInBank: 0,
+    };
+  }
+}
+
+function computeSpyAmpFactor(targetPop: number): number {
+  let ampFactor = 0.4;
+
+  const breakpoints = [
+    { limit: 10, factor: 1.6 },
+    { limit: 9, factor: 1.5 },
+    { limit: 7, factor: 1.35 },
+    { limit: 5, factor: 1.2 },
+    { limit: 3, factor: 0.95 },
+    { limit: 1, factor: 0.75 },
+  ];
+
+  for (const bp of breakpoints) {
+    if (targetPop <= bp.limit) {
+      ampFactor *= bp.factor;
+      break;
+    }
+  }
+
+  return ampFactor;
+
 }
 
 /**
@@ -375,13 +458,30 @@ function simulateBattle(
   }
   return result;
 }
+function getSentryStrength(user: UserModel, spies:number): number {
+  let strength = 0;
+  let numSentries = 0;
+  const sentryUnits = user.units.find((u) => u.type === 'SENTRY' && u.level === 1);
+  if (sentryUnits) {
+    numSentries = Math.min(sentryUnits.quantity, spies);
+    if (numSentries === 0) 
+      return 0;
+    const unitType = UnitTypes.find((unitType) => unitType.type === sentryUnits.type && unitType.level === 1);
+    if (unitType) {
+      strength += unitType.bonus * numSentries;
+    }
+    const sentryWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.usage === sentryUnits.type.toString() && item.level === 1);
+    if (sentryWeapons) {
+      sentryWeapons.forEach((item) => {
+        const bonus = WeaponTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
+        strength += bonus?.bonus * Math.min(item.quantity, numSentries);
+      });
+    }
+  }
+  return strength;
+}
 
 function getSpyStrength(user: UserModel, attacker: boolean, spies: number): number {
-  /* This should query the user.units where type = 'SPY' if attacker==true or type = 'SENTRY' if false */
-  /* We'll then grab the number of spies and sentries and multiply them by their respective strength */
-  /* This should also query the user.items where type = 'WEAPON' and unitType = 'SPY' if attacker==true or type = 'WEAPON' and unitType = 'SENTRY' if false */
-  /* This should also query the user.items where type != 'WEAPON' and unitType = 'SPY' if attacker==true or type != 'WEAPON' and unitType = 'SENTRY' if false */
-  /* We'll then multiply the items' bonus by the number of 'spies' provided or by the number of items quantity, whichever is less */
   let strength = 0;
   let numSpies = 0;
   const spyUnits = user.units.find((u) => (attacker ? u.type === 'SPY' : u.type === 'SENTRY') && u.level === 1);
@@ -391,8 +491,11 @@ function getSpyStrength(user: UserModel, attacker: boolean, spies: number): numb
     if (unitType) {
       strength += unitType.bonus * numSpies;
     }
-    const spyWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.unitType === spyUnits.type);
-    console.log('spy WEapons: ', spyWeapons); 
+    const spyWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.usage === spyUnits.type.toString() && item.level === 1);
+    spyWeapons.forEach((item) => {
+      const bonus = WeaponTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
+      strength += bonus?.bonus * Math.min(item.quantity, numSpies);
+    });
   }
   return strength;
 }
@@ -401,7 +504,7 @@ function simulateIntel(
   defender: UserModel,
   spies: number
 ): any {
-  const result = new BattleResult(attacker, defender);
+  //const result = new BattleResult(attacker, defender);
   // Ensure attack_turns is within [1, 10]
   spies = Math.max(1, Math.min(spies, 10));
   const fortification = Fortifications[defender.fortLevel];
@@ -417,56 +520,105 @@ function simulateIntel(
       fortification?.defenseBonusPercentage;
 
     const attackerKS = getSpyStrength(attacker, true, spies);
-    /*const defenderstrength = getSpyDefense(defender, true);
-    console.log(defenderstrength);
+    console.log('attackerKS: ', attackerKS);
+    console.log('FortDefenseBoost: ', fortDefenseBoost);
+    const defenderstrength = getSentryStrength(defender, spies);
     const defenderDS =
       defenderstrength * (1 + fortDefenseBoost / 100);
-
-    const defenderKS = getSpyStrength(defender, false);
-    const attackerDS = getSpyDefense(attacker, false);
-
-    console.log('attackerKS: ', attackerKS);
     console.log('defenderDS: ', defenderDS);
+    console.log('defenderStrength: ', defenderstrength);
     const offenseToDefenseRatio =
       defenderDS === 0 ? 1 : attackerKS / defenderDS;
-    const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
+    const counterAttackRatio = attackerKS === 0 ? 1 : defenderDS / attackerKS;
+    console.log('offenseToDefenseRatio: ', offenseToDefenseRatio);
+    //const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
 
-    /*const TargetPop = Math.max(
-      defender.unitTotals.defense,// + defender.unitTotals.citizens,
+    const TargetPop = Math.max(
+      defender.unitTotals.sentries,// + defender.unitTotals.citizens,
+      0
+    );
+    const CharPop = Math.max(
+      attacker.unitTotals.spies,
       1
     );
-    //const CharPop = attacker.unitTotals.offense;
-    //const AmpFactor = computeAmpFactor(TargetPop);
-    
-    // Distribute casualties among defense units if fort is destroyed
-    //result.Losses.Defender.total += distributeCasualties(defenseUnits, DefCalcCas);
-    // If all defense units are depleted, attack the citizen units
-    //if (defenseUnits.every((unit) => unit.quantity === 0)) {
-    //  result.Losses.Defender.total += distributeCasualties(citizenUnits, DefCalcCas);
-    //}
+    console.log('TargetPop: ', TargetPop);
+    console.log('CharPop: ', CharPop);
+    const AmpFactor = computeAmpFactor(TargetPop);
+    console.log('AmpFactor: ', AmpFactor);
 
-    //result.Losses.Attacker.total += distributeCasualties(offenseUnits, AttCalcCas);
+    const OffUnitFactor = computeUnitFactor(
+      defender.unitTotals.defense,
+      attacker.unitTotals.offense
+    );
+    const DefUnitFactor =
+      attacker.unitTotals.offense === 0 ? 0 : 1 / OffUnitFactor;
 
-    result.fortHitpoints = Math.floor(fortHitpoints);
-    result.turnsTaken = turn;
-    /*result.experienceResult = computeExperience(
-      attacker,
-      defender,
-      offenseToDefenseRatio
-    );*/
+    const DefCalcCas = computeCasualties(
+      offenseToDefenseRatio,
+      TargetPop,
+      AmpFactor,
+      DefUnitFactor,
+      defender.fortHitpoints,
+      defenderDS,
+      true
+    );
 
-    // Update attacker and defender models with the calculated experience
-    attacker.experience += result.experienceResult.Experience.Attacker;
-    defender.experience += result.experienceResult.Experience.Defender;
+    const AttCalcCas = computeCasualties(
+      counterAttackRatio,
+      CharPop,
+      AmpFactor,
+      OffUnitFactor
+    );
+
+    console.log('DefCalcCas: ', DefCalcCas);
+    console.log('AttCalcCas: ', AttCalcCas);
+
+    //Distribution of casualties
 
     // Breaking the loop if one side has no units left
     if (attacker.unitTotals.offense <= 0) {
       break;
     }
-    return {
-      //offenseToDefenseRatio,counterAttackRatio
-    }
   }
+  const isSuccessful = attacker.spy > defender.sentry;
+  const defenderSpyUnit = new SpyUserModel(defender, spies * 10)
+
+  const result: IntelResult = {
+    success: isSuccessful,
+    //attacker: attacker,
+    //defender: defender,
+    spiesSent: spies,
+    spiesLost: isSuccessful ? 0 : spies,
+    intelligenceGathered: defenderSpyUnit
+  };
+
+  if (isSuccessful) {
+    const intelPercentage = Math.min(spies * 10, 100);
+    const intelKeys = Object.keys(new SpyUserModel(defender, spies * 10));
+    const selectedKeys = intelKeys.slice(0, Math.ceil(intelKeys.length * intelPercentage / 100));
+    // Randomize the order of selected keys
+    const randomizedKeys = selectedKeys.sort(() => 0.5 - Math.random());
+
+    result.intelligenceGathered = randomizedKeys.reduce((partialIntel, key) => {
+      if (key === 'units' || key === 'items') {
+        // Determine the number of unit/item types to include
+        const totalTypes = defender[key].length;
+        const typesToInclude = Math.ceil(totalTypes * intelPercentage / 100);
+
+        // Randomly select the unit/item types to include
+        const selectedTypes = defender[key]
+          .sort(() => 0.5 - Math.random()) // Shuffle array
+          .slice(0, typesToInclude); // Take the first N types
+
+        // Include the selected types with their full quantities
+        partialIntel[key] = selectedTypes;
+      } else {
+        partialIntel[key] = defender[key];
+      }
+      return partialIntel;
+    }, {});
+  }
+  return result;
 }
     
 function simulateAssassination() {
@@ -493,6 +645,11 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
 
   let spyResults = {}
   console.log('type: ', type)
+  if (attacker.spy === 0) {
+    return { status: 'failed', message: 'Insufficient Spy Offense' };
+  }
+  const Winner = attacker.spy > defender.sentry ? attacker : defender;
+ 
   if (type === 'INTEL') {
     spyResults = simulateIntel(attacker, defender, spies);
   } else if (type === 'ASSASSINATION') {
@@ -500,7 +657,8 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
   } else {
     spyResults = simulateInfiltration();
   }
-
+  console.log('Winner: ', Winner.displayName)
+  console.log('spyResults: ', spyResults)
   //AttackPlayer.spies -= spies;
   //AttackPlayer.experience += spyResults.experienceResult.Experience.Attacker;
   //AttackPlayer.gold += spyResults.goldStolen;
