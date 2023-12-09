@@ -258,13 +258,13 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
           onClick={handleEquip}
         >
-          Equip
+          Buy
         </button>
         <button
           className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
           onClick={handleUnequip}
         >
-          Unequip
+          Sell
         </button>
       </div>
     </div>
