@@ -179,15 +179,15 @@ const SpyMissionsModal = ({ isOpen, toggleModal, defenderID }) => {
             <span>🔍 Intelligence Gathering</span><br />
             <small>Send up to 10 Spies to collect Intel</small>
           </CustomButton>
+          <CustomButton onClick={() => setCurrentPanel('assassination')} disabled={isAssassinateDisabled}>
+            <span>🗡️ Assassination</span><br />
+            <small>Attempt to assassinate player's Defenders</small><br />
+            {isAssassinateDisabled && <b><small className='text-black'> Requires Fort: ###</small></b>}
+          </CustomButton>
           <CustomButton onClick={() => setCurrentPanel('infiltration')} disabled={isInfiltrationDisabled}>
             <span>🚧 Infiltration</span><br />
             <small>Infiltrate and Destroy the Fort</small><br />
             {isInfiltrationDisabled && <b><small className='text-black'> Requires Fort: ###</small></b>}
-          </CustomButton>
-          <CustomButton onClick={() => setCurrentPanel('assassination')} disabled={isAssassinateDisabled}>
-            <span>🗡️ Assassination</span><br />
-            <small>Attempt to assassinate player's Defenders</small><br/>
-            {isAssassinateDisabled && <b><small className='text-black'> Requires Fort: ###</small></b>}
           </CustomButton>
         </div>
       ) : (
