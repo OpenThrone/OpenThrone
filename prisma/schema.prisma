@@ -12,7 +12,6 @@ datasource db {
   provider = "postgresql"
   url = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
-  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING_SHADOW") // used for migrations
 }
 
 model users {
@@ -49,6 +48,9 @@ model users {
   attacksMade      attack_log[] @relation("AttackLogs")
   attacksDefended  attack_log[] @relation("DefenseLogs")
   recruitHistories recruit_history[]
+  blogPosts        blog_posts[]        // Opposite relation field for `postedBy` in `blog_posts`
+  postReadStatuses post_read_status[]  // Opposite relation field for `user` in `post_read_status`
+
 }
 
 model attack_log {
@@ -59,6 +61,7 @@ model attack_log {
   defenderPlayer users @relation("DefenseLogs", fields: [defender_id], references: [id])
   timestamp DateTime? @db.Timestamptz(3)
   winner Int
+  type String @default("attack")
   stats Json
 }
 
@@ -84,7 +87,7 @@ model messages {
   created_date DateTime? @default(now()) @db.Timestamptz(3)
   updated_date DateTime? @default(now()) @db.Timestamptz(3)
   body String
-  unread Boolean
+  unread Boolean @default(true)
 }
 
 model recruit_history {
@@ -103,20 +106,21 @@ model blog_posts {
   updated_timestamp DateTime @updatedAt @db.Timestamptz(3)
   postedby_id      Int
   content          String
-
+  
   // Relations
-  postedBy         users     @relation(fields: [postedby_id], references: [id])
   postReadStatus   post_read_status[]
+  postedBy         users @relation(fields: [postedby_id], references: [id])
+
 }
 
 model post_read_status {
-  post_id       Int      @id
-  user_id       Int      @id
-  last_read_at  DateTime @db.Timestamptz(3)
+  post_id      Int      // Primary key part 1
+  last_read_at DateTime @db.Timestamptz(3)
 
   // Relations
-  post          blog_posts @relation(fields: [post_id], references: [id])
-  user          users      @relation(fields: [user_id], references: [id])
-
-  @@unique([post_id, user_id])
+  post         blog_posts @relation(fields: [post_id], references: [id])
+  user_id      Int
+  user         users @relation(fields: [user_id], references: [id])
+  @@id([post_id, user_id]) // Composite primary key
 }
+

@@ -23,6 +23,8 @@ CREATE TABLE "users" (
     "bio" TEXT NOT NULL DEFAULT '',
     "colorScheme" TEXT,
     "recruit_link" TEXT NOT NULL DEFAULT '',
+    "locale" TEXT NOT NULL DEFAULT 'en-US'::text,
+    "economy_level" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
