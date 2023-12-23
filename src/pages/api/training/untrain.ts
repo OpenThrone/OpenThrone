@@ -18,12 +18,23 @@ export default async function handler(
 
     try {
       const user = await prisma.users.findUnique({ where: { id: userId } });
-
+      
       // Validate if the user has enough units to untrain
       for (const unitData of units) {
         const unit = UnitTypes.find((u) => u.type === unitData.type);
+        const userUnit = user.units.find((u) => u.type === unitData.type && u.level === unitData.level);
+        if (!userUnit) {
+          return res
+            .status(400)
+            .json({ error: `Invalid unit to untrain: ${unitData}` });
+        }
+        if (userUnit.quantity < unitData.quantity) {
+          return res.status(400).json({
+            error: `Not enough units to untrain: ${unit?.name}`,
+          });
+        }
         if (unitData.quantity < 0) {
-          res.status(400).json({ error: 'Invalid quantity' });
+          return res.status(400).json({ error: 'Invalid quantity' });
         }
         if (!unit) {
           return res
@@ -48,8 +59,6 @@ export default async function handler(
         }
         return u;
       });
-
-      console.log(totalCost, user.gold, user.gold + totalCost);
 
       await prisma.users.update({
         where: { id: userId },

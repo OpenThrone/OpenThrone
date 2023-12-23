@@ -48,7 +48,7 @@ export default async function handler(
     const updatedItems = user.items.map((userItem) => {
       const itemToEquip = itemsToEquip.find((item) => item.type === userItem.type && item.usage === userItem.usage && item.level === userItem.level);
       if (itemToEquip) {
-        userItem.quantity += itemToEquip.quantity; // Increase the quantity of the item
+        userItem.quantity = parseInt(userItem.quantity) + parseInt(itemToEquip.quantity); // Increase the quantity of the item
       }
       return userItem;
     });
@@ -73,6 +73,7 @@ export default async function handler(
         items: updatedItems,
       },
     });
+    console.log('updatedItems', updatedItems)
 
     return res.status(200).json({
       message: 'Items equipped successfully',
