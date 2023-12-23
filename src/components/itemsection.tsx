@@ -138,12 +138,21 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
             return item;
           });
         });
+        currentItems.forEach((item) => {
+          //console.log(item)
+          const inputElement = document.querySelector(`input[name="${item.id}"]`);
+          //console.log(inputElement)
+          if (inputElement)
+          inputElement.value = '0';
+        });
+        
         forceUpdate();
       } else {
         alertService.error(data.error);
       }
     } catch (error) {
       alertService.error('Failed to equip items. Please try again.');
+      console.log(error)
     }
   };
 
@@ -188,6 +197,10 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
             }
             return item;
           });
+        });
+        currentItems.forEach((item) => {
+          const inputElement = document.querySelector(`input[name="${item.id}"]`);
+          inputElement.value = '0';
         });
         forceUpdate();
       } else {
