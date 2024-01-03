@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 const results = ({ battle }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
   const isPlayerWinner = winner === attackerPlayer.id;
-
+  console.log('Battle: ', battle);
   const lines = [];
   console.log(defenderPlayer)
   const defenderRace = defenderPlayer?.race ?? 'ELF'; // assuming you have access to the race of the player.
@@ -63,7 +63,7 @@ const results = ({ battle }) => {
   summaryLines.push(`Winner: ${isPlayerWinner ? attackerPlayer.display_name : defenderPlayer.display_name}`);
   summaryLines.push(`XP Earned by Attacker: ${stats.xpEarned}`);
   summaryLines.push(`Gold Pillaged: ${isPlayerWinner ? stats.pillagedGold.toLocaleString() : 0}`);
-  summaryLines.push(`Fort Damage Dealt by Attacker: ${stats.fortDamage}`);
+  summaryLines.push(`Fort Damage Dealt by Attacker: ${stats.forthpAtStart - stats.forthpAtEnd}`);
   summaryLines.push(`Attack Turns Used: ${stats.turns}`);
   summaryLines.push(`Total Units Lost by Attacker: ${attackerTotalLosses}`);
   summaryLines.push(`Total Units Lost by Defender: ${defenderTotalLosses}`);
@@ -102,10 +102,10 @@ const results = ({ battle }) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            key={i}
+            key={`${i}-firstanimate` }
           >
             {line.split('').map((char, index) => (
-              <motion.span key={`${char}-${index}`} variants={letter}>
+              <motion.span key={`${char}-${index}-1`} variants={letter}>
                 {char}
               </motion.span>
             ))}
@@ -120,10 +120,10 @@ const results = ({ battle }) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            key={i}
+            key={`${i}-secondanimate`}
           >
             {line.split('').map((char, index) => (
-              <motion.span key={`${char}-${index}`} variants={letter}>
+              <motion.span key={`${char}-${index}-2`} variants={letter}>
                 {char}
               </motion.span>
             ))}

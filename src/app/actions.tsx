@@ -819,7 +819,7 @@ export async function attackHandler(
     data: {
       gold: AttackPlayer.gold,
       attack_turns: AttackPlayer.attackTurns - attack_turns,
-      experience: AttackPlayer.experience,
+      experience: startOfAttack.Attacker.experience + (XP + battleResults.experienceResult.Experience.Attacker),
       units: AttackPlayer.units,
     },
   });
@@ -843,6 +843,7 @@ export async function attackHandler(
       XP,
       GoldPerTurn,
       levelDifference,
+      'fortDmgTotal': startOfAttack.Defender.fortHitpoints - (Math.max(DefensePlayer.fortHitpoints, 0)),
       // 'fortDamagePercentage': modifiedFortDamagePercentage,
       // 'fortDmg': calculatedFortDmg,
       // 'offenseToDefenseRatio': scaledOffenseToDefenseRatio,
