@@ -1,10 +1,9 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
-import { useUser } from '@/context/users';
 import { useLayout } from '@/context/LayoutContext';
 
 const parentLinks = [
@@ -49,17 +48,21 @@ const subMenus: {
       parent: 'Community',
     },
     { text: 'Auto Recruit', href: '/auto-recruit', parent: 'Community' },
-    { text: 'Report Issues', href: 'https://github.com/uaktags/OpenThrone/issues', parent: 'Community' },
+    {
+      text: 'Report Issues',
+      href: 'https://github.com/uaktags/OpenThrone/issues',
+      parent: 'Community',
+    },
   ],
 };
 
 export const NavLoggedIn: React.FC = () => {
-  const router = useRouter();
+  const pathName = usePathname();
   const [activeSubMenu, setActiveSubMenu] = useState<
     { text: string; href: string; parent: string }[]
   >([]);
   const [activeParentLink, setActiveParentLink] = useState<string>('');
-  const [activeSubLink, setActiveSubLink] = useState<string>('');
+  const [, setActiveSubLink] = useState<string>('');
 
   const [defaultSubMenu, setDefaultSubMenu] = useState<
     { text: string; href: string; parent: string }[]
@@ -83,9 +86,9 @@ export const NavLoggedIn: React.FC = () => {
   };
 
   useEffect(() => {
-    let currentPath = router.pathname.split('/')[1]; // Extract the base path
-    let secondPath = router.pathname.split('/')[2];
-    if (router.pathname === '/') {
+    let currentPath = pathName?.split('/')[1]; // Extract the base path
+    let secondPath = pathName?.split('/')[2];
+    if (pathName === '/') {
       currentPath = 'home';
       secondPath = 'overview';
     }
@@ -120,7 +123,7 @@ export const NavLoggedIn: React.FC = () => {
         setDefaultSubMenu(subMenus[activeLink] || []);
       }
     }
-  }, [router.pathname]);
+  }, [pathName]);
 
   const [resetTimer, setResetTimer] = useState<NodeJS.Timeout | null>(null);
 

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import React, { useEffect, useState } from 'react';
@@ -14,7 +14,12 @@ import { alertService } from '@/services';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
 
-const Index = ({ users }) => {
+interface IndexProps {
+  users: UserModel[];
+}
+
+const Index: React.FC<IndexProps> = ({ users }) => {
+  console.log(users);
   const hideSidebar = false;
   const context = useUser();
   const user = context ? context.user : null;
@@ -39,7 +44,7 @@ const Index = ({ users }) => {
     setIsSpyModalOpen(!isSpyModalOpen);
   };
 
-  const handleSubmit = async (turns) => {
+  const handleSubmit = async (turns: number) => {
     if (!turns) turns = 1;
     const res = await fetch(`/api/attack/${profile.id}`, {
       method: 'POST',
@@ -66,8 +71,10 @@ const Index = ({ users }) => {
     if (!isPlayer && user && (user.id === 1 || user.id === 2)) setCanSpy(true);
     if (profile) {
       const nowdate = new Date();
+      const lastActiveTimestamp = new Date(profile.last_active).getTime();
+      const nowTimestamp = nowdate.getTime();
 
-      setIsOnline((nowdate - profile.last_active) / (1000 * 60) <= 15);
+      setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
     }
   }, [profile, users, user, isPlayer]);
   return (
@@ -212,66 +219,62 @@ const Index = ({ users }) => {
     </div>
   );
 };
+
+async function getUserRank(id, recruitLink) {
+  // Fetch all users and calculate composite score
+  const allUsers = await prisma.users.findMany({where:{id: {not: 0}}});
+  allUsers.forEach((user) => {
+    user.score =
+      0.7 * user.experience +
+      0.2 * user.fort_level +
+      0.1 * user.house_level +
+      0.4 * (user.units ? user.units.map((unit) => unit.quantity).reduce((a, b) => a + b, 0) : 0) +
+      0.3 * (user.items ? user.items.map((item) => item.quantity * (item.level * 0.1)).reduce((a, b) => a + b, 0) : 0);
+  });
+
+  // Sort users based on composite score
+  allUsers.sort((a, b) => b.score - a.score);
+  // Find the rank of the specific user
+  const userRank = allUsers.findIndex(
+    (user) => user.id === id || user.recruit_link === recruitLink
+  ) + 1;
+
+  return userRank;
+}
+
 export const getServerSideProps = async ({ query }) => {
   let recruitLink = '';
   let id;
 
   if (Number.isNaN(Number(query.id))) {
     recruitLink = query.id;
-    id = null; // Set to null instead of 0
+    id = null;
   } else {
     id = parseInt(query.id, 10);
   }
 
-  // Check if neither recruitLink nor id is provided
   if (!recruitLink && (id === null || id === 0)) {
-    return {
-      notFound: true, // Returns a 404 status
-    };
+    return { notFound: true };
   }
 
-  // Fetch the user's rank from the database
   let rank;
   if (id) {
-    rank = await prisma.$queryRaw`
-      SELECT overallrank
-      FROM (
-        SELECT id, ROW_NUMBER() OVER (ORDER BY experience DESC, display_name, fort_level) AS overallrank, recruit_link
-        FROM users
-      ) AS ranks
-      WHERE id = ${id} OR recruit_link = ${recruitLink}
-    `;
+    rank = await getUserRank(id, null);
   } else {
-    rank = await prisma.$queryRaw`
-      SELECT overallrank
-      FROM (
-        SELECT id, ROW_NUMBER() OVER (ORDER BY experience DESC, display_name, fort_level) AS overallrank, recruit_link
-        FROM users
-      ) AS ranks
-      WHERE recruit_link = ${recruitLink}
-    `;
+    rank = await getUserRank(null, recruitLink);
   }
 
-  // Fetch the user data from the database
-  const whereCondition = id
-    ? { OR: [{ id }, { recruit_link: recruitLink }] }
-    : { recruit_link: recruitLink };
-
-  const user = await prisma.users.findFirst({
-    where: whereCondition,
-  });
+  const whereCondition = id ? { id } : { recruit_link: recruitLink };
+  const user = await prisma.users.findFirst({ where: whereCondition });
 
   if (!user) {
-    return {
-      notFound: true, // Returns a 404 status if user is not found
-    };
+    return { notFound: true };
   }
 
-  // Combine user and rank into a single object
   const userData = {
     ...user,
-    overallrank: String(rank[0]?.overallrank),
-    bionew: await serialize(user.bio),
+    overallrank: rank,
+    bionew: await serialize(user.bio), // Ensure serialize is defined and works as expected
   };
 
   return { props: { users: userData } };

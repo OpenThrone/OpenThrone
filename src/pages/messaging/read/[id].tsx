@@ -1,15 +1,9 @@
-import { useRouter } from 'next/router';
 import { getSession } from 'next-auth/react';
 import prisma from '@/lib/prisma';
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 const MessageDetail = ({ message }) => {
-  const router = useRouter();
-
-  if (router.isFallback) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="mx-auto w-full py-2">

@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
 
-    if (totalRecruitments >= 300) continue; // Skip user if recruited more than 25 times
+    if (totalRecruitments >= 25) continue; // Skip user if recruited more than 25 times
     
     // Check if the user has been recruited by the same recruiter more than 5 times
     const sameRecruiterRecruitments = await prisma.recruit_history.count({
@@ -55,7 +55,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    if (sameRecruiterRecruitments < 5) validUsers.push(user); // Add user to validUsers if recruited less than 5 times by the same recruiter
+    const recruitmentsCountByRecruiter = await prisma.recruit_history.groupBy({
+      by: ['from_user'],
+      where: {
+        to_user: user.id, // replace userId with the actual user ID you are checking
+        timestamp: {
+          gte: twentyFourHoursAgo,
+        },
+        from_user: {
+          not: 0,
+        },
+      },
+      _count: {
+        from_user: true,
+      },
+      having: {
+        from_user: {
+          _count: {
+            lt: 5,
+          },
+        },
+      },
+    });
+
+    console.log('recruitmentsCountByRecruiter', recruitmentsCountByRecruiter);
+
+    if (recruitmentsCountByRecruiter < 5) validUsers.push(user); // Add user to validUsers if recruited less than 5 times by the same recruiter
   }
 
 

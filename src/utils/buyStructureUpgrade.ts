@@ -1,4 +1,4 @@
-import { alertService } from "@/services";
+import { alertService } from '@/services';
 
 // utils/buyStructureUpgrade.js
 const buyUpgrade = async (currentPage, index, forceUpdate) => {
@@ -9,7 +9,7 @@ const buyUpgrade = async (currentPage, index, forceUpdate) => {
     },
     body: JSON.stringify({
       currentPage,
-      index
+      index,
     }),
   });
 

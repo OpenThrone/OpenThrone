@@ -1,3 +1,5 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
+
 'use client';
 
 import Link from 'next/link';
@@ -27,10 +29,19 @@ const Form = ({
     class: 'FIGHTER',
   });
 
-  const handleChange = (e) => {
+  const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Your logic for handling keyboard events
+    const { name, value } = e.currentTarget;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
+
   return (
     <form
       onSubmit={async (e) => {
@@ -65,9 +76,9 @@ const Form = ({
                 router.push('/account/login');
               }, 2000);
             } else {
-              const { message } = await res.json();
+              const message = await res.json();
               setLoading(false);
-              setErrorMessage(message);
+              setErrorMessage(message.error);
             }
           }
         } catch (error) {
@@ -119,7 +130,8 @@ const Form = ({
               type="text"
               placeholder="DisplayName"
               autoComplete="display_name"
-              onKeyUp={handleChange}
+              onKeyUp={handleKeyUp}
+              onChange={handleChange}
               required
               className="w-full rounded border border-gray-300 px-3 py-2"
             />
@@ -134,7 +146,8 @@ const Form = ({
               type="email"
               placeholder="username@email.com"
               autoComplete="email"
-              onKeyUp={handleChange}
+              onKeyUp={handleKeyUp}
+              onChange={handleChange}
               required
               className="w-full rounded border border-gray-300 px-3 py-2"
             />
@@ -147,7 +160,8 @@ const Form = ({
               id="password"
               name="password"
               type="password"
-              onKeyUp={handleChange}
+              onKeyUp={handleKeyUp}
+              onChange={handleChange}
               required
               className="w-full rounded border border-gray-300 px-3 py-2"
             />
@@ -190,6 +204,7 @@ const Form = ({
       )}
       <button
         disabled={loading}
+        type="submit"
         className={`${
           loading
             ? 'cursor-not-allowed border-gray-200 bg-gray-100'

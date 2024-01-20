@@ -1,71 +1,81 @@
-import { OffensiveUpgradeType, SpyUpgradeType, SentryUpgradeType } from "@/types/typings";
+import type {
+  OffensiveUpgradeType,
+  SentryUpgradeType,
+  SpyUpgradeType,
+} from '@/types/typings';
 
 export const EconomyUpgrades = [
   {
-    name: "Farm",
+    name: 'Farm',
     fortLevel: 0,
     goldPerWorker: 50,
     depositsPerDay: 3,
     goldTransferRec: 0,
     goldTransferTx: 0,
     cost: 0,
-    index: 0
-  }, {
-    name: "Produce Market",
+    index: 0,
+  },
+  {
+    name: 'Produce Market',
     fortLevel: 3,
     goldPerWorker: 55,
     depositsPerDay: 4,
     goldTransferRec: 0,
     goldTransferTx: 0,
     cost: 500000,
-    index: 1
-  }, {
-    name: "Livestock Market",
+    index: 1,
+  },
+  {
+    name: 'Livestock Market',
     fortLevel: 7,
     goldPerWorker: 60,
     depositsPerDay: 5,
     goldTransferRec: 0,
     goldTransferTx: 0,
     cost: 2000000,
-    index: 2
-  }, {
-    name: "Coal Mine",
-    fortLevel: 11, //Fortress Level 2
+    index: 2,
+  },
+  {
+    name: 'Coal Mine',
+    fortLevel: 11, // Fortress Level 2
     goldPerWorker: 65,
     depositsPerDay: 6,
     goldTransferRec: 50000,
     goldTransferTx: 150000,
     cost: 5000000,
-    index: 3
-  }, {
-    name: "Tavern",
-    fortLevel: 15, //Citadel Level 3
+    index: 3,
+  },
+  {
+    name: 'Tavern',
+    fortLevel: 15, // Citadel Level 3
     goldPerWorker: 70,
     depositsPerDay: 7,
     goldTransferRec: 100000,
     goldTransferTx: 300000,
     cost: 15000000,
-    index: 4
-  }, {
-    name: "Copper Mine",
-    fortLevel: 19, //Kingdom
+    index: 4,
+  },
+  {
+    name: 'Copper Mine',
+    fortLevel: 19, // Kingdom
     goldPerWorker: 75,
     depositsPerDay: 8,
     goldTransferRec: 250000,
     goldTransferTx: 600000,
     cost: 37500000,
-    index: 5
-  }, {
-    name: "Meat Market",
-    fortLevel: 23, //Empire Level 2
+    index: 5,
+  },
+  {
+    name: 'Meat Market',
+    fortLevel: 23, // Empire Level 2
     goldPerWorker: 80,
     depositsPerDay: 9,
     goldTransferRec: 500000,
     goldTransferTx: 1250000,
     cost: 100000000,
-    index: 6
-  }
-]
+    index: 6,
+  },
+];
 
 export const OffenseiveUpgrades: OffensiveUpgradeType[] = [
   {
@@ -84,14 +94,14 @@ export const OffenseiveUpgrades: OffensiveUpgradeType[] = [
   },
   {
     name: 'Mastery',
-    fortLevelRequirement: 3, //Town
+    fortLevelRequirement: 3, // Town
     offenseBonusPercentage: 10,
     cost: 250000,
     level: 2,
   },
   {
     name: 'Ladders',
-    fortLevelRequirement: 4, //Outpost
+    fortLevelRequirement: 4, // Outpost
     offenseBonusPercentage: 15,
     cost: 500000,
     level: 3,
@@ -232,7 +242,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 0,
-    level: 0
+    level: 0,
   },
   {
     name: 'Rope Training',
@@ -241,7 +251,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 50000,
-    level: 1
+    level: 1,
   },
   {
     name: 'Basic Stealth Training',
@@ -250,7 +260,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 125000,
-    level: 2
+    level: 2,
   },
   {
     name: 'Basic Disguise Kit Usage',
@@ -259,7 +269,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 250000,
-    level: 3
+    level: 3,
   },
   {
     name: 'Brass Knuckles Training',
@@ -268,7 +278,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 500000,
-    level: 4
+    level: 4,
   },
   {
     name: 'Informants',
@@ -277,7 +287,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 1000000,
-    level: 5
+    level: 5,
   },
   {
     name: 'Infiltration Training',
@@ -286,7 +296,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 1,
     maxAssassinations: 0,
     cost: 1500000,
-    level: 6
+    level: 6,
   },
   {
     name: 'Grappling Hook Training',
@@ -295,7 +305,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 2,
     maxAssassinations: 0,
     cost: 2000000,
-    level: 7
+    level: 7,
   },
   {
     name: 'Cudgel Training',
@@ -304,7 +314,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 3,
     maxAssassinations: 0,
     cost: 2500000,
-    level: 8
+    level: 8,
   },
   {
     name: 'Informant Detection',
@@ -313,7 +323,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 4,
     maxAssassinations: 0,
     cost: 3750000,
-    level: 9
+    level: 9,
   },
   {
     name: 'Stealth Training',
@@ -322,7 +332,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 5,
     maxAssassinations: 0,
     cost: 5000000,
-    level: 10
+    level: 10,
   },
   {
     name: 'Poison Usage',
@@ -331,7 +341,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 6,
     maxAssassinations: 0,
     cost: 7500000,
-    level: 11
+    level: 11,
   },
   {
     name: 'Knife Training',
@@ -340,7 +350,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 7,
     maxAssassinations: 0,
     cost: 10000000,
-    level: 12
+    level: 12,
   },
   {
     name: 'Languages',
@@ -349,7 +359,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 8,
     maxAssassinations: 0,
     cost: 15000000,
-    level: 13
+    level: 13,
   },
   {
     name: 'Languages',
@@ -358,7 +368,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 9,
     maxAssassinations: 0,
     cost: 20000000,
-    level: 14
+    level: 14,
   },
   {
     name: 'Lockpicks Usage',
@@ -367,7 +377,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 10,
     maxAssassinations: 50,
     cost: 20000000,
-    level: 15
+    level: 15,
   },
   {
     name: 'Hatchet Training',
@@ -376,7 +386,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 11,
     maxAssassinations: 70,
     cost: 37500000,
-    level: 16
+    level: 16,
   },
   {
     name: 'Translation',
@@ -385,7 +395,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 12,
     maxAssassinations: 90,
     cost: 50000000,
-    level: 17
+    level: 17,
   },
   {
     name: 'Camouflage Training',
@@ -394,7 +404,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 13,
     maxAssassinations: 110,
     cost: 75000000,
-    level: 18
+    level: 18,
   },
   {
     name: 'Tripwire Setting',
@@ -403,7 +413,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 14,
     maxAssassinations: 130,
     cost: 100000000,
-    level: 19
+    level: 19,
   },
   {
     name: 'Dart Gun Training',
@@ -412,7 +422,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 15,
     maxAssassinations: 150,
     cost: 125000000,
-    level: 20
+    level: 20,
   },
   {
     name: 'Forging',
@@ -421,7 +431,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 16,
     maxAssassinations: 170,
     cost: 150000000,
-    level: 21
+    level: 21,
   },
 ];
 
@@ -565,37 +575,37 @@ export const ArmoryUpgrades = [
     name: 'No Armory',
     fortLevel: 0,
     cost: 0,
-    level: 0
+    level: 0,
   },
   {
     name: 'Leather Armory 1',
     fortLevel: 5,
     cost: 500000,
-    level: 1
+    level: 1,
   },
   {
     name: 'Leather Armory 2',
     fortLevel: 10, // Stronghold Level 3
     cost: 2000000,
-    level: 2
+    level: 2,
   },
   {
     name: 'Chainmail Armory 1',
     fortLevel: 13, // Citadel
     cost: 5000000,
-    level: 3
+    level: 3,
   },
   {
     name: 'Chainmail Armory 2',
     fortLevel: 17, // Castle Level 2
     cost: 15000000,
-    level: 4
+    level: 4,
   },
   {
     name: 'Chainmail Armory 3',
     fortLevel: 21, // Kingdom Level 3
     cost: 37500000,
-    level: 5
+    level: 5,
   },
 ];
 
@@ -605,48 +615,48 @@ export const HouseUpgrades = {
     fortLevel: 0,
     citizensDaily: 1,
     cost: 0,
-    index: 0
+    index: 0,
   },
   1: {
     name: 'Housing Level 1',
     fortLevel: 2,
     citizensDaily: 10,
     cost: 500000,
-    index: 1
+    index: 1,
   },
   2: {
     name: 'Housing Level 2',
     fortLevel: 6, // Outpost Level 3
     citizensDaily: 20,
     cost: 1000000,
-    index: 2
+    index: 2,
   },
   3: {
     name: 'Housing Level 3',
     fortLevel: 10, // Fortress
     citizensDaily: 30,
     cost: 1500000,
-    index: 3
+    index: 3,
   },
   4: {
     name: 'Housing Level 4',
     fortLevel: 14, // Citadel Level 2
     citizensDaily: 40,
     cost: 2500000,
-    index: 4
+    index: 4,
   },
   5: {
     name: 'Housing Level 5',
     fortLevel: 18, // Castle Level 3
     citizensDaily: 50,
     cost: 3500000,
-    index: 5
+    index: 5,
   },
   6: {
     name: 'Housing Level 6',
     fortLevel: 22, // Empire
     citizensDaily: 60,
     cost: 5000000,
-    index: 6
+    index: 6,
   },
 };

@@ -1,6 +1,7 @@
-import { useRouter } from 'next/router';
+import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import UserModel from '@/models/Users';
 import { alertService } from '@/services';
@@ -13,13 +14,13 @@ interface UserContextType {
 // Updated UserContext with forceUpdate function
 const UserContext = createContext<UserContextType>({
   user: null, // Default value for user is null
-  forceUpdate: () => { },
-  loading: true
+  forceUpdate: () => {},
+  loading: true,
 });
 
 export const useUser = () => useContext(UserContext);
 
-const isPublicPath = (path: string) => {
+const isPublicPath = (path: string | null) => {
   const publicPathsRegex = [
     /^\/account\/login$/,
     /^\/account\/register$/,
@@ -27,6 +28,7 @@ const isPublicPath = (path: string) => {
     /^\/userprofile\/[a-z0-9]+$/i, // Updated to include letters or numbers
     /^\/recruit\/[a-z0-9]+$/i, // New regex for /recruit/
   ];
+  if (path === null) return false;
   return publicPathsRegex.some((regex) => regex.test(path));
 };
 interface UsersProviderProps {
@@ -34,8 +36,10 @@ interface UsersProviderProps {
 }
 export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const router = useRouter();
+  const pathName = usePathname();
+
   const { data, status } = useSession();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<UserModel | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async () => {
@@ -43,14 +47,18 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     try {
       const response = await fetch(`/api/getUser`);
       if (!response.ok) {
-        alertService.error(response?.error);
+        // Handle HTTP errors
+        const errorText = await response.text(); // or response.json() if the server responds with JSON
+        alertService.error(`Error fetching user data: ${errorText}`);
         signOut();
-        throw { message: 'Failed to fetch user data', status: response.status };
+        throw new Error('Failed to fetch user data');
       }
       const userData = await response.json();
       setUser(new UserModel(userData));
       if (userData?.beenAttacked) {
-        alertService.error('You have been attacked since you were last active!');
+        alertService.error(
+          'You have been attacked since you were last active!'
+        );
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -61,10 +69,10 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    if (status === 'authenticated' && data?.user?.id) {
-      fetchUserData(data.user.id);
+    if (status === 'authenticated') {
+      fetchUserData();
     }
-  }, [data?.user?.id, status]);
+  }, [status]);
 
   useEffect(() => {
     if (user instanceof UserModel) {
@@ -73,23 +81,27 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
-    const { asPath } = router;
-
-    if (status !== 'loading') {
-      if (!data && !isPublicPath(asPath)) {
-        router.replace('/account/login');
-      } else if (data && asPath === '/') {
-        router.replace('/home/overview');
+    if (pathName) {
+      if (router) {
+        if (status !== 'loading') {
+          if (!data && !isPublicPath(pathName)) {
+            router.push('/account/login');
+          } else if (data && pathName === '/') {
+            router.push('/home/overview');
+          }
+        }
       }
     }
-  }, [data, router, status]);
+  }, [data, pathName, status, router]);
 
-  // Removed the async useMemo and the interval useEffect
-  // Use a dedicated useEffect for recurring updates
+  const value = useMemo(
+    () => ({
+      user,
+      forceUpdate: () => fetchUserData(),
+      loading,
+    }),
+    [user, loading]
+  ); // Dependencies array
 
-  return (
-    <UserContext.Provider value={{ user, forceUpdate: () => fetchUserData(data?.user?.id), loading }}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

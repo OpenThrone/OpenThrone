@@ -1,5 +1,5 @@
 import 'tailwindcss/tailwind.css';
-import '../styles/global.css';
+import '@/styles/global.css';
 import 'rpg-awesome/css/rpg-awesome.min.css';
 
 import type { AppProps } from 'next/app';
@@ -14,15 +14,16 @@ const MyApp = ({
   Component,
   pageProps: { session, ...pageProps },
 }: AppProps) => (
-  <Suspense><SessionProvider session={session}>
-    <UserProvider>
-      <LayoutProvider>
-        <Layout meta={undefined}>
-          <Component {...pageProps} />
-        </Layout>
-      </LayoutProvider>
-    </UserProvider>
-  </SessionProvider>
+  <Suspense>
+    <SessionProvider session={session}>
+      <UserProvider>
+        <LayoutProvider>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </LayoutProvider>
+      </UserProvider>
+    </SessionProvider>
   </Suspense>
 );
 

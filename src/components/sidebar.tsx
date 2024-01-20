@@ -11,12 +11,12 @@ const Sidebar: React.FC = () => {
   const { user } = useUser();
 
   const [sidebar, setSidebar] = useState({
-    gold: 0,
-    citizens: 0,
-    level: 1,
-    xp: 0,
-    turns: 0,
-    xpNextLevel: 0,
+    gold: '0',
+    citizens: '0',
+    level: '1',
+    xp: '0',
+    turns: '0',
+    xpNextLevel: '0',
   });
   useEffect(() => {
     const messagesArray = [
@@ -62,18 +62,20 @@ const Sidebar: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const remaining = getTimeRemaining(getTimeToNextTurn());
-      const minutes = String(remaining.minutes).padStart(2, '0');
-      const seconds = String(remaining.seconds).padStart(2, '0');
-      setTime(`${minutes}:${seconds}`);
-      setSidebar({
-        gold: toLocale(user?.gold, user?.locale),
-        citizens: toLocale(user?.citizens, user?.locale),
-        level: toLocale(user?.level, user?.locale),
-        xp: toLocale(user?.experience, user?.locale),
-        xpNextLevel: toLocale(user?.xpToNextLevel, user?.locale),
-        turns: toLocale(user?.attackTurns, user?.locale),
-      });
+      if (user) {
+        const remaining = getTimeRemaining(getTimeToNextTurn());
+        const minutes = String(remaining.minutes).padStart(2, '0');
+        const seconds = String(remaining.seconds).padStart(2, '0');
+        setTime(`${minutes}:${seconds}`);
+        setSidebar({
+          gold: toLocale(user.gold, user?.locale),
+          citizens: toLocale(user.citizens, user?.locale),
+          level: toLocale(user.level, user?.locale),
+          xp: toLocale(user.experience, user?.locale),
+          xpNextLevel: toLocale(user.xpToNextLevel, user?.locale),
+          turns: toLocale(user.attackTurns, user?.locale),
+        });
+      }
     }, 1000);
     return () => clearInterval(interval);
   }, [user]);

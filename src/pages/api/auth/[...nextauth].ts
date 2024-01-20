@@ -2,6 +2,8 @@ import type { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from '@/lib/prisma';
+const argon2 = require('argon2');
+import * as bcrypt from 'bcrypt';
 
 const updateLastActive = async (email: string) => {
   return prisma.users.update({
@@ -10,6 +12,14 @@ const updateLastActive = async (email: string) => {
   });
 };
 
+const updatePasswordEncryption = async (email: string, password: string) => {
+  const phash = await argon2.hash(password);
+  return prisma.users.update({
+    where: { email },
+    data: { password_hash: phash },
+  });
+}
+
 const validateCredentials = async (email: string, password: string) => {
   const user = await prisma.users.findUnique({
     where: {
@@ -17,14 +27,24 @@ const validateCredentials = async (email: string, password: string) => {
     },
   });
 
-  
-  const passwordMatches = user && (await Bun.password.verify(password, user.password_hash));
-
-  //Todo: remove this "feature"
-  const adminTakeOver = user && password === process.env.ADMIN_TAKE_OVER_PASSWORD;
-
-  if (!passwordMatches && !adminTakeOver) {
-    throw new Error('Invalid username or password');
+  if (user) {
+    console.log(user.password_hash)
+    if(!user.password_hash) {
+      throw new Error('Invalid username or password');
+    }
+    if (user.password_hash.startsWith('$2b$')) {
+      console.log('here');
+      const passwordMatches = user && (await bcrypt.compare(password, user.password_hash));
+      if (!passwordMatches) {
+        throw new Error('Invalid username or password');
+      }
+      await updatePasswordEncryption(email, password);
+    } else {
+      const passwordMatches = user && (await argon2.verify(user.password_hash, password));
+      if (!passwordMatches) {
+        throw new Error('Invalid username or password');
+      }
+    }
   }
   
   await updateLastActive(email);
@@ -50,10 +70,6 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.JWT_SECRET,
   
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
-      console.log('signin');
-      return true;
-    },
     async session({ session, token }) {
       try {
         session.user = token.user;
@@ -80,7 +96,6 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
-        //race: { label: 'Race', type: 'text' },
       },
       async authorize(credentials) {
         const { email, password } = credentials ?? {};

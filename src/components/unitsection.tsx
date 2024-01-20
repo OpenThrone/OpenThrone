@@ -19,8 +19,8 @@ type UnitSectionProps = {
   heading: string;
   units: UnitProps[];
   updateTotalCost: (costChange: number) => void; // New prop
-  onTrain; // New prop
-  onUntrain; // New prop
+  onTrain: any; // New prop
+  onUntrain: any; // New prop
 };
 
 const UnitSection: React.FC<UnitSectionProps> = ({
@@ -37,12 +37,17 @@ const UnitSection: React.FC<UnitSectionProps> = ({
     const unitsToTrain = units
       .filter((unit) => unit.enabled)
       .map((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-        
+        const inputElement = document.querySelector(
+          `input[name="${unit.id}"]`
+        ) as HTMLInputElement;
+        if (!inputElement) return null;
         return {
           type: unit.id.split('_')[0], // Extracting the unit type from the id
           quantity: parseInt(inputElement.value, 10),
-          level: parseInt(unit.id.split('_')[1], 10),
+          level: parseInt(
+            unit.id.split('_')[1] ? unit.id.split('_')[1] : 1,
+            10
+          ),
         };
       });
 
@@ -68,7 +73,9 @@ const UnitSection: React.FC<UnitSectionProps> = ({
           return prevUnits.map((unit) => {
             const unitTypeLevel = unit.id.split('_');
             const updatedUnit = data.data.find(
-              (u) => u.type === unitTypeLevel[0] && u.level.toString() === unitTypeLevel[1]
+              (u: any) =>
+                u.type === unitTypeLevel[0] &&
+                u.level.toString() === unitTypeLevel[1]
             );
             if (updatedUnit) {
               return { ...unit, ownedUnits: updatedUnit.quantity };
@@ -89,7 +96,9 @@ const UnitSection: React.FC<UnitSectionProps> = ({
     const unitsToUntrain = units
       .filter((unit) => unit.enabled)
       .map((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+        const inputElement = document.querySelector(
+          `input[name="${unit.id}"]`
+        ) as HTMLInputElement;
         return {
           type: unit.id.split('_')[0], // Extracting the unit type from the id
           quantity: parseInt(inputElement.value, 10),
@@ -118,7 +127,9 @@ const UnitSection: React.FC<UnitSectionProps> = ({
           return prevUnits.map((unit) => {
             const unitTypeLevel = unit.id.split('_');
             const updatedUnit = data.data.find(
-              (u) => u.type === unitTypeLevel[0] && u.level.toString() === unitTypeLevel[1]
+              (u: UnitProps) =>
+                u.type === unitTypeLevel[0] &&
+                u.level.toString() === unitTypeLevel[1]
             );
             if (updatedUnit) {
               return { ...unit, ownedUnits: updatedUnit.quantity };
@@ -141,7 +152,9 @@ const UnitSection: React.FC<UnitSectionProps> = ({
     onTrain && onTrain(heading); // Use the passed down handler
     units.forEach((unit) => {
       if (unit.enabled) {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+        const inputElement = document.querySelector(
+          `input[name="${unit.id}"]`
+        ) as HTMLInputElement;
         inputElement.value = 0;
       }
     });
@@ -222,7 +235,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
             ) : (
               <tr key={unit.id}>
                 <td className="border px-4 py-2">{unit.name}</td>
-                <td className="border px-4 py-2" />
+                <td className="border px-4 py-2">-</td>
                 <td colSpan={3} className="border px-4 py-2 text-center">
                   Unlocked with {unit.requirement}
                 </td>
@@ -235,12 +248,14 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
           onClick={handleTrainClick}
+          type="button"
         >
           Train
         </button>
         <button
           className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
           onClick={handleUntrainClick}
+          type="button"
         >
           Untrain
         </button>

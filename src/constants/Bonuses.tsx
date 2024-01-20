@@ -1,4 +1,4 @@
-import { PlayerBonus, BonusPointsItem } from "@/types/typings";
+import type { BonusPointsItem, PlayerBonus } from '@/types/typings';
 
 export const Bonuses: PlayerBonus[] = [
   { race: 'HUMAN', bonusType: 'OFFENSE', bonusAmount: 5 },

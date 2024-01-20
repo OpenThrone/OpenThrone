@@ -4,7 +4,7 @@ import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 
 const Upgrades = () => {
-  const { user, forceUpdate } = useUser();
+  const { user } = useUser();
   return (
     <div className="mainArea pb-10">
       <h2>Upgrades</h2>

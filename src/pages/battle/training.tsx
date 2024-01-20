@@ -1,9 +1,11 @@
+'use client';
+
 // src/pages/battle/training.tsx
 import { useEffect, useState } from 'react';
 
 import Alert from '@/components/alert';
 import UnitSection from '@/components/unitsection';
-import { EconomyUpgrades, Fortifications, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
+import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
@@ -38,19 +40,25 @@ const Training = () => {
   };
 
   const unitMapFunction = (unit, idPrefix: string) => {
-    const bonus = unit.name === 'Worker' ? EconomyUpgrades[user?.economyLevel]?.goldPerWorker : unit.bonus;
-    
+    const bonus =
+      unit.name === 'Worker'
+        ? EconomyUpgrades[user?.economyLevel]?.goldPerWorker
+        : unit.bonus;
+
     return {
       id: `${idPrefix}_${unit.level}`,
       name: unit.name,
-      bonus: bonus,
+      bonus,
       ownedUnits:
         user.units.find((u) => u.type === unit.type && u.level === unit.level)
           ?.quantity || 0,
       requirement: Fortifications.find((fort) => {
-        return fort.level == unit.fortLevel;
+        return fort.level === unit.fortLevel;
       }).name,
-      cost: toLocale(unit.cost - (user?.priceBonus / 100 * unit.cost), user?.locale),
+      cost: toLocale(
+        unit.cost - (user?.priceBonus / 100) * unit.cost,
+        user?.locale
+      ),
       enabled: unit.fortLevel <= user?.fortLevel,
       level: unit.level,
     };

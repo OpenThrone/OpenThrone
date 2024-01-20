@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import type { AlertType } from '../services/alert.service';
@@ -19,15 +19,7 @@ const Alert: React.FC = () => {
 
   useEffect(() => {
     // clear alert on location change, respecting the showAfterRedirect flag
-    const handleRouteChange = () => {
-      alertService.clear();
-    };
-
-    router.events.on('routeChangeStart', handleRouteChange);
-
-    return () => {
-      router.events.off('routeChangeStart', handleRouteChange);
-    };
+    alertService.clear();
   }, [router]);
 
   if (!alert) return null;

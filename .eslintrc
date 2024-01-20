@@ -3,7 +3,8 @@
   "extends": [
     "airbnb-base",
     "next/core-web-vitals", // Needed to avoid warning in next.js build: 'The Next.js plugin was not detected in your ESLint configuration'
-    "plugin:prettier/recommended"
+    "plugin:prettier/recommended",
+    "plugin:@next/next/recommended"
   ],
   "rules": {
     "prettier/prettier": [
@@ -12,7 +13,8 @@
         "singleQuote": true,
         "endOfLine": "auto"
       }
-    ]
+    ],
+    "@next/next/no-document-import-in-page": "off"
   },
   "overrides": [
     // Configuration for TypeScript files
@@ -51,6 +53,7 @@
         "@next/next/no-img-element": "off", // We currently not using next/image because it isn't supported with SSG mode
         "@typescript-eslint/comma-dangle": "off", // Avoid conflict rule between Eslint and Prettier
         "@typescript-eslint/consistent-type-imports": "error", // Ensure `import type` is used when it's necessary
+        "@next/next/no-document-import-in-page": "off",
         "no-restricted-syntax": [
           "error",
           "ForInStatement",

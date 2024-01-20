@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { useUser } from '@/context/users';
-import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades} from '@/constants';
 import FortificationsTab from '@/components/fortification-upgrades';
 import HousingTab from '@/components/housing-upgrades';
 import EconomyTab from '@/components/economy-upgrades';
@@ -13,8 +12,7 @@ import ArmoryUpgradesTab from '@/components/armory-upgrades';
 import ClandestineUpgrade from '@/components/clandestineupgrades';
 
 const UpgradeTab = () => {
-  const router = useRouter();
-  const { tab } = router.query;
+  const tab = usePathname()?.split('/')[3];
   const { user, forceUpdate } = useUser();
   const currentPage = tab || 'fortifications';
 
@@ -22,46 +20,6 @@ const UpgradeTab = () => {
     if (currentPage === 'fortifications') {
     }
   }, [currentPage]);
-
-  const renderTable = (data, userLevel) => {
-    return (
-      <>
-        <br />
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Level</th>
-              <th>Cost</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.values(data)
-              .filter(
-                (item) =>
-                  (item.level || item.fortLevel) <= userLevel + 2
-              )
-              .map((item, index) => (
-                <tr key={index}>
-                  <td>{item.name} {(item.level || item.fortLevel) === userLevel && ("(Current Upgrade)")}</td>
-                  <td>{(currentPage === "economy" ? index : (item.level || item.fortLevel))}</td>
-                  <td>{item.cost}</td>
-                  <td>
-                    {((item.level || item.fortLevel) === userLevel + 1 || (currentPage == 'economy' && index === userLevel + 1)) && (
-                      <button type="button" className={"bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"} onClick={() => buyUpgrade(currentPage, index, forceUpdate)}>Buy</button>
-                    )}
-                    {(item.level || item.fortLevel) === userLevel + 2 && (
-                      <span>Unlock at level {userLevel + 1}</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-          </table>
-        </>
-    );
-  };
 
   return (
     <div className="mainArea pb-10">

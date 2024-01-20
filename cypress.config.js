@@ -6,11 +6,15 @@ module.exports = defineConfig({
   e2e: {
     baseUrl: 'https://OpenThrone.dev',
     setupNodeEvents(on, config) {
-      config.env = {
-        ...process.env,
-        ...config.env,
+      const { env, ...rest } = config;
+      const modifiedConfig = {
+        ...rest,
+        env: {
+          ...process.env,
+          ...env,
+        },
       };
-      return config;
+      return modifiedConfig;
     },
   },
 });

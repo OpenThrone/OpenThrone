@@ -5,8 +5,9 @@ import prisma from '@/lib/prisma';
 
 import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
+import { PlayerUnit, Unit } from '@/types/typings';
 
-function increaseCitizens(units) {
+function increaseCitizens(units: PlayerUnit[]) {
   // Find the CITIZEN object
   const citizen = units.find((unit) => unit.type === 'CITIZEN');
   if (citizen) {
@@ -27,7 +28,7 @@ export default async function handler(
   let recruiterID = 0;
   const session = await getServerSession(req, res, authOptions);
   if (session) {
-    recruiterID = session.user?.id;
+    recruiterID = parseInt(session.user?.id.toLocaleString());
   }
   const recruitedUser = await prisma.users.findUnique({
     where: {

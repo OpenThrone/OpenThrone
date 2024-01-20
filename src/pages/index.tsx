@@ -39,7 +39,7 @@ const Index = () => {
             </li>
             <li>
               Stay in contact with the game&apos;s developers via the OpenThrone
-              Discord
+              {' '}<a style={{'color': 'darkgreen'}} href={'https://discord.gg/J2gw2xvh3R'}>Discord</a>
             </li>
           </ul>
         </div>

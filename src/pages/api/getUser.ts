@@ -10,7 +10,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   // If there's no session, return an error
   if (!session) {
-    return res.status(401).json({ error: 'Not authenticated' });
+    res.status(401).json({ error: 'Not authenticated' });
+    return;
   }
 
   try {
@@ -22,7 +23,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ error: 'User not found' });
+      return;
     }
 
     const updateLastActive = async (id: number) => {
@@ -33,7 +35,6 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       });
     };
     const updated = await updateLastActive(user.id);
-    console.log('updated: ', updated.last_active)
     if ((new Date(updated.last_active) - new Date(user.last_active)) > 1000 * 30) {      
       // Calculate the timestamp of user.last_active
       const userLastActiveTimestamp = new Date(user.last_active);
@@ -49,11 +50,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       });
 
       if (attacks.length > 0) {
-        console.log('you were attacked!')
         user.beenAttacked = true;
       }
     }
-    console.log('after: ', user.last_active);
 
     // Count the number of won attacks
     const wonAttacks = await prisma.attack_log.count({
@@ -89,9 +88,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     user.won_defends = wonDefends;
     user.totalAttacks = totalAttacks;
     user.totalDefends = totalDefends;
-    return res.status(200).json(user);
+    res.status(200).json(user);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

@@ -7,6 +7,7 @@ import { useLayout } from '@/context/LayoutContext';
 
 const Login = () => {
   const { setMeta } = useLayout();
+  const [resetEmail, setResetEmail] = useState('');
 
   useEffect(() => {
     if (setMeta) {
@@ -17,6 +18,11 @@ const Login = () => {
     }
   }, [setMeta]);
   const [errorMessage, setErrorMessage] = useState<string>('');
+
+  const handlePasswordReset = async () => {
+    // Logic to handle password reset
+    // This will involve sending the reset email to `resetEmail`
+  };
 
   return (
     <>

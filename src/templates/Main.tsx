@@ -1,5 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import { useRouter } from 'next/router';
+import { useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
@@ -15,11 +16,11 @@ interface IMainProps {
 }
 
 const Main = (props: IMainProps) => {
-  const router = useRouter();
   const [authorized, setAuthorized] = useState<boolean>(false);
   const { data: session, status } = useSession();
-
-  function authCheck(url: string) {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  function authCheck(url: string | null) {
     // redirect to login page if accessing a private page and not logged in
 
     if (status === 'loading') {
@@ -33,19 +34,9 @@ const Main = (props: IMainProps) => {
     return true;
   }
   useEffect(() => {
-    // on initial load - run auth check
-    authCheck(router.asPath);
-
-    // on route change complete - run auth check
-    const authCheckHandler = (url: string) => authCheck(url);
-    router.events.on('routeChangeComplete', authCheckHandler);
-
-    // unsubscribe from events in useEffect return function
-    return () => {
-      // router.events.off('routeChangeStart', hideContent);
-      router.events.off('routeChangeComplete', authCheckHandler);
-    };
-  }, [session]);
+      authCheck(pathname);
+    
+  }, [session, pathname, searchParams]);
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -6,16 +6,7 @@ import BattleResult from '@/models/BattleResult';
 import BattleSimulationResult from '@/models/BattleSimulationResult';
 import UserModel from '@/models/Users';
 import type { BattleUnits, ItemType, PlayerItem, PlayerUnit } from '@/types/typings';
-
-/**
- * Generates a random number between the given minimum and maximum values (inclusive).
- * @param min The minimum value of the range.
- * @param max The maximum value of the range.
- * @returns A random number between the given minimum and maximum values (inclusive).
- */
-function mtRand(min: number, max: number): number {
-  return min + Math.random() * (max - min);
-}
+import mtRand from '@/utils/mtrand';
 
 /**
  * Calculates the strength of a user's units.

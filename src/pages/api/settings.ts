@@ -3,9 +3,10 @@ import { getServerSession } from 'next-auth/next';
 
 import { authOptions } from './auth/[...nextauth]';
 import password from 'inquirer/lib/prompts/password';
+import { Locales, PlayerRace } from '@/types/typings';
 
 const prisma = new PrismaClient();
-
+const argon2 = require('argon2');
 export default async (req, res) => {
   const session = await getServerSession(req, res, authOptions);
   if (!session) {
@@ -27,7 +28,7 @@ export default async (req, res) => {
       if (req.body.password !== req.body.password_confirm) {
         return res.status(400).json({ error: 'Passwords do not match' });
       }
-      if (await Bun.password.verify(password, user.password_hash) === false)
+      if (await argon2.verify(password, user.password_hash) === false)
         return res.status(400).json({ error: 'Incorrect password' });
         
       await prisma.users.update({
@@ -35,7 +36,7 @@ export default async (req, res) => {
           id: session.user.id,
         },
         data: {
-          password_hash: await Bun.password.hash(req.body.password),
+          password_hash: await argon2.hash(req.body.password),
         },
       });
 

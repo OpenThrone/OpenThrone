@@ -103,5 +103,5 @@ export const levelXPArray: LevelXP[] = [
   { level: 97, xp: 4948000 },
   { level: 98, xp: 5048000 },
   { level: 99, xp: 5149000 },
-  { level: 100, xp: 5251000 }
+  { level: 100, xp: 5251000 },
 ];

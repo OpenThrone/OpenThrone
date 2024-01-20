@@ -1,4 +1,4 @@
-import { Unit } from "@/types/typings";
+import type { Unit } from '@/types/typings';
 
 export const UnitTypes: Unit[] = [
   {
@@ -71,7 +71,7 @@ export const UnitTypes: Unit[] = [
     bonus: 50,
     cost: 25000,
     fortLevel: 7,
-    hp: 30
+    hp: 30,
   },
   {
     name: 'Spy',

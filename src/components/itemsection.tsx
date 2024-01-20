@@ -3,82 +3,80 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 import { alertService } from '@/services';
-
-import { useUser } from '../context/users';
+import type { UnitProps, UnitSectionProps } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
 
-type UnitProps = {
-  id: string;
-  name: string;
-  bonus?: number;
-  ownedItems: number;
-  cost: string;
-  enabled: boolean;
-  level?: number;
-  usage: string;
-  fortName: string;
-  armoryLevel: number;
-};
-
-type UnitSectionProps = {
-  heading: string;
-  items: UnitProps[];
-  updateTotalCost: (costChange: number) => void; // New prop
-};
+import { useUser } from '../context/users';
 
 // Utility function outside the component
-const getIconClass = (heading:string) => {
-  const iconMap = {
-    'WEAPON': 'ra ra-sword',
-    'SHIELD': 'ra ra-shield',
-    'ARMOR': 'ra ra-armor',
-    'BOOTS': 'ra ra-boot-stomp',
-    'BRACERS': 'ra ra-bracer',
-    'HELM': 'ra ra-knight-helmet',
+const getIconClass = (heading: string) => {
+  const iconMap: { [key: string]: string } = {
+    WEAPON: 'ra ra-sword',
+    SHIELD: 'ra ra-shield',
+    ARMOR: 'ra ra-armor',
+    BOOTS: 'ra ra-boot-stomp',
+    BRACERS: 'ra ra-bracer',
+    HELM: 'ra ra-knight-helmet',
   };
   if (!heading) return 'default-icon';
 
   const words = heading.toUpperCase().split(' ');
   for (const word of words) {
-    if (iconMap[word]) return iconMap[word];
+    if (word in iconMap) return iconMap[word];
   }
 
   return 'default-icon';
 };
 
-const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCost }) => {
+const ItemSection: React.FC<UnitSectionProps> = ({
+  heading,
+  items,
+  updateTotalCost,
+}) => {
   const { user, forceUpdate } = useUser();
   const icon = useMemo(() => getIconClass(heading), [heading]);
   const [currentItems, setCurrentItems] = useState<UnitProps[]>(items);
+  const [inputValue, setInputValue] = useState('');
   useEffect(() => {
     // Set initial items on component mount
     setCurrentItems(items);
   }, [items]);
 
   const getItems = useMemo(() => {
-    return currentItems?.filter(item => item.armoryLevel <= user?.armoryLevel + 1) || [];
+    return (
+      currentItems?.filter(
+        (item) => (item?.armoryLevel ?? 0) <= (user?.armoryLevel ?? 0) + 1
+      ) || []
+    );
   }, [currentItems, user]);
 
   const computeTotalCostForSection = () => {
-    console.log('compute each section')
     let sectionCost = 0;
     items?.forEach((unit) => {
       const inputElement = document.querySelector(`input[name="${unit.id}"]`);
       // Parse the value to number for calculation
-      const inputValue = parseInt(inputElement?.value.replace(/,/g, '') || '0', 10);
-      sectionCost += inputValue * parseInt(unit.cost.replace(/,/g, ''), 10);
+      const iValue = parseInt(
+        (inputElement as HTMLInputElement)?.value.replace(/,/g, '') || '0',
+        10
+      );
+      sectionCost += iValue * parseInt(unit.cost.replace(/,/g, ''), 10);
     });
     updateTotalCost(sectionCost);
   };
 
-  const handleInputChange = (event) => {
-    // Format the number on input
-    if (event.target.value === '') {
-      event.target.value = 0;
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let { value } = event.target;
+    if (value === '') {
+      value = '0';
     }
-    const formattedValue = toLocale(parseInt(event.target.value.replace(/,/g, ''), 10), user?.locale);
-    event.target.value = (formattedValue == 'NaN' ? 0 : formattedValue);
-  }
+
+    const formattedValue = toLocale(
+      parseInt(value.replace(/,/g, ''), 10),
+      user?.locale
+    );
+
+    setInputValue(formattedValue === 'NaN' ? '0' : formattedValue);
+  };
   useEffect(() => {
     if (items) {
       items.forEach((unit) => {
@@ -90,8 +88,13 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
     return () => {
       if (items) {
         items.forEach((unit) => {
-          const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-          inputElement?.removeEventListener('input', computeTotalCostForSection);
+          const inputElement = document.querySelector(
+            `input[name="${unit.id}"]`
+          );
+          inputElement?.removeEventListener(
+            'input',
+            computeTotalCostForSection
+          );
         });
       }
     };
@@ -99,17 +102,29 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
 
   const handleEquip = async () => {
     if (!getItems || getItems.length === 0) return;
+
     const itemsToEquip = getItems
       .filter((item) => item.enabled)
       .map((item) => {
-        const inputElement = document.querySelector(`input[name="${item.id}"]`);
+        const inputElement = document.querySelector(
+          `input[name="${item.id}"]`
+        ) as HTMLInputElement;
+        if (!inputElement) return null; // Handle the case where the element is not found
+
         return {
-          type: item.id.split('_')[1], // Extracting the item type from the id
+          type: item.id?.split('_')[1] || '', // Provide a fallback value for type
           quantity: parseInt(inputElement.value, 10),
           usage: item.usage,
-          level: parseInt(item.id.split('_')[2], 10),
+          level: parseInt(item.id?.split('_')[2] || '0', 10), // Provide a fallback for level
         };
-      });
+      })
+      .filter(Boolean); // Filter out null values
+
+    if (!user) {
+      // Handle the case where user is null
+      alertService.error('User not found');
+      return;
+    }
     try {
       const response = await fetch('/api/armory/equip', {
         method: 'POST',
@@ -130,7 +145,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
         setCurrentItems((prevItems) => {
           return prevItems.map((item) => {
             const updatedItem = data.data.find(
-              (i) => i.type === item.id.split('_')[0]
+              (i: UnitProps) => i.type === item.id.split('_')[0]
             );
             if (updatedItem) {
               return { ...item, ownedItems: updatedItem.quantity };
@@ -139,36 +154,50 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
           });
         });
         currentItems.forEach((item) => {
-          //console.log(item)
-          const inputElement = document.querySelector(`input[name="${item.id}"]`);
-          //console.log(inputElement)
-          if (inputElement)
-          inputElement.value = '0';
+          // console.log(item)
+          const inputElement = document.querySelector(
+            `input[name="${item.id}"]`
+          );
+          // console.log(inputElement)
+          if (inputElement instanceof HTMLInputElement) {
+            inputElement.value = '0';
+          }
         });
-        
+
         forceUpdate();
       } else {
         alertService.error(data.error);
       }
     } catch (error) {
       alertService.error('Failed to equip items. Please try again.');
-      console.log(error)
+      console.log(error);
     }
   };
 
   const handleUnequip = async () => {
     if (!getItems || getItems.length === 0) return;
+
     const itemsToUnequip = getItems
       .filter((item) => item.enabled)
       .map((item) => {
-        const inputElement = document.querySelector(`input[name="${item.id}"]`);
+        const inputElement = document.querySelector(
+          `input[name="${item.id}"]`
+        ) as HTMLInputElement | null;
+        if (!inputElement) return null;
+
         return {
-          type: item.id.split('_')[1], // Extracting the item type from the id
+          type: item.id?.split('_')[1] || '', // Check for undefined and provide a fallback
           quantity: parseInt(inputElement.value, 10),
           usage: item.usage,
-          level: parseInt(item.id.split('_')[2], 10),
+          level: parseInt(item.id?.split('_')[2] || '0', 10), // Check for undefined and provide a fallback
         };
-      });
+      })
+      .filter(Boolean); // Filter out null values
+
+    if (!user || !user.id) {
+      alertService.error('User information is not available.');
+      return;
+    }
 
     try {
       const response = await fetch('/api/armory/unequip', {
@@ -190,7 +219,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
         setCurrentItems((prevItems) => {
           return prevItems.map((item) => {
             const updatedItem = data.data.find(
-              (i) => i.type === item.id.split('_')[0]
+              (i: UnitProps) => i.type === item.id.split('_')[0]
             );
             if (updatedItem) {
               return { ...item, ownedItems: updatedItem.quantity };
@@ -199,8 +228,10 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
           });
         });
         currentItems.forEach((item) => {
-          const inputElement = document.querySelector(`input[name="${item.id}"]`);
-          inputElement.value = '0';
+          const inputElement = document.querySelector(
+            `input[name="${item.id}"]`
+          ) as HTMLInputElement | null;
+          if (inputElement) inputElement.value = '0';
         });
         forceUpdate();
       } else {
@@ -211,19 +242,23 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
     }
   };
 
-  const formatHeading = (heading) => {
-    return heading
-      .split(' ')
-      .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+  const formatHeading = (SecHeading: string) => {
+    return SecHeading.split(' ')
+      .map((word) =>
+        word[0] ? word[0].toUpperCase() + word.substring(1).toLowerCase() : ''
+      )
       .join(' ');
-  }
+  };
 
   return (
     <div className="my-10 rounded-lg bg-gray-800">
       <table className="w-full table-auto">
         <thead>
           <tr>
-            <th className="w-60 px-4 py-2"><span className={`ra ${icon}`} />{' ' + formatHeading(heading)}</th>
+            <th className="w-60 px-4 py-2">
+              <span className={`ra ${icon}`} />
+              {` ${formatHeading(heading)}`}
+            </th>
             <th className="w-10 px-4 py-2">Bonus</th>
             <th className="w-10 px-4 py-2">You Have</th>
             <th className="w-10 px-4 py-2">Cost</th>
@@ -250,6 +285,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
                     defaultValue="0"
                     min={0}
                     onChange={handleInputChange}
+                    value={inputValue}
                     className="w-full rounded-md bg-gray-600 p-2"
                   />
                 </td>
@@ -257,7 +293,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
             ) : (
               <tr key={unit.id}>
                 <td className="border px-4 py-2">{unit.name}</td>
-                <td className="border px-4 py-2" />
+                <td className="border px-4 py-2">-</td>
                 <td colSpan={3} className="border px-4 py-2 text-center">
                   Unlocked with {unit.fortName}
                 </td>
@@ -268,12 +304,14 @@ const ItemSection: React.FC<UnitSectionProps> = ({ heading, items, updateTotalCo
       </table>
       <div className="mt-4 flex justify-between">
         <button
+          type="button"
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
           onClick={handleEquip}
         >
           Buy
         </button>
         <button
+          type="button"
           className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
           onClick={handleUnequip}
         >

@@ -1,4 +1,4 @@
-import { useRouter } from 'next/router';
+import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
@@ -6,21 +6,22 @@ import { useEffect, useState } from 'react';
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
 import Sidebar from '@/components/sidebar';
+import { useLayout } from '@/context/LayoutContext';
 import { AppConfig } from '@/utils/AppConfig';
-import { raceClasses, useLayout } from '@/context/LayoutContext';
+
 import NewsBulletin from './news-bulletin';
 
 interface IMainProps {
   // eslint-disable-next-line react/no-unused-prop-types
-  meta: ReactNode;
+  // meta: ReactNode;
   children: ReactNode;
 }
 const Layout = (props: IMainProps) => {
-  const router = useRouter();
   const { data: session, status } = useSession();
   const [authorized, setAuthorized] = useState(status === 'authenticated');
   const layoutCont = useLayout();
-  function authCheck(_url: string) {
+  const pathName = usePathname();
+  function authCheck(_url: string | null) {
     // redirect to login page if accessing a private page and not logged in
 
     if (status === 'loading') {
@@ -28,19 +29,9 @@ const Layout = (props: IMainProps) => {
     }
     return setAuthorized(status === 'authenticated');
   }
-  
-  useEffect(() => {
-    // on initial load - run auth check
-    authCheck(router.asPath);
 
-    // on route change complete - run auth check
-    const authCheckHandler = (url: string) => authCheck(url);
-    router.events.on('routeChangeComplete', authCheckHandler);
-    // unsubscribe from events in useEffect return function
-    return () => {
-      // router.events.off('routeChangeStart', hideContent);
-      router.events.off('routeChangeComplete', authCheckHandler);
-    };
+  useEffect(() => {
+    authCheck(pathName);
   }, [session]);
 
   return (
@@ -51,10 +42,14 @@ const Layout = (props: IMainProps) => {
         } px-1 text-yellow-400 antialiased`}
       >
         <div className="mx-auto max-w-screen-xl">
-          <header className={`mx-auto max-w-screen-xl ${layoutCont.raceClasses.borderBottomClass}`}>
+          <header
+            className={`mx-auto max-w-screen-xl ${layoutCont.raceClasses.borderBottomClass}`}
+          >
             <div
               className={`${
-                authorized ? layoutCont.raceClasses.bgClass : 'bg-elf-header-bgcolor'
+                authorized
+                  ? layoutCont.raceClasses.bgClass
+                  : 'bg-elf-header-bgcolor'
               } pb-10 pt-2`}
             >
               <h1 className="title text-title text-center text-6xl font-medium">
@@ -72,7 +67,9 @@ const Layout = (props: IMainProps) => {
                   <div className="w-full px-3 sm:w-3/12">
                     <Sidebar />
                   </div>
-                  <div className={`w-full bg-black ${layoutCont.raceClasses.borderClass} px-3 sm:w-9/12`}>
+                  <div
+                    className={`w-full bg-black ${layoutCont.raceClasses.borderClass} px-3 sm:w-9/12`}
+                  >
                     <NewsBulletin />
                     {props.children}
                   </div>

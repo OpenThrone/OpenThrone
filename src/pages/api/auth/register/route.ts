@@ -1,7 +1,7 @@
 import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
-
-import prisma from '@/lib/prisma';
+import { PrismaClient } from '@prisma/client';
+const argon2 = require('argon2');
 
 export default async function handle(
   req: NextApiRequest,
@@ -17,20 +17,28 @@ export default async function handle(
 }
 
 export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
+  const prisma = new PrismaClient();
+  console.log('handling post');
   try {
     const { email, password, race, display_name } = await req.body;
-    
-    const exists = await prisma.users.findUnique({
+    let exists = await prisma.users.count({
       where: {
-        email,
+        email: email,
       },
     });
-
     if (exists) {
       return res.status(400).json({ error: 'User already exists' });
     }
-    
-    const phash = await Bun.password.hash(password);
+    exists = await prisma.users.count({
+      where: {
+        display_name: display_name,
+      },
+    });
+    if (exists) {
+      return res.status(400).json({ error: 'Display name already exists' });
+    }
+
+    const phash = await argon2.hash(password);
     
     const user = await prisma.users.create({
       data: {
@@ -39,6 +47,7 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
         display_name,
         race,
         class: req.body.class,
+        locale: 'en-US',
       },
     });
     

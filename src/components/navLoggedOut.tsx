@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 const parentLinks = [
@@ -10,10 +10,10 @@ const parentLinks = [
 ] as const;
 
 export const NavLoggedOut: React.FC = () => {
-  const router = useRouter();
+  const pathName = usePathname();
   const [activeParentLink, setActiveParentLink] = useState<string>('');
 
-  const [defaultParentLink, setDefaultParentLink] = useState<string>('/');
+  const [, setDefaultParentLink] = useState<string>('/');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleParentClick = (event: React.MouseEvent, link: string) => {
@@ -26,7 +26,7 @@ export const NavLoggedOut: React.FC = () => {
   };
 
   useEffect(() => {
-    const currentPath = router.pathname;
+    const currentPath = pathName;
     const activeLink = parentLinks.find((link) => link.url === currentPath);
     if (activeLink) {
       setActiveParentLink(activeLink.url);
@@ -34,7 +34,7 @@ export const NavLoggedOut: React.FC = () => {
     } else {
       setActiveParentLink('');
     }
-  }, [router.pathname]);
+  }, [pathName]);
 
   return (
     <>

@@ -8,7 +8,7 @@ export default function ComposeModal({ onClose }) {
 
   const [possibleMatches, setPossibleMatches] = useState([]);
   const [possibleRecipients, setPossibleRecipients] = useState([]);
-  const [recipientValid, setRecipientValid] = useState(null); // null: not checked, true: valid, false: invalid
+  const [recipientValid, setRecipientValid] = useState<bool>(null); // null: not checked, true: valid, false: invalid
 
   const handleRecipientChange = async (value) => {
     setRecipient(value);

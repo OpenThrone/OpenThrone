@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 import { alertService } from '@/services';
@@ -8,8 +8,7 @@ import Alert from '@/components/alert';
 import toLocale from '@/utils/numberFormatting';
 
 const Bank = () => {
-  const router = useRouter();
-  const { tab } = router.query;
+  const tab = usePathname()?.split('/')[3];
   const { user, forceUpdate } = useUser();
   const [depositAmount, setDepositAmount] = useState(0);
   const [withdrawAmount, setWithdrawAmount] = useState(0);
@@ -34,7 +33,7 @@ const Bank = () => {
 
   useEffect(() => {
     if(user && user.units){
-      setCitizenUnit(user?.units.find((u) => u.type === 'WORKER')?.quantity | 0);
+      setCitizenUnit(user?.units.find((u) => u.type === 'WORKER')?.quantity ?? 0);
       setDepositsMax(user.maximumBankDeposits);
     }
   }, [user]);
@@ -95,11 +94,11 @@ const Bank = () => {
       </div>
       <div className="my-5 flex justify-around">
         <p className="mb-0">
-          Gold On Hand: <span>{parseInt(user?.gold).toLocaleString()}</span>
+          Gold On Hand: <span>{parseInt(user?.gold?.toString() ?? "0").toLocaleString()}</span>
         </p>
         <p className="mb-0">
           Banked Gold:{' '}
-          <span>{parseInt(user?.goldInBank).toLocaleString()}</span>
+          <span>{parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}</span>
         </p>
         <p className="mb-0">
           Maximum Deposits Per Day: <span>{depositsMax}</span>
@@ -113,7 +112,7 @@ const Bank = () => {
           <Link
             href="/structures/bank/deposit"
             className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              tab === 'deposit' ? 'bg-blue-500 text-white' : ''
+              currentPage === 'deposit' ? 'bg-blue-500 text-white' : ''
             }`}
             aria-current="page"
           >
@@ -122,7 +121,7 @@ const Bank = () => {
           <Link
             href="/structures/bank/history"
             className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              tab === 'history' ? 'bg-blue-500 text-white' : ''
+              currentPage === 'history' ? 'bg-blue-500 text-white' : ''
             }`}
           >
             Bank History
@@ -130,7 +129,7 @@ const Bank = () => {
           <Link
             href="/structures/bank/economy"
             className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              tab === 'economy' ? 'bg-blue-500 text-white' : ''
+              currentPage === 'economy' ? 'bg-blue-500 text-white' : ''
             }`}
           >
             Economy
@@ -138,7 +137,7 @@ const Bank = () => {
         </div>
       </div>
 
-      {tab === 'deposit' && (
+      {currentPage === 'deposit' && (
         <>
           <form
             onSubmit={(e) => {
@@ -158,7 +157,7 @@ const Bank = () => {
                 className="w-full border p-2 bg-black"
                 min="0"
                 value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
+                onChange={(e) => setDepositAmount(parseFloat(e.target.value))}
               />
             </div>
             <div>
@@ -188,7 +187,7 @@ const Bank = () => {
                 className="w-full border p-2 bg-black"
                 min="0"
                 value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
+                onChange={(e) => setWithdrawAmount(parseFloat(e.target.value))}
               />
             </div>
             <div>
@@ -240,7 +239,7 @@ const Bank = () => {
         </div>
       )}
 
-      {tab === 'economy' && (
+      {currentPage === 'economy' && (
         <div className="flex space-x-8">
           {/* Workers Card */}
           <div className="w-1/2 rounded-lg  p-6 shadow-md">

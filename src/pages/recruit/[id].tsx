@@ -1,25 +1,26 @@
 import { Turnstile } from '@marsidev/react-turnstile';
-import router, { useRouter } from 'next/router';
-import React, { useEffect, useState, useRef } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 import { alertService } from '@/services';
-import autoRecruit from '../auto-recruit';
 import Alert from '@/components/alert';
-import { useForceUpdate } from 'framer-motion';
+import UserModel from '@/models/Users';
 
 export default function Recruit() {
   const router = useRouter();
-  const { id, auto_recruit } = router.query;
+  const params = useSearchParams();
   const [error, setError] = useState(null);
+  const auto_recruit = params?.get('auto_recruit');
+  const id = usePathname()?.split('/').pop();
   const [showCaptcha, setShowCaptcha] = useState(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
-  const [userInfo, setUserInfo] = useState(null);
-
+  const [userInfo, setUserInfo] = useState<UserModel | null>(null);
+  
   
   useEffect(() => {
-    if (!id) {
-      return;
-    }
+    console.log('id: ', id, 'auto_recruit: ', auto_recruit);
+    if (!id) return;
+
     const checkRecruitmentHistory = async () => {
       const response = await fetch(`/api/recruit/${id}`);
       const data = await response.json();
@@ -49,7 +50,7 @@ export default function Recruit() {
     };
 
     fetchUserInfo();
-  }, [id]);
+  }, [params]);
 
   const autoRecruit = async () => {
     // Fetch the next recruitment link immediately
@@ -69,7 +70,7 @@ export default function Recruit() {
         console.log('push');
         window.location.href = `/recruit/${data.recruit_link}?auto_recruit=${auto_recruit}`;
       
-    }, 5000);
+    }, 3000);
   };
   const handleCaptchaSuccess = async () => {
     // event.preventDefault();
@@ -102,14 +103,16 @@ export default function Recruit() {
 
       if (recData.success) {
         alertService.success("You've recruited into a player's army.", true);
-        
+        console.log('params', params);
         if (auto_recruit === '1') {
           await autoRecruit();
           return;
         }
-        router.push(`/userprofile/${id}`);
+          router.push(`/userprofile/${id}`);
         // Navigate to the user's profile page which is /userprofile/[id]
-      }if(recData.error){
+      }
+      console.log('recData: ', recData);
+      if (recData.error) {
         alertService.error(recData.error);
         if (auto_recruit === '1') {
           await autoRecruit();

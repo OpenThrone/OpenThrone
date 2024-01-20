@@ -1,4 +1,4 @@
-import { useRouter } from 'next/router';
+import { usePathname, useRouter } from 'next/navigation';
 import { getSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
@@ -15,14 +15,15 @@ const WarHistory = ({
   const router = useRouter();
   const [attackPage, setAttackPage] = useState(initialAttackPage);
   const [defensePage, setDefensePage] = useState(initialDefensePage);
+  const pathName = usePathname();
   useEffect(() => {
     setAttackPage(
-      parseInt(router.query.attackPage as string) || initialAttackPage
+      parseInt(pathName as string) || initialAttackPage
     );
     setDefensePage(
-      parseInt(router.query.defensePage as string) || initialDefensePage
+      parseInt(pathName as string) || initialDefensePage
     );
-  }, [router.query]);
+  }, [pathName]);
   return (
     <div className="container mx-auto p-4">
       <h1 className="mb-4 text-2xl font-bold">War History</h1>

@@ -22,9 +22,7 @@ export type BonusType =
   | 'INTEL'
   | 'INCOME'
   | 'PRICES';
-export type Locales =
-  | 'en-US'
-  | 'es-ES'
+export type Locales = 'en-US' | 'es-ES';
 export type BattleUnits = {
   type: string;
   quantity: number;
@@ -35,9 +33,9 @@ export interface PageAlert {
   message: string;
 }
 export interface BattleUpgradeProps {
-  userLevel: number; // Assuming userLevel is a number
-  fortLevel: number; // Assuming fortLevel is a number
-  forceUpdate: () => void; // Assuming forceUpdate is a function with no arguments and no return value
+  userLevel: number;
+  fortLevel: number;
+  forceUpdate: () => void;
 }
 
 export type CasualtiesResult = {
@@ -172,3 +170,24 @@ export type BankTransferHistoryType =
   | 'ECONOMY'
   | 'PLAYER_TRANSFER'
   | 'WAR_SPOILS';
+
+export type UnitProps = {
+  id: string;
+  name: string;
+  bonus?: number;
+  ownedItems: number;
+  cost: string;
+  enabled: boolean;
+  level?: number;
+  type: string;
+  fortName: string;
+  armoryLevel?: number;
+  usage?: UnitType;
+};
+
+export type UnitSectionProps = {
+  heading: string;
+  items: UnitProps[];
+  updateTotalCost: (costChange: number) => void; // New prop
+  type?: string;
+};

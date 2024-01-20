@@ -1,4 +1,4 @@
-import { Fortification } from "@/types/typings";
+import type { Fortification } from '@/types/typings';
 
 export const Fortifications: Fortification[] = [
   {

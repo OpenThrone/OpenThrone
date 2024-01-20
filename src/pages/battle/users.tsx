@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { getSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react';
 
@@ -12,8 +12,10 @@ const ROWS_PER_PAGE = 10;
 
 const Users = ({ players, session, userPage }) => {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, forceUpdate } = useUser();
-  const initialPage = parseInt(router.query.page as string) || userPage;
+  const initialPage = parseInt(pathname as string) || userPage;
   const [page, setPage] = useState(initialPage);
   // State to store the formatted gold values
   const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
@@ -25,9 +27,9 @@ const Users = ({ players, session, userPage }) => {
   }, [players]);
 
   useEffect(() => {
-    const newPage = parseInt(router.query.page as string) || userPage;
+    const newPage = parseInt(pathname as string) || userPage;
     setPage(newPage);
-  }, [router.query.page, userPage]);
+  }, [pathname, userPage]);
 
   return (
     <div className="mainArea pb-10">
@@ -112,64 +114,45 @@ const Users = ({ players, session, userPage }) => {
   );
 };
 
-export const getServerSideProps = async (context: any) => {
+const calculateUserScore = (user) => {
+  const unitScore = user.units
+    ? user.units.map((unit) => unit.quantity).reduce((a, b) => a + b, 0)
+    : 0;
+  const itemScore = user.items
+    ? user.items.map((item) => item.quantity * (item.level * 0.1)).reduce((a, b) => a + b, 0)
+    : 0;
+
+  return 0.7 * user.experience +
+    0.2 * user.fort_level +
+    0.1 * user.house_level +
+    0.4 * unitScore +
+    0.3 * itemScore;
+};
+
+export const getServerSideProps = async (context) => {
   const session = await getSession(context);
 
-  // Fetch all users
-  const allUsers = await prisma.users.findMany({
-    orderBy: [
-      {
-        experience: 'desc',
-      },
-      {
-        fort_level: 'desc',
-      },
-      {
-        house_level: 'desc',
-      },
-    ],
-  });
+  try {
+    const allUsers = await prisma.users.findMany({ where: { id: { not: 0 } } });
+    allUsers.forEach(user => user.score = calculateUserScore(user));
 
-  // Calculate composite score for each user
-  allUsers.forEach((user) => {
-    user.score =
-      0.7 * user.experience + 0.2 * user.fort_level + 0.1 * user.house_level;
-  });
+    allUsers.sort((a, b) => b.score - a.score);
 
-  // Sort users based on composite score
-  allUsers.sort((a, b) => b.score - a.score);
+    const userRank = allUsers.findIndex(user => user.id === session?.user.id) + 1;
+    const userPage = Math.max(Math.ceil(userRank / ROWS_PER_PAGE), 1);
 
-  // Find the rank of the current user
-  const userRank =
-    allUsers.findIndex((user) => user.id === session?.user.id) + 1;
+    let page = parseInt(context.query.page as string) || userPage;
+    page = Math.max(page, 1);
+    const skip = (page - 1) * ROWS_PER_PAGE;
 
-  // Calculate the page number based on the user's rank
-  const userPage = Math.max(Math.ceil(userRank / ROWS_PER_PAGE), 1);
-  
-  // Use the user's page as default if no page query parameter is present
-  let page = parseInt(context.query.page as string) || userPage;
-  // Ensure page is not less than 1
-  page = Math.max(page, 1);
-  const skip = (page - 1) * ROWS_PER_PAGE;
-  const players = await prisma.users.findMany({
-    skip,
-    take: ROWS_PER_PAGE,
-    orderBy: [
-      {
-        experience: 'desc',
-      },
-      {
-        display_name: 'asc',
-      },
-    ],
-  });
+    const players = allUsers.slice(skip, skip + ROWS_PER_PAGE);
+    players.forEach((player, index) => player.overallrank = skip + index + 1);
 
-  // Adjust the overall rank calculation
-  for (let i = 0; i < players.length; i += 1) {
-    players[i].overallrank = skip + i + 1;
+    return { props: { players, session, userPage } };
+  } catch (error) {
+    console.error('Error fetching user data:', error);
   }
-
-  return { props: { players, session, userPage } };
 };
+
 
 export default Users;

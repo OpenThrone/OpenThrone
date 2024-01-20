@@ -1,5 +1,13 @@
+/* eslint-disable tailwindcss/no-contradicting-classname */
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import { useUser } from './users';
 
 // Define interfaces for typing
@@ -25,17 +33,6 @@ interface LayoutContextProps {
   raceClasses: RaceColors;
 }
 
-// Create Context
-const LayoutContext = createContext<LayoutContextProps>({});
-
-// Hook to use context
-export const useLayout = () => useContext(LayoutContext);
-
-interface LayoutProviderProps {
-  children: ReactNode;
-}
-
-
 // Function to generate color classes based on race
 function generateRaceColors(race: string): RaceColors {
   const colors = {
@@ -50,7 +47,7 @@ function generateRaceColors(race: string): RaceColors {
     bodyBgClass: `bg-${race}-bodyBg`,
     footerClass: `bg-${race}-footer`,
     borderClass: `${race}-double-border border-${race}`,
-    borderBottomClass: `${race}-double-border-down`
+    borderBottomClass: `${race}-double-border-down`,
   };
   return colors;
 }
@@ -63,42 +60,87 @@ const raceClasses = {
   UNDEAD: generateRaceColors('undead'),
 };
 
+// Default race classes (assuming 'ELF' as the default race)
+const defaultRaceClasses = generateRaceColors('ELF');
+
+// Default context value
+const defaultLayoutContextProps: LayoutContextProps = {
+  raceClasses: defaultRaceClasses,
+  title: undefined,
+  description: undefined,
+  setMeta: undefined,
+};
+
+// Create Context with default value
+const LayoutContext = createContext<LayoutContextProps>(
+  defaultLayoutContextProps
+);
+
+// Hook to use context
+export const useLayout = () => useContext(LayoutContext);
+
+interface LayoutProviderProps {
+  children: ReactNode;
+}
+
 // LayoutProvider Component
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
-  const [meta, setMeta] = useState({ title: '', description: '' });
+  const [meta, setMetaState] = useState({ title: '', description: '' });
   const { user } = useUser();
-  const [derivedRaceClasses, setDerivedRaceClasses] = useState<RaceColors>(raceClasses['ELF']);
+  const [derivedRaceClasses, setDerivedRaceClasses] = useState<RaceColors>(
+    raceClasses.ELF
+  );
+
+  const setMeta = (newMeta: { title?: string; description?: string }) => {
+    setMetaState((prevMeta) => ({
+      ...prevMeta,
+      ...newMeta,
+    }));
+  };
 
   const updateOptions = () => {
-    // Determine the race and corresponding classes
-    const race = user?.colorScheme || user?.race || 'ELF';
-    setDerivedRaceClasses(raceClasses[race]);
-  }
-  
+    let race = user?.colorScheme || user?.race || 'ELF';
+    // Ensure race is a valid key of raceClasses
+    if (!Object.prototype.hasOwnProperty.call(raceClasses, race)) {
+      race = 'ELF'; // Default to 'ELF' if race is not a valid key
+    }
+    setDerivedRaceClasses(raceClasses[race as keyof typeof raceClasses]);
+  };
+
   useEffect(() => {
     updateOptions();
   }, [user]);
 
+  const providerValue = useMemo(
+    () => ({
+      ...meta,
+      setMeta,
+      raceClasses: derivedRaceClasses,
+      updateOptions,
+    }),
+    [meta, setMeta, derivedRaceClasses, updateOptions]
+  );
+
   return (
-    <LayoutContext.Provider value={{ ...meta, setMeta, raceClasses: derivedRaceClasses, updateOptions }}>
+    <LayoutContext.Provider value={providerValue}>
       <div className="hidden">
         {/* Link Classes */}
-        <div className="text-elf-link-current hover:text-elf-link-hover text-elf-link-link"></div>
-        <div className="text-goblin-link-current hover:text-goblin-link-hover text-goblin-link-link"></div>
-        <div className="text-human-link-current hover:text-human-link-hover text-human-link-link"></div>
-        <div className="text-undead-link-current hover:text-undead-link-hover text-undead-link-link"></div>
+        <div className="text-elf-link-current text-elf-link-link hover:text-elf-link-hover" />
+        <div className="text-goblin-link-current text-goblin-link-link hover:text-goblin-link-hover" />
+        <div className="text-human-link-current text-human-link-link hover:text-human-link-hover" />
+        <div className="text-undead-link-current text-undead-link-link hover:text-undead-link-hover" />
 
         {/* Background Classes */}
-        <div className="bg-elf-header-bgcolor bg-elf-menu-primary bg-elf-menu-secondary bg-elf-sidebar-bgcolor bg-elf-bodyBg bg-elf-footer"></div>
-        <div className="bg-goblin-header-bgcolor bg-goblin-menu-primary bg-goblin-menu-secondary bg-goblin-sidebar-bgcolor bg-goblin-bodyBg bg-goblin-footer"></div>
-        <div className="bg-human-header-bgcolor bg-human-menu-primary bg-human-menu-secondary bg-human-sidebar-bgcolor bg-human-bodyBg bg-human-footer"></div>
-        <div className="bg-undead-header-bgcolor bg-undead-menu-primary bg-undead-menu-secondary bg-undead-sidebar-bgcolor bg-undead-bodyBg bg-undead-footer"></div>
+        <div className="bg-elf-bodyBg bg-elf-footer bg-elf-header-bgcolor bg-elf-menu-primary bg-elf-menu-secondary bg-elf-sidebar-bgcolor" />
+        <div className="bg-goblin-bodyBg bg-goblin-footer bg-goblin-header-bgcolor bg-goblin-menu-primary bg-goblin-menu-secondary bg-goblin-sidebar-bgcolor" />
+        <div className="bg-human-bodyBg bg-human-footer bg-human-header-bgcolor bg-human-menu-primary bg-human-menu-secondary bg-human-sidebar-bgcolor" />
+        <div className="bg-undead-bodyBg bg-undead-footer bg-undead-header-bgcolor bg-undead-menu-primary bg-undead-menu-secondary bg-undead-sidebar-bgcolor" />
 
         {/* Border Classes */}
-        <div className="border-elf"></div>
-        <div className="border-goblin"></div>
-        <div className="border-human"></div>
-        <div className="border-undead"></div>
+        <div className="border-elf" />
+        <div className="border-goblin" />
+        <div className="border-human" />
+        <div className="border-undead" />
       </div>
       {children}
     </LayoutContext.Provider>

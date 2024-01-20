@@ -3,9 +3,10 @@ import Alert from '@/components/alert';
 import ItemSection from '@/components/itemsection';
 import { ArmoryUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
-import { useRouter } from 'next/router';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toLocale from '@/utils/numberFormatting';
+import { alertService } from '@/services';
 const useItems = (user, armoryLevel) => {
   const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {} });
 
@@ -28,7 +29,6 @@ const useItems = (user, armoryLevel) => {
       });
     }
   }, [user, armoryLevel]);
-  console.log(items);
   return items;
 };
 
@@ -56,9 +56,9 @@ const itemMapFunction = (item, itemType, idPrefix, user, armoryLevel) => {
 
 const ArmoryTab = () => {
   const router = useRouter();
-  const { tab } = router.query;
+  const tab  = usePathname()?.split('/')[3];
   const currentPage = tab || 'offense';
-  const { user } = useUser();
+  const { user, forceUpdate } = useUser();
   const armoryLevel = user?.armoryLevel || 0;
   const items = useItems(user, armoryLevel);
   const [totalDefenseCost, setTotalDefenseCost] = useState(0);
@@ -137,13 +137,150 @@ const ArmoryTab = () => {
     // Logic to unequip items based on itemType
   };
 
-  const handleEquipAll = () => {
-    // Logic to equip all items
+  const handleEquipAll = async () => {
+    let itemsToUnequip = [];
+
+    ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
+      Object.keys(items[type]).forEach((category) => {
+        items[type][category].forEach((item) => {
+          const inputElement = document.querySelector(`input[name="${item.id}"]`);
+          if (inputElement) {
+            // No need to query the DOM since we are unequipping all
+            if (item.ownedItems > 0) {
+              itemsToUnequip.push({
+                type: item.type, // Assuming item.type is already in the correct format
+                quantity: inputElement.value,
+                usage: item.usage,
+                level: item.level,
+              });
+            }
+          }
+        });
+      });
+    });
+
+    if (itemsToUnequip.length === 0) return;
+    console.log(itemsToUnequip);
+     
+    try {
+      const response = await fetch('/api/armory/equip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          items: itemsToUnequip,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alertService.success(data.message);
+        const newItems = { ...items };
+        ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
+          Object.keys(newItems[type]).forEach((category) => {
+            newItems[type][category] = newItems[type][category].map(
+              (item) =>
+              (
+                {
+                  ...item,
+                  ownedItems: item.ownedItems
+                }
+              )
+            );
+            newItems[type][category].forEach((item) => {
+              const inputElement = document.querySelector(`input[name="${item.id}"]`);
+              if (inputElement) {
+                inputElement.value = '0';
+              }
+            });
+          });
+        });
+
+        forceUpdate()
+      } else {
+        alertService.error(data.error);
+      }
+    } catch (error) {
+      alertService.error('Failed to buy items. Please try again.');
+      console.log('error', error)
+    }
   };
 
-  const handleUnequipAll = () => {
-    // Logic to unequip all items
+  const handleUnequipAll = async () => {
+    let itemsToUnequip = [];
+
+    ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
+      Object.keys(items[type]).forEach((category) => {
+        items[type][category].forEach((item) => {
+          const inputElement = document.querySelector(`input[name="${item.id}"]`);
+          if (inputElement) {
+            // No need to query the DOM since we are unequipping all
+            if (item.ownedItems > 0) {
+              itemsToUnequip.push({
+                type: item.type, // Assuming item.type is already in the correct format
+                quantity: inputElement.value,
+                usage: item.usage,
+                level: item.level,
+              });
+              console.log('itemsToUnequip', itemsToUnequip)
+            }
+          }
+          });
+      });
+    });
+
+    if (itemsToUnequip.length === 0) return;
+
+    try {
+      const response = await fetch('/api/armory/unequip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          items: itemsToUnequip,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alertService.success(data.message);
+        const newItems = { ...items };
+        ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
+          Object.keys(newItems[type]).forEach((category) => {
+            newItems[type][category] = newItems[type][category].map(
+              (item) =>
+              (
+                {
+                  ...item,
+                  ownedItems: item.ownedItems
+                }
+              )
+            );
+            newItems[type][category].forEach((item) => {
+              const inputElement = document.querySelector(`input[name="${item.id}"]`);
+              if (inputElement) {
+                inputElement.value = '0';
+              }
+            });
+          });
+        });
+
+        forceUpdate()
+      } else {
+        alertService.error(data.error);
+      }
+    } catch (error) {
+      alertService.error('Failed to unequip items. Please try again.');
+      console.log('error', error)
+    }
   };
+
 
  
 
@@ -187,16 +324,22 @@ const ArmoryTab = () => {
       {['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].map((type) =>
         currentPage === type.toLowerCase() && (
           <>
-            {['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'].map((iType) => (
-              <ItemSection
-                key={`${type}_${iType}`}
-                heading={`${type.charAt(0).toUpperCase() + type.slice(1)} ${iType}`}
-                items={items[type] ? items[type][iType] : []}
-                onEquip={() => handleEquip(type, iType)}
-                onUnequip={() => handleUnequip(type, iType)}
-                updateTotalCost={(cost) => updateTotalCost(type.toUpperCase(), iType, cost)}
-              />
-            ))}
+            {['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'].map((iType) => {
+              const categoryItems = items[type] ? items[type][iType] : [];
+              return (
+                categoryItems?.length > 0 && (
+                  <ItemSection
+                    key={`${type}_${iType}`}
+                    heading={`${type.charAt(0).toUpperCase() + type.slice(1)} ${iType}`}
+                    items={items[type] ? items[type][iType] : []}
+                    onEquip={() => handleEquip(type, iType)}
+                    onUnequip={() => handleUnequip(type, iType)}
+                    updateTotalCost={(cost) => updateTotalCost(type.toUpperCase(), iType, cost)}
+                  />
+                )
+              )
+
+            })}
 
             <div className="mt-4">
               <p>Total Cost: {toLocale(

@@ -1,14 +1,14 @@
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-const Upgrades = () => {
+const UpgradesIndex = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/structures/upgrades/fortifications');
+    router.push('/structures/upgrades/fortifications');
   }, []);
 
   return null;
 };
 
-export default Upgrades;
+export default UpgradesIndex;

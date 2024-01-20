@@ -1,13 +1,18 @@
-import React, { useState, useTransition } from 'react';
+import React, { useState } from 'react';
 
 import { useLayout } from '../context/LayoutContext';
 
-const Modal = ({ isOpen, toggleModal, onSubmit }) => {
-  const [turns, setTurns] = useState('');
-  const [isPending, startTransition] = useTransition();
-  const handleSubmit = (event) => {
-    event.preventDefault();
+interface ModalProps {
+  isOpen: boolean;
+  toggleModal: () => void;
+  onSubmit: (turns: string) => void;
+}
 
+const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, onSubmit }) => {
+  const [turns, setTurns] = useState('');
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     onSubmit(turns);
   };
 
@@ -30,13 +35,10 @@ const Modal = ({ isOpen, toggleModal, onSubmit }) => {
         </span>
         <div className="inline-block overflow-hidden text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
           <div
-            className={`px-4 pb-4 pt-5 sm:p-6 sm:pb-4 rounded-md ${raceClasses.bgClass}`}
+            className={`rounded-md px-4 pb-4 pt-5 sm:p-6 sm:pb-4${raceClasses.bgClass}`}
           >
             <div className="justify-between sm:flex sm:items-center">
-              <h3
-                className="text-lg font-medium leading-6"
-                id="modal-title"
-              >
+              <h3 className="text-lg font-medium leading-6" id="modal-title">
                 How many turns?
               </h3>
               <button
@@ -46,7 +48,7 @@ const Modal = ({ isOpen, toggleModal, onSubmit }) => {
               >
                 <span className="sr-only">Close</span>
                 <svg
-                  className="h-6 w-6"
+                  className="size-6"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -69,7 +71,7 @@ const Modal = ({ isOpen, toggleModal, onSubmit }) => {
                   placeholder="1"
                   value={turns}
                   onChange={(e) => setTurns(e.target.value)}
-                  className="block w-full leading-6 rounded-md border-gray-300 bg-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2.5"
+                  className="block w-full rounded-md border-gray-300 bg-black p-2.5 leading-6 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
               <div className="mt-4">
