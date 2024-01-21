@@ -1,18 +1,18 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { WeaponTypes } from "@/constants";
-import prisma from "@/lib/prisma";
+import { WeaponTypes } from '@/constants';
+import prisma from '@/lib/prisma';
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
-  if (req.method === "POST") {
+  if (req.method === 'POST') {
     const { userId, items } = req.body;
 
     // Validate the input data
     if (!userId || !Array.isArray(items)) {
-      return res.status(400).json({ error: "Invalid input data" });
+      return res.status(400).json({ error: 'Invalid input data' });
     }
 
     try {
@@ -20,13 +20,16 @@ export default async function handler(
       let totalRefund = 0;
 
       // Create a copy of user's items to manipulate
-      let updatedItems = [...user.items];
+      const updatedItems = [...user.items];
 
       for (const itemData of items) {
         if (itemData.quantity < 0)
-          return res.status(400).json({ error: "Invalid quantity" });
+          return res.status(400).json({ error: 'Invalid quantity' });
         const itemType = WeaponTypes.find(
-          (w) => w.type === itemData.type && w.usage === itemData.usage && w.level === itemData.level
+          (w) =>
+            w.type === itemData.type &&
+            w.usage === itemData.usage &&
+            w.level === itemData.level,
         );
         if (!itemType) {
           return res.status(400).json({
@@ -35,12 +38,17 @@ export default async function handler(
         }
 
         const userItemIndex = updatedItems.findIndex(
-          (i) => i.type === itemData.type && i.usage === itemData.usage && i.level === itemData.level
+          (i) =>
+            i.type === itemData.type &&
+            i.usage === itemData.usage &&
+            i.level === itemData.level,
         );
-        
-        if (itemData.quantity <= 0)
-          continue;
-        if (userItemIndex === -1 || updatedItems[userItemIndex].quantity < itemData.quantity) {
+
+        if (itemData.quantity <= 0) continue;
+        if (
+          userItemIndex === -1 ||
+          updatedItems[userItemIndex].quantity < itemData.quantity
+        ) {
           return res
             .status(400)
             .json({ error: `Not enough ${itemType.name} to unequip` });
@@ -66,13 +74,15 @@ export default async function handler(
       });
 
       return res.status(200).json({
-        message: "Items unequipped successfully!",
+        message: 'Items unequipped successfully!',
         data: updatedItems,
       });
     } catch (error) {
-      return res.status(500).json({ error: "Failed to unequip items", message: error.message });
+      return res
+        .status(500)
+        .json({ error: 'Failed to unequip items', message: error.message });
     }
   } else {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 }

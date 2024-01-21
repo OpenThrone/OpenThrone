@@ -36,7 +36,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
   const { user, forceUpdate } = useUser();
   const icon = useMemo(() => getIconClass(heading), [heading]);
   const [currentItems, setCurrentItems] = useState<UnitProps[]>(items);
-  const [inputValue, setInputValue] = useState('');
+
   useEffect(() => {
     // Set initial items on component mount
     setCurrentItems(items);
@@ -45,7 +45,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
   const getItems = useMemo(() => {
     return (
       currentItems?.filter(
-        (item) => (item?.armoryLevel ?? 0) <= (user?.armoryLevel ?? 0) + 1
+        (item) => (item?.armoryLevel ?? 0) <= (user?.armoryLevel ?? 0) + 1,
       ) || []
     );
   }, [currentItems, user]);
@@ -57,7 +57,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
       // Parse the value to number for calculation
       const iValue = parseInt(
         (inputElement as HTMLInputElement)?.value.replace(/,/g, '') || '0',
-        10
+        10,
       );
       sectionCost += iValue * parseInt(unit.cost.replace(/,/g, ''), 10);
     });
@@ -65,6 +65,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleInputChange', event.target.value);
     let { value } = event.target;
     if (value === '') {
       value = '0';
@@ -72,11 +73,11 @@ const ItemSection: React.FC<UnitSectionProps> = ({
 
     const formattedValue = toLocale(
       parseInt(value.replace(/,/g, ''), 10),
-      user?.locale
+      user?.locale,
     );
-
-    setInputValue(formattedValue === 'NaN' ? '0' : formattedValue);
+    value = formattedValue === 'NaN' ? '0' : formattedValue;
   };
+
   useEffect(() => {
     if (items) {
       items.forEach((unit) => {
@@ -89,11 +90,11 @@ const ItemSection: React.FC<UnitSectionProps> = ({
       if (items) {
         items.forEach((unit) => {
           const inputElement = document.querySelector(
-            `input[name="${unit.id}"]`
+            `input[name="${unit.id}"]`,
           );
           inputElement?.removeEventListener(
             'input',
-            computeTotalCostForSection
+            computeTotalCostForSection,
           );
         });
       }
@@ -107,7 +108,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
       .filter((item) => item.enabled)
       .map((item) => {
         const inputElement = document.querySelector(
-          `input[name="${item.id}"]`
+          `input[name="${item.id}"]`,
         ) as HTMLInputElement;
         if (!inputElement) return null; // Handle the case where the element is not found
 
@@ -145,7 +146,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
         setCurrentItems((prevItems) => {
           return prevItems.map((item) => {
             const updatedItem = data.data.find(
-              (i: UnitProps) => i.type === item.id.split('_')[0]
+              (i: UnitProps) => i.type === item.id.split('_')[0],
             );
             if (updatedItem) {
               return { ...item, ownedItems: updatedItem.quantity };
@@ -156,7 +157,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
         currentItems.forEach((item) => {
           // console.log(item)
           const inputElement = document.querySelector(
-            `input[name="${item.id}"]`
+            `input[name="${item.id}"]`,
           );
           // console.log(inputElement)
           if (inputElement instanceof HTMLInputElement) {
@@ -181,7 +182,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
       .filter((item) => item.enabled)
       .map((item) => {
         const inputElement = document.querySelector(
-          `input[name="${item.id}"]`
+          `input[name="${item.id}"]`,
         ) as HTMLInputElement | null;
         if (!inputElement) return null;
 
@@ -219,7 +220,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
         setCurrentItems((prevItems) => {
           return prevItems.map((item) => {
             const updatedItem = data.data.find(
-              (i: UnitProps) => i.type === item.id.split('_')[0]
+              (i: UnitProps) => i.type === item.id.split('_')[0],
             );
             if (updatedItem) {
               return { ...item, ownedItems: updatedItem.quantity };
@@ -229,7 +230,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
         });
         currentItems.forEach((item) => {
           const inputElement = document.querySelector(
-            `input[name="${item.id}"]`
+            `input[name="${item.id}"]`,
           ) as HTMLInputElement | null;
           if (inputElement) inputElement.value = '0';
         });
@@ -245,7 +246,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
   const formatHeading = (SecHeading: string) => {
     return SecHeading.split(' ')
       .map((word) =>
-        word[0] ? word[0].toUpperCase() + word.substring(1).toLowerCase() : ''
+        word[0] ? word[0].toUpperCase() + word.substring(1).toLowerCase() : '',
       )
       .join(' ');
   };
@@ -282,10 +283,9 @@ const ItemSection: React.FC<UnitSectionProps> = ({
                     type="text"
                     aria-labelledby={unit.id}
                     name={unit.id}
-                    defaultValue="0"
+                    defaultValue={0}
                     min={0}
                     onChange={handleInputChange}
-                    value={inputValue}
                     className="w-full rounded-md bg-gray-600 p-2"
                   />
                 </td>
@@ -298,7 +298,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
                   Unlocked with {unit.fortName}
                 </td>
               </tr>
-            )
+            ),
           )}
         </tbody>
       </table>
