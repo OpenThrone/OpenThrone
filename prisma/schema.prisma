@@ -34,7 +34,7 @@ model users {
   house_level Int @default(0)
   economy_level Int @default(0)
   battle_upgrades Json? @default("[{\"type\": \"Offense\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Spy\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Sentry\", \"level\": 1, \"quantity\": 0}]")
-  structure_upgrades Json? @default("[{\"type\": \"Offense\", \"level\": 1}, {\"type\": \"Spy\", \"level\": 1}, {\"type\": \"Sentry\", \"level\": 1}]")
+  structure_upgrades Json? @default("[{\"type\": \"OFFENSE\", \"level\": 1}, {\"type\": \"SPY\", \"level\": 1}, {\"type\": \"SENTRY\", \"level\": 1}]")
   bonus_points Json? @default("[{\"type\": \"OFFENSE\", \"level\":0,\"type\": \"DEFENSE\", \"level\":0,\"type\": \"INCOME\", \"level\":0,\"type\": \"INTEL\", \"level\":0,\"type\": \"PRICES\", \"level\":0 }]")
   bio String @default("")
   colorScheme String?
