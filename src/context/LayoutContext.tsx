@@ -31,6 +31,7 @@ interface LayoutContextProps {
   description?: string;
   setMeta?: (meta: { title?: string; description?: string }) => void;
   raceClasses: RaceColors;
+  meta: { title: string; description: string };
 }
 
 // Function to generate color classes based on race
@@ -69,6 +70,7 @@ const defaultLayoutContextProps: LayoutContextProps = {
   title: undefined,
   description: undefined,
   setMeta: undefined,
+  meta: undefined
 };
 
 // Create Context with default value

@@ -6,17 +6,18 @@ import Form from '@/components/form';
 import { useLayout } from '@/context/LayoutContext';
 
 const Login = () => {
-  const { setMeta } = useLayout();
+  const { setMeta, meta } = useLayout();
   const [resetEmail, setResetEmail] = useState('');
 
   useEffect(() => {
-    if (setMeta) {
+    if (setMeta && meta && meta.title !== "OpenThrone - Login") {
       setMeta({
         title: 'OpenThrone - Login',
         description: 'Meta Description',
       });
     }
-  }, [setMeta]);
+  }, [meta, setMeta]);
+  
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const handlePasswordReset = async () => {

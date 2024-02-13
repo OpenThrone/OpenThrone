@@ -3,17 +3,16 @@ import React, { useEffect } from 'react';
 import { useLayout } from '@/context/LayoutContext';
 
 const Index = () => {
-  const { setMeta } = useLayout();
+  const { setMeta, meta } = useLayout();
 
   useEffect(() => {
-    if (setMeta) {
+    if (setMeta && meta && meta.title !== 'OpenThrone') {
       setMeta({
         title: 'OpenThrone',
         description: 'Meta Description',
       });
     }
-  }, [setMeta]);
-
+  }, [meta, setMeta]);
   return (
     <div className="mx-auto w-3/4 py-2 md:col-span-9">
       <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">
