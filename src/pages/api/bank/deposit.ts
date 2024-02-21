@@ -3,10 +3,11 @@ import { getServerSession } from 'next-auth/next';
 
 import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 const prisma = new PrismaClient();
 
-export default async (req, res) => {
+export default async function depositHandler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
@@ -21,7 +22,7 @@ export default async (req, res) => {
   // Fetch the user based on the session's user ID
   const user = await prisma.users.findUnique({
     where: {
-      id: parseInt(session.user.id),
+      id: Number(session.user.id),
     },
   });
 
@@ -62,7 +63,7 @@ export default async (req, res) => {
   }
 
   await prisma.users.update({
-    where: { id: parseInt(userMod.id) },
+    where: { id: Number(userMod.id) },
     data: {
       gold: user.gold - depositAmount,
       gold_in_bank: user?.gold_in_bank + depositAmount,

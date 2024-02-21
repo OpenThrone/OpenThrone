@@ -21,18 +21,18 @@ const Layout = (props: IMainProps) => {
   const [authorized, setAuthorized] = useState(status === 'authenticated');
   const layoutCont = useLayout();
   const pathName = usePathname();
-  function authCheck(_url: string | null) {
-    // redirect to login page if accessing a private page and not logged in
-
-    if (status === 'loading') {
-      return <div>Loading</div>;
-    }
-    return setAuthorized(status === 'authenticated');
-  }
 
   useEffect(() => {
+    function authCheck(_url: string | null) {
+      // redirect to login page if accessing a private page and not logged in
+
+      if (status === 'loading') {
+        return <div>Loading</div>;
+      }
+      return setAuthorized(status === 'authenticated');
+    }
     authCheck(pathName);
-  }, [session]);
+  }, [session, pathName, status]);
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -5,7 +5,7 @@ import { authOptions } from './auth/[...nextauth]';
 
 const prisma = new PrismaClient();
 
-export default async (req, res) => {
+export default async function handler(req: any, res: any) {
   const session = await getServerSession(req, res, authOptions);
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -13,7 +13,7 @@ export default async (req, res) => {
 
   const user = await prisma.users.findUnique({
     where: {
-      id: session.user.id,
+      id: typeof(session.user.id) === 'string' ? parseInt(session.user.id) : session.user.id,
     },
   });
 

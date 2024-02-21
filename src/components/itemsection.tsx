@@ -50,20 +50,6 @@ const ItemSection: React.FC<UnitSectionProps> = ({
     );
   }, [currentItems, user]);
 
-  const computeTotalCostForSection = () => {
-    let sectionCost = 0;
-    items?.forEach((unit) => {
-      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-      // Parse the value to number for calculation
-      const iValue = parseInt(
-        (inputElement as HTMLInputElement)?.value.replace(/,/g, '') || '0',
-        10,
-      );
-      sectionCost += iValue * parseInt(unit.cost.replace(/,/g, ''), 10);
-    });
-    updateTotalCost(sectionCost);
-  };
-
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log('handleInputChange', event.target.value);
     let { value } = event.target;
@@ -79,6 +65,19 @@ const ItemSection: React.FC<UnitSectionProps> = ({
   };
 
   useEffect(() => {
+    const computeTotalCostForSection = () => {
+      let sectionCost = 0;
+      items?.forEach((unit) => {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+        // Parse the value to number for calculation
+        const iValue = parseInt(
+          (inputElement as HTMLInputElement)?.value.replace(/,/g, '') || '0',
+          10,
+        );
+        sectionCost += iValue * parseInt(unit.cost.replace(/,/g, ''), 10);
+      });
+      updateTotalCost(sectionCost);
+    };
     if (items) {
       items.forEach((unit) => {
         const inputElement = document.querySelector(`input[name="${unit.id}"]`);
@@ -99,7 +98,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
         });
       }
     };
-  }, [currentItems, updateTotalCost]);
+  }, [currentItems, items, updateTotalCost]);
 
   const handleEquip = async () => {
     if (!getItems || getItems.length === 0) return;

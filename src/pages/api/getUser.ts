@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from './auth/[...nextauth]';
 import { alertService } from '@/services';
 
-export default async (req: NextApiRequest, res: NextApiResponse) => {
+export default async function getUser(req: NextApiRequest, res: NextApiResponse) {
   // Get the session on the server-side
   const session = await getServerSession(req, res, authOptions);
 
@@ -18,7 +18,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     // Fetch the user based on the session's user ID
     const user = await prisma.users.findUnique({
       where: {
-        id: parseInt(session.user.id),
+        id: typeof(session.user.id) === 'string' ? parseInt(session.user.id) : session.user.id,
       },
     });
 

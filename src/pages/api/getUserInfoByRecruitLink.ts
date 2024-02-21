@@ -1,12 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '@/lib/prisma';
 
-// I'm assuming you have a UserModel class which can calculate level, if not, you'll need to implement that logic.
+import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const { recruit_link } = req.query;
 
@@ -23,7 +22,7 @@ export default async function handler(
 
     // Create a new UserModel instance to calculate and access the user's level.
     const userModelInstance = new UserModel(user);
-    
+
     // Respond with the required data
     return res.status(200).json({
       display_name: user.display_name,
@@ -34,4 +33,5 @@ export default async function handler(
   }
 
   res.status(405).json({ error: 'Method not allowed' }); // Send a proper response for unsupported methods
+  return null;
 }

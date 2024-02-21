@@ -32,7 +32,6 @@ const UnitSection: React.FC<UnitSectionProps> = ({
 }) => {
   const { user, forceUpdate } = useUser();
   const [getUnits, setUnits] = useState(units || []);
-
   const handleTrain = async () => {
     const unitsToTrain = units
       .filter((unit) => unit.enabled)
@@ -210,38 +209,46 @@ const UnitSection: React.FC<UnitSectionProps> = ({
           </tr>
         </thead>
         <tbody>
-          {getUnits.map((unit) =>
-            unit.enabled ? (
-              <tr key={unit.id}>
-                <td className="border px-4 py-2">{unit.name}</td>
-                <td className="border px-4 py-2">
-                  +{unit.bonus} {heading}
-                </td>
-                <td className="border px-4 py-2">
-                  <span id={`${unit.id}_owned`}>{unit.ownedUnits}</span>
-                </td>
-                <td className="border px-4 py-2">{unit.cost}</td>
-                <td className="border px-4 py-2">
-                  <input
-                    type="number"
-                    aria-labelledby={unit.id}
-                    name={unit.id}
-                    defaultValue="0"
-                    min="0"
-                    className="w-full rounded-md bg-gray-600 p-2"
-                  />
-                </td>
-              </tr>
-            ) : (
-              <tr key={unit.id}>
-                <td className="border px-4 py-2">{unit.name}</td>
-                <td className="border px-4 py-2">-</td>
-                <td colSpan={3} className="border px-4 py-2 text-center">
-                  Unlocked with {unit.requirement}
-                </td>
-              </tr>
-            )
-          )}
+          {(() => {
+            const sortedUnits = getUnits.sort((a, b) => a.id - b.id); // Ensure units are sorted by ID.
+            const firstDisabledUnit = sortedUnits.find(u => !u.enabled); // Find the first disabled unit.
+            return sortedUnits.map((unit) => {
+              if (unit.enabled) {
+                return (
+                  <tr key={unit.id}>
+                    <td className="border px-4 py-2">{unit.name}</td>
+                    <td className="border px-4 py-2">+{unit.bonus} {heading}</td>
+                    <td className="border px-4 py-2">
+                      <span id={`${unit.id}_owned`}>{unit.ownedUnits}</span>
+                    </td>
+                    <td className="border px-4 py-2">{unit.cost}</td>
+                    <td className="border px-4 py-2">
+                      <input
+                        type="number"
+                        aria-labelledby={unit.id}
+                        name={unit.id}
+                        defaultValue="0"
+                        min="0"
+                        className="w-full rounded-md bg-gray-600 p-2"
+                      />
+                    </td>
+                  </tr>
+                );
+              } else if (unit.id === firstDisabledUnit?.id) {
+                // Rendering for the first disabled unit
+                return (
+                  <tr key={unit.id}>
+                    <td className="border px-4 py-2">{unit.name}</td>
+                    <td className="border px-4 py-2">-</td>
+                    <td colSpan={3} className="border px-4 py-2 text-center">
+                      Unlocked with {unit.requirement}
+                    </td>
+                  </tr>
+                );
+              }
+              return null; // For all other disabled units, do not render anything.
+            });
+          })()}
         </tbody>
       </table>
       <div className="mt-4 flex justify-between">

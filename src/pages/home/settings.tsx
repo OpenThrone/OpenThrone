@@ -107,7 +107,7 @@ const Settings = () => {
           />
           {!passwordsMatch && (
             <p className="col-span-2 text-xs text-red-500">
-              Passwords don't match.
+              Passwords don&apos;t match.
             </p>
           )}
         </div>

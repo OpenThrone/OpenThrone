@@ -1,18 +1,27 @@
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
 import Alert from '@/components/alert';
 import ItemSection from '@/components/itemsection';
 import { ArmoryUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
-import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import toLocale from '@/utils/numberFormatting';
 import { alertService } from '@/services';
+import toLocale from '@/utils/numberFormatting';
+
 const useItems = (user, armoryLevel) => {
   const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {} });
 
   useEffect(() => {
     if (user && user.availableItemTypes) {
-      const categories = ['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS','ARMOR'];
+      const categories = [
+        'WEAPON',
+        'HELM',
+        'BRACERS',
+        'SHIELD',
+        'BOOTS',
+        'ARMOR',
+      ];
       const types = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
       types.forEach((type) => {
         categories.forEach((category) => {
@@ -22,7 +31,9 @@ const useItems = (user, armoryLevel) => {
               ...prevItems[type],
               [category]: user.availableItemTypes
                 .filter((unit) => unit.usage === type && unit.type === category)
-                .map((unit) => itemMapFunction(unit, type, category, user, armoryLevel)),
+                .map((unit) =>
+                  itemMapFunction(unit, type, category, user, armoryLevel),
+                ),
             },
           }));
         });
@@ -42,9 +53,12 @@ const itemMapFunction = (item, itemType, idPrefix, user, armoryLevel) => {
         (i) =>
           i.type === item.type &&
           i.level === item.level &&
-          i.usage === item.usage
+          i.usage === item.usage,
       )?.quantity || 0,
-    cost: toLocale(item.cost - (user?.priceBonus / 100 * item.cost), user?.locale),
+    cost: toLocale(
+      item.cost - (user?.priceBonus / 100) * item.cost,
+      user?.locale,
+    ),
     enabled: item.armoryLevel <= armoryLevel,
     level: item.level,
     type: item.type,
@@ -56,7 +70,7 @@ const itemMapFunction = (item, itemType, idPrefix, user, armoryLevel) => {
 
 const ArmoryTab = () => {
   const router = useRouter();
-  const tab  = usePathname()?.split('/')[3];
+  const tab = usePathname()?.split('/')[3];
   const currentPage = tab || 'offense';
   const { user, forceUpdate } = useUser();
   const armoryLevel = user?.armoryLevel || 0;
@@ -69,30 +83,29 @@ const ArmoryTab = () => {
     OFFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
     DEFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
     SPY: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
-    SENTRY: {WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0}
+    SENTRY: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
   });
   const calculateTotalCost = (type: string = 'ALL') => {
     if (type === 'ALL') {
       const offenseCost = Object.values(totalCost.OFFENSE).reduce(
         (acc, curr) => acc + curr,
-        0
+        0,
       );
       const defenseCost = Object.values(totalCost.DEFENSE).reduce(
         (acc, curr) => acc + curr,
-        0
+        0,
       );
       const spyCost = Object.values(totalCost.SPY).reduce(
         (acc, curr) => acc + curr,
-        0
+        0,
       );
       const sentryCost = Object.values(totalCost.SENTRY).reduce(
         (acc, curr) => acc + curr,
-        0
+        0,
       );
       return offenseCost + defenseCost + spyCost + sentryCost;
-    } else {
-      return Object.values(totalCost[type]).reduce((acc, curr) => acc + curr, 0);
     }
+    return Object.values(totalCost[type]).reduce((acc, curr) => acc + curr, 0);
   };
 
   useEffect(() => {
@@ -114,7 +127,7 @@ const ArmoryTab = () => {
     setTotalDefenseCost(defenseCost);
     setTotalSpyCost(spyCost);
     setTotalSentryCost(sentryCost);
-  }, [items,totalCost]);
+  }, [items, totalCost]);
 
   const updateTotalCost = (section, item, cost) => {
     setTotalCost((prevTotalCost) => {
@@ -138,12 +151,14 @@ const ArmoryTab = () => {
   };
 
   const handleEquipAll = async () => {
-    let itemsToUnequip = [];
+    const itemsToUnequip = [];
 
     ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
       Object.keys(items[type]).forEach((category) => {
         items[type][category].forEach((item) => {
-          const inputElement = document.querySelector(`input[name="${item.id}"]`);
+          const inputElement = document.querySelector(
+            `input[name="${item.id}"]`,
+          );
           if (inputElement) {
             // No need to query the DOM since we are unequipping all
             if (item.ownedItems > 0) {
@@ -161,7 +176,7 @@ const ArmoryTab = () => {
 
     if (itemsToUnequip.length === 0) return;
     console.log(itemsToUnequip);
-     
+
     try {
       const response = await fetch('/api/armory/equip', {
         method: 'POST',
@@ -181,17 +196,14 @@ const ArmoryTab = () => {
         const newItems = { ...items };
         ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
           Object.keys(newItems[type]).forEach((category) => {
-            newItems[type][category] = newItems[type][category].map(
-              (item) =>
-              (
-                {
-                  ...item,
-                  ownedItems: item.ownedItems
-                }
-              )
-            );
+            newItems[type][category] = newItems[type][category].map((item) => ({
+              ...item,
+              ownedItems: item.ownedItems,
+            }));
             newItems[type][category].forEach((item) => {
-              const inputElement = document.querySelector(`input[name="${item.id}"]`);
+              const inputElement = document.querySelector(
+                `input[name="${item.id}"]`,
+              );
               if (inputElement) {
                 inputElement.value = '0';
               }
@@ -199,23 +211,25 @@ const ArmoryTab = () => {
           });
         });
 
-        forceUpdate()
+        forceUpdate();
       } else {
         alertService.error(data.error);
       }
     } catch (error) {
       alertService.error('Failed to buy items. Please try again.');
-      console.log('error', error)
+      console.log('error', error);
     }
   };
 
   const handleUnequipAll = async () => {
-    let itemsToUnequip = [];
+    const itemsToUnequip = [];
 
     ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
       Object.keys(items[type]).forEach((category) => {
         items[type][category].forEach((item) => {
-          const inputElement = document.querySelector(`input[name="${item.id}"]`);
+          const inputElement = document.querySelector(
+            `input[name="${item.id}"]`,
+          );
           if (inputElement) {
             // No need to query the DOM since we are unequipping all
             if (item.ownedItems > 0) {
@@ -225,10 +239,10 @@ const ArmoryTab = () => {
                 usage: item.usage,
                 level: item.level,
               });
-              console.log('itemsToUnequip', itemsToUnequip)
+              console.log('itemsToUnequip', itemsToUnequip);
             }
           }
-          });
+        });
       });
     });
 
@@ -253,17 +267,14 @@ const ArmoryTab = () => {
         const newItems = { ...items };
         ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
           Object.keys(newItems[type]).forEach((category) => {
-            newItems[type][category] = newItems[type][category].map(
-              (item) =>
-              (
-                {
-                  ...item,
-                  ownedItems: item.ownedItems
-                }
-              )
-            );
+            newItems[type][category] = newItems[type][category].map((item) => ({
+              ...item,
+              ownedItems: item.ownedItems,
+            }));
             newItems[type][category].forEach((item) => {
-              const inputElement = document.querySelector(`input[name="${item.id}"]`);
+              const inputElement = document.querySelector(
+                `input[name="${item.id}"]`,
+              );
               if (inputElement) {
                 inputElement.value = '0';
               }
@@ -271,18 +282,15 @@ const ArmoryTab = () => {
           });
         });
 
-        forceUpdate()
+        forceUpdate();
       } else {
         alertService.error(data.error);
       }
     } catch (error) {
       alertService.error('Failed to unequip items. Please try again.');
-      console.log('error', error)
+      console.log('error', error);
     }
   };
-
-
- 
 
   return (
     <div className="mainArea pb-10">
@@ -306,69 +314,92 @@ const ArmoryTab = () => {
       </div>
       <div className="mb-4 flex justify-center">
         <div className="flex space-x-2">
-          <Link href="/structures/armory/offense" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'offense' ? 'bg-blue-500 text-white' : ''}`}>
+          <Link
+            href="/structures/armory/offense"
+            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'offense' ? 'bg-blue-500 text-white' : ''}`}
+          >
             Offense
           </Link>
-          <Link href="/structures/armory/defense" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'defense' ? 'bg-blue-500 text-white' : ''}`}>
+          <Link
+            href="/structures/armory/defense"
+            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'defense' ? 'bg-blue-500 text-white' : ''}`}
+          >
             Defense
           </Link>
-          <Link href="/structures/armory/spy" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'spy' ? 'bg-blue-500 text-white' : ''}`}>
+          <Link
+            href="/structures/armory/spy"
+            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'spy' ? 'bg-blue-500 text-white' : ''}`}
+          >
             Spy
           </Link>
-          <Link href="/structures/armory/sentry" className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'sentry' ? 'bg-blue-500 text-white' : ''}`}>
+          <Link
+            href="/structures/armory/sentry"
+            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'sentry' ? 'bg-blue-500 text-white' : ''}`}
+          >
             Sentry
           </Link>
         </div>
       </div>
-      
-      {['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].map((type) =>
-        currentPage === type.toLowerCase() && (
-          <>
-            {['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'].map((iType) => {
-              const categoryItems = items[type] ? items[type][iType] : [];
-              return (
-                categoryItems?.length > 0 && (
-                  <ItemSection
-                    key={`${type}_${iType}`}
-                    heading={`${type.charAt(0).toUpperCase() + type.slice(1)} ${iType}`}
-                    items={items[type] ? items[type][iType] : []}
-                    onEquip={() => handleEquip(type, iType)}
-                    onUnequip={() => handleUnequip(type, iType)}
-                    updateTotalCost={(cost) => updateTotalCost(type.toUpperCase(), iType, cost)}
-                  />
-                )
-              )
 
-            })}
+      {['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].map(
+        (type) =>
+          currentPage === type.toLowerCase() && (
+            <>
+              {['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'].map(
+                (iType) => {
+                  const categoryItems = items[type] ? items[type][iType] : [];
+                  return (
+                    categoryItems?.length > 0 && (
+                      <ItemSection
+                        key={`${type}_${iType}`}
+                        heading={`${type.charAt(0).toUpperCase() + type.slice(1)} ${iType}`}
+                        items={items[type] ? items[type][iType] : []}
+                        onEquip={() => handleEquip(type, iType)}
+                        onUnequip={() => handleUnequip(type, iType)}
+                        updateTotalCost={(cost) =>
+                          updateTotalCost(type.toUpperCase(), iType, cost)
+                        }
+                      />
+                    )
+                  );
+                },
+              )}
 
-            <div className="mt-4">
-              <p>Total Cost: {toLocale(
-                type === 'OFFENSE' ? totalOffenseCost :
-                  type === 'DEFENSE' ? totalDefenseCost :
-                    type === 'SPY' ? totalSpyCost : 
-                      type === 'SENTRY' ? totalSentryCost : 0,
-              )}</p>
-            </div>
-            <div className="mt-4 flex justify-between">
-              <button
-                type="button"
-                className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-                onClick={handleEquipAll}
-              >
-                Buy All
-              </button>
-              <button
-                type="button"
-                className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
-                onClick={handleUnequipAll}
-              >
-                Sell All
-              </button>
-            </div>
-          </>
-        )
+              <div className="mt-4">
+                <p>
+                  Total Cost:{' '}
+                  {toLocale(
+                    type === 'OFFENSE'
+                      ? totalOffenseCost
+                      : type === 'DEFENSE'
+                        ? totalDefenseCost
+                        : type === 'SPY'
+                          ? totalSpyCost
+                          : type === 'SENTRY'
+                            ? totalSentryCost
+                            : 0,
+                  )}
+                </p>
+              </div>
+              <div className="mt-4 flex justify-between">
+                <button
+                  type="button"
+                  className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+                  onClick={handleEquipAll}
+                >
+                  Buy All
+                </button>
+                <button
+                  type="button"
+                  className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+                  onClick={handleUnequipAll}
+                >
+                  Sell All
+                </button>
+              </div>
+            </>
+          ),
       )}
-      
     </div>
   );
 };

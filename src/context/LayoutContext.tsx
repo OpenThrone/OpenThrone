@@ -1,7 +1,7 @@
-/* eslint-disable tailwindcss/no-contradicting-classname */
 import type { ReactNode } from 'react';
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -93,25 +93,25 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
     raceClasses.ELF
   );
 
-  const setMeta = (newMeta: { title?: string; description?: string }) => {
-    setMetaState((prevMeta) => ({
-      ...prevMeta,
-      ...newMeta,
-    }));
-  };
+  const setMeta = useCallback((newMeta: { title?: string; description?: string }) => {
+      setMetaState((prevMeta) => ({
+        ...prevMeta,
+        ...newMeta,
+      }));
+    }, [setMetaState]);
 
-  const updateOptions = () => {
+  const updateOptions = useCallback(() => {
     let race = user?.colorScheme || user?.race || 'ELF';
     // Ensure race is a valid key of raceClasses
     if (!Object.prototype.hasOwnProperty.call(raceClasses, race)) {
       race = 'ELF'; // Default to 'ELF' if race is not a valid key
     }
     setDerivedRaceClasses(raceClasses[race as keyof typeof raceClasses]);
-  };
+  }, [user]);
 
   useEffect(() => {
     updateOptions();
-  }, [user]);
+  }, [user, updateOptions]);
 
   const providerValue = useMemo(
     () => ({
@@ -119,6 +119,7 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
       setMeta,
       raceClasses: derivedRaceClasses,
       updateOptions,
+      meta
     }),
     [meta, setMeta, derivedRaceClasses, updateOptions]
   );
