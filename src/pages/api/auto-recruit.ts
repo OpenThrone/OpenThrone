@@ -1,7 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 import prisma from '@/lib/prisma';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== 'GET') {
     return res.status(405).end(); // Method not allowed
   }
@@ -18,20 +22,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       NOT: [
         {
           id: {
-            in:[0]
-          }
-        }
-      ]
-    }
+            in: [0],
+          },
+        },
+      ],
+    },
   });
 
   if (!users.length) {
-    return res.status(404).json({ error: 'No users available for recruitment.' });
+    return res
+      .status(404)
+      .json({ error: 'No users available for recruitment.' });
   }
 
-  const validUsers = [];
-  for (const user of users) {
-    // Check if the user has been recruited more than 25 times in the last 24 hours
+  const userPromises = users.map(async (user: any) => {
     const totalRecruitments = await prisma.recruit_history.count({
       where: {
         to_user: user.id,
@@ -40,20 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       },
     });
-
-
-    if (totalRecruitments >= 25) continue; // Skip user if recruited more than 25 times
-    
-    // Check if the user has been recruited by the same recruiter more than 5 times
-    const sameRecruiterRecruitments = await prisma.recruit_history.count({
-      where: {
-        to_user: user.id,
-        from_user: { not: 0 }, // Exclude from_user = 0
-        timestamp: {
-          gte: twentyFourHoursAgo,
-        },
-      },
-    });
+    if (totalRecruitments >= 25) return null; // Skip user if recruited more than 25 times
 
     const recruitmentsCountByRecruiter = await prisma.recruit_history.groupBy({
       by: ['from_user'],
@@ -78,14 +69,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    console.log('recruitmentsCountByRecruiter', recruitmentsCountByRecruiter);
+    const isOverRecruited = recruitmentsCountByRecruiter.some(
+      // eslint-disable-next-line no-underscore-dangle
+      (recruitment: any) => recruitment._count.from_user >= 5,
+    );
 
-    if (recruitmentsCountByRecruiter < 5) validUsers.push(user); // Add user to validUsers if recruited less than 5 times by the same recruiter
-  }
+    if (!isOverRecruited) {
+      return user;
+    }
+    return null;
+  });
 
+  const validUsers = (await Promise.all(userPromises)).filter(Boolean);
 
   if (!validUsers.length) {
-    return res.status(404).json({ error: 'No valid users available for recruitment.' });
+    return res
+      .status(404)
+      .json({ error: 'No valid users available for recruitment.' });
   }
 
   // Randomly select a user from the validUsers
