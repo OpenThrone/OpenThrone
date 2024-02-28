@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck, faRefresh, faTrash } from "@fortawesome/free-solid-svg-icons";
+
 
 const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
   const [messages, setMessages] = useState(['']);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
-  const { user } = useUser();
+  const { user, forceUpdate } = useUser();
 
   const [sidebar, setSidebar] = useState({
     gold: '0',
@@ -20,9 +23,10 @@ const Sidebar: React.FC = () => {
   });
   useEffect(() => {
     const messagesArray = [
-      'This is a hint. It will rotate out',
-      'This is another hint.',
-      'You get the point',
+      'It is better to buy a few stronger weapons than many weaker ones.',
+      'The more attack turns you use in an attack, the more experience and gold you will gain.',
+      'The more workers you have, the more gold you&#39;ll earn per turn.',
+      'Recruiting your max amount every day will ensure you&#39;re kingdom continues to grow.',
       // Add more messages as needed
     ];
 
@@ -89,7 +93,7 @@ const Sidebar: React.FC = () => {
           </h6>
           <p className="text-xs">{messages[currentMessageIndex]}</p>
 
-          <h6 className="text-center">Stats</h6>
+            <h6 className="text-center">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 10, padding: '3px 0' }} onClick={forceUpdate} /></h6>
           <ul className="list-none pl-0 text-sm">
             <li>
               <i className="ra ra-gem ra-fw" /> Gold:{' '}
