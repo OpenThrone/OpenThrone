@@ -24,6 +24,8 @@ const isPublicPath = (path: string | null) => {
   const publicPathsRegex = [
     /^\/account\/login$/,
     /^\/account\/register$/,
+    /^\/account\/resetPW$/,
+    /^\/account\/resetPW\/result$/,
     /^\/$/,
     /^\/userprofile\/[a-z0-9]+$/i, // Updated to include letters or numbers
     /^\/recruit\/[a-z0-9]+$/i, // New regex for /recruit/
