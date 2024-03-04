@@ -36,11 +36,10 @@ export default function Recruit() {
       return;
     }
 
-    // Delay for 5 seconds before navigating to the next recruitment link
+    // Delay for 1 second before navigating to the next recruitment link
     setTimeout(() => {
-      console.log('push');
       window.location.href = `/recruit/${data.recruit_link}?auto_recruit=${autoRecruitParams}`;
-    }, 3000);
+    }, 1000);
   };
 
   useEffect(() => {
