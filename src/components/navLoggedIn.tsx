@@ -43,6 +43,11 @@ const subMenus: {
   // Alliances: [{ text: 'Test', href: '#' }],
   Community: [
     {
+      text: 'News',
+      href: '/community/news',
+      parent: 'Community',
+    },
+    {
       text: 'Discord',
       href: 'https://discord.gg/j9NYxmBCjA',
       parent: 'Community',

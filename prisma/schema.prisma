@@ -2,125 +2,131 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["jsonProtocol"]
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
 model users {
-  id        Int     @id @default(autoincrement())
-  email     String  @unique
-  display_name String @unique
-  password_hash  String
-  race  String
-  class String
-  units Json? @default("[{\"type\": \"CITIZEN\", \"level\": 1, \"quantity\": 50}, {\"type\": \"WORKER\", \"level\": 1, \"quantity\": 0}, {\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}]")
-  experience Int @default(0)
-  gold  Int @default(25000)
-  gold_in_bank  Int @default(0)
-  fort_level  Int @default(1)
-  fort_hitpoints  Int @default(100)
-  attack_turns  Int @default(10)
-  last_active DateTime? @db.Timestamptz(3)
-  rank Int @default(0)
-  items Json? @default("[{\"type\": \"WEAPON\", \"level\": 1, \"quantity\": 0, \"usage\": \"OFFENSE\"}]")
-  house_level Int @default(0)
-  economy_level Int @default(0)
-  battle_upgrades Json? @default("[{\"type\": \"Offense\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Spy\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Sentry\", \"level\": 1, \"quantity\": 0}]")
-  structure_upgrades Json? @default("[{\"type\": \"OFFENSE\", \"level\": 1}, {\"type\": \"SPY\", \"level\": 1}, {\"type\": \"SENTRY\", \"level\": 1}]")
-  bonus_points Json? @default("[{\"type\": \"OFFENSE\", \"level\":0,\"type\": \"DEFENSE\", \"level\":0,\"type\": \"INCOME\", \"level\":0,\"type\": \"INTEL\", \"level\":0,\"type\": \"PRICES\", \"level\":0 }]")
-  bio String @default("")
-  colorScheme String?
-  recruit_link String @default("") @unique
-  locale String
-  
+  id                 Int       @id @default(autoincrement())
+  email              String    @unique
+  display_name       String    @unique
+  password_hash      String
+  race               String
+  class              String
+  units              Json?     @default("[{\"type\": \"CITIZEN\", \"level\": 1, \"quantity\": 50}, {\"type\": \"WORKER\", \"level\": 1, \"quantity\": 0}, {\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}]")
+  experience         Int       @default(0)
+  gold               Int       @default(25000)
+  gold_in_bank       Int       @default(0)
+  fort_level         Int       @default(1)
+  fort_hitpoints     Int       @default(100)
+  attack_turns       Int       @default(10)
+  last_active        DateTime? @db.Timestamptz(3)
+  rank               Int       @default(0)
+  items              Json?     @default("[{\"type\": \"WEAPON\", \"level\": 1, \"quantity\": 0, \"usage\": \"OFFENSE\"}]")
+  house_level        Int       @default(0)
+  economy_level      Int       @default(0)
+  battle_upgrades    Json?     @default("[{\"type\": \"Offense\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Spy\", \"level\": 1, \"quantity\": 0}, {\"type\": \"Sentry\", \"level\": 1, \"quantity\": 0}]")
+  structure_upgrades Json?     @default("[{\"type\": \"OFFENSE\", \"level\": 1}, {\"type\": \"SPY\", \"level\": 1}, {\"type\": \"SENTRY\", \"level\": 1}]")
+  bonus_points       Json?     @default("[{\"type\": \"OFFENSE\", \"level\":0,\"type\": \"DEFENSE\", \"level\":0,\"type\": \"INCOME\", \"level\":0,\"type\": \"INTEL\", \"level\":0,\"type\": \"PRICES\", \"level\":0 }]")
+  bio                String    @default("")
+  colorScheme        String?
+  recruit_link       String    @unique @default("")
+  locale             String
 
   // Relations
-  sentMessages     messages[] @relation("from_user")
-  receivedMessages messages[] @relation("to_user")
-  attacksMade      attack_log[] @relation("AttackLogs")
-  attacksDefended  attack_log[] @relation("DefenseLogs")
+  sentMessages     messages[]         @relation("from_user")
+  receivedMessages messages[]         @relation("to_user")
+  attacksMade      attack_log[]       @relation("AttackLogs")
+  attacksDefended  attack_log[]       @relation("DefenseLogs")
   recruitHistories recruit_history[]
-  blogPosts        blog_posts[]        // Opposite relation field for `postedBy` in `blog_posts`
-  postReadStatuses post_read_status[]  // Opposite relation field for `user` in `post_read_status`
+  blogPosts        blog_posts[] // Opposite relation field for `postedBy` in `blog_posts`
+  postReadStatuses post_read_status[] // Opposite relation field for `user` in `post_read_status`
+
+}
+
+model PasswordReset {
+  id               Int      @id @default(autoincrement())
+  userId           Int // Foreign key to reference the 'users' table
+  verificationCode String
+  createdAt        DateTime @default(now()) @db.Timestamptz(3)
+  status           Int @default(0) // 0 = Active, 1 = Used, 2 = Expired
 
 }
 
 model attack_log {
-  id Int @id @default(autoincrement())
-  attacker_id Int
-  attackerPlayer users @relation("AttackLogs", fields: [attacker_id], references: [id])
-  defender_id Int
-  defenderPlayer users @relation("DefenseLogs", fields: [defender_id], references: [id])
-  timestamp DateTime? @db.Timestamptz(3)
-  winner Int
-  type String @default("attack")
-  stats Json
+  id             Int       @id @default(autoincrement())
+  attacker_id    Int
+  attackerPlayer users     @relation("AttackLogs", fields: [attacker_id], references: [id])
+  defender_id    Int
+  defenderPlayer users     @relation("DefenseLogs", fields: [defender_id], references: [id])
+  timestamp      DateTime? @db.Timestamptz(3)
+  winner         Int
+  type           String    @default("attack")
+  stats          Json
 }
 
 model bank_history {
-  id Int @id @default(autoincrement())
-  gold_amount Int
-  from_user_id Int
+  id                     Int       @id @default(autoincrement())
+  gold_amount            Int
+  from_user_id           Int
   from_user_account_type String
-  to_user_id Int
-  to_user_account_type String
-  date_time DateTime? @db.Timestamptz(3)
-  history_type String
+  to_user_id             Int
+  to_user_account_type   String
+  date_time              DateTime? @db.Timestamptz(3)
+  history_type           String
 }
 
 model messages {
-  id Int @id @default(autoincrement())
-  subject String
+  id           Int       @id @default(autoincrement())
+  subject      String
   from_user_id Int
-  from_user users @relation("from_user", fields: [from_user_id], references: [id])
-  to_user_id Int
-  to_user users @relation("to_user", fields: [to_user_id], references: [id])
-  date_time DateTime? @default(now()) @db.Timestamptz(3)
+  from_user    users     @relation("from_user", fields: [from_user_id], references: [id])
+  to_user_id   Int
+  to_user      users     @relation("to_user", fields: [to_user_id], references: [id])
+  date_time    DateTime? @default(now()) @db.Timestamptz(3)
   created_date DateTime? @default(now()) @db.Timestamptz(3)
   updated_date DateTime? @default(now()) @db.Timestamptz(3)
-  body String
-  unread Boolean @default(true)
+  body         String
+  unread       Boolean   @default(true)
 }
 
 model recruit_history {
-  id Int @id @default(autoincrement())
-  from_user Int?
-  from_userObj users? @relation(fields: [from_user], references: [id])
-  to_user Int
-  ip_addr String
-  timestamp DateTime? @db.Timestamptz(3)
+  id           Int       @id @default(autoincrement())
+  from_user    Int?
+  from_userObj users?    @relation(fields: [from_user], references: [id])
+  to_user      Int
+  ip_addr      String
+  timestamp    DateTime? @db.Timestamptz(3)
 }
 
 model blog_posts {
-  id               Int       @id @default(autoincrement())
-  title            String
+  id                Int      @id @default(autoincrement())
+  title             String
   created_timestamp DateTime @default(now()) @db.Timestamptz(3)
   updated_timestamp DateTime @updatedAt @db.Timestamptz(3)
-  postedby_id      Int
-  content          String
-  
-  // Relations
-  postReadStatus   post_read_status[]
-  postedBy         users @relation(fields: [postedby_id], references: [id])
+  postedby_id       Int
+  content           String
 
+  // Relations
+  postReadStatus post_read_status[]
+  postedBy       users              @relation(fields: [postedby_id], references: [id])
 }
 
 model post_read_status {
-  post_id      Int      // Primary key part 1
+  post_id      Int // Primary key part 1
   last_read_at DateTime @db.Timestamptz(3)
 
   // Relations
-  post         blog_posts @relation(fields: [post_id], references: [id])
-  user_id      Int
-  user         users @relation(fields: [user_id], references: [id])
+  post    blog_posts @relation(fields: [post_id], references: [id])
+  user_id Int
+  user    users      @relation(fields: [user_id], references: [id])
+
   @@id([post_id, user_id]) // Composite primary key
 }
-
