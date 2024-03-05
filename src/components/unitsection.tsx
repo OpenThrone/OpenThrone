@@ -4,16 +4,9 @@ import React, { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
+import { UnitProps } from '@/types/typings';
 
-type UnitProps = {
-  id: string;
-  name: string;
-  bonus?: number;
-  ownedUnits: number;
-  cost: string;
-  enabled: boolean;
-  fortName?: string;
-};
+
 
 type UnitSectionProps = {
   heading: string;
@@ -31,7 +24,38 @@ const UnitSection: React.FC<UnitSectionProps> = ({
   onUntrain, // New prop
 }) => {
   const { user, forceUpdate } = useUser();
-  const [getUnits, setUnits] = useState(units || []);
+  const [getUnits, setUnits] = useState<UnitProps[]>(units || []);
+
+  useEffect(() => {
+    const computeTotalCostForSection = () => {
+      let sectionCost = 0;
+      units.forEach((unit) => {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`) as HTMLInputElement;
+        sectionCost +=
+          parseInt(inputElement?.value || '0', 10) *
+          parseInt(unit.cost.replace(/,/g, ''), 10);
+      });
+      updateTotalCost(sectionCost); // Send the total cost for this section
+    };
+
+    units.forEach((unit) => {
+      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+      inputElement?.addEventListener('input', computeTotalCostForSection);
+    });
+
+    return () => {
+      units.forEach((unit) => {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+        inputElement?.removeEventListener('input', computeTotalCostForSection);
+      });
+    };
+  }, [units, updateTotalCost]);
+
+  if (!user || !user.id) {
+    alertService.error('User information is not available.');
+    return;
+  }
+
   const handleTrain = async () => {
     const unitsToTrain = units
       .filter((unit) => unit.enabled)
@@ -44,7 +68,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
           type: unit.id.split('_')[0], // Extracting the unit type from the id
           quantity: parseInt(inputElement.value, 10),
           level: parseInt(
-            unit.id.split('_')[1] ? unit.id.split('_')[1] : 1,
+            unit.id.split('_')[1] ? unit.id.split('_')[1] : "1",
             10
           ),
         };
@@ -128,7 +152,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
             const updatedUnit = data.data.find(
               (u: UnitProps) =>
                 u.type === unitTypeLevel[0] &&
-                u.level.toString() === unitTypeLevel[1]
+                u.level?.toString() === unitTypeLevel[1]
             );
             if (updatedUnit) {
               return { ...unit, ownedUnits: updatedUnit.quantity };
@@ -154,7 +178,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         const inputElement = document.querySelector(
           `input[name="${unit.id}"]`
         ) as HTMLInputElement;
-        inputElement.value = 0;
+        inputElement.value = "0";
       }
     });
     updateTotalCost(0);
@@ -165,36 +189,12 @@ const UnitSection: React.FC<UnitSectionProps> = ({
     onUntrain && onUntrain(heading); // Use the passed down handler
     units.forEach((unit) => {
       if (unit.enabled) {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-        inputElement.value = 0;
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`) as HTMLInputElement;
+        inputElement.value = "0";
       }
     });
     updateTotalCost(0);
   };
-  useEffect(() => {
-    const computeTotalCostForSection = () => {
-      let sectionCost = 0;
-      units.forEach((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-        sectionCost +=
-          parseInt(inputElement?.value || '0', 10) *
-          parseInt(unit.cost.replace(/,/g, ''), 10);
-      });
-      updateTotalCost(sectionCost); // Send the total cost for this section
-    };
-
-    units.forEach((unit) => {
-      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-      inputElement?.addEventListener('input', computeTotalCostForSection);
-    });
-
-    return () => {
-      units.forEach((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-        inputElement?.removeEventListener('input', computeTotalCostForSection);
-      });
-    };
-  }, [units, updateTotalCost]);
 
   return (
     <div className="my-10 rounded-lg bg-gray-800">
@@ -210,7 +210,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         </thead>
         <tbody>
           {(() => {
-            const sortedUnits = getUnits.sort((a, b) => a.id - b.id); // Ensure units are sorted by ID.
+            const sortedUnits = getUnits.sort((a, b) => parseInt(a.id,10) - parseInt(b.id,10)); // Ensure units are sorted by ID.
             const firstDisabledUnit = sortedUnits.find(u => !u.enabled); // Find the first disabled unit.
             return sortedUnits.map((unit) => {
               if (unit.enabled) {
@@ -219,7 +219,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
                     <td className="border px-4 py-2">{unit.name}</td>
                     <td className="border px-4 py-2">+{unit.bonus} {heading}</td>
                     <td className="border px-4 py-2">
-                      <span id={`${unit.id}_owned`}>{unit.ownedUnits}</span>
+                      <span id={`${unit.id}_owned`}>{unit.ownedItems}</span>
                     </td>
                     <td className="border px-4 py-2">{unit.cost}</td>
                     <td className="border px-4 py-2">

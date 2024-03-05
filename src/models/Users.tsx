@@ -8,7 +8,6 @@ import type {
   Locales,
   OffensiveUpgradeType,
   PlayerClass,
-  PlayerItem,
   PlayerRace,
   PlayerUnit,
   SentryUpgradeType,
@@ -16,7 +15,8 @@ import type {
   Unit,
   UnitTotalsType,
   UnitType,
-  Weapon,
+  Item,
+  ItemCounts,
 } from '@/types/typings';
 
 import {
@@ -30,7 +30,7 @@ import {
   SentryUpgrades,
   SpyUpgrades,
   UnitTypes,
-  WeaponTypes,
+  ItemTypes,
   levelXPArray,
 } from '../constants';
 
@@ -63,7 +63,7 @@ class UserModel {
 
   public units: PlayerUnit[];
 
-  public items: PlayerItem[];
+  public items: Item[];
 
   public last_active: Date;
 
@@ -306,8 +306,8 @@ class UserModel {
     ).reduce(function (count, stat) {
       return count + stat.bonusAmount;
     }, 0);
-    const houseBonus = HouseUpgrades[this.houseLevel].citizensDaily;
-    return parseInt(recruiting + houseBonus, 10);
+    const houseBonus = HouseUpgrades[this.houseLevel as keyof typeof HouseUpgrades].citizensDaily;
+    return recruiting + houseBonus;
   }
 
   /**
@@ -337,7 +337,7 @@ class UserModel {
     ).reduce(function (count, stat) {
       return count + stat.bonusAmount;
     }, 0);
-    return price + this.bonus_points.find((bonus) => bonus.type === 'PRICES')?.level || 0;
+    return price + (this.bonus_points.find((bonus) => bonus.type === 'PRICES')?.level || 0);
   }
 
   /**
@@ -363,7 +363,7 @@ class UserModel {
    * @returns {number} The number of citizens.
    */
   get citizens(): number {
-    return this.units.find((unit) => unit.type === 'CITIZEN').quantity;
+    return this.units.find((unit) => unit.type === 'CITIZEN')?.quantity || 0;
   }
 
   /**
@@ -441,7 +441,13 @@ class UserModel {
       return 0; // No worker units.
     }
 
-    const workerBonus = EconomyUpgrades[this.economyLevel as keyof typeof EconomyUpgrades]?.goldPerWorker;
+    let workerBonus = 50;
+
+    const upgrade = EconomyUpgrades[this.economyLevel as keyof typeof EconomyUpgrades];
+
+    if (typeof upgrade === 'object' && 'goldPerWorker' in upgrade) {
+      workerBonus = upgrade.goldPerWorker;
+    }
 
     // Calculate the bonus per worker after considering incomeBonus.
     const workerGoldPerTurn = workerBonus ? workerBonus * (1 + parseInt(this.incomeBonus.toString(), 10) / 100) : 0;
@@ -483,7 +489,7 @@ class UserModel {
       totalStat += (unitFiltered?.bonus || 0) * unit.quantity;
 
       // Initialize a count object for each item type
-      const itemCounts = {};
+      const itemCounts: ItemCounts = {};
 
       // Filter out the weapons that match the unit type and categorize them by type
       const matchingWeapons = this.items?.filter(
@@ -494,7 +500,7 @@ class UserModel {
         // Initialize count for this weapon type if not already done
         itemCounts[weapon.type] = itemCounts[weapon.type] || 0;
 
-        const weaponBonus = WeaponTypes.find(
+        const weaponBonus = ItemTypes.find(
           (w) => w.level === weapon.level && w.usage === unit.type && w.type === weapon.type
         )?.bonus || 0;
 
@@ -731,10 +737,10 @@ class UserModel {
 
   /**
    * Returns an array of available weapons based on the user's fort level.
-   * @returns {Weapon[]} An array of available weapons.
+   * @returns {Item[]} An array of available weapons.
    */
-  get availableItemTypes(): Weapon[] {
-    return WeaponTypes.filter(
+  get availableItemTypes(): Item[] {
+    return ItemTypes.filter(
       (unitType) => unitType.level <= this.fortLevel + 1
     );
   }
@@ -751,21 +757,21 @@ class UserModel {
    * Returns an array of available defensive upgrades based on the user's fort level.
    * @returns {DefensiveUpgradeType[]} An array of available defensive upgrades.
    */
-  get availableDefenseBattleUpgrades(): DefensiveUpgradeType[] {
-    return DefenseiveUpgrades.filter(
+  /*get availableDefenseBattleUpgrades(): DefensiveUpgradeType[] {
+    return DefensiveUpgrades.filter(
       (fort) => fort.fortLevelRequirement <= this.fortLevel + 1
     );
-  }
+  }*/
 
   /**
    * Returns an array of available offensive battle upgrades based on the user's fort level.
    * @returns {OffensiveUpgradeType[]} An array of available offensive battle upgrades.
    */
-  get availableOffenseBattleUpgrades(): OffensiveUpgradeType[] {
+  /*get availableOffenseBattleUpgrades(): OffensiveUpgradeType[] {
     return BattleUpgrades.filter(
       (fort) => fort.StructureUpgradeLevelRequired <= this.offensiveLevel + 5 && fort.type === 'OFFENSE'
     );
-  }
+  }*/
 
   /**
    * Returns an array of available spy battle upgrades based on the user's fort level.

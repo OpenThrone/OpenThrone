@@ -6,7 +6,7 @@ const getUnitName = (type: UnitType, level: number): string => {
   return unit ? unit.name : 'Unknown';
 };
 
-const formatDate = (timestamp) => {
+const formatDate = (timestamp: string | number | Date) => {
   return new Date(timestamp).toLocaleString('en-US', {
     year: 'numeric',
     month: 'numeric',
@@ -17,7 +17,7 @@ const formatDate = (timestamp) => {
   });
 };
 
-const generateRandomString = (length) => {
+const generateRandomString = (length: number) => {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   var charactersLength = characters.length;

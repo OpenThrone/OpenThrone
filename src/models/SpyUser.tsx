@@ -1,9 +1,9 @@
-import { PlayerUnit, PlayerItem } from "@/types/typings";
+import { PlayerUnit, Item } from "@/types/typings";
 import UserModel from "./Users";
 
 export class SpyUserModel {
   units: PlayerUnit[] | null;
-  items: PlayerItem[] | null;
+  items: Item[] | null;
   fort_level: number | null;
   fort_hitpoints: number | null;
   goldInBank: number | null;

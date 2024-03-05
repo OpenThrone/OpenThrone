@@ -1,4 +1,4 @@
-import { UnitTypes, WeaponTypes } from "@/constants";
+import { UnitTypes, ItemTypes } from "@/constants";
 import UserModel from "@/models/Users";
 import { ItemType } from "@/types/typings";
 
@@ -24,10 +24,10 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
 
     const itemCounts: Record<ItemType, number> = { WEAPON: 0, HELM: 0, BOOTS: 0, BRACERS: 0, SHIELD: 0, ARMOR: 0 };
 
-    user.items.filter((item) => item.unitType === unit.type).forEach((item) => {
+    user.items.filter((item) => item.usage === unit.type).forEach((item) => {
       itemCounts[item.type] = itemCounts[item.type] || 0;
 
-      const itemInfo = WeaponTypes.find(
+      const itemInfo = ItemTypes.find(
         (w) => w.level === item.level && w.usage === unit.type && w.type === item.type
       );
       if (itemInfo) {

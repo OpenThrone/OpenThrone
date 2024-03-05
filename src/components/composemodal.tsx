@@ -1,8 +1,9 @@
 // src/components/ComposeModal.tsx
 import React, { useState } from 'react';
 import ComposeForm from './compose-form';
+import { ComposeFormProps } from '@/types/typings';
 
-export default function ComposeModal({ onClose }) {
+export default function ComposeModal({ onClose }: ComposeFormProps) {
   
   return (
     <>

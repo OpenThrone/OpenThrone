@@ -1,6 +1,6 @@
-import type { Weapon } from '@/types/typings';
+import type { Item } from '@/types/typings';
 
-export const WeaponTypes: Weapon[] = [
+export const ItemTypes: Item[] = [
   {
     name: 'Dagger',
     usage: 'OFFENSE',
@@ -10,6 +10,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Hatchet',
@@ -20,6 +21,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Quarterstaff',
@@ -30,6 +32,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Mace',
@@ -40,6 +43,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ALL',
     armoryLevel: 3,
+    quantity: 0
   },
   {
     name: 'Battle Axe',
@@ -50,6 +54,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ALL',
     armoryLevel: 4,
+    quantity: 0
   },
   {
     name: 'Short Sword',
@@ -60,6 +65,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ALL',
     armoryLevel: 5,
+    quantity: 0
   },
   {
     name: 'Long Sword',
@@ -70,6 +76,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'HUMAN',
     armoryLevel: 6,
+    quantity: 0
   },
   {
     name: 'Padded Hood',
@@ -80,6 +87,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'HELM',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Leather Hood',
@@ -90,6 +98,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'HELM',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Studded Leather Hood',
@@ -100,6 +109,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'HELM',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Padded Armor',
@@ -110,6 +120,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'ARMOR',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Leather Armor',
@@ -120,6 +131,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'ARMOR',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Studded Leather Armor',
@@ -130,6 +142,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'ARMOR',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Padded Boots',
@@ -140,6 +153,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BOOTS',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Leather Boots',
@@ -150,6 +164,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BOOTS',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Studded Leather Boots',
@@ -160,6 +175,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BOOTS',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Padded Bracers',
@@ -170,6 +186,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BRACERS',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Leather Bracers',
@@ -180,6 +197,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BRACERS',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Studded Leather Bracers',
@@ -190,6 +208,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BRACERS',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Small Wooden Shield',
@@ -200,6 +219,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'SHIELD',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Medium Wooden Shield',
@@ -210,6 +230,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'SHIELD',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Large Wooden Shield',
@@ -220,6 +241,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'SHIELD',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Sling',
@@ -230,6 +252,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Hatchet',
@@ -240,6 +263,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Spear',
@@ -250,6 +274,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Padded Hood',
@@ -260,6 +285,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'HELM',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Leather Hood',
@@ -270,6 +296,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'HELM',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Studded Leather Hood',
@@ -280,6 +307,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'HELM',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Padded Armor',
@@ -290,6 +318,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'ARMOR',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Leather Armor',
@@ -300,6 +329,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'ARMOR',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Studded Leather Armor',
@@ -310,6 +340,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'ARMOR',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Padded Armor',
@@ -320,6 +351,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BOOTS',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Leather Armor',
@@ -330,6 +362,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BOOTS',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Studded Leather Armor',
@@ -340,6 +373,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BOOTS',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Padded Bracers',
@@ -350,6 +384,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BRACERS',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Leather Bracers',
@@ -360,6 +395,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BRACERS',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Studded Leather Bracers',
@@ -370,6 +406,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'BRACERS',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Small Wooden Shield',
@@ -380,6 +417,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'SHIELD',
     race: 'ALL',
     armoryLevel: 0,
+    quantity: 0
   },
   {
     name: 'Medium Wooden Shield',
@@ -390,6 +428,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'SHIELD',
     race: 'ALL',
     armoryLevel: 1,
+    quantity: 0
   },
   {
     name: 'Large Wooden Shield',
@@ -400,6 +439,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'SHIELD',
     race: 'ALL',
     armoryLevel: 2,
+    quantity: 0
   },
   {
     name: 'Sling',
@@ -410,7 +450,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'WEAPON',
     armoryLevel: 0,
-  },
+  quantity: 0},
   {
     name: 'Brass Knuckles',
     usage: 'SPY',
@@ -420,7 +460,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'WEAPON',
     armoryLevel: 1,
-  },
+  quantity: 0},
   {
     name: 'Cudgel',
     usage: 'SPY',
@@ -430,7 +470,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'WEAPON',
     armoryLevel: 2,
-  },
+  quantity: 0},
   {
     name: 'Knife',
     usage: 'SPY',
@@ -440,7 +480,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'WEAPON',
     armoryLevel: 3,
-  },
+  quantity: 0},
   {
     name: 'Cloth Cap',
     usage: 'SPY',
@@ -450,7 +490,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'HELM',
     armoryLevel: 0,
-  },
+  quantity: 0},
   {
     name: 'Padded Cap',
     usage: 'SPY',
@@ -460,7 +500,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'HELM',
     armoryLevel: 1,
-  },
+  quantity: 0},
   {
     name: 'Leather Cap',
     usage: 'SPY',
@@ -470,7 +510,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'HELM',
     armoryLevel: 2,
-  },
+  quantity: 0},
   {
     name: 'Cloth Hood',
     usage: 'SPY',
@@ -480,7 +520,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'HELM',
     armoryLevel: 3,
-  },
+  quantity: 0},
   {
     name: 'Dark Cloth Armor',
     usage: 'SPY',
@@ -490,7 +530,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'ARMOR',
     armoryLevel: 0,
-  },
+  quantity: 0},
   {
     name: 'Padded Cloth Armor',
     usage: 'SPY',
@@ -500,7 +540,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'ARMOR',
     armoryLevel: 1,
-  },
+  quantity: 0},
   {
     name: 'Leather Armor',
     usage: 'SPY',
@@ -510,7 +550,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'ARMOR',
     armoryLevel: 2,
-  },
+  quantity: 0},
   {
     name: 'Padded Leather Armor',
     usage: 'SPY',
@@ -520,7 +560,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'ARMOR',
     armoryLevel: 3,
-  },
+  quantity: 0},
   {
     name: 'Cloth Boots',
     usage: 'SPY',
@@ -530,7 +570,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BOOTS',
     armoryLevel: 0,
-  },
+  quantity: 0},
   {
     name: 'Padded Boots',
     usage: 'SPY',
@@ -540,7 +580,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BOOTS',
     armoryLevel: 1,
-  },
+  quantity: 0},
   {
     name: 'Leather Boots',
     usage: 'SPY',
@@ -550,7 +590,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BOOTS',
     armoryLevel: 2,
-  },
+  quantity: 0},
   {
     name: 'Padded Leather Boots',
     usage: 'SPY',
@@ -560,7 +600,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BOOTS',
     armoryLevel: 3,
-  },
+  quantity: 0},
   {
     name: 'Cloth Bracers',
     usage: 'SPY',
@@ -570,7 +610,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BRACERS',
     armoryLevel: 0,
-  },
+  quantity: 0},
   {
     name: 'Padded Bracers',
     usage: 'SPY',
@@ -580,7 +620,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BRACERS',
     armoryLevel: 1,
-  },
+  quantity: 0},
   {
     name: 'Leather Bracers',
     usage: 'SPY',
@@ -590,7 +630,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BRACERS',
     armoryLevel: 2,
-  },
+  quantity: 0},
   {
     name: 'Padded Leather Bracers',
     usage: 'SPY',
@@ -600,7 +640,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BRACERS',
     armoryLevel: 3,
-  },
+  quantity: 0},
   {
     name: 'Sling',
     usage: 'SENTRY',
@@ -610,7 +650,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'WEAPON',
     armoryLevel: 0,
-  },
+  quantity: 0},
   {
     name: 'Dagger',
     usage: 'SENTRY',
@@ -620,7 +660,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'WEAPON',
     armoryLevel: 1,
-  },
+  quantity: 0},
   {
     name: 'Hatchet',
     usage: 'SENTRY',
@@ -630,7 +670,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'WEAPON',
     armoryLevel: 2,
-  },
+  quantity: 0},
   {
     name: 'Quarterstaff',
     usage: 'SENTRY',
@@ -640,7 +680,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'WEAPON',
     armoryLevel: 3,
-  },
+  quantity: 0},
   {
     name: 'Mace',
     usage: 'SENTRY',
@@ -650,7 +690,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'WEAPON',
     armoryLevel: 4,
-  },
+  quantity: 0},
 
   {
     name: 'Padded Hood',
@@ -661,7 +701,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'HELM',
     armoryLevel: 0,
-  },
+  quantity: 0},
 
   {
     name: 'Leather Hood',
@@ -672,7 +712,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'HELM',
     armoryLevel: 1,
-  },
+  quantity: 0},
 
   {
     name: 'Studded Leather Hood',
@@ -683,7 +723,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'HELM',
     armoryLevel: 2,
-  },
+  quantity: 0},
 
   {
     name: 'Bronze Cap',
@@ -694,7 +734,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'HELM',
     armoryLevel: 3,
-  },
+  quantity: 0},
 
   {
     name: 'Padded Armor',
@@ -705,7 +745,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'ARMOR',
     armoryLevel: 0,
-  },
+  quantity: 0},
 
   {
     name: 'Leather Armor',
@@ -716,7 +756,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'ARMOR',
     armoryLevel: 1,
-  },
+  quantity: 0},
 
   {
     name: 'Studded Leather Armor',
@@ -727,7 +767,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'ARMOR',
     armoryLevel: 2,
-  },
+  quantity: 0},
 
   {
     name: 'Bronze Chainmail',
@@ -738,7 +778,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'ARMOR',
     armoryLevel: 3,
-  },
+  quantity: 0},
 
   {
     name: 'Padded Boots',
@@ -749,7 +789,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BOOTS',
     armoryLevel: 0,
-  },
+  quantity: 0},
 
   {
     name: 'Leather Boots',
@@ -760,7 +800,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BOOTS',
     armoryLevel: 1,
-  },
+  quantity: 0},
 
   {
     name: 'Studded Leather Greaves',
@@ -771,7 +811,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BOOTS',
     armoryLevel: 2,
-  },
+  quantity: 0},
 
   {
     name: 'Bronze Chain Greaves',
@@ -782,7 +822,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BOOTS',
     armoryLevel: 3,
-  },
+  quantity: 0},
 
   {
     name: 'Padded Bracers',
@@ -793,7 +833,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BRACERS',
     armoryLevel: 0,
-  },
+  quantity: 0},
 
   {
     name: 'Leather Bracers',
@@ -804,7 +844,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BRACERS',
     armoryLevel: 1,
-  },
+  quantity: 0},
 
   {
     name: 'Studded Leather Bracers',
@@ -815,7 +855,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BRACERS',
     armoryLevel: 2,
-  },
+  quantity: 0},
 
   {
     name: 'Bronze Chain Bracers',
@@ -826,7 +866,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'BRACERS',
     armoryLevel: 3,
-  },
+  quantity: 0},
 
   {
     name: 'Small Wooden Shield',
@@ -837,7 +877,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'SHIELD',
     armoryLevel: 0,
-  },
+  quantity: 0},
 
   {
     name: 'Medium Wooden Shield',
@@ -848,7 +888,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'SHIELD',
     armoryLevel: 1,
-  },
+  quantity: 0},
 
   {
     name: 'Large Wooden Shield',
@@ -859,7 +899,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'SHIELD',
     armoryLevel: 2,
-  },
+  quantity: 0},
 
   {
     name: 'Bronze Studded Shield',
@@ -870,7 +910,7 @@ export const WeaponTypes: Weapon[] = [
     race: 'ALL',
     type: 'SHIELD',
     armoryLevel: 3,
-  },
+  quantity: 0},
   // Need Sentry Helm, Armor, Boots, Bracers, Shield
   {
     name: 'Great Sword',
@@ -881,7 +921,7 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'HUMAN',
     armoryLevel: 5,
-  },
+  quantity: 0},
   {
     name: 'Elven Longbow',
     usage: 'OFFENSE',
@@ -891,5 +931,5 @@ export const WeaponTypes: Weapon[] = [
     type: 'WEAPON',
     race: 'ELF',
     armoryLevel: 5,
-  },
+  quantity: 0},
 ];

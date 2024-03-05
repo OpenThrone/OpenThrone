@@ -1,7 +1,7 @@
 import { alertService } from '@/services';
 
 // utils/buyStructureUpgrade.js
-const buyUpgrade = async (currentPage, index, forceUpdate) => {
+const buyUpgrade = async (currentPage: string, index: number, forceUpdate: () => void) => {
   const response = await fetch('/api/structures/upgrades', {
     method: 'POST',
     headers: {

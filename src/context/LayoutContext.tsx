@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { IMetaProps } from '@/types/typings';
 
 import { useUser } from './users';
 
@@ -70,7 +71,7 @@ const defaultLayoutContextProps: LayoutContextProps = {
   title: undefined,
   description: undefined,
   setMeta: undefined,
-  meta: undefined
+  meta: { title: '', description: '' },
 };
 
 // Create Context with default value

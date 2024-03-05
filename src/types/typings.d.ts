@@ -1,3 +1,7 @@
+import { PrismaClient } from '@prisma/client';
+declare global {
+  var prisma: PrismaClient | undefined;
+}
 export type PlayerRace = 'UNDEAD' | 'HUMAN' | 'GOBLIN' | 'ELF' | 'ALL';
 export type PlayerClass = 'FIGHTER' | 'CLERIC' | 'ASSASSIN' | 'THIEF';
 export type UnitType =
@@ -64,12 +68,7 @@ export type AttackPlayerUnit = {
   quantity: number;
   casualties: number;
 };
-export type PlayerItem = {
-  level: number;
-  type: ItemType;
-  unitType: UnitType;
-  quantity: number;
-};
+
 export type BonusPointsItem = {
   type: BonusType;
   level: number;
@@ -88,7 +87,10 @@ export type Unit = {
   fortLevel: number;
   hp: number;
 };
-export type Weapon = {
+export interface ItemCounts {
+  [key: string]: number; // This allows any string as a key and number as its value
+}
+export type Item = {
   name: string;
   usage: UnitType;
   type: ItemType;
@@ -96,6 +98,7 @@ export type Weapon = {
   bonus: number;
   cost: number;
   race: PlayerRace;
+  quantity: number;
   armoryLevel: number;
 };
 export type Fortification = {
@@ -172,6 +175,7 @@ export type BankTransferHistoryType =
   | 'WAR_SPOILS';
 
 export type UnitProps = {
+  requirement?: string;
   id: string;
   name: string;
   bonus?: number;
@@ -191,3 +195,13 @@ export type UnitSectionProps = {
   updateTotalCost: (costChange: number) => void; // New prop
   type?: string;
 };
+
+export type IMetaProps = {
+  title: string;
+  description: string;
+  canonical ?: string;
+};
+
+export interface ComposeFormProps {
+  onClose: () => void;
+}

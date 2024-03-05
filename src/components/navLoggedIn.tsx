@@ -130,10 +130,10 @@ export const NavLoggedIn: React.FC = () => {
     }
   }, [pathName]);
 
-  const [resetTimer, setResetTimer] = useState<NodeJS.Timeout | null>(null);
+  const [resetTimer, setResetTimer] = useState<number | null>(null);
 
   const resetMenu = () => {
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setActiveParentLink(defaultParentLink);
       setActiveSubMenu(defaultSubMenu);
     }, 300);
@@ -143,7 +143,7 @@ export const NavLoggedIn: React.FC = () => {
   // Remember to clear the timeout when the mouse enters again to prevent it from resetting while still hovering
   const clearReset = () => {
     if (resetTimer) {
-      clearTimeout(resetTimer);
+      window.clearTimeout(resetTimer);
       setResetTimer(null);
     }
   };
