@@ -69,7 +69,7 @@ const Inbox = ({ messages, session }) => {
           <ComposeModal onClose={() => setComposeModalOpen(false)} />
         )}
 
-        <table class="w-full">
+        <table className="w-full">
           <thead>
             <tr>
               <th>From</th>
