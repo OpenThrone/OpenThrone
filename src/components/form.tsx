@@ -30,7 +30,6 @@ const Form = ({
   });
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Your logic for handling keyboard events
     const { name, value } = e.currentTarget;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };

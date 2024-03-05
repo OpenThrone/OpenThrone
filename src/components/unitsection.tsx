@@ -251,16 +251,16 @@ const UnitSection: React.FC<UnitSectionProps> = ({
           })()}
         </tbody>
       </table>
-      <div className="mt-4 flex justify-between">
+      <div className="mt-2 flex p-2 justify-between">
         <button
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+          className="rounded bg-blue-500 px-4 py-2 font-bold text-blue-100 hover:bg-blue-700"
           onClick={handleTrainClick}
           type="button"
         >
           Train
         </button>
         <button
-          className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+          className="rounded bg-red-500 px-4 py-2 font-bold text-red-100 hover:bg-red-700"
           onClick={handleUntrainClick}
           type="button"
         >

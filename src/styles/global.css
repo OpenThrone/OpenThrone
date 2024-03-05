@@ -268,7 +268,7 @@ h2{
 }
 .elf-double-border-down {
   border-bottom: 3px double rgb(13,97,46); /* First border color */
-  //box-shadow: 0 0 0 4px rgb(10,61,31); /* Second border color as shadow */
+  
 }
 .undead-double-border {
   border-left: 3px double rgb(33, 33, 33); /* First border color */
@@ -277,7 +277,7 @@ h2{
 }
 .undead-double-border-down {
   border-bottom: 3px double rgb(33, 33, 33); /* First border color */
-  //box-shadow: 0 0 0 4px rgb(77, 77, 77); /* Second border color as shadow */
+  
 }
 .goblin-double-border {
   border-left: 3px double rgb(46, 12, 12); /* First border color */
@@ -286,7 +286,7 @@ h2{
 }
 .goblin-double-border-down {
   border-bottom: 3px double rgb(46, 12, 12); /* First border color */
-  //box-shadow: 0 0 0 4px #70301a; /* Second border color as shadow */
+  
 }
 .human-double-border {
   border-left: 3px double rgb(26, 55, 93); /* First border color */
@@ -295,5 +295,5 @@ h2{
 }
 .human-double-border-down {
   border-bottom: 3px double rgb(26, 55, 93); /* First border color */
-  //box-shadow: 0 0 0 4px rgb(14, 31, 53); /* Second border color as shadow */
+  
 }

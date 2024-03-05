@@ -7,46 +7,8 @@ import BattleSimulationResult from '@/models/BattleSimulationResult';
 import UserModel from '@/models/Users';
 import type { BattleUnits, ItemType, PlayerItem, PlayerUnit } from '@/types/typings';
 import mtRand from '@/utils/mtrand';
-
-/**
- * Calculates the strength of a user's units.
- * @param user - The user whose units' killing strength will be calculated.
- * @param unitType - Either OFFENSE or DEFENSE.
- * @param isAttacker - Whether the user is the attacker or defender
- * @returns The total killing strength of the user's units.
- */
-function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE'): number {
-  let strength = 0;
-  const unitMultiplier = unitType === 'OFFENSE' ? (1 + parseInt(user.attackBonus.toString(), 10) / 100) :
-    (1 + parseInt(user.defenseBonus.toString(), 10) / 100);
-
-  user.units.filter((u) => u.type === unitType).forEach((unit) => {
-    const unitInfo = UnitTypes.find(
-      (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
-    );
-    if (unitInfo) {
-      strength += (unitInfo.bonus || 0) * unit.quantity;
-    }
-
-    const itemCounts: Record<ItemType, number> = { WEAPON: 0, HELM: 0, BOOTS: 0, BRACERS: 0, SHIELD: 0, ARMOR:0 };
-
-    user.items.filter((item) => item.unitType === unit.type).forEach((item) => {
-      itemCounts[item.type] = itemCounts[item.type] || 0;
-
-      const itemInfo = WeaponTypes.find(
-        (w) => w.level === item.level && w.usage === unit.type && w.type === item.type
-      );
-      if (itemInfo) {
-        const usableQuantity = Math.min(item.quantity, unit.quantity - itemCounts[item.type]);
-        strength += itemInfo.bonus * usableQuantity;
-        itemCounts[item.type] += usableQuantity;
-      }
-    });
-  });
-
-  strength *= unitMultiplier;
-  return Math.ceil(strength);
-}
+import { calculateStrength, computeAmpFactor } from '@/utils/attackFunctions';
+import { SpyUserModel } from '@/models/SpyUser';
 
 function getKillingStrength(user: UserModel, attacker: boolean): number {
   return calculateStrength(user, attacker ? 'OFFENSE' : 'DEFENSE');
@@ -56,60 +18,6 @@ function getDefenseStrength(user: UserModel, defender: boolean): number {
   return calculateStrength(user, defender ? 'DEFENSE' : 'OFFENSE');
 }
 
-/**
- * Computes the amplification factor based on the target population.
- * @param targetPop The target population.
- * @returns The amplification factor.
- */
-function computeAmpFactor(targetPop: number): number {
-  let ampFactor = 0.4;
-
-  const breakpoints = [
-    { limit: 1000, factor: 1.6 },
-    { limit: 5000, factor: 1.5 },
-    { limit: 10000, factor: 1.35 },
-    { limit: 50000, factor: 1.2 },
-    { limit: 100000, factor: 0.95 },
-    { limit: 150000, factor: 0.75 },
-  ];
-
-  for (const bp of breakpoints) {
-    if (targetPop <= bp.limit) {
-      ampFactor *= bp.factor;
-      break;
-    }
-  }
-
-  return ampFactor;
-}
-
-class SpyUserModel {
-  units: PlayerUnit[] | null;
-  items: PlayerItem[] | null;
-  fort_level: number | null;
-  fort_hitpoints: number | null;
-  goldInBank: number | null;
-
-  constructor(defender: UserModel, intelPercentage: number) {
-    // Explicitly set each property based on the defender's properties
-    console.log(intelPercentage)
-    this.units = defender.units
-      ? defender.units.map(unit => ({ ...unit, quantity: Math.ceil(unit.quantity * intelPercentage / 100) }))
-      : null;
-    this.items = defender.items
-      ? defender.items.map(item => ({ ...item, quantity: Math.ceil(item.quantity * intelPercentage / 100) }))
-      : null;
-    this.fort_level = defender.fortLevel
-      ? Math.ceil(defender.fortLevel * intelPercentage / 100)
-      : 0;
-    this.fort_hitpoints = defender.fortHitpoints
-      ? Math.ceil(defender.fortHitpoints * intelPercentage / 100)
-      : 0;
-    this.goldInBank = defender.goldInBank
-      ? Math.ceil(defender.goldInBank * intelPercentage / 100)
-      : 0;
-  }
-}
 
 class IntelResult {
   //attacker: UserModel;
@@ -141,29 +49,6 @@ class IntelResult {
       goldInBank: 0,
     };
   }
-}
-
-function computeSpyAmpFactor(targetPop: number): number {
-  let ampFactor = 0.4;
-
-  const breakpoints = [
-    { limit: 10, factor: 1.6 },
-    { limit: 9, factor: 1.5 },
-    { limit: 7, factor: 1.35 },
-    { limit: 5, factor: 1.2 },
-    { limit: 3, factor: 0.95 },
-    { limit: 1, factor: 0.75 },
-  ];
-
-  for (const bp of breakpoints) {
-    if (targetPop <= bp.limit) {
-      ampFactor *= bp.factor;
-      break;
-    }
-  }
-
-  return ampFactor;
-
 }
 
 /**

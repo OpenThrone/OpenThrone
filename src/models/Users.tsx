@@ -93,7 +93,7 @@ class UserModel {
 
   public beenAttacked: boolean;
 
-  public locale: Locales;
+  public locale: Locales; 
 
   constructor(userData: any, filtered: boolean = true) {
     this.id = 0;
@@ -621,6 +621,10 @@ class UserModel {
     return this.getLevelFromXP(this.experience);
   }
 
+  /**
+   * Returns the amount of experience points required to reach the next level.
+   * @returns The amount of experience points required to reach the next level.
+   */
   xpRequiredForLevel(level: number): number {
     const levelInfo = levelXPArray.find(l => l.level === level);
     return levelInfo ? levelInfo.xp : Math.floor(level ** 2.5 * 1000); // Fallback to formula if level not in array
@@ -634,7 +638,7 @@ class UserModel {
   getLevelFromXP(xp: number): number {
     for (let i = 0; i < levelXPArray.length; i++) {
       if (xp < levelXPArray[i].xp) {
-        return levelXPArray[i].level - 1;
+        return levelXPArray[i].level - 1 == 0 ? 1 : levelXPArray[i].level - 1;
       }
     }
     return levelXPArray[levelXPArray.length - 1].level; // Return max level if XP exceeds all defined levels

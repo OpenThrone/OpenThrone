@@ -46,6 +46,7 @@ const Layout = (props: IMainProps) => {
             className={`mx-auto max-w-screen-xl ${layoutCont.raceClasses.borderBottomClass}`}
           >
             <div
+              style={{ backgroundImage: `url(${'/assets/header/Elf-wall-header.webp'})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}}
               className={`${
                 authorized
                   ? layoutCont.raceClasses.bgClass

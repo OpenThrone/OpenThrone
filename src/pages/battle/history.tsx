@@ -95,8 +95,6 @@ const WarHistory = ({
 };
 
 export const getServerSideProps = async (context: any) => {
-  // Assuming you can get the current user's ID from the request
-  // Assuming you can get the current user's ID from the request
   const session = await getSession(context);
   const userId = session?.user?.id;
 
