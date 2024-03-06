@@ -4,7 +4,7 @@ import rehypeRaw from 'rehype-raw';
 import { useState } from 'react';
 import { getSession } from 'next-auth/react';
 
-const News = ({ posts: serverPosts }) => {
+const News = ({ posts: serverPosts, loggedIn }) => {
   const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })));
   const handleReadChange = async (postId) => {
     // Optimistically update the UI before the API call is made
@@ -52,15 +52,18 @@ const News = ({ posts: serverPosts }) => {
     <div className="mainArea pb-10">
       <h2>News</h2>
       {posts.map((post) => (
-        <div key={post.id} className="max-w-md mx-auto rounded-xl shadow-md overflow-hidden md:max-w-2xl border border-gray-200">
+        <div key={post.id} className="mx-auto rounded-xl overflow-hidden border border-gray-200">
           {/* Header / Title Bar Section */}
           <div className="bg-gray-600 p-2 flex justify-between items-center">
-            <div className="uppercase tracking-wide text-md text-white font-semibold">{post.title}</div>
-            <label className="flex items-center space-x-2 text-white text-sm">
-              <span>Read:</span>
-              <input type="checkbox" checked={post.isRead}
-                onChange={() => handleReadChange(post.id)} className="form-checkbox" />
-            </label>
+            <div className="uppercase tracking-wide text-md text-white font-semibold">{post.title}
+              <br /><label className="text-xs">{post.created_timestamp.toString()}</label></div>
+            {loggedIn && (
+              <label className="flex items-center space-x-2 text-white text-sm">
+                <span>Read:</span>
+                <input type="checkbox" checked={post.isRead}
+                  onChange={() => handleReadChange(post.id)} className="form-checkbox" />
+              </label>
+            )}
           </div>
 
           {/* Body Section */}
@@ -75,35 +78,43 @@ const News = ({ posts: serverPosts }) => {
 
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
-  const userId = session?.user?.id;
+  let posts;
+  if (session) {
+    
+    const userId = session?.user?.id;
 
-  // Fetch posts along with the read status for the current user
-  const posts = await prisma.blog_posts.findMany({
-    include: {
-      postReadStatus: {
-        where: {
-          user_id: parseInt(userId.toString()),
-        },
-        select: {
-          last_read_at: true, // Select only the last_read_at field
+    // Fetch posts along with the read status for the current user
+    posts = await prisma.blog_posts.findMany({
+      include: {
+        postReadStatus: {
+          where: {
+            user_id: parseInt(userId.toString()),
+          },
+          select: {
+            last_read_at: true, // Select only the last_read_at field
+          },
         },
       },
-    },
-  });
+    });
+    // Transform the posts to include a read status boolean
+    const postsWithReadStatus = posts.map((post) => {
+      const readStatus = post.postReadStatus.length > 0; // If there's any read status, the post is considered read
 
-  // Transform the posts to include a read status boolean
-  const postsWithReadStatus = posts.map((post) => {
-    const readStatus = post.postReadStatus.length > 0; // If there's any read status, the post is considered read
-    
+      return {
+        ...post,
+        isRead: readStatus,
+        lastReadAt: readStatus ? post.postReadStatus[0].last_read_at : null,
+      };
+    });
     return {
-      ...post,
-      isRead: readStatus,
-      lastReadAt: readStatus ? post.postReadStatus[0].last_read_at : null,
+      props: { posts: postsWithReadStatus, loggedIn: true},
     };
-  });
-
+  } 
+  // Fetch posts without the read status
+  posts = await prisma.blog_posts.findMany();
+  
   return {
-    props: { posts: postsWithReadStatus },
+    props: { posts, loggedIn: false },
   };
 };
 
