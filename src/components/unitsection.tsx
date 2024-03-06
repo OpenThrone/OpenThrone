@@ -219,7 +219,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
                     <td className="border px-4 py-2">{unit.name}</td>
                     <td className="border px-4 py-2">+{unit.bonus} {heading}</td>
                     <td className="border px-4 py-2">
-                      <span id={`${unit.id}_owned`}>{unit.ownedItems}</span>
+                      <span id={`${unit.id}_owned`}>{unit.ownedUnits}</span>
                     </td>
                     <td className="border px-4 py-2">{unit.cost}</td>
                     <td className="border px-4 py-2">
