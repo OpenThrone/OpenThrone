@@ -35,7 +35,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, onSubmit }) => {
         </span>
         <div className="inline-block overflow-hidden text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
           <div
-            className={`rounded-md px-4 pb-4 pt-5 sm:p-6 sm:pb-4${raceClasses.bgClass}`}
+            className={`rounded-md px-4 pb-4 pt-5 sm:p-6 sm:pb-4 ${raceClasses.bgClass}`}
           >
             <div className="justify-between sm:flex sm:items-center">
               <h3 className="text-lg font-medium leading-6" id="modal-title">
