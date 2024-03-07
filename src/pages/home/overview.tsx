@@ -1,10 +1,31 @@
 import Alert from '@/components/alert';
+import NewsAccordion from '@/components/newsAccordion';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
+import { useEffect, useState } from 'react';
 
 const Overview = () => {
   // const router = useRouter();
+  const [getNews, setNews] = useState(['no news']);
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const response = await fetch('/api/blog/getRecentPosts');
+        console.log('response: ', response);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        console.log('data: ', data);
+        setNews(data);
+      } catch (error) {
+        console.error('Failed to fetch news:', error);
+      }
+    };
 
+    fetchNews();
+  }, []);
+  
   const { user } = useUser();
   return (
     <div className="mainArea pb-10">
@@ -98,6 +119,9 @@ const Overview = () => {
             </tr>
           </tbody>
         </table>
+
+        <h1 className="text-2xl font-bold">Recent News</h1>
+        <NewsAccordion news={getNews} />
       </div>
     </div>
   );
