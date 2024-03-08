@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { WeaponTypes } from '@/constants';
+import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 
 export default async function handler(
@@ -25,7 +25,7 @@ export default async function handler(
       for (const itemData of items) {
         if (itemData.quantity < 0)
           return res.status(400).json({ error: 'Invalid quantity' });
-        const itemType = WeaponTypes.find(
+        const itemType = ItemTypes.find(
           (w) =>
             w.type === itemData.type &&
             w.usage === itemData.usage &&

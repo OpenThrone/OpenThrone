@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-import { WeaponTypes } from '@/constants';
+import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 
@@ -36,7 +36,7 @@ export default async function handler(
 
     // Validate the items and calculate total cost
     for (const itemData of itemsToEquip) {
-      const item = WeaponTypes.find(
+      const item = ItemTypes.find(
         (w) =>
           w.type === itemData.type &&
           w.level === itemData.level &&

@@ -68,6 +68,13 @@ const itemMapFunction = (item, itemType, idPrefix, user, armoryLevel) => {
   };
 };
 
+type costProps = {
+  OFFENSE: { WEAPON: number, HELM: number, BRACERS: number, SHIELD: number, BOOTS: number, ARMOR: number },
+  DEFENSE: { WEAPON: number, HELM: number, BRACERS: number, SHIELD: number, BOOTS: number, ARMOR: number },
+  SPY: { WEAPON: number, HELM: number, BRACERS: number, SHIELD: number, BOOTS: number, ARMOR: number },
+  SENTRY: { WEAPON: number, HELM: number, BRACERS: number, SHIELD: number, BOOTS: number, ARMOR: number },
+}
+
 const ArmoryTab = () => {
   const router = useRouter();
   const tab = usePathname()?.split('/')[3];
@@ -79,7 +86,7 @@ const ArmoryTab = () => {
   const [totalOffenseCost, setTotalOffenseCost] = useState(0);
   const [totalSpyCost, setTotalSpyCost] = useState(0);
   const [totalSentryCost, setTotalSentryCost] = useState(0);
-  const [totalCost, setTotalCost] = useState({
+  const [totalCost, setTotalCost] = useState<costProps>({
     OFFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
     DEFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
     SPY: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
@@ -117,10 +124,10 @@ const ArmoryTab = () => {
 
   useEffect(() => {
     // Calculate the total cost for each category
-    const offenseCost = calculateTotalCost('OFFENSE');
-    const defenseCost = calculateTotalCost('DEFENSE');
-    const spyCost = calculateTotalCost('SPY');
-    const sentryCost = calculateTotalCost('SENTRY');
+    const offenseCost = calculateTotalCost('OFFENSE') as number;
+    const defenseCost = calculateTotalCost('DEFENSE') as number;
+    const spyCost = calculateTotalCost('SPY') as number;
+    const sentryCost = calculateTotalCost('SENTRY') as number;
 
     // Update the total costs
     setTotalOffenseCost(offenseCost);
@@ -150,32 +157,43 @@ const ArmoryTab = () => {
     // Logic to unequip items based on itemType
   };
 
+  const resetTotalCost = () => {
+    setTotalCost({
+      OFFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
+      DEFENSE: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
+      SPY: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
+      SENTRY: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
+    });
+    setTotalDefenseCost(0);
+    setTotalOffenseCost(0);
+    setTotalSpyCost(0);
+    setTotalSentryCost(0);
+  }
+
   const handleEquipAll = async () => {
     const itemsToUnequip = [];
 
     ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
+      
       Object.keys(items[type]).forEach((category) => {
         items[type][category].forEach((item) => {
           const inputElement = document.querySelector(
             `input[name="${item.id}"]`,
-          );
+          ) as HTMLInputElement;
           if (inputElement) {
-            // No need to query the DOM since we are unequipping all
-            if (item.ownedItems > 0) {
-              itemsToUnequip.push({
-                type: item.type, // Assuming item.type is already in the correct format
-                quantity: inputElement.value,
-                usage: item.usage,
-                level: item.level,
-              });
-            }
+            if(parseInt(inputElement.value) > 0)
+            itemsToUnequip.push({
+              type: item.type, // Assuming item.type is already in the correct format
+              quantity: inputElement.value,
+              usage: item.usage,
+              level: item.level,
+            });  
           }
         });
       });
     });
 
     if (itemsToUnequip.length === 0) return;
-    console.log(itemsToUnequip);
 
     try {
       const response = await fetch('/api/armory/equip', {
@@ -192,6 +210,8 @@ const ArmoryTab = () => {
       const data = await response.json();
 
       if (response.ok) {
+
+        resetTotalCost();
         alertService.success(data.message);
         const newItems = { ...items };
         ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
@@ -203,14 +223,14 @@ const ArmoryTab = () => {
             newItems[type][category].forEach((item) => {
               const inputElement = document.querySelector(
                 `input[name="${item.id}"]`,
-              );
+              ) as HTMLInputElement;
               if (inputElement) {
                 inputElement.value = '0';
               }
             });
           });
         });
-
+        
         forceUpdate();
       } else {
         alertService.error(data.error);
@@ -263,6 +283,8 @@ const ArmoryTab = () => {
       const data = await response.json();
 
       if (response.ok) {
+
+        resetTotalCost();
         alertService.success(data.message);
         const newItems = { ...items };
         ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
