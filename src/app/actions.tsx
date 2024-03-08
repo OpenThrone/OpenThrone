@@ -1,11 +1,11 @@
 'use server';
 
-import { Fortifications, UnitTypes, WeaponTypes } from '@/constants';
+import { Fortifications, UnitTypes, ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import BattleResult from '@/models/BattleResult';
 import BattleSimulationResult from '@/models/BattleSimulationResult';
 import UserModel from '@/models/Users';
-import type { BattleUnits, ItemType, PlayerItem, PlayerUnit } from '@/types/typings';
+import type { BattleUnits, ItemType, Item, PlayerUnit } from '@/types/typings';
 import mtRand from '@/utils/mtrand';
 import { calculateStrength, computeAmpFactor } from '@/utils/attackFunctions';
 import { SpyUserModel } from '@/models/SpyUser';
@@ -27,12 +27,11 @@ class IntelResult {
   success: boolean;
   intelligenceGathered: {
     units: PlayerUnit[] | null;
-    items: PlayerItem[] | null;
+    items: Item[] | null;
     fort_level: number | null;
     fort_hitpoints: number | null;
-    //gold: number;
     goldInBank: number | null;
-  };
+  } | null;
 
   constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
     //this.attacker = JSON.parse(JSON.stringify(attacker));  // deep copy
@@ -40,14 +39,7 @@ class IntelResult {
     this.spiesSent = spiesSent;
     this.spiesLost = 0;
     this.success = false;
-    this.intelligenceGathered = {
-      units: [],
-      items: [],
-      fort_level: 0,
-      fort_hitpoints: 0,
-      //gold: 0,
-      goldInBank: 0,
-    };
+    this.intelligenceGathered = null;
   }
 }
 
@@ -334,6 +326,7 @@ function simulateBattle(
   }
   return result;
 }
+
 function getSentryStrength(user: UserModel, spies:number): number {
   let strength = 0;
   let numSentries = 0;
@@ -349,7 +342,7 @@ function getSentryStrength(user: UserModel, spies:number): number {
     const sentryWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.usage === sentryUnits.type.toString() && item.level === 1);
     if (sentryWeapons) {
       sentryWeapons.forEach((item) => {
-        const bonus = WeaponTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
+        const bonus = ItemTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
         strength += bonus?.bonus * Math.min(item.quantity, numSentries);
       });
     }
@@ -369,130 +362,66 @@ function getSpyStrength(user: UserModel, attacker: boolean, spies: number): numb
     }
     const spyWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.usage === spyUnits.type.toString() && item.level === 1);
     spyWeapons.forEach((item) => {
-      const bonus = WeaponTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
+      const bonus = ItemTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
       strength += bonus?.bonus * Math.min(item.quantity, numSpies);
     });
   }
   return strength;
 }
+
 function simulateIntel(
   attacker: UserModel,
   defender: UserModel,
   spies: number
 ): any {
-  //const result = new BattleResult(attacker, defender);
-  // Ensure attack_turns is within [1, 10]
   spies = Math.max(1, Math.min(spies, 10));
+  
   const fortification = Fortifications[defender.fortLevel];
   if (!fortification) {
     return { status: 'failed', message: 'Fortification not found' };
   }
   let { fortHitpoints } = defender;
 
-  for (let turn = 1; turn <= spies; turn++) {
-    // Calculate defense boost from fortifications
-    const fortDefenseBoost =
-      (fortHitpoints / fortification?.hitpoints) *
-      fortification?.defenseBonusPercentage;
-
-    const attackerKS = getSpyStrength(attacker, true, spies);
-    console.log('attackerKS: ', attackerKS);
-    console.log('FortDefenseBoost: ', fortDefenseBoost);
-    const defenderstrength = getSentryStrength(defender, spies);
-    const defenderDS =
-      defenderstrength * (1 + fortDefenseBoost / 100);
-    console.log('defenderDS: ', defenderDS);
-    console.log('defenderStrength: ', defenderstrength);
-    const offenseToDefenseRatio =
-      defenderDS === 0 ? 1 : attackerKS / defenderDS;
-    const counterAttackRatio = attackerKS === 0 ? 1 : defenderDS / attackerKS;
-    console.log('offenseToDefenseRatio: ', offenseToDefenseRatio);
-    //const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
-
-    const TargetPop = Math.max(
-      defender.unitTotals.sentries,// + defender.unitTotals.citizens,
-      0
-    );
-    const CharPop = Math.max(
-      attacker.unitTotals.spies,
-      1
-    );
-    console.log('TargetPop: ', TargetPop);
-    console.log('CharPop: ', CharPop);
-    const AmpFactor = computeAmpFactor(TargetPop);
-    console.log('AmpFactor: ', AmpFactor);
-
-    const OffUnitFactor = computeUnitFactor(
-      defender.unitTotals.defense,
-      attacker.unitTotals.offense
-    );
-    const DefUnitFactor =
-      attacker.unitTotals.offense === 0 ? 0 : 1 / OffUnitFactor;
-
-    const DefCalcCas = computeCasualties(
-      offenseToDefenseRatio,
-      TargetPop,
-      AmpFactor,
-      DefUnitFactor,
-      defender.fortHitpoints,
-      defenderDS,
-      true
-    );
-
-    const AttCalcCas = computeCasualties(
-      counterAttackRatio,
-      CharPop,
-      AmpFactor,
-      OffUnitFactor
-    );
-
-    console.log('DefCalcCas: ', DefCalcCas);
-    console.log('AttCalcCas: ', AttCalcCas);
-
-    //Distribution of casualties
-
-    // Breaking the loop if one side has no units left
-    if (attacker.unitTotals.offense <= 0) {
-      break;
-    }
-  }
+  
   const isSuccessful = attacker.spy > defender.sentry;
   const defenderSpyUnit = new SpyUserModel(defender, spies * 10)
 
-  const result: IntelResult = {
-    success: isSuccessful,
-    //attacker: attacker,
-    //defender: defender,
-    spiesSent: spies,
-    spiesLost: isSuccessful ? 0 : spies,
-    intelligenceGathered: defenderSpyUnit
-  };
-
+  const result = new IntelResult(attacker, defender, spies);
+  result.success = isSuccessful;
+  result.spiesLost = isSuccessful ? 0 : spies;
+  
   if (isSuccessful) {
-    const intelPercentage = Math.min(spies * 10, 100);
-    const intelKeys = Object.keys(new SpyUserModel(defender, spies * 10));
+    // Proceed with gathering intelligence
+    const deathRiskFactor = Math.max(0, 1 - (attacker.spy / defender.sentry));
+    let spiesLost = 0;
+    for (let i = 0; i < spies; i++) {
+      if (Math.random() < deathRiskFactor) {
+        spiesLost++;
+      }
+    }
+    const intelPercentage = Math.min((spies-spiesLost) * 10, 100);
+    const intelKeys = Object.keys(new SpyUserModel(defender, (spies - spiesLost) * 10));
     const selectedKeys = intelKeys.slice(0, Math.ceil(intelKeys.length * intelPercentage / 100));
-    // Randomize the order of selected keys
     const randomizedKeys = selectedKeys.sort(() => 0.5 - Math.random());
 
     result.intelligenceGathered = randomizedKeys.reduce((partialIntel, key) => {
+      const initPartialIntel = partialIntel ?? {
+        units: null,
+        items: null,
+        fort_level: null,
+        fort_hitpoints: null,
+        goldInBank: null,
+      };
+
       if (key === 'units' || key === 'items') {
-        // Determine the number of unit/item types to include
         const totalTypes = defender[key].length;
         const typesToInclude = Math.ceil(totalTypes * intelPercentage / 100);
-
-        // Randomly select the unit/item types to include
-        const selectedTypes = defender[key]
-          .sort(() => 0.5 - Math.random()) // Shuffle array
-          .slice(0, typesToInclude); // Take the first N types
-
-        // Include the selected types with their full quantities
-        partialIntel[key] = selectedTypes;
+        initPartialIntel[key] = defender[key].sort(() => 0.5 - Math.random()).slice(0, typesToInclude);
       } else {
-        partialIntel[key] = defender[key];
+        initPartialIntel[key] = defender[key];
       }
-      return partialIntel;
-    }, {});
+      return initPartialIntel;
+    }, result.intelligenceGathered);
   }
   return result;
 }
@@ -552,8 +481,8 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
   return {
     status: 'success',
     result: spyResults,
-    attacker: attacker,
-    defender: defender,
+    //attacker: attacker,
+    //defender: defender,
     extra_variables: {
       spies,
       spyResults,
@@ -711,8 +640,8 @@ export async function attackHandler(
   return {
     status: 'success',
     result: isAttackerWinner,
-    attacker: AttackPlayer,
-    defender: DefensePlayer,
+    //attacker: AttackPlayer,
+    //defender: DefensePlayer,
     attack_log: attack_log.id,
     extra_variables: {
       pillagedGold,
