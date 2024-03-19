@@ -478,6 +478,17 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     },
   });*/
 
+  const attack_log = await prisma.attack_log.create({
+    data: {
+      attacker_id: attackerId,
+      defender_id: defenderId,
+      timestamp: new Date().toISOString(),
+      winner: Winner.id,
+      type: type,
+      stats: {spyResults},
+    },
+  });
+
   return {
     status: 'success',
     result: spyResults,
