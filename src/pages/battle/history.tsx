@@ -96,7 +96,7 @@ const WarHistory = ({
 
 export const getServerSideProps = async (context: any) => {
   const session = await getSession(context);
-  const userId = session?.user?.id;
+  const userId = parseInt(session?.user?.id.toString());
 
   const attackPage = parseInt(context.query.attackPage as string) || 1;
   const defensePage = parseInt(context.query.defensePage as string) || 1;
@@ -106,7 +106,7 @@ export const getServerSideProps = async (context: any) => {
 
   // Fetch attack logs where the user is the attacker and include the related attacker and defender players
   const attackLogs = await prisma.attack_log.findMany({
-    where: { attacker_id: userId },
+    where: { attacker_id: userId, type: 'attack'},
     include: {
       attackerPlayer: true,
       defenderPlayer: true,
@@ -120,7 +120,7 @@ export const getServerSideProps = async (context: any) => {
 
   // Fetch defense logs where the user is the defender and include the related attacker and defender players
   const defenseLogs = await prisma.attack_log.findMany({
-    where: { defender_id: userId },
+    where: { defender_id: userId, type: 'attack' },
     include: {
       attackerPlayer: true,
       defenderPlayer: true,
