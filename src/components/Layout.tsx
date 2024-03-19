@@ -54,7 +54,7 @@ const Layout = (props: IMainProps) => {
               } pb-10 pt-2`}
             >
               <h1 className="title text-title text-center text-6xl font-medium">
-                {AppConfig.title}
+                <center><img src="/assets/header/OpenThrone.webp" alt="OpenThrone" style={{ height: '150px' }} /></center>
               </h1>
               <h2 className="text-center text-xl">{AppConfig.description}</h2>
             </div>
