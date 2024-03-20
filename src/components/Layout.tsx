@@ -54,9 +54,9 @@ const Layout = (props: IMainProps) => {
               } pb-10 pt-2`}
             >
               <h1 className="title text-title text-center text-6xl font-medium">
-                <center><img src="/assets/header/OpenThrone.webp" alt="OpenThrone" style={{ height: '150px' }} /></center>
+                <center><img src="/assets/header/OpenThrone.webp" alt="OpenThrone" style={{ height: '150px', filter: 'drop-shadow(0px 3px 0px #000000)' }} /></center>
               </h1>
-              <h2 className="text-center text-xl">{AppConfig.description}</h2>
+              <h2 className="text-center text-xl" style={{textShadow: '0 -1px'}}>{AppConfig.description}</h2>
             </div>
             {authorized ? <NavLoggedIn /> : <NavLoggedOut />}
           </header>
