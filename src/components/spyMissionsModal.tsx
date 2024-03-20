@@ -6,6 +6,7 @@ import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 
 import Alert from './alert';
+import router from 'next/router';
 
 interface ModalProps {
   isOpen: boolean;
@@ -135,7 +136,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       });
     }
   }, [user]);
-  const handleIntelGathering = () => {
+  const handleIntelGathering = async () => {
     if (intelSpies > 10) {
       alertService.error(
         'You can only send a maximum of 10 spies per mission.',
@@ -143,13 +144,21 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       );
       return;
     }
-    fetch(`/api/spy/${defenderID}`, {
+    const res = await fetch(`/api/spy/${defenderID}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ type: 'INTEL', spies: intelSpies }),
     });
+    const results = await res.json();
+
+    if (results.status === 'failed') {
+      alertService.error(results.status);
+    } else {
+      router.push(`/battle/results/${results.attack_log}`);
+      toggleModal();
+    }
     alertService.success(
       `You have sent ${intelSpies} spies to gather intelligence.`
     );

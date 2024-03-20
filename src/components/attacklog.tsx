@@ -52,8 +52,10 @@ const isValidUnitType = (type: any): type is UnitType => {
 
 const LossesList: React.FC<LossesListProps> = ({ losses }) => {
   if (Object.keys(losses).length === 0) {
-    return <span>No losses</span>;
+    return <span>0 Units</span>;
   }
+  if (losses.total === 0) 
+    return <span>0 Units</span>;
 
   return (
     <ul>
@@ -137,6 +139,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
         ]
       : ['Outcome', 'Attack on player', 'Pillage and Experience', 'Casualties'];
 
+  console.log('logs', logs)
   return (
     <table className="min-w-full bg-black">
       <thead>

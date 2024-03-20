@@ -492,6 +492,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
   return {
     status: 'success',
     result: spyResults,
+    attack_log: attack_log.id,
     //attacker: attacker,
     //defender: defender,
     extra_variables: {
