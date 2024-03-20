@@ -1,4 +1,4 @@
-import { UnitTypes } from '@/constants';
+import { levelXPArray, UnitTypes } from '@/constants';
 import type { UnitType } from '@/types/typings';
 
 const getUnitName = (type: UnitType, level: number): string => {
@@ -27,4 +27,18 @@ const generateRandomString = (length: number) => {
   return result;
 }
 
-export { formatDate, getUnitName, generateRandomString };
+/**
+   * Calculates the level of a user based on their XP using the levelXPArray.
+   * @param xp - The amount of XP the user has.
+   * @returns The user's level.
+   */
+const getLevelFromXP = (xp: number): number => {
+  for (let i = 0; i < levelXPArray.length; i++) {
+    if (xp < levelXPArray[i].xp) {
+      return levelXPArray[i].level - 1 == 0 ? 1 : levelXPArray[i].level - 1;
+    }
+  }
+  return levelXPArray[levelXPArray.length - 1].level; // Return max level if XP exceeds all defined levels
+}
+
+export { formatDate, getUnitName, generateRandomString, getLevelFromXP };

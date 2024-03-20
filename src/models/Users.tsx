@@ -33,6 +33,7 @@ import {
   ItemTypes,
   levelXPArray,
 } from '../constants';
+import { getLevelFromXP } from '@/utils/utilities';
 
 class UserModel {
   public id: number;
@@ -574,8 +575,8 @@ class UserModel {
    */
   canAttack(level: number): boolean {
     return (
-      this.getLevelFromXP(this.experience) >= level - 5 &&
-      this.getLevelFromXP(this.experience) <= level + 5
+      getLevelFromXP(this.experience) >= level - 5 &&
+      getLevelFromXP(this.experience) <= level + 5
     );
   }
 
@@ -624,7 +625,7 @@ class UserModel {
   get level(): number {
     if (this.experience === 0) return 1;
 
-    return this.getLevelFromXP(this.experience);
+    return getLevelFromXP(this.experience);
   }
 
   /**
@@ -634,20 +635,6 @@ class UserModel {
   xpRequiredForLevel(level: number): number {
     const levelInfo = levelXPArray.find(l => l.level === level);
     return levelInfo ? levelInfo.xp : Math.floor(level ** 2.5 * 1000); // Fallback to formula if level not in array
-  }
-
-  /**
-   * Calculates the level of a user based on their XP using the levelXPArray.
-   * @param xp - The amount of XP the user has.
-   * @returns The user's level.
-   */
-  getLevelFromXP(xp: number): number {
-    for (let i = 0; i < levelXPArray.length; i++) {
-      if (xp < levelXPArray[i].xp) {
-        return levelXPArray[i].level - 1 == 0 ? 1 : levelXPArray[i].level - 1;
-      }
-    }
-    return levelXPArray[levelXPArray.length - 1].level; // Return max level if XP exceeds all defined levels
   }
 
   /**
