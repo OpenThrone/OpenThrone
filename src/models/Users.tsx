@@ -483,12 +483,12 @@ class UserModel {
     Units.forEach((unit) => {
       // Get the unit's bonus
       const unitFiltered = UnitTypes.find(
-        (unitType) => unitType.type === unit.type && unitType.fortLevel <= this.getLevelForUnit(type)
+        (unitType) => unitType.type === unit.type && unitType.level === unit.level
       );
       if (unitFiltered === undefined) return 0;
       // Add the unit's bonus to the total
       totalStat += (unitFiltered?.bonus || 0) * unit.quantity;
-
+      
       // Initialize a count object for each item type
       const itemCounts: ItemCounts = {};
 
@@ -497,6 +497,7 @@ class UserModel {
         (weapon) => weapon.usage === unit.type
       ) || [];
 
+      
       matchingWeapons.forEach((weapon) => {
         // Initialize count for this weapon type if not already done
         itemCounts[weapon.type] = itemCounts[weapon.type] || 0;
@@ -508,10 +509,10 @@ class UserModel {
         // Calculate the bonus for this weapon, considering the unit quantity and type count
         const usableQuantity = Math.min(weapon.quantity, unit.quantity - itemCounts[weapon.type]);
         totalStat += weaponBonus * usableQuantity;
-
         // Update the count for this weapon type
         itemCounts[weapon.type] += usableQuantity;
       });
+
     });
     
     // Apply the appropriate bonus based on the type
