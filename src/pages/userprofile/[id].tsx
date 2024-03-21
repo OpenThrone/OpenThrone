@@ -166,7 +166,7 @@ const Index: React.FC<IndexProps> = ({ users }) => {
                 <button
                   type='button'
                   onClick={toggleSpyModal}
-                  className={`list-group-item list-group-item-action w-full text-left ${user?.id === 1 || user?.id === 2 ? '' : 'disabled'}}`}
+                  className={`list-group-item list-group-item-action w-full text-left ${user?.id === 1 || user?.id === 2 ? '' : 'disabled'}`}
               >
                 Spy Missions
                 </button>
