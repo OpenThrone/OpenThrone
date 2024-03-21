@@ -30,33 +30,22 @@ const Modal: React.FC<ModalProps> = ({ isOpen, children, toggleModal }) => {
         >
           &#8203;
         </span>
-        <div className="inline-block overflow-hidden text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+        <div className="inline-block overflow-hidden text-left align-bottom shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle bg-white rounded-lg">
           <div
-            className={`rounded-md px-4 pb-4 pt-5 sm:p-6 sm:pb-4 ${layoutCont.raceClasses.bgClass}`}
+            className={`rounded-t-lg px-4 pt-5 pb-4 sm:p-6 sm:pb-4 ${layoutCont.raceClasses.bgClass}`}
           >
-            <div className="justify-between sm:flex sm:items-center">
-              <h2 className="font-medium leading-6" id="modal-title">
+            <div className="justify-between flex items-center">
+              <h2 className="text-xl font-semibold leading-6" id="modal-title">
                 Spy Mission
               </h2>
               <button
                 onClick={toggleModal}
                 type="button"
-                className="ml-3 inline-flex rounded-md border border-transparent bg-red-600 p-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:text-sm"
+                className="rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
                 <span className="sr-only">Close</span>
-                <svg
-                  className="size-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
               </button>
             </div>
@@ -84,10 +73,10 @@ const CustomButton: FC<CustomButtonProps> = ({
     onClick={onClick}
     disabled={disabled}
     type="button"
-    className={`my-2 w-full rounded-md px-4 py-2 text-lg font-bold text-white ${
+    className={`my-2 w-full rounded-md px-4 py-2 text-lg font-bold ${
       disabled
-        ? 'cursor-not-allowed bg-gray-400'
-        : 'cursor-pointer bg-gray-800 hover:bg-gray-600'
+        ? 'cursor-not-allowed bg-gray-900 text-gray-700'
+      : 'cursor-pointer bg-gray-800 hover:bg-gray-600 text-white'
     }`}
   >
     {children}
@@ -173,43 +162,45 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
   */
   const MissionPanels: Record<MissionPanelKey, JSX.Element> = {
     intelligence: (
-      <div>
-        <h2 className="text-center">Intelligence Gathering</h2>
+      <div className="px-4 py-5 sm:p-6 shadow-xl rounded-lg">
+        <h2 className="text-center text-lg font-semibold mb-4">Intelligence Gathering</h2>
         How many spies would you like to send? <br />
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <input
               type="number"
-              className="w-25 rounded-md bg-gray-600 p-2"
+              className="mt-2 mb-4 w-full sm:w-1/2 rounded-md bg-gray-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               max={10}
               min={1}
               onChange={(e) => setIntelSpies(parseInt(e.target.value, 10))}
               value={intelSpies}
             />
-            <span className="ml-1">/ 10</span>
+            <span className="ml-2 text-white">/ 10</span>
           </div>
           <button
             type="button"
             onClick={handleIntelGathering}
-            className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+            className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
             Send Spies
           </button>
         </div>
-        <h2 className="text-center">Intelligence Information</h2>
-        <p>Spies Trained: {units.SPY}</p>
-        <span>You can send a maximum of 10 spies per mission.</span>
+        <div className="mt-4">
+          <h2 className="text-center text-lg font-semibold">Intelligence Information</h2>
+          <p className="mt-2">Spies Trained: {units.SPY}</p>
+          <span className="block mt-1">You can send a maximum of 10 spies per mission.</span>
+        </div>
       </div>
     ),
     assassination: (
-      <div>
-        <h2 className="text-center">Assassination</h2>
+      <div className='px-4 py-5 sm:p-6'>
+        <h2 className="text-center text-lg font-medium mb-4">Assassination</h2>
         What type of units would you like to assassinate?
         <br />
         <select
           value={assassinateUnit}
           onChange={(e) => setAssassinateUnit(e.target.value)}
-          className="w-25 rounded-md bg-gray-600 p-2"
+          className="mt-2 mb-4 w-full rounded-md bg-gray-700 p-2 text-white"
         >
           {['CITIZEN/WORKERS', 'OFFENSE', 'DEFENSE'].map((unit) => (
             <option key={unit}>{unit}</option>
@@ -220,29 +211,31 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         <br />
         <input
           type="number"
-          className="w-10 rounded-md bg-gray-600 p-2"
+          className="mt-2 mb-4 w-1/2 rounded-md bg-gray-700 p-2 text-white"
           max={5}
           min={1}
         />{' '}
         / 5<br />
         <button
           type="button"
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+          className="w-full rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 transition-colors"
         >
           Assassinate
         </button>
         <br />
-        <h2 className="text-center">Assassination Information</h2>
-        <p>Total Assassins: </p>
+        <div className="mt-4">
+          <h2 className="text-center text-lg font-medium">Assassination Information</h2>
+          <p className="mt-2">Total Assassins: </p>
         <span>You can send a maximum of 5 assassins per mission.</span>
         <br />
-        <p>Assassination Attempts Available: ##</p>
+          <p className="mt-2">Assassination Attempts Available: ##</p>
         <span>
           You can only send 1 assassination attempt per 24 hours.
           <br />
           To increase the number of attempts per day, upgrade your spy
           structure!
-        </span>
+          </span>
+        </div>
       </div>
     ),
     infiltration: (
@@ -289,7 +282,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <br />
             {isInfiltrationDisabled && (
               <b>
-                <small className="text-black"> Requires Fort: ###</small>
+                <small className="text-white"> Requires Fort: ###</small>
               </b>
             )}
           </CustomButton>
