@@ -4,6 +4,7 @@ import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faRefresh, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { getTimeRemaining, getTimeToNextTurn } from '@/utils/timefunctions';
 
 
 const Sidebar: React.FC = () => {
@@ -41,29 +42,6 @@ const Sidebar: React.FC = () => {
     return () => clearInterval(interval);
   }, [messages]);
 
-  // https://www.sitepoint.com/build-javascript-countdown-timer-no-dependencies/
-  const getTimeRemaining = (endtime: string) => {
-    const total = Date.parse(endtime) - new Date().getTime();
-    const seconds = Math.floor((total / 1000) % 60);
-    const minutes = Math.floor((total / 1000 / 60) % 60);
-    const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
-    const days = Math.floor(total / (1000 * 60 * 60 * 24));
-
-    return {
-      total,
-      days,
-      hours,
-      minutes,
-      seconds,
-    };
-  };
-
-  const getTimeToNextTurn = (date = new Date()) => {
-    const ms = 1800000; // 30mins in ms
-    const nextTurn = new Date(Math.ceil(date.getTime() / ms) * ms);
-    return nextTurn.toString();
-  };
-
   useEffect(() => {
     const interval = setInterval(() => {
       if (user) {
@@ -86,14 +64,21 @@ const Sidebar: React.FC = () => {
 
   return (
     <div className="block sm:block">
-      <div className="advisor mt-3 overflow-hidden rounded-lg shadow-lg">
+      <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg min-h-96 h-96" style={{
+        backgroundImage: 'url(/assets/images/advisor-scroll.webp)',
+        backgroundSize: 'contain',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        paddingLeft: '30px',
+        paddingRight: '30px',
+}}>
         <div className="p-6">
-          <h6 className="advisor-title text-center">
+          <h6 className="advisor-title text-center font-medieval font-bold">
             <span> </span> Advisor <span> </span>
           </h6>
           <p className="text-xs">{messages[currentMessageIndex]}</p>
 
-            <h6 className="text-center">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 10, padding: '3px 0' }} onClick={forceUpdate} /></h6>
+            <h6 className="text-center font-medieval font-bold">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 10, padding: '3px 0' }} onClick={forceUpdate} /></h6>
           <ul className="list-none pl-0 text-sm">
             <li>
               <i className="ra ra-gem ra-fw" /> Gold:{' '}

@@ -1,3 +1,4 @@
+import { ItemTypes } from "@/constants";
 import { getLevelFromXP } from "@/utils/utilities";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -27,7 +28,6 @@ const IntelResult = ({ battle, viewerID }) => {
   const attackerTotalLosses = totalLosses(stats.attacker_losses);
   const defenderTotalLosses = totalLosses(stats.defender_losses);
 
-  console.log(stats);
   const summaryLines = []
 
   const countUnitsOfType = (units, type) => {
@@ -40,6 +40,23 @@ const IntelResult = ({ battle, viewerID }) => {
     summaryLines.push(`You sent ${stats.spyResults.spiesSent} ${stats.spyResults.spiesSent > 1 ? 'spies' : 'spy'} to ${defenderPlayer.display_name}`);
 
   summaryLines.push(`${isViewerAttacker ? 'You were' : attackerPlayer.display_name + ' was'} ${isAttackerWinner ? 'successful' : 'unsuccessful.'}`);
+  if (isAttackerWinner) {
+    if (stats.spyResults.intelligenceGathered.units.length > 0) {
+      summaryLines.push('Units Found');
+      stats.spyResults.intelligenceGathered.units.forEach(unit => {
+
+        const uType = unit.type[0] + unit.type.slice(1).toLowerCase();
+        summaryLines.push(`${unit.quantity}x Level ${unit.level} ${uType} Units found`);
+      });
+    }
+    if(stats.spyResults.intelligenceGathered.items.length > 0) {
+      summaryLines.push('Items Found');
+      stats.spyResults.intelligenceGathered.items.forEach(item => {
+        const iName = ItemTypes.find(i => i.usage === item.usage && i.level === item.level && i.type === item.type).name;
+        summaryLines.push(`${item.quantity}x ${item.usage} ${iName} found`);
+      });
+    }
+  }
   /*summaryLines.push(`${isViewerAttacker ? 'You' : attackerPlayer.display_name} attacked ${isViewerDefender ? 'You' : defenderPlayer.display_name}`);
   summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name}'s ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did X damage`);
   summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name}'s ${countUnitsOfType(stats.startOfAttack.Defender.units, 'DEFENSE')} guards did Y damage`);
@@ -102,16 +119,15 @@ const IntelResult = ({ battle, viewerID }) => {
         backgroundSize: 'contain',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        paddingTop: '30px',
+        paddingTop: '60px',
         paddingBottom: '90px',
-        height:'500px'
       }}
-        className='text-center'>
-        <p className="text-2xl text-black"><b>Intelligence Report</b></p>
+        className='text-center min-h-96'>
+        <p className="text-2xl text-black font-medieval font-bold">Intelligence Report</p>
         <AnimatePresence>
           {summaryLines.map((line, i) => (
             <motion.p
-              className="load-screen--message"
+              className="load-screen--message font-medieval font-semibold text-2xl"
               variants={sentence}
               initial="hidden"
               animate="visible"
