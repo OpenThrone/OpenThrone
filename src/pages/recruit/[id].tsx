@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 
 import Alert from '@/components/alert';
 import { alertService } from '@/services';
+import Image from 'next/image';
 
 interface RecruitProps {
   id: string;
@@ -134,14 +135,17 @@ export default function Recruit() {
         <Alert />
       </div>
       {userInfo && (
-        <div className="mb-5 text-center">
+        <div className="mb-5 text-center items-center">
           <p>
             {userInfo.display_name} is a level {userInfo.level} {userInfo.race}{' '}
             {userInfo.class}.
+            <center>
+              <Image src={`/assets/shields/${userInfo.race}_150x150.webp`} width={'150'} height={'150'} alt="" />
+            </center>
           </p>
         </div>
       )}
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="container mx-auto text-center">
           {error ? (
             <p>{error}</p>

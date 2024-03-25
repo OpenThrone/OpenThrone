@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/anchor-is-valid */
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -18,7 +17,6 @@ export const NavLoggedOut: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleParentClick = (event: React.MouseEvent, link: string) => {
-    event.preventDefault();
     if (link === activeParentLink) {
       setActiveParentLink('');
     } else {
@@ -54,7 +52,7 @@ export const NavLoggedOut: React.FC = () => {
                 <Link
                   href={link.url}
                   className="border-none text-gray-700 hover:text-gray-900"
-                  onClick={(event) => handleParentClick(event, link.url)}
+                  onClick={(event) => handleParentClick(event, link.url)}                  
                 >
                   {link.title}
                 </Link>

@@ -86,11 +86,6 @@ function computeCasualties(
     0,
     mtRand(100000 * ratio - 10, 100000 * ratio - 5) / 100000
   );
-  if (isDefender)
-  {
-    console.log('randMultiplier: ', randMultiplier)
-    console.log('ratio: ', ratio);
-  }
   
   if (ratio >= 5) {
     baseValue = mtRand(0.0015, 0.0018);
@@ -106,13 +101,6 @@ function computeCasualties(
     baseValue = mtRand(0.0005, 0.0006);
   } else {
     baseValue = mtRand(0.0004, 0.00045);
-  }
-  if (isDefender) {
-    console.log('baseValue: ', baseValue);
-    console.log('population: ', population);
-    console.log('ampFactor: ', ampFactor);
-    console.log('unitFactor: ', unitFactor);
-    console.log('fortHitpoints: ', fortHitpoints);
   }
   let fortDamageMultiplier = 1;
   let citizenCasualtyMultiplier = 1;
@@ -182,7 +170,6 @@ function computeExperience(
   }
 
   const AmpFactor = mtRand(97, 103) / 100;
-  console.log('Phys : ', PhysOffToDefRatio);
   if (PhysOffToDefRatio >= 1) {
     // Attacker Wins
     result.Result = 'Win';
@@ -449,7 +436,6 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
   }
 
   let spyResults = {}
-  console.log('type: ', type)
   if (attacker.spy === 0) {
     return { status: 'failed', message: 'Insufficient Spy Offense' };
   }
@@ -462,8 +448,6 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
   } else {
     spyResults = simulateInfiltration();
   }
-  console.log('Winner: ', Winner.displayName)
-  console.log('spyResults: ', spyResults)
   //AttackPlayer.spies -= spies;
   //AttackPlayer.experience += spyResults.experienceResult.Experience.Attacker;
   //AttackPlayer.gold += spyResults.goldStolen;

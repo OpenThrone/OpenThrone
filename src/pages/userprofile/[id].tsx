@@ -19,14 +19,13 @@ interface IndexProps {
 }
 
 const Index: React.FC<IndexProps> = ({ users }) => {
-  console.log(users);
   const hideSidebar = false;
   const context = useUser();
   const user = context ? context.user : null;
   const [isPlayer, setIsPlayer] = useState(false);
 
   const router = useRouter();
-  const [profile, setUser] = useState<UserModel>(() => new UserModel(users));
+  const [profile, setUser] = useState<UserModel>(() => new UserModel(users, true));
   const [canAttack, setCanAttack] = useState(false);
   const [canSpy, setCanSpy] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -65,7 +64,7 @@ const Index: React.FC<IndexProps> = ({ users }) => {
   };
 
   useEffect(() => {
-    if (profile.id !== users.id) setUser(new UserModel(users));
+    if (profile.id !== users.id) setUser(new UserModel(users, true));
     if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
     if (!isPlayer && user && (user.id === 1 || user.id === 2)) setCanSpy(true);
@@ -271,10 +270,12 @@ export const getServerSideProps = async ({ query }) => {
     return { notFound: true };
   }
 
+  const { password_hash, ...userWithoutPassword } = user;
+
   const userData = {
-    ...user,
+    ...userWithoutPassword, 
     overallrank: rank,
-    bionew: await serialize(user.bio), // Ensure serialize is defined and works as expected
+    bionew: await serialize(user.bio),
   };
 
   return { props: { users: userData } };

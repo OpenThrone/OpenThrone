@@ -24,7 +24,7 @@ const Users = ({ players, session, userPage }) => {
     // Format the gold values based on the client's locale
     const golds = players.map(player => toLocale(player.gold, user?.locale));
     setFormattedGolds(golds);
-  }, [players]);
+  }, [players, user?.locale]);
 
   useEffect(() => {
     const newPage = parseInt(pathname as string) || userPage;

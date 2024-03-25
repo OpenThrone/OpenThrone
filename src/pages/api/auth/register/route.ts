@@ -31,7 +31,6 @@ export default async function handle(
 
 export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
   const prisma = new PrismaClient();
-  console.log('handling post');
   try {
     const { email, password, race, display_name } = await req.body;
     let exists = await prisma.users.count({
