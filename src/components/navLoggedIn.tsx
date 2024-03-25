@@ -53,6 +53,7 @@ const subMenus: {
       parent: 'Community',
     },
     { text: 'Auto Recruit', href: '/auto-recruit', parent: 'Community' },
+    { text: 'Stats', href: '/community/stats', parent: 'Community' },
     {
       text: 'Report Issues',
       href: 'https://github.com/uaktags/OpenThrone/issues',
