@@ -15,6 +15,8 @@ const smtpConfig: SMTPTransport.Options = {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,
   },
+  tls: { rejectUnauthorized: false },
+  debug: true
 };
 
 export default async function handler(
@@ -32,19 +34,19 @@ export default async function handler(
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    console.log('user found')
     const uModel = new UserModel(user, false);
 
     const resetToken = generateRandomString(6);
-    
-    const existingReset = await prisma.PasswordReset.findMany({
+    console.log(resetToken);
+    const existingReset = await prisma.passwordReset.findMany({
       where: {
         userId: uModel.id,
         status: 0
       },
     });
+    console.log('existingReset', existingReset)
     for (const reset of existingReset) {
-      await prisma.PasswordReset.update({
+      await prisma.passwordReset.update({
         where: { id: reset.id },
         data: {
           status: 1,
@@ -53,7 +55,7 @@ export default async function handler(
     }
 
     // save reset token
-    const resetReq = await prisma.PasswordReset.create({
+    const resetReq = await prisma.passwordReset.create({
       data: {
         userId: parseInt(uModel.id.toString()),
         verificationCode: resetToken,
@@ -67,10 +69,10 @@ export default async function handler(
       from: `<OpenThrone> ${process.env.SMTP_FROM_EMAIL}`,
       to: uModel.email,
       subject: 'Password Reset',
-      text: `Your password reset token is: ${resetToken}`,
+      text: `Your password reset token is: ${resetToken} 
+      Please use this token to reset your password here <a href='https://openthrone.dev/account/resetPW/verify'>https://openthrone.dev/account/resetPW/verify</a>`,
     });
-    console.log('email sent', info);
-
+    
     return res.json({
       status: true,
       message: 'Password reset email sent',

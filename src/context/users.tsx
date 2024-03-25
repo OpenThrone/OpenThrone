@@ -26,6 +26,7 @@ const isPublicPath = (path: string | null) => {
     /^\/account\/register$/,
     /^\/account\/resetPW$/,
     /^\/account\/resetPW\/result$/,
+    /^\/account\/resetPW\/verify$/,
     /^\/community\/news$/,
     /^\/$/,
     /^\/userprofile\/[a-z0-9]+$/i, // Updated to include letters or numbers
@@ -104,7 +105,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       loading,
     }),
     [user, loading]
-  ); // Dependencies array
+  );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
