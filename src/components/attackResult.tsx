@@ -1,4 +1,5 @@
 import UserModel from "@/models/Users";
+import toLocale from "@/utils/numberFormatting";
 import { getLevelFromXP } from "@/utils/utilities";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -19,30 +20,30 @@ const attackResults = ({ battle, viewerID }) => {
     }).join(', ');
   };
 
-  const totalLosses = (losses) => {
+  const totalLosses = (losses: number): number => {
     if (losses)
       return Object.values(losses).reduce((acc, curr) => acc + curr, 0);
     else return 0;
   };
 
-  const attackerTotalLosses = totalLosses(stats.attacker_losses);
-  const defenderTotalLosses = totalLosses(stats.defender_losses);
+  const attackerTotalLosses = toLocale(totalLosses(stats.attacker_losses));
+  const defenderTotalLosses = toLocale(totalLosses(stats.defender_losses));
 
   console.log(stats);
   const summaryLines = []
 
   const countUnitsOfType = (units, type) => {
-    return units.filter(unit => unit.type === type)
-      .reduce((acc, curr) => acc + curr.quantity, 0);
+    return toLocale(units.filter(unit => unit.type === type)
+      .reduce((acc, curr) => acc + curr.quantity, 0));
   }
 
   summaryLines.push(`Battle ID: ${battle.id}`);
   summaryLines.push(`${isViewerAttacker ? 'You' : attackerPlayer.display_name} attacked ${isViewerDefender ? 'You' : defenderPlayer.display_name}`);
-  summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${new UserModel(stats.startOfAttack.Attacker).offense} damage`);
-  summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Defender.units, 'DEFENSE')} guards did ${new UserModel(stats.startOfAttack.Defender).defense} damage`);
+  summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${toLocale(new UserModel(stats.startOfAttack.Attacker).offense)} damage`);
+  summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Defender.units, 'DEFENSE')} guards did ${toLocale(new UserModel(stats.startOfAttack.Defender).defense)} damage`);
   summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} won the battle`);
-  summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} earned ${stats.xpEarned} XP`)
-  summaryLines.push(`Gold Pillaged: ${isPlayerWinner ? stats.pillagedGold.toLocaleString() : 0}`);
+  summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} earned ${toLocale(stats.xpEarned)} XP`)
+  summaryLines.push(`Gold Pillaged: ${isPlayerWinner ? toLocale(stats.pillagedGold.toLocaleString()) : 0}`);
   summaryLines.push(`Fort Damage Dealt by Attacker: ${stats.forthpAtStart - stats.forthpAtEnd}`);
   summaryLines.push(`Total Units Lost by Attacker: ${attackerTotalLosses}`);
   summaryLines.push(`Total Units Lost by Defender: ${defenderTotalLosses}`);
@@ -101,10 +102,9 @@ const attackResults = ({ battle, viewerID }) => {
         backgroundSize: 'contain',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        paddingTop: '30px',
-        paddingBottom: '90px'
+        paddingTop: '30px'
       }}
-        className='text-center'>
+        className='text-center pb-90px pt-10'>
         <p className="text-2xl text-black font-medieval font-bold"><b>Battle Log</b></p>
         <AnimatePresence>
           {summaryLines.map((line, i) => (
