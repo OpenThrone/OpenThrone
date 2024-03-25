@@ -38,8 +38,8 @@ const attackResults = ({ battle, viewerID }) => {
 
   summaryLines.push(`Battle ID: ${battle.id}`);
   summaryLines.push(`${isViewerAttacker ? 'You' : attackerPlayer.display_name} attacked ${isViewerDefender ? 'You' : defenderPlayer.display_name}`);
-  summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name}'s ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${new UserModel(stats.startOfAttack.Attacker).offense} damage`);
-  summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name}'s ${countUnitsOfType(stats.startOfAttack.Defender.units, 'DEFENSE')} guards did ${new UserModel(stats.startOfAttack.Defender).defense} damage`);
+  summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${new UserModel(stats.startOfAttack.Attacker).offense} damage`);
+  summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Defender.units, 'DEFENSE')} guards did ${new UserModel(stats.startOfAttack.Defender).defense} damage`);
   summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} won the battle`);
   summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} earned ${stats.xpEarned} XP`)
   summaryLines.push(`Gold Pillaged: ${isPlayerWinner ? stats.pillagedGold.toLocaleString() : 0}`);
@@ -105,11 +105,11 @@ const attackResults = ({ battle, viewerID }) => {
         paddingBottom: '90px'
       }}
         className='text-center'>
-        <p className="text-2xl text-black"><b>Battle Log</b></p>
+        <p className="text-2xl text-black font-medieval font-bold"><b>Battle Log</b></p>
         <AnimatePresence>
           {summaryLines.map((line, i) => (
             <motion.p
-              className="load-screen--message"
+              className="load-screen--message font-medieval font-semibold"
               variants={sentence}
               initial="hidden"
               animate="visible"

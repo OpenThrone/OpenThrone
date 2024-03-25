@@ -14,7 +14,7 @@ const Index = () => {
     }
   }, [meta, setMeta]);
   return (
-    <div className="mx-auto w-3/4 py-2 md:col-span-9">
+    <div className="mx-auto xs:w-96 md:w-3/4 py-2 md:col-span-9">
       <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">
         <div className="flex justify-center">
           <ul className="list-inside list-disc">

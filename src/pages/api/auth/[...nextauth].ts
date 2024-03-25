@@ -29,38 +29,42 @@ const validateCredentials = async (email: string, password: string) => {
     },
   });
 
-  if (user) {
-    if (!user.password_hash) {
-      throw new Error('Invalid username or password');
-    }
-    if (user.password_hash.startsWith('$2b$')) {
-      console.log('here');
-      const passwordMatches =
-        user && (await bcrypt.compare(password, user.password_hash));
-      if (!passwordMatches) {
-        throw new Error('Invalid username or password');
-      }
-      await updatePasswordEncryption(email, password);
-    } else {
-      const passwordMatches =
-        user && (await argon2.verify(user.password_hash, password));
-        if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
-          const { password_hash, ...rest } = user;
-          console.log(rest);
-          return rest;
-        } 
-      if (!passwordMatches) {
-        throw new Error('Invalid username or password');
-      }
-    }
+  // User not found or password_hash not set
+  if (!user || !user.password_hash) {
+    console.log('user or password hash not found')
+    throw new Error('Invalid username or password');
   }
 
+  let passwordMatches = false;
+    if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
+      const { password_hash, ...rest } = user;
+      console.log('taking over!');
+      return rest;
+    }
+  // Check bcrypt hash
+  if (user.password_hash.startsWith('$2b$')) {
+    passwordMatches = await bcrypt.compare(password, user.password_hash);
+    if (passwordMatches) {
+      await updatePasswordEncryption(email, password); // Update hash to argon2
+    }
+  } else {
+    // Check argon2 hash
+    passwordMatches = await argon2.verify(user.password_hash, password);
+  }
+
+  console.log('passeword matched!');
+
+  if (!passwordMatches) {
+    throw new Error('Invalid username or password');
+  }
+  console.log('update Last Active');
+
   await updateLastActive(email);
-
   const { password_hash, ...rest } = user;
-
+  console.log('returning rest')
   return rest;
 };
+
 
 export const authOptions: NextAuthOptions = {
   // Page configuration
@@ -68,13 +72,11 @@ export const authOptions: NextAuthOptions = {
     signIn: '/account/login',
   },
 
-  // Define session expiration time in seconds (optional, default is 1 day)
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 1 day
   },
 
-  // Secret for JWT Signing
   secret: process.env.JWT_SECRET,
 
   callbacks: {
@@ -84,7 +86,7 @@ export const authOptions: NextAuthOptions = {
         return session;
       } catch (error) {
         console.error('Session callback error:', error);
-        throw error; // Re-throwing the error after logging it will help in identifying the issue
+        throw error; 
       }
     },
     async jwt({ token, user }) {
@@ -95,7 +97,7 @@ export const authOptions: NextAuthOptions = {
         return token;
       } catch (error) {
         console.error('JWT callback error:', error);
-        throw error; // Re-throwing the error after logging it will help in identifying the issue
+        throw error;
       }
     },
   },

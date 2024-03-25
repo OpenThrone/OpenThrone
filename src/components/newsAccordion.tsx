@@ -11,7 +11,25 @@ const NewsAccordion = ({ news }) => {
     setIsOpen(newState);
   };
 
-  return (
+  return (<>
+    <div className="block sm:hidden">
+  {news.map((item, index) => (
+    <div key={item.id} className="p-4 bg-gray-800 my-2 rounded-lg">
+      <h3 className="text-lg font-bold">{item.title}</h3>
+      <p>{new Date(item.created_timestamp).toLocaleDateString() + ' ' + new Date(item.created_timestamp).toLocaleTimeString()}</p>
+      {isOpen[index] && (
+        <>
+          <p className="text-gray-500">{item.content.substring(0, 200)}...</p>
+          <a href={`/community/news/${item.id}`} className="text-blue-500 hover:underline">Read more</a>
+        </>
+      )}
+      <button onClick={() => toggleAccordion(index)} className="mt-2">
+        {isOpen[index] ? 'Collapse' : 'Expand'}
+      </button>
+    </div>
+  ))}
+    </div>
+    <div className="hidden sm:block">
     <table className="min-w-full divide-y divide-gray-200 my-4 table-auto text-white ">
       <thead>
         <tr className='odd:bg-table-odd even:bg-table-even'>
@@ -53,7 +71,9 @@ const NewsAccordion = ({ news }) => {
           </>
         ))}
       </tbody>
-    </table>
+      </table>
+    </div>
+  </>
   );
 };
 

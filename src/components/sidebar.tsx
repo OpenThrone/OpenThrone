@@ -27,7 +27,7 @@ const Sidebar: React.FC = () => {
       'It is better to buy a few stronger weapons than many weaker ones.',
       'The more attack turns you use in an attack, the more experience and gold you will gain.',
       'The more workers you have, the more gold you&#39;ll earn per turn.',
-      'Recruiting your max amount every day will ensure you&#39;re kingdom continues to grow.',
+      `Recruiting your max amount every day will ensure you're kingdom continues to grow.`,
       // Add more messages as needed
     ];
 
@@ -72,7 +72,7 @@ const Sidebar: React.FC = () => {
         paddingLeft: '30px',
         paddingRight: '30px',
 }}>
-        <div className="p-6">
+        <div className="xs:p-14 md:p-6">
           <h6 className="advisor-title text-center font-medieval font-bold">
             <span> </span> Advisor <span> </span>
           </h6>

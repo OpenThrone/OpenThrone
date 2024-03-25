@@ -24,7 +24,7 @@ const Index = () => {
       // Handle success
       toast.success('Account created! Redirecting to login...');
       setTimeout(() => {
-        router.push('/account/passRW/result');
+        router.push('/account/resetPW/result');
       }, 2000);
     } catch (error) {
       console.error('Error:', error);
@@ -37,10 +37,10 @@ const Index = () => {
       <div className="mainArea pb-10">
         <h2>Password Reset</h2>
       </div>
-      <div className="mx-auto w-3/4 py-2 md:col-span-9">
+      <div className="xs:w-96 md:w-3/4 py-2 md:col-span-9">
         <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">
           <div className="flex justify-center">
-            <div className="w-3/4">
+            <div className="xs:w-96 md:w-3/4">
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                   <label htmlFor="email" className="mb-1 block">

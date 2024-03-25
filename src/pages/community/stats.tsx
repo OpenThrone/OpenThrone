@@ -53,6 +53,7 @@ export const getServerSideProps = async (context: any) => {
 
     // Map recruitmentCounts to include user data
     const recruitsWithUser = await Promise.all(recruitmentCounts.map(async (recruit) => {
+      if(recruit.from_user === 0) return null;
       const user = await prisma.users.findUnique({
         where: {
           id: recruit.from_user,
@@ -68,7 +69,7 @@ export const getServerSideProps = async (context: any) => {
       };
     }));
 
-    return recruitsWithUser;
+    return recruitsWithUser.filter(recruit => recruit !== null);
   }
 
 

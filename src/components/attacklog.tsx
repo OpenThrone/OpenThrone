@@ -1,6 +1,8 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import type { UnitType } from '@/types/typings';
 import { formatDate, getUnitName } from '@/utils/utilities';
+import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 interface Loss {
   [key: string]: number;
@@ -106,14 +108,14 @@ const StatsList: React.FC<StatsListProps> = ({ stats, type }) => (
 
 const renderOutcome = (log: Log, type: string) => {
   if (type === 'defense') {
-    return log.winner === log.defender_id ? 'Y' : 'N';
+    return log.winner === log.defender_id ? <FontAwesomeIcon icon={faCheck} color='lightgreen' size='lg' /> : <FontAwesomeIcon icon={faXmark} color='red' size='lg' />;
   }
-  return log.winner === log.attacker_id ? 'Y' : 'N';
+  return log.winner === log.attacker_id ? <FontAwesomeIcon icon={faCheck} color='lightgreen' size='lg' /> : <FontAwesomeIcon icon={faXmark} color='red' size='lg'/>;
 };
 
 const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => (
   <>
-    <td className="border-b px-4 py-2">
+    <td className="border-b px-4 py-2 text-center">
       {renderOutcome(log, type)}
       <br />
     </td>
@@ -137,11 +139,10 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
           'Pillage and Experience',
           'Casualties',
         ]
-      : ['Outcome', 'Attack on player', 'Pillage and Experience', 'Casualties'];
+      : ['Outcome', 'Attack on player', 'Pillage and Experience', 'Casualties', 'Action'];
 
-  console.log('logs', logs)
   return (
-    <table className="min-w-full bg-black">
+    <table className="min-w-full table-auto bg-gray-900 rounded">
       <thead>
         <tr>
           {tableHeaders.map((header) => (
@@ -160,7 +161,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
           </tr>
         ) : (
           logs.map((log) => (
-            <tr key={log.id}>
+            <tr key={log.id} className='odd:bg-table-odd even:bg-table-even'>
               <PlayerOutcome log={log} type={type} />
               <td className="border-b px-4 py-2">
                 <StatsList stats={log.stats} type={type} />
@@ -177,6 +178,11 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
                   </li>
                 </ul>
               </td>
+              {type === 'defense' ? null : (
+              <td className="border-b px-4 py-2 text-center">
+                  <a href={`/battle/${log.id}`} className='inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 '>View Battle</a>
+              </td>
+              )}
             </tr>
           ))
         )}
