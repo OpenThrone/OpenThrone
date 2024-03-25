@@ -180,7 +180,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
               </td>
               {type === 'defense' ? null : (
               <td className="border-b px-4 py-2 text-center">
-                  <a href={`/battle/${log.id}`} className='inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 '>View Battle</a>
+                  <a href={`/battle/results/${log.id}`} className='inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 '>View Battle</a>
               </td>
               )}
             </tr>
