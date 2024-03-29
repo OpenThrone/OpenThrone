@@ -7,6 +7,37 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
+
+  const checkParams = (body: any, spiesNeeded: number) => {
+    if (!body.type) {
+      return false;
+    }
+
+    if (!body.spies) {
+      return false;
+    }
+
+    if (isNaN(body.spies)) {
+      return false;
+    }
+
+    if (body.spies < 0) {
+      return false;
+    }
+
+    if (body.spies > spiesNeeded) {
+      return false;
+    }
+
+    if (body.type === 'assassinate') {
+      if (body.unit === undefined) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   if (session) {
     switch (req.body.type) {
       case 'INTEL':
@@ -34,14 +65,28 @@ export default async function handler(req, res) {
           .status(200)
           .json(
             await spyHandler(
-              session.user.id,
+              parseInt(session.user.id.toString()),
               parseInt(req.query.id),
               parseInt(req.body.spies),
               req.body.type
             )
           );
-      case 'assassinate':
-        return res.status(200).json({ status: 'success' });
+      case 'ASSASSINATE':
+        if (checkParams(req.body, 5) === false) {
+          return res.status(400).json({ status: 'failed' });
+        }
+
+        return res
+          .status(200)
+          .json(
+            await spyHandler(
+              parseInt(session.user.id.toString()),
+              parseInt(req.query.id),
+              parseInt(req.body.spies),
+              req.body.type,
+              req.body.unit
+            )
+          );
       case 'infiltrate':
         return res.status(200).json({ status: 'success' });
     }

@@ -9,6 +9,7 @@ import type { BattleUnits, ItemType, Item, PlayerUnit } from '@/types/typings';
 import mtRand from '@/utils/mtrand';
 import { calculateStrength, computeAmpFactor } from '@/utils/attackFunctions';
 import { SpyUserModel } from '@/models/SpyUser';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 function getKillingStrength(user: UserModel, attacker: boolean): number {
   return calculateStrength(user, attacker ? 'OFFENSE' : 'DEFENSE');
@@ -18,6 +19,33 @@ function getDefenseStrength(user: UserModel, defender: boolean): number {
   return calculateStrength(user, defender ? 'DEFENSE' : 'OFFENSE');
 }
 
+class AssassinationResult {
+  //attacker: UserModel;
+  //defender: UserModel;
+  spiesSent: number;
+  spiesLost: number;
+  unitsKilled: number;
+  unit: string;
+
+  success: boolean;
+  experienceGained: number;
+  goldStolen: number;
+  units: PlayerUnit[];
+
+  constructor(attacker: UserModel, defender: UserModel, spies: number, unit: string) {
+    //this.attacker = JSON.parse(stringifyObj(attacker));  // deep copy
+    //this.defender = JSON.parse(stringifyObj(defender));  // deep copy
+    this.spiesSent = spies;
+    this.spiesLost = 0;
+    this.unitsKilled = 0;
+    this.unit = unit;
+    this.success = false;
+    this.experienceGained = 0;
+    this.goldStolen = 0;
+    this.units = [];
+
+  }
+}
 
 class IntelResult {
   //attacker: UserModel;
@@ -34,8 +62,8 @@ class IntelResult {
   } | null;
 
   constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
-    //this.attacker = JSON.parse(JSON.stringify(attacker));  // deep copy
-    //this.defender = JSON.parse(JSON.stringify(defender));  // deep copy
+    //this.attacker = JSON.parse(stringifyObj(attacker));  // deep copy
+    //this.defender = JSON.parse(stringifyObj(defender));  // deep copy
     this.spiesSent = spiesSent;
     this.spiesLost = 0;
     this.success = false;
@@ -413,15 +441,70 @@ function simulateIntel(
   return result;
 }
     
-function simulateAssassination() {
-  return {}
+function simulateAssassination(
+  attacker: UserModel,
+  defender: UserModel,
+  spies: number,
+  unit: string
+) {
+  const isSuccessful = attacker.spy > defender.sentry;
+
+  const result = new AssassinationResult(attacker, defender, spies, unit);
+  result.success = isSuccessful;
+  result.spiesLost = isSuccessful ? 0 : spies;
+
+  if (isSuccessful) {
+
+    const deathRiskFactor = Math.max(0, 1 - (attacker.spy / defender.sentry));
+    
+    let spiesLost = 0;
+    for (let i = 0; i < spies; i++) {
+      if (Math.random() < deathRiskFactor) {
+        spiesLost++;
+      }
+    }
+    let casualties = 0;
+    let defenderUnitCount = () => {
+      if (unit === 'OFFENSE') {
+        return defender.unitTotals.offense;
+      }
+      if (unit === 'DEFENSE') {
+        return defender.unitTotals.defense;
+      }
+      if (unit === 'CITIZEN/WORKERS') {
+        return defender.unitTotals.citizens + defender.unitTotals.workers;
+      }
+      return 0;
+    }
+
+    // TODO: right now we're maxing at 10 casualities (2*#ofSpies), but we can increase this depending on some other params.
+    for (let i = 0; i < Math.min(defenderUnitCount(), spies * 2); i++) {
+      if (Math.random() < deathRiskFactor) {
+        casualties++;
+      }
+    }
+    result.unitsKilled = casualties;
+    if (casualties > 0) {
+      let defenderUnitType;
+      if (unit !== 'CITIZEN/WORKERS') {
+        defenderUnitType = defender.units.find((u) => u.type === unit && u.level === 1);
+      } else {
+        defenderUnitType = defender.units.find((u) => (u.type === 'WORKER' || u.type === 'CITIZEN') && u.level === 1);
+      }
+        if (defenderUnitType) {
+          defenderUnitType.quantity -= casualties;
+        }
+    }
+    result.spiesLost = spiesLost;
+  }
+  return result;
 }
 
 function simulateInfiltration() {
   return {};
 }
 
-export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string) { 
+export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string, unit?: string) { 
   const attacker: UserModel = new UserModel(await prisma?.users.findUnique({
     where: { id: attackerId },
   }));
@@ -435,19 +518,40 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     return { status: 'failed', message: 'Insufficient spies' };
   }
 
-  let spyResults = {}
+  let spyResults: AssassinationResult | IntelResult;
   if (attacker.spy === 0) {
     return { status: 'failed', message: 'Insufficient Spy Offense' };
   }
   const Winner = attacker.spy > defender.sentry ? attacker : defender;
- 
+  let spyLevel = 1;
   if (type === 'INTEL') {
     spyResults = simulateIntel(attacker, defender, spies);
-  } else if (type === 'ASSASSINATION') {
-    spyResults = simulateAssassination();
+    
+  } else if (type === 'ASSASSINATE') {
+    spyResults = simulateAssassination(attacker, defender, spies, unit);
+
+    spyLevel = 2;
+    console.log(defender.unitTotals);
+    console.log(defender.units);
+    console.log(defenderId);
+    await prisma.users.update({
+      where: { id: defenderId },
+      data: {
+        units: defender.units,
+      },
+    });
+    console.log('done update');
+    console.log(defender.unitTotals);
+    //return spyResults;
   } else {
     spyResults = simulateInfiltration();
   }
+
+  /*if (spyResults.spiesLost > 0) {
+    attacker.units.find((u) => u.type === 'SPY' && u.level === spyLevel).quantity -= spyResults.spiesLost;
+  }*/
+  
+
   //AttackPlayer.spies -= spies;
   //AttackPlayer.experience += spyResults.experienceResult.Experience.Attacker;
   //AttackPlayer.gold += spyResults.goldStolen;
@@ -516,8 +620,8 @@ export async function attackHandler(
   }
 
   const startOfAttack = {
-    Attacker: JSON.parse(JSON.stringify(AttackPlayer)),
-    Defender: JSON.parse(JSON.stringify(DefensePlayer)),
+    Attacker: JSON.parse(JSON.stringify(stringifyObj(AttackPlayer))),
+    Defender: JSON.parse(JSON.stringify(stringifyObj(DefensePlayer))),
   };
 
   let GoldPerTurn = 0.8 / 10;
@@ -653,3 +757,4 @@ export async function attackHandler(
     },
   };
 }
+

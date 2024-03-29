@@ -50,9 +50,9 @@ class UserModel {
 
   public experience: number;
 
-  public gold: number;
+  public gold: BigInt;
 
-  public goldInBank: number;
+  public goldInBank: BigInt;
 
   public fortLevel: number;
 
@@ -104,8 +104,8 @@ class UserModel {
     this.race = 'ELF';
     this.class = 'ASSASSIN';
     this.experience = 0;
-    this.gold = 0;
-    this.goldInBank = 0;
+    this.gold = BigInt(0);
+    this.goldInBank = BigInt(0);
 
     this.fortLevel = 0;
     this.fortHitpoints = 0;
@@ -371,7 +371,7 @@ class UserModel {
    * Returns the total gold per turn for the user, calculated based on the number of worker units and fortification level.
    * @returns The total gold per turn for the user.
    */
-  get goldPerTurn(): number {
+  get goldPerTurn(): BigInt {
     const workerUnits = this.units.filter((units) => units.type === 'WORKER');
     const workerGoldPerTurn = workerUnits
       .map(
@@ -384,7 +384,7 @@ class UserModel {
 
     const fortificationGoldPerTurn =
       Fortifications[this.fortLevel - 1]?.goldPerTurn;
-    return workerGoldPerTurn + fortificationGoldPerTurn + (this.incomeBonus / 100 * (workerGoldPerTurn + fortificationGoldPerTurn));
+    return BigInt(Math.ceil(workerGoldPerTurn + fortificationGoldPerTurn + (this.incomeBonus / 100 * (workerGoldPerTurn + fortificationGoldPerTurn))));
   }
 
   /**

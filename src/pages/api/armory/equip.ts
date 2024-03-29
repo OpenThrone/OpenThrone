@@ -72,7 +72,7 @@ export default async function handler(
         return {
           ...userItem, // Spread the rest of the properties
           quantity:
-            userItem.quantity +
+            (typeof userItem.quantity === 'string' ? parseInt(userItem.quantity, 10) : userItem.quantity) +
             (typeof itemToEquip.quantity === 'string'
               ? parseInt(itemToEquip.quantity, 10)
               : itemToEquip.quantity), // Update the quantity
@@ -105,7 +105,7 @@ export default async function handler(
     await prisma.users.update({
       where: { id: userId },
       data: {
-        gold: user.gold - totalCost,
+        gold: BigInt(user.gold) - BigInt(totalCost),
         items: updatedItems,
       },
     });

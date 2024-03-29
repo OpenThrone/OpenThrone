@@ -22,8 +22,8 @@ model users {
   class              String
   units              Json?     @default("[{\"type\": \"CITIZEN\", \"level\": 1, \"quantity\": 50}, {\"type\": \"WORKER\", \"level\": 1, \"quantity\": 0}, {\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}]")
   experience         Int       @default(0)
-  gold               Int       @default(25000)
-  gold_in_bank       Int       @default(0)
+  gold               BigInt       @default(25000)
+  gold_in_bank       BigInt       @default(0)
   fort_level         Int       @default(1)
   fort_hitpoints     Int       @default(100)
   attack_turns       Int       @default(10)
@@ -77,7 +77,7 @@ model attack_log {
 
 model bank_history {
   id                     Int       @id @default(autoincrement())
-  gold_amount            Int
+  gold_amount            BigInt
   from_user_id           Int
   from_user_account_type String
   to_user_id             Int

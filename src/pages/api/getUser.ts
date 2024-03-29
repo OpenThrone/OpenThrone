@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 
 import { authOptions } from './auth/[...nextauth]';
 import { alertService } from '@/services';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 export default async function getUser(req: NextApiRequest, res: NextApiResponse) {
   // Get the session on the server-side
@@ -38,7 +39,6 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
     if ((new Date(updated.last_active) - new Date(user.last_active)) > 1000 * 30) {      
       // Calculate the timestamp of user.last_active
       const userLastActiveTimestamp = new Date(user.last_active);
-
       // Check if there was an attack since user.last_active
       const attacks = await prisma.attack_log.findMany({
         where: {
@@ -88,7 +88,7 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
     user.won_defends = wonDefends;
     user.totalAttacks = totalAttacks;
     user.totalDefends = totalDefends;
-    res.status(200).json(user);
+    res.status(200).json(stringifyObj(user));
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: 'Internal server error' });

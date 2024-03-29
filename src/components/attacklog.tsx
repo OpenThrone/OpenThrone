@@ -3,6 +3,12 @@ import type { UnitType } from '@/types/typings';
 import { formatDate, getUnitName } from '@/utils/utilities';
 import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useState } from 'react';
+import Modal from './modal';
+import { alertService } from '@/services';
+import router from 'next/router';
+import { useUser } from '@/context/users';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 interface Loss {
   [key: string]: number;
@@ -115,14 +121,14 @@ const renderOutcome = (log: Log, type: string) => {
 
 const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => (
   <>
-    <td className="border-b px-4 py-2 text-center">
+    <td className="border-b px-1 py-2 text-center">
       {renderOutcome(log, type)}
       <br />
     </td>
     <td className="border-b px-4 py-2">
       {type === 'defense'
-        ? log.attackerPlayer?.display_name ?? 'Unknown'
-        : log.defenderPlayer?.display_name ?? 'Unknown'}
+        ? <a href={`/userprofile/${log.attackerPlayer?.id}`} className='text-white'>{log.attackerPlayer?.display_name}</a> ?? 'Unknown'
+        : <a href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</a> ?? 'Unknown'}
       <br />
       {formatDate(log.timestamp)}
     </td>
@@ -132,21 +138,44 @@ const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => (
 const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
   const isEmpty = logs.length === 0;
   const tableHeaders =
-    type === 'defense'
-      ? [
-          'Outcome',
-          'Attack from player',
-          'Pillage and Experience',
-          'Casualties',
-        ]
-      : ['Outcome', 'Attack on player', 'Pillage and Experience', 'Casualties', 'Action'];
+    ['Outcome', 'Attack on player', 'Pillage and Experience', 'Casualties', 'Action'];
 
+
+
+  const context = useUser();
+  const [isOpen, setIsOpen] = useState(false);
+  const toggleModal = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleSubmit = async (turns: number, profileID: number) => {
+    if (!turns) turns = 1;
+    console.log(turns, profileID)
+    const res = await fetch(`/api/attack/${profileID}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(stringifyObj({ turns })),
+    });
+    const results = await res.json();
+
+    if (results.status === 'failed') {
+      alertService.error(results.status);
+    } else {
+      context.forceUpdate();
+      router.push(`/battle/results/${results.attack_log}`);
+      toggleModal();
+    }
+  };
+  
   return (
     <table className="min-w-full table-auto bg-gray-900 rounded">
       <thead>
         <tr>
           {tableHeaders.map((header) => (
-            <th key={header} className="border-b px-4 py-2">
+            //if the header key is 0 then px-1 else px-4
+            <th key={header} className={`border-b px-${header === 'Outcome' ? '1' : '4'} py-2`}>
               {header}
             </th>
           ))}
@@ -178,11 +207,27 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
                   </li>
                 </ul>
               </td>
-              {type === 'defense' ? null : (
               <td className="border-b px-4 py-2 text-center">
+                {type === 'defense' ? (
+                 <> <button
+                type="button"
+                onClick={toggleModal}
+                    className={`bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-700 `}
+              >
+                Attack Back              </button>
+              <Modal
+                isOpen={isOpen}
+                toggleModal={toggleModal}
+                      onSubmit={handleSubmit}
+                      profileID={parseInt(log.attacker_id)}
+              /></>
+                  
+                
+              ) : (
                   <a href={`/battle/results/${log.id}`} className='inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 '>View Battle</a>
+              
+                )}
               </td>
-              )}
             </tr>
           ))
         )}

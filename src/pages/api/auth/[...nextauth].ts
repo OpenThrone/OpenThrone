@@ -4,6 +4,7 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 import prisma from '@/lib/prisma';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 const argon2 = require('argon2');
 
@@ -92,7 +93,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       try {
         if (user) {
-          token.user = user;
+          token.user = stringifyObj(user);
         }
         return token;
       } catch (error) {

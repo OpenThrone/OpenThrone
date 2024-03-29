@@ -1,7 +1,7 @@
 import Alert from '@/components/alert';
 import NewsAccordion from '@/components/newsAccordion';
 import { useUser } from '@/context/users';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 import { useEffect, useState } from 'react';
 
 const Overview = () => {

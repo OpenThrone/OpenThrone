@@ -5,17 +5,21 @@ import { getSession } from 'next-auth/react';
 import { getLevelFromXP } from '@/utils/utilities';
 import AttackResult from '@/components/attackResult';
 import IntelResult from '@/components/IntelResult';
+import AssassinateResult from '@/components/AssassinateResult';
 
 const results = ({ battle, viewerID }) => {
   const { stats } = battle;
 
   console.log('stats', stats);
+  console.log(battle)
 
   return (
     <div className="mainArea pb-10">
       <h2>Battle Results</h2>
       {battle.type === 'attack' ? (
         <AttackResult battle={battle} viewerID={viewerID} />
+      ) : battle.type === 'ASSASSINATE' ? (
+        <AssassinateResult battle={battle} viewerID={viewerID} />
       ) : (
         <IntelResult battle={battle} viewerID={viewerID} />
       )}

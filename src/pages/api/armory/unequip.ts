@@ -68,7 +68,7 @@ export default async function handler(
       await prisma.users.update({
         where: { id: userId },
         data: {
-          gold: user.gold + totalRefund,
+          gold: BigInt(user.gold) + BigInt(totalRefund),
           items: updatedItems,
         },
       });

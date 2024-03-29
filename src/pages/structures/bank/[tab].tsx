@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { alertService } from '@/services';
 import { useUser } from '@/context/users';
 import Alert from '@/components/alert';
-import toLocale from '@/utils/numberFormatting';
+import toLocale, { stringifyObj } from '@/utils/numberFormatting';
 
 const Bank = () => {
   const tab = usePathname()?.split('/')[3];
@@ -45,7 +45,7 @@ const Bank = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ depositAmount }),
+        body: stringifyObj({ depositAmount }),
       });
 
       const data = await response.json();
@@ -69,7 +69,7 @@ const Bank = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ withdrawAmount }),
+        body: stringifyObj({ withdrawAmount }),
       });
 
       const data = await response.json();

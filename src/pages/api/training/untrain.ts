@@ -64,7 +64,7 @@ export default async function handler(
         where: { id: userId },
         data: {
           units: updatedUnits,
-          gold: user.gold + totalCost,
+          gold: BigInt(user.gold) + BigInt(totalCost),
         },
       });
       const updatedUser = await prisma.users.findUnique({

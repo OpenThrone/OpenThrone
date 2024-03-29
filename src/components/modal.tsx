@@ -5,15 +5,16 @@ import { useLayout } from '../context/LayoutContext';
 interface ModalProps {
   isOpen: boolean;
   toggleModal: () => void;
-  onSubmit: (turns: string) => void;
+  onSubmit: (turns: string | number, profileID?: number) => void;
+  profileID?: number;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, onSubmit }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, onSubmit, profileID }) => {
   const [turns, setTurns] = useState('');
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSubmit(turns);
+    onSubmit(turns, profileID);
   };
 
   const { raceClasses } = useLayout();

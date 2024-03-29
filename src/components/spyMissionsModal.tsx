@@ -7,6 +7,7 @@ import { alertService } from '@/services';
 
 import Alert from './alert';
 import router from 'next/router';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 interface ModalProps {
   isOpen: boolean;
@@ -45,7 +46,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, children, toggleModal }) => {
               >
                 <span className="sr-only">Close</span>
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
               </button>
             </div>
@@ -138,7 +139,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ type: 'INTEL', spies: intelSpies }),
+      body: stringifyObj({ type: 'INTEL', spies: intelSpies }),
     });
     const results = await res.json();
 
@@ -152,11 +153,36 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       `You have sent ${intelSpies} spies to gather intelligence.`
     );
   };
-  /*
-  const handleAssassination = () => {
-    console.log('assassination');
+  
+  const handleAssassination = async () => {
+    if(intelSpies > 5) {
+      alertService.error(
+        'You can only send a maximum of 5 assassins per mission.',
+        false
+      );
+      return;
+    }
+    const res = await fetch(`/api/spy/${defenderID}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: stringifyObj({ type: 'ASSASSINATE', spies: intelSpies, unit: assassinateUnit}),
+    });
+    const results = await res.json();
+
+    if (results.status === 'failed') {
+      alertService.error(results.status);
+    } else {
+      console.log('log id: ',results.attack_log)
+      router.push(`/battle/results/${results.attack_log}`);
+      toggleModal();
+    }
+    alertService.success(
+      `You have sent ${intelSpies} spies to assassinate ${assassinateUnit}.`
+    );
   };
-  const handleInfiltration = () => {
+  /*const handleInfiltration = () => {
     console.log('infiltration');
   };
   */
@@ -214,9 +240,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           className="mt-2 mb-4 w-1/2 rounded-md bg-gray-700 p-2 text-white"
           max={5}
           min={1}
+          onChange={(e) => setIntelSpies(parseInt(e.target.value, 10))}
         />{' '}
         / 5<br />
         <button
+          onClick={handleAssassination}
           type="button"
           className="w-full rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 transition-colors"
         >
