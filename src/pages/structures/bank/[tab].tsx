@@ -10,8 +10,8 @@ import toLocale, { stringifyObj } from '@/utils/numberFormatting';
 const Bank = () => {
   const tab = usePathname()?.split('/')[3];
   const { user, forceUpdate } = useUser();
-  const [depositAmount, setDepositAmount] = useState(0);
-  const [withdrawAmount, setWithdrawAmount] = useState(0);
+  const [depositAmount, setDepositAmount] = useState(BigInt(0));
+  const [withdrawAmount, setWithdrawAmount] = useState(BigInt(0));
   const [bankHistory, setBankHistory] = useState([]);
   const currentPage = tab || 'deposit';
   const [citizenUnit, setCitizenUnit] = useState(0);
@@ -45,17 +45,24 @@ const Bank = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: stringifyObj({ depositAmount }),
+        body: JSON.stringify(stringifyObj({ depositAmount })),
       });
 
       const data = await response.json();
 
       if (data.error) {
+        alertService.error(data.error);
+
         // Handle error
       } else {
         // Update the user context or fetch new data
         forceUpdate();
         alertService.success("Successfully deposited gold");
+        fetch('/api/bank/getDeposits')
+          .then((response) => response.json())
+          .then((data) => setDepositsAvailable(data))
+          .catch((error) => console.error('Error fetching bank history:', error));
+        setDepositAmount(BigInt(0));
       }
     } catch (error) {
       console.error('Error depositing:', error);
@@ -69,7 +76,7 @@ const Bank = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: stringifyObj({ withdrawAmount }),
+        body: JSON.stringify(stringifyObj({ withdrawAmount })),
       });
 
       const data = await response.json();
@@ -80,6 +87,7 @@ const Bank = () => {
         // Update the user context or fetch new data
         forceUpdate();
         alertService.success("Successfully withdrew gold");
+        setWithdrawAmount(BigInt(0));
       }
     } catch (error) {
       console.error('Error withdrawing:', error);
@@ -156,8 +164,8 @@ const Bank = () => {
                 id="depositAmount"
                 className="w-full border p-2 bg-black"
                 min="0"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(parseFloat(e.target.value))}
+                value={depositAmount.toString()}
+                onChange={(e) => setDepositAmount(BigInt(e.target.value))}
               />
             </div>
             <div>
@@ -186,8 +194,8 @@ const Bank = () => {
                 id="withdrawAmount"
                 className="w-full border p-2 bg-black"
                 min="0"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(parseFloat(e.target.value))}
+                value={withdrawAmount.toString()}
+                onChange={(e) => setWithdrawAmount(BigInt(e.target.value))}
               />
             </div>
             <div>

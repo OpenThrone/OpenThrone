@@ -40,7 +40,7 @@ export default async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - Fortifications[index].cost,
+            gold: userMod.gold - BigInt(Fortifications[index].cost),
             fort_level: index + 1,
           },
         });
@@ -55,7 +55,7 @@ export default async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - HouseUpgrades[index].cost,
+            gold: userMod.gold - BigInt(HouseUpgrades[index].cost),
             house_level: index,
           },
         });
@@ -71,7 +71,7 @@ export default async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - EconomyUpgrades[index].cost,
+            gold: userMod.gold - BigInt(EconomyUpgrades[index].cost),
             economy_level: index,
           },
         });
@@ -87,7 +87,7 @@ export default async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - OffenseiveUpgrades[index].cost,
+            gold: userMod.gold - BigInt(OffenseiveUpgrades[index].cost),
             structure_upgrades: structure_upgrades('OFFENSE'),
           },
         });
@@ -105,7 +105,7 @@ export default async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - ArmoryUpgrades[index].cost,
+            gold: userMod.gold - BigInt(ArmoryUpgrades[index].cost),
             structure_upgrades: structure_upgrades('ARMORY'),
           },
         });
@@ -123,7 +123,7 @@ export default async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - SpyUpgrades[index].cost,
+            gold: userMod.gold - BigInt(SpyUpgrades[index].cost),
             structure_upgrades: structure_upgrades('SPY'),
           },
         });

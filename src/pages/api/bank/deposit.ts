@@ -17,7 +17,7 @@ export default async function depositHandler(req: NextApiRequest, res: NextApiRe
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const depositAmount = parseInt(req.body.depositAmount);
+  const depositAmount = BigInt(req.body.depositAmount);
 
   // Fetch the user based on the session's user ID
   const user = await prisma.users.findUnique({
@@ -58,7 +58,7 @@ export default async function depositHandler(req: NextApiRequest, res: NextApiRe
     return res.status(401).json({ error: `You can only deposit ${userMod.maximumBankDeposits} times per day` });
   }
 
-  if (depositAmount > userMod.gold) {
+  if (depositAmount > BigInt(userMod.gold.toString())) {
     return res.status(401).json({ error: `Not enough gold for deposit` });
   }
 

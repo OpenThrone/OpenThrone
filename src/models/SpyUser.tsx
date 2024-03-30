@@ -6,7 +6,7 @@ export class SpyUserModel {
   items: Item[] | null;
   fort_level: number | null;
   fort_hitpoints: number | null;
-  goldInBank: number | null;
+  goldInBank: bigint | null;
 
   constructor(defender: UserModel, intelPercentage: number) {
     // Explicitly set each property based on the defender's properties
@@ -24,7 +24,7 @@ export class SpyUserModel {
       ? Math.ceil(defender.fortHitpoints * intelPercentage / 100)
       : 0;
     this.goldInBank = defender.goldInBank
-      ? Math.ceil(defender.goldInBank * intelPercentage / 100)
+      ? (defender.goldInBank * BigInt(intelPercentage)) / BigInt(100)
       : 0;
   }
 }

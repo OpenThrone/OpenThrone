@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next';
 
 import { authOptions } from '../auth/[...nextauth]';
 import { NextApiRequest, NextApiResponse } from 'next';
+import user from '@/pages/messaging/compose/[user]';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 const prisma = new PrismaClient();
 
@@ -16,16 +18,16 @@ export default async function withdraw(req: NextApiRequest, res: NextApiResponse
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const withdrawAmount = parseInt(req.body.withdrawAmount.toString());
+  const withdrawAmount = BigInt(req.body.withdrawAmount.toString());
 
   // Fetch the user based on the session's user ID
-  const user: { id: number; gold: number; gold_in_bank?: number } | null = await prisma.users.findUnique({
+  const user: { id: number; gold: bigint; gold_in_bank?: bigint } | null = await prisma.users.findUnique({
     where: {
       id: Number(session.user.id),
     },
   });
   if (withdrawAmount > user?.gold_in_bank) {
-    return res.status(401).json({ error: `Not enough gold for deposit` });
+    return res.status(401).json(stringifyObj({ error: `Not enough gold for withdraw`, withdrawAmount: withdrawAmount, gold_in_bank: user?.gold_in_bank, difference: (withdrawAmount - user?.gold_in_bank) }));
   }
 
   await prisma.users.update({

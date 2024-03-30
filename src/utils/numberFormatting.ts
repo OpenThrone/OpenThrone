@@ -27,20 +27,25 @@ export const toLocale = (num: number | string | bigint, locale?: Locales) => {
 };
 
 const convertToHumanReadable = (num: bigint, locale?: Locales) => {
-  console.log('convertToHuman: ', num)
-  const billion = 1000000000n;
-  const trillion = 1000000000000n;
+  const names = [
+    { value: 1e9, name: "Billion" },
+    { value: 1e12, name: "Trillion" },
+    { value: 1e15, name: "Quadrillion" },
+    { value: 1e18, name: "Quintillion" },
+    { value: 1e21, name: "Sextillion" },
+    { value: 1e24, name: "Septillion" },
+    { value: 1e27, name: "Octillion" },
+  ];
 
-  if (num < billion) {
-    // Convert BigInt to Number for toLocaleString() because it's safe here
-    return Number(num).toLocaleString(locale || undefined);
-  } else if (num >= billion && num < trillion) {
-    const result = (Number(num) / 1e9).toLocaleString(locale || undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-    return `${result} Billion`;
-  } else {
-    const result = (Number(num) / 1e12).toLocaleString(locale || undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-    return `${result} Trillion`;
+  for (let i = names.length - 1; i >= 0; i--) {
+    const { value, name } = names[i];
+    if (num >= BigInt(value)) {
+      const result = Number(num / BigInt(value)).toLocaleString(locale || undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+      return `${result} ${name}`;
+    }
   }
+  // Fallback for numbers less than 1 million
+  return Number(num).toLocaleString(locale || undefined);
 };
 
 export const stringifyObj = (obj) => {
