@@ -41,7 +41,7 @@ const IntelResult = ({ battle, viewerID }) => {
 
   summaryLines.push(`${isViewerAttacker ? 'You were' : attackerPlayer.display_name + ' was'} ${isAttackerWinner ? 'successful' : 'unsuccessful.'}`);
   if (isAttackerWinner) {
-    if (stats.spyResults.intelligenceGathered.units.length > 0) {
+    if (stats.spyResults.intelligenceGathered.units && stats.spyResults.intelligenceGathered.units.length > 0) {
       summaryLines.push('Units Found');
       stats.spyResults.intelligenceGathered.units.forEach(unit => {
 
@@ -49,7 +49,7 @@ const IntelResult = ({ battle, viewerID }) => {
         summaryLines.push(`${unit.quantity}x Level ${unit.level} ${uType} Units found`);
       });
     }
-    if(stats.spyResults.intelligenceGathered.items.length > 0) {
+    if (stats.spyResults.intelligenceGathered.items && stats.spyResults.intelligenceGathered.items.length > 0) {
       summaryLines.push('Items Found');
       stats.spyResults.intelligenceGathered.items.forEach(item => {
         const iName = ItemTypes.find(i => i.usage === item.usage && i.level === item.level && i.type === item.type).name;
