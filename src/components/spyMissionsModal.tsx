@@ -139,7 +139,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       headers: {
         'Content-Type': 'application/json',
       },
-      body: stringifyObj({ type: 'INTEL', spies: intelSpies }),
+      body: JSON.stringify({ type: 'INTEL', spies: intelSpies }),
     });
     const results = await res.json();
 
@@ -167,7 +167,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       headers: {
         'Content-Type': 'application/json',
       },
-      body: stringifyObj({ type: 'ASSASSINATE', spies: intelSpies, unit: assassinateUnit}),
+      body: JSON.stringify({ type: 'ASSASSINATE', spies: intelSpies, unit: assassinateUnit}),
     });
     const results = await res.json();
 

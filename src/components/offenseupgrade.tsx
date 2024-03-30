@@ -66,7 +66,7 @@ const OffenseUpgrade: React.FC<BattleUpgradeProps> = ({
                       Buy
                     </button>
                   ) : (
-                    item.fortLevelRequirement >= fortLevel && (
+                    item.fortLevelRequirement > fortLevel && (
                       <span>
                         Unlock with: <br />
                         {
