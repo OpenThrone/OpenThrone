@@ -50,9 +50,9 @@ class UserModel {
 
   public experience: number;
 
-  public gold: BigInt;
+  public gold: bigint;
 
-  public goldInBank: BigInt;
+  public goldInBank: bigint;
 
   public fortLevel: number;
 
