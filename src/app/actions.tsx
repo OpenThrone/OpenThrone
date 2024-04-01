@@ -624,7 +624,7 @@ export async function attackHandler(
     Defender: JSON.parse(JSON.stringify(stringifyObj(DefensePlayer))),
   };
 
-  let GoldPerTurn = 0.8 / 10;
+  let GoldPerTurn = Number(0.8 / 10);
 
   const levelDifference = DefensePlayer.level - AttackPlayer.level;
   switch (levelDifference) {
@@ -660,11 +660,10 @@ export async function attackHandler(
   }
   const isAttackerWinner = battleResults.experienceResult.Result === 'Win';
   
-  const pillagedGold = Math.floor(Math.min(
-    GoldPerTurn * DefensePlayer.gold * attack_turns,
-    DefensePlayer.gold
-    )
-  );
+  const pillagedGold = ((BigInt(GoldPerTurn * 10000)) * BigInt(DefensePlayer.gold.toString())/ BigInt(10000)) * BigInt(attack_turns) < BigInt(DefensePlayer.gold.toString())
+    ? ((BigInt(GoldPerTurn * 10000)) * BigInt(DefensePlayer.gold.toString()) / BigInt(10000)) * BigInt(attack_turns)
+    : BigInt(DefensePlayer.gold.toString());
+  
   const BaseXP = 1000;
   const LevelDifference = DefensePlayer.level - AttackPlayer.level;
   const LevelDifferenceBonus =
@@ -678,8 +677,9 @@ export async function attackHandler(
 
   AttackPlayer.experience += XP;
   if (isAttackerWinner) {
-    DefensePlayer.gold -= pillagedGold;
-    AttackPlayer.gold += pillagedGold;
+    console.log(typeof DefensePlayer.gold, typeof pillagedGold, typeof AttackPlayer.gold);
+    DefensePlayer.gold = BigInt(DefensePlayer.gold) - pillagedGold;
+    AttackPlayer.gold = BigInt(AttackPlayer.gold) + pillagedGold;
 
     await prisma.bank_history.create({
       data: {
@@ -693,6 +693,7 @@ export async function attackHandler(
       },
     });
   }
+  console.log('start before attack_log');
   const attack_log = await prisma.attack_log.create({
     data: {
       attacker_id: attackerId,
@@ -705,7 +706,7 @@ export async function attackHandler(
         endTurns: AttackPlayer.attackTurns,
         offensePointsAtEnd: AttackPlayer.offense,
         defensePointsAtEnd: DefensePlayer.defense,
-        pillagedGold: isAttackerWinner ? pillagedGold : 0,
+        pillagedGold: isAttackerWinner ? pillagedGold : BigInt(0),
         // fortDamage: calculatedFortDmg,
         forthpAtStart: startOfAttack.Defender.fortHitpoints,
         forthpAtEnd: Math.max(DefensePlayer.fortHitpoints, 0),
@@ -743,7 +744,7 @@ export async function attackHandler(
     //attacker: AttackPlayer,
     //defender: DefensePlayer,
     attack_log: attack_log.id,
-    extra_variables: {
+    extra_variables: stringifyObj({
       pillagedGold,
       XP,
       GoldPerTurn,
@@ -754,7 +755,7 @@ export async function attackHandler(
       // 'offenseToDefenseRatio': scaledOffenseToDefenseRatio,
       // 'DmgPerTurn': DmgPerTurn,
       BattleResults: battleResults,
-    },
+    }),
   };
 }
 

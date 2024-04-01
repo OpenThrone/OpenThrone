@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 
 import { attackHandler, spyHandler } from '@/app/actions';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
@@ -64,12 +65,12 @@ export default async function handler(req, res) {
         return res
           .status(200)
           .json(
-            await spyHandler(
+            stringifyObj(await spyHandler(
               parseInt(session.user.id.toString()),
               parseInt(req.query.id),
               parseInt(req.body.spies),
               req.body.type
-            )
+            ))
           );
       case 'ASSASSINATE':
         if (checkParams(req.body, 5) === false) {

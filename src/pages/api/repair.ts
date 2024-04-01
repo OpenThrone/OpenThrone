@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { Fortifications } from '@/constants';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth/[...nextauth]';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Ensure the request is of type POST
@@ -40,13 +41,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await prisma.users.update({
       where: { id: userId },
       data: {
-        gold: user.gold - totalCost,
+        gold: user.gold - BigInt(totalCost),
         fort_hitpoints: newFortHitpoints,
       },
     });
 
     // Return success response with new gold and fort hitpoints values
-    return res.status(200).json({ success: true, newGold: user.gold - totalCost, newFortHitpoints });
+    return res.status(200).json(stringifyObj({ success: true, newGold: user.gold - BigInt(totalCost), newFortHitpoints }));
   } catch (error) {
     console.error('Error repairing fortification:', error, userId);
     return res.status(500).json({ error: 'Internal Server Error' });
