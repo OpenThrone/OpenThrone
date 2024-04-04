@@ -3,11 +3,9 @@ import { getSession } from 'next-auth/react';
 import { useState } from 'react';
 import prisma from '@/lib/prisma';
 import ComposeModal from '@/components/composemodal';
+import ComposeForm from '@/components/compose-form';
 
 const handleReply = async (message) => {
-  // Redirect to a composition page or open a modal
-  // Prepopulate with "Re: [Original Subject]" and original sender as recipient
-  // On submission, POST to /api/messages/reply with necessary data
   const replySubject = `Re: ${message.subject}`;
   const replyBody = ''; // This can be from a textarea or input
   const response = await fetch('/api/messages/reply', {
@@ -61,15 +59,14 @@ const Inbox = ({ messages, session }) => {
   return (
     <div className="mx-auto w-full py-2">
       <h1 className="mb-4 text-2xl font-bold">Inbox</h1>
-      <div>
-        <button type="button" onClick={() => setComposeModalOpen(true)}>
+      
+      <div className="mt-4 bg-gray-700 p-4 rounded-lg">
+        {!composeModalOpen ? (
+          <>
+            <button type="button" onClick={() => setComposeModalOpen(true)} className='rounded bg-gray-700 px-4 py-2 font-bold text-white hover:bg-blue-700'>
           Compose
         </button>
-        {composeModalOpen && (
-          <ComposeModal onClose={() => setComposeModalOpen(false)} />
-        )}
-
-        <table className="w-full">
+        <table className="w-full table-auto bg-gray-900 text-white my-2">
           <thead>
             <tr>
               <th>From</th>
@@ -100,7 +97,11 @@ const Inbox = ({ messages, session }) => {
             </tr>
           ))}
             </tbody>
-        </table>
+            </table>
+            </>
+        ) : (
+            <ComposeForm  onClose={()=>setComposeModalOpen(false)}/>
+        )}
       </div>
     </div>
   );

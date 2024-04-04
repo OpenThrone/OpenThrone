@@ -89,7 +89,7 @@ a:hover {
 }
 
 h1 {
-  font-family: 'Book Antiqua', Serif;
+  font-family: 'Book Antiqua', Serif !important;
   font-size: 500%;
 }
 .title {
@@ -192,7 +192,7 @@ h1 {
 }
 
 body{
-    font-family: 'Book Antiqua', Serif
+    font-family: 'Book Antiqua', Serif !important
 }
 .wrapper {
   min-height: 100vh-50px;
