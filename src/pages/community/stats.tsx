@@ -28,18 +28,19 @@ export const getServerSideProps = async (context: any) => {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const recruitmentCounts = await prisma.recruit_history.groupBy({
-      by: ['from_user'],
+      by: ['to_user'],
       _count: {
-        from_user: true,
+        to_user: true,
       },
       where: {
         timestamp: {
           gte: sevenDaysAgo,
         },
+        from_user:{not: 0}
       },
       orderBy: {
         _count: {
-          from_user: 'desc',
+          to_user: 'desc',
         },
       },
       take: 10,
@@ -53,10 +54,10 @@ export const getServerSideProps = async (context: any) => {
 
     // Map recruitmentCounts to include user data
     const recruitsWithUser = await Promise.all(recruitmentCounts.map(async (recruit) => {
-      if(recruit.from_user === 0) return null;
+      if(recruit.to_user === 0) return null;
       const user = await prisma.users.findUnique({
         where: {
-          id: recruit.from_user,
+          id: recruit.to_user,
         },
         select: {
           display_name: true,
@@ -65,7 +66,7 @@ export const getServerSideProps = async (context: any) => {
 
       return {
         display_name: user ? user.display_name : 'Unknown',
-        stat: recruit._count.from_user,
+        stat: recruit._count.to_user,
       };
     }));
 

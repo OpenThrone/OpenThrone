@@ -35,16 +35,22 @@ export default async function handler(
       .json({ error: 'No users available for recruitment.' });
   }
 
-  const userPromises = users.map(async (user: any) => {
+  //todo: 
+  /* I think this needs to be updated logically.
+   * When a logged in player(me) recruits another player, I get the new citizen so the to_user should be me. 
+   * When a nonplayer recruits me, I get the new citizen so the to_user is me and from_user = 0. 
+   * We should be returning all the people who haven't sent to me over the maximum limit (25)  
+  */const userPromises = users.map(async (user: any) => {
     const totalRecruitments = await prisma.recruit_history.count({
       where: {
+        from_user: {not: 0},
         to_user: user.id,
         timestamp: {
           gte: twentyFourHoursAgo,
         },
       },
     });
-    if (totalRecruitments >= 25) return null; // Skip user if recruited more than 25 times
+    if (totalRecruitments >= 40) return null; // Skip user if recruited more than 25 times
 
     const recruitmentsCountByRecruiter = await prisma.recruit_history.groupBy({
       by: ['from_user'],
