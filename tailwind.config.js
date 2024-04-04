@@ -63,14 +63,15 @@ module.exports = {
       '5xl': '3rem',
       '6xl': '4rem',
     },
+    
     extend: {
       fontFamily: {
         medieval: ['MedievalSharp', 'cursive'],
       },
       colors: {
         elf: generateRaceColors(
-          'rgb(13, 97, 46)', // navActive
-          'rgb(13, 97, 46)', // navHover
+          'rgb(236,155,0)', // navActive
+          'rgb(236,155,0)', // navHover
           '#0B2012', // bg
           'rgb(10,61,31)', // menuPrimary
           'rgb(13,97,46)', // menuSecondary
