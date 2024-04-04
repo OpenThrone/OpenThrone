@@ -1,17 +1,21 @@
+import { alertService } from '@/services';
 import { ComposeFormProps } from '@/types/typings';
 import React, { useState } from 'react';
 
 export default function ComposeForm({ onClose }: ComposeFormProps) {
-  const [recipient, setRecipient] = useState('');
+  const [recipients, setRecipients] = useState([]);
+  const [recipient, setRecipient] = useState(''); 
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
 
   const [possibleMatches, setPossibleMatches] = useState([]);
   const [possibleRecipients, setPossibleRecipients] = useState([]);
   const [recipientValid, setRecipientValid] = useState<boolean>(false); // null: not checked, true: valid, false: invalid
-
+  const handleInputChange = (e) => {
+    setRecipient(e.target.value);
+  };
   const handleRecipientChange = async (value: string) => {
-  setRecipient(value);
+  //setRecipient(value);
 
   // Fetch possible matches from the API
   const res = await fetch('/api/checkDisplayName', {
@@ -28,13 +32,28 @@ export default function ComposeForm({ onClose }: ComposeFormProps) {
     name.toLowerCase().includes(value.toLowerCase())
   );
   setPossibleMatches(matches);
-
   if (matches.includes(value)) {
     setRecipientValid(true);
+    addRecipient(value)
   } else {
     setRecipientValid(false);
   }
-};
+  };
+  
+  const addRecipient = (recipientName) => {
+    if (!recipients.includes(recipientName)) {
+      setRecipients((currentRecipients) => [...currentRecipients, recipientName]);
+      setRecipient(''); // Clear the input box after adding
+      setRecipientValid(null); // Reset the validation state
+      setPossibleMatches([]); // Clear the possible matches
+    }
+  };
+
+  const removeRecipient = (recipientToRemove) => {
+    setRecipients((currentRecipients) =>
+      currentRecipients.filter((recipient) => recipient !== recipientToRemove)
+    );
+  };
 
   const handleSubmit = async () => {
     const response = await fetch('/api/messages/send', {
@@ -44,41 +63,44 @@ export default function ComposeForm({ onClose }: ComposeFormProps) {
     });
 
     const data = await response.json();
+    console.log('data', data)
     if (data.success) {
       onClose();
       // Optionally, you can provide a success message or refresh the inbox.
     } else {
-      // Handle the error.
+      // Handle the error
     }
   };
 
   return (
     <>
-      
-        <div
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', padding: '5px', border: '2px solid #333', borderRadius: '5px' }}>
+        {recipients.map((recipient) => (
+          <span key={recipient} style={{ display: 'flex', alignItems: 'center', background: '#555', color: 'white', padding: '5px', borderRadius: '999px' }}>
+            {recipient}
+            <button onClick={() => removeRecipient(recipient)} style={{ marginLeft: '5px', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}>
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          className='bg-black text-white border-2 border-gray rounded-md p-2 w-full focus:outline-none focus:border-blue-500'
+          list="recipients"
+          value={recipient}
+          onChange={handleInputChange}
+          onKeyDown={(e) => (e.key === ' ' ? handleRecipientChange(recipient) : null)} // Add recipient on Enter key press
+          placeholder="Add recipient..."
           style={{
+            flex: '1', padding: '5px',
             width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
+            borderColor:
+              recipientValid === true
+                ? 'green'
+                : recipientValid === false
+                  ? 'red'
+                  : 'initial',
           }}
-        >
-          <input
-            list="recipients"
-            value={recipient}
-            onChange={(e) => handleRecipientChange(e.target.value)}
-          placeholder="Recipient"
-          className='bg-black text-white border-2 border-black rounded-md p-2 w-full focus:outline-none focus:border-blue-500'
-            style={{
-              width: '100%',
-              borderColor:
-                recipientValid === true
-                  ? 'green'
-                  : recipientValid === false
-                    ? 'red'
-                    : 'initial',
-            }}
-          />
+        />
           <datalist id="recipients">
             {possibleMatches.map((name) => (
               <option key={name} value={name} />
