@@ -70,7 +70,7 @@ const Users = ({ players, session, userPage }) => {
                     </Link>
                   </td>
                   <td className="px-4 py-2">{formattedGolds[index]}</td>
-                  <td className="px-4 py-2">{player.population}</td>
+                  <td className="px-4 py-2">{toLocale(player.population)}</td>
                   <td className="px-4 py-2">{player.level}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center justify-center">
