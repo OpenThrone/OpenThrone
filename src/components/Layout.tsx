@@ -21,7 +21,7 @@ const Layout = (props: IMainProps) => {
   const [authorized, setAuthorized] = useState(status === 'authenticated');
   const layoutCont = useLayout();
   const pathName = usePathname();
-  const [gitInfo, setGitInfo] = useState({ latestCommit: '', pendingChanges: '' });
+  const [gitInfo, setGitInfo] = useState({ latestCommit: '', pendingChanges: '', latestCommitMessage: '' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -102,11 +102,12 @@ const Layout = (props: IMainProps) => {
           </main>
         </div>
       </div>
-      <footer className="shrink-0 border-t border-gray-300 bg-black py-8 text-center text-sm text-yellow-500">
+      <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-yellow-500">
         © Copyright {new Date().getFullYear()} {AppConfig.title}.
         <br />
         <div className="text-xs">
           <p><strong>Latest Commit:</strong> {gitInfo.latestCommit}</p>
+          <p><strong>Latest Commit Message:</strong> {gitInfo.latestCommitMessage}</p>
           <p><strong>Pending Changes:</strong> {gitInfo.pendingChanges}</p>
         </div>
       </footer>
