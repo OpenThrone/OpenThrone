@@ -39,6 +39,7 @@ model users {
   colorScheme        String?
   recruit_link       String    @unique @default("")
   locale             String
+  avatar             String?   @default("SHIELD")
 
   // Relations
   sentMessages         messages[]             @relation("from_user")
