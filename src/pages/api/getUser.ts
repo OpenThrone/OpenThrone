@@ -35,8 +35,8 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
         data: { last_active: new Date() },
       });
     };
-    const updated = await updateLastActive(user.id);
-    if ((new Date(updated.last_active) - new Date(user.last_active)) > 1000 * 30) {      
+    if ((new Date() - new Date(user.last_active)) > 1000 * 30) {
+      const updated = await updateLastActive(user.id);
       // Calculate the timestamp of user.last_active
       const userLastActiveTimestamp = new Date(user.last_active);
       // Check if there was an attack since user.last_active
