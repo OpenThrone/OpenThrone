@@ -105,7 +105,7 @@ const Index: React.FC<IndexProps> = ({ users }) => {
                 />
               ) : (
                 <img
-                  src={`/assets/shields/${profile?.race}_150x150.webp`}
+                  src={profile?.avatar}
                   className="ml-2"
                 />
               )}
