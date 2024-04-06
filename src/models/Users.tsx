@@ -96,6 +96,8 @@ class UserModel {
 
   public locale: Locales; 
 
+  public avatar: string;
+
   constructor(userData: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
@@ -128,6 +130,7 @@ class UserModel {
     this.beenAttacked = false;
     this.structure_upgrades = [];
     this.locale = 'en-US';
+    this.avatar = '';
     if (userData) {
       this.id = userData.id;
       this.displayName = userData.display_name;
@@ -137,7 +140,11 @@ class UserModel {
         this.goldInBank = userData.gold_in_bank;
       }
       this.economyLevel = userData.economy_level;
+      const nowdate = new Date();
+      const lastActiveTimestamp = new Date(userData.last_active).getTime();
+      const nowTimestamp = nowdate.getTime();
 
+      this.is_online = (nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15;
       this.attackTurns = userData.attack_turns;
       this.race = userData.race;
       this.class = userData.class;
@@ -162,6 +169,11 @@ class UserModel {
       this.defends_won = userData.won_defends;
       this.structure_upgrades = userData.structure_upgrades;
       this.locale = userData.locale;
+      if(userData.avatar !== 'SHIELD') {
+        this.avatar = userData.avatar;
+      } else {
+        this.avatar = `/assets/shields/${this.race}_150x150.webp`
+      }
     }
   }
 
