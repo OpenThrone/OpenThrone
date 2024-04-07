@@ -2,6 +2,7 @@ import { EconomyUpgrades, Fortifications } from '@/constants';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import toLocale from '@/utils/numberFormatting';
+import { Badge } from '@mantine/core';
 
 const EconomyTab: React.FC<BattleUpgradeProps> = ({
   userLevel,
@@ -11,37 +12,39 @@ const EconomyTab: React.FC<BattleUpgradeProps> = ({
   console.log('Economy: ', userLevel);
   console.log('Fort: ', fortLevel);
   return (
-    <table className="w-full table-auto">
-      <thead className="text-left">
+    <table className="w-full table-auto bg-gray-800 text-white">
+      <thead className="bg-gray-900 text-left">
         <tr>
-          <th className="w-46 px-2">Name</th>
-          <th className="w-20 px-2">Fort Req.</th>
-          <th className="w-20 px-2">Gold per Worker</th>
-          <th className="w-20 px-2">Deposits per Day</th>
-          <th>Gold Transfer</th>
-          <th>Cost</th>
-          <th>Action</th>
+          <th className="px-4 py-2">Name</th>
+          <th className="px-4 py-2">Fort Req.</th>
+          <th className="px-4 py-2">Gold per Worker</th>
+          <th className="px-4 py-2">Deposits per Day</th>
+          <th className="px-4 py-2">Gold Transfer</th>
+          <th className="px-4 py-2">Cost</th>
+          <th className="px-4 py-2">Action</th>
         </tr>
       </thead>
       <tbody>
         {Object.values(EconomyUpgrades)
           .filter((item) => item.index <= userLevel + 2)
           .map((item, index) => (
-            <tr key={`${item.index}_${item.name}`}>
-              <td className="border px-2 py-1">
-                {item.name} {index === userLevel && '(Current Upgrade)'}
+            <tr key={`${item.index}_${item.name}`} className='text-md odd:bg-table-odd even:bg-table-even'>
+              <td className="px-2 py-1">
+                {item.name} {index === userLevel && (
+                  <Badge color="blue" ml={5}>Owned</Badge>
+                )}
               </td>
-              <td className="border px-2 py-1">
+              <td className="px-2 py-1">
                 {Fortifications.find((fort) => fort.level === item.fortLevel)
                   ?.name || 'Manor'}
               </td>
-              <td className="border px-2 py-1">{item.goldPerWorker}</td>
-              <td className="border px-2 py-1">{item.depositsPerDay}</td>
-              <td className="border px-2 py-1">
+              <td className="px-2 py-1">{item.goldPerWorker}</td>
+              <td className="px-2 py-1">{item.depositsPerDay}</td>
+              <td className="px-2 py-1">
                 {toLocale(item.goldTransferTx)}/{toLocale(item.goldTransferRec)}
               </td>
-              <td className="border px-2 py-1">{toLocale(item.cost)}</td>
-              <td className="border px-2 py-1">
+              <td className="px-2 py-1">{toLocale(item.cost)}</td>
+              <td className="px-2 py-1">
                 {item.index === userLevel + 1 &&
                   item.fortLevel <= fortLevel && (
                     <button

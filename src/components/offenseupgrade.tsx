@@ -5,6 +5,7 @@ import { useUser } from '@/context/users';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import toLocale from '@/utils/numberFormatting';
+import { Badge } from '@mantine/core';
 
 const OffenseUpgrade: React.FC<BattleUpgradeProps> = ({
   userLevel,
@@ -21,14 +22,14 @@ const OffenseUpgrade: React.FC<BattleUpgradeProps> = ({
   const { user } = useUser();
 
   return (
-    <table className="w-full table-fixed">
-      <thead className="text-left">
+    <table className="w-full table-auto bg-gray-900 text-white">
+      <thead className="bg-gray-900 text-left">
         <tr>
-          <th className="w-60 px-2">Name</th>
-          <th className="w-52 px-2">Fort Req.</th>
-          <th className="w-48 px-2">Bonus</th>
-          <th className="w-40 px-2">Cost</th>
-          <th className="w-full px-2">Action</th>
+          <th className="px-4 py-2">Name</th>
+          <th className="px-4 py-2">Fort Req.</th>
+          <th className="px-4 py-2">Bonus</th>
+          <th className="px-4 py-2">Cost</th>
+          <th className="px-4 py-2">Action</th>
         </tr>
       </thead>
       <tbody className="">
@@ -38,23 +39,25 @@ const OffenseUpgrade: React.FC<BattleUpgradeProps> = ({
             // const units = anyUnits(item.level);
             return (
               <tr key={`${item.name}_${item.level}`} className="text-md">
-                <td className="border px-2 py-1">
-                  {item.name} {item.level === userLevel && '(Current Upgrade)'}
+                <td className="px-2 py-1">
+                  {item.name} {item.level === userLevel && (
+                    <Badge color="blue" ml={5}>Owned</Badge>
+                  )}
                 </td>
-                <td className="border px-2 py-1">
+                <td className="px-2 py-1">
                   {
                     Fortifications.find(
                       (fort) => fort.level === item.fortLevelRequirement
                     )?.name
                   }
                 </td>
-                <td className="border px-2 py-1">
+                <td className="px-2 py-1">
                   Offense Bonus: {item.offenseBonusPercentage}%
                 </td>
-                <td className="border px-2 py-1">
+                <td className="px-2 py-1">
                   {toLocale(item.cost, user?.locale)} Gold
                 </td>
-                <td className="border px-2 py-1">
+                <td className="px-2 py-1">
                   {item.level === userLevel + 1 &&
                   item.fortLevelRequirement <= fortLevel ? (
                     <button

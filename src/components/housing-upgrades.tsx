@@ -2,6 +2,7 @@ import { Fortifications, HouseUpgrades } from '@/constants';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import toLocale from '@/utils/numberFormatting';
+import { Badge } from '@mantine/core';
 
 const HousingTab: React.FC<BattleUpgradeProps> = ({
   userLevel,
@@ -9,32 +10,33 @@ const HousingTab: React.FC<BattleUpgradeProps> = ({
   forceUpdate,
 }) => {
   return (
-    <table className="w-full">
-      <thead className="text-left">
+    <table className="min-w-full table-auto bg-gray-900 text-white">
+      <thead className="bg-gray-900 text-left">
         <tr>
-          <th>Name</th>
-          <th>Fort Req.</th>
-          <th>Citizens Per Day</th>
-          <th>Cost</th>
-          <th>Action</th>
+          <th className='px-4 py-2'>Name</th>
+          <th className='px-4 py-2'>Fort Req.</th>
+          <th className='px-4 py-2'>Citizens Per Day</th>
+          <th className='px-4 py-2'>Cost</th>
+          <th className='px-4 py-2'>Action</th>
         </tr>
       </thead>
       <tbody>
         {Object.values(HouseUpgrades)
           .filter((item) => item.index <= userLevel + 2)
           .map((item, index) => (
-            <tr key={`${item.index}`}>
-              <td className="border px-4 py-2">
-                {item.name} {index === userLevel && '(Current Upgrade)'}
+            <tr key={`${item.index}`} className='odd:bg-table-odd even:bg-table-even'>
+              <td className="px-4 py-2">
+                {item.name} {index === userLevel && (
+                  <Badge color="blue" ml={5}>Owned</Badge>
+                )}
               </td>
-              <td className="border px-4 py-2">
+              <td className="px-4 py-2">
                 {Fortifications.find((fort) => fort.level === item.fortLevel)
                   ?.name || 'Manor'}
               </td>
-              <td className="border px-4 py-2">{item.citizensDaily}</td>
-              <td className="border px-4 py-2">{toLocale(item.cost)} Gold</td>
-              <td className="border px-4 py-2">
-                {/* Check if the item is the next available upgrade */}
+              <td className="px-4 py-2">{item.citizensDaily}</td>
+              <td className="px-4 py-2">{toLocale(item.cost)} Gold</td>
+              <td className="px-4 py-2">
                 {item.index === userLevel + 1 &&
                   (item.fortLevel <= fortLevel ? (
                     // Buy button if fort level requirements are met

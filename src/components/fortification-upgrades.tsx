@@ -3,6 +3,7 @@ import { useUser } from '@/context/users';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import toLocale from '@/utils/numberFormatting';
+import { Badge } from '@mantine/core';
 
 const FortificationsTab: React.FC<BattleUpgradeProps> = ({
   userLevel,
@@ -10,34 +11,36 @@ const FortificationsTab: React.FC<BattleUpgradeProps> = ({
 }) => {
   const { forceUpdate, user } = useUser();
   return (
-    <table className="w-full table-fixed">
+    <table className="min-w-full table-auto bg-gray-900 text-white">
       <thead className="text-left">
         <tr>
-          <th className="w-60">Name</th>
-          <th className="w-20">Level Req.</th>
-          <th className="w-60">Bonus</th>
-          <th className="w-40">Cost</th>
-          <th className="w-full">Action</th>
+          <th className="px-4 py-2">Name</th>
+          <th className="px-4 py-2">Level Req.</th>
+          <th className="px-4 py-2">Bonus</th>
+          <th className="px-4 py-2">Cost</th>
+          <th className="px-4 py-2">Action</th>
         </tr>
       </thead>
       <tbody className="">
         {Object.values(Fortifications)
           .filter((item) => item.level <= fortLevel + 2)
           .map((item, index) => (
-            <tr key={`${item.level}_${item.name}`}>
-              <td className="border px-4 py-2">
-                {item.name} {item.level === fortLevel && '(Current Upgrade)'}
+            <tr key={`${item.level}_${item.name}`} className='odd:bg-table-odd even:bg-table-even'>
+              <td className="px-4 py-2">
+                {item.name} {item.level === fortLevel && (
+                  <Badge color="blue" ml={5}>Owned</Badge>
+                )}
               </td>
-              <td className="border px-4 py-2">{item.levelRequirement}</td>
-              <td className="border px-4 py-2">
+              <td className="px-4 py-2">{item.levelRequirement}</td>
+              <td className="px-4 py-2">
                 Gold Per Turn: {toLocale(item.goldPerTurn, user?.locale)}
                 <br />
                 Defense Bonus: {item.defenseBonusPercentage}%
               </td>
-              <td className="border px-4 py-2">
+              <td className="px-4 py-2">
                 {toLocale(item.cost, user?.locale)} Gold
               </td>
-              <td className="border px-4 py-2">
+              <td className="px-4 py-2">
                 {item.level === fortLevel + 1 &&
                 item.levelRequirement <= userLevel ? (
                   <button
