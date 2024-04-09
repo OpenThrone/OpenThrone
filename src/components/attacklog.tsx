@@ -8,7 +8,7 @@ import Modal from './modal';
 import { alertService } from '@/services';
 import router from 'next/router';
 import { useUser } from '@/context/users';
-import { stringifyObj } from '@/utils/numberFormatting';
+import toLocale, { stringifyObj } from '@/utils/numberFormatting';
 
 interface Loss {
   [key: string]: number;
@@ -106,7 +106,7 @@ const LossesList: React.FC<LossesListProps> = ({ losses }) => {
 
 const StatsList: React.FC<StatsListProps> = ({ stats, type }) => (
   <ul>
-    <li>Pillaged Gold: {stats.pillagedGold.toLocaleString()}</li>
+    <li>Pillaged Gold: {toLocale(stats.pillagedGold.toLocaleString())}</li>
     <li>XP Earned: {stats.xpEarned}</li>
     {type !== 'defense' ? <li>Turns Used: {stats.turns}</li> : ''}
   </ul>

@@ -189,8 +189,8 @@ export const NavLoggedIn: React.FC = () => {
           className={`hidden h-8 ${layoutCont.raceClasses.menuPrimaryClass} md:block`}
           onMouseEnter={clearReset}
         >
-          <div className="mx-auto max-w-screen-md md:block">
-            <ul className="flex flex-wrap items-center justify-evenly text-center text-xl">
+          <div className="mx-auto max-w-screen-md md:block justify-center">
+            <ul className="flex flex-wrap items-center justify-center text-center text-xl">
               {parentLinks.map((link) => {
                 return (
                   <li className="px-6" key={link}>
@@ -210,7 +210,7 @@ export const NavLoggedIn: React.FC = () => {
                   </li>
                 );
               })}
-              <li>
+              <li className="px-6" key={'signOut'}>
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: '/' })}

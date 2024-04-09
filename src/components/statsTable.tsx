@@ -1,7 +1,6 @@
 import React from 'react';
 
 const StatsTable = ({ title, data }) => {
-  console.log('data', data)
   return (
     <div>
       <center><h2 className="text-xl font-semibold mb-4">{title}</h2>

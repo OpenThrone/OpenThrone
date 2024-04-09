@@ -61,9 +61,9 @@ const Layout = (props: IMainProps) => {
           authorized ? layoutCont.raceClasses.bgClass : 'bg-elf-header-bgcolor'
         } px-1 text-yellow-400 antialiased`}
       >
-        <div className="mx-auto max-w-screen-xl">
+        <div className="mx-auto max-w-screen-2xl">
           <header
-            className={`mx-auto max-w-screen-xl ${layoutCont.raceClasses.borderBottomClass}`}
+            className={`mx-auto max-w-screen-2xl ${layoutCont.raceClasses.borderBottomClass}`}
           >
             <div
               style={{ backgroundImage: `url(${'/assets/header/Elf-wall-header.webp'})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}}
@@ -85,11 +85,11 @@ const Layout = (props: IMainProps) => {
             <div className="flex h-full flex-wrap">
               {authorized ? (
                 <>
-                  <div className="w-full px-3 sm:w-3/12" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                  <div className="w-full px-3 sm:w-1/5" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <Sidebar />
                   </div>
                   <div
-                    className={`w-full bg-black ${layoutCont.raceClasses.borderClass} px-3 sm:w-9/12`}
+                    className={`w-full bg-black ${layoutCont.raceClasses.borderClass} px-3 sm:w-4/5`}
                   >
                     <NewsBulletin />
                     {props.children}

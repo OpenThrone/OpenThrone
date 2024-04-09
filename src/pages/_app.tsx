@@ -14,13 +14,14 @@ import Layout from '@/components/Layout'; // Import the Layout component
 import { LayoutProvider } from '@/context/LayoutContext';
 import { UserProvider } from '@/context/users';
 import { createTheme, MantineProvider } from '@mantine/core';
+import LoadingDots from '@/components/loading-dots';
 
 
 const MyApp = ({
   Component,
   pageProps: { session, ...pageProps },
 }: AppProps) => (
-  <Suspense>
+  <Suspense fallback={<LoadingDots/>}>
     <SessionProvider session={session}>
       <MantineProvider defaultColorScheme="dark">
       <UserProvider>

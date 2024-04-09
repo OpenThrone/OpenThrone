@@ -12,7 +12,7 @@ export default function Document() {
             rel="stylesheet"
           />
           <link href='https://fonts.googleapis.com/css?family=MedievalSharp' rel='stylesheet' />
-          <ColorSchemeScript defaultColorScheme="auto" />
+          <ColorSchemeScript defaultColorScheme="dark" />
         </Head>
         <body>
           <Main />

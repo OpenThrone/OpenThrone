@@ -12,13 +12,6 @@ const OffenseUpgrade: React.FC<BattleUpgradeProps> = ({
   fortLevel,
   forceUpdate,
 }) => {
-  /* const anyUnits = (level: number) => {
-    return Object.values(UnitTypes).filter(
-      (item) => item.type === 'OFFENSE' && item.fortLevel === level
-    );
-  }; */
-
-  console.log(userLevel, fortLevel);
   const { user } = useUser();
 
   return (
@@ -36,7 +29,6 @@ const OffenseUpgrade: React.FC<BattleUpgradeProps> = ({
         {Object.values(OffenseiveUpgrades)
           .filter((item) => item.level <= fortLevel + 2)
           .map((item, index) => {
-            // const units = anyUnits(item.level);
             return (
               <tr key={`${item.name}_${item.level}`} className="text-md">
                 <td className="px-2 py-1">
