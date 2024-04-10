@@ -5,8 +5,21 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 
 import prisma from '@/lib/prisma';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { IUserSession } from '@/types/typings';
 
 const argon2 = require('argon2');
+
+declare module 'next-auth' {
+  interface Session {
+    user: IUserSession; // Now session.user adheres to UserType
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    user?: IUserSession; // Now JWT.user adheres to UserType
+  }
+}
 
 const updateLastActive = async (email: string) => {
   return prisma.users.update({
@@ -93,7 +106,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       try {
         if (user) {
-          token.user = stringifyObj(user);
+          const userObj = stringifyObj(user);
+          token.user = {
+            id: userObj.id,
+            display_name: userObj.display_name,
+            class: userObj.class,
+            race: userObj.race,
+            colorScheme: userObj.colorScheme,
+          };
         }
         return token;
       } catch (error) {

@@ -205,3 +205,11 @@ export type IMetaProps = {
 export interface ComposeFormProps {
   onClose: () => void;
 }
+
+export type IUserSession  ={ 
+  id: number;
+  display_name: string;
+  class: PlayerClass;
+  race: PlayerRace;
+  colorScheme: string;
+}
