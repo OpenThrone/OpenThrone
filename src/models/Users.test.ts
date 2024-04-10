@@ -1,6 +1,5 @@
 import { stringifyObj } from '@/utils/numberFormatting';
 import UserModel from './Users';
-import { PlayerRace, PlayerClass, PlayerUnit } from '@/types/typings';
 import { EconomyUpgrades, Fortifications } from '@/constants';
 
 describe('UserModel', () => {
@@ -41,10 +40,12 @@ describe('UserModel', () => {
     expect(user.class).toBe('ASSASSIN');
   });
 
-  it('should correctly instantiate with provided userData', () => {
-    const user = new UserModel(userData, false);
+  it('should correctly instantiate with provided userData (no password shown)', () => {
+    const user = new UserModel(userData, true);
     expect(user.id).toEqual(userData.id);
     expect(user.displayName).toEqual(userData.display_name);
+    console.log(user.passwordHash)
+    expect(user.passwordHash).toBe('');
   });
 
   //Test if Fortification is correct based on Fort Level
@@ -95,6 +96,30 @@ describe('UserModel', () => {
     expect(offense2).toBe(23 + 75);
   });
 
+  //Test to make sure that Defense is correct based on Units and Fortification
+  it('should correctly calculate defense based on units and fortification', () => {
+    const user = new UserModel(userData);
+    const defense = user.defense;
+    expect(defense).toBe(0);
+    const userData2 = JSON.parse(JSON.stringify(stringifyObj(userData)));
+    userData2.units = [
+      { level: 1, type: 'DEFENSE', quantity: 1 }, //3bonus * 1 = 3
+      { level: 2, type: 'DEFENSE', quantity: 1 }, //20bonus * 1 = 20
+    ];
+    const user2 = new UserModel(userData2);
+    const defense2 = user2.defense;
+    expect(user2.fortLevel).toBe(1);
+    expect(user.defenseBonus).toBe(10);
+    expect(defense2).toBe(26);
+
+    userData2.fort_level = 5; //'Outpost Level 2' - 25% defense bonus
+    const user3 = new UserModel(userData2);
+    expect(user3.fortLevel).toBe(5);
+    expect(user3.defenseBonus).toBe(30); // 30%
+    const defense3 = user3.defense;
+    expect(defense3).toBe(30); // 30% of 23 = 7 (rounded) + 23 = 30
+  });
+
   //Test to make sure that GoldPerWorker is correct based on Economy Level
   it('should correctly calculate gold per worker based on economy level', () => {
     const user = new UserModel(userData);
@@ -128,7 +153,7 @@ describe('UserModel', () => {
     expect(bonuses.length).toBe(2);
     expect(user.attackBonus).toBe(0);
     expect(user.spyBonus).toBe(5);
-    expect(user.defenseBonus).toBe(5);
+    expect(user.defenseBonus).toBe(10); // 5 for Elf + 5 for Fortification
     expect(bonuses[0].bonusAmount).toBe(5); //[{ race: "ELF", bonusType: "DEFENSE", bonusAmount: 5 }, {race: "ASSASSIN", bonusType: "INTEL", bonusAmount: 5}]
     const userData2 = JSON.parse(JSON.stringify(stringifyObj(userData)));
     userData2.units = [
@@ -143,7 +168,7 @@ describe('UserModel', () => {
     expect(bonuses2.length).toBe(2);
     expect(user2.attackBonus).toBe(10);
     expect(user2.spyBonus).toBe(0);
-    expect(user2.defenseBonus).toBe(0);
+    expect(user2.defenseBonus).toBe(5); //5% for Fort
     expect(user2.offense).toBe(108);
   });
 });

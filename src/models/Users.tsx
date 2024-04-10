@@ -99,7 +99,7 @@ class UserModel {
 
   public avatar: string;
 
-  constructor(userData: any, filtered: boolean = true) {
+  constructor(userData?: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
     this.email = '';
@@ -152,6 +152,7 @@ class UserModel {
       this.experience = userData.experience;
       this.gold = userData.gold;
       this.goldInBank = userData.gold_in_bank;
+      console
       this.fortLevel = userData.fort_level;
       this.fortHitpoints = userData.fort_hitpoints;
       this.houseLevel = userData.house_level;
@@ -279,7 +280,8 @@ class UserModel {
     const defenseLevelBonus = this.bonus_points
       .filter((bonus) => bonus.type === 'DEFENSE')
       .reduce((acc, bonus) => acc + bonus.level, 0);
-    return defense + defenseLevelBonus;
+    const fortBonus = Fortifications.find(x => x.level === this.fortLevel)?.defenseBonusPercentage || 0;
+    return defense + defenseLevelBonus + fortBonus;
   }
 
   /**
@@ -527,6 +529,7 @@ class UserModel {
         totalStat *= 1 + this.attackBonus / 100;
         break;
       case 'DEFENSE':
+        console.log('Total Stat: ', totalStat, 'Defense Bonus: ', this.defenseBonus / 100)
         totalStat *= 1 + this.defenseBonus / 100;
         break;
       case 'SPY':
