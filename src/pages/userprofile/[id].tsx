@@ -15,7 +15,7 @@ import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
 
 interface IndexProps {
-  users: UserModel[];
+  users: UserModel;
 }
 
 const Index: React.FC<IndexProps> = ({ users }) => {
@@ -158,8 +158,8 @@ const Index: React.FC<IndexProps> = ({ users }) => {
               </button>
               <Modal
                 isOpen={isOpen}
-                toggleModal={toggleModal}
-                onSubmit={handleSubmit}
+                  toggleModal={toggleModal}
+                  profileID={users.id}
               />
 
                 <button

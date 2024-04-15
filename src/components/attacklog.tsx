@@ -3,7 +3,7 @@ import type { UnitType } from '@/types/typings';
 import { formatDate, getUnitName } from '@/utils/utilities';
 import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from './modal';
 import { alertService } from '@/services';
 import router from 'next/router';
@@ -119,55 +119,46 @@ const renderOutcome = (log: Log, type: string) => {
   return log.winner === log.attacker_id ? <FontAwesomeIcon icon={faCheck} color='lightgreen' size='lg' /> : <FontAwesomeIcon icon={faXmark} color='red' size='lg'/>;
 };
 
-const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => (
-  <>
-    <td className="border-b px-1 py-2 text-center">
-      {renderOutcome(log, type)}
-      <br />
-    </td>
-    <td className="border-b px-4 py-2">
-      {type === 'defense'
-        ? <a href={`/userprofile/${log.attackerPlayer?.id}`} className='text-white'>{log.attackerPlayer?.display_name}</a> ?? 'Unknown'
-        : <a href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</a> ?? 'Unknown'}
-      <br />
-      {formatDate(log.timestamp)}
-    </td>
-  </>
-);
+const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => {
+  const [formattedDate, setFormattedDate] = useState('');
+
+  useEffect(() => {
+    // This will ensure the date is processed client-side
+    setFormattedDate(formatDate(log.timestamp));
+  }, [log.timestamp]);
+  return (
+    <>
+      <td className="border-b px-1 py-2 text-center">
+        {renderOutcome(log, type)}
+        <br />
+      </td>
+      <td className="border-b px-4 py-2">
+        {type === 'defense'
+          ? <a href={`/userprofile/${log.attackerPlayer?.id}`} className='text-white'>{log.attackerPlayer?.display_name}</a> ?? 'Unknown'
+          : <a href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</a> ?? 'Unknown'}
+        <br />
+        {formattedDate}
+      </td>
+    </>
+  );
+};
 
 const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
   const isEmpty = logs.length === 0;
   const tableHeaders =
     ['Outcome', 'Attack on player', 'Pillage and Experience', 'Casualties', 'Action'];
 
+  const [openModalId, setOpenModalId] = useState<number | null>(null);
 
-
-  const context = useUser();
-  const [isOpen, setIsOpen] = useState(false);
-  const toggleModal = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const handleSubmit = async (turns: number, profileID: number) => {
-    if (!turns) turns = 1;
-    console.log(turns, profileID)
-    const res = await fetch(`/api/attack/${profileID}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(stringifyObj({ turns })),
-    });
-    const results = await res.json();
-
-    if (results.status === 'failed') {
-      alertService.error(results.status);
+  const toggleModal = (id: number) => {
+    if (openModalId === id) {
+      setOpenModalId(null); // Close modal
     } else {
-      context.forceUpdate();
-      router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
+      setOpenModalId(id); // Open modal for specific ID
     }
   };
+
+  
   
   return (
     <table className="min-w-full table-auto bg-gray-900 rounded">
@@ -211,14 +202,13 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
                 {type === 'defense' ? (
                  <> <button
                 type="button"
-                onClick={toggleModal}
+                onClick={(()=> toggleModal(parseInt(log.attacker_id)))}
                     className={`bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-700 `}
               >
                 Attack Back              </button>
               <Modal
-                isOpen={isOpen}
-                toggleModal={toggleModal}
-                      onSubmit={handleSubmit}
+                      isOpen={openModalId === parseInt(log.attacker_id)}
+                      toggleModal={(() => toggleModal(parseInt(log.attacker_id)))}
                       profileID={parseInt(log.attacker_id)}
               /></>
                   

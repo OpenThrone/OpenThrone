@@ -619,6 +619,13 @@ export async function attackHandler(
     };
   }
 
+  if (AttackPlayer.level > DefensePlayer.level + 5 || AttackPlayer.level < DefensePlayer.level - 5) {
+    return {
+      status: 'failed',
+      message: 'You can only attack within 5 levels of your own level.',
+   } 
+  }
+
   const startOfAttack = {
     Attacker: JSON.parse(JSON.stringify(stringifyObj(AttackPlayer))),
     Defender: JSON.parse(JSON.stringify(stringifyObj(DefensePlayer))),
@@ -659,9 +666,9 @@ export async function attackHandler(
     GoldPerTurn *= 1.05;
   }
   const isAttackerWinner = battleResults.experienceResult.Result === 'Win';
-  
-  const pillagedGold = ((BigInt(GoldPerTurn * 10000)) * BigInt(DefensePlayer.gold.toString())/ BigInt(10000)) * BigInt(attack_turns) < BigInt(DefensePlayer.gold.toString())
-    ? ((BigInt(GoldPerTurn * 10000)) * BigInt(DefensePlayer.gold.toString()) / BigInt(10000)) * BigInt(attack_turns)
+  const checkPillaged = ((BigInt(Math.round(GoldPerTurn * 10000))) * BigInt(DefensePlayer.gold.toString()) / BigInt(10000)) * BigInt(attack_turns.toString());
+  const pillagedGold = checkPillaged < BigInt(DefensePlayer.gold.toString())
+    ? checkPillaged
     : BigInt(DefensePlayer.gold.toString());
   
   const BaseXP = 1000;
@@ -694,6 +701,7 @@ export async function attackHandler(
     });
   }
   console.log('start before attack_log');
+  console.log('Pillaged Gold: ', pillagedGold);
   const attack_log = await prisma.attack_log.create({
     data: {
       attacker_id: attackerId,
@@ -720,6 +728,7 @@ export async function attackHandler(
     },
   });
 
+  console.log('Updated AttackLog: ', pillagedGold);
   await prisma.users.update({
     where: { id: attackerId },
     data: {

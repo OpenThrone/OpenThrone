@@ -99,10 +99,11 @@ const attackResults = ({ battle, viewerID }) => {
         backgroundImage: 'url(/assets/images/scroll.webp)',
         paddingLeft: '70px',
         paddingRight: '70px',
-        backgroundSize: 'contain',
+        backgroundSize: '75% 100%',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        paddingTop: '30px'
+        paddingTop: '30px',
+        paddingBlockEnd: '30px',
       }}
         className='text-center pb-90px pt-10'>
         <p className="text-2xl text-black font-medieval font-bold"><b>Battle Log</b></p>
