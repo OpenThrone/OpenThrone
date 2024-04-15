@@ -19,6 +19,7 @@ const subMenus: {
     text: string;
     href: string;
     parent: string;
+    target?: string;
   }[];
 } = {
   Home: [
@@ -58,6 +59,7 @@ const subMenus: {
       text: 'Report Issues',
       href: 'https://github.com/uaktags/OpenThrone/issues',
       parent: 'Community',
+      target: '_blank',
     },
   ],
 };
@@ -65,7 +67,7 @@ const subMenus: {
 export const NavLoggedIn: React.FC = () => {
   const pathName = usePathname();
   const [activeSubMenu, setActiveSubMenu] = useState<
-    { text: string; href: string; parent: string }[]
+    { text: string; href: string; parent: string, target?: string }[]
   >([]);
   const [activeParentLink, setActiveParentLink] = useState<string>('');
   const [, setActiveSubLink] = useState<string>('');
@@ -175,7 +177,7 @@ export const NavLoggedIn: React.FC = () => {
                       className="mr-6 pl-4"
                       key={`${subLink.href}.${subLink.text}`}
                     >
-                      <Link href={subLink.href}>{subLink.text}</Link>
+                      <Link href={subLink.href} target={subLink.target ? subLink.target : '_self'}>{subLink.text}</Link>
                     </li>
                   ))}
                 </ul>
@@ -242,6 +244,7 @@ export const NavLoggedIn: React.FC = () => {
                     className={`
                       text-elf-link-link
                     `}
+                    target={item.target ? item.target : '_self'}
                   >
                     {item.text}
                   </Link>
