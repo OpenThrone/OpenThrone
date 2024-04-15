@@ -2,7 +2,7 @@ import { Locales } from "@/types/typings";
 
 
 
-export const toLocale = (num: number | string | bigint, locale?: Locales) => {
+export const toLocale = (num: number | string | bigint| BigInt, locale?: Locales) => {
   if (typeof num === 'number') {
     return num.toLocaleString(locale || undefined);
   } else if (typeof num === 'string') {
