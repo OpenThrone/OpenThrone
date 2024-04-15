@@ -81,8 +81,8 @@ module.exports = {
           'rgb(11,32,18)' // footer
         ),
         goblin: generateRaceColors(
-          '#c0532e', // navActive
-          '#70301a', // navHover
+          'rgb(236,155,0)', // navActive
+          'rgb(236,155,0)', // navHover
           'rgb(45, 12, 12)', // bg
           '#70301a', // menuPrimary
           'rgb(46, 12, 12)', // menuSecondary
@@ -92,8 +92,8 @@ module.exports = {
           'rgb(11,32,18)' // footer
         ),
         human: generateRaceColors(
-          'rgb(26, 55, 93)', // navActive
-          'rgb(26, 55, 93)', // navHover
+          'rgb(236,155,0)', // navActive
+          'rgb(236,155,0)', // navHover
           'rgb(14, 31, 53)', // bg
           'rgb(14, 31, 53)', // menuPrimary
           'rgb(26, 55, 93)', // menuSecondary
@@ -103,8 +103,8 @@ module.exports = {
           'rgb(11,32,18)' // footer
         ),
         undead: generateRaceColors(
-          'rgb(77, 77, 77)', // navActive
-          'rgb(77, 77, 77)', // navHover
+          'rgb(236,155,0)', // navActive
+          'rgb(236,155,0)', // navHover
           'rgb(33, 33, 33)', // bg
           'rgb(77, 77, 77)', // menuPrimary
           'rgb(33, 33, 33)', // menuSecondary
