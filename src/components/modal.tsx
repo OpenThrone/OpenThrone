@@ -1,20 +1,44 @@
 import React, { useState } from 'react';
 
 import { useLayout } from '../context/LayoutContext';
+import { alertService } from '@/services';
+import router from 'next/router';
+import { useUser } from '@/context/users';
+import result from '@/pages/account/resetPW/result';
 
 interface ModalProps {
   isOpen: boolean;
   toggleModal: () => void;
-  onSubmit: (turns: string | number, profileID?: number) => void;
   profileID?: number;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, onSubmit, profileID }) => {
-  const [turns, setTurns] = useState('');
+const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
+  const [turns, setTurns] = useState(1);
+  const context = useUser();
+  const [error, setError] = useState('');
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSubmit(turns, profileID);
+    if (!turns) return;
+
+    const res = await fetch(`/api/attack/${profileID}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ turns }),
+    });
+
+    const results = await res.json();
+
+    if (results.status === 'failed') {
+      setError(`Failed to execute attack. ${results?.message}`);
+    } else {
+      setError('');
+      context.forceUpdate();
+      router.push(`/battle/results/${results.attack_log}`);
+      toggleModal();
+    }
   };
 
   const { raceClasses } = useLayout();
@@ -64,6 +88,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, onSubmit, profileID 
                 </svg>
               </button>
             </div>
+
+            {error && <p className="text-red-500">{error}</p>}
             <form onSubmit={handleSubmit}>
               <div className="mt-2">
                 <input
