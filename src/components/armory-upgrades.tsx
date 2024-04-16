@@ -11,13 +11,11 @@ const ArmoryUpgradesTab: React.FC<BattleUpgradeProps> = ({
   fortLevel,
   forceUpdate,
 }) => {
-  console.log('ArmoryTab', userLevel, fortLevel);
   return (
     <table className="w-full table-auto bg-gray-800 text-white">
       <thead className="bg-gray-900 text-left">
         <tr>
           <th className="w-60 px-2">Name</th>
-          <th className="w-20 px-2">Level Req.</th>
           <th className="w-60 px-2">Bonus</th>
           <th className="w-40 px-2">Cost</th>
           <th className=" px-2">Action</th>
@@ -33,7 +31,6 @@ const ArmoryUpgradesTab: React.FC<BattleUpgradeProps> = ({
                   <Badge color="blue" ml={5}>Owned</Badge>
                 )}
               </td>
-              <td className="px-4 py-2">{item.fortLevel}</td>
               <td className="px-4 py-2">
                 Level {item.level} Armory items
               </td>
