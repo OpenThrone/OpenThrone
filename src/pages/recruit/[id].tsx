@@ -140,7 +140,7 @@ export default function Recruit() {
             {userInfo.display_name} is a level {userInfo.level} {userInfo.race}{' '}
             {userInfo.class}.
             <center>
-              <Image src={`/assets/shields/${userInfo.race}_150x150.webp`} width={'150'} height={'150'} alt="" />
+              <Image src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${userInfo.race}_150x150.webp`} width={'150'} height={'150'} alt="" />
             </center>
           </p>
         </div>

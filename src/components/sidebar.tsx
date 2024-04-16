@@ -155,11 +155,11 @@ const Sidebar: React.FC = () => {
       <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg min-h-96 h-96" style={{
         height: '100%',
         backgroundImage: 'url(https://assets.openthrone.dev/images%2Fbackground%2Fadvisor-scroll_25.webp)',
-        backgroundSize: 'cover',
+        backgroundSize: '100% 100%',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        paddingLeft: '30px',
-        paddingRight: '30px',
+        paddingLeft: '10px',
+        paddingRight: '10px',
         paddingTop: '15px',
         paddingBottom: '30px',
       }}>

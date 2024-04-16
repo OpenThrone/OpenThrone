@@ -299,7 +299,7 @@ const Bank = () => {
               </div>
               <div className="flex justify-between">
                 <strong>Total Gold Per Turn: </strong>
-                <span>{user?.totalGoldPerTurn.toLocaleString()}</span>
+                <span>{user?.goldPerTurn.toLocaleString()}</span>
               </div>
               <div className="mt-6 text-sm text-gray-600">
                 This includes workers, fort gold, and any additional wealth bonus
@@ -307,7 +307,7 @@ const Bank = () => {
 
               <div className="flex justify-between">
                 <strong>Daily Income:</strong>
-                <span>{((user?.totalGoldPerTurn || 0)  * 48).toLocaleString()}</span>
+                <span>{((BigInt(user?.goldPerTurn.toString()) || BigInt(0))  * BigInt(48)).toLocaleString()}</span>
                 {/* You can compute and display the daily income here */}
               </div>
             </div>

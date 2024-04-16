@@ -65,7 +65,7 @@ const IntelResult = ({ battle, viewerID }) => {
           <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
           <center>
             <img
-              src={`/assets/shields/${attackerPlayer?.race}_150x150.webp`}
+              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${attackerPlayer?.race}_150x150.webp`}
               className="ml-2"
             />
           </center>
@@ -74,7 +74,7 @@ const IntelResult = ({ battle, viewerID }) => {
           <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
           <center>
             <img
-              src={`/assets/shields/${defenderPlayer?.race}_150x150.webp`}
+              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${defenderPlayer?.race}_150x150.webp`}
               className="ml-2"
             />
           </center>

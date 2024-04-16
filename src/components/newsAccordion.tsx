@@ -4,7 +4,6 @@ import { useState } from 'react';
 const NewsAccordion = ({ news }) => {
   const [isOpen, setIsOpen] = useState(Array(news.length).fill(false));
   
-  console.log('news: ', news);
   const toggleAccordion = (index) => {
     const newState = [...isOpen];
     newState[index] = !newState[index];
@@ -30,7 +29,7 @@ const NewsAccordion = ({ news }) => {
   ))}
     </div>
     <div className="hidden sm:block">
-    <table className="min-w-full divide-y divide-gray-200 my-4 table-auto text-white ">
+    <table className="w-full divide-y divide-gray-200 my-4 table-auto text-white ">
       <thead>
         <tr className='odd:bg-table-odd even:bg-table-even'>
           <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
@@ -39,7 +38,7 @@ const NewsAccordion = ({ news }) => {
           <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
             Date
           </th>
-          <th scope="col" className="relative px-6 py-3">
+          <th scope="col" className="hidden md:block relative px-6 py-3">
             <span className="sr-only">Expand</span>
           </th>
         </tr>
@@ -54,7 +53,7 @@ const NewsAccordion = ({ news }) => {
               <td className="px-6 py-4 whitespace-nowrap text-sm ">
                 {new Date(item.created_timestamp).toLocaleDateString() + ' ' + new Date(item.created_timestamp).toLocaleTimeString()}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td className="hidden md:block px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button onClick={() => toggleAccordion(index)}>
                   {isOpen[index] ? 'Collapse' : 'Expand'}
                 </button>

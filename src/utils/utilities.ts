@@ -69,7 +69,7 @@ const getAvatarSrc = (avatar: string, race?: string) => {
   }
   if (avatar === 'SHIELD') {
     if (race) {
-      return `/assets/shields/${race}_25x25.webp`
+      return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${race}_25x25.webp`
     }
   }
 }
