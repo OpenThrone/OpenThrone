@@ -9,7 +9,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     bonus: 200,
     cost: 100000,
     unitsCovered: 1,
-    minUnitLevel: 1,
+    minUnitLevel: 2,
   },
   {
     type: 'OFFENSE',
@@ -19,7 +19,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     bonus: 1000,
     cost: 5000000,
     unitsCovered: 1,
-    minUnitLevel: 1,
+    minUnitLevel: 2,
   },
   {
     type: 'DEFENSE',
@@ -29,6 +29,6 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     bonus: 200,
     cost: 100000,
     unitsCovered: 5,
-    minUnitLevel: 1,
+    minUnitLevel: 2,
   },
 ];

@@ -30,6 +30,7 @@ describe('UserModel', () => {
     won_defends: 5,
     bonus_points: [{ level: 1 }, { level: 2 }],
     structure_upgrades: [{ "type": "ARMORY", "level": 0 }, { "type": "SPY", "level": 0 }, { "type": "SENTRY", "level": 0 }, { "type": "OFFENSE", "level": 0 }],
+    battle_upgrades: []
   };
 
   it('should correctly instantiate with default values when no userData is provided', () => {
@@ -118,6 +119,20 @@ describe('UserModel', () => {
     expect(user3.defenseBonus).toBe(30); // 30%
     const defense3 = user3.defense;
     expect(defense3).toBe(30); // 30% of 23 = 7 (rounded) + 23 = 30
+  });
+
+  //Test to make sure that Defense is correct based on Battle Upgrades
+  it('should correctly calculate defense based on battle upgrades', () => {
+    const user = new UserModel(userData);
+    const defense = user.defense;
+    expect(defense).toBe(0);
+    const userData2 = JSON.parse(JSON.stringify(stringifyObj(userData)));
+    userData2.units = [{ "type": "CITIZEN", "level": 1, "quantity": 0 }, { "type": "WORKER", "level": 1, "quantity": 8982 }, { "type": "OFFENSE", "level": 1, "quantity": 0 }, { "type": "DEFENSE", "level": 1, "quantity": 0 }, { "type": "SPY", "level": 1, "quantity": 500 }, { "type": "OFFENSE", "level": 2, "quantity": 8146 }, { "type": "DEFENSE", "level": 2, "quantity": 6000 }, { "type": "SENTRY", "level": 1, "quantity": 200 }];
+    userData2.structure_upgrades = [{ "type": "ARMORY", "level": 1 }, { "type": "SPY", "level": 1 }, { "type": "SENTRY", "level": 1 }, { "type": "OFFENSE", "level": 1 }];
+    userData2.battle_upgrades = [{ "type": "OFFENSE", "level": 1, "quantity": 1 }, { "type": "DEFENSE", "level": 1, "quantity": 1300 }, { "type": "SENTRY", "level": 1, "quantity": 0 }, { "type": "OFFENSE", "level": 2, "quantity": 1 }];
+    const user2 = new UserModel(userData2);
+    const defense2 = user2.defense;
+    expect(defense2).toBe(396001);
   });
 
   //Test to make sure that GoldPerWorker is correct based on Economy Level
