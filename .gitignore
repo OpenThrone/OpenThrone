@@ -52,3 +52,4 @@ local
 
 # vercel
 .vercel
+temp/*

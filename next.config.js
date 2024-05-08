@@ -28,7 +28,9 @@ module.exports = withBundleAnalyzer({
   poweredByHeader: true,
   trailingSlash: false,
   basePath: '',
-
+  images: {
+    domains: ['assets.openthrone.dev'], 
+  },
   publicRuntimeConfig: {
     apiUrl:
       process.env.NODE_ENV === 'development'
