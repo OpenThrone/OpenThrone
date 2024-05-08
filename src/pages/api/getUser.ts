@@ -35,7 +35,7 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
         data: { last_active: new Date() },
       });
     };
-    if ((new Date() - new Date(user.last_active)) > 1000 * 30) {
+    if ((new Date() - new Date(user.last_active)) > 1000 * 60 * 10) {
       const updated = await updateLastActive(user.id);
       // Calculate the timestamp of user.last_active
       const userLastActiveTimestamp = new Date(user.last_active);
