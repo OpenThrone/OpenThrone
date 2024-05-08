@@ -107,7 +107,7 @@ const AssassinateResult = ({ battle, viewerID }) => {
         </div>
       </div>
       <div style={{
-        backgroundImage: 'url(/assets/images/scroll.webp)',
+        backgroundImage: `url(${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/background/advisor-scroll.webp)`,
         paddingLeft: '34%',
         paddingRight: '34%',
         backgroundSize: 'contain',

@@ -149,6 +149,7 @@ export type UnitUpgradeType = {
   cost: number;
   minUnitLevel: number;
   unitsCovered: number;
+  quantity?: number;
 };
 export type PlayerBonus = {
   race: PlayerRace | PlayerClass;
@@ -187,6 +188,8 @@ export type UnitProps = {
   fortName: string;
   armoryLevel?: number;
   usage?: UnitType;
+  minUnitLevel?: number;
+  unitsCovered?: number;
 };
 
 export type UnitSectionProps = {

@@ -6,8 +6,12 @@ import { alertService } from '@/services';
 import { useUser } from '@/context/users';
 import Alert from '@/components/alert';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
+import { Chip, Group, Paper, Table, Tabs, SimpleGrid, Text, Space, NumberInput, rem, ThemeIcon } from '@mantine/core';
+import { BiCoinStack, BiMoney, BiMoneyWithdraw, BiSolidBank } from "react-icons/bi";
+import classes from './[tab].module.css'
+import user from '@/pages/messaging/compose/[user]';
 
-const Bank = () => {
+const Bank = (props) => {
   const tab = usePathname()?.split('/')[3];
   const { user, forceUpdate } = useUser();
   const [depositAmount, setDepositAmount] = useState(BigInt(0));
@@ -17,18 +21,65 @@ const Bank = () => {
   const [citizenUnit, setCitizenUnit] = useState(0);
   const [despositsAvailable, setDepositsAvailable] = useState(0);
   const [depositsMax, setDepositsMax] = useState(0);
+  const router = useRouter();
+  const [message, setMessage] = useState('');
+  const [colorScheme, setColorScheme] = useState('ELF');
+  const [nextDepositAvailable, setNextDepositAvailable] = useState({hours: 0, minutes: 0, seconds: 0});
+
+  const [filters, setFilters] = useState({
+    deposits: true,
+    withdraws: true,
+    war_spoils: true,
+    transfers: true,
+  });
+
   useEffect(() => {
-    if (currentPage === 'history') {
-      fetch('/api/bank/history')
-        .then((response) => response.json())
-        .then((data) => setBankHistory(data))
-        .catch((error) => console.error('Error fetching bank history:', error));
+    if (user) {
+      if (user.colorScheme)
+        setColorScheme(user.colorScheme);
     }
-    fetch('/api/bank/getDeposits')
-      .then((response) => response.json())
-      .then((data) => setDepositsAvailable(data))
-      .catch((error) => console.error('Error fetching bank history:', error));
-  }, [currentPage]);
+  }, [user]);
+
+  useEffect(() => {
+    const anyFilterActive = Object.values(filters).some(status => status === true);
+
+    if (currentPage === 'history' || currentPage === 'deposit') {
+      if (anyFilterActive) {
+        const queryParams = new URLSearchParams();
+        Object.keys(filters).forEach(key => {
+          if (filters[key]) {
+            queryParams.append(key, 'true');
+          }
+        });
+
+        fetch(`/api/bank/history?${queryParams.toString()}`)
+          .then((response) => response.json())
+          .then((data) => {
+            setBankHistory(data);
+            setMessage('');
+          })
+          .catch((error) => {
+            console.error('Error fetching bank history:', error);
+            setMessage('Failed to fetch data');
+          });
+      } else {
+        setMessage('No filters selected');
+        setBankHistory([]);
+      }
+    } else {
+      fetch('/api/bank/getDeposits')
+        .then((response) => response.json())
+        .then((data) => {
+          setDepositsAvailable(data.deposits);
+          setNextDepositAvailable(data.nextDepositAvailable);
+          setMessage('');
+        })
+        .catch((error) => {
+          console.error('Error fetching deposits:', error);
+          setMessage('Failed to fetch deposits');
+        });
+    }
+  }, [currentPage, filters]);
 
 
   useEffect(() => {
@@ -60,7 +111,7 @@ const Bank = () => {
         alertService.success("Successfully deposited gold");
         fetch('/api/bank/getDeposits')
           .then((response) => response.json())
-          .then((data) => setDepositsAvailable(data))
+          .then((data) => setDepositsAvailable(data.deposits))
           .catch((error) => console.error('Error fetching bank history:', error));
         setDepositAmount(BigInt(0));
       }
@@ -94,60 +145,108 @@ const Bank = () => {
       alertService.error('Failed to withdraw gold. Please try again.');
     }
   };
+
   return (
     <div className="mainArea pb-10">
       <h2>Bank</h2>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
-      <div className="my-5 flex justify-around">
-        <p className="mb-0">
-          Gold On Hand: <span>{parseInt(user?.gold?.toString() ?? "0").toLocaleString()}</span>
-        </p>
-        <p className="mb-0">
-          Banked Gold:{' '}
-          <span>{parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}</span>
-        </p>
-        <p className="mb-0">
-          Maximum Deposits Per Day: <span>{depositsMax}</span>
-        </p>
-        <p className="mb-0">
-          Deposits Available Today: <span>{despositsAvailable}</span>
-        </p>
-      </div>
-      <div className="mb-4 flex justify-center">
-        <div className="flex space-x-2">
-          <Link
-            href="/structures/bank/deposit"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              currentPage === 'deposit' ? 'bg-blue-500 text-white' : ''
-            }`}
-            aria-current="page"
+      <SimpleGrid cols={{base:1, xs:2, md:4}}>
+        <Paper withBorder p="sm" radius="md" className={classes.card}>
+          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
+            <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
+          </ThemeIcon>
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">
+              Gold On Hand
+            </Text>
+          </Group>
+
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{parseInt(user?.gold?.toString() ?? "0").toLocaleString()}</Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="sm" radius="md" className={classes.card}>
+          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
+            <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
+          </ThemeIcon>
+          <Group justify="space-between">
+            <Text size="xs" c="dimmed">
+              Banked Gold
+            </Text>
+          </Group>
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}</Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="sm" radius="md" className={classes.card}>
+          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
+            <BiMoney style={{ width: rem(15), height: rem(15) }}  />
+          </ThemeIcon>
+          <Group justify="space-between">
+            <Text size="xs" c="dimmed">
+              Max Deposits Per Day
+            </Text>
+          </Group>
+
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{depositsMax}</Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="sm" radius="md" className={classes.card}>
+          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
+            <BiMoneyWithdraw style={{ width: rem(15), height: rem(15) }}  />
+          </ThemeIcon>
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">
+              Deposits Available Today
+            </Text>
+          </Group>
+
+          <Group align="flex-end" gap="sm" mt={10}>
+            
+            <Text>{despositsAvailable}</Text>
+          </Group>
+          {despositsAvailable <= depositsMax && (
+            <Group>
+              <Text size="xs" c="dimmed">
+                Next deposit available in {nextDepositAvailable.hours}:{nextDepositAvailable.minutes}
+              </Text>
+            </Group>
+          )}
+        </Paper>
+      </SimpleGrid>
+
+      <Space h="md" />
+      
+      <Tabs defaultValue={currentPage}  className="mb-2 font-medieval">
+        <Tabs.List grow justify="center">
+          <Tabs.Tab value="deposit" onClick={() => {
+            router.push("/structures/bank/deposit");
+          }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Deposit
-          </Link>
-          <Link
-            href="/structures/bank/history"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              currentPage === 'history' ? 'bg-blue-500 text-white' : ''
-            }`}
+            <span className="text-xl">Deposit</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="history" onClick={() => { router.push("/structures/bank/history") }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Bank History
-          </Link>
-          <Link
-            href="/structures/bank/economy"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              currentPage === 'economy' ? 'bg-blue-500 text-white' : ''
-            }`}
+            <span className="text-xl">History</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="economy" onClick={() => { router.push("/structures/bank/economy") }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Economy
-          </Link>
-        </div>
-      </div>
+            <span className="text-xl">Economy</span>
+          </Tabs.Tab>
+        </Tabs.List>
+      </Tabs>
+     
+      <Space h="md" />
 
       {currentPage === 'deposit' && (
         <>
-          <form
+          <Paper shadow="xs" p="md"><form
             onSubmit={(e) => {
               e.preventDefault();
               handleDeposit();
@@ -158,14 +257,18 @@ const Bank = () => {
               <label htmlFor="depositAmount" className="mb-2 block">
                 Amount to Deposit
               </label>
-              <input
-                type="number"
-                name="depositAmount"
-                id="depositAmount"
-                className="w-full border p-2 bg-black"
-                min="0"
+              <NumberInput
                 value={depositAmount.toString()}
-                onChange={(e) => setDepositAmount(BigInt(e.target.value))}
+                onChange={(value) => setDepositAmount(BigInt(value))}
+                placeholder="0"
+                min={0}
+                hideControls
+                rightSection={
+                  <Text size="sm" c="dimmed" onClick={() => { setDepositAmount(BigInt(user?.gold?.toString()))}}>
+                    Max: {parseInt(user?.gold?.toString())}
+                  </Text>
+                }
+                rightSectionWidth={100}
               />
             </div>
             <div>
@@ -188,16 +291,14 @@ const Bank = () => {
               <label htmlFor="withdrawAmount" className="mb-2 block">
                 Amount to Withdraw
               </label>
-              <input
-                type="number"
-                name="withdrawAmount"
-                id="withdrawAmount"
-                className="w-full border p-2 bg-black"
-                min="0"
+              <NumberInput
                 value={withdrawAmount.toString()}
-                onChange={(e) => setWithdrawAmount(BigInt(e.target.value))}
-              />
-            </div>
+                onChange={(value) => setWithdrawAmount(BigInt(value))}
+                placeholder="0"
+                min={0}
+                max={parseInt(user?.goldInBank?.toString())}
+                hideControls
+              /></div>
             <div>
               <button
                 type="submit"
@@ -206,44 +307,118 @@ const Bank = () => {
                 Withdraw
               </button>
             </div>
-          </form>
+            </form>
+          </Paper>
+          <Space h="md" />
+          <Paper shadow="xs" p="md">
+            <Table className="min-w-full border-neutral-500" striped>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Date</Table.Th>
+                  <Table.Th>Transaction Type</Table.Th>
+                  <Table.Th>Amount</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {bankHistory.filter((entry)=>entry.from_user_id === entry.to_user_id).slice(0,10).map((entry, index) => {
+                  let transactionType = '';
+                  if (entry.from_user_id === entry.to_user_id) {
+                    transactionType =
+                      entry.from_user_account_type === 'HAND'
+                        ? 'Deposit'
+                        : 'Withdraw';
+                  }
+
+                  return (
+                    <Table.Tr key={index}>
+                      <Table.Td>{new Date(entry.date_time).toLocaleDateString()}</Table.Td>
+                      <Table.Td>{transactionType}</Table.Td>
+                      <Table.Td>{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+                    </Table.Tr>
+                  );
+                })}
+              </Table.Tbody>
+            </Table>
+          </Paper>
         </>
       )}
 
       {currentPage === 'history' && (
         <div>
-          <h3>Bank History</h3>
-          <table className="min-w-full border-neutral-500">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Transaction Type</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bankHistory.map((entry, index) => {
-                let transactionType = '';
+          <Group><Chip
+            variant="filled"
+            checked={filters.war_spoils}
+            onChange={() => { setFilters({ ...filters, war_spoils: !filters.war_spoils }) }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray': 'blue'))}
+          >
+            War Spoils
+          </Chip>
+          <Chip
+            variant="filled"
+              checked={filters.deposits}
+              onChange={() => { setFilters({ ...filters, deposits: !filters.deposits }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+          >
+            Deposits
+          </Chip>
+          <Chip
+            variant="filled"
+              checked={filters.withdraws}
+              onChange={() => { setFilters({ ...filters, withdraws: !filters.withdraws }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+          >
+            Withdraws
+          </Chip>
+          <Chip
+            variant="filled"
+              checked={filters.transfers}
+              onChange={() => { setFilters({ ...filters, transfers: !filters.transfers }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+          >
+            Transfers
+          </Chip>
+          </Group>
+          {message && <div className="text-center p-4">{message}</div>}
+          <Space h="md" />
+          {message === '' && bankHistory.length > 0 ? (
+            
+            <Paper shadow="xs" >
+            <Table className="min-w-full border-neutral-500" striped>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Date</Table.Th>
+                  <Table.Th>Transaction Type</Table.Th>
+                  <Table.Th>Amount</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {bankHistory.map((entry, index) => {
+                  let transactionType = '';
+                  if (entry.from_user_id === entry.to_user_id) {
+                    transactionType =
+                      entry.from_user_account_type === 'HAND'
+                        ? 'Deposit'
+                        : 'Withdraw';
+                  } else if (entry.history_type === 'PLAYER_TRANSFER') {
+                    transactionType = 'Player Transfer';
+                  } else {
+                    transactionType = 'War Spoils';
+                  }
 
-                if (entry.from_user_id === entry.to_user_id) {
-                  transactionType =
-                    entry.from_user_account_type === 'HAND'
-                      ? 'Deposit'
-                      : 'Withdraw';
-                } else if (entry.history_type === 'PLAYER_TRANSFER') {
-                  transactionType = 'Player Transfer';
-                }
-
-                return (
-                  <tr key={index}>
-                    <td>{new Date(entry.date_time).toLocaleDateString()}</td>
-                    <td>{transactionType}</td>
-                    <td>{entry.gold_amount} gold</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  return (
+                    <Table.Tr key={index}>
+                      <Table.Td>{new Date(entry.date_time).toLocaleDateString()}</Table.Td>
+                      <Table.Td>{transactionType}</Table.Td>
+                      <Table.Td>{toLocale(entry.gold_amount, user.locale)} gold</Table.Td>
+                    </Table.Tr>
+                  );
+                })}
+              </Table.Tbody>
+              </Table>
+            </Paper>
+          ) : (
+            <div className="text-center p-4">No Records Found</div>
+          )}
         </div>
       )}
 

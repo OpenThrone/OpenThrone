@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { setTimeout } from 'timers';
 
 import LoadingDots from '@/components/loading-dots';
+import { Paper, PasswordInput, TextInput } from '@mantine/core';
 
 const Form = ({
   type,
@@ -89,34 +90,28 @@ const Form = ({
       className="mt-2 flex flex-col space-y-4"
     >
       {type === 'login' ? (
-        <>
-          <div className="mb-3">
-            <label htmlFor="email" className="mb-1 block">
-              Email Address
-            </label>
-            <input
+        <Paper withBorder shadow="md" p={30} radius="md">
+          
+            <TextInput
               id="email"
               name="email"
               type="email"
+              label="Email Address"
               placeholder="username@email.com"
               autoComplete="email"
-              required
-              className="w-full rounded border border-gray-300 px-3 py-2"
+            required
+            className='text-white'
             />
-          </div>
-          <div>
-            <label htmlFor="password" className="mb-1 block">
-              Password
-            </label>
-            <input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
-              required
-              className="w-full rounded border border-gray-300 px-3 py-2"
+            type="password"
+            label="Password"
+            placeholder='Password'
+            required
+            className='text-white'
             />
-          </div>
-        </>
+        </Paper>
       ) : (
         <>
           <div className="mb-3">

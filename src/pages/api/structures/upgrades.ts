@@ -7,7 +7,7 @@ import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, Offense
 
 const prisma = new PrismaClient();
 
-export default async(req, res) => {
+const upgrades = async(req, res) => {
   if (req.method === 'POST') {
     const session = await getServerSession(req, res, authOptions);
     if (!session) {
@@ -140,3 +140,5 @@ export default async(req, res) => {
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default upgrades;

@@ -34,7 +34,7 @@ export default function AutoRecruit() {
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <div className="container mx-auto text-center">
           <p>Click Start to begin the Auto-Recruit, a new link will appear.</p>
           <button

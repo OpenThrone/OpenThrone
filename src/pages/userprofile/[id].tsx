@@ -99,16 +99,12 @@ const Index: React.FC<IndexProps> = ({ users }) => {
         <div className="col-span-1">
           <div className="card-dark">
             <div className="flex items-center justify-center">
-              {profile?.id === 6 ? (
-                <img src='/assets/images/santee.webp'
-                  className='ml-2'
-                />
-              ) : (
+              
                 <img
                   src={profile?.avatar}
                   className="ml-2"
                 />
-              )}
+              
             </div>
             <div className="my-3 mb-4">
               <MDXRemote {...users.bionew} />

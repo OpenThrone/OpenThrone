@@ -1,3 +1,4 @@
+import { Burger } from '@mantine/core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -37,13 +38,8 @@ export const NavLoggedOut: React.FC = () => {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="block md:hidden"
-      >
-        {mobileMenuOpen ? 'Close' : 'Open'} Menu
-      </button>
+      <Burger className="block sm:hidden" opened={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}></Burger>
+      
       <nav className={mobileMenuOpen ? 'block md:hidden' : 'hidden md:hidden'}>
         <ul className="text-center text-xl">
           {parentLinks.map((link) => (

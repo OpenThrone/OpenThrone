@@ -3,6 +3,7 @@ import { ArmoryUpgrades, BattleUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import { UnitProps } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
+import Alert from '@/components/alert';
 import { useEffect, useState } from 'react';
 
 const useItems = (user) => {
@@ -56,12 +57,15 @@ const itemMapFunction = (item, itemType, user, armoryLevel) => {
   };
 };
 
-const Upgrades = () => {
+const Upgrades = (props) => {
   const { user } = useUser();
 
   return (
     <div className="mainArea pb-10">
       <h2>Upgrades</h2>
+      <div className="my-5 flex justify-between">
+        <Alert />
+      </div>
       <div className="my-5 flex justify-around">
         <p className="mb-0">
           Gold On Hand: <span>{toLocale(user?.gold)}</span>

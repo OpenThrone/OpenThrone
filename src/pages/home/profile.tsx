@@ -24,6 +24,7 @@ const Profile = () => {
         });
 
         if (!response.ok) {
+          alertService.error('Error uploading file.');
           throw new Error('Network response was not ok');
         }
 
@@ -51,10 +52,11 @@ const Profile = () => {
           <Group wrap="nowrap">
           <Avatar
             src={user?.avatar}
-            size={450}
+            size={150}
             radius="md"
           /></Group></div>
-        <div className="text-xl text-bold">New Avatar</div>
+        <div className="text-xl text-bold">New Avatar<br /><div className="text-sm text-gray-400">Limits: 450x450 and 1.5mb</div></div>
+        
         <Group wrap="nowrap">
           <Avatar src={''} size={150} radius="md" />
           <input type="file" accept="image/jpeg, image/jpg, image/gif, image/png, image/webp" onChange={handleFileChange} />

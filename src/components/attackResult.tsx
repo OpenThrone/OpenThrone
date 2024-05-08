@@ -79,7 +79,7 @@ const attackResults = ({ battle, viewerID }) => {
           <h4 className="text-white">Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}</h4>
           <center>
             <img
-              src={`/assets/shields/${attackerPlayer?.race}_150x150.webp`}
+              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${attackerPlayer?.race}_150x150.webp`}
               className="ml-2"
             />
           </center>
@@ -89,7 +89,7 @@ const attackResults = ({ battle, viewerID }) => {
           <h4 className="text-white">Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}</h4>
           <center>
             <img
-              src={`/assets/shields/${defenderPlayer?.race}_150x150.webp`}
+              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${defenderPlayer?.race}_150x150.webp`}
               className="ml-2"
             />
           </center>

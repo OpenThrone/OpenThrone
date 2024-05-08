@@ -77,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const updated = await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            avatar: process.env.AWS_S3_ENDPOINT + result.Key,
+            avatar: process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + result.Key,
           },
         });
         // Respond back with the result

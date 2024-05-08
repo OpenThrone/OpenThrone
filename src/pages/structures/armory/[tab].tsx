@@ -249,7 +249,7 @@ const ArmoryTab = () => {
         items[type][category].forEach((item) => {
           const inputElement = document.querySelector(
             `input[name="${item.id}"]`,
-          );
+          ) as HTMLInputElement;
           if (inputElement) {
             // No need to query the DOM since we are unequipping all
             if (item.ownedItems > 0) {
@@ -296,7 +296,7 @@ const ArmoryTab = () => {
             newItems[type][category].forEach((item) => {
               const inputElement = document.querySelector(
                 `input[name="${item.id}"]`,
-              );
+              ) as HTMLInputElement;
               if (inputElement) {
                 inputElement.value = '0';
               }

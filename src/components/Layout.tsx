@@ -66,7 +66,7 @@ const Layout = (props: IMainProps) => {
             className={`mx-auto max-w-screen-2xl ${layoutCont.raceClasses.borderBottomClass}`}
           >
             <div
-              style={{ backgroundImage: `url(${'/assets/header/Elf-wall-header.webp'})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}}
+              style={{ backgroundImage: `url('${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/header/Elf-wall-header.webp')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}}
               className={`${
                 authorized
                   ? layoutCont.raceClasses.bgClass
@@ -74,7 +74,7 @@ const Layout = (props: IMainProps) => {
               } pb-10 pt-2`}
             >
               <h1 className="title text-title text-center text-6xl font-medium">
-                <center><img src="/assets/header/OpenThrone.webp" alt="OpenThrone" style={{ height: '150px', filter: 'drop-shadow(0px 3px 0px #000000)' }} /></center>
+                <center><img src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/header/OpenThrone.webp`} alt="OpenThrone" style={{ height: '150px', filter: 'drop-shadow(0px 3px 0px #000000)' }} /></center>
               </h1>
               <h2 className="text-center text-xl" style={{textShadow: '0 -1px'}}>{AppConfig.description}</h2>
             </div>

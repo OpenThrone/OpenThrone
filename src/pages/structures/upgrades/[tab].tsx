@@ -10,11 +10,14 @@ import OffenseUpgrade from '@/components/offenseupgrade';
 import Alert from '@/components/alert';
 import ArmoryUpgradesTab from '@/components/armory-upgrades';
 import ClandestineUpgrade from '@/components/clandestineupgrades';
+import { Tabs } from '@mantine/core';
+import router from 'next/router';
 
 const UpgradeTab = () => {
   const tab = usePathname()?.split('/')[3];
   const { user, forceUpdate } = useUser();
   const currentPage = tab || 'fortifications';
+  const colorScheme = user?.colorScheme;
 
   useEffect(() => {
     if (currentPage === 'fortifications') {
@@ -27,57 +30,48 @@ const UpgradeTab = () => {
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
-      <div className="mb-4 flex justify-center">
-        <div className="flex space-x-2">
-          <Link
-            href="/structures/upgrades/fortifications"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              tab === 'fortifications' ? 'bg-blue-500 text-white' : ''
-            }`}
-            aria-current="page"
+      <Tabs variant="pills" defaultValue={currentPage} className="mb-2 font-medieval">
+        <Tabs.List grow justify="center">
+          <Tabs.Tab value="fortifications" onClick={() => {
+            router.push("/structures/upgrades/fortifications");
+          }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Fortifcations
-          </Link>
-          <Link
-          href='/structures/upgrades/offense'
-          className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              tab === 'offense' ? 'bg-blue-500 text-white' : ''
-              }`}
-            aria-current='page'>
-            Siege Upgrades
-          </Link>
-          <Link
-            href="/structures/upgrades/intel"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${
-              tab === 'intel' ? 'bg-blue-500 text-white' : ''
-            }`}
+            <span className="text-xl">Fortifications</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="offense" onClick={() => { router.push("/structures/upgrades/offense") }}
+            color={(colorScheme === "ELF") ?
+              'green' : (
+                colorScheme === 'GOBLIN' ? 'red' : (
+                  colorScheme === 'UNDEAD' ? 'dark'
+                    : 'blue'
+                ))}
           >
-            Clandestine Upgrades
-          </Link>
-          <Link
-            href="/structures/upgrades/houses"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${tab === 'houses' ? 'bg-blue-500 text-white' : ''
-              }`}
-            aria-current="page"
+            <span className="text-xl">Siege Upgrades</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="intel" onClick={() => { router.push("/structures/upgrades/intel") }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Housing
-          </Link>
-          {<Link
-            href="/structures/upgrades/economy"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${tab === 'economy' ? 'bg-blue-500 text-white' : ''
-              }`}
+            <span className="text-xl">Clandestine Upgrades</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="armory" onClick={() => { router.push("/structures/upgrades/armory") }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Economy Upgrades
-          </Link>}
-          {<Link
-            href="/structures/upgrades/armory"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${tab === 'armory' ? 'bg-blue-500 text-white' : ''
-              }`}
+            <span className="text-xl">Armory Upgrades</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="economy" onClick={() => { router.push("/structures/upgrades/economy") }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Armory Upgrades
-          </Link>}
-        </div>
-      </div>
+            <span className="text-xl">Economy Upgrades</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="houses" onClick={() => { router.push("/structures/upgrades/houses") }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
+          >
+            <span className="text-xl">Housing Upgrades</span>
+          </Tabs.Tab>
+        </Tabs.List>
+      </Tabs>
+      
       
       <div className="mb-4 flex justify-center">
         {currentPage === 'fortifications' && (<h2>Fortifications</h2>)}
