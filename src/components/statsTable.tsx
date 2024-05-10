@@ -1,3 +1,4 @@
+import toLocale from '@/utils/numberFormatting';
 import React from 'react';
 
 const StatsTable = ({ title, data }) => {
@@ -28,7 +29,7 @@ const StatsTable = ({ title, data }) => {
                 {player.display_name}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
-                {player.stat}
+                {toLocale(player.stat) || 0}
               </td>
             </tr>
           ))}

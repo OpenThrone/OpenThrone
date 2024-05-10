@@ -1,20 +1,44 @@
 import { HouseUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
+import { Group, Paper, rem, SimpleGrid, ThemeIcon, Text } from '@mantine/core';
+import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
+import classes from './housing.module.css'
 
-const Housing = () => {
+const Housing = (props) => {
   const { user } = useUser();
   return (
     <div className="mainArea pb-10">
       <h2>Housing</h2>
-      <div className="my-5 flex justify-around">
-        <p className="mb-0">
-          Gold On Hand: <span>{parseInt(user?.gold).toLocaleString()}</span>
-        </p>
-        <p className="mb-0">
-          Banked Gold:{' '}
-          <span>{parseInt(user?.goldInBank).toLocaleString()}</span>
-        </p>
-      </div>
+      <div className="my-5 flex justify-center justify-evenly">
+        <Paper withBorder p="sm" radius="md" className={classes.card}>
+          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
+            <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
+          </ThemeIcon>
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">
+              Gold On Hand
+            </Text>
+          </Group>
+
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{parseInt(user?.gold?.toString() ?? "0").toLocaleString()}</Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="sm" radius="md" className={classes.card}>
+          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
+            <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
+          </ThemeIcon>
+          <Group justify="space-between">
+            <Text size="xs" c="dimmed">
+              Banked Gold
+            </Text>
+          </Group>
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}</Text>
+          </Group>
+        </Paper>
+        </div>
+      
       <div className="my-5 flex justify-center">
         <table className="my-4 w-10/12 table-auto text-white">
           <thead>

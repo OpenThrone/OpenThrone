@@ -19,12 +19,10 @@ export default async function handler(
   }
 
   const calculateUserScoreNEW = (user) => {
-    const sortedItems = JSON.parse(JSON.stringify(user.items.filter(item => item.usage === 'type').sort((a, b) => b.level - a.level)));
-    const sortedUnits = JSON.parse(JSON.stringify(user.units.filter(unit => unit.type === 'type').sort((a, b) => b.level - a.level)));
+    const sortedItems = JSON.parse(JSON.stringify(user.items.sort((a, b) => b.level - a.level)));
+    const sortedUnits = JSON.parse(JSON.stringify(user.units.sort((a, b) => b.level - a.level)));
 
     let totalStat = 0;
-    const unitCoverage = new Map(); // Keeps track of how many times each unit has been covered
-
     sortedUnits.forEach((unit) => {
       const unitFiltered = UnitTypes.find((unitType) => unitType.type === unit.type && unitType.level === unit.level);
       if (unitFiltered === undefined) return 0;
@@ -43,7 +41,7 @@ export default async function handler(
 
     const unitScore = totalStat; // Adjusted unit score
     const itemScore = user.items
-      ? user.items.map((item) => item.quantity * (item.level * 0.1)).reduce((a, b) => a + b, 0)
+      ? user.items.map((item) => (ItemTypes.find(i => i.level === item.level && i.type === item.type)?.bonus || 0) * item.quantity).reduce((a, b) => a + b, 0)
       : 0;
 
     const userScore = 0.7 * user.experience +
@@ -63,7 +61,6 @@ export default async function handler(
       userScore
     };
   };
-
 
   const calculateUserScore = (user) => {
     const unitScore = user.units
@@ -106,21 +103,46 @@ export default async function handler(
     },
   });
 
-  const usersWithScores = users.map(user => calculateUserScore(user));
+  const usersWithOldScores = users.map(user => calculateUserScore(user));
   const usersWithNewScores = users.map(user => calculateUserScoreNEW(user));
-  usersWithScores.sort((a, b) => b.userScore - a.userScore);
+
+  usersWithOldScores.sort((a, b) => b.userScore - a.userScore);
   usersWithNewScores.sort((a, b) => b.userScore - a.userScore);
 
   // Add rank to each user
-  usersWithScores.forEach((user, index) => {
-    user.rank = index + 1;
+  usersWithOldScores.forEach((user, index) => {
+    user.Oldrank = index + 1;
   });
 
-  /*i want it to show
-  {
-  id, display_name, experienceWeight, fortLevelWeight, houseLevelWeight, oldunitScoreWeight, newUnitScoreWeight, olditemScoreWeight, newitemScoreWeight, olduserScore, newUserScore, oldrank, newRank
-  }
-  */
+  usersWithNewScores.forEach((user, index) => {
+    user.Newrank = index + 1;
+  });
 
-  return res.status(200).json({ users: usersWithScores });
+  // Combine both scores into the desired format
+  const combinedUsers = users.map((user, index) => {
+    const oldUserScore = usersWithOldScores.find(u => u.id === user.id);
+    const newUserScore = usersWithNewScores.find(u => u.id === user.id);
+
+    return {
+      id: user.id,
+      display_name: user.display_name,
+      experienceWeight: oldUserScore.experienceWeight,
+      fortLevelWeight: oldUserScore.fortLevelWeight,
+      houseLevelWeight: oldUserScore.houseLevelWeight,
+      oldunitScoreWeight: oldUserScore.unitScoreWeight,
+      newUnitScoreWeight: newUserScore.unitScoreWeight,
+      olditemScoreWeight: oldUserScore.itemScoreWeight,
+      newitemScoreWeight: newUserScore.itemScoreWeight,
+      olduserScore: oldUserScore.userScore,
+      newUserScore: newUserScore.userScore,
+      oldrank: oldUserScore.Oldrank,
+      newRank: newUserScore.Newrank
+    };
+  });
+
+
+  // Sort combined users by oldrank
+  combinedUsers.sort((a, b) => a.oldrank - b.oldrank);
+
+  return res.status(200).json({ users: combinedUsers });
 }

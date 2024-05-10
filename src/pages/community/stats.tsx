@@ -3,7 +3,10 @@ import { getSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import StatsTable from '@/components/statsTable';
 import prisma from '@/lib/prisma';
-const Stats = ({ attacks , recruits, population}) => {
+import { InferGetServerSidePropsType } from "next";
+import { ItemTypes } from '@/constants';
+
+const Stats = ({ attacks , recruits, population, totalWealth, goldOnHand, goldInBank}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
 
   return (
     <>
@@ -15,6 +18,9 @@ const Stats = ({ attacks , recruits, population}) => {
           <StatsTable title="Top 10 Population" data={population} />
           <StatsTable title="Most Active Recruiters in last 7 days" data={recruits} />
           <StatsTable title="Top 10 Successful Attackers in last 7 days" data={attacks} />
+          <StatsTable title="Top 10 Gold on Hand" data={goldOnHand} />
+          <StatsTable title="Top 10 Wealthiest Players" data={totalWealth} />
+          <StatsTable title="Top 10 Gold in Bank" data={goldInBank} />
         </div>
       </div>
     </>
@@ -72,7 +78,6 @@ export const getServerSideProps = async (context: any) => {
 
     return recruitsWithUser.filter(recruit => recruit !== null);
   }
-
 
   async function getTopSuccessfulAttacks() {
     const sevenDaysAgo = new Date();
@@ -154,8 +159,101 @@ export const getServerSideProps = async (context: any) => {
     return topPopulations;
   }
 
+  async function getTopGoldOnHand() {
+    const users = await prisma.users.findMany({
+      select: {
+        id: true,
+        display_name: true,
+        gold: true,
+      },
+      orderBy: {
+        gold: 'desc',
+      },
+      take: 10,
+    });
 
-  return { props: { attacks: await getTopSuccessfulAttacks(), recruits: await getTopRecruitsWithDisplayNames(), population: await getTopPopulations()  } };
+    const mappedUsers = users.map((user) => { 
+      return {
+        ...user,
+        stat: user.gold,
+      }
+    })
+
+    return mappedUsers;
+  }
+
+  async function getTopGoldInBank() {
+    const users = await prisma.users.findMany({
+      select: {
+        id: true,
+        display_name: true,
+        gold_in_bank: true,
+      },
+      orderBy: {
+        gold_in_bank: 'desc',
+      },
+      take: 10,
+    });
+
+    const mappedUsers = users.map((user) => {
+      return {
+        ...user,
+        stat: user.gold_in_bank,
+      }
+    })
+
+    return mappedUsers;
+  }
+
+  //Wealth is calculated by the amount of gold a user has in bank + the amount of gold a user has in hand + the value (cost) of all the items they hold
+  async function getTopWealth() {
+    const users = await prisma.users.findMany({
+      select: {
+        id: true,
+        display_name: true,
+        gold: true,
+        items: true,
+        gold_in_bank: true,
+      },
+    });
+
+    const calculateItemsValue = (items) => {
+      return items.reduce((total, item) => {
+        return total + (item.quantity * ItemTypes.find((itm)=>itm.level === item.level && item.usage === itm.usage && item.type === itm.type).cost); // Assuming the value is quantity * level
+      }, 0);
+    };
+
+    const usersWithWealth = users.map((user) => {
+      const itemsValue = user.items ? calculateItemsValue(user.items) : 0;
+      const wealth = user.gold + user.gold_in_bank + BigInt(itemsValue);
+
+      return {
+        ...user,
+        itemsValue,
+        stat: wealth,
+      };
+    })
+
+    // Sort users by wealth in descending order
+    usersWithWealth.sort((a, b) => (b.stat > a.stat ? 1 : (b.stat < a.stat ? -1 : 0)));
+
+    // Get only the top 10 users
+    const top10UsersWithWealth = usersWithWealth.slice(0, 10);
+
+    return top10UsersWithWealth;
+  }
+
+
+  return {
+    props: {
+      totalWealth: await getTopWealth(),
+      goldOnHand: await getTopGoldOnHand(),
+      goldInBank: await getTopGoldInBank(),
+      attacks: await getTopSuccessfulAttacks(),
+      recruits: await getTopRecruitsWithDisplayNames(),
+      population: await getTopPopulations()
+    }
+  };
 };
 
 export default Stats;
