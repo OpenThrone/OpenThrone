@@ -1,12 +1,10 @@
 'use server';
 
-import { getServerSession } from 'next-auth';
-
 import { attackHandler } from '@/app/actions';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { withAuth } from '@/middleware/auth';
 
-export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions);
+const handler = async (req, res) => {
+  const session = req.session;
   if (session) {
     if (req.body.turns <= 0) {
       return res.status(400).json({ status: 'failed' });
@@ -41,3 +39,5 @@ export default async function handler(req, res) {
   // console.log('failed: ', session);
   return res.status(401).json({ status: 'failed' });
 }
+
+export default withAuth(handler);

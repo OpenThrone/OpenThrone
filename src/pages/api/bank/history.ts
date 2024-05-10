@@ -1,18 +1,17 @@
 // pages/api/bank/history.js
 import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth/next';
 
 import { NextApiRequest, NextApiResponse } from 'next';
-import { authOptions } from '../auth/[...nextauth]';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { withAuth } from '@/middleware/auth';
 const prisma = new PrismaClient();
 
-export default async function history(req: NextApiRequest, res: NextApiResponse) {
+const history = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
   }
 
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -58,3 +57,5 @@ export default async function history(req: NextApiRequest, res: NextApiResponse)
 
   return res.status(200).json(stringifyObj(bankHistory));
 };
+
+export default withAuth(history);

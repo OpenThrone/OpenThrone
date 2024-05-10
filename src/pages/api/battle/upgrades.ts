@@ -25,7 +25,7 @@ const handler = async(
   }
 
   try {
-    const user = await prisma.users.findUnique({ where: { id: userId } });
+    const user = await prisma.users.findUnique({ where: { id: req.session.user.id } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }

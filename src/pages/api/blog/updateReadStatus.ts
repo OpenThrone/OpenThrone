@@ -1,15 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { withAuth } from '@/middleware/auth';
 
 
-export default async function updateReadStatus(req: NextApiRequest, res: NextApiResponse) {
+const updateReadStatus = async(req: NextApiRequest, res: NextApiResponse) => {
   if(req.method !== 'POST') {
     res.status(405).json({error: 'Method not allowed'});
     return;
   }
   // Get the session on the server-side
-  const session = await getServerSession(req, res, authOptions);
+  const session =req.session;
   if (!session) {
     res.status(401).json({ error: 'Not authenticated' });
     return;
@@ -36,3 +35,5 @@ export default async function updateReadStatus(req: NextApiRequest, res: NextApi
   });
 
 }
+
+export default withAuth(updateReadStatus);

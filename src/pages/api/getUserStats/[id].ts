@@ -2,12 +2,12 @@
 
 import { getServerSession } from 'next-auth';
 
-import { attackHandler } from '@/app/actions';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import UserModel from '@/models/Users';
+import { withAuth } from '@/middleware/auth';
 
-export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions);
+const handler = async(req, res) => {
+  const session = req.session;
   if (session) {
     const { id } = req.query;
     if (session.user.id !== 1 && session.user.id !== 2 && session.user.id !== id) {
@@ -32,3 +32,5 @@ export default async function handler(req, res) {
   // console.log('failed: ', session);
   return res.status(401).json({ status: 'Not logged in' });
 }
+
+export default withAuth(handler);

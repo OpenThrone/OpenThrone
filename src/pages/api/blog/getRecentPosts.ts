@@ -1,12 +1,9 @@
+import { withAuth } from '@/middleware/auth';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
 
-import { authOptions } from '../auth/[...nextauth]';
-import { alertService } from '@/services';
-
-export default async function getPosts(req: NextApiRequest, res: NextApiResponse) {
+const getPosts = async(req: NextApiRequest, res: NextApiResponse) => {
   // Get the session on the server-side
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
 
   // If there's no session, return an error
   if (!session) {
@@ -51,4 +48,4 @@ export default async function getPosts(req: NextApiRequest, res: NextApiResponse
   }
 };
 
-
+export default withAuth(getPosts);

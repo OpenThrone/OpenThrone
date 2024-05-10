@@ -1,18 +1,17 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '../auth/[...nextauth]';
 import { ItemTypes, UnitTypes } from '@/constants';
+import { withAuth } from '@/middleware/auth';
 
-export default async function handler(
+const handler = async (
   req: NextApiRequest,
   res: NextApiResponse,
-) {
+) => {
   if (req.method !== 'GET') {
     return res.status(405).end(); // Method not allowed
   }
 
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
 
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -146,3 +145,5 @@ export default async function handler(
 
   return res.status(200).json({ users: combinedUsers });
 }
+
+export default withAuth(handler);

@@ -1,23 +1,18 @@
 import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth/next';
 
-import { authOptions } from '../auth/[...nextauth]';
 import { NextApiRequest, NextApiResponse } from 'next';
-import user from '@/pages/messaging/compose/[user]';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { withAuth } from '@/middleware/auth';
 
 const prisma = new PrismaClient();
 
-export default async function withdraw(req: NextApiRequest, res: NextApiResponse) {
+const withdraw = (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
 
-  const session = await getServerSession(req, res, authOptions);
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
+  const session = req.session;
+  
   const withdrawAmount = BigInt(req.body.withdrawAmount.toString());
 
   // Fetch the user based on the session's user ID
@@ -53,3 +48,5 @@ export default async function withdraw(req: NextApiRequest, res: NextApiResponse
   // Return the updated user data or any other relevant response
   return res.status(200).json({ message: 'Withdraw successful' });
 };
+
+export default withAuth(withdraw);

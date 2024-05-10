@@ -3,14 +3,14 @@ import { getServerSession } from 'next-auth/next';
 
 import { NextApiRequest, NextApiResponse } from 'next';
 
-import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
-import { stringifyObj } from '@/utils/numberFormatting';
+import { withAuth } from '@/middleware/auth';
+import handler from '../auto-recruit';
 
 const prisma = new PrismaClient();
 
-export default async function getDeposits(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getServerSession(req, res, authOptions);
+const getDeposits = async (req: NextApiRequest, res: NextApiResponse) => {
+  const session = req.session;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -71,3 +71,5 @@ export default async function getDeposits(req: NextApiRequest, res: NextApiRespo
 
   return res.status(200).json({ deposits: userMod.maximumBankDeposits - history.length, nextDepositAvailable: history.length > 0 ? getCountdown(history[0].date_time.toString()):0 } );
 };
+
+export default withAuth(getDeposits);

@@ -1,18 +1,16 @@
 import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth/next';
-
-import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { withAuth } from '@/middleware/auth';
 
 const prisma = new PrismaClient();
 
-export default async function depositHandler(req: NextApiRequest, res: NextApiResponse) {
+const depositHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
 
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -85,3 +83,5 @@ export default async function depositHandler(req: NextApiRequest, res: NextApiRe
   // Return the updated user data or any other relevant response
   return res.status(200).json({ message: 'Deposit successful' });
 };
+
+export default withAuth(depositHandler);

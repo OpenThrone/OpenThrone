@@ -3,7 +3,6 @@
 import prisma from '@/lib/prisma';
 
 export default async function handler(req, res) {
-  console.log(req.query.id);
   const exists = await prisma.users.findUnique({
     where: { id: parseInt(req.query?.id, 10) },
   });

@@ -1,12 +1,8 @@
 'use server';
 
-import { getServerSession } from 'next-auth';
+import { withAuth } from "@/middleware/auth";
 
-import { attackHandler } from '@/app/actions';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
-import UserModel from '@/models/Users';
-
-export default async function handler(req, res) {
+const handler = async (req, res) => {
     const { id, token } = req.query;
     const user = await prisma?.users.findUnique({
       where: { id: Number(id) },
@@ -25,6 +21,6 @@ export default async function handler(req, res) {
           proficiencies: user.bonus_points
         }
       });
-  // console.log('failed: ', session);
-  return res.status(401).json({ status: 'Not logged in' });
 }
+
+export default withAuth(handler);
