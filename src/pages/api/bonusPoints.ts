@@ -1,27 +1,20 @@
 // pages/api/update-bonus-points.js
 import type { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '@/lib/prisma'; // Adjust the import path to your actual Prisma instance
-import { getServerSession } from 'next-auth';
-import { authOptions } from './auth/[...nextauth]';
+import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
+import { withAuth } from '@/middleware/auth';
 
 // Handler function for the API route
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Ensure the request is of type POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Retrieve session and return an error if not authenticated
-  const session = await getServerSession(req, res, authOptions);
-  if (!session) {
-    return res.status(403).json({ error: 'Not authenticated' });
-  }
-
   // Retrieve the type to update and user ID from the request body
   const { typeToUpdate } = req.body;
   
-  const userId = session.user?.id; // Make sure your session object has the correct structure
+  const userId = req.session.user?.id; // Make sure your session object has the correct structure
   if (!userId) {
     return res.status(403).json({ error: 'User ID is missing from session' , session: session});
   }
@@ -61,7 +54,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Increment the level of the specified type if present
     updatedBonusPoints = updatedBonusPoints.map((bonus) => {
       if (bonus.type === typeToUpdate) {
-        return { ...bonus, level: bonus.level + 1 };
+        if (bonus.level <= 75) {
+          return { ...bonus, level: bonus.level + 1 };
+        } else {
+          return res.status(404).json({ error: 'Max level reached' });
+        }
       }
       return bonus;
     });
@@ -79,3 +76,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Internal Server Error', errorDetails: error });
   }
 }
+
+export default withAuth(handler);

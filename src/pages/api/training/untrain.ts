@@ -2,11 +2,13 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { UnitTypes } from '@/constants';
 import prisma from '@/lib/prisma';
+import UserModel from '@/models/Users';
+import { withAuth } from '@/middleware/auth';
 
-export default async function handler(
+const handler = async(
   req: NextApiRequest,
   res: NextApiResponse
-) {
+) => {
   if (req.method === 'POST') {
     const { userId, units } = req.body;
     let totalCost = 0;
@@ -18,6 +20,13 @@ export default async function handler(
 
     try {
       const user = await prisma.users.findUnique({ where: { id: userId } });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      if (user.id !== req.session.user.id) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const uModel = new UserModel(user);
       
       // Validate if the user has enough units to untrain
       for (const unitData of units) {
@@ -41,7 +50,7 @@ export default async function handler(
             .status(400)
             .json({ error: `Invalid unit type: ${unitData.type}` });
         }
-        totalCost += unit.cost * unitData.quantity;
+        totalCost += (unit.cost - ((uModel.priceBonus || 0) / 100) * unit.cost) * unitData.quantity;
       }
 
       // Add the number of units to "CITIZENS"
@@ -81,3 +90,5 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 }
+
+export default withAuth(handler);

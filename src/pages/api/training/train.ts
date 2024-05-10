@@ -2,14 +2,28 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { UnitTypes } from '@/constants';
 import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]';
+import UserModel from '@/models/Users';
+import { withAuth } from '@/middleware/auth';
 
-export default async function handler(
+const handler = async(
   req: NextApiRequest,
   res: NextApiResponse
-) {
+) => {
   if (req.method === 'POST') {
-    const { userId, units } = req.body;
-
+    let { userId, units } = req.body;
+    if (userId !== req.session.user.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const user = await prisma.users.findUnique({ where: { id: userId } });
+    const uModel = new UserModel(user);
+    if (typeof units === 'string') {
+      units = JSON.parse(units);
+    }
+    if (typeof userId === 'string') {
+      userId = parseInt(userId);
+    }
     // Validate the input data
     if (!userId || !Array.isArray(units)) {
       return res.status(400).json({ error: 'Invalid input data' });
@@ -31,7 +45,7 @@ export default async function handler(
         if (!unitType) {
           return res.status(400).json({ error: `Invalid unit type or level: ${unitData.type} Level ${unitData.level}` });
         }
-        totalCost += unitType.cost * unitData.quantity;
+        totalCost += (unitType.cost - ((uModel.priceBonus || 0) / 100) * unitType.cost) * unitData.quantity;
       }
 
       if (user.gold < totalCost) {
@@ -73,10 +87,11 @@ export default async function handler(
       await prisma.users.update({
         where: { id: userId },
         data: {
-          gold: BigInt(user.gold) - BigInt(totalCost),
+          gold: BigInt(user.gold) - BigInt(Math.ceil(totalCost).toString()),
           units: updatedUnitsArray,
         },
       });
+      console.log('here')
       const updatedUser = await prisma.users.findUnique({
         where: { id: userId },
       });
@@ -85,9 +100,12 @@ export default async function handler(
         data: updatedUser.units,
       });
     } catch (error) {
+      console.log(error);
       return res.status(500).json({ error: 'Failed to train units' });
     }
   } else {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 }
+
+export default withAuth(handler);
