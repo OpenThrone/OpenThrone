@@ -1,21 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 
-import { authOptions } from './auth/[...nextauth]';
 import { alertService } from '@/services';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { withAuth } from '@/middleware/auth';
 
-export default async function getUser(req: NextApiRequest, res: NextApiResponse) {
-  // Get the session on the server-side
-  const session = await getServerSession(req, res, authOptions);
-
-  // If there's no session, return an error
-  if (!session) {
-    res.status(401).json({ error: 'Not authenticated' });
-    return;
-  }
+const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
   try {
+    const session = req.session;
     // Fetch the user based on the session's user ID
     const user = await prisma.users.findUnique({
       where: {
@@ -94,3 +87,5 @@ export default async function getUser(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export default withAuth(getUser);

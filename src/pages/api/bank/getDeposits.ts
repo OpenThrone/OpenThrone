@@ -69,5 +69,5 @@ export default async function getDeposits(req: NextApiRequest, res: NextApiRespo
 
   const userMod = new UserModel(user);
 
-  return res.status(200).json({ deposits: userMod.maximumBankDeposits - history.length, nextDepositAvailable: getCountdown(history[0].date_time.toString()) } );
+  return res.status(200).json({ deposits: userMod.maximumBankDeposits - history.length, nextDepositAvailable: history.length > 0 ? getCountdown(history[0].date_time.toString()):0 } );
 };

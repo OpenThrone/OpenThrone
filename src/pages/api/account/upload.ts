@@ -3,13 +3,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import AWS from 'aws-sdk';
 import formidable from 'formidable';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
 import path from 'path';
 import fs from 'fs';
 import mime from 'mime-types';
 import { stringifyObj } from '@/utils/numberFormatting';
 import imageSize from 'image-size';
+import { withAuth } from '@/middleware/auth';
 
 
 // AWS S3 upload function
@@ -23,7 +22,6 @@ const uploadToS3 = (file: formidable.File, uId: Number): Promise<AWS.S3.ManagedU
   });
 
   const fileStream = fs.createReadStream(file.filepath);
-  console.log('File Stream:', fileStream)
   const contentType = mime.lookup(file.originalFilename) || 'application/octet-stream'; // Fallback to application/octet-stream if the MIME type is unknown
 
   const params = {
@@ -44,11 +42,7 @@ export const config = {
   },
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getServerSession(req, res, authOptions);
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
     const form = formidable({ multiples: false, maxFileSize: 1.5 * 1024 * 1024 })
     form.uploadDir = path.join(process.cwd(), 'temp'); 
@@ -93,3 +87,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+export default withAuth(handler);

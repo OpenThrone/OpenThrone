@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
+import { withAuth } from '@/middleware/auth';
 
 interface EquipmentProps {
   type: string;
@@ -11,23 +12,24 @@ interface EquipmentProps {
   quantity: number | string;
 }
 
-export default async function handler(
+const handler = async(
   req: NextApiRequest,
   res: NextApiResponse,
-) {
+) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { userId, items: itemsToEquip } = req.body;
-
+  if (userId !== req.session.user.id)
+    return res.status(400).json({ error: 'Unauthorized' });
   // Validate the input data
   if (!userId || !Array.isArray(itemsToEquip)) {
     return res.status(400).json({ error: 'Invalid input data' });
   }
 
   try {
-    const user = await prisma.users.findUnique({ where: { id: userId } });
+    const user = await prisma.users.findUnique({ where: { id: req.session.user.id } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -109,7 +111,6 @@ export default async function handler(
         items: updatedItems,
       },
     });
-    console.log('updatedItems', updatedItems);
 
     return res.status(200).json({
       message: 'Items equipped successfully',
@@ -120,3 +121,5 @@ export default async function handler(
     return res.status(500).json({ error: 'Failed to equip items' });
   }
 }
+
+export default withAuth(handler);

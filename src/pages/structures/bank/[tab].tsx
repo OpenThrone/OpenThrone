@@ -66,7 +66,7 @@ const Bank = (props) => {
         setMessage('No filters selected');
         setBankHistory([]);
       }
-    } else {
+    } 
       fetch('/api/bank/getDeposits')
         .then((response) => response.json())
         .then((data) => {
@@ -78,7 +78,7 @@ const Bank = (props) => {
           console.error('Error fetching deposits:', error);
           setMessage('Failed to fetch deposits');
         });
-    }
+
   }, [currentPage, filters]);
 
 
@@ -208,7 +208,7 @@ const Bank = (props) => {
             
             <Text>{despositsAvailable}</Text>
           </Group>
-          {despositsAvailable <= depositsMax && (
+          {despositsAvailable < depositsMax && (
             <Group>
               <Text size="xs" c="dimmed">
                 Next deposit available in {nextDepositAvailable.hours}:{nextDepositAvailable.minutes}
@@ -331,7 +331,7 @@ const Bank = (props) => {
 
                   return (
                     <Table.Tr key={index}>
-                      <Table.Td>{new Date(entry.date_time).toLocaleDateString()}</Table.Td>
+                      <Table.Td>{new Date(entry?.date_time).toLocaleDateString()}</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
                       <Table.Td>{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
                     </Table.Tr>
@@ -409,7 +409,7 @@ const Bank = (props) => {
                     <Table.Tr key={index}>
                       <Table.Td>{new Date(entry.date_time).toLocaleDateString()}</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
-                      <Table.Td>{toLocale(entry.gold_amount, user.locale)} gold</Table.Td>
+                      <Table.Td>{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
                     </Table.Tr>
                   );
                 })}

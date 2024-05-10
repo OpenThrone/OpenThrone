@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { BattleUpgrades, ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { stringifyObj } from '@/utils/numberFormatting';
+import { withAuth } from '@/middleware/auth';
 
 interface EquipmentProps {
   type: string;
@@ -11,13 +11,13 @@ interface EquipmentProps {
   quantity: number | string;
 }
 
-export default async function handler(
+const handler = async(
   req: NextApiRequest,
   res: NextApiResponse,
-) {
+) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
-  }
+  }  
 
   const { userId, items: itemsToEquip, operation = 'buy' } = req.body;
   if (!userId || !Array.isArray(itemsToEquip) || !['buy', 'sell'].includes(operation)) {
@@ -118,3 +118,5 @@ export default async function handler(
     return res.status(500).json({ error: 'Failed to equip items' });
   }
 }
+
+export default withAuth(handler);

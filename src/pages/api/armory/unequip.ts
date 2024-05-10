@@ -2,14 +2,16 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
+import { withAuth } from '@/middleware/auth';
 
-export default async function handler(
+const handler = async (
   req: NextApiRequest,
   res: NextApiResponse,
-) {
+) => {
   if (req.method === 'POST') {
     const { userId, items } = req.body;
-
+    if (userId !== req.session.user.id)
+      return res.status(403).json({ error: 'Unauthorized' });
     // Validate the input data
     if (!userId || !Array.isArray(items)) {
       return res.status(400).json({ error: 'Invalid input data' });
@@ -86,3 +88,5 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 }
+
+export default withAuth(handler);

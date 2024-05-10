@@ -1,22 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth/next';
 
 import { NextApiRequest, NextApiResponse } from 'next';
-import { authOptions } from '../auth/[...nextauth]';
+import { withAuth } from '@/middleware/auth';
 const prisma = new PrismaClient();
 
-export default async function getAll(req: NextApiRequest, res: NextApiResponse) {
+const getAll = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
-  }
-
-  const session = await getServerSession(req, res, authOptions);
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  if (!session.user.id) {
-    return res.status(400).json({ error: 'Invalid user' });
   }
 
   const Alliances = await prisma.alliances.findMany({
@@ -51,3 +41,4 @@ export default async function getAll(req: NextApiRequest, res: NextApiResponse) 
 
   return res.status(200).json(Alliances);
 };
+export default withAuth(getAll);
