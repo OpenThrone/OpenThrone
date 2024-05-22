@@ -67,9 +67,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       try {
         // Upload the file to S3
-        const result = await uploadToS3(file, session.user.id);
+        const result = await uploadToS3(file, req.session.user.id);
         const updated = await prisma.users.update({
-          where: { id: session.user.id },
+          where: { id: req.session.user.id },
           data: {
             avatar: process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + result.Key,
           },
