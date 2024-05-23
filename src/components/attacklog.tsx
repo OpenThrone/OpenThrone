@@ -1,23 +1,23 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import type { UnitType } from '@/types/typings';
-import { formatDate, getUnitName } from '@/utils/utilities';
+import type { BattleUnits } from '@/types/typings';
+import { formatDate } from '@/utils/utilities';
 import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from './modal';
-import { alertService } from '@/services';
-import router from 'next/router';
-import { useUser } from '@/context/users';
-import toLocale, { stringifyObj } from '@/utils/numberFormatting';
+import toLocale from '@/utils/numberFormatting';
+import Link from 'next/link';
+import { HoverCard, List, Text } from '@mantine/core';
 
 interface Loss {
-  [key: string]: number;
+  total: number;
+  units: BattleUnits[];
 }
 
 interface Stats {
   pillagedGold: number;
   xpEarned: number;
-  turns?: number; // Assuming turns can be optional
+  turns?: number;
   attacker_losses?: Loss;
   defender_losses?: Loss;
 }
@@ -52,55 +52,28 @@ interface AttackLogTableProps {
   type: string;
 }
 
-const isValidUnitType = (type: any): type is UnitType => {
-  return ['CITIZEN', 'WORKER', 'OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].includes(
-    type
-  );
-};
-
 const LossesList: React.FC<LossesListProps> = ({ losses }) => {
+  if (losses.total === 0)
+    return <span>0 Units</span>;
   if (Object.keys(losses).length === 0) {
     return <span>0 Units</span>;
   }
-  if (losses.total === 0) 
-    return <span>0 Units</span>;
-
+  if (Object.keys(losses.units).length === 0 && losses.total > 0) {
+    return <span>{losses.total} Units</span>
+  }
   return (
-    <ul>
-      {Object.entries(losses).map(([key, value]) => {
-        const [type, levelStr] = key.split('-');
-
-        // Ensure that levelStr is not undefined
-        if (typeof levelStr === 'undefined') {
-          console.warn(`Level string is undefined for key '${key}'`);
-          return null; // Skip this item
-        }
-
-        const level = parseInt(levelStr, 10);
-
-        // Check if level is a valid number
-        if (Number.isNaN(level)) {
-          console.warn(`Invalid level '${levelStr}' for key '${key}'`);
-          return null; // Skip this item if level is not valid
-        }
-
-        if (typeof type === 'undefined') {
-          console.warn('Type is undefined for key', key);
-          return null; // Skip this item
-        }
-
-        if (!isValidUnitType(type)) {
-          console.warn(`Invalid unit type '${type}' for key '${key}'`);
-          return null; // Skip this item
-        }
-
-        return (
-          <li key={key}>
-            {getUnitName(type, level)}: {value}
-          </li>
-        );
-      })}
-    </ul>
+    <HoverCard>
+      <HoverCard.Target>
+        <span>{losses.total} Units</span>
+      </HoverCard.Target>
+      <HoverCard.Dropdown>
+        <List>
+          {losses.units.map((unit, index) => (
+            <List.Item key={index}>{unit.quantity}x Level {unit.level} {unit.type}</List.Item>
+          ))}
+        </List>
+      </HoverCard.Dropdown>
+    </HoverCard>
   );
 };
 
@@ -134,8 +107,8 @@ const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => {
       </td>
       <td className="border-b px-4 py-2">
         {type === 'defense'
-          ? <a href={`/userprofile/${log.attackerPlayer?.id}`} className='text-white'>{log.attackerPlayer?.display_name}</a> ?? 'Unknown'
-          : <a href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</a> ?? 'Unknown'}
+          ? <Link href={`/userprofile/${log.attackerPlayer?.id}`} className='text-white'>{log.attackerPlayer?.display_name}</Link> ?? 'Unknown'
+          : <Link href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</Link> ?? 'Unknown'}
         <br />
         {formattedDate}
       </td>
@@ -157,8 +130,6 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
       setOpenModalId(id); // Open modal for specific ID
     }
   };
-
-  
   
   return (
     <table className="min-w-full table-auto bg-gray-900 rounded">

@@ -1,4 +1,4 @@
-import type { PlayerUnit } from '@/types/typings';
+import type { BattleUnits, PlayerUnit } from '@/types/typings';
 
 import BattleSimulationResult from './BattleSimulationResult';
 import type UserModel from './Users';
@@ -18,11 +18,11 @@ class BattleResult {
   Losses: {
     Attacker: {
       total: number;
-      units: PlayerUnit[]
+      units: BattleUnits[]
     };
     Defender: {
       total: number;
-      units: PlayerUnit[]
+      units: BattleUnits[]
     };
   };
 
@@ -42,6 +42,31 @@ class BattleResult {
         units: [],
       },
     };
+  }
+
+  distributeCasualties(units: BattleUnits[], casualties: number): BattleUnits[] {
+    let distributedCasualties = 0;
+    const killedUnits: BattleUnits[] = [];
+
+    for (const unit of units) {
+      const unitCasualties = Math.min(unit.quantity, casualties - distributedCasualties);
+      distributedCasualties += unitCasualties;
+      unit.quantity -= unitCasualties;
+
+      if (unitCasualties > 0) {
+        killedUnits.push({
+          level: unit.level,
+          type: unit.type,
+          quantity: unitCasualties,
+        });
+      }
+
+      if (distributedCasualties >= casualties) {
+        break;
+      }
+    }
+
+    return killedUnits;
   }
 
 }
