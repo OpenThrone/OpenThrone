@@ -10,6 +10,7 @@ const parentLinks = [
   'Home',
   'Battle',
   'Structures',
+  'Social',
   // 'Alliances',
   'Community',
 ] as const;
@@ -33,6 +34,11 @@ const subMenus: {
     { text: 'Training', href: '/battle/training', parent: 'Battle' },
     { text: 'Upgrades', href: '/battle/upgrades', parent: 'Battle' },
     { text: 'War History', href: '/battle/history', parent: 'Battle' },
+  ],
+  Social: [
+    { text: 'Friends', href: '/social/friends', parent: 'Social' },
+    { text: 'Enemies', href: '/social/enemies', parent: 'Social' },
+    { text: 'Requests', href: '/social/requests', parent: 'Social' },
   ],
   Structures: [
     { text: 'Bank', href: '/structures/bank', parent: 'Structures' },
