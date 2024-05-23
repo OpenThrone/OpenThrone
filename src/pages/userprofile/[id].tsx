@@ -13,6 +13,7 @@ import UserModel from '@/models/Users';
 import { alertService } from '@/services';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
+import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid } from '@mantine/core';
 
 interface IndexProps {
   users: UserModel;
@@ -30,6 +31,47 @@ const Index: React.FC<IndexProps> = ({ users }) => {
   const [canSpy, setCanSpy] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const handleAddFriend = async () => {
+    const res = await fetch('/api/social/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendId: profile.id, relationshipType: 'FRIEND' }),
+    });
+
+    if (res.ok) {
+      alertService.success('Friend added successfully');
+      context.forceUpdate();
+    } else {
+      alertService.error('Failed to add friend');
+    }
+  };
+
+  const handleRemoveFriend = async () => {
+    const res = await fetch('/api/social/remove', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendId: profile.id }),
+    });
+
+    if (res.ok) {
+      alertService.success('Friend removed successfully');
+      context.forceUpdate();
+    } else {
+      alertService.error('Failed to remove friend');
+    }
+  };
+
+  useEffect(() => {
+    fetch('/api/social/listAll?type=FRIEND&limit=5&playerId=' + profile.id)
+      .then(response => response.json())
+      .then(data => {
+        setFriends(data);
+        setLoading(false);
+      });
+  }, []);
   const toggleModal = () => {
     setIsOpen(!isOpen);
   };
@@ -76,6 +118,31 @@ const Index: React.FC<IndexProps> = ({ users }) => {
       setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
     }
   }, [profile, users, user, isPlayer]);
+
+  if (loading) return <Loader />;
+  const isFriend = friends.some(friend => friend.friend.id === profile.id);
+  const friendsList = (friends.length > 0 ? friends.map(friend => {
+    const player = new UserModel(friend.friend); // Assuming the data structure correctly maps to UserModel
+    return (
+      <Paper key={player.id} radius="md" withBorder p="lg" className="my-3">
+        <Indicator color={player.is_online ? 'teal' : 'red'} style={{ display: 'block', textAlign: 'center' }}>
+          <Avatar src={player?.avatar} size={40} radius={40} mx="auto" />
+        </Indicator>
+        <Text size="sm" weight={500} align="center" mt="md">
+          <Link
+            href={`/userprofile/${player.id}`}
+            className='text-blue-500 hover:text-blue-700 font-bold'
+          >
+            {player.displayName}
+          </Link>
+          {player.is_player && <Badge color="blue" ml={5}>You</Badge>}
+        </Text>
+        <Text size="xs" color="dimmed" align="center">
+          {player.race} {player.class}
+        </Text>
+      </Paper>
+    );
+  }) : <p>No friends found.</p>);
   return (
     <div className="mainArea pb-10">
       <h2>{profile?.displayName}</h2>
@@ -170,17 +237,55 @@ const Index: React.FC<IndexProps> = ({ users }) => {
                   toggleModal={toggleSpyModal}
                   defenderID={profile?.id}
                 />
-              {/* <a href="#" className="list-group-item list-group-item-action disabled">Transfer Gold</a> */}
               <Link
                 href={`/recruit/${profile?.recruitingLink}`}
                 className="list-group-item list-group-item-action"
               >
                 Recruit this Player
               </Link>
-              {/* <a href="#" className="list-group-item list-group-item-action disabled">Add to Friends List</a>
-        <a href="#" className="list-group-item list-group-item-action disabled">Add to Enemies List</a> */}
+                <button
+                  type="button"
+                  onClick={handleAddFriend}
+                  className={`list-group-item list-group-item-action w-full text-left`}
+                  style={{ display: isFriend ? 'none' : 'block' }}
+                >
+                  Add to Friends List
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveFriend}
+                  className={`list-group-item list-group-item-action w-full text-left`}
+                  style={{ display: isFriend ? 'block' : 'none' }}
+                >
+                  Remove Friend
+                </button>
+                <button
+                  type="button"
+                  className={`list-group-item list-group-item-action w-full text-left`}
+                  style={{ display: isFriend ? 'block' : 'none' }}
+                >
+                  Transfer Gold
+                </button>
+                <button
+                  type="button"
+                  className={`list-group-item list-group-item-action w-full text-left`}
+                  style={{ display: isFriend ? 'block' : 'none' }}
+                >
+                  Request Gold
+                </button>
+                <Link href="#" className={`list-group-item list-group-item-action ${isFriend ? 'disabled' : ''}`}>
+                  Add to Enemies List
+                </Link>
             </div>
           )}
+          <h6 className="border-dark text-center font-bold">
+            Top Friends
+          </h6>
+          <Paper shadow="sm" p="md" className="my-5">
+            <SimpleGrid cols={3} spacing={4}>
+              {friendsList}
+              </SimpleGrid>
+          </Paper>
           <table className="mb-5 table w-full table-auto">
             <thead>
               <tr>
