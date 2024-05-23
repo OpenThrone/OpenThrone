@@ -15,8 +15,8 @@ const Stats = ({ attacks , recruits, population, totalWealth, goldOnHand, goldIn
       </div>
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <StatsTable title="Top 10 Population" data={population} />
-          <StatsTable title="Most Active Recruiters in last 7 days" data={recruits} />
+          <StatsTable title="Top 10 Population" data={population} description="The top 10 population is a list of the ten user accounts with the highest total population over a span." />
+          <StatsTable title="Most Active Recruiters in last 1 day" data={recruits} />
           <StatsTable title="Top 10 Successful Attackers in last 7 days" data={attacks} />
           <StatsTable title="Top 10 Gold on Hand" data={goldOnHand} />
           <StatsTable title="Top 10 Wealthiest Players" data={totalWealth} />
@@ -28,10 +28,9 @@ const Stats = ({ attacks , recruits, population, totalWealth, goldOnHand, goldIn
 };
 
 export const getServerSideProps = async (context: any) => {
-
-  async function getRecruitmentCounts() {
+  async function getRecruitmentCounts(days: number = 7) {
     const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - days);
 
     const recruitmentCounts = await prisma.recruit_history.groupBy({
       by: ['to_user'],
@@ -42,7 +41,7 @@ export const getServerSideProps = async (context: any) => {
         timestamp: {
           gte: sevenDaysAgo,
         },
-        from_user:{not: 0}
+        from_user: { not: 0 }
       },
       orderBy: {
         _count: {
@@ -52,25 +51,51 @@ export const getServerSideProps = async (context: any) => {
       take: 10,
     });
 
-    return recruitmentCounts;
+    const recruitmentCountsWithFilteredRecords = await Promise.all(recruitmentCounts.map(async (recruit) => {
+      const validRecruitmentRecords = await prisma.recruit_history.findMany({
+        where: {
+          from_user: { not: recruit.to_user },
+          to_user: recruit.to_user,
+          timestamp: { gte: sevenDaysAgo },
+        },
+        select: {
+          from_user: true,
+          timestamp: true,
+          to_user: true,
+        },
+      });
+
+      recruit.recruitmentRecords = validRecruitmentRecords;
+      recruit._count.to_user = validRecruitmentRecords.length; // update count based on valid records
+
+      return recruit;
+    }));
+
+    return recruitmentCountsWithFilteredRecords;
   }
 
   async function getTopRecruitsWithDisplayNames() {
-    const recruitmentCounts = await getRecruitmentCounts();
+    const recruitmentCounts = await getRecruitmentCounts(1);
+
+    // Filter out entries with no valid recruitments
+    const filteredRecruitmentCounts = recruitmentCounts.filter(recruit =>
+      recruit.recruitmentRecords.length > 0
+    );
 
     // Map recruitmentCounts to include user data
-    const recruitsWithUser = await Promise.all(recruitmentCounts.map(async (recruit) => {
-      if(recruit.to_user === 0) return null;
+    const recruitsWithUser = await Promise.all(filteredRecruitmentCounts.map(async (recruit) => {
       const user = await prisma.users.findUnique({
         where: {
           id: recruit.to_user,
         },
         select: {
           display_name: true,
+          id: true
         },
       });
 
       return {
+        id: user ? user.id : 0,
         display_name: user ? user.display_name : 'Unknown',
         stat: recruit._count.to_user,
       };
@@ -78,6 +103,8 @@ export const getServerSideProps = async (context: any) => {
 
     return recruitsWithUser.filter(recruit => recruit !== null);
   }
+
+
 
   async function getTopSuccessfulAttacks() {
     const sevenDaysAgo = new Date();
@@ -116,6 +143,7 @@ export const getServerSideProps = async (context: any) => {
             id: attacker_id,
           },
           select: {
+            id: true,
             display_name: true,
           },
         });
@@ -126,6 +154,7 @@ export const getServerSideProps = async (context: any) => {
     // Merge attacker details with attack counts
     const detailedAttackCounts = sortedAttackers.map(attacker => ({
       ...attacker,
+      id: attacker.attacker_id,
       display_name: attackerDetails.find(detail => detail && detail.attacker_id === attacker.attacker_id)?.display_name || 'Unknown',
     }));
 
@@ -155,7 +184,6 @@ export const getServerSideProps = async (context: any) => {
     // Sort by total units in descending order and take the top 10
     const topPopulations = usersTotalUnits.sort((a, b) => b.stat - a.stat).slice(0, 10);
 
-
     return topPopulations;
   }
 
@@ -172,7 +200,7 @@ export const getServerSideProps = async (context: any) => {
       take: 10,
     });
 
-    const mappedUsers = users.map((user) => { 
+    const mappedUsers = users.map((user) => {
       return {
         ...user,
         stat: user.gold,
@@ -205,7 +233,7 @@ export const getServerSideProps = async (context: any) => {
     return mappedUsers;
   }
 
-  //Wealth is calculated by the amount of gold a user has in bank + the amount of gold a user has in hand + the value (cost) of all the items they hold
+  // Wealth is calculated by the amount of gold a user has in bank + the amount of gold a user has in hand + the value (cost) of all the items they hold
   async function getTopWealth() {
     const users = await prisma.users.findMany({
       select: {
@@ -219,7 +247,7 @@ export const getServerSideProps = async (context: any) => {
 
     const calculateItemsValue = (items) => {
       return items.reduce((total, item) => {
-        return total + (item.quantity * ItemTypes.find((itm)=>itm.level === item.level && item.usage === itm.usage && item.type === itm.type).cost); // Assuming the value is quantity * level
+        return total + (item.quantity * ItemTypes.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type).cost); // Assuming the value is quantity * level
       }, 0);
     };
 
@@ -255,5 +283,6 @@ export const getServerSideProps = async (context: any) => {
     }
   };
 };
+
 
 export default Stats;
