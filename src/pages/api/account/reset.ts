@@ -77,7 +77,8 @@ export default async function handler(
       status: true,
       message: 'Password reset email sent',
       id: resetReq.id,
-      uId: uModel.id
+      uId: uModel.id,
+      info
     });
   } catch (error: any) {
     return res.status(500).json({

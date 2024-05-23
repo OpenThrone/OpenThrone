@@ -1,14 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 
-import { authOptions } from './auth/[...nextauth]';
-import { alertService } from '@/services';
 import { stringifyObj } from '@/utils/numberFormatting';
-import users from '../battle/users';
+import { withAuth } from '@/middleware/auth';
 
-export default async function getSearchResults(req: NextApiRequest, res: NextApiResponse) {
+const getSearchResults = async (req: NextApiRequest, res: NextApiResponse) => {
   // Get the session on the server-side
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
 
   // If there's no session, return an error
   if (!session) {
@@ -55,3 +53,5 @@ export default async function getSearchResults(req: NextApiRequest, res: NextApi
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export default withAuth(getSearchResults);

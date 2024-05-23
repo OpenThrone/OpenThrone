@@ -2,12 +2,18 @@ import router from 'next/router';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { alertService } from '@/services';
+import classes from './floatinginput.module.css';
+import { Space, TextInput } from '@mantine/core';
 
 const Index = () => {
   const [verify, setVerify] = useState('');
   const [verified, setVerified] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [verifyFocused, setVerifyFocused] = useState(false);
+  const emailFloating = email.trim().length !== 0 || emailFocused || undefined;
+  const verifyFloating = verify.trim().length !== 0 || verifyFocused || undefined;
 
   const handleVerifySubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submit action
@@ -68,36 +74,49 @@ const Index = () => {
         <div className="mainArea pb-10">
           <h2>Password Reset</h2>
         </div>
-        <div className="xs:w-96 md:w-3/4 py-2 md:col-span-9">
+        <div className="mx-auto xs:w-96 md:w-3/4 py-2 md:col-span-9">
           <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">
             <div className="flex justify-center">
               <div className="xs:w-96 md:w-3/4">
                 <form onSubmit={handleVerifySubmit}>
                   <div className="mb-4">
-                    <label htmlFor="email" className="mb-1 block">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
+                    <TextInput
+                      label="Email Address"
+                      placeholder="Enter your email address"
                       required
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded border border-gray-300 px-3 py-2"/>
+                      id="email"
+                      name="email"
+                      onChange={(event) => setEmail(event.currentTarget.value)}
+                      onFocus={() => setEmailFocused(true)}
+                      onBlur={() => setEmailFocused(false)}
+                      classNames={classes}
+                      mt="md"
+                      autoComplete="nope"
+                      data-floating={emailFloating}
+                      labelProps={{ 'data-floating': emailFloating }}
+                      className="w-full rounded border border-gray-300"
+                    />
+                    <Space h={'md'}/>
                     
-                    <label htmlFor="verify" className="mb-1 block">
-                      Verification code
-                    </label>
-                    <input
-                      type="text"
-                      id="verify"
-                      name="verify"
+                    <TextInput
+                      label="Verification code"
+                      placeholder="Enter your verification code"
                       required
                       value={verify}
-                      onChange={(e) => setVerify(e.target.value)}
-                      className="w-full rounded border border-gray-300 px-3 py-2"
+                      onChange={(event) => setVerify(event.currentTarget.value)}
+                      onFocus={() => setVerifyFocused(true)}
+                      onBlur={() => setVerifyFocused(false)}
+                      classNames={classes}
+                      mt="md"
+                      id="verify"
+                      name="verify"
+                      autoComplete="nope"
+                      data-floating={verifyFloating}
+                      labelProps={{ 'data-floating': verifyFloating }}
+                      className="w-full rounded border border-gray-300"
                     />
+                    
                   </div>
                   <div className="flex justify-end">
                     <button

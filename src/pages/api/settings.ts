@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 import password from 'inquirer/lib/prompts/password';
 import { Locales, PlayerRace } from '@/types/typings';
+import { withAuth } from '@/middleware/auth';
 
 const prisma = new PrismaClient();
 const argon2 = require('argon2');
@@ -57,3 +58,5 @@ const handler = async (req, res) => {
 
   return res.status(200).json(req.body);
 };
+
+export default withAuth(handler);

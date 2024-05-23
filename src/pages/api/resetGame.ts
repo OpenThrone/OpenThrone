@@ -124,8 +124,6 @@ export default async function handler(
   try {
     await Promise.all(updatePromises);
 
-    // Finish your task logic
-
     return res.status(200).json({ message: 'Tasks executed successfully' });
   } catch (error) {
     return res
