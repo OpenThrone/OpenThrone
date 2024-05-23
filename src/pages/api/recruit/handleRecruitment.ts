@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '../auth/[...nextauth]';
+import { withAuth } from '@/middleware/auth';
 import { PlayerUnit } from '@/types/typings';
+import mtrand from '@/utils/mtrand';
 
 function increaseCitizens(units: PlayerUnit[]) {
   const citizen = units.find((unit) => unit.type === 'CITIZEN');
@@ -14,15 +14,15 @@ function increaseCitizens(units: PlayerUnit[]) {
   return units;
 }
 
-export default async function handler(
+const handler = async (
   req: NextApiRequest,
   res: NextApiResponse,
-) {
+) => {
   if (req.method !== 'POST') {
     return res.status(405).end(); // Method not allowed
   }
 
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
 
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -31,16 +31,37 @@ export default async function handler(
   const { recruitedUserId, selfRecruit } = req.body;
 
   try {
+    // Save the recruitment record
     const newRecord = await prisma.recruit_history.create({
       data: {
-        from_user: Number(recruitedUserId), // ID of the user being recruited
-        to_user: Number(session.user.id),  // ID of the recruiter (current user)
+        from_user: Number(recruitedUserId),
+        to_user: Number(session.user.id),
         ip_addr: req.headers['cf-connecting-ip'] as string,
         timestamp: new Date(),
       },
     });
 
     if (newRecord) {
+      // Wait for 1 second
+      await new Promise((resolve) => setTimeout(resolve, mtrand(5,13) * 100));
+
+      // Check the number of recruitments for the recruited user within the last 24 hours
+      const recruitments = await prisma.recruit_history.findMany({
+        where: {
+          from_user: Number(recruitedUserId),
+          to_user: Number(session.user.id),
+          timestamp: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
+      });
+
+      // If the number of recruitments is 5 or more, delete the new record and reject the request
+      if (recruitments.length > 5) {
+        await prisma.recruit_history.delete({
+          where: { id: newRecord.id },
+        });
+        return res.status(400).json({ error: 'User has already been recruited 5 times in the last 24 hours.' });
+      }
+
       let userToUpdate = await prisma.users.findUnique({
         where: { id: Number(session.user.id) },
       });
@@ -69,6 +90,11 @@ export default async function handler(
     }
   } catch (error) {
     console.error('Error in recruitment:', error);
+    if (error.message === 'User has already been recruited 5 times in the last 24 hours.') {
+      return res.status(400).json({ error: error.message });
+    }
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+export default withAuth(handler);

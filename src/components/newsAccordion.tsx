@@ -1,4 +1,5 @@
 import { table } from 'console';
+import Link from 'next/link';
 import { useState } from 'react';
 
 const NewsAccordion = ({ news }) => {
@@ -19,7 +20,7 @@ const NewsAccordion = ({ news }) => {
       {isOpen[index] && (
         <>
           <p className="text-gray-500">{item.content.substring(0, 200)}...</p>
-          <a href={`/community/news/${item.id}`} className="text-blue-500 hover:underline">Read more</a>
+          <Link href={`/community/news/${item.id}`} className="text-blue-500 hover:underline">Read more</Link>
         </>
       )}
       <button onClick={() => toggleAccordion(index)} className="mt-2">
@@ -63,7 +64,7 @@ const NewsAccordion = ({ news }) => {
               <tr className="odd:bg-table-odd even:bg-table-even">
                 <td colSpan={parseInt("3")} className="px-6 py-4">
                   <p className="text-sm text-gray-500">{item.content.substring(0, 200)}...</p>
-                  <a href={`/community/news/${item.id}`} className="text-blue-500 hover:underline">Read more</a>
+                  <Link href={`/community/news/${item.id}`} className="text-blue-500 hover:underline">Read more</Link>
                 </td>
               </tr>
             )}

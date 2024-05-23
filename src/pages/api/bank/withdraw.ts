@@ -6,7 +6,7 @@ import { withAuth } from '@/middleware/auth';
 
 const prisma = new PrismaClient();
 
-const withdraw = (req: NextApiRequest, res: NextApiResponse) => {
+const withdraw = async(req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }

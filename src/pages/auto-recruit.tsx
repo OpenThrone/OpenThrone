@@ -1,17 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Recruiter from '../components/recruiter';
-import { Alert, Button } from '@mantine/core';
+import Alert from '../components/alert';
+import { alertService } from '@/services';
+import { Button } from '@mantine/core';
 import { useUser } from '@/context/users';
 
 export default function AutoRecruiter(props) {
   const [consecutiveSuccesses, setConsecutiveSuccesses] = useState(0);
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [isRecruiting, setIsRecruiting] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [lastSuccess, setLastSuccess] = useState(false);  // Track the timing of the last success
+  const [lastSuccess, setLastSuccess] = useState(false);
   const [totalLeft, setTotalLeft] = useState(0);
   const {forceUpdate} = useUser();
 
@@ -25,16 +26,19 @@ export default function AutoRecruiter(props) {
         setTotalLeft(data.totalLeft);
       } else {
         setHasEnded(true);
-        console.error('Error fetching user:', data.error);
+        setIsPaused(true);
+        alertService.error(data.error);;
+        console.error('Error fetching new user:', data.error);
       }
     } catch (error) {
       setHasEnded(true);
-      console.error('Error fetching user:', error);
+      setIsPaused(true);
+      alertService.error('Error fetching new user');
+      console.error('Caught Error fetching user:', error);
     }
   }, []);
 
   const startCountdown = useCallback(() => {
-    setIsLoading(true);
     setCountdown(3);
     let timer = 3;
     const interval = setInterval(() => {
@@ -42,7 +46,6 @@ export default function AutoRecruiter(props) {
       timer -= 1;
       if (timer < 0) {
         clearInterval(interval);
-        setIsLoading(false);
         setLastSuccess(false);  // Reset after countdown finishes
         fetchRandomUser();
       }
@@ -77,26 +80,12 @@ export default function AutoRecruiter(props) {
           }
         }
       } else {
-        console.error('Error handling recruitment:', data.error);
+        console.error('Error handling recruitment_:', data.error);
       }
     } catch (error) {
       console.error('Error handling recruitment:', error);
     }
   }, [user, consecutiveSuccesses, isPaused, startCountdown, forceUpdate, totalLeft]);
-
-  const handleSuccess = useCallback(() => {
-    setLastSuccess(true);  // Set true on success
-    const newCount = consecutiveSuccesses + 1;
-    forceUpdate();  // Force update the user context
-    setConsecutiveSuccesses(newCount);
-    if (!isPaused) {
-      if (totalLeft === 0) {
-        stopRecruiting(true);
-      } else {
-        startCountdown();
-      }
-    }
-  }, [consecutiveSuccesses, startCountdown, isPaused]);
 
   const startRecruiting = () => {
     setIsRecruiting(true);
@@ -121,8 +110,7 @@ export default function AutoRecruiter(props) {
         <div className="flex h-full items-center justify-center">
           <div className="container mx-auto text-center">
             {!hasEnded && <p>Click Start to begin the Auto-Recruit, a new user will appear.</p>}
-            {hasEnded && <Alert color="blue" title="Notice">You&apos;ve reached the end of the list.</Alert>}
-            <Button color='dark' onClick={startRecruiting}>Start Recruiting</Button>
+            <Button color='dark' onClick={startRecruiting}>{!hasEnded ? "Start" : "Stop"} Recruiting</Button>
           </div>
         </div>
       </div>
@@ -133,8 +121,21 @@ export default function AutoRecruiter(props) {
     return (
       <div className="mainArea pb-10">
         <h2>Auto Recruiter</h2>
-        <div>Loading next user in {countdown} seconds...</div>
-        <Button loading color='dark' onClick={() => stopRecruiting()}>Stop Recruiting</Button>
+        <div className="my-5 flex justify-between">
+          <Alert />
+        </div>
+        <div className='my-5 flex justify-center items-center'>
+        {!hasEnded ? (
+          <div>
+            <div>Loading next user in {countdown} seconds...</div>
+            <Button loading color='dark' onClick={() => stopRecruiting()}>Stop Recruiting</Button>
+          </div>
+        ) : (
+          <div>
+            <Button color='dark' onClick={() => startRecruiting()}>Restart Recruiting</Button>
+          </div>
+          )}
+        </div>
       </div>
     );
   }

@@ -1,19 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { authOptions } from '../auth/[...nextauth]';
+import { withAuth } from '@/middleware/auth';
+import mtrand from '@/utils/mtrand';
 
-export default async function handler(
+const handler = async (
   req: NextApiRequest,
   res: NextApiResponse,
-) {
+) => {
   if (req.method !== 'GET') {
     return res.status(405).end(); // Method not allowed
   }
 
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
+  
   const recruiterID = session ? parseInt(session.user?.id.toLocaleString()) : 0;
 
   // Fetch all users
@@ -44,7 +45,7 @@ export default async function handler(
       },
     });
 
-    const remainingRecruits = 10 - recruitmentCount;
+    const remainingRecruits = (session.user.id === 1 ? 5 : 5) - recruitmentCount;
     return { user, remainingRecruits };
   });
 
@@ -54,10 +55,12 @@ export default async function handler(
     return res.status(404).json({ error: 'No valid users available for recruitment.' });
   }
 
-  const randomUserIndex = Math.floor(Math.random() * validUsers.length);
+  const randomUserIndex = Math.floor(mtrand(0, validUsers.length - 1));
   const randomUser = validUsers[randomUserIndex];
 
   const totalLeft = validUsers.reduce((sum, { remainingRecruits }) => sum + remainingRecruits, 0);
 
-  return res.status(200).json({ randomUser: { ...randomUser.user, remainingRecruits: randomUser.remainingRecruits }, totalLeft });
+  return res.status(200).json({ randomUser: { ...randomUser.user, remainingRecruits: randomUser.remainingRecruits }, totalLeft, "totalPlayerCount": users.length, "maxRecruitsExpected": users.length * 5 });
 }
+
+export default withAuth(handler);
