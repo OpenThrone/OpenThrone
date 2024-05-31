@@ -16,7 +16,7 @@ interface Loss {
 
 interface Stats {
   pillagedGold: number;
-  xpEarned: number;
+  xpEarned: {defender: number, attacker: number} | number;
   turns?: number;
   attacker_losses?: Loss;
   defender_losses?: Loss;
@@ -80,7 +80,7 @@ const LossesList: React.FC<LossesListProps> = ({ losses }) => {
 const StatsList: React.FC<StatsListProps> = ({ stats, type }) => (
   <ul>
     <li>Pillaged Gold: {toLocale(stats.pillagedGold.toLocaleString())}</li>
-    <li>XP Earned: {stats.xpEarned}</li>
+    <li>XP Earned: {(typeof stats.xpEarned === 'object' ? '[Defender: ' + stats.xpEarned.defender + ' | Attacker: ' +stats.xpEarned.attacker + ']' : String(stats.xpEarned))}</li>
     {type !== 'defense' ? <li>Turns Used: {stats.turns}</li> : ''}
   </ul>
 );

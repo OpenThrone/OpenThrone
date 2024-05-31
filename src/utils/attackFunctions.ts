@@ -1,6 +1,7 @@
 import { UnitTypes, ItemTypes } from "@/constants";
 import UserModel from "@/models/Users";
 import { ItemType } from "@/types/typings";
+import mtRand from "./mtrand";
 
 /**
  * Calculates the strength of a user's units.
@@ -67,4 +68,37 @@ export function computeAmpFactor(targetPop: number): number {
   }
 
   return ampFactor;
+}
+
+/**
+ * Computes the attack turns based on the user's population.
+ * @param user The user whose attack turns will be computed.
+ * @returns The number of attack turns.
+ */
+export function calculateLoot(attacker: UserModel, defender: UserModel, turns: number): bigint {
+  const uniformFactor = mtRand(90, 99) / 100;
+  const turnFactor = mtRand(100 + turns * 10, 100 + turns * 20) / 100;
+  const levelDifferenceFactor = 1 + Math.min(0.5, (defender.level - attacker.level) * 0.05);
+  const lootFactor = uniformFactor * turnFactor * levelDifferenceFactor;
+
+  let maxGoldLoot = BigInt(100000); // Example global max gold per attack
+  let defenderGold = BigInt(defender.gold);
+  let calculatedLoot = Number(defenderGold) * lootFactor;
+  let loot = BigInt(Math.floor(calculatedLoot));
+  let maxUserGoldLoot = defenderGold * BigInt(75) / BigInt(100);
+
+  return loot > maxUserGoldLoot ? maxUserGoldLoot : loot;
+}
+
+
+/**
+ * Computes the attack turns based on the user's population.
+ * @param user The user whose attack turns will be computed.
+ * @returns The number of attack turns.
+ */
+export const computeUnitFactor = (unitsA: number, unitsB: number): number => {
+  const factor = unitsA / unitsB;
+  if (factor >= 4) return 4;
+  if (factor <= 0.1) return 0.1;
+  return factor;
 }

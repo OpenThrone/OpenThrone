@@ -1,13 +1,20 @@
 'use server';
 
+import {
+  getUserById,
+  updateUserUnits,
+  createAttackLog,
+  updateUser,
+  createBankHistory,
+} from '@/services/attack.service';
 import { Fortifications, UnitTypes, ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import BattleResult from '@/models/BattleResult';
 import BattleSimulationResult from '@/models/BattleSimulationResult';
 import UserModel from '@/models/Users';
-import type { BattleUnits, ItemType, Item, PlayerUnit } from '@/types/typings';
+import type { BattleUnits, ItemType, Item, PlayerUnit, UnitType } from '@/types/typings';
 import mtRand from '@/utils/mtrand';
-import { calculateStrength, computeAmpFactor } from '@/utils/attackFunctions';
+import { calculateStrength, computeAmpFactor, calculateLoot, computeUnitFactor as newComputeUnitFactor } from '@/utils/attackFunctions';
 import { SpyUserModel } from '@/models/SpyUser';
 import { stringifyObj } from '@/utils/numberFormatting';
 
@@ -153,26 +160,31 @@ function computeCasualties(
  * @param casualties - The total number of casualties to distribute.
  * @returns The number of casualties that were successfully distributed.
  */
-function distributeCasualties(
-  units: BattleUnits[],
-  casualties: number
-): number {
+function distributeCasualties(units: BattleUnits[], casualties: number): BattleUnits[] {
   let distributedCasualties = 0;
+  const killedUnits: BattleUnits[] = [];
+
   for (const unit of units) {
-    const unitCasualties = Math.min(
-      unit.quantity,
-      casualties - distributedCasualties
-    );
+    const unitCasualties = Math.min(unit.quantity, casualties - distributedCasualties);
     distributedCasualties += unitCasualties;
     unit.quantity -= unitCasualties;
+
+    if (unitCasualties > 0) {
+      killedUnits.push({
+        level: unit.level,
+        type: unit.type,
+        quantity: unitCasualties,
+      });
+    }
 
     if (distributedCasualties >= casualties) {
       break;
     }
   }
 
-  return distributedCasualties;
+  return killedUnits;
 }
+
 
 function computeExperience(
   attacker: UserModel,
@@ -269,7 +281,7 @@ function simulateBattle(
     const defenseUnits = filterUnitsByType(defender.units, 'DEFENSE');
     const citizenUnits = filterUnitsByType(defender.units, 'CITIZEN');
 
-    const OffUnitFactor = computeUnitFactor(
+    const OffUnitFactor = newComputeUnitFactor( //computeUnitFactor
       defender.unitTotals.defense,
       attacker.unitTotals.offense
     );
@@ -314,13 +326,18 @@ function simulateBattle(
     }
     
     // Distribute casualties among defense units if fort is destroyed
-    result.Losses.Defender.total += distributeCasualties(defenseUnits, DefCalcCas);
+    result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, DefCalcCas));
+
     // If all defense units are depleted, attack the citizen units
     if (defenseUnits.every((unit) => unit.quantity === 0)) {
-      result.Losses.Defender.total += distributeCasualties(citizenUnits, DefCalcCas);
+      result.Losses.Defender.units.push(...result.distributeCasualties(citizenUnits, DefCalcCas));
     }
 
-    result.Losses.Attacker.total += distributeCasualties(offenseUnits, AttCalcCas);
+    result.Losses.Attacker.units.push(...result.distributeCasualties(offenseUnits, AttCalcCas));
+
+    // Update total losses
+    result.Losses.Defender.total = result.Losses.Defender.units.reduce((sum, unit) => sum + unit.quantity, 0);
+    result.Losses.Attacker.total = result.Losses.Attacker.units.reduce((sum, unit) => sum + unit.quantity, 0);
 
     result.fortHitpoints = Math.floor(fortHitpoints);
     result.turnsTaken = turn;
@@ -331,8 +348,8 @@ function simulateBattle(
     );
 
     // Update attacker and defender models with the calculated experience
-    attacker.experience += result.experienceResult.Experience.Attacker;
-    defender.experience += result.experienceResult.Experience.Defender;
+    //attacker.experience += result.experienceResult.Experience.Attacker;
+    //defender.experience += result.experienceResult.Experience.Defender;
 
     // Breaking the loop if one side has no units left
     if (attacker.unitTotals.offense <= 0) {
@@ -391,7 +408,7 @@ function simulateIntel(
 ): any {
   spies = Math.max(1, Math.min(spies, 10));
   
-  const fortification = Fortifications[defender.fortLevel];
+  const fortification = Fortifications.find((fort) => fort.level === defender.fortLevel);
   if (!fortification) {
     return { status: 'failed', message: 'Fortification not found' };
   }
@@ -505,12 +522,10 @@ function simulateInfiltration() {
 }
 
 export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string, unit?: string) { 
-  const attacker: UserModel = new UserModel(await prisma?.users.findUnique({
-    where: { id: attackerId },
-  }));
-  const defender: UserModel = new UserModel(await prisma?.users.findUnique({
-    where: { id: defenderId },
-  }));
+  const attackerUser = await getUserById(attackerId);
+  const defenderUser = await getUserById(defenderId);
+  const attacker = new UserModel(attackerUser);
+  const defender = new UserModel(defenderUser);
   if (!attacker || !defender) {
     return { status: 'failed', message: 'User not found' };
   }
@@ -531,15 +546,9 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     spyResults = simulateAssassination(attacker, defender, spies, unit);
 
     spyLevel = 2;
-    console.log(defender.unitTotals);
-    console.log(defender.units);
-    console.log(defenderId);
-    await prisma.users.update({
-      where: { id: defenderId },
-      data: {
-        units: defender.units,
-      },
-    });
+    await updateUserUnits(defenderId,
+      { units: defender.units },
+    );
     console.log('done update');
     console.log(defender.unitTotals);
     //return spyResults;
@@ -566,15 +575,13 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     },
   });*/
 
-  const attack_log = await prisma.attack_log.create({
-    data: {
+  const attack_log = await createAttackLog({
       attacker_id: attackerId,
       defender_id: defenderId,
       timestamp: new Date().toISOString(),
       winner: Winner.id,
       type: type,
       stats: {spyResults},
-    },
   });
 
   return {
@@ -595,12 +602,10 @@ export async function attackHandler(
   defenderId: number,
   attack_turns: number
 ) {
-  const attacker: UserModel = await prisma?.users.findUnique({
-    where: { id: attackerId },
-  });
-  const defender: UserModel = await prisma?.users.findUnique({
-    where: { id: defenderId },
-  });
+  const attackerUser = await getUserById(attackerId);
+  const defenderUser = await getUserById(defenderId);
+  const attacker = new UserModel(attackerUser);
+  const defender = new UserModel(defenderUser);
   if (!attacker || !defender) {
     return { status: 'failed', message: 'User not found' };
   }
@@ -608,10 +613,9 @@ export async function attackHandler(
     return { status: 'failed', message: 'Insufficient attack turns' };
   }
 
-  const AttackPlayer = new UserModel(attacker);
-  const DefensePlayer = new UserModel(defender);
+  const AttackPlayer = new UserModel(attackerUser);
+  const DefensePlayer = new UserModel(defenderUser);
 
-  // Check if attacker's offense is negligible
   if (AttackPlayer.offense <= 0) {
     return {
       status: 'failed',
@@ -623,7 +627,7 @@ export async function attackHandler(
     return {
       status: 'failed',
       message: 'You can only attack within 5 levels of your own level.',
-   } 
+    }
   }
 
   const startOfAttack = {
@@ -632,7 +636,6 @@ export async function attackHandler(
   };
 
   let GoldPerTurn = Number(0.8 / 10);
-
   const levelDifference = DefensePlayer.level - AttackPlayer.level;
   switch (levelDifference) {
     case 0:
@@ -654,6 +657,7 @@ export async function attackHandler(
       if (levelDifference >= 5) GoldPerTurn *= 0.95;
       break;
   }
+
   const battleResults = simulateBattle(
     AttackPlayer,
     DefensePlayer,
@@ -661,110 +665,105 @@ export async function attackHandler(
   );
 
   DefensePlayer.fortHitpoints = battleResults.fortHitpoints;
-
   if (DefensePlayer.fortHitpoints <= 0) {
     GoldPerTurn *= 1.05;
   }
+
   const isAttackerWinner = battleResults.experienceResult.Result === 'Win';
-  const checkPillaged = ((BigInt(Math.round(GoldPerTurn * 10000))) * BigInt(DefensePlayer.gold.toString()) / BigInt(10000)) * BigInt(attack_turns.toString());
+  //const checkPillaged = ((BigInt(Math.round(GoldPerTurn * 10000))) * BigInt(DefensePlayer.gold.toString()) / BigInt(10000)) * BigInt(attack_turns.toString());
+  const loot = calculateLoot(attacker, defender, attack_turns);
+
+  /*
   const pillagedGold = checkPillaged < BigInt(DefensePlayer.gold.toString())
     ? checkPillaged
     : BigInt(DefensePlayer.gold.toString());
-  
+*/
   const BaseXP = 1000;
   const LevelDifference = DefensePlayer.level - AttackPlayer.level;
-  const LevelDifferenceBonus =
-    LevelDifference > 0 ? LevelDifference * 0.05 * BaseXP : 0;
-  const FortDestructionBonus =
-    DefensePlayer.fortHitpoints <= 0 ? 0.5 * BaseXP : 0;
+  const LevelDifferenceBonus = LevelDifference > 0 ? LevelDifference * 0.05 * BaseXP : 0;
+  const FortDestructionBonus = DefensePlayer.fortHitpoints <= 0 ? 0.5 * BaseXP : 0;
   const TurnsUsedMultiplier = attack_turns / 10;
-
   let XP = BaseXP + LevelDifferenceBonus + FortDestructionBonus;
   XP *= TurnsUsedMultiplier;
+  AttackPlayer.experience += (isAttackerWinner ? XP * (75 / 100) : XP * (25 / 100)) + battleResults.experienceResult.Experience.Attacker;
+  DefensePlayer.experience += (!isAttackerWinner ? XP * (75 / 100) : XP * (25 / 100)) + battleResults.experienceResult.Experience.Defender;
 
-  AttackPlayer.experience += XP;
-  if (isAttackerWinner) {
-    console.log(typeof DefensePlayer.gold, typeof pillagedGold, typeof AttackPlayer.gold);
-    DefensePlayer.gold = BigInt(DefensePlayer.gold) - pillagedGold;
-    AttackPlayer.gold = BigInt(AttackPlayer.gold) + pillagedGold;
+  try {
+    const attack_log = await prisma.$transaction(async (prisma) => {
+      if (isAttackerWinner) {
+        DefensePlayer.gold = BigInt(DefensePlayer.gold) - loot;
+        AttackPlayer.gold = BigInt(AttackPlayer.gold) + loot;
 
-    await prisma.bank_history.create({
-      data: {
-        gold_amount: pillagedGold,
-        from_user_id: defenderId,
-        from_user_account_type: 'HAND',
-        to_user_id: attackerId,
-        to_user_account_type: 'HAND',
-        date_time: new Date().toISOString(),
-        history_type: 'WAR_SPOILS',
-      },
+        await createBankHistory({
+          gold_amount: loot,
+          from_user_id: defenderId,
+          from_user_account_type: 'HAND',
+          to_user_id: attackerId,
+          to_user_account_type: 'HAND',
+          date_time: new Date().toISOString(),
+          history_type: 'WAR_SPOILS',
+        });
+      }
+
+      const attack_log = await createAttackLog({
+        attacker_id: attackerId,
+        defender_id: defenderId,
+        timestamp: new Date().toISOString(),
+        winner: isAttackerWinner ? attackerId : defenderId,
+        stats: {
+          startOfAttack,
+          endTurns: AttackPlayer.attackTurns,
+          offensePointsAtEnd: AttackPlayer.offense,
+          defensePointsAtEnd: DefensePlayer.defense,
+          pillagedGold: isAttackerWinner ? loot : BigInt(0),
+          forthpAtStart: startOfAttack.Defender.fortHitpoints,
+          forthpAtEnd: Math.max(DefensePlayer.fortHitpoints, 0),
+          xpEarned: {
+            attacker: Math.ceil((isAttackerWinner ? XP * (75 / 100) : XP * (25 / 100)) + battleResults.experienceResult.Experience.Attacker),
+            defender: Math.ceil((!isAttackerWinner ? XP * (75 / 100) : XP * (25 / 100)) + battleResults.experienceResult.Experience.Defender),
+          },
+          turns: attack_turns,
+          attacker_units: AttackPlayer.units,
+          defender_units: DefensePlayer.units,
+          attacker_losses: battleResults.Losses.Attacker,
+          defender_losses: battleResults.Losses.Defender,
+        },
+      });
+
+      await updateUser(attackerId, {
+        gold: AttackPlayer.gold,
+        attack_turns: AttackPlayer.attackTurns - attack_turns,
+        experience: Math.ceil(AttackPlayer.experience),
+        units: AttackPlayer.units,
+      });
+
+      await updateUser(defenderId, {
+        gold: DefensePlayer.gold,
+        fort_hitpoints: Math.max(DefensePlayer.fortHitpoints, 0),
+        units: DefensePlayer.units,
+        experience: Math.ceil(DefensePlayer.experience),
+      });
+
+      return attack_log;
     });
+
+    return {
+      status: 'success',
+      result: isAttackerWinner,
+      attack_log: attack_log.id,
+      extra_variables: stringifyObj({
+        loot,
+        XP,
+        GoldPerTurn,
+        levelDifference,
+        fortDmgTotal: startOfAttack.Defender.fortHitpoints - Math.max(DefensePlayer.fortHitpoints, 0),
+        BattleResults: battleResults,
+      }),
+    };
+  } catch (error) {
+    console.error('Transaction failed: ', error);
+    return { status: 'failed', message: 'Transaction failed.' };
   }
-  console.log('start before attack_log');
-  console.log('Pillaged Gold: ', pillagedGold);
-  const attack_log = await prisma.attack_log.create({
-    data: {
-      attacker_id: attackerId,
-      defender_id: defenderId,
-      timestamp: new Date().toISOString(),
-      winner: isAttackerWinner ? attackerId : defenderId,
-      stats: {
-        startOfAttack,
-        // startTurns: startTurns,
-        endTurns: AttackPlayer.attackTurns,
-        offensePointsAtEnd: AttackPlayer.offense,
-        defensePointsAtEnd: DefensePlayer.defense,
-        pillagedGold: isAttackerWinner ? pillagedGold : BigInt(0),
-        // fortDamage: calculatedFortDmg,
-        forthpAtStart: startOfAttack.Defender.fortHitpoints,
-        forthpAtEnd: Math.max(DefensePlayer.fortHitpoints, 0),
-        xpEarned: XP + battleResults.experienceResult.Experience.Attacker,
-        turns: attack_turns,
-        attacker_units: AttackPlayer.units,
-        defender_units: DefensePlayer.units,
-        attacker_losses: battleResults.Losses.Attacker,
-        defender_losses: battleResults.Losses.Defender
-      },
-    },
-  });
-
-  console.log('Updated AttackLog: ', pillagedGold);
-  await prisma.users.update({
-    where: { id: attackerId },
-    data: {
-      gold: AttackPlayer.gold,
-      attack_turns: AttackPlayer.attackTurns - attack_turns,
-      experience: startOfAttack.Attacker.experience + (XP + battleResults.experienceResult.Experience.Attacker),
-      units: AttackPlayer.units,
-    },
-  });
-  await prisma.users.update({
-    where: { id: defenderId },
-    data: {
-      gold: DefensePlayer.gold,
-      fort_hitpoints: Math.max(DefensePlayer.fortHitpoints, 0),
-      units: DefensePlayer.units,
-    },
-  });
-
-  return {
-    status: 'success',
-    result: isAttackerWinner,
-    //attacker: AttackPlayer,
-    //defender: DefensePlayer,
-    attack_log: attack_log.id,
-    extra_variables: stringifyObj({
-      pillagedGold,
-      XP,
-      GoldPerTurn,
-      levelDifference,
-      'fortDmgTotal': startOfAttack.Defender.fortHitpoints - (Math.max(DefensePlayer.fortHitpoints, 0)),
-      // 'fortDamagePercentage': modifiedFortDamagePercentage,
-      // 'fortDmg': calculatedFortDmg,
-      // 'offenseToDefenseRatio': scaledOffenseToDefenseRatio,
-      // 'DmgPerTurn': DmgPerTurn,
-      BattleResults: battleResults,
-    }),
-  };
 }
+
 
