@@ -31,6 +31,7 @@ const Bank = (props) => {
     withdraws: true,
     war_spoils: true,
     transfers: true,
+    sale:true
   });
 
   useEffect(() => {
@@ -322,11 +323,12 @@ const Bank = (props) => {
               <Table.Tbody>
                 {bankHistory.filter((entry)=>entry.from_user_id === entry.to_user_id).slice(0,10).map((entry, index) => {
                   let transactionType = '';
+                  console.log('history type: ', entry.history_type)
                   if (entry.from_user_id === entry.to_user_id) {
                     transactionType =
                       entry.from_user_account_type === 'HAND'
-                        ? 'Deposit'
-                        : 'Withdraw';
+                        ? (entry.history_type === 'SALE'? 'Purchase' : 'Deposit')
+                      : (entry.history_type === 'SALE' ? 'Sale' : 'Withdraw');
                   }
 
                   return (
@@ -376,7 +378,15 @@ const Bank = (props) => {
               color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
           >
             Transfers
-          </Chip>
+            </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.sale}
+              onChange={() => { setFilters({ ...filters, sale: !filters.sale }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Sale
+            </Chip>
           </Group>
           {message && <div className="text-center p-4">{message}</div>}
           <Space h="md" />
@@ -394,11 +404,12 @@ const Bank = (props) => {
               <Table.Tbody>
                 {bankHistory.map((entry, index) => {
                   let transactionType = '';
+                  
                   if (entry.from_user_id === entry.to_user_id) {
                     transactionType =
                       entry.from_user_account_type === 'HAND'
-                        ? 'Deposit'
-                        : 'Withdraw';
+                        ? (entry.history_type === 'SALE' ? 'Purchase' : 'Deposit')
+                        : (entry.history_type === 'SALE' ? 'Sale' : 'Withdraw');
                   } else if (entry.history_type === 'PLAYER_TRANSFER') {
                     transactionType = 'Player Transfer';
                   } else {

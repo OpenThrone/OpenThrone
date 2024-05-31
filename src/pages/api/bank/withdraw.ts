@@ -1,52 +1,26 @@
-import { PrismaClient } from '@prisma/client';
-
 import { NextApiRequest, NextApiResponse } from 'next';
-import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
+import { withdraw } from '@/services/bank.service';
+import { stringifyObj } from '@/utils/numberFormatting';
 
-const prisma = new PrismaClient();
-
-const withdraw = async(req: NextApiRequest, res: NextApiResponse) => {
+const withdrawHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
 
   const session = req.session;
-  
-  const withdrawAmount = BigInt(req.body.withdrawAmount.toString());
-
-  // Fetch the user based on the session's user ID
-  const user: { id: number; gold: bigint; gold_in_bank?: bigint } | null = await prisma.users.findUnique({
-    where: {
-      id: Number(session.user.id),
-    },
-  });
-  if (withdrawAmount > user?.gold_in_bank) {
-    return res.status(401).json(stringifyObj({ error: `Not enough gold for withdraw`, withdrawAmount: withdrawAmount, gold_in_bank: user?.gold_in_bank, difference: (withdrawAmount - user?.gold_in_bank) }));
+  if (!session) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  await prisma.users.update({
-    where: { id: Number(session.user.id) },
-    data: {
-      gold: user.gold + withdrawAmount,
-      gold_in_bank: user?.gold_in_bank - withdrawAmount,
-    },
-  });
+  const withdrawAmount = BigInt(req.body.withdrawAmount);
 
-  await prisma.bank_history.create({
-    data: {
-      gold_amount: withdrawAmount,
-      from_user_id: user.id,
-      from_user_account_type: 'BANK',
-      to_user_id: user.id,
-      to_user_account_type: 'HAND',
-      date_time: new Date().toISOString(),
-      history_type: 'PLAYER_TRANSFER',
-    },
-  });
-
-  // Return the updated user data or any other relevant response
-  return res.status(200).json({ message: 'Withdraw successful' });
+  try {
+    const updatedUser = await withdraw(Number(session.user.id), withdrawAmount);
+    return res.status(200).json({ message: 'Withdraw successful', data: stringifyObj(updatedUser) });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
 };
 
-export default withAuth(withdraw);
+export default withAuth(withdrawHandler);

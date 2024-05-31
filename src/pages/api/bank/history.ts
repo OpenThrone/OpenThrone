@@ -1,12 +1,10 @@
 // pages/api/bank/history.js
-import { PrismaClient } from '@prisma/client';
-
 import { NextApiRequest, NextApiResponse } from 'next';
-import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
-const prisma = new PrismaClient();
+import { getBankHistory } from '@/services/bank.service';
+import { stringifyObj } from '@/utils/numberFormatting';
 
-const history = async (req: NextApiRequest, res: NextApiResponse) => {
+const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
   }
@@ -16,8 +14,7 @@ const history = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { deposits, withdraws, war_spoils, transfers } = req.query;
-
+  const { deposits, withdraws, war_spoils, transfers, sale } = req.query;
   let conditions = [];
 
   if (deposits === 'true') {
@@ -36,26 +33,29 @@ const history = async (req: NextApiRequest, res: NextApiResponse) => {
 
   if (war_spoils === 'true') {
     conditions.push({
-      history_type: 'WAR_SPOILS'
+      history_type: 'WAR_SPOILS',
     });
   }
 
   if (transfers === 'true') {
     conditions.push({
-      history_type: 'TRANSFER'
+      history_type: 'PLAYER_TRANSFER',
     });
   }
 
-  const bankHistory = await prisma.bank_history.findMany({
-    where: {
-      OR: conditions.length > 0 ? conditions : undefined,
-    },
-    orderBy: {
-      date_time: 'desc',
-    },
-  });
 
-  return res.status(200).json(stringifyObj(bankHistory));
+  if (sale === 'true') {
+    conditions.push({
+      history_type: 'SALE',
+    });
+  }
+
+  try {
+    const bankHistory = await getBankHistory(conditions);
+    return res.status(200).json(stringifyObj(bankHistory));
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
 };
 
-export default withAuth(history);
+export default withAuth(historyHandler);
