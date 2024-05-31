@@ -42,8 +42,13 @@ const attackResults = ({ battle, viewerID }) => {
   summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${toLocale(new UserModel(stats.startOfAttack.Attacker).offense)} damage`);
   summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Defender.units, 'DEFENSE')} guards did ${toLocale(new UserModel(stats.startOfAttack.Defender).defense)} damage`);
   summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} won the battle`);
-  summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} earned ${isViewerAttacker ? toLocale(stats.xpEarned.attacker) : toLocale(stats.xpEarned.defender)} XP`)
-  summaryLines.push(`Gold Pillaged: ${isPlayerWinner ? toLocale(stats.pillagedGold.toLocaleString()) : 0}`);
+  if (typeof stats.xpEarned === 'object') {
+    summaryLines.push(`${attackerPlayer.display_name} earned ${toLocale(stats.xpEarned.attacker)} XP`)
+    summaryLines.push(`${defenderPlayer.display_name} earned ${toLocale(stats.xpEarned.defender)} XP`)
+  } else {
+    summaryLines.push(`${attackerPlayer.display_name} earned: ${toLocale(stats.xpEarned)} XP`);
+  }
+  summaryLines.push(`Gold Pillaged: ${isAttackerWinner ? toLocale(stats.pillagedGold.toLocaleString()) : 0}`);
   summaryLines.push(`Fort Damage Dealt by Attacker: ${stats.forthpAtStart - stats.forthpAtEnd}`);
   summaryLines.push(`Total Units Lost by Attacker: ${attackerTotalLosses}`);
   summaryLines.push(`Total Units Lost by Defender: ${defenderTotalLosses}`);
