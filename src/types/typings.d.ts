@@ -29,6 +29,7 @@ export type BonusType =
 export type Locales = 'en-US' | 'es-ES';
 export type BattleUnits = {
   type: string;
+  type: UnitType;
   quantity: number;
 };
 
@@ -169,11 +170,13 @@ export type UnitTotalsType = {
  * ECONOMY - Gold Per Turn added to the players account.
  * PLAYER_TRANSFER - Funds manually transferred by the player.
  * WAR_SPOILS - Gold via combat (or spying)
+ * SALE - Gold from buying/selling items and (un)training units
  */
 export type BankTransferHistoryType =
   | 'ECONOMY'
   | 'PLAYER_TRANSFER'
-  | 'WAR_SPOILS';
+  | 'WAR_SPOILS'
+  | 'SALE';
 
 export type UnitProps = {
   requirement?: string;
