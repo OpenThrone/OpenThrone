@@ -36,6 +36,8 @@ const FortificationsTab: React.FC<BattleUpgradeProps> = ({
                 Gold Per Turn: {toLocale(item.goldPerTurn, user?.locale)}
                 <br />
                 Defense Bonus: {item.defenseBonusPercentage}%
+                <br />
+                Max HP: {toLocale(item.hitpoints, user?.locale)}
               </td>
               <td className="px-4 py-2">
                 {toLocale(item.cost, user?.locale)} Gold

@@ -40,6 +40,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
 
     units.forEach((unit) => {
       const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+      
       inputElement?.addEventListener('input', computeTotalCostForSection);
     });
 

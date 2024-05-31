@@ -401,7 +401,7 @@ class UserModel {
       .reduce((acc, gold) => acc + gold, 0);
 
     const fortificationGoldPerTurn =
-      Fortifications[this.fortLevel - 1]?.goldPerTurn;
+      Fortifications.find((fort) => fort.level === this.fortLevel)?.goldPerTurn;
     return BigInt(Math.ceil(workerGoldPerTurn + fortificationGoldPerTurn + (this.incomeBonus / 100 * (workerGoldPerTurn + fortificationGoldPerTurn))));
   }
 
@@ -410,7 +410,7 @@ class UserModel {
    * @returns {number} The amount of gold earned per turn.
    */
   get fortificationGoldPerTurn(): number {
-    return Fortifications[this.fortLevel - 1]?.goldPerTurn || 0;
+    return Fortifications.find((fort) => fort.level === this.fortLevel)?.goldPerTurn || 0;
   }
 
   /**
@@ -676,9 +676,9 @@ class UserModel {
 
     return {
       current: this.fortHitpoints,
-      max: Fortifications[this.fortLevel].hitpoints,
+      max: Fortifications[this.fortLevel-1].hitpoints,
       percentage: Math.floor(
-        (this.fortHitpoints / Fortifications[this.fortLevel].hitpoints) * 100
+        (this.fortHitpoints / Fortifications.find((fort) => fort.level === this.fortLevel).hitpoints) * 100
       ),
     };
   }

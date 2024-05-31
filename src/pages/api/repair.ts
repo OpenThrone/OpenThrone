@@ -27,11 +27,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     // Retrieve fortification details and calculate total cost for repair
-    const fortification = Fortifications[user.fort_level];
+    const fortification = Fortifications.find((f) => f.level === user.fort_level);
     const totalCost = repairPoints * fortification.costPerRepairPoint;
 
     // Return an error if the user does not have enough gold
     if (user.gold < totalCost) return res.status(400).json({ error: 'Not enough gold' });
+
+    if (user.fort_hitpoints === fortification.hitpoints) return res.status(400).json({ error: 'Fortification is already at full health' });
 
     // Calculate new fort hitpoints and ensure it does not exceed maximum allowable hitpoints
     let newFortHitpoints = user.fort_hitpoints + repairPoints;
