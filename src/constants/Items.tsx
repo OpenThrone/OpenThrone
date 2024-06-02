@@ -9,7 +9,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     type: 'WEAPON',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -20,7 +20,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     type: 'WEAPON',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -31,7 +31,7 @@ export const ItemTypes: Item[] = [
     cost: 50000,
     type: 'WEAPON',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -42,7 +42,7 @@ export const ItemTypes: Item[] = [
     cost: 100000,
     type: 'WEAPON',
     race: 'ALL',
-    armoryLevel: 3,
+    armoryLevel: 4,
     quantity: 0
   },
   {
@@ -53,7 +53,7 @@ export const ItemTypes: Item[] = [
     cost: 200000,
     type: 'WEAPON',
     race: 'ALL',
-    armoryLevel: 4,
+    armoryLevel: 5,
     quantity: 0
   },
   {
@@ -64,7 +64,7 @@ export const ItemTypes: Item[] = [
     cost: 500000,
     type: 'WEAPON',
     race: 'ALL',
-    armoryLevel: 5,
+    armoryLevel: 6,
     quantity: 0
   },
   {
@@ -75,7 +75,7 @@ export const ItemTypes: Item[] = [
     cost: 750000,
     type: 'WEAPON',
     race: 'HUMAN',
-    armoryLevel: 6,
+    armoryLevel: 7,
     quantity: 0
   },
   {
@@ -86,7 +86,7 @@ export const ItemTypes: Item[] = [
     cost: 3000,
     type: 'HELM',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -97,7 +97,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     type: 'HELM',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -108,7 +108,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     type: 'HELM',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -119,7 +119,7 @@ export const ItemTypes: Item[] = [
     cost: 9500,
     type: 'ARMOR',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -130,7 +130,7 @@ export const ItemTypes: Item[] = [
     cost: 19000,
     type: 'ARMOR',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -141,7 +141,7 @@ export const ItemTypes: Item[] = [
     cost: 37500,
     type: 'ARMOR',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -152,7 +152,7 @@ export const ItemTypes: Item[] = [
     cost: 3000,
     type: 'BOOTS',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -163,7 +163,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     type: 'BOOTS',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -174,7 +174,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     type: 'BOOTS',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -185,7 +185,7 @@ export const ItemTypes: Item[] = [
     cost: 1500,
     type: 'BRACERS',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -196,7 +196,7 @@ export const ItemTypes: Item[] = [
     cost: 2500,
     type: 'BRACERS',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -207,7 +207,7 @@ export const ItemTypes: Item[] = [
     cost: 5000,
     type: 'BRACERS',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -218,7 +218,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     type: 'SHIELD',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -229,7 +229,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     type: 'SHIELD',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -240,7 +240,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     type: 'SHIELD',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -251,7 +251,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     type: 'WEAPON',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -262,7 +262,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     type: 'WEAPON',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -273,7 +273,7 @@ export const ItemTypes: Item[] = [
     cost: 50000,
     type: 'WEAPON',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -284,7 +284,7 @@ export const ItemTypes: Item[] = [
     cost: 3000,
     type: 'HELM',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -295,7 +295,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     type: 'HELM',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -306,7 +306,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     type: 'HELM',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -317,7 +317,7 @@ export const ItemTypes: Item[] = [
     cost: 9500,
     type: 'ARMOR',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -328,7 +328,7 @@ export const ItemTypes: Item[] = [
     cost: 19000,
     type: 'ARMOR',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -339,7 +339,7 @@ export const ItemTypes: Item[] = [
     cost: 37500,
     type: 'ARMOR',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -350,7 +350,7 @@ export const ItemTypes: Item[] = [
     cost: 3000,
     type: 'BOOTS',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -361,7 +361,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     type: 'BOOTS',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -372,7 +372,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     type: 'BOOTS',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -383,7 +383,7 @@ export const ItemTypes: Item[] = [
     cost: 1500,
     type: 'BRACERS',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -394,7 +394,7 @@ export const ItemTypes: Item[] = [
     cost: 2500,
     type: 'BRACERS',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -405,7 +405,7 @@ export const ItemTypes: Item[] = [
     cost: 5000,
     type: 'BRACERS',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -416,7 +416,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     type: 'SHIELD',
     race: 'ALL',
-    armoryLevel: 0,
+    armoryLevel: 1,
     quantity: 0
   },
   {
@@ -427,7 +427,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     type: 'SHIELD',
     race: 'ALL',
-    armoryLevel: 1,
+    armoryLevel: 2,
     quantity: 0
   },
   {
@@ -438,7 +438,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     type: 'SHIELD',
     race: 'ALL',
-    armoryLevel: 2,
+    armoryLevel: 3,
     quantity: 0
   },
   {
@@ -449,8 +449,9 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     race: 'ALL',
     type: 'WEAPON',
-    armoryLevel: 0,
-  quantity: 0},
+    armoryLevel: 1,
+    quantity: 0
+  },
   {
     name: 'Brass Knuckles',
     usage: 'SPY',
@@ -459,7 +460,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     race: 'ALL',
     type: 'WEAPON',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
   {
     name: 'Cudgel',
@@ -469,7 +470,7 @@ export const ItemTypes: Item[] = [
     cost: 50000,
     race: 'ALL',
     type: 'WEAPON',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
   {
     name: 'Knife',
@@ -479,7 +480,7 @@ export const ItemTypes: Item[] = [
     cost: 100000,
     race: 'ALL',
     type: 'WEAPON',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
   {
     name: 'Cloth Cap',
@@ -489,7 +490,7 @@ export const ItemTypes: Item[] = [
     cost: 3000,
     race: 'ALL',
     type: 'HELM',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
   {
     name: 'Padded Cap',
@@ -499,7 +500,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     race: 'ALL',
     type: 'HELM',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
   {
     name: 'Leather Cap',
@@ -509,7 +510,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     race: 'ALL',
     type: 'HELM',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
   {
     name: 'Cloth Hood',
@@ -519,7 +520,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     race: 'ALL',
     type: 'HELM',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
   {
     name: 'Dark Cloth Armor',
@@ -529,7 +530,7 @@ export const ItemTypes: Item[] = [
     cost: 9500,
     race: 'ALL',
     type: 'ARMOR',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
   {
     name: 'Padded Cloth Armor',
@@ -539,7 +540,7 @@ export const ItemTypes: Item[] = [
     cost: 19000,
     race: 'ALL',
     type: 'ARMOR',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
   {
     name: 'Leather Armor',
@@ -549,7 +550,7 @@ export const ItemTypes: Item[] = [
     cost: 37500,
     race: 'ALL',
     type: 'ARMOR',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
   {
     name: 'Padded Leather Armor',
@@ -559,7 +560,7 @@ export const ItemTypes: Item[] = [
     cost: 75000,
     race: 'ALL',
     type: 'ARMOR',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
   {
     name: 'Cloth Boots',
@@ -569,7 +570,7 @@ export const ItemTypes: Item[] = [
     cost: 3000,
     race: 'ALL',
     type: 'BOOTS',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
   {
     name: 'Padded Boots',
@@ -579,7 +580,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     race: 'ALL',
     type: 'BOOTS',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
   {
     name: 'Leather Boots',
@@ -589,7 +590,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     race: 'ALL',
     type: 'BOOTS',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
   {
     name: 'Padded Leather Boots',
@@ -599,7 +600,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     race: 'ALL',
     type: 'BOOTS',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
   {
     name: 'Cloth Bracers',
@@ -609,7 +610,7 @@ export const ItemTypes: Item[] = [
     cost: 1500,
     race: 'ALL',
     type: 'BRACERS',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
   {
     name: 'Padded Bracers',
@@ -619,7 +620,7 @@ export const ItemTypes: Item[] = [
     cost: 2500,
     race: 'ALL',
     type: 'BRACERS',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
   {
     name: 'Leather Bracers',
@@ -629,7 +630,7 @@ export const ItemTypes: Item[] = [
     cost: 5000,
     race: 'ALL',
     type: 'BRACERS',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
   {
     name: 'Padded Leather Bracers',
@@ -639,7 +640,7 @@ export const ItemTypes: Item[] = [
     cost: 10000,
     race: 'ALL',
     type: 'BRACERS',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
   {
     name: 'Sling',
@@ -649,7 +650,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     race: 'ALL',
     type: 'WEAPON',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
   {
     name: 'Dagger',
@@ -659,7 +660,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     race: 'ALL',
     type: 'WEAPON',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
   {
     name: 'Hatchet',
@@ -669,7 +670,7 @@ export const ItemTypes: Item[] = [
     cost: 50000,
     race: 'ALL',
     type: 'WEAPON',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
   {
     name: 'Quarterstaff',
@@ -679,7 +680,7 @@ export const ItemTypes: Item[] = [
     cost: 100000,
     race: 'ALL',
     type: 'WEAPON',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
   {
     name: 'Mace',
@@ -689,7 +690,7 @@ export const ItemTypes: Item[] = [
     cost: 200000,
     race: 'ALL',
     type: 'WEAPON',
-    armoryLevel: 4,
+    armoryLevel: 5,
   quantity: 0},
 
   {
@@ -700,7 +701,7 @@ export const ItemTypes: Item[] = [
     cost: 3000,
     race: 'ALL',
     type: 'HELM',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
 
   {
@@ -711,7 +712,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     race: 'ALL',
     type: 'HELM',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
 
   {
@@ -722,7 +723,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     race: 'ALL',
     type: 'HELM',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
 
   {
@@ -733,7 +734,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     race: 'ALL',
     type: 'HELM',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
 
   {
@@ -744,7 +745,7 @@ export const ItemTypes: Item[] = [
     cost: 9500,
     race: 'ALL',
     type: 'ARMOR',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
 
   {
@@ -755,7 +756,7 @@ export const ItemTypes: Item[] = [
     cost: 19000,
     race: 'ALL',
     type: 'ARMOR',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
 
   {
@@ -766,9 +767,9 @@ export const ItemTypes: Item[] = [
     cost: 37500,
     race: 'ALL',
     type: 'ARMOR',
-    armoryLevel: 2,
-  quantity: 0},
-
+    armoryLevel: 3,
+    quantity: 0
+  },
   {
     name: 'Bronze Chainmail',
     usage: 'SENTRY',
@@ -777,7 +778,7 @@ export const ItemTypes: Item[] = [
     cost: 75000,
     race: 'ALL',
     type: 'ARMOR',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
 
   {
@@ -788,7 +789,7 @@ export const ItemTypes: Item[] = [
     cost: 3000,
     race: 'ALL',
     type: 'BOOTS',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
 
   {
@@ -799,7 +800,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     race: 'ALL',
     type: 'BOOTS',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
 
   {
@@ -810,7 +811,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     race: 'ALL',
     type: 'BOOTS',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
 
   {
@@ -821,7 +822,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     race: 'ALL',
     type: 'BOOTS',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
 
   {
@@ -832,7 +833,7 @@ export const ItemTypes: Item[] = [
     cost: 1500,
     race: 'ALL',
     type: 'BRACERS',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
 
   {
@@ -843,7 +844,7 @@ export const ItemTypes: Item[] = [
     cost: 2500,
     race: 'ALL',
     type: 'BRACERS',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
 
   {
@@ -854,7 +855,7 @@ export const ItemTypes: Item[] = [
     cost: 5000,
     race: 'ALL',
     type: 'BRACERS',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
 
   {
@@ -865,7 +866,7 @@ export const ItemTypes: Item[] = [
     cost: 10000,
     race: 'ALL',
     type: 'BRACERS',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
 
   {
@@ -876,7 +877,7 @@ export const ItemTypes: Item[] = [
     cost: 6000,
     race: 'ALL',
     type: 'SHIELD',
-    armoryLevel: 0,
+    armoryLevel: 1,
   quantity: 0},
 
   {
@@ -887,7 +888,7 @@ export const ItemTypes: Item[] = [
     cost: 12500,
     race: 'ALL',
     type: 'SHIELD',
-    armoryLevel: 1,
+    armoryLevel: 2,
   quantity: 0},
 
   {
@@ -898,7 +899,7 @@ export const ItemTypes: Item[] = [
     cost: 25000,
     race: 'ALL',
     type: 'SHIELD',
-    armoryLevel: 2,
+    armoryLevel: 3,
   quantity: 0},
 
   {
@@ -909,7 +910,7 @@ export const ItemTypes: Item[] = [
     cost: 50000,
     race: 'ALL',
     type: 'SHIELD',
-    armoryLevel: 3,
+    armoryLevel: 4,
   quantity: 0},
   // Need Sentry Helm, Armor, Boots, Bracers, Shield
   {

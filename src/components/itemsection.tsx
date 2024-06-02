@@ -266,22 +266,22 @@ const ItemSection: React.FC<UnitSectionProps> = ({
           </tr>
         </thead>
         <tbody>
-          {getItems.map((unit) =>
-            unit.enabled ? (
-              <tr key={unit.id}>
-                <td className="border px-4 py-2">{unit.name}</td>
+          {getItems.map((item) =>
+            item.enabled ? (
+              <tr key={item.id}>
+                <td className="border px-4 py-2">{item.name}</td>
                 <td className="border px-4 py-2">
-                  +{unit.bonus} {unit.usage}
+                  +{item.bonus} {item.usage}
                 </td>
                 <td className="border px-4 py-2">
-                  <span id={`${unit.id}_owned`}>{unit.ownedItems}</span>
+                  <span id={`${item.id}_owned`}>{item.ownedItems}</span>
                 </td>
-                <td className="border px-4 py-2">{unit.cost}</td>
+                <td className="border px-4 py-2">{item.cost}</td>
                 <td className="border px-4 py-2">
                   <input
                     type="text"
-                    aria-labelledby={unit.id}
-                    name={unit.id}
+                    aria-labelledby={item.id}
+                    name={item.id}
                     defaultValue={0}
                     min={0}
                     onChange={handleInputChange}
@@ -290,11 +290,11 @@ const ItemSection: React.FC<UnitSectionProps> = ({
                 </td>
               </tr>
             ) : (
-              <tr key={unit.id}>
-                <td className="border px-4 py-2">{unit.name}</td>
+              <tr key={item.id}>
+                <td className="border px-4 py-2">{item.name}</td>
                 <td className="border px-4 py-2">-</td>
                 <td colSpan={3} className="border px-4 py-2 text-center">
-                  Unlocked with {unit.fortName}
+                  Unlocked with {item.fortName}
                 </td>
               </tr>
             ),

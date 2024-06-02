@@ -64,7 +64,7 @@ const itemMapFunction = (item, itemType, idPrefix, user, armoryLevel) => {
     type: item.type,
     usage: item.usage,
     armoryLevel: item.armoryLevel,
-    fortName: ArmoryUpgrades.find((f) => f.level === item.armoryLevel)?.name,
+    fortName: ArmoryUpgrades.find((f) => f.level === item.armoryLevel )?.name,
   };
 };
 
