@@ -52,9 +52,7 @@ const handler = async(
           .status(400)
           .json({ error: `Invalid item type, usage, or level` });
       }
-      totalCost +=
-        (item.cost - ((uModel.priceBonus || 1) / 100) * item.cost) *
-        itemData.quantity;
+      totalCost += Math.floor((item.cost - ((uModel.priceBonus || 0) / 100) * item.cost) * itemData.quantity);
     }
 
     // Check if the user has enough gold

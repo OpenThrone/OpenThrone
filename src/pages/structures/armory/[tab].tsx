@@ -1,16 +1,17 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Alert from '@/components/alert';
-import ItemSection from '@/components/itemsection';
+import NewItemSection  from '@/components/newItemSection';
 import { ArmoryUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
+import { Paper, Tabs } from '@mantine/core';
 
-const useItems = (user, armoryLevel) => {
-  const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {} });
+const useItems = (user: unknown, armoryLevel: unknown) => {
+  const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
 
   useEffect(() => {
     if (user && user.availableItemTypes) {
@@ -30,8 +31,8 @@ const useItems = (user, armoryLevel) => {
             [type]: {
               ...prevItems[type],
               [category]: user.availableItemTypes
-                .filter((unit) => unit.usage === type && unit.type === category)
-                .map((unit) =>
+                .filter((unit: { usage: string; type: string; }) => unit.usage === type && unit.type === category)
+                .map((unit: any) =>
                   itemMapFunction(unit, type, category, user, armoryLevel),
                 ),
             },
@@ -43,28 +44,25 @@ const useItems = (user, armoryLevel) => {
   return items;
 };
 
-const itemMapFunction = (item, itemType, idPrefix, user, armoryLevel) => {
+const itemMapFunction = (item: { level: any; name: any; bonus: any; type: any; usage: any; cost: number; armoryLevel: number; }, itemType: string, idPrefix: string, user: { items: any[]; priceBonus: number; locale: string; }, armoryLevel: number) => {
   return {
     id: `${itemType}_${idPrefix}_${item.level}`,
     name: item.name,
     bonus: item.bonus,
     ownedItems:
       user?.items.find(
-        (i) =>
+        (i: { type: any; level: any; usage: any; }) =>
           i.type === item.type &&
           i.level === item.level &&
           i.usage === item.usage,
       )?.quantity || 0,
-    cost: toLocale(
-      item.cost - (user?.priceBonus / 100) * item.cost,
-      user?.locale,
-    ),
+    cost: item.cost - (user?.priceBonus / 100) * item.cost,
     enabled: item.armoryLevel <= armoryLevel,
     level: item.level,
     type: item.type,
     usage: item.usage,
     armoryLevel: item.armoryLevel,
-    fortName: ArmoryUpgrades.find((f) => f.level === item.armoryLevel )?.name,
+    fortName: ArmoryUpgrades.find((f) => f.level === item.armoryLevel)?.name,
   };
 };
 
@@ -77,8 +75,8 @@ type costProps = {
 
 const ArmoryTab = () => {
   const router = useRouter();
-  const tab = usePathname()?.split('/')[3];
-  const currentPage = tab || 'offense';
+  const tab = usePathname()?.split('/testing/')[1];
+  const [currentPage, setCurrentPage] = useState('offense');
   const { user, forceUpdate } = useUser();
   const armoryLevel = user?.armoryLevel || 0;
   const items = useItems(user, armoryLevel);
@@ -92,28 +90,27 @@ const ArmoryTab = () => {
     SPY: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
     SENTRY: { WEAPON: 0, HELM: 0, BRACERS: 0, SHIELD: 0, BOOTS: 0, ARMOR: 0 },
   });
-  const calculateTotalCost = (type: string = 'ALL') => {
+  const [totalUnits, setTotalUnits] = useState({
+    OFFENSE: 0,
+    DEFENSE: 0,
+    SPY: 0,
+    SENTRY: 0,
+  });
+  const colorScheme = user?.colorScheme;
+
+  const calculateTotalCost = (type = 'ALL') => {
     if (type === 'ALL') {
-      const offenseCost = Object.values(totalCost.OFFENSE).reduce(
-        (acc, curr) => acc + curr,
-        0,
-      );
-      const defenseCost = Object.values(totalCost.DEFENSE).reduce(
-        (acc, curr) => acc + curr,
-        0,
-      );
-      const spyCost = Object.values(totalCost.SPY).reduce(
-        (acc, curr) => acc + curr,
-        0,
-      );
-      const sentryCost = Object.values(totalCost.SENTRY).reduce(
-        (acc, curr) => acc + curr,
-        0,
-      );
+      const offenseCost = Object.values(totalCost.OFFENSE).reduce((acc, curr) => acc + curr, 0);
+      const defenseCost = Object.values(totalCost.DEFENSE).reduce((acc, curr) => acc + curr, 0);
+      const spyCost = Object.values(totalCost.SPY).reduce((acc, curr) => acc + curr, 0);
+      const sentryCost = Object.values(totalCost.SENTRY).reduce((acc, curr) => acc + curr, 0);
       return offenseCost + defenseCost + spyCost + sentryCost;
     }
     return Object.values(totalCost[type]).reduce((acc, curr) => acc + curr, 0);
   };
+  useEffect(() => {
+    setCurrentPage(tab || 'offense')
+  }, [tab])
 
   useEffect(() => {
     setTotalOffenseCost(calculateTotalCost('OFFENSE'));
@@ -134,28 +131,28 @@ const ArmoryTab = () => {
     setTotalDefenseCost(defenseCost);
     setTotalSpyCost(spyCost);
     setTotalSentryCost(sentryCost);
-  }, [items, totalCost]);
+    if(user) {
+      setTotalUnits({
+        OFFENSE: user.units.find(unit => unit.type === 'OFFENSE')?.quantity || 0,
+        DEFENSE: user.units.find(unit => unit.type === 'DEFENSE')?.quantity || 0,
+        SPY: user.units.find(unit => unit.type === 'SPY')?.quantity || 0,
+        SENTRY: user.units.find(unit => unit.type === 'SENTRY')?.quantity || 0,
+      });
+    }
+  }, [items, totalCost, user]);
 
-  const updateTotalCost = (section, item, cost) => {
+  const updateTotalCost = (section, type, cost) => {
+    console.log('section', section)
+    console.log('type', type)
+    console.log('cost', cost)
     setTotalCost((prevTotalCost) => {
       const newTotalCost = { ...prevTotalCost };
-
-      // Assuming item.cost is available
-      const itemCost = cost;
-
-      newTotalCost[section][item] = itemCost;
-
+      if (!newTotalCost[section]) newTotalCost[section] = {};
+      newTotalCost[section][type] = cost;
       return newTotalCost;
     });
   };
 
-  const handleEquip = (itemType: string) => {
-    // Logic to equip items based on itemType
-  };
-
-  const handleUnequip = (itemType: string) => {
-    // Logic to unequip items based on itemType
-  };
 
   const resetTotalCost = () => {
     setTotalCost({
@@ -174,20 +171,20 @@ const ArmoryTab = () => {
     const itemsToUnequip = [];
 
     ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
-      
+
       Object.keys(items[type]).forEach((category) => {
-        items[type][category].forEach((item) => {
+        items[type][category].forEach((item: { id: any; type: any; usage: any; level: any; }) => {
           const inputElement = document.querySelector(
             `input[name="${item.id}"]`,
           ) as HTMLInputElement;
           if (inputElement) {
-            if(parseInt(inputElement.value) > 0)
-            itemsToUnequip.push({
-              type: item.type, // Assuming item.type is already in the correct format
-              quantity: inputElement.value,
-              usage: item.usage,
-              level: item.level,
-            });  
+            if (parseInt(inputElement.value) > 0)
+              itemsToUnequip.push({
+                type: item.type, // Assuming item.type is already in the correct format
+                quantity: inputElement.value,
+                usage: item.usage,
+                level: item.level,
+              });
           }
         });
       });
@@ -216,11 +213,11 @@ const ArmoryTab = () => {
         const newItems = { ...items };
         ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
           Object.keys(newItems[type]).forEach((category) => {
-            newItems[type][category] = newItems[type][category].map((item) => ({
+            newItems[type][category] = newItems[type][category].map((item: { ownedItems: any; }) => ({
               ...item,
               ownedItems: item.ownedItems,
             }));
-            newItems[type][category].forEach((item) => {
+            newItems[type][category].forEach((item: { id: any; }) => {
               const inputElement = document.querySelector(
                 `input[name="${item.id}"]`,
               ) as HTMLInputElement;
@@ -230,7 +227,7 @@ const ArmoryTab = () => {
             });
           });
         });
-        
+
         forceUpdate();
       } else {
         alertService.error(data.error);
@@ -246,7 +243,7 @@ const ArmoryTab = () => {
 
     ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
       Object.keys(items[type]).forEach((category) => {
-        items[type][category].forEach((item) => {
+        items[type][category].forEach((item: { id: any; ownedItems: number; type: any; usage: any; level: any; }) => {
           const inputElement = document.querySelector(
             `input[name="${item.id}"]`,
           ) as HTMLInputElement;
@@ -289,11 +286,11 @@ const ArmoryTab = () => {
         const newItems = { ...items };
         ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
           Object.keys(newItems[type]).forEach((category) => {
-            newItems[type][category] = newItems[type][category].map((item) => ({
+            newItems[type][category] = newItems[type][category].map((item: { ownedItems: any; }) => ({
               ...item,
               ownedItems: item.ownedItems,
             }));
-            newItems[type][category].forEach((item) => {
+            newItems[type][category].forEach((item: { id: any; }) => {
               const inputElement = document.querySelector(
                 `input[name="${item.id}"]`,
               ) as HTMLInputElement;
@@ -314,8 +311,36 @@ const ArmoryTab = () => {
     }
   };
 
+  const parentRef = useRef(null);
+  const stickyRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const stickyElement = stickyRef.current;
+      const parentElement = parentRef.current;
+      const { bottom } = parentElement.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      if (bottom <= windowHeight) {
+        stickyElement.style.position = 'absolute';
+        stickyElement.style.bottom = '0';
+        stickyElement.style.width = '100%';
+      } else {
+        stickyElement.style.position = 'fixed';
+        stickyElement.style.bottom = '0';
+        stickyElement.style.width = '69vw';
+        stickyElement.style.maxWidth = '1200px';
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  
   return (
-    <div className="mainArea pb-10">
+    <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
       <h2 className="text-2xl font-bold">Armory</h2>
       <div className="my-5 flex justify-between">
         <Alert />
@@ -334,34 +359,40 @@ const ArmoryTab = () => {
           Armory Level: <span>{user?.armoryLevel}</span>
         </p>
       </div>
-      <div className="mb-4 flex justify-center">
-        <div className="flex space-x-2">
-          <Link
-            href="/structures/armory/offense"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'offense' ? 'bg-blue-500 text-white' : ''}`}
+      
+
+      <Tabs variant="pills" defaultValue={currentPage} className="mb-2 font-medieval">
+        <Tabs.List grow justify="center">
+          <Tabs.Tab value="Offense" onClick={() => {
+            router.push("/structures/armory/testing/offense");
+          }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Offense
-          </Link>
-          <Link
-            href="/structures/armory/defense"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'defense' ? 'bg-blue-500 text-white' : ''}`}
+            <span className="text-xl">Offense</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="defense" onClick={() => { router.push("/structures/armory/testing/defense") }}
+            color={(colorScheme === "ELF") ?
+              'green' : (
+                colorScheme === 'GOBLIN' ? 'red' : (
+                  colorScheme === 'UNDEAD' ? 'dark'
+                    : 'blue'
+                ))}
           >
-            Defense
-          </Link>
-          <Link
-            href="/structures/armory/spy"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'spy' ? 'bg-blue-500 text-white' : ''}`}
+            <span className="text-xl">Defense</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="spy" onClick={() => { router.push("/structures/armory/testing/spy") }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Spy
-          </Link>
-          <Link
-            href="/structures/armory/sentry"
-            className={`border border-blue-500 px-4 py-2 hover:bg-blue-500 hover:text-white ${currentPage === 'sentry' ? 'bg-blue-500 text-white' : ''}`}
+            <span className="text-xl">Spy</span>
+          </Tabs.Tab>
+          <Tabs.Tab value="sentry" onClick={() => { router.push("/structures/armory/testing/sentry") }}
+            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
-            Sentry
-          </Link>
-        </div>
-      </div>
+            <span className="text-xl">Sentry</span>
+          </Tabs.Tab>
+          
+        </Tabs.List>
+      </Tabs>
 
       {['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].map(
         (type) =>
@@ -372,21 +403,25 @@ const ArmoryTab = () => {
                   const categoryItems = items[type] ? items[type][iType] : [];
                   return (
                     categoryItems?.length > 0 && (
-                      <ItemSection
+                      <NewItemSection
                         key={`${type}_${iType}`}
                         heading={`${type.charAt(0).toUpperCase() + type.slice(1)} ${iType}`}
                         items={items[type] ? items[type][iType] : []}
-                        onEquip={() => handleEquip(type, iType)}
-                        onUnequip={() => handleUnequip(type, iType)}
-                        updateTotalCost={(cost) =>
-                          updateTotalCost(type.toUpperCase(), iType, cost)
-                        }
+                        updateTotalCost={(section, type, cost) => updateTotalCost(section.toUpperCase(), type, cost)}
+                        units={totalUnits[type]}
                       />
+
+
                     )
                   );
                 },
               )}
 
+              <div
+                ref={stickyRef}
+                className="flex justify-between mt-8 rounded bg-gray-800"
+                style={{ position: 'sticky', bottom: '0', width:"69vw", padding: '.5rem', zIndex: 10 }}
+              >
               <div className="mt-4">
                 <p>
                   Total Cost:{' '}
@@ -403,7 +438,7 @@ const ArmoryTab = () => {
                   )}
                 </p>
               </div>
-              <div className="mt-4 flex justify-between">
+                <Paper  withBorder radius="md" shadow='md' className="mt-4 flex justify-between">
                 <button
                   type="button"
                   className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
@@ -418,7 +453,8 @@ const ArmoryTab = () => {
                 >
                   Sell All
                 </button>
-              </div>
+                </Paper>
+                </div>
             </>
           ),
       )}

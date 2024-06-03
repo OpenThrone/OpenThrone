@@ -1,17 +1,16 @@
 'use client';
 
 // src/pages/battle/training.tsx
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Alert from '@/components/alert';
-import UnitSection from '@/components/unitsection';
+import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
 
 const Training = () => {
-  // Replace this with actual data fetching
   const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
   const { user, forceUpdate } = useUser();
   const [workerUnits, setWorkers] = useState(null); // Define the worker units data here
@@ -55,10 +54,7 @@ const Training = () => {
       requirement: Fortifications.find((fort) => {
         return fort.level === unit.fortLevel;
       }).name,
-      cost: toLocale(
-        unit.cost - (user?.priceBonus / 100) * unit.cost,
-        user?.locale
-      ),
+      cost: unit.cost - (user?.priceBonus / 100) * unit.cost,
       enabled: unit.fortLevel <= user?.fortLevel,
       level: unit.level,
     };
@@ -245,8 +241,36 @@ const Training = () => {
       alertService.error('Failed to train units. Please try again.');
     }
   };
+
+  const parentRef = useRef(null);
+  const stickyRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const stickyElement = stickyRef.current;
+      const parentElement = parentRef.current;
+      const { bottom } = parentElement.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      if (bottom <= windowHeight) {
+        stickyElement.style.position = 'absolute';
+        stickyElement.style.bottom = '0';
+        stickyElement.style.width = '100%';
+      } else {
+        stickyElement.style.position = 'fixed';
+        stickyElement.style.bottom = '0';
+        stickyElement.style.width = '69vw';
+        stickyElement.style.maxWidth = '1200px';
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
   return (
-    <div className="mainArea pb-10">
+    <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
       <h2 className="text-2xl font-bold">Training</h2>
       <div className="my-5 flex justify-between">
         <Alert />
@@ -266,40 +290,45 @@ const Training = () => {
         </p>
       </div>
       {workerUnits && (
-        <UnitSection
+        <NewUnitSection
           heading="Economy"
           units={workerUnits}
           updateTotalCost={(cost) => updateTotalCost('WORKER', cost)}
         />
       )}
       {offensiveUnits && (
-        <UnitSection
+        <NewUnitSection
           heading="Offense"
           units={offensiveUnits}
           updateTotalCost={(cost) => updateTotalCost('OFFENSE', cost)}
         />
       )}
       {defensiveUnits && (
-        <UnitSection
+        <NewUnitSection
           heading="Defense"
           units={defensiveUnits}
           updateTotalCost={(cost) => updateTotalCost('DEFENSE', cost)}
         />
       )}
       {spyUnits && (
-        <UnitSection
+        <NewUnitSection
           heading="Spy"
           units={spyUnits}
           updateTotalCost={(cost) => updateTotalCost('SPY', cost)}
         />
       )}
       {sentryUnits && (
-        <UnitSection
+        <NewUnitSection
           heading="Sentry"
           units={sentryUnits}
           updateTotalCost={(cost) => updateTotalCost('SENTRY', cost)}
         />
       )}
+      <div
+        ref={stickyRef}
+        className="flex justify-between mt-8 rounded bg-gray-800"
+        style={{ position: 'sticky', bottom: '0', width: "69vw", padding: '.5rem', zIndex: 10 }}
+      >
       <div className="mt-4">
         <p>Total Cost: {toLocale(totalCost)}</p>
       </div>
@@ -318,6 +347,7 @@ const Training = () => {
         >
           Untrain All
         </button>
+      </div>
       </div>
     </div>
   );

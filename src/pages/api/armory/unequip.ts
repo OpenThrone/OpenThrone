@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
+import UserModel from '@/models/Users';
 
 const handler = async (
   req: NextApiRequest,
@@ -19,6 +20,10 @@ const handler = async (
 
     try {
       const user = await prisma.users.findUnique({ where: { id: userId } });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      const uModel = new UserModel(user);
       let totalRefund = 0;
 
       // Create a copy of user's items to manipulate
@@ -64,7 +69,7 @@ const handler = async (
           updatedItems.splice(userItemIndex, 1);
         }
 
-        totalRefund += itemType.cost * itemData.quantity;
+        totalRefund += Math.floor((itemType.cost - ((uModel.priceBonus || 0) / 100) * itemType.cost) * itemData.quantity * 0.75);
       }
 
       await prisma.users.update({
