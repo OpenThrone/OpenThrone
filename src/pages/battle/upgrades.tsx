@@ -1,5 +1,5 @@
 import BattleUpgradesSection from '@/components/battle-upgrade';
-import { ArmoryUpgrades, BattleUpgrades } from '@/constants';
+import { ArmoryUpgrades, BattleUpgrades, OffenseiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import { UnitProps } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
@@ -12,7 +12,7 @@ const useItems = (user) => {
   useEffect(() => {
     if (user) {
       const itemMap = (item, itemType) =>
-        itemMapFunction(item, itemType, user, user.armoryLevel);
+        itemMapFunction(item, itemType, user, user.offensiveLevel);
       setItems({
         OFFENSE: BattleUpgrades.filter((i) => i.type === 'OFFENSE').map((i) =>
           itemMap(i, 'OFFENSE'),
@@ -32,7 +32,7 @@ const useItems = (user) => {
   return items;
 };
 
-const itemMapFunction = (item, itemType, user, armoryLevel) => {
+const itemMapFunction = (item, itemType, user, siegeLevel) => {
   return {
     id: `${itemType}_${item.level}`,
     name: item.name,
@@ -47,19 +47,18 @@ const itemMapFunction = (item, itemType, user, armoryLevel) => {
       item.cost - (user?.priceBonus / 100) * item.cost,
       user?.locale,
     ),
-    enabled: item.armoryLevel <= armoryLevel,
+    enabled: item.SiegeUpgradeLevel <= siegeLevel,
     level: item.level,
     type: item.type,
-    armoryLevel: item.armoryLevel,
+    SiegeUpgradeLevel: item.SiegeUpgradeLevel,
     unitsCovered: item.unitsCovered,
     minUnitLevel: item.minUnitLevel,
-    fortName: ArmoryUpgrades.find((f) => f.level === item.armoryLevel)?.name,
+    SiegeUpgrade: OffenseiveUpgrades.find((f) => f.level === item.SiegeUpgradeLevel)?.name,
   };
 };
 
 const Upgrades = (props) => {
   const { user } = useUser();
-
   return (
     <div className="mainArea pb-10">
       <h2>Upgrades</h2>

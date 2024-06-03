@@ -28,9 +28,9 @@ export type BonusType =
   | 'PRICES';
 export type Locales = 'en-US' | 'es-ES';
 export type BattleUnits = {
-  type: string;
-  type: UnitType;
+  type: UnitType | string;
   quantity: number;
+  level?: number;
 };
 
 export interface PageAlert {
@@ -144,7 +144,7 @@ export type SentryUpgradeType = {
 export type UnitUpgradeType = {
   type: UnitType;
   name: string;
-  StructureUpgradeLevelRequired: number;
+  SiegeUpgradeLevel: number;
   level: number;
   bonus: number;
   cost: number;

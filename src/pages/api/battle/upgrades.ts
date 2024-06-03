@@ -50,7 +50,6 @@ const handler = async(
       const itemCost =
         (item.cost - ((uModel.priceBonus || 0) / 100) * item.cost) *
         itemData.quantity;
-      console.log('operation', operation)
       if (operation === 'buy') {
         totalCost += itemCost;
       } else { // selling items
@@ -99,15 +98,37 @@ const handler = async(
       }
     });
 
-    // Update the user's gold and items in the database
-    await prisma.users.update({
-      where: { id: userId },
-      data: {
-        gold: BigInt(user.gold) - BigInt(totalCost),
-        battle_upgrades: updatedItems,
-      },
+    await prisma.$transaction(async (prisma) => {
+      // Update the user's gold and items in the database
+      await prisma.users.update({
+        where: { id: userId },
+        data: {
+          gold: BigInt(user.gold) - BigInt(totalCost),
+          battle_upgrades: updatedItems,
+        },
+      });
+    
+      await prisma.bank_history.create({
+        data: {
+          gold_amount: BigInt(totalCost),
+          from_user_id: userId,
+          from_user_account_type: 'HAND',
+          to_user_id: 0,
+          to_user_account_type: 'BANK',
+          date_time: new Date(),
+          history_type: 'SALE',
+          stats: {
+            action: 'battle_upgrade',
+            items: itemsToEquip.map(item => ({
+              type: item.type,
+              level: item.level,
+              quantity: item.quantity,
+              cost: item.cost,
+            }))
+          }
+        },
+      });
     });
-    console.log('updatedItems', updatedItems);
 
     return res.status(200).json({
       message: 'Items equipped successfully',
@@ -115,7 +136,7 @@ const handler = async(
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Failed to equip items' });
+    return res.status(500).json({ error: 'Failed to equip items', message: error.message });
   }
 }
 
