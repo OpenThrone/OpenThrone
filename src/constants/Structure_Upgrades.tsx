@@ -14,6 +14,7 @@ export const EconomyUpgrades = [
     goldTransferTx: 0,
     cost: 0,
     index: 0,
+    level: 1
   },
   {
     name: 'Produce Market',
@@ -24,6 +25,7 @@ export const EconomyUpgrades = [
     goldTransferTx: 0,
     cost: 500000,
     index: 1,
+    level: 2
   },
   {
     name: 'Livestock Market',
@@ -34,6 +36,7 @@ export const EconomyUpgrades = [
     goldTransferTx: 0,
     cost: 2000000,
     index: 2,
+    level: 3
   },
   {
     name: 'Coal Mine',
@@ -44,6 +47,7 @@ export const EconomyUpgrades = [
     goldTransferTx: 150000,
     cost: 5000000,
     index: 3,
+    level: 4
   },
   {
     name: 'Tavern',
@@ -54,6 +58,7 @@ export const EconomyUpgrades = [
     goldTransferTx: 300000,
     cost: 15000000,
     index: 4,
+    level: 5
   },
   {
     name: 'Copper Mine',
@@ -64,6 +69,7 @@ export const EconomyUpgrades = [
     goldTransferTx: 600000,
     cost: 37500000,
     index: 5,
+    level: 6
   },
   {
     name: 'Meat Market',
@@ -74,6 +80,7 @@ export const EconomyUpgrades = [
     goldTransferTx: 1250000,
     cost: 100000000,
     index: 6,
+    level: 7
   },
 ];
 
@@ -83,154 +90,154 @@ export const OffenseiveUpgrades: OffensiveUpgradeType[] = [
     fortLevelRequirement: 1, // Manor
     offenseBonusPercentage: 0,
     cost: 0,
-    level: 0,
+    level: 1,
   },
   {
     name: 'Hand To Hand Combat',
     fortLevelRequirement: 2, // Village
     offenseBonusPercentage: 5,
     cost: 100000,
-    level: 1,
+    level: 2,
   },
   {
     name: 'Mastery',
     fortLevelRequirement: 3, // Town
     offenseBonusPercentage: 10,
     cost: 250000,
-    level: 2,
+    level: 3,
   },
   {
     name: 'Ladders',
     fortLevelRequirement: 4, // Outpost
     offenseBonusPercentage: 15,
     cost: 500000,
-    level: 3,
+    level: 4,
   },
   {
     name: 'Hatchet Training',
     fortLevelRequirement: 5, // Outpost Level 2
     offenseBonusPercentage: 20,
     cost: 1000000,
-    level: 4,
+    level: 5,
   },
   {
     name: 'Battle Upgrades Level 1',
     fortLevelRequirement: 6, // Outpost Level 3
     offenseBonusPercentage: 25,
     cost: 2000000,
-    level: 5,
+    level: 6,
   },
   {
     name: 'Hatchet Mastery',
     fortLevelRequirement: 7,
     offenseBonusPercentage: 30,
     cost: 3000000,
-    level: 6,
+    level: 7,
   },
   {
     name: 'Mounted Combat Training',
     fortLevelRequirement: 8,
     offenseBonusPercentage: 35,
     cost: 4000000,
-    level: 7,
+    level: 8,
   },
   {
     name: 'Quarterstaff Training',
     fortLevelRequirement: 9,
     offenseBonusPercentage: 40,
     cost: 5000000,
-    level: 8,
+    level: 9,
   },
   {
     name: 'Sapping',
     fortLevelRequirement: 10,
     offenseBonusPercentage: 45,
     cost: 7500000,
-    level: 9,
+    level: 10,
   },
   {
     name: 'Quarterstaff Mastery',
     fortLevelRequirement: 11,
     offenseBonusPercentage: 50,
     cost: 10000000,
-    level: 10,
+    level: 11,
   },
   {
     name: 'Battering Rams',
     fortLevelRequirement: 12,
     offenseBonusPercentage: 55,
     cost: 15000000,
-    level: 11,
+    level: 12,
   },
   {
     name: 'Mace Training',
     fortLevelRequirement: 13,
     offenseBonusPercentage: 60,
     cost: 20000000,
-    level: 12,
+    level: 13,
   },
   {
     name: 'Pole Mace',
     fortLevelRequirement: 14,
     offenseBonusPercentage: 65,
     cost: 30000000,
-    level: 13,
+    level: 14,
   },
   {
     name: 'Mace Mastery',
     fortLevelRequirement: 15,
     offenseBonusPercentage: 70,
     cost: 40000000,
-    level: 14,
+    level: 15,
   },
   {
     name: 'Battle Upgrades Level 2',
     fortLevelRequirement: 16, // Castle
     offenseBonusPercentage: 75,
     cost: 50000000,
-    level: 15,
+    level: 16,
   },
   {
     name: 'Short Sword Training',
     fortLevelRequirement: 17,
     offenseBonusPercentage: 80,
     cost: 75000000,
-    level: 16,
+    level: 17,
   },
   {
     name: 'War Commanders',
     fortLevelRequirement: 18,
     offenseBonusPercentage: 85,
     cost: 100000000,
-    level: 17,
+    level: 18,
   },
   {
     name: 'Short Sword Mastery',
     fortLevelRequirement: 19,
     offenseBonusPercentage: 90,
     cost: 150000000,
-    level: 18,
+    level: 19,
   },
   {
     name: 'Wyrm',
     fortLevelRequirement: 20,
     offenseBonusPercentage: 95,
     cost: 200000000,
-    level: 19,
+    level: 20,
   },
   {
     name: 'Morning Star Training',
     fortLevelRequirement: 21,
     offenseBonusPercentage: 100,
     cost: 250000000,
-    level: 20,
+    level: 21,
   },
   {
     name: 'Ballistas',
     fortLevelRequirement: 22,
     offenseBonusPercentage: 105,
     cost: 300000000,
-    level: 21,
+    level: 22,
   },
 ];
 
@@ -242,7 +249,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 0,
-    level: 0,
+    level: 1,
   },
   {
     name: 'Rope Training',
@@ -251,7 +258,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 50000,
-    level: 1,
+    level: 2,
   },
   {
     name: 'Basic Stealth Training',
@@ -260,7 +267,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 125000,
-    level: 2,
+    level: 3,
   },
   {
     name: 'Basic Disguise Kit Usage',
@@ -269,7 +276,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 250000,
-    level: 3,
+    level: 4,
   },
   {
     name: 'Brass Knuckles Training',
@@ -278,7 +285,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 500000,
-    level: 4,
+    level: 5,
   },
   {
     name: 'Informants',
@@ -287,7 +294,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 0,
     maxAssassinations: 0,
     cost: 1000000,
-    level: 5,
+    level: 6,
   },
   {
     name: 'Infiltration Training',
@@ -296,7 +303,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 1,
     maxAssassinations: 0,
     cost: 1500000,
-    level: 6,
+    level: 7,
   },
   {
     name: 'Grappling Hook Training',
@@ -305,7 +312,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 2,
     maxAssassinations: 0,
     cost: 2000000,
-    level: 7,
+    level: 8,
   },
   {
     name: 'Cudgel Training',
@@ -314,7 +321,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 3,
     maxAssassinations: 0,
     cost: 2500000,
-    level: 8,
+    level: 9,
   },
   {
     name: 'Informant Detection',
@@ -323,7 +330,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 4,
     maxAssassinations: 0,
     cost: 3750000,
-    level: 9,
+    level: 10,
   },
   {
     name: 'Stealth Training',
@@ -332,7 +339,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 5,
     maxAssassinations: 0,
     cost: 5000000,
-    level: 10,
+    level: 11,
   },
   {
     name: 'Poison Usage',
@@ -341,7 +348,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 6,
     maxAssassinations: 0,
     cost: 7500000,
-    level: 11,
+    level: 12,
   },
   {
     name: 'Knife Training',
@@ -350,7 +357,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 7,
     maxAssassinations: 0,
     cost: 10000000,
-    level: 12,
+    level: 13,
   },
   {
     name: 'Languages',
@@ -359,7 +366,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 8,
     maxAssassinations: 0,
     cost: 15000000,
-    level: 13,
+    level: 14,
   },
   {
     name: 'Languages',
@@ -368,7 +375,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 9,
     maxAssassinations: 0,
     cost: 20000000,
-    level: 14,
+    level: 15,
   },
   {
     name: 'Lockpicks Usage',
@@ -377,7 +384,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 10,
     maxAssassinations: 50,
     cost: 20000000,
-    level: 15,
+    level: 16,
   },
   {
     name: 'Hatchet Training',
@@ -386,7 +393,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 11,
     maxAssassinations: 70,
     cost: 37500000,
-    level: 16,
+    level: 17,
   },
   {
     name: 'Translation',
@@ -395,7 +402,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 12,
     maxAssassinations: 90,
     cost: 50000000,
-    level: 17,
+    level: 18,
   },
   {
     name: 'Camouflage Training',
@@ -404,7 +411,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 13,
     maxAssassinations: 110,
     cost: 75000000,
-    level: 18,
+    level: 19,
   },
   {
     name: 'Tripwire Setting',
@@ -413,7 +420,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 14,
     maxAssassinations: 130,
     cost: 100000000,
-    level: 19,
+    level: 20,
   },
   {
     name: 'Dart Gun Training',
@@ -422,7 +429,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 15,
     maxAssassinations: 150,
     cost: 125000000,
-    level: 20,
+    level: 21,
   },
   {
     name: 'Forging',
@@ -431,7 +438,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     maxInfiltrations: 16,
     maxAssassinations: 170,
     cost: 150000000,
-    level: 21,
+    level: 22,
   },
 ];
 
@@ -575,37 +582,37 @@ export const ArmoryUpgrades = [
     name: 'No Armory',
     fortLevel: 0,
     cost: 0,
-    level: 0,
+    level: 1,
   },
   {
     name: 'Leather Armory 1',
     fortLevel: 5,
     cost: 500000,
-    level: 1,
+    level: 2,
   },
   {
     name: 'Leather Armory 2',
     fortLevel: 10, // Stronghold Level 3
     cost: 2000000,
-    level: 2,
+    level: 3,
   },
   {
     name: 'Chainmail Armory 1',
     fortLevel: 13, // Citadel
     cost: 5000000,
-    level: 3,
+    level: 4,
   },
   {
     name: 'Chainmail Armory 2',
     fortLevel: 17, // Castle Level 2
     cost: 15000000,
-    level: 4,
+    level: 5,
   },
   {
     name: 'Chainmail Armory 3',
     fortLevel: 21, // Kingdom Level 3
     cost: 37500000,
-    level: 5,
+    level: 6,
   },
 ];
 
@@ -616,6 +623,7 @@ export const HouseUpgrades = {
     citizensDaily: 1,
     cost: 0,
     index: 0,
+    level: 1
   },
   1: {
     name: 'Housing Level 1',
@@ -623,6 +631,7 @@ export const HouseUpgrades = {
     citizensDaily: 10,
     cost: 500000,
     index: 1,
+    level: 2
   },
   2: {
     name: 'Housing Level 2',
@@ -630,6 +639,7 @@ export const HouseUpgrades = {
     citizensDaily: 20,
     cost: 1000000,
     index: 2,
+    level: 3
   },
   3: {
     name: 'Housing Level 3',
@@ -637,6 +647,7 @@ export const HouseUpgrades = {
     citizensDaily: 30,
     cost: 1500000,
     index: 3,
+    level: 4
   },
   4: {
     name: 'Housing Level 4',
@@ -644,6 +655,7 @@ export const HouseUpgrades = {
     citizensDaily: 40,
     cost: 2500000,
     index: 4,
+    level: 5
   },
   5: {
     name: 'Housing Level 5',
@@ -651,6 +663,7 @@ export const HouseUpgrades = {
     citizensDaily: 50,
     cost: 3500000,
     index: 5,
+    level: 6
   },
   6: {
     name: 'Housing Level 6',
@@ -658,5 +671,6 @@ export const HouseUpgrades = {
     citizensDaily: 60,
     cost: 5000000,
     index: 6,
+    level: 7
   },
 };

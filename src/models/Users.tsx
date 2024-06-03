@@ -764,7 +764,7 @@ class UserModel {
    */
   get availableDefenseBattleUpgrades(): UnitUpgradeType[] {
     return BattleUpgrades.filter(
-      (fort) => fort.StructureUpgradeLevelRequired <= this.offensiveLevel + 1 && fort.type === 'DEFENSE'
+      (fort) => fort.SiegeUpgradeLevel <= this.offensiveLevel + 1 && fort.type === 'DEFENSE'
     );
   }
 
@@ -774,7 +774,7 @@ class UserModel {
    */
   get availableOffenseBattleUpgrades(): UnitUpgradeType[] {
     return BattleUpgrades.filter(
-      (fort) => fort.StructureUpgradeLevelRequired <= this.offensiveLevel + 5 && fort.type === 'OFFENSE'
+      (fort) => fort.SiegeUpgradeLevel <= this.offensiveLevel + 5 && fort.type === 'OFFENSE'
     );
   }
 

@@ -162,33 +162,50 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
           </tr>
         </thead>
         <tbody>
-          {getItems.map((item: UnitProps) => (
-            <tr key={item.id}>
-              <td className="border px-4 py-2">{item.name}</td>
-              <td className="border px-4 py-2">{item.ownedItems}</td>
-              <td className="border px-4 py-2">
-                {toLocale(item.cost, user?.locale)}
-              </td>
-              <td className="border px-4 py-2">
-                <ul>
-                  <li>+{(item.unitsCovered > 1 ? toLocale(item?.bonus / item.unitsCovered, user?.locale) : toLocale(item?.bonus || 0, user?.locale))} {item.type}/Unit</li>
-                  <li>Holds: {item.unitsCovered} Units</li>
-                  <li>Min Unit Level: {item.minUnitLevel}</li>
-                </ul>
-              </td>
-              <td className="border px-4 py-2">
-                <input
-                  type="number"
-                  aria-labelledby={item.id}
-                  name={`${item.type}_${item.level}`}
-                  defaultValue={0}
-                  min={0}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md bg-gray-900 p-2"
-                />
-              </td>
-            </tr>
-          ))}
+          {getItems.map((item: UnitProps) => {
+            if (item.enabled) {
+              return (
+
+                <tr key={item.id}>
+                  <td className="border px-4 py-2">{item.name}</td>
+                  <td className="border px-4 py-2">{item.ownedItems}</td>
+                  <td className="border px-4 py-2">
+                    {toLocale(item.cost, user?.locale)}
+                  </td>
+
+                  <td className="border px-4 py-2">
+                    <ul>
+                      <li>+{(item.unitsCovered > 1 ? toLocale(item?.bonus / item.unitsCovered, user?.locale) : toLocale(item?.bonus || 0, user?.locale))} {item.type}/Unit</li>
+                      <li>Holds: {item.unitsCovered} Units</li>
+                      <li>Min Unit Level: {item.minUnitLevel}</li>
+                    </ul>
+                  </td>
+                  <td className="border px-4 py-2">
+                    <input
+                      type="number"
+                      aria-labelledby={item.id}
+                      name={`${item.type}_${item.level}`}
+                      defaultValue={0}
+                      min={0}
+                      onChange={handleInputChange}
+                      className="w-full rounded-md bg-gray-900 p-2"
+                    />
+                  </td>
+                </tr>
+              );
+            } else {
+              console.log(item);
+              return (
+                <tr key={item.id}>
+                  <td className="border px-4 py-2">{item.name}</td>
+                  <td className="border px-4 py-2">-</td>
+                  <td className="border px-4 py-2" colSpan={3}>
+                    <p className="text-center">Unlocked with {item.SiegeUpgrade}</p>
+                  </td>
+                </tr>
+              );
+            }
+          })}
         </tbody>
       </table>
       <div className="mt-4 flex justify-between">
