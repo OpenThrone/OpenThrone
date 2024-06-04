@@ -75,7 +75,7 @@ type costProps = {
 
 const ArmoryTab = () => {
   const router = useRouter();
-  const tab = usePathname()?.split('/testing/')[1];
+  const tab = usePathname()?.split('/armory/')[1];
   const [currentPage, setCurrentPage] = useState('offense');
   const { user, forceUpdate } = useUser();
   const armoryLevel = user?.armoryLevel || 0;
@@ -365,7 +365,7 @@ const ArmoryTab = () => {
 
       <Tabs variant="pills" defaultValue={currentPage} className="mb-2 font-medieval">
         <Tabs.List grow justify="center">
-          <Tabs.Tab value="Offense" onClick={() => {
+          <Tabs.Tab value="offense" onClick={() => {
             router.push("/structures/armory/offense");
           }}
             color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}

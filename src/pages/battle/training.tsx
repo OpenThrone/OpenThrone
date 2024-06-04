@@ -36,7 +36,7 @@ const Training = () => {
       return updatedCosts;
     });
   };
-
+  
   const resetUnitCosts = () => {
     setUnitCosts({});
     setTotalCost(0);
@@ -148,6 +148,28 @@ const Training = () => {
           });
         });
         setDefensive((prevUnits) => {
+          return prevUnits.map((unit) => {
+            const updatedUnit = data.data.find(
+              (u) => u.type === unit.id.split('_')[0]
+            );
+            if (updatedUnit) {
+              return { ...unit, ownedUnits: updatedUnit.quantity };
+            }
+            return unit;
+          });
+        });
+        setSentryUnits((prevUnits) => {
+          return prevUnits.map((unit) => {
+            const updatedUnit = data.data.find(
+              (u) => u.type === unit.id.split('_')[0]
+            );
+            if (updatedUnit) {
+              return { ...unit, ownedUnits: updatedUnit.quantity };
+            }
+            return unit;
+          });
+        });
+        setSpyUnits((prevUnits) => {
           return prevUnits.map((unit) => {
             const updatedUnit = data.data.find(
               (u) => u.type === unit.id.split('_')[0]

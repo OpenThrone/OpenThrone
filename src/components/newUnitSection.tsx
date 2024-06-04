@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NumberInput, Group, Text, Paper, Table, Select, Button } from '@mantine/core';
 import toLocale from '@/utils/numberFormatting';
 import { alertService } from '@/services';
 import user from '@/pages/messaging/compose/[user]';
+import { useUser } from '@/context/users';
 
 type UnitSectionProps = {
   heading: string;
@@ -19,11 +20,28 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
   unitCosts,
   setUnitCosts,
 }) => {
-
+  const { user, forceUpdate } = useUser();
+  const [currentUnits, setCurrentUnits] = useState(units);
   const [conversionAmount, setConversionAmount] = useState<number>(0);
   const [fromItem, setFromItem] = useState<string | null>(null);
   const [toItem, setToItem] = useState<string | null>(null);
   const [conversionCost, setConversionCost] = useState(0);
+  const [toLower, setToLower] = useState(false);
+
+  useEffect(() => {
+    setCurrentUnits(units);
+  }, [units]);
+
+  useEffect(() => {
+    if (!fromItem || !toItem) return;
+    const fromItemData = units.find((item) => item.id === fromItem);
+    const toItemData = units.find((item) => item.id === toItem);
+    if (!fromItemData || !toItemData) return;
+
+    setToLower(fromItemData.level > toItemData.level);
+    const conversionCost = conversionAmount * (Number(toItemData.cost) - Number(fromItemData.cost)) * (toLower ? 0.75 : 1);
+    setConversionCost(conversionCost * (toLower ? -1 : 1));
+  }, [fromItem, toItem, conversionAmount, units, toLower]);
 
   const handleInputChange = (unitId: string, value: number | undefined) => {
     if (value !== undefined) {
@@ -33,6 +51,20 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
     }
   };
 
+  const computeTotalCostForSection = (updatedUnitCosts: { [key: string]: number }) => {
+    let sectionCost = 0;
+    units.forEach((unit) => {
+      const unitCost = updatedUnitCosts[unit.id] || 0;
+      sectionCost += unitCost * parseInt(unit.cost, 10);
+    });
+    updateTotalCost(sectionCost);
+  };
+
+
+  const getUnits = useMemo(() => {
+    return currentUnits;
+  }, [currentUnits]);
+
   useEffect(() => {
     if (!fromItem || !toItem) return;
     const fromItemData = units.find((item) => item.id === fromItem);
@@ -40,7 +72,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
     if (!fromItemData || !toItemData) return;
     const conversionCost = conversionAmount * (Number(toItemData.cost) - Number(fromItemData.cost));
     setConversionCost(conversionCost);
-  }, [fromItem, toItem, conversionAmount]);
+  }, [fromItem, toItem, conversionAmount, units]);
 
   const handleConvert = async () => {
     // Conversion logic here
@@ -91,20 +123,6 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
       alertService.error('Failed to convert items');
     }
   };
-
-  const computeTotalCostForSection = (updatedUnitCosts: { [key: string]: number }) => {
-    let sectionCost = 0;
-    units.forEach((unit) => {
-      const unitCost = updatedUnitCosts[unit.id] || 0;
-      sectionCost += unitCost * parseInt(unit.cost, 10);
-    });
-    updateTotalCost(sectionCost);
-  };
-
-  useEffect(() => {
-    // Reset costs when units change
-    setUnitCosts({});
-  }, [units, setUnitCosts]);
 
   return (
     <Paper className="my-10 rounded-lg bg-gray-800">
@@ -220,7 +238,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
             className="w-40"
           />
           <span>
-            <Text>Cost: {toLocale(conversionCost)}</Text>
+            <Text>{toLower ? 'Refund' : 'Cost'}: {toLocale(conversionCost)}</Text>
           </span>
           <Button onClick={handleConvert}>Convert</Button>
         </Group>

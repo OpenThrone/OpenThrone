@@ -47,6 +47,7 @@ const NewItemSection = ({
   const [toItem, setToItem] = useState('');
   //const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
   const [conversionCost, setConversionCost] = useState(0);
+  const [toLower, setToLower] = useState(false);
   
   useEffect(() => {
     // Set initial items on component mount
@@ -280,9 +281,10 @@ const NewItemSection = ({
     const fromItemData = getItems.find((item) => item.id === fromItem);
     const toItemData = getItems.find((item) => item.id === toItem);
     if (!fromItemData || !toItemData) return;
-    const conversionCost = conversionAmount * (Number(toItemData.cost) - Number(fromItemData.cost));
-    setConversionCost(conversionCost);
-  }, [fromItem, toItem, conversionAmount]);
+    setToLower(fromItemData.level > toItemData.level);
+    const conversionCost = conversionAmount * (Number(toItemData.cost) - Number(fromItemData.cost)) * (toLower ? 0.75 : 1);      
+    setConversionCost(conversionCost * (toLower ? -1 : 1));
+  }, [fromItem, toItem, conversionAmount, getItems, toLower]);
 
   return (
     <Paper className="my-10 rounded-lg ">
@@ -394,7 +396,7 @@ const NewItemSection = ({
                   className="w-40"
                 />
                 <span>
-                  <Text>Cost: {toLocale(conversionCost)}</Text>
+                  <Text>{toLower? 'Refund': 'Cost'}: {toLocale(conversionCost)}</Text>
                 </span>
                 <Button onClick={handleConvert}>Convert</Button>
               </Group>
