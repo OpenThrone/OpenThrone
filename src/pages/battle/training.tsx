@@ -1,8 +1,4 @@
-'use client';
-
-// src/pages/battle/training.tsx
-import { useEffect, useRef, useState } from 'react';
-
+import React, { useEffect, useRef, useState } from 'react';
 import Alert from '@/components/alert';
 import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
@@ -13,12 +9,12 @@ import toLocale from '@/utils/numberFormatting';
 const Training = () => {
   const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
   const { user, forceUpdate } = useUser();
-  const [workerUnits, setWorkers] = useState(null); // Define the worker units data here
-  const [offensiveUnits, setOffensive] = useState(null); // Define the offensive units data here
-  const [defensiveUnits, setDefensive] = useState(null); // Define the offensive units data here
-  const [spyUnits, setSpyUnits] = useState(null); // Define the spy units data here
-  const [sentryUnits, setSentryUnits] = useState(null); // Define the sentry units data here
-  const [totalCost, setTotalCost] = useState(0); // Added state for total cost
+  const [workerUnits, setWorkers] = useState(null);
+  const [offensiveUnits, setOffensive] = useState(null);
+  const [defensiveUnits, setDefensive] = useState(null);
+  const [spyUnits, setSpyUnits] = useState(null);
+  const [sentryUnits, setSentryUnits] = useState(null);
+  const [totalCost, setTotalCost] = useState(0);
   const [sectionCosts, setSectionCosts] = useState({
     WORKER: 0,
     OFFENSE: 0,
@@ -26,6 +22,9 @@ const Training = () => {
     SPY: 0,
     SENTRY: 0,
   });
+
+  const [unitCosts, setUnitCosts] = useState<{ [key: string]: number }>({});
+
   const updateTotalCost = (section: string, cost: number) => {
     setSectionCosts((prevCosts) => {
       const updatedCosts = { ...prevCosts, [section]: cost };
@@ -38,14 +37,21 @@ const Training = () => {
     });
   };
 
+  const resetUnitCosts = () => {
+    setUnitCosts({});
+    setTotalCost(0);
+  };
+
   const unitMapFunction = (unit, idPrefix: string) => {
     const bonus =
       unit.name === 'Worker'
         ? EconomyUpgrades[user?.economyLevel]?.goldPerWorker
         : unit.bonus;
 
+    const unitId = `${idPrefix}_${unit.level}`;
+
     return {
-      id: `${idPrefix}_${unit.level}`,
+      id: unitId,
       name: unit.name,
       bonus,
       ownedUnits:
@@ -59,6 +65,7 @@ const Training = () => {
       level: unit.level,
     };
   };
+
   useEffect(() => {
     if (user && user.availableUnitTypes) {
       setWorkers(
@@ -89,61 +96,13 @@ const Training = () => {
     }
   }, [user]);
 
-  const handleTrain = async (unitTypeData: any[]) => {
-    const allUnitsToTrain = [].concat(...unitTypeData);
-
-    try {
-      const responseData = await fetch('/api/training/train', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id, // Assuming you have the user's ID available
-          units: allUnitsToTrain,
-        }),
-      });
-
-      console.log('Training was successful:', responseData);
-      // Handle success scenario (like updating UI, showing a success message, etc.)
-    } catch (error) {
-      console.error('Failed to train units:', error);
-      // Handle error scenario (like showing an error message to the user, etc.)
-    }
-  };
-
-  const handleUntrain = async (unitTypeData: any[]) => {
-    const allUnitsToUntrain = [].concat(...unitTypeData);
-
-    try {
-      const responseData = await fetch('/api/training/untrain', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id, // Assuming you have the user's ID available
-          units: allUnitsToUntrain,
-        }),
-      });
-
-      console.log('Untraining was successful:', responseData);
-      // Handle success scenario
-    } catch (error) {
-      console.error('Failed to untrain units:', error);
-      // Handle error scenario
-    }
-  };
-
   const handleTrainAll = async () => {
     const unitsToTrain = [...workerUnits, ...offensiveUnits, ...defensiveUnits]
       .filter((unit) => unit.enabled)
       .map((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-
         return {
-          type: unit.id.split('_')[0], // Extracting the unit type from the id
-          quantity: parseInt(inputElement.value, 10),
+          type: unit.id.split('_')[0],
+          quantity: unitCosts[unit.id] || 0,
           level: parseInt(unit.id.split('_')[1], 10),
         };
       });
@@ -155,7 +114,7 @@ const Training = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user.id, // Assuming you have the user's ID available
+          userId: user.id,
           units: unitsToTrain,
         }),
       });
@@ -177,52 +136,7 @@ const Training = () => {
             return unit;
           });
         });
-        forceUpdate();
-      } else {
-        alertService.error(data.error);
-      }
-    } catch (error) {
-      console.log(error);
-      alertService.error('Failed to train units. Please try again.');
-    }
-  };
-
-  const handleUntrainAll = async () => {
-    const unitsToUnTrain = [
-      ...workerUnits,
-      ...offensiveUnits,
-      ...defensiveUnits,
-    ]
-      .filter((unit) => unit.enabled)
-      .map((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-
-        return {
-          type: unit.id.split('_')[0], // Extracting the unit type from the id
-          quantity: parseInt(inputElement.value, 10),
-          level: parseInt(unit.id.split('_')[1], 10),
-        };
-      });
-
-    try {
-      const response = await fetch('/api/training/untrain', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id, // Assuming you have the user's ID available
-          units: unitsToUnTrain,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alertService.success(data.message);
-
-        // Update the getUnits state with the new quantities
-        setWorkers((prevUnits) => {
+        setOffensive((prevUnits) => {
           return prevUnits.map((unit) => {
             const updatedUnit = data.data.find(
               (u) => u.type === unit.id.split('_')[0]
@@ -233,11 +147,24 @@ const Training = () => {
             return unit;
           });
         });
+        setDefensive((prevUnits) => {
+          return prevUnits.map((unit) => {
+            const updatedUnit = data.data.find(
+              (u) => u.type === unit.id.split('_')[0]
+            );
+            if (updatedUnit) {
+              return { ...unit, ownedUnits: updatedUnit.quantity };
+            }
+            return unit;
+          });
+        });
+        resetUnitCosts(); // Reset unit costs to 0
         forceUpdate();
       } else {
         alertService.error(data.error);
       }
     } catch (error) {
+      console.log(error);
       alertService.error('Failed to train units. Please try again.');
     }
   };
@@ -269,6 +196,7 @@ const Training = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
   return (
     <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
       <h2 className="text-2xl font-bold">Training</h2>
@@ -294,6 +222,8 @@ const Training = () => {
           heading="Economy"
           units={workerUnits}
           updateTotalCost={(cost) => updateTotalCost('WORKER', cost)}
+          unitCosts={unitCosts}
+          setUnitCosts={setUnitCosts}
         />
       )}
       {offensiveUnits && (
@@ -301,6 +231,8 @@ const Training = () => {
           heading="Offense"
           units={offensiveUnits}
           updateTotalCost={(cost) => updateTotalCost('OFFENSE', cost)}
+          unitCosts={unitCosts}
+          setUnitCosts={setUnitCosts}
         />
       )}
       {defensiveUnits && (
@@ -308,6 +240,8 @@ const Training = () => {
           heading="Defense"
           units={defensiveUnits}
           updateTotalCost={(cost) => updateTotalCost('DEFENSE', cost)}
+          unitCosts={unitCosts}
+          setUnitCosts={setUnitCosts}
         />
       )}
       {spyUnits && (
@@ -315,6 +249,8 @@ const Training = () => {
           heading="Spy"
           units={spyUnits}
           updateTotalCost={(cost) => updateTotalCost('SPY', cost)}
+          unitCosts={unitCosts}
+          setUnitCosts={setUnitCosts}
         />
       )}
       {sentryUnits && (
@@ -322,6 +258,8 @@ const Training = () => {
           heading="Sentry"
           units={sentryUnits}
           updateTotalCost={(cost) => updateTotalCost('SENTRY', cost)}
+          unitCosts={unitCosts}
+          setUnitCosts={setUnitCosts}
         />
       )}
       <div
@@ -329,25 +267,25 @@ const Training = () => {
         className="flex justify-between mt-8 rounded bg-gray-800"
         style={{ position: 'sticky', bottom: '0', width: "69vw", padding: '.5rem', zIndex: 10 }}
       >
-      <div className="mt-4">
-        <p>Total Cost: {toLocale(totalCost)}</p>
-      </div>
-      <div className="mt-4 flex justify-between">
-        <button
-          type="button"
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          onClick={handleTrainAll}
-        >
-          Train All
-        </button>
-        <button
-          type="button"
-          className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
-          onClick={handleUntrainAll}
-        >
-          Untrain All
-        </button>
-      </div>
+        <div className="mt-4">
+          <p>Total Cost: {toLocale(totalCost)}</p>
+        </div>
+        <div className="mt-4 flex justify-between">
+          <button
+            type="button"
+            className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+            onClick={handleTrainAll}
+          >
+            Train All
+          </button>
+          <button
+            type="button"
+            className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+            onClick={handleTrainAll}
+          >
+            Untrain All
+          </button>
+        </div>
       </div>
     </div>
   );
