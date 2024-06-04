@@ -1,4 +1,3 @@
-// pages/api/bank/history.js
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { getBankHistory } from '@/services/bank.service';
@@ -15,41 +14,55 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   const { deposits, withdraws, war_spoils, transfers, sale } = req.query;
-  let conditions = [];
+  const conditions = [];
+  const transactionConditions = [];
 
   if (deposits === 'true') {
-    conditions.push({
+    transactionConditions.push({
       from_user_account_type: 'HAND',
       to_user_account_type: 'BANK',
     });
   }
 
   if (withdraws === 'true') {
-    conditions.push({
+    transactionConditions.push({
       from_user_account_type: 'BANK',
       to_user_account_type: 'HAND',
     });
   }
 
   if (war_spoils === 'true') {
-    conditions.push({
+    transactionConditions.push({
       history_type: 'WAR_SPOILS',
     });
   }
 
   if (transfers === 'true') {
-    conditions.push({
+    transactionConditions.push({
       history_type: 'PLAYER_TRANSFER',
     });
   }
 
-
   if (sale === 'true') {
-    conditions.push({
+    transactionConditions.push({
       history_type: 'SALE',
     });
   }
 
+  if (transactionConditions.length > 0) {
+    conditions.push({
+      OR: transactionConditions,
+    });
+  }
+
+  conditions.push({
+    OR: [
+      { from_user_id: session.user.id },
+      { to_user_id: session.user.id },
+    ],
+  });
+
+  console.log('conditions: ', JSON.stringify(conditions));
   try {
     const bankHistory = await getBankHistory(conditions);
     return res.status(200).json(stringifyObj(bankHistory));

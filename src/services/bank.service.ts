@@ -86,7 +86,7 @@ export const getDepositHistory = async (userId: number) => {
 export const getBankHistory = async (conditions: any) => {
   return await prisma.bank_history.findMany({
     where: {
-      OR: conditions.length > 0 ? conditions : undefined,
+      AND: conditions,
     },
     orderBy: {
       date_time: 'desc',
