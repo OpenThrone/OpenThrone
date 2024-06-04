@@ -8,6 +8,7 @@ import toLocale from '@/utils/numberFormatting';
 
 import { useUser } from '../context/users';
 import { Table, Text, Group, TextInput, NumberInput, Paper, Select, Button } from '@mantine/core';
+import user from '@/pages/messaging/compose/[user]';
 
 // Utility function outside the component
 const getIconClass = (heading: string) => {
@@ -33,6 +34,8 @@ const NewItemSection = ({
   heading,
   items,
   updateTotalCost,
+  itemCosts,
+  setItemCosts,
   units
 }) => {
   const { user, forceUpdate } = useUser();
@@ -42,7 +45,7 @@ const NewItemSection = ({
   const [conversionAmount, setConversionAmount] = useState(0);
   const [fromItem, setFromItem] = useState('');
   const [toItem, setToItem] = useState('');
-  const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
+  //const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
   const [conversionCost, setConversionCost] = useState(0);
   
   useEffect(() => {
@@ -60,29 +63,6 @@ const NewItemSection = ({
       ) || []
     );
   }, [currentItems, user]);
-
-  useEffect(() => {
-    if (items) {
-      items.forEach((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-        inputElement?.addEventListener('input', computeTotalCostForSection);
-      });
-    }
-
-    return () => {
-      if (items) {
-        items.forEach((unit) => {
-          const inputElement = document.querySelector(
-            `input[name="${unit.id}"]`,
-          );
-          inputElement?.removeEventListener(
-            'input',
-            computeTotalCostForSection,
-          );
-        });
-      }
-    };
-  }, [currentItems, items, updateTotalCost]);
 
   const handleEquip = async () => {
     if (!getItems || getItems.length === 0) return;
@@ -136,16 +116,6 @@ const NewItemSection = ({
             }
             return item;
           });
-        });
-        currentItems.forEach((item) => {
-          // console.log(item)
-          const inputElement = document.querySelector(
-            `input[name="${item.id}"]`,
-          );
-          // console.log(inputElement)
-          if (inputElement instanceof HTMLInputElement) {
-            inputElement.value = '0';
-          }
         });
 
         forceUpdate();
@@ -234,12 +204,12 @@ const NewItemSection = ({
       .join(' ');
   };
 
-  const handleInputChange = (unit, value) => {
-    setItemCosts((prev) => {
-      const newCosts = { ...prev, [unit]: value };
+  const handleInputChange = (unitId: string, value: number | undefined) => {
+    if (value !== undefined) {
+      const newCosts = { ...itemCosts, [unitId]: value };
       computeTotalCostForSection(newCosts);
-      return newCosts;
-    });    
+      setItemCosts(newCosts);
+    }    
   };
 
   const computeTotalCostForSection = (updatedItemCosts: {[key: string]: number}) => {
@@ -360,11 +330,10 @@ const NewItemSection = ({
                 </Table.Td>
                 <Table.Td className="w-40 px-4 py-2">
                   <NumberInput
-                    type="text"
                     aria-labelledby={unit.id}
                     name={unit.id}
-                    defaultValue={0}
-                    onChange={(value) => handleInputChange(unit.id, Number(value))}
+                    value={itemCosts[unit.id] || 0}
+                    onChange={(value: number | undefined) => handleInputChange(unit.id, value)}
                     min={0}
                     className="w-full rounded-md "
                   />

@@ -97,6 +97,8 @@ const ArmoryTab = () => {
     SENTRY: 0,
   });
   const colorScheme = user?.colorScheme;
+  
+  const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
 
   const calculateTotalCost = (type = 'ALL') => {
     if (type === 'ALL') {
@@ -338,7 +340,7 @@ const ArmoryTab = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
-  
+
   return (
     <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
       <h2 className="text-2xl font-bold">Armory</h2>
@@ -364,13 +366,13 @@ const ArmoryTab = () => {
       <Tabs variant="pills" defaultValue={currentPage} className="mb-2 font-medieval">
         <Tabs.List grow justify="center">
           <Tabs.Tab value="Offense" onClick={() => {
-            router.push("/structures/armory/testing/offense");
+            router.push("/structures/armory/offense");
           }}
             color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
             <span className="text-xl">Offense</span>
           </Tabs.Tab>
-          <Tabs.Tab value="defense" onClick={() => { router.push("/structures/armory/testing/defense") }}
+          <Tabs.Tab value="defense" onClick={() => { router.push("/structures/armory/defense") }}
             color={(colorScheme === "ELF") ?
               'green' : (
                 colorScheme === 'GOBLIN' ? 'red' : (
@@ -380,12 +382,12 @@ const ArmoryTab = () => {
           >
             <span className="text-xl">Defense</span>
           </Tabs.Tab>
-          <Tabs.Tab value="spy" onClick={() => { router.push("/structures/armory/testing/spy") }}
+          <Tabs.Tab value="spy" onClick={() => { router.push("/structures/armory/spy") }}
             color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
             <span className="text-xl">Spy</span>
           </Tabs.Tab>
-          <Tabs.Tab value="sentry" onClick={() => { router.push("/structures/armory/testing/sentry") }}
+          <Tabs.Tab value="sentry" onClick={() => { router.push("/structures/armory/sentry") }}
             color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
           >
             <span className="text-xl">Sentry</span>
@@ -409,6 +411,8 @@ const ArmoryTab = () => {
                         items={items[type] ? items[type][iType] : []}
                         updateTotalCost={(section, type, cost) => updateTotalCost(section.toUpperCase(), type, cost)}
                         units={totalUnits[type]}
+                        itemCosts={itemCosts}
+                        setItemCosts={setItemCosts}
                       />
 
 

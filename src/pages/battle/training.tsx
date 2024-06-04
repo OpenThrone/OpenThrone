@@ -220,7 +220,7 @@ const Training = () => {
       {workerUnits && (
         <NewUnitSection
           heading="Economy"
-          units={workerUnits}
+          units={workerUnits.filter((unit) => unit.enabled)}
           updateTotalCost={(cost) => updateTotalCost('WORKER', cost)}
           unitCosts={unitCosts}
           setUnitCosts={setUnitCosts}
@@ -229,7 +229,7 @@ const Training = () => {
       {offensiveUnits && (
         <NewUnitSection
           heading="Offense"
-          units={offensiveUnits}
+          units={offensiveUnits.filter((unit) => unit.enabled)}
           updateTotalCost={(cost) => updateTotalCost('OFFENSE', cost)}
           unitCosts={unitCosts}
           setUnitCosts={setUnitCosts}
@@ -238,7 +238,7 @@ const Training = () => {
       {defensiveUnits && (
         <NewUnitSection
           heading="Defense"
-          units={defensiveUnits}
+          units={defensiveUnits.filter((unit) => unit.enabled)}
           updateTotalCost={(cost) => updateTotalCost('DEFENSE', cost)}
           unitCosts={unitCosts}
           setUnitCosts={setUnitCosts}
@@ -247,7 +247,7 @@ const Training = () => {
       {spyUnits && (
         <NewUnitSection
           heading="Spy"
-          units={spyUnits}
+          units={spyUnits.filter((unit) => unit.enabled)}
           updateTotalCost={(cost) => updateTotalCost('SPY', cost)}
           unitCosts={unitCosts}
           setUnitCosts={setUnitCosts}
@@ -256,7 +256,7 @@ const Training = () => {
       {sentryUnits && (
         <NewUnitSection
           heading="Sentry"
-          units={sentryUnits}
+          units={sentryUnits.filter((unit) => unit.enabled)}
           updateTotalCost={(cost) => updateTotalCost('SENTRY', cost)}
           unitCosts={unitCosts}
           setUnitCosts={setUnitCosts}

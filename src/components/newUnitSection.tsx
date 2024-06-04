@@ -25,7 +25,6 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
   const [toItem, setToItem] = useState<string | null>(null);
   const [conversionCost, setConversionCost] = useState(0);
 
-
   const handleInputChange = (unitId: string, value: number | undefined) => {
     if (value !== undefined) {
       const newCosts = { ...unitCosts, [unitId]: value };
