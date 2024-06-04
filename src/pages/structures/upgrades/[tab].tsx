@@ -75,8 +75,9 @@ const UpgradeTab = () => {
       
       <div className="mb-4 flex justify-center">
         {currentPage === 'fortifications' && (<h2>Fortifications</h2>)}
-        {currentPage === 'offense' && (<h2>Offense Upgrades</h2>)}
+        {currentPage === 'offense' && (<h2>Siege Upgrades</h2>)}
         {currentPage === 'intel' && (<h2>Clandestine Upgrades</h2>)}
+        {currentPage === 'armory' && (<h2>Armory Upgrades</h2>)}
         {currentPage === 'houses' && (<h2>Housing Upgrades</h2>)}
         {currentPage === 'economy' && (<h2>Economy Upgrades</h2>)}
       </div>
