@@ -97,7 +97,7 @@ const Training = () => {
   }, [user]);
 
   const handleTrainAll = async () => {
-    const unitsToTrain = [...workerUnits, ...offensiveUnits, ...defensiveUnits]
+    const unitsToTrain = [...workerUnits, ...offensiveUnits, ...defensiveUnits, ...spyUnits, ...sentryUnits]
       .filter((unit) => unit.enabled)
       .map((unit) => {
         return {
@@ -191,6 +191,108 @@ const Training = () => {
     }
   };
 
+  const handleUntrainAll = async () => {
+    const unitsToUnTrain = [
+      ...workerUnits,
+      ...offensiveUnits,
+      ...defensiveUnits,
+      ...spyUnits,
+      ...sentryUnits
+    ]
+      .filter((unit) => unit.enabled)
+      .map((unit) => {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+
+        return {
+          type: unit.id.split('_')[0], // Extracting the unit type from the id
+          quantity: parseInt(inputElement.value, 10),
+          level: parseInt(unit.id.split('_')[1], 10),
+        };
+      });
+
+    try {
+      const response = await fetch('/api/training/untrain', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id, // Assuming you have the user's ID available
+          units: unitsToUnTrain,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alertService.success(data.message);
+
+        // Update the getUnits state with the new quantities
+        setWorkers((prevUnits) => {
+          return prevUnits.map((unit) => {
+            const updatedUnit = data.data.find(
+              (u) => u.type === unit.id.split('_')[0]
+            );
+            if (updatedUnit) {
+              return { ...unit, ownedUnits: updatedUnit.quantity };
+            }
+            return unit;
+          });
+        });
+        setOffensive((prevUnits) => {
+          return prevUnits.map((unit) => {
+            const updatedUnit = data.data.find(
+              (u) => u.type === unit.id.split('_')[0]
+            );
+            if (updatedUnit) {
+              return { ...unit, ownedUnits: updatedUnit.quantity };
+            }
+            return unit;
+          });
+        });
+        setDefensive((prevUnits) => {
+          return prevUnits.map((unit) => {
+            const updatedUnit = data.data.find(
+              (u) => u.type === unit.id.split('_')[0]
+            );
+            if (updatedUnit) {
+              return { ...unit, ownedUnits: updatedUnit.quantity };
+            }
+            return unit;
+          });
+        });
+        setSentryUnits((prevUnits) => {
+          return prevUnits.map((unit) => {
+            const updatedUnit = data.data.find(
+              (u) => u.type === unit.id.split('_')[0]
+            );
+            if (updatedUnit) {
+              return { ...unit, ownedUnits: updatedUnit.quantity };
+            }
+            return unit;
+          });
+        });
+        setSpyUnits((prevUnits) => {
+          return prevUnits.map((unit) => {
+            const updatedUnit = data.data.find(
+              (u) => u.type === unit.id.split('_')[0]
+            );
+            if (updatedUnit) {
+              return { ...unit, ownedUnits: updatedUnit.quantity };
+            }
+            return unit;
+          });
+        });
+        resetUnitCosts(); // Reset unit costs to 0
+        forceUpdate();
+      } else {
+        alertService.error(data.error);
+      }
+    } catch (error) {
+      alertService.error('Failed to train units. Please try again.');
+    }
+  };
+
   const parentRef = useRef(null);
   const stickyRef = useRef(null);
 
@@ -200,7 +302,7 @@ const Training = () => {
       const parentElement = parentRef.current;
       const { bottom } = parentElement.getBoundingClientRect();
       const windowHeight = window.innerHeight;
-
+      
       if (bottom <= windowHeight) {
         stickyElement.style.position = 'absolute';
         stickyElement.style.bottom = '0';
@@ -286,8 +388,7 @@ const Training = () => {
       )}
       <div
         ref={stickyRef}
-        className="flex justify-between mt-8 rounded bg-gray-800"
-        style={{ position: 'sticky', bottom: '0', width: "69vw", padding: '.5rem', zIndex: 10 }}
+        className="flex justify-between mt-8 rounded bg-gray-800 sticky bottom-0 px-4 z-10 sm:w-100 md:w-[69vw]"
       >
         <div className="mt-4">
           <p>Total Cost: {toLocale(totalCost)}</p>
@@ -303,7 +404,7 @@ const Training = () => {
           <button
             type="button"
             className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
-            onClick={handleTrainAll}
+            onClick={handleUntrainAll}
           >
             Untrain All
           </button>
