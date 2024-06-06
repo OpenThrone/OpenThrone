@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
@@ -72,6 +72,7 @@ const subMenus: {
 
 export const NavLoggedIn: React.FC = () => {
   const pathName = usePathname();
+  const searchParms = useSearchParams();
   const [activeSubMenu, setActiveSubMenu] = useState<
     { text: string; href: string; parent: string, target?: string }[]
   >([]);
@@ -84,6 +85,7 @@ export const NavLoggedIn: React.FC = () => {
   const [defaultParentLink, setDefaultParentLink] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const layoutCont = useLayout();
+  const [testMenu, setTestMenu] = useState(false);
 
   const handleParentClick = (event: React.MouseEvent, link: string) => {
     event.preventDefault();
@@ -105,6 +107,12 @@ export const NavLoggedIn: React.FC = () => {
     if (pathName === '/') {
       currentPath = 'home';
       secondPath = 'overview';
+    }
+
+    if (searchParms.get('test') === 'menu') {
+      setTestMenu(true);
+    } else {
+      setTestMenu(false);
     }
 
     if (currentPath === 'userprofile') {
@@ -234,31 +242,33 @@ export const NavLoggedIn: React.FC = () => {
             </ul>
           </div>
         </nav>
-        <nav
-          className={`hidden h-8 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
-          onMouseEnter={clearReset}
-        >
-          <div className="mx-auto max-w-screen-md">
-            <ul className="flex flex-wrap justify-evenly text-center text-xl">
-              {activeSubMenu.map((item) => (
-                <li
-                  key={`${item.text}.${item.href}`}
-                  className="mx-4 cursor-pointer"
-                >
-                  <Link
-                    href={item.href}
-                    className={`
+        {!testMenu && (
+          <nav
+            className={`hidden h-8 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
+            onMouseEnter={clearReset}
+          >
+            <div className="mx-auto max-w-screen-md">
+              <ul className="flex flex-wrap justify-evenly text-center text-xl">
+                {activeSubMenu.map((item) => (
+                  <li
+                    key={`${item.text}.${item.href}`}
+                    className="mx-4 cursor-pointer"
+                  >
+                    <Link
+                      href={item.href}
+                      className={`
                       text-elf-link-link
                     `}
-                    target={item.target ? item.target : '_self'}
-                  >
-                    {item.text}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </nav>
+                      target={item.target ? item.target : '_self'}
+                    >
+                      {item.text}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
+        )}
       </div>
     </>
   );
