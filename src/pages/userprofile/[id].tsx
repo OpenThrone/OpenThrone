@@ -49,6 +49,36 @@ const Index: React.FC<IndexProps> = ({ users }) => {
     }
   };
 
+  const handleAddEnemy = async () => {
+    const res = await fetch('/api/social/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendId: profile.id, relationshipType: 'ENEMY' }),
+    });
+
+    if (res.ok) {
+      alertService.success('Friend added successfully');
+      context.forceUpdate();
+    } else {
+      alertService.error('Failed to add friend');
+    }
+  };
+
+  const handleRequestTruce = async () => {
+    const res = await fetch('/api/social/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ friendId: profile.id, relationshipType: 'TRUCE' }),
+    });
+
+    if (res.ok) {
+      alertService.success('Truce requested successfully');
+      context.forceUpdate();
+    } else {
+      alertService.error('Failed to request truce');
+    }
+  }
+
   const handleRemoveFriend = async () => {
     const res = await fetch('/api/social/remove', {
       method: 'DELETE',
@@ -189,6 +219,10 @@ const Index: React.FC<IndexProps> = ({ users }) => {
                   <h6>Offline</h6>
                 </div>
               )}
+              <div>
+                <h6 className="border-dark border-b-2 p-2 font-bold">Last Online</h6>
+                <Text size='sm'>{profile?.last_active.toDateString()}</Text>
+              </div>
             </div>
           </div>
         </div>
@@ -273,9 +307,9 @@ const Index: React.FC<IndexProps> = ({ users }) => {
                 >
                   Request Gold
                 </button>
-                <Link href="#" className={`list-group-item list-group-item-action ${isFriend ? 'disabled' : ''}`}>
+                {/*}<button type='button' className={`list-group-item list-group-item-action w-full text-left ${isFriend ? 'disabled' : ''}`}>
                   Add to Enemies List
-                </Link>
+              </button>{*/}
             </div>
           )}
           <h6 className="border-dark text-center font-bold">
