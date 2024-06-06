@@ -44,6 +44,7 @@ const Sidebar: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
+      forceUpdate();
     }, 30000);
 
     return () => clearInterval(interval);
