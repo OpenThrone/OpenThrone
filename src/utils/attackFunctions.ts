@@ -81,7 +81,6 @@ export function calculateLoot(attacker: UserModel, defender: UserModel, turns: n
   const levelDifferenceFactor = 1 + Math.min(0.5, (defender.level - attacker.level) * 0.05);
   const lootFactor = uniformFactor * turnFactor * levelDifferenceFactor;
 
-  let maxGoldLoot = BigInt(100000); // Example global max gold per attack
   let defenderGold = BigInt(defender.gold);
   let calculatedLoot = Number(defenderGold) * lootFactor;
   let loot = BigInt(Math.floor(calculatedLoot));
@@ -98,7 +97,62 @@ export function calculateLoot(attacker: UserModel, defender: UserModel, turns: n
  */
 export const computeUnitFactor = (unitsA: number, unitsB: number): number => {
   const factor = unitsA / unitsB;
-  if (factor >= 4) return 4;
-  if (factor <= 0.1) return 0.1;
-  return factor;
+
+  return Math.min(Math.max(factor, 0.5), 4.0);
+  //return Math.min(Math.max(factor, 0.1), 4.0);
+}
+
+/**
+ * Computes the number of casualties based on the given ratio, population, amplification factor, and unit factor.
+ * @param ratio - The ratio of attacking units to defending units.
+ * @param population - The population of the defending units.
+ * @param ampFactor - The amplification factor.
+ * @param unitFactor - The unit factor.
+ * @returns The number of casualties.
+ */
+export function computeCasualties(
+  ratio: number,
+  population: number,
+  ampFactor: number,
+  unitFactor: number,
+  fortHitpoints?: number,
+  defenderDS?: number,
+  isDefender: boolean = false
+): number {
+  let baseValue: number;
+  const randMultiplier = Math.max(
+    0,
+    mtRand(100000 * ratio - 10, 100000 * ratio - 5) / 100000
+  );
+
+  if (ratio >= 5) {
+    baseValue = mtRand(0.0015, 0.0018);
+  } else if (ratio >= 4) {
+    baseValue = mtRand(0.00115, 0.0013);
+  } else if (ratio >= 3) {
+    baseValue = mtRand(0.001, 0.00125);
+  } else if (ratio >= 2) {
+    baseValue = mtRand(0.0009, 0.00105);
+  } else if (ratio >= 1) {
+    baseValue = mtRand(0.00085, 0.00095);
+  } else if (ratio >= 0.5) {
+    baseValue = mtRand(0.0005, 0.0006);
+  } else {
+    baseValue = mtRand(0.0004, 0.00045);
+  }
+  let fortDamageMultiplier = 1;
+  let citizenCasualtyMultiplier = 1;
+
+  if (isDefender && fortHitpoints) {
+    fortDamageMultiplier = defenderDS === 0 && fortHitpoints > 0 ? 1.5 : 1;
+    citizenCasualtyMultiplier = fortHitpoints <= 0 ? 1.5 : 1;
+  }
+
+  const casualties = Math.round(
+    ((baseValue * 100000 * population * ampFactor * unitFactor) / 100000) *
+    randMultiplier *
+    fortDamageMultiplier *
+    citizenCasualtyMultiplier
+  );
+  return Number.isNaN(casualties) ? 0 : Math.max(0, casualties);
 }

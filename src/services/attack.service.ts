@@ -33,3 +33,22 @@ export const createBankHistory = async (historyData) => {
     data: historyData,
   });
 };
+
+export const canAttack = async (attacker, defender) => {
+  const history = await prisma.attack_log.count({
+    where: {
+      OR: [
+        { attacker_id: attacker.id },
+        { defender_id: attacker.id },
+      ],
+      AND: [
+        { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } },
+      ]
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
+  })
+  if (history >= 5) return false;
+  return true;
+};

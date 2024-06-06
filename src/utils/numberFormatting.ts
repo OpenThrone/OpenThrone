@@ -26,6 +26,29 @@ export const toLocale = (num: number | string | bigint| BigInt, locale?: Locales
   return "0";
 };
 
+const fromLocale = (str: string, locale?: Locales) => {
+  const localeSeparators = {
+    'en-US': { decimal: '.', thousands: ',' },
+    'es-ES': { decimal: ',', thousands: '.' },
+  };
+
+  // Get the separators for the specified locale or default to 'en-US'
+  const { decimal, thousands } = localeSeparators[locale || 'en-US'];
+
+  // Remove thousands separators
+  const normalizedStr = str.replace(new RegExp(`\\${thousands}`, 'g'), '');
+
+  // Replace the decimal separator with a period
+  const cleanedStr = normalizedStr.replace(decimal, '.');
+
+  // Attempt to convert to BigInt or Number
+  try {
+    return BigInt(cleanedStr);
+  } catch (e) {
+    return parseFloat(cleanedStr);
+  }
+};
+
 const convertToHumanReadable = (num: bigint, locale?: Locales) => {
   const names = [
     { value: 1e9, name: "Billion" },
@@ -59,5 +82,6 @@ export const stringifyObj = (obj) => {
   return obj;
 };
 
+export const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
 export default toLocale;
