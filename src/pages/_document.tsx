@@ -13,6 +13,7 @@ export default function Document() {
           />
           <link href='https://fonts.googleapis.com/css?family=MedievalSharp' rel='stylesheet' />
           <ColorSchemeScript defaultColorScheme="dark" />
+          <meta name="google-adsense-account" content="ca-pub-5510515377090188"></meta>
         </Head>
         <body>
           <Main />
