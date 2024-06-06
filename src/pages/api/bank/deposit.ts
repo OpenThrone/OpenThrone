@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
-import { deposit } from '@/services/bank.service';
+import { deposit, getDepositHistory } from '@/services/bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
+import UserModel from '@/models/Users';
 
 const depositHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
@@ -14,6 +15,20 @@ const depositHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   const depositAmount = BigInt(req.body.depositAmount);
+  if (depositAmount <= 0) {
+    return res.status(400).json({ error: 'Invalid deposit amount' });
+  }
+
+  const history = await getDepositHistory(Number(session.user.id));
+  const user = await prisma.users.findUnique({
+    where: { id: Number(session.user.id) },
+  });
+
+  const uModel = new UserModel(user);
+
+  if (uModel.maximumBankDeposits - history.length <= 0) {
+    return res.status(400).json({ error: 'Maximum deposits reached' });
+  }
 
   try {
     const updatedUser = await deposit(Number(session.user.id), depositAmount);
