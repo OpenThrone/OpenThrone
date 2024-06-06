@@ -87,13 +87,13 @@ export default function AutoRecruiter(props) {
     }
   }, [user, consecutiveSuccesses, isPaused, startCountdown, forceUpdate, totalLeft]);
 
-  const startRecruiting = () => {
+  const startRecruiting = async () => {
     setIsRecruiting(true);
     setIsPaused(false);
     setConsecutiveSuccesses(0);
     setHasEnded(false);
     setLastSuccess(false);  // Reset last success flag
-    fetchRandomUser();
+    await fetchRandomUser();
   };
 
   const stopRecruiting = (endSession = false) => {
