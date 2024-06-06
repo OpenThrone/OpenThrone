@@ -61,6 +61,23 @@ const LossesList: React.FC<LossesListProps> = ({ losses }) => {
   if (Object.keys(losses.units).length === 0 && losses.total > 0) {
     return <span>{losses.total} Units</span>
   }
+  
+  const consolidateUnits = (units: BattleUnits[]): BattleUnits[] => {
+    const consolidated: { [key: string]: BattleUnits } = {};
+
+    units.forEach((unit) => {
+      const key = `${unit.level}-${unit.type}`;
+      if (!consolidated[key]) {
+        consolidated[key] = { ...unit, quantity: 0 };
+      }
+      consolidated[key].quantity += unit.quantity;
+    });
+
+    return Object.values(consolidated);
+  };
+
+  const consolidatedUnits = consolidateUnits(losses.units);
+
   return (
     <HoverCard>
       <HoverCard.Target>
@@ -68,7 +85,7 @@ const LossesList: React.FC<LossesListProps> = ({ losses }) => {
       </HoverCard.Target>
       <HoverCard.Dropdown>
         <List>
-          {losses.units.map((unit, index) => (
+          {consolidatedUnits.map((unit, index) => (
             <List.Item key={index}>{unit.quantity}x Level {unit.level} {unit.type}</List.Item>
           ))}
         </List>
