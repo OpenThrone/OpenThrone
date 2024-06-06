@@ -167,6 +167,7 @@ const ArmoryTab = () => {
     setTotalOffenseCost(0);
     setTotalSpyCost(0);
     setTotalSentryCost(0);
+    setItemCosts({});
   }
 
   const handleEquipAll = async () => {
@@ -229,7 +230,6 @@ const ArmoryTab = () => {
             });
           });
         });
-
         forceUpdate();
       } else {
         alertService.error(data.error);

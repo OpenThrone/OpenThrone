@@ -333,7 +333,7 @@ const Bank = (props) => {
 
                   return (
                     <Table.Tr key={index}>
-                      <Table.Td>{new Date(entry?.date_time).toLocaleDateString()}</Table.Td>
+                      <Table.Td>{new Date(entry?.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString() }</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
                       <Table.Td>{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
                     </Table.Tr>
@@ -418,7 +418,7 @@ const Bank = (props) => {
 
                   return (
                     <Table.Tr key={index}>
-                      <Table.Td>{new Date(entry.date_time).toLocaleDateString()}</Table.Td>
+                      <Table.Td>{new Date(entry.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString()}</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
                       <Table.Td>{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
                     </Table.Tr>
