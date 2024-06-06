@@ -1,5 +1,5 @@
 'use server';
-
+import prisma from "@/lib/prisma";
 import { withAuth } from "@/middleware/auth";
 
 const handler = async (req, res) => {

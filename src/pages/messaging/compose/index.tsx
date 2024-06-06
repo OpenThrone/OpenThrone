@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import ComposeModal from "@/components/composemodal";
 import { getSession } from "next-auth/react";
 import Link from "next/link";

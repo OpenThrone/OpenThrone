@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import { ItemTypes } from "@/constants";
 import { withAuth } from "@/middleware/auth";
 import UserModel from "@/models/Users";

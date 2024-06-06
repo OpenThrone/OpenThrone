@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 

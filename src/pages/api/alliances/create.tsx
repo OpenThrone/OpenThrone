@@ -1,8 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from "@/lib/prisma";
 import { withAuth } from '@/middleware/auth';
-import { getSession } from 'next-auth/react';
-
-const prisma = new PrismaClient();
 
 const createAlliance = async (req, res) => {
   if (req.method !== 'POST') {

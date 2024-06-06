@@ -3,6 +3,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useState } from 'react';
 import { getSession } from 'next-auth/react';
+import prisma from '@/lib/prisma';
 
 const News = ({ posts: serverPosts, loggedIn }) => {
   const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })));

@@ -1,9 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
-
-import { alertService } from '@/services';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
+import prisma from '@/lib/prisma';
 
 const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
