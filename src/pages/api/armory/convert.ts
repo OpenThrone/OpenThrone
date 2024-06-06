@@ -57,8 +57,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const toItemType = ItemTypes.find((item) => item.type === toType && item.usage === toUsage && item.level === toLevel);
     const fromItemType = ItemTypes.find((item) => item.type === fromType && item.usage === fromUsage && item.level === fromLevel);
 
-    // Example conversion logic
-    const cost = BigInt(amount) * (BigInt(toItemType.cost - ((uModel?.priceBonus / 100) * toItemType.cost)) - BigInt(fromItemType.cost - ((uModel?.priceBonus / 100) * fromItemType.cost))) * (toItemType.level > fromItemType.level ? BigInt(1) : BigInt(0.75));
+    const cost = BigInt(amount) * (BigInt(toItemType.cost - ((uModel?.priceBonus / 100) * toItemType.cost)) - BigInt(fromItemType.cost - ((uModel?.priceBonus / 100) * fromItemType.cost))) * (toItemType.level > fromItemType.level ? BigInt(1) : BigInt(75) / BigInt(100));
 
     console.log(`Converting ${amount} ${fromItem} to ${toItem} for ${cost} gold`)
 

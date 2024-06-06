@@ -56,7 +56,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const toUnitType = UnitTypes.find((unit) => unit.type === toType && unit.level === toLevel);
     const fromUnitType = UnitTypes.find((unit) => unit.type === fromType && unit.level === fromLevel);
 
-    const cost = BigInt(amount) * (BigInt(toUnitType.cost - (((uModel.priceBonus || 0) / 100) * toUnitType.cost)) - BigInt(fromUnitType.cost - (((uModel.priceBonus || 0) / 100) * fromUnitType.cost))) * (toUnitType.level > fromUnitType.level ? BigInt(1) : BigInt(0.75));
+    const cost = BigInt(amount) * (BigInt(toUnitType.cost - (((uModel.priceBonus || 0) / 100) * toUnitType.cost)) - BigInt(fromUnitType.cost - (((uModel.priceBonus || 0) / 100) * fromUnitType.cost))) * (toUnitType.level > fromUnitType.level ? BigInt(1) : BigInt(75) / BigInt(100));
 
 
     if (user.gold < cost) {
