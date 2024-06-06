@@ -74,6 +74,13 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
     setConversionCost(conversionCost);
   }, [fromItem, toItem, conversionAmount, units]);
 
+
+  const resetConversion = () => {
+    setConversionAmount(0);
+    setFromItem(null);
+    setToItem(null);
+  }
+
   const handleConvert = async () => {
     // Conversion logic here
     if (!fromItem || !toItem || !conversionAmount) {
@@ -117,6 +124,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
       const data = await response.json();
       console.log('Conversion successful', data);
       alertService.success('Conversion successful');
+      resetConversion();
       forceUpdate();
     } catch (error) {
       console.error('Failed to convert items', error);
