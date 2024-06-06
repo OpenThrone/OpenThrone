@@ -31,9 +31,9 @@ const StatsTable = ({ title, data, description = "description" }) => {
             <Table.Th className="text-sm font-medium px-6 py-4 text-left">
               Stat
             </Table.Th>
-            <Table.Th className="text-sm font-medium px-6 py-4 text-center">
+            <th className="text-sm font-medium px-6 py-4 text-center content-center">
               <Text>Action</Text>
-            </Table.Th>
+            </th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
