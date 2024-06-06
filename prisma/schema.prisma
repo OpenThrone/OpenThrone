@@ -40,6 +40,7 @@ model users {
   recruit_link       String    @unique @default("")
   locale             String
   avatar             String?   @default("SHIELD")
+  created_at         DateTime  @default(now())
 
   // Relations
   sentMessages         messages[]             @relation("from_user")
@@ -53,6 +54,22 @@ model users {
   ledAlliances         alliances[]            @relation("AllianceLeader")
   alliances            alliances[]
   alliance_memberships alliance_memberships[]
+  socialRelationsAsPlayer social[] @relation("PlayerRelations")
+  socialRelationsAsFriend social[] @relation("FriendRelations")
+}
+
+model social {
+  id                 Int       @id @default(autoincrement())
+  playerId           Int
+  friendId           Int
+  relationshipType   String
+  requestDate        DateTime  @default(now())
+  acceptanceDate     DateTime?
+  endDate            DateTime?
+  status             String    @default("requested") // "requested", "accepted", "ended"
+
+  player             users     @relation("PlayerRelations", fields: [playerId], references: [id])
+  friend             users     @relation("FriendRelations", fields: [friendId], references: [id])
 }
 
 model PasswordReset {
@@ -85,6 +102,7 @@ model bank_history {
   to_user_account_type   String
   date_time              DateTime? @db.Timestamptz(3)
   history_type           String
+  stats                  Json?    @default("[]")
 }
 
 model messages {

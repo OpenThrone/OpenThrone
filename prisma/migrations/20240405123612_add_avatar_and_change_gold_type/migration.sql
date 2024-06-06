@@ -17,3 +17,6 @@ ALTER COLUMN structure_upgrades SET DEFAULT '[{"type": "OFFENSE", "level": 1}, {
 -- Add the `avatar` column to the `users` table
 ALTER TABLE users
 ADD COLUMN avatar TEXT DEFAULT 'SHIELD';
+
+ALTER TABLE bank_history 
+ADD COLUMN "stats" JSONB DEFAULT '[]';
