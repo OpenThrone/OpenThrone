@@ -1,11 +1,9 @@
 // pages/api/tasks.ts
-import { PrismaClient } from '@prisma/client';
 import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
-
+import prisma from "@/lib/prisma";
 import UserModel from '@/models/Users';
 
-const prisma = new PrismaClient();
 
 export default async function handler(
   req: NextApiRequest,

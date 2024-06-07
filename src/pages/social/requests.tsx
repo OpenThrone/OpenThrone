@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Table, Loader, Group, Paper } from '@mantine/core';
 import { useUser } from '@/context/users';
-import { request } from 'http';
 
 const Requests = () => {
   const [requests, setRequests] = useState([]);
@@ -9,7 +8,7 @@ const Requests = () => {
   const { user } = useUser();
 
   useEffect(() => {
-    fetch('https://openthrone.dev/api/social/listAll?type=REQUESTS')
+    fetch(process.env.NEXTAUTH_URL + '/api/social/listAll?type=REQUESTS')
       .then(response => response.json())
       .then(data => {
         setRequests(data);

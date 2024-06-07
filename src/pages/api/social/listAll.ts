@@ -1,9 +1,7 @@
+import prisma from "@/lib/prisma";
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
-import { PrismaClient } from '@prisma/client';
 import { stringifyObj } from '@/utils/numberFormatting';
-
-const prisma = new PrismaClient();
 
 const getTopSocialRelations = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {

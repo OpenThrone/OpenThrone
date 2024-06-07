@@ -1,8 +1,7 @@
 'use server';
-
+import prisma from "@/lib/prisma";
 import { getServerSession } from 'next-auth';
-
-import { attackHandler, spyHandler } from '@/app/actions';
+import { spyHandler } from '@/app/actions';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { stringifyObj } from '@/utils/numberFormatting';
 

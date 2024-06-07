@@ -1,8 +1,5 @@
 'use server';
-
-import { getServerSession } from 'next-auth';
-
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import prisma from "@/lib/prisma";
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
 

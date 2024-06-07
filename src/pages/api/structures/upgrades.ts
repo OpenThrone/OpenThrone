@@ -1,11 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from "@/lib/prisma";
 import { getServerSession } from 'next-auth/next';
-
 import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
 import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
-
-const prisma = new PrismaClient();
 
 const upgrades = async(req, res) => {
   if (req.method === 'POST') {

@@ -1,7 +1,5 @@
 import { stringifyObj } from '@/utils/numberFormatting';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export const deposit = async (userId: number, depositAmount: bigint) => {
   return await prisma.$transaction(async (prisma) => {

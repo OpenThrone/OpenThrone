@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { deposit, getDepositHistory } from '@/services/bank.service';

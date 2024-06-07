@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client';
-
+import prisma from "@/lib/prisma";
 import password from 'inquirer/lib/prompts/password';
 import { Locales, PlayerRace } from '@/types/typings';
 import { withAuth } from '@/middleware/auth';
 
-const prisma = new PrismaClient();
 const argon2 = require('argon2');
 const handler = async (req, res) => {
   const user = await prisma.users.findUnique({

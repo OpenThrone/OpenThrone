@@ -1,6 +1,6 @@
+import prisma from "@/lib/prisma";
 import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 const argon2 = require('argon2');
@@ -30,7 +30,6 @@ export default async function handle(
 }
 
 export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
-  const prisma = new PrismaClient();
   try {
     const { email, password, race, display_name } = await req.body;
     let exists = await prisma.users.count({
