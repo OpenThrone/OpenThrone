@@ -24,6 +24,7 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
     }
 
     const itemCounts: Record<ItemType, number> = { WEAPON: 0, HELM: 0, BOOTS: 0, BRACERS: 0, SHIELD: 0, ARMOR: 0 };
+    if (unit.quantity === 0) return;
 
     user.items.filter((item) => item.usage === unit.type).forEach((item) => {
       itemCounts[item.type] = itemCounts[item.type] || 0;
@@ -40,6 +41,18 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
   });
 
   strength *= unitMultiplier;
+
+  if (unitType === 'DEFENSE' && strength === 0) {
+    user.units.filter((u) => u.type === 'WORKER' || u.type === 'CITIZEN' || u.type === 'SENTRY' || u.type === 'SPY').forEach((unit) => {
+      const unitInfo = UnitTypes.find(
+        (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
+      );
+      if (unitInfo) {
+        strength += (unitInfo.bonus * .3 || 0) * unit.quantity;
+      }
+    })
+  }
+
   return Math.ceil(strength);
 }
 
@@ -120,7 +133,10 @@ export function computeCasualties(
   isDefender: boolean = false
 ): number {
   let baseValue: number;
-  
+
+  if (!isDefender) {
+    console.log('ratio: ', ratio, 'population: ', population, 'ampFactor: ', ampFactor, 'unitFactor: ', unitFactor, 'fortHitpoints: ', fortHitpoints, 'defenderDS: ', defenderDS, 'isDefender: ', isDefender);
+  }
 
   if (ratio >= 5) {
     baseValue = mtRand(0.0015, 0.0018);
@@ -147,7 +163,7 @@ export function computeCasualties(
 
   const casualties = Math.round(
     ((baseValue * 100000 * population * ampFactor * unitFactor) / 100000) *
-    mtRand(0, population * .3) *
+    mtRand(0, population * mtRand(.02, .08 )) *
     fortDamageMultiplier *
     citizenCasualtyMultiplier
   );

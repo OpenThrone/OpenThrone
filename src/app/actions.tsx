@@ -89,37 +89,6 @@ function filterUnitsByType(units: BattleUnits[], type: string): BattleUnits[] {
   return units.filter((unit) => unit.type === type);
 }
 
-/**
- * Distributes casualties among the given units.
- * @param units - An array of BattleUnits to distribute casualties among.
- * @param casualties - The total number of casualties to distribute.
- * @returns The number of casualties that were successfully distributed.
- */
-function distributeCasualties(units: BattleUnits[], casualties: number): BattleUnits[] {
-  let distributedCasualties = 0;
-  const killedUnits: BattleUnits[] = [];
-
-  for (const unit of units) {
-    const unitCasualties = Math.min(unit.quantity, casualties - distributedCasualties);
-    distributedCasualties += unitCasualties;
-    unit.quantity -= unitCasualties;
-
-    if (unitCasualties > 0) {
-      killedUnits.push({
-        level: unit.level,
-        type: unit.type,
-        quantity: unitCasualties,
-      });
-    }
-
-    if (distributedCasualties >= casualties) {
-      break;
-    }
-  }
-
-  return killedUnits;
-}
-
 
 function computeExperience(
   attacker: UserModel,
@@ -188,7 +157,6 @@ export function simulateBattle(
   let { fortHitpoints } = defender;
   
   for (let turn = 1; turn <= attackTurns; turn++) {
-    // Calculate defense boost from fortifications
     const fortDefenseBoost =
       (fortHitpoints / fortification.hitpoints) *
       fortification?.defenseBonusPercentage;
