@@ -63,7 +63,6 @@ const Users = ({ players, session, userPage, sortBy, sortDir }) => {
               {players.map((nplayer, index) => {
                 const player = new UserModel(nplayer);
                 if (player.id === user?.id) player.is_player = true;
-                console.log(player);
                 return (
                   <Table.Tr
                     key={player.id}
@@ -145,12 +144,12 @@ const calculateUserScore = (user) => {
   const itemScore = user.items
     ? user.items.map((item) => item.quantity * (item.level * 0.1)).reduce((a, b) => a + b, 0)
     : 0;
-
+  
   return 0.7 * user.experience +
     0.2 * user.fort_level +
     0.1 * user.house_level +
-    0.4 * unitScore +
-    0.3 * itemScore;
+    0.004 * unitScore +
+    0.003 * itemScore;
 };
 
 // Inside your page component file
