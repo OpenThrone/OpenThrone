@@ -67,16 +67,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Deduct items and gold, add converted items
-    fromItemData.quantity -= amount;
+    fromItemData.quantity = parseInt(fromItemData.quantity) - amount;
     if (toItemData) {
-      toItemData.quantity += amount;
+      toItemData.quantity = parseInt(toItemData.quantity) + amount;
     } else {
       user.items.push({ type: toType, usage: toUsage, level: toLevel, quantity: amount });
     }
 
-    console.log(`User Gold before conversion: ${user.gold}`);
     user.gold -= BigInt(cost);
-    console.log(`User Gold after conversion: ${user.gold}`);
 
     // Update user in the database
     await prisma.users.update({
