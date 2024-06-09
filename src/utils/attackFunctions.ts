@@ -120,10 +120,7 @@ export function computeCasualties(
   isDefender: boolean = false
 ): number {
   let baseValue: number;
-  const randMultiplier = Math.max(
-    0,
-    mtRand(100000 * ratio - 10, 100000 * ratio - 5) / 100000
-  );
+  
 
   if (ratio >= 5) {
     baseValue = mtRand(0.0015, 0.0018);
@@ -150,7 +147,7 @@ export function computeCasualties(
 
   const casualties = Math.round(
     ((baseValue * 100000 * population * ampFactor * unitFactor) / 100000) *
-    randMultiplier *
+    mtRand(0, population * .3) *
     fortDamageMultiplier *
     citizenCasualtyMultiplier
   );

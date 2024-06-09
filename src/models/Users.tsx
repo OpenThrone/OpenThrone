@@ -140,7 +140,7 @@ class UserModel {
       this.displayName = userData.display_name;
       if (!filtered) {
         this.email = userData.email;
-        this.passwordHash = userData.password_hash;
+        this.passwordHash = userData?.password_hash;
         this.goldInBank = userData.gold_in_bank;
       }
       this.economyLevel = userData.economy_level;
@@ -157,7 +157,7 @@ class UserModel {
       this.goldInBank = userData.gold_in_bank;
       this.battle_upgrades = userData.battle_upgrades;
       this.fortLevel = userData.fort_level;
-      this.fortHitpoints = userData.fort_hitpoints;
+      this.fortHitpoints = userData?.fort_hitpoints || userData?.fortHitpoints || 0;
       this.houseLevel = userData.house_level;
 
       this.last_active = userData.last_active;

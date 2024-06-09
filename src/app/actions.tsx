@@ -172,7 +172,7 @@ function computeExperience(
   return result;
 }
 
-function simulateBattle(
+export function simulateBattle(
   attacker: UserModel,
   defender: UserModel,
   attackTurns: number
@@ -186,7 +186,7 @@ function simulateBattle(
     return { status: 'failed', message: 'Fortification not found' };
   }
   let { fortHitpoints } = defender;
-
+  
   for (let turn = 1; turn <= attackTurns; turn++) {
     // Calculate defense boost from fortifications
     const fortDefenseBoost =
@@ -200,13 +200,12 @@ function simulateBattle(
 
     const defenderKS = getKillingStrength(defender, false);
     const attackerDS = getDefenseStrength(attacker, false);
-
     const offenseToDefenseRatio =
-      defenderDS === 0 ? 1 : attackerKS / defenderDS;
+      attackerKS / (defenderDS ? defenderDS : 1);
     const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
 
     const TargetPop = Math.max(
-      defender.unitTotals.defense,// + defender.unitTotals.citizens,
+      defender.unitTotals.defense + defender.unitTotals.citizens + defender.unitTotals.workers + defender.unitTotals.spies + defender.unitTotals.sentries,
       1
     );
     const CharPop = attacker.unitTotals.offense;
@@ -215,11 +214,14 @@ function simulateBattle(
     const offenseUnits = filterUnitsByType(attacker.units, 'OFFENSE');
     const defenseUnits = filterUnitsByType(defender.units, 'DEFENSE');
     const citizenUnits = filterUnitsByType(defender.units, 'CITIZEN');
+    const workerUnits = filterUnitsByType(defender.units, 'WORKER');
+    const spyUnits = filterUnitsByType(defender.units, 'SPY');
+    const sentryUnits = filterUnitsByType(defender.units, 'SENTRY');
 
-    //attacker has 100 and defender has 10, factor = 
-    //Math.min(Math.max(factor, 0.5), 4.0);
     const OffUnitFactor = computeUnitFactor ( 
-      defender.unitTotals.defense,
+      (defender.unitTotals.defense ? defender.unitTotals.defense : 
+        defender.unitTotals.citizens + defender.unitTotals.workers + defender.unitTotals.spies + defender.unitTotals.sentries
+      ),
       attacker.unitTotals.offense
     );
     const DefUnitFactor =
@@ -264,14 +266,13 @@ function simulateBattle(
     
     // Distribute casualties among defense units if fort is destroyed
     result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, DefCalcCas));
-
     // If all defense units are depleted, attack the citizen units
     if (defenseUnits.every((unit) => unit.quantity === 0)) {
-      result.Losses.Defender.units.push(...result.distributeCasualties(citizenUnits, DefCalcCas));
+      const combinedUnits = [...citizenUnits, ...workerUnits, ...spyUnits, ...sentryUnits];
+      result.Losses.Defender.units.push(...result.distributeCasualties(combinedUnits, DefCalcCas));
     }
 
     result.Losses.Attacker.units.push(...result.distributeCasualties(offenseUnits, AttCalcCas));
-
     // Update total losses
     result.Losses.Defender.total = result.Losses.Defender.units.reduce((sum, unit) => sum + unit.quantity, 0);
     result.Losses.Attacker.total = result.Losses.Attacker.units.reduce((sum, unit) => sum + unit.quantity, 0);
