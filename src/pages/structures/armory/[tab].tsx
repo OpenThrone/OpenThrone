@@ -101,14 +101,19 @@ const ArmoryTab = () => {
   const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
 
   const calculateTotalCost = (type = 'ALL') => {
-    if (type === 'ALL') {
-      const offenseCost = Object.values(totalCost.OFFENSE).reduce((acc, curr) => acc + curr, 0);
-      const defenseCost = Object.values(totalCost.DEFENSE).reduce((acc, curr) => acc + curr, 0);
-      const spyCost = Object.values(totalCost.SPY).reduce((acc, curr) => acc + curr, 0);
-      const sentryCost = Object.values(totalCost.SENTRY).reduce((acc, curr) => acc + curr, 0);
-      return offenseCost + defenseCost + spyCost + sentryCost;
+    try {
+      if (type === 'ALL') {
+        const offenseCost = Object.values(totalCost.OFFENSE).reduce((acc, curr) => acc + curr, 0);
+        const defenseCost = Object.values(totalCost.DEFENSE).reduce((acc, curr) => acc + curr, 0);
+        const spyCost = Object.values(totalCost.SPY).reduce((acc, curr) => acc + curr, 0);
+        const sentryCost = Object.values(totalCost.SENTRY).reduce((acc, curr) => acc + curr, 0);
+        return offenseCost + defenseCost + spyCost + sentryCost;
+      }
+      return Object.values(totalCost[type]).reduce((acc, curr) => acc + curr, 0);
+    } catch (e) {
+      console.error(e);
+      return 0;
     }
-    return Object.values(totalCost[type]).reduce((acc, curr) => acc + curr, 0);
   };
   useEffect(() => {
     setCurrentPage(tab || 'offense')
@@ -133,20 +138,38 @@ const ArmoryTab = () => {
     setTotalDefenseCost(defenseCost);
     setTotalSpyCost(spyCost);
     setTotalSentryCost(sentryCost);
-    if(user) {
+    if (user) {
       setTotalUnits({
-        OFFENSE: user.units.find(unit => unit.type === 'OFFENSE')?.quantity || 0,
-        DEFENSE: user.units.find(unit => unit.type === 'DEFENSE')?.quantity || 0,
-        SPY: user.units.find(unit => unit.type === 'SPY')?.quantity || 0,
-        SENTRY: user.units.find(unit => unit.type === 'SENTRY')?.quantity || 0,
+        OFFENSE: user.units.reduce((acc, unit) => {
+          if (unit.type === 'OFFENSE') {
+            return acc + unit.quantity;
+          }
+          return acc;
+        }, 0) || 0,
+        DEFENSE: user.units.reduce((acc, unit) => {
+          if (unit.type === 'DEFENSE') {
+            return acc + unit.quantity;
+          }
+          return acc;
+        }, 0) || 0,
+        SPY: user.units.reduce((acc, unit) => {
+          if (unit.type === 'SPY') {
+            return acc + unit.quantity;
+          }
+          return acc;
+        }, 0) || 0,
+        SENTRY: user.units.reduce((acc, unit) => {
+          if (unit.type === 'SENTRY') {
+            return acc + unit.quantity;
+          }
+          return acc;
+        }, 0) || 0,
       });
+
     }
   }, [items, totalCost, user]);
 
   const updateTotalCost = (section, type, cost) => {
-    console.log('section', section)
-    console.log('type', type)
-    console.log('cost', cost)
     setTotalCost((prevTotalCost) => {
       const newTotalCost = { ...prevTotalCost };
       if (!newTotalCost[section]) newTotalCost[section] = {};

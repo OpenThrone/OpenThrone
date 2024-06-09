@@ -1,4 +1,6 @@
 import prisma from "@/lib/prisma";
+import user from "@/pages/messaging/compose/[user]";
+import { createUser, userExists } from "@/services";
 import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import nodemailer from 'nodemailer';
@@ -32,40 +34,14 @@ export default async function handle(
 export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
   try {
     const { email, password, race, display_name } = await req.body;
-    let exists = await prisma.users.count({
-      where: {
-        email: email,
-      },
-    });
+    let exists = await userExists(email);
     if (exists) {
       return res.status(400).json({ error: 'User already exists' });
-    }
-    exists = await prisma.users.count({
-      where: {
-        display_name: display_name,
-      },
-    });
-    if (exists) {
-      return res.status(400).json({ error: 'Display name already exists' });
     }
 
     const phash = await argon2.hash(password);
     
-    const user = await prisma.users.create({
-      data: {
-        email,
-        password_hash: phash,
-        display_name,
-        race,
-        class: req.body.class,
-        locale: 'en-US',
-      },
-    });
-    
-    await prisma.users.update({
-      where: { id: user.id },
-      data: { recruit_link: md5(user.id.toString()) },
-    });
+    const user = createUser(email, phash, display_name, race, req.body.class, 'en-US');
 
     return res.json(user);
 

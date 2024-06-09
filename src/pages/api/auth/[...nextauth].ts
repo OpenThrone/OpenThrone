@@ -39,7 +39,7 @@ const updatePasswordEncryption = async (email: string, password: string) => {
 const validateCredentials = async (email: string, password: string) => {
   const user = await prisma.users.findUnique({
     where: {
-      email,
+      email: email.toLowerCase(),
     },
   });
 
