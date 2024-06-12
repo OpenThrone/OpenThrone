@@ -15,69 +15,10 @@ import BattleSimulationResult from '@/models/BattleSimulationResult';
 import UserModel from '@/models/Users';
 import type { BattleUnits, ItemType, Item, PlayerUnit, UnitType } from '@/types/typings';
 import mtRand from '@/utils/mtrand';
-import { calculateStrength, computeAmpFactor, calculateLoot, computeUnitFactor, computeCasualties } from '@/utils/attackFunctions';
+import { calculateStrength, computeAmpFactor, calculateLoot, computeUnitFactor, computeCasualties, getKillingStrength, getDefenseStrength, getFortificationBoost, computeDefenseCasualties, computeOffenseCasualties,  } from '@/utils/attackFunctions';
 import { SpyUserModel } from '@/models/SpyUser';
 import { stringifyObj } from '@/utils/numberFormatting';
-
-function getKillingStrength(user: UserModel, attacker: boolean): number {
-  return calculateStrength(user, attacker ? 'OFFENSE' : 'DEFENSE');
-}
-
-function getDefenseStrength(user: UserModel, defender: boolean): number {
-  return calculateStrength(user, defender ? 'DEFENSE' : 'OFFENSE');
-}
-
-class AssassinationResult {
-  //attacker: UserModel;
-  //defender: UserModel;
-  spiesSent: number;
-  spiesLost: number;
-  unitsKilled: number;
-  unit: string;
-
-  success: boolean;
-  experienceGained: number;
-  goldStolen: number;
-  units: PlayerUnit[];
-
-  constructor(attacker: UserModel, defender: UserModel, spies: number, unit: string) {
-    //this.attacker = JSON.parse(stringifyObj(attacker));  // deep copy
-    //this.defender = JSON.parse(stringifyObj(defender));  // deep copy
-    this.spiesSent = spies;
-    this.spiesLost = 0;
-    this.unitsKilled = 0;
-    this.unit = unit;
-    this.success = false;
-    this.experienceGained = 0;
-    this.goldStolen = 0;
-    this.units = [];
-
-  }
-}
-
-class IntelResult {
-  //attacker: UserModel;
-  //defender: UserModel;
-  spiesSent: number;
-  spiesLost: number;
-  success: boolean;
-  intelligenceGathered: {
-    units: PlayerUnit[] | null;
-    items: Item[] | null;
-    fort_level: number | null;
-    fort_hitpoints: number | null;
-    goldInBank: number | null;
-  } | null;
-
-  constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
-    //this.attacker = JSON.parse(stringifyObj(attacker));  // deep copy
-    //this.defender = JSON.parse(stringifyObj(defender));  // deep copy
-    this.spiesSent = spiesSent;
-    this.spiesLost = 0;
-    this.success = false;
-    this.intelligenceGathered = null;
-  }
-}
+import { AssassinationResult, IntelResult } from '@/utils/spyFunctions';
 
 /**
  * Filters an array of BattleUnits by a given type.
@@ -155,51 +96,59 @@ export function simulateBattle(
     return { status: 'failed', message: 'Fortification not found' };
   }
   let { fortHitpoints } = defender;
-  
+
   for (let turn = 1; turn <= attackTurns; turn++) {
-    const fortDefenseBoost =
-      (fortHitpoints / fortification.hitpoints) *
-      fortification?.defenseBonusPercentage;
+    const fortDefenseBoost = getFortificationBoost(fortHitpoints, fortification);
 
     const attackerKS = getKillingStrength(attacker, true);
-    const defenderstrength = getDefenseStrength(defender, true);
-    const defenderDS =
-      defenderstrength * (1 + fortDefenseBoost / 100);
+    const defenderDS = getDefenseStrength(defender, true, fortDefenseBoost);
 
     const defenderKS = getKillingStrength(defender, false);
-    const attackerDS = getDefenseStrength(attacker, false);
+    const attackerDS = getDefenseStrength(attacker, false, 0);
+
     const offenseToDefenseRatio =
       attackerKS / (defenderDS ? defenderDS : 1);
     const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
 
+    const isMorethan = (units, pop, perc) => {
+      if (units / pop > (perc / 100)) {
+        return true;
+      }
+      return false;
+    }
+
+    const totalPopulation = defender.unitTotals.citizens + defender.unitTotals.workers + defender.unitTotals.defense;
+    const defenseThreshold = totalPopulation * 0.25;
+
     const TargetPop = Math.max(
-      defender.unitTotals.defense + defender.unitTotals.citizens + defender.unitTotals.workers + defender.unitTotals.spies + defender.unitTotals.sentries,
-      1
+      (isMorethan(defender.unitTotals.defense, totalPopulation, 25) ? defender.unitTotals.defense : defender.unitTotals.defense + (defender.unitTotals.citizens + defender.unitTotals.workers) * 0.25),
+      0
     );
     const CharPop = attacker.unitTotals.offense;
     const AmpFactor = computeAmpFactor(TargetPop);
-
     const offenseUnits = filterUnitsByType(attacker.units, 'OFFENSE');
     const defenseUnits = filterUnitsByType(defender.units, 'DEFENSE');
     const citizenUnits = filterUnitsByType(defender.units, 'CITIZEN');
     const workerUnits = filterUnitsByType(defender.units, 'WORKER');
-    const spyUnits = filterUnitsByType(defender.units, 'SPY');
-    const sentryUnits = filterUnitsByType(defender.units, 'SENTRY');
 
-    const OffUnitFactor = computeUnitFactor ( 
-      (defender.unitTotals.defense ? defender.unitTotals.defense : 
-        defender.unitTotals.citizens + defender.unitTotals.workers + defender.unitTotals.spies + defender.unitTotals.sentries
-      ),
+    const OffUnitFactor = computeUnitFactor(
+      (defender.unitTotals.defense / totalPopulation >= 0.25 ? defender.unitTotals.defense : defender.unitTotals.defense + ((defender.unitTotals.citizens + defender.unitTotals.workers) * 0.25)),
       attacker.unitTotals.offense
     );
-    const DefUnitFactor =
-      attacker.unitTotals.offense === 0 ? 0 : 1 / OffUnitFactor;
+
+    const DefUnitFactor = computeUnitFactor(
+      attacker.unitTotals.offense,
+      (defender.unitTotals.defense / totalPopulation >= 0.25 ? defender.unitTotals.defense : defender.unitTotals.defense + ((defender.unitTotals.citizens + defender.unitTotals.workers) * 0.25))
+    );
+
+    const DefUnitFactor2 =
+      attacker.unitTotals.offense === 0 ? 0 : DefUnitFactor / OffUnitFactor;
 
     const DefCalcCas = computeCasualties(
       offenseToDefenseRatio,
       TargetPop,
       AmpFactor,
-      DefUnitFactor,
+      DefUnitFactor2,
       defender.fortHitpoints,
       defenderDS,
       true
@@ -217,7 +166,7 @@ export function simulateBattle(
       if (DefCalcCas) fortHitpoints -= DefCalcCas;
       else {
         if (offenseToDefenseRatio <= 0.05)
-          fortHitpoints -= Math.floor(mtRand(0,1));
+          fortHitpoints -= Math.floor(mtRand(0, 1));
         if (offenseToDefenseRatio > 0.05 && offenseToDefenseRatio <= 0.5)
           fortHitpoints -= Math.floor(mtRand(0, 3));
         else if (offenseToDefenseRatio > 0.5 && offenseToDefenseRatio <= 1.3)
@@ -231,12 +180,16 @@ export function simulateBattle(
     if (fortHitpoints < 0) {
       fortHitpoints = 0;
     }
-    
+
     // Distribute casualties among defense units if fort is destroyed
-    result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, DefCalcCas));
-    // If all defense units are depleted, attack the citizen units
-    if (defenseUnits.every((unit) => unit.quantity === 0)) {
-      const combinedUnits = [...citizenUnits, ...workerUnits, ...spyUnits, ...sentryUnits];
+    if (isMorethan(defender.unitTotals.defense, totalPopulation, 25)) {
+      result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, DefCalcCas));
+    } else {
+      const combinedUnits = [
+        ...defenseUnits,
+        ...citizenUnits,
+        ...workerUnits
+      ];
       result.Losses.Defender.units.push(...result.distributeCasualties(combinedUnits, DefCalcCas));
     }
 
@@ -265,47 +218,6 @@ export function simulateBattle(
   return result;
 }
 
-function getSentryStrength(user: UserModel, spies:number): number {
-  let strength = 0;
-  let numSentries = 0;
-  const sentryUnits = user.units.find((u) => u.type === 'SENTRY' && u.level === 1);
-  if (sentryUnits) {
-    numSentries = Math.min(sentryUnits.quantity, spies);
-    if (numSentries === 0) 
-      return 0;
-    const unitType = UnitTypes.find((unitType) => unitType.type === sentryUnits.type && unitType.level === 1);
-    if (unitType) {
-      strength += unitType.bonus * numSentries;
-    }
-    const sentryWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.usage === sentryUnits.type.toString() && item.level === 1);
-    if (sentryWeapons) {
-      sentryWeapons.forEach((item) => {
-        const bonus = ItemTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
-        strength += bonus?.bonus * Math.min(item.quantity, numSentries);
-      });
-    }
-  }
-  return strength;
-}
-
-function getSpyStrength(user: UserModel, attacker: boolean, spies: number): number {
-  let strength = 0;
-  let numSpies = 0;
-  const spyUnits = user.units.find((u) => (attacker ? u.type === 'SPY' : u.type === 'SENTRY') && u.level === 1);
-  if (spyUnits) {
-    numSpies = Math.min(spyUnits.quantity, spies);
-    const unitType = UnitTypes.find((unitType) => unitType.type === spyUnits.type && unitType.level === 1);
-    if (unitType) {
-      strength += unitType.bonus * numSpies;
-    }
-    const spyWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.usage === spyUnits.type.toString() && item.level === 1);
-    spyWeapons.forEach((item) => {
-      const bonus = ItemTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
-      strength += bonus?.bonus * Math.min(item.quantity, numSpies);
-    });
-  }
-  return strength;
-}
 
 function simulateIntel(
   attacker: UserModel,
@@ -536,7 +448,7 @@ export async function attackHandler(
     }
   }
 
-  if (canAttack(AttackPlayer, DefensePlayer) === false) {
+  if (await canAttack(AttackPlayer, DefensePlayer) === false) {
     return {
       status: 'failed',
       message: 'You have attacked too many times in the last 24 hours.',

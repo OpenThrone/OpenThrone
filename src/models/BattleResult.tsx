@@ -29,6 +29,7 @@ class BattleResult {
   constructor(attacker: UserModel, defender: UserModel) {
     this.attacker = JSON.parse(JSON.stringify(stringifyObj(attacker))); // deep copy
     this.defender = JSON.parse(JSON.stringify(stringifyObj(defender))); // deep copy
+    console.log('attacker: ', this.attacker.units.filter((unit) => unit.type === 'OFFENSE'));
     this.fortHitpoints = 0;
     this.turnsTaken = 0;
     this.experienceResult = new BattleSimulationResult();
@@ -48,8 +49,23 @@ class BattleResult {
     let distributedCasualties = 0;
     const killedUnits: BattleUnits[] = [];
 
+    // Calculate the max number of citizens and workers that can be at risk
+    const totalCitizens = units.filter(unit => unit.type === 'CITIZEN').reduce((sum, unit) => sum + unit.quantity, 0);
+    const totalWorkers = units.filter(unit => unit.type === 'WORKER').reduce((sum, unit) => sum + unit.quantity, 0);
+    const maxRiskCitizens = Math.floor(totalCitizens * 0.25);
+    const maxRiskWorkers = Math.floor(totalWorkers * 0.25);
+
     for (const unit of units) {
-      const unitCasualties = Math.min(unit.quantity, casualties - distributedCasualties);
+      let unitCasualties = 0;
+
+      if (unit.type === 'CITIZEN' || unit.type === 'WORKER') {
+        const maxRiskUnits = unit.type === 'CITIZEN' ? maxRiskCitizens : maxRiskWorkers;
+        const riskUnits = Math.min(unit.quantity, maxRiskUnits);
+        unitCasualties = Math.min(riskUnits, casualties - distributedCasualties);
+      } else {
+        unitCasualties = Math.min(unit.quantity, casualties - distributedCasualties);
+      }
+
       distributedCasualties += unitCasualties;
       unit.quantity -= unitCasualties;
 

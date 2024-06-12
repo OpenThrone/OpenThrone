@@ -1,6 +1,6 @@
 import { UnitTypes, ItemTypes } from "@/constants";
 import UserModel from "@/models/Users";
-import { ItemType } from "@/types/typings";
+import { Fortification, ItemType } from "@/types/typings";
 import mtRand from "./mtrand";
 
 /**
@@ -42,7 +42,7 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
 
   strength *= unitMultiplier;
 
-  if (unitType === 'DEFENSE' && strength === 0) {
+  /*if (unitType === 'DEFENSE' && strength === 0) {
     user.units.filter((u) => u.type === 'WORKER' || u.type === 'CITIZEN' || u.type === 'SENTRY' || u.type === 'SPY').forEach((unit) => {
       const unitInfo = UnitTypes.find(
         (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
@@ -51,7 +51,7 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
         strength += (unitInfo.bonus * .3 || 0) * unit.quantity;
       }
     })
-  }
+  }*/
 
   return Math.ceil(strength);
 }
@@ -111,8 +111,8 @@ export function calculateLoot(attacker: UserModel, defender: UserModel, turns: n
 export const computeUnitFactor = (unitsA: number, unitsB: number): number => {
   const factor = unitsA / unitsB;
 
-  return Math.min(Math.max(factor, 0.5), 4.0);
-  //return Math.min(Math.max(factor, 0.1), 4.0);
+  //return Math.min(Math.max(factor, 0.5), 4.0);
+  return Math.min(Math.max(factor, 0.1), 4.0);
 }
 
 /**
@@ -133,10 +133,6 @@ export function computeCasualties(
   isDefender: boolean = false
 ): number {
   let baseValue: number;
-
-  if (!isDefender) {
-    console.log('ratio: ', ratio, 'population: ', population, 'ampFactor: ', ampFactor, 'unitFactor: ', unitFactor, 'fortHitpoints: ', fortHitpoints, 'defenderDS: ', defenderDS, 'isDefender: ', isDefender);
-  }
 
   if (ratio >= 5) {
     baseValue = mtRand(0.0015, 0.0018);
@@ -162,10 +158,23 @@ export function computeCasualties(
   }
 
   const casualties = Math.round(
-    ((baseValue * 100000 * population * ampFactor * unitFactor) / 100000) *
-    mtRand(0, population * mtRand(.02, .08 )) *
+    ((baseValue * 100000 * population  * unitFactor) / 100000) *
+    mtRand(0, population * mtRand(.003, .03 )) *
     fortDamageMultiplier *
     citizenCasualtyMultiplier
   );
   return Number.isNaN(casualties) ? 0 : Math.max(0, casualties);
+}
+
+export function getKillingStrength(user: UserModel, attacker: boolean): number {
+  return calculateStrength(user, attacker ? 'OFFENSE' : 'DEFENSE');
+}
+
+export function getDefenseStrength(user: UserModel, defender: boolean, fortBoost: number): number {
+  return calculateStrength(user, defender ? 'DEFENSE' : 'OFFENSE') * (1 + (fortBoost / 100));
+}
+
+export function getFortificationBoost(fortHitpoints: number, fortification: Fortification): number {
+  return (fortHitpoints / fortification.hitpoints) *
+    fortification?.defenseBonusPercentage;
 }
