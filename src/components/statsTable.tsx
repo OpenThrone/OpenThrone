@@ -1,7 +1,6 @@
 import toLocale from '@/utils/numberFormatting';
 import { Table, Button, Text, Popover } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { profile } from 'console';
 import Link from 'next/link';
 import React from 'react';
 
