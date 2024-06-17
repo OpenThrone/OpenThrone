@@ -138,11 +138,9 @@ export function simulateBattle(
 
     // Attack fort first
     if (fortHitpoints > 0) {
-      //if (defenderCasualties) fortHitpoints -= defenderCasualties;
-      //else {
         if (attackerKS / defenderDS <= 0.05)
-          fortHitpoints -= Math.floor(mtRand(0, 1));
-        if (attackerKS / defenderDS > 0.05 && attackerKS / defenderDS <= 0.5)
+        fortHitpoints -= Math.floor(mtRand(0, 1))
+        else if (attackerKS / defenderDS > 0.05 && attackerKS / defenderDS <= 0.5)
           fortHitpoints -= Math.floor(mtRand(0, 3));
         else if (attackerKS / defenderDS > 0.5 && attackerKS / defenderDS <= 1.3)
           fortHitpoints -= Math.floor(mtRand(3, 8));
@@ -419,7 +417,7 @@ export async function attackHandler(
   if (await canAttack(AttackPlayer, DefensePlayer) === false) {
     return {
       status: 'failed',
-      message: 'You have attacked too many times in the last 24 hours.',
+      message: 'You have attacked this player too many times in the last 24 hours.',
     }
   }
 
