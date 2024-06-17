@@ -43,6 +43,17 @@ const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInB
 
 export const getStaticProps = async (context: any) => {
   
+  // Get the current date and time
+  const now = new Date();
+
+  // Get the next midnight
+  const nextMidnight = new Date(now);
+  nextMidnight.setDate(now.getDate() + 1);
+  nextMidnight.setHours(0, 0, 0, 0);
+
+  // Calculate the number of seconds until the next midnight
+  const secondsUntilMidnight = Math.floor((nextMidnight.getTime() - now.getTime()) / 1000);
+
   return {
     props: {
       totalWealth: await getTopWealth(),
@@ -56,7 +67,7 @@ export const getStaticProps = async (context: any) => {
       defenderCas: await getTop10TotalDefenderCasualties(24 * 60 * 60 * 1000 * 7),
       lastGenerated: new Date().toISOString(),
     },
-    revalidate: 120, // Revalidate every 10 minutes
+    revalidate: secondsUntilMidnight, // Revalidate every 10 minutes
   };
 };
 
