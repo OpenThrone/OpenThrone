@@ -38,6 +38,7 @@ const handler = async (req, res) => {
           newDefenderArmy: results.defender.units.filter((units) => units.type === 'DEFENSE' || units.type === 'WORKER' || units.type === 'CITIZEN').reduce((total, unit) => total + unit.quantity, 0),
           newAttackerLosses: results.Losses.Attacker.total,
           newDefenderLosses: results.Losses.Defender.total,
+          fortHPAtEnd: results.fortHitpoints,
         }
       );
   }

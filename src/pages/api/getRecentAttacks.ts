@@ -46,7 +46,7 @@ const getRecentAttacks = async (req: NextApiRequest, res: NextApiResponse) => {
     });
 
     res.status(200).json(badAttacks.map((attack) => (
-      { id: attack.id, timestamp: attack.timestamp, attacker_id: attack.attacker_id, defender_id: attack.defender_id, attackerLosses: attack.stats.attacker_losses?.total, defenderLosses: attack.stats.defender_losses?.total }
+      { id: attack.id, timestamp: attack.timestamp, attacker_id: attack.attacker_id, defender_id: attack.defender_id, attackerLosses: attack.stats.attacker_losses?.total, defenderLosses: attack.stats.defender_losses?.total, 'fortHPAtEnd': attack.stats.forthpAtEnd }
     )));
 
   } catch (error) {

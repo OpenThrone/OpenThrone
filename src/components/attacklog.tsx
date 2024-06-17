@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import Modal from './modal';
 import toLocale from '@/utils/numberFormatting';
 import Link from 'next/link';
-import { HoverCard, List, Text } from '@mantine/core';
+import { HoverCard, List, Text, Tooltip } from '@mantine/core';
 
 interface Loss {
   total: number;
@@ -94,9 +94,9 @@ const LossesList: React.FC<LossesListProps> = ({ losses }) => {
   );
 };
 
-const StatsList: React.FC<StatsListProps> = ({ stats, type }) => (
+const StatsList: React.FC<StatsListProps> = ({ id, stats, type }) => (
   <ul>
-    <li>Pillaged Gold: {toLocale(stats.pillagedGold.toLocaleString())}</li>
+    <li>Pillaged Gold: {toLocale(stats.pillagedGold.toLocaleString())} | Battle ID: {id}</li>
     <li>XP Earned: {(typeof stats.xpEarned === 'object' ? '[Defender: ' + stats.xpEarned.defender + ' | Attacker: ' +stats.xpEarned.attacker + ']' : String(stats.xpEarned))}</li>
     {type !== 'defense' ? <li>Turns Used: {stats.turns}</li> : ''}
   </ul>
@@ -170,9 +170,10 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
         ) : (
           logs.map((log) => (
             <tr key={log.id} className='odd:bg-table-odd even:bg-table-even'>
+              
               <PlayerOutcome log={log} type={type} />
               <td className="border-b px-4 py-2">
-                <StatsList stats={log.stats} type={type} />
+                <StatsList id={log.id} stats={log.stats} type={type} />
               </td>
               <td className="border-b px-4 py-2">
                 <ul>
@@ -185,7 +186,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
                     <LossesList losses={log.stats.defender_losses || {}} />
                   </li>
                 </ul>
-              </td>
+                </td>
               <td className="border-b px-4 py-2 text-center">
                 {type === 'defense' ? (
                  <> <button

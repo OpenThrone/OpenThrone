@@ -98,30 +98,18 @@ export function simulateBattle(
   let { fortHitpoints } = defender;
 
   for (let turn = 1; turn <= attackTurns; turn++) {
-    const fortDefenseBoost = getFortificationBoost(fortHitpoints, fortification);
+    //const fortDefenseBoost = getFortificationBoost(fortHitpoints, fortification);
 
-    const attackerKS = getKillingStrength(attacker, true);
-    const defenderDS = getDefenseStrength(defender, true, fortDefenseBoost);
+    const attackerKS = calculateStrength(attacker, 'OFFENSE');
+    const defenderDS = calculateStrength(defender, 'DEFENSE');
 
-    const defenderKS = getKillingStrength(defender, false);
-    const attackerDS = getDefenseStrength(attacker, false, 0);
-
-    const offenseToDefenseRatio =
-      attackerKS / (defenderDS ? defenderDS : 1);
-    const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
-
-    const isMorethan = (units, pop, perc) => {
-      if (units / pop > (perc / 100)) {
-        return true;
-      }
-      return false;
-    }
+    const defenderKS = calculateStrength(defender, 'DEFENSE');
+    const attackerDS = calculateStrength(attacker, 'OFFENSE');
 
     const totalPopulation = defender.unitTotals.citizens + defender.unitTotals.workers + defender.unitTotals.defense;
-    const defenseThreshold = totalPopulation * 0.25;
-
+    
     const TargetPop = Math.max(
-      (isMorethan(defender.unitTotals.defense, totalPopulation, 25) ? defender.unitTotals.defense : defender.unitTotals.defense + (defender.unitTotals.citizens + defender.unitTotals.workers) * 0.25),
+      (defender.unitTotals.defense / totalPopulation >= 0.25 ? defender.unitTotals.defense : defender.unitTotals.defense + (defender.unitTotals.citizens + defender.unitTotals.workers) * 0.25),
       0
     );
     const CharPop = attacker.unitTotals.offense;
@@ -131,69 +119,54 @@ export function simulateBattle(
     const citizenUnits = filterUnitsByType(defender.units, 'CITIZEN');
     const workerUnits = filterUnitsByType(defender.units, 'WORKER');
 
-    const OffUnitFactor = computeUnitFactor(
-      (defender.unitTotals.defense / totalPopulation >= 0.25 ? defender.unitTotals.defense : defender.unitTotals.defense + ((defender.unitTotals.citizens + defender.unitTotals.workers) * 0.25)),
-      attacker.unitTotals.offense
-    );
+    // Calculate the proportion of defense units for the defender
+    const defenderDefenseProportion = defender.unitTotals.defense / totalPopulation;
 
-    const DefUnitFactor = computeUnitFactor(
-      attacker.unitTotals.offense,
-      (defender.unitTotals.defense / totalPopulation >= 0.25 ? defender.unitTotals.defense : defender.unitTotals.defense + ((defender.unitTotals.citizens + defender.unitTotals.workers) * 0.25))
-    );
-
-    const DefUnitFactor2 =
-      attacker.unitTotals.offense === 0 ? 0 : DefUnitFactor / OffUnitFactor;
-
-    const DefCalcCas = computeCasualties(
-      offenseToDefenseRatio,
+    // Compute casualties for both attacker and defender
+    const { attackerCasualties, defenderCasualties } = computeCasualties(
+      attackerKS,
+      defenderDS,
+      defenderKS,
+      attackerDS,
+      CharPop,
       TargetPop,
       AmpFactor,
-      DefUnitFactor2,
-      defender.fortHitpoints,
+      defenderDefenseProportion,
+      fortHitpoints,
       defenderDS,
-      true
-    );
-
-    const AttCalcCas = computeCasualties(
-      counterAttackRatio,
-      CharPop,
-      AmpFactor,
-      OffUnitFactor
     );
 
     // Attack fort first
     if (fortHitpoints > 0) {
-      if (DefCalcCas) fortHitpoints -= DefCalcCas;
-      else {
-        if (offenseToDefenseRatio <= 0.05)
+      //if (defenderCasualties) fortHitpoints -= defenderCasualties;
+      //else {
+        if (attackerKS / defenderDS <= 0.05)
           fortHitpoints -= Math.floor(mtRand(0, 1));
-        if (offenseToDefenseRatio > 0.05 && offenseToDefenseRatio <= 0.5)
+        if (attackerKS / defenderDS > 0.05 && attackerKS / defenderDS <= 0.5)
           fortHitpoints -= Math.floor(mtRand(0, 3));
-        else if (offenseToDefenseRatio > 0.5 && offenseToDefenseRatio <= 1.3)
+        else if (attackerKS / defenderDS > 0.5 && attackerKS / defenderDS <= 1.3)
           fortHitpoints -= Math.floor(mtRand(3, 8));
         else fortHitpoints -= Math.floor(mtRand(6, 12));
-      }
+      //}
       if (fortHitpoints < 0) {
         fortHitpoints = 0;
       }
     }
-    if (fortHitpoints < 0) {
-      fortHitpoints = 0;
-    }
+    console.log('fortHitpoints: ', fortHitpoints)
 
     // Distribute casualties among defense units if fort is destroyed
-    if (isMorethan(defender.unitTotals.defense, totalPopulation, 25)) {
-      result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, DefCalcCas));
+    if (defender.unitTotals.defense / totalPopulation >= 0.25) {
+      result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, defenderCasualties));
     } else {
       const combinedUnits = [
         ...defenseUnits,
         ...citizenUnits,
         ...workerUnits
       ];
-      result.Losses.Defender.units.push(...result.distributeCasualties(combinedUnits, DefCalcCas));
+      result.Losses.Defender.units.push(...result.distributeCasualties(combinedUnits, defenderCasualties));
     }
 
-    result.Losses.Attacker.units.push(...result.distributeCasualties(offenseUnits, AttCalcCas));
+    result.Losses.Attacker.units.push(...result.distributeCasualties(offenseUnits, attackerCasualties));
     // Update total losses
     result.Losses.Defender.total = result.Losses.Defender.units.reduce((sum, unit) => sum + unit.quantity, 0);
     result.Losses.Attacker.total = result.Losses.Attacker.units.reduce((sum, unit) => sum + unit.quantity, 0);
@@ -203,12 +176,8 @@ export function simulateBattle(
     result.experienceResult = computeExperience(
       attacker,
       defender,
-      offenseToDefenseRatio
+      attackerKS / (defenderDS ? defenderDS : 1)
     );
-
-    // Update attacker and defender models with the calculated experience
-    //attacker.experience += result.experienceResult.Experience.Attacker;
-    //defender.experience += result.experienceResult.Experience.Defender;
 
     // Breaking the loop if one side has no units left
     if (attacker.unitTotals.offense <= 0) {
@@ -217,7 +186,6 @@ export function simulateBattle(
   }
   return result;
 }
-
 
 function simulateIntel(
   attacker: UserModel,

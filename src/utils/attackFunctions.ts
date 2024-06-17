@@ -7,7 +7,6 @@ import mtRand from "./mtrand";
  * Calculates the strength of a user's units.
  * @param user - The user whose units' killing strength will be calculated.
  * @param unitType - Either OFFENSE or DEFENSE.
- * @param isAttacker - Whether the user is the attacker or defender
  * @returns The total killing strength of the user's units.
  */
 export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE'): number {
@@ -40,18 +39,20 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
     });
   });
 
-  strength *= unitMultiplier;
+  if(unitType === 'DEFENSE') 
 
-  /*if (unitType === 'DEFENSE' && strength === 0) {
+  if (unitType === 'DEFENSE' && strength === 0) {
     user.units.filter((u) => u.type === 'WORKER' || u.type === 'CITIZEN' || u.type === 'SENTRY' || u.type === 'SPY').forEach((unit) => {
       const unitInfo = UnitTypes.find(
-        (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
+        (unitType) => unitType.type === unit.type
       );
       if (unitInfo) {
-        strength += (unitInfo.bonus * .3 || 0) * unit.quantity;
+        strength += Math.max((unitInfo.bonus * .3), Math.min((unitInfo.bonus * .3),0)) * unit.quantity;
       }
     })
-  }*/
+  }
+
+  strength *= unitMultiplier;
 
   return Math.ceil(strength);
 }
@@ -115,24 +116,8 @@ export const computeUnitFactor = (unitsA: number, unitsB: number): number => {
   return Math.min(Math.max(factor, 0.1), 4.0);
 }
 
-/**
- * Computes the number of casualties based on the given ratio, population, amplification factor, and unit factor.
- * @param ratio - The ratio of attacking units to defending units.
- * @param population - The population of the defending units.
- * @param ampFactor - The amplification factor.
- * @param unitFactor - The unit factor.
- * @returns The number of casualties.
- */
-export function computeCasualties(
-  ratio: number,
-  population: number,
-  ampFactor: number,
-  unitFactor: number,
-  fortHitpoints?: number,
-  defenderDS?: number,
-  isDefender: boolean = false
-): number {
-  let baseValue: number;
+export function computeBaseValue(ratio) {
+  let baseValue;
 
   if (ratio >= 5) {
     baseValue = mtRand(0.0015, 0.0018);
@@ -149,22 +134,75 @@ export function computeCasualties(
   } else {
     baseValue = mtRand(0.0004, 0.00045);
   }
-  let fortDamageMultiplier = 1;
-  let citizenCasualtyMultiplier = 1;
 
-  if (isDefender && fortHitpoints) {
-    fortDamageMultiplier = defenderDS === 0 && fortHitpoints > 0 ? 1.5 : 1;
-    citizenCasualtyMultiplier = fortHitpoints <= 0 ? 1.5 : 1;
+  return baseValue;
+
+}
+
+/**
+ * Computes the number of casualties based on the given ratio, population, amplification factor, and unit factor.
+ * @param ratio - The ratio of attacking units to defending units.
+ * @param population - The population of the defending units.
+ * @param ampFactor - The amplification factor.
+ * @param unitFactor - The unit factor.
+ * @returns The number of casualties.
+ */
+export function computeCasualties(
+  attackerKS: number,
+  defenderDS: number,
+  defenderKS: number,
+  attackerDS: number,
+  attackerPop: number,
+  defenderPop: number,
+  ampFactor: number,
+  defenseProportion: number,
+  fortHitpoints?: number,
+  defenderStrength?: number,
+): { attackerCasualties: number, defenderCasualties: number } {
+  let attackerBaseValue: number;
+  let defenderBaseValue: number;
+
+  const offenseToDefenseRatio = attackerKS / (defenderDS ? defenderDS : 1);
+  const counterAttackRatio = attackerDS === 0 ? 1 : defenderKS / attackerDS;
+  
+  // Determine base value for attacker casualties based on defense KS vs attacker DS
+  attackerBaseValue = computeBaseValue(counterAttackRatio);
+
+  // Determine base value for defender casualties based on attacker KS vs defender DS
+  defenderBaseValue = computeBaseValue(offenseToDefenseRatio);
+
+  // Adjust casualties based on fortification and defender's defense strength
+  let fortificationMultiplier = 1;
+  if (fortHitpoints !== undefined && defenderStrength !== undefined) {
+    fortificationMultiplier = defenderStrength === 0 && fortHitpoints > 0 ? 1.5 : 1;
   }
 
-  const casualties = Math.round(
-    ((baseValue * 100000 * population  * unitFactor) / 100000) *
-    mtRand(0, population * mtRand(.003, .03 )) *
-    fortDamageMultiplier *
-    citizenCasualtyMultiplier
+  console.log('defenderPop: ', defenderPop, 'attackerPop: ', attackerPop, 'attackerBaseValue: ', attackerBaseValue, 'defenderBaseValue: ', defenderBaseValue, 'ampFactor: ', ampFactor, 'fortificationMultiplier: ', fortificationMultiplier)
+  // Compute casualties considering all factors
+  let attackerCasualties = Math.round(
+    attackerBaseValue * ampFactor * ((attackerPop / defenderPop)*counterAttackRatio) * defenderPop * fortificationMultiplier
   );
-  return Number.isNaN(casualties) ? 0 : Math.max(0, casualties);
+
+  let defenderCasualties = Math.round(
+    defenderBaseValue * ampFactor * ((defenderPop / attackerPop)* offenseToDefenseRatio) * attackerPop * fortificationMultiplier
+  );
+
+  // Cap casualties to ensure they do not exceed a certain percentage of the population
+  const maxAttackerCasualties = attackerPop * .24;
+  const maxDefenderCasualties = defenderPop * .24;
+
+  // Floor the casualties to make sure it's a whole number
+  attackerCasualties = Math.floor(Math.min(attackerCasualties, maxAttackerCasualties));
+  defenderCasualties = Math.floor(Math.min(defenderCasualties, maxDefenderCasualties));
+
+  // Adjust casualties based on the proportion of defense units
+  if (defenseProportion <= 0.25 && defenseProportion > 0) {
+    defenderCasualties = Math.floor(defenderCasualties * 1.5); // Increase the defender casualties by 50%
+  }
+
+  return { attackerCasualties, defenderCasualties };
 }
+
 
 export function getKillingStrength(user: UserModel, attacker: boolean): number {
   return calculateStrength(user, attacker ? 'OFFENSE' : 'DEFENSE');
