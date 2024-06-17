@@ -19,7 +19,7 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
   }; */
   const { user } = useUser();
   const renderUpgradeAction = (item: SpyUpgradeType, index: number) => {
-    if (index === userLevel + 1 && item.fortLevelRequirement <= fortLevel) {
+    if (index === userLevel && item.fortLevelRequirement <= fortLevel) {
       return (
         <button
           type="button"
