@@ -1,5 +1,6 @@
 import UserModel from "@/models/Users";
-import { simulateBattle } from "./actions";
+import { simulateBattle } from "../utils/attackFunctions";
+import mtRand from "@/utils/mtrand";
 
 const defense = {
   "id": 84,
@@ -162,7 +163,7 @@ const defense = {
     {
       "type": "CITIZEN",
       "level": 1,
-      "quantity": 13785
+      "quantity": 10
     },
     {
       "type": "WORKER",
@@ -177,7 +178,7 @@ const defense = {
     {
       "type": "DEFENSE",
       "level": 1,
-      "quantity": 1000
+      "quantity": 0
     },
     {
       "type": "SPY",
@@ -209,7 +210,7 @@ const defense = {
     },
     {
       "type": "OFFENSE",
-      "level": 5
+      "level": 0
     },
     {
       "type": "DEFENSE",
@@ -244,13 +245,13 @@ const defense = {
     {
       "type": "DEFENSE",
       "level": 1,
-      "quantity": 1
+      "quantity": 0
     }
   ],
   "structure_upgrades": [
     {
       "type": "OFFENSE",
-      "level": 3
+      "level": 1
     },
     {
       "type": "SPY",
@@ -391,12 +392,12 @@ const attacker = {
     {
       "type": "CITIZEN",
       "level": 1,
-      "quantity": 20
+      "quantity": 10
     },
     {
       "type": "WORKER",
       "level": 1,
-      "quantity": 13189
+      "quantity": 0
     },
     {
       "type": "OFFENSE",
@@ -426,7 +427,7 @@ const attacker = {
     {
       "type": "OFFENSE",
       "level": 2,
-      "quantity": 1116
+      "quantity": 0
     }
   ],
   "fortLevel": 5,
@@ -462,12 +463,12 @@ const attacker = {
     {
       "type": "OFFENSE",
       "level": 1,
-      "quantity": 50
+      "quantity": 0
     },
     {
       "type": "DEFENSE",
       "level": 1,
-      "quantity": 18
+      "quantity": 0
     },
     {
       "type": "SENTRY",
@@ -477,17 +478,17 @@ const attacker = {
     {
       "type": "OFFENSE",
       "level": 2,
-      "quantity": 8
+      "quantity": 0
     }
   ],
   "structure_upgrades": [
     {
       "type": "ARMORY",
-      "level": 2
+      "level": 1
     },
     {
       "type": "SPY",
-      "level": 2
+      "level": 1
     },
     {
       "type": "SENTRY",
@@ -495,7 +496,7 @@ const attacker = {
     },
     {
       "type": "OFFENSE",
-      "level": 5
+      "level": 1
     }
   ]
 }
@@ -505,25 +506,30 @@ describe('setup Attack test', () => {
     const equalAttacker = new UserModel({
       ...attacker,
       fortHitpoints: 500,
-      units: attacker.units.map(unit => ({ ...unit, quantity: 1000 }))
+      units: attacker.units.filter(unit => (unit.type === 'OFFENSE' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
     });
     const equalDefender = new UserModel({
       ...defense,
       fortHitpoints: 500,
-      units: defense.units.map(unit => ({ ...unit, quantity: 1000 }))
+      units: defense.units.filter(unit=>(unit.type === 'DEFENSE' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
     });
-    const battle = await simulateBattle(equalAttacker, equalDefender, 10);
+    console.log(equalAttacker.unitTotals)
+    console.log(equalDefender.unitTotals)
+    const battle = await simulateBattle(equalAttacker, equalDefender, 1);
     console.log('Equal Armies - Attacker Losses: ', battle.Losses.Attacker.total, 'Defender Losses: ', battle.Losses.Defender.total);
   });
 
   it('should simulate a battle where the attacker has substantially more offense', async () => {
     const strongAttacker = new UserModel({
       ...attacker,
-      units: attacker.units.map(unit => unit.type === 'OFFENSE' && unit.level === 2 ? { ...unit, quantity: unit.quantity + 10000 } : unit)
+      units: attacker.units.filter(unit => unit.type === 'OFFENSE' && unit.level === 1).map(unit => ({ ...unit, quantity: 1000 }))
     });
     const weakDefender = new UserModel({
-      ...defense
+      ...defense,
+      units: defense.units.filter(unit => unit.type === 'DEFENSE' && unit.level === 1).map(unit => ({ ...unit, quantity: 10 }))
     });
+    console.log(strongAttacker.unitTotals)
+    console.log(weakDefender.unitTotals)
     const battle = await simulateBattle(strongAttacker, weakDefender, 10);
     console.log('Strong Attacker - Attacker Losses: ', battle.Losses.Attacker.total, 'Defender Losses: ', battle.Losses.Defender.total);
   });
@@ -531,17 +537,16 @@ describe('setup Attack test', () => {
   it('should simulate a battle where the attacker has substantially less offense', async () => {
     const weakAttacker = new UserModel({
       ...attacker,
-      units: attacker.units.map(unit => unit.type === 'OFFENSE' && unit.level === 1 ? { ...unit, quantity: Math.max(0, unit.quantity - 10000) } : unit)
+      units: attacker.units.filter(unit => unit.type === 'OFFENSE' && unit.level === 1).map(unit => ({ ...unit, quantity: mtRand(10, 100) }))
     });
     const strongDefender = new UserModel({
       ...defense,
-      units: defense.units.map(unit => unit.type === 'DEFENSE' && unit.level === 2 ? { ...unit, quantity: unit.quantity + 10000 } : unit)
+      units: defense.units.filter(unit => unit.type === 'DEFENSE' && unit.level === 1).map(unit => ({ ...unit, quantity: mtRand(1000, 10000) }))
     });
 
     // Log the quantities for verification
-    //console.log('Weak Attacker Units: ', weakAttacker.units.map(unit => ({ type: unit.type, quantity: unit.quantity, level: unit.level })));
-    //console.log('Strong Defender Units: ', strongDefender.units.map(unit => ({ type: unit.type, quantity: unit.quantity, level: unit.level })));
-
+    console.log(weakAttacker.unitTotals)
+    console.log(strongDefender.unitTotals)
     const battle = await simulateBattle(weakAttacker, strongDefender, 10);
     console.log('Weak Attacker - Attacker Losses: ', battle.Losses.Attacker.total, 'Defender Losses: ', battle.Losses.Defender.total);
   });

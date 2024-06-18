@@ -45,9 +45,9 @@ export const canAttack = async (attacker, defender) => {
     orderBy: {
       timestamp: 'desc',
     },
-  })
+  });
   if (history >= 5 && (attacker.id !== 1 && attacker.id !== 2 && history <= 15)) return false;
-  return true; //true
+  return true;
 };
 
 export const getTop10AttacksByTotalCasualties = async (timeFrame) => {

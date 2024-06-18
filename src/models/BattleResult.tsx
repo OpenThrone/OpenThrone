@@ -15,6 +15,8 @@ class BattleResult {
 
   experienceResult: BattleSimulationResult;
 
+  pillagedGold: number | BigInt | undefined;
+
   Losses: {
     Attacker: {
       total: number;
@@ -32,6 +34,7 @@ class BattleResult {
     this.fortHitpoints = 0;
     this.turnsTaken = 0;
     this.experienceResult = new BattleSimulationResult();
+    this.pillagedGold = 0;
     this.Losses = {
       Attacker: {
         total: 0,

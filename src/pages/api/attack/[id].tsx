@@ -26,15 +26,17 @@ const handler = async (req, res) => {
       return res.status(400).json({ status: 'failed' });
     }
 
+    const results = await attackHandler(
+      session.user.id,
+      parseInt(req.query.id),
+      parseInt(req.body.turns)
+    );
+
+    await res.revalidate('/battle/users');
+
     return res
       .status(200)
-      .json(
-        await attackHandler(
-          session.user.id,
-          parseInt(req.query.id),
-          parseInt(req.body.turns)
-        )
-      );
+      .json(results);
   }
   // console.log('failed: ', session);
   return res.status(401).json({ status: 'failed' });

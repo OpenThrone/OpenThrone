@@ -87,6 +87,8 @@ export type Unit = {
   cost: number;
   fortLevel: number;
   hp: number;
+  killingStrength?: number;
+  defenseStrength?: number;
 };
 export interface ItemCounts {
   [key: string]: number; // This allows any string as a key and number as its value
@@ -101,6 +103,8 @@ export type Item = {
   race: PlayerRace;
   quantity: number;
   armoryLevel: number;
+  killingStrength?: number;
+  defenseStrength?: number;
 };
 export type Fortification = {
   name: string;
