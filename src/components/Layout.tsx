@@ -21,7 +21,7 @@ const Layout = (props: IMainProps) => {
   const [authorized, setAuthorized] = useState(status === 'authenticated');
   const layoutCont = useLayout();
   const pathName = usePathname();
-  const [gitInfo, setGitInfo] = useState({ latestCommit: '', pendingChanges: '', latestCommitMessage: '' });
+  const [gitInfo, setGitInfo] = useState({ latestCommit: '', latestCommitMessage: '' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -108,7 +108,6 @@ const Layout = (props: IMainProps) => {
         <div className="text-xs">
           <p><strong>Latest Commit:</strong> {gitInfo.latestCommit}</p>
           <p><strong>Latest Commit Message:</strong> {gitInfo.latestCommitMessage}</p>
-          <p><strong>Pending Changes:</strong> {gitInfo.pendingChanges}</p>
         </div>
       </footer>
     </div>

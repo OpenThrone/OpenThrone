@@ -91,7 +91,6 @@ const handler = async(
           units: updatedUnitsArray,
         },
       });
-      console.log('here')
       const updatedUser = await prisma.users.findUnique({
         where: { id: userId },
       });
