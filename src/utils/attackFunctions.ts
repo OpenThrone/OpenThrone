@@ -147,9 +147,10 @@ export function computeAmpFactor(targetPop: number): number {
  * @returns The amount of loot that the attacker will receive.
  */
 export function calculateLoot(attacker: UserModel, defender: UserModel, turns: number): bigint {
-  const uniformFactor = mtRand(90, 99) / 100;
-  const turnFactor = mtRand(100 + turns * 10, 100 + turns * 20) / 100;
-  const levelDifferenceFactor = 1 + Math.min(0.5, (defender.level - attacker.level) * 0.05);
+  const uniformFactor = mtRand(90, 99) / 100; // Always between 0.90 and 0.99
+  const turnFactor = mtRand(100 + turns * 10, 100 + turns * 20) / 100; // Always positive
+  const levelDifferenceFactor = Math.max(1, 1 + Math.min(0.5, (defender.level - attacker.level) * 0.05)); // Ensure it never goes below 1
+
   const lootFactor = uniformFactor * turnFactor * levelDifferenceFactor;
 
   let defenderGold = BigInt(defender.gold);
@@ -157,8 +158,12 @@ export function calculateLoot(attacker: UserModel, defender: UserModel, turns: n
   let loot = BigInt(Math.floor(calculatedLoot));
   let maxUserGoldLoot = defenderGold * BigInt(75) / BigInt(100);
 
-  return loot > maxUserGoldLoot ? maxUserGoldLoot : loot;
+  // Ensure loot is never negative and never more than maxUserGoldLoot
+  loot = loot > maxUserGoldLoot ? maxUserGoldLoot : loot;
+  return loot < BigInt(0) ? BigInt(0) : loot;
 }
+
+
 
 
 /**
@@ -443,7 +448,7 @@ export function simulateBattle(
     result.experienceResult = computeExperience(
       attacker,
       defender,
-      attackerKS / (defenderDS ? defenderDS : 1)
+      attacker.offense / (defender.defense ? defender.defense : 1)
     );
 
     // Breaking the loop if one side has no units left
@@ -518,10 +523,6 @@ function computeExperience(
     result.Experience.Defender = Math.round(
       (30 + PhysOffToDefRatio * 45 + DefUnitRatio * 20) * AmpFactor
     );
-  }
-  if (PhysOffToDefRatio < 0.33) {
-    result.Experience.Attacker = 0;
-    result.Experience.Defender = 0;
   }
 
   return result;
