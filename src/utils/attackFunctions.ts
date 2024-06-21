@@ -427,15 +427,15 @@ export function simulateBattle(
     }
     
     // Distribute casualties among defense units if fort is destroyed
-    if (defender.unitTotals.defense / totalPopulation >= 0.25) {
-      result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, defenderCasualties));
-    } else {
+    if (fortHitpoints == 0) {
       const combinedUnits = [
         ...defenseUnits,
         ...citizenUnits,
         ...workerUnits
       ];
       result.Losses.Defender.units.push(...result.distributeCasualties(combinedUnits, defenderCasualties));
+    } else {
+      result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, defenderCasualties));
     }
 
     result.Losses.Attacker.units.push(...result.distributeCasualties(offenseUnits, attackerCasualties));
