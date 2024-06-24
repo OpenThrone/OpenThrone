@@ -70,7 +70,7 @@ export default async function handler(
       to: uModel.email,
       subject: 'Password Reset',
       text: `Your password reset token is: ${resetToken} 
-      Please use this token to reset your password here <a href='https://openthrone.dev/account/resetPW/verify'>https://openthrone.dev/account/resetPW/verify</a>`,
+      Please use this token to reset your password here <a href='https://openthrone.dev/account/password-reset/verify'>https://openthrone.dev/account/password-reset/verify</a>`,
     });
     
     return res.json({

@@ -4,7 +4,7 @@ import { useLayout } from '../context/LayoutContext';
 import { alertService } from '@/services';
 import router from 'next/router';
 import { useUser } from '@/context/users';
-import result from '@/pages/account/resetPW/result';
+import result from '@/pages/account/password-reset/result';
 
 interface ModalProps {
   isOpen: boolean;

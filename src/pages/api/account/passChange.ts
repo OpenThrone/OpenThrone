@@ -11,15 +11,12 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed!' });
   }
   // handle password reset
-  console.log('here');
   const { email, verify, newPassword } = req.body;
   try {
     const user = await prisma.users.findUnique({ where: { email } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-
-    console.log('user', user);
 
     const existingReset = await prisma.passwordReset.findMany({
       where: {

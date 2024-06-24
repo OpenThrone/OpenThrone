@@ -4,8 +4,9 @@ import React from 'react';
 
 import Form from '@/components/form';
 import { useLayout } from '@/context/LayoutContext';
+import Alert from '@/components/alert';
 
-const Login = () => {
+const Login = (props) => {
   const { setMeta, meta } = useLayout();
   const [resetEmail, setResetEmail] = useState('');
 
@@ -35,6 +36,9 @@ const Login = () => {
           {errorMessage && (
             <div className="mb-4 bg-red-500 p-4 text-white">{errorMessage}</div>
           )}
+          <div className="my-5 flex justify-between">
+            <Alert />
+          </div>
           <div className="flex justify-center">
             <div className="xs:w-96 md:w-5/12">
               <Form type="login" setErrorMessage={setErrorMessage} />
