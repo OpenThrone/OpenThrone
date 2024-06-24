@@ -11,10 +11,11 @@ const handler = async (
     return res.status(405).end(); // Method not allowed
   }
 
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const session = req.session;
-  
+
   const recruiterID = session ? parseInt(session.user?.id.toLocaleString()) : 0;
 
   // Fetch all users
@@ -41,7 +42,7 @@ const handler = async (
       where: {
         to_user: recruiterID,
         from_user: user.id,
-        timestamp: { gte: twentyFourHoursAgo },
+        timestamp: { gte: midnight },
       },
     });
 
