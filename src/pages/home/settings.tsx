@@ -4,8 +4,9 @@ import { useUser } from "@/context/users";
 import { alertService } from "@/services";
 import { Locales, PlayerRace } from "@/types/typings";
 import { useEffect, useState } from "react";
+import { Modal, Button, TextInput, Select } from '@mantine/core'; // Importing Mantine components
 
-const Settings = () => {
+const Settings = (props) => {
   const locales: Locales[] = ['en-US', 'es-ES'];
   const colorSchemes: PlayerRace[] = ['UNDEAD', 'HUMAN', 'GOBLIN', 'ELF'];
   // State for password change
@@ -13,10 +14,12 @@ const Settings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { user, forceUpdate } = useUser();
-  const { updateOptions} = useLayout();
+  const { updateOptions } = useLayout();
   const [colorScheme, setColorScheme] = useState(user?.colorScheme || 'UNDEAD');
   const [locale, setLocale] = useState(user?.locale || 'en-US');
   const [passwordsMatch, setPasswordsMatch] = useState(true);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
 
   const checkPasswordsMatch = () => {
     setPasswordsMatch(newPassword === confirmPassword);
@@ -27,6 +30,7 @@ const Settings = () => {
       setLocale(user.locale);
     }
   }, [user]);
+
   // Function to update password
   const updatePassword = async () => {
     checkPasswordsMatch();
@@ -71,15 +75,37 @@ const Settings = () => {
     }
   };
 
+  // Function to handle account reset
+  const handleResetAccount = async () => {
+    const response = await fetch('/api/account/resetAccount', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        password: resetPassword,
+      }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      alertService.success('Account reset successfully.');
+      forceUpdate();
+    } else {
+      alertService.error(data.error);
+    }
+    setIsResetModalOpen(false);
+  };
+
   // Validate whenever the passwords change
   useEffect(() => {
     checkPasswordsMatch();
   }, [newPassword, confirmPassword]);
   const { raceClasses } = useLayout();
+
   return (
     <div className="mainArea pb-10">
       <h2>Settings</h2>
-      <Alert/>
+      <Alert />
       {/* Change Password Section */}
       <div className="section">
         <h3 className="font-bold">Change Password</h3>
@@ -111,11 +137,10 @@ const Settings = () => {
             </p>
           )}
         </div>
-
         <button
           type='button'
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          onClick={() => updatePassword()}
+          onClick={updatePassword}
         >Save</button>
       </div>
 
@@ -124,25 +149,19 @@ const Settings = () => {
         <h3 className="font-bold">Game Options</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>Locale Formatting</div>
-          <select
+          <Select
             value={locale}
-            onChange={(e) => setLocale(e.target.value)}
+            onChange={(value) => setLocale(value)}
+            data={locales.map((locale) => ({ value: locale, label: locale }))}
             className={`w-full rounded-md border border-gray-300 ${raceClasses.bgClass} p-2`}
-          >
-            {locales.map((locale, index) => (
-              <option key={index} value={locale}>{locale}</option>
-            ))}
-          </select>
+          />
           <div>Color Scheme</div>
-          <select
+          <Select
             value={colorScheme}
-            onChange={(e) => setColorScheme(e.target.value)}
-            className={`w-full rounded-md border border-gray-300 ${raceClasses.bgClass} p-2`}>
-            {colorSchemes.map((color, index) => (
-              <option key={index} value={color}>{color}</option>
-            ))}
-          </select>
-          
+            onChange={(value) => setColorScheme(value)}
+            data={colorSchemes.map((color) => ({ value: color, label: color }))}
+            className={`w-full rounded-md border border-gray-300 ${raceClasses.bgClass} p-2`}
+          />
         </div>
         <button
           type='button'
@@ -152,6 +171,43 @@ const Settings = () => {
           Save
         </button>
       </div>
+
+      {/* Reset Account Section */}
+      <div className="section mt-6">
+        <h3 className="font-bold">Reset Account</h3>
+        <button
+          type='button'
+          className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+          onClick={() => setIsResetModalOpen(true)}
+        >
+          Reset Account
+        </button>
+      </div>
+
+      <Modal
+        opened={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        title="Confirm Account Reset"
+      >
+        <div>
+          <p>Are you sure you want to reset your account? This action cannot be undone.</p>
+          <TextInput
+            type="password"
+            value={resetPassword}
+            onChange={(e) => setResetPassword(e.target.value)}
+            placeholder="Enter your password to confirm"
+            className="w-full rounded-md border border-gray-300 p-2 mt-4"
+          />
+          <div className="mt-4 flex justify-end space-x-4">
+            <Button variant="outline" color="gray" onClick={() => setIsResetModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleResetAccount}>
+              Confirm Reset
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
