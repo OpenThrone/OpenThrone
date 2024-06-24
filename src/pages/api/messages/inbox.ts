@@ -29,4 +29,4 @@ export const handle = async (
   }
 }
 
-default export withAuth(handle);
+export default withAuth(handle);
