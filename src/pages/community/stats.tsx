@@ -67,7 +67,7 @@ export const getStaticProps = async (context: any) => {
       defenderCas: await getTop10TotalDefenderCasualties(24 * 60 * 60 * 1000 * 7),
       lastGenerated: new Date().toISOString(),
     },
-    revalidate: secondsUntilMidnight, // Revalidate every 10 minutes
+    revalidate: secondsUntilMidnight,
   };
 };
 

@@ -1,5 +1,5 @@
 import toLocale from '@/utils/numberFormatting';
-import { Table, Button, Text, Popover } from '@mantine/core';
+import { Table, Button, Text, Popover, Paper } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import Link from 'next/link';
 import React from 'react';
@@ -7,17 +7,19 @@ import React from 'react';
 const StatsTable = ({ title, data, description = "description" }) => {
   const [opened, { close, open }] = useDisclosure(false);
   return (
-    <div>
+    <>
       <center>
         <Popover withArrow shadow="md" width={250} opened={opened} position="bottom">
           <Popover.Target>
-            <h2 className="text-xl font-semibold mb-4" onMouseEnter={open} onMouseLeave={close}>{title}</h2>
+            <h2 className="text-xl font-semibold mb-2" onMouseEnter={open} onMouseLeave={close}>{title}</h2>
           </Popover.Target>
           <Popover.Dropdown style={{ pointerEvents: 'none' }}>
             <Text>{description}</Text>
           </Popover.Dropdown>
         </Popover>
       </center>
+    
+    <Paper withBorder shadow='md'>
       <Table className="min-w-full table-auto" color='dark' striped highlightOnHover> 
         <Table.Thead className="border-b">
           <Table.Tr className="bg-table-odd">
@@ -56,7 +58,8 @@ const StatsTable = ({ title, data, description = "description" }) => {
           ))}
         </Table.Tbody>
       </Table>
-    </div>
+      </Paper>
+    </>
   );
 };
 

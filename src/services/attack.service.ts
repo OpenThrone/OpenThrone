@@ -138,6 +138,7 @@ export const getTop10TotalDefenderCasualties = async (timeFrame) => {
 export async function getRecruitmentCounts(days: number = 7) {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - days);
+  const midnight = new Date(sevenDaysAgo.getFullYear(), sevenDaysAgo.getMonth(), sevenDaysAgo.getDate());
 
   const recruitmentCounts = await prisma.recruit_history.groupBy({
     by: ['to_user'],
@@ -146,9 +147,10 @@ export async function getRecruitmentCounts(days: number = 7) {
     },
     where: {
       timestamp: {
-        gte: sevenDaysAgo,
+        gte: midnight,
       },
-      from_user: { not: 0 }
+      from_user: { not: 0 },
+      to_user: { not: 0 }
     },
     orderBy: {
       _count: {
@@ -208,7 +210,14 @@ export async function getTopRecruitsWithDisplayNames() {
     };
   }));
 
-  return recruitsWithUser.filter(recruit => recruit !== null);
+  return recruitsWithUser
+    .filter(recruit => recruit !== null)
+    .sort((a, b) => {
+      if (b.stat !== a.stat) {
+        return b.stat - a.stat; // Sort by stat in descending order
+      }
+      return a.display_name.localeCompare(b.display_name); // Sort by display_name in ascending order
+    });
 }
 
 export async function getTopSuccessfulAttacks() {
