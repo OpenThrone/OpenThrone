@@ -2,14 +2,18 @@ import ComposeForm from "@/components/compose-form";
 import ComposeModal from "@/components/composemodal";
 import { getSession } from "next-auth/react";
 import Link from "next/link";
+import router from "next/router";
 import { useState } from "react";
+import { InferGetServerSidePropsType } from "next";
+import Alert from "@/components/alert";
 
-const user = ({ session }) => {
+const user = ({ session }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
 
   return (
     <>
+      <Alert/>
       <h2>Compose </h2>
-      <ComposeForm onClose={() => { }} />
+      <ComposeForm onClose={() => { router.push('/messaging/inbox') }} />
     </>
   );
 };

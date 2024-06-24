@@ -1,16 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
+import { withAuth } from '@/middleware/auth';
 
-export default async function handle(
+export const handle = async (
   req: NextApiRequest,
   res: NextApiResponse
-) {
+) => {
   if (req.method === 'GET') {
     try {
-      const session = await getServerSession(req, res, authOptions);
+      const session = req.session;
       // Fetch messages for the logged-in user, sorted by date_time in descending order
       const messages = await prisma.messages.findMany({
         where: {
@@ -29,3 +28,5 @@ export default async function handle(
     res.status(405).json({ error: 'Method not allowed.' });
   }
 }
+
+default export withAuth(handle);

@@ -3,11 +3,15 @@ import ComposeModal from "@/components/composemodal";
 import { getSession } from "next-auth/react";
 import Link from "next/link";
 import { useState } from "react";
+import { InferGetServerSidePropsType } from "next";
+import router from "next/router";
 
-const Compose = ({ messages, session }) => {
+const Compose = ({ messages, session }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
 
   return (
-    <ComposeModal onClose={() => { }} />
+    <>
+      <ComposeModal onClose={() => { router.push('/messaging/inbox') }} />
+    </>
   );
 };
 

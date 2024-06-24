@@ -1,132 +1,176 @@
 import { alertService } from '@/services';
 import { ComposeFormProps } from '@/types/typings';
 import React, { useState } from 'react';
+import '@mantine/tiptap/styles.css';
+import { RichTextEditor, Link } from '@mantine/tiptap';
+import { useEditor } from '@tiptap/react';
+import Highlight from '@tiptap/extension-highlight';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import Superscript from '@tiptap/extension-superscript';
+import SubScript from '@tiptap/extension-subscript';
+import { Markdown } from 'tiptap-markdown';
+import Alert  from '@/components/alert';
+import { TextInput, Button, Paper, Group, MultiSelect, Space } from '@mantine/core';
 
 export default function ComposeForm({ onClose }: ComposeFormProps) {
-  const [recipients, setRecipients] = useState([]);
-  const [recipient, setRecipient] = useState(''); 
+  const [recipients, setRecipients] = useState<string[]>([]);
+  const [recipient, setRecipient] = useState('');
   const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
-
-  const [possibleMatches, setPossibleMatches] = useState([]);
-  const [possibleRecipients, setPossibleRecipients] = useState([]);
+  const [possibleMatches, setPossibleMatches] = useState<string[]>([]);
   const [recipientValid, setRecipientValid] = useState<boolean>(false); // null: not checked, true: valid, false: invalid
-  const handleInputChange = (e) => {
-    setRecipient(e.target.value);
-  };
-  const handleRecipientChange = async (value: string) => {
-  //setRecipient(value);
 
-  // Fetch possible matches from the API
-  const res = await fetch('/api/checkDisplayName', {
-    method: 'POST',
-    body: JSON.stringify({ displayName: value }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Link,
+      Superscript,
+      SubScript,
+      Highlight,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Markdown,
+    ],
   });
-  const data = await res.json();
-  setPossibleRecipients(data.possibleMatches);
 
-  const matches = data.possibleMatches.filter((name: string) =>
-    name.toLowerCase().includes(value.toLowerCase())
-  );
-  setPossibleMatches(matches);
-  if (matches.includes(value)) {
-    setRecipientValid(true);
-    addRecipient(value)
-  } else {
-    setRecipientValid(false);
-  }
+  const handleRecipientChange = async (value: string) => {
+    setRecipient(value);
+
+    if (value.length > 0) {
+      const res = await fetch('/api/checkDisplayName', {
+        method: 'POST',
+        body: JSON.stringify({ displayName: value }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await res.json();
+      setPossibleMatches(data.possibleMatches);
+
+      const matches = data.possibleMatches.filter((name: string) =>
+        name.toLowerCase().includes(value.toLowerCase())
+      );
+
+      if (matches.includes(value)) {
+        setRecipientValid(true);
+      } else {
+        setRecipientValid(false);
+      }
+    } else {
+      setPossibleMatches([]);
+      setRecipientValid(false);
+    }
   };
-  
-  const addRecipient = (recipientName) => {
+
+  const addRecipient = (recipientName: string) => {
     if (!recipients.includes(recipientName)) {
       setRecipients((currentRecipients) => [...currentRecipients, recipientName]);
       setRecipient(''); // Clear the input box after adding
-      setRecipientValid(null); // Reset the validation state
+      setRecipientValid(false); // Reset the validation state
       setPossibleMatches([]); // Clear the possible matches
     }
   };
 
-  const removeRecipient = (recipientToRemove) => {
-    setRecipients((currentRecipients) =>
-      currentRecipients.filter((recipient) => recipient !== recipientToRemove)
-    );
-  };
-
   const handleSubmit = async () => {
+    if (!recipients.length) {
+      alertService.error('Invalid recipient');
+      return;
+    }
     const response = await fetch('/api/messages/send', {
       method: 'POST',
-      body: JSON.stringify({ recipient, subject, body }),
+      body: JSON.stringify({ recipients, subject, body: editor.storage.markdown.getMarkdown() }),
       headers: { 'Content-Type': 'application/json' },
     });
 
     const data = await response.json();
-    console.log('data', data)
     if (data.success) {
+      alertService.success('Message sent successfully');
       onClose();
-      // Optionally, you can provide a success message or refresh the inbox.
     } else {
-      // Handle the error
+      alertService.error('Failed to send message');
     }
   };
 
   return (
     <>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', padding: '5px', border: '2px solid #333', borderRadius: '5px' }}>
-        {recipients.map((recipient) => (
-          <span key={recipient} style={{ display: 'flex', alignItems: 'center', background: '#555', color: 'white', padding: '5px', borderRadius: '999px' }}>
-            {recipient}
-            <button onClick={() => removeRecipient(recipient)} style={{ marginLeft: '5px', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}>
-              ×
-            </button>
-          </span>
-        ))}
-        <input
-          className='bg-black text-white border-2 border-gray rounded-md p-2 w-full focus:outline-none focus:border-blue-500'
-          list="recipients"
-          value={recipient}
-          onChange={handleInputChange}
-          onKeyDown={(e) => (e.key === ' ' ? handleRecipientChange(recipient) : null)} // Add recipient on Enter key press
-          placeholder="Add recipient..."
-          style={{
-            flex: '1', padding: '5px',
-            width: '100%',
-            borderColor:
-              recipientValid === true
-                ? 'green'
-                : recipientValid === false
-                  ? 'red'
-                  : 'initial',
-          }}
+      <Alert />
+      <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg">
+        <MultiSelect
+          data={possibleMatches}
+          placeholder="Add recipients..."
+          value={recipients}
+          onChange={setRecipients}
+          searchable
+          creatable
+          getCreateLabel={(query) => `+ Add ${query}`}
+          onCreate={(query) => addRecipient(query)}
+          onItemSubmit={(item) => addRecipient(item.value)}
+          onSearchChange={handleRecipientChange}
+          label="Recipients"
+          nothingFound="No matches"
+          searchValue={recipient}
+          onSearchValueChange={setRecipient}
         />
-          <datalist id="recipients">
-            {possibleMatches.map((name) => (
-              <option key={name} value={name} />
-            ))}
-          </datalist>
-          <input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+
+
+        <Space h="md" />
+
+        <TextInput
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
           placeholder="Subject"
-          className='bg-black text-white border-2 border-gray rounded-md p-2 w-full focus:outline-none focus:border-blue-500'
-            style={{ width: '100%' }}
-          />
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-          placeholder="Message body"
-          className='bg-black text-white border-2 border-grey rounded-md p-2 w-full focus:outline-none focus:border-blue-500'
-            style={{ width: '100%', minHeight: '4em' }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button className='p-2 border-blue-400 border-2 rounded-md' onClick={handleSubmit} disabled={recipientValid !== true}>
-              Send
-            </button>
-          <button className='p-2 border-red-400 border-2 rounded-md' onClick={onClose}>Close</button>
-          </div>
-        </div>
+          label="Subject"
+        />
+
+        <Space h="md" />
+
+        <RichTextEditor editor={editor}>
+          <RichTextEditor.Toolbar sticky stickyOffset={60}>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Italic />
+              <RichTextEditor.Underline />
+              <RichTextEditor.Strikethrough />
+              <RichTextEditor.ClearFormatting />
+              <RichTextEditor.Highlight />
+              <RichTextEditor.Code />
+            </RichTextEditor.ControlsGroup>
+
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.H1 />
+              <RichTextEditor.H2 />
+              <RichTextEditor.H3 />
+              <RichTextEditor.H4 />
+            </RichTextEditor.ControlsGroup>
+
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Blockquote />
+              <RichTextEditor.Hr />
+              <RichTextEditor.BulletList />
+              <RichTextEditor.OrderedList />  
+            </RichTextEditor.ControlsGroup>
+
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Link />
+              <RichTextEditor.Unlink />
+            </RichTextEditor.ControlsGroup>
+
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Undo />
+              <RichTextEditor.Redo />
+            </RichTextEditor.ControlsGroup>
+          </RichTextEditor.Toolbar>
+
+          <RichTextEditor.Content />
+        </RichTextEditor>
+
+        <Group position="right" mt="md">
+          <Button onClick={handleSubmit} disabled={recipients.length === 0}>
+            Send
+          </Button>
+          <Button color="red" onClick={onClose}>Close</Button>
+        </Group>
+      </Paper>
     </>
   );
 }
