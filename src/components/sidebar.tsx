@@ -35,6 +35,9 @@ const Sidebar: React.FC = () => {
       'The more attack turns you use in an attack, the more experience and gold you will gain.',
       `The more workers you have, the more gold you'll earn per turn.`,
       `Recruiting your max amount every day will ensure you're kingdom continues to grow.`,
+      `A unit is only as strong as the equipment they wield. Make sure your army is well equipped.`,
+      `If your defense is less than 25% of your non-combatant population, you may lose citizens and workers in an attack. Keep your fort repaired`,
+      
       // Add more messages as needed
     ];
 
