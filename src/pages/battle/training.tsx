@@ -6,7 +6,7 @@ import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
 
-const Training = () => {
+const Training = (props) => {
   const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
   const { user, forceUpdate } = useUser();
   const [workerUnits, setWorkers] = useState(null);
@@ -392,6 +392,7 @@ const Training = () => {
       >
         <div className="mt-4">
           <p>Total Cost: {toLocale(totalCost)}</p>
+          <p>Total Refund: {toLocale(totalCost * .75)}</p>
         </div>
         <div className="mt-4 flex justify-between">
           <button

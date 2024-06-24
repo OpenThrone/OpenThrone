@@ -73,7 +73,7 @@ type costProps = {
   SENTRY: { WEAPON: number, HELM: number, BRACERS: number, SHIELD: number, BOOTS: number, ARMOR: number },
 }
 
-const ArmoryTab = () => {
+const ArmoryTab = (props) => {
   const router = useRouter();
   const tab = usePathname()?.split('/armory/')[1];
   const [currentPage, setCurrentPage] = useState('offense');
@@ -463,7 +463,20 @@ const ArmoryTab = () => {
                             ? totalSentryCost
                             : 0,
                   )}
-                </p>
+                  </p>
+                  <p>Total Refund: {' '}
+                    {toLocale(
+                      type === 'OFFENSE'
+                        ? totalOffenseCost * .75
+                        : type === 'DEFENSE'
+                          ? totalDefenseCost * .75
+                          : type === 'SPY'
+                            ? totalSpyCost * .75
+                            : type === 'SENTRY'
+                              ? totalSentryCost * .75
+                              : 0,
+                    )}
+                  </p>
               </div>
                 <Paper  withBorder radius="md" shadow='md' className="mt-4 flex justify-between">
                 <button
