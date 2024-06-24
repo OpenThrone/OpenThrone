@@ -1,10 +1,13 @@
 import UserModel from "@/models/Users";
 import { simulateBattle } from "../utils/attackFunctions";
+import { simulateIntel } from "../app/actions";
 import mtRand from "@/utils/mtrand";
+import { stringifyObj } from "@/utils/numberFormatting";
 
 const defense = {
   "id": 84,
   "gold": "1713",
+  "goldInBank": "1337",
   "race": "UNDEAD",
   "class": "FIGHTER",
   "items": [
@@ -201,7 +204,7 @@ const defense = {
       "quantity": 0
     }
   ],
-  "fortLevel": 3,
+  "fort_level": 3,
   "experience": 104151,
   "bonus_points": [
     {
@@ -225,7 +228,7 @@ const defense = {
       "level": 0
     }
   ],
-  "fortHitpoints": 0,
+  "fortHitpoints": 500,
   "battle_upgrades": [
     {
       "type": "OFFENSE",
@@ -412,7 +415,7 @@ const attacker = {
     {
       "type": "SPY",
       "level": 1,
-      "quantity": 0
+      "quantity": 10
     },
     {
       "type": "SENTRY",
@@ -430,7 +433,7 @@ const attacker = {
       "quantity": 0
     }
   ],
-  "fortLevel": 5,
+  "fort_level": 5,
   "experience": 101954,
   "houseLevel": 1,
   "attackTurns": 7825,
@@ -503,44 +506,46 @@ const attacker = {
 
 describe('setup Attack test', () => {
   it('should simulate a battle between equal armies', async () => {
+    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
+    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
     const equalAttacker = new UserModel({
-      ...attacker,
+      ...attackPlayer,
       fortHitpoints: 500,
       units: attacker.units.filter(unit => (unit.type === 'OFFENSE' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
     });
     const equalDefender = new UserModel({
-      ...defense,
+      ...defensePlayer,
       fortHitpoints: 500,
       units: defense.units.filter(unit=>(unit.type === 'DEFENSE' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
     });
-    console.log(equalAttacker.unitTotals)
-    console.log(equalDefender.unitTotals)
     const battle = await simulateBattle(equalAttacker, equalDefender, 1);
     console.log('Equal Armies - Attacker Losses: ', battle.Losses.Attacker.total, 'Defender Losses: ', battle.Losses.Defender.total);
   });
 
   it('should simulate a battle where the attacker has substantially more offense', async () => {
+    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
+    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
     const strongAttacker = new UserModel({
-      ...attacker,
+      ...attackPlayer,
       units: attacker.units.filter(unit => unit.type === 'OFFENSE' && unit.level === 1).map(unit => ({ ...unit, quantity: 1000 }))
     });
     const weakDefender = new UserModel({
-      ...defense,
+      ...defensePlayer,
       units: defense.units.filter(unit => unit.type === 'DEFENSE' && unit.level === 1).map(unit => ({ ...unit, quantity: 10 }))
     });
-    console.log(strongAttacker.unitTotals)
-    console.log(weakDefender.unitTotals)
     const battle = await simulateBattle(strongAttacker, weakDefender, 10);
     console.log('Strong Attacker - Attacker Losses: ', battle.Losses.Attacker.total, 'Defender Losses: ', battle.Losses.Defender.total);
   });
 
   it('should simulate a battle where the attacker has substantially less offense', async () => {
+    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
+    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
     const weakAttacker = new UserModel({
-      ...attacker,
+      ...attackPlayer,
       units: attacker.units.filter(unit => unit.type === 'OFFENSE' && unit.level === 1).map(unit => ({ ...unit, quantity: mtRand(10, 100) }))
     });
     const strongDefender = new UserModel({
-      ...defense,
+      ...defensePlayer,
       units: defense.units.filter(unit => unit.type === 'DEFENSE' && unit.level === 1).map(unit => ({ ...unit, quantity: mtRand(1000, 10000) }))
     });
 
@@ -549,5 +554,27 @@ describe('setup Attack test', () => {
     console.log(strongDefender.unitTotals)
     const battle = await simulateBattle(weakAttacker, strongDefender, 10);
     console.log('Weak Attacker - Attacker Losses: ', battle.Losses.Attacker.total, 'Defender Losses: ', battle.Losses.Defender.total);
+  });
+});
+
+describe('Spy Test', () => {
+  it('should simulate a battle between equal armies', async () => {
+    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
+    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
+    const equalAttacker = new UserModel({
+      ...attackPlayer,
+      fortHitpoints: 500,
+      units: attacker.units.filter(unit => (unit.type === 'SPY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
+    });
+    const equalDefender = new UserModel({
+      ...defensePlayer,
+      goldInBank: BigInt(1000000),
+      fortHitpoints: 500,
+      units: defense.units.filter(unit => (unit.type === 'DEFENSE' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
+    });
+    const battle = await simulateIntel(equalAttacker, equalDefender, 1);
+    console.log(battle)
+    console.log(battle.intelligenceGathered.units)
+    console.log(battle.intelligenceGathered.items)
   });
 });

@@ -61,8 +61,8 @@ export class IntelResult {
   intelligenceGathered: {
     units: PlayerUnit[] | null;
     items: Item[] | null;
-    fort_level: number | null;
-    fort_hitpoints: number | null;
+    fortLevel: number | null;
+    fortHitpoints: number | null;
     goldInBank: number | null;
   } | null;
 

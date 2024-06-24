@@ -212,16 +212,28 @@ const Form = ({
         )}
       </button>
       {type === 'login' ? (
-        <p className="text-center text-sm text-gray-600">
+        <Paper withBorder shadow="md" p={15} radius="xs">
+          <p className="text-justify text-sm text-gray-600">
           Don&apos;t have an account?{' '}
           <Link
             href="/account/register"
-            className="font-semibold text-gray-800"
+            className="font-semibold text-gray-500"
           >
             Sign up
           </Link>{' '}
           for free.
-        </p>
+          </p>
+          <p className="text-justify text-sm text-gray-600">
+            Forgot your password?{' '}
+            <Link
+              href="/account/password-reset"
+              className="font-semibold text-gray-500"
+            >
+              Reset it
+            </Link>{' '}
+            now.
+          </p>
+          </Paper>
       ) : (
         <p className="text-center text-sm text-gray-600">
           Already have an account?{' '}

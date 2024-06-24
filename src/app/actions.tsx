@@ -21,7 +21,7 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import { AssassinationResult, IntelResult } from '@/utils/spyFunctions';
 
 
-function simulateIntel(
+export function simulateIntel(
   attacker: UserModel,
   defender: UserModel,
   spies: number
@@ -30,11 +30,10 @@ function simulateIntel(
   
   const fortification = Fortifications.find((fort) => fort.level === defender.fortLevel);
   if (!fortification) {
-    return { status: 'failed', message: 'Fortification not found' };
+    return { status: 'failed', message: 'Fortification not found', defender: defender.fortLevel };
   }
   let { fortHitpoints } = defender;
-
-  
+  console.log('Spy', attacker.spy, 'Sentry', defender.sentry);
   const isSuccessful = attacker.spy > defender.sentry;
   const defenderSpyUnit = new SpyUserModel(defender, spies * 10)
 
@@ -53,17 +52,20 @@ function simulateIntel(
     }
     const intelPercentage = Math.min((spies-spiesLost) * 10, 100);
     const intelKeys = Object.keys(new SpyUserModel(defender, (spies - spiesLost) * 10));
-    const selectedKeys = intelKeys.slice(0, Math.ceil(intelKeys.length * intelPercentage / 100));
-    const randomizedKeys = selectedKeys.sort(() => 0.5 - Math.random());
+    const selectedKeysCount = Math.ceil(intelKeys.length * intelPercentage / 100);
+    const randomizedKeys = intelKeys.sort(() => 0.5 - Math.random()).slice(0, selectedKeysCount);
+    console.log('Random Keys:', randomizedKeys, 'Intel Percentage:', intelPercentage, 'Intel Keys:', intelKeys)
 
     result.intelligenceGathered = randomizedKeys.reduce((partialIntel, key) => {
       const initPartialIntel = partialIntel ?? {
         units: null,
         items: null,
-        fort_level: null,
-        fort_hitpoints: null,
+        fortLevel: null,
+        fortHitpoints: null,
         goldInBank: null,
       };
+
+      console.log(defender)
 
       if (key === 'units' || key === 'items') {
         const totalTypes = defender[key].length;

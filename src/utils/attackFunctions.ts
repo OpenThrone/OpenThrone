@@ -60,7 +60,7 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
   return Math.ceil(strength);
 }
 
-export function newCalculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE', includeCitz: boolean = false): { killingStrength: number, defenseStrength: number } {
+export function newCalculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE', includeCitz: boolean = false, fortBoost: number = 0): { killingStrength: number, defenseStrength: number } {
   let KS = 0;
   let DS = 0;
   const unitMultiplier = unitType === 'OFFENSE' ? (1 + parseInt(user.attackBonus.toString(), 10) / 100) :
@@ -311,8 +311,6 @@ export function newComputeCasualties(
   const maxAttackerCasualties = (attackerCasualties / attackerPop >= .75 ? attackerPop : attackerPop * .05);
   const maxDefenderCasualties = (defenderCasualties / defenderPop >= .75 ? defenderPop : defenderPop * .05);
 
-  console.log('maxDefenderCasualties', maxDefenderCasualties, 'defenderCasualties', defenderCasualties, 'maxAttackerCasualties', maxAttackerCasualties, 'attackerCasualties', attackerCasualties)
-
   // Floor the casualties to make sure it's a whole number
   attackerCasualties = Math.floor(Math.min(attackerCasualties, maxAttackerCasualties));
   defenderCasualties = Math.floor(Math.min(defenderCasualties, maxDefenderCasualties));
@@ -323,14 +321,6 @@ export function newComputeCasualties(
   }
 
   return { attackerCasualties, defenderCasualties };
-}
-
-export function getKillingStrength(user: UserModel, attacker: boolean): number {
-  return calculateStrength(user, attacker ? 'OFFENSE' : 'DEFENSE');
-}
-
-export function getDefenseStrength(user: UserModel, defender: boolean, fortBoost: number): number {
-  return calculateStrength(user, defender ? 'DEFENSE' : 'OFFENSE') * (1 + (fortBoost / 100));
 }
 
 export function getFortificationBoost(fortHitpoints: number, fortification: Fortification): number {
@@ -380,7 +370,7 @@ export function simulateBattle(
     //const fortDefenseBoost = getFortificationBoost(fortHitpoints, fortification);
 
     const totalPopulation = defender.unitTotals.citizens + defender.unitTotals.workers + defender.unitTotals.defense;
-    const { killingStrength: attackerKS, defenseStrength: attackerDS } = newCalculateStrength(attacker, 'OFFENSE');
+    const { killingStrength: attackerKS, defenseStrength: attackerDS } = newCalculateStrength(attacker, 'OFFENSE', false, 0);
     const { killingStrength: defenderKS, defenseStrength: defenderDS } = newCalculateStrength(defender, 'DEFENSE', defender.unitTotals.defense / totalPopulation >= 0.25 ? false : true);
 
 
@@ -427,14 +417,14 @@ export function simulateBattle(
     }
     
     // Distribute casualties among defense units if fort is destroyed
-    if (fortHitpoints == 0) {
+    if (fortHitpoints == 0 && defenderDefenseProportion < 0.25) {
       const combinedUnits = [
         ...defenseUnits,
         ...citizenUnits,
         ...workerUnits
       ];
       result.Losses.Defender.units.push(...result.distributeCasualties(combinedUnits, defenderCasualties));
-    } else {
+    }  else {
       result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, defenderCasualties));
     }
 

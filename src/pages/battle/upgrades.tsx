@@ -74,7 +74,7 @@ const Upgrades = (props) => {
         </p>
       </div>
       <br />
-      Only Level 2 and higher units can use battle upgrades. Currently there are no restrictions on buying, but later we will lock this down to requiring a Battle Upgrade Level 2 first.
+      Only Level 2 and higher units can use battle upgrades.
       <div className="mb-4 flex flex-col justify-around">
         <BattleUpgradesSection heading='Offense' type='OFFENSE' items={useItems(user).OFFENSE} />
 
