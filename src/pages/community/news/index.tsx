@@ -4,11 +4,16 @@ import rehypeRaw from 'rehype-raw';
 import { useState } from 'react';
 import { getSession } from 'next-auth/react';
 import prisma from '@/lib/prisma';
+import { Button, Modal, Textarea, TextInput } from '@mantine/core';
+import Error from 'next/error';
+import { InferGetServerSidePropsType } from "next";
 
-const News = ({ posts: serverPosts, loggedIn }) => {
+const News = ({ posts: serverPosts, loggedIn, userId }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })));
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [newPost, setNewPost] = useState({ title: '', content: '' });
+
   const handleReadChange = async (postId) => {
-    // Optimistically update the UI before the API call is made
     setPosts(posts.map(post => {
       if (post.id === postId) {
         return { ...post, isRead: !post.isRead };
@@ -16,7 +21,6 @@ const News = ({ posts: serverPosts, loggedIn }) => {
       return post;
     }));
 
-    // Determine the new read status based on the current state
     const postToUpdate = posts.find(post => post.id === postId);
     const newReadStatus = postToUpdate ? !postToUpdate.isRead : false;
 
@@ -49,11 +53,39 @@ const News = ({ posts: serverPosts, loggedIn }) => {
     }
   };
 
+  const handlePostNew = async () => {
+    try {
+      const response = await fetch('/api/blog/post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newPost),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      setPosts([...posts, data]);
+      setModalIsOpen(false);
+      setNewPost({ title: '', content: '' });
+    } catch (error) {
+      console.error('Error creating new post:', error);
+    }
+  };
+
   return (
     <div className="mainArea pb-10">
       <h2>News</h2>
+      {loggedIn && userId === 1 && (
+        <Button onClick={() => setModalIsOpen(true)}>
+          Post New
+        </Button>
+      )}
       {posts.map((post) => (
-        <div key={post.id} className="mx-auto rounded-xl overflow-hidden border border-gray-200">
+        <div key={post.id} className="mx-auto my-2 rounded-xl overflow-hidden border border-gray-200">
           {/* Header / Title Bar Section */}
           <div className="bg-gray-600 p-2 flex justify-between items-center">
             <div className="uppercase tracking-wide text-md text-white font-semibold">{post.title}
@@ -73,6 +105,28 @@ const News = ({ posts: serverPosts, loggedIn }) => {
           </div>
         </div>
       ))}
+      <Modal
+        opened={modalIsOpen}
+        onClose={() => setModalIsOpen(false)}
+        title="New Post"
+      >
+        <form onSubmit={(e) => { e.preventDefault(); handlePostNew(); }}>
+          <TextInput
+            label="Title"
+            value={newPost.title}
+            onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+            required
+          />
+          <Textarea
+            label="Content"
+            value={newPost.content}
+            onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+            required
+          />
+          <Button type="submit" className="mt-4">Submit</Button>
+          <Button type="button" className="mt-2" variant="outline" onClick={() => setModalIsOpen(false)}>Cancel</Button>
+        </form>
+      </Modal>
     </div>
   );
 };
@@ -96,6 +150,9 @@ export const getServerSideProps = async (context) => {
           },
         },
       },
+      orderBy: {
+        created_timestamp: 'desc',
+      },
     });
     // Transform the posts to include a read status boolean
     const postsWithReadStatus = posts.map((post) => {
@@ -108,7 +165,7 @@ export const getServerSideProps = async (context) => {
       };
     });
     return {
-      props: { posts: postsWithReadStatus, loggedIn: true},
+      props: { posts: postsWithReadStatus, loggedIn: true, userId},
     };
   } 
   // Fetch posts without the read status
