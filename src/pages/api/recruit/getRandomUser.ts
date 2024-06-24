@@ -30,6 +30,7 @@ const handler = async (
     },
     where: {
       NOT: [{ id: { in: [0, recruiterID] } }],
+      created_at: { lt: midnight },
     },
   });
 
