@@ -27,5 +27,7 @@
   },
   "[typescript]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"
-  } // Don't run prettier for files listed in .gitignore
+  },
+  "WillLuke.nextjs.addTypesOnSave": true,
+  "WillLuke.nextjs.hasPrompted": true // Don't run prettier for files listed in .gitignore
 }
