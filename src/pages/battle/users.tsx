@@ -7,10 +7,11 @@ import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import toLocale from '@/utils/numberFormatting';
 import { Table, Group, Avatar, Badge, Text, Indicator } from '@mantine/core';
+import { InferGetStaticPropsType } from "next";
 
 const ROWS_PER_PAGE = 10;
 
-const Users = ({ allUsers }) => {
+const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,7 +55,7 @@ const Users = ({ allUsers }) => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Attack</h2>
+      <h2 className="page-title">Attack</h2>
       <div className="overflow-x-auto">
         <Table.ScrollContainer minWidth={400}>
           <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">

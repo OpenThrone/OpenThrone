@@ -34,7 +34,7 @@ const Housing = (props) => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Housing</h2>
+      <h2 className="page-title">Housing</h2>
       <div className="my-5 flex justify-center justify-evenly">
         <Paper withBorder p="sm" radius="md" className={classes.card}>
           <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>

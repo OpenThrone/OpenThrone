@@ -29,7 +29,7 @@ const Login = (props) => {
   return (
     <>
       <div className="mainArea pb-10">
-        <h2>Login</h2>
+        <h2 className="page-title">Login</h2>
       </div>
       <div className="mx-auto xs:w-96 md:w-3/4 py-2 md:col-span-9">
         <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">

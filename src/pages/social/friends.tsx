@@ -3,7 +3,7 @@ import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator } from '@ma
 import UserModel from '@/models/Users';
 import Link from 'next/link';
 
-const Friends = () => {
+const Friends = (props) => {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +54,7 @@ const Friends = () => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Friends</h2>
+      <h2 className="page-title">Friends</h2>
       <Paper shadow="xs" p="md">
         <Table className="min-w-full" striped>
           <Table.Thead>

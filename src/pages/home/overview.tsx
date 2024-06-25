@@ -4,7 +4,7 @@ import { useUser } from '@/context/users';
 import { toLocale } from '@/utils/numberFormatting';
 import { useEffect, useState } from 'react';
 
-const Overview = () => {
+const Overview = (props) => {
   // const router = useRouter();
   const [getNews, setNews] = useState(['no news']);
   useEffect(() => {
@@ -28,7 +28,7 @@ const Overview = () => {
   const { user } = useUser();
   return (
     <div className="mainArea pb-10">
-      <h2>Overview</h2>
+      <h2 className="page-title">Overview</h2>
       <div className="container mx-auto">
         <p className="text-center">
           <span className="text-white">{user?.displayName}</span> is a{user?.race === 'ELF' || user?.race === 'UNDEAD' ? 'n ' : ' '}

@@ -130,7 +130,7 @@ export default function Recruit(props) {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Recruiter</h2>
+      <h2 className="page-title">Recruiter</h2>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>

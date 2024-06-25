@@ -376,7 +376,7 @@ const ArmoryTab = (props) => {
 
   return (
     <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
-      <h2 className="text-2xl font-bold">Armory</h2>
+      <h2 className="text-2xl font-bold page-title">Armory</h2>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>

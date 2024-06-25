@@ -61,7 +61,7 @@ const Upgrades = (props) => {
   const { user } = useUser();
   return (
     <div className="mainArea pb-10">
-      <h2>Upgrades</h2>
+      <h2 className="page-title">Upgrades</h2>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>

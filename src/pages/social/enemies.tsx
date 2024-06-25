@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Loader, Group, Paper } from '@mantine/core';
 
-const Enemies = () => {
+const Enemies = (props) => {
   const [enemies, setEnemies] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +25,7 @@ const Enemies = () => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Enemies</h2>
+      <h2 className="page-title">Enemies</h2>
       <Paper shadow="xs" p="md">
         <Table className="min-w-full" striped>
           <Table.Thead>

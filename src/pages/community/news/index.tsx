@@ -78,7 +78,7 @@ const News = ({ posts: serverPosts, loggedIn, userId }: InferGetServerSidePropsT
 
   return (
     <div className="mainArea pb-10">
-      <h2>News</h2>
+      <h2 className="page-title">News</h2>
       {loggedIn && userId === 1 && (
         <Button onClick={() => setModalIsOpen(true)}>
           Post New

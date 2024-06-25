@@ -2,14 +2,14 @@ import { useState } from 'react';
 
 import Form from '@/components/form';
 
-const Register = () => {
+const Register = (props) => {
   const [errorMessage, setErrorMessage] = useState('');
 
   return (
     <div className="container">
       <div className="row">
         <div className="mainArea pb-10">
-          <h2>Register</h2>
+          <h2 className="page-title">Register</h2>
         </div>
         <div className="xs:w-96 md:w-3/4 py-2 md:col-span-9">
           <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">

@@ -177,7 +177,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   }) : <p>No friends found.</p>);
   return (
     <div className="mainArea pb-10">
-      <h2>{profile?.displayName}</h2>
+      <h2 className="page-title">{profile?.displayName}</h2>
 
       <div className="my-5 flex justify-between">
         <Alert />

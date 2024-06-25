@@ -67,7 +67,7 @@ const Levels = (props) => {
   };
   return (
     <div className="mainArea pb-10">
-      <h2>Levels</h2>
+      <h2 className="page-title">Levels</h2>
       <Text size="lg">
         You currently have {proficiencyPoints} proficiency points
         available.

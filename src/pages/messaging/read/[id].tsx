@@ -2,14 +2,15 @@ import { getSession } from 'next-auth/react';
 import prisma from '@/lib/prisma';
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { InferGetServerSidePropsType } from "next";
 
-const MessageDetail = ({ message }) => {
+const MessageDetail = ({ message }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
 
   return (
     <div className="mx-auto w-full py-2">
       <h1 className="mb-4 text-2xl font-bold">Message Detail</h1>
       <div>
-        <h2>From: {message?.from_user?.display_name ?? ''}</h2>
+        <h2 className="page-title">From: {message?.from_user?.display_name ?? ''}</h2>
         <h3>To: { message?.to_user?.display_name ?? '' }</h3>
         <h3>Subject: {message.subject}</h3>
         <span>Date/Time: {message.date_time.toString()}</span>

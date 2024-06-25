@@ -105,7 +105,7 @@ const Settings = (props) => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Settings</h2>
+      <h2 className="page-title">Settings</h2>
       <Alert />
       {/* Change Password Section */}
       <div className="section">

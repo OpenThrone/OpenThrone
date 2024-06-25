@@ -13,7 +13,7 @@ import ClandestineUpgrade from '@/components/clandestineupgrades';
 import { Tabs } from '@mantine/core';
 import router from 'next/router';
 
-const UpgradeTab = () => {
+const UpgradeTab = (props) => {
   const tab = usePathname()?.split('/')[3];
   const { user, forceUpdate } = useUser();
   const currentPage = tab || 'fortifications';
@@ -26,7 +26,7 @@ const UpgradeTab = () => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Structure Upgrades</h2>
+      <h2 className="page-title">Structure Upgrades</h2>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
@@ -74,12 +74,12 @@ const UpgradeTab = () => {
       
       
       <div className="mb-4 flex justify-center">
-        {currentPage === 'fortifications' && (<h2>Fortifications</h2>)}
-        {currentPage === 'offense' && (<h2>Siege Upgrades</h2>)}
-        {currentPage === 'intel' && (<h2>Clandestine Upgrades</h2>)}
-        {currentPage === 'armory' && (<h2>Armory Upgrades</h2>)}
-        {currentPage === 'houses' && (<h2>Housing Upgrades</h2>)}
-        {currentPage === 'economy' && (<h2>Economy Upgrades</h2>)}
+        {currentPage === 'fortifications' && (<h2  className='page-title'>Fortifications</h2>)}
+        {currentPage === 'offense' && (<h2  className='page-title'>Siege Upgrades</h2>)}
+        {currentPage === 'intel' && (<h2  className='page-title'>Clandestine Upgrades</h2>)}
+        {currentPage === 'armory' && (<h2  className='page-title'>Armory Upgrades</h2>)}
+        {currentPage === 'houses' && (<h2  className='page-title'>Housing Upgrades</h2>)}
+        {currentPage === 'economy' && (<h2  className='page-title'>Economy Upgrades</h2>)}
       </div>
       <div className="mb-4 flex justify-center my-10 rounded-lg bg-gray-800">
         {currentPage === 'fortifications' && <FortificationsTab userLevel={user?.level} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}

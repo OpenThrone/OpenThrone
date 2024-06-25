@@ -6,13 +6,14 @@ import router from "next/router";
 import { useState } from "react";
 import { InferGetServerSidePropsType } from "next";
 import Alert from "@/components/alert";
+import { getServerSideProps } from ".";
 
 const user = ({ session }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
 
   return (
     <>
       <Alert/>
-      <h2>Compose </h2>
+      <h2 className="page-title">Compose </h2>
       <ComposeForm onClose={() => { router.push('/messaging/inbox') }} />
     </>
   );

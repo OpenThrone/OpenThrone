@@ -335,7 +335,7 @@ const Training = (props) => {
 
   return (
     <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
-      <h2 className="text-2xl font-bold">Training</h2>
+      <h2 className="page-title text-2xl font-bold">Training</h2>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>

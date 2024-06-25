@@ -4,8 +4,9 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useState } from 'react';
 import { getSession } from 'next-auth/react';
+import { InferGetServerSidePropsType } from "next";
 
-const News = ({ post: serverPost, loggedIn }) => {
+const News = ({ post: serverPost, loggedIn }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [post, setPost] = useState({ ...serverPost });
   const handleReadChange = async () => {
     // Optimistically update the UI before the API call is made
@@ -40,7 +41,7 @@ const News = ({ post: serverPost, loggedIn }) => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>News</h2>
+      <h2 className="page-title">News</h2>
         <div key={post.id} className="mx-auto rounded-xl overflow-hidden border border-gray-200">
           {/* Header / Title Bar Section */}
           <div className="bg-gray-600 p-2 flex justify-between items-center">

@@ -4,7 +4,7 @@ import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import { Badge, Box, Button, Center, Group, NumberInput, Paper, RingProgress, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
 
-const Repair = () => {
+const Repair = (props) => {
   const { user, forceUpdate } = useUser();
   const [fortification, setFortification] = useState(Fortifications[0]);
   const [repairPoints, setRepairPoints] = useState(0);
@@ -71,7 +71,7 @@ const Repair = () => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Fort Repair</h2>
+      <h2 className="page-title">Fort Repair</h2>
       <div className="my-5 flex justify-around">
         <p className="mb-0">
           Gold On Hand: <span>{toLocale(user?.gold, user?.locale)}</span>

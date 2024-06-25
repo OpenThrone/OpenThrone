@@ -106,7 +106,7 @@ export default function AutoRecruiter(props) {
   if (!isRecruiting) {
     return (
       <div className="mainArea pb-10">
-        <h2>Auto Recruiter</h2>
+        <h2 className="page-title">Auto Recruiter</h2>
         <div className="flex h-full items-center justify-center">
           <div className="container mx-auto text-center">
             {!hasEnded && <p>Click Start to begin the Auto-Recruit, a new user will appear.</p>}
@@ -120,7 +120,7 @@ export default function AutoRecruiter(props) {
   if (!user) {
     return (
       <div className="mainArea pb-10">
-        <h2>Auto Recruiter</h2>
+        <h2 className="page-title">Auto Recruiter</h2>
         <div className="my-5 flex justify-between">
           <Alert />
         </div>
@@ -142,7 +142,7 @@ export default function AutoRecruiter(props) {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Auto Recruiter</h2>
+      <h2 className="page-title">Auto Recruiter</h2>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>

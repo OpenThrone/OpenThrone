@@ -8,6 +8,21 @@ a:hover {
   @apply border-b-2 border-blue-700;
 }
 
+@layer base {
+  h1 {
+    @apply text-2xl;
+    @apply font-bold;
+  }
+  h2 {
+    @apply text-xl;
+    @apply font-bold;
+  }
+  h3 {
+    @apply text-lg;
+    @apply font-bold;
+  }
+}
+
 @tailwind components;
 
 @tailwind utilities;
@@ -88,13 +103,10 @@ a:hover {
   z-index: -1;
 }
 
-h1 {
-  font-family: 'Book Antiqua', Serif !important;
-  font-size: 500%;
-}
 .title {
   font-family: 'Chomsky', 'Book Antiqua', Serif !important; 
   text-shadow: 3px 0px black;
+  font-size: 500%;
 }
 .form-control-dark {
   color: var(--bs-table-striped-color);
@@ -204,13 +216,21 @@ body{
   position: fixed;
   width: 100%;
 }
-h2{
+/*h2{
     -webkit-background-clip: text;
     -moz-background-clip: text;
     -webkit-text-fill-color: transparent;
     -moz-text-fill-color: transparent;
     /* color: darkorange; */
     /* text-shadow: 0.5px 0.5px 1px orange; */
+ /*   background-image: linear-gradient(360deg, orange, darkorange);
+    font-weight: bold;
+}*/
+.page-title {
+  -webkit-background-clip: text;
+    -moz-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -moz-text-fill-color: transparent;
     background-image: linear-gradient(360deg, orange, darkorange);
     font-weight: bold;
 }

@@ -4,7 +4,7 @@ import { Group, Avatar } from "@mantine/core";
 import { useState } from "react";
 import Alert from "@/components/alert";
 
-const Profile = () => {
+const Profile = (props) => {
   const [file, setFile] = useState<File | null>(null);
   const { user, forceUpdate } = useUser();
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,7 +42,7 @@ const Profile = () => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Profile</h2>
+      <h2 className="page-title">Profile</h2>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>

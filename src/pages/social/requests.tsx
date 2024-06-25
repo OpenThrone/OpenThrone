@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Table, Loader, Group, Paper } from '@mantine/core';
 import { useUser } from '@/context/users';
 
-const Requests = () => {
+const Requests = (props) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
@@ -73,7 +73,7 @@ const Requests = () => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Outgoing Friend Requests</h2>
+      <h2 className='page-title'>Outgoing Friend Requests</h2>
       <Paper shadow="xs" p="md">
         <Table className="min-w-full border-neutral-500" striped highlightOnHover>
           <Table.Thead>
@@ -88,7 +88,7 @@ const Requests = () => {
         </Table>
       </Paper>
 
-      <h2>Incoming Friend Requests</h2>
+      <h2 className='page-title'>Incoming Friend Requests</h2>
       <Paper shadow="xs" p="md">
         <Table className="min-w-full border-neutral-500" striped>
           <Table.Thead>

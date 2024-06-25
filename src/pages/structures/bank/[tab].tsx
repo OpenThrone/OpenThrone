@@ -149,7 +149,7 @@ const Bank = (props) => {
 
   return (
     <div className="mainArea pb-10">
-      <h2>Bank</h2>
+      <h2 className="page-title">Bank</h2>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
