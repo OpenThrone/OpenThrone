@@ -23,6 +23,12 @@ const Layout = (props: IMainProps) => {
   const pathName = usePathname();
   const [gitInfo, setGitInfo] = useState({ latestCommit: '', latestCommitMessage: '' });
   const [loading, setLoading] = useState(true);
+  const [onlinePlayerInfo, setOnlinePlayerInfo] = useState({ onlinePlayers: 0, totalPlayers: 0, newestPlayer:'', newPlayers: 0 });
+  const [isDevelopment, setIsDevelopment] = useState(false);
+
+  useEffect(() => {
+    setIsDevelopment(process.env.NODE_ENV === 'development');
+  }, []);
 
   useEffect(() => {
     function authCheck(_url: string | null) {
@@ -37,21 +43,48 @@ const Layout = (props: IMainProps) => {
   }, [session, pathName, status]);
 
   useEffect(() => {
-    fetch('/api/git-info')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch git info');
-        }
-        return response.json();
-      })
-      .then(data => {
-        setGitInfo(data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Failed to fetch git info:', error);
-        setLoading(false);
-      });
+    if (isDevelopment) {
+      console.log('fetching git info');
+      fetch('/api/git-info')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch git info');
+          }
+          return response.json();
+        })
+        .then(data => {
+          setGitInfo(data);
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error('Failed to fetch git info:', error);
+          setLoading(false);
+        });
+    }
+  }, [isDevelopment]);
+
+  useEffect(() => {
+    if (!isDevelopment) {
+      console.log('fetching online player info');
+      fetch('/api/getOnlinePlayers')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch online player info');
+          }
+          return response.json();
+        })
+        .then(data => {
+          setOnlinePlayerInfo({
+            onlinePlayers: data.onlineUsers,
+            totalPlayers: data.allUsersCounted,
+            newestPlayer: data.newestUser,
+            newPlayers: data.newUsers,
+          });
+        })
+        .catch(error => {
+          console.error('Failed to fetch online player info:', error);
+        });
+    }
   }, []);
 
   return (
@@ -79,7 +112,7 @@ const Layout = (props: IMainProps) => {
                     src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/header/OpenThrone.webp`}
                     alt="OpenThrone"
                     style={{ height: '150px', filter: 'drop-shadow(0px 3px 0px #000000)' }}
-                    width={'150'}
+                    width={'300'}
                     height={'150'}
                   />
                 </center>
@@ -114,8 +147,19 @@ const Layout = (props: IMainProps) => {
         © Copyright {new Date().getFullYear()} {AppConfig.title}.
         <br />
         <div className="text-xs">
-          <p><strong>Latest Commit:</strong> {gitInfo.latestCommit}</p>
-          <p><strong>Latest Commit Message:</strong> {gitInfo.latestCommitMessage}</p>
+          {isDevelopment ? (
+            <>
+              <p><strong>Latest Commit:</strong> {gitInfo.latestCommit}</p>
+              <p><strong>Latest Commit Message:</strong> {gitInfo.latestCommitMessage}</p>
+            </>
+          ) : (
+            <>
+              <p><strong>Online Players:</strong> {onlinePlayerInfo.onlinePlayers} / {onlinePlayerInfo.totalPlayers}</p>
+              <p><strong>New Players in last 24hrs:</strong> {onlinePlayerInfo.newPlayers}</p>
+              <p><strong>Newest Player:</strong> {onlinePlayerInfo.newestPlayer}</p>
+            </>
+          )}
+          
         </div>
       </footer>
     </div>
