@@ -42,8 +42,9 @@ export default function AutoRecruiter(props) {
     setCountdown(3);
     let timer = 3;
     const interval = setInterval(() => {
-      setCountdown(timer - 1);
+      if(timer >= 1) setCountdown(timer - 1);
       timer -= 1;
+      
       if (timer < 0) {
         clearInterval(interval);
         setLastSuccess(false);  // Reset after countdown finishes

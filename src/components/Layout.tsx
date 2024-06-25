@@ -45,7 +45,7 @@ const Layout = (props: IMainProps) => {
   useEffect(() => {
     if (isDevelopment) {
       console.log('fetching git info');
-      fetch('/api/git-info')
+      fetch('/api/general/git-info')
         .then(response => {
           if (!response.ok) {
             throw new Error('Failed to fetch git info');
@@ -66,7 +66,7 @@ const Layout = (props: IMainProps) => {
   useEffect(() => {
     if (!isDevelopment) {
       console.log('fetching online player info');
-      fetch('/api/getOnlinePlayers')
+      fetch('/api/general/getOnlinePlayers')
         .then(response => {
           if (!response.ok) {
             throw new Error('Failed to fetch online player info');

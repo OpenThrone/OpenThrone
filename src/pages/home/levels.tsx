@@ -37,7 +37,7 @@ const Levels = (props) => {
 
     // Send a POST request to the API endpoint
     try {
-      const response = await fetch('/api/bonusPoints', {
+      const response = await fetch('/api/account/bonusPoints', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -16,14 +16,12 @@ const Recruiter = ({ user, showCaptcha, onSuccess }) => {
 
   return (
     <div>
-      <div className="mb-5 text-center items-center">
-        <p>
+      <div className="mb-5 text-center justify-center items-center content-center">
+        
           {user.display_name} is a level {user.level} {user.race}{' '}
           {user.class}.
-          <center>
-            <Image src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${user.race}_150x150.webp`} width={'150'} height={'150'} alt="" />
-          </center>
-        </p>
+        <center><Image src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${user.race}_150x150.webp`} width={'150'} height={'150'} alt="" /></center>
+        
       </div>
       <div className="flex items-center justify-center">
         <div className="container mx-auto text-center">

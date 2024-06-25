@@ -18,7 +18,7 @@ const Repair = (props) => {
   const handleRepair = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/repair', {
+      const response = await fetch('/api/account/repair', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ const Repair = (props) => {
     const maxRepairPoints = (fortification?.hitpoints ?? 0) - (user?.fortHitpoints ?? 0);
     if (maxRepairPoints <= 0) return;
     try {
-      const response = await fetch('/api/repair', {
+      const response = await fetch('/api/account/repair', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -49,7 +49,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const fetchUserData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/getUser`);
+      const response = await fetch(`/api/general/getUser`);
       if (!response.ok) {
         // Handle HTTP errors
         const errorText = await response.text(); // or response.json() if the server responds with JSON

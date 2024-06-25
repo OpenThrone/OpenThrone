@@ -26,7 +26,7 @@ export default function Recruit(props) {
 
   const autoRecruit = useCallback(async () => {
     // Fetch the next recruitment link immediately
-    const response = await fetch('/api/auto-recruit');
+    const response = await fetch('/api/recruit/auto-recruit');
     const data = await response.json();
     if (data.error) {
       alertService.error(data.error);
@@ -63,7 +63,7 @@ export default function Recruit(props) {
     checkRecruitmentHistory();
     const fetchUserInfo = async () => {
       const response = await fetch(
-        `/api/getUserInfoByRecruitLink?recruit_link=${id}`,
+        `/api/general/getUserInfoByRecruitLink?recruit_link=${id}`,
       );
       const data = await response.json();
 
@@ -84,7 +84,7 @@ export default function Recruit(props) {
     const formData = new FormData(formRef.current);
     const token = formData.get('cf-turnstile-response');
 
-    const res = await fetch('/api/verify', {
+    const res = await fetch('/api/captcha/verify', {
       method: 'POST',
       body: JSON.stringify({ token }),
       headers: {

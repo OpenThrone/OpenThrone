@@ -38,7 +38,7 @@ export default function ComposeForm({ onClose }: ComposeFormProps) {
     setRecipient(value);
 
     if (value.length > 0) {
-      const res = await fetch('/api/checkDisplayName', {
+      const res = await fetch('/api/general/checkDisplayName', {
         method: 'POST',
         body: JSON.stringify({ displayName: value }),
         headers: {
