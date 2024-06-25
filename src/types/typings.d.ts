@@ -155,6 +155,8 @@ export type UnitUpgradeType = {
   minUnitLevel: number;
   unitsCovered: number;
   quantity?: number;
+  killingStrength?: number;
+  defenseStrength?: number;
 };
 export type PlayerBonus = {
   race: PlayerRace | PlayerClass;
