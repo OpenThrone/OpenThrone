@@ -8,7 +8,7 @@ const Requests = (props) => {
   const { user } = useUser();
 
   useEffect(() => {
-    fetch(process.env.NEXTAUTH_URL + '/api/social/listAll?type=REQUESTS')
+    fetch('/api/social/listAll?type=REQUESTS')
       .then(response => response.json())
       .then(data => {
         setRequests(data);
@@ -17,7 +17,7 @@ const Requests = (props) => {
   }, []);
 
   const handleResponse = (id, action) => {
-    fetch('https://openthrone.dev/api/social/respond', {
+    fetch('w/api/social/respond', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, requestId: id }),
