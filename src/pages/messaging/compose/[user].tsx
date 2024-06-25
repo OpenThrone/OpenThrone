@@ -6,7 +6,6 @@ import router from "next/router";
 import { useState } from "react";
 import { InferGetServerSidePropsType } from "next";
 import Alert from "@/components/alert";
-import { getServerSideProps } from ".";
 
 const user = ({ session }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
 
