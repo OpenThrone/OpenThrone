@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Alert from '@/components/alert';
 import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
@@ -42,7 +42,10 @@ const Training = (props) => {
     setTotalCost(0);
   };
 
-  const unitMapFunction = (unit, idPrefix: string) => {
+  const unitMapFunction = useCallback((unit, idPrefix: string) => {
+    if (!user) {
+      return;
+    }
     const bonus =
       unit.name === 'Worker'
         ? EconomyUpgrades[user?.economyLevel]?.goldPerWorker
@@ -64,7 +67,7 @@ const Training = (props) => {
       enabled: unit.fortLevel <= user?.fortLevel,
       level: unit.level,
     };
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user && user.availableUnitTypes) {
@@ -94,7 +97,7 @@ const Training = (props) => {
           .map((unit) => unitMapFunction(unit, 'SENTRY'))
       );
     }
-  }, [user]);
+  }, [user, unitMapFunction]);
 
   const handleTrainAll = async () => {
     const unitsToTrain = [...workerUnits, ...offensiveUnits, ...defensiveUnits, ...spyUnits, ...sentryUnits]
@@ -108,6 +111,10 @@ const Training = (props) => {
       });
 
     try {
+      if (!user) {
+        alertService.error('User not found. Please try again.');
+        return;
+      }
       const response = await fetch('/api/training/train', {
         method: 'POST',
         headers: {
@@ -202,6 +209,11 @@ const Training = (props) => {
       .filter((unit) => unit.enabled)
       .map((unit) => {
         const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+
+        if (!user) {
+          alertService.error('User not found. Please try again.');
+          return;
+        }
 
         return {
           type: unit.id.split('_')[0], // Extracting the unit type from the id
@@ -319,7 +331,7 @@ const Training = (props) => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [stickyRef, parentRef]);
 
   return (
     <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>

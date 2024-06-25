@@ -1,12 +1,12 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-const Armory = () => {
+const Armory = (props) => {
   const router = useRouter();
 
   useEffect(() => {
     router.replace('/structures/armory/offense');
-  }, []);
+  }, [router]);
 
   return null;
 };

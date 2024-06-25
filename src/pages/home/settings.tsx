@@ -3,8 +3,9 @@ import { useLayout } from "@/context/LayoutContext";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services";
 import { Locales, PlayerRace } from "@/types/typings";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Modal, Button, TextInput, Select } from '@mantine/core'; // Importing Mantine components
+
 
 const Settings = (props) => {
   const locales: Locales[] = ['en-US', 'es-ES'];
@@ -21,9 +22,9 @@ const Settings = (props) => {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetPassword, setResetPassword] = useState('');
 
-  const checkPasswordsMatch = () => {
+  const checkPasswordsMatch = useCallback(() => {
     setPasswordsMatch(newPassword === confirmPassword);
-  }
+  }, [newPassword, confirmPassword]);
   useEffect(() => {
     if (user) {
       setColorScheme(user.colorScheme);
@@ -99,7 +100,7 @@ const Settings = (props) => {
   // Validate whenever the passwords change
   useEffect(() => {
     checkPasswordsMatch();
-  }, [newPassword, confirmPassword]);
+  }, [newPassword, confirmPassword, checkPasswordsMatch]);
   const { raceClasses } = useLayout();
 
   return (

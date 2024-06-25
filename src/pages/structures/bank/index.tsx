@@ -1,12 +1,12 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-const BankIndex = () => {
+const BankIndex = (props) => {
   const router = useRouter();
 
   useEffect(() => {
     router.replace('/structures/bank/deposit');
-  }, []);
+  }, [router]);
 
   return null;
 };

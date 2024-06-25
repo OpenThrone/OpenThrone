@@ -1,6 +1,6 @@
 import { Turnstile } from '@marsidev/react-turnstile';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import Alert from '@/components/alert';
 import { alertService } from '@/services';
@@ -14,7 +14,7 @@ interface RecruitProps {
   race: string;
 }
 
-export default function Recruit() {
+export default function Recruit(props) {
   const router = useRouter();
   const params = useSearchParams();
   const [error, setError] = useState(null);
@@ -24,7 +24,7 @@ export default function Recruit() {
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const [userInfo, setUserInfo] = useState<RecruitProps | null>(null);
 
-  const autoRecruit = async () => {
+  const autoRecruit = useCallback(async () => {
     // Fetch the next recruitment link immediately
     const response = await fetch('/api/auto-recruit');
     const data = await response.json();
@@ -41,7 +41,7 @@ export default function Recruit() {
     setTimeout(() => {
       window.location.href = `/recruit/${data.recruit_link}?auto_recruit=${autoRecruitParams}`;
     }, 1000);
-  };
+  }, [autoRecruitParams]);
 
   useEffect(() => {
     if (!id) return;
@@ -76,7 +76,7 @@ export default function Recruit() {
     };
 
     fetchUserInfo();
-  }, [params]);
+  }, [params, autoRecruit, id, autoRecruitParams]);
 
   const handleCaptchaSuccess = async () => {
     // event.preventDefault();

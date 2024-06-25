@@ -51,7 +51,7 @@ const Sidebar: React.FC = () => {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [messages]);
+  }, [messages, forceUpdate]);
 
   useEffect(() => {
     const interval = setInterval(() => {

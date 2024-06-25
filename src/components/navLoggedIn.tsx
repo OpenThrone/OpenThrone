@@ -145,7 +145,7 @@ export const NavLoggedIn: React.FC = () => {
         setDefaultSubMenu(subMenus[activeLink] || []);
       }
     }
-  }, [pathName]);
+  }, [pathName, searchParms]);
 
   const [resetTimer, setResetTimer] = useState<number | null>(null);
 

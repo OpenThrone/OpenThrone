@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import Alert from '@/components/alert';
 import NewItemSection  from '@/components/newItemSection';
@@ -9,12 +9,14 @@ import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
 import { Paper, Tabs } from '@mantine/core';
+import UserModel from '@/models/Users';
 
-const useItems = (user: unknown, armoryLevel: unknown) => {
+const useItems = (user: UserModel, armoryLevel: unknown) => {
   const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
 
   useEffect(() => {
-    if (user && user.availableItemTypes) {
+    if(!user) return;
+    if (user.availableItemTypes) {
       const categories = [
         'WEAPON',
         'HELM',
@@ -100,7 +102,7 @@ const ArmoryTab = (props) => {
   
   const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
 
-  const calculateTotalCost = (type = 'ALL') => {
+  const calculateTotalCost = useCallback((type = 'ALL') => {
     try {
       if (type === 'ALL') {
         const offenseCost = Object.values(totalCost.OFFENSE).reduce((acc, curr) => acc + curr, 0);
@@ -114,7 +116,7 @@ const ArmoryTab = (props) => {
       console.error(e);
       return 0;
     }
-  };
+  }, [totalCost]);
   useEffect(() => {
     setCurrentPage(tab || 'offense')
   }, [tab])
@@ -124,7 +126,7 @@ const ArmoryTab = (props) => {
     setTotalDefenseCost(calculateTotalCost('DEFENSE'));
     setTotalSpyCost(calculateTotalCost('SPY'));
     setTotalSpyCost(calculateTotalCost('SENTRY'));
-  }, [items]);
+  }, [items, calculateTotalCost]);
 
   useEffect(() => {
     // Calculate the total cost for each category
@@ -167,7 +169,7 @@ const ArmoryTab = (props) => {
       });
 
     }
-  }, [items, totalCost, user]);
+  }, [items, totalCost, user, calculateTotalCost]);
 
   const updateTotalCost = (section, type, cost) => {
     setTotalCost((prevTotalCost) => {
@@ -194,6 +196,10 @@ const ArmoryTab = (props) => {
   }
 
   const handleEquipAll = async () => {
+    if (!user) {
+      alertService.error('User not found. Please try again.');
+      return;
+    }
     const itemsToUnequip = [];
 
     ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
@@ -264,6 +270,10 @@ const ArmoryTab = (props) => {
   };
 
   const handleUnequipAll = async () => {
+    if (!user) {
+      alertService.error('User not found. Please try again.');
+      return;
+    }
     const itemsToUnequip = [];
 
     ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].forEach((type) => {
@@ -362,7 +372,7 @@ const ArmoryTab = (props) => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [stickyRef, parentRef]);
 
   return (
     <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>

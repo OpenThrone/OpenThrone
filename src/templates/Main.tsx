@@ -3,7 +3,7 @@ import { useSearchParams } from 'next/navigation';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
@@ -20,7 +20,7 @@ const Main = (props: IMainProps) => {
   const { data: session, status } = useSession();
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  function authCheck(url: string | null) {
+  const authCheck = useCallback((url: string | null) => {
     // redirect to login page if accessing a private page and not logged in
 
     if (status === 'loading') {
@@ -32,11 +32,11 @@ const Main = (props: IMainProps) => {
       setAuthorized(true);
     }
     return true;
-  }
+  }, [status, session]);
   useEffect(() => {
       authCheck(pathname);
     
-  }, [session, pathname, searchParams]);
+  }, [session, pathname, searchParams, authCheck]);
 
   return (
     <div className="flex min-h-screen flex-col">
