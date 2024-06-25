@@ -1,6 +1,6 @@
 import { ItemTypes } from "@/constants";
-import { getLevelFromXP } from "@/utils/utilities";
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 
 const IntelResult = ({ battle, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
@@ -64,18 +64,24 @@ const IntelResult = ({ battle, viewerID }) => {
         <div className="text-center">
           <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
           <center>
-            <img
+            <Image
               src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${attackerPlayer?.race}_150x150.webp`}
               className="ml-2"
+              alt="attacker avatar"
+              width={150}
+              height={150}
             />
           </center>
         </div>
         <div className="text-center">
           <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
           <center>
-            <img
+            <Image
               src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${defenderPlayer?.race}_150x150.webp`}
               className="ml-2"
+              alt="defender avatar"
+              width={150}
+              height={150}
             />
           </center>
         </div>

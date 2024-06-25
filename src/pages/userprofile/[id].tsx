@@ -14,12 +14,14 @@ import { alertService } from '@/services';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
 import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid } from '@mantine/core';
+import { InferGetServerSidePropsType } from "next";
+import Image from 'next/image';
 
 interface IndexProps {
   users: UserModel;
 }
 
-const Index: React.FC<IndexProps> = ({ users }) => {
+const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const hideSidebar = false;
   const context = useUser();
   const user = context ? context.user : null;
@@ -101,7 +103,7 @@ const Index: React.FC<IndexProps> = ({ users }) => {
         setFriends(data);
         setLoading(false);
       });
-  }, []);
+  }, [profile.id]);
   const toggleModal = () => {
     setIsOpen(!isOpen);
   };
@@ -196,10 +198,12 @@ const Index: React.FC<IndexProps> = ({ users }) => {
         <div className="col-span-1">
           <div className="card-dark">
             <div className="flex items-center justify-center">
-              
-                <img
+                <Image
                   src={profile?.avatar}
-                  className="ml-2"
+                style={{ width: '100%', height: 'auto', marginLeft: 2 }}
+                alt='avatar'
+                  width={484}
+                  height={484}
                 />
               
             </div>

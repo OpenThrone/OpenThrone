@@ -2,6 +2,7 @@ import UserModel from "@/models/Users";
 import toLocale from "@/utils/numberFormatting";
 import { getLevelFromXP } from "@/utils/utilities";
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 
 const attackResults = ({ battle, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
@@ -83,9 +84,12 @@ const attackResults = ({ battle, viewerID }) => {
           <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
           <h4 className="text-white">Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}</h4>
           <center>
-            <img
+            <Image
               src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${attackerPlayer?.race}_150x150.webp`}
               className="ml-2"
+              width={150}
+              height={150}
+              alt="attacker avatar"
             />
           </center>
         </div>
@@ -93,9 +97,10 @@ const attackResults = ({ battle, viewerID }) => {
           <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
           <h4 className="text-white">Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}</h4>
           <center>
-            <img
+            <Image
               src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${defenderPlayer?.race}_150x150.webp`}
               className="ml-2"
+              alt="defender avatar"
             />
           </center>
         </div>
