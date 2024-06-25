@@ -101,6 +101,8 @@ const attackResults = ({ battle, viewerID }) => {
               src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${defenderPlayer?.race}_150x150.webp`}
               className="ml-2"
               alt="defender avatar"
+              width={150}
+              height={150}
             />
           </center>
         </div>
