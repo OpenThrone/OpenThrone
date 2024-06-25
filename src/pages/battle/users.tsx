@@ -18,7 +18,7 @@ const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => 
   const { user } = useUser();
   const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1);
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'overallrank');
-  const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'desc');
+  const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'asc');
   const [players, setPlayers] = useState([]);
   const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
 
@@ -29,16 +29,22 @@ const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => 
     console.log(sortBy);
 
     if (sortBy === 'overallrank') {
-      sortedPlayers.sort((a, b) => sortDir === 'asc' ? a.score - b.score : b.score - a.score);
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? a.score - b.score : b.score - a.score);
     } else if (sortBy === 'gold') {
-      sortedPlayers.sort((a, b) => sortDir === 'asc' ? a.gold - b.gold : b.gold - a.gold);
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.gold) - Number(b.gold) : Number(b.gold) - Number(a.gold));
+    } else if (sortBy === 'population') {
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.population) - Number(b.population) : Number(b.population) - Number(a.population));
+    } else if (sortBy === 'level') {
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.experience) - Number(b.experience) : Number(b.experience) - Number(a.experience));
     }
 
+
     const paginatedPlayers = sortedPlayers.slice(start, end);
-    paginatedPlayers.forEach((player, index) => player.overallrank = start + index + 1);
+    paginatedPlayers.forEach((player, index) => player.overallrank = (sortDir === 'asc' ? start + index + 1 : allUsers.length - start - index));
 
     setPlayers(paginatedPlayers);
   }, [page, sortBy, sortDir, allUsers]);
+
 
   useEffect(() => {
     const golds = players.map(player => toLocale(player.gold, user?.locale));
@@ -53,6 +59,15 @@ const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => 
     router.push(`?sortBy=${newSortBy}&sortDir=${newSortDir}&page=1`);
   };
 
+  /*useEffect(() => {
+    const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
+    if (loggedInPlayerIndex !== -1) {
+      const newPage = Math.floor(loggedInPlayerIndex / ROWS_PER_PAGE) + 1;
+      setPage(newPage);
+      router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
+    }
+  }, [user, allUsers, sortBy, sortDir]);
+*/
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Attack</h2>
@@ -64,8 +79,8 @@ const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => 
                 <Table.Th className="px-1 py-1"><button onClick={() => handleSort('overallrank')}>Rank</button></Table.Th>
                 <Table.Th className="px-4 py-2">Username</Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('gold')}>Gold {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
-                <Table.Th className="px-4 py-2">Army Size</Table.Th>
-                <Table.Th className="px-4 py-2">Level</Table.Th>
+                <Table.Th className="px-4 py-2"><button onClick={() => handleSort('population')}> Population {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
+                <Table.Th className="px-4 py-2"><button onClick={() => handleSort('level')}> Level{sortBy === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -163,12 +178,12 @@ export const getStaticProps = async () => {
       const nowdate = new Date();
       const lastActiveTimestamp = new Date(user.last_active).getTime();
       const nowTimestamp = nowdate.getTime();
-
+      const population = user.units.reduce((acc, unit) => acc + unit.quantity, 0);
+      user.population = population;
       user.isOnline = ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
     });
     allUsers.forEach(user => user.score = calculateUserScore(user));
     allUsers.sort((a, b) => b.score - a.score);
-    console.log(allUsers);
     return { props: { allUsers }, revalidate: 60 };
   } catch (error) {
     console.error('Error fetching user data:', error);
