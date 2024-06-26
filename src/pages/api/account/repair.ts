@@ -2,15 +2,15 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { Fortifications } from '@/constants';
 import { getServerSession } from 'next-auth';
-import { authOptions } from './auth/[...nextauth]';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { withAuth } from '@/middleware/auth';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Ensure the request is of type POST
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   // Retrieve session and return an error if not authenticated
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
   if (!session) return res.status(403).json({ error: 'Not authenticated' });
 
   // Retrieve repair points from the request body and validate
@@ -55,3 +55,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+export default withAuth(handler);

@@ -1,9 +1,9 @@
 import prisma from '@/lib/prisma';
+import { withAuth } from '@/middleware/auth';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
 
-export default async function handle(req, res) {
-  const session = await getServerSession(req, res, authOptions);
+const handle = async (req, res) => {
+  const session = req.session
   if (!session) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
@@ -44,3 +44,5 @@ export default async function handle(req, res) {
 
   return res.status(405).json({ message: 'Method not allowed.' });
 }
+
+export default withAuth(handle);

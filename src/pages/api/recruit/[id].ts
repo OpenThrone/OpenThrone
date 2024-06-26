@@ -1,11 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
-
 import prisma from '@/lib/prisma';
-
-import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
 import { PlayerUnit, Unit } from '@/types/typings';
+import { withAuth } from '@/middleware/auth';
 
 function increaseCitizens(units: PlayerUnit[]) {
   // Find the CITIZEN object
@@ -20,13 +18,13 @@ function increaseCitizens(units: PlayerUnit[]) {
   return units;
 }
 
-export default async function handler(
+const handler = async(
   req: NextApiRequest,
   res: NextApiResponse
-) {
+) => {
   const { id } = req.query;
   let recruiterID = 0;
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
   if (session) {
     recruiterID = parseInt(session.user?.id.toLocaleString());
   }
@@ -160,3 +158,5 @@ export default async function handler(
 
   res.status(405).json({ error: 'Method not allowed' }); // Send a proper response
 }
+
+export default withAuth(handler);

@@ -1,12 +1,11 @@
 import prisma from "@/lib/prisma";
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
 import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
+import { withAuth } from "@/middleware/auth";
 
 const upgrades = async(req, res) => {
   if (req.method === 'POST') {
-    const session = await getServerSession(req, res, authOptions);
+    const session = req.session;
     if (!session) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -138,4 +137,4 @@ const upgrades = async(req, res) => {
   }
 }
 
-export default upgrades;
+export default withAuth(upgrades);

@@ -2,8 +2,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { UnitTypes } from '@/constants';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]';
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
 

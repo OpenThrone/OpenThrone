@@ -1,12 +1,11 @@
 'use server';
 import prisma from "@/lib/prisma";
-import { getServerSession } from 'next-auth';
 import { spyHandler } from '@/app/actions';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { withAuth } from "@/middleware/auth";
 
-export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions);
+const handler = async (req, res) => {
+  const session = req.session;
 
   const checkParams = (body: any, spiesNeeded: number) => {
     if (!body.type) {
@@ -94,3 +93,5 @@ export default async function handler(req, res) {
   // console.log('failed: ', session);
   return res.status(401).json({ status: 'failed' });
 }
+
+export default withAuth(handler);

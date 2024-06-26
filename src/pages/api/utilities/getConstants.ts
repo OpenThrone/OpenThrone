@@ -1,13 +1,8 @@
-'use server';
-
-import { getServerSession } from 'next-auth';
-
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { BattleUpgrades, Fortifications, UnitTypes, levelXPArray, OffenseiveUpgrades, EconomyUpgrades, SpyUpgrades, SentryUpgrades, ArmoryUpgrades, HouseUpgrades, ItemTypes } from '@/constants';
+import { withAuth } from '@/middleware/auth';
 
-
-export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions);
+const handler = async (req, res) => {
+  const session = req.session;
   const { id, xtoken } = req.query;
   if (session || xtoken === 'openthrone-gsheets') {
     if (session?.user?.id !== 1 && session?.user?.id !== 2 && session?.user?.id !== id) {
@@ -76,3 +71,5 @@ export default async function handler(req, res) {
   // console.log('failed: ', session);
   return res.status(401).json({ status: 'Not logged in', req });
 }
+
+export default withAuth(handler);
