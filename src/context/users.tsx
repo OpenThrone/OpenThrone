@@ -64,6 +64,11 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
           'You have been attacked since you were last active!'
         );
       }
+      if(userData?.detectedSpy) {
+        alertService.error(
+          'You have detected a Spy attempt since you were last active!'
+        );
+      }
     } catch (error) {
       console.error('Error fetching user data:', error);
       // Consider setting an error state here as well

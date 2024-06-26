@@ -95,6 +95,8 @@ class UserModel {
 
   public beenAttacked: boolean;
 
+  public detectedSpy: boolean;
+
   public locale: Locales; 
 
   public avatar: string;
@@ -131,6 +133,7 @@ class UserModel {
     this.attacks_won = 0;
     this.defends_won = 0;
     this.beenAttacked = false;
+    this.detectedSpy = false;
     this.structure_upgrades = [];
     this.battle_upgrades = [];
     this.locale = 'en-US';

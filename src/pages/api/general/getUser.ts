@@ -40,8 +40,19 @@ const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
         },
       });
 
-      if (attacks.length > 0) {
+      if (attacks.map((attack) => {
+        if(attack.type === 'attack') {
+          return attack;
+        }
+      }).length > 0) {
         user.beenAttacked = true;
+      }
+      if(attacks.map((attack) => {
+        if(attack.type !== 'attack' && winner === user.id) {
+          return attack;
+        }
+      }).length > 0) {
+        user.detectedSpy = true;
       }
     }
 
