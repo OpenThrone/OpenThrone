@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     }
     return res.status(405).send('Method not allowed'); // Handle any other HTTP methods
   } catch (error) {
-    console.error('Error in /api/verify:', error);
+    console.error('Error in /api/catpcha/verify:', error);
     return res.status(500).send('Internal Server Error');
   }
 }
