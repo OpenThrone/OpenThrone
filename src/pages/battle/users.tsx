@@ -26,7 +26,6 @@ const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => 
     const start = (page - 1) * ROWS_PER_PAGE;
     const end = start + ROWS_PER_PAGE;
     let sortedPlayers = [...allUsers];
-    console.log(sortBy);
 
     if (sortBy === 'overallrank') {
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? a.score - b.score : b.score - a.score);
@@ -59,15 +58,15 @@ const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => 
     router.push(`?sortBy=${newSortBy}&sortDir=${newSortDir}&page=1`);
   };
 
-  /*useEffect(() => {
+  useEffect(() => {
     const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
-    if (loggedInPlayerIndex !== -1) {
+    if (loggedInPlayerIndex !== -1 && !searchParams.get('page') && !searchParams.get('sortBy') && !searchParams.get('sortDir')) {
       const newPage = Math.floor(loggedInPlayerIndex / ROWS_PER_PAGE) + 1;
       setPage(newPage);
       router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
     }
-  }, [user, allUsers, sortBy, sortDir]);
-*/
+  }, [user, allUsers, sortBy, sortDir, router, searchParams]);
+
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Attack</h2>
