@@ -51,9 +51,6 @@ export const getStaticProps = async (context: any) => {
   nextMidnight.setDate(now.getDate() + 1);
   nextMidnight.setHours(0, 0, 0, 0);
 
-  // Calculate the number of seconds until the next midnight
-  const secondsUntilMidnight = Math.floor((nextMidnight.getTime() - now.getTime()) / 1000);
-
   return {
     props: {
       totalWealth: await getTopWealth(),
@@ -67,7 +64,7 @@ export const getStaticProps = async (context: any) => {
       defenderCas: await getTop10TotalDefenderCasualties(24 * 60 * 60 * 1000 * 7),
       lastGenerated: new Date().toISOString(),
     },
-    revalidate: secondsUntilMidnight,
+    revalidate: 60 * 60 * 24 + (60 * 10), // 24 hours + 10 minutes, a cron should revalidate it instead
   };
 };
 
