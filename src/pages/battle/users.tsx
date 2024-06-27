@@ -7,11 +7,11 @@ import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import toLocale from '@/utils/numberFormatting';
 import { Table, Group, Avatar, Badge, Text, Indicator } from '@mantine/core';
-import { InferGetStaticPropsType } from "next";
+import { InferGetServerSidePropsType } from "next";
 
 const ROWS_PER_PAGE = 10;
 
-const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => {
+const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,13 +37,11 @@ const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => 
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.experience) - Number(b.experience) : Number(b.experience) - Number(a.experience));
     }
 
-
     const paginatedPlayers = sortedPlayers.slice(start, end);
     paginatedPlayers.forEach((player, index) => player.overallrank = (sortDir === 'asc' ? start + index + 1 : allUsers.length - start - index));
 
     setPlayers(paginatedPlayers);
   }, [page, sortBy, sortDir, allUsers]);
-
 
   useEffect(() => {
     const golds = players.map(player => toLocale(player.gold, user?.locale));
@@ -90,8 +88,8 @@ const Users = ({ allUsers }: InferGetStaticPropsType<typeof getStaticProps>) => 
                   <Table.Tr
                     key={player.id}
                     className={`${player.is_player
-                        ? 'bg-gray-500'
-                        : 'odd:bg-table-odd even:bg-table-even'
+                      ? 'bg-gray-500'
+                      : 'odd:bg-table-odd even:bg-table-even'
                       }`}
                   >
                     <Table.Td className="px-2 py-2">{nplayer.overallrank}</Table.Td>
@@ -170,7 +168,7 @@ const calculateUserScore = (user) => {
 };
 
 
-export const getStaticProps = async () => {
+export const getServerSideProps = async () => {
   try {
     let allUsers = await prisma.users.findMany({ where: { id: { not: 0 } } });
     allUsers.forEach(user => {
@@ -183,10 +181,10 @@ export const getStaticProps = async () => {
     });
     allUsers.forEach(user => user.score = calculateUserScore(user));
     allUsers.sort((a, b) => b.score - a.score);
-    return { props: { allUsers }, revalidate: 60 };
+    return { props: { allUsers } };
   } catch (error) {
     console.error('Error fetching user data:', error);
-    return { props: { allUsers: [] }, revalidate: 60 };
+    return { props: { allUsers: [] } };
   }
 };
 
