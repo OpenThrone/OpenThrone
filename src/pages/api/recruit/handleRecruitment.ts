@@ -31,19 +31,19 @@ const handler = async (
   const { recruitedUserId, selfRecruit } = req.body;
 
   try {
-    // Save the recruitment record
-    const newRecord = await prisma.recruit_history.create({
-      data: {
-        from_user: Number(recruitedUserId),
-        to_user: Number(session.user.id),
-        ip_addr: req.headers['cf-connecting-ip'] as string,
-        timestamp: new Date(),
-      },
-    });
+    const result = await prisma.$transaction(async (prisma) => {
+      // Save the recruitment record
+      await prisma.recruit_history.create({
+        data: {
+          from_user: Number(recruitedUserId),
+          to_user: Number(session.user.id),
+          ip_addr: req.headers['cf-connecting-ip'] as string,
+          timestamp: new Date(),
+        },
+      });
 
-    if (newRecord) {
       // Wait for 1 second
-      await new Promise((resolve) => setTimeout(resolve, mtrand(5,13) * 100));
+      await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
 
       // Check the number of recruitments for the recruited user within the last 24 hours
       const recruitments = await prisma.recruit_history.findMany({
@@ -54,12 +54,9 @@ const handler = async (
         },
       });
 
-      // If the number of recruitments is 5 or more, delete the new record and reject the request
+      // If the number of recruitments is 5 or more, reject the request and revert the transaction
       if (recruitments.length > 5) {
-        await prisma.recruit_history.delete({
-          where: { id: newRecord.id },
-        });
-        return res.status(400).json({ error: 'User has already been recruited 5 times in the last 24 hours.' });
+        throw new Error(`User has already been recruited 5 times in the last 24 hours.`);
       }
 
       let userToUpdate = await prisma.users.findUnique({
@@ -84,10 +81,10 @@ const handler = async (
         },
       });
 
-      return res.status(200).json({ success: true });
-    } else {
-      return res.status(400).json({ error: 'Failed to update user.' });
-    }
+      return { success: true };
+    });
+
+    return res.status(200).json(result);
   } catch (error) {
     console.error('Error in recruitment:', error);
     if (error.message === 'User has already been recruited 5 times in the last 24 hours.') {
