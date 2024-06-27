@@ -8,17 +8,14 @@ import {
   createBankHistory,
   canAttack,
 } from '@/services/attack.service';
-import { Fortifications, UnitTypes, ItemTypes } from '@/constants';
+import { Fortifications } from '@/constants';
 import prisma from '@/lib/prisma';
-import BattleResult from '@/models/BattleResult';
-import BattleSimulationResult from '@/models/BattleSimulationResult';
 import UserModel from '@/models/Users';
-import type { BattleUnits, ItemType, Item, PlayerUnit, UnitType } from '@/types/typings';
-import mtRand from '@/utils/mtrand';
-import { calculateLoot, simulateBattle  } from '@/utils/attackFunctions';
+import { simulateBattle  } from '@/utils/attackFunctions';
 import { SpyUserModel } from '@/models/SpyUser';
 import { stringifyObj } from '@/utils/numberFormatting';
-import { AssassinationResult, IntelResult } from '@/utils/spyFunctions';
+import { AssassinationResult, InfiltrationResult, IntelResult } from '@/utils/spyFunctions';
+import mtRand from '@/utils/mtrand';
 
 
 export function simulateIntel(
@@ -35,7 +32,7 @@ export function simulateIntel(
   let { fortHitpoints } = defender;
   console.log('Spy', attacker.spy, 'Sentry', defender.sentry);
   const isSuccessful = attacker.spy > defender.sentry;
-  const defenderSpyUnit = new SpyUserModel(defender, spies * 10)
+  //const defenderSpyUnit = new SpyUserModel(defender, spies * 10)
 
   const result = new IntelResult(attacker, defender, spies);
   result.success = isSuccessful;
@@ -58,6 +55,10 @@ export function simulateIntel(
 
     result.intelligenceGathered = randomizedKeys.reduce((partialIntel, key) => {
       const initPartialIntel = partialIntel ?? {
+        offense: 0,
+        defense: 0,
+        spyDefense: 0,
+        spyOffense: 0,
         units: null,
         items: null,
         fortLevel: null,
@@ -139,9 +140,52 @@ function simulateAssassination(
   return result;
 }
 
-function simulateInfiltration() {
-  return {};
-}
+export const simulateInfiltration =
+  (
+    attacker: UserModel,
+    defender: UserModel,
+    spies: number
+  ) => {
+    const isSuccessful = attacker.spy > defender.sentry;
+
+    const result = new InfiltrationResult(attacker, defender, spies);
+    result.success = isSuccessful;
+    result.spiesLost = isSuccessful ? 0 : spies;
+
+    if (!isSuccessful) {
+      const deathRiskFactor = Math.max(0, 1 - (attacker.spy / defender.sentry));
+
+      let spiesLost = 0;
+      for (let i = 0; i < spies; i++) {
+        if (Math.random() < deathRiskFactor) {
+          spiesLost++;
+        }
+      }
+      result.spiesLost = spiesLost;
+      return result
+    } else {
+      const startHP = result.defender.fortHitpoints;
+      for (var i = 1; i <= spies; i++) {
+        if (result.defender.fortHitpoints > 0) {
+          if (result.attacker.spy / result.defender.sentry <= 0.05)
+            result.defender.fortHitpoints -= Math.floor(mtRand(0, 2))
+          else if (result.attacker.spy / result.defender.sentry > 0.05 && result.attacker.spy / result.defender.sentry <= 0.5)
+            result.defender.fortHitpoints -= Math.floor(mtRand(3, 6));
+          else if (result.attacker.spy / result.defender.sentry > 0.5 && result.attacker.spy / result.defender.sentry <= 1.3)
+            result.defender.fortHitpoints -= Math.floor(mtRand(6, 16));
+          else result.defender.fortHitpoints -= Math.floor(mtRand(12, 24));
+          //}
+          if (result.defender.fortHitpoints < 0) {
+            result.defender.fortHitpoints = 0;
+          }
+        }
+      }
+          result.fortDmg += Number(startHP - result.defender.fortHitpoints);
+        
+      
+      return result;
+    }
+  }
 
 export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string, unit?: string) { 
   const attackerUser = await getUserById(attackerId);

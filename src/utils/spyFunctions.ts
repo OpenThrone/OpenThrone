@@ -1,6 +1,7 @@
 import { ItemTypes, UnitTypes } from "@/constants";
 import UserModel from "@/models/Users";
 import { Item, PlayerUnit } from "@/types/typings";
+import stringifyObj from "@/utils/numberFormatting";
 
 export function computeSpyAmpFactor(targetPop: number): number {
   let ampFactor = 0.4;
@@ -53,12 +54,16 @@ export class AssassinationResult {
 }
 
 export class IntelResult {
-  //attacker: UserModel;
-  //defender: UserModel;
+  attacker: UserModel;
+  defender: UserModel;
   spiesSent: number;
   spiesLost: number;
   success: boolean;
   intelligenceGathered: {
+    offense: number | 0;
+    defense: number | 0;
+    spyOffense: number | 0;
+    spyDefense: number | 0;
     units: PlayerUnit[] | null;
     items: Item[] | null;
     fortLevel: number | null;
@@ -67,13 +72,32 @@ export class IntelResult {
   } | null;
 
   constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
-    //this.attacker = JSON.parse(stringifyObj(attacker));  // deep copy
-    //this.defender = JSON.parse(stringifyObj(defender));  // deep copy
+    this.attacker = attacker;  // deep copy
+    this.defender = defender;  // deep copy
     this.spiesSent = spiesSent;
     this.spiesLost = 0;
     this.success = false;
     this.intelligenceGathered = null;
   }
+}
+
+export class InfiltrationResult {
+  attacker: UserModel;
+  defender: UserModel;
+  spiesSent: number;
+  spiesLost: number;
+  success: boolean;
+  fortDmg: number;
+
+  constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
+    this.attacker = attacker;  // deep copy
+    this.defender = defender;  // deep copy
+    this.spiesSent = spiesSent;
+    this.spiesLost = 0;
+    this.success = false;
+    this.fortDmg = 0;
+  }
+
 }
 
 export function getSentryStrength(user: UserModel, spies: number): number {
