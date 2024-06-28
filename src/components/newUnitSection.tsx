@@ -65,15 +65,6 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
     return currentUnits;
   }, [currentUnits]);
 
-  useEffect(() => {
-    if (!fromItem || !toItem) return;
-    const fromItemData = units.find((item) => item.id === fromItem);
-    const toItemData = units.find((item) => item.id === toItem);
-    if (!fromItemData || !toItemData) return;
-    const conversionCost = conversionAmount * (Number(toItemData.cost) - Number(fromItemData.cost));
-    setConversionCost(conversionCost);
-  }, [fromItem, toItem, conversionAmount, units]);
-
 
   const resetConversion = () => {
     setConversionAmount(0);
@@ -183,6 +174,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
                         min={0}
                         className="w-full"
                         onChange={(value: number | undefined) => handleInputChange(unit.id, value)}
+                        allowNegative={false}
                       />
                     </Table.Td>
                   </Table.Tr>
@@ -229,6 +221,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
             onChange={(value: string | number) => setConversionAmount(value as number)}
             min={0}
             className="w-32"
+            allowNegative={false}
           />
           <Select
             data={units.map((item) => ({ value: item.id, label: item.name }))}

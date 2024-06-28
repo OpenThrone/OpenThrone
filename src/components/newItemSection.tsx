@@ -338,6 +338,7 @@ const NewItemSection = ({
                     onChange={(value: number | undefined) => handleInputChange(unit.id, value)}
                     min={0}
                     className="w-full rounded-md "
+                    allowNegative={false}
                   />
                 </Table.Td>
               </Table.Tr>
@@ -377,6 +378,7 @@ const NewItemSection = ({
                   onChange={(value) => setConversionAmount(value)}
                   min={0}
                   className="w-32"
+                  allowNegative={false}
                 />
                 <Select
                   data={getItems.filter(

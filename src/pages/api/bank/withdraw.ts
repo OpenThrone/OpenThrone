@@ -15,6 +15,10 @@ const withdrawHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const withdrawAmount = BigInt(req.body.withdrawAmount);
 
+  if (!withdrawAmount || withdrawAmount <= 0) {
+    return res.status(400).json({ error: 'Invalid withdraw amount' });
+  }
+
   try {
     const updatedUser = await withdraw(Number(session.user.id), withdrawAmount);
     return res.status(200).json({ message: 'Withdraw successful', data: stringifyObj(updatedUser) });

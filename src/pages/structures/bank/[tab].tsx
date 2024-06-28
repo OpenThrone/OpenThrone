@@ -264,6 +264,7 @@ const Bank = (props) => {
                 placeholder="0"
                 min={0}
                 hideControls
+                allowNegative={false}
                 rightSection={
                   <Text size="sm" c="dimmed" onClick={() => { setDepositAmount(BigInt(user?.gold?.toString()))}}>
                     Max: {parseInt(user?.gold?.toString())}
@@ -298,7 +299,8 @@ const Bank = (props) => {
                 placeholder="0"
                 min={0}
                 max={parseInt(user?.goldInBank?.toString())}
-                hideControls
+                  hideControls
+                  allowNegative={false}
               /></div>
             <div>
               <button

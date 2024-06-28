@@ -136,6 +136,7 @@ const Repair = (props) => {
                 className="w-32"
                 max={remainingHitpoints}
                 min={0}
+                allowNegative={false}
               />
               <Text size="sm" color="dimmed" onClick={()=>setRepairPoints(remainingHitpoints)}>
                 Max: {remainingHitpoints}
