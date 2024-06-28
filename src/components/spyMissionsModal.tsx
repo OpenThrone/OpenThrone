@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import React, { useEffect, useState } from 'react';
-
+import { faBackwardStep} from '@fortawesome/free-solid-svg-icons';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
@@ -8,7 +8,8 @@ import { alertService } from '@/services';
 import Alert from './alert';
 import router from 'next/router';
 import { stringifyObj } from '@/utils/numberFormatting';
-import { NumberInput } from '@mantine/core';
+import { Button, NumberInput } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 interface ModalProps {
   isOpen: boolean;
@@ -323,9 +324,9 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         </div>
       ) : (
         <>
-          <button type="button" onClick={() => setCurrentPanel('')}>
+            <Button leftSection={< FontAwesomeIcon icon={ faBackwardStep} size={'1x'} />} onClick={() => setCurrentPanel('')}>
             Back
-          </button>
+          </Button>
           {MissionPanels[currentPanel]}
         </>
       )}
