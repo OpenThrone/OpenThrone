@@ -8,6 +8,7 @@ import { alertService } from '@/services';
 import Alert from './alert';
 import router from 'next/router';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { NumberInput } from '@mantine/core';
 
 interface ModalProps {
   isOpen: boolean;
@@ -193,13 +194,15 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         How many spies would you like to send? <br />
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <input
-              type="number"
+            <NumberInput
               className="mt-2 mb-4 w-full sm:w-1/2 rounded-md bg-gray-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              max={10}
+              max={5}
               min={1}
-              onChange={(e) => setIntelSpies(parseInt(e.target.value, 10))}
-              value={intelSpies}
+              value={intelSpies || 0}
+              allowNegative={false}
+              allowDecimal={false}
+              allowLeadingZeros={false}
+              onChange={(e) => setIntelSpies(Number(e))}
             />
             <span className="ml-2 text-white">/ 10</span>
           </div>
@@ -235,12 +238,15 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         <br />
         How many assassins would you like to send?
         <br />
-        <input
-          type="number"
+        <NumberInput
           className="mt-2 mb-4 w-1/2 rounded-md bg-gray-700 p-2 text-white"
           max={5}
           min={1}
-          onChange={(e) => setIntelSpies(parseInt(e.target.value, 10))}
+          value={intelSpies || 0}
+          allowNegative={false}
+          allowDecimal={false}
+          allowLeadingZeros={false}
+          onChange={(e) => setIntelSpies(Number(e))}
         />{' '}
         / 5<br />
         <button
