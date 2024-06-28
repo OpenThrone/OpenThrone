@@ -159,4 +159,4 @@ const handler = async(
   res.status(405).json({ error: 'Method not allowed' }); // Send a proper response
 }
 
-export default withAuth(handler);
+export default withAuth(handler, true);
