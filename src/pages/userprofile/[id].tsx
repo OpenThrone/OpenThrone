@@ -36,6 +36,46 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const [lastActive, setLastActive] = useState( 'Never logged in');
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [composeModalOpen, setComposeModalOpen] = useState(false);
+
+  // State to control the Spy Missions Modal
+  const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
+
+
+  useEffect(() => {
+    fetch('/api/social/listAll?type=FRIEND&limit=5&playerId=' + profile.id)
+      .then(response => response.json())
+      .then(data => {
+        setFriends(data);
+        setLoading(false);
+      });
+  }, [profile.id]);
+  const toggleModal = () => {
+    setIsOpen(!isOpen);
+  };
+  useEffect(() => {
+    if (profile.id !== users.id) setUser(new UserModel(users, true));
+    if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
+    if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
+    if (!isPlayer && user && (user.id === 1 || user.id === 2)) setCanSpy(true);
+    if (profile) {
+      const nowdate = new Date();
+      if (profile.last_active === null) {
+        setIsOnline(false);
+        setLastActive('Never logged in');
+        return;
+      }
+      const lastActiveTimestamp = new Date(profile.last_active).getTime();
+      const nowTimestamp = nowdate.getTime();
+
+      setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
+      setLastActive(profile.last_active.toDateString());
+    }
+  }, [profile, users, user, isPlayer]);
+
+  if (loading) return <Loader />;
+  if (!profile) return <p>User not found</p>;
+  if (lastActive === 'Never logged in') return <p>User is currently inactive</p>;
 
   const handleAddFriend = async () => {
     const res = await fetch('/api/social/add', {
@@ -97,22 +137,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     }
   };
 
-  useEffect(() => {
-    fetch('/api/social/listAll?type=FRIEND&limit=5&playerId=' + profile.id)
-      .then(response => response.json())
-      .then(data => {
-        setFriends(data);
-        setLoading(false);
-      });
-  }, [profile.id]);
-  const toggleModal = () => {
-    setIsOpen(!isOpen);
-  };
-  const [composeModalOpen, setComposeModalOpen] = useState(false);
-
-  // State to control the Spy Missions Modal
-  const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
-
   // Function to toggle the Spy Missions Modal
   const toggleSpyModal = () => {
     setIsSpyModalOpen(!isSpyModalOpen);
@@ -138,29 +162,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     }
   };
 
-  useEffect(() => {
-    if (profile.id !== users.id) setUser(new UserModel(users, true));
-    if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
-    if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
-    if (!isPlayer && user && (user.id === 1 || user.id === 2)) setCanSpy(true);
-    if (profile) {
-      const nowdate = new Date();
-      if (profile.last_active === null) {
-        setIsOnline(false);
-        setLastActive('Never logged in');
-        return;
-      }
-      const lastActiveTimestamp = new Date(profile.last_active).getTime();
-      const nowTimestamp = nowdate.getTime();
-
-      setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
-      setLastActive(profile.last_active.toDateString());
-    }
-  }, [profile, users, user, isPlayer]);
-
-  if (loading) return <Loader />;
-  if (!profile) return <p>User not found</p>;
-  if(lastActive === 'Never logged in') return <p>User is currently inactive</p>;
   const isFriend = friends.some(friend => friend.friend.id === profile.id);
   const friendsList = (friends.length > 0 ? friends.map(friend => {
     const player = new UserModel(friend.friend); // Assuming the data structure correctly maps to UserModel
