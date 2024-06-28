@@ -92,7 +92,7 @@ const Sidebar: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/searchUsers', {
+      const response = await fetch('/api/general/searchUsers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
