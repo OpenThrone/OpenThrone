@@ -32,8 +32,6 @@ const handler = async (req, res) => {
       parseInt(req.body.turns)
     );
 
-    await res.revalidate('/battle/users');
-
     return res
       .status(200)
       .json(results);
