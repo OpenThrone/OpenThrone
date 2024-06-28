@@ -213,7 +213,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
 
     spyLevel = 2;
     await updateUserUnits(defenderId,
-      { units: defender.units },
+      defender.units,
     );
     console.log('done update');
     console.log(defender.unitTotals);
