@@ -45,12 +45,15 @@ const handler = async (
       // Wait for 1 second
       await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
 
+      const now = new Date();
+      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
       // Check the number of recruitments for the recruited user within the last 24 hours
       const recruitments = await prisma.recruit_history.findMany({
         where: {
           from_user: Number(recruitedUserId),
           to_user: Number(session.user.id),
-          timestamp: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          timestamp: { gte: midnight },
         },
       });
 
