@@ -266,7 +266,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 <button
                   type='button'
                   onClick={toggleSpyModal}
-                  className={`list-group-item list-group-item-action w-full text-left ${user?.id === 1 || user?.id === 2 ? '' : 'disabled'}`}
+                  className={`list-group-item list-group-item-action w-full text-left ${canAttack ? '' : 'disabled'}`}
               >
                 Spy Missions
                 </button>
