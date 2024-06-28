@@ -36,6 +36,9 @@ const handler = async(
 
       // Calculate total cost and validate each unit type and level
       for (const unitData of units) {
+        if (unitData.quantity === 0) {
+          continue;
+        }
         const unitType = UnitTypes.find(u => u.type === unitData.type && u.level === unitData.level);
         if (unitData.quantity < 0) {
           res.status(400).json({ error: 'Invalid quantity' });

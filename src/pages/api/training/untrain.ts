@@ -31,9 +31,11 @@ const handler = async(
       // Validate if the user has enough units to untrain
       for (const unitData of units) {
         const unit = UnitTypes.find((u) => u.type === unitData.type);
+        if (unitData.quantity === 0)
+          continue;
         const userUnit = user.units.find((u) => u.type === unitData.type && u.level === unitData.level);
         if (!userUnit) {
-          return res
+         return res
             .status(400)
             .json({ error: `Invalid unit to untrain: ${unitData}` });
         }
@@ -50,7 +52,7 @@ const handler = async(
             .status(400)
             .json({ error: `Invalid unit type: ${unitData.type}` });
         }
-        totalCost += (unit.cost - ((uModel.priceBonus || 0) / 100) * unit.cost) * unitData.quantity;
+        totalCost += Math.floor((unit.cost - ((uModel.priceBonus || 0) / 100) * unit.cost) * unitData.quantity * 0.75);
       }
 
       // Add the number of units to "CITIZENS"
@@ -84,6 +86,7 @@ const handler = async(
         data: updatedUser.units,
       });
     } catch (error) {
+      console.error(error);
       return res.status(500).json({ error: 'Failed to untrain units' });
     }
   } else {
