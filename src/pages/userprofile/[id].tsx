@@ -33,6 +33,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const [canSpy, setCanSpy] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
+  const [lastActive, setLastActive] = useState( 'Never logged in');
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -144,14 +145,22 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     if (!isPlayer && user && (user.id === 1 || user.id === 2)) setCanSpy(true);
     if (profile) {
       const nowdate = new Date();
+      if (profile.last_active === null) {
+        setIsOnline(false);
+        setLastActive('Never logged in');
+        return;
+      }
       const lastActiveTimestamp = new Date(profile.last_active).getTime();
       const nowTimestamp = nowdate.getTime();
 
       setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
+      setLastActive(profile.last_active.toDateString());
     }
   }, [profile, users, user, isPlayer]);
 
   if (loading) return <Loader />;
+  if (!profile) return <p>User not found</p>;
+  if(lastActive === 'Never logged in') return <p>User is currently inactive</p>;
   const isFriend = friends.some(friend => friend.friend.id === profile.id);
   const friendsList = (friends.length > 0 ? friends.map(friend => {
     const player = new UserModel(friend.friend); // Assuming the data structure correctly maps to UserModel
@@ -225,7 +234,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
               )}
               <div>
                 <h6 className="border-dark border-b-2 p-2 font-bold">Last Online</h6>
-                <Text size='sm'>{profile?.last_active.toDateString()}</Text>
+                <Text size='sm'>{lastActive}</Text>
               </div>
             </div>
           </div>

@@ -170,7 +170,7 @@ const calculateUserScore = (user) => {
 
 export const getServerSideProps = async () => {
   try {
-    let allUsers = await prisma.users.findMany({ where: { id: { not: 0 } } });
+    let allUsers = await prisma.users.findMany({ where: { AND: [{ id: { not: 0 } }, { last_active: { not: null } }] } } );
     allUsers.forEach(user => {
       const nowdate = new Date();
       const lastActiveTimestamp = new Date(user.last_active).getTime();
