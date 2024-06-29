@@ -333,7 +333,6 @@ export function computeSpyCasualties(
   let defenderCasualties = Math.floor(
     defenderBaseValue * Math.random() * offenseToDefenseRatio * attackerPop
   );
-  console.log('defenderCasualties', defenderCasualties, 'defenderBaseValue', defenderBaseValue, 'offenseToDefenseRatio', offenseToDefenseRatio, 'attackerPop', attackerPop, 'ampFactor', ampFactor, 'defenderPop', defenderPop, 'defenseProportion', defenseProportion, 'defenderDS', defenderDS, 'defenderKS', defenderKS, 'attackerDS', attackerDS, 'attackerKS', attackerKS)
   return { attackerCasualties, defenderCasualties };
 }
 

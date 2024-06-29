@@ -88,7 +88,6 @@ export const simulateAssassination = (
 
   const result = new AssassinationResult(attacker, defender, spies, unit);
   result.success = isSuccessful;
-  console.log('Assassination Result:', result, 'Is Successful:', isSuccessful, 'Spies:', spies, 'Unit:', unit);
   result.spiesLost = isSuccessful ? 0 : spies;
 
   if (isSuccessful) {
@@ -116,15 +115,8 @@ export const simulateAssassination = (
     const { attackerCasualties, defenderCasualties } = computeSpyCasualties(attackerKS, attackerDS, defenderKS, defenderDS, spies, defenderUnitCount(), 1, 1);
     result.spiesLost = attackerCasualties;
 
-    // TODO: right now we're maxing at 10 casualities (2*#ofSpies), but we can increase this depending on some other params.
-    /*for (let i = 0; i < Math.min(defenderUnitCount(), spies * 2); i++) {
-      const defenderRandom = Math.random();
-      console.log('Defender Random:', defenderRandom, 'Death Risk Factor:', deathRiskFactor)
-      if (defenderRandom > deathRiskFactor) {
-        casualties++;
-      }
-    }*/
     result.unitsKilled = defenderCasualties;
+    console.log('result thus far: ', result)
     if (defenderCasualties > 0) {
       let defenderUnitType;
       if (unit !== 'CITIZEN/WORKERS') {
@@ -132,8 +124,9 @@ export const simulateAssassination = (
       } else {
         defenderUnitType = defender.units.find((u) => (u.type === 'WORKER' || u.type === 'CITIZEN') && u.level === 1);
       }
-        if (defenderUnitType) {
-          defenderUnitType.quantity -= defenderCasualties;
+      if (defenderUnitType) {
+          console.log('DefenderUnitType:', defenderUnitType, 'DefenderCasualties:', defenderCasualties)
+          defenderUnitType.quantity = Math.max(0, defenderUnitType.quantity - defenderCasualties);
         }
     }
   }
@@ -199,7 +192,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     return { status: 'failed', message: 'Insufficient spies' };
   }
 
-  let spyResults: AssassinationResult | IntelResult;
+  let spyResults: AssassinationResult | IntelResult | InfiltrationResult;
   if (attacker.spy === 0) {
     return { status: 'failed', message: 'Insufficient Spy Offense' };
   }
@@ -215,19 +208,24 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     await updateUserUnits(defenderId,
       defender.units,
     );
-    console.log('done update');
-    console.log(defender.unitTotals);
     //return spyResults;
   } else {
-    spyResults = simulateInfiltration();
-  }
+    spyResults = simulateInfiltration(attacker, defender, spies);
+    spyLevel = 3;
+    await updateUserUnits(defenderId,
+      defender.units,
+    );
 
+  }
+  if (spyResults.spiesLost > 0) {
+    await updateUserUnits(attackerId,
+      attacker.units,
+    );
+  }
   /*if (spyResults.spiesLost > 0) {
     attacker.units.find((u) => u.type === 'SPY' && u.level === spyLevel).quantity -= spyResults.spiesLost;
   }*/
   
-
-  //AttackPlayer.spies -= spies;
   //AttackPlayer.experience += spyResults.experienceResult.Experience.Attacker;
   //AttackPlayer.gold += spyResults.goldStolen;
   //AttackPlayer.units = spyResults.units;
