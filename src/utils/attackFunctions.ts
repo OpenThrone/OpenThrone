@@ -60,6 +60,42 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
   return Math.ceil(strength);
 }
 
+export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 'SENTRY', spiesSent: number): {spyStrength: number, sentryStrength: number} {
+  let strength = 0;
+  let KS = 0;
+  let DS = 0;
+
+  const unitMultiplier = 1 + parseInt(((unitType === 'SPY' ? user.spyBonus.toString() : user.sentryBonus.toString())), 10) / 100;
+  user.units.filter((u) => u.type === unitType).forEach((unit) => {
+    const unitInfo = UnitTypes.find(
+      (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
+    );
+    if(unitInfo) {
+      KS += (unitInfo.killingStrength || 0) * Math.min(unit.quantity, spiesSent);
+      DS += (unitInfo.defenseStrength || 0) * Math.min(unit.quantity, spiesSent);
+    }
+
+    const itemCounts: Record<ItemType, number> = { WEAPON: 0, HELM: 0, BOOTS: 0, BRACERS: 0, SHIELD: 0, ARMOR: 0 };
+    if (unit.quantity === 0) return;
+
+    user.items.filter((item) => item.usage === unit.type).forEach((item) => {
+      itemCounts[item.type] = itemCounts[item.type] || 0;
+
+      const itemInfo = ItemTypes.find(
+        (w) => w.level === item.level && w.usage === unit.type && w.type === item.type
+      );
+      if (itemInfo) {
+        const usableQuantity = Math.min(item.quantity, Math.min(unit.quantity, spiesSent) - itemCounts[item.type]);
+        KS += itemInfo.killingStrength * usableQuantity;
+        DS += itemInfo.defenseStrength * usableQuantity;
+        itemCounts[item.type] += usableQuantity;
+      }
+    });
+  })
+
+  return {spyStrength: Math.ceil(KS), sentryStrength: Math.ceil(DS)};
+}
+
 export function newCalculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE', includeCitz: boolean = false, fortBoost: number = 0): { killingStrength: number, defenseStrength: number } {
   let KS = 0;
   let DS = 0;
@@ -213,6 +249,7 @@ export function computeBaseValue(ratio) {
  * @param unitFactor - The unit factor.
  * @returns The number of casualties.
  */
+/*
 export function computeCasualties(
   attackerKS: number,
   defenderDS: number,
@@ -265,6 +302,38 @@ export function computeCasualties(
     defenderCasualties = Math.floor(defenderCasualties * 1.5); // Increase the defender casualties by 50%
   }
 
+  return { attackerCasualties, defenderCasualties };
+}*/
+
+export function computeSpyCasualties(
+  attackerKS: number,
+  defenderDS: number,
+  defenderKS: number,
+  attackerDS: number,
+  attackerPop: number,
+  defenderPop: number,
+  ampFactor: number,
+  defenseProportion: number
+): { attackerCasualties: number, defenderCasualties: number } {
+
+  let attackerBaseValue: number;
+  let defenderBaseValue: number;
+  const offenseToDefenseRatio = attackerKS / (defenderDS ? defenderDS : 1);
+  const counterAttackRatio = defenderKS / (attackerDS ? attackerDS : 1);
+
+  // Determine base value for attacker casualties based on defense KS vs attacker DS
+  attackerBaseValue = computeBaseValue(counterAttackRatio) * 1000;
+
+  // Determine base value for defender casualties based on attacker KS vs defender DS
+  defenderBaseValue = computeBaseValue(offenseToDefenseRatio) * 1000;
+
+  let attackerCasualties = Math.floor(
+    attackerBaseValue * Math.random() * counterAttackRatio * defenderPop
+  );
+  let defenderCasualties = Math.floor(
+    defenderBaseValue * Math.random() * offenseToDefenseRatio * attackerPop
+  );
+  console.log('defenderCasualties', defenderCasualties, 'defenderBaseValue', defenderBaseValue, 'offenseToDefenseRatio', offenseToDefenseRatio, 'attackerPop', attackerPop, 'ampFactor', ampFactor, 'defenderPop', defenderPop, 'defenseProportion', defenseProportion, 'defenderDS', defenderDS, 'defenderKS', defenderKS, 'attackerDS', attackerDS, 'attackerKS', attackerKS)
   return { attackerCasualties, defenderCasualties };
 }
 

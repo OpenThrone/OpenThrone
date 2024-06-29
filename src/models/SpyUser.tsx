@@ -9,9 +9,6 @@ export class SpyUserModel {
   goldInBank: bigint | null;
 
   constructor(defender: UserModel, intelPercentage: number) {
-    console.log('defender: ', defender)
-    
-    console.log('spy: ', (BigInt(defender.goldInBank.toString()) * BigInt(intelPercentage)) / BigInt(100))
     // Explicitly set each property based on the defender's properties
     this.units = defender.units
       ? defender.units.map(unit => ({ ...unit, quantity: Math.ceil(unit.quantity * intelPercentage / 100) }))
@@ -26,7 +23,7 @@ export class SpyUserModel {
       ? Math.ceil(defender.fortHitpoints * intelPercentage / 100)
       : 0;
     this.goldInBank = defender.goldInBank
-      ? (defender.goldInBank * BigInt(intelPercentage)) / BigInt(100)
+      ? defender.goldInBank // * BigInt(intelPercentage)) / BigInt(100)
       : BigInt(0);
   }
 }

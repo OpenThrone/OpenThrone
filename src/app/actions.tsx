@@ -11,7 +11,7 @@ import {
 import { Fortifications } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { simulateBattle  } from '@/utils/attackFunctions';
+import { calculateClandestineStrength, computeSpyCasualties, simulateBattle  } from '@/utils/attackFunctions';
 import { SpyUserModel } from '@/models/SpyUser';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { AssassinationResult, InfiltrationResult, IntelResult } from '@/utils/spyFunctions';
@@ -30,14 +30,13 @@ export function simulateIntel(
     return { status: 'failed', message: 'Fortification not found', defender: defender.fortLevel };
   }
   let { fortHitpoints } = defender;
-  console.log('Spy', attacker.spy, 'Sentry', defender.sentry);
   const isSuccessful = attacker.spy > defender.sentry;
   //const defenderSpyUnit = new SpyUserModel(defender, spies * 10)
 
   const result = new IntelResult(attacker, defender, spies);
   result.success = isSuccessful;
   result.spiesLost = isSuccessful ? 0 : spies;
-  
+  console.log('Intel Is Successful:', isSuccessful, 'Spies:', spies, 'Result:', result, 'Defender:', defender, 'Attacker:', attacker)
   if (isSuccessful) {
     // Proceed with gathering intelligence
     const deathRiskFactor = Math.max(0, 1 - (attacker.spy / defender.sentry));
@@ -66,8 +65,6 @@ export function simulateIntel(
         goldInBank: null,
       };
 
-      console.log(defender)
-
       if (key === 'units' || key === 'items') {
         const totalTypes = defender[key].length;
         const typesToInclude = Math.ceil(totalTypes * intelPercentage / 100);
@@ -81,50 +78,54 @@ export function simulateIntel(
   return result;
 }
     
-function simulateAssassination(
+export const simulateAssassination = (
   attacker: UserModel,
   defender: UserModel,
   spies: number,
   unit: string
-) {
+) => {
   const isSuccessful = attacker.spy > defender.sentry;
 
   const result = new AssassinationResult(attacker, defender, spies, unit);
   result.success = isSuccessful;
+  console.log('Assassination Result:', result, 'Is Successful:', isSuccessful, 'Spies:', spies, 'Unit:', unit);
   result.spiesLost = isSuccessful ? 0 : spies;
 
   if (isSuccessful) {
-
-    const deathRiskFactor = Math.max(0, 1 - (attacker.spy / defender.sentry));
-    
-    let spiesLost = 0;
-    for (let i = 0; i < spies; i++) {
-      if (Math.random() < deathRiskFactor) {
-        spiesLost++;
-      }
-    }
-    let casualties = 0;
+    //let spiesLost = 0;
+    //for (let i = 0; i < spies; i++) {
+      const spyRandom = Math.random();
+      const { spyStrength: attackerKS, sentryStrength: attackerDS } = calculateClandestineStrength(attacker, 'SPY', 5);
+      const { spyStrength: defenderKS, sentryStrength: defenderDS } = calculateClandestineStrength(defender, 'SENTRY', 5);
+      
+    //}
+    //let casualties = 0;
     let defenderUnitCount = () => {
       if (unit === 'OFFENSE') {
-        return defender.unitTotals.offense;
+        return Math.min(spies * 2, defender.unitTotals.offense);
       }
       if (unit === 'DEFENSE') {
-        return defender.unitTotals.defense;
+        return Math.min(spies * 2, defender.unitTotals.defense);
       }
       if (unit === 'CITIZEN/WORKERS') {
-        return defender.unitTotals.citizens + defender.unitTotals.workers;
+        return Math.min(spies * 2, (defender.unitTotals.citizens + defender.unitTotals.workers));
       }
       return 0;
     }
 
+    const { attackerCasualties, defenderCasualties } = computeSpyCasualties(attackerKS, attackerDS, defenderKS, defenderDS, spies, defenderUnitCount(), 1, 1);
+    result.spiesLost = attackerCasualties;
+
     // TODO: right now we're maxing at 10 casualities (2*#ofSpies), but we can increase this depending on some other params.
-    for (let i = 0; i < Math.min(defenderUnitCount(), spies * 2); i++) {
-      if (Math.random() < deathRiskFactor) {
+    /*for (let i = 0; i < Math.min(defenderUnitCount(), spies * 2); i++) {
+      const defenderRandom = Math.random();
+      console.log('Defender Random:', defenderRandom, 'Death Risk Factor:', deathRiskFactor)
+      if (defenderRandom > deathRiskFactor) {
         casualties++;
       }
-    }
-    result.unitsKilled = casualties;
-    if (casualties > 0) {
+    }*/
+    result.unitsKilled = defenderCasualties;
+    if (defenderCasualties > 0) {
       let defenderUnitType;
       if (unit !== 'CITIZEN/WORKERS') {
         defenderUnitType = defender.units.find((u) => u.type === unit && u.level === 1);
@@ -132,10 +133,9 @@ function simulateAssassination(
         defenderUnitType = defender.units.find((u) => (u.type === 'WORKER' || u.type === 'CITIZEN') && u.level === 1);
       }
         if (defenderUnitType) {
-          defenderUnitType.quantity -= casualties;
+          defenderUnitType.quantity -= defenderCasualties;
         }
     }
-    result.spiesLost = spiesLost;
   }
   return result;
 }

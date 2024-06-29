@@ -197,7 +197,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           <div className="flex items-center">
             <NumberInput
               className="mt-2 mb-4 w-full sm:w-1/2 rounded-md bg-gray-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              max={5}
+              max={10}
               min={1}
               value={intelSpies || 0}
               allowNegative={false}

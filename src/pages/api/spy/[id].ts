@@ -41,11 +41,11 @@ const handler = async (req, res) => {
     switch (req.body.type) {
       case 'INTEL':
         if (req.body.spies <= 0) {
-          return res.status(400).json({ status: 'failed' });
+          return res.status(400).json({ status: 'failed', message: 'You need to send at least 1 spy' });
         }
 
         if (req.body.spies > 10) {
-          return res.status(400).json({ status: 'failed' });
+          return res.status(400).json({ status: 'failed', message: 'You can only send up to 10 spies'});
         }
 
         const myUser = await prisma?.users.findUnique({
@@ -53,11 +53,11 @@ const handler = async (req, res) => {
         });
 
         if (!myUser) {
-          return res.status(400).json({ status: 'failed' });
+          return res.status(400).json({ status: 'failed', message: 'User not found' });
         }
 
         if (req.body.spies > myUser.units.find((u) => u.type === 'SPY' && u.level === 1).quantity) {
-          return res.status(400).json({ status: 'failed' });
+          return res.status(400).json({ status: 'failed', message: 'You do not have enough spies' });
         }
 
         return res
@@ -72,7 +72,7 @@ const handler = async (req, res) => {
           );
       case 'ASSASSINATE':
         if (checkParams(req.body, 5) === false) {
-          return res.status(400).json({ status: 'failed' });
+          return res.status(400).json({ status: 'failed' , message: 'Invalid parameters' });
         }
 
         return res
@@ -91,7 +91,7 @@ const handler = async (req, res) => {
     }
   }
   // console.log('failed: ', session);
-  return res.status(401).json({ status: 'failed' });
+  return res.status(401).json({ status: 'failed', message: 'Unauthorized'});
 }
 
 export default withAuth(handler);
