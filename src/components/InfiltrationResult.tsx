@@ -6,12 +6,14 @@ import { useEffect, useState } from 'react';
 import SpyMissionsModal from './spyMissionsModal';
 import Modal from './modal';
 
-const IntelResult = ({ battle, viewerID, lastGenerated }) => {
+const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
   const [isAttackModalOpen, setIsAttackModalOpen] = useState(false);
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
   const isViewerAttacker = viewerID === attackerPlayer.id;
   const isAttackerWinner = winner === attackerPlayer.id;
+  console.log('isAttackerWinner', isAttackerWinner)
+  console.log('isViewerAttacker', isViewerAttacker)
   const [unitSegments, setUnitSegments] = useState([]);
   const [itemsByCategory, setItemsByCategory] = useState([]);
   const itemColors = {
@@ -268,4 +270,4 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   );
 };
 
-export default IntelResult;
+export default InfiltrationResult;

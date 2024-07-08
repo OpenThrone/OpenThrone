@@ -105,7 +105,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
 
   // const [assassinateAmount, setAssassinateAmount] = useState(1);
   const [isAssassinateDisabled, setIsAssassinateDisabled] = useState(false);
-  const [isInfiltrationDisabled, setIsInfiltrationDisabled] = useState(true);
+  const [isInfiltrationDisabled, setIsInfiltrationDisabled] = useState(false);
   const [isIntelDisabled, setIsIntelDisabled] = useState(false);
   const { user } = useUser();
   const [units, setUnits] = useState({ SPY: 0, ASSASSIN: 0, INFILTRATOR: 0 });
@@ -184,10 +184,34 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       `You have sent ${intelSpies} spies to assassinate ${assassinateUnit}.`
     );
   };
-  /*const handleInfiltration = () => {
-    console.log('infiltration');
-  };
-  */
+
+  const handleSpyMission = async () => {
+    let type = 'INTEL';
+    if (currentPanel === "assassination") {
+      type = 'ASSASSINATE';
+    }else if (currentPanel === "infiltration") {
+      type = 'INFILTRATE';
+    }
+    const res = await fetch(`/api/spy/${defenderID}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify((currentPanel === "assassination" ? { type, spies: intelSpies, unit: assassinateUnit } : { type, spies: intelSpies})),
+    });
+    const results = await res.json();
+
+    if (results.status === 'failed') {
+      alertService.error(results.status);
+    } else {
+      router.push(`/battle/results/${results.attack_log}`);
+      toggleModal();
+    }
+    alertService.success(
+      `You have sent ${intelSpies} spies.`
+    );
+  }
+
   const MissionPanels: Record<MissionPanelKey, JSX.Element> = {
     intelligence: (
       <div className="px-4 py-5 sm:p-6 shadow-xl rounded-lg">
@@ -209,7 +233,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           </div>
           <button
             type="button"
-            onClick={handleIntelGathering}
+            onClick={handleSpyMission}
             className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
             Send Spies
@@ -223,7 +247,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       </div>
     ),
     assassination: (
-      <div className='px-4 py-5 sm:p-6'>
+      <div className='px-4 py-5 sm:p-6 shadow-xl rounded-lg'>
         <h2 className="text-center text-lg font-medium mb-4">Assassination</h2>
         What type of units would you like to assassinate?
         <br />
@@ -251,7 +275,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         />{' '}
         / 5<br />
         <button
-          onClick={handleAssassination}
+          onClick={handleSpyMission}
           type="button"
           className="w-full rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 transition-colors"
         >
@@ -261,22 +285,56 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         <div className="mt-4">
           <h2 className="text-center text-lg font-medium">Assassination Information</h2>
           <p className="mt-2">Total Assassins: </p>
-        <span>You can send a maximum of 5 assassins per mission.</span>
-        <br />
-          <p className="mt-2">Assassination Attempts Available: ##</p>
-        <span>
-          You can only send 1 assassination attempt per 24 hours.
+          <span>You can send a maximum of 5 assassins per mission.</span>
           <br />
-          To increase the number of attempts per day, upgrade your spy
-          structure!
+          <p className="mt-2">Assassination Attempts Available: ##</p>
+          <span>
+            You can only send 1 assassination attempt per 24 hours.
+            <br />
+            To increase the number of attempts per day, upgrade your spy
+            structure!
           </span>
         </div>
       </div>
     ),
     infiltration: (
-      <div>
-        <h3>Infiltration</h3>
-        <p>Damage Fort. 3 Spies per 24h - Upgradable.</p>
+      <div className='px-4 py-5 sm:p-6 shadow-xl rounded-lg'>
+        <h2 className="text-center text-lg font-medium mb-4">Infiltration</h2>
+        How many spies would you like to send to infiltrate? <br />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <NumberInput
+              className="mt-2 mb-4 w-full sm:w-1/2 rounded-md bg-gray-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              max={3}
+              min={1}
+              value={intelSpies || 0}
+              allowNegative={false}
+              allowDecimal={false}
+              allowLeadingZeros={false}
+              onChange={(e) => setIntelSpies(Number(e))}
+            />
+            <span className="ml-2 text-white">/ 3</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSpyMission}
+            className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          >
+            Infiltrate
+          </button>
+        </div>
+        <div className="mt-4">
+          <h2 className="text-center text-lg font-medium">Infiltration Information</h2>
+          <p className="mt-2">Total Spies: {units.SPY}</p>
+          <span className="block mt-1">You can send a maximum of 3 spies per infiltration mission.</span>
+          <br />
+          <p className="mt-2">Infiltration Attempts Available: ##</p>
+          <span>
+            You can only send 1 infiltration attempt per 24 hours.
+            <br />
+            To increase the number of attempts per day, upgrade your spy structure!
+          </span>
+        </div>
       </div>
     ),
   };

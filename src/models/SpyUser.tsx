@@ -16,13 +16,13 @@ export class SpyUserModel {
     this.items = defender.items
       ? defender.items.map(item => ({ ...item, quantity: Math.ceil(item.quantity * intelPercentage / 100) }))
       : null;
-    this.fort_level = defender.fortLevel
+    this.fort_level = defender.fortLevel !== null
       ? Math.ceil(defender.fortLevel * intelPercentage / 100)
-      : 0;
-    this.fort_hitpoints = defender.fortHitpoints
+      : null;
+    this.fort_hitpoints = defender.fortHitpoints !== null
       ? Math.ceil(defender.fortHitpoints * intelPercentage / 100)
-      : 0;
-    this.goldInBank = defender.goldInBank
+      : null;
+    this.goldInBank = defender.goldInBank !== null
       ? defender.goldInBank // * BigInt(intelPercentage)) / BigInt(100)
       : BigInt(0);
   }

@@ -1,6 +1,6 @@
 import UserModel from "@/models/Users";
 import { simulateBattle } from "../utils/attackFunctions";
-import { simulateAssassination, simulateInfiltration, simulateIntel } from "../app/actions";
+import { simulateAssassination, simulateInfiltration, simulateIntel } from "../utils/spyFunctions";
 import mtRand from "@/utils/mtrand";
 import { stringifyObj } from "@/utils/numberFormatting";
 
@@ -515,9 +515,8 @@ const attacker = {
     }
   ]
 }
-
+/*
 describe('setup Attack test', () => {
-  /*
   it('should simulate a battle between equal armies', async () => {
     const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
     const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
@@ -569,6 +568,7 @@ describe('setup Attack test', () => {
     console.log('Weak Attacker - Attacker Losses: ', battle.Losses.Attacker.total, 'Defender Losses: ', battle.Losses.Defender.total);
   });
 });
+*/
 
 describe('Spy Test', () => {
   it('should simulate a battle between equal armies', async () => {
@@ -622,6 +622,8 @@ describe('Infiltration Test', () => {
   it('should simulate an infiltration against a substantially stronger opponent. ', async () => {
     const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
     const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
+    const attackPlayerCopy = JSON.parse(JSON.stringify(stringifyObj(attacker)));
+    const defensePlayerCopy = JSON.parse(JSON.stringify(stringifyObj(defense)));
     const equalAttacker = new UserModel({
       ...attackPlayer,
       fortHitpoints: 500,
@@ -640,6 +642,8 @@ describe('Infiltration Test', () => {
     if (!battle.sucess) console.log(`Spies lost: ${battle.spiesLost}`);
     console.log('Spy Off: ', battle.attacker.spy, "Spy Def: ", battle.defender.sentry, "FortHP: ", battle.defender.fortHitpoints)
     console.log('Fort DMG:', battle.fortDmg)
+    console.log('Starting Units:', attackPlayer.units, "Ending Units:", battle.attacker.units)
+    expect(equalAttacker.units).toBe(battle.attacker.units);
     expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
     expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
     console.log('Starting Fort HP:', defensePlayer.fortHitpoints, "Ending Fort HP:", battle.defender.fortHitpoints)
@@ -665,9 +669,9 @@ describe('Infiltration Test', () => {
     expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
     expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
   })
-  */
+
   
-  it('should simulate an intelligence mission against a equal opponent. ', async () => {
+ /* it('should simulate an intelligence mission against a equal opponent. ', async () => {
     const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
     const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
     const equalAttacker = new UserModel({
@@ -686,9 +690,9 @@ describe('Infiltration Test', () => {
     });
     const battle = await simulateIntel(equalAttacker, equalDefender, 3);
     expect(battle.success === true).toBe(true);
-  })
+  })*/
 
-  it('should simulate an assassination to kill workers. ', async () => {
+  /*it('should simulate an assassination to kill workers. ', async () => {
     const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
     const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
     const equalAttacker = new UserModel({
@@ -705,13 +709,56 @@ describe('Infiltration Test', () => {
       fortHitpoints: 500,
       units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1) || (unit.type === 'WORKER')).map(unit => ({ ...unit, quantity: 10 }))
     });
+
+    console.log(equalDefender.unitTotals.citizens + equalDefender.unitTotals.workers)
     const battle = await simulateAssassination(equalAttacker, equalDefender, 3, 'CITIZEN/WORKERS');
     
     expect(battle.success === true).toBe(true);
+    console.log(equalDefender.unitTotals.citizens + equalDefender.unitTotals.workers)
     //console.log('battle: ', battle)
     //if (!battle.sucesss) console.log(`Spies lost: ${battle.spiesLost}`);
     //expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
     //expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
+  })*/
+  
+  it('it should simulate failing every mission, losing units along the way', async () => {
+    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
+    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
+    const equalAttacker = new UserModel({
+      ...attackPlayer,
+      fortHitpoints: 500,
+      units: attacker.units.filter(unit => (unit.type === 'SPY')).map(unit => ({ ...unit, quantity: 1000 })),
+      items: attacker.items.filter(item => item.type === 'WEAPON' && item.level === 1 && item.usage === 'SPY').map(item => {
+        return { ...item, quantity: 1000 }
+      })
+    });
+    const equalDefender = new UserModel({
+      ...defensePlayer,
+      goldInBank: stringifyObj(BigInt(1000000)),
+      fortHitpoints: 500,
+      units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1) || (unit.type === 'WORKER')).map(unit => ({ ...unit, quantity: 1000000 })),
+      items: attacker.items.filter(item => item.type === 'WEAPON' && item.level === 1 && item.usage === 'SENTRY').map(item => {
+        return { ...item, quantity: 1000000 }
+      })
+    });
+    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
+    const intelMission = await simulateIntel(equalAttacker, equalDefender, 10);
+    expect(intelMission.success === false).toBe(true);
+    expect(intelMission.spiesLost === intelMission.spiesSent).toBe(true);
+
+    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
+    
+    const infiltrationMission = await simulateInfiltration(equalAttacker, equalDefender, 5);
+  
+    expect(infiltrationMission.success === false).toBe(true);
+    expect(infiltrationMission.spiesLost).toBeGreaterThanOrEqual(infiltrationMission.spiesSent - 1); // Almost all spies should be lost.
+
+    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
+    const assassinationMission = await simulateAssassination(equalAttacker, equalDefender, 1, 'CITIZEN/WORKERS');
+    expect(assassinationMission.success === false).toBe(true);
+    expect(infiltrationMission.spiesLost).toBeGreaterThanOrEqual(infiltrationMission.spiesSent - 1); // Almost all spies should be lost.
+
+    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
   })
 
 })

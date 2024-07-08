@@ -7,12 +7,25 @@ export const getUserById = async (userId) => {
   });
 };
 
+export const getAllUserIds = async () => {
+  return await prisma.users.findMany({
+    select: { id: true },
+  });
+};
+
 export const updateUserUnits = async (userId, units) => {
   await prisma.users.update({
     where: { id: userId },
     data: { units },
   });
 };
+
+export const updateFortHitpoints = async (userId, hitpoints) => {
+  await prisma.users.update({
+    where: { id: userId },
+    data: { fort_hitpoints: hitpoints },
+  });
+}
 
 export const createAttackLog = async (logData) => {
   return await prisma.attack_log.create({
