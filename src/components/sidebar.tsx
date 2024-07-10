@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { getTimeRemaining, getTimeToNextTurn } from '@/utils/timefunctions';
 import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text } from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
+import { useDebouncedCallback } from '@mantine/hooks';
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
 
@@ -14,12 +13,10 @@ const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
   const [messages, setMessages] = useState(['']);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-
   const { user, forceUpdate } = useUser();
   const [searchValue, setSearchValue] = useState('');
   const [usersData, setUsersData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [debouncedSearchTerm] = useDebouncedValue(searchValue, 300);
 
   const [sidebar, setSidebar] = useState({
     gold: '0',
@@ -29,6 +26,7 @@ const Sidebar: React.FC = () => {
     turns: '0',
     xpNextLevel: '0',
   });
+
   useEffect(() => {
     const messagesArray = [
       'It is better to buy a few stronger weapons than many weaker ones.',
@@ -37,7 +35,6 @@ const Sidebar: React.FC = () => {
       `Recruiting your max amount every day will ensure you're kingdom continues to grow.`,
       `A unit is only as strong as the equipment they wield. Make sure your army is well equipped.`,
       `If your defense is less than 25% of your non-combatant population, you may lose citizens and workers in an attack. Keep your fort repaired`,
-      
       // Add more messages as needed
     ];
 
@@ -106,11 +103,11 @@ const Sidebar: React.FC = () => {
 
       const data = await response.json();
       return data.map(user => ({
-        value: user.display_name, 
-        label: user.display_name, 
-        image: user.avatar, 
+        value: user.display_name,
+        label: user.display_name,
+        image: user.avatar,
         class: user.class,
-        race: user.race, 
+        race: user.race,
         experience: getLevelFromXP(user.experience),
         id: user.id
       }));
@@ -121,34 +118,37 @@ const Sidebar: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleSearch = useDebouncedCallback(async (query) => {
+    if (!query.trim()) {
+      setUsersData([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const users = await fetchUsers(query);
+      setUsersData(users);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, 300);
+
   useEffect(() => {
-    const fetchData = async () => {
-      if (!debouncedSearchTerm.trim()) return setUsersData([]);
-
-      setLoading(true);
-      try {
-        const users = await fetchUsers(debouncedSearchTerm);
-        setUsersData(users);
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
-        // Handle error appropriately
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [debouncedSearchTerm]);
+    handleSearch(searchValue);
+  }, [searchValue, handleSearch]);
 
   const handleItemSubmit = (item) => {
-    router.push(`/userprofile/${item.id}`); // Navigate using the item's value, which is the user's ID
+    router.push(`/userprofile/${item.id}`);
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent the default form submission behavior
+    e.preventDefault();
     const user = usersData.find(u => u.label.toLowerCase() === searchValue.toLowerCase());
     if (user) {
-      router.push(`/userprofile/${user.id}`); // Navigate using the found user's ID
+      router.push(`/userprofile/${user.id}`);
     } else {
       console.log("No matching user found.");
     }
@@ -208,21 +208,23 @@ const Sidebar: React.FC = () => {
             <span> </span> Search <span> </span>
           </h6>
           <form onSubmit={handleSubmit}>
-
             <Autocomplete
               value={searchValue}
               onChange={setSearchValue}
-              onSubmit={handleItemSubmit} 
+              onSubmit={handleItemSubmit}
               renderOption={renderAutocompleteOption}
               data={usersData}
               maxDropdownHeight={300}
               placeholder="Type to search..."
               style={{ width: '95%' }}
-              className='mb-2 text-white'
-              comboboxProps={{ width: '250px' }}></Autocomplete>
-
+              className='mb-2'
+              comboboxProps={{ width: '250px' }}
+              color='brand'
+              variant='filled'
+              bg={'dark'}
+            />
             <center>
-              <Button type="submit" color='gray'>Submit</Button>
+              <Button type="submit" color='bluishGray' variant='brand'>Submit</Button>
             </center>
           </form>
         </div>

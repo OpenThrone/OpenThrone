@@ -10,6 +10,7 @@ const FortificationsTab: React.FC<BattleUpgradeProps> = ({
   fortLevel,
 }) => {
   const { forceUpdate, user } = useUser();
+  const colorScheme = user?.colorScheme;
   return (
     <table className="min-w-full table-auto bg-gray-900 text-white">
       <thead className="text-left">
@@ -28,7 +29,12 @@ const FortificationsTab: React.FC<BattleUpgradeProps> = ({
             <tr key={`${item.level}_${item.name}`} className='odd:bg-table-odd even:bg-table-even'>
               <td className="px-4 py-2">
                 {item.name} {item.level === fortLevel && (
-                  <Badge color="blue" ml={5}>Owned</Badge>
+                  <Badge color={(colorScheme === "ELF") ?
+                    'green' : (
+                      colorScheme === 'GOBLIN' ? 'red' : (
+                        colorScheme === 'UNDEAD' ? 'dark'
+                          : 'blue'
+                      ))} ml={5}>Owned</Badge>
                 )}
               </td>
               <td className="px-4 py-2">{item.levelRequirement}</td>

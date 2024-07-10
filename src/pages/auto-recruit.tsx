@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import Recruiter from '../components/recruiter';
 import Alert from '../components/alert';
 import { alertService } from '@/services';
-import { Button } from '@mantine/core';
+import { Button, Space, Container, Text, Title, Center, LoadingOverlay, Flex } from '@mantine/core';
 import { useUser } from '@/context/users';
 
 export default function AutoRecruiter(props) {
@@ -41,7 +41,8 @@ export default function AutoRecruiter(props) {
   const startCountdown = useCallback(() => {
     setCountdown(3);
     let timer = 3;
-    const interval = setInterval(async() => {
+    const interval = setInterval(async () => {
+      console.log('Timer:', timer)
       if (timer > 1) {
         setCountdown(timer - 1);
       } else {
@@ -106,61 +107,76 @@ export default function AutoRecruiter(props) {
 
   if (!isRecruiting) {
     return (
-      <div className="mainArea pb-10">
-        <h2 className="page-title">Auto Recruiter</h2>
-        <div className="flex h-full items-center justify-center">
-          <div className="container mx-auto text-center">
-            {!hasEnded && <p>Click Start to begin the Auto-Recruit, a new user will appear.</p>}
-            <Button color="dark" onClick={startRecruiting}>
-              {!hasEnded ? 'Start' : 'Stop'} Recruiting
-            </Button>
-          </div>
-        </div>
-      </div>
+      <Container className="mainArea" pb="xl">
+        <Title order={2} className="page-title">Auto Recruiter</Title>
+        <Center>
+          <Container>
+            {!hasEnded && <Text>Click Start to begin the Auto-Recruit, a new user will appear.</Text>}
+            <Center>
+              <Button color="dark" onClick={startRecruiting}>
+                {!hasEnded ? 'Start' : 'Stop'} Recruiting
+              </Button>
+            </Center>
+          </Container>
+        </Center>
+      </Container>
     );
   }
 
   if (!user) {
     return (
-      <div className="mainArea pb-10">
-        <h2 className="page-title">Auto Recruiter</h2>
-        <div className="my-5 flex justify-between">
-          <Alert />
-        </div>
-        <div className="my-5 flex justify-center items-center">
+      <Container className="mainArea" pb="xl">
+        <Title order={2} className="page-title">Auto Recruiter</Title>
+        <Space h="md" />
+        <Alert />
+        <Space h="md" />
+        <Center>
           {!hasEnded ? (
             <div>
-              <div>Loading{(countdown > 0 ? ` next user in ${countdown} seconds...` : '...')}</div><br />
-              <Button loading color="dark" onClick={() => stopRecruiting()}>
-                Stop Recruiting
-              </Button>
+              <Center>
+              <Text>
+                Loading{countdown > 0 ? ` next user in ${countdown} seconds...` : '...'}
+              </Text>
+              <Space h="md" />
+              <Center>
+                <Button loading color="dark" onClick={() => stopRecruiting()}>
+                  Stop Recruiting
+                </Button>
+                </Center>
+              </Center>
             </div>
           ) : (
-            <div>
+            <Center>
               <Button color="dark" onClick={() => startRecruiting()}>
                 Restart Recruiting
               </Button>
-            </div>
+            </Center>
           )}
-        </div>
-      </div>
+        </Center>
+      </Container>
     );
   }
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Auto Recruiter</h2>
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
+    <Container className="mainArea" pb="xl" size={'xl'}>
+      <Title order={2} className="page-title">Auto Recruiter</Title>
+      <Space h="md" />
+      <Alert />
+      <Space h="md" />
       <Recruiter
         key={user.id}
         user={user}
         showCaptcha={consecutiveSuccesses < 3}
         onSuccess={handleRecruitment}
       />
-      <div className="my-5 flex justify-center items-center">
-        {!isPaused && lastSuccess && <div>Loading{(countdown > 0 ? ` next user in ${countdown} seconds...` : '...')}</div>}<br />
+      <Space h="md" />
+      <Flex justify={'center'} align={'center'} direction={'column'}>
+        {!isPaused && lastSuccess && (
+            <Text>
+              Loading{countdown > 0 ? ` next user in ${countdown} seconds...` : '...'}
+            </Text>
+        )}
+        <Space h="md" />
         {isPaused ? (
           <Button color="dark" onClick={startRecruiting}>
             Resume Recruiting
@@ -170,7 +186,7 @@ export default function AutoRecruiter(props) {
             Stop Recruiting
           </Button>
         )}
-      </div>
-    </div>
+      </Flex>
+    </Container>
   );
 }

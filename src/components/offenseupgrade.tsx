@@ -33,7 +33,12 @@ const OffenseUpgrade: React.FC<BattleUpgradeProps> = ({
               <tr key={`${item.name}_${item.level}`} className='odd:bg-table-odd even:bg-table-even'>
                 <td className="px-2 py-2">
                   {item.name} {item.level === userLevel && (
-                    <Badge color="blue" ml={5}>Owned</Badge>
+                    <Badge color={(user?.colorScheme === "ELF") ?
+                      'green' : (
+                        user?.colorScheme === 'GOBLIN' ? 'red' : (
+                          user?.colorScheme === 'UNDEAD' ? 'dark'
+                            : 'blue'
+                        ))} ml={5}>Owned</Badge>
                   )}
                 </td>
                 <td className="px-2 py-2">

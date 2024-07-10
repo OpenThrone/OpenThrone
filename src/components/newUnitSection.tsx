@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { NumberInput, Group, Text, Paper, Table, Select, Button } from '@mantine/core';
+import { NumberInput, Group, Text, Paper, Table, Select, Button, Space } from '@mantine/core';
 import toLocale from '@/utils/numberFormatting';
 import { alertService } from '@/services';
-import user from '@/pages/messaging/compose/[user]';
 import { useUser } from '@/context/users';
 
 type UnitSectionProps = {
@@ -213,7 +212,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
           })()}
         </Table.Tbody>
       </Table>
-      <div className="mt-4">
+      <div className='mt-3 ml-3 mr-3'>
         <Group spacing="xs" grow>
           <Text>Convert</Text>
           <NumberInput
@@ -241,9 +240,10 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
           <span>
             <Text>{toLower ? 'Refund' : 'Cost'}: {toLocale(conversionCost)}</Text>
           </span>
-          <Button onClick={handleConvert}>Convert</Button>
+          <Button className='mb-1' onClick={handleConvert}>Convert</Button>
         </Group>
       </div>
+      <Space h="xs" />
     </Paper>
   );
 };

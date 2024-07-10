@@ -1,4 +1,5 @@
 import { EconomyUpgrades, Fortifications } from '@/constants';
+import { useUser } from '@/context/users';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import toLocale from '@/utils/numberFormatting';
@@ -9,8 +10,8 @@ const EconomyTab: React.FC<BattleUpgradeProps> = ({
   forceUpdate,
   fortLevel,
 }) => {
-  console.log('Economy: ', userLevel);
-  console.log('Fort: ', fortLevel);
+  const { user } = useUser();
+  const colorScheme = user?.colorScheme;
   return (
     <table className="w-full table-auto bg-gray-800 text-white">
       <thead className="bg-gray-900 text-left">
@@ -31,7 +32,12 @@ const EconomyTab: React.FC<BattleUpgradeProps> = ({
             <tr key={`${item.index}_${item.name}`} className='text-md odd:bg-table-odd even:bg-table-even'>
               <td className="px-2 py-1">
                 {item.name} {index === userLevel && (
-                  <Badge color="blue" ml={5}>Owned</Badge>
+                  <Badge color={(colorScheme === "ELF") ?
+                    'green' : (
+                      colorScheme === 'GOBLIN' ? 'red' : (
+                        colorScheme === 'UNDEAD' ? 'dark'
+                          : 'blue'
+                      ))} ml={5}>Owned</Badge>
                 )}
               </td>
               <td className="px-2 py-1">

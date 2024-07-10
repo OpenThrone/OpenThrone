@@ -58,6 +58,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         throw new Error('Failed to fetch user data');
       }
       const userData = await response.json();
+      console.log('colorScheme from context:', userData.colorScheme)
       setUser(new UserModel(userData));
       if (userData?.beenAttacked) {
         alertService.error(

@@ -317,3 +317,23 @@ body{
   border-bottom: 3px double rgb(26, 55, 93); /* First border color */
   
 }
+
+.intel-result-container {
+  @apply p-5;
+}
+
+.intel-players-grid {
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-5;
+}
+
+.intel-report {
+  @apply mt-10;
+}
+
+.unit-segments-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2;
+}
+
+.unit-segment {
+  @apply p-2;
+}

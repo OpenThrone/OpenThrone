@@ -30,7 +30,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const router = useRouter();
   const [profile, setUser] = useState<UserModel>(() => new UserModel(users, true));
   const [canAttack, setCanAttack] = useState(false);
-  const [canSpy, setCanSpy] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [lastActive, setLastActive] = useState( 'Never logged in');
@@ -57,7 +56,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     if (profile.id !== users.id) setUser(new UserModel(users, true));
     if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
-    if (!isPlayer && user && (user.id === 1 || user.id === 2)) setCanSpy(true);
     if (profile) {
       const nowdate = new Date();
       if (profile.last_active === null) {
@@ -177,7 +175,12 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
           >
             {player.displayName}
           </Link>
-          {player.is_player && <Badge color="blue" ml={5}>You</Badge>}
+          {player.is_player && <Badge color={(player.colorScheme === "ELF") ?
+            'green' : (
+              player.colorScheme === 'GOBLIN' ? 'red' : (
+                player.colorScheme === 'UNDEAD' ? 'dark'
+                  : 'blue'
+              ))} ml={5}>You</Badge>}
         </Text>
         <Text size="xs" color="dimmed" align="center">
           {player.race} {player.class}

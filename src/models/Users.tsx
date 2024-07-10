@@ -538,7 +538,6 @@ class UserModel {
         const usersOffenseBattleUpgrades = this.battle_upgrades.filter(upgrade => upgrade.type === 'OFFENSE');
         const applicableUpgrades = this.availableOffenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel);
         if (applicableUpgrades.length !== 0) {
-          console.log('totalStat: ', totalStat)
           applicableUpgrades.forEach(upgrade => {
             const userUpgrade = usersOffenseBattleUpgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
             if (userUpgrade && userUpgrade.quantity > 0) {
@@ -557,7 +556,6 @@ class UserModel {
             }
           });
 
-          console.log('totalStat: ', totalStat)
         }
       }
     });
@@ -595,7 +593,6 @@ class UserModel {
    * @returns {number} The defense stat of the user's army.
    */
   get defense(): number {
-    console.log('Defense', this.getArmyStat('DEFENSE'));
     return this.getArmyStat('DEFENSE');
   }
 

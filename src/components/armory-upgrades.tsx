@@ -5,12 +5,15 @@ import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import toLocale from '@/utils/numberFormatting';
 import { Badge } from '@mantine/core';
+import { useUser } from '@/context/users';
 
 const ArmoryUpgradesTab: React.FC<BattleUpgradeProps> = ({
   userLevel,
   fortLevel,
   forceUpdate,
 }) => {
+  const { user } = useUser();
+  const colorScheme = user?.colorScheme;
   return (
     <table className="w-full table-auto bg-gray-800 text-white">
       <thead className="bg-gray-900 text-left">
@@ -28,7 +31,12 @@ const ArmoryUpgradesTab: React.FC<BattleUpgradeProps> = ({
             <tr key={`${item.name}_${item.level}`} className='text-md odd:bg-table-odd even:bg-table-even'>
               <td className="px-4 py-2">
                 {item.name} {item.level === userLevel && (
-                  <Badge color="blue" ml={5}>Owned</Badge>
+                  <Badge color={(colorScheme === "ELF") ?
+                    'green' : (
+                      colorScheme === 'GOBLIN' ? 'red' : (
+                        colorScheme === 'UNDEAD' ? 'dark'
+                          : 'blue'
+                      ))} ml={5}>Owned</Badge>
                 )}
               </td>
               <td className="px-4 py-2">

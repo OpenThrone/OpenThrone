@@ -5,9 +5,12 @@ import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
+import { Paper, Group, SimpleGrid, Title, Text } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBuildingColumns, faCoins, faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 
 const Training = (props) => {
-  const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
+  //const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
   const { user, forceUpdate } = useUser();
   const [workerUnits, setWorkers] = useState(null);
   const [offensiveUnits, setOffensive] = useState(null);
@@ -339,20 +342,41 @@ const Training = (props) => {
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
-      <div className="my-5 flex justify-around">
-        <p className="mb-0">
-          Untrained Citizens:{' '}
-          <span>
-            {user?.units.filter((unit) => unit.type === 'CITIZEN')[0].quantity}
-          </span>
-        </p>
-        <p className="mb-0">
-          Gold On Hand: <span>{toLocale(user?.gold, user?.locale)}</span>
-        </p>
-        <p className="mb-0">
-          Banked Gold: <span>{toLocale(user?.goldInBank, user?.locale)}</span>
-        </p>
-      </div>
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>
+        <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
+          <Group justify='space-between'>
+            <Text size="lg" fw={'bold'} c="dimmed">Untrained Citizens</Text>
+            <FontAwesomeIcon icon={faPeopleGroup} />
+          </Group>
+          <Group>
+            <Text>
+                {user?.units.filter((unit) => unit.type === 'CITIZEN')[0].quantity}
+            </Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="md" radius={'md'} key='GoldOnHand'>
+          <Group justify='space-between'>
+            <Text size="lg" fw={'bold'} c="dimmed">Gold On Hand</Text>
+            <FontAwesomeIcon icon={faCoins} />
+          </Group>
+          <Group>
+            <Text>
+              {toLocale(user?.gold, user?.locale)}
+            </Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="md" radius={'md'} key='BankedGold'>
+          <Group justify='space-between'>
+            <Text size="lg" fw={'bold'} c="dimmed">Banked Gold</Text>
+            <FontAwesomeIcon icon={faBuildingColumns} />
+          </Group>
+          <Group>
+            <Text>
+              {toLocale(user?.goldInBank, user?.locale)}
+            </Text>
+          </Group>
+        </Paper>
+      </SimpleGrid>
       {workerUnits && (
         <NewUnitSection
           heading="Economy"

@@ -1,10 +1,12 @@
 import BattleUpgradesSection from '@/components/battle-upgrade';
-import { ArmoryUpgrades, BattleUpgrades, OffenseiveUpgrades } from '@/constants';
+import { BattleUpgrades, OffenseiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
-import { UnitProps } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
 import Alert from '@/components/alert';
 import { useEffect, useState } from 'react';
+import { SimpleGrid, Paper, Group, Text, Space } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBuildingColumns, faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
 
 const useItems = (user) => {
   const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
@@ -65,16 +67,54 @@ const Upgrades = (props) => {
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
-      <div className="my-5 flex justify-around">
-        <p className="mb-0">
-          Gold On Hand: <span>{toLocale(user?.gold)}</span>
-        </p>
-        <p className="mb-0">
-          Banked Gold: <span>{toLocale(user?.goldInBank)}</span>
-        </p>
-      </div>
-      <br />
-      Only Level 2 and higher units can use battle upgrades.
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
+        <Paper withBorder p="md" radius={'md'} key='GoldOnHand'>
+          <Group justify='space-between'>
+            <Text size="lg" fw={'bold'} c="dimmed">Gold On Hand</Text>
+            <FontAwesomeIcon icon={faCoins} />
+          </Group>
+          <Group>
+            <Text>
+              {toLocale(user?.gold, user?.locale)}
+            </Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="md" radius={'md'} key='BankedGold'>
+          <Group justify='space-between'>
+            <Text size="lg" fw={'bold'} c="dimmed">Banked Gold</Text>
+            <FontAwesomeIcon icon={faBuildingColumns} />
+          </Group>
+          <Group>
+            <Text>
+              {toLocale(user?.goldInBank, user?.locale)}
+            </Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
+          <Group justify='space-between'>
+            <Text size="lg" fw={'bold'} c="dimmed">Offensive Units</Text>
+            <i className="ra ra-crossed-swords ra-fw" />
+          </Group>
+          <Group>
+            <Text>
+              {user?.units.filter((unit) => unit.type === 'OFFENSE')[0].quantity}
+            </Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
+          <Group justify='space-between'>
+            <Text size="lg" fw={'bold'} c="dimmed">Defensive Units</Text>
+            <FontAwesomeIcon icon={faShield} />
+          </Group>
+          <Group>
+            <Text>
+              {user?.units.filter((unit) => unit.type === 'DEFENSE')[0].quantity}
+            </Text>
+          </Group>
+        </Paper>
+      </SimpleGrid>
+      <Space h="md" />
+      <Text size='lg'>Only Level 2 and higher units can use battle upgrades.</Text>
       <div className="mb-4 flex flex-col justify-around">
         <BattleUpgradesSection heading='Offense' type='OFFENSE' items={useItems(user).OFFENSE} />
 

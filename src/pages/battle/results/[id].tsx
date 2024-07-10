@@ -1,39 +1,46 @@
 import { AnimatePresence, motion } from 'framer-motion';
-
+import { getSession, useSession } from 'next-auth/react';
 import prisma from '@/lib/prisma';
-import { getSession } from 'next-auth/react';
-import { getLevelFromXP } from '@/utils/utilities';
 import AttackResult from '@/components/attackResult';
 import IntelResult from '@/components/IntelResult';
 import AssassinateResult from '@/components/AssassinateResult';
-import { InferGetServerSidePropsType } from "next";
+import { InferGetStaticPropsType } from "next";
+import { useRouter } from 'next/router';
 
-const results = ({ battle, viewerID }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const { stats } = battle;
+const ResultsPage = ({ battle, lastGenerated }: InferGetStaticPropsType<typeof getStaticProps>) => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  console.log('stats', stats);
-  console.log(battle)
+  if (status === 'loading') {
+    return <p>Loading...</p>;
+  }
+
+  if (session) {
+    console.log('session', session)
+  }
+
+  if (status === 'unauthenticated') {
+    router.replace('/auth/signin');
+    return null;
+  }
 
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Battle Results</h2>
       {battle.type === 'attack' ? (
-        <AttackResult battle={battle} viewerID={viewerID} />
+        <AttackResult battle={battle} viewerID={session.user.id} />
       ) : battle.type === 'ASSASSINATE' ? (
-        <AssassinateResult battle={battle} viewerID={viewerID} />
+        <AssassinateResult battle={battle} viewerID={session.user.id} />
       ) : (
-        <IntelResult battle={battle} viewerID={viewerID} />
+            <IntelResult battle={battle} viewerID={session.user.id} lastGenerated={lastGenerated} />
       )}
     </div>
   );
 };
 
-export const getServerSideProps = async (context) => {
-  const { query } = context;
-  const id = parseInt(query.id, 10);
-
-  const session = await getSession(context);
-  const viewerID = parseInt(session?.user?.id.toString());
+export const getStaticProps = async (context) => {
+  const { params } = context;
+  const id = parseInt(params.id, 10);
 
   const results = await prisma.attack_log.findFirst({
     where: { id },
@@ -42,20 +49,38 @@ export const getServerSideProps = async (context) => {
         select: {
           id: true,
           display_name: true,
-          race:true
+          race: true,
         },
       },
       defenderPlayer: {
         select: {
           id: true,
           display_name: true,
-          race: true
+          race: true,
         },
       },
     },
   });
 
-  return { props: { battle: results, viewerID } };
+  return {
+    props: { battle: results, lastGenerated: new Date().toISOString() },
+    revalidate: 60, // Revalidate the page every 60 seconds
+  };
 };
 
-export default results;
+export const getStaticPaths = async () => {
+  const battles = await prisma.attack_log.findMany({
+    select: { id: true },
+  });
+
+  const paths = battles.map((battle) => ({
+    params: { id: battle.id.toString() },
+  }));
+
+  return {
+    paths,
+    fallback: 'blocking', // Use 'blocking' to generate paths on-demand if not pre-rendered
+  };
+};
+
+export default ResultsPage;

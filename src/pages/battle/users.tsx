@@ -16,6 +16,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
+  const colorScheme = user?.colorScheme;
   const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1);
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'overallrank');
   const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'asc');
@@ -106,7 +107,12 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                             >
                               {player.displayName}
                             </Link>
-                            {player.is_player && <Badge color="blue" ml={5}>You</Badge>}
+                            {player.is_player && <Badge color={(colorScheme === "ELF") ?
+                              'green' : (
+                                colorScheme === 'GOBLIN' ? 'red' : (
+                                  colorScheme === 'UNDEAD' ? 'dark'
+                                    : 'blue'
+                                ))} ml={5}>You</Badge>}
                           </Text>
                           <Text fz="xs" c="dimmed">
                             {player.race} {player.class}

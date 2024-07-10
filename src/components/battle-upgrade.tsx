@@ -8,6 +8,7 @@ import toLocale from '@/utils/numberFormatting';
 
 import { useUser } from '../context/users';
 import { alertService } from '@/services';
+import { Group, NumberInput, Paper, Table, Text } from '@mantine/core';
 
 const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   heading,
@@ -15,12 +16,15 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
 }) => {
   const { user, forceUpdate } = useUser();
   const [getItems, setItems] = useState<UnitProps[] | []>(items || []);
+  const [sectionEnabled, setSectionEnabled] = useState(false);
 
   useEffect(() => {
     if (items) {
       items.forEach((item) => {
         if (item.ownedItems === undefined) {
           item.ownedItems = 0;
+        } else if (item.ownedItems > 0) {
+          setSectionEnabled(true);
         }
       });
       setItems(items);
@@ -100,6 +104,10 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
       alertService.error('User not found');
       return;
     }
+    if (itemsToEquip.length === 0) {
+      alertService.error('Please select items to equip');
+      return;
+    }
     try {
       const response = await fetch('/api/battle/upgrades', {
         method: 'POST',
@@ -150,81 +158,102 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   };
 
   return (
-    <div className="my-10 rounded-lg bg-gray-800">
-      <table className="w-full table-auto">
-        <thead>
-          <tr>
-            <th className="w-60 px-4 py-2">{heading}</th>
-            <th className="w-10 px-4 py-2">You Have</th>
-            <th className="w-10 px-4 py-2">Cost</th>
-            <th className="w-10 px-4 py-2">Stats</th>
-            <th className="w-10 px-4 py-2">Quantity</th>
-          </tr>
-        </thead>
-        <tbody>
+    <Paper className="my-10 rounded-lg bg-gray-800">
+      <Table striped highlightOnHover>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th className="w-60 px-4 py-2">
+              {heading}
+            </Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
           {getItems.map((item: UnitProps) => {
             if (item.enabled) {
               return (
 
-                <tr key={item.id}>
-                  <td className="border px-4 py-2">{item.name}</td>
-                  <td className="border px-4 py-2">{item.ownedItems}</td>
-                  <td className="border px-4 py-2">
-                    {toLocale(item.cost, user?.locale)}
-                  </td>
+                <Table.Tr key={item.id}>
+                  <Table.Td>
+                    <Group gap={'sm'} grow>
+                      <div>
+                        <Text fz="lg" fw={500} className='font-medieval'>{item.name}
+                          <span className='text-xs font-medieval'>
+                            {' '}(+{item.bonus} {heading})
+                          </span>
+                        </Text>
+                        <Text fz="sm" c='#ADB5BD'>
+                          +{(item.unitsCovered > 1 ? toLocale(item?.bonus / item.unitsCovered, user?.locale) : toLocale(item?.bonus || 0, user?.locale))} {item.type}/Unit
+                        </Text>
+                        <Text fz="sm" c='#ADB5BD'>
+                          Costs: {toLocale(item.cost)} Gold
+                        </Text>
+                        <Text fz="sm" c='#ADB5BD'>
+                          Sale Value: {toLocale(Math.floor(parseInt(item.cost) * .75))}
+                        </Text>
 
-                  <td className="border px-4 py-2">
-                    <ul>
-                      <li>+{(item.unitsCovered > 1 ? toLocale(item?.bonus / item.unitsCovered, user?.locale) : toLocale(item?.bonus || 0, user?.locale))} {item.type}/Unit</li>
-                      <li>Holds: {item.unitsCovered} Units</li>
-                      <li>Min Unit Level: {item.minUnitLevel}</li>
-                    </ul>
-                  </td>
-                  <td className="border px-4 py-2">
-                    <input
-                      type="number"
+                      </div>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td className='w-80 px-4 py-2'>
+                    <Group gap={'sm'} grow>
+                      <div>
+                        <Text fz="sm" c='#ADB5BD'>
+                        <span className='font-medieval'>Owned: </span><span id={`${item.id}_owned`}>{toLocale(item.ownedItems)}</span>
+                      </Text>
+                        <Text fz="sm" c='#ADB5BD'>
+                        <span className='font-medieval'>Holds: {item.unitsCovered} Units</span>
+                      </Text>
+                        <Text fz="sm" c='#ADB5BD'>
+                        <span className='font-medieval'>Min Unit Level: {item.minUnitLevel}</span>
+                        </Text>
+                      </div>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td className='w-40 px-4 py-2'>
+                    <NumberInput
                       aria-labelledby={item.id}
                       name={`${item.type}_${item.level}`}
-                      defaultValue={0}
                       min={0}
-                      onChange={handleInputChange}
                       className="w-full rounded-md bg-gray-900 p-2"
+                      onChange={(value: number | undefined) => handleInputChange}
+                      allowNegative={false}
                     />
-                  </td>
-                </tr>
+                  </Table.Td>
+
+
+                </Table.Tr>
               );
             } else {
-              console.log(item);
               return (
-                <tr key={item.id}>
-                  <td className="border px-4 py-2">{item.name}</td>
-                  <td className="border px-4 py-2">-</td>
-                  <td className="border px-4 py-2" colSpan={3}>
+                <Table.Tr key={item.id}>
+                  <Table.Td className="border px-4 py-2">{item.name}</Table.Td>
+                  <Table.Td className="border px-4 py-2" colSpan={3}>
                     <p className="text-center">Unlocked with {item.SiegeUpgrade}</p>
-                  </td>
-                </tr>
+                  </Table.Td>
+                </Table.Tr>
               );
             }
           })}
-        </tbody>
-      </table>
+        </Table.Tbody>
+      </Table>
       <div className="mt-4 flex justify-between">
         <button
           type="button"
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          onClick={async() => await handleEquip('buy')}
+          className={`rounded px-4 py-2 font-bold text-white hover:bg-blue-700 ${!sectionEnabled ? 'cursor-not-allowed bg-blue-700' : 'bg-blue-500'}`}
+          disabled={!sectionEnabled}
+          onClick={async () => await handleEquip('buy')}
         >
           Buy
         </button>
         <button
           type="button"
-          className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+          className={`rounded px-4 py-2 font-bold text-white ${!sectionEnabled ? 'cursor-not-allowed bg-red-700' : 'bg-red-500'}`}
           onClick={async () => await handleEquip('sell')}
         >
           Sell
         </button>
       </div>
-    </div>
+    </Paper>
   );
 };
 

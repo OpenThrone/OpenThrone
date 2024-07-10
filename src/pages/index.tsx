@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 
 import { useLayout } from '@/context/LayoutContext';
 
-const Index = () => {
+const Index = (props) => {
   const { setMeta, meta } = useLayout();
 
   useEffect(() => {
@@ -32,7 +32,7 @@ const Index = () => {
               and communicate via the in-game message system
             </li>
             <li>
-              <span className="line-through">
+              <span>
                 Create a character profile with a custom avatar
               </span>
             </li>

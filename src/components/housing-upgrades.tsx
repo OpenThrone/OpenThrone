@@ -1,4 +1,5 @@
 import { Fortifications, HouseUpgrades } from '@/constants';
+import { useUser } from '@/context/users';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import toLocale from '@/utils/numberFormatting';
@@ -9,6 +10,8 @@ const HousingTab: React.FC<BattleUpgradeProps> = ({
   fortLevel,
   forceUpdate,
 }) => {
+  const { user } = useUser();
+  const colorScheme = user?.colorScheme;
   return (
     <table className="min-w-full table-auto bg-gray-900 text-white">
       <thead className="bg-gray-900 text-left">
@@ -27,7 +30,12 @@ const HousingTab: React.FC<BattleUpgradeProps> = ({
             <tr key={`${item.index}`} className='odd:bg-table-odd even:bg-table-even'>
               <td className="px-4 py-2">
                 {item.name} {index === userLevel && (
-                  <Badge color="blue" ml={5}>Owned</Badge>
+                  <Badge color={(colorScheme === "ELF") ?
+                    'green' : (
+                      colorScheme === 'GOBLIN' ? 'red' : (
+                        colorScheme === 'UNDEAD' ? 'dark'
+                          : 'blue'
+                      ))} ml={5}>Owned</Badge>
                 )}
               </td>
               <td className="px-4 py-2">

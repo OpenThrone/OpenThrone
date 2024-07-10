@@ -56,6 +56,7 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
 
     return null; // Default return when none of the conditions are met
   };
+  const colorScheme = user?.colorScheme;
   return (
     <table className="min-w-full table-auto bg-gray-800 text-white">
       <thead className="bg-gray-900 text-left">
@@ -76,7 +77,12 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
               <tr key={`${item.level}_${item.name}`} className="text-md odd:bg-table-odd even:bg-table-even">
                 <td className="px-2 py-1">
                   {item.name} {item.level === userLevel && (
-                    <Badge color="blue" ml={5}>Owned</Badge>
+                    <Badge color={(colorScheme === "ELF") ?
+                      'green' : (
+                        colorScheme === 'GOBLIN' ? 'red' : (
+                          colorScheme === 'UNDEAD' ? 'dark'
+                            : 'blue'
+                        ))} ml={5}>Owned</Badge>
                   )}
                 </td>
                 <td className="px-2 py-1">

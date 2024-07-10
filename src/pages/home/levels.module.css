@@ -1,0 +1,51 @@
+.starLayout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem; /* Adjust as needed */
+}
+
+.starRow {
+  display: flex;
+  justify-content: center;
+  gap: 2rem; /* Adjust as needed */
+}
+
+.starRow.row1 {
+  justify-content: center;
+}
+
+.starRow.row2 {
+  justify-content: space-around; /* Distribute space evenly */
+  width: 80%; /* Adjust as needed for proper spacing */
+}
+
+.starRow.row3 {
+  justify-content: space-around; /* Distribute space evenly */
+  width: 60%; /* Adjust as needed for proper spacing */
+}
+
+.starPoint {
+  width: 300px; /* Default width */
+  background-color: #1A1B1E;
+  padding: 1rem; /* Add some padding for better spacing */
+  margin: 0 auto; /* Center the card */
+}
+
+@media (max-width: 768px) {
+  .starRow {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .starPoint {
+    width: 100%; /* Adjust width for mobile devices */
+  }
+  
+  .starRow.row1,
+  .starRow.row2,
+  .starRow.row3 {
+    justify-content: space-evenly;
+    width: 85%;
+  }
+}
