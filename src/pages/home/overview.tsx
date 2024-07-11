@@ -3,7 +3,9 @@ import NewsAccordion from '@/components/newsAccordion';
 import { useUser } from '@/context/users';
 import { toLocale } from '@/utils/numberFormatting';
 import { useEffect, useState } from 'react';
-import { Text, Card, Space, Table, Group, Center, Flex } from '@mantine/core';
+import { Text, Card, Space, Table, Group, Center, Flex, ThemeIcon } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUsers, faShieldAlt, faUserShield, faCoins, faLevelUpAlt, faSyncAlt, faStar, faPiggyBank, faTrophy, faMedal, faUserSecret, faCrown, faEye, faShieldVirus } from '@fortawesome/free-solid-svg-icons';
 
 const Overview = (props) => {
   const [getNews, setNews] = useState(['no news']);
@@ -70,11 +72,11 @@ const Overview = (props) => {
         gap="md"
         className="my-4"
       >
-        <Card shadow="sm" ps="md" pb='md' radius="md" className="w-full">
+        <Card shadow="sm" ps="xs" pb='md' radius="md" className="w-full">
           <Table striped highlightOnHover verticalSpacing="md" className="text-white">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th colSpan={4}>
+                <Table.Th colSpan={2}>
                   <Center>
                     <Text size='md' fw={'bolder'} className='font-medieval'>Statistics</Text>
                   </Center>
@@ -83,30 +85,100 @@ const Overview = (props) => {
             </Table.Thead>
             <Table.Tbody>
               <Table.Tr>
-                <Table.Td>Population</Table.Td>
-                <Table.Td>{toLocale(user?.population, user?.locale)}</Table.Td>
-                <Table.Td>Fort Health</Table.Td>
                 <Table.Td>
-                  {user?.fortHealth.current}/{user?.fortHealth.max}({user?.fortHealth.percentage}%)
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faUsers} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Population</Text>
+                      <Text>{toLocale(user?.population, user?.locale)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faShieldAlt} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Fort Health</Text>
+                      <Text>{user?.fortHealth.current}/{user?.fortHealth.max}({user?.fortHealth.percentage}%)</Text>
+                    </div>
+                  </Group>
                 </Table.Td>
               </Table.Tr>
               <Table.Tr>
-                <Table.Td>Army Size</Table.Td>
-                <Table.Td>{toLocale(user?.armySize, user?.locale)}</Table.Td>
-                <Table.Td>Gold</Table.Td>
-                <Table.Td>{toLocale(user?.gold, user?.locale)}</Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faUserShield} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Army Size</Text>
+                      <Text>{toLocale(user?.armySize, user?.locale)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faCoins} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Gold</Text>
+                      <Text>{toLocale(user?.gold, user?.locale)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
               </Table.Tr>
               <Table.Tr>
-                <Table.Td>Level</Table.Td>
-                <Table.Td>{toLocale(user?.level, user?.locale)}</Table.Td>
-                <Table.Td>Gold Per Turn</Table.Td>
-                <Table.Td>{toLocale(user?.goldPerTurn, user?.locale)}</Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faLevelUpAlt} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Level</Text>
+                      <Text>{toLocale(user?.level, user?.locale)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faSyncAlt} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Gold Per Turn</Text>
+                      <Text>{toLocale(user?.goldPerTurn, user?.locale)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
               </Table.Tr>
               <Table.Tr>
-                <Table.Td>XP to Next Level</Table.Td>
-                <Table.Td>{toLocale(user?.xpToNextLevel, user?.locale)}</Table.Td>
-                <Table.Td>Gold in Bank</Table.Td>
-                <Table.Td>{toLocale(user?.goldInBank, user?.locale)}</Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faStar} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">XP to Next Level</Text>
+                      <Text>{toLocale(user?.xpToNextLevel, user?.locale)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faPiggyBank} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Gold in Bank</Text>
+                      <Text>{toLocale(user?.goldInBank, user?.locale)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
               </Table.Tr>
             </Table.Tbody>
           </Table>
@@ -115,33 +187,105 @@ const Overview = (props) => {
           <Table striped highlightOnHover verticalSpacing="md" className="text-white">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th colSpan={4}><Center><Text size='md' fw={'bolder'} className='font-medieval'>War Statistics</Text></Center></Table.Th>
+                <Table.Th colSpan={2}><Center><Text size='md' fw={'bolder'} className='font-medieval'>War Statistics</Text></Center></Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               <Table.Tr>
-                <Table.Td>Offense</Table.Td>
-                <Table.Td>{user ? toLocale(user.offense) : '0'}</Table.Td>
-                <Table.Td>Attacks Won</Table.Td>
-                <Table.Td>{user ? toLocale(user.attacksWon) : '0'}</Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <i className="ra ra-crossed-swords ra-fw" />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Offense</Text>
+                      <Text>{user ? toLocale(user.offense) : '0'}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faTrophy} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Attacks Won</Text>
+                      <Text>{user ? toLocale(user.attacksWon) : '0'}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
               </Table.Tr>
               <Table.Tr>
-                <Table.Td>Defense</Table.Td>
-                <Table.Td>{toLocale(user?.defense)}</Table.Td>
-                <Table.Td>Defends Won</Table.Td>
-                <Table.Td>{toLocale(user?.defendsWon)}</Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faShieldAlt} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Defense</Text>
+                      <Text>{toLocale(user?.defense)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faMedal} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Defends Won</Text>
+                      <Text>{toLocale(user?.defendsWon)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
               </Table.Tr>
               <Table.Tr>
-                <Table.Td>Spy Offense</Table.Td>
-                <Table.Td>{toLocale(user?.spy)}</Table.Td>
-                <Table.Td>Spy Victories</Table.Td>
-                <Table.Td>{toLocale(user?.spyVictories)}</Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faUserSecret} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Spy Offense</Text>
+                      <Text>{toLocale(user?.spy)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faCrown} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Spy Victories</Text>
+                      <Text>{toLocale(user?.spyVictories)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
               </Table.Tr>
               <Table.Tr>
-                <Table.Td>Spy Defense</Table.Td>
-                <Table.Td>{toLocale(user?.sentry)}</Table.Td>
-                <Table.Td>Sentry Victories</Table.Td>
-                <Table.Td>{toLocale(user?.sentryVictories)}</Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faEye} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Spy Defense</Text>
+                      <Text>{toLocale(user?.sentry)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faShieldVirus} />
+                      </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Sentry Victories</Text>
+                      <Text>{toLocale(user?.sentryVictories)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
               </Table.Tr>
             </Table.Tbody>
           </Table>
