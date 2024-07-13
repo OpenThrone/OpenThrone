@@ -1,6 +1,8 @@
+// /api/alliances/getAll
 import prisma from "@/lib/prisma";
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
+import { stringifyObj } from "@/utils/numberFormatting";
 
 const getAll = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
@@ -35,8 +37,8 @@ const getAll = async (req: NextApiRequest, res: NextApiResponse) => {
       },
     },
   });
-  
 
-  return res.status(200).json(Alliances);
+  return res.status(200).json(stringifyObj(Alliances));
 };
+
 export default withAuth(getAll);
