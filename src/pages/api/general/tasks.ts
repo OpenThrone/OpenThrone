@@ -1,4 +1,3 @@
-// pages/api/tasks.ts
 import prisma from "@/lib/prisma";
 import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -15,10 +14,9 @@ export default async function handler(
       message: `Unauthorized: ${token} ${process.env.TASK_SECRET}`,
     });
   }
+
   const currentTime = new Date();
   const isCloseToMidnight = currentTime.getHours() === 0 && currentTime.getMinutes() < 30;
-
-
 
   // Start your task logic here
 
@@ -44,6 +42,7 @@ export default async function handler(
         };
         newUser.units.push(citizenUnit);
       }
+
       let updateData = {
         gold: updatedGold,
         attack_turns: user.attack_turns + 1,
@@ -55,6 +54,7 @@ export default async function handler(
           units: newUser.units,
         };
       }
+
       if (!user.recruit_link) {
         updateData = {
           ...updateData,
@@ -69,13 +69,47 @@ export default async function handler(
     } catch (error) {
       console.log(`Error updating user ${user.id}: ${error.message}`)
     }
-
   });
+
+  if (isCloseToMidnight) {
+    const twentyDaysAgo = new Date();
+    twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
+
+    const cleanupPromises = [
+      prisma.attack_log.deleteMany({
+        where: {
+          timestamp: {
+            lt: twentyDaysAgo,
+          },
+        },
+      }),
+      prisma.bank_history.deleteMany({
+        where: {
+          date_time: {
+            lt: twentyDaysAgo,
+          },
+        },
+      }),
+      prisma.recruit_history.deleteMany({
+        where: {
+          timestamp: {
+            lt: twentyDaysAgo,
+          },
+        },
+      }),
+    ];
+
+    try {
+      await Promise.all(cleanupPromises);
+    } catch (error) {
+      console.log(`Error cleaning up old records: ${error.message}`);
+    }
+  }
+
   try {
     await Promise.all(updatePromises);
 
     // Finish your task logic
-
     return res.status(200).json({ message: 'Tasks executed successfully' });
   } catch (error) {
     return res
