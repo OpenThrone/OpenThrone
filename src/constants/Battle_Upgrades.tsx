@@ -16,7 +16,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
   {
     type: 'OFFENSE',
     name: 'War Elephant',
-    SiegeUpgradeLevel: 6,
+    SiegeUpgradeLevel: 6, //16
     level: 2,
     bonus: 1000,
     cost: 5000000,
@@ -40,7 +40,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
   {
     type: 'DEFENSE',
     name: 'Catapult',
-    SiegeUpgradeLevel: 6,
+    SiegeUpgradeLevel: 6, //16
     level: 2,
     bonus: 1000,
     cost: 5000000,
@@ -64,7 +64,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
   {
     type: 'SPY',
     name: 'Informant',
-    SiegeUpgradeLevel: 6,
+    SiegeUpgradeLevel: 6, //16
     level: 2,
     bonus: 1000,
     cost: 5000000,
@@ -88,7 +88,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
   {
     type: 'SENTRY',
     name: 'Watch Tower',
-    SiegeUpgradeLevel: 6,
+    SiegeUpgradeLevel: 6, //16
     level: 2,
     bonus: 1000,
     cost: 5000000,

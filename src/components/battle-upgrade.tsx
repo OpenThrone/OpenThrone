@@ -225,8 +225,15 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
             } else {
               return (
                 <Table.Tr key={item.id}>
-                  <Table.Td className="border px-4 py-2">{item.name}</Table.Td>
-                  <Table.Td className="border px-4 py-2" colSpan={3}>
+                  <Table.Td>
+                    <Group gap={'sm'} grow>
+                      <div>
+                        <Text fz="lg" fw={500} className='font-medieval'>{item.name}
+                        </Text>
+                      </div>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td colSpan={3}>
                     <p className="text-center">Unlocked with {item.SiegeUpgrade}</p>
                   </Table.Td>
                 </Table.Tr>
