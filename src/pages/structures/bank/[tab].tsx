@@ -6,7 +6,7 @@ import { alertService } from '@/services';
 import { useUser } from '@/context/users';
 import Alert from '@/components/alert';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
-import { Chip, Group, Paper, Table, Tabs, SimpleGrid, Text, Space, NumberInput, rem, ThemeIcon } from '@mantine/core';
+import { Chip, Group, Paper, Table, Tabs, SimpleGrid, Text, Space, NumberInput, rem, ThemeIcon, Button } from '@mantine/core';
 import { BiCoinStack, BiMoney, BiMoneyWithdraw, BiSolidBank } from "react-icons/bi";
 import classes from './[tab].module.css'
 import user from '@/pages/messaging/compose/[user]';
@@ -155,13 +155,13 @@ const Bank = (props) => {
       </div>
       <SimpleGrid cols={{base:1, xs:2, md:4}}>
         <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
-            <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
-          </ThemeIcon>
           <Group justify="space-between">
-            <Text size="sm" c="dimmed">
+            <Text size="lg" fw={'bold'} c="dimmed">
               Gold On Hand
             </Text>
+            <ThemeIcon c='white'>
+              <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
           </Group>
 
           <Group align="flex-end" gap="xs" mt={10}>
@@ -169,26 +169,26 @@ const Bank = (props) => {
           </Group>
         </Paper>
         <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
-            <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
-          </ThemeIcon>
           <Group justify="space-between">
-            <Text size="xs" c="dimmed">
+            <Text size="lg" fw={'bold'} c="dimmed">
               Banked Gold
             </Text>
+            <ThemeIcon c='white'>
+              <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
           </Group>
           <Group align="flex-end" gap="xs" mt={10}>
             <Text>{parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}</Text>
           </Group>
         </Paper>
         <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
-            <BiMoney style={{ width: rem(15), height: rem(15) }}  />
-          </ThemeIcon>
           <Group justify="space-between">
-            <Text size="xs" c="dimmed">
-              Max Deposits Per Day
+            <Text size="lg" fw={'bold'} c="dimmed">
+              Daily Deposits
             </Text>
+            <ThemeIcon c='white'>
+              <BiMoney style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
           </Group>
 
           <Group align="flex-end" gap="xs" mt={10}>
@@ -196,13 +196,13 @@ const Bank = (props) => {
           </Group>
         </Paper>
         <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
-            <BiMoneyWithdraw style={{ width: rem(15), height: rem(15) }}  />
-          </ThemeIcon>
           <Group justify="space-between">
-            <Text size="sm" c="dimmed">
-              Deposits Available Today
+            <Text size="lg" fw={'bold'} c="dimmed">
+              Deposits Available
             </Text>
+            <ThemeIcon c='white'>
+              <BiMoney style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
           </Group>
 
           <Group align="flex-end" gap="sm" mt={10}>
@@ -211,7 +211,7 @@ const Bank = (props) => {
           </Group>
           {despositsAvailable < depositsMax && (
             <Group>
-              <Text size="xs" c="dimmed">
+              <Text size="lg" c="dimmed">
                 Next deposit available in {nextDepositAvailable.hours}:{nextDepositAvailable.minutes}
               </Text>
             </Group>
@@ -274,12 +274,12 @@ const Bank = (props) => {
               />
             </div>
             <div>
-              <button
+              <Button
                 type="submit"
-                className="bg-blue-500 px-4 py-2 text-white"
+                className="px-4 py-2 text-white"
               >
                 Deposit
-              </button>
+              </Button>
             </div>
           </form>
           <form
@@ -303,12 +303,12 @@ const Bank = (props) => {
                   allowNegative={false}
               /></div>
             <div>
-              <button
+              <Button
                 type="submit"
-                className="bg-blue-500 px-4 py-2 text-white"
+                className="px-4 py-2 text-white"
               >
                 Withdraw
-              </button>
+              </Button>
             </div>
             </form>
           </Paper>

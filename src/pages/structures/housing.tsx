@@ -1,10 +1,11 @@
-import { HouseUpgrades } from '@/constants';
+import { Fortifications, HouseUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
-import { Group, Paper, rem, ThemeIcon, Text } from '@mantine/core';
+import { Group, Paper, rem, ThemeIcon, Text, SimpleGrid, Center, RingProgress, Space, Stack } from '@mantine/core';
 import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 import classes from './housing.module.css';
 import { useEffect, useState } from 'react';
 import toLocale from '@/utils/numberFormatting';
+import Alert from '@/components/alert';
 
 const Housing = (props) => {
   const { user } = useUser();
@@ -15,6 +16,7 @@ const Housing = (props) => {
   const [citizens, setCitizens] = useState(0);
   const [citizensDaily, setCitizensDaily] = useState(0);
   const [houseUpgrade, setHouseUpgrade] = useState(HouseUpgrades[houseLevel]);
+  const [nextUpgrade, setNextUpgrade] = useState(HouseUpgrades[houseLevel + 1]);
 
   useEffect(() => {
     setMounted(true); // Set mounted to true when component mounts
@@ -23,6 +25,7 @@ const Housing = (props) => {
   useEffect(() => {
     if (!user) return;
     setHouseUpgrade(HouseUpgrades[user.houseLevel]);
+    setNextUpgrade(HouseUpgrades[user.houseLevel + 1]);
     setHouseLevel(user.houseLevel);
     setGold(user.gold);
     setGoldInBank(user.goldInBank);
@@ -33,70 +36,93 @@ const Housing = (props) => {
   if (!mounted) return null; // Render nothing on the server
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Housing</h2>
-      <div className="my-5 flex justify-center justify-evenly">
-        <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
-            <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
-          </ThemeIcon>
+    <div className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
+      <h2 className="text-2xl font-bold page-title">Housing</h2>
+      <div className="my-5 flex justify-between">
+        <Alert />
+      </div>
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 2 }}>
+        <Paper withBorder p="sm" radius="md">
           <Group justify="space-between">
-            <Text size="sm" c="dimmed">
-              Gold On Hand
+            <Text size="lg" fw={'bold'} c="dimmed">
+              Gold In Hand
             </Text>
+            <ThemeIcon c='white'>
+              <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
           </Group>
           <Group align="flex-end" gap="xs" mt={10}>
-            <Text>{toLocale(gold)}</Text>
+            <Text>{parseInt(user?.gold?.toString() ?? "0").toLocaleString()}</Text>
           </Group>
         </Paper>
-        <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <ThemeIcon size={30} radius={30} className={classes.icon} color='gray'>
-            <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
-          </ThemeIcon>
+        <Paper withBorder p="sm" radius="md">
           <Group justify="space-between">
-            <Text size="xs" c="dimmed">
+            <Text size="lg" fw={'bold'} c="dimmed">
               Banked Gold
             </Text>
+            <ThemeIcon c='white'>
+              <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
           </Group>
           <Group align="flex-end" gap="xs" mt={10}>
-            <Text>{toLocale(goldInBank)}</Text>
+            <Text>{parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}</Text>
           </Group>
         </Paper>
-      </div>
+      </SimpleGrid>
 
-      <div className="my-5 flex justify-center">
-        <table className="my-4 w-10/12 table-auto text-white">
-          <thead>
-            <tr className="odd:bg-table-even even:bg-table-odd">
-              <th colSpan={4}>Housing</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="odd:bg-table-odd even:bg-table-even">
-              Current Housing Level:{' '}
-              <span className="text-yellow-600">
-                {houseUpgrade.name}{' '}
-              </span>
-              <br />
-              <sub className="text-gray-400">
-                To upgrade your housing, visit the structure upgrades page.
-              </sub>
-            </tr>
-            <tr className="odd:bg-table-odd even:bg-table-even">
-              New Citizens Per Day:{' '}
-              <span className="text-yellow-600">
-                {houseUpgrade.citizensDaily}
-              </span>
-              <br />
-              <sub className="text-gray-400">
-                Housing brings new citizens to your fortification every day.
-                <br />
-                You will gain a new citizen every day at midnight OT time.
-              </sub>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <Space h="md" />
+
+      <SimpleGrid cols={{ base: 1, md: 2 }}>
+        <Paper withBorder radius="md" p="md" className="w-full mb-4">
+          <Group position="apart" align="flex-start">
+            <Stack spacing="xs">
+                
+              <Text>
+                <Text fw={700} size="xl" className='font-medieval'>
+                  {houseUpgrade.name}
+                </Text>
+                <Text size="xs" color='dimmed'>
+                  Housing brings new citizens to your fortification every day.
+                </Text>
+              </Text>
+              
+              <Text>
+              <Text size="sm" color="dimmed">
+                New Citizens Per Day: <Text component="span" color="lightgray">{houseUpgrade.citizensDaily}</Text>
+                </Text>
+                <Text size='xs' color='dimmed'>
+                  You will gain a new citizen every day at midnight OT time.
+                  </Text>
+              </Text>
+            </Stack>
+          </Group>
+        </Paper>
+        <Paper withBorder radius="md" p="md" className="w-full mb-4">
+          <Group position="apart" align="flex-start">
+            <Stack spacing="xs">
+              <Text>
+                <Text fw={700} size="xl" className='font-medieval'>
+                  <span color='dimmed'>Next Upgrade:</span> {nextUpgrade.name}
+                </Text>
+                <Text size="xs" color='dimmed'>
+                  Upgrade your housing to bring more citizens to your fortification every day.
+                </Text>
+              </Text>
+              <Text size="sm" color="dimmed">
+                New Citizens Per Day: <Text component="span" color="lightgray">{nextUpgrade.citizensDaily}</Text>
+              </Text>
+              <Text size="sm" color="dimmed">
+                Fortification Required: <Text component="span" color="lightgray">{Fortifications[nextUpgrade.fortLevel].name}</Text>
+              </Text>
+              <Text size="sm" color="dimmed">
+                Cost: <Text component="span" color="lightgray">{nextUpgrade.cost} Gold</Text>
+              </Text>
+            </Stack>
+          </Group>
+        </Paper>
+      </SimpleGrid>
+
+      
     </div>
   );
 };

@@ -167,7 +167,7 @@ const Sidebar: React.FC = () => {
         paddingTop: '15px',
         paddingBottom: '30px',
       }}>
-        <div className="xs:p-14 md:p-6 mt-2">
+        <div className="p-10 md:p-4 mt-2">
           <h6 className="advisor-title text-center font-medieval font-bold text-xl">
             <span> </span> Advisor <span> </span>
           </h6>

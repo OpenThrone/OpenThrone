@@ -3,7 +3,7 @@ import NewsAccordion from '@/components/newsAccordion';
 import { useUser } from '@/context/users';
 import { toLocale } from '@/utils/numberFormatting';
 import { useEffect, useState } from 'react';
-import { Text, Card, Space, Table, Group, Center, Flex, ThemeIcon } from '@mantine/core';
+import { Text, Card, Space, Table, Group, Center, Flex, ThemeIcon, Paper } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faShieldAlt, faUserShield, faCoins, faLevelUpAlt, faSyncAlt, faStar, faPiggyBank, faTrophy, faMedal, faUserSecret, faCrown, faEye, faShieldVirus } from '@fortawesome/free-solid-svg-icons';
 
@@ -45,26 +45,40 @@ const Overview = (props) => {
       </Text>
       <Space h="md" />
       <Center>
-        <Text size="lg" align="center">
-          <span className="text-white">{user?.displayName}</span> is a{user?.race === 'ELF' || user?.race === 'UNDEAD' ? 'n ' : ' '}
-          {user?.race} {user?.class}
-        </Text>
-      </Center>
-      <Space h="md" />
-      <Group position="apart" grow>
-        <Alert />
-      </Group>
-      <Space h="md" />
-      <Center>
-        <Text size="lg" align="center">
-          Share this link to gain up to 25 citizens per day: {' '}
-          <a
-            href={`https://OpenThrone.dev/recruit/${user?.recruitingLink}`}
-            style={{ color: '#1E90FF' }}
-          >
-            {user?.recruitingLink}
-          </a>
-        </Text>
+        <Paper w={{ sm: '100%', md: '80%' }} shadow="sm" ps="sm" pb='md' radius="md">
+          <Group position="apart" grow>
+            <Alert />
+          </Group>
+          <Space h="md" />
+          <Center>
+            <div className='hidden md:block'>
+              <Text size="lg" align="center">
+                <span className="text-white">{user?.displayName}</span> is a{user?.race === 'ELF' || user?.race === 'UNDEAD' ? 'n ' : ' '}
+                {user?.race} {user?.class}
+              </Text>
+            </div>
+            <div className='block md:hidden'>
+              <Text size="lg" align="center">
+                <span className="text-white">{user?.displayName}</span></Text>
+              <Text size='md' align='center'>
+                {user?.race === 'ELF' || user?.race === 'UNDEAD' ? 'n ' : ' '}
+                {user?.race} {user?.class}
+              </Text>
+            </div>
+          </Center>
+          <Space h="md" />
+          <Center>
+            <Text size="lg" align="center">
+              Share this link to gain up to 25 citizens per day: {' '}
+              <a
+                href={`https://OpenThrone.dev/recruit/${user?.recruitingLink}`}
+                style={{ color: '#1E90FF' }}
+              >
+                {user?.recruitingLink}
+              </a>
+            </Text>
+          </Center>
+        </Paper>
       </Center>
       <Space h="md" />
       <Flex
@@ -100,7 +114,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faShieldAlt} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Fort Health</Text>
                       <Text>{user?.fortHealth.current}/{user?.fortHealth.max}({user?.fortHealth.percentage}%)</Text>
@@ -113,7 +127,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faUserShield} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Army Size</Text>
                       <Text>{toLocale(user?.armySize, user?.locale)}</Text>
@@ -124,7 +138,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faCoins} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Gold</Text>
                       <Text>{toLocale(user?.gold, user?.locale)}</Text>
@@ -161,7 +175,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faStar} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">XP to Next Level</Text>
                       <Text>{toLocale(user?.xpToNextLevel, user?.locale)}</Text>
@@ -172,7 +186,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faPiggyBank} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Gold in Bank</Text>
                       <Text>{toLocale(user?.goldInBank, user?.locale)}</Text>
@@ -207,7 +221,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faTrophy} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Attacks Won</Text>
                       <Text>{user ? toLocale(user.attacksWon) : '0'}</Text>
@@ -244,7 +258,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faUserSecret} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Spy Offense</Text>
                       <Text>{toLocale(user?.spy)}</Text>
@@ -255,7 +269,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faCrown} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Spy Victories</Text>
                       <Text>{toLocale(user?.spyVictories)}</Text>
@@ -268,7 +282,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faEye} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Spy Defense</Text>
                       <Text>{toLocale(user?.sentry)}</Text>
@@ -279,7 +293,7 @@ const Overview = (props) => {
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
                       <FontAwesomeIcon icon={faShieldVirus} />
-                      </ThemeIcon>
+                    </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Sentry Victories</Text>
                       <Text>{toLocale(user?.sentryVictories)}</Text>

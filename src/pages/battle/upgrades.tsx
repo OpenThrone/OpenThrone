@@ -4,7 +4,7 @@ import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import Alert from '@/components/alert';
 import { useEffect, useState } from 'react';
-import { SimpleGrid, Paper, Group, Text, Space } from '@mantine/core';
+import { SimpleGrid, Paper, Group, Text, Space, ThemeIcon } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuildingColumns, faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
 
@@ -71,7 +71,10 @@ const Upgrades = (props) => {
         <Paper withBorder p="md" radius={'md'} key='GoldOnHand'>
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Gold On Hand</Text>
-            <FontAwesomeIcon icon={faCoins} />
+
+            <ThemeIcon c='white'>
+              <FontAwesomeIcon icon={faCoins} />
+            </ThemeIcon>
           </Group>
           <Group>
             <Text>
@@ -82,7 +85,9 @@ const Upgrades = (props) => {
         <Paper withBorder p="md" radius={'md'} key='BankedGold'>
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Banked Gold</Text>
-            <FontAwesomeIcon icon={faBuildingColumns} />
+            <ThemeIcon c='white'>
+              <FontAwesomeIcon icon={faBuildingColumns} />
+            </ThemeIcon>
           </Group>
           <Group>
             <Text>
@@ -93,7 +98,9 @@ const Upgrades = (props) => {
         <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Offensive Units</Text>
-            <i className="ra ra-crossed-swords ra-fw" />
+            <ThemeIcon c='white'>
+              <i className="ra ra-crossed-swords ra-fw" />
+            </ThemeIcon>
           </Group>
           <Group>
             <Text>
@@ -104,7 +111,9 @@ const Upgrades = (props) => {
         <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Defensive Units</Text>
-            <FontAwesomeIcon icon={faShield} />
+            <ThemeIcon c='white'>
+              <FontAwesomeIcon icon={faShield} />
+            </ThemeIcon>
           </Group>
           <Group>
             <Text>
@@ -119,6 +128,10 @@ const Upgrades = (props) => {
         <BattleUpgradesSection heading='Offense' type='OFFENSE' items={useItems(user).OFFENSE} />
 
         <BattleUpgradesSection heading='Defense' type='DEFENSE' items={useItems(user).DEFENSE} />
+
+        <BattleUpgradesSection heading='Spy' type='SPY' items={useItems(user).SPY} />
+
+        <BattleUpgradesSection heading='Sentry' type='SENTRY' items={useItems(user).SENTRY} />
       </div>
     </div>
   );

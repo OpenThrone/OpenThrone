@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
-import { Badge, Box, Button, Center, Group, NumberInput, Paper, RingProgress, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
+import { Badge, Box, Button, Center, Group, NumberInput, Paper, rem, RingProgress, SimpleGrid, Space, Stack, Text, TextInput, ThemeIcon } from '@mantine/core';
+import Alert from '@/components/alert';
+import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 
 const Repair = (props) => {
   const { user, forceUpdate } = useUser();
@@ -72,14 +74,39 @@ const Repair = (props) => {
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Fort Repair</h2>
-      <div className="my-5 flex justify-around">
-        <p className="mb-0">
-          Gold On Hand: <span>{toLocale(user?.gold, user?.locale)}</span>
-        </p>
-        <p className="mb-0">
-          Banked Gold: <span>{toLocale(user?.goldInBank, user?.locale)}</span>
-        </p>
+      <div className="my-5 flex justify-between">
+        <Alert />
       </div>
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 2 }}>
+
+        <Paper withBorder p="sm" radius="md">
+          <Group justify="space-between">
+            <Text size="lg" fw={'bold'} c="dimmed">
+              Gold In Hand
+            </Text>
+            <ThemeIcon c='white'>
+              <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
+          </Group>
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{parseInt(user?.gold?.toString() ?? "0").toLocaleString()}</Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="sm" radius="md">
+          <Group justify="space-between">
+            <Text size="lg" fw={'bold'} c="dimmed">
+              Banked Gold
+            </Text>
+            <ThemeIcon c='white'>
+              <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
+          </Group>
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}</Text>
+          </Group>
+        </Paper>
+      </SimpleGrid>
+      <Space h="md" />
 
       <SimpleGrid cols={{ base: 1, md: 2 }}>
       <Paper withBorder radius="md" p="md" className="w-full mb-4"> 
@@ -89,7 +116,7 @@ const Repair = (props) => {
                 <Text fw={700} size="xl" className='font-medieval'>
                   {fortification?.name}
                 </Text>
-                <Badge color="blue" variant="filled">
+                <Badge color="brand" variant={remainingHitpoints === 0 ? 'default' : 'filled'} >
                   {remainingHitpoints === 0 ? 'Fully Repaired' : 'Needs Repair'}
                 </Badge>
               </Group>
@@ -138,9 +165,11 @@ const Repair = (props) => {
                 min={0}
                 allowNegative={false}
               />
-              <Text size="sm" color="dimmed" onClick={()=>setRepairPoints(remainingHitpoints)}>
+              <Button p={'10'} fs={'10px'} fz={'lg'} h={'50%'} color='secondary' size='compact-xs'>
+              <Text size="xs" color="light" onClick={()=>setRepairPoints(remainingHitpoints)}>
                 Max: {remainingHitpoints}
-              </Text>
+                </Text>
+              </Button>
               <Button color="blue" fs={'10px'} onClick={handleRepair}>Repair</Button>
               <Button color='gray' onClick={()=>setRepairPoints(0)}>Reset</Button>
             </Box>

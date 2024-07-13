@@ -8,7 +8,7 @@ import toLocale from '@/utils/numberFormatting';
 
 import { useUser } from '../context/users';
 import { alertService } from '@/services';
-import { Group, NumberInput, Paper, Table, Text } from '@mantine/core';
+import { Group, NumberInput, Paper, Table, Text, Title } from '@mantine/core';
 
 const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   heading,
@@ -32,7 +32,6 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   }, [items]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('handleInputChange', event.target.value);
     let { value } = event.target;
     if (value === '') {
       value = '0';
@@ -163,7 +162,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
         <Table.Thead>
           <Table.Tr>
             <Table.Th className="w-60 px-4 py-2">
-              {heading}
+              <Title order={6}>{heading}</Title>
             </Table.Th>
           </Table.Tr>
         </Table.Thead>

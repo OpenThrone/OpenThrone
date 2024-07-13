@@ -5,7 +5,7 @@ import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
-import { Paper, Group, SimpleGrid, Title, Text } from '@mantine/core';
+import { Paper, Group, SimpleGrid, Title, Text, ThemeIcon } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuildingColumns, faCoins, faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 
@@ -346,7 +346,9 @@ const Training = (props) => {
         <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Untrained Citizens</Text>
-            <FontAwesomeIcon icon={faPeopleGroup} />
+            <ThemeIcon c='white'>
+              <FontAwesomeIcon icon={faPeopleGroup} />
+            </ThemeIcon>
           </Group>
           <Group>
             <Text>
@@ -357,7 +359,9 @@ const Training = (props) => {
         <Paper withBorder p="md" radius={'md'} key='GoldOnHand'>
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Gold On Hand</Text>
-            <FontAwesomeIcon icon={faCoins} />
+            <ThemeIcon c='white'>
+              <FontAwesomeIcon icon={faCoins} />
+            </ThemeIcon>
           </Group>
           <Group>
             <Text>
@@ -368,7 +372,9 @@ const Training = (props) => {
         <Paper withBorder p="md" radius={'md'} key='BankedGold'>
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Banked Gold</Text>
-            <FontAwesomeIcon icon={faBuildingColumns} />
+            <ThemeIcon c='white'>
+              <FontAwesomeIcon icon={faBuildingColumns} />
+            </ThemeIcon>
           </Group>
           <Group>
             <Text>

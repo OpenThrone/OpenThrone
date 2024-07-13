@@ -8,8 +8,11 @@ import { ArmoryUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
-import { Paper, Tabs } from '@mantine/core';
+import { Group, Paper, rem, SimpleGrid, Tabs, ThemeIcon, Text, Space } from '@mantine/core';
 import UserModel from '@/models/Users';
+import { BiCoinStack, BiSolidBank, BiMoney } from 'react-icons/bi';
+import { faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 const useItems = (user: UserModel, armoryLevel: unknown) => {
   const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
@@ -98,7 +101,6 @@ const ArmoryTab = (props) => {
     SPY: 0,
     SENTRY: 0,
   });
-  const colorScheme = user?.colorScheme;
   
   const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
 
@@ -380,54 +382,93 @@ const ArmoryTab = (props) => {
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
-      <div className="my-5 flex justify-around">
-        <p className="mb-0">
-          Citizens: <span>{toLocale(user?.citizens, user?.locale)}</span>
-        </p>
-        <p className="mb-0">
-          Gold On Hand: <span>{toLocale(user?.gold, user?.locale)}</span>
-        </p>
-        <p className="mb-0">
-          Banked Gold: <span>{toLocale(user?.goldInBank, user?.locale)}</span>
-        </p>
-        <p>
-          Armory Level: <span>{user?.armoryLevel}</span>
-        </p>
-      </div>
-      
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
+        <Paper withBorder p="sm" radius="md">
+          <Group justify="space-between">
+            <Text size="lg" fw={'bold'} c="dimmed">
+              Citizens
+            </Text>
+            <ThemeIcon c='white'>
+              <FontAwesomeIcon icon={faPeopleGroup} />
+            </ThemeIcon>
+          </Group>
 
-      <Tabs variant="pills" defaultValue={currentPage} className="mb-2 font-medieval">
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{toLocale(user?.citizens, user?.locale)}</Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="sm" radius="md">
+          <Group justify="space-between">
+            <Text size="lg" fw={'bold'} c="dimmed">
+              Gold In Hand
+            </Text>
+            <ThemeIcon c='white'>
+              <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
+          </Group>
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{parseInt(user?.gold?.toString() ?? "0").toLocaleString()}</Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="sm" radius="md">
+          <Group justify="space-between">
+            <Text size="lg" fw={'bold'} c="dimmed">
+              Banked Gold
+            </Text>
+            <ThemeIcon c='white'>
+              <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
+            </ThemeIcon>
+          </Group>
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}</Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="sm" radius="md">
+          <Group justify="space-between">
+            <Text size="lg" fw={'bold'} c="dimmed">
+              Armory Level
+            </Text>
+            <ThemeIcon c='white'>
+              <i className='ra ra-trophy'/>
+            </ThemeIcon>
+          </Group>
+
+          <Group align="flex-end" gap="xs" mt={10}>
+            <Text>{user?.armoryLevel}</Text>
+          </Group>
+        </Paper>
+      </SimpleGrid>
+      <Space h="md" />
+
+      <Paper>
+      <Tabs variant="pills" defaultValue={currentPage} c='brand' className="mb-2 font-medieval">
         <Tabs.List grow justify="center">
           <Tabs.Tab value="offense" onClick={() => {
             router.push("/structures/armory/offense");
           }}
-            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
+            color='brand'
           >
             <span className="text-xl">Offense</span>
           </Tabs.Tab>
           <Tabs.Tab value="defense" onClick={() => { router.push("/structures/armory/defense") }}
-            color={(colorScheme === "ELF") ?
-              'green' : (
-                colorScheme === 'GOBLIN' ? 'red' : (
-                  colorScheme === 'UNDEAD' ? 'dark'
-                    : 'blue'
-                ))}
+            color='brand'
           >
             <span className="text-xl">Defense</span>
           </Tabs.Tab>
           <Tabs.Tab value="spy" onClick={() => { router.push("/structures/armory/spy") }}
-            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
+            color='brand'
           >
             <span className="text-xl">Spy</span>
           </Tabs.Tab>
           <Tabs.Tab value="sentry" onClick={() => { router.push("/structures/armory/sentry") }}
-            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
+            color='brand'
           >
             <span className="text-xl">Sentry</span>
           </Tabs.Tab>
-          
         </Tabs.List>
       </Tabs>
+
+    </Paper>
 
       {['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].map(
         (type) =>
