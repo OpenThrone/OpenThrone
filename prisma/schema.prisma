@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["jsonProtocol"]
@@ -22,8 +19,8 @@ model users {
   class              String
   units              Json?     @default("[{\"type\": \"CITIZEN\", \"level\": 1, \"quantity\": 50}, {\"type\": \"WORKER\", \"level\": 1, \"quantity\": 0}, {\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}]")
   experience         Int       @default(0)
-  gold               BigInt       @default(25000)
-  gold_in_bank       BigInt       @default(0)
+  gold               BigInt    @default(25000)
+  gold_in_bank       BigInt    @default(0)
   fort_level         Int       @default(1)
   fort_hitpoints     Int       @default(50)
   attack_turns       Int       @default(50)
@@ -41,35 +38,35 @@ model users {
   locale             String
   avatar             String?   @default("SHIELD")
   created_at         DateTime  @default(now())
+  updated_at         DateTime  @default(now()) @updatedAt
 
   // Relations
-  sentMessages         messages[]             @relation("from_user")
-  receivedMessages     messages[]             @relation("to_user")
-  attacksMade          attack_log[]           @relation("AttackLogs")
-  attacksDefended      attack_log[]           @relation("DefenseLogs")
-  recruitHistories     recruit_history[]
-  blogPosts            blog_posts[] // Opposite relation field for `postedBy` in `blog_posts`
-  postReadStatuses     post_read_status[] // Opposite relation field for `user` in `post_read_status`
-  sharedAttackLogs     attack_log_acl[]       @relation("SharedAttackLogs")
-  ledAlliances         alliances[]            @relation("AllianceLeader")
-  alliances            alliances[]
-  alliance_memberships alliance_memberships[]
-  socialRelationsAsPlayer social[] @relation("PlayerRelations")
-  socialRelationsAsFriend social[] @relation("FriendRelations")
+  sentMessages            messages[]             @relation("from_user")
+  receivedMessages        messages[]             @relation("to_user")
+  attacksMade             attack_log[]           @relation("AttackLogs")
+  attacksDefended         attack_log[]           @relation("DefenseLogs")
+  recruitHistories        recruit_history[]
+  blogPosts               blog_posts[] // Opposite relation field for `postedBy` in `blog_posts`
+  postReadStatuses        post_read_status[] // Opposite relation field for `user` in `post_read_status`
+  sharedAttackLogs        attack_log_acl[]       @relation("SharedAttackLogs")
+  ledAlliances            alliances[]            @relation("AllianceLeader")
+  alliance_memberships    alliance_memberships[]
+  socialRelationsAsPlayer social[]               @relation("PlayerRelations")
+  socialRelationsAsFriend social[]               @relation("FriendRelations")
 }
 
 model social {
-  id                 Int       @id @default(autoincrement())
-  playerId           Int
-  friendId           Int
-  relationshipType   String
-  requestDate        DateTime  @default(now())
-  acceptanceDate     DateTime?
-  endDate            DateTime?
-  status             String    @default("requested") // "requested", "accepted", "ended"
+  id               Int       @id @default(autoincrement())
+  playerId         Int
+  friendId         Int
+  relationshipType String
+  requestDate      DateTime  @default(now())
+  acceptanceDate   DateTime?
+  endDate          DateTime?
+  status           String    @default("requested") // "requested", "accepted", "ended"
 
-  player             users     @relation("PlayerRelations", fields: [playerId], references: [id])
-  friend             users     @relation("FriendRelations", fields: [friendId], references: [id])
+  player users @relation("PlayerRelations", fields: [playerId], references: [id])
+  friend users @relation("FriendRelations", fields: [friendId], references: [id])
 }
 
 model PasswordReset {
@@ -102,7 +99,9 @@ model bank_history {
   to_user_account_type   String
   date_time              DateTime? @db.Timestamptz(3)
   history_type           String
-  stats                  Json?    @default("[]")
+  stats                  Json?     @default("[]")
+
+  @@index([from_user_id, to_user_id, date_time], name: "bank_history_from_user_id_to_user_id_date_time_idx")
 }
 
 model messages {
@@ -126,6 +125,8 @@ model recruit_history {
   to_user      Int
   ip_addr      String
   timestamp    DateTime? @db.Timestamptz(3)
+
+  @@index([to_user, from_user, timestamp], name: "recruit_history_to_user_from_user_timestamp_idx")
 }
 
 model blog_posts {
@@ -167,16 +168,23 @@ model attack_log_acl {
 }
 
 model alliances {
-  id               Int                    @id @default(autoincrement())
-  name             String
-  leader_id        Int
-  leader           users                  @relation("AllianceLeader", fields: [leader_id], references: [id])
-  members          alliance_memberships[]
-  sharedAttackLogs attack_log_acl[]
-
-  alliance_roles alliance_roles[]
-  users          users?           @relation(fields: [usersId], references: [id])
-  usersId        Int?
+  id                Int                    @id @default(autoincrement())
+  name              String
+  leader_id         Int
+  leader            users                  @relation("AllianceLeader", fields: [leader_id], references: [id])
+  gold_in_bank      BigInt                 @default(0)
+  avatar            String?
+  bannerimg         String?
+  motto             String?
+  comments          String?
+  is_public         Boolean                @default(true)
+  require_auth      Boolean                @default(false)
+  closed_enrollment Boolean                @default(false)
+  members           alliance_memberships[]
+  sharedAttackLogs  attack_log_acl[]
+  alliance_roles    alliance_roles[]
+  created_at        DateTime               @default(now())
+  updated_at        DateTime               @default(now()) @updatedAt
 
   @@index([leader_id], name: "idx_alliance_leader")
 }
@@ -200,6 +208,7 @@ model alliance_roles {
   id          Int                    @id @default(autoincrement())
   name        String
   alliance_id Int
+  permissions Json
   alliance    alliances              @relation(fields: [alliance_id], references: [id])
   members     alliance_memberships[]
 
