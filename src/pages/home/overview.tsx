@@ -224,7 +224,11 @@ const Overview = (props) => {
                     </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Attacks Won</Text>
-                      <Text>{user ? toLocale(user.attacksWon) : '0'}</Text>
+                      
+                        <Text>{user ? toLocale(user?.statistics('OFFENSE', 'WON')) : '0'}
+                        {' '}/ {user ? user?.statistics('OFFENSE', 'WON') + user?.statistics('OFFENSE', 'LOST') : '0'}
+                        </Text>
+                      
                     </div>
                   </Group>
                 </Table.Td>
@@ -248,7 +252,7 @@ const Overview = (props) => {
                     </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Defends Won</Text>
-                      <Text>{toLocale(user?.defendsWon)}</Text>
+                      <Text>{toLocale(user?.statistics('DEFENSE', 'WON'))}</Text>
                     </div>
                   </Group>
                 </Table.Td>
@@ -272,7 +276,7 @@ const Overview = (props) => {
                     </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Spy Victories</Text>
-                      <Text>{toLocale(user?.spyVictories)}</Text>
+                      <Text>{toLocale(user?.statistics('SPY', 'WON'))}{' '}/ {user ? user.statistics('SPY', 'WON') + user.statistics('SPY', 'LOST') : '0'}</Text>
                     </div>
                   </Group>
                 </Table.Td>
@@ -296,7 +300,7 @@ const Overview = (props) => {
                     </ThemeIcon>
                     <div>
                       <Text size="md" weight={700} color="dimmed">Sentry Victories</Text>
-                      <Text>{toLocale(user?.sentryVictories)}</Text>
+                      <Text>{toLocale(user?.statistics('SENTRY', 'WON'))}</Text>
                     </div>
                   </Group>
                 </Table.Td>

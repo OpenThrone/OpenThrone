@@ -8,6 +8,7 @@ import {
   createBankHistory,
   canAttack,
   updateFortHitpoints,
+  incrementUserStats,
 } from '@/services/attack.service';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -66,6 +67,16 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     winner: Winner.id,
     type: type,
     stats: { spyResults },
+  });
+
+  await incrementUserStats(attackerId, {
+    type: 'SPY',
+    subtype: (attackerId === Winner.id) ? 'WON' : 'LOST',
+    stat: 1
+  });
+  await incrementUserStats(defenderId, {
+    type: 'SENTRY',
+    subtype: (defenderId === Winner.id) ? 'WON' : 'LOST',
   });
 
   
@@ -180,6 +191,17 @@ export async function attackHandler(
           attacker_losses: battleResults.Losses.Attacker,
           defender_losses: battleResults.Losses.Defender,
         },
+      });
+
+      await incrementUserStats(attackerId, {
+        type: 'OFFENSE',
+        subtype: (isAttackerWinner) ? 'WON' : 'LOST',
+        stat: 1
+      });
+
+      await incrementUserStats(defenderId, {
+        type: 'DEFENSE',
+        subtype: (!isAttackerWinner) ? 'WON' : 'LOST',
       });
 
       await updateUser(attackerId, {

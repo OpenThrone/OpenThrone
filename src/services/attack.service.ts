@@ -33,6 +33,48 @@ export const createAttackLog = async (logData) => {
   });
 };
 
+// { type: 'OFFENSE', subtype: 'TOTAL', stat: 1 } +1
+// { type: 'OFFENSE', subtype: 'WON', stat: 12 } +12
+export const incrementUserStats = async (userId, newStat) => {
+  const user = await prisma.users.findUnique({
+    where: { id: userId },
+    select: {
+      stats: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Initialize stats if none exist
+  if (!user.stats) {
+    user.stats = [];
+  }
+
+  // Check if the stat type and subtype already exists
+  const existingStatIndex = user.stats.findIndex(stat => stat.type === newStat.type && stat.subtype === newStat.subtype);
+
+  if (existingStatIndex >= 0) {
+    // Stat already exists, increment it
+    user.stats[existingStatIndex].stat += newStat.stat;
+  } else {
+    // Stat does not exist, initialize it with the new stat value
+    user.stats.push({
+      type: newStat.type,
+      subtype: newStat.subtype,
+      stat: newStat.stat
+    });
+  }
+
+  // Update the user's stats
+  await prisma.users.update({
+    where: { id: userId },
+    data: { stats: user.stats },
+  });
+}
+
+
 export const updateUser = async (userId, data) => {
   await prisma.users.update({
     where: { id: userId },

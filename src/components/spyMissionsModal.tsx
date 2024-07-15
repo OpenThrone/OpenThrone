@@ -146,11 +146,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     const results = await res.json();
 
     if (results.status === 'failed') {
-      alertService.error(results.status);
-    } else {
-      router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
+      alertService.error(results.message);
+      return;
     }
+    router.push(`/battle/results/${results.attack_log}`);
+    toggleModal();
     alertService.success(
       `You have sent ${intelSpies} spies to gather intelligence.`
     );
@@ -174,12 +174,13 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     const results = await res.json();
 
     if (results.status === 'failed') {
-      alertService.error(results.status);
-    } else {
-      console.log('log id: ',results.attack_log)
-      router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
+      alertService.error(results.message);
+      return;
     }
+    console.log('log id: ',results.attack_log)
+    router.push(`/battle/results/${results.attack_log}`);
+    toggleModal();
+    
     alertService.success(
       `You have sent ${intelSpies} spies to assassinate ${assassinateUnit}.`
     );
@@ -202,11 +203,12 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     const results = await res.json();
 
     if (results.status === 'failed') {
-      alertService.error(results.status);
-    } else {
-      router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
+      alertService.error(results.message);
+      return
     }
+    router.push(`/battle/results/${results.attack_log}`);
+    toggleModal();
+    
     alertService.success(
       `You have sent ${intelSpies} spies.`
     );

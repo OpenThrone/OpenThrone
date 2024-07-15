@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import mtrand from '@/utils/mtrand';
-import { now } from 'next-auth/client/_utils';
 
 const handler = async (
   req: NextApiRequest,
