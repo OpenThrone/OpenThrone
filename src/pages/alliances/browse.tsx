@@ -3,6 +3,8 @@ import classes from './browse.module.css';
 import toLocale from '@/utils/numberFormatting';
 import { useEffect, useState } from 'react';
 
+import Alert from '@/components/alert';
+
 export const UserCardImage = ({ name, members, description, gold, joinText, imgsrc, bannerimgsrc }) => {
   return (
     <Card withBorder padding="xl" radius="md" className={classes.card}>
@@ -47,7 +49,7 @@ export const UserCardImage = ({ name, members, description, gold, joinText, imgs
   );
 };
 
-const Browse = () => {
+const Browse = (props) => {
   const [alliances, setAlliances] = useState([]);
 
   useEffect(() => {
@@ -70,6 +72,11 @@ const Browse = () => {
   }, []);
 
   return (
+    <div className="mainArea pb-10">
+      <h2 className="page-title">Alliances</h2>
+      <div className="my-5 flex justify-between">
+        <Alert />
+      </div>
     <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 3 }}>
       {alliances.map((alliance) => (
         <UserCardImage
@@ -83,7 +90,8 @@ const Browse = () => {
           bannerimgsrc={alliance.bannerimg || '/path/to/default/banner.png'}
         />
       ))}
-    </SimpleGrid>
+      </SimpleGrid>
+    </div>
   );
 };
 
