@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRefresh } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { getTimeRemaining, getTimeToNextTurn } from '@/utils/timefunctions';
 import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text } from '@mantine/core';
 import { useDebouncedCallback } from '@mantine/hooks';
@@ -41,14 +41,28 @@ const Sidebar: React.FC = () => {
     setMessages(messagesArray);
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
-      forceUpdate();
-    }, 30000);
+  const intervalIdRef = useRef(null);
 
-    return () => clearInterval(interval);
-  }, [messages, forceUpdate]);
+  const resetInterval = useCallback(() => {
+    if (intervalIdRef.current) {
+      clearInterval(intervalIdRef.current);
+    }
+
+    // Define new interval
+    intervalIdRef.current = setInterval(() => {
+      setCurrentMessageIndex(prevIndex => (prevIndex + 1) % messages.length);
+      forceUpdate();
+    }, 3000);
+
+    return () => clearInterval(intervalIdRef.current);
+  }, [messages.length, forceUpdate]);
+
+  useEffect(() => {
+    resetInterval();
+    return () => clearInterval(intervalIdRef.current);
+  }, [resetInterval]);
+
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -154,6 +168,15 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  const handlePrevAdvisor = () => {
+    setCurrentMessageIndex((prevIndex) => (prevIndex - 1 + messages.length) % messages.length);
+    resetInterval();
+  }
+  const handleNextAdvisor = () => {
+    setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
+    resetInterval();
+  }
+
   return (
     <div className="block sm:block">
       <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg min-h-96 h-96" style={{
@@ -169,7 +192,7 @@ const Sidebar: React.FC = () => {
       }}>
         <div className="p-10 md:p-4 mt-2">
           <h6 className="advisor-title text-center font-medieval font-bold text-xl">
-            <span> </span> Advisor <span> </span>
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px 0' }} onClick={handlePrevAdvisor} /> Advisor <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px 0' }} onClick={handleNextAdvisor} />
           </h6>
           <p className="text-xs">{messages[currentMessageIndex]}</p>
 
