@@ -202,6 +202,9 @@ class UserModel {
       !['WON', 'LOST'].includes(subType)) {
       return 0;
     }
+    if (this.stats?.length === 0 || !this.stats) {
+      return 0;
+    }
     return this.stats.find(stat => stat.type === type && stat.subtype === subType)?.stat || 0;
   }
 
