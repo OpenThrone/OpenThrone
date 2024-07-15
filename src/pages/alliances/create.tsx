@@ -1,8 +1,9 @@
-import { TextInput, Text, Button, Group, Alert, Loader, Textarea, FileInput, Paper } from '@mantine/core';
+import { TextInput, Text, Button, Group, Loader, Textarea, FileInput, Paper } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useUser } from '@/context/users';
+import Alert from '@/components/alert';
 
-export default function CreateAlliance() {
+export default function CreateAlliance(props) {
   const { user } = useUser();
 
   const form = useForm({
@@ -28,11 +29,11 @@ export default function CreateAlliance() {
   }
 
   if (user.level < 5) {
-    return <Alert color="red">You must be at least level 10 to create an alliance.</Alert>;
+    //return <Alert color="red">You must be at least level 10 to create an alliance.</Alert>;
   }
 
   if (user.gold < 100000000) {
-    return <Alert color="red">Creating an alliance costs 100 million gold.</Alert>;
+    //return <Alert color="red">Creating an alliance costs 100 million gold.</Alert>;
   }
 
   const handleSubmit = async (values) => {
@@ -49,6 +50,11 @@ export default function CreateAlliance() {
   };
 
   return (
+    <div className="mainArea pb-10">
+      <h2 className="page-title">Create new alliance</h2>
+      <div className="my-5 flex justify-between">
+        <Alert />
+      </div>
     <Paper shadow='2' p="md">
     <form onSubmit={form.onSubmit(handleSubmit)}>
       <TextInput
@@ -80,6 +86,7 @@ export default function CreateAlliance() {
         <Button type="submit">Create Alliance</Button>
       </Group>
       </form>
-    </Paper>
+      </Paper>
+    </div>
   );
 }
