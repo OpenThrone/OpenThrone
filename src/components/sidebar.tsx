@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -41,14 +41,28 @@ const Sidebar: React.FC = () => {
     setMessages(messagesArray);
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
-      forceUpdate();
-    }, 30000);
+  const intervalIdRef = useRef(null);
 
-    return () => clearInterval(interval);
-  }, [messages, forceUpdate]);
+  const resetInterval = useCallback(() => {
+    if (intervalIdRef.current) {
+      clearInterval(intervalIdRef.current);
+    }
+
+    // Define new interval
+    intervalIdRef.current = setInterval(() => {
+      setCurrentMessageIndex(prevIndex => (prevIndex + 1) % messages.length);
+      forceUpdate();
+    }, 3000);
+
+    return () => clearInterval(intervalIdRef.current);
+  }, [messages.length, forceUpdate]);
+
+  useEffect(() => {
+    resetInterval();
+    return () => clearInterval(intervalIdRef.current);
+  }, [resetInterval]);
+
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -156,9 +170,11 @@ const Sidebar: React.FC = () => {
 
   const handlePrevAdvisor = () => {
     setCurrentMessageIndex((prevIndex) => (prevIndex - 1 + messages.length) % messages.length);
+    resetInterval();
   }
   const handleNextAdvisor = () => {
     setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
+    resetInterval();
   }
 
   return (
