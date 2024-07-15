@@ -5,9 +5,9 @@ import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
-import { Paper, Group, SimpleGrid, Title, Text, ThemeIcon } from '@mantine/core';
+import { Paper, Group, SimpleGrid, Title, Text, ThemeIcon, Badge, Tooltip } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuildingColumns, faCoins, faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
+import { faBuildingColumns, faCoins, faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
 
 const Training = (props) => {
   //const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
@@ -380,6 +380,26 @@ const Training = (props) => {
             <Text>
               {toLocale(user?.goldInBank, user?.locale)}
             </Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="md" radius={'md'} key='DefenseToPopulation'>
+          <Group justify='space-between'>
+            <Text size="lg" fw={'bold'} c="dimmed">Defense To Population Ratio</Text>
+            <ThemeIcon c='white'>
+              <FontAwesomeIcon icon={faShield} />
+            </ThemeIcon>
+          </Group>
+          <Group>
+            <Text>
+              {toLocale((user?.unitTotals.defense / user?.population) * 100)} %
+            </Text>
+            {(user?.unitTotals.defense / user?.population) < .25 && (
+              <Text size='sm' c='dimmed'>
+                <Tooltip label='It is recommended that you have at least 25% Defense along with a healthy Fort. You may take heavier losses and your Workers and Citizens may be at risk!'>
+                  <Badge color="brand">Advisor: Too low</Badge>
+                </Tooltip>
+            </Text>
+            )}
           </Group>
         </Paper>
       </SimpleGrid>
