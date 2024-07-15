@@ -342,7 +342,7 @@ const Training = (props) => {
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>
+      <SimpleGrid cols={{ base: 1, xs: 2, sm:3, md: 4 }}>
         <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Untrained Citizens</Text>
@@ -384,7 +384,7 @@ const Training = (props) => {
         </Paper>
         <Paper withBorder p="md" radius={'md'} key='DefenseToPopulation'>
           <Group justify='space-between'>
-            <Text size="lg" fw={'bold'} c="dimmed">Defense To Population Ratio</Text>
+            <Text size="lg" fw={'bold'} c="dimmed">Defense Ratio</Text>
             <ThemeIcon c='white'>
               <FontAwesomeIcon icon={faShield} />
             </ThemeIcon>
