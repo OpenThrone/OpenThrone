@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import mtrand from '@/utils/mtrand';
+import { now } from 'next-auth/client/_utils';
 
 const handler = async (
   req: NextApiRequest,
@@ -12,7 +13,8 @@ const handler = async (
   }
 
   const now = new Date();
-  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
 
   const session = req.session;
 
@@ -30,7 +32,7 @@ const handler = async (
     },
     where: {
       NOT: [{ id: { in: [0, recruiterID] } }],
-      created_at: { lt: midnight },
+      created_at: { lt: startDate },
     },
   });
 
@@ -43,7 +45,7 @@ const handler = async (
       where: {
         to_user: recruiterID,
         from_user: user.id,
-        timestamp: { gte: midnight },
+        timestamp: { gte: startDate },
       },
     });
 

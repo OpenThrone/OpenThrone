@@ -150,9 +150,9 @@ export const getTop10TotalDefenderCasualties = async (timeFrame) => {
 };
 
 export async function getRecruitmentCounts(days: number = 7) {
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - days);
-  const midnight = new Date(sevenDaysAgo.getFullYear(), sevenDaysAgo.getMonth(), sevenDaysAgo.getDate());
+  const currentDate = new Date(); // Current date and time
+  const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - days);
+  const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - (days-1)); // The start of the next day
 
   const recruitmentCounts = await prisma.recruit_history.groupBy({
     by: ['to_user'],
@@ -161,7 +161,8 @@ export async function getRecruitmentCounts(days: number = 7) {
     },
     where: {
       timestamp: {
-        gte: midnight,
+        gte: startDate, // Greater than or equal to the start of the specified days ago
+        lt: endDate,   // Less than the start of the next day
       },
       from_user: { not: 0 },
       to_user: { not: 0 }
@@ -179,7 +180,9 @@ export async function getRecruitmentCounts(days: number = 7) {
       where: {
         from_user: { not: recruit.to_user },
         to_user: recruit.to_user,
-        timestamp: { gte: sevenDaysAgo },
+        timestamp: {
+          gte: startDate,
+          lt: endDate },
       },
       select: {
         from_user: true,
