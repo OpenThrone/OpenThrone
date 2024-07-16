@@ -7,11 +7,13 @@ import prisma from '@/lib/prisma';
 import { Button, Modal, Textarea, TextInput } from '@mantine/core';
 import Error from 'next/error';
 import { InferGetServerSidePropsType } from "next";
+import BlogPost from '@/components/blogPost';
 
 const News = ({ posts: serverPosts, loggedIn, userId }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })));
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '' });
+  console.log('serverPosts: ', serverPosts);
 
   const handleReadChange = async (postId) => {
     setPosts(posts.map(post => {
@@ -85,25 +87,7 @@ const News = ({ posts: serverPosts, loggedIn, userId }: InferGetServerSidePropsT
         </Button>
       )}
       {posts.map((post) => (
-        <div key={post.id} className="mx-auto my-2 rounded-xl overflow-hidden border border-gray-200">
-          {/* Header / Title Bar Section */}
-          <div className="bg-gray-600 p-2 flex justify-between items-center">
-            <div className="uppercase tracking-wide text-md text-white font-semibold">{post.title}
-              <br /><label className="text-xs">{post.created_timestamp.toString()}</label></div>
-            {loggedIn && (
-              <label className="flex items-center space-x-2 text-white text-sm">
-                <span>Read:</span>
-                <input type="checkbox" checked={post.isRead}
-                  onChange={() => handleReadChange(post.id)} className="form-checkbox" />
-              </label>
-            )}
-          </div>
-
-          {/* Body Section */}
-          <div className="p-4">
-            <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{post.content}</Markdown>
-          </div>
-        </div>
+        <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} key={'Post_'+post.id} />
       ))}
       <Modal
         opened={modalIsOpen}
@@ -157,7 +141,7 @@ export const getServerSideProps = async (context) => {
     // Transform the posts to include a read status boolean
     const postsWithReadStatus = posts.map((post) => {
       const readStatus = post.postReadStatus.length > 0; // If there's any read status, the post is considered read
-
+      console.log('readStatus: ', readStatus);
       return {
         ...post,
         isRead: readStatus,
