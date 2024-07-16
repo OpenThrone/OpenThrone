@@ -6,10 +6,11 @@ import { alertService } from '@/services';
 import { useUser } from '@/context/users';
 import Alert from '@/components/alert';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
-import { Chip, Group, Paper, Table, Tabs, SimpleGrid, Text, Space, NumberInput, rem, ThemeIcon, Button } from '@mantine/core';
+import { Chip, Group, Paper, Table, Tabs, SimpleGrid, Text, Space, NumberInput, rem, ThemeIcon, Button, Flex, Divider } from '@mantine/core';
 import { BiCoinStack, BiMoney, BiMoneyWithdraw, BiSolidBank } from "react-icons/bi";
 import classes from './[tab].module.css'
 import user from '@/pages/messaging/compose/[user]';
+import { EconomyUpgrades } from '@/constants';
 
 const Bank = (props) => {
   const tab = usePathname()?.split('/')[3];
@@ -436,37 +437,37 @@ const Bank = (props) => {
       )}
 
       {currentPage === 'economy' && (
-        <div className="flex space-x-8">
+        <Flex>
           {/* Workers Card */}
-          <div className="w-1/2 rounded-lg  p-6 shadow-md">
-            <h3 className="mb-4 text-xl font-semibold">Workers</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <strong>Total Workers:</strong>
-                <span>{citizenUnit || 0}</span>
-              </div>
-              <div className="mt-6 text-sm text-gray-600">
-                <p>To increase your workforce, visit the training page.</p>
-              </div>
-              <div className="flex justify-between">
-                <strong>Gold Per Worker:</strong>
-                <span>{user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn</span>
-              </div>
-              <div className="mt-6 text-sm text-gray-600">
-                <p>
+          <Paper className="w-1/2 rounded-lg p-6" shadow='md'>
+            <h3 className="text-xl font-semibold">Workers</h3>
+            <Divider my="md" />
+            <div className="space-y-2">
+              <Flex justify={'space-between'}>
+                <Text size='md'>Total Workers:</Text>
+                <Text size='sm'>{citizenUnit || 0}</Text>
+              </Flex>
+              <Text c='dimmed' size='sm'>To increase your workforce, visit the training page.</Text>
+              <Flex justify={'space-between'}>
+                <Text size='md'>Gold Per Worker:</Text>
+                <Text size='sm'>{user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn</Text>
+              </Flex>
+                <Text c='dimmed' size='sm'>
                   To increase your gold per worker, upgrade your economy
                   structure.
-                </p>
-              </div>
+                </Text>
             </div>
-          </div>
+          </Paper>
+          <Space w="md" />
 
           {/* Operations Card */}
-          <div className="w-1/2 rounded-lg  p-6 shadow-md">
-            <h3 className="mb-4 text-xl font-semibold">Operations</h3>
+          <Paper className="w-1/2 rounded-lg p-6 shadow-md">
+            <h3 className="text-xl font-semibold">Operations</h3>
+            <Divider my="md"  />
             <div className="space-y-4">
               <div className="flex justify-between">
                 <strong>Current Economy Upgrade:</strong>
+                <span>{EconomyUpgrades.find((eu) => eu.index === user?.economyLevel).name}</span>
               </div>
               <div className="mt-6 text-sm text-gray-600">
                 This Upgrade will increase bank deposits or gold per worker
@@ -499,8 +500,8 @@ const Bank = (props) => {
                 {/* You can compute and display the daily income here */}
               </div>
             </div>
-          </div>
-        </div>
+          </Paper>
+        </Flex>
       )}
     </div>
   );
