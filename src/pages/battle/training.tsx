@@ -5,7 +5,7 @@ import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
-import { Paper, Group, SimpleGrid, Title, Text, ThemeIcon, Badge, Tooltip } from '@mantine/core';
+import { Paper, Group, SimpleGrid, Title, Text, ThemeIcon, Badge, Tooltip, Button, Space, Flex, Stack } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuildingColumns, faCoins, faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
 
@@ -448,31 +448,32 @@ const Training = (props) => {
           setUnitCosts={setUnitCosts}
         />
       )}
-      <div
+      <Flex justify='space-between'
         ref={stickyRef}
-        className="flex justify-between mt-8 rounded bg-gray-800 sticky bottom-0 px-4 z-10 sm:w-100 md:w-[69vw]"
+        className=" mt-8 rounded bg-gray-800 sticky bottom-0 px-4 z-10 sm:w-100 md:w-[69vw]"
       >
-        <div className="mt-4">
-          <p>Total Cost: {toLocale(totalCost)}</p>
-          <p>Total Refund: {toLocale(totalCost * .75)}</p>
-        </div>
-        <div className="mt-4 flex justify-between">
-          <button
-            type="button"
-            className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+        <Stack
+          justify="center"
+          gap="xs">
+          <Text size='sm'>Total Cost: {toLocale(totalCost)}</Text>
+          <Text size='sm'>Total Refund: {toLocale(totalCost * .75)}</Text>
+        </Stack>
+        <Flex justify='space-between' m={'xs'}>
+          <Button
+            color='brand.6'
             onClick={handleTrainAll}
           >
             Train All
-          </button>
-          <button
-            type="button"
-            className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+          </Button>
+          <Space w='sm' />
+          <Button
+            color='brand'
             onClick={handleUntrainAll}
           >
             Untrain All
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Flex>
+      </Flex>
     </div>
   );
 };
