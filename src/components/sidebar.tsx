@@ -4,7 +4,7 @@ import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faArrowRight, faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { getTimeRemaining, getTimeToNextTurn } from '@/utils/timefunctions';
-import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text } from '@mantine/core';
+import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List } from '@mantine/core';
 import { useDebouncedCallback } from '@mantine/hooks';
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
@@ -194,23 +194,23 @@ const Sidebar: React.FC = () => {
           <h6 className="advisor-title text-center font-medieval font-bold text-xl">
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px 0' }} onClick={handlePrevAdvisor} /> Advisor <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px 0' }} onClick={handleNextAdvisor} />
           </h6>
-          <p className="text-xs">{messages[currentMessageIndex]}</p>
+          <Text size='sm' fw={'bold'} className='text-black'>{messages[currentMessageIndex]}</Text>
 
           <h6 className="text-center font-medieval font-bold text-xl mt-2">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
-          <ul className="list-none pl-0 text-sm">
-            <li>
+          <List size={'sm'}>
+            <List.Item>
               <i className="ra ra-gem ra-fw" /> Gold:{' '}
               <span id="gold">{sidebar.gold}</span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               <i className="ra ra-player ra-fw" /> Citizens:{' '}
               <span id="citizens">{sidebar.citizens}</span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               <i className="ra ra-tower ra-fw" /> Level:{' '}
               <span id="level">{sidebar.level}</span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               Experience:{' '}
               <span id="experience">
                 {sidebar.xp}{' '}
@@ -219,14 +219,14 @@ const Sidebar: React.FC = () => {
                   <span id="xpToNextLevel">{sidebar.xpNextLevel}</span>)
                 </span>
               </span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               Turns Available: <span id="attackTurns">{sidebar.turns}</span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               Time Until Next Turn: <span id="nextTurnTimestamp">{time}</span>
-            </li>
-          </ul>
+            </List.Item>
+          </List>
           <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2">
             <span> </span> Search <span> </span>
           </h6>
