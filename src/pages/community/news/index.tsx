@@ -4,7 +4,7 @@ import rehypeRaw from 'rehype-raw';
 import { useState } from 'react';
 import { getSession } from 'next-auth/react';
 import prisma from '@/lib/prisma';
-import { Button, Modal, Textarea, TextInput } from '@mantine/core';
+import { Button, Modal, Space, Textarea, TextInput } from '@mantine/core';
 import Error from 'next/error';
 import { InferGetServerSidePropsType } from "next";
 import BlogPost from '@/components/blogPost';
@@ -86,6 +86,7 @@ const News = ({ posts: serverPosts, loggedIn, userId }: InferGetServerSidePropsT
           Post New
         </Button>
       )}
+      <Space h='sm' />
       {posts.map((post) => (
         <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} key={'Post_'+post.id} />
       ))}
