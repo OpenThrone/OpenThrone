@@ -46,7 +46,6 @@ const handler = async(
           {
             AND: [
               { to_user: Number(recruitedUser.id) },
-              { from_user: { not: 0 } }, // Exclude from_user = 0
               { from_user: Number(recruiterID) },
               { timestamp: { gte: twentyFourHoursAgo } },
             ],
@@ -69,6 +68,7 @@ const handler = async(
     }
     const toUserHistory = await prisma.recruit_history.count({
       where: {
+        from_user: Number(recruiterID),
         to_user: Number(recruitedUser.id),
         timestamp: { gte: twentyFourHoursAgo },
       },

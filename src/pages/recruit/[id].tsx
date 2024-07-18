@@ -110,7 +110,6 @@ export default function Recruit(props) {
 
       if (recData.success) {
         alertService.success("You've recruited into a player's army.", true);
-        console.log('params', params);
         if (autoRecruitParams === '1') {
           await autoRecruit();
           return;
