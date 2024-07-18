@@ -22,10 +22,10 @@ interface IndexProps {
 }
 
 const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const hideSidebar = false;
-  const context = useUser();
-  const user = context ? context.user : null;
+  const [hideSidebar, setHideSidebar] = useState(true);
+  const {user} = useUser();
   const [isPlayer, setIsPlayer] = useState(false);
+  const [isAPlayer, setIsAPlayer] = useState(false);
 
   const router = useRouter();
   const [profile, setUser] = useState<UserModel>(() => new UserModel(users, true));
@@ -39,6 +39,13 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
 
   // State to control the Spy Missions Modal
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setIsAPlayer(true);
+      setHideSidebar(false);
+    }
+  }, [user])
 
 
   useEffect(() => {
@@ -252,6 +259,10 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
               >
                 Recruit this Player
               </Link>
+              <Link
+                href={'/account/register'}
+                className={`list-group-item list-group-item-action`}
+              >Join Now</Link>
             </div>
           ) : (
             <div className="list-group mb-4">
