@@ -4,7 +4,7 @@ import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import Alert from '@/components/alert';
 import { useEffect, useState } from 'react';
-import { SimpleGrid, Paper, Group, Text, Space, ThemeIcon } from '@mantine/core';
+import { SimpleGrid, Paper, Group, Text, Space, ThemeIcon, Tooltip } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuildingColumns, faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
 
@@ -95,7 +95,8 @@ const Upgrades = (props) => {
             </Text>
           </Group>
         </Paper>
-        <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
+        <Tooltip label='Only Level 2+ Units'>
+        <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>            
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Offensive Units</Text>
             <ThemeIcon c='white'>
@@ -104,23 +105,26 @@ const Upgrades = (props) => {
           </Group>
           <Group>
             <Text>
-              {user?.units.filter((unit) => unit.type === 'OFFENSE')[0].quantity}
+              {user?.units.filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)[0].quantity}
             </Text>
-          </Group>
+              </Group>
         </Paper>
-        <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
-          <Group justify='space-between'>
-            <Text size="lg" fw={'bold'} c="dimmed">Defensive Units</Text>
-            <ThemeIcon c='white'>
-              <FontAwesomeIcon icon={faShield} />
-            </ThemeIcon>
-          </Group>
-          <Group>
-            <Text>
-              {user?.units.filter((unit) => unit.type === 'DEFENSE')[0].quantity}
-            </Text>
-          </Group>
-        </Paper>
+        </Tooltip>
+        <Tooltip label='Only Level 2+ Units'>
+          <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
+            <Group justify='space-between'>
+              <Text size="lg" fw={'bold'} c="dimmed">Defensive Units</Text>
+              <ThemeIcon c='white'>
+                <FontAwesomeIcon icon={faShield} />
+              </ThemeIcon>
+            </Group>
+            <Group>
+              <Text>
+                {user?.units.filter((unit) => unit.type === 'DEFENSE' && unit.level > 1)[0].quantity}
+              </Text>
+            </Group>
+          </Paper>
+        </Tooltip>
       </SimpleGrid>
       <Space h="md" />
       <Text size='lg'>Only Level 2 and higher units can use battle upgrades.</Text>
