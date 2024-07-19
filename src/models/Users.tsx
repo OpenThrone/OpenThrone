@@ -635,8 +635,8 @@ class UserModel {
    */
   canAttack(level: number): boolean {
     return (
-      getLevelFromXP(this.experience) >= level - 5 &&
-      getLevelFromXP(this.experience) <= level + 5
+      getLevelFromXP(this.experience) >= level - 25 && //TODO: Revert back to 5
+      getLevelFromXP(this.experience) <= level + 25
     );
   }
 

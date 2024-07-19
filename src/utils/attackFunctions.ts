@@ -185,7 +185,7 @@ export function computeAmpFactor(targetPop: number): number {
 export function calculateLoot(attacker: UserModel, defender: UserModel, turns: number): bigint {
   const uniformFactor = mtRand(90, 99) / 100; // Always between 0.90 and 0.99
   const turnFactor = mtRand(100 + turns * 10, 100 + turns * 20) / 100; // Always positive
-  const levelDifferenceFactor = Math.max(1, 1 + Math.min(0.5, (defender.level - attacker.level) * 0.05)); // Ensure it never goes below 1
+  const levelDifferenceFactor = Math.max(1, 1 + Math.min(0.5, Math.min(5, Math.abs(defender.level - attacker.level)) * 0.05)); // Ensure it never goes below 1
 
   const lootFactor = uniformFactor * turnFactor * levelDifferenceFactor;
 
@@ -405,29 +405,6 @@ export function simulateBattle(
   // Ensure attack_turns is within [1, 10]
   attackTurns = Math.max(1, Math.min(attackTurns, 10));
 
-  const levelDifference = defender.level - attacker.level;
-  let GoldPerTurn = Number(0.8 / 10);
-  switch (levelDifference) {
-    case 0:
-      GoldPerTurn *= 0.05;
-      break;
-    case 1:
-      GoldPerTurn *= 0.15;
-      break;
-    case 2:
-      GoldPerTurn *= 0.35;
-      break;
-    case 3:
-      GoldPerTurn *= 0.55;
-      break;
-    case 4:
-      GoldPerTurn *= 0.75;
-      break;
-    default:
-      if (levelDifference >= 5) GoldPerTurn *= 0.95;
-      break;
-  }
-
   const fortification = Fortifications[defender.fortLevel || 0];
   if (!fortification) {
     return { status: 'failed', message: 'Fortification not found' };
@@ -483,23 +460,27 @@ export function simulateBattle(
         fortHitpoints = 0;
       }
     }
-    
-    // Distribute casualties among defense units if fort is destroyed
-    if (fortHitpoints == 0 && defenderDefenseProportion < 0.25) {
-      const combinedUnits = [
-        ...defenseUnits,
-        ...citizenUnits,
-        ...workerUnits
-      ];
-      result.Losses.Defender.units.push(...result.distributeCasualties(combinedUnits, defenderCasualties));
-    }  else {
-      result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, defenderCasualties));
-    }
 
-    result.Losses.Attacker.units.push(...result.distributeCasualties(offenseUnits, attackerCasualties));
-    // Update total losses
-    result.Losses.Defender.total = result.Losses.Defender.units.reduce((sum, unit) => sum + unit.quantity, 0);
-    result.Losses.Attacker.total = result.Losses.Attacker.units.reduce((sum, unit) => sum + unit.quantity, 0);
+    if (Math.abs(defender.level - attacker.level) <= 5 || Math.abs(attacker.level - defender.level) <= 5) {
+      
+      // Distribute casualties among defense units if fort is destroyed
+      if (fortHitpoints == 0 && defenderDefenseProportion < 0.25) {
+        const combinedUnits = [
+          ...defenseUnits,
+          ...citizenUnits,
+          ...workerUnits
+        ];
+        result.Losses.Defender.units.push(...result.distributeCasualties(combinedUnits, defenderCasualties));
+      }  else {
+        result.Losses.Defender.units.push(...result.distributeCasualties(defenseUnits, defenderCasualties));
+      }
+
+      result.Losses.Attacker.units.push(...result.distributeCasualties(offenseUnits, attackerCasualties));
+      // Update total losses
+      result.Losses.Defender.total = result.Losses.Defender.units.reduce((sum, unit) => sum + unit.quantity, 0);
+      result.Losses.Attacker.total = result.Losses.Attacker.units.reduce((sum, unit) => sum + unit.quantity, 0);
+    } 
+      
 
     result.fortHitpoints = Math.floor(fortHitpoints);
     result.turnsTaken = turn;

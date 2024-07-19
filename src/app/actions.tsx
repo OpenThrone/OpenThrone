@@ -120,10 +120,10 @@ export async function attackHandler(
     };
   }
 
-  if (AttackPlayer.level > DefensePlayer.level + 5 || AttackPlayer.level < DefensePlayer.level - 5) {
+  if (!AttackPlayer.canAttack(DefensePlayer.level)) {
     return {
       status: 'failed',
-      message: 'You can only attack within 5 levels of your own level.',
+      message: 'You can only attack within 25 levels of your own level.', //TODO: Revert to 5 levels
     }
   }
 
