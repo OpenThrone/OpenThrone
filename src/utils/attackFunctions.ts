@@ -498,6 +498,7 @@ export function simulateBattle(
 
   result.pillagedGold = calculateLoot(attacker, defender, attackTurns);
   const BaseXP = 1000;
+  const levelDifference = Math.abs(attacker.level - defender.level);
   const LevelDifferenceBonus = levelDifference > 0 ? levelDifference * 0.05 * BaseXP : 0;
   const FortDestructionBonus = defender.fortHitpoints <= 0 ? 0.5 * BaseXP : 0;
   const TurnsUsedMultiplier = attackTurns / 10;
