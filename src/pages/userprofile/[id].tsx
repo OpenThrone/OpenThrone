@@ -13,9 +13,10 @@ import UserModel from '@/models/Users';
 import { alertService } from '@/services';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
-import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid } from '@mantine/core';
+import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid, Center, Space, Flex, Container } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
 import Image from 'next/image';
+import FriendCard from '@/components/friendCard';
 
 interface IndexProps {
   users: UserModel;
@@ -23,7 +24,7 @@ interface IndexProps {
 
 const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [hideSidebar, setHideSidebar] = useState(true);
-  const {user} = useUser();
+  const {user, forceUpdate} = useUser();
   const [isPlayer, setIsPlayer] = useState(false);
   const [isAPlayer, setIsAPlayer] = useState(false);
 
@@ -91,7 +92,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
 
     if (res.ok) {
       alertService.success('Friend added successfully');
-      context.forceUpdate();
+      forceUpdate();
     } else {
       alertService.error('Failed to add friend');
     }
@@ -106,7 +107,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
 
     if (res.ok) {
       alertService.success('Friend added successfully');
-      context.forceUpdate();
+      forceUpdate();
     } else {
       alertService.error('Failed to add friend');
     }
@@ -121,7 +122,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
 
     if (res.ok) {
       alertService.success('Truce requested successfully');
-      context.forceUpdate();
+      forceUpdate();
     } else {
       alertService.error('Failed to request truce');
     }
@@ -136,7 +137,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
 
     if (res.ok) {
       alertService.success('Friend removed successfully');
-      context.forceUpdate();
+      forceUpdate();
     } else {
       alertService.error('Failed to remove friend');
     }
@@ -161,40 +162,19 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     if (results.status === 'failed') {
       alertService.error(results.status);
     } else {
-      context.forceUpdate();
+      forceUpdate();
       router.push(`/battle/results/${results.attack_log}`);
       toggleModal();
     }
   };
 
   const isFriend = friends.some(friend => friend.friend.id === profile.id);
-  const friendsList = (friends.length > 0 ? friends.map(friend => {
-    const player = new UserModel(friend.friend); // Assuming the data structure correctly maps to UserModel
+  const friendsList = friends.length > 0 ? friends.map(friend => {
+    const player = new UserModel(friend.friend);
     return (
-      <Paper key={player.id} radius="md" withBorder p="lg" className="my-3">
-        <Indicator color={player.is_online ? 'teal' : 'red'} style={{ display: 'block', textAlign: 'center' }}>
-          <Avatar src={player?.avatar} size={40} radius={40} mx="auto" />
-        </Indicator>
-        <Text size="sm" weight={500} align="center" mt="md">
-          <Link
-            href={`/userprofile/${player.id}`}
-            className='text-blue-500 hover:text-blue-700 font-bold'
-          >
-            {player.displayName}
-          </Link>
-          {player.is_player && <Badge color={(player.colorScheme === "ELF") ?
-            'green' : (
-              player.colorScheme === 'GOBLIN' ? 'red' : (
-                player.colorScheme === 'UNDEAD' ? 'dark'
-                  : 'blue'
-              ))} ml={5}>You</Badge>}
-        </Text>
-        <Text size="xs" color="dimmed" align="center">
-          {player.race} {player.class}
-        </Text>
-      </Paper>
+      <FriendCard key={player.id} player={player} />
     );
-  }) : <p>No friends found.</p>);
+  }) : <p>No friends found.</p>;
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">{profile?.displayName}</h2>
@@ -203,20 +183,23 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
         <Alert />
       </div>
 
-      <div className="container mx-auto">
-        <p className="text-center">
+      <Container className="container mx-auto">
+        <Text className="text-center">
           <span className="text-white">{profile?.displayName}</span> is a{profile.race === 'ELF' || profile.race === 'UNDEAD' ? 'n ':' '}
           {profile?.race} {profile?.class}
-        </p>
-      </div>
-      <div className="my-4 flex justify-around">
+        </Text>
+      </Container>
+      <Space h='lg' />
+      <Flex justify='space-around'>
         <p className="mb-0">Level: {profile?.level}</p>
         <p className="mb-0">Overall Rank: {users?.overallrank}</p>
-      </div>
+      </Flex>
+
+      <Space h='lg' />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="col-span-1">
-          <div className="card-dark">
+          <Paper>
             <div className="flex items-center justify-center">
                 <Image
                   src={profile?.avatar}
@@ -229,7 +212,12 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
             </div>
             <div className="my-3 mb-4">
               <MDXRemote {...users.bionew} />
-            </div>
+          </div>
+
+          </Paper>
+
+          <SimpleGrid cols={2}>
+          <Paper>
             <div className="card-header-dark">
               <h6 className="border-light border-b-2 p-2 font-bold">Status</h6>
             </div>
@@ -243,12 +231,13 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                   <h6>Offline</h6>
                 </div>
               )}
-              <div>
-                <h6 className="border-dark border-b-2 p-2 font-bold">Last Online</h6>
-                <Text size='sm'>{lastActive}</Text>
-              </div>
             </div>
-          </div>
+              </Paper>
+            <Paper>
+                <h6 className="border-dark border-b-2 p-2 font-bold">Last Online</h6>
+                <Text size='sm' p={6}>{lastActive}</Text>
+          </Paper>
+          </SimpleGrid>
         </div>
         <div className="col-span-1">
           {hideSidebar || isPlayer ? (
@@ -348,31 +337,31 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
               {friendsList}
               </SimpleGrid>
           </Paper>
-          <table className="mb-5 table w-full table-auto">
-            <thead>
-              <tr>
-                <th colSpan={2}>Statistics</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="odd:bg-table-odd even:bg-table-even">
-                <td>Population</td>
-                <td>{profile?.population?.toLocaleString()}</td>
-              </tr>
-              <tr className="odd:bg-table-odd even:bg-table-even">
-                <td>Army Size</td>
-                <td>{profile?.armySize?.toLocaleString()}</td>
-              </tr>
-              <tr className="odd:bg-table-odd even:bg-table-even">
-                <td>Fortification</td>
-                <td>{Fortifications.find((fort)=> fort.level === profile?.fortLevel).name}</td>
-              </tr>
-              <tr className="odd:bg-table-odd even:bg-table-even">
-                <td>Gold</td>
-                <td>{toLocale(profile?.gold)}</td>
-              </tr>
-            </tbody>
-          </table>
+          <Center>
+            <h6 className="border-dark text-center font-bold">
+              Statistics
+            </h6>
+          </Center>
+          <Table striped highlightOnHover>
+            <Table.Tbody>
+              <Table.Tr className="odd:bg-table-odd even:bg-table-even">
+                <Table.Td>Population</Table.Td>
+                <Table.Td>{profile?.population?.toLocaleString()}</Table.Td>
+              </Table.Tr>
+              <Table.Tr className="odd:bg-table-odd even:bg-table-even">
+                <Table.Td>Army Size</Table.Td>
+                <Table.Td>{profile?.armySize?.toLocaleString()}</Table.Td>
+              </Table.Tr>
+              <Table.Tr className="odd:bg-table-odd even:bg-table-even">
+                <Table.Td>Fortification</Table.Td>
+                <Table.Td>{Fortifications.find((fort) => fort.level === profile?.fortLevel).name}</Table.Td>
+              </Table.Tr>
+              <Table.Tr className="odd:bg-table-odd even:bg-table-even">
+                <Table.Td>Gold</Table.Td>
+                <Table.Td>{toLocale(profile?.gold)}</Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
           <h6 className="border-dark border-b-2 p-2 text-center font-bold">
             Medals
           </h6>
