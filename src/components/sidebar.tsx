@@ -52,7 +52,7 @@ const Sidebar: React.FC = () => {
     intervalIdRef.current = setInterval(() => {
       setCurrentMessageIndex(prevIndex => (prevIndex + 1) % messages.length);
       forceUpdate();
-    }, 3000);
+    }, 15000);
 
     return () => clearInterval(intervalIdRef.current);
   }, [messages.length, forceUpdate]);
