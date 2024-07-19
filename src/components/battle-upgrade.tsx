@@ -21,10 +21,9 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   useEffect(() => {
     if (items) {
       items.forEach((item) => {
-        if (item.ownedItems === undefined) {
-          item.ownedItems = 0;
-        } else if (item.ownedItems > 0) {
+        if (item.enabled) {
           setSectionEnabled(true);
+          return;
         }
       });
       setItems(items);
