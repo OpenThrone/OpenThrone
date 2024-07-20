@@ -83,6 +83,24 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       },
     });
 
+    await prisma.bank_history.create({
+      data: {
+        gold_amount: BigInt(cost),
+        from_user_id: Number(userId),
+        from_user_account_type: 'HAND',
+        to_user_id: Number(userId),
+        to_user_account_type: 'BANK',
+        date_time: new Date().toISOString(),
+        history_type: 'SALE',
+        stats: {
+          type: 'TRAINING_CONVERSION',
+          fromItem: fromUnit,
+          toItem: toUnit,
+          amount: conversionAmount
+        }
+      }
+    });
+
     return res.status(200).json({
       message: 'Conversion successful',
       data: user.units,

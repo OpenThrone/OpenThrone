@@ -40,6 +40,21 @@ const upgrades = async(req, res) => {
             fort_level: index + 1,
           },
         });
+        await prisma.bank_history.create({
+          data: {
+            gold_amount: BigInt(Fortifications[index].cost),
+            from_user_id: session.user.id,
+            from_user_account_type: 'HAND',
+            to_user_id: 0,
+            to_user_account_type: 'BANK',
+            date_time: new Date(),
+            history_type: 'SALE',
+            stats: {
+              action: 'fort_upgrade',
+              new_structure: Fortifications[index]
+            }
+          },
+        });
         break;
       case 'houses':
         if (userMod.fortLevel < HouseUpgrades[index].fortLevel) {
@@ -55,7 +70,21 @@ const upgrades = async(req, res) => {
             house_level: index,
           },
         });
-        // Logic for buying house upgrades
+        await prisma.bank_history.create({
+          data: {
+            gold_amount: BigInt(HouseUpgrades[index].cost),
+            from_user_id: session.user.id,
+            from_user_account_type: 'HAND',
+            to_user_id: 0,
+            to_user_account_type: 'BANK',
+            date_time: new Date(),
+            history_type: 'SALE',
+            stats: {
+              action: 'house_upgrade',
+              new_structure: HouseUpgrades[index]
+            }
+          },
+        });
         break;
       case 'economy':
         if (userMod.fortLevel < EconomyUpgrades[index].fortLevel) {
@@ -69,6 +98,21 @@ const upgrades = async(req, res) => {
           data: {
             gold: userMod.gold - BigInt(EconomyUpgrades[index].cost),
             economy_level: index,
+          },
+        });
+        await prisma.bank_history.create({
+          data: {
+            gold_amount: BigInt(EconomyUpgrades[index].cost),
+            from_user_id: session.user.id,
+            from_user_account_type: 'HAND',
+            to_user_id: 0,
+            to_user_account_type: 'BANK',
+            date_time: new Date(),
+            history_type: 'SALE',
+            stats: {
+              action: 'economy_upgrade',
+              new_structure: EconomyUpgrades[index]
+            }
           },
         });
         break;
@@ -85,6 +129,21 @@ const upgrades = async(req, res) => {
           data: {
             gold: userMod.gold - BigInt(OffenseiveUpgrades[index].cost),
             structure_upgrades: structure_upgrades('OFFENSE'),
+          },
+        });
+        await prisma.bank_history.create({
+          data: {
+            gold_amount: BigInt(OffenseiveUpgrades[index].cost),
+            from_user_id: session.user.id,
+            from_user_account_type: 'HAND',
+            to_user_id: 0,
+            to_user_account_type: 'BANK',
+            date_time: new Date(),
+            history_type: 'SALE',
+            stats: {
+              action: 'offense_upgrade',
+              new_structure: OffenseiveUpgrades[index]
+            }
           },
         });
         break;
@@ -105,6 +164,21 @@ const upgrades = async(req, res) => {
             structure_upgrades: structure_upgrades('ARMORY'),
           },
         });
+        await prisma.bank_history.create({
+          data: {
+            gold_amount: BigInt(ArmoryUpgrades[index].cost),
+            from_user_id: session.user.id,
+            from_user_account_type: 'HAND',
+            to_user_id: 0,
+            to_user_account_type: 'BANK',
+            date_time: new Date(),
+            history_type: 'SALE',
+            stats: {
+              action: 'armory_upgrade',
+              new_structure: ArmoryUpgrades[index]
+            }
+          },
+        });
         break;
       case 'spy':
         if (userMod.spyLevel < SpyUpgrades[index].level - 1) {
@@ -121,6 +195,21 @@ const upgrades = async(req, res) => {
           data: {
             gold: userMod.gold - BigInt(SpyUpgrades[index].cost),
             structure_upgrades: structure_upgrades('SPY'),
+          },
+        });
+        await prisma.bank_history.create({
+          data: {
+            gold_amount: BigInt(SpyUpgrades[index].cost),
+            from_user_id: session.user.id,
+            from_user_account_type: 'HAND',
+            to_user_id: 0,
+            to_user_account_type: 'BANK',
+            date_time: new Date(),
+            history_type: 'SALE',
+            stats: {
+              action: 'spy_upgrade',
+              new_structure: SpyUpgrades[index] 
+            }
           },
         });
         break;
