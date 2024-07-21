@@ -45,7 +45,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
       defender.units,
     );
     //return spyResults;
-  } else {
+  } else if(type === 'INFILTRATE') {
     spyResults = simulateInfiltration(attacker, defender, spies);
     spyLevel = 3;
     await updateUserUnits(defenderId,
@@ -79,7 +79,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     subtype: (defenderId === Winner.id) ? 'WON' : 'LOST',
   });
 
-  
+  console.log('Spy Results: ', spyResults);
 
   return {
     status: 'success',

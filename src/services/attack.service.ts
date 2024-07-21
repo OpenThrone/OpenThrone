@@ -106,6 +106,42 @@ export const canAttack = async (attacker, defender) => {
   return true;
 };
 
+export const canAssassinate = async (attacker, defender) => {
+  const history = await prisma.attack_log.count({
+    where: {
+      AND: [
+        { attacker_id: attacker.id },
+        { defender_id: defender.id },
+        { type: 'INTEL' },
+        { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } },
+      ]
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
+  });
+  if (history >= 5) return false;
+  return true;
+};
+
+export const canInfiltrate = async (attacker, defender) => {
+  const history = await prisma.attack_log.count({
+    where: {
+      AND: [
+        { attacker_id: attacker.id },
+        { defender_id: defender.id },
+        { type: 'INFILTRATE' },
+        { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } },
+      ]
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
+  });
+  if (history >= 5) return false;
+  return true;
+};
+
 export const getTop10AttacksByTotalCasualties = async (timeFrame) => {
   const relations = await prisma.attack_log.findMany({
     where: {

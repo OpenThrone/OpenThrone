@@ -47,6 +47,7 @@ const handler = async (req, res) => {
           newSimulationDefenderLossesBreakdown: results2.Losses.Defender,
           fortHPAtEnd: results2.fortHitpoints,
           attackerWon: results2.experienceResult.Result,
+          strength: results2.strength,
         })
       );
   }
