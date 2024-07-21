@@ -10,7 +10,7 @@ import { InferGetServerSidePropsType } from "next";
 import BlogPost from '@/components/blogPost';
 
 const News = ({ posts: serverPosts, loggedIn, userId }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })));
+  const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })).sort((a, b) => b.created_timestamp - a.created_timestamp));
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '' });
   console.log('serverPosts: ', serverPosts);
