@@ -10,7 +10,7 @@ const parentLinks = [
   'Home',
   'Battle',
   'Structures',
-  'Social',
+  //'Social',
   // 'Alliances',
   'Community',
 ] as const;

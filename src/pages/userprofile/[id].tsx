@@ -293,7 +293,9 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 className="list-group-item list-group-item-action"
               >
                 Recruit this Player
-              </Link>
+                </Link>
+                {true === false && (
+                <>
                 <button
                   type="button"
                   onClick={handleAddFriend}
@@ -323,20 +325,26 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                   style={{ display: isFriend ? 'block' : 'none' }}
                 >
                   Request Gold
-                </button>
+                    </button>
+                  </>
+                )}
                 {/*}<button type='button' className={`list-group-item list-group-item-action w-full text-left ${isFriend ? 'disabled' : ''}`}>
                   Add to Enemies List
               </button>{*/}
             </div>
           )}
-          <h6 className="border-dark text-center font-bold">
-            Top Friends
-          </h6>
-          <Paper shadow="sm" p="md" className="my-5">
-            <SimpleGrid cols={3} spacing={4}>
-              {friendsList}
-              </SimpleGrid>
-          </Paper>
+          {true === false && (
+            <>
+              <h6 className="border-dark text-center font-bold">
+                Top Friends
+              </h6>
+              <Paper shadow="sm" p="md" className="my-5">
+                <SimpleGrid cols={3} spacing={4}>
+                  {friendsList}
+                </SimpleGrid>
+              </Paper>
+            </>
+          )}
           <Center>
             <h6 className="border-dark text-center font-bold">
               Statistics
