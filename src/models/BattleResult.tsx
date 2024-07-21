@@ -17,6 +17,8 @@ class BattleResult {
 
   pillagedGold: number | BigInt | undefined;
 
+  strength: any[];
+
   Losses: {
     Attacker: {
       total: number;
@@ -35,6 +37,7 @@ class BattleResult {
     this.turnsTaken = 0;
     this.experienceResult = new BattleSimulationResult();
     this.pillagedGold = 0;
+    this.strength = [];
     this.Losses = {
       Attacker: {
         total: 0,

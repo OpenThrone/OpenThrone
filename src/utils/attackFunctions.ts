@@ -479,9 +479,17 @@ export function simulateBattle(
       // Update total losses
       result.Losses.Defender.total = result.Losses.Defender.units.reduce((sum, unit) => sum + unit.quantity, 0);
       result.Losses.Attacker.total = result.Losses.Attacker.units.reduce((sum, unit) => sum + unit.quantity, 0);
+      result.strength.push({
+        'turn': turn,
+        'attackerKS': attackerKS,
+        'defenderDS':defenderDS,
+        'defenderKS':defenderKS,
+        'attackerDS':attackerDS,
+      });
     } 
       
 
+    
     result.fortHitpoints = Math.floor(fortHitpoints);
     result.turnsTaken = turn;
     result.experienceResult = computeExperience(
@@ -507,7 +515,6 @@ export function simulateBattle(
   const isAttackerWinner = result.experienceResult.Result === 'Win';
   result.experienceResult.Experience.Attacker += (isAttackerWinner ? XP * (75 / 100) : XP * (25 / 100)) + result.experienceResult.Experience.Attacker;
   result.experienceResult.Experience.Defender += (isAttackerWinner ? XP * (25 / 100) : XP * (75 / 100)) + result.experienceResult.Experience.Defender;
-  
   return result;
 }
 
