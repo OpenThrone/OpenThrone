@@ -84,20 +84,21 @@ const handler = async (
         },
       });
 
+      const reConfirm = await prisma.recruit_history.findMany({
+        where: {
+          from_user: Number(recruitedUserId),
+          to_user: Number(session.user.id),
+          timestamp: { gte: midnight },
+        },
+      });
+
+      // If the number of recruitments is 5 or more, reject the request and revert the transaction
+      if (reConfirm.length > 5) {
+        throw new Error(`User has already been recruited 5 times in the last 24 hours.`);
+      }
+      
       return { success: true };
     });
-    const reConfirm = await prisma.recruit_history.findMany({
-      where: {
-        from_user: Number(recruitedUserId),
-        to_user: Number(session.user.id),
-        timestamp: { gte: midnight },
-      },
-    });
-
-    // If the number of recruitments is 5 or more, reject the request and revert the transaction
-    if (reConfirm.length > 5) {
-      throw new Error(`User has already been recruited 5 times in the last 24 hours.`);
-    }
 
     return res.status(200).json(result);
   } catch (error) {
