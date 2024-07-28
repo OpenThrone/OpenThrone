@@ -423,7 +423,7 @@ export function simulateBattle(
       (defender.unitTotals.defense / totalPopulation >= 0.25 ? defender.unitTotals.defense : defender.unitTotals.defense + (defender.unitTotals.citizens + defender.unitTotals.workers) * 0.25),
       0
     );
-    const CharPop = attacker.unitTotals.offense;
+    const AttackPop = attacker.unitTotals.offense;
     const AmpFactor = computeAmpFactor(TargetPop);
     const offenseUnits = filterUnitsByType(attacker.units, 'OFFENSE');
     const defenseUnits = filterUnitsByType(defender.units, 'DEFENSE');
@@ -439,7 +439,7 @@ export function simulateBattle(
       defenderDS,
       defenderKS,
       attackerDS,
-      CharPop,
+      AttackPop,
       TargetPop,
       AmpFactor,
       defenderDefenseProportion,
@@ -552,7 +552,7 @@ function computeExperience(
   }
 
   const AmpFactor = mtRand(97, 103) / 100;
-  if (PhysOffToDefRatio >= 1) {
+  if (attacker.offense > defender.defense) {
     // Attacker Wins
     result.Result = 'Win';
     result.Experience.Attacker = Math.round(

@@ -1,40 +1,27 @@
-import { ItemTypes } from "@/constants";
-import { getLevelFromXP } from "@/utils/utilities";
+
+import { Grid, Space, Group, Button, Text } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
+import Modal from "./modal";
+import SpyMissionsModal from "./spyMissionsModal";
+import { useState } from "react";
 
 const AssassinateResult = ({ battle, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
+  const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
+  const [isAttackModalOpen, setIsAttackModalOpen] = useState(false);
   const isViewerAttacker = viewerID === attackerPlayer.id
-  const isViewerDefender = viewerID === defenderPlayer.id;
-  const isPlayerWinner = winner === viewerID;
   const isAttackerWinner = winner === attackerPlayer.id;
-  console.log(stats);
-  const lines = [];
-  const defenderRace = defenderPlayer?.race ?? 'ELF';
 
-  const describeLosses = (losses) => {
-    return Object.entries(losses).map(([key, value]) => {
-      const [unitType, unitLevel] = key.split('-');
-      return `${value} ${unitType} level ${unitLevel}`;
-    }).join(', ');
+  const toggleSpyModal = () => {
+    setIsSpyModalOpen(!isSpyModalOpen);
   };
 
-  const totalLosses = (losses) => {
-    if (losses)
-      return Object.values(losses).reduce((acc, curr) => acc + curr, 0);
-    else return 0;
-  };
-
-  const attackerTotalLosses = totalLosses(stats.attacker_losses);
-  const defenderTotalLosses = totalLosses(stats.defender_losses);
+  const toggleAttackModal = () => {
+    setIsAttackModalOpen(!isAttackModalOpen);
+  }
 
   const summaryLines = []
-
-  const countUnitsOfType = (units, type) => {
-    return units.filter(unit => unit.type === type)
-      .reduce((acc, curr) => acc + curr.quantity, 0);
-  }
 
   summaryLines.push(`Battle ID: ${battle.id}`);
   if (isViewerAttacker)
@@ -86,8 +73,8 @@ const AssassinateResult = ({ battle, viewerID }) => {
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="text-center">
+      <Grid grow className="gap-5">
+        <Grid.Col span={3} md={4} className="text-center">
           <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
           <center>
             <Image
@@ -98,8 +85,58 @@ const AssassinateResult = ({ battle, viewerID }) => {
               height={150}
             />
           </center>
-        </div>
-        <div className="text-center">
+        </Grid.Col>
+        <Grid.Col span={6} md={4} className="text-center">
+          <Space h='10' />
+          <div className="text-container inline-block align-middle">
+            <Text color="white" fw="bolder" size='xl' className="font-medieval">
+              Battle Report
+            </Text>
+
+            <Text size='lg' fw='bold' className={`text-2xl ${isAttackerWinner ? 'text-green-400' : 'text-red-400'}`}>
+              {isViewerAttacker ? 'You were' : attackerPlayer.display_name + ' was'} {isAttackerWinner ? 'successful' : 'unsuccessful.'}
+            </Text>
+            <Text size='md' fw='normal' className="text-2xl">
+              Battle ID: {battle.id}
+            </Text>
+            <Space h='10' />
+            <Group justify='center'>
+              {(isViewerAttacker || viewerID === 1) && (
+                <>
+                  <Text size="lg" fw='bold'>Another Mission?</Text>
+                  <Space h='10' />
+                  <Group justify='center'>
+
+                    <Button onClick={toggleSpyModal}>
+                      Send More Spies
+                    </Button>
+                    <SpyMissionsModal
+                      isOpen={isSpyModalOpen}
+                      toggleModal={toggleSpyModal}
+                      defenderID={defenderPlayer?.id}
+                    />
+                    <Button onClick={toggleSpyModal}>
+                      Infiltrate
+                    </Button>
+                    <Button onClick={toggleSpyModal}>
+                      Assassinate
+                    </Button>
+                    <Button onClick={toggleAttackModal}>
+                      Attack
+                    </Button>
+                    <Modal
+                      isOpen={isAttackModalOpen}
+                      toggleModal={toggleAttackModal}
+                      profileID={defenderPlayer.id}
+                    />
+                  </Group>
+                </>
+              )}
+            </Group>
+
+          </div>
+        </Grid.Col>
+        <Grid.Col span={3} md={4} className="text-center">
           <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
           <center>
             <Image
@@ -110,13 +147,13 @@ const AssassinateResult = ({ battle, viewerID }) => {
               height={150}
             />
           </center>
-        </div>
-      </div>
+        </Grid.Col>
+      </Grid>
       <div style={{
         backgroundImage: `url(${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/background/advisor-scroll.webp)`,
-        paddingLeft: '34%',
-        paddingRight: '34%',
-        backgroundSize: 'contain',
+        paddingLeft: '70px',
+        paddingRight: '70px',
+        backgroundSize: '75% 100%',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         paddingTop: '60px',

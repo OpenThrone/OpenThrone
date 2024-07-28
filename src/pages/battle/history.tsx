@@ -9,11 +9,11 @@ import { InferGetServerSidePropsType } from "next";
 // Assuming this is the path to your prisma client
 const ROWS_PER_PAGE = 5;
 const WarHistory = ({
-              attackLogs,
-              defenseLogs,
-              attackPage: initialAttackPage,
-              defensePage: initialDefensePage,
-            }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+                      attackLogs,
+                      defenseLogs,
+                      attackPage: initialAttackPage,
+                      defensePage: initialDefensePage,
+                    }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter();
   const [attackPage, setAttackPage] = useState(initialAttackPage);
   const [defensePage, setDefensePage] = useState(initialDefensePage);
@@ -107,7 +107,7 @@ export const getServerSideProps = async (context: any) => {
 
   // Fetch attack logs where the user is the attacker and include the related attacker and defender players
   const attackLogs = await prisma.attack_log.findMany({
-    where: { attacker_id: userId, type: 'attack'},
+    where: { attacker_id: userId, type: 'attack' },
     include: {
       attackerPlayer: true,
       defenderPlayer: true,
@@ -121,7 +121,7 @@ export const getServerSideProps = async (context: any) => {
 
   // Fetch defense logs where the user is the defender and include the related attacker and defender players
   const defenseLogs = await prisma.attack_log.findMany({
-    where: { defender_id: userId, type: 'attack' },
+    where: { defender_id: userId },
     include: {
       attackerPlayer: true,
       defenderPlayer: true,
@@ -133,7 +133,19 @@ export const getServerSideProps = async (context: any) => {
     },
   });
 
-  return { props: { attackLogs, defenseLogs, attackPage, defensePage } };
+  const filteredDefenseLogs = defenseLogs.filter((log) => {
+    if (log.type === 'attack') {
+      return true;
+    }
+    if (log.winner === userId) {
+      return true;
+    }
+    return false;
+  })
+
+  return {
+    props: {
+      attackLogs, defenseLogs: filteredDefenseLogs, attackPage, defensePage } };
 };
 
 export default WarHistory;

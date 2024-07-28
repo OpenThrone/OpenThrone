@@ -39,7 +39,7 @@ const handler = async (req, res) => {
           originalDefenderArmy: attack.stats.startOfAttack.Defender.units.filter((units) => units.type === 'DEFENSE' || units.type === 'WORKER' || units.type === 'CITIZEN').reduce((total, unit) => total + unit.quantity, 0),
           originalAttackerLosses: attack.stats.attacker_losses.total,
           originalDefenderLosses: attack.stats.defender_losses.total,
-         newSimulationAttackerArmy: results2.attacker.units.filter((units) => units.type === 'OFFENSE').reduce((total, unit) => total + unit.quantity, 0),
+          newSimulationAttackerArmy: results2.attacker.units.filter((units) => units.type === 'OFFENSE').reduce((total, unit) => total + unit.quantity, 0),
           newSimulationDefenderArmy: results2.defender.units.filter((units) => units.type === 'DEFENSE' || units.type === 'WORKER' || units.type === 'CITIZEN').reduce((total, unit) => total + unit.quantity, 0),
           newSimulationAttackerLossesTotal: results2.Losses.Attacker.total,
           newSimulationAttackerLossesBreakdown: results2.Losses.Attacker,
@@ -48,6 +48,8 @@ const handler = async (req, res) => {
           fortHPAtEnd: results2.fortHitpoints,
           attackerWon: results2.experienceResult.Result,
           strength: results2.strength,
+          originalGold: attack.stats.pillagedGold,
+          newGold: results2.pillagedGold,
         })
       );
   }

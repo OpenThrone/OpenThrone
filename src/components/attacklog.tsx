@@ -7,7 +7,8 @@ import React, { useEffect, useState } from 'react';
 import Modal from './modal';
 import toLocale from '@/utils/numberFormatting';
 import Link from 'next/link';
-import { HoverCard, List, Text, Tooltip } from '@mantine/core';
+import { Button, HoverCard, List, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core';
+import router from 'next/router';
 
 interface Loss {
   total: number;
@@ -31,6 +32,7 @@ interface Log {
   defenderPlayer?: { display_name: string };
   timestamp: string;
   stats: Stats;
+  type: string;
 }
 
 interface LossesListProps {
@@ -40,6 +42,7 @@ interface LossesListProps {
 interface StatsListProps {
   stats: Stats;
   type: string;
+  subType: string;
 }
 
 interface PlayerOutcomeProps {
@@ -94,11 +97,18 @@ const LossesList: React.FC<LossesListProps> = ({ losses }) => {
   );
 };
 
-const StatsList: React.FC<StatsListProps> = ({ id, stats, type }) => (
+const StatsList: React.FC<StatsListProps> = ({ id, stats, type, subType }) => (
   <ul>
-    <li>Pillaged Gold: {toLocale(stats.pillagedGold.toLocaleString())} | Battle ID: {id}</li>
-    <li>XP Earned: {(typeof stats.xpEarned === 'object' ? '[Defender: ' + stats.xpEarned.defender + ' | Attacker: ' +stats.xpEarned.attacker + ']' : String(stats.xpEarned))}</li>
-    {type !== 'defense' ? <li>Turns Used: {stats.turns}</li> : ''}
+    {subType === 'attack' &&
+      (
+      <>
+        <li>Pillaged Gold: {toLocale(stats.pillagedGold.toLocaleString())}</li>
+        <li>XP Earned: {(typeof stats.xpEarned === 'object' ? (type === 'defense' ? stats.xpEarned.defender : stats.xpEarned.attacker ) : String(stats.xpEarned))}</li>
+        {type === 'attack' ? <li>Turns Used: {stats.turns}</li> : ''}
+      </>
+        )
+    }
+    
   </ul>
 );
 
@@ -128,6 +138,8 @@ const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => {
           : <Link href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</Link> ?? 'Unknown'}
         <br />
         {formattedDate}
+        <br />
+        Battle ID: {log.id}
       </td>
     </>
   );
@@ -173,7 +185,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
               
               <PlayerOutcome log={log} type={type} />
               <td className="border-b px-4 py-2">
-                <StatsList id={log.id} stats={log.stats} type={type} />
+                <StatsList id={log.id} stats={log.stats} type={type} subType={log.type} />
               </td>
               <td className="border-b px-4 py-2">
                 <ul>
@@ -188,24 +200,42 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
                 </ul>
                 </td>
               <td className="border-b px-4 py-2 text-center">
+                <SimpleGrid cols={2} mt='sm' mb={'sm'}>
                 {type === 'defense' ? (
-                 <> <button
-                type="button"
-                onClick={(()=> toggleModal(parseInt(log.attacker_id)))}
-                    className={`bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-700 `}
-              >
-                Attack Back              </button>
-              <Modal
+                  <>
+                    <Button
+                      type="button"
+                      onClick={(() => toggleModal(parseInt(log.attacker_id)))}
+                      color={"brand"}
+                        className={`font-bold py-2 px-4 rounded `}
+                        size='xs'
+
+                      >Attack Back
+                    </Button>
+                    <Modal
                       isOpen={openModalId === parseInt(log.attacker_id)}
                       toggleModal={(() => toggleModal(parseInt(log.attacker_id)))}
                       profileID={parseInt(log.attacker_id)}
-              /></>
-                  
+                    /></>
+                  ) : <>
+                      <Button
+                        type="button"
+                        onClick={(() => toggleModal(parseInt(log.attacker_id)))}
+                        color={"brand"}
+                        className={`font-bold py-2 px-4 rounded `}
+                        size='xs'
+
+                      >Attack Again
+                      </Button>
+                      <Modal
+                        isOpen={openModalId === parseInt(log.defender_id)}
+                        toggleModal={(() => toggleModal(parseInt(log.defender_id)))}
+                        profileID={parseInt(log.defender_id)}
+                      /></>
+                  }    
                 
-              ) : (
-                  <a href={`/battle/results/${log.id}`} className='inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 '>View Battle</a>
-              
-                )}
+                  <Button onClick={()=>router.push(`/battle/results/${log.id}`)} size='xs' className='font-bold py-2 px-4 rounded' color="brand.5">View Battle</Button>
+                </SimpleGrid>
               </td>
             </tr>
           ))

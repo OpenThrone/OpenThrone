@@ -1,8 +1,12 @@
 import UserModel from "@/models/Users";
 import toLocale from "@/utils/numberFormatting";
 import { getLevelFromXP } from "@/utils/utilities";
+import { Grid, Space, Group, Button, Text, Paper } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
+import Modal from "./modal";
+import users from "@/pages/battle/users";
+import { useState } from "react";
 
 const attackResults = ({ battle, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
@@ -11,8 +15,13 @@ const attackResults = ({ battle, viewerID }) => {
   const isPlayerWinner = winner === viewerID;
   const isAttackerWinner = winner === attackerPlayer.id;
   console.log(stats);
+  const [isOpen, setIsOpen] = useState(false);
   const lines = [];
   const defenderRace = defenderPlayer?.race ?? 'ELF';
+
+  const toggleModal = () => {
+    setIsOpen(!isOpen);
+  };
 
   const describeLosses = (losses) => {
     return Object.entries(losses).map(([key, value]) => {
@@ -78,23 +87,53 @@ const attackResults = ({ battle, viewerID }) => {
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="text-center">
+      <Grid grow className="gap-5">
+        <Grid.Col span={3} md={4} className="text-center">
           <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
-          <h4 className="text-white">Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}</h4>
+          <h4>Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}</h4>
           <center>
             <Image
               src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${attackerPlayer?.race}_150x150.webp`}
               className="ml-2"
+              alt="attacker avatar"
               width={150}
               height={150}
-              alt="attacker avatar"
             />
           </center>
-        </div>
-        <div className="text-center">
+        </Grid.Col>
+        <Grid.Col span={6} md={4} className="text-center">
+          <Space h='10' />
+          <div className="text-container inline-block align-middle">
+            <Text color="white" fw="bolder" size='xl' className="font-medieval">
+              Battle Report
+            </Text>
+          
+            <Text size='lg' fw='bold' className={`text-2xl ${isAttackerWinner ? 'text-green-400' : 'text-red-400'}`}>
+              {isViewerAttacker ? 'You were' : attackerPlayer.display_name + ' was'} {isAttackerWinner ? 'successful' : 'unsuccessful.'}
+            </Text>
+            <Text size='md' fw='normal' className="text-2xl">
+              Battle ID: {battle.id}
+            </Text>
+                <Space h='10' />
+                <Group justify='center'>
+              {(isViewerAttacker) ? (
+                <Button onClick={toggleModal}>
+                    Attack Again
+                  </Button>
+              ) : (<Button onClick={toggleModal}>Attack Back</Button>)
+              }
+              <Modal
+                isOpen={isOpen}
+                toggleModal={toggleModal}
+                profileID={(isViewerAttacker ? users.id : attackerPlayer.id)}
+              />
+                </Group>
+            
+          </div>
+        </Grid.Col>
+        <Grid.Col span={3} md={4} className="text-center">
           <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
-          <h4 className="text-white">Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}</h4>
+          <h4>Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}</h4>
           <center>
             <Image
               src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${defenderPlayer?.race}_150x150.webp`}
@@ -104,8 +143,8 @@ const attackResults = ({ battle, viewerID }) => {
               height={150}
             />
           </center>
-        </div>
-      </div>
+        </Grid.Col>
+      </Grid>
       <div style={{
         backgroundImage: 'url(/assets/images/scroll.webp)',
         paddingLeft: '70px',
@@ -137,7 +176,7 @@ const attackResults = ({ battle, viewerID }) => {
             </motion.p>
           ))}
         </AnimatePresence>
-      </div>
+        </div>
     </div>
   );
 };
