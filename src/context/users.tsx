@@ -31,6 +31,7 @@ const isPublicPath = (path: string | null) => {
     /^\/$/,
     /^\/userprofile\/[a-z0-9]+$/i, // Updated to include letters or numbers
     /^\/recruit\/[a-z0-9]+$/i, // New regex for /recruit/
+    /^\/auto-recruit$/, // New regex for /auto-recruit/
   ];
   if (path === null) return false;
   return publicPathsRegex.some((regex) => regex.test(path));

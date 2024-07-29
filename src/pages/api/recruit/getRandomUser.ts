@@ -14,11 +14,9 @@ const handler = async (
   const now = new Date();
   const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-
   const session = req.session;
-
   const recruiterID = session ? parseInt(session.user?.id.toLocaleString()) : 0;
-
+ 
   // Fetch all users
   const users = await prisma.users.findMany({
     select: {
@@ -42,13 +40,14 @@ const handler = async (
   const userPromises = users.map(async (user: any) => {
     const recruitmentCount = await prisma.recruit_history.count({
       where: {
-        to_user: recruiterID,
-        from_user: user.id,
+        to_user: user.id,
+        from_user: (recruiterID? user.id : 0),
         timestamp: { gte: startDate },
+        ...(recruiterID === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
       },
     });
 
-    const remainingRecruits = (session.user.id === 1 ? 5 : 5) - recruitmentCount;
+    const remainingRecruits = 5 - recruitmentCount;
     return { user, remainingRecruits };
   });
 
@@ -66,4 +65,4 @@ const handler = async (
   return res.status(200).json({ randomUser: { ...randomUser.user, remainingRecruits: randomUser.remainingRecruits }, totalLeft, "totalPlayerCount": users.length, "maxRecruitsExpected": users.length * 5 });
 }
 
-export default withAuth(handler);
+export default withAuth(handler, true);

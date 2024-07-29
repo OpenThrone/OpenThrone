@@ -24,9 +24,7 @@ const handler = async (
 
   const session = req.session;
 
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  const recruiterUser = (session? session.user.id : 0);
 
   const { recruitedUserId, selfRecruit } = req.body;
 
@@ -35,8 +33,8 @@ const handler = async (
       // Save the recruitment record
       await prisma.recruit_history.create({
         data: {
-          from_user: Number(recruitedUserId),
-          to_user: Number(session.user.id),
+          from_user: recruiterUser ? Number(recruitedUserId) : recruiterUser,
+          to_user: recruiterUser ? Number(recruiterUser) : recruitedUserId,
           ip_addr: req.headers['cf-connecting-ip'] as string,
           timestamp: new Date(),
         },
@@ -51,9 +49,10 @@ const handler = async (
       // Check the number of recruitments for the recruited user within the last 24 hours
       const recruitments = await prisma.recruit_history.findMany({
         where: {
-          from_user: Number(recruitedUserId),
-          to_user: Number(session.user.id),
+          from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
+          to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
           timestamp: { gte: midnight },
+          ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
         },
       });
 
@@ -63,12 +62,12 @@ const handler = async (
       }
 
       let userToUpdate = await prisma.users.findUnique({
-        where: { id: Number(session.user.id) },
+        where: { id: Number(recruiterUser) },
       });
 
       if (selfRecruit) {
         userToUpdate = await prisma.users.findUnique({
-          where: { id: Number(session.user.id) },
+          where: { id: Number(recruiterUser) },
         });
       }
 
@@ -86,8 +85,8 @@ const handler = async (
 
       const reConfirm = await prisma.recruit_history.findMany({
         where: {
-          from_user: Number(recruitedUserId),
-          to_user: Number(session.user.id),
+          from_user: recruitedUserId ? Number(recruitedUserId) : recruiterUser,
+          to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
           timestamp: { gte: midnight },
         },
       });
@@ -110,4 +109,4 @@ const handler = async (
   }
 }
 
-export default withAuth(handler);
+export default withAuth(handler, true);

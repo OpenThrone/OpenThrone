@@ -14,7 +14,7 @@ export default function AutoRecruiter(props) {
   const [isPaused, setIsPaused] = useState(false);
   const [lastSuccess, setLastSuccess] = useState(false);
   const [totalLeft, setTotalLeft] = useState(0);
-  const { forceUpdate } = useUser();
+  const { forceUpdate, user: viewer} = useUser();
 
   const fetchRandomUser = useCallback(async () => {
     try {
@@ -73,7 +73,10 @@ export default function AutoRecruiter(props) {
       if (response.ok) {
         setLastSuccess(true);
         setConsecutiveSuccesses((prev) => prev + 1);
-        forceUpdate();
+        if (viewer) {
+          console.log('user', viewer);
+          forceUpdate();
+        }
         if (!isPaused) {
           if (totalLeft === 0) {
             stopRecruiting(true);
