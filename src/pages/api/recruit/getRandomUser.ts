@@ -40,12 +40,12 @@ const handler = async (
   const userPromises = users.map(async (user: any) => {
     const recruitmentCount = await prisma.recruit_history.count({
       where: {
-        to_user: user.id,
-        from_user: (recruiterID? user.id : 0),
+        to_user: recruiterID,
+        from_user: recruiterID === 0 ? recruiterID : user.id,
         timestamp: { gte: startDate },
         ...(recruiterID === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
       },
-    });
+    });   
 
     const remainingRecruits = 5 - recruitmentCount;
     return { user, remainingRecruits };

@@ -24,11 +24,14 @@ const handler = async (
 
   const session = req.session;
 
-  const recruiterUser = (session? session.user.id : 0);
+  const recruiterUser = (session ? session.user.id : 0);
 
-  const { recruitedUserId, selfRecruit } = req.body;
+  let { recruitedUserId, selfRecruit } = req.body;
 
   try {
+    if (!Number.isInteger(recruitedUserId)) {
+      recruitedUserId = await prisma.users.findFirst({where: {recruit_link: recruitedUserId}}).then((user) => user.id);
+    }
     const result = await prisma.$transaction(async (prisma) => {
       // Save the recruitment record
       await prisma.recruit_history.create({
@@ -55,6 +58,14 @@ const handler = async (
           ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
         },
       });
+
+      console.log('recruiterUser', recruiterUser);
+      (recruiterUser === 0 && console.log('recruitments', {
+        from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
+        to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
+        timestamp: { gte: midnight },
+        ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
+      }));
 
       // If the number of recruitments is 5 or more, reject the request and revert the transaction
       if (recruitments.length > 5) {

@@ -112,12 +112,7 @@ const handler = async(
         .status(400)
         .json({ error: 'You can only Recruit up to 5x in 24 hours.' });
     }
-    console.log({
-      from_user: Number(recruitedUser.id),
-      to_user: Number(recruiterID),
-      ip_addr: req.headers['cf-connecting-ip'] as string,
-      timestamp: new Date(),
-    });
+    
     const newRecord = await prisma.recruit_history.create({
       data: {
         from_user: Number(recruitedUser.id),

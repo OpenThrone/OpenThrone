@@ -64,7 +64,7 @@ export default function AutoRecruiter(props) {
         },
         body: JSON.stringify({
           recruitedUserId: user.id,
-          selfRecruit: false, // Adjust this flag based on your requirement
+          selfRecruit: false,
         }),
       });
 
@@ -85,10 +85,13 @@ export default function AutoRecruiter(props) {
           }
         }
       } else {
-        console.error('Error handling recruitment:', data.error);
+        console.error('Error handling recruitment, ln88:', data.error);
+        console.log('startingCountdown after error ');
+        startCountdown();
       }
     } catch (error) {
-      console.error('Error handling recruitment:', error);
+      console.error('Error handling recruitment, ln 93:', error);
+      startCountdown();
     }
   }, [user, isPaused, startCountdown, forceUpdate, totalLeft]);
 
