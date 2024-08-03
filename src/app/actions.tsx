@@ -79,8 +79,6 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     subtype: (defenderId === Winner.id) ? 'WON' : 'LOST',
   });
 
-  console.log('Spy Results: ', spyResults);
-
   return {
     status: 'success',
     result: spyResults,
