@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { PlayerUnit } from '@/types/typings';
 import mtrand from '@/utils/mtrand';
+import { OTStartDate } from '@/utils/timefunctions';
 
 function increaseCitizens(units: PlayerUnit[]) {
   const citizen = units.find((unit) => unit.type === 'CITIZEN');
@@ -46,24 +47,20 @@ const handler = async (
       // Wait for 1 second
       await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
 
-      const now = new Date();
-      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
       // Check the number of recruitments for the recruited user within the last 24 hours
       const recruitments = await prisma.recruit_history.findMany({
         where: {
           from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
           to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
-          timestamp: { gte: midnight },
+          timestamp: { gte: OTStartDate },
           ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
         },
       });
 
-      console.log('recruiterUser', recruiterUser);
       (recruiterUser === 0 && console.log('recruitments', {
         from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
         to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
-        timestamp: { gte: midnight },
+        timestamp: { gte: OTStartDate },
         ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
       }));
 
@@ -98,7 +95,7 @@ const handler = async (
         where: {
           from_user: recruitedUserId ? Number(recruitedUserId) : recruiterUser,
           to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
-          timestamp: { gte: midnight },
+          timestamp: { gte: OTStartDate },
         },
       });
 

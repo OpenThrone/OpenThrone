@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
+import { OTStartDate } from '@/utils/timefunctions';
 
 const handler = async (
   req: NextApiRequest,
@@ -10,7 +11,6 @@ const handler = async (
     return res.status(405).end(); // Method not allowed
   }
 
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const session = req?.session;
   const requestID = req?.query?.id;
   const recruiterID = requestID ? parseInt(requestID.toString()) : (session ? parseInt(session.user?.id.toLocaleString()) : 0);
@@ -20,7 +20,7 @@ const handler = async (
     where: {
       from_user: { not: { in: [0, recruiterID] } },
       to_user: recruiterID,
-      timestamp: { gte: twentyFourHoursAgo },
+      timestamp: { gte: OTStartDate },
     },
     select: {
       from_user: true,
@@ -63,7 +63,7 @@ const handler = async (
     recruitCount: recruitCountMap[user.id],
   }));
 
-  return res.status(200).json({ usersWithRecruitCount, '24hoursago': twentyFourHoursAgo, recruitmentRecords });
+  return res.status(200).json({ usersWithRecruitCount, '24hoursago': OTStartDate, recruitmentRecords });
 }
 
 export default withAuth(handler);

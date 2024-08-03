@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import mtrand from '@/utils/mtrand';
+import { OTStartDate} from '@/utils/timefunctions';
 
 const handler = async (
   req: NextApiRequest,
@@ -11,12 +12,9 @@ const handler = async (
     return res.status(405).end(); // Method not allowed
   }
 
-  const now = new Date();
-  const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const session = req.session;
+  const { session } = req;
   const recruiterID = session ? parseInt(session.user?.id.toLocaleString()) : 0;
- 
+
   // Fetch all users
   const users = await prisma.users.findMany({
     select: {
@@ -29,7 +27,7 @@ const handler = async (
     },
     where: {
       NOT: [{ id: { in: [0, recruiterID] } }],
-      created_at: { lt: startDate },
+      created_at: { lt: OTStartDate },
     },
   });
 
@@ -42,7 +40,7 @@ const handler = async (
       where: {
         to_user: recruiterID,
         from_user: recruiterID === 0 ? recruiterID : user.id,
-        timestamp: { gte: startDate },
+        timestamp: { gte: OTStartDate },
         ...(recruiterID === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
       },
     });   

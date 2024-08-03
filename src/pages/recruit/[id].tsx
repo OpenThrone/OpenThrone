@@ -111,15 +111,15 @@ export default function Recruit(props) {
       const recData = await response.json();
 
       if (recData.success) {
-        alertService.success("You've recruited into a player's army.", true);
+        alertService.success("You've been recruited into a player's army.", true);
         if (autoRecruitParams === '1') {
           await autoRecruit();
           return;
         }
-        router.push(`/userprofile/${id}`);
+        //router.push(`/userprofile/${id}`);
         // Navigate to the user's profile page which is /userprofile/[id]
       }
-      console.log('recData: ', recData);
+
       if (recData.error) {
         alertService.error(recData.error);
         if (autoRecruitParams === '1') {
