@@ -25,6 +25,7 @@ interface RaceColors {
   footerClass: string;
   borderClass: string;
   borderBottomClass: string;
+  race: string;
 }
 
 interface LayoutContextProps {
@@ -50,6 +51,7 @@ function generateRaceColors(race: string): RaceColors {
     footerClass: `bg-${race}-footer`,
     borderClass: `${race}-double-border border-${race}`,
     borderBottomClass: `${race}-double-border-down`,
+    race: race.toUpperCase()
   };
   return colors;
 }

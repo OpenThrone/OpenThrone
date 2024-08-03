@@ -31,7 +31,7 @@ const CustomModal: FC<ModalProps> = ({ isOpen, children, toggleModal }) => {
           <Modal.Title>
             <Title order={4}>Spy Mission</Title>
           </Modal.Title>
-          <Modal.CloseButton />
+          <Modal.CloseButton size={'lg'} />
         </Modal.Header>
         <Divider my="xs" />
         <Modal.Body>
