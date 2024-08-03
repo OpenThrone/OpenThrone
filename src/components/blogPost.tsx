@@ -1,4 +1,4 @@
-import { Divider, Flex, Paper, Space, Title, Text, Checkbox, Badge } from "@mantine/core";
+import { Flex, Paper, Space, Title, Text, Checkbox, Badge, Divider } from "@mantine/core";
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -23,7 +23,8 @@ const BlogPost = ({ post, loggedIn, handleReadChange }) => {
             )}
           </Flex>
         </Paper>
-        <Paper className="p-4" bg={'#b5a565'}>
+        <Divider />
+        <Paper className="p-4" bg={'!#b5a565'} >
           <Markdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw]}
@@ -33,7 +34,7 @@ const BlogPost = ({ post, loggedIn, handleReadChange }) => {
               h4: ({ node, ...props }) => <Title order={4} {...props} />,
               p: ({ node, ...props }) => <Text component="p" fw={'normal'} size='lg' mb={'xl'} {...props} />, // Use Text with mb for margin-bottom
             }}
-            className="text-black font-semibold text-shadow-xs shadow-slate-900 space-y-100"
+            className="text-gray-400 font-semibold text-shadow-sm shadow-black space-y-100"
           >
             {post.content}
           </Markdown>

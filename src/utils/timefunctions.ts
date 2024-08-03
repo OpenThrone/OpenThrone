@@ -20,7 +20,7 @@ const getTimeToNextTurn = (date = new Date()) => {
   const nextTurn = new Date(Math.ceil(date.getTime() / ms) * ms);
   return nextTurn.toString();
 }; 
-const OTTime = new Date(new Date().getTime() - 4 * 60 * 60 * 1000);
+const OTTime = new Date(new Date().getTime() +0 * 60 * 60 * 1000);
 const OTStartDate = new Date(OTTime.getFullYear(), OTTime.getMonth(), OTTime.getDate());
 
 export { getTimeRemaining, getTimeToNextTurn, OTTime, OTStartDate };

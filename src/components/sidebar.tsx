@@ -3,7 +3,7 @@ import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faArrowRight, faRefresh } from "@fortawesome/free-solid-svg-icons";
-import { getTimeRemaining, getTimeToNextTurn } from '@/utils/timefunctions';
+import { getTimeRemaining, getTimeToNextTurn, OTTime } from '@/utils/timefunctions';
 import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List } from '@mantine/core';
 import { useDebouncedCallback } from '@mantine/hooks';
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
@@ -225,6 +225,9 @@ const Sidebar: React.FC = () => {
             </List.Item>
             <List.Item>
               Time Until Next Turn: <span id="nextTurnTimestamp">{time}</span>
+            </List.Item>
+            <List.Item>
+              OT Time: <span id="otTime">{OTTime.getHours().toString()}:{ OTTime.getMinutes().toString()}</span>
             </List.Item>
           </List>
           <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2">
