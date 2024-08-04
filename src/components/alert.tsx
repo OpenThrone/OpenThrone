@@ -35,7 +35,7 @@ const AlertComponent: React.FC = () => {
   return (
     <div className="container mx-auto px-4">
       <div className="my-3">
-        <Alert variant='filled' className={'alert-' + alert.type} withCloseButton onClose={alertService.clear}>
+        <Alert variant='filled' className={'alert-' + alert.type} title={alert.type.toUpperCase()} withCloseButton onClose={alertService.clear}>
           <Text className='text-shadow-xs text-gray-800'>{alert.message}</Text>
         </Alert>
       </div>
