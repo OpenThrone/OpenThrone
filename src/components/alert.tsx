@@ -4,8 +4,11 @@ import { useEffect, useState } from 'react';
 
 import type { AlertType } from '../services/alert.service';
 import { alertService } from '../services/alert.service';
+import { faRectangleXmark } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Alert, Text } from '@mantine/core';
 
-const Alert: React.FC = () => {
+const AlertComponent: React.FC = () => {
   const router = useRouter();
   const [alert, setAlert] = useState<AlertType | null>(null);
 
@@ -32,23 +35,12 @@ const Alert: React.FC = () => {
   return (
     <div className="container mx-auto px-4">
       <div className="my-3">
-        <div
-          className={`relative rounded px-3 py-2 ${
-            alertClassNames[alert.type]
-          } ${alert.type}`}
-        >
-          {alert.message}
-          <button
-            type="button"
-            className="absolute inset-y-0 right-0 px-4 py-3"
-            onClick={alertService.clear}
-          >
-            {/* SVG Component */}
-          </button>
-        </div>
+        <Alert variant='filled' className={'alert-' + alert.type} withCloseButton onClose={alertService.clear}>
+          <Text className='text-shadow-xs text-gray-800'>{alert.message}</Text>
+        </Alert>
       </div>
     </div>
   );
 };
 
-export default Alert;
+export default AlertComponent;

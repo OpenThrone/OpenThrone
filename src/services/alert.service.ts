@@ -1,7 +1,7 @@
 import { BehaviorSubject } from 'rxjs';
 
 export interface AlertType {
-  type: 'alert-success' | 'alert-error';
+  type: 'success' | 'error';
   message: string;
   showAfterRedirect: boolean;
 }
@@ -9,7 +9,7 @@ export interface AlertType {
 const alertSubject = new BehaviorSubject<AlertType | null>(null);
 
 function showAlert(
-  type: 'alert-success' | 'alert-error',
+  type: 'success' | 'error',
   message: string,
   showAfterRedirect = false
 ): void {
@@ -29,8 +29,8 @@ function clear(): void {
 export const alertService = {
   alert: alertSubject.asObservable(),
   success: (message: string, showAfterRedirect?: boolean) =>
-    showAlert('alert-success', message, showAfterRedirect),
+    showAlert('success', message, showAfterRedirect),
   error: (message: string, showAfterRedirect?: boolean) =>
-    showAlert('alert-error', message, showAfterRedirect),
+    showAlert('error', message, showAfterRedirect),
   clear,
 };
