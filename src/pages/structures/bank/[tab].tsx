@@ -25,7 +25,9 @@ const Bank = (props) => {
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [colorScheme, setColorScheme] = useState('ELF');
-  const [nextDepositAvailable, setNextDepositAvailable] = useState({hours: 0, minutes: 0, seconds: 0});
+  const [nextDepositAvailable, setNextDepositAvailable] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [depositError, setDepositError] = useState('');
+  const [withdrawError, setWithdrawError] = useState('');
 
   const [filters, setFilters] = useState({
     deposits: true,
@@ -88,10 +90,26 @@ const Bank = (props) => {
     if(user && user.units){
       setCitizenUnit(user?.units.find((u) => u.type === 'WORKER')?.quantity ?? 0);
       setDepositsMax(user.maximumBankDeposits);
+      if (depositAmount > BigInt(Math.floor(parseInt(user?.gold?.toString()) * 0.8))) {
+        setDepositError('Deposit amount exceeds the maximum allowed limit.');
+      } else {
+        setDepositError('');
+      }
+      if (withdrawAmount > BigInt(user?.goldInBank?.toString())) {
+        setWithdrawError('Withdraw amount exceeds the maximum allowed limit.');
+      } else {
+        setWithdrawError('');
+      }
     }
-  }, [user]);
+
+  }, [user, depositAmount, withdrawAmount]);
 
   const handleDeposit = async () => {
+    if (depositAmount > BigInt(Math.floor(parseInt(user?.gold?.toString()) * 0.8))) {
+      setDepositError('Deposit amount exceeds the maximum allowed limit.');
+      return;
+    }
+    setDepositError('')
     try {
       const response = await fetch('/api/bank/deposit', {
         method: 'POST',
@@ -116,6 +134,7 @@ const Bank = (props) => {
           .then((data) => setDepositsAvailable(data.deposits))
           .catch((error) => console.error('Error fetching bank history:', error));
         setDepositAmount(BigInt(0));
+        setDepositError('');
       }
     } catch (error) {
       console.error('Error depositing:', error);
@@ -123,6 +142,11 @@ const Bank = (props) => {
     }
   };
   const handleWithdraw = async () => {
+    if (withdrawAmount > BigInt(user?.goldInBank?.toString())) {
+      setWithdrawError('Withdraw amount exceeds the maximum allowed limit.');
+      return;
+    }
+    setWithdrawError('')
     try {
       const response = await fetch('/api/bank/withdraw', {
         method: 'POST',
@@ -141,6 +165,7 @@ const Bank = (props) => {
         forceUpdate();
         alertService.success("Successfully withdrew gold");
         setWithdrawAmount(BigInt(0));
+        setWithdrawError('');
       }
     } catch (error) {
       console.error('Error withdrawing:', error);
@@ -256,22 +281,25 @@ const Bank = (props) => {
             className="flex items-end space-x-2"
           >
             <div className="grow">
-              <label htmlFor="depositAmount" className="mb-2 block">
+              <label htmlFor="depositAmount" className="block">
                 Amount to Deposit
               </label>
+              <label className="text-sm text-gray-600 mb-2 block">You can deposit up to 80% of your gold per transaction</label>
               <NumberInput
                 value={depositAmount.toString()}
                 onChange={(value) => setDepositAmount(BigInt(value))}
+                max={Math.floor(parseInt(user?.gold?.toString()) * 0.8)}
                 placeholder="0"
                 min={0}
                 hideControls
                 allowNegative={false}
+                error={depositError}
                 rightSection={
-                  <Text size="sm" c="dimmed" onClick={() => { setDepositAmount(BigInt(user?.gold?.toString()))}}>
-                    Max: {parseInt(user?.gold?.toString())}
-                  </Text>
+                  <Button size="compact-xs" c="dimmed" onClick={() => { setDepositAmount(BigInt(Math.floor(parseInt(user?.gold?.toString()) * 0.8)))}}>
+                    Max
+                  </Button>
                 }
-                rightSectionWidth={100}
+                rightSectionWidth={50}
               />
             </div>
             <div>
@@ -295,14 +323,25 @@ const Bank = (props) => {
                 Amount to Withdraw
               </label>
               <NumberInput
-                value={withdrawAmount.toString()}
-                onChange={(value) => setWithdrawAmount(BigInt(value))}
-                placeholder="0"
-                min={0}
-                max={parseInt(user?.goldInBank?.toString())}
+                  value={withdrawAmount.toString()}
+                  onChange={(value) => setWithdrawAmount(BigInt(value))}
+                  placeholder="0"
+                  min={0}
+                  max={parseInt(user?.goldInBank?.toString())}
                   hideControls
                   allowNegative={false}
-              /></div>
+                  error={withdrawError}
+                  rightSection={
+                    <>
+                      <Button type='button' size='compact-xs' c="dimmed" mr={5} onClick={() => { setWithdrawAmount(BigInt(Math.floor(parseInt(user?.goldInBank?.toString()) * 0.1))) }}>10%</Button>
+                      <Button type='button' size='compact-xs' c="dimmed" mr={5} onClick={() => { setWithdrawAmount(BigInt(Math.floor(parseInt(user?.goldInBank?.toString()) * 0.25))) }}>25%</Button>
+                      <Button type='button' size='compact-xs' c="dimmed" mr={5} onClick={() => { setWithdrawAmount(BigInt(Math.floor(parseInt(user?.goldInBank?.toString()) * 0.50))) }}>50%</Button>
+                      <Button type='button' size='compact-xs' c="dimmed" onClick={() => { setWithdrawAmount(BigInt(Math.floor(parseInt(user?.goldInBank?.toString()) ))) }}>100%</Button>
+                    </>
+                  }
+                  rightSectionWidth={200}
+                />
+              </div>
             <div>
               <Button
                 type="submit"
