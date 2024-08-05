@@ -102,6 +102,8 @@ class UserModel {
   public avatar: string;
 
   public battle_upgrades: UnitUpgradeType[] | [];
+  
+  public stats: any[];
 
   constructor(userData?: any, filtered: boolean = true) {
     this.id = 0;
@@ -175,6 +177,7 @@ class UserModel {
       this.bonus_points = userData.bonus_points;
       this.attacks_won = userData.won_attacks;
       this.defends_won = userData.won_defends;
+      this.stats = userData.stats;
       this.structure_upgrades = userData.structure_upgrades;
       this.locale = userData.locale;
       if(userData.avatar !== 'SHIELD') {
@@ -192,6 +195,19 @@ class UserModel {
   get defendsWon(): number {
     return this.defends_won;
   }
+
+  statistics(type: String, subType: String): number {
+    // Return 0 for unsupported types or subtypes
+    if (!['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].includes(type) ||
+      !['WON', 'LOST'].includes(subType)) {
+      return 0;
+    }
+    if (this.stats?.length === 0 || !this.stats) {
+      return 0;
+    }
+    return this.stats.find(stat => stat.type === type && stat.subtype === subType)?.stat || 0;
+  }
+
 
   /**
    * Returns the number of available proficiency points for the user.
@@ -619,8 +635,8 @@ class UserModel {
    */
   canAttack(level: number): boolean {
     return (
-      getLevelFromXP(this.experience) >= level - 5 &&
-      getLevelFromXP(this.experience) <= level + 5
+      getLevelFromXP(this.experience) >= level - 25 && //TODO: Revert back to 5
+      getLevelFromXP(this.experience) <= level + 25
     );
   }
 

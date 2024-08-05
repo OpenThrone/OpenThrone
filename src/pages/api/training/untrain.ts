@@ -78,6 +78,23 @@ const handler = async(
           gold: BigInt(user.gold) + BigInt(totalCost),
         },
       });
+
+      await prisma.bank_history.create({
+        data: {
+          gold_amount: BigInt(totalCost),
+          from_user_id: 0,
+          from_user_account_type: 'BANK',
+          to_user_id: userId,
+          to_user_account_type: 'HAND',
+          date_time: new Date().toISOString(),
+          history_type: 'SALE',
+          stats: {
+            type: 'TRAINING_UNTRAIN',
+            items: units,
+          }
+        },
+      });
+
       const updatedUser = await prisma.users.findUnique({
         where: { id: userId },
       });

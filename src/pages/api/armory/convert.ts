@@ -25,7 +25,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    const user = await prisma.users.findUnique({ where: { id: userId } });
+    const user = await prisma.users.findUnique({ where: { id: Number(userId) } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -78,11 +78,29 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Update user in the database
     await prisma.users.update({
-      where: { id: userId },
+      where: { id: Number(userId) },
       data: {
         gold: BigInt(user.gold),
         items: user.items,
       },
+    });
+
+    await prisma.bank_history.create({
+      data: {
+        gold_amount: BigInt(cost),
+        from_user_id: Number(userId),
+        from_user_account_type: 'HAND',
+        to_user_id: Number(userId),
+        to_user_account_type: 'BANK',
+        date_time: new Date().toISOString(),
+        history_type: 'SALE',
+        stats: {
+          type:'ARMORY_CONVERSION',
+          fromItem: fromItem,
+          toItem: toItem,
+          amount: conversionAmount
+        }
+      }
     });
 
     return res.status(200).json({

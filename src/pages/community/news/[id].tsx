@@ -5,6 +5,8 @@ import rehypeRaw from 'rehype-raw';
 import { useState } from 'react';
 import { getSession } from 'next-auth/react';
 import { InferGetServerSidePropsType } from "next";
+import { Flex } from "@mantine/core";
+import BlogPost from "@/components/blogPost";
 
 const News = ({ post: serverPost, loggedIn }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [post, setPost] = useState({ ...serverPost });
@@ -42,25 +44,7 @@ const News = ({ post: serverPost, loggedIn }: InferGetServerSidePropsType<typeof
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">News</h2>
-        <div key={post.id} className="mx-auto rounded-xl overflow-hidden border border-gray-200">
-          {/* Header / Title Bar Section */}
-          <div className="bg-gray-600 p-2 flex justify-between items-center">
-            <div className="uppercase tracking-wide text-md text-white font-semibold">{post.title}
-              <br /><label className="text-xs">{post.created_timestamp.toString()}</label></div>
-            {loggedIn && (
-              <label className="flex items-center space-x-2 text-white text-sm">
-                <span>Read:</span>
-                <input type="checkbox" checked={post.isRead}
-                  onChange={() => handleReadChange()} className="form-checkbox" />
-              </label>
-            )}
-          </div>
-
-          {/* Body Section */}
-          <div className="p-4">
-            <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{post.content}</Markdown>
-          </div>
-        </div>
+        <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} />
     </div>
   );
 };

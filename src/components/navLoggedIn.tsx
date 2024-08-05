@@ -5,12 +5,14 @@ import { signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 
 import { useLayout } from '@/context/LayoutContext';
+import { useUser } from '@/context/users';
+import { Indicator } from '@mantine/core';
 
 const parentLinks = [
   'Home',
   'Battle',
   'Structures',
-  'Social',
+  //'Social',
   // 'Alliances',
   'Community',
 ] as const;
@@ -21,6 +23,7 @@ const subMenus: {
     href: string;
     parent: string;
     target?: string;
+
   }[];
 } = {
   Home: [
@@ -86,6 +89,7 @@ export const NavLoggedIn: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const layoutCont = useLayout();
   const [testMenu, setTestMenu] = useState(false);
+  const { user } = useUser();
 
   const handleParentClick = (event: React.MouseEvent, link: string) => {
     event.preventDefault();
@@ -191,8 +195,7 @@ export const NavLoggedIn: React.FC = () => {
                       className="mr-6 pl-4"
                       key={`${subLink.href}.${subLink.text}`}
                     >
-                      <Link href={subLink.href} target={subLink.target ? subLink.target : '_self'}>{subLink.text}</Link>
-                    </li>
+                      <Link href={subLink.href} target={subLink.target ? subLink.target : '_self'}>{subLink.text}</Link>                    </li>
                   ))}
                 </ul>
               )}
@@ -254,15 +257,17 @@ export const NavLoggedIn: React.FC = () => {
                     key={`${item.text}.${item.href}`}
                     className="mx-4 cursor-pointer"
                   >
-                    <Link
-                      href={item.href}
-                      className={`
-                      text-elf-link-link
-                    `}
-                      target={item.target ? item.target : '_self'}
-                    >
-                      {item.text}
-                    </Link>
+                    <Indicator inline offset={-10} position="middle-end" color='brand.2' size={8} processing disabled>
+                      <Link
+                        href={item.href}
+                        className={`
+                        text-elf-link-link
+                      `}
+                        target={item.target ? item.target : '_self'}
+                      >
+                        {item.text}
+                      </Link>
+                    </Indicator>
                   </li>
                 ))}
               </ul>

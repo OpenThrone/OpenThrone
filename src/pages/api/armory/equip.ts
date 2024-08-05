@@ -110,6 +110,22 @@ const handler = async(
       },
     });
 
+    await prisma.bank_history.create({
+      data: {
+        gold_amount: BigInt(totalCost),
+        from_user_id: userId,
+        from_user_account_type: 'HAND',
+        to_user_id: 0,
+        to_user_account_type: 'BANK',
+        date_time: new Date().toISOString(),
+        history_type: 'SALE',
+        stats: {
+          type: 'ARMORY_EQUIP',
+          items: itemsToEquip,
+        }
+      },
+    });
+
     return res.status(200).json({
       message: 'Items equipped successfully',
       data: updatedItems,

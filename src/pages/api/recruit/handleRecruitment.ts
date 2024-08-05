@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { PlayerUnit } from '@/types/typings';
 import mtrand from '@/utils/mtrand';
+import { OTStartDate } from '@/utils/timefunctions';
 
 function increaseCitizens(units: PlayerUnit[]) {
   const citizen = units.find((unit) => unit.type === 'CITIZEN');
@@ -24,19 +25,20 @@ const handler = async (
 
   const session = req.session;
 
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  const recruiterUser = (session ? session.user.id : 0);
 
-  const { recruitedUserId, selfRecruit } = req.body;
+  let { recruitedUserId, selfRecruit } = req.body;
 
   try {
+    if (!Number.isInteger(recruitedUserId)) {
+      recruitedUserId = await prisma.users.findFirst({where: {recruit_link: recruitedUserId}}).then((user) => user.id);
+    }
     const result = await prisma.$transaction(async (prisma) => {
       // Save the recruitment record
       await prisma.recruit_history.create({
         data: {
-          from_user: Number(recruitedUserId),
-          to_user: Number(session.user.id),
+          from_user: recruiterUser ? Number(recruitedUserId) : recruiterUser,
+          to_user: recruiterUser ? Number(recruiterUser) : recruitedUserId,
           ip_addr: req.headers['cf-connecting-ip'] as string,
           timestamp: new Date(),
         },
@@ -45,17 +47,22 @@ const handler = async (
       // Wait for 1 second
       await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
 
-      const now = new Date();
-      const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
       // Check the number of recruitments for the recruited user within the last 24 hours
       const recruitments = await prisma.recruit_history.findMany({
         where: {
-          from_user: Number(recruitedUserId),
-          to_user: Number(session.user.id),
-          timestamp: { gte: midnight },
+          from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
+          to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
+          timestamp: { gte: OTStartDate },
+          ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
         },
       });
+
+      (recruiterUser === 0 && console.log('recruitments', {
+        from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
+        to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
+        timestamp: { gte: OTStartDate },
+        ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
+      }));
 
       // If the number of recruitments is 5 or more, reject the request and revert the transaction
       if (recruitments.length > 5) {
@@ -63,12 +70,12 @@ const handler = async (
       }
 
       let userToUpdate = await prisma.users.findUnique({
-        where: { id: Number(session.user.id) },
+        where: { id: Number(recruiterUser) },
       });
 
       if (selfRecruit) {
         userToUpdate = await prisma.users.findUnique({
-          where: { id: Number(session.user.id) },
+          where: { id: Number(recruiterUser) },
         });
       }
 
@@ -84,6 +91,19 @@ const handler = async (
         },
       });
 
+      const reConfirm = await prisma.recruit_history.findMany({
+        where: {
+          from_user: recruitedUserId ? Number(recruitedUserId) : recruiterUser,
+          to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
+          timestamp: { gte: OTStartDate },
+        },
+      });
+
+      // If the number of recruitments is 5 or more, reject the request and revert the transaction
+      if (reConfirm.length > 5) {
+        throw new Error(`User has already been recruited 5 times in the last 24 hours.`);
+      }
+      
       return { success: true };
     });
 
@@ -97,4 +117,4 @@ const handler = async (
   }
 }
 
-export default withAuth(handler);
+export default withAuth(handler, true);

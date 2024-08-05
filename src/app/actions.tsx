@@ -8,6 +8,7 @@ import {
   createBankHistory,
   canAttack,
   updateFortHitpoints,
+  incrementUserStats,
 } from '@/services/attack.service';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -44,7 +45,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
       defender.units,
     );
     //return spyResults;
-  } else {
+  } else if(type === 'INFILTRATE') {
     spyResults = simulateInfiltration(attacker, defender, spies);
     spyLevel = 3;
     await updateUserUnits(defenderId,
@@ -68,7 +69,15 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     stats: { spyResults },
   });
 
-  
+  await incrementUserStats(attackerId, {
+    type: 'SPY',
+    subtype: (attackerId === Winner.id) ? 'WON' : 'LOST',
+    stat: 1
+  });
+  await incrementUserStats(defenderId, {
+    type: 'SENTRY',
+    subtype: (defenderId === Winner.id) ? 'WON' : 'LOST',
+  });
 
   return {
     status: 'success',
@@ -109,10 +118,10 @@ export async function attackHandler(
     };
   }
 
-  if (AttackPlayer.level > DefensePlayer.level + 5 || AttackPlayer.level < DefensePlayer.level - 5) {
+  if (!AttackPlayer.canAttack(DefensePlayer.level)) {
     return {
       status: 'failed',
-      message: 'You can only attack within 5 levels of your own level.',
+      message: 'You can only attack within 25 levels of your own level.', //TODO: Revert to 5 levels
     }
   }
 
@@ -180,6 +189,17 @@ export async function attackHandler(
           attacker_losses: battleResults.Losses.Attacker,
           defender_losses: battleResults.Losses.Defender,
         },
+      });
+
+      await incrementUserStats(attackerId, {
+        type: 'OFFENSE',
+        subtype: (isAttackerWinner) ? 'WON' : 'LOST',
+        stat: 1
+      });
+
+      await incrementUserStats(defenderId, {
+        type: 'DEFENSE',
+        subtype: (!isAttackerWinner) ? 'WON' : 'LOST',
       });
 
       await updateUser(attackerId, {

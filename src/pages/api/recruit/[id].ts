@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { PlayerUnit, Unit } from '@/types/typings';
 import { withAuth } from '@/middleware/auth';
+import { OTStartDate } from '@/utils/timefunctions';
 
 function increaseCitizens(units: PlayerUnit[]) {
   // Find the CITIZEN object
@@ -38,29 +39,19 @@ const handler = async(
   }
   if (req.method === 'GET') {
     // Check if the user has clicked on this link in the last 24 hours
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
     const history = await prisma.recruit_history.count({
       where: {
-        OR: [
-          {
-            AND: [
-              { to_user: Number(recruitedUser.id) },
-              { from_user: { not: 0 } }, // Exclude from_user = 0
-              { from_user: Number(recruiterID) },
-              { timestamp: { gte: twentyFourHoursAgo } },
-            ],
-          },
-          {
-            AND: [
-              { to_user: Number(recruitedUser.id) },
-              { ip_addr: req.headers['x-real-ip'] as string },
-              { timestamp: { gte: twentyFourHoursAgo } },
-            ],
-          },
-        ],
+        
+              to_user: Number(recruitedUser.id) ,
+               from_user: Number(recruiterID) ,
+               timestamp: { gte: OTStartDate  },
+
+        ...(recruiterID === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
+        
       },
     });
+
+    
 
     if (history >= 5) {
       return res
@@ -69,8 +60,9 @@ const handler = async(
     }
     const toUserHistory = await prisma.recruit_history.count({
       where: {
+        from_user: Number(recruiterID),
         to_user: Number(recruitedUser.id),
-        timestamp: { gte: twentyFourHoursAgo },
+        timestamp: { gte: OTStartDate },
       },
     });
 
@@ -83,8 +75,6 @@ const handler = async(
     return res.status(200).json({ showCaptcha: true });
   }
   if (req.method === 'POST') {
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
     const history = await prisma.recruit_history.count({
       where: {
         OR: [
@@ -93,14 +83,14 @@ const handler = async(
               { to_user: Number(recruiterID) },
               { from_user: { not: 0 } }, // Exclude from_user = 0
               { from_user: Number(recruitedUser.id)  },
-              { timestamp: { gte: twentyFourHoursAgo } },
+              { timestamp: { gte: OTStartDate } },
             ],
           },
           {
             AND: [
               { to_user: Number(recruiterID) },
               { ip_addr: req.headers['x-real-ip'] as string },
-              { timestamp: { gte: twentyFourHoursAgo } },
+              { timestamp: { gte: OTStartDate } },
             ],
           },
         ],
@@ -112,12 +102,7 @@ const handler = async(
         .status(400)
         .json({ error: 'You can only Recruit up to 5x in 24 hours.' });
     }
-    console.log({
-      from_user: Number(recruitedUser.id),
-      to_user: Number(recruiterID),
-      ip_addr: req.headers['cf-connecting-ip'] as string,
-      timestamp: new Date(),
-    });
+    
     const newRecord = await prisma.recruit_history.create({
       data: {
         from_user: Number(recruitedUser.id),

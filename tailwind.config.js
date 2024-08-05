@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+const plugin = require('tailwindcss/plugin')
 const navLinkColor = 'rgb(253, 226, 101)';
 const titleColor = 'rgb(221, 149, 63)';
 
@@ -67,6 +68,15 @@ module.exports = {
     extend: {
       fontFamily: {
         medieval: ['MedievalSharp', 'cursive'],
+      },
+       textShadow: {
+         DEFAULT: '0 2px 4px var(--tw-shadow-color)',
+         xs: '0 1px 1px var(--tw-shadow-color)', // Extra Small shadow
+        sm: '0 1px 2px var(--tw-shadow-color)', // Small shadow
+        md: '0 3px 6px var(--tw-shadow-color)', // Medium shadow
+        lg: '0 8px 16px var(--tw-shadow-color)', // Large shadow
+        xl: '0 12px 24px var(--tw-shadow-color)', // Extra Large shadow
+        xxl: '0 20px 40px var(--tw-shadow-color)', // Double Extra Large shadow
       },
       colors: {
         elf: generateRaceColors(
@@ -142,5 +152,16 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(function ({ matchUtilities, theme }) {
+      matchUtilities(
+        {
+          'text-shadow': (value) => ({
+            textShadow: value,
+          }),
+        },
+        { values: theme('textShadow') }
+      )
+    }),
+  ],
 };

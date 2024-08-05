@@ -8,7 +8,7 @@ import toLocale from '@/utils/numberFormatting';
 
 import { useUser } from '../context/users';
 import { alertService } from '@/services';
-import { Group, NumberInput, Paper, Table, Text, Title } from '@mantine/core';
+import { Button, Flex, Group, NumberInput, Paper, Table, Text, Title } from '@mantine/core';
 
 const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   heading,
@@ -21,10 +21,9 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   useEffect(() => {
     if (items) {
       items.forEach((item) => {
-        if (item.ownedItems === undefined) {
-          item.ownedItems = 0;
-        } else if (item.ownedItems > 0) {
+        if (item.enabled) {
           setSectionEnabled(true);
+          return;
         }
       });
       setItems(items);
@@ -242,23 +241,28 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
           })}
         </Table.Tbody>
       </Table>
-      <div className="mt-4 flex justify-between">
-        <button
+      <Flex justify={'space-between'} mb="xs">
+        <Button
           type="button"
-          className={`rounded px-4 py-2 font-bold text-white hover:bg-blue-700 ${!sectionEnabled ? 'cursor-not-allowed bg-blue-700' : 'bg-blue-500'}`}
+          size='md'
+          color='brand.5'
+          className={`rounded px-4 py-2 ml-2 font-bold text-white  ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
           disabled={!sectionEnabled}
           onClick={async () => await handleEquip('buy')}
         >
           Buy
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className={`rounded px-4 py-2 font-bold text-white ${!sectionEnabled ? 'cursor-not-allowed bg-red-700' : 'bg-red-500'}`}
+          size='md'
+          color='brand'
+          className={`rounded px-4 py-2 mr-2 font-bold text-white ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
           onClick={async () => await handleEquip('sell')}
+          disabled={!sectionEnabled}
         >
           Sell
-        </button>
-      </div>
+        </Button>
+      </Flex>
     </Paper>
   );
 };

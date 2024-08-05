@@ -170,8 +170,8 @@ const Repair = (props) => {
                 Max: {remainingHitpoints}
                 </Text>
               </Button>
-              <Button color="blue" fs={'10px'} onClick={handleRepair}>Repair</Button>
-              <Button color='gray' onClick={()=>setRepairPoints(0)}>Reset</Button>
+              <Button color="brand" fs={'10px'} onClick={handleRepair}>Repair</Button>
+              <Button color='brand.9' fs={'10px'} onClick={()=>setRepairPoints(0)}>Reset</Button>
             </Box>
             <Text mt="xs" color="dimmed" size="sm">
               Repair Cost Per HP: <Text component="span" color="lightgray">{fortification?.costPerRepairPoint} Gold</Text>

@@ -268,7 +268,6 @@ export const simulateInfiltration =
     spies: number
   ) => {
     const isSuccessful = attacker.spy > defender.sentry;
-
     const result = new InfiltrationResult(attacker, defender, spies);
     result.success = isSuccessful;
     result.spiesLost = isSuccessful ? 0 : spies;
@@ -307,7 +306,6 @@ export const simulateInfiltration =
         }
       }
       result.fortDmg += Number(startHP - result.defender.fortHitpoints);
-
 
       return result;
     }

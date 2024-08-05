@@ -9,12 +9,11 @@ const getTopSocialRelations = async (req: NextApiRequest, res: NextApiResponse) 
   }
 
   const session = req.session;
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
 
   let { type, limit, playerId } = req.query;
   if (!playerId) {
+    if (!session)
+      return res.status(401).json({ error: 'Unauthorized' });
     playerId = session.user.id;
   }
 
@@ -72,4 +71,4 @@ const getTopSocialRelations = async (req: NextApiRequest, res: NextApiResponse) 
   }
 };
 
-export default withAuth(getTopSocialRelations);
+export default withAuth(getTopSocialRelations, true);

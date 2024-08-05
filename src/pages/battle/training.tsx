@@ -5,9 +5,9 @@ import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale from '@/utils/numberFormatting';
-import { Paper, Group, SimpleGrid, Title, Text, ThemeIcon } from '@mantine/core';
+import { Paper, Group, SimpleGrid, Title, Text, ThemeIcon, Badge, Tooltip, Button, Space, Flex, Stack } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuildingColumns, faCoins, faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
+import { faBuildingColumns, faCoins, faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
 
 const Training = (props) => {
   //const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
@@ -342,7 +342,7 @@ const Training = (props) => {
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }}>
+      <SimpleGrid cols={{ base: 1, xs: 2, sm:3, md: 4 }}>
         <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
           <Group justify='space-between'>
             <Text size="lg" fw={'bold'} c="dimmed">Untrained Citizens</Text>
@@ -380,6 +380,26 @@ const Training = (props) => {
             <Text>
               {toLocale(user?.goldInBank, user?.locale)}
             </Text>
+          </Group>
+        </Paper>
+        <Paper withBorder p="md" radius={'md'} key='DefenseToPopulation'>
+          <Group justify='space-between'>
+            <Text size="lg" fw={'bold'} c="dimmed">Defense Ratio</Text>
+            <ThemeIcon c='white'>
+              <FontAwesomeIcon icon={faShield} />
+            </ThemeIcon>
+          </Group>
+          <Group>
+            <Text>
+              {toLocale((user?.unitTotals.defense / user?.population) * 100)} %
+            </Text>
+            {(user?.unitTotals.defense / user?.population) < .25 && (
+              <Text size='sm' c='dimmed'>
+                <Tooltip label='It is recommended that you have at least 25% Defense along with a healthy Fort. You may take heavier losses and your Workers and Citizens may be at risk!'>
+                  <Badge color="brand">Advisor: Too low</Badge>
+                </Tooltip>
+            </Text>
+            )}
           </Group>
         </Paper>
       </SimpleGrid>
@@ -428,31 +448,32 @@ const Training = (props) => {
           setUnitCosts={setUnitCosts}
         />
       )}
-      <div
+      <Flex justify='space-between'
         ref={stickyRef}
-        className="flex justify-between mt-8 rounded bg-gray-800 sticky bottom-0 px-4 z-10 sm:w-100 md:w-[69vw]"
+        className=" mt-8 rounded bg-gray-800 sticky bottom-0 px-4 z-10 sm:w-100 md:w-[69vw]"
       >
-        <div className="mt-4">
-          <p>Total Cost: {toLocale(totalCost)}</p>
-          <p>Total Refund: {toLocale(totalCost * .75)}</p>
-        </div>
-        <div className="mt-4 flex justify-between">
-          <button
-            type="button"
-            className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+        <Stack
+          justify="center"
+          gap="xs">
+          <Text size='sm'>Total Cost: {toLocale(totalCost)}</Text>
+          <Text size='sm'>Total Refund: {toLocale(totalCost * .75)}</Text>
+        </Stack>
+        <Flex justify='space-between' m={'xs'}>
+          <Button
+            color='brand.6'
             onClick={handleTrainAll}
           >
             Train All
-          </button>
-          <button
-            type="button"
-            className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+          </Button>
+          <Space w='sm' />
+          <Button
+            color='brand'
             onClick={handleUntrainAll}
           >
             Untrain All
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Flex>
+      </Flex>
     </div>
   );
 };

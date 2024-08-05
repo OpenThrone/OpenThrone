@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import mtrand from '@/utils/mtrand';
+import { OTStartDate, OTTime} from '@/utils/timefunctions';
 
 const handler = async (
   req: NextApiRequest,
@@ -11,11 +12,7 @@ const handler = async (
     return res.status(405).end(); // Method not allowed
   }
 
-  const now = new Date();
-  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const session = req.session;
-
+  const { session } = req;
   const recruiterID = session ? parseInt(session.user?.id.toLocaleString()) : 0;
 
   // Fetch all users
@@ -30,7 +27,7 @@ const handler = async (
     },
     where: {
       NOT: [{ id: { in: [0, recruiterID] } }],
-      created_at: { lt: midnight },
+      created_at: { lt: OTStartDate },
     },
   });
 
@@ -42,17 +39,26 @@ const handler = async (
     const recruitmentCount = await prisma.recruit_history.count({
       where: {
         to_user: recruiterID,
-        from_user: user.id,
-        timestamp: { gte: midnight },
+        from_user: recruiterID === 0 ? recruiterID : user.id,
+        timestamp: { gte: OTStartDate },
+        ...(recruiterID === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
       },
-    });
+    });   
 
-    const remainingRecruits = (session.user.id === 1 ? 5 : 5) - recruitmentCount;
+    const remainingRecruits = 5 - recruitmentCount;
     return { user, remainingRecruits };
   });
 
   const validUsers = (await Promise.all(userPromises)).filter(({ remainingRecruits }) => remainingRecruits > 0);
+  console.log({
+    to_user: recruiterID,
+    from_user: recruiterID === 0 ? recruiterID : 'user.id',
+    timestamp: { gte: OTStartDate },
+    ...(recruiterID === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
+  }
+  )
 
+  console.log(OTTime)
   if (!validUsers.length) {
     return res.status(404).json({ error: 'No valid users available for recruitment.' });
   }
@@ -65,4 +71,4 @@ const handler = async (
   return res.status(200).json({ randomUser: { ...randomUser.user, remainingRecruits: randomUser.remainingRecruits }, totalLeft, "totalPlayerCount": users.length, "maxRecruitsExpected": users.length * 5 });
 }
 
-export default withAuth(handler);
+export default withAuth(handler, true);

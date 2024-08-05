@@ -166,9 +166,9 @@ a:hover {
   color: #e1e1e1;
 }
 .alert-error {
-  color: #ee8277;
-  background-color: #74261e;
-  border-color: #8b2e24;
+  color: #ee8277 !important;
+  background-color: #74261e !important;
+  border-color: #8b2e24 !important;
 }
 .alert {
   position: relative;
@@ -178,9 +178,9 @@ a:hover {
   border-radius: 0.25rem;
 }
 .alert-success {
-  color: #4dd0af;
-  background-color: #005e46;
-  border-color: #007154;
+  color: #4dd0af !important;
+  background-color: #005e46 !important;
+  border-color: #007154 !important;
 }
 .table-hover > tbody > tr:hover > * {
   --bs-table-accent-bg: var(--bs-table-hover-bg);

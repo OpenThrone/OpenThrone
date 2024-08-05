@@ -1,10 +1,11 @@
 import { Turnstile } from '@marsidev/react-turnstile';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
-
+import { Button, Divider, Group, Paper, Space, Text } from '@mantine/core';
 import Alert from '@/components/alert';
 import { alertService } from '@/services';
 import Image from 'next/image';
+import { useUser } from '@/context/users';
 
 interface RecruitProps {
   id: string;
@@ -23,6 +24,7 @@ export default function Recruit(props) {
   const [showCaptcha, setShowCaptcha] = useState(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const [userInfo, setUserInfo] = useState<RecruitProps | null>(null);
+  const { user } = useUser();
 
   const autoRecruit = useCallback(async () => {
     // Fetch the next recruitment link immediately
@@ -94,31 +96,30 @@ export default function Recruit(props) {
 
     const data = await res.json();
     if (data.success) {
-      // Set the self_recruit parameter if auto_recruit is active
-      const body =
-        autoRecruitParams === '1' ? { self_recruit: '1' } : undefined;
 
-      const response = await fetch(`/api/recruit/${id}`, {
+      const response = await fetch('/api/recruit/handleRecruitment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          recruitedUserId: id,
+          selfRecruit: false,
+        }),
       });
-
+      
       const recData = await response.json();
 
       if (recData.success) {
-        alertService.success("You've recruited into a player's army.", true);
-        console.log('params', params);
+        alertService.success("You've been recruited into a player's army.", true);
         if (autoRecruitParams === '1') {
           await autoRecruit();
           return;
         }
-        router.push(`/userprofile/${id}`);
+        //router.push(`/userprofile/${id}`);
         // Navigate to the user's profile page which is /userprofile/[id]
       }
-      console.log('recData: ', recData);
+
       if (recData.error) {
         alertService.error(recData.error);
         if (autoRecruitParams === '1') {
@@ -137,18 +138,21 @@ export default function Recruit(props) {
       {userInfo && (
         <div className="mb-5 text-center items-center">
           <p>
-            {userInfo.display_name} is a level {userInfo.level} {userInfo.race}{' '}
+            <Text size='xl'>You are being recruited into the army of <span className="text-white">{userInfo.display_name}</span></Text>
+            <span className="text-white">{userInfo.display_name}</span> is a level {userInfo.level} {userInfo.race}{' '}
             {userInfo.class}.
             <center>
               <Image src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${userInfo.race}_150x150.webp`} width={'150'} height={'150'} alt="" />
             </center>
+            <Text size="md">Please wait for Cloudflare&lsquo;s captcha below.</Text>
+
           </p>
         </div>
       )}
       <div className="flex items-center justify-center">
         <div className="container mx-auto text-center">
           {error ? (
-            <p>{error}</p>
+            <Text>{error}</Text>
           ) : (
             showCaptcha && (
               <form
@@ -165,6 +169,32 @@ export default function Recruit(props) {
               </form>
             )
           )}
+          {!user && (
+            <>
+              <Space h="md" />
+            <Text size="md">
+              Don&lsquo;t have an account? Sign up now to join the fun!
+            </Text>
+              <Button onClick={() => router.push(`/account/register`)}>
+              SignUp
+              </Button> 
+            </>
+          )}
+          <Space h="md" />
+          <Divider />
+          <Space h="md" />
+          <Paper pl={'md'} pr={'md'} pb={'sm'}>
+            <Text size="xl">Anti Spam Policy</Text>
+            <Text size="sm">
+            Recruiting is intended to be used with your friends and family. Spam of any kind is not permitted and will result in suspension or ban of your account. Further violations may result in a ban of your IP address. Please be respectful of others and only recruit with permission.
+            </Text>
+            <Space h="md" />
+            <Text size="sm">
+              We use Cloudflare&lsquo;s Turnstile to prevent spam and abuse. By
+              completing this captcha, you are helping us keep the game fair and
+              fun for everyone.
+            </Text>
+          </Paper>
         </div>
       </div>
     </div>

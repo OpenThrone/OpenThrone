@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import React, { useEffect, useState } from 'react';
-import { faBackwardStep} from '@fortawesome/free-solid-svg-icons';
+import { faBackwardStep } from '@fortawesome/free-solid-svg-icons';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
@@ -8,7 +8,7 @@ import { alertService } from '@/services';
 import Alert from './alert';
 import router from 'next/router';
 import { stringifyObj } from '@/utils/numberFormatting';
-import { Button, NumberInput } from '@mantine/core';
+import { Button, NumberInput, Modal, Group, Select, Text, Paper, Divider, Title } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 interface ModalProps {
@@ -17,47 +17,31 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, children, toggleModal }) => {
+const CustomModal: FC<ModalProps> = ({ isOpen, children, toggleModal }) => {
   const layoutCont = useLayout();
-  if (!isOpen) return null;
+
   return (
-    <div
-      className={`fixed inset-0 z-10 overflow-y-auto bg-gray-500 bg-opacity-75 transition-opacity ${
-        isOpen ? '' : 'hidden'
-      }`}
+    <Modal.Root
+      opened={isOpen}
+      onClose={toggleModal}
     >
-      <div className="flex min-h-screen  items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <span
-          className="hidden sm:inline-block sm:h-screen sm:align-middle"
-          aria-hidden="true"
-        >
-          &#8203;
-        </span>
-        <div className="inline-block overflow-hidden text-left align-bottom shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle bg-white rounded-lg">
-          <div
-            className={`rounded-t-lg px-4 pt-5 pb-4 sm:p-6 sm:pb-4 ${layoutCont.raceClasses.bgClass}`}
-          >
-            <div className="justify-between flex items-center">
-              <h2 className="text-xl font-semibold leading-6" id="modal-title">
-                Spy Mission
-              </h2>
-              <button
-                onClick={toggleModal}
-                type="button"
-                className="rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                <span className="sr-only">Close</span>
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            <Alert />
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>
+      <Modal.Overlay />
+      <Modal.Content>
+        <Modal.Header >
+          <Modal.Title>
+            <Title order={4}>Spy Mission</Title>
+          </Modal.Title>
+          <Modal.CloseButton size={'lg'} />
+        </Modal.Header>
+        <Divider my="xs" />
+        <Modal.Body>
+      <Paper>
+        <Alert />
+        {children}
+          </Paper>
+        </Modal.Body>
+      </Modal.Content>
+    </Modal.Root>
   );
 };
 
@@ -72,19 +56,21 @@ const CustomButton: FC<CustomButtonProps> = ({
   disabled,
   children,
 }) => (
-  <button
+  <Button
     onClick={onClick}
     disabled={disabled}
-    type="button"
-    className={`my-2 w-full rounded-md px-4 py-2 text-lg font-bold ${
-      disabled
-        ? 'cursor-not-allowed bg-gray-900 text-gray-700'
-      : 'cursor-pointer bg-gray-800 hover:bg-gray-600 text-white'
-    }`}
+    fullWidth
+    radius="md"
+    size="lg"
+    variant="filled"
+    mb={'lg'}
   >
-    {children}
-  </button>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {children}
+    </div>
+  </Button>
 );
+
 
 interface SpyMissionProps {
   isOpen: boolean;
@@ -103,15 +89,14 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
   const [intelSpies, setIntelSpies] = useState(1);
   const [assassinateUnit, setAssassinateUnit] = useState('CITIZEN/WORKERS');
 
-  // const [assassinateAmount, setAssassinateAmount] = useState(1);
   const [isAssassinateDisabled, setIsAssassinateDisabled] = useState(false);
   const [isInfiltrationDisabled, setIsInfiltrationDisabled] = useState(false);
   const [isIntelDisabled, setIsIntelDisabled] = useState(false);
   const { user } = useUser();
   const [units, setUnits] = useState({ SPY: 0, ASSASSIN: 0, INFILTRATOR: 0 });
+
   useEffect(() => {
     if (user) {
-      // TODO, set this correctly
       if (user.level >= 15) setIsInfiltrationDisabled(false);
       if (user.level >= 10) setIsAssassinateDisabled(false);
       if (user.level >= 5) setIsIntelDisabled(false);
@@ -128,68 +113,12 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       });
     }
   }, [user]);
-  const handleIntelGathering = async () => {
-    if (intelSpies > 10) {
-      alertService.error(
-        'You can only send a maximum of 10 spies per mission.',
-        false
-      );
-      return;
-    }
-    const res = await fetch(`/api/spy/${defenderID}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ type: 'INTEL', spies: intelSpies }),
-    });
-    const results = await res.json();
-
-    if (results.status === 'failed') {
-      alertService.error(results.status);
-    } else {
-      router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
-    }
-    alertService.success(
-      `You have sent ${intelSpies} spies to gather intelligence.`
-    );
-  };
-  
-  const handleAssassination = async () => {
-    if(intelSpies > 5) {
-      alertService.error(
-        'You can only send a maximum of 5 assassins per mission.',
-        false
-      );
-      return;
-    }
-    const res = await fetch(`/api/spy/${defenderID}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ type: 'ASSASSINATE', spies: intelSpies, unit: assassinateUnit}),
-    });
-    const results = await res.json();
-
-    if (results.status === 'failed') {
-      alertService.error(results.status);
-    } else {
-      console.log('log id: ',results.attack_log)
-      router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
-    }
-    alertService.success(
-      `You have sent ${intelSpies} spies to assassinate ${assassinateUnit}.`
-    );
-  };
 
   const handleSpyMission = async () => {
     let type = 'INTEL';
     if (currentPanel === "assassination") {
       type = 'ASSASSINATE';
-    }else if (currentPanel === "infiltration") {
+    } else if (currentPanel === "infiltration") {
       type = 'INFILTRATE';
     }
     const res = await fetch(`/api/spy/${defenderID}`, {
@@ -197,16 +126,17 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify((currentPanel === "assassination" ? { type, spies: intelSpies, unit: assassinateUnit } : { type, spies: intelSpies})),
+      body: JSON.stringify((currentPanel === "assassination" ? { type, spies: intelSpies, unit: assassinateUnit } : { type, spies: intelSpies })),
     });
     const results = await res.json();
 
     if (results.status === 'failed') {
-      alertService.error(results.status);
-    } else {
-      router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
+      alertService.error(results.message);
+      return
     }
+    router.push(`/battle/results/${results.attack_log}`);
+    toggleModal();
+
     alertService.success(
       `You have sent ${intelSpies} spies.`
     );
@@ -214,141 +144,93 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
 
   const MissionPanels: Record<MissionPanelKey, JSX.Element> = {
     intelligence: (
-      <div className="px-4 py-5 sm:p-6 shadow-xl rounded-lg">
-        <h2 className="text-center text-lg font-semibold mb-4">Intelligence Gathering</h2>
-        How many spies would you like to send? <br />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <NumberInput
-              className="mt-2 mb-4 w-full sm:w-1/2 rounded-md bg-gray-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              max={10}
-              min={1}
-              value={intelSpies || 0}
-              allowNegative={false}
-              allowDecimal={false}
-              allowLeadingZeros={false}
-              onChange={(e) => setIntelSpies(Number(e))}
-            />
-            <span className="ml-2 text-white">/ 10</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleSpyMission}
-            className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            Send Spies
-          </button>
-        </div>
+      <div>
+        <Title align="center" order={3} weight={700} mb="md">Intelligence Gathering</Title>
+        <Text>How many spies would you like to send?</Text>
+        <Group position="apart" mt="md">
+          <NumberInput
+            max={10}
+            min={1}
+            value={intelSpies}
+            onChange={(value) => setIntelSpies(value)}
+          />
+          <Button onClick={handleSpyMission}>Send Spies</Button>
+        </Group>
         <div className="mt-4">
-          <h2 className="text-center text-lg font-semibold">Intelligence Information</h2>
-          <p className="mt-2">Spies Trained: {units.SPY}</p>
-          <span className="block mt-1">You can send a maximum of 10 spies per mission.</span>
+          <Title align="center" order={3} weight={700}>Intelligence Information</Title>
+          <Text mt="md">Spies Trained: {units.SPY}</Text>
+          <Text>You can send a maximum of 10 spies per mission.</Text>
         </div>
       </div>
     ),
     assassination: (
-      <div className='px-4 py-5 sm:p-6 shadow-xl rounded-lg'>
-        <h2 className="text-center text-lg font-medium mb-4">Assassination</h2>
-        What type of units would you like to assassinate?
-        <br />
-        <select
+      <div>
+        <Text align="center" size="lg" weight={700} mb="md">Assassination</Text>
+        <Text>What type of units would you like to assassinate?</Text>
+        <Select
           value={assassinateUnit}
-          onChange={(e) => setAssassinateUnit(e.target.value)}
-          className="mt-2 mb-4 w-full rounded-md bg-gray-700 p-2 text-white"
-        >
-          {['CITIZEN/WORKERS', 'OFFENSE', 'DEFENSE'].map((unit) => (
-            <option key={unit}>{unit}</option>
-          ))}
-        </select>
-        <br />
-        How many assassins would you like to send?
-        <br />
+          onChange={(value) => setAssassinateUnit(value)}
+          data={['CITIZEN/WORKERS', 'OFFENSE', 'DEFENSE']}
+          mt="md"
+        />
+        <Text mt="md">How many assassins would you like to send?</Text>
         <NumberInput
-          className="mt-2 mb-4 w-1/2 rounded-md bg-gray-700 p-2 text-white"
           max={5}
           min={1}
-          value={intelSpies || 0}
-          allowNegative={false}
-          allowDecimal={false}
-          allowLeadingZeros={false}
-          onChange={(e) => setIntelSpies(Number(e))}
-        />{' '}
-        / 5<br />
-        <button
-          onClick={handleSpyMission}
-          type="button"
-          className="w-full rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 transition-colors"
-        >
-          Assassinate
-        </button>
-        <br />
+          value={intelSpies}
+          onChange={(value) => setIntelSpies(value)}
+          mt="md"
+        />
+        <Button onClick={handleSpyMission} fullWidth mt="md">Assassinate</Button>
         <div className="mt-4">
-          <h2 className="text-center text-lg font-medium">Assassination Information</h2>
-          <p className="mt-2">Total Assassins: </p>
-          <span>You can send a maximum of 5 assassins per mission.</span>
-          <br />
-          <p className="mt-2">Assassination Attempts Available: ##</p>
-          <span>
+          <Text align="center" size="lg" weight={700}>Assassination Information</Text>
+          <Text mt="md">Total Assassins: {units.ASSASSIN}</Text>
+          <Text>You can send a maximum of 5 assassins per mission.</Text>
+          <Text mt="md">Assassination Attempts Available: ##</Text>
+          <Text>
             You can only send 1 assassination attempt per 24 hours.
-            <br />
             To increase the number of attempts per day, upgrade your spy
             structure!
-          </span>
+          </Text>
         </div>
       </div>
     ),
     infiltration: (
-      <div className='px-4 py-5 sm:p-6 shadow-xl rounded-lg'>
-        <h2 className="text-center text-lg font-medium mb-4">Infiltration</h2>
-        How many spies would you like to send to infiltrate? <br />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <NumberInput
-              className="mt-2 mb-4 w-full sm:w-1/2 rounded-md bg-gray-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              max={3}
-              min={1}
-              value={intelSpies || 0}
-              allowNegative={false}
-              allowDecimal={false}
-              allowLeadingZeros={false}
-              onChange={(e) => setIntelSpies(Number(e))}
-            />
-            <span className="ml-2 text-white">/ 3</span>
-          </div>
-          <button
-            type="button"
-            onClick={handleSpyMission}
-            className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            Infiltrate
-          </button>
-        </div>
+      <div>
+        <Text align="center" size="lg" weight={700} mb="md">Infiltration</Text>
+        <Text>How many spies would you like to send to infiltrate?</Text>
+        <Group position="apart" mt="md">
+          <NumberInput
+            max={3}
+            min={1}
+            value={intelSpies}
+            onChange={(value) => setIntelSpies(value)}
+          />
+          <Button onClick={handleSpyMission}>Infiltrate</Button>
+        </Group>
         <div className="mt-4">
-          <h2 className="text-center text-lg font-medium">Infiltration Information</h2>
-          <p className="mt-2">Total Spies: {units.SPY}</p>
-          <span className="block mt-1">You can send a maximum of 3 spies per infiltration mission.</span>
-          <br />
-          <p className="mt-2">Infiltration Attempts Available: ##</p>
-          <span>
+          <Text align="center" size="lg" weight={700}>Infiltration Information</Text>
+          <Text mt="md">Total Spies: {units.INFILTRATOR}</Text>
+          <Text>You can send a maximum of 3 spies per infiltration mission.</Text>
+          <Text mt="md">Infiltration Attempts Available: ##</Text>
+          <Text>
             You can only send 1 infiltration attempt per 24 hours.
-            <br />
             To increase the number of attempts per day, upgrade your spy structure!
-          </span>
+          </Text>
         </div>
       </div>
     ),
   };
 
   return (
-    <Modal isOpen={isOpen} toggleModal={toggleModal}>
+    <CustomModal isOpen={isOpen} toggleModal={toggleModal}>
       {!currentPanel ? (
-        <div className="text-left">
+        <div>
           <CustomButton
             onClick={() => setCurrentPanel('intelligence')}
             disabled={isIntelDisabled}
           >
             <span>🔍 Intelligence Gathering</span>
-            <br />
             <small>Send up to 10 Spies to collect Intel</small>
           </CustomButton>
           <CustomButton
@@ -356,9 +238,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             disabled={isAssassinateDisabled}
           >
             <span>🗡️ Assassination</span>
-            <br />
             <small>Attempt to assassinate player&apos;s Defenders</small>
-            <br />
             {isAssassinateDisabled && (
               <b>
                 <small className="text-black"> Requires Fort: ###</small>
@@ -370,9 +250,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             disabled={isInfiltrationDisabled}
           >
             <span>🚧 Infiltration</span>
-            <br />
             <small>Infiltrate and Destroy the Fort</small>
-            <br />
             {isInfiltrationDisabled && (
               <b>
                 <small className="text-white"> Requires Fort: ###</small>
@@ -382,13 +260,17 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         </div>
       ) : (
         <>
-            <Button leftSection={< FontAwesomeIcon icon={ faBackwardStep} size={'1x'} />} onClick={() => setCurrentPanel('')}>
+          <Button
+            leftIcon={<FontAwesomeIcon icon={faBackwardStep} size={'1x'} />}
+            onClick={() => setCurrentPanel('')}
+            mb="md"
+          >
             Back
           </Button>
           {MissionPanels[currentPanel]}
         </>
       )}
-    </Modal>
+    </CustomModal>
   );
 };
 

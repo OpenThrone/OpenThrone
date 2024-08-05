@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRefresh } from "@fortawesome/free-solid-svg-icons";
-import { getTimeRemaining, getTimeToNextTurn } from '@/utils/timefunctions';
-import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text } from '@mantine/core';
+import { faArrowLeft, faArrowRight, faRefresh } from "@fortawesome/free-solid-svg-icons";
+import { getTimeRemaining, getTimeToNextTurn, OTTime } from '@/utils/timefunctions';
+import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List } from '@mantine/core';
 import { useDebouncedCallback } from '@mantine/hooks';
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
@@ -41,14 +41,28 @@ const Sidebar: React.FC = () => {
     setMessages(messagesArray);
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
-      forceUpdate();
-    }, 30000);
+  const intervalIdRef = useRef(null);
 
-    return () => clearInterval(interval);
-  }, [messages, forceUpdate]);
+  const resetInterval = useCallback(() => {
+    if (intervalIdRef.current) {
+      clearInterval(intervalIdRef.current);
+    }
+
+    // Define new interval
+    intervalIdRef.current = setInterval(() => {
+      setCurrentMessageIndex(prevIndex => (prevIndex + 1) % messages.length);
+      forceUpdate();
+    }, 15000);
+
+    return () => clearInterval(intervalIdRef.current);
+  }, [messages.length, forceUpdate]);
+
+  useEffect(() => {
+    resetInterval();
+    return () => clearInterval(intervalIdRef.current);
+  }, [resetInterval]);
+
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -154,6 +168,15 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  const handlePrevAdvisor = () => {
+    setCurrentMessageIndex((prevIndex) => (prevIndex - 1 + messages.length) % messages.length);
+    resetInterval();
+  }
+  const handleNextAdvisor = () => {
+    setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
+    resetInterval();
+  }
+
   return (
     <div className="block sm:block">
       <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg min-h-96 h-96" style={{
@@ -169,25 +192,25 @@ const Sidebar: React.FC = () => {
       }}>
         <div className="p-10 md:p-4 mt-2">
           <h6 className="advisor-title text-center font-medieval font-bold text-xl">
-            <span> </span> Advisor <span> </span>
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px 0' }} onClick={handlePrevAdvisor} /> Advisor <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px 0' }} onClick={handleNextAdvisor} />
           </h6>
-          <p className="text-xs">{messages[currentMessageIndex]}</p>
+          <Text size='sm' fw={'bold'} className='text-black'>{messages[currentMessageIndex]}</Text>
 
           <h6 className="text-center font-medieval font-bold text-xl mt-2">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
-          <ul className="list-none pl-0 text-sm">
-            <li>
+          <List size={'sm'}>
+            <List.Item>
               <i className="ra ra-gem ra-fw" /> Gold:{' '}
               <span id="gold">{sidebar.gold}</span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               <i className="ra ra-player ra-fw" /> Citizens:{' '}
               <span id="citizens">{sidebar.citizens}</span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               <i className="ra ra-tower ra-fw" /> Level:{' '}
               <span id="level">{sidebar.level}</span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               Experience:{' '}
               <span id="experience">
                 {sidebar.xp}{' '}
@@ -196,14 +219,17 @@ const Sidebar: React.FC = () => {
                   <span id="xpToNextLevel">{sidebar.xpNextLevel}</span>)
                 </span>
               </span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               Turns Available: <span id="attackTurns">{sidebar.turns}</span>
-            </li>
-            <li>
+            </List.Item>
+            <List.Item>
               Time Until Next Turn: <span id="nextTurnTimestamp">{time}</span>
-            </li>
-          </ul>
+            </List.Item>
+            <List.Item>
+              OT Time: <span id="otTime">{OTTime.getHours().toString()}:{ OTTime.getMinutes().toString()}</span>
+            </List.Item>
+          </List>
           <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2">
             <span> </span> Search <span> </span>
           </h6>

@@ -6,10 +6,11 @@ import { alertService } from '@/services';
 import { useUser } from '@/context/users';
 import Alert from '@/components/alert';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
-import { Chip, Group, Paper, Table, Tabs, SimpleGrid, Text, Space, NumberInput, rem, ThemeIcon, Button } from '@mantine/core';
+import { Chip, Group, Paper, Table, Tabs, SimpleGrid, Text, Space, NumberInput, rem, ThemeIcon, Button, Flex, Divider } from '@mantine/core';
 import { BiCoinStack, BiMoney, BiMoneyWithdraw, BiSolidBank } from "react-icons/bi";
 import classes from './[tab].module.css'
 import user from '@/pages/messaging/compose/[user]';
+import { EconomyUpgrades } from '@/constants';
 
 const Bank = (props) => {
   const tab = usePathname()?.split('/')[3];
@@ -24,7 +25,9 @@ const Bank = (props) => {
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [colorScheme, setColorScheme] = useState('ELF');
-  const [nextDepositAvailable, setNextDepositAvailable] = useState({hours: 0, minutes: 0, seconds: 0});
+  const [nextDepositAvailable, setNextDepositAvailable] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [depositError, setDepositError] = useState('');
+  const [withdrawError, setWithdrawError] = useState('');
 
   const [filters, setFilters] = useState({
     deposits: true,
@@ -87,10 +90,26 @@ const Bank = (props) => {
     if(user && user.units){
       setCitizenUnit(user?.units.find((u) => u.type === 'WORKER')?.quantity ?? 0);
       setDepositsMax(user.maximumBankDeposits);
+      if (depositAmount > BigInt(Math.floor(parseInt(user?.gold?.toString()) * 0.8))) {
+        setDepositError('Deposit amount exceeds the maximum allowed limit.');
+      } else {
+        setDepositError('');
+      }
+      if (withdrawAmount > BigInt(user?.goldInBank?.toString())) {
+        setWithdrawError('Withdraw amount exceeds the maximum allowed limit.');
+      } else {
+        setWithdrawError('');
+      }
     }
-  }, [user]);
+
+  }, [user, depositAmount, withdrawAmount]);
 
   const handleDeposit = async () => {
+    if (depositAmount > BigInt(Math.floor(parseInt(user?.gold?.toString()) * 0.8))) {
+      setDepositError('Deposit amount exceeds the maximum allowed limit.');
+      return;
+    }
+    setDepositError('')
     try {
       const response = await fetch('/api/bank/deposit', {
         method: 'POST',
@@ -115,6 +134,7 @@ const Bank = (props) => {
           .then((data) => setDepositsAvailable(data.deposits))
           .catch((error) => console.error('Error fetching bank history:', error));
         setDepositAmount(BigInt(0));
+        setDepositError('');
       }
     } catch (error) {
       console.error('Error depositing:', error);
@@ -122,6 +142,11 @@ const Bank = (props) => {
     }
   };
   const handleWithdraw = async () => {
+    if (withdrawAmount > BigInt(user?.goldInBank?.toString())) {
+      setWithdrawError('Withdraw amount exceeds the maximum allowed limit.');
+      return;
+    }
+    setWithdrawError('')
     try {
       const response = await fetch('/api/bank/withdraw', {
         method: 'POST',
@@ -140,6 +165,7 @@ const Bank = (props) => {
         forceUpdate();
         alertService.success("Successfully withdrew gold");
         setWithdrawAmount(BigInt(0));
+        setWithdrawError('');
       }
     } catch (error) {
       console.error('Error withdrawing:', error);
@@ -255,22 +281,25 @@ const Bank = (props) => {
             className="flex items-end space-x-2"
           >
             <div className="grow">
-              <label htmlFor="depositAmount" className="mb-2 block">
+              <label htmlFor="depositAmount" className="block">
                 Amount to Deposit
               </label>
+              <label className="text-sm text-gray-600 mb-2 block">You can deposit up to 80% of your gold per transaction</label>
               <NumberInput
                 value={depositAmount.toString()}
                 onChange={(value) => setDepositAmount(BigInt(value))}
+                max={Math.floor(parseInt(user?.gold?.toString()) * 0.8)}
                 placeholder="0"
                 min={0}
                 hideControls
                 allowNegative={false}
+                error={depositError}
                 rightSection={
-                  <Text size="sm" c="dimmed" onClick={() => { setDepositAmount(BigInt(user?.gold?.toString()))}}>
-                    Max: {parseInt(user?.gold?.toString())}
-                  </Text>
+                  <Button size="compact-xs" c="dimmed" onClick={() => { setDepositAmount(BigInt(Math.floor(parseInt(user?.gold?.toString()) * 0.8)))}}>
+                    Max
+                  </Button>
                 }
-                rightSectionWidth={100}
+                rightSectionWidth={50}
               />
             </div>
             <div>
@@ -294,14 +323,25 @@ const Bank = (props) => {
                 Amount to Withdraw
               </label>
               <NumberInput
-                value={withdrawAmount.toString()}
-                onChange={(value) => setWithdrawAmount(BigInt(value))}
-                placeholder="0"
-                min={0}
-                max={parseInt(user?.goldInBank?.toString())}
+                  value={withdrawAmount.toString()}
+                  onChange={(value) => setWithdrawAmount(BigInt(value))}
+                  placeholder="0"
+                  min={0}
+                  max={parseInt(user?.goldInBank?.toString())}
                   hideControls
                   allowNegative={false}
-              /></div>
+                  error={withdrawError}
+                  rightSection={
+                    <>
+                      <Button type='button' size='compact-xs' c="dimmed" mr={5} onClick={() => { setWithdrawAmount(BigInt(Math.floor(parseInt(user?.goldInBank?.toString()) * 0.1))) }}>10%</Button>
+                      <Button type='button' size='compact-xs' c="dimmed" mr={5} onClick={() => { setWithdrawAmount(BigInt(Math.floor(parseInt(user?.goldInBank?.toString()) * 0.25))) }}>25%</Button>
+                      <Button type='button' size='compact-xs' c="dimmed" mr={5} onClick={() => { setWithdrawAmount(BigInt(Math.floor(parseInt(user?.goldInBank?.toString()) * 0.50))) }}>50%</Button>
+                      <Button type='button' size='compact-xs' c="dimmed" onClick={() => { setWithdrawAmount(BigInt(Math.floor(parseInt(user?.goldInBank?.toString()) ))) }}>100%</Button>
+                    </>
+                  }
+                  rightSectionWidth={200}
+                />
+              </div>
             <div>
               <Button
                 type="submit"
@@ -436,37 +476,37 @@ const Bank = (props) => {
       )}
 
       {currentPage === 'economy' && (
-        <div className="flex space-x-8">
+        <Flex>
           {/* Workers Card */}
-          <div className="w-1/2 rounded-lg  p-6 shadow-md">
-            <h3 className="mb-4 text-xl font-semibold">Workers</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <strong>Total Workers:</strong>
-                <span>{citizenUnit || 0}</span>
-              </div>
-              <div className="mt-6 text-sm text-gray-600">
-                <p>To increase your workforce, visit the training page.</p>
-              </div>
-              <div className="flex justify-between">
-                <strong>Gold Per Worker:</strong>
-                <span>{user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn</span>
-              </div>
-              <div className="mt-6 text-sm text-gray-600">
-                <p>
+          <Paper className="w-1/2 rounded-lg p-6" shadow='md'>
+            <h3 className="text-xl font-semibold">Workers</h3>
+            <Divider my="md" />
+            <div className="space-y-2">
+              <Flex justify={'space-between'}>
+                <Text size='md'>Total Workers:</Text>
+                <Text size='sm'>{citizenUnit || 0}</Text>
+              </Flex>
+              <Text c='dimmed' size='sm'>To increase your workforce, visit the training page.</Text>
+              <Flex justify={'space-between'}>
+                <Text size='md'>Gold Per Worker:</Text>
+                <Text size='sm'>{user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn</Text>
+              </Flex>
+                <Text c='dimmed' size='sm'>
                   To increase your gold per worker, upgrade your economy
                   structure.
-                </p>
-              </div>
+                </Text>
             </div>
-          </div>
+          </Paper>
+          <Space w="md" />
 
           {/* Operations Card */}
-          <div className="w-1/2 rounded-lg  p-6 shadow-md">
-            <h3 className="mb-4 text-xl font-semibold">Operations</h3>
+          <Paper className="w-1/2 rounded-lg p-6 shadow-md">
+            <h3 className="text-xl font-semibold">Operations</h3>
+            <Divider my="md"  />
             <div className="space-y-4">
               <div className="flex justify-between">
                 <strong>Current Economy Upgrade:</strong>
+                <span>{EconomyUpgrades.find((eu) => eu.index === user?.economyLevel).name}</span>
               </div>
               <div className="mt-6 text-sm text-gray-600">
                 This Upgrade will increase bank deposits or gold per worker
@@ -499,8 +539,8 @@ const Bank = (props) => {
                 {/* You can compute and display the daily income here */}
               </div>
             </div>
-          </div>
-        </div>
+          </Paper>
+        </Flex>
       )}
     </div>
   );

@@ -111,13 +111,14 @@ const handler = async(
       await prisma.bank_history.create({
         data: {
           gold_amount: BigInt(totalCost),
-          from_user_id: userId,
-          from_user_account_type: 'HAND',
-          to_user_id: 0,
-          to_user_account_type: 'BANK',
+          from_user_id: (operation === 'buy' ? userId : 0),
+          from_user_account_type: (operation === 'buy' ? 'HAND' : 'BANK'),
+          to_user_id: (operation === 'buy' ? 0 : userId),
+          to_user_account_type: (operation === 'buy' ? 'BANK' : 'HAND'),
           date_time: new Date(),
           history_type: 'SALE',
           stats: {
+            operation: operation,
             action: 'battle_upgrade',
             items: itemsToEquip.map(item => ({
               type: item.type,

@@ -86,11 +86,21 @@ const handler = async (req, res) => {
               req.body.unit
             )
           );
-      case 'infiltrate':
-        return res.status(200).json({ status: 'success' });
+      case 'INFILTRATE':
+        return res
+          .status(200)
+          .json(
+            await spyHandler(
+              parseInt(session.user.id.toString()),
+              parseInt(req.query.id),
+              parseInt(req.body.spies),
+              req.body.type,
+              req.body.unit
+            )
+          );
     }
   }
-  // console.log('failed: ', session);
+  console.log('failed: ', session);
   return res.status(401).json({ status: 'failed', message: 'Unauthorized'});
 }
 
