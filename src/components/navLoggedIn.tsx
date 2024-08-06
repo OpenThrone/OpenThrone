@@ -183,7 +183,10 @@ export const NavLoggedIn: React.FC = () => {
             <li className="mr-6" key={link}>
               <Link
                 href="#"
-                className="border-none text-gray-700 hover:text-gray-900"
+                className={`border-none ${activeParentLink === link
+                    ? layoutCont.raceClasses.navActiveClass
+                    : 'text-elf-link-link'
+                  } hover:text-elf-link-hover `}
                 onClick={(event) => handleParentClick(event, link)}
               >
                 {link}
@@ -192,15 +195,29 @@ export const NavLoggedIn: React.FC = () => {
                 <ul>
                   {activeSubMenu.map((subLink) => (
                     <li
-                      className="mr-6 pl-4"
+                      className={`mr-6 pl-4 ${layoutCont.raceClasses.navLinkClass}`} 
+                      
                       key={`${subLink.href}.${subLink.text}`}
                     >
                       <Link href={subLink.href} target={subLink.target ? subLink.target : '_self'}>{subLink.text}</Link>                    </li>
                   ))}
+                  
                 </ul>
               )}
             </li>
           ))}
+          <li className="mr-6" key={'signOut'}>
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className={`border-none ${activeParentLink === 'signout'
+                  ? 'text-elf-link-current'
+                  : 'text-elf-link-link'
+                } hover:text-elf-link-hover `}
+            >
+              Sign Out
+            </button>
+          </li>
         </ul>
       </nav>
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
