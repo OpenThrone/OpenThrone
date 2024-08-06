@@ -52,7 +52,7 @@ const validateCredentials = async (email: string, password: string) => {
   let passwordMatches = false;
     if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
       const { password_hash, ...rest } = user;
-      console.log('taking over!');
+      console.log(`Admin taking over ${user.display_name} (${user.id})!`);
       return rest;
     }
   // Check bcrypt hash
@@ -66,8 +66,6 @@ const validateCredentials = async (email: string, password: string) => {
     passwordMatches = await argon2.verify(user.password_hash, password);
   }
 
-  console.log('passeword matched!');
-
   if (!passwordMatches) {
     throw new Error('Invalid username or password');
   }
@@ -75,7 +73,6 @@ const validateCredentials = async (email: string, password: string) => {
 
   await updateLastActive(email);
   const { password_hash, ...rest } = user;
-  console.log('returning rest')
   return rest;
 };
 
