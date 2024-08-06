@@ -1,15 +1,24 @@
 import { getSession } from 'next-auth/react';
-import { Container, Title, Text, Card, Group, Divider, Badge, Button, Space } from '@mantine/core';
+import { Container, Title, Text, Card, Group, Divider, Badge, Button, Space, Anchor, Breadcrumbs } from '@mantine/core';
 import prisma from '@/lib/prisma'; // Ensure your Prisma client is properly imported
 import { useUser } from '@/context/users';
 import { InferGetServerSidePropsType } from "next";
+import { useBreadcrumbs } from '@/context/BreadcrumbContext';
 
 const Index = ({ alliances }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { user } = useUser();  // Assuming useUser returns the current user object
+  const { breadcrumbs } = useBreadcrumbs(); // Assuming useBreadcrumbs returns the current breadcrumbs
   return (
     <Container size="lg" mt={40}>
       <Title order={1}>My Alliances</Title>
-      <Group position="right" mb="md">
+      <Breadcrumbs className="text-center mt-4">
+        {breadcrumbs.map((breadcrumb, index) => (
+          <Anchor href={breadcrumb.href} key={index}>
+            {breadcrumb.text}
+          </Anchor>
+        ))}
+      </Breadcrumbs>
+      <Group position="right" mb="md" mt={'md'}>
         <Button variant="outline">Create Alliance</Button>
       </Group>
 

@@ -6,6 +6,7 @@ import classes from './housing.module.css';
 import { useEffect, useState } from 'react';
 import toLocale from '@/utils/numberFormatting';
 import Alert from '@/components/alert';
+import PageTemplate from '@/components/PageTemplate';
 
 const Housing = (props) => {
   const { user } = useUser();
@@ -36,8 +37,7 @@ const Housing = (props) => {
   if (!mounted) return null; // Render nothing on the server
 
   return (
-    <div className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
-      <h2 className="text-2xl font-bold page-title">Housing</h2>
+    <PageTemplate title='Housing'>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
@@ -123,7 +123,7 @@ const Housing = (props) => {
       </SimpleGrid>
 
       
-    </div>
+    </PageTemplate>
   );
 };
 

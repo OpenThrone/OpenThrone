@@ -4,6 +4,7 @@ import { DefaultLevelBonus } from '@/constants';
 import { useUser } from '@/context/users';
 import { Text, Card, Group, Button, Space, Center } from '@mantine/core';
 import styles from './levels.module.css'; // Import the CSS module
+import PageTemplate from '@/components/PageTemplate';
 
 const Levels = (props) => {
   const { user, forceUpdate } = useUser();
@@ -56,18 +57,7 @@ const Levels = (props) => {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <Text
-        style={{
-          background: 'linear-gradient(360deg, orange, darkorange)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-        }}
-      >
-        Levels
-      </Text>
+    <PageTemplate title="Levels">
       <Space h="md" />
       <Text size="lg">
         You currently have {proficiencyPoints} proficiency points available.
@@ -167,7 +157,7 @@ const Levels = (props) => {
           </Card>
         </div>
       </div>
-    </div>
+    </PageTemplate>
 
 
   );

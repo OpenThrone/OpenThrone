@@ -6,6 +6,7 @@ import IntelResult from '@/components/IntelResult';
 import AssassinateResult from '@/components/AssassinateResult';
 import { InferGetStaticPropsType } from "next";
 import { useRouter } from 'next/router';
+import PageTemplate from '@/components/PageTemplate';
 
 const ResultsPage = ({ battle, lastGenerated }: InferGetStaticPropsType<typeof getStaticProps>) => {
   const { data: session, status } = useSession();
@@ -25,8 +26,7 @@ const ResultsPage = ({ battle, lastGenerated }: InferGetStaticPropsType<typeof g
   }
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Battle Results</h2>
+    <PageTemplate title="Battle Results">
       {battle.type === 'attack' ? (
         <AttackResult battle={battle} viewerID={session.user.id} />
       ) : battle.type === 'ASSASSINATE' ? (
@@ -34,7 +34,7 @@ const ResultsPage = ({ battle, lastGenerated }: InferGetStaticPropsType<typeof g
       ) : (
             <IntelResult battle={battle} viewerID={session.user.id} lastGenerated={lastGenerated} />
       )}
-    </div>
+    </PageTemplate>
   );
 };
 

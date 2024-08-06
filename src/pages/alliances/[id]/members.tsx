@@ -4,15 +4,16 @@ import { useSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
-import UserModel from '@/models/Users';
 import toLocale from '@/utils/numberFormatting';
-import { Table, Group, Avatar, Badge, Text, Indicator } from '@mantine/core';
+import { Table, Group, Avatar, Badge, Text, Indicator, Anchor, Breadcrumbs } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
+import UserModel from '@/models/Users';
+import { useBreadcrumbs } from '@/context/BreadcrumbContext';
 import PageTemplate from '@/components/PageTemplate';
 
 const ROWS_PER_PAGE = 10;
 
-const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Users = ({ allUsers, id }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,6 +24,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'asc');
   const [players, setPlayers] = useState([]);
   const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
+  const { breadcrumbs } = useBreadcrumbs();
 
   useEffect(() => {
     const start = (page - 1) * ROWS_PER_PAGE;
@@ -55,7 +57,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     setSortBy(newSortBy);
     setSortDir(newSortDir);
     setPage(1);
-    router.push(`?sortBy=${newSortBy}&sortDir=${newSortDir}&page=1`);
+    router.push(`/alliances/${id}/members?sortBy=${newSortBy}&sortDir=${newSortDir}&page=1`);
   };
 
   useEffect(() => {
@@ -63,12 +65,12 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     if (loggedInPlayerIndex !== -1 && !searchParams.get('page') && !searchParams.get('sortBy') && !searchParams.get('sortDir')) {
       const newPage = Math.floor(loggedInPlayerIndex / ROWS_PER_PAGE) + 1;
       setPage(newPage);
-      router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
+      router.push(`/alliances/${id}/members?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
     }
   }, [user, allUsers, sortBy, sortDir, router, searchParams]);
 
   return (
-    <PageTemplate title="Attack">
+    <PageTemplate title="Alliance Members">
       <div className="overflow-x-auto">
         <Table.ScrollContainer minWidth={400}>
           <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
@@ -82,22 +84,19 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {players.map((nplayer, index) => {
-                const player = new UserModel(nplayer);
-                if (player.id === user?.id) player.is_player = true;
+              {players.map((nPlayer, index) => {
+                const player = new UserModel(nPlayer);
+                const isPlayer = player.id === user?.id;
                 return (
                   <Table.Tr
                     key={player.id}
-                    className={`${player.is_player
-                      ? 'bg-gray-500'
-                      : 'odd:bg-table-odd even:bg-table-even'
-                      }`}
+                    className={`${isPlayer ? 'bg-gray-500' : 'odd:bg-table-odd even:bg-table-even'}`}
                   >
-                    <Table.Td className="px-2 py-2">{nplayer.overallrank}</Table.Td>
+                    <Table.Td className="px-2 py-2">{player.overallrank}</Table.Td>
                     <Table.Td className="px-4 py-2">
                       <Group gap={'sm'} className="text-justify">
                         <Indicator color={player.is_online ? 'teal' : 'red'}>
-                          <Avatar src={player?.avatar} size={40} radius={40} />
+                          <Avatar src={player.avatar} size={40} radius={40} />
                         </Indicator>
                         <div>
                           <Text fz="med" fw={500}>
@@ -107,12 +106,8 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                             >
                               {player.displayName}
                             </Link>
-                            {player.is_player && <Badge color={(colorScheme === "ELF") ?
-                              'green' : (
-                                colorScheme === 'GOBLIN' ? 'red' : (
-                                  colorScheme === 'UNDEAD' ? 'dark'
-                                    : 'blue'
-                                ))} ml={5}>You</Badge>}
+                            {isPlayer && <Badge color='brand' ml={5}>You</Badge>}
+                            <Badge color="blue" ml={5}>{nPlayer.role.name}</Badge>
                           </Text>
                           <Text fz="xs" c="dimmed">
                             {player.race} {player.class}
@@ -120,7 +115,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                         </div>
                       </Group>
                     </Table.Td>
-                    <Table.Td className="px-4 py-2">{toLocale(formattedGolds[index])}</Table.Td>
+                    <Table.Td className="px-4 py-2">{formattedGolds[index]}</Table.Td>
                     <Table.Td className="px-4 py-2">{toLocale(player.population)}</Table.Td>
                     <Table.Td className="px-4 py-2">{player.level}</Table.Td>
                   </Table.Tr>
@@ -136,7 +131,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           onClick={() => {
             const newPage = Math.max(page - 1, 1);
             setPage(newPage);
-            router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
+            router.push(`/alliances/${id}/members?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
           disabled={page == 1}
         >
@@ -147,7 +142,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           onClick={() => {
             const newPage = page + 1;
             setPage(newPage);
-            router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
+            router.push(`/alliances/${id}/members?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
           disabled={players.length < ROWS_PER_PAGE}
         >
@@ -174,24 +169,85 @@ const calculateUserScore = (user) => {
 };
 
 
-export const getServerSideProps = async () => {
+export const getServerSideProps = async ({ params }) => {
+  const { id } = params;
+
+  let whereCondition;
+
+  if (isNaN(parseInt(id))) {
+    // If `id` is not a number, treat it as a slug
+    whereCondition = { slug: id };
+  } else {
+    // If `id` is a number, treat it as an ID
+    whereCondition = { id: parseInt(id) };
+  }
+
   try {
-    let allUsers = await prisma.users.findMany({ where: { AND: [{ id: { not: 0 } }, { last_active: { not: null } }] } } );
-    allUsers.forEach(user => {
+    const alliance = await prisma.alliances.findFirst({
+      where: whereCondition,
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                display_name: true,
+                experience: true,
+                race: true,
+                avatar: true,
+                recruit_link: true,
+                class: true,
+                last_active: true,
+                units: true,
+                items: true,
+                house_level: true,
+                fort_level: true,
+                gold: true,
+              },
+            },
+            role: {
+              select: {
+                name: true,
+                permissions: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!alliance) {
+      return { notFound: true };
+    }
+
+    let allUsers = alliance.members.map((membership) => {
+      const user = membership.user;
       const nowdate = new Date();
       const lastActiveTimestamp = new Date(user.last_active).getTime();
       const nowTimestamp = nowdate.getTime();
       const population = user.units.reduce((acc, unit) => acc + unit.quantity, 0);
-      user.population = population;
-      user.isOnline = ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
+      const isOnline = ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
+      const score = calculateUserScore(user);
+      const role = membership.role;
+
+      return {
+        ...user,
+        population,
+        isOnline,
+        score,
+        role,
+      };
     });
-    allUsers.forEach(user => user.score = calculateUserScore(user));
+
     allUsers.sort((a, b) => b.score - a.score);
-    return { props: { allUsers } };
+    return { props: { allUsers, id: alliance.id, slug: alliance.slug } };
   } catch (error) {
     console.error('Error fetching user data:', error);
-    return { props: { allUsers: [] } };
+    return { props: { allUsers: [], id } };
+  } finally {
+    await prisma.$disconnect();
   }
 };
+
 
 export default Users;

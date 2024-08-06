@@ -5,15 +5,16 @@ import { useEffect, useState } from 'react';
 import AttackLogTable from '@/components/attacklog';
 import prisma from '@/lib/prisma';
 import { InferGetServerSidePropsType } from "next";
+import PageTemplate from '@/components/PageTemplate';
 
 // Assuming this is the path to your prisma client
 const ROWS_PER_PAGE = 5;
 const WarHistory = ({
-                      attackLogs,
-                      defenseLogs,
-                      attackPage: initialAttackPage,
-                      defensePage: initialDefensePage,
-                    }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+                          attackLogs,
+                          defenseLogs,
+                          attackPage: initialAttackPage,
+                          defensePage: initialDefensePage,
+                        }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter();
   const [attackPage, setAttackPage] = useState(initialAttackPage);
   const [defensePage, setDefensePage] = useState(initialDefensePage);
@@ -27,8 +28,7 @@ const WarHistory = ({
     );
   }, [pathName, initialAttackPage, initialDefensePage]);
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="page-title mb-4 text-2xl font-bold">War History</h2>
+    <PageTemplate title="War History">
 
       <section className="mb-8">
         <h2 className="mb-2 text-xl">Attack Log</h2>
@@ -91,7 +91,7 @@ const WarHistory = ({
           Next
         </button>
       </div>
-    </div>
+    </PageTemplate>
   );
 };
 

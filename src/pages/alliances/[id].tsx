@@ -1,16 +1,16 @@
 import Alert from "@/components/alert";
 import { InferGetServerSidePropsType } from "next";
 import prisma from "@/lib/prisma";
-import { Text, Title, Image, Flex, Paper, SimpleGrid, Grid, Group, BackgroundImage, Container, Table, Button } from "@mantine/core";
+import { Text, Title, Image, Flex, Paper, SimpleGrid, Grid, Group, BackgroundImage, Container, Table, Button, Anchor, Breadcrumbs } from "@mantine/core";
 import { useUser } from "@/context/users";
+import { useBreadcrumbs } from "@/context/BreadcrumbContext";
+import PageTemplate from "@/components/PageTemplate";
 
 const Index = ({ alliance }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  console.log('alliance loaded', alliance);
   const { user } = useUser();
+  const {breadcrumbs} = useBreadcrumbs();
   return (
-    <div className = "mainArea pb-10" >
-      <h2 className="page-title">Alliance Profile</h2>
-
+    <PageTemplate title={'Alliance Profile'}>
       <div className="my-2 flex justify-between">
         <Alert />
       </div>
@@ -95,16 +95,27 @@ const Index = ({ alliance }: InferGetServerSidePropsType<typeof getServerSidePro
           </Paper>
         </Grid.Col>
       </Grid>      
-    </div>
+    </PageTemplate>
   );
 
 }
 
 export const getServerSideProps = async ({ query }) => {
-
   const { id } = query;
+
+  let whereCondition;
+
+  if (isNaN(parseInt(id))) {
+    // If `id` is not a number, treat it as a slug
+    whereCondition = { slug: id };
+  } else {
+    // If `id` is a number, treat it as an ID
+    whereCondition = { id: parseInt(id) };
+  }
+
   const alliance = await prisma.alliances.findFirst({
-    where: { id: parseInt(id) }, include: {
+    where: whereCondition,
+    include: {
       leader: {
         select: {
           display_name: true,
@@ -135,11 +146,14 @@ export const getServerSideProps = async ({ query }) => {
           },
         },
       },
-    }, });
+    },
+  });
+
   if (!alliance) {
     return { notFound: true };
   }
+
   return { props: { alliance } };
-}
+};
 
 export default Index;
