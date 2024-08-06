@@ -47,7 +47,10 @@ export const NavLoggedOut: React.FC = () => {
               <li className="mr-6">
                 <Link
                   href={link.url}
-                  className="border-none text-gray-700 hover:text-gray-900"
+                  className={`border-none ${activeParentLink === link.url
+                      ? 'text-elf-link-current'
+                      : 'text-elf-link-link'
+                    } hover:text-elf-link-hover`}
                   onClick={(event) => handleParentClick(event, link.url)}                  
                 >
                   {link.title}
@@ -58,7 +61,7 @@ export const NavLoggedOut: React.FC = () => {
         </ul>
       </nav>
       <div>
-        <nav className="hidden bg-elf-menu-primary md:block">
+        <nav className="hidden bg-elf-menu-primary sm:block">
           <div className="mx-auto max-w-screen-md md:block">
             <ul className="flex flex-wrap items-center justify-evenly text-center text-xl">
               {parentLinks.map((link) => (
