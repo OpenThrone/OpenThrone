@@ -171,6 +171,7 @@ model attack_log_acl {
 model alliances {
   id                Int                    @id @default(autoincrement())
   name              String
+  slug              String
   leader_id         Int
   leader            users                  @relation("AllianceLeader", fields: [leader_id], references: [id])
   gold_in_bank      BigInt                 @default(0)
