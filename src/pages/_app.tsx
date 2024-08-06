@@ -16,6 +16,7 @@ import { UserProvider, useUser } from '@/context/users';
 import { MantineProvider } from '@mantine/core';
 import LoadingDots from '@/components/loading-dots';
 import { themes } from '@/styles/themes';
+import { BreadcrumbProvider } from '@/context/BreadcrumbContext';
 
 const MyApp = ({ Component, pageProps: { session, ...pageProps } }) => (
   <Suspense fallback={<LoadingDots />}>
@@ -58,9 +59,11 @@ const AppWithTheme = ({ Component, pageProps }: AppProps) => {
   return (
     <MantineProvider defaultColorScheme="dark" theme={theme}>
       <LayoutProvider>
+        <BreadcrumbProvider>
         <Layout>
-          <Component {...pageProps} />
+            <Component {...pageProps} />
         </Layout>
+      </BreadcrumbProvider>
       </LayoutProvider>
     </MantineProvider>
   );

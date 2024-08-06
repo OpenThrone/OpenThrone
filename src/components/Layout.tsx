@@ -10,6 +10,8 @@ import { useLayout } from '@/context/LayoutContext';
 import { AppConfig } from '@/utils/AppConfig';
 import Image from 'next/image';
 import NewsBulletin from './news-bulletin';
+import { useBreadcrumbs } from '@/context/BreadcrumbContext';
+import { Breadcrumbs, Anchor } from '@mantine/core';
 
 interface IMainProps {
   // eslint-disable-next-line react/no-unused-prop-types
@@ -25,7 +27,6 @@ const Layout = (props: IMainProps) => {
   const [loading, setLoading] = useState(true);
   const [onlinePlayerInfo, setOnlinePlayerInfo] = useState({ onlinePlayers: 0, totalPlayers: 0, newestPlayer:'', newPlayers: 0 });
   const [isDevelopment, setIsDevelopment] = useState(false);
-
   useEffect(() => {
     setIsDevelopment(process.env.NODE_ENV === 'development');
   }, []);
