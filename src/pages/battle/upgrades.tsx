@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { SimpleGrid, Paper, Group, Text, Space, ThemeIcon, Tooltip } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuildingColumns, faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
+import PageTemplate from '@/components/PageTemplate';
 
 const useItems = (user) => {
   const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
@@ -62,8 +63,7 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
 const Upgrades = (props) => {
   const { user } = useUser();
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Upgrades</h2>
+    <PageTemplate title="Battle Upgrades">
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
@@ -137,7 +137,7 @@ const Upgrades = (props) => {
 
         <BattleUpgradesSection heading='Sentry' type='SENTRY' items={useItems(user).SENTRY} />
       </div>
-    </div>
+    </PageTemplate>
   );
 };
 

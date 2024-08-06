@@ -2,6 +2,7 @@ import { TextInput, Text, Button, Group, Loader, Textarea, FileInput, Paper } fr
 import { useForm } from '@mantine/form';
 import { useUser } from '@/context/users';
 import Alert from '@/components/alert';
+import PageTemplate from '@/components/PageTemplate';
 
 export default function CreateAlliance(props) {
   const { user } = useUser();
@@ -50,8 +51,7 @@ export default function CreateAlliance(props) {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Create new alliance</h2>
+    <PageTemplate title='Create'>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
@@ -87,6 +87,6 @@ export default function CreateAlliance(props) {
       </Group>
       </form>
       </Paper>
-    </div>
+    </PageTemplate>
   );
 }

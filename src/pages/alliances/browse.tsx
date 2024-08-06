@@ -1,4 +1,4 @@
-import { Card, Avatar, Text, Group, Button, SimpleGrid, Image, Flex, Stack, Space, Paper, Pagination, Table, Modal } from '@mantine/core';
+import { Card, Avatar, Text, Group, Button, SimpleGrid, Image, Flex, Stack, Space, Paper, Pagination, Table, Modal, Anchor, Breadcrumbs } from '@mantine/core';
 import classes from './browse.module.css';
 import toLocale from '@/utils/numberFormatting';
 import { useEffect, useState } from 'react';
@@ -9,7 +9,8 @@ import { InferGetServerSidePropsType } from "next";
 import { useDisclosure } from '@mantine/hooks';
 import { useRouter } from 'next/router';
 import { useUser } from '@/context/users';
-import user from '../messaging/compose/[user]';
+import { useBreadcrumbs } from '@/context/BreadcrumbContext';
+import PageTemplate from '@/components/PageTemplate';
 
 export const UserCardImage = ({ name, members, description, gold, joinText, imgsrc, bannerimgsrc, leader, isMember,id }) => {
 
@@ -84,6 +85,7 @@ export const UserCardImage = ({ name, members, description, gold, joinText, imgs
 const Browse = ({ processedAlliances, totalCount, page, pageSize }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [viewMode, setViewMode] = useState('cards');  // 'cards' or 'table'
   const [opened, { open, close }] = useDisclosure(false); // modal for join not implemented
+  const  {breadcrumbs} = useBreadcrumbs();
 
   const handlePageChange = (page) => {
     window.location.href = `/browse?page=${page}`;  // Update to use your routing logic
@@ -92,8 +94,7 @@ const Browse = ({ processedAlliances, totalCount, page, pageSize }: InferGetServ
   const { user } = useUser();
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Alliances</h2>
+    <PageTemplate title="Alliances">
       <div className="my-5 flex justify-between">
         <Button onClick={() => setViewMode('cards')}>Card View</Button>
         <Button onClick={() => setViewMode('table')}>Table View</Button>
@@ -155,7 +156,7 @@ const Browse = ({ processedAlliances, totalCount, page, pageSize }: InferGetServ
       )}
       <Space h="lg" />
       <Pagination total={Math.ceil(totalCount / pageSize)} page={page} onChange={handlePageChange} withControls withEdges />
-    </div>
+    </PageTemplate>
   );
 };
 

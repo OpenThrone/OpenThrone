@@ -13,6 +13,7 @@ import UserModel from '@/models/Users';
 import { BiCoinStack, BiSolidBank, BiMoney } from 'react-icons/bi';
 import { faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import PageTemplate from '@/components/PageTemplate';
 
 const useItems = (user: UserModel, armoryLevel: unknown) => {
   const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
@@ -377,8 +378,8 @@ const ArmoryTab = (props) => {
   }, [stickyRef, parentRef]);
 
   return (
-    <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
-      <h2 className="text-2xl font-bold page-title">Armory</h2>
+    <PageTemplate title="Armory">
+    <div ref={parentRef} style={{ position: 'relative', paddingBottom: '50px' }}>
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
@@ -548,8 +549,9 @@ const ArmoryTab = (props) => {
                 </div>
             </>
           ),
-      )}
+        )}
     </div>
+    </PageTemplate>
   );
 };
 

@@ -5,6 +5,7 @@ import toLocale from '@/utils/numberFormatting';
 import { Badge, Box, Button, Center, Group, NumberInput, Paper, rem, RingProgress, SimpleGrid, Space, Stack, Text, TextInput, ThemeIcon } from '@mantine/core';
 import Alert from '@/components/alert';
 import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
+import PageTemplate from '@/components/PageTemplate';
 
 const Repair = (props) => {
   const { user, forceUpdate } = useUser();
@@ -72,8 +73,7 @@ const Repair = (props) => {
   const repairCost = repairPoints * fortification?.costPerRepairPoint;
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Fort Repair</h2>
+    <PageTemplate title="Repair Fortification">
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
@@ -182,7 +182,7 @@ const Repair = (props) => {
           </Box>
         </Paper>
       </SimpleGrid>
-    </div>
+    </PageTemplate>
   );
 };
 

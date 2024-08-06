@@ -20,6 +20,7 @@ import {
 import { useDisclosure, useDebouncedValue } from "@mantine/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
+import PageTemplate from "@/components/PageTemplate";
 
 const Settings = (props) => {
   const locales: Locales[] = ["en-US", "es-ES"];
@@ -118,18 +119,7 @@ const Settings = (props) => {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <Text
-        style={{
-          background: 'linear-gradient(360deg, orange, darkorange)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-        }}
-      >
-        Settings
-      </Text>
+    <PageTemplate title='Settings'>
       <Alert />
       <Grid gutter="lg">
         <Grid.Col span={6}>
@@ -248,7 +238,7 @@ const Settings = (props) => {
           </Group>
         </div>
       </Modal>
-    </div>
+    </PageTemplate>
   );
 
 };

@@ -6,6 +6,7 @@ import Alert from '@/components/alert';
 import { alertService } from '@/services';
 import Image from 'next/image';
 import { useUser } from '@/context/users';
+import PageTemplate from '@/components/PageTemplate';
 
 interface RecruitProps {
   id: string;
@@ -130,8 +131,7 @@ export default function Recruit(props) {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Recruiter</h2>
+    <PageTemplate title="Recruitment">
       <div className="my-5 flex justify-between">
         <Alert />
       </div>
@@ -197,6 +197,6 @@ export default function Recruit(props) {
           </Paper>
         </div>
       </div>
-    </div>
+    </PageTemplate>
   );
 }
