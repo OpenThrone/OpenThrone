@@ -13,7 +13,7 @@ const parentLinks = [
   'Battle',
   'Structures',
   //'Social',
-  // 'Alliances',
+  //'Alliances',
   'Community',
 ] as const;
 
@@ -50,7 +50,11 @@ const subMenus: {
     { text: 'Housing', href: '/structures/housing', parent: 'Structures' },
     { text: 'Repair', href: '/structures/repair', parent: 'Structures' },
   ],
-  // Alliances: [{ text: 'Test', href: '#' }],
+  Alliances: [
+    { text: 'Joined', href: '/alliances/joined', parent: 'Alliances' },
+    { text: 'Browse', href: '/alliances/browse', parent: 'Alliances' },
+    { text: 'Create New', href: '/alliances/create', parent: 'Alliances' },
+  ],
   Community: [
     {
       text: 'News',
