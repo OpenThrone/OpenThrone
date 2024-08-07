@@ -4,22 +4,25 @@ import prisma from '@/lib/prisma'; // Ensure your Prisma client is properly impo
 import { useUser } from '@/context/users';
 import { InferGetServerSidePropsType } from "next";
 import { useBreadcrumbs } from '@/context/BreadcrumbContext';
+import PageTemplate from '@/components/PageTemplate';
+import { useRouter } from 'next/router';
 
 const Index = ({ alliances }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { user } = useUser();  // Assuming useUser returns the current user object
-  const { breadcrumbs } = useBreadcrumbs(); // Assuming useBreadcrumbs returns the current breadcrumbs
+  const router = useRouter();  // Initialize the router
+
+  const handleCreateButtonClick = () => {
+    router.push('/alliances/create'); // Navigate to the /create page
+  };
+
+  const handleMembersClick = (id) => {
+    router.push(`/alliances/${id}/members`); // Navigate to the /members page
+  }
   return (
-    <Container size="lg" mt={40}>
-      <Title order={1}>My Alliances</Title>
-      <Breadcrumbs className="text-center mt-4">
-        {breadcrumbs.map((breadcrumb, index) => (
-          <Anchor href={breadcrumb.href} key={index}>
-            {breadcrumb.text}
-          </Anchor>
-        ))}
-      </Breadcrumbs>
+    <PageTemplate title="My Alliances">
+    <Container size="lg">
       <Group position="right" mb="md" mt={'md'}>
-        <Button variant="outline">Create Alliance</Button>
+        <Button variant="outline" onClick={handleCreateButtonClick}>Create Alliance</Button>
       </Group>
 
       {alliances.map(alliance => (
@@ -43,7 +46,7 @@ const Index = ({ alliances }: InferGetServerSidePropsType<typeof getServerSidePr
             )}
             <Button variant="subtle">Allies</Button>
             <Button variant="subtle">Enemies</Button>
-            <Button variant="subtle">Members List</Button>
+            <Button variant="subtle" onClick={() => handleMembersClick(alliance.id)}>Members List</Button>
             <Button variant="subtle">Access</Button>
             <Button variant="subtle">Invite</Button>
             <Button variant="subtle">Ranks</Button>
@@ -55,7 +58,8 @@ const Index = ({ alliances }: InferGetServerSidePropsType<typeof getServerSidePr
           <Space h='md' />
         </>
       ))}
-    </Container>
+      </Container>
+    </PageTemplate>
   );
 };
 
