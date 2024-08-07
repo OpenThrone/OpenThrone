@@ -20,44 +20,44 @@ const Index = ({ alliances }: InferGetServerSidePropsType<typeof getServerSidePr
   }
   return (
     <PageTemplate title="My Alliances">
-    <Container size="lg">
-      <Group position="right" mb="md" mt={'md'}>
-        <Button variant="outline" onClick={handleCreateButtonClick}>Create Alliance</Button>
-      </Group>
+      <Container size="lg">
+        <Group position="right" mb="md" mt={'md'}>
+          <Button variant="outline" onClick={handleCreateButtonClick}>Create Alliance</Button>
+        </Group>
 
-      {alliances.map(alliance => (
-        <>
-        <Card shadow="sm" p="lg" radius="md" key={alliance?.id}>
-          <Group position="apart">
-            <Text fw={'bold'} size='lg'>{alliance.name}</Text>
-            <Badge color='brand' variant='outline'>
-              <Text size='sm' c='dimmed'>{user?.id === alliance?.leader?.id ? 'LEADER' : 'Led by: ' + alliance.leader.display_name}</Text>
-            </Badge>
-          </Group>
-          <Divider my="sm" />
-          <Text size="sm">Members: {alliance._count.members}</Text>
-          <Group mt="md">
-            {user?.id === alliance?.leader?.id && (
-              <>
-                <Button variant="subtle">Modify Profile</Button>
-                <Button color="red" variant="subtle">Disband</Button>
-                <Button variant="subtle">Change Leader</Button>
-              </>
-            )}
-            <Button variant="subtle">Allies</Button>
-            <Button variant="subtle">Enemies</Button>
-            <Button variant="subtle" onClick={() => handleMembersClick(alliance.id)}>Members List</Button>
-            <Button variant="subtle">Access</Button>
-            <Button variant="subtle">Invite</Button>
-            <Button variant="subtle">Ranks</Button>
-            <Button variant="subtle">Lists</Button>
-            <Button variant="subtle">Message Center</Button>
-          </Group>
-        </Card>
-        
-          <Space h='md' />
-        </>
-      ))}
+        {alliances.map(alliance => (
+          <>
+          <Card shadow="sm" p="lg" radius="md" key={alliance?.id}>
+            <Group position="apart">
+              <Text fw={'bold'} size='lg'>{alliance.name}</Text>
+              <Badge color='brand' variant='outline'>
+                <Text size='sm' c='dimmed' mt={'1px'}>{user?.id === alliance?.leader?.id ? 'LEADER' : 'Led by: ' + alliance.leader.display_name}</Text>
+              </Badge>
+            </Group>
+            <Divider my="sm" />
+            <Text size="sm">Members: {alliance._count.members}</Text>
+            <Group mt="md">
+              {user?.id === alliance?.leader?.id && (
+                <>
+                  <Button variant="subtle">Modify Profile</Button>
+                  <Button color="red" variant="subtle" onClick={()=>alert("Not implemented yet")}>Disband</Button>
+                  <Button variant="subtle">Change Leader</Button>
+                </>
+              )}
+                <Button variant="subtle" disabled>Allies</Button>
+                <Button variant="subtle" disabled>Enemies</Button>
+              <Button variant="subtle" onClick={() => handleMembersClick(alliance.id)}>Members List</Button>
+              <Button variant="subtle" disabled>Access</Button>
+                <Button variant="subtle" disabled>Invite</Button>
+              <Button variant="subtle">Ranks</Button>
+              <Button variant="subtle" disabled>Lists</Button>
+              <Button variant="subtle" disabled>Message Center</Button>
+            </Group>
+          </Card>
+          
+            <Space h='md' />
+          </>
+        ))}
       </Container>
     </PageTemplate>
   );
