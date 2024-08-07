@@ -13,7 +13,8 @@ const handler = async (
   }
 
   const { session } = req;
-  const recruiterID = session ? parseInt(session.user?.id.toLocaleString()) : 0;
+  const requestID = req?.query?.id;
+  const recruiterID = requestID ? parseInt(requestID.toString()) : (session ? parseInt(session.user?.id.toLocaleString()) : 0);
 
   // Fetch all users
   const users = await prisma.users.findMany({
@@ -68,7 +69,7 @@ const handler = async (
 
   const totalLeft = validUsers.reduce((sum, { remainingRecruits }) => sum + remainingRecruits, 0);
 
-  return res.status(200).json({ randomUser: { ...randomUser.user, remainingRecruits: randomUser.remainingRecruits }, totalLeft, "totalPlayerCount": users.length, "maxRecruitsExpected": users.length * 5 });
+  return res.status(200).json({ userID: recruiterID, randomUser: { ...randomUser.user, remainingRecruits: randomUser.remainingRecruits }, totalLeft, "totalPlayerCount": users.length, "maxRecruitsExpected": users.length * 5 });
 }
 
 export default withAuth(handler, true);
