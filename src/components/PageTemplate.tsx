@@ -14,9 +14,9 @@ const PageTemplate = ({ title, children }: PageTemplateProps) => {
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">{title}</h2>
-      <Breadcrumbs className="text-center mt-4">
+      <Breadcrumbs className="text-center mt-4 ">
         {breadcrumbs.map((breadcrumb, index) => (
-          <Anchor href={breadcrumb.href} key={index}>
+          <Anchor href={breadcrumb.href} key={index} c='dimmed'> 
             {breadcrumb.text}
           </Anchor>
         ))}
