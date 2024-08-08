@@ -30,6 +30,16 @@ Contributions are the backbone of OpenThrone. Feel encouraged to report bugs or 
 - Volunteering: We welcome volunteers skilled in art, NextJS, or Figma. Reach out to DasTacoMann to contribute.
 - Ideation: While we appreciate your enthusiasm and ideas, our current focus is on foundational game mechanics. There will be opportunities to discuss new ideas once we have a stable version.
 
+## Getting it running
+A few notes about how to get the game running locally (for dev work or otherwise):
+
+- Download the source: `git clone https://github.com/OpenThrone/OpenThrone && cd OpenThrone`
+- Install the dependencies: `npm install` (you may need to use --legacy-peer-deps for this to complete successfully)
+- Set up a postgresql user and database (this is beyond the scope of this documentation, but there are plenty of examples elsewhere on the web)
+- Copy .env.sample with `cp .env.sample .env.local` and add your configuration to .env.local
+- Run the prisma migrations: `npx prisma migrate dev --name init`
+- Start the development server: `npm run bun-dev`
+
 ## Other Information
 ### VSCode information (optional)
 
