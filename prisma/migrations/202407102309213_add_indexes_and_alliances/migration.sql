@@ -21,8 +21,12 @@ CREATE INDEX "recruit_history_to_from_timestamp_idx" ON "recruit_history" ("to_u
 -- Changed `users` table
 ALTER TABLE "users" ALTER COLUMN "structure_upgrades" SET DEFAULT '[{"type": "OFFENSE", "level": 1}, {"type": "SPY", "level": 1}, {"type": "SENTRY", "level": 1}, {"type":"ARMORY","level":1}]';
 
-DROP TRIGGER IF EXISTS update_alliances_updated_at ON "alliances";
-CREATE TRIGGER update_alliances_updated_at
-BEFORE UPDATE ON "alliances"
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();
+-- This was manually commented out because it was causing an error when running
+-- the migrations - it may be important to reinstate this change, or something
+-- similar, when alliances are re-introduced. Beware!
+
+--DROP TRIGGER IF EXISTS update_alliances_updated_at ON "alliances";
+--CREATE TRIGGER update_alliances_updated_at
+--BEFORE UPDATE ON "alliances"
+--FOR EACH ROW
+--EXECUTE FUNCTION update_updated_at_column();

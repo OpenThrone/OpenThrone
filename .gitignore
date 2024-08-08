@@ -53,3 +53,6 @@ local
 # vercel
 .vercel
 temp/*
+
+# yarn
+yarn.lock
