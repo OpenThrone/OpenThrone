@@ -91,7 +91,7 @@ const Housing = (props) => {
                 New Citizens Per Day: <Text component="span" color="lightgray">{houseUpgrade.citizensDaily}</Text>
                 </Text>
                 <Text size='xs' color='dimmed'>
-                  You will gain a new citizen every day at midnight OT time.
+                  You will gain the above citizens every day at midnight OT time.
                   </Text>
               </Text>
             </Stack>
