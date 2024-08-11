@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import mtrand from '@/utils/mtrand';
-import { OTStartDate, OTTime} from '@/utils/timefunctions';
+import { getOTStartDate, getOTTime} from '@/utils/timefunctions';
 
 const handler = async (
   req: NextApiRequest,
@@ -27,7 +27,7 @@ const handler = async (
     },
     where: {
       NOT: [{ id: { in: [0, recruiterID] } }],
-      created_at: { lt: OTStartDate },
+      created_at: { lt: getOTStartDate() },
     },
   });
 
@@ -40,7 +40,7 @@ const handler = async (
       where: {
         to_user: recruiterID,
         from_user: recruiterID === 0 ? recruiterID : user.id,
-        timestamp: { gte: OTStartDate },
+        timestamp: { gte: getOTStartDate() },
         ...(recruiterID === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
       },
     });   
@@ -53,12 +53,12 @@ const handler = async (
   console.log({
     to_user: recruiterID,
     from_user: recruiterID === 0 ? recruiterID : 'user.id',
-    timestamp: { gte: OTStartDate },
+    timestamp: { gte: getOTStartDate() },
     ...(recruiterID === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
   }
   )
 
-  console.log(OTTime)
+  console.log(getOTTime());
   if (!validUsers.length) {
     return res.status(404).json({ error: 'No valid users available for recruitment.' });
   }

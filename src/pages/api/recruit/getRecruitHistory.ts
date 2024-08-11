@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
-import { OTStartDate } from '@/utils/timefunctions';
+import { getOTStartDate } from '@/utils/timefunctions';
 
 const handler = async (
   req: NextApiRequest,
@@ -20,7 +20,7 @@ const handler = async (
     where: {
       from_user: { not: { in: [0, recruiterID] } },
       to_user: recruiterID,
-      timestamp: { gte: OTStartDate },
+      timestamp: { gte: getOTStartDate() },
     },
     select: {
       from_user: true,
@@ -63,7 +63,7 @@ const handler = async (
     recruitCount: recruitCountMap[user.id],
   }));
 
-  return res.status(200).json({ usersWithRecruitCount, '24hoursago': OTStartDate, recruitmentRecords });
+  return res.status(200).json({ usersWithRecruitCount, '24hoursago': getOTStartDate(), recruitmentRecords });
 }
 
 export default withAuth(handler);

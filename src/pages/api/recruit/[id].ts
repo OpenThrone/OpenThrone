@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { PlayerUnit, Unit } from '@/types/typings';
 import { withAuth } from '@/middleware/auth';
-import { OTStartDate } from '@/utils/timefunctions';
+import { getOTStartDate } from '@/utils/timefunctions';
 
 function increaseCitizens(units: PlayerUnit[]) {
   // Find the CITIZEN object
@@ -44,7 +44,7 @@ const handler = async(
         
               to_user: Number(recruitedUser.id) ,
                from_user: Number(recruiterID) ,
-               timestamp: { gte: OTStartDate  },
+               timestamp: { gte: getOTStartDate() },
 
         ...(recruiterID === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
         
@@ -62,7 +62,7 @@ const handler = async(
       where: {
         from_user: Number(recruiterID),
         to_user: Number(recruitedUser.id),
-        timestamp: { gte: OTStartDate },
+        timestamp: { gte: getOTStartDate() },
       },
     });
 
@@ -83,14 +83,14 @@ const handler = async(
               { to_user: Number(recruiterID) },
               { from_user: { not: 0 } }, // Exclude from_user = 0
               { from_user: Number(recruitedUser.id)  },
-              { timestamp: { gte: OTStartDate } },
+              { timestamp: { gte: getOTStartDate() } },
             ],
           },
           {
             AND: [
               { to_user: Number(recruiterID) },
               { ip_addr: req.headers['x-real-ip'] as string },
-              { timestamp: { gte: OTStartDate } },
+              { timestamp: { gte: getOTStartDate() } },
             ],
           },
         ],
