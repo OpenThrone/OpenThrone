@@ -10,7 +10,7 @@ const getOnlinePlayers = async (req: NextApiRequest, res: NextApiResponse) => {
     const newUsers = await prisma.users.count({ where: { created_at: { gte: new Date(Date.now() - 1000 * 60 * 60 * 24) } } });
     const newestUser = await prisma.users.findFirst({ orderBy: { created_at: 'desc' } });
 
-    res.status(200).json({ allUsersCounted, onlineUsers, newUsers, newestUser: newestUser.display_name});
+    res.status(200).json({ allUsersCounted, onlineUsers, newUsers, newestUser: newestUser ? newestUser.display_name : null});
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: 'Internal server error', message: error.message});

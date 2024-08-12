@@ -110,7 +110,7 @@ const Layout = (props: IMainProps) => {
               <h1 className="title text-title text-center text-6xl font-medium">
                 <center>
                   <Image
-                    src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/header/OpenThrone.webp`}
+                    src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT || ''}/images/header/OpenThrone.webp`}
                     alt="OpenThrone"
                     style={{ height: '150px', filter: 'drop-shadow(0px 3px 0px #000000)' }}
                     width={'300'}
