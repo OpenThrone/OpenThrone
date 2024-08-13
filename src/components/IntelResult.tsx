@@ -1,5 +1,4 @@
-
-import { getLevelFromXP } from '@/utils/utilities';
+import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
 import { Box, Text, Group, Paper, Grid, RingProgress, Button, Space, Container } from '@mantine/core';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -104,7 +103,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
           <h4>Level: {getLevelFromXP(stats.spyResults.attacker.experience)}</h4>
           <center>
             <Image
-              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${attackerPlayer?.race}_150x150.webp`}
+              src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
               className="ml-2"
               alt="attacker avatar"
               width={150}
@@ -167,7 +166,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
           <h4>Level: {getLevelFromXP(stats.spyResults.defender.experience)}</h4>
           <center>
             <Image
-              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${defenderPlayer?.race}_150x150.webp`}
+              src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
               className="ml-2"
               alt="defender avatar"
               width={150}

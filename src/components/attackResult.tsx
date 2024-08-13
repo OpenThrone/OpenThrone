@@ -1,6 +1,6 @@
 import UserModel from "@/models/Users";
 import toLocale from "@/utils/numberFormatting";
-import { getLevelFromXP } from "@/utils/utilities";
+import { getLevelFromXP, getAssetPath } from "@/utils/utilities";
 import { Grid, Space, Group, Button, Text, Paper } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
@@ -93,7 +93,7 @@ const attackResults = ({ battle, viewerID }) => {
           <h4>Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}</h4>
           <center>
             <Image
-              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${attackerPlayer?.race}_150x150.webp`}
+              src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
               className="ml-2"
               alt="attacker avatar"
               width={150}
@@ -136,7 +136,7 @@ const attackResults = ({ battle, viewerID }) => {
           <h4>Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}</h4>
           <center>
             <Image
-              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${defenderPlayer?.race}_150x150.webp`}
+              src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
               className="ml-2"
               alt="defender avatar"
               width={150}
