@@ -108,7 +108,7 @@ const getAvatarSrc = (avatar: string, race?: string) => {
   }
   if (avatar === 'SHIELD') {
     if (race) {
-      return getAssetPath('shields', '25x25', race)';
+      return getAssetPath('shields', '25x25', race);
     }
   }
 }
