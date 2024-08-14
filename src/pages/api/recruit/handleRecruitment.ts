@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { PlayerUnit } from '@/types/typings';
 import mtrand from '@/utils/mtrand';
-import { OTStartDate } from '@/utils/timefunctions';
+import { getOTStartDate } from '@/utils/timefunctions';
 
 function increaseCitizens(units: PlayerUnit[]) {
   const citizen = units.find((unit) => unit.type === 'CITIZEN');
@@ -52,7 +52,7 @@ const handler = async (
         where: {
           from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
           to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
-          timestamp: { gte: OTStartDate },
+          timestamp: { gte: getOTStartDate() },
           ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
         },
       });
@@ -60,7 +60,7 @@ const handler = async (
       (recruiterUser === 0 && console.log('recruitments', {
         from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
         to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
-        timestamp: { gte: OTStartDate },
+        timestamp: { gte: getOTStartDate() },
         ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
       }));
 
@@ -95,7 +95,7 @@ const handler = async (
         where: {
           from_user: recruitedUserId ? Number(recruitedUserId) : recruiterUser,
           to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
-          timestamp: { gte: OTStartDate },
+          timestamp: { gte: getOTStartDate() },
         },
       });
 

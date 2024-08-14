@@ -20,7 +20,16 @@ const getTimeToNextTurn = (date = new Date()) => {
   const nextTurn = new Date(Math.ceil(date.getTime() / ms) * ms);
   return nextTurn.toString();
 }; 
-const OTTime = new Date(new Date().getTime() +0 * 60 * 60 * 1000);
-const OTStartDate = new Date(OTTime.getFullYear(), OTTime.getMonth(), OTTime.getDate());
 
-export { getTimeRemaining, getTimeToNextTurn, OTTime, OTStartDate };
+// Get the current time according to the server
+const getOTTime = () => {
+  return new Date();
+};
+
+// Get a Date object representing the beginning of this day
+const getOTStartDate = () => {
+  const OTTime = getOTTime();
+  return new Date(OTTime.getFullYear(), OTTime.getMonth(), OTTime.getDate());
+};
+
+export { getTimeRemaining, getTimeToNextTurn, getOTTime, getOTStartDate };
