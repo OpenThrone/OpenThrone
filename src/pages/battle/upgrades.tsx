@@ -105,7 +105,7 @@ const Upgrades = (props) => {
           </Group>
           <Group>
             <Text>
-              {user?.units.filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)[0].quantity}
+              {user?.units.filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)[0]?.quantity}
             </Text>
               </Group>
         </Paper>
@@ -120,7 +120,7 @@ const Upgrades = (props) => {
             </Group>
             <Group>
               <Text>
-                {user?.units.filter((unit) => unit.type === 'DEFENSE' && unit.level > 1)[0].quantity}
+                {user?.units.filter((unit) => unit.type === 'DEFENSE' && unit.level > 1)[0]?.quantity}
               </Text>
             </Group>
           </Paper>

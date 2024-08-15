@@ -6,6 +6,7 @@ import Alert from '@/components/alert';
 import { alertService } from '@/services';
 import Image from 'next/image';
 import { useUser } from '@/context/users';
+import { getAssetPath } from '@/utils/utilities';
 
 interface RecruitProps {
   id: string;
@@ -142,7 +143,7 @@ export default function Recruit(props) {
             <span className="text-white">{userInfo.display_name}</span> is a level {userInfo.level} {userInfo.race}{' '}
             {userInfo.class}.
             <center>
-              <Image src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${userInfo.race}_150x150.webp`} width={'150'} height={'150'} alt="" />
+              <Image src={getAssetPath('shields', '150x150', userInfo.race)} width={'150'} height={'150'} alt="" />
             </center>
             <Text size="md">Please wait for Cloudflare&lsquo;s captcha below.</Text>
 

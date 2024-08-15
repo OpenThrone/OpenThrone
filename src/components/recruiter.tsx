@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import Image from 'next/image';
+import { getAssetPath } from '@/utils/utilities';
 
 const Recruiter = ({ user, showCaptcha, onSuccess }) => {
   const [error, setError] = useState(null);
@@ -20,7 +21,7 @@ const Recruiter = ({ user, showCaptcha, onSuccess }) => {
         
           {user.display_name} is a level {user.level} {user.race}{' '}
           {user.class}.
-        <center><Image src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${user.race}_150x150.webp`} width={'150'} height={'150'} alt="" /></center>
+        <center><Image src={getAssetPath('shields', '150x150', user.race)} width={'150'} height={'150'} alt="" /></center>
         
       </div>
       <div className="flex items-center justify-center">

@@ -39,7 +39,14 @@ const handler = async (
         data: {
           from_user: recruiterUser ? Number(recruitedUserId) : recruiterUser,
           to_user: recruiterUser ? Number(recruiterUser) : recruitedUserId,
-          ip_addr: req.headers['cf-connecting-ip'] as string,
+          ip_addr: (
+            // Prefer IP address as reported by CloudFlare, if available.
+            req.headers['cf-connecting-ip'] ||
+            // Fallback to the IP address we received the request from
+            req.connection.remoteAddress ||
+            // Otherwise, no dice - but fail gracefully.
+            'No IP address detected.'
+          ) as string,
           timestamp: new Date(),
         },
       });
