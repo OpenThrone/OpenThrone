@@ -3,13 +3,15 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import Image from 'next/image';
 import { getAssetPath } from '@/utils/utilities';
 
+
 const Recruiter = ({ user, showCaptcha, onSuccess }) => {
-  const [error, setError] = useState(null);
+  const [completed, setCompleted] = useState(false);
   useEffect(() => {
-    if (!showCaptcha) {
+    if (!showCaptcha && !completed) {
       // Automatically succeed after 3 seconds if no captcha is required
       const timeout = setTimeout(() => {
         onSuccess();
+        setCompleted(true);
       }, 3000);
       return () => clearTimeout(timeout);
     }
@@ -26,10 +28,7 @@ const Recruiter = ({ user, showCaptcha, onSuccess }) => {
       </div>
       <div className="flex items-center justify-center">
         <div className="container mx-auto text-center">
-          {error ? (
-            <p>{error}</p>
-          ) : (
-            showCaptcha && (
+            {showCaptcha && (
                 <div className="flex items-center justify-center">
                 <Turnstile
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
@@ -37,7 +36,7 @@ const Recruiter = ({ user, showCaptcha, onSuccess }) => {
                   />
                   </div>
             )
-          )}
+          }
         </div>
       </div>
       
