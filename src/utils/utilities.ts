@@ -66,8 +66,7 @@ const getLevelFromXP = (xp: number): number => {
  */
 const getAssetPath = (name, size, race) => {
   let path = '';
-
-  if (process.env.USE_AWS) {
+  if (process.env.NEXT_PUBLIC_USE_AWS) {
     path += process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + '/images';
   } else {
     path += '/assets';
@@ -76,10 +75,11 @@ const getAssetPath = (name, size, race) => {
   switch (name) {
     case 'shields':
       path += '/shields/' +
-        race || 'ELF' + // TODO: Saner fallback/default
+        (race || 'ELF') + // TODO: Saner fallback/default
         '_' + size + '.webp';
+      break;
     case 'advisor-scroll':
-      if (!process.env.USE_AWS) {
+      if (!process.env.NEXT_PUBLIC_USE_AWS) {
         path += '/images/';
       }
       path += 'advisor-scroll.webp';
