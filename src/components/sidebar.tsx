@@ -11,6 +11,7 @@ import router from 'next/router';
 
 const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
+  const [OTTime, setOTTime] = useState('');
   const [messages, setMessages] = useState(['']);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const { user, forceUpdate } = useUser();
@@ -71,6 +72,7 @@ const Sidebar: React.FC = () => {
         const minutes = String(remaining.minutes).padStart(2, '0');
         const seconds = String(remaining.seconds).padStart(2, '0');
         setTime(`${minutes}:${seconds}`);
+        setOTTime(getOTTime().toLocaleTimeString('en-us', {timeStyle: 'short', hour12: false}));
         setSidebar({
           gold: toLocale(user.gold, user?.locale),
           citizens: toLocale(user.citizens, user?.locale),
@@ -227,7 +229,7 @@ const Sidebar: React.FC = () => {
               Time Until Next Turn: <span id="nextTurnTimestamp">{time}</span>
             </List.Item>
             <List.Item>
-              OT Time: <span id="otTime">{getOTTime().getHours().toString()}:{ getOTTime().getMinutes().toString()}</span>
+              OT Time: <span id="otTime">{OTTime}</span>
             </List.Item>
           </List>
           <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2">
