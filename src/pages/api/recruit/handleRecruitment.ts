@@ -77,12 +77,12 @@ const handler = async (
       }
 
       let userToUpdate = await prisma.users.findUnique({
-        where: { id: Number(recruiterUser) },
+        where: { id: Number(recruiterUser ? Number(session.user.id) : recruitedUserId) },
       });
 
       if (selfRecruit) {
         userToUpdate = await prisma.users.findUnique({
-          where: { id: Number(recruiterUser) },
+          where: { id: Number(recruiterUser ? Number(session.user.id) : recruitedUserId) },
         });
       }
 

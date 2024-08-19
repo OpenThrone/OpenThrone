@@ -14,13 +14,17 @@ const handler = async (
   const session = req?.session;
   const requestID = req?.query?.id;
   const recruiterID = requestID ? parseInt(requestID.toString()) : (session ? parseInt(session.user?.id.toLocaleString()) : 0);
-
+  const startDate = new Date(Number(getOTStartDate()) - 1 * 24 * 60 * 60 * 1000); // The start of the day 1 day ago
+  const endDate = getOTStartDate(); // The start of current day
   // Fetch all recruitment records within the last 24 hours for the recruiter
   const recruitmentRecords = await prisma.recruit_history.findMany({
     where: {
       from_user: { not: { in: [0, recruiterID] } },
       to_user: recruiterID,
-      timestamp: { gte: getOTStartDate() },
+      timestamp: {
+        gte: startDate, 
+        lt: endDate, 
+      },
     },
     select: {
       from_user: true,
@@ -30,7 +34,7 @@ const handler = async (
   });
 
   if (!recruitmentRecords.length) {
-    return res.status(404).json({ error: 'No recruitment history found in the last 24 hours.' });
+    return res.status(404).json({ error: 'No recruitment history found in the last 24 hours.', '24hoursago': getOTStartDate(), });
   }
 
   // Count the number of times each user has been recruited
