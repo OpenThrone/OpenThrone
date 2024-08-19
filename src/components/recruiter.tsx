@@ -5,13 +5,11 @@ import { getAssetPath } from '@/utils/utilities';
 
 
 const Recruiter = ({ user, showCaptcha, onSuccess }) => {
-  const [completed, setCompleted] = useState(false);
   useEffect(() => {
-    if (!showCaptcha && !completed) {
+    if (!showCaptcha) {
       // Automatically succeed after 3 seconds if no captcha is required
       const timeout = setTimeout(() => {
         onSuccess();
-        setCompleted(true);
       }, 3000);
       return () => clearTimeout(timeout);
     }
