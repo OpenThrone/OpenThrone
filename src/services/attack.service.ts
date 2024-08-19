@@ -1,5 +1,6 @@
 import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
+import { getOTStartDate } from '@/utils/timefunctions';
 
 export const getUserById = async (userId) => {
   return await prisma.users.findUnique({
@@ -228,10 +229,8 @@ export const getTop10TotalDefenderCasualties = async (timeFrame) => {
 };
 
 export async function getRecruitmentCounts(days: number = 7) {
-  const currentDate = new Date(); // Current date and time
-  const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - days);
-  const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - (days-1)); // The start of the next day
-
+  const startDate = new Date(Number(getOTStartDate()) - days * 24 * 60 * 60 * 1000); // The start of the specified days ago
+  const endDate = new Date(Number(getOTStartDate()) - (days - 1) * 24 * 60 * 60 * 1000); // The start of the next day
   const recruitmentCounts = await prisma.recruit_history.groupBy({
     by: ['to_user'],
     _count: {
