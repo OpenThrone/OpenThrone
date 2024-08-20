@@ -287,14 +287,17 @@ export async function getTopRecruitsWithDisplayNames() {
 
   // Map recruitmentCounts to include user data
   const recruitsWithUser = await Promise.all(filteredRecruitmentCounts.map(async (recruit) => {
-    const user = await prisma.users.findUnique({
+    const user = await prisma.users.findFirst({
       where: {
-        id: recruit.to_user,
+        AND: [
+          { id: recruit.to_user },
+          { id: { not: 0 } }
+        ]
       },
       select: {
         display_name: true,
         id: true
-      },
+      }
     });
 
     return {
@@ -377,6 +380,9 @@ export async function getTopPopulations() {
       display_name: true,
       units: true, // Assuming this is the field containing the units JSON
     },
+    where: {
+      id: { not: 0 },
+    }
   });
 
   // Calculate total units for each user
@@ -405,6 +411,9 @@ export async function getTopGoldOnHand() {
     orderBy: {
       gold: 'desc',
     },
+    where: {
+      id: { not: 0 },
+    },
     take: 10,
   });
 
@@ -428,6 +437,9 @@ export async function getTopGoldInBank() {
     orderBy: {
       gold_in_bank: 'desc',
     },
+    where: {
+      id: { not: 0 },
+    },
     take: 10,
   });
 
@@ -450,6 +462,9 @@ export async function getTopWealth() {
       gold: true,
       items: true,
       gold_in_bank: true,
+    },
+    where: {
+      id: { not: 0 },
     },
   });
 
