@@ -29,8 +29,8 @@ const handler = async(
       const uModel = new UserModel(user);
       
       // Validate if the user has enough units to untrain
-      for (const unitData of units) {
-        const unit = UnitTypes.find((u) => u.type === unitData.type);
+      for (const unitData of units.filter((u) => u.quantity > 0)) {
+        const unit = UnitTypes.find((u) => u.type === unitData.type && u.level === unitData.level);
         if (unitData.quantity === 0)
           continue;
         const userUnit = user.units.find((u) => u.type === unitData.type && u.level === unitData.level);
