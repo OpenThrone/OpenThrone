@@ -186,7 +186,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
                           Costs: {toLocale(item.cost)} Gold
                         </Text>
                         <Text fz="sm" c='#ADB5BD'>
-                          Sale Value: {toLocale(Math.floor(parseInt(item.cost) * .75))}
+                          Sale Value: {toLocale(Number(item.cost.replace(/,/g, '')) *0.75)} Gold
                         </Text>
 
                       </div>
