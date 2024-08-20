@@ -43,6 +43,13 @@ const Training = (props) => {
   const resetUnitCosts = () => {
     setUnitCosts({});
     setTotalCost(0);
+    setSectionCosts({
+      WORKER: 0,
+      OFFENSE: 0,
+      DEFENSE: 0,
+      SPY: 0,
+      SENTRY: 0,
+    });
   };
 
   const unitMapFunction = useCallback((unit, idPrefix: string) => {
