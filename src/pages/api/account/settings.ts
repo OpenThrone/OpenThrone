@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import password from 'inquirer/lib/prompts/password';
 import { Locales, PlayerRace } from '@/types/typings';
 import { withAuth } from '@/middleware/auth';
 
@@ -20,9 +19,8 @@ const handler = async (req, res) => {
       if (req.body.password !== req.body.password_confirm) {
         return res.status(400).json({ error: 'Passwords do not match' });
       }
-      if (await argon2.verify(password, user.password_hash) === false)
+      if (await argon2.verify(user.password_hash, req.body.currentPassword) === false)
         return res.status(400).json({ error: 'Incorrect password' });
-        
       await prisma.users.update({
         where: {
           id: req.session.user.id,
