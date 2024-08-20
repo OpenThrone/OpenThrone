@@ -95,9 +95,9 @@ const Profile = (props) => {
       <Space h="md" />
       <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
         <Space h="md" />
-        <Text size="xl" fw='bolder'>Comments</Text>
+        <Text size="xl" fw='bolder'>Profile Biography</Text>
         <TextInput
-          placeholder="Enter Your Comments"
+          placeholder="NOT IMPLEMENTED YET"
           className="w-full"
           style={{ backgroundColor: '#1A1B1E' }}
         />
