@@ -85,6 +85,25 @@ const Settings = (props) => {
 
   const updateEmail = async () => {
     alertService.error("This feature is not yet implemented.");
+    const response = await fetch("/api/account/emailChange", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ newEmail, userEmail }),
+    });
+
+    const data = await response.json();
+    // Handle the response
+    if (response.ok) {
+      alertService.success(
+        "Email request sent successfully. Follow the instructions in the email to complete the process."
+      );
+      //forceUpdate();
+      updateOptions();
+    } else {
+      alertService.error(data.error);
+    }
   }
 
   const updateLocale = async () => {
@@ -245,8 +264,8 @@ const Settings = (props) => {
             <Text c="dimmed" size="md">{userEmail}</Text>
             <Text>New Email</Text>
             <TextInput
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
               className={raceClasses.bgClass}
             />
             <Text size="sm" c="dimmed">An email confirmation will be sent out to confirm this change.</Text>
