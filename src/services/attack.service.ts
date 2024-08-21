@@ -164,7 +164,7 @@ export const getTop10AttacksByTotalCasualties = async (timeFrame) => {
     rank: 0,
     display_name: attack.attackerPlayer.display_name + " vs " + attack.defenderPlayer.display_name,
     stat: (attack.stats.attacker_losses?.total || 0) + (attack.stats.defender_losses?.total || 0)
-  })).sort((a, b) => b.totalCasualties - a.totalCasualties).slice(0, 10);
+  })).sort((a, b) => b.stat - a.stat).slice(0, 10);
 
   return sortedAttacks.map((attack, index) => ({ ...attack, rank: index + 1 }));
 };
