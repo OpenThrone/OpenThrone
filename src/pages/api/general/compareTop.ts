@@ -1,6 +1,9 @@
 'use server';
+import { UnitTypes } from "@/constants";
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/middleware/auth";
+import UserModel from "@/models/Users";
+import { calculateStrength } from "@/utils/attackFunctions";
 import { stringifyObj } from '@/utils/numberFormatting';
 import { getLevelFromXP } from "@/utils/utilities";
 
@@ -29,43 +32,38 @@ const handler = async (req, res) => {
   const johnny = await prisma?.users.findUnique({
     where: { id: Number(76) },
   });
-  const lukScore = calculateUserScore(luk);
-  const revScore = calculateUserScore(rev);
-  const johnnyScore = calculateUserScore(johnny);
-  const lukScore2 = calculateUserScore(luk, .7, .2, .1, .05, .03);
-  const revScore2 = calculateUserScore(rev, .7, .2, .1, .05, .03);
-  const johnnyScore2 = calculateUserScore(johnny, .7, .2, .1, .05, .03);
   let allUsers = await prisma.users.findMany({ where: { AND: [{ id: { not: 0 } }, { last_active: { not: null } }] } });
   allUsers.forEach(user => {
-    const nowdate = new Date();
-    const lastActiveTimestamp = new Date(user.last_active).getTime();
-    const nowTimestamp = nowdate.getTime();
-    const population = user.units.reduce((acc, unit) => acc + unit.quantity, 0);
+    const uModel = new UserModel(user);
+    const population = uModel.population;
     user.population = population;
-    user.isOnline = ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
+    user.ks = calculateStrength(uModel, 'OFFENSE');
+    user.ds = calculateStrength(uModel, 'DEFENSE');
+    user.networth = uModel.networth;
   });
 
   const originalAllUsers = JSON.parse(JSON.stringify(stringifyObj(allUsers)));
   originalAllUsers.forEach(user => user.score = calculateUserScore(user));
   originalAllUsers.sort((a, b) => b.score.total - a.score.total);
-
-  const modifiedAllUsers = JSON.parse(JSON.stringify(stringifyObj(allUsers)));
-  modifiedAllUsers.forEach(user => user.score = calculateUserScore(user, .7, .2, .1, .4, .3));
-  modifiedAllUsers.sort((a, b) => b.score.total - a.score.total);
-
-  const modifiedAllUsers2 = JSON.parse(JSON.stringify(stringifyObj(allUsers)));
-  modifiedAllUsers2.forEach(user => user.score = calculateUserScore(user, .00001, .2, .1, .6, .5));
-  modifiedAllUsers2.sort((a, b) => b.score.total - a.score.total);
   return res.status(200).json(
-    {
-      status: 'success',
-      results: [
-        { original: originalAllUsers.map(user => ({ id: user.id, level: getLevelFromXP(user.experience), displayName: user.display_name, score: user.score.total, unitScore: user.score.unitScore, itemScore: user.score.itemScore })).slice(0, 10) },
-        { modified: modifiedAllUsers.map(user => ({ id: user.id, level: getLevelFromXP(user.experience), displayName: user.display_name, score: user.score.total, unitScore: user.score.unitScore, itemScore: user.score.itemScore })).slice(0, 10) },
-        { modified2: modifiedAllUsers2.map(user => ({ id: user.id, level: getLevelFromXP(user.experience), displayName: user.display_name, score: user.score.total, unitScore: user.score.unitScore, itemScore: user.score.itemScore })).slice(0, 10) },
-
-      ],
-    }
+    
+      originalAllUsers.map(user => (
+            {
+              id: user.id,
+              level: getLevelFromXP(user.experience),
+              xp: user.experience,
+              displayName: user.display_name,
+              score: user.score.total,
+              unitScore: user.score.unitScore,
+              itemScore: user.score.itemScore,
+              ks: user.ks,
+              ds: user.ds,
+              netWorth: user.networth,
+              fortLevel: user.fort_level,
+              houseLevel: user.house_level,
+              population: user.population,
+            })).slice(0, 30)
+        
     );
 }
 
