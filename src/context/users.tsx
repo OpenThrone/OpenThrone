@@ -60,7 +60,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       }
       const userData = await response.json();
       console.log('colorScheme from context:', userData.colorScheme)
-      setUser(new UserModel(userData));
+      setUser(new UserModel(userData, false));
       if (userData?.beenAttacked) {
         alertService.error(
           'You have been attacked since you were last active!'
