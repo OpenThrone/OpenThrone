@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import Image from 'next/image';
-import { getAssetPath } from '@/utils/utilities';
+import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
 
 
 const Recruiter = ({ user, showCaptcha, onSuccess }) => {
@@ -19,7 +19,7 @@ const Recruiter = ({ user, showCaptcha, onSuccess }) => {
     <div>
       <div className="mb-5 text-center justify-center items-center content-center">
         
-          {user.display_name} is a level {user.level} {user.race}{' '}
+          {user.display_name} is a level {getLevelFromXP(user.experience)} {user.race}{' '}
           {user.class}.
         <center><Image src={getAssetPath('shields', '150x150', user.race)} width={'150'} height={'150'} alt="" /></center>
         
