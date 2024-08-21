@@ -98,14 +98,14 @@ const Upgrades = (props) => {
         <Tooltip label='Only Level 2+ Units'>
         <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>            
           <Group justify='space-between'>
-            <Text size="lg" fw={'bold'} c="dimmed">Offensive Units</Text>
+              <Text size="lg" fw={'bold'} c="dimmed">Offensive Units</Text>
             <ThemeIcon c='white'>
               <i className="ra ra-crossed-swords ra-fw" />
             </ThemeIcon>
           </Group>
           <Group>
             <Text>
-              {user?.units.filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)[0]?.quantity}
+                {user?.units.filter((unit) => unit.type === 'OFFENSE' && unit.level > 1).reduce((acc, unit) => acc + unit.quantity, 0)}
             </Text>
               </Group>
         </Paper>
@@ -120,7 +120,7 @@ const Upgrades = (props) => {
             </Group>
             <Group>
               <Text>
-                {user?.units.filter((unit) => unit.type === 'DEFENSE' && unit.level > 1)[0]?.quantity}
+                {user?.units.filter((unit) => unit.type === 'DEFENSE' && unit.level > 1).reduce((acc, unit) => acc + unit.quantity, 0)}
               </Text>
             </Group>
           </Paper>
