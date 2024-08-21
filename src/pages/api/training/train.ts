@@ -26,7 +26,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (user.gold < totalCost) return res.status(400).json({ error: 'Not enough gold' });
 
     const userUnitsMap = new Map(user.units.map(u => [`${u.type}_${u.level}`, u]));
-    const updatedUnitsMap = updateUnitsMap(userUnitsMap, units, true);
+    // Check if user has enough citizens
+    const citizensRequired = units.reduce((acc, unit) => acc + unit.quantity, 0);
+
+    const updatedUnitsMap = updateUnitsMap(userUnitsMap, units, true, citizensRequired);
     const updatedUnitsArray = Array.from(updatedUnitsMap.values());
 
     await prisma.users.update({
@@ -53,7 +56,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(200).json({ message: 'Units trained successfully!', data: updatedUnitsArray });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Failed to train units' });
+    return res.status(500).json({ error: error.message || 'Failed to train units' });
   }
 };
 
