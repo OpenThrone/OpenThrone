@@ -28,6 +28,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const userUnitsMap = new Map(user.units.map(u => [`${u.type}_${u.level}`, u]));
     // Check if user has enough citizens
     const citizensRequired = units.reduce((acc, unit) => acc + unit.quantity, 0);
+    if(citizensRequired <= 0) return res.status(400).json({ error: 'Invalid units quantity' });
 
     const updatedUnitsMap = updateUnitsMap(userUnitsMap, units, true, citizensRequired);
     const updatedUnitsArray = Array.from(updatedUnitsMap.values());
