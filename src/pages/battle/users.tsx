@@ -29,7 +29,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     let sortedPlayers = [...allUsers];
 
     if (sortBy === 'overallrank') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? a.score - b.score : b.score - a.score);
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? b.rank - a.rank : a.rank - b.rank);
     } else if (sortBy === 'gold') {
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.gold) - Number(b.gold) : Number(b.gold) - Number(a.gold));
     } else if (sortBy === 'population') {
