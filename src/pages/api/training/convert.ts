@@ -84,9 +84,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         to_user_id: Number(userId),
         to_user_account_type: 'BANK',
         date_time: new Date().toISOString(),
-        history_type: 'SALE',
+        history_type: 'TRAINING',
         stats: {
-          type: 'TRAINING_CONVERSION',
+          type: 'CONVERT',
           fromItem: fromUnit,
           toItem: toUnit,
           amount: conversionAmount

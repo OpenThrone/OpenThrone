@@ -34,7 +34,8 @@ const Bank = (props) => {
     withdraws: true,
     war_spoils: true,
     transfers: true,
-    sale:true
+    sale: true,
+    training: true
   });
 
   useEffect(() => {
@@ -171,6 +172,48 @@ const Bank = (props) => {
       console.error('Error withdrawing:', error);
       alertService.error('Failed to withdraw gold. Please try again.');
     }
+  };
+
+  const getTransactionType = (entry) => {
+    const { from_user_id, to_user_id, from_user_account_type, history_type, stats } = entry;
+
+    // Handle cases where the user is both the sender and receiver
+    if (from_user_id === to_user_id) {
+      if (from_user_account_type === 'HAND') {
+        if (history_type === 'SALE') return 'Purchase';
+        return stats?.type === 'CONVERT' ? 'Unit Conversion' : 'Deposit';
+      }
+      return history_type === 'SALE' ? 'Sale' : 'Withdraw';
+    }
+
+    // Handle sales and equipment transactions
+    if (history_type === 'SALE') {
+      if (from_user_id === 0 && from_user_account_type === 'BANK') {
+        return 'Sale';
+      }
+      if (from_user_account_type === 'HAND' && to_user_id === 0) {
+        return stats?.type === 'ARMORY_EQUIP' ? 'Purchase' : 'Sale';
+      }
+    }
+
+    // Handle training-related transactions
+    if (history_type === 'TRAINING') {
+      switch (stats?.type) {
+        case 'UNTRAIN':
+          return 'Untrain Units';
+        case 'TRAIN':
+          return 'Train Units';
+        case 'CONVERT':
+          return 'Convert Units';
+      }
+    }
+
+    // Handle player transfers
+    if (history_type === 'PLAYER_TRANSFER') return 'Player Transfer';
+
+    // Fallback for unknown types
+    console.log('Unknown transaction type:', entry);
+    return 'War Spoils';
   };
 
   return (
@@ -366,12 +409,7 @@ const Bank = (props) => {
                 {bankHistory.filter((entry)=>entry.from_user_id === entry.to_user_id).slice(0,10).map((entry, index) => {
                   let transactionType = '';
                   console.log('history type: ', entry.history_type)
-                  if (entry.from_user_id === entry.to_user_id) {
-                    transactionType =
-                      entry.from_user_account_type === 'HAND'
-                        ? (entry.history_type === 'SALE'? 'Purchase' : 'Deposit')
-                      : (entry.history_type === 'SALE' ? 'Sale' : 'Withdraw');
-                  }
+                  transactionType = getTransactionType(entry);
 
                   return (
                     <Table.Tr key={index}>
@@ -429,6 +467,14 @@ const Bank = (props) => {
             >
               Sale
             </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.training}
+              onChange={() => { setFilters({ ...filters, training: !filters.training }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Training
+            </Chip>
           </Group>
           {message && <div className="text-center p-4">{message}</div>}
           <Space h="md" />
@@ -447,16 +493,7 @@ const Bank = (props) => {
                 {bankHistory.map((entry, index) => {
                   let transactionType = '';
                   
-                  if (entry.from_user_id === entry.to_user_id) {
-                    transactionType =
-                      entry.from_user_account_type === 'HAND'
-                        ? (entry.history_type === 'SALE' ? 'Purchase' : 'Deposit')
-                        : (entry.history_type === 'SALE' ? 'Sale' : 'Withdraw');
-                  } else if (entry.history_type === 'PLAYER_TRANSFER') {
-                    transactionType = 'Player Transfer';
-                  } else {
-                    transactionType = 'War Spoils';
-                  }
+                  transactionType = getTransactionType(entry);
 
                   return (
                     <Table.Tr key={index}>

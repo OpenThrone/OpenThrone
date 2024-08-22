@@ -13,21 +13,27 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { deposits, withdraws, war_spoils, transfers, sale } = req.query;
+  const { deposits, withdraws, war_spoils, transfers, sale, training } = req.query;
   const conditions = [];
   const transactionConditions = [];
 
   if (deposits === 'true') {
     transactionConditions.push({
       from_user_account_type: 'HAND',
+      to_user_id: session.user.id,
       to_user_account_type: 'BANK',
+      from_user_id: session.user.id,
+      history_type: 'PLAYER_TRANSFER',
     });
   }
 
   if (withdraws === 'true') {
     transactionConditions.push({
       from_user_account_type: 'BANK',
+      to_user_id: session.user.id,
       to_user_account_type: 'HAND',
+      from_user_id: session.user.id,
+      history_type: 'PLAYER_TRANSFER',
     });
   }
 
@@ -40,14 +46,61 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (transfers === 'true') {
     transactionConditions.push({
       history_type: 'PLAYER_TRANSFER',
+      AND: [
+        {
+          OR: [
+            { from_user_id: session.user.id },
+            { to_user_id: session.user.id }
+          ]
+        },
+        {
+          NOT: [
+            { from_user_id: session.user.id, to_user_id: session.user.id }
+          ]
+        }
+      ]
     });
   }
+
 
   if (sale === 'true') {
     transactionConditions.push({
       history_type: 'SALE',
+      stats: {
+        path: ['type'],
+        string_contains: 'ARMORY',
+      }
     });
   }
+
+  if (training === 'true') {
+    transactionConditions.push({
+      OR: [
+        {
+          history_type: { in: ['TRAINING'] },
+          stats: {
+            path: ['type'],
+            string_contains: 'TRAIN',
+          },
+        },
+        {
+          history_type: { in: ['TRAINING'] },
+          stats: {
+            path: ['type'],
+            string_contains: 'UNTRAIN',
+          },
+        },
+        {
+          history_type: { in: ['TRAINING'] },
+          stats: {
+            path: ['type'],
+            string_contains: 'CONVERT',
+          },
+        },
+      ],
+    });
+  }
+
 
   if (transactionConditions.length > 0) {
     conditions.push({
