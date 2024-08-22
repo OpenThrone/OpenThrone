@@ -72,7 +72,6 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
   await incrementUserStats(attackerId, {
     type: 'SPY',
     subtype: (attackerId === Winner.id) ? 'WON' : 'LOST',
-    stat: 1
   });
   await incrementUserStats(defenderId, {
     type: 'SENTRY',
@@ -194,7 +193,6 @@ export async function attackHandler(
       await incrementUserStats(attackerId, {
         type: 'OFFENSE',
         subtype: (isAttackerWinner) ? 'WON' : 'LOST',
-        stat: 1
       });
 
       await incrementUserStats(defenderId, {

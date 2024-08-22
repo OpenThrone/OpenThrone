@@ -36,6 +36,7 @@ export const createAttackLog = async (logData) => {
 
 // { type: 'OFFENSE', subtype: 'TOTAL', stat: 1 } +1
 // { type: 'OFFENSE', subtype: 'WON', stat: 12 } +12
+// { type: 'DEFENSE', subtype: 'LOST' } +1 (defaults to 1 if not specified)
 export const incrementUserStats = async (userId, newStat) => {
   const user = await prisma.users.findUnique({
     where: { id: userId },
@@ -57,14 +58,19 @@ export const incrementUserStats = async (userId, newStat) => {
   const existingStatIndex = user.stats.findIndex(stat => stat.type === newStat.type && stat.subtype === newStat.subtype);
 
   if (existingStatIndex >= 0) {
+    if (user.stats[existingStatIndex].stat === null) {
+      // Temporary detection of a broken state from when we were accidentally setting
+      // stats to null - reset these to 0.
+      user.stats[existingStatIndex].stat = 0;
+    }
     // Stat already exists, increment it
-    user.stats[existingStatIndex].stat += newStat.stat;
+    user.stats[existingStatIndex].stat += newStat.stat || 1;
   } else {
     // Stat does not exist, initialize it with the new stat value
     user.stats.push({
       type: newStat.type,
       subtype: newStat.subtype,
-      stat: newStat.stat
+      stat: newStat.stat || 1,
     });
   }
 
