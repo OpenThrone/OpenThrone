@@ -192,7 +192,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
       <Space h='lg' />
       <Flex justify='space-around'>
         <p className="mb-0">Level: {profile?.level}</p>
-        <p className="mb-0">Overall Rank: {users?.overallrank}</p>
+        <p className="mb-0">Overall Rank: {users?.rank}</p>
       </Flex>
 
       <Space h='lg' />
@@ -379,28 +379,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   );
 };
 
-async function getUserRank(id, recruitLink) {
-  // Fetch all users and calculate composite score
-  const allUsers = await prisma.users.findMany({where:{id: {not: 0}}});
-  allUsers.forEach((user) => {
-    user.score =
-      0.7 * user.experience +
-      0.2 * user.fort_level +
-      0.1 * user.house_level +
-      0.4 * (user.units ? user.units.map((unit) => unit.quantity).reduce((a, b) => a + b, 0) : 0) +
-      0.3 * (user.items ? user.items.map((item) => item.quantity * (item.level * 0.1)).reduce((a, b) => a + b, 0) : 0);
-  });
-
-  // Sort users based on composite score
-  allUsers.sort((a, b) => b.score - a.score);
-  // Find the rank of the specific user
-  const userRank = allUsers.findIndex(
-    (user) => user.id === id || user.recruit_link === recruitLink
-  ) + 1;
-
-  return userRank;
-}
-
 export const getServerSideProps = async ({ query }) => {
   let recruitLink = '';
   let id;
@@ -416,13 +394,6 @@ export const getServerSideProps = async ({ query }) => {
     return { notFound: true };
   }
 
-  let rank;
-  if (id) {
-    rank = await getUserRank(id, null);
-  } else {
-    rank = await getUserRank(null, recruitLink);
-  }
-
   const whereCondition = id ? { id } : { recruit_link: recruitLink };
   const user = await prisma.users.findFirst({ where: whereCondition });
 
@@ -434,7 +405,6 @@ export const getServerSideProps = async ({ query }) => {
 
   const userData = {
     ...userWithoutPassword, 
-    overallrank: rank,
     bionew: await serialize(user.bio),
   };
 

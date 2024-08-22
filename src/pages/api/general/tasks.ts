@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma";
 import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import UserModel from '@/models/Users';
+import { calculateOverallRank } from "@/utils/utilities";
+import user from "@/pages/messaging/compose/[user]";
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,13 +22,31 @@ export default async function handler(
 
   // Start your task logic here
 
-  // Example: Fetch all users
+  // Fetch all users
   const allUsers = await prisma.users.findMany();
 
-  const updatePromises = allUsers.map((user) => {
+  // Calculate rank scores for all users
+  const userRanks = allUsers.map((user) => {
+    const newUser = new UserModel(user);
+    const rankScore = calculateOverallRank(user);
+
+    return {
+      id: user.id,
+      rankScore,
+      newUser,
+    };
+  });
+
+  // Sort users by rank score in descending order
+  userRanks.sort((a, b) => b.rankScore - a.rankScore);
+
+  // Assign ranks based on sorted order
+  const updatePromises = userRanks.map((userRank, index) => {
+    const { newUser } = userRank;
     try {
-      const newUser = new UserModel(user);
-      const updatedGold = newUser.goldPerTurn + user.gold;
+
+      const updatedGold = BigInt(newUser.goldPerTurn.toString()) + newUser.gold;
+
       // Find the CITIZEN unit
       let citizenUnit = newUser.units.find(unit => unit.type === 'CITIZEN');
 
@@ -45,7 +65,8 @@ export default async function handler(
 
       let updateData = {
         gold: updatedGold,
-        attack_turns: user.attack_turns + 1,
+        attack_turns: newUser.attackTurns + 1,
+        rank: index + 1, // Assign the rank (1-based index)
       };
 
       if (isCloseToMidnight) {
@@ -55,19 +76,19 @@ export default async function handler(
         };
       }
 
-      if (!user.recruit_link) {
+      if (!newUser.recruitingLink) {
         updateData = {
           ...updateData,
-          recruit_link: md5(user.id.toString()),
+          recruit_link: md5(newUser.id.toString()),
         }
       }
 
       return prisma.users.update({
-        where: { id: user.id },
+        where: { id: newUser.id },
         data: updateData,
       });
     } catch (error) {
-      console.log(`Error updating user ${user.id}: ${error.message}`)
+      console.log(`Error updating user ${user.id}: ${error.message}`);
     }
   });
 

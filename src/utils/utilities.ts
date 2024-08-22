@@ -113,4 +113,19 @@ const getAvatarSrc = (avatar: string, race?: string) => {
   }
 }
 
-export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc };
+const calculateOverallRank = (user) => {
+  const unitScore = user.units
+    ? user.units.map((unit) => unit.quantity).reduce((a, b) => a + b, 0)
+    : 0;
+  const itemScore = user.items
+    ? user.items.map((item) => item.quantity * (item.level * 0.1)).reduce((a, b) => a + b, 0)
+    : 0;
+
+  return 0.7 * user.experience +
+    0.2 * user.fort_level +
+    0.1 * user.house_level +
+    0.004 * unitScore +
+    0.003 * itemScore;
+};
+
+export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank };
