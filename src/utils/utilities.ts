@@ -57,6 +57,45 @@ const getLevelFromXP = (xp: number): number => {
   return levelXPArray[levelXPArray.length - 1].level; // Return max level if XP exceeds all defined levels
 }
 
+/**
+ * Returns the path for a requested asset, using AWS S3 if configured.
+ * @param {string} name The name of the asset
+ * @param {string} [size] The size of the asset, if applicable (example: '150x150')
+ * @param {string} [race] The race associated with the asset, if applicable
+ * @returns {string} The path for the specified asset, fit for use in HTML tags
+ */
+const getAssetPath = (name, size, race) => {
+  let path = '';
+  if (process.env.NEXT_PUBLIC_USE_AWS) {
+    path += process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + '/images';
+  } else {
+    path += '/assets';
+  }
+
+  switch (name) {
+    case 'shields':
+      path += '/shields/' +
+        (race || 'ELF') + // TODO: Saner fallback/default
+        '_' + size + '.webp';
+      break;
+    case 'advisor-scroll':
+      if (!process.env.NEXT_PUBLIC_USE_AWS) {
+        path += '/images/';
+      }
+      path += 'advisor-scroll.webp';
+      break;
+    case 'Elf-wall-header':
+      path += '/header/Elf-wall-header.webp';
+      break;
+    case 'OpenThrone':
+      path += '/header/OpenThrone.webp';
+      break;
+    default:
+  }
+
+  return path;
+};
+
 /*
   * Returns the source for the avatar image.
   * @param avatar - The avatar string
@@ -69,9 +108,9 @@ const getAvatarSrc = (avatar: string, race?: string) => {
   }
   if (avatar === 'SHIELD') {
     if (race) {
-      return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${race}_25x25.webp`
+      return getAssetPath('shields', '25x25', race);
     }
   }
 }
 
-export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAvatarSrc };
+export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc };

@@ -172,7 +172,7 @@ export default function AutoRecruiter(props) {
       <Recruiter
         key={user.id}
         user={user}
-        showCaptcha={consecutiveSuccesses < 3}
+        showCaptcha={process.env.NEXT_PUBLIC_USE_CAPTCHA ? consecutiveSuccesses < 3 : false}
         onSuccess={handleRecruitment}
       />
       <Space h="md" />

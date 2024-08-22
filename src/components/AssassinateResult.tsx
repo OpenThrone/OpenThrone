@@ -1,10 +1,10 @@
-
 import { Grid, Space, Group, Button, Text } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Modal from "./modal";
 import SpyMissionsModal from "./spyMissionsModal";
 import { useState } from "react";
+import { getAssetPath } from "@/utils/utilities";
 
 const AssassinateResult = ({ battle, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
@@ -78,7 +78,7 @@ const AssassinateResult = ({ battle, viewerID }) => {
           <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
           <center>
             <Image
-              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${attackerPlayer?.race}_150x150.webp`}
+              src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
               className="ml-2"
               alt="attacker avatar"
               width={150}
@@ -140,7 +140,7 @@ const AssassinateResult = ({ battle, viewerID }) => {
           <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
           <center>
             <Image
-              src={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${defenderPlayer?.race}_150x150.webp`}
+              src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
               className="ml-2"
               alt="defender avatar"
               width={150}
@@ -150,7 +150,7 @@ const AssassinateResult = ({ battle, viewerID }) => {
         </Grid.Col>
       </Grid>
       <div style={{
-        backgroundImage: `url(${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/background/advisor-scroll.webp)`,
+        backgroundImage: `url(${getAssetPath('advisor-scroll')})`,
         paddingLeft: '70px',
         paddingRight: '70px',
         backgroundSize: '75% 100%',

@@ -1,5 +1,6 @@
 import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
+import { getOTStartDate } from '@/utils/timefunctions';
 
 export const getUserById = async (userId) => {
   return await prisma.users.findUnique({
@@ -163,7 +164,7 @@ export const getTop10AttacksByTotalCasualties = async (timeFrame) => {
     rank: 0,
     display_name: attack.attackerPlayer.display_name + " vs " + attack.defenderPlayer.display_name,
     stat: (attack.stats.attacker_losses?.total || 0) + (attack.stats.defender_losses?.total || 0)
-  })).sort((a, b) => b.totalCasualties - a.totalCasualties).slice(0, 10);
+  })).sort((a, b) => b.stat - a.stat).slice(0, 10);
 
   return sortedAttacks.map((attack, index) => ({ ...attack, rank: index + 1 }));
 };
@@ -228,10 +229,8 @@ export const getTop10TotalDefenderCasualties = async (timeFrame) => {
 };
 
 export async function getRecruitmentCounts(days: number = 7) {
-  const currentDate = new Date(); // Current date and time
-  const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - days);
-  const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - (days-1)); // The start of the next day
-
+  const startDate = new Date(Number(getOTStartDate()) - days * 24 * 60 * 60 * 1000); // The start of the specified days ago
+  const endDate = new Date(Number(getOTStartDate()) - (days - 1) * 24 * 60 * 60 * 1000); // The start of the next day
   const recruitmentCounts = await prisma.recruit_history.groupBy({
     by: ['to_user'],
     _count: {
@@ -288,14 +287,17 @@ export async function getTopRecruitsWithDisplayNames() {
 
   // Map recruitmentCounts to include user data
   const recruitsWithUser = await Promise.all(filteredRecruitmentCounts.map(async (recruit) => {
-    const user = await prisma.users.findUnique({
+    const user = await prisma.users.findFirst({
       where: {
-        id: recruit.to_user,
+        AND: [
+          { id: recruit.to_user },
+          { id: { not: 0 } }
+        ]
       },
       select: {
         display_name: true,
         id: true
-      },
+      }
     });
 
     return {
@@ -378,6 +380,9 @@ export async function getTopPopulations() {
       display_name: true,
       units: true, // Assuming this is the field containing the units JSON
     },
+    where: {
+      id: { not: 0 },
+    }
   });
 
   // Calculate total units for each user
@@ -406,6 +411,9 @@ export async function getTopGoldOnHand() {
     orderBy: {
       gold: 'desc',
     },
+    where: {
+      id: { not: 0 },
+    },
     take: 10,
   });
 
@@ -429,6 +437,9 @@ export async function getTopGoldInBank() {
     orderBy: {
       gold_in_bank: 'desc',
     },
+    where: {
+      id: { not: 0 },
+    },
     take: 10,
   });
 
@@ -451,6 +462,9 @@ export async function getTopWealth() {
       gold: true,
       items: true,
       gold_in_bank: true,
+    },
+    where: {
+      id: { not: 0 },
     },
   });
 

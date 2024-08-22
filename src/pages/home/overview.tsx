@@ -61,7 +61,7 @@ const Overview = (props) => {
             <Text size="lg" align="center">
               Share this link to gain up to 25 citizens per day: {' '}
               <a
-                href={`https://OpenThrone.dev/recruit/${user?.recruitingLink}`}
+                href={`${process.env.NEXT_PUBLIC_URL_ROOT}/recruit/${user?.recruitingLink}`}
                 style={{ color: '#1E90FF' }}
               >
                 {user?.recruitingLink}

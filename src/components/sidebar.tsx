@@ -11,6 +11,7 @@ import router from 'next/router';
 
 const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
+  const [OTTime, setOTTime] = useState('');
   const [messages, setMessages] = useState(['']);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const { user, forceUpdate } = useUser();
@@ -32,9 +33,9 @@ const Sidebar: React.FC = () => {
       'It is better to buy a few stronger weapons than many weaker ones.',
       'The more attack turns you use in an attack, the more experience and gold you will gain.',
       `The more workers you have, the more gold you'll earn per turn.`,
-      `Recruiting your max amount every day will ensure you're kingdom continues to grow.`,
+      `Recruiting your max amount every day will ensure your kingdom continues to grow.`,
       `A unit is only as strong as the equipment they wield. Make sure your army is well equipped.`,
-      `If your defense is less than 25% of your non-combatant population, you may lose citizens and workers in an attack. Keep your fort repaired`,
+      `If your defense is less than 25% of your non-combatant population, you may lose citizens and workers in an attack. Keep your fort repaired.`,
       // Add more messages as needed
     ];
 
@@ -71,6 +72,7 @@ const Sidebar: React.FC = () => {
         const minutes = String(remaining.minutes).padStart(2, '0');
         const seconds = String(remaining.seconds).padStart(2, '0');
         setTime(`${minutes}:${seconds}`);
+        setOTTime(getOTTime().toLocaleTimeString('en-us', {timeStyle: 'short', hour12: false}));
         setSidebar({
           gold: toLocale(user.gold, user?.locale),
           citizens: toLocale(user.citizens, user?.locale),
@@ -185,8 +187,8 @@ const Sidebar: React.FC = () => {
         backgroundSize: '100% 100%',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        paddingLeft: '10px',
-        paddingRight: '10px',
+        paddingLeft: '18px',
+        paddingRight: '18px',
         paddingTop: '15px',
         paddingBottom: '30px',
       }}>
@@ -194,7 +196,7 @@ const Sidebar: React.FC = () => {
           <h6 className="advisor-title text-center font-medieval font-bold text-xl">
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px 0' }} onClick={handlePrevAdvisor} /> Advisor <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px 0' }} onClick={handleNextAdvisor} />
           </h6>
-          <Text size='sm' fw={'bold'} className='text-black'>{messages[currentMessageIndex]}</Text>
+          <Text size='sm' fw={'bold'} className='text-black' style={{minHeight: '105px'}}>{messages[currentMessageIndex]}</Text>
 
           <h6 className="text-center font-medieval font-bold text-xl mt-2">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
           <List size={'sm'}>
@@ -227,7 +229,7 @@ const Sidebar: React.FC = () => {
               Time Until Next Turn: <span id="nextTurnTimestamp">{time}</span>
             </List.Item>
             <List.Item>
-              OT Time: <span id="otTime">{getOTTime().getHours().toString()}:{ getOTTime().getMinutes().toString()}</span>
+              OT Time: <span id="otTime">{OTTime}</span>
             </List.Item>
           </List>
           <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2">

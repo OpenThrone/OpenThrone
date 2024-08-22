@@ -1,4 +1,5 @@
 import md5 from 'md5';
+import { getAssetPath } from '@/utils/utilities';
 
 import type {
   BonusPointsItem,
@@ -183,7 +184,7 @@ class UserModel {
       if(userData.avatar !== 'SHIELD') {
         this.avatar = userData.avatar;
       } else {
-        this.avatar = `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/shields/${this.race}_150x150.webp`
+        this.avatar = getAssetPath('shields', '150x150', this.race)
       }
     }
   }

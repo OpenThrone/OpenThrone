@@ -10,14 +10,28 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import imageSize from 'image-size';
 import { withAuth } from '@/middleware/auth';
 
+// Function to save the uploaded file to the local file system
+const saveToLocal = async (file: formidable.File, userId: number): Promise<string> => {
+  const uploadDir = path.join(process.cwd(), 'public', `users/${userId}/avatar`);
+
+  // Ensure the directory exists
+  fs.mkdirSync(uploadDir, { recursive: true });
+
+  const filePath = path.join(uploadDir, file.originalFilename || 'unknown_filename');
+
+  // Move the file to the upload directory
+  await fs.promises.rename(file.filepath, filePath);
+
+  return `/users/${userId}/avatar/${file.originalFilename}`;
+};
 
 // AWS S3 upload function
 const uploadToS3 = (file: formidable.File, uId: Number): Promise<AWS.S3.ManagedUpload.SendData> => {
   // Configure AWS S3
   const s3 = new AWS.S3({
-    endpoint: `https://7c4f7908394dad3137ff31e103712455.r2.cloudflarestorage.com`, // Use your Cloudflare account ID
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Your Cloudflare R2 Access Key ID
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY, // Your Cloudflare R2 Secret Access Key
+    endpoint: process.env.AWS_S3_ENDPOINT, 
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     signatureVersion: 'v4',
   });
 
@@ -50,8 +64,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     form.parse(req, async (err, fields, files) => {
       if (err) {
-        console.error('Error parsing the form:', err);
-        return res.status(500).json({ error: 'Error parsing the form data.' });
+        console.error('Error parsing the form: ', err);
+        return res.status(500).json({ error: err.message });
       }
 
       const file = Array.isArray(files.avatar) ? files.avatar[0] : files.avatar;
@@ -66,16 +80,31 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       try {
-        // Upload the file to S3
-        const result = await uploadToS3(file, req.session.user.id);
-        const updated = await prisma.users.update({
-          where: { id: req.session.user.id },
-          data: {
-            avatar: process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + "/" + result.Key,
-          },
-        });
-        // Respond back with the result
-        return res.status(200).json({ status: 'success', data: stringifyObj({ result, updated }) });
+        if (process.env.NEXT_PUBLIC_USE_AWS === 'true') {
+          // Upload the file to S3
+          const result = await uploadToS3(file, req.session.user.id);
+          const updated = await prisma.users.update({
+            where: { id: req.session.user.id },
+            data: {
+              avatar: process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + "/" + result.Key,
+            },
+          });
+          // Respond back with the result
+          return res.status(200).json({ status: 'success', data: stringifyObj({ result, updated }) });
+        } else {
+          // Save the file to the local file system
+          const filePath = await saveToLocal(file, req.session.user.id);
+          console.log('File uploaded to:', filePath);
+          // Update the user's avatar path in the database
+          const updated = await prisma.users.update({
+            where: { id: req.session.user.id },
+            data: {
+              avatar: filePath,
+            },
+          });
+          // Respond back with the file path
+          return res.status(200).json({ status: 'success', data: stringifyObj({ filePath, updated }) });
+        }
       } catch (uploadError) {
         console.error('Error uploading to S3:', uploadError);
         return res.status(500).json({ error: 'Error uploading to S3' });

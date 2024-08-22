@@ -32,17 +32,22 @@ const Profile = (props) => {
           body: formData,
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          alertService.error("Error uploading file.");
-          throw new Error("Network response was not ok");
+          const msg = (err) => { // TODO: Need to identify different errors that aren't understood well
+            if (err.includes("options.maxTotalFileSize")) {
+              return "File size must be less than 1.5mb.";
+            }
+            return err;
+          }
+          throw new Error(msg(data.error));
         }
 
-        const data = await response.json();
         alertService.success("File uploaded successfully.");
         forceUpdate();
       } catch (error) {
-        console.error("Error uploading file:", error);
-        alertService.error("Error uploading file.");
+        alertService.error("Error uploading file. " + error.message);
       }
     }
   };
@@ -80,9 +85,9 @@ const Profile = (props) => {
       <Space h="md" />
       <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
         <Space h="md" />
-        <Text size="xl" fw='bolder'>Comments</Text>
+        <Text size="xl" fw='bolder'>Profile Biography</Text>
         <TextInput
-          placeholder="Enter Your Comments"
+          placeholder="NOT IMPLEMENTED YET"
           className="w-full"
           style={{ backgroundColor: '#1A1B1E' }}
         />

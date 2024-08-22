@@ -70,7 +70,14 @@ const Settings = (props) => {
       }),
     });
     const data = await response.json();
-    // Handle the response
+    if(response.ok) {
+      alertService.success("Password updated successfully.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } else {
+      alertService.error(data.error);
+    }
   };
 
   const updateLocale = async () => {
