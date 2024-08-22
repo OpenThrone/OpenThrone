@@ -58,6 +58,11 @@ export const incrementUserStats = async (userId, newStat) => {
   const existingStatIndex = user.stats.findIndex(stat => stat.type === newStat.type && stat.subtype === newStat.subtype);
 
   if (existingStatIndex >= 0) {
+    if (!user.stats[existingStatIndex].stat) {
+      // Hacky detection of a broken state from when we were accidentally setting
+      // stats to null - reset these to 0.
+      user.stats[existingStatIndex].stat = 0;
+    }
     // Stat already exists, increment it
     user.stats[existingStatIndex].stat += newStat.stat;
   } else {
