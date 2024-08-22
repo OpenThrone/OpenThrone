@@ -36,6 +36,7 @@ export const createAttackLog = async (logData) => {
 
 // { type: 'OFFENSE', subtype: 'TOTAL', stat: 1 } +1
 // { type: 'OFFENSE', subtype: 'WON', stat: 12 } +12
+// { type: 'DEFENSE', subtype: 'LOST' } +1 (defaults to 1 if not specified)
 export const incrementUserStats = async (userId, newStat) => {
   const user = await prisma.users.findUnique({
     where: { id: userId },
@@ -64,7 +65,7 @@ export const incrementUserStats = async (userId, newStat) => {
     user.stats.push({
       type: newStat.type,
       subtype: newStat.subtype,
-      stat: newStat.stat
+      stat: newStat.stat || 1,
     });
   }
 
