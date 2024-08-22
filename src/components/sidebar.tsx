@@ -187,8 +187,8 @@ const Sidebar: React.FC = () => {
         backgroundSize: '100% 100%',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        paddingLeft: '10px',
-        paddingRight: '10px',
+        paddingLeft: '18px',
+        paddingRight: '18px',
         paddingTop: '15px',
         paddingBottom: '30px',
       }}>
@@ -196,7 +196,7 @@ const Sidebar: React.FC = () => {
           <h6 className="advisor-title text-center font-medieval font-bold text-xl">
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px 0' }} onClick={handlePrevAdvisor} /> Advisor <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px 0' }} onClick={handleNextAdvisor} />
           </h6>
-          <Text size='sm' fw={'bold'} className='text-black'>{messages[currentMessageIndex]}</Text>
+          <Text size='sm' fw={'bold'} className='text-black' style={{minHeight: '105px'}}>{messages[currentMessageIndex]}</Text>
 
           <h6 className="text-center font-medieval font-bold text-xl mt-2">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
           <List size={'sm'}>

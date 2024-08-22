@@ -27,13 +27,13 @@ const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInB
           <StatsTable title="Top 10 Gold in Bank" data={goldInBank} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Attacks by Total Casualties in last 7 days" data={attackByCas} />
-        </Grid.Col>
-        <Grid.Col span={{ base:12, md:6}}>
           <StatsTable title="Top 10 Total Attacker Casualties in last 7 days" data={attackerCas} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
           <StatsTable title="Top 10 Total Defender Casualties in last 7 days" data={defenderCas} />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <StatsTable title="Top 10 Attacks by Total Casualties in last 7 days" data={attackByCas} displayButton={false} />
         </Grid.Col>
       </Grid>
       <Text align="center" mt="lg">Last generated: {new Date(lastGenerated).toLocaleString()}</Text>
@@ -42,14 +42,8 @@ const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInB
 };
 
 export const getStaticProps = async (context: any) => {
-  
   // Get the current date and time
   const now = new Date();
-
-  // Get the next midnight
-  const nextMidnight = new Date(now);
-  nextMidnight.setDate(now.getDate() + 1);
-  nextMidnight.setHours(0, 0, 0, 0);
 
   return {
     props: {

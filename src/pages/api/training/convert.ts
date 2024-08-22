@@ -1,8 +1,9 @@
-import { UnitTypes } from "@/constants";
-import { withAuth } from "@/middleware/auth";
-import UserModel from "@/models/Users";
+// pages/api/convert.ts
+import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
-import { NextApiRequest, NextApiResponse } from "next";
+import { withAuth } from '@/middleware/auth';
+import UserModel from '@/models/Users';
+import { UnitTypes } from '@/constants';
 
 interface ConvertRequest {
   userId: string;
@@ -10,31 +11,26 @@ interface ConvertRequest {
   toUnit: string;
   conversionAmount: string; // Amount in string format to handle locale-specific formats
 }
-
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { userId, fromUnit, toUnit, conversionAmount }: ConvertRequest = req.body;
-
   if (!userId || !fromUnit || !toUnit || !conversionAmount) {
     return res.status(400).json({ error: 'Invalid input data' });
   }
+  if (userId !== req.session.user.id) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
     const user = await prisma.users.findUnique({ where: { id: userId } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-
     const amount = Number(conversionAmount);
     const uModel = new UserModel(user);
     // Validate the amount
     if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) {
       return res.status(400).json({ error: 'Invalid conversion amount' });
     }
-
     // Split the fromUnit and toUnit strings to get the type and level
     const [fromType, fromLevelStr] = fromUnit.split('_');
     const [toType, toLevelStr] = toUnit.split('_');
@@ -55,7 +51,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const toUnitType = UnitTypes.find((unit) => unit.type === toType && unit.level === toLevel);
     const fromUnitType = UnitTypes.find((unit) => unit.type === fromType && unit.level === fromLevel);
-
     const cost = amount * ((toUnitType.cost - (((uModel.priceBonus || 0) / 100) * toUnitType.cost)) - (fromUnitType.cost - (((uModel.priceBonus || 0) / 100) * fromUnitType.cost))) * (toUnitType.level > fromUnitType.level ? 1 : 75 / 100);
 
     if (user.gold < BigInt(cost)) {
@@ -70,9 +65,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       user.units.push({ type: toType, level: toLevel, quantity: amount });
     }
 
-    console.log(`User Gold before conversion: ${user.gold}`);
     user.gold -= BigInt(cost);
-    console.log(`User Gold after conversion: ${user.gold}`);
 
     // Update user in the database
     await prisma.users.update({
@@ -101,13 +94,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
     });
 
-    return res.status(200).json({
-      message: 'Conversion successful',
-      data: user.units,
-    });
+    return res.status(200).json({ message: 'Units converted successfully!', data: user.units });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: 'Failed to perform conversion' });
+    return res.status(500).json({ error: 'Failed to convert units' });
   }
 };
 

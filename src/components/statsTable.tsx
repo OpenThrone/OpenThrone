@@ -4,7 +4,7 @@ import { useDisclosure } from '@mantine/hooks';
 import Link from 'next/link';
 import React from 'react';
 
-const StatsTable = ({ title, data, description = "description" }) => {
+const StatsTable = ({ title, data, description = "description", displayButton = true }) => {
   const [opened, { close, open }] = useDisclosure(false);
   return (
     <>
@@ -31,10 +31,12 @@ const StatsTable = ({ title, data, description = "description" }) => {
             </Table.Th>
             <Table.Th className="text-sm font-medium px-6 py-4 text-left">
               Stat
-            </Table.Th>
-            <th className="text-sm font-medium px-6 py-4 text-center content-center">
-              <Text>Action</Text>
-            </th>
+              </Table.Th>
+              {displayButton &&
+                <th className="text-sm font-medium px-6 py-4 text-center content-center">
+                  <Text>Action</Text>
+                </th>
+              }
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -49,11 +51,13 @@ const StatsTable = ({ title, data, description = "description" }) => {
               <Table.Td className="px-6 py-4 whitespace-nowrap text-sm">
                 {toLocale(player.stat) || 0}
               </Table.Td>
-              <Table.Td className="px-6 py-4 whitespace-nowrap text-sm text-center content-center">
-                <Link href={'/userprofile/'+player.id}><Button color='dark' className=" text-white font-bold py-2 px-4 rounded">
-                  View Profile
-                </Button></Link>
-              </Table.Td>
+              {displayButton &&
+                <Table.Td className="px-6 py-4 whitespace-nowrap text-sm text-center content-center">
+                  <Link href={'/userprofile/' + player.id}><Button color='dark' className=" text-white font-bold py-2 px-4 rounded">
+                    View Profile
+                  </Button></Link>
+                </Table.Td>
+              }
             </Table.Tr>
           ))}
         </Table.Tbody>

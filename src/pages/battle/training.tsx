@@ -12,22 +12,62 @@ import { faBuildingColumns, faCoins, faPeopleGroup, faShield } from '@fortawesom
 const Training = (props) => {
   //const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
   const { user, forceUpdate } = useUser();
-  const [workerUnits, setWorkers] = useState(null);
-  const [offensiveUnits, setOffensive] = useState(null);
-  const [defensiveUnits, setDefensive] = useState(null);
-  const [spyUnits, setSpyUnits] = useState(null);
-  const [sentryUnits, setSentryUnits] = useState(null);
   const [totalCost, setTotalCost] = useState(0);
-  const [sectionCosts, setSectionCosts] = useState({
-    WORKER: 0,
-    OFFENSE: 0,
-    DEFENSE: 0,
-    SPY: 0,
-    SENTRY: 0,
-  });
+
+  // Keys we use to add the state objects to each unit type
+  const indexDataKeys = ['unitData', 'updateFn'];
+
+  // A quick function that turns the useState output into an object with the above keys
+  const getUnitIndexState = () => Object.fromEntries(
+    useState(null).map((s, i) => [indexDataKeys[i], s])
+  );
+
+  // All the things we need for each unit type
+  const unitTypesIndex = [
+    {
+      type: 'WORKER',
+      sectionTitle: 'Economy',
+    },
+    {
+      type: 'OFFENSE',
+      sectionTitle: 'Offense',
+    },
+    {
+      type: 'DEFENSE',
+      sectionTitle: 'Defense',
+    },
+    {
+      type: 'SPY',
+      sectionTitle: 'Spy',
+    },
+    {
+      type: 'SENTRY',
+      sectionTitle: 'Sentry',
+    },
+  // n.b. this returns unitData and updateFn for each unit type, so they're all available
+  ].map((ix) => { return {...ix, ...getUnitIndexState()}});
+
+  /**
+   * Gets an object representing the base state of the form, i.e., no units
+   * being trained.
+   * @return {Object<string, number>}
+   */
+  const getBlankSectionCosts = () => {
+    return Object.fromEntries(
+      unitTypesIndex.map((unitType) => [unitType.type, 0])
+    )
+  };
+
+  const [sectionCosts, setSectionCosts] = useState(getBlankSectionCosts());
 
   const [unitCosts, setUnitCosts] = useState<{ [key: string]: number }>({});
 
+  /**
+   * Update the total costs for the units currently slated to be trained in a section.
+   *
+   * @param {string} section The section to update.
+   * @param {number} cost 
+   */
   const updateTotalCost = (section: string, cost: number) => {
     setSectionCosts((prevCosts) => {
       const updatedCosts = { ...prevCosts, [section]: cost };
@@ -39,19 +79,23 @@ const Training = (props) => {
       return updatedCosts;
     });
   };
-  
+ 
+  /**
+   * Reset the unit costs to zero (for example, when a previous training action is done)
+   */
   const resetUnitCosts = () => {
     setUnitCosts({});
     setTotalCost(0);
-    setSectionCosts({
-      WORKER: 0,
-      OFFENSE: 0,
-      DEFENSE: 0,
-      SPY: 0,
-      SENTRY: 0,
-    });
+    setSectionCosts(getBlankSectionCosts());
   };
 
+  /**
+   * Gives data about a specific unit.
+   *
+   * @param {Object} unit
+   * @param {string} unit.name The name of the unit we want data for.
+   * @return {Object} Includes id, name, ownedUnits, requirement, cost, enabled, and level
+   */
   const unitMapFunction = useCallback((unit, idPrefix: string) => {
     if (!user) {
       return;
@@ -81,237 +125,131 @@ const Training = (props) => {
 
   useEffect(() => {
     if (user && user.availableUnitTypes) {
-      setWorkers(
-        user.availableUnitTypes
-          .filter((unit) => unit.type === 'WORKER')
-          .map((unit) => unitMapFunction(unit, 'WORKER'))
-      );
-      setOffensive(
-        user.availableUnitTypes
-          .filter((unit) => unit.type === 'OFFENSE')
-          .map((unit) => unitMapFunction(unit, 'OFFENSE'))
-      );
-      setDefensive(
-        user.availableUnitTypes
-          .filter((unit) => unit.type === 'DEFENSE')
-          .map((unit) => unitMapFunction(unit, 'DEFENSE'))
-      );
-      setSpyUnits(
-        user.availableUnitTypes
-          .filter((unit) => unit.type === 'SPY')
-          .map((unit) => unitMapFunction(unit, 'SPY'))
-      );
-      setSentryUnits(
-        user.availableUnitTypes
-          .filter((unit) => unit.type === 'SENTRY')
-          .map((unit) => unitMapFunction(unit, 'SENTRY'))
-      );
+      unitTypesIndex.forEach((unitType) => {
+        unitType.updateFn(
+          user.availableUnitTypes
+            .filter((unit) => unit.type === unitType.type)
+            .map((unit) => unitMapFunction(unit, unitType.type))
+        );
+      });
     }
   }, [user, unitMapFunction]);
 
-  const handleTrainAll = async () => {
-    const unitsToTrain = [...workerUnits, ...offensiveUnits, ...defensiveUnits, ...spyUnits, ...sentryUnits]
+  /**
+   * Get type, quantity, and level for each unit.
+   * @return {Object}
+   */
+  const getUnitQuantities = () => {
+    return unitTypesIndex.reduce((curVal, unitType) => [...curVal, ...unitType.unitData], [])
       .filter((unit) => unit.enabled)
       .map((unit) => {
+        const unitComponents = unit.id.split('_');
         return {
-          type: unit.id.split('_')[0],
+          type: unitComponents[0],
           quantity: unitCosts[unit.id] || 0,
-          level: parseInt(unit.id.split('_')[1], 10),
+          level: parseInt(unitComponents[1], 10),
         };
       });
+  };
+
+  /**
+   * Calls the named training API endpoint, with the provided user and units.
+   * 
+   * @param {string} endpoint Either 'train' or 'untrain'
+   * @param {User} user
+   * @param {Array} units
+   * @return {Promise}
+   */
+  const callTrainingApi = async (endpoint, user, units) => {
+    const response = await fetch('/api/training/' + endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        units: units,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Calling training API endpoint ' + endpoint + ' failed.');
+      return;
+    }
+
+    const data = await response.json();
+
+    alertService.success(data.message);
+
+    return data;
+  };
+
+  /**
+   * Updates the units on the page with data from the API, e.g. after a successful
+   * API call.
+   * @param {Object} data Parsed JSON response from one of the training API endpoints.
+   */
+  const updateUnits = (data) => {
+    unitTypesIndex.forEach((unit) => {
+      unit.updateFn((prevUnits) => {
+        return prevUnits.map((unit) => {
+          const updatedUnit = data.data.find(
+            (u) => u.type === unit.id.split('_')[0]
+          );
+          if (updatedUnit) {
+            return { ...unit, ownedUnits: updatedUnit.quantity };
+          }
+          return unit;
+        });
+      });
+    });
+
+    resetUnitCosts(); // Reset unit costs to 0
+    forceUpdate();
+  };
+
+  /**
+   * Handles either a train or untrain action.
+   * @param {'train'|'untrain'} submitType
+   */
+  const handleFormSubmit = async (submitType) => {
+    if (!user) {
+      alertService.error('User not found. Please try again.');
+      return;
+    }
+
+    const unitsToModify = getUnitQuantities();
 
     try {
-      if (!user) {
-        alertService.error('User not found. Please try again.');
-        return;
-      }
-      const response = await fetch('/api/training/train', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          units: unitsToTrain,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alertService.success(data.message);
-
-        // Update the getUnits state with the new quantities
-        setWorkers((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        setOffensive((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        setDefensive((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        setSentryUnits((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        setSpyUnits((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        resetUnitCosts(); // Reset unit costs to 0
-        forceUpdate();
-      } else {
-        alertService.error(data.error);
-      }
+      const data = await callTrainingApi(submitType, user, unitsToModify);
+      updateUnits(data);
     } catch (error) {
       console.log(error);
-      alertService.error('Failed to train units. Please try again.');
+      alertService.error('Failed to ' + submitType + ' units. Please try again.');
     }
   };
 
-  const handleUntrainAll = async () => {
-    const unitsToUnTrain = [
-      ...workerUnits,
-      ...offensiveUnits,
-      ...defensiveUnits,
-      ...spyUnits,
-      ...sentryUnits
-    ]
-      .filter((unit) => unit.enabled)
-      .map((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-
-        if (!user) {
-          alertService.error('User not found. Please try again.');
-          return;
-        }
-
-        return {
-          type: unit.id.split('_')[0], // Extracting the unit type from the id
-          quantity: parseInt(inputElement.value, 10),
-          level: parseInt(unit.id.split('_')[1], 10),
-        };
-      });
-
+  /**
+   * Handles a train action.
+   */
+  const handleTrainAll = async () => {
     try {
-      const response = await fetch('/api/training/untrain', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id, // Assuming you have the user's ID available
-          units: unitsToUnTrain,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alertService.success(data.message);
-
-        // Update the getUnits state with the new quantities
-        setWorkers((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        setOffensive((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        setDefensive((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        setSentryUnits((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        setSpyUnits((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const updatedUnit = data.data.find(
-              (u) => u.type === unit.id.split('_')[0]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        resetUnitCosts(); // Reset unit costs to 0
-        forceUpdate();
-      } else {
-        alertService.error(data.error);
-      }
+      handleFormSubmit('train');
     } catch (error) {
-      alertService.error('Failed to train units. Please try again.');
+      console.log(error);
+      return;
+    }
+  };
+
+  /**
+   * Handles an untrain action.
+   */
+  const handleUntrainAll = async () => {
+    try {
+      handleFormSubmit('untrain');
+    } catch (error) {
+      console.log(error);
+      return;
     }
   };
 
@@ -410,51 +348,18 @@ const Training = (props) => {
           </Group>
         </Paper>
       </SimpleGrid>
-      {workerUnits && (
-        <NewUnitSection
-          heading="Economy"
-          units={workerUnits.filter((unit) => unit.enabled)}
-          updateTotalCost={(cost) => updateTotalCost('WORKER', cost)}
-          unitCosts={unitCosts}
-          setUnitCosts={setUnitCosts}
-        />
-      )}
-      {offensiveUnits && (
-        <NewUnitSection
-          heading="Offense"
-          units={offensiveUnits.filter((unit) => unit.enabled)}
-          updateTotalCost={(cost) => updateTotalCost('OFFENSE', cost)}
-          unitCosts={unitCosts}
-          setUnitCosts={setUnitCosts}
-        />
-      )}
-      {defensiveUnits && (
-        <NewUnitSection
-          heading="Defense"
-          units={defensiveUnits.filter((unit) => unit.enabled)}
-          updateTotalCost={(cost) => updateTotalCost('DEFENSE', cost)}
-          unitCosts={unitCosts}
-          setUnitCosts={setUnitCosts}
-        />
-      )}
-      {spyUnits && (
-        <NewUnitSection
-          heading="Spy"
-          units={spyUnits.filter((unit) => unit.enabled)}
-          updateTotalCost={(cost) => updateTotalCost('SPY', cost)}
-          unitCosts={unitCosts}
-          setUnitCosts={setUnitCosts}
-        />
-      )}
-      {sentryUnits && (
-        <NewUnitSection
-          heading="Sentry"
-          units={sentryUnits.filter((unit) => unit.enabled)}
-          updateTotalCost={(cost) => updateTotalCost('SENTRY', cost)}
-          unitCosts={unitCosts}
-          setUnitCosts={setUnitCosts}
-        />
-      )}
+      {
+        unitTypesIndex.filter((unitType) => unitType.unitData !== null)
+          .map((unitType) => (
+            <NewUnitSection
+              heading={unitType.sectionTitle}
+              units={unitType.unitData.filter((unit) => unit.enabled)}
+              updateTotalCost={(cost) => updateTotalCost(unitType.type, cost)}
+              unitCosts={unitCosts}
+              setUnitCosts={setUnitCosts}
+            />
+          ))
+      }
       <Flex justify='space-between'
         ref={stickyRef}
         className=" mt-8 rounded bg-gray-800 sticky bottom-0 px-4 z-10 sm:w-100 md:w-[69vw]"
