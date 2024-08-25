@@ -6,7 +6,7 @@ import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import toLocale from '@/utils/numberFormatting';
-import { Table, Group, Avatar, Badge, Text, Indicator } from '@mantine/core';
+import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
 
 const ROWS_PER_PAGE = 10;
@@ -18,6 +18,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const { user } = useUser();
   const colorScheme = user?.colorScheme;
   const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1);
+  const [lastPage, setLastPage] = useState(1);
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'overallrank');
   const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'asc');
   const [players, setPlayers] = useState([]);
@@ -27,15 +28,16 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     const start = (page - 1) * ROWS_PER_PAGE;
     const end = start + ROWS_PER_PAGE;
     let sortedPlayers = [...allUsers];
+    setLastPage(Math.ceil(allUsers.length / ROWS_PER_PAGE));
 
     if (sortBy === 'overallrank') {
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? b.rank - a.rank : a.rank - b.rank);
     } else if (sortBy === 'gold') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.gold) - Number(b.gold) : Number(b.gold) - Number(a.gold));
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.gold) - Number(a.gold) : Number(a.gold) - Number(b.gold));
     } else if (sortBy === 'population') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.population) - Number(b.population) : Number(b.population) - Number(a.population));
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.population) - Number(a.population) : Number(a.population) - Number(b.population));
     } else if (sortBy === 'level') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.experience) - Number(b.experience) : Number(b.experience) - Number(a.experience));
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.experience) - Number(a.experience) : Number(a.experience) - Number(b.experience));
     }
 
     const paginatedPlayers = sortedPlayers.slice(start, end);
@@ -69,12 +71,39 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Attack</h2>
+      <p className="text-white">Attack other players to steal their gold, gain XP, increase your rank!</p>
+      <Center><p>You can attack players within levels: x and x</p></Center>
+      <div className="mt-4 flex justify-between mb-2">
+        <button
+          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+          onClick={() => {
+            const newPage = Math.max(page - 1, 1);
+            setPage(newPage);
+            //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
+          }}
+          disabled={page == 1}
+        >
+          Previous
+        </button>
+        <Pagination total={lastPage} siblings={1} value={page} defaultValue={page} onChange={setPage} />
+        <button
+          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+          onClick={() => {
+            const newPage = page + 1;
+            setPage(newPage);
+            //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
+          }}
+          disabled={players.length < ROWS_PER_PAGE}
+        >
+          Next
+        </button>
+      </div>
       <div className="overflow-x-auto">
         <Table.ScrollContainer minWidth={400}>
           <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th className="px-1 py-1"><button onClick={() => handleSort('overallrank')}>Rank</button></Table.Th>
+                <Table.Th className="px-1 py-1"><button onClick={() => handleSort('overallrank')}>Rank {sortBy === 'overallrank' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
                 <Table.Th className="px-4 py-2">Username</Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('gold')}>Gold {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('population')}> Population {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
@@ -136,18 +165,19 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           onClick={() => {
             const newPage = Math.max(page - 1, 1);
             setPage(newPage);
-            router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
+            //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
           disabled={page == 1}
         >
           Previous
         </button>
+        <Pagination total={lastPage} siblings={1} value={page} defaultValue={page} onChange={setPage} />
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
           onClick={() => {
             const newPage = page + 1;
             setPage(newPage);
-            router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
+            //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
           disabled={players.length < ROWS_PER_PAGE}
         >
