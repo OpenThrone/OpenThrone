@@ -4,7 +4,8 @@ import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import UserModel from '@/models/Users';
-import { newCalculateStrength } from '@/utils/attackFunctions';
+import { updateUserAndBankHistory } from '@/services';
+import { calculateUserStats } from '@/utils/utilities';
 
 const handler = async (
   req: NextApiRequest,
@@ -73,29 +74,22 @@ const handler = async (
         totalRefund += Math.floor((itemType.cost - ((uModel.priceBonus || 0) / 100) * itemType.cost) * itemData.quantity * 0.75);
       }
 
-      const unequip = await prisma.$transaction(async (prisma) => {
-        const newUModel = new UserModel({ ...user, items: updatedItems });
-        const { killingStrength, defenseStrength } = newCalculateStrength(newUModel, 'OFFENSE');
-        const newOffense = newUModel.getArmyStat('OFFENSE')
-        const newDefense = newUModel.getArmyStat('DEFENSE')
-        const newSpying = newUModel.getArmyStat('SPY')
-        const newSentry = newUModel.getArmyStat('SENTRY')
-        await prisma.users.update({
-          where: { id: userId },
-          data: {
-            gold: BigInt(user.gold) + BigInt(totalRefund),
-            items: updatedItems,
-            killing_str: killingStrength,
-            defense_str: defenseStrength,
-            offense: newOffense,
-            defense: newDefense,
-            spy: newSpying,
-            sentry: newSentry,
-          },
-        });
+      const unequip = await prisma.$transaction(async (tx) => {
+        const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
+          calculateUserStats(user, updatedItems, 'items');
 
-        await prisma.bank_history.create({
-          data: {
+        await updateUserAndBankHistory(
+          tx,
+          userId,
+          BigInt(user.gold) + BigInt(totalRefund),
+          updatedItems,
+          killingStrength,
+          defenseStrength,
+          newOffense,
+          newDefense,
+          newSpying,
+          newSentry,
+          {
             gold_amount: BigInt(totalRefund),
             from_user_id: 0,
             from_user_account_type: 'BANK',
@@ -106,9 +100,11 @@ const handler = async (
             stats: {
               type: 'ARMORY_UNEQUIP',
               items: items,
-            }
+            },
           },
-        });
+          'items'
+        );
+        
       });
 
       return res.status(200).json({
