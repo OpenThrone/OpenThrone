@@ -17,6 +17,7 @@ module.exports = withBundleAnalyzer({
         },
       ],
     ],
+    instrumentationHook: true,
   },
   eslint: {
     dirs: ['.'],
