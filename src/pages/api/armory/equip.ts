@@ -4,7 +4,8 @@ import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
-import { newCalculateStrength } from '@/utils/attackFunctions';
+import { updateUserAndBankHistory } from '@/services';
+import { calculateUserStats } from '@/utils/utilities';
 
 interface EquipmentProps {
   type: string;
@@ -102,30 +103,22 @@ const handler = async(
       }
     });
 
-    const equipDB = await prisma.$transaction(async (prisma) => {
-      const newUModel = new UserModel({ ...user, items: updatedItems });
-      const { killingStrength, defenseStrength } = newCalculateStrength(newUModel, 'OFFENSE');
-      const newOffense = newUModel.getArmyStat('OFFENSE')
-      const newDefense = newUModel.getArmyStat('DEFENSE')
-      const newSpying = newUModel.getArmyStat('SPY')
-      const newSentry = newUModel.getArmyStat('SENTRY')
-      // Update the user's gold and items in the database
-      await prisma.users.update({
-        where: { id: userId },
-        data: {
-          gold: BigInt(user.gold) - BigInt(totalCost),
-          items: updatedItems,
-          killing_str: killingStrength,
-          defense_str: defenseStrength,
-          offense: newOffense,
-          defense: newDefense,
-          spy: newSpying,
-          sentry: newSentry,
-        },
-      });
+    const equipDB = await prisma.$transaction(async (tx) => {
+      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
+        calculateUserStats(user, updatedItems, 'items');
 
-      await prisma.bank_history.create({
-        data: {
+      await updateUserAndBankHistory(
+        tx,
+        userId,
+        BigInt(user.gold) - BigInt(totalCost),
+        updatedItems,
+        killingStrength,
+        defenseStrength,
+        newOffense,
+        newDefense,
+        newSpying,
+        newSentry,
+        {
           gold_amount: BigInt(totalCost),
           from_user_id: userId,
           from_user_account_type: 'HAND',
@@ -136,9 +129,10 @@ const handler = async(
           stats: {
             type: 'ARMORY_EQUIP',
             items: itemsToEquip,
-          }
+          },
         },
-      });
+        'items'
+      );
     });
 
     return res.status(200).json({

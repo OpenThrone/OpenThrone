@@ -3,7 +3,8 @@ import { ItemTypes } from "@/constants";
 import { withAuth } from "@/middleware/auth";
 import UserModel from "@/models/Users";
 import { NextApiRequest, NextApiResponse } from "next";
-import { newCalculateStrength } from "@/utils/attackFunctions";
+import { updateUserAndBankHistory } from "@/services";
+import { calculateUserStats } from "@/utils/utilities";
 
 interface ConvertRequest {
   userId: string;
@@ -75,30 +76,22 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     user.gold -= BigInt(cost);
 
-    const conversion = await prisma.$transaction(async (prisma) => {
-      const newUModel = new UserModel({ ...user, items: user.items });
-      const { killingStrength, defenseStrength } = newCalculateStrength(newUModel, 'OFFENSE');
-      const newOffense = newUModel.getArmyStat('OFFENSE')
-      const newDefense = newUModel.getArmyStat('DEFENSE')
-      const newSpying = newUModel.getArmyStat('SPY')
-      const newSentry = newUModel.getArmyStat('SENTRY')
-      // Update user in the database
-      await prisma.users.update({
-        where: { id: Number(userId) },
-        data: {
-          gold: BigInt(user.gold),
-          items: user.items,
-          killing_str: killingStrength,
-          defense_str: defenseStrength,
-          offense: newOffense,
-          defense: newDefense,
-          spy: newSpying,
-          sentry: newSentry,
-        },
-      });
+    const conversion = await prisma.$transaction(async (tx) => {
+      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
+        calculateUserStats(user, JSON.parse(JSON.stringify(user.items)), 'items');
 
-      await prisma.bank_history.create({
-        data: {
+      await updateUserAndBankHistory(
+        tx,
+        user.id,
+        BigInt(user.gold),
+        JSON.parse(JSON.stringify(user.items)),
+        killingStrength,
+        defenseStrength,
+        newOffense,
+        newDefense,
+        newSpying,
+        newSentry,
+        {
           gold_amount: BigInt(cost),
           from_user_id: Number(userId),
           from_user_account_type: 'HAND',
@@ -110,10 +103,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             type: 'ARMORY_CONVERSION',
             fromItem: fromItem,
             toItem: toItem,
-            amount: conversionAmount
-          }
-        }
-      });
+            amount: conversionAmount,
+          },
+        },
+        'items'
+      );
     })
 
     return res.status(200).json({
