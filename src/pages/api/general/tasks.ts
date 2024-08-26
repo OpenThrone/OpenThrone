@@ -4,6 +4,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import UserModel from '@/models/Users';
 import { calculateOverallRank } from "@/utils/utilities";
 import user from "@/pages/messaging/compose/[user]";
+import { newCalculateStrength } from "@/utils/attackFunctions";
 
 export default async function handler(
   req: NextApiRequest,
@@ -63,9 +64,21 @@ export default async function handler(
         newUser.units.push(citizenUnit);
       }
 
+      const { killingStrength, defenseStrength } = newCalculateStrength(newUser, 'OFFENSE');
+      const newOffense = newUser.getArmyStat('OFFENSE')
+      const newDefense = newUser.getArmyStat('DEFENSE')
+      const newSpying = newUser.getArmyStat('SPY')
+      const newSentry = newUser.getArmyStat('SENTRY')
+
       let updateData = {
         gold: updatedGold,
         attack_turns: newUser.attackTurns + 1,
+        killing_str: killingStrength,
+        defense_str: defenseStrength,
+        offense: newOffense,
+        defense: newDefense,
+        spy: newSpying,
+        sentry: newSentry,
         rank: index + 1, // Assign the rank (1-based index)
       };
 
