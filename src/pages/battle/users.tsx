@@ -9,8 +9,6 @@ import toLocale from '@/utils/numberFormatting';
 import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
 
-const ROWS_PER_PAGE = 10;
-
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { data: session } = useSession();
   const router = useRouter();
@@ -23,12 +21,15 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'asc');
   const [players, setPlayers] = useState([]);
   const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [attackRangeMin, setAttackRangeMin] = useState(1);
+  const [attackRangeMax, setAttackRangeMax] = useState(5);
 
   useEffect(() => {
-    const start = (page - 1) * ROWS_PER_PAGE;
-    const end = start + ROWS_PER_PAGE;
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
     let sortedPlayers = [...allUsers];
-    setLastPage(Math.ceil(allUsers.length / ROWS_PER_PAGE));
+    setLastPage(Math.ceil(allUsers.length / rowsPerPage));
 
     if (sortBy === 'overallrank') {
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? b.rank - a.rank : a.rank - b.rank);
@@ -51,6 +52,11 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     setFormattedGolds(golds);
   }, [players, user?.locale]);
 
+  useEffect(() => {
+    setAttackRangeMax(user?.attackRange.max);
+    setAttackRangeMin(user?.attackRange.min);
+  }, [user?.attackRange]);
+
   const handleSort = (newSortBy) => {
     const newSortDir = sortBy === newSortBy && sortDir === 'desc' ? 'asc' : 'desc';
     setSortBy(newSortBy);
@@ -62,17 +68,23 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   useEffect(() => {
     const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
     if (loggedInPlayerIndex !== -1 && !searchParams.get('page') && !searchParams.get('sortBy') && !searchParams.get('sortDir')) {
-      const newPage = Math.floor(loggedInPlayerIndex / ROWS_PER_PAGE) + 1;
+      const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
       setPage(newPage);
       router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
     }
   }, [user, allUsers, sortBy, sortDir, router, searchParams]);
 
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    setPage(1);
+    router.push(`?sortBy=${sortBy}&sortDir=${sortDir}&page=1`);
+  };
+
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Attack</h2>
       <p className="text-white">Attack other players to steal their gold, gain XP, increase your rank!</p>
-      <Center><p>You can attack players within levels: x and x</p></Center>
+      <Center><p>You can attack players within levels: {attackRangeMin} and {attackRangeMax}</p></Center>
       <div className="mt-4 flex justify-between mb-2">
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
@@ -93,12 +105,26 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
             setPage(newPage);
             //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
-          disabled={players.length < ROWS_PER_PAGE}
+          disabled={players.length < rowsPerPage}
         >
           Next
         </button>
       </div>
       <div className="overflow-x-auto">
+        <Group>
+          <Text size="sm">Show per page: </Text>
+          {[10, 20, 50, 100].map(option => (
+            <Text
+              key={option}
+              size="sm"
+              c={rowsPerPage === option ? 'dimmed' : 'white'}
+              className='cursor-pointer'
+              onClick={() => handleRowsPerPageChange(option)}
+            >
+              {option}
+            </Text>
+          ))}
+        </Group>
         <Table.ScrollContainer minWidth={400}>
           <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
             <Table.Thead>
@@ -179,7 +205,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
             setPage(newPage);
             //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
-          disabled={players.length < ROWS_PER_PAGE}
+          disabled={players.length < rowsPerPage}
         >
           Next
         </button>
