@@ -4,6 +4,7 @@ import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import UserModel from '@/models/Users';
+import { newCalculateStrength } from '@/utils/attackFunctions';
 
 const handler = async (
   req: NextApiRequest,
@@ -72,28 +73,42 @@ const handler = async (
         totalRefund += Math.floor((itemType.cost - ((uModel.priceBonus || 0) / 100) * itemType.cost) * itemData.quantity * 0.75);
       }
 
-      await prisma.users.update({
-        where: { id: userId },
-        data: {
-          gold: BigInt(user.gold) + BigInt(totalRefund),
-          items: updatedItems,
-        },
-      });
+      const unequip = await prisma.$transaction(async (prisma) => {
+        const newUModel = new UserModel({ ...user, items: updatedItems });
+        const { killingStrength, defenseStrength } = newCalculateStrength(newUModel, 'OFFENSE');
+        const newOffense = newUModel.getArmyStat('OFFENSE')
+        const newDefense = newUModel.getArmyStat('DEFENSE')
+        const newSpying = newUModel.getArmyStat('SPY')
+        const newSentry = newUModel.getArmyStat('SENTRY')
+        await prisma.users.update({
+          where: { id: userId },
+          data: {
+            gold: BigInt(user.gold) + BigInt(totalRefund),
+            items: updatedItems,
+            killing_str: killingStrength,
+            defense_str: defenseStrength,
+            offense: newOffense,
+            defense: newDefense,
+            spy: newSpying,
+            sentry: newSentry,
+          },
+        });
 
-      await prisma.bank_history.create({
-        data: {
-          gold_amount: BigInt(totalRefund),
-          from_user_id: 0,
-          from_user_account_type: 'BANK',
-          to_user_id: userId,
-          to_user_account_type: 'HAND',
-          date_time: new Date().toISOString(),
-          history_type: 'SALE',
-          stats: {
-            type: 'ARMORY_UNEQUIP',
-            items: items,
-          }
-        },
+        await prisma.bank_history.create({
+          data: {
+            gold_amount: BigInt(totalRefund),
+            from_user_id: 0,
+            from_user_account_type: 'BANK',
+            to_user_id: userId,
+            to_user_account_type: 'HAND',
+            date_time: new Date().toISOString(),
+            history_type: 'SALE',
+            stats: {
+              type: 'ARMORY_UNEQUIP',
+              items: items,
+            }
+          },
+        });
       });
 
       return res.status(200).json({

@@ -4,6 +4,7 @@ import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
+import { newCalculateStrength } from '@/utils/attackFunctions';
 
 interface EquipmentProps {
   type: string;
@@ -101,29 +102,43 @@ const handler = async(
       }
     });
 
-    // Update the user's gold and items in the database
-    await prisma.users.update({
-      where: { id: userId },
-      data: {
-        gold: BigInt(user.gold) - BigInt(totalCost),
-        items: updatedItems,
-      },
-    });
+    const equipDB = await prisma.$transaction(async (prisma) => {
+      const newUModel = new UserModel({ ...user, items: updatedItems });
+      const { killingStrength, defenseStrength } = newCalculateStrength(newUModel, 'OFFENSE');
+      const newOffense = newUModel.getArmyStat('OFFENSE')
+      const newDefense = newUModel.getArmyStat('DEFENSE')
+      const newSpying = newUModel.getArmyStat('SPY')
+      const newSentry = newUModel.getArmyStat('SENTRY')
+      // Update the user's gold and items in the database
+      await prisma.users.update({
+        where: { id: userId },
+        data: {
+          gold: BigInt(user.gold) - BigInt(totalCost),
+          items: updatedItems,
+          killing_str: killingStrength,
+          defense_str: defenseStrength,
+          offense: newOffense,
+          defense: newDefense,
+          spy: newSpying,
+          sentry: newSentry,
+        },
+      });
 
-    await prisma.bank_history.create({
-      data: {
-        gold_amount: BigInt(totalCost),
-        from_user_id: userId,
-        from_user_account_type: 'HAND',
-        to_user_id: 0,
-        to_user_account_type: 'BANK',
-        date_time: new Date().toISOString(),
-        history_type: 'SALE',
-        stats: {
-          type: 'ARMORY_EQUIP',
-          items: itemsToEquip,
-        }
-      },
+      await prisma.bank_history.create({
+        data: {
+          gold_amount: BigInt(totalCost),
+          from_user_id: userId,
+          from_user_account_type: 'HAND',
+          to_user_id: 0,
+          to_user_account_type: 'BANK',
+          date_time: new Date().toISOString(),
+          history_type: 'SALE',
+          stats: {
+            type: 'ARMORY_EQUIP',
+            items: itemsToEquip,
+          }
+        },
+      });
     });
 
     return res.status(200).json({
