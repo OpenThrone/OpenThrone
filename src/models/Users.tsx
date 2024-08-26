@@ -106,6 +106,22 @@ class UserModel {
   
   public stats: any[];
 
+  public offense: number;
+
+  public defense: number;
+
+  public spy: number;
+
+  public sentry: number;
+
+  public killing_str: number;
+
+  public defense_str: number;
+
+  public spying_str: number;
+
+  public sentry_str: number;
+
   constructor(userData?: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
@@ -181,6 +197,14 @@ class UserModel {
       this.stats = userData.stats;
       this.structure_upgrades = userData.structure_upgrades;
       this.locale = userData.locale;
+      this.killing_str = userData.killing_str;
+      this.defense_str = userData.defense_str;
+      this.spying_str = userData.spying_str;
+      this.sentry_str = userData.sentry_str;
+      this.offense = userData.offense;
+      this.defense = userData.defense;
+      this.spy = userData.spy;
+      this.sentry = userData.sentry;
       if(userData.avatar !== 'SHIELD') {
         this.avatar = userData.avatar;
       } else {
@@ -594,39 +618,6 @@ class UserModel {
         break;
     }
     return Math.ceil(totalStat);
-  }
-
-
-  /**
-   * Returns the offense army stat of the user.
-   * @returns {number} The offense army stat of the user.
-   */
-  get offense(): number {
-    return this.getArmyStat('OFFENSE');
-  }
-
-  /**
-   * Returns the defense stat of the user's army.
-   * @returns {number} The defense stat of the user's army.
-   */
-  get defense(): number {
-    return this.getArmyStat('DEFENSE');
-  }
-
-  /**
-   * Returns the value of the SENTRY army stat for the user.
-   * @returns {number} The value of the SENTRY army stat.
-   */
-  get sentry(): number {
-    return this.getArmyStat('SENTRY');
-  }
-
-  /**
-   * Returns the SPY army stat of the user.
-   * @returns {number} The SPY army stat of the user.
-   */
-  get spy(): number {
-    return this.getArmyStat('SPY');
   }
 
   /**
