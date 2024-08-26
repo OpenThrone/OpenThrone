@@ -3,6 +3,7 @@ import { ItemTypes } from "@/constants";
 import { withAuth } from "@/middleware/auth";
 import UserModel from "@/models/Users";
 import { NextApiRequest, NextApiResponse } from "next";
+import { newCalculateStrength } from "@/utils/attackFunctions";
 
 interface ConvertRequest {
   userId: string;
@@ -60,8 +61,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const cost = BigInt(amount) * (BigInt(toItemType.cost - ((uModel?.priceBonus / 100) * toItemType.cost)) - BigInt(fromItemType.cost - ((uModel?.priceBonus / 100) * fromItemType.cost))) * (toItemType.level > fromItemType.level ? BigInt(1) : BigInt(75) / BigInt(100));
 
-    console.log(`Converting ${amount} ${fromItem} to ${toItem} for ${cost} gold`)
-
     if (user.gold < cost) {
       return res.status(400).json({ error: 'Not enough gold' });
     }
@@ -76,32 +75,46 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     user.gold -= BigInt(cost);
 
-    // Update user in the database
-    await prisma.users.update({
-      where: { id: Number(userId) },
-      data: {
-        gold: BigInt(user.gold),
-        items: user.items,
-      },
-    });
+    const conversion = await prisma.$transaction(async (prisma) => {
+      const newUModel = new UserModel({ ...user, items: user.items });
+      const { killingStrength, defenseStrength } = newCalculateStrength(newUModel, 'OFFENSE');
+      const newOffense = newUModel.getArmyStat('OFFENSE')
+      const newDefense = newUModel.getArmyStat('DEFENSE')
+      const newSpying = newUModel.getArmyStat('SPY')
+      const newSentry = newUModel.getArmyStat('SENTRY')
+      // Update user in the database
+      await prisma.users.update({
+        where: { id: Number(userId) },
+        data: {
+          gold: BigInt(user.gold),
+          items: user.items,
+          killing_str: killingStrength,
+          defense_str: defenseStrength,
+          offense: newOffense,
+          defense: newDefense,
+          spy: newSpying,
+          sentry: newSentry,
+        },
+      });
 
-    await prisma.bank_history.create({
-      data: {
-        gold_amount: BigInt(cost),
-        from_user_id: Number(userId),
-        from_user_account_type: 'HAND',
-        to_user_id: Number(userId),
-        to_user_account_type: 'BANK',
-        date_time: new Date().toISOString(),
-        history_type: 'SALE',
-        stats: {
-          type:'ARMORY_CONVERSION',
-          fromItem: fromItem,
-          toItem: toItem,
-          amount: conversionAmount
+      await prisma.bank_history.create({
+        data: {
+          gold_amount: BigInt(cost),
+          from_user_id: Number(userId),
+          from_user_account_type: 'HAND',
+          to_user_id: Number(userId),
+          to_user_account_type: 'BANK',
+          date_time: new Date().toISOString(),
+          history_type: 'SALE',
+          stats: {
+            type: 'ARMORY_CONVERSION',
+            fromItem: fromItem,
+            toItem: toItem,
+            amount: conversionAmount
+          }
         }
-      }
-    });
+      });
+    })
 
     return res.status(200).json({
       message: 'Conversion successful',
