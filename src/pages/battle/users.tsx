@@ -62,7 +62,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     setSortBy(newSortBy);
     setSortDir(newSortDir);
     setPage(1);
-    router.push(`?sortBy=${newSortBy}&sortDir=${newSortDir}&page=1`);
   };
 
   useEffect(() => {
@@ -70,28 +69,24 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     if (loggedInPlayerIndex !== -1 && !searchParams.get('page') && !searchParams.get('sortBy') && !searchParams.get('sortDir')) {
       const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
       setPage(newPage);
-      router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
     }
   }, [user, allUsers, sortBy, sortDir, router, searchParams]);
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
     setPage(1);
-    router.push(`?sortBy=${sortBy}&sortDir=${sortDir}&page=1`);
   };
 
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Attack</h2>
-      <p className="text-white">Attack other players to steal their gold, gain XP, increase your rank!</p>
-      <Center><p>You can attack players within levels: {attackRangeMin} and {attackRangeMax}</p></Center>
+      <Center><p>You can attack players from levels {attackRangeMin} to {attackRangeMax}</p></Center>
       <div className="mt-4 flex justify-between mb-2">
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
           onClick={() => {
             const newPage = Math.max(page - 1, 1);
             setPage(newPage);
-            //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
           disabled={page == 1}
         >
@@ -103,7 +98,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           onClick={() => {
             const newPage = page + 1;
             setPage(newPage);
-            //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
           disabled={players.length < rowsPerPage}
         >
@@ -191,7 +185,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           onClick={() => {
             const newPage = Math.max(page - 1, 1);
             setPage(newPage);
-            //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
           disabled={page == 1}
         >
@@ -203,7 +196,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           onClick={() => {
             const newPage = page + 1;
             setPage(newPage);
-            //router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
           disabled={players.length < rowsPerPage}
         >
