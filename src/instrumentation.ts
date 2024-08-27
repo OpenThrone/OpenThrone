@@ -11,30 +11,28 @@ import { calculateOverallRank } from '@/utils/utilities';
  * @return {Promise}
  */
 const updateUserPerDay = (currentUser) => {
-  const { newUser } = currentUser;
-
   try {
     // Find the CITIZEN unit
-    let citizenUnit = newUser.units.find(unit => unit.type === 'CITIZEN');
+    let citizenUnit = currentUser.units.find(unit => unit.type === 'CITIZEN');
 
     if (citizenUnit) {
       // If CITIZEN unit is found, increment its quantity
-      citizenUnit.quantity += newUser.recruitingBonus;
+      citizenUnit.quantity += currentUser.recruitingBonus;
     } else {
       // If CITIZEN unit is not found, create one and set its quantity
       citizenUnit = {
         type: 'CITIZEN',
         level: 1,
-        quantity: newUser.recruitingBonus
+        quantity: currentUser.recruitingBonus
       };
-      newUser.units.push(citizenUnit);
+      currentUser.units.push(citizenUnit);
     }
 
     return prisma.users.update({
-      where: { id: newUser.id },
+      where: { id: currentUser.id },
       data: {
-        units: newUser.units,
-        ...(!newUser.recruitingLink && { recruit_link: md5(newUser.id.toString()) }),
+        units: currentUser.units,
+        ...(!currentUser.recruitingLink && { recruit_link: md5(currentUser.id.toString()) }),
       },
     });
   } catch (error) {
@@ -50,19 +48,17 @@ const updateUserPerDay = (currentUser) => {
  * @return {Promise}
  */
 const updateUserPerTurn = (currentUser, rank) => {
-  const { newUser } = currentUser;
-
   try {
-    const updatedGold = BigInt(newUser.goldPerTurn.toString()) + newUser.gold;
+    const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + currentUser.gold;
 
     let updateData = {
       gold: updatedGold,
-      attack_turns: newUser.attackTurns + 1,
+      attack_turns: currentUser.attackTurns + 1,
       rank: rank,
     };
 
     return prisma.users.update({
-      where: { id: newUser.id },
+      where: { id: currentUser.id },
       data: updateData,
     });
   } catch (error) {
@@ -78,14 +74,14 @@ const updateUserPerTurn = (currentUser, rank) => {
 const doDailyCleanup = () => {
   const twentyDaysAgo = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
   const tablesToClean = [
-    'attack_log',
-    'bank_history',
-    'recruit_history',
+    { name: 'attack_log', dateField: 'timestamp' },
+    { name: 'bank_history', dateField: 'date_time' },
+    { name: 'recruit_history', dateField: 'timestamp' },
   ];
 
-  return tablesToClean.map((tableName) => prisma[tableName].deleteMany({
+  return tablesToClean.map((table) => prisma[table.name].deleteMany({
     where: {
-      date_time: {
+      [table.dateField]: {
         lt: twentyDaysAgo,
       },
     },
@@ -120,9 +116,9 @@ export async function register() {
           };
         });
 
-        userRanks.sort((a, b) => b.rankScore - a.rankscore);
+        userRanks.sort((a, b) => b.rankScore - a.rankScore);
 
-        const updatePromises = userRanks.map((userRank, index) => updateUserPerTurn(userRank, index + 1));
+        const updatePromises = userRanks.map((userRank, index) => updateUserPerTurn(userRank.newUser, index + 1));
 
         Promise.all(updatePromises).then(() => console.log('Updated users for turn change.'));
       });
