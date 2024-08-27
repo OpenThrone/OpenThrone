@@ -11,30 +11,28 @@ import { calculateOverallRank } from '@/utils/utilities';
  * @return {Promise}
  */
 const updateUserPerDay = (currentUser) => {
-  const { newUser } = currentUser;
-
   try {
     // Find the CITIZEN unit
-    let citizenUnit = newUser.units.find(unit => unit.type === 'CITIZEN');
+    let citizenUnit = currentUser.units.find(unit => unit.type === 'CITIZEN');
 
     if (citizenUnit) {
       // If CITIZEN unit is found, increment its quantity
-      citizenUnit.quantity += newUser.recruitingBonus;
+      citizenUnit.quantity += currentUser.recruitingBonus;
     } else {
       // If CITIZEN unit is not found, create one and set its quantity
       citizenUnit = {
         type: 'CITIZEN',
         level: 1,
-        quantity: newUser.recruitingBonus
+        quantity: currentUser.recruitingBonus
       };
-      newUser.units.push(citizenUnit);
+      currentUser.units.push(citizenUnit);
     }
 
     return prisma.users.update({
-      where: { id: newUser.id },
+      where: { id: currentUser.id },
       data: {
-        units: newUser.units,
-        ...(!newUser.recruitingLink && { recruit_link: md5(newUser.id.toString()) }),
+        units: currentUser.units,
+        ...(!currentUser.recruitingLink && { recruit_link: md5(currentUser.id.toString()) }),
       },
     });
   } catch (error) {
