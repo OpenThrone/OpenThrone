@@ -228,7 +228,23 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
 export const getServerSideProps = async () => {
   try {
-    let allUsers = await prisma.users.findMany({ where: { AND: [{ id: { not: 0 } }, { last_active: { not: null } }] } } );
+    let allUsers = await prisma.users.findMany({
+      where: {
+        AND: [{ id: { not: 0 } }, { last_active: { not: null } }],
+      },
+      select: { // limit the amount of data we're sending back - fixes data prop concerns for performance
+        id: true,
+        display_name: true,
+        rank: true,
+        last_active: true,
+        avatar: true,
+        units: true,
+        gold: true,
+        race: true,
+        class: true,
+        experience: true,
+      },
+    });
     allUsers.forEach(user => {
       const nowdate = new Date();
       const lastActiveTimestamp = new Date(user.last_active).getTime();
