@@ -866,6 +866,16 @@ class UserModel {
     return this.structure_upgrades.find((struc)=> struc.type === 'SENTRY').level || 0;
   }
 
+  get attackRange(): {
+    min: number;
+    max: number;
+  } {
+    return {
+      min: Math.max(1, this.level - 5), //min is 1 or 5 levels below current level
+      max: this.level + 5, //max is 5 levels above current level
+    };
+  }
+
 }
 
 export default UserModel;
