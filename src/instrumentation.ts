@@ -74,14 +74,14 @@ const updateUserPerTurn = (currentUser, rank) => {
 const doDailyCleanup = () => {
   const twentyDaysAgo = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
   const tablesToClean = [
-    'attack_log',
-    'bank_history',
-    'recruit_history',
+    { name: 'attack_log', dateField: 'timestamp' },
+    { name: 'bank_history', dateField: 'date_time' },
+    { name: 'recruit_history', dateField: 'timestamp' },
   ];
 
-  return tablesToClean.map((tableName) => prisma[tableName].deleteMany({
+  return tablesToClean.map((table) => prisma[table.name].deleteMany({
     where: {
-      date_time: {
+      [table.dateField]: {
         lt: twentyDaysAgo,
       },
     },
