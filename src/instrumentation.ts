@@ -104,37 +104,45 @@ export async function register() {
     const cron = require('node-cron');
     console.log('Setting up cron tasks');
 
-    // Tasks to complete each turn
-    cron.schedule('0,30 * * * *', async () => {
-      const allUsers = await prisma.users.findMany();
+    if (process.env.DO_TURN_UPDATES) {
+      // Tasks to complete each turn
+      cron.schedule('0,30 * * * *', async () => {
+        const allUsers = await prisma.users.findMany();
 
-      const userRanks = allUsers.map((user) => {
-        const newUser = new UserModel(user);
-        const rankScore = calculateOverallRank(user);
+        const userRanks = allUsers.map((user) => {
+          const newUser = new UserModel(user);
+          const rankScore = calculateOverallRank(user);
 
-        return {
-          id: user.id,
-          rankScore,
-          newUser,
-        };
+          return {
+            id: user.id,
+            rankScore,
+            newUser,
+          };
+        });
+
+        userRanks.sort((a, b) => b.rankScore - a.rankscore);
+
+        const updatePromises = userRanks.map((userRank, index) => updateUserPerTurn(userRank, index + 1));
+
+        Promise.all(updatePromises).then(() => console.log('Updated users for turn change.'));
       });
 
-      userRanks.sort((a, b) => b.rankScore - a.rankscore);
+      console.log('Registered turn update cron task');
+    }
 
-      const updatePromises = userRanks.map((userRank, index) => updateUserPerTurn(userRank, index + 1));
+    if (process.env.DO_DAILY_UPDATES) {
+      // Tasks to complete at midnight (server time)
+      cron.schedule('0 0 * * *', async () => {
+        const allUsers = await prisma.users.findMany();
 
-      Promise.all(updatePromises).then(() => console.log('Updated users for turn change.'));
-    });
+        const updatePromises = allUsers.map((singleUser) => updateUserPerDay(singleUser));
+        Promise.all(updatePromises).then(() => console.log('Updated users for day change.'));
 
-    // Tasks to complete at midnight (server time)
-    cron.schedule('0 0 * * *', async () => {
-      const allUsers = await prisma.users.findMany();
+        const cleanupPromises = doDailyCleanup();
+        Promise.all(cleanupPromises).then(() => console.log('Cleaned up database for day change.'));
+      });
 
-      const updatePromises = allUsers.map((singleUser) => updateUserPerDay(singleUser));
-      Promise.all(updatePromises).then(() => console.log('Updated users for day change.'));
-
-      const cleanupPromises = doDailyCleanup();
-      Promise.all(cleanupPromises).then(() => console.log('Cleaned up database for day change.'));
-    });
+      console.log('Registered daily update cron task');
+    }
   }
 };
