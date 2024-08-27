@@ -10,8 +10,6 @@ import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center } from
 import { InferGetServerSidePropsType } from "next";
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const { data: session } = useSession();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
   const colorScheme = user?.colorScheme;
@@ -66,15 +64,31 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   };
 
   useEffect(() => {
-    if (!hasSetPageInitially) {
-      const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
-      if (loggedInPlayerIndex !== -1 && !searchParams.get('page') && !searchParams.get('sortBy') && !searchParams.get('sortDir')) {
-        const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
-        setPage(newPage);
+    if(user){
+      if (!hasSetPageInitially) {
+        const pageParam = searchParams.get('page');
+        const sortByParam = searchParams.get('sortBy');
+        const sortDirParam = searchParams.get('sortDir');
+
+        if (!pageParam && !sortByParam && !sortDirParam) {
+          const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
+          
+          if (loggedInPlayerIndex !== -1) {
+            const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
+            setPage(newPage);
+          }
+        } else {
+          const initialPage = parseInt(pageParam) || 1;
+          setPage(initialPage);
+          setSortBy(sortByParam || 'overallrank');
+          setSortDir(sortDirParam || 'asc');
+        }
+
+        // Mark the initial setting as complete
+        setHasSetPageInitially(true);
       }
-      setHasSetPageInitially(true);
     }
-  }, [user, allUsers, sortBy, sortDir, router, searchParams, rowsPerPage, hasSetPageInitially]);
+  }, [user, allUsers, searchParams, rowsPerPage, hasSetPageInitially]);
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
