@@ -62,7 +62,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     const newSortDir = sortBy === newSortBy && sortDir === 'desc' ? 'asc' : 'desc';
     setSortBy(newSortBy);
     setSortDir(newSortDir);
-    console.log('setting page to 1 for handleSort')
     setPage(1);
   };
 
@@ -80,7 +79,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
     
-    console.log('setting page to 1 for handleRowsPerPageChange')
     setPage(1);
   };
 
