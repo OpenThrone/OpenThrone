@@ -16,6 +16,10 @@ const updateUserPerDay = (currentUser) => {
     let citizenUnit = currentUser.units.find(unit => unit.type === 'CITIZEN');
 
     if (citizenUnit) {
+      if (!citizenUnit.quantity) {
+        // Catch if something caused the quantity to be null at some point
+        citizenUnit.quantity = 0;
+      }
       // If CITIZEN unit is found, increment its quantity
       citizenUnit.quantity += currentUser.recruitingBonus;
     } else {
@@ -131,7 +135,7 @@ export async function register() {
       cron.schedule('0 0 * * *', async () => {
         const allUsers = await prisma.users.findMany();
 
-        const updatePromises = allUsers.map((singleUser) => updateUserPerDay(singleUser));
+        const updatePromises = allUsers.map((singleUser) => updateUserPerDay(new UserModel(singleUser)));
         Promise.all(updatePromises).then(() => console.log('Updated users for day change.'));
 
         const cleanupPromises = doDailyCleanup();
