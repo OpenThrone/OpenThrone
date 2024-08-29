@@ -1,58 +1,64 @@
-// components/Levels.js
+// pages/home/levels.js
 import { useEffect, useState } from 'react';
 import { DefaultLevelBonus } from '@/constants';
 import { useUser } from '@/context/users';
-import { Text, Card, Group, Button, Space, Center } from '@mantine/core';
-import styles from './levels.module.css'; // Import the CSS module
+import { Text, Space, Button, Center } from '@mantine/core';
+import styles from './levels.module.css';
+import LevelCard from '@/components/levelCard';
 
-const Levels = (props) => {
+const Levels = () => {
   const { user, forceUpdate } = useUser();
   const [levels, setLevels] = useState(user?.bonus_points ?? DefaultLevelBonus);
   const [proficiencyPoints, setProficiencyPoints] = useState(user?.availableProficiencyPoints ?? 0);
-
-  const incrementLevel = (typeToUpdate) => {
-    const updatedLevels = levels.map((level) => {
-      if (level.type === typeToUpdate) {
-        return { ...level, level: level.level + 1 };
-      }
-      return level;
-    });
-    setLevels(updatedLevels);
+  const defaultChangeQueue = {
+    OFFENSE: { start: 0, change: 0 },
+    DEFENSE: { start: 0, change: 0 },
+    INCOME: { start: 0, change: 0 },
+    INTEL: { start: 0, change: 0 },
+    PRICES: { start: 0, change: 0 },
   };
 
+  // Use defaultChangeQueue to initialize state
+  const [changeQueue, setChangeQueue] = useState(defaultChangeQueue);
+
   useEffect(() => {
-    setLevels(user?.bonus_points ?? DefaultLevelBonus);
-    setProficiencyPoints(user?.availableProficiencyPoints ?? 0);
+    console.log('changeQueue', changeQueue);
+    if (proficiencyPoints === 0 && user?.availableProficiencyPoints) {
+      setLevels(user?.bonus_points ?? DefaultLevelBonus);
+      setProficiencyPoints(user.availableProficiencyPoints);
+      setChangeQueue(defaultChangeQueue);
+    }
+
+    console.log('changeQueue', changeQueue);
   }, [user?.bonus_points, user?.availableProficiencyPoints]);
 
-  const handleAddBonus = async (type) => {
-    const previousLevels = [...levels];
-    const previousPoints = proficiencyPoints;
-    incrementLevel(type);
-
-    const requestData = { typeToUpdate: type };
-
-    try {
-      const response = await fetch('/api/account/bonusPoints', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setProficiencyPoints(user?.availableProficiencyPoints ?? proficiencyPoints - 1);
-      forceUpdate();
-    } catch (error) {
-      console.error('Failed to update bonus points:', error);
-      setLevels(previousLevels);
-      setProficiencyPoints(previousPoints);
+  const handleAddBonus = (type) => {
+    if (proficiencyPoints > 0 && (!changeQueue[type] || proficiencyPoints > 0)) {
+      const updatedQueue = { ...changeQueue };
+      updatedQueue[type].change++;
+      setProficiencyPoints(proficiencyPoints - 1);
+      setChangeQueue(updatedQueue);
     }
+  };
+
+  const handleReduceBonus = (type) => {
+    if (changeQueue[type] && changeQueue[type].change > 0) {
+      const updatedQueue = { ...changeQueue };
+      updatedQueue[type].change--;
+      setProficiencyPoints(proficiencyPoints + 1);
+      setChangeQueue(updatedQueue);
+    }
+  };
+
+  const getCurrentLevel = (type) => {
+    const baseLevel = levels.find((level) => level.type === type)?.level ?? 0;
+    const queuedChange = changeQueue[type]?.change ?? 0;
+    return baseLevel + queuedChange;
+  };
+
+  const handleSubmitChanges = async () => {
+    // Logic to save changes; iterate over changeQueue and update levels
+    // Example API call to submit changes to backend
   };
 
   return (
@@ -69,107 +75,75 @@ const Levels = (props) => {
         Levels
       </Text>
       <Space h="md" />
-      <Text size="lg">
-        You currently have {proficiencyPoints} proficiency points available.
-      </Text>
+      <Text size="lg">You currently have {proficiencyPoints} proficiency points available.</Text>
       <Text size="sm">Maximum % is 75</Text>
       <Space h="md" />
       <div className={styles.starLayout}>
         <div className={`${styles.starRow} ${styles.row1}`}>
-          <Card className={styles.starPoint}>
-            <Text size="lg" fw={700} align="center" style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}>
-              Strength (Offense)
-            </Text>
-            <Space h="md" />
-            <Text align="center">Current Bonus {levels.find((level) => level.type === 'OFFENSE')?.level ?? 0}%</Text>
-            <Space h="md" />
-            <Center>
-              <Button
-                w='75%'
-                onClick={() => handleAddBonus('OFFENSE')}
-                disabled={!user?.availableProficiencyPoints || levels.find((level) => level.type === 'OFFENSE')?.level >= 75}
-              >
-                Add
-              </Button>
-            </Center>
-          </Card>
+          <LevelCard
+            title="Strength (Offense)"
+            type="OFFENSE"
+            currentLevel={getCurrentLevel('OFFENSE')}
+            onAdd={() => handleAddBonus('OFFENSE')}
+            onReduce={() => handleReduceBonus('OFFENSE')}
+            canAdd={proficiencyPoints > 0 && getCurrentLevel('OFFENSE') < 75 && (!changeQueue['OFFENSE'] || changeQueue['OFFENSE'].change < proficiencyPoints)}
+            canReduce={changeQueue['OFFENSE']?.change > 0}
+            changeQueue={changeQueue}
+          />
         </div>
         <div className={`${styles.starRow} ${styles.row2}`}>
-          <Card className={styles.starPoint}>
-            <Text size="lg" fw={700} align="center" style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}>
-              Constitution (Defense)
-            </Text>
-            <Space h="md" />
-            <Text align="center">Current Bonus {levels.find((level) => level.type === 'DEFENSE')?.level ?? 0}%</Text>
-            <Space h="md" />
-            <Center>
-              <Button
-                w='75%'
-                onClick={() => handleAddBonus('DEFENSE')}
-                disabled={!user?.availableProficiencyPoints || levels.find((level) => level.type === 'DEFENSE')?.level >= 75}
-              >
-                Add
-              </Button>
-            </Center>
-          </Card>
-          <Card className={styles.starPoint}>
-            <Text size="lg" fw={700} align="center" style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}>
-              Wealth (Income)
-            </Text>
-            <Space h="md" />
-            <Text align="center">Current Bonus {levels.find((level) => level.type === 'INCOME')?.level ?? 0}%</Text>
-            <Space h="md" />
-            <Center>
-              <Button
-                w='75%'
-                onClick={() => handleAddBonus('INCOME')}
-                disabled={!user?.availableProficiencyPoints || levels.find((level) => level.type === 'INCOME')?.level >= 75}
-              >
-                Add
-              </Button>
-            </Center>
-          </Card>
+          <LevelCard
+            title="Constitution (Defense)"
+            type="DEFENSE"
+            currentLevel={getCurrentLevel('DEFENSE')}
+            onAdd={() => handleAddBonus('DEFENSE')}
+            onReduce={() => handleReduceBonus('DEFENSE')}
+            canAdd={proficiencyPoints > 0 && getCurrentLevel('DEFENSE') < 75 && (!changeQueue['DEFENSE'] || changeQueue['DEFENSE'].change < proficiencyPoints)}
+            canReduce={changeQueue['DEFENSE']?.change > 0}
+            changeQueue={changeQueue}
+          />
+          <LevelCard
+            title="Wealth (Income)"
+            type="INCOME"
+            currentLevel={getCurrentLevel('INCOME')}
+            onAdd={() => handleAddBonus('INCOME')}
+            onReduce={() => handleReduceBonus('INCOME')}
+            canAdd={proficiencyPoints > 0 && getCurrentLevel('INCOME') < 75 && (!changeQueue['INCOME'] || changeQueue['INCOME'].change < proficiencyPoints)}
+            canReduce={changeQueue['INCOME']?.change > 0}
+            changeQueue={changeQueue}
+          />
         </div>
         <div className={`${styles.starRow} ${styles.row3}`}>
-          <Card className={styles.starPoint}>
-            <Text size="lg" fw={700} align="center" style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}>
-              Dexterity (Spy & Sentry)
-            </Text>
-            <Space h="md" />
-            <Text align="center">Current Bonus {levels.find((level) => level.type === 'INTEL')?.level ?? 0}%</Text>
-            <Space h="md" />
-            <Center>
-              <Button
-                w='75%'
-                onClick={() => handleAddBonus('INTEL')}
-                disabled={!user?.availableProficiencyPoints || levels.find((level) => level.type === 'INTEL')?.level >= 75}
-              >
-                Add
-              </Button>
-            </Center>
-          </Card>
-          <Card className={styles.starPoint}>
-            <Text size="lg" fw={700} align="center" style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}>
-              Charisma (Reduced Prices)
-            </Text>
-            <Space h="md" />
-            <Text align="center">Current Bonus {levels.find((level) => level.type === 'PRICES')?.level ?? 0}%</Text>
-            <Space h="md" />
-            <Center>
-              <Button
-                w='75%'
-                onClick={() => handleAddBonus('PRICES')}
-                disabled={!user?.availableProficiencyPoints || levels.find((level) => level.type === 'PRICES')?.level >= 75}
-              >
-                Add
-              </Button>
-            </Center>
-          </Card>
+          <LevelCard
+            title="Dexterity (Spy & Sentry)"
+            type="INTEL"
+            currentLevel={getCurrentLevel('INTEL')}
+            onAdd={() => handleAddBonus('INTEL')}
+            onReduce={() => handleReduceBonus('INTEL')}
+            canAdd={proficiencyPoints > 0 && getCurrentLevel('INTEL') < 75 && (!changeQueue['INTEL'] || changeQueue['INTEL'].change < proficiencyPoints)}
+            canReduce={changeQueue['INTEL']?.change > 0}
+            changeQueue={changeQueue}
+          />
+          <LevelCard
+            title="Charisma (Reduced Prices)"
+            type="PRICES"
+            currentLevel={getCurrentLevel('PRICES')}
+            onAdd={() => handleAddBonus('PRICES')}
+            onReduce={() => handleReduceBonus('PRICES')}
+            canAdd={proficiencyPoints > 0 && getCurrentLevel('PRICES') < 75 && (!changeQueue['PRICES'] || changeQueue['PRICES'].change < proficiencyPoints)}
+            canReduce={changeQueue['PRICES']?.change > 0}
+            changeQueue={changeQueue}
+          />
         </div>
       </div>
+      {Object.values(changeQueue).some((change) => change.change > 0) && (
+        <Center>
+          <Button onClick={handleSubmitChanges} style={{ marginTop: '20px' }}>
+            Save Changes
+          </Button>
+        </Center>
+      )}
     </div>
-
-
   );
 };
 
