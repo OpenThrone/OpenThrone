@@ -21,8 +21,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     throw new Error('Password is required');
   }
   try {
-    await prisma.$transaction(async (prisma) => {
-      const user = await prisma.users.findUnique({ where: { id: userId } });
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.users.findUnique({ where: { id: userId } });
 
       if (!user) {
         throw new Error('User not found');
@@ -117,7 +117,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         ],
       };
 
-      await prisma.users.update({
+      await tx.users.update({
         where: { id: user.id },
         data: updateData,
       });

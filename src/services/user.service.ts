@@ -2,8 +2,8 @@ import md5 from "md5";
 import prisma from "@/lib/prisma";
 
 export const createUser = async (email: string, password_hash: string, display_name: string, race: string, class_name: string, locale: string = 'en-US') => {
-  return await prisma.$transaction(async (prisma) => {
-    const user = await prisma.users.create({
+  return await prisma.$transaction(async (tx) => {
+    const user = await tx.users.create({
       data: {
         email,
         password_hash,
@@ -14,7 +14,7 @@ export const createUser = async (email: string, password_hash: string, display_n
       },
     });
 
-    await prisma.users.update({
+    await tx.users.update({
       where: { id: user.id },
       data: { recruit_link: md5(user.id.toString()) },
     });

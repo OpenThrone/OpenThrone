@@ -98,9 +98,9 @@ const handler = async(
       }
     });
 
-    await prisma.$transaction(async (prisma) => {
+    await prisma.$transaction(async (tx) => {
       // Update the user's gold and items in the database
-      await prisma.users.update({
+      await tx.users.update({
         where: { id: userId },
         data: {
           gold: BigInt(user.gold) - BigInt(totalCost),
@@ -108,7 +108,7 @@ const handler = async(
         },
       });
     
-      await prisma.bank_history.create({
+      await tx.bank_history.create({
         data: {
           gold_amount: BigInt(totalCost),
           from_user_id: (operation === 'buy' ? userId : 0),
