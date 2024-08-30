@@ -10,8 +10,6 @@ import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center } from
 import { InferGetServerSidePropsType } from "next";
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const { data: session } = useSession();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
   const colorScheme = user?.colorScheme;
@@ -24,6 +22,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [attackRangeMin, setAttackRangeMin] = useState(1);
   const [attackRangeMax, setAttackRangeMax] = useState(5);
+  const [hasSetPageInitially, setHasSetPageInitially] = useState(false);
 
   useEffect(() => {
     const start = (page - 1) * rowsPerPage;
@@ -45,7 +44,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     paginatedPlayers.forEach((player, index) => player.overallrank = (sortDir === 'asc' ? start + index + 1 : allUsers.length - start - index));
 
     setPlayers(paginatedPlayers);
-  }, [page, sortBy, sortDir, allUsers]);
+  }, [page, sortBy, sortDir, allUsers, rowsPerPage]);
 
   useEffect(() => {
     const golds = players.map(player => toLocale(player.gold, user?.locale));
@@ -65,15 +64,35 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   };
 
   useEffect(() => {
-    const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
-    if (loggedInPlayerIndex !== -1 && !searchParams.get('page') && !searchParams.get('sortBy') && !searchParams.get('sortDir')) {
-      const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
-      setPage(newPage);
+    if(user){
+      if (!hasSetPageInitially) {
+        const pageParam = searchParams.get('page');
+        const sortByParam = searchParams.get('sortBy');
+        const sortDirParam = searchParams.get('sortDir');
+
+        if (!pageParam && !sortByParam && !sortDirParam) {
+          const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
+          
+          if (loggedInPlayerIndex !== -1) {
+            const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
+            setPage(newPage);
+          }
+        } else {
+          const initialPage = parseInt(pageParam) || 1;
+          setPage(initialPage);
+          setSortBy(sortByParam || 'overallrank');
+          setSortDir(sortDirParam || 'asc');
+        }
+
+        // Mark the initial setting as complete
+        setHasSetPageInitially(true);
+      }
     }
-  }, [user, allUsers, sortBy, sortDir, router, searchParams]);
+  }, [user, allUsers, searchParams, rowsPerPage, hasSetPageInitially]);
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
+    
     setPage(1);
   };
 
@@ -209,7 +228,23 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
 export const getServerSideProps = async () => {
   try {
-    let allUsers = await prisma.users.findMany({ where: { AND: [{ id: { not: 0 } }, { last_active: { not: null } }] } } );
+    let allUsers = await prisma.users.findMany({
+      where: {
+        AND: [{ id: { not: 0 } }, { last_active: { not: null } }],
+      },
+      select: { // limit the amount of data we're sending back - fixes data prop concerns for performance
+        id: true,
+        display_name: true,
+        rank: true,
+        last_active: true,
+        avatar: true,
+        units: true,
+        gold: true,
+        race: true,
+        class: true,
+        experience: true,
+      },
+    });
     allUsers.forEach(user => {
       const nowdate = new Date();
       const lastActiveTimestamp = new Date(user.last_active).getTime();

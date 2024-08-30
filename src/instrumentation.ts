@@ -12,30 +12,32 @@ import { newCalculateStrength } from './utils/attackFunctions';
  * @return {Promise}
  */
 const updateUserPerDay = (currentUser) => {
-  const { newUser } = currentUser;
-
   try {
     // Find the CITIZEN unit
-    let citizenUnit = newUser.units.find(unit => unit.type === 'CITIZEN');
+    let citizenUnit = currentUser.units.find(unit => unit.type === 'CITIZEN');
 
     if (citizenUnit) {
+      if (!citizenUnit.quantity) {
+        // Catch if something caused the quantity to be null at some point
+        citizenUnit.quantity = 0;
+      }
       // If CITIZEN unit is found, increment its quantity
-      citizenUnit.quantity += newUser.recruitingBonus;
+      citizenUnit.quantity += currentUser.recruitingBonus;
     } else {
       // If CITIZEN unit is not found, create one and set its quantity
       citizenUnit = {
         type: 'CITIZEN',
         level: 1,
-        quantity: newUser.recruitingBonus
+        quantity: currentUser.recruitingBonus
       };
-      newUser.units.push(citizenUnit);
+      currentUser.units.push(citizenUnit);
     }
 
     return prisma.users.update({
-      where: { id: newUser.id },
+      where: { id: currentUser.id },
       data: {
-        units: newUser.units,
-        ...(!newUser.recruitingLink && { recruit_link: md5(newUser.id.toString()) }),
+        units: currentUser.units,
+        ...(!currentUser.recruitingLink && { recruit_link: md5(currentUser.id.toString()) }),
       },
     });
   } catch (error) {
@@ -51,19 +53,17 @@ const updateUserPerDay = (currentUser) => {
  * @return {Promise}
  */
 const updateUserPerTurn = (currentUser, rank) => {
-  const { newUser } = currentUser;
-
   try {
-    const updatedGold = BigInt(newUser.goldPerTurn.toString()) + newUser.gold;
-    const { killingStrength, defenseStrength } = newCalculateStrength(newUser, 'OFFENSE');
-    const newOffense = newUser.getArmyStat('OFFENSE')
-    const newDefense = newUser.getArmyStat('DEFENSE')
-    const newSpying = newUser.getArmyStat('SPY')
-    const newSentry = newUser.getArmyStat('SENTRY')
+    const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + currentUser.gold;
+    const { killingStrength, defenseStrength } = newCalculateStrength(currentUser, 'OFFENSE');
+    const newOffense = currentUser.getArmyStat('OFFENSE')
+    const newDefense = currentUser.getArmyStat('DEFENSE')
+    const newSpying = currentUser.getArmyStat('SPY')
+    const newSentry = currentUser.getArmyStat('SENTRY')
 
     let updateData = {
       gold: updatedGold,
-      attack_turns: newUser.attackTurns + 1,
+      attack_turns: currentUser.attackTurns + 1,
       rank: rank,
       killing_str: killingStrength,
       defense_str: defenseStrength,
@@ -74,7 +74,7 @@ const updateUserPerTurn = (currentUser, rank) => {
     };
 
     return prisma.users.update({
-      where: { id: newUser.id },
+      where: { id: currentUser.id },
       data: updateData,
     });
   } catch (error) {
@@ -90,14 +90,14 @@ const updateUserPerTurn = (currentUser, rank) => {
 const doDailyCleanup = () => {
   const twentyDaysAgo = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
   const tablesToClean = [
-    'attack_log',
-    'bank_history',
-    'recruit_history',
+    { name: 'attack_log', dateField: 'timestamp' },
+    { name: 'bank_history', dateField: 'date_time' },
+    { name: 'recruit_history', dateField: 'timestamp' },
   ];
 
-  return tablesToClean.map((tableName) => prisma[tableName].deleteMany({
+  return tablesToClean.map((table) => prisma[table.name].deleteMany({
     where: {
-      date_time: {
+      [table.dateField]: {
         lt: twentyDaysAgo,
       },
     },
@@ -132,9 +132,9 @@ export async function register() {
           };
         });
 
-        userRanks.sort((a, b) => b.rankScore - a.rankscore);
+        userRanks.sort((a, b) => b.rankScore - a.rankScore);
 
-        const updatePromises = userRanks.map((userRank, index) => updateUserPerTurn(userRank, index + 1));
+        const updatePromises = userRanks.map((userRank, index) => updateUserPerTurn(userRank.newUser, index + 1));
 
         Promise.all(updatePromises).then(() => console.log('Updated users for turn change.'));
       });
@@ -147,7 +147,7 @@ export async function register() {
       cron.schedule('0 0 * * *', async () => {
         const allUsers = await prisma.users.findMany();
 
-        const updatePromises = allUsers.map((singleUser) => updateUserPerDay(singleUser));
+        const updatePromises = allUsers.map((singleUser) => updateUserPerDay(new UserModel(singleUser)));
         Promise.all(updatePromises).then(() => console.log('Updated users for day change.'));
 
         const cleanupPromises = doDailyCleanup();
