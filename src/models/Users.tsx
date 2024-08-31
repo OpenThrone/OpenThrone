@@ -309,7 +309,11 @@ class UserModel {
     const offenseLevelBonus = this.bonus_points
       .filter((bonus) => bonus.type === 'OFFENSE')
       .reduce((acc, bonus) => acc + bonus.level, 0);
-    return attack + offenseLevelBonus;
+    const siegeUpgradeBonus = OffenseiveUpgrades.filter(
+      (upgrade) => upgrade.level === this.structure_upgrades.find((upgrade) => upgrade.type === 'OFFENSE').level
+    ).reduce((acc, upgrade) => acc + upgrade.offenseBonusPercentage, 0);
+    
+    return attack + offenseLevelBonus + siegeUpgradeBonus;
   }
 
   /**
@@ -535,12 +539,10 @@ class UserModel {
 
     let totalStat = 0;
     const unitCoverage = new Map();  // Keeps track of how many times each unit has been covered
-
     sortedUnits.forEach((unit, index) => {
       const unitFiltered = UnitTypes.find((unitType) => unitType.type === unit.type && unitType.level === unit.level);
       if (unitFiltered === undefined) return 0;
       totalStat += (unitFiltered?.bonus || 0) * unit.quantity;
-
       const itemCounts: ItemCounts = {};
       sortedItems.forEach((item) => {
         itemCounts[item.type] = itemCounts[item.type] || 0;
@@ -550,57 +552,33 @@ class UserModel {
         item.quantity -= usableQuantity;
         itemCounts[item.type] += usableQuantity;
       });
+    })
 
-      // Apply battle upgrade bonuses if type is 'DEFENSE'
-      if (type === 'DEFENSE') {
-        const usersDefenseBattleUpgrades = this.battle_upgrades.filter(upgrade => upgrade.type === 'DEFENSE');
-        const applicableUpgrades = this.availableDefenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel);
-
-        applicableUpgrades.forEach(upgrade => {
-          const userUpgrade = usersDefenseBattleUpgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
-          
-          if (userUpgrade && userUpgrade.quantity > 0) {
-            //console.log('Applying upgrade', upgrade, 'to unit', unit, 'with user upgrade', userUpgrade);
-            const bonusPerUnit = upgrade.bonus / upgrade.unitsCovered;
-            let remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
-            const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered); // Ensure not to cover more than upgrade allows
-            //console.log(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered, upgrade.unitsCovered)
-            const totalBonusForUnits = bonusPerUnit * unitsCovered;
-            //console.log('Total bonus for units', totalBonusForUnits, 'units covered', unitsCovered, 'remaining coverage', remainingCoverage, 'total bonus per unit', bonusPerUnit, 'total bonus', totalBonusForUnits)
-            totalStat += totalBonusForUnits;
-
-            // Update the quantity of the upgrade and track coverage
-            userUpgrade.quantity -= 1;  // Decrement by the number of upgrades used
-            unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
-          }
-        });
-      }
+    sortedUnits.forEach((unit, index) => {
       if (type === 'OFFENSE') {
         const usersOffenseBattleUpgrades = this.battle_upgrades.filter(upgrade => upgrade.type === 'OFFENSE');
-        const applicableUpgrades = this.availableOffenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel);
+        const applicableUpgrades = this.availableOffenseBattleUpgrades
+          .filter(upgrade => unit.level >= upgrade.minUnitLevel)
+          .sort((a, b) => b.level - a.level); // Sort upgrades by level in descending order
+
         if (applicableUpgrades.length !== 0) {
           applicableUpgrades.forEach(upgrade => {
             const userUpgrade = usersOffenseBattleUpgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
             if (userUpgrade && userUpgrade.quantity > 0) {
-              //console.log('Applying upgrade', upgrade, 'to unit', unit, 'with user upgrade', userUpgrade);
               const bonusPerUnit = upgrade.bonus / upgrade.unitsCovered;
               let remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
               const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered); // Ensure not to cover more than upgrade allows
-              //console.log(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered, upgrade.unitsCovered)
               const totalBonusForUnits = bonusPerUnit * unitsCovered;
-              //console.log('Total bonus for units', totalBonusForUnits, 'units covered', unitsCovered, 'remaining coverage', remainingCoverage, 'total bonus per unit', bonusPerUnit, 'total bonus', totalBonusForUnits)
               totalStat += totalBonusForUnits;
-
+              
               // Update the quantity of the upgrade and track coverage
-              userUpgrade.quantity -= 1;  // Decrement by the number of upgrades used
+              userUpgrade.quantity -= Math.ceil(unitsCovered / upgrade.unitsCovered);  // Decrement by the number of upgrades used
               unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
             }
           });
-
         }
       }
     });
-
     switch (type) {
       case 'OFFENSE':
         totalStat *= 1 + this.attackBonus / 100;
