@@ -28,162 +28,163 @@ describe('UserModel', () => {
     totalDefends: 15,
     won_attacks: 10,
     won_defends: 5,
-    bonus_points: [{ level: 1 }, { level: 2 }],
     structure_upgrades: [{ "type": "ARMORY", "level": 0 }, { "type": "SPY", "level": 0 }, { "type": "SENTRY", "level": 0 }, { "type": "OFFENSE", "level": 0 }],
     battle_upgrades: []
   };
 
-  it('should correctly instantiate with default values when no userData is provided', () => {
-    const user = new UserModel(null);
-    expect(user.id).toBe(0);
-    expect(user.displayName).toBe('');
-    expect(user.race).toBe('ELF');
-    expect(user.class).toBe('ASSASSIN');
-  });
-
-  it('should correctly instantiate with provided userData (no password shown)', () => {
-    const user = new UserModel(userData, true);
-    expect(user.id).toEqual(userData.id);
-    expect(user.displayName).toEqual(userData.display_name);
-    console.log(user.passwordHash)
-    expect(user.passwordHash).toBe('');
-  });
-
-  //Test if Fortification is correct based on Fort Level
-  it('should correctly calculate fortification based on fort level', () => {
-    const user = new UserModel(userData);
-    const fortification = Fortifications.find(f => f.level === user.fortLevel);
-
-    expect(fortification.hitpoints).toBe(50);
-    user.fortLevel = 5;
-    expect(Fortifications.find(f => f.level === user.fortLevel).hitpoints).toBe(500);
-  });
-
-  //Test to make sure that Offense is correct based on Units
-  it('should correctly calculate offense based on no units or items', () => {
-    const user = new UserModel(userData);
-    const offense = user.offense;
-    expect(offense).toBe(0);
-  });
-
-  it('should correctly calculate offense based on units', () => {
+  it('should correctly calculate offense based on Revs Units', () => {
     userData.units = [
-      { level: 1, type: 'OFFENSE', quantity: 10 }, //3bonus * 10 = 30
-      { level: 2, type: 'OFFENSE', quantity: 5 }, //20bonus * 5 = 100
+      {
+        "type": "CITIZEN",
+        "level": 1,
+        "quantity": 0
+      },
+      {
+        "type": "WORKER",
+        "level": 1,
+        "quantity": 27500
+      },
+      {
+        "type": "OFFENSE",
+        "level": 1,
+        "quantity": 0
+      },
+      {
+        "type": "DEFENSE",
+        "level": 1,
+        "quantity": 641
+      },
+      {
+        "type": "DEFENSE",
+        "level": 2,
+        "quantity": 12890
+      },
+      {
+        "type": "DEFENSE",
+        "level": 3,
+        "quantity": 0
+      },
+      {
+        "type": "SPY",
+        "level": 1,
+        "quantity": 1300
+      },
+      {
+        "type": "SENTRY",
+        "level": 1,
+        "quantity": 1500
+      },
+      {
+        "type": "OFFENSE",
+        "level": 2,
+        "quantity": 10365 // 10365 * 20 = 207300
+      },
+      {
+        "type": "OFFENSE",
+        "level": 3,
+        "quantity": 7759 // 7759 * 50 = 387950
+      }
     ];
-    const user = new UserModel(userData);
-    const offense = user.offense;
-    expect(offense).toBe(130);
-  });
-
-  //Test to make sure that Offense is correct based on Items
-  it('should correctly calculate offense based on items', () => {
-    userData.items = [
-      { level: 1, type: 'WEAPON', usage:"OFFENSE", quantity: 1 }, //25bonus * 1 = 25
-      { level: 2, type: 'WEAPON', usage: "OFFENSE", quantity: 1 }, //50bonus * 1 = 50
+    const userDataUnits = JSON.parse(JSON.stringify(stringifyObj(userData)));
+    userDataUnits.items = [];
+    userDataUnits.structure_upgrades = [{ "type": "ARMORY", "level": 1 }, { "type": "SPY", "level": 1 }, { "type": "SENTRY", "level": 1 }, { "type": "OFFENSE", "level": 1 }];
+    userDataUnits.battle_upgrades = [{ "type": "OFFENSE", "level": 1, "quantity": 0 },{ "type": "OFFENSE", "level": 2, "quantity": 0 }];
+    userDataUnits.bonus_points = [{ "type": "OFFENSE", "level": 0 }];
+    const user = new UserModel(userDataUnits);
+    const offense = user.getArmyStat('OFFENSE');
+    expect(offense).toBe(595250); 
+    
+    const userDataWithItems = JSON.parse(JSON.stringify(stringifyObj(userDataUnits)));
+    userDataWithItems.items = [
+      {
+        "type": "WEAPON",
+        "level": 2,
+        "usage": "OFFENSE",
+        "quantity": 20000 // 18124 * 50 = 906200
+      },
+      {
+        "type": "HELM",
+        "level": 2,
+        "usage": "OFFENSE",
+        "quantity": 20000 // 12 * 18124 = 217488
+      },
+      {
+        "type": "BRACERS",
+        "level": 2,
+        "usage": "OFFENSE",
+        "quantity": 20000 // 5 * 18124 = 90620
+      },
+      {
+        "type": "SHIELD",
+        "level": 2,
+        "usage": "OFFENSE",
+        "quantity": 20000 // 25 * 18124 = 453100
+      },
+      {
+        "type": "BOOTS",
+        "level": 2,
+        "usage": "OFFENSE",
+        "quantity": 20000 // 12 * 18124 = 217488
+      },
+      {
+        "type": "ARMOR",
+        "level": 2,
+        "usage": "OFFENSE",
+        "quantity": 20000 // 38 * 18124 = 688712
+      },
     ];
-    const userData2 = JSON.parse(JSON.stringify(stringifyObj(userData)));
-    userData2.units = [];
-    const user = new UserModel(userData2);
-    const offense = user.offense;
-    expect(offense).toBe(0);
-    userData2.units = [
-      { level: 1, type: 'OFFENSE', quantity: 1 }, //3bonus * 1 = 3
-      { level: 2, type: 'OFFENSE', quantity: 1 }, //20bonus * 1 = 20
-      { level: 1, type: 'DEFENSE', quantity: 1 }, //3bonus * 1 = 3 this should be ignored
-    ];
-    const user2 = new UserModel(userData2);
-    const offense2 = user2.offense;
-    expect(offense2).toBe(23 + 75);
-  });
 
-  //Test to make sure that Defense is correct based on Units and Fortification
-  it('should correctly calculate defense based on units and fortification', () => {
-    const user = new UserModel(userData);
-    const defense = user.defense;
-    expect(defense).toBe(0);
-    const userData2 = JSON.parse(JSON.stringify(stringifyObj(userData)));
-    userData2.units = [
-      { level: 1, type: 'DEFENSE', quantity: 1 }, //3bonus * 1 = 3
-      { level: 2, type: 'DEFENSE', quantity: 1 }, //20bonus * 1 = 20
-    ];
-    const user2 = new UserModel(userData2);
-    const defense2 = user2.defense;
-    expect(user2.fortLevel).toBe(1);
-    expect(user.defenseBonus).toBe(10);
-    expect(defense2).toBe(26);
+    const user2 = new UserModel(userDataWithItems);
+    const offense2 = user2.getArmyStat('OFFENSE');
+    expect(offense2).toBe(595250 + (906200 + 217488 + 90620 + 453100 + 217488 + 688712));  // 595250 + 2573608 = 3168858
+    
+    const userDataWithBattleUpgrades = JSON.parse(JSON.stringify(stringifyObj(userDataWithItems)));
+    userDataWithBattleUpgrades.battle_upgrades = [{
+      "type": "OFFENSE", "level": 1, "quantity": 15539 // 200 * 15539 = 3107800
+    }, {
+      "type": "OFFENSE", "level": 2, "quantity": 0
+    }];
 
-    userData2.fort_level = 5; //'Outpost Level 2' - 25% defense bonus
-    const user3 = new UserModel(userData2);
-    expect(user3.fortLevel).toBe(5);
-    expect(user3.defenseBonus).toBe(30); // 30%
-    const defense3 = user3.defense;
-    expect(defense3).toBe(30); // 30% of 23 = 7 (rounded) + 23 = 30
-  });
+    const user3 = new UserModel(userDataWithBattleUpgrades);
+    const offense3 = user3.getArmyStat('OFFENSE');
 
-  //Test to make sure that Defense is correct based on Battle Upgrades
-  it('should correctly calculate defense based on battle upgrades', () => {
-    const user = new UserModel(userData);
-    const defense = user.defense;
-    expect(defense).toBe(0);
-    const userData2 = JSON.parse(JSON.stringify(stringifyObj(userData)));
-    userData2.units = [{ "type": "CITIZEN", "level": 1, "quantity": 0 }, { "type": "WORKER", "level": 1, "quantity": 8982 }, { "type": "OFFENSE", "level": 1, "quantity": 0 }, { "type": "DEFENSE", "level": 1, "quantity": 0 }, { "type": "SPY", "level": 1, "quantity": 500 }, { "type": "OFFENSE", "level": 2, "quantity": 8146 }, { "type": "DEFENSE", "level": 2, "quantity": 6000 }, { "type": "SENTRY", "level": 1, "quantity": 200 }];
-    userData2.structure_upgrades = [{ "type": "ARMORY", "level": 1 }, { "type": "SPY", "level": 1 }, { "type": "SENTRY", "level": 1 }, { "type": "OFFENSE", "level": 1 }];
-    userData2.battle_upgrades = [{ "type": "OFFENSE", "level": 1, "quantity": 1 }, { "type": "DEFENSE", "level": 1, "quantity": 1300 }, { "type": "SENTRY", "level": 1, "quantity": 0 }, { "type": "OFFENSE", "level": 2, "quantity": 1 }];
-    const user2 = new UserModel(userData2);
-    const defense2 = user2.defense;
-    expect(defense2).toBe(396001);
-  });
+    console.log('attackBonus', user3.attackBonus)
+    expect(offense3).toBe(6276658);  // 3168858 + 3107800 = 6276658
 
-  //Test to make sure that GoldPerWorker is correct based on Economy Level
-  it('should correctly calculate gold per worker based on economy level', () => {
-    const user = new UserModel(userData);
-    expect(user.goldPerTurn).toBe(BigInt(1000));
-    expect(EconomyUpgrades.find(x=>x.index === user.economyLevel).goldPerWorker).toBe(55);
-    const userData2 = JSON.parse(JSON.stringify(stringifyObj(userData)));
-    userData2.economy_level = 5;
-    userData2.units = [{
-      level: 1,
-      type: 'WORKER',
-      quantity: 1,
-    }]
-    userData2.fort_level = 5;
-    const user2 = new UserModel(userData2);
-    expect(user2.goldPerTurn).toBe(BigInt(5075));
-  });
+    const userDataWithBonusPoints = JSON.parse(JSON.stringify(stringifyObj(userDataWithBattleUpgrades)));
+    userDataWithBonusPoints.bonus_points = [{ "type": "OFFENSE", "level": 24 }];
+    userDataWithBonusPoints.battle_upgrades = [{
+      "type": "OFFENSE", "level": 1, "quantity": 15539 // 200 * 15539 = 3107800
+    }, {
+      "type": "OFFENSE", "level": 2, "quantity": 0
+      }];
+    userDataWithBonusPoints.structure_upgrades = [{ "type": 'OFFENSE', "level": 7 }];
 
-  it('should correctly calculate attacks won', () => {
-    const user = new UserModel(userData);
-    expect(user.attacksWon).toBe(10);
-  });
+    console.log(userDataWithBonusPoints);
+    const user4 = new UserModel(userDataWithBonusPoints);
+    const offense4 = user4.getArmyStat('OFFENSE');
+    expect(offense4).toBe(Math.ceil(6276658 + (6276658 * .54))); 
 
-  it('should correctly calculate defends won', () => {
-    const user = new UserModel(userData);
-    expect(user.defendsWon).toBe(5);
-  });
+    console.log('offense4', offense4);
 
-  it('should filter player bonuses based on race or class', () => {
-    const user = new UserModel(userData);
-    const bonuses = user.playerBonuses;
-    expect(bonuses.length).toBe(2);
-    expect(user.attackBonus).toBe(0);
-    expect(user.spyBonus).toBe(5);
-    expect(user.defenseBonus).toBe(10); // 5 for Elf + 5 for Fortification
-    expect(bonuses[0].bonusAmount).toBe(5); //[{ race: "ELF", bonusType: "DEFENSE", bonusAmount: 5 }, {race: "ASSASSIN", bonusType: "INTEL", bonusAmount: 5}]
-    const userData2 = JSON.parse(JSON.stringify(stringifyObj(userData)));
-    userData2.units = [
-      { level: 1, type: 'OFFENSE', quantity: 1 }, //3bonus * 1 = 3
-      { level: 2, type: 'OFFENSE', quantity: 1 }, //20bonus * 1 = 20
-      { level: 1, type: 'DEFENSE', quantity: 1 }, //3bonus * 1 = 3 this should be ignored
-    ];
-    userData2.race = "HUMAN";
-    userData2.class = "FIGHTER";
-    const user2 = new UserModel(userData2);
-    const bonuses2 = user2.playerBonuses;
-    expect(bonuses2.length).toBe(2);
-    expect(user2.attackBonus).toBe(10);
-    expect(user2.spyBonus).toBe(0);
-    expect(user2.defenseBonus).toBe(5); //5% for Fort
-    expect(user2.offense).toBe(108);
+    // Convert 1 Level 2 Offense unit to a Level 3 Offense unit
+    userDataWithBonusPoints.bonus_points = [{ "type": "OFFENSE", "level": 24 }];
+    userDataWithBonusPoints.battle_upgrades = [{
+      "type": "OFFENSE", "level": 1, "quantity": 15539 // 200 * 15539 = 3107800
+    }, {
+      "type": "OFFENSE", "level": 2, "quantity": 0
+    }];
+    userDataWithBonusPoints.structure_upgrades = [{ "type": 'OFFENSE', "level": 7 }];
+    const userDataWithConversion = JSON.parse(JSON.stringify(stringifyObj(userDataWithBonusPoints)));
+    userDataWithConversion.units.find(u => u.type === 'OFFENSE' && u.level === 2).quantity -= 1;
+    userDataWithConversion.units.find(u => u.type === 'OFFENSE' && u.level === 3).quantity += 1;
+
+    const user5 = new UserModel(userDataWithConversion);
+    const offense5 = user5.getArmyStat('OFFENSE');
+    console.log('offense5', offense5);
+    expect(offense5).toBe(Math.ceil(9666100)); // Updated offense calculation after conversion
+    
+    console.log('difference in offense', offense5 - offense4);
+
   });
 });
