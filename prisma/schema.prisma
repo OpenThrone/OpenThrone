@@ -62,6 +62,7 @@ model users {
   alliance_memberships    alliance_memberships[]
   socialRelationsAsPlayer social[]               @relation("PlayerRelations")
   socialRelationsAsFriend social[]               @relation("FriendRelations")
+  permissions             PermissionGrant[]      @relation("PermissionGrants")
 }
 
 model social {
@@ -222,4 +223,17 @@ model alliance_roles {
   members     alliance_memberships[]
 
   @@index([alliance_id], name: "idx_role_alliance")
+}
+
+enum PermissionType {
+  ADMINISTRATOR
+  MODERATOR
+}
+
+model PermissionGrant {
+  id          Int                    @id @default(autoincrement())
+  type        PermissionType
+  user_id     Int
+  user        users                  @relation("PermissionGrants", fields: [user_id], references: [id])
+  created_at  DateTime               @default(now())
 }

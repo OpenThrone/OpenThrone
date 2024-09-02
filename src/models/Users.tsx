@@ -19,6 +19,7 @@ import type {
   Item,
   ItemCounts,
   UnitUpgradeType,
+  PermissionGrant,
 } from '@/types/typings';
 
 import {
@@ -122,6 +123,8 @@ class UserModel {
 
   public sentry_str: number;
 
+  public permissions: any[];
+
   constructor(userData?: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
@@ -157,6 +160,7 @@ class UserModel {
     this.battle_upgrades = [];
     this.locale = 'en-US';
     this.avatar = '';
+    this.permissions = [];
     if (userData) {
       this.id = userData.id;
       this.displayName = userData.display_name;
@@ -210,6 +214,8 @@ class UserModel {
       } else {
         this.avatar = getAssetPath('shields', '150x150', this.race)
       }
+
+      this.permissions = userData.permissions;
     }
   }
 
