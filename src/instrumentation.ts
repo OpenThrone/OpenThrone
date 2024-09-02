@@ -3,6 +3,7 @@ import md5 from 'md5';
 
 import UserModel from '@/models/Users';
 import { calculateOverallRank } from '@/utils/utilities';
+import { newCalculateStrength } from './utils/attackFunctions';
 
 /**
  * Update a single user for a new day.
@@ -54,11 +55,22 @@ const updateUserPerDay = (currentUser) => {
 const updateUserPerTurn = (currentUser, rank) => {
   try {
     const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + currentUser.gold;
+    const { killingStrength, defenseStrength } = newCalculateStrength(currentUser, 'OFFENSE');
+    const newOffense = currentUser.getArmyStat('OFFENSE')
+    const newDefense = currentUser.getArmyStat('DEFENSE')
+    const newSpying = currentUser.getArmyStat('SPY')
+    const newSentry = currentUser.getArmyStat('SENTRY')
 
     let updateData = {
       gold: updatedGold,
       attack_turns: currentUser.attackTurns + 1,
       rank: rank,
+      killing_str: killingStrength,
+      defense_str: defenseStrength,
+      offense: newOffense,
+      defense: newDefense,
+      spy: newSpying,
+      sentry: newSentry,
     };
 
     return prisma.users.update({
