@@ -1,8 +1,9 @@
-// components/levelCard.js
-import React from 'react';
+// components/levelCard.ts
+import React, { useEffect } from 'react';
 import { Text, Card, Button, Center, Space, Tooltip } from '@mantine/core';
+import styles from '../pages/home/levels.module.css'
 
-const levelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canReduce, changeQueue }) => {
+const LevelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canReduce, changeQueue }) => {
   const tooltipText = {
     OFFENSE: 'Strength: Increases your Offense by x%',
     DEFENSE: 'Constitution: Increases your Defense by x%',
@@ -11,11 +12,21 @@ const levelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canRedu
     PRICES: 'Charisma: Reduces the price of Units, Items, and Upgrades by x%',
   }[type];
 
-  console.log('changeQueueInLevelCard', changeQueue);
-  console.log('type', type);
+  const [Init, setInit] = React.useState(false);
 
+  useEffect(() => {
+    if (currentLevel === 0) {
+      setInit(true);
+    }
+  }, [currentLevel]);
+
+  const handleAddClick = () => {
+    setInit(false);
+    onAdd();
+  };
+  
   return (
-    <Card>
+    <Card className={styles.starPoint}>
       <Tooltip label={tooltipText} withArrow>
         <Text size="lg" fw={700} align="center" style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}>
           {title}
@@ -26,8 +37,8 @@ const levelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canRedu
       <Text align="center">New Pending: {currentLevel}%</Text>
       <Space h="md" />
       <Center>
-        {currentLevel === 0 ? (
-          <Button onClick={onAdd} style={{ cursor: 'pointer' }}>
+        {Init ? (
+          <Button onClick={handleAddClick} style={{ cursor: 'pointer' }}>
             Add
           </Button>
         ) : (
@@ -46,4 +57,4 @@ const levelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canRedu
   );
 };
 
-export default levelCard;
+export default LevelCard;

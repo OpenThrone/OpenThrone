@@ -1,4 +1,4 @@
-// pages/home/levels.js
+// pages/home/levels.tsx
 import { useEffect, useState } from 'react';
 import { DefaultLevelBonus } from '@/constants';
 import { useUser } from '@/context/users';
@@ -10,6 +10,7 @@ const Levels = () => {
   const { user, forceUpdate } = useUser();
   const [levels, setLevels] = useState(user?.bonus_points ?? DefaultLevelBonus);
   const [proficiencyPoints, setProficiencyPoints] = useState(user?.availableProficiencyPoints ?? 0);
+  const [initialized, setInitialized] = useState(false);
   const defaultChangeQueue = {
     OFFENSE: { start: 0, change: 0 },
     DEFENSE: { start: 0, change: 0 },
@@ -22,15 +23,15 @@ const Levels = () => {
   const [changeQueue, setChangeQueue] = useState(defaultChangeQueue);
 
   useEffect(() => {
-    console.log('changeQueue', changeQueue);
-    if (proficiencyPoints === 0 && user?.availableProficiencyPoints) {
-      setLevels(user?.bonus_points ?? DefaultLevelBonus);
-      setProficiencyPoints(user.availableProficiencyPoints);
-      setChangeQueue(defaultChangeQueue);
+    if (user) {
+      setLevels(user.bonus_points);
+      if (!initialized) {
+        setProficiencyPoints(user.availableProficiencyPoints); 
+        setChangeQueue(defaultChangeQueue);
+        setInitialized(true);
+      }
     }
-
-    console.log('changeQueue', changeQueue);
-  }, [user?.bonus_points, user?.availableProficiencyPoints]);
+  }, [user?.availableProficiencyPoints, user?.bonus_points]);
 
   const handleAddBonus = (type) => {
     if (proficiencyPoints > 0 && (!changeQueue[type] || proficiencyPoints > 0)) {
@@ -57,9 +58,35 @@ const Levels = () => {
   };
 
   const handleSubmitChanges = async () => {
-    // Logic to save changes; iterate over changeQueue and update levels
-    // Example API call to submit changes to backend
+    try {
+      const response = await fetch('/api/account/bonusPoints', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ changeQueue }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Changes saved successfully:', data.updatedBonusPoints);
+        // Optionally, update local state with the new bonus points
+        setInitialized(false);
+        forceUpdate(); // To trigger re-fetching user data
+        getCurrentLevel('OFFENSE')
+        getCurrentLevel('DEFENSE')
+        getCurrentLevel('INCOME')
+        getCurrentLevel('INTEL')
+        getCurrentLevel('PRICES')
+      } else {
+        console.error('Failed to save changes:', data.error);
+      }
+    } catch (error) {
+      console.error('Error saving changes:', error);
+    }
   };
+
 
   return (
     <div className="mainArea pb-10">
