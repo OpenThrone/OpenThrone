@@ -68,7 +68,7 @@ const attackResults = ({ battle, viewerID }) => {
       transition: {
         delayChildren: 1,
         staggerChildren: 0.06,
-        staggerDirection: -1,
+        staggerDirection: 1, //TODO: with i18n, this should be configurable based on RTL or LTR
       },
     },
     exit: { opacity: 0 },

@@ -3,6 +3,8 @@ import { ItemTypes } from "@/constants";
 import { withAuth } from "@/middleware/auth";
 import UserModel from "@/models/Users";
 import { NextApiRequest, NextApiResponse } from "next";
+import { updateUserAndBankHistory } from "@/services";
+import { calculateUserStats } from "@/utils/utilities";
 
 interface ConvertRequest {
   userId: string;
@@ -60,8 +62,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const cost = BigInt(amount) * (BigInt(toItemType.cost - ((uModel?.priceBonus / 100) * toItemType.cost)) - BigInt(fromItemType.cost - ((uModel?.priceBonus / 100) * fromItemType.cost))) * (toItemType.level > fromItemType.level ? BigInt(1) : BigInt(75) / BigInt(100));
 
-    console.log(`Converting ${amount} ${fromItem} to ${toItem} for ${cost} gold`)
-
     if (user.gold < cost) {
       return res.status(400).json({ error: 'Not enough gold' });
     }
@@ -76,32 +76,39 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     user.gold -= BigInt(cost);
 
-    // Update user in the database
-    await prisma.users.update({
-      where: { id: Number(userId) },
-      data: {
-        gold: BigInt(user.gold),
-        items: user.items,
-      },
-    });
+    const conversion = await prisma.$transaction(async (tx) => {
+      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
+        calculateUserStats(user, JSON.parse(JSON.stringify(user.items)), 'items');
 
-    await prisma.bank_history.create({
-      data: {
-        gold_amount: BigInt(cost),
-        from_user_id: Number(userId),
-        from_user_account_type: 'HAND',
-        to_user_id: Number(userId),
-        to_user_account_type: 'BANK',
-        date_time: new Date().toISOString(),
-        history_type: 'SALE',
-        stats: {
-          type:'ARMORY_CONVERSION',
-          fromItem: fromItem,
-          toItem: toItem,
-          amount: conversionAmount
-        }
-      }
-    });
+      await updateUserAndBankHistory(
+        tx,
+        user.id,
+        BigInt(user.gold),
+        JSON.parse(JSON.stringify(user.items)),
+        killingStrength,
+        defenseStrength,
+        newOffense,
+        newDefense,
+        newSpying,
+        newSentry,
+        {
+          gold_amount: BigInt(cost),
+          from_user_id: Number(userId),
+          from_user_account_type: 'HAND',
+          to_user_id: Number(userId),
+          to_user_account_type: 'BANK',
+          date_time: new Date().toISOString(),
+          history_type: 'SALE',
+          stats: {
+            type: 'ARMORY_CONVERSION',
+            fromItem: fromItem,
+            toItem: toItem,
+            amount: conversionAmount,
+          },
+        },
+        'items'
+      );
+    })
 
     return res.status(200).json({
       message: 'Conversion successful',

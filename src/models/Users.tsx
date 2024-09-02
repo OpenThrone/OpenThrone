@@ -19,6 +19,7 @@ import type {
   Item,
   ItemCounts,
   UnitUpgradeType,
+  PermissionGrant,
 } from '@/types/typings';
 
 import {
@@ -106,6 +107,24 @@ class UserModel {
   
   public stats: any[];
 
+  public offense: number;
+
+  public defense: number;
+
+  public spy: number;
+
+  public sentry: number;
+
+  public killing_str: number;
+
+  public defense_str: number;
+
+  public spying_str: number;
+
+  public sentry_str: number;
+
+  public permissions: any[];
+
   constructor(userData?: any, filtered: boolean = true) {
     this.id = 0;
     this.displayName = '';
@@ -141,6 +160,7 @@ class UserModel {
     this.battle_upgrades = [];
     this.locale = 'en-US';
     this.avatar = '';
+    this.permissions = [];
     if (userData) {
       this.id = userData.id;
       this.displayName = userData.display_name;
@@ -181,11 +201,21 @@ class UserModel {
       this.stats = userData.stats;
       this.structure_upgrades = userData.structure_upgrades;
       this.locale = userData.locale;
+      this.killing_str = userData.killing_str;
+      this.defense_str = userData.defense_str;
+      this.spying_str = userData.spying_str;
+      this.sentry_str = userData.sentry_str;
+      this.offense = userData.offense;
+      this.defense = userData.defense;
+      this.spy = userData.spy;
+      this.sentry = userData.sentry;
       if(userData.avatar !== 'SHIELD') {
         this.avatar = userData.avatar;
       } else {
         this.avatar = getAssetPath('shields', '150x150', this.race)
       }
+
+      this.permissions = userData.permissions;
     }
   }
 
@@ -285,7 +315,11 @@ class UserModel {
     const offenseLevelBonus = this.bonus_points
       .filter((bonus) => bonus.type === 'OFFENSE')
       .reduce((acc, bonus) => acc + bonus.level, 0);
-    return attack + offenseLevelBonus;
+    const siegeUpgradeBonus = OffenseiveUpgrades.filter(
+      (upgrade) => upgrade.level === this.structure_upgrades.find((upgrade) => upgrade.type === 'OFFENSE')?.level
+    ).reduce((acc, upgrade) => acc + upgrade.offenseBonusPercentage, 0);
+    
+    return attack + offenseLevelBonus + siegeUpgradeBonus;
   }
 
   /**
@@ -508,15 +542,12 @@ class UserModel {
   getArmyStat(type: UnitType) {
     const sortedItems = JSON.parse(JSON.stringify(this.items.filter(item => item.usage === type).sort((a, b) => b.level - a.level)));
     const sortedUnits = JSON.parse(JSON.stringify(this.units.filter(unit => unit.type === type).sort((a, b) => b.level - a.level)));
-
     let totalStat = 0;
     const unitCoverage = new Map();  // Keeps track of how many times each unit has been covered
-
     sortedUnits.forEach((unit, index) => {
       const unitFiltered = UnitTypes.find((unitType) => unitType.type === unit.type && unitType.level === unit.level);
       if (unitFiltered === undefined) return 0;
       totalStat += (unitFiltered?.bonus || 0) * unit.quantity;
-
       const itemCounts: ItemCounts = {};
       sortedItems.forEach((item) => {
         itemCounts[item.type] = itemCounts[item.type] || 0;
@@ -526,57 +557,59 @@ class UserModel {
         item.quantity -= usableQuantity;
         itemCounts[item.type] += usableQuantity;
       });
-
-      // Apply battle upgrade bonuses if type is 'DEFENSE'
+    })
+    sortedUnits
+      .filter((u) => u.level >= 2)
+      .forEach((unit, index) => {
       if (type === 'DEFENSE') {
-        const usersDefenseBattleUpgrades = this.battle_upgrades.filter(upgrade => upgrade.type === 'DEFENSE');
-        const applicableUpgrades = this.availableDefenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel);
+        const usersDefenseBattleUpgrades = this.battle_upgrades.filter(upgrade => upgrade.type === 'DEFENSE' && upgrade.quantity > 0);
+        const applicableUpgrades = this.availableDefenseBattleUpgrades
+          .filter(upgrade => unit.level >= upgrade.minUnitLevel)
+          .sort((a, b) => b.level - a.level); // Sort upgrades by level in descending order;
 
-        applicableUpgrades.forEach(upgrade => {
-          const userUpgrade = usersDefenseBattleUpgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
-          
-          if (userUpgrade && userUpgrade.quantity > 0) {
-            //console.log('Applying upgrade', upgrade, 'to unit', unit, 'with user upgrade', userUpgrade);
-            const bonusPerUnit = upgrade.bonus / upgrade.unitsCovered;
-            let remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
-            const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered); // Ensure not to cover more than upgrade allows
-            //console.log(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered, upgrade.unitsCovered)
-            const totalBonusForUnits = bonusPerUnit * unitsCovered;
-            //console.log('Total bonus for units', totalBonusForUnits, 'units covered', unitsCovered, 'remaining coverage', remainingCoverage, 'total bonus per unit', bonusPerUnit, 'total bonus', totalBonusForUnits)
-            totalStat += totalBonusForUnits;
+        if (applicableUpgrades.length !== 0) {
+          applicableUpgrades.forEach(upgrade => {
+            const userUpgrade = usersDefenseBattleUpgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
 
-            // Update the quantity of the upgrade and track coverage
-            userUpgrade.quantity -= 1;  // Decrement by the number of upgrades used
-            unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
-          }
-        });
+            if (applicableUpgrades.length !== 0) {
+              if (userUpgrade && userUpgrade.quantity > 0) {
+                const bonusPerUnit = upgrade.bonus;
+                let remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
+                const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered); // Ensure not to cover more than upgrade allows
+                const totalBonusForUnits = bonusPerUnit * unitsCovered;
+                totalStat += totalBonusForUnits;
+                // Update the quantity of the upgrade and track coverage
+                userUpgrade.quantity -= Math.ceil(unitsCovered / upgrade.unitsCovered);  // Decrement by the number of upgrades used
+                unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
+              }
+            }
+          });
+        }
       }
       if (type === 'OFFENSE') {
         const usersOffenseBattleUpgrades = this.battle_upgrades.filter(upgrade => upgrade.type === 'OFFENSE');
-        const applicableUpgrades = this.availableOffenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel);
+        const applicableUpgrades = this.availableOffenseBattleUpgrades
+          .filter(upgrade => unit.level >= upgrade.minUnitLevel)
+          .sort((a, b) => b.level - a.level); // Sort upgrades by level in descending order
+
         if (applicableUpgrades.length !== 0) {
           applicableUpgrades.forEach(upgrade => {
             const userUpgrade = usersOffenseBattleUpgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
             if (userUpgrade && userUpgrade.quantity > 0) {
-              //console.log('Applying upgrade', upgrade, 'to unit', unit, 'with user upgrade', userUpgrade);
-              const bonusPerUnit = upgrade.bonus / upgrade.unitsCovered;
+              const bonusPerUnit = upgrade.bonus;
               let remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
               const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered); // Ensure not to cover more than upgrade allows
-              //console.log(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered, upgrade.unitsCovered)
               const totalBonusForUnits = bonusPerUnit * unitsCovered;
-              //console.log('Total bonus for units', totalBonusForUnits, 'units covered', unitsCovered, 'remaining coverage', remainingCoverage, 'total bonus per unit', bonusPerUnit, 'total bonus', totalBonusForUnits)
               totalStat += totalBonusForUnits;
-
+              
               // Update the quantity of the upgrade and track coverage
-              userUpgrade.quantity -= 1;  // Decrement by the number of upgrades used
+              userUpgrade.quantity -= Math.ceil(unitsCovered / upgrade.unitsCovered);  // Decrement by the number of upgrades used
               unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
             }
           });
-
         }
       }
     });
-
     switch (type) {
       case 'OFFENSE':
         totalStat *= 1 + this.attackBonus / 100;
@@ -594,39 +627,6 @@ class UserModel {
         break;
     }
     return Math.ceil(totalStat);
-  }
-
-
-  /**
-   * Returns the offense army stat of the user.
-   * @returns {number} The offense army stat of the user.
-   */
-  get offense(): number {
-    return this.getArmyStat('OFFENSE');
-  }
-
-  /**
-   * Returns the defense stat of the user's army.
-   * @returns {number} The defense stat of the user's army.
-   */
-  get defense(): number {
-    return this.getArmyStat('DEFENSE');
-  }
-
-  /**
-   * Returns the value of the SENTRY army stat for the user.
-   * @returns {number} The value of the SENTRY army stat.
-   */
-  get sentry(): number {
-    return this.getArmyStat('SENTRY');
-  }
-
-  /**
-   * Returns the SPY army stat of the user.
-   * @returns {number} The SPY army stat of the user.
-   */
-  get spy(): number {
-    return this.getArmyStat('SPY');
   }
 
   /**
@@ -851,19 +851,19 @@ class UserModel {
   }
 
   get armoryLevel(): number {
-    return this.structure_upgrades.find((struc)=> struc.type === 'ARMORY').level || 0;
+    return this.structure_upgrades.find((struc)=> struc.type === 'ARMORY')?.level || 0;
   }
 
   get offensiveLevel(): number {
-    return this.structure_upgrades.find((struc)=> struc.type === 'OFFENSE').level || 0;
+    return this.structure_upgrades.find((struc)=> struc.type === 'OFFENSE')?.level || 0;
   }
 
   get spyLevel(): number {
-    return this.structure_upgrades.find((struc)=> struc.type === 'SPY').level || 0;
+    return this.structure_upgrades.find((struc)=> struc.type === 'SPY')?.level || 0;
   }
 
   get sentryLevel(): number {
-    return this.structure_upgrades.find((struc)=> struc.type === 'SENTRY').level || 0;
+    return this.structure_upgrades.find((struc)=> struc.type === 'SENTRY')?.level || 0;
   }
 
   get attackRange(): {
