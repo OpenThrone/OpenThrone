@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import UserModel from '@/models/Users';
 import { UnitTypes } from '@/constants';
+import { updateUserAndBankHistory } from '@/services';
+import { calculateUserStats } from '@/utils/utilities';
 
 interface ConvertRequest {
   userId: string;
@@ -66,33 +68,39 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     user.gold -= BigInt(cost);
+    const conversion = await prisma.$transaction(async (tx) => {
+      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
+        calculateUserStats(user, JSON.parse(JSON.stringify(user.units)), 'units');
 
-    // Update user in the database
-    await prisma.users.update({
-      where: { id: userId },
-      data: {
-        gold: BigInt(user.gold),
-        units: user.units,
-      },
-    });
-
-    await prisma.bank_history.create({
-      data: {
-        gold_amount: BigInt(cost),
-        from_user_id: Number(userId),
-        from_user_account_type: 'HAND',
-        to_user_id: Number(userId),
-        to_user_account_type: 'BANK',
-        date_time: new Date().toISOString(),
-        history_type: 'SALE',
-        stats: {
-          type: 'TRAINING_CONVERSION',
-          fromItem: fromUnit,
-          toItem: toUnit,
-          amount: conversionAmount
-        }
-      }
-    });
+      await updateUserAndBankHistory(
+        tx,
+        user.id,
+        BigInt(user.gold),
+        JSON.parse(JSON.stringify(user.units)),
+        killingStrength,
+        defenseStrength,
+        newOffense,
+        newDefense,
+        newSpying,
+        newSentry,
+        {
+          gold_amount: BigInt(cost),
+          from_user_id: Number(userId),
+          from_user_account_type: 'HAND',
+          to_user_id: Number(userId),
+          to_user_account_type: 'BANK',
+          date_time: new Date().toISOString(),
+          history_type: 'SALE',
+          stats: {
+            type: 'TRAINING_CONVERSION',
+            fromItem: fromUnit,
+            toItem: toUnit,
+            amount: conversionAmount,
+          },
+        },
+        'units'
+      );
+    })
 
     return res.status(200).json({ message: 'Units converted successfully!', data: user.units });
   } catch (error) {

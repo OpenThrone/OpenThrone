@@ -30,6 +30,9 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     let sortedPlayers = [...allUsers];
     setLastPage(Math.ceil(allUsers.length / rowsPerPage));
 
+    // Fallback for users where the rank hasn't been calculated yet (and is therefore 0 or null)
+    sortedPlayers.forEach((u) => u.rank = u.rank || Infinity);
+
     if (sortBy === 'overallrank') {
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? b.rank - a.rank : a.rank - b.rank);
     } else if (sortBy === 'gold') {

@@ -1,5 +1,7 @@
 import { levelXPArray, UnitTypes } from '@/constants';
+import UserModel from '@/models/Users';
 import type { UnitType } from '@/types/typings';
+import { newCalculateStrength } from './attackFunctions';
 
 /**
    * Returns the name of a unit based on its type and level.
@@ -128,4 +130,26 @@ const calculateOverallRank = (user) => {
     0.003 * itemScore;
 };
 
-export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank };
+const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | 'items') => {
+  const newUserData = { ...userData };
+  if (type === 'units') {
+    newUserData.units = updatedData;
+  } else if (type === 'items') {
+    newUserData.items = updatedData;
+  }
+
+  const newUModel = new UserModel(newUserData);
+  const { killingStrength, defenseStrength } = newCalculateStrength(newUModel, 'OFFENSE');
+
+  return {
+    killingStrength,
+    defenseStrength,
+    newOffense: newUModel.getArmyStat('OFFENSE'),
+    newDefense: newUModel.getArmyStat('DEFENSE'),
+    newSpying: newUModel.getArmyStat('SPY'),
+    newSentry: newUModel.getArmyStat('SENTRY'),
+  };
+};
+
+
+export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats };

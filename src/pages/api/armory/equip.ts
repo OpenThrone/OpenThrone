@@ -4,6 +4,8 @@ import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
+import { updateUserAndBankHistory } from '@/services';
+import { calculateUserStats } from '@/utils/utilities';
 
 interface EquipmentProps {
   type: string;
@@ -101,29 +103,36 @@ const handler = async(
       }
     });
 
-    // Update the user's gold and items in the database
-    await prisma.users.update({
-      where: { id: userId },
-      data: {
-        gold: BigInt(user.gold) - BigInt(totalCost),
-        items: updatedItems,
-      },
-    });
+    const equipDB = await prisma.$transaction(async (tx) => {
+      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
+        calculateUserStats(user, updatedItems, 'items');
 
-    await prisma.bank_history.create({
-      data: {
-        gold_amount: BigInt(totalCost),
-        from_user_id: userId,
-        from_user_account_type: 'HAND',
-        to_user_id: 0,
-        to_user_account_type: 'BANK',
-        date_time: new Date().toISOString(),
-        history_type: 'SALE',
-        stats: {
-          type: 'ARMORY_EQUIP',
-          items: itemsToEquip,
-        }
-      },
+      await updateUserAndBankHistory(
+        tx,
+        userId,
+        BigInt(user.gold) - BigInt(totalCost),
+        updatedItems,
+        killingStrength,
+        defenseStrength,
+        newOffense,
+        newDefense,
+        newSpying,
+        newSentry,
+        {
+          gold_amount: BigInt(totalCost),
+          from_user_id: userId,
+          from_user_account_type: 'HAND',
+          to_user_id: 0,
+          to_user_account_type: 'BANK',
+          date_time: new Date().toISOString(),
+          history_type: 'SALE',
+          stats: {
+            type: 'ARMORY_EQUIP',
+            items: itemsToEquip,
+          },
+        },
+        'items'
+      );
     });
 
     return res.status(200).json({

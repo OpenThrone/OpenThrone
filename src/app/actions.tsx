@@ -12,7 +12,7 @@ import {
 } from '@/services/attack.service';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { simulateBattle } from '@/utils/attackFunctions';
+import { newCalculateStrength, simulateBattle } from '@/utils/attackFunctions';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { AssassinationResult, InfiltrationResult, IntelResult, simulateAssassination, simulateInfiltration, simulateIntel } from '@/utils/spyFunctions';
 
@@ -200,11 +200,28 @@ export async function attackHandler(
         subtype: (!isAttackerWinner) ? 'WON' : 'LOST',
       }, tx);
 
+      const { killingStrength: attackerKS, defenseStrength: attackerDS } = newCalculateStrength(AttackPlayer, 'OFFENSE');
+      const newAttOffense = AttackPlayer.getArmyStat('OFFENSE')
+      const newAttDefense = AttackPlayer.getArmyStat('DEFENSE')
+      const newAttSpying = AttackPlayer.getArmyStat('SPY')
+      const newAttSentry = AttackPlayer.getArmyStat('SENTRY')
+      const { killingStrength: defenderKS, defenseStrength: defenderDS } = newCalculateStrength(DefensePlayer, 'OFFENSE');
+      const newDefOffense = DefensePlayer.getArmyStat('OFFENSE')
+      const newDefDefense = DefensePlayer.getArmyStat('DEFENSE')
+      const newDefSpying = DefensePlayer.getArmyStat('SPY')
+      const newDefSentry = DefensePlayer.getArmyStat('SENTRY')
+
       await updateUser(attackerId, {
         gold: AttackPlayer.gold,
         attack_turns: AttackPlayer.attackTurns - attack_turns,
         experience: Math.ceil(AttackPlayer.experience),
         units: AttackPlayer.units,
+        offense: newAttOffense,
+        defense: newAttDefense,
+        spy: newAttSpying,
+        sentry: newAttSentry,
+        killing_str: attackerKS,
+        defense_str: attackerDS,
       },tx);
 
       await updateUser(defenderId, {
@@ -212,6 +229,12 @@ export async function attackHandler(
         fort_hitpoints: Math.max(DefensePlayer.fortHitpoints, 0),
         units: DefensePlayer.units,
         experience: Math.ceil(DefensePlayer.experience),
+        offense: newDefOffense,
+        defense: newDefDefense,
+        spy: newDefSpying,
+        sentry: newDefSentry,
+        killing_str: defenderKS,
+        defense_str: defenderDS,
       },tx);
 
       return attack_log;

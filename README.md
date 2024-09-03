@@ -40,6 +40,40 @@ A few notes about how to get the game running locally (for dev work or otherwise
 - Run the prisma migrations: `npx prisma migrate dev --name init`
 - Start the development server: `npm run bun-dev`
 
+### Handling Updates from Upstream
+
+When you pull the latest updates from the upstream repository, there may be new migrations, dependencies, or configuration changes. Follow these steps to ensure everything runs smoothly:
+
+1. **Pull the Latest Updates:**
+   ```bash
+   git pull upstream main
+   ```
+
+2. **Install New Dependencies:**
+    - If there are updates to `package.json`, you may need to install new dependencies:
+    ```bash
+    npm install
+    ```
+
+3. **Update the Database Schema:**
+   - If there are new Prisma migrations, run the following command to apply them:
+     ```bash
+     npx prisma migrate dev
+     ```
+   - This command will apply the latest migrations and sync your database schema with the code.
+
+4. **Rebuild the Project (if necessary):**
+   - If there are changes in TypeScript types or other build-related changes, you may need to rebuild the project:
+     ```bash
+     npm run build
+     ```
+
+5. **Restart the Development Server:**
+   - Ensure the server is restarted to pick up all changes:
+     ```bash
+     npm run bun-dev
+     ```
+
 ## Other Information
 ### VSCode information (optional)
 

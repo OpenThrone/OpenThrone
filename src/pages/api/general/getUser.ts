@@ -12,6 +12,9 @@ const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
       where: {
         id: typeof(session.user.id) === 'string' ? parseInt(session.user.id) : session.user.id,
       },
+      include: {
+        permissions: true,
+      },
     });
 
     if (!user) {
