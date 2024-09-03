@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { calculateTotalCost, updateUnitsMap, validateUnits } from '@/utils/units';
 import UserModel from '@/models/Users';
+import { updateUserAndBankHistory } from '@/services';
+import { calculateUserStats } from '@/utils/utilities';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -33,25 +35,33 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const updatedUnitsMap = updateUnitsMap(userUnitsMap, units, true, citizensRequired);
     const updatedUnitsArray = Array.from(updatedUnitsMap.values());
 
-    await prisma.users.update({
-      where: { id: userId },
-      data: {
-        gold: BigInt(user.gold) - BigInt(totalCost),
-        units: updatedUnitsArray,
-      },
-    });
+    const trainTx = await prisma.$transaction(async (tx) => {
+      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
+        calculateUserStats(user, updatedUnitsArray, 'units');
 
-    await prisma.bank_history.create({
-      data: {
-        gold_amount: BigInt(totalCost),
-        from_user_id: userId,
-        from_user_account_type: 'HAND',
-        to_user_id: 0,
-        to_user_account_type: 'BANK',
-        date_time: new Date().toISOString(),
-        history_type: 'TRAINING',
-        stats: { type: 'TRAIN', items: units },
-      },
+      await updateUserAndBankHistory(
+        tx,
+        userId,
+        BigInt(user.gold) - BigInt(totalCost),
+        updatedUnitsArray,
+        killingStrength,
+        defenseStrength,
+        newOffense,
+        newDefense,
+        newSpying,
+        newSentry,
+        {
+          gold_amount: BigInt(totalCost),
+          from_user_id: userId,
+          from_user_account_type: 'HAND',
+          to_user_id: 0,
+          to_user_account_type: 'BANK',
+          date_time: new Date().toISOString(),
+          history_type: 'SALE',
+          stats: { type: 'TRAINING_TRAIN', items: units },
+        },
+        'units'
+      );
     });
 
     return res.status(200).json({ message: 'Units trained successfully!', data: updatedUnitsArray });

@@ -5,7 +5,6 @@ import { Grid, Space, Group, Button, Text, Paper } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Modal from "./modal";
-import users from "@/pages/battle/users";
 import { useState } from "react";
 
 const attackResults = ({ battle, viewerID }) => {
@@ -69,7 +68,7 @@ const attackResults = ({ battle, viewerID }) => {
       transition: {
         delayChildren: 1,
         staggerChildren: 0.06,
-        staggerDirection: -1,
+        staggerDirection: 1, //TODO: with i18n, this should be configurable based on RTL or LTR
       },
     },
     exit: { opacity: 0 },
@@ -125,7 +124,7 @@ const attackResults = ({ battle, viewerID }) => {
               <Modal
                 isOpen={isOpen}
                 toggleModal={toggleModal}
-                profileID={(isViewerAttacker ? users.id : attackerPlayer.id)}
+                profileID={(isViewerAttacker ? defenderPlayer.id : attackerPlayer.id)}
               />
                 </Group>
             

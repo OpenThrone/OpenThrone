@@ -38,6 +38,8 @@ const upgrades = async(req, res) => {
           data: {
             gold: userMod.gold - BigInt(Fortifications[index].cost),
             fort_level: index + 1,
+            // Set hitpoints to full (for free - may change in the future)
+            fort_hitpoints: Fortifications[index].hitpoints,
           },
         });
         await prisma.bank_history.create({
