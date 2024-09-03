@@ -5,6 +5,7 @@ import { useUser } from '@/context/users';
 import { Text, Space, Button, Center } from '@mantine/core';
 import styles from './levels.module.css';
 import LevelCard from '@/components/levelCard';
+import { alertService } from '@/services';
 
 const Levels = () => {
   const { user, forceUpdate } = useUser();
@@ -79,10 +80,13 @@ const Levels = () => {
         getCurrentLevel('INCOME')
         getCurrentLevel('INTEL')
         getCurrentLevel('PRICES')
+        alertService.success('Changes saved successfully');
       } else {
+        alertService.error('Failed to save changes:', data.error);
         console.error('Failed to save changes:', data.error);
       }
     } catch (error) {
+      alertService.error('Error saving changes:', error);
       console.error('Error saving changes:', error);
     }
   };
