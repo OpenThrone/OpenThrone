@@ -15,67 +15,69 @@ function increaseCitizens(units: PlayerUnit[]) {
   return units;
 }
 
-const handler = async (
-  req: NextApiRequest,
-  res: NextApiResponse,
-) => {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end(); // Method not allowed
   }
 
   const session = req.session;
-
-  const recruiterUser = (session ? session.user.id : 0);
-
+  const recruiterUserId = session ? session.user.id : 0;
   let { recruitedUserId, selfRecruit } = req.body;
 
   try {
     if (!Number.isInteger(recruitedUserId)) {
-      recruitedUserId = await prisma.users.findFirst({where: {recruit_link: recruitedUserId}}).then((user) => user.id);
+      const recruitedUser = await prisma.users.findFirst({
+        where: { recruit_link: recruitedUserId },
+      });
+      recruitedUserId = recruitedUser?.id || 0;
     }
+
     const result = await prisma.$transaction(async (tx) => {
+      const fromUser = recruiterUserId ? recruitedUserId : recruiterUserId;
+      const toUser = recruiterUserId ? recruiterUserId : recruitedUserId;
+
       // Save the recruitment record
       await tx.recruit_history.create({
         data: {
-          from_user: recruiterUser ? Number(recruitedUserId) : recruiterUser,
-          to_user: recruiterUser ? Number(recruiterUser) : recruitedUserId,
-          ip_addr: (
+          from_user: fromUser,
+          to_user: toUser,
+          ip_addr:
             // Prefer IP address as reported by CloudFlare, if available.
-            req.headers['cf-connecting-ip'] ||
+            (req.headers['cf-connecting-ip'] as string) ||
             // Fallback to the IP address we received the request from
             req.connection.remoteAddress ||
             // Otherwise, no dice - but fail gracefully.
-            'No IP address detected.'
-          ) as string,
+            'No IP address detected.',
           timestamp: new Date(),
         },
       });
 
-      // Wait for 1 second
+      // Wait for a random delay
       await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
 
-      // Check the number of recruitments for the recruited user within the last 24 hours
-      const recruitments = await prisma.recruit_history.findMany({
+      // Check recruitments within the last 24 hours
+      const recruitments = await tx.recruit_history.findMany({
         where: {
-          from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
-          to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
+          from_user: fromUser,
+          to_user: toUser,
           timestamp: { gte: getOTStartDate() },
-          ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
+          ...(recruiterUserId === 0 && {
+            ip_addr: req.headers['cf-connecting-ip'] as string,
+          }),
         },
       });
 
-      // If the number of recruitments is 5 or more, reject the request and revert the transaction
       if (recruitments.length > 5) {
-        throw new Error(`User has already been recruited 5 times in the last 24 hours.`);
+        throw new Error('User has already been recruited 5 times in the last 24 hours.');
       }
 
-      let userToUpdate = await prisma.users.findUnique({
-        where: { id: Number(recruiterUser ? Number(session.user.id) : recruitedUserId) },
+      let userToUpdate = await tx.users.findUnique({
+        where: { id: Number(toUser) },
       });
 
       if (selfRecruit) {
-        userToUpdate = await prisma.users.findUnique({
-          where: { id: Number(recruiterUser ? Number(session.user.id) : recruitedUserId) },
+        userToUpdate = await tx.users.findUnique({
+          where: { id: Number(recruitedUserId) },
         });
       }
 
@@ -85,9 +87,7 @@ const handler = async (
         where: { id: userToUpdate.id },
         data: {
           units: updatedUnits,
-          gold: {
-            increment: 250,
-          },
+          gold: { increment: 250 },
         },
       });
 
@@ -100,34 +100,33 @@ const handler = async (
           date_time: new Date(),
           gold_amount: 250,
           history_type: 'RECRUITMENT',
-          
         },
       });
 
-      const reConfirm = await prisma.recruit_history.findMany({
+      // Recheck recruitments to confirm no violations
+      const reConfirm = await tx.recruit_history.findMany({
         where: {
-          from_user: recruitedUserId ? Number(recruitedUserId) : recruiterUser,
-          to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
+          from_user: fromUser,
+          to_user: toUser,
           timestamp: { gte: getOTStartDate() },
         },
       });
 
-      // If the number of recruitments is 5 or more, reject the request and revert the transaction
       if (reConfirm.length > 5) {
-        throw new Error(`User has already been recruited 5 times in the last 24 hours.`);
+        throw new Error('User has already been recruited 5 times in the last 24 hours.');
       }
-      
+
       return { success: true };
     });
 
     return res.status(200).json(result);
   } catch (error) {
     console.error('Error in recruitment:', error);
-    if (error.message === 'User has already been recruited 5 times in the last 24 hours.') {
-      return res.status(400).json({ error: error.message });
-    }
-    return res.status(500).json({ error: 'Internal Server Error' });
+    const statusCode = error.message.includes('recruited 5 times')
+      ? 400
+      : 500;
+    return res.status(statusCode).json({ error: error.message });
   }
-}
+};
 
 export default withAuth(handler, true);
