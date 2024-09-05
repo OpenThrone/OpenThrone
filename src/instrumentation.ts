@@ -73,9 +73,27 @@ const updateUserPerTurn = (currentUser, rank) => {
       sentry: newSentry,
     };
 
-    return prisma.users.update({
-      where: { id: currentUser.id },
-      data: updateData,
+    prisma.$transaction(async (tx) => {
+      await tx.bank_history.create({
+        data: {
+          from_user_id: 0,
+          to_user_id: currentUser.id,
+          to_user_account_type: 'HAND',
+          from_user_account_type: 'BANK',
+          date_time: new Date(),
+          gold_amount: currentUser.goldPerTurn,
+          history_type: 'INCOME',
+          stats: {
+            currentGold: currentUser.gold,
+            newGold: updatedGold,
+            increase: currentUser.goldPerTurn,
+          }
+        },
+      });
+      return tx.users.update({
+        where: { id: currentUser.id },
+        data: updateData,
+      });
     });
   } catch (error) {
     console.log(`Error updating user ${currentUser.id}: ${error.message}`);
@@ -116,45 +134,64 @@ export async function register() {
     const cron = require('node-cron');
     console.log('Setting up cron tasks');
 
-    if (process.env.DO_TURN_UPDATES) {
-      // Tasks to complete each turn
-      cron.schedule('0,30 * * * *', async () => {
-        const allUsers = await prisma.users.findMany();
+    console.log('PM2 INSTANCE NAME', process.env.PM2_INSTANCE_NAME);
+    console.log('USE PM2 CLUSTER', process.env.USE_PM2_CLUSTER);
+    console.log('DO TURN UPDATES', process.env.DO_TURN_UPDATES);
+    console.log('DO DAILY UPDATES', process.env.DO_DAILY_UPDATES);
+    const shouldRun = process.env.USE_PM2_CLUSTER === 'true'
+      ? (
+        process.env.name == process.env.PM2_INSTANCE_NAME ||
+          process.env.instances === process.env.PM2_INSTANCE_NAME ? true : false
+      )
+      : true;
+    console.log('PM2 ID', process.env.pm_id);
+    console.log('PM2 NAME', process.env.name);
+    console.log('SHOULD RUN', shouldRun);
+    //console.log('process.env', process.env);
 
-        const userRanks = allUsers.map((user) => {
-          const newUser = new UserModel(user);
-          const rankScore = calculateOverallRank(user);
+    if (shouldRun) {
+      if (process.env.DO_TURN_UPDATES === 'true') {
+        // Tasks to complete each turn
+        cron.schedule('0,30 * * * *', async () => {
+          const allUsers = await prisma.users.findMany();
 
-          return {
-            id: user.id,
-            rankScore,
-            newUser,
-          };
+          const userRanks = allUsers.map((user) => {
+            const newUser = new UserModel(user);
+            const rankScore = calculateOverallRank(user);
+
+            return {
+              id: user.id,
+              rankScore,
+              newUser,
+            };
+          });
+
+          userRanks.sort((a, b) => b.rankScore - a.rankScore);
+
+          const updatePromises = userRanks.map((userRank, index) => updateUserPerTurn(userRank.newUser, index + 1));
+
+          Promise.all(updatePromises).then(() => console.log('Updated users for turn change.'));
         });
 
-        userRanks.sort((a, b) => b.rankScore - a.rankScore);
+        console.log('Registered turn update cron task');
+      }
 
-        const updatePromises = userRanks.map((userRank, index) => updateUserPerTurn(userRank.newUser, index + 1));
+      if (process.env.DO_DAILY_UPDATES === 'true') {
+        // Tasks to complete at midnight (server time)
+        cron.schedule('0 0 * * *', async () => {
+          const allUsers = await prisma.users.findMany();
 
-        Promise.all(updatePromises).then(() => console.log('Updated users for turn change.'));
-      });
+          const updatePromises = allUsers.map((singleUser) => updateUserPerDay(new UserModel(singleUser)));
+          Promise.all(updatePromises).then(() => console.log('Updated users for day change.'));
 
-      console.log('Registered turn update cron task');
-    }
+          const cleanupPromises = doDailyCleanup();
+          Promise.all(cleanupPromises).then(() => console.log('Cleaned up database for day change.'));
+        });
 
-    if (process.env.DO_DAILY_UPDATES) {
-      // Tasks to complete at midnight (server time)
-      cron.schedule('0 0 * * *', async () => {
-        const allUsers = await prisma.users.findMany();
-
-        const updatePromises = allUsers.map((singleUser) => updateUserPerDay(new UserModel(singleUser)));
-        Promise.all(updatePromises).then(() => console.log('Updated users for day change.'));
-
-        const cleanupPromises = doDailyCleanup();
-        Promise.all(cleanupPromises).then(() => console.log('Cleaned up database for day change.'));
-      });
-
-      console.log('Registered daily update cron task');
+        console.log('Registered daily update cron task');
+      }
+    } else {
+      console.log('PM2 instance name does not match, skipping cron task registration.');
     }
   }
 };
