@@ -35,7 +35,9 @@ const Bank = (props) => {
     war_spoils: true,
     transfers: true,
     sale: true,
-    training: true
+    training: true,
+    recruitment: true,
+    economy: true,
   });
 
   useEffect(() => {
@@ -210,6 +212,10 @@ const Bank = (props) => {
 
     // Handle player transfers
     if (history_type === 'PLAYER_TRANSFER') return 'Player Transfer';
+
+    if (history_type === 'RECRUITMENT') return 'Recruitment';
+
+    if (history_type === 'ECONOMY') return 'Income';
 
     // Fallback for unknown types
     console.log('Unknown transaction type:', entry);
@@ -474,6 +480,22 @@ const Bank = (props) => {
               color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
             >
               Training
+            </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.recruitment}
+              onChange={() => { setFilters({ ...filters, recruitment: !filters.recruitment }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Recruitment
+            </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.economy}
+              onChange={() => { setFilters({ ...filters, economy: !filters.economy }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Income
             </Chip>
           </Group>
           {message && <div className="text-center p-4">{message}</div>}

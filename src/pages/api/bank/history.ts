@@ -13,7 +13,7 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { deposits, withdraws, war_spoils, transfers, sale, training } = req.query;
+  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment } = req.query;
   const conditions = [];
   const transactionConditions = [];
 
@@ -62,6 +62,19 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     });
   }
 
+  if (economy === 'true') {
+    transactionConditions.push({
+      history_type: 'ECONOMY',
+      to_user_id: session.user.id,
+    });
+  }
+
+  if (recruitment === 'true') {
+    transactionConditions.push({
+      history_type: 'RECRUITMENT',
+      to_user_id: session.user.id,
+    });
+  }
 
   if (sale === 'true') {
     transactionConditions.push({
