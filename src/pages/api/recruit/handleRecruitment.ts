@@ -33,9 +33,9 @@ const handler = async (
     if (!Number.isInteger(recruitedUserId)) {
       recruitedUserId = await prisma.users.findFirst({where: {recruit_link: recruitedUserId}}).then((user) => user.id);
     }
-    const result = await prisma.$transaction(async (prisma) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Save the recruitment record
-      await prisma.recruit_history.create({
+      await tx.recruit_history.create({
         data: {
           from_user: recruiterUser ? Number(recruitedUserId) : recruiterUser,
           to_user: recruiterUser ? Number(recruiterUser) : recruitedUserId,
@@ -64,13 +64,6 @@ const handler = async (
         },
       });
 
-      (recruiterUser === 0 && console.log('recruitments', {
-        from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
-        to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
-        timestamp: { gte: getOTStartDate() },
-        ...(recruiterUser === 0 && { ip_addr: req.headers['cf-connecting-ip'] as string })
-      }));
-
       // If the number of recruitments is 5 or more, reject the request and revert the transaction
       if (recruitments.length > 5) {
         throw new Error(`User has already been recruited 5 times in the last 24 hours.`);
@@ -88,13 +81,26 @@ const handler = async (
 
       // Update the number of citizens and gold for the user
       const updatedUnits = increaseCitizens(userToUpdate.units as PlayerUnit[]);
-      await prisma.users.update({
+      await tx.users.update({
         where: { id: userToUpdate.id },
         data: {
           units: updatedUnits,
           gold: {
             increment: 250,
           },
+        },
+      });
+
+      await tx.bank_history.create({
+        data: {
+          from_user_id: 0,
+          to_user_id: userToUpdate.id,
+          to_user_account_type: 'HAND',
+          from_user_account_type: 'BANK',
+          date_time: new Date(),
+          gold_amount: 250,
+          history_type: 'RECRUITMENT',
+          
         },
       });
 
