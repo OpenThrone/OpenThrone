@@ -82,7 +82,7 @@ const updateUserPerTurn = (currentUser, rank) => {
           from_user_account_type: 'BANK',
           date_time: new Date(),
           gold_amount: currentUser.goldPerTurn,
-          history_type: 'INCOME',
+          history_type: 'ECONOMY',
           stats: {
             currentGold: currentUser.gold,
             newGold: updatedGold,
