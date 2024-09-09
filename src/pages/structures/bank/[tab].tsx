@@ -521,7 +521,7 @@ const Bank = (props) => {
                     <Table.Tr key={index}>
                       <Table.Td>{new Date(entry.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString()}</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
-                      <Table.Td>{(entry.stats.type?.includes(["UN"]) ? '+' : '-') +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+                      <Table.Td>{(entry.stats.type?.includes(["UN"]) || transactionType === 'Recruitment' ? '+' : '-') +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
                     </Table.Tr>
                   );
                 })}

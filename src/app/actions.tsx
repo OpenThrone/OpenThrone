@@ -149,7 +149,7 @@ export async function attackHandler(
   AttackPlayer.experience += battleResults.experienceResult.Experience.Attacker;
   DefensePlayer.experience += battleResults.experienceResult.Experience.Defender;
   try {
-    const attack_log = await prisma.$transaction(async (prisma) => {
+    const attack_log = await prisma.$transaction(async (tx) => {
       if (isAttackerWinner) {
         DefensePlayer.gold = BigInt(DefensePlayer.gold) - battleResults.pillagedGold;
         AttackPlayer.gold = BigInt(AttackPlayer.gold) + battleResults.pillagedGold;
@@ -178,7 +178,7 @@ export async function attackHandler(
           attacker_losses: battleResults.Losses.Attacker,
           defender_losses: battleResults.Losses.Defender,
         },
-      });
+      }, tx);
 
       if (isAttackerWinner) {
         await createBankHistory({
@@ -190,18 +190,18 @@ export async function attackHandler(
           date_time: new Date().toISOString(),
           history_type: 'WAR_SPOILS',
           stats: { type: 'ATTACK', attackID: attack_log.id },
-        }); 
+        }, tx); 
       }
 
       await incrementUserStats(attackerId, {
         type: 'OFFENSE',
         subtype: (isAttackerWinner) ? 'WON' : 'LOST',
-      });
+      }, tx);
 
       await incrementUserStats(defenderId, {
         type: 'DEFENSE',
         subtype: (!isAttackerWinner) ? 'WON' : 'LOST',
-      });
+      }, tx);
 
       const { killingStrength: attackerKS, defenseStrength: attackerDS } = newCalculateStrength(AttackPlayer, 'OFFENSE');
       const newAttOffense = AttackPlayer.getArmyStat('OFFENSE')
@@ -225,7 +225,7 @@ export async function attackHandler(
         sentry: newAttSentry,
         killing_str: attackerKS,
         defense_str: attackerDS,
-      });
+      },tx);
 
       await updateUser(defenderId, {
         gold: DefensePlayer.gold,
@@ -238,7 +238,7 @@ export async function attackHandler(
         sentry: newDefSentry,
         killing_str: defenderKS,
         defense_str: defenderDS,
-      });
+      },tx);
 
       return attack_log;
     });

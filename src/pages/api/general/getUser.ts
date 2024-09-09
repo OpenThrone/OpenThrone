@@ -23,14 +23,14 @@ const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const updateLastActive = async (id: number) => {
-      console.log('setting last active: ', new Date());
+      console.log('setting last active for user: ' + id, new Date());
       return prisma.users.update({
         where: { id },
         data: { last_active: new Date() },
       });
     };
     if ((new Date() - new Date(user.last_active)) > 1000 * 60 * 10) {
-      const updated = await updateLastActive(user.id);
+      await updateLastActive(user.id);
       // Calculate the timestamp of user.last_active
       const userLastActiveTimestamp = new Date(user.last_active);
       // Check if there was an attack since user.last_active
@@ -51,7 +51,7 @@ const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
         user.beenAttacked = true;
       }
       if(attacks.map((attack) => {
-        if(attack.type !== 'attack' && winner === user.id) {
+        if(attack.type !== 'attack' && attack.winner === user.id) {
           return attack;
         }
       }).length > 0) {

@@ -14,22 +14,22 @@ export const getAllUserIds = async () => {
   });
 };
 
-export const updateUserUnits = async (userId, units) => {
-  await prisma.users.update({
+export const updateUserUnits = async (userId, units, txClient) => {
+  await txClient.users.update({
     where: { id: userId },
     data: { units },
   });
 };
 
-export const updateFortHitpoints = async (userId, hitpoints) => {
-  await prisma.users.update({
+export const updateFortHitpoints = async (userId, hitpoints, txClient) => {
+  await txClient.users.update({
     where: { id: userId },
     data: { fort_hitpoints: hitpoints },
   });
 }
 
-export const createAttackLog = async (logData) => {
-  return await prisma.attack_log.create({
+export const createAttackLog = async (logData, txClient) => {
+  return await txClient.attack_log.create({
     data: logData,
   });
 };
@@ -37,8 +37,8 @@ export const createAttackLog = async (logData) => {
 // { type: 'OFFENSE', subtype: 'TOTAL', stat: 1 } +1
 // { type: 'OFFENSE', subtype: 'WON', stat: 12 } +12
 // { type: 'DEFENSE', subtype: 'LOST' } +1 (defaults to 1 if not specified)
-export const incrementUserStats = async (userId, newStat) => {
-  const user = await prisma.users.findUnique({
+export const incrementUserStats = async (userId, newStat, txClient) => {
+  const user = await txClient.users.findUnique({
     where: { id: userId },
     select: {
       stats: true,
@@ -49,48 +49,42 @@ export const incrementUserStats = async (userId, newStat) => {
     throw new Error("User not found");
   }
 
-  // Initialize stats if none exist
   if (!user.stats) {
     user.stats = [];
   }
 
-  // Check if the stat type and subtype already exists
   const existingStatIndex = user.stats.findIndex(stat => stat.type === newStat.type && stat.subtype === newStat.subtype);
 
   if (existingStatIndex >= 0) {
     if (user.stats[existingStatIndex].stat === null) {
-      // Temporary detection of a broken state from when we were accidentally setting
-      // stats to null - reset these to 0.
       user.stats[existingStatIndex].stat = 0;
     }
-    // Stat already exists, increment it
-    user.stats[existingStatIndex].stat += newStat.stat || 1;
+    user.stats[existingStatIndex].stat += 1;
   } else {
-    // Stat does not exist, initialize it with the new stat value
     user.stats.push({
       type: newStat.type,
       subtype: newStat.subtype,
-      stat: newStat.stat || 1,
+      stat: 1,
     });
   }
 
   // Update the user's stats
-  await prisma.users.update({
+  await txClient.users.update({
     where: { id: userId },
     data: { stats: user.stats },
   });
 }
 
 
-export const updateUser = async (userId, data) => {
-  await prisma.users.update({
+export const updateUser = async (userId, data, txClient) => {
+  await txClient.users.update({
     where: { id: userId },
     data,
   });
 };
 
-export const createBankHistory = async (historyData) => {
-  await prisma.bank_history.create({
+export const createBankHistory = async (historyData, txClient) => {
+  await txClient.bank_history.create({
     data: historyData,
   });
 };
