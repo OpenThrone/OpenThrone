@@ -15,10 +15,10 @@ const LevelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canRedu
   const [Init, setInit] = React.useState(false);
 
   useEffect(() => {
-    if (currentLevel === 0) {
+    if (currentLevel === 0 || changeQueue[type]?.change === 0) {
       setInit(true);
     }
-  }, [currentLevel]);
+  }, [currentLevel, changeQueue, type]);
 
   const handleAddClick = () => {
     setInit(false);
