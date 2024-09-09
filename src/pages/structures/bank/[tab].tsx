@@ -223,6 +223,20 @@ const Bank = (props) => {
     return 'UNKNOWN';
   };
 
+  const getGoldTxSymbol = (entry) => {
+    let transactionType = '';
+    transactionType = getTransactionType(entry);
+    if (entry.stats.type?.includes(["UN"]))
+      return '+';
+    if (transactionType === 'Recruitment')
+      return '+';
+    if (transactionType === 'War Spoils') {
+      if (entry.to_user_id === user?.id)
+        return '+';
+    }
+    return '-';
+  };
+
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Bank</h2>
@@ -421,7 +435,7 @@ const Bank = (props) => {
                     <Table.Tr key={index}>
                       <Table.Td>{new Date(entry?.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString() }</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
-                      <Table.Td>{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+                      <Table.Td>{getGoldTxSymbol(entry) +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
                     </Table.Tr>
                   );
                 })}
@@ -521,7 +535,7 @@ const Bank = (props) => {
                     <Table.Tr key={index}>
                       <Table.Td>{new Date(entry.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString()}</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
-                      <Table.Td>{(entry.stats.type?.includes(["UN"]) || transactionType === 'Recruitment' ? '+' : '-') +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+                      <Table.Td>{getGoldTxSymbol(entry) +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
                     </Table.Tr>
                   );
                 })}
