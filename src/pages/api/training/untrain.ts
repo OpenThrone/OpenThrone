@@ -20,7 +20,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!validateUnits(units)) return res.status(400).json({ error: 'Invalid input data' });
 
   try {
-    const totalRefund = calculateTotalCost(units, uModel) * 0.75;
+    const totalRefund = Math.floor(calculateTotalCost(units, uModel) * 0.75);
     if(totalRefund <= 0) return res.status(400).json({ error: 'Invalid units quantity' });
     const userUnitsMap = new Map((user.units as PlayerUnit[]).map(u => [`${u.type}_${u.level}`, u]));
     // Add the number of units to "CITIZENS"
@@ -54,8 +54,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           to_user_id: userId,
           to_user_account_type: 'HAND',
           date_time: new Date().toISOString(),
-          history_type: 'TRAINING',
-          stats: { type: 'UNTRAIN', items: units },
+          history_type: 'SALE',
+          stats: { type: 'TRAINING_UNTRAIN', items: units },
         },
         'units'
       );
