@@ -230,6 +230,8 @@ const Bank = (props) => {
       return '+';
     if (transactionType === 'Recruitment')
       return '+';
+    if (transactionType === 'Income')
+      return '+';
     if (transactionType === 'War Spoils') {
       if (entry.to_user_id === user?.id)
         return '+';
