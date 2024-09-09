@@ -33,9 +33,9 @@ const handler = async (
     if (!Number.isInteger(recruitedUserId)) {
       recruitedUserId = await prisma.users.findFirst({where: {recruit_link: recruitedUserId}}).then((user) => user.id);
     }
-    const result = await prisma.$transaction(async (prisma) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Save the recruitment record
-      await prisma.recruit_history.create({
+      await tx.recruit_history.create({
         data: {
           from_user: recruiterUser ? Number(recruitedUserId) : recruiterUser,
           to_user: recruiterUser ? Number(recruiterUser) : recruitedUserId,
@@ -55,7 +55,7 @@ const handler = async (
       await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
 
       // Check the number of recruitments for the recruited user within the last 24 hours
-      const recruitments = await prisma.recruit_history.findMany({
+      const recruitments = await tx.recruit_history.findMany({
         where: {
           from_user: recruiterUser === 0 ? 0 : Number(recruitedUserId),
           to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,
@@ -76,19 +76,19 @@ const handler = async (
         throw new Error(`User has already been recruited 5 times in the last 24 hours.`);
       }
 
-      let userToUpdate = await prisma.users.findUnique({
+      let userToUpdate = await tx.users.findUnique({
         where: { id: Number(recruiterUser ? Number(session.user.id) : recruitedUserId) },
       });
 
       if (selfRecruit) {
-        userToUpdate = await prisma.users.findUnique({
+        userToUpdate = await tx.users.findUnique({
           where: { id: Number(recruiterUser ? Number(session.user.id) : recruitedUserId) },
         });
       }
 
       // Update the number of citizens and gold for the user
       const updatedUnits = increaseCitizens(userToUpdate.units as PlayerUnit[]);
-      await prisma.users.update({
+      await tx.users.update({
         where: { id: userToUpdate.id },
         data: {
           units: updatedUnits,
@@ -98,7 +98,7 @@ const handler = async (
         },
       });
 
-      const reConfirm = await prisma.recruit_history.findMany({
+      const reConfirm = await tx.recruit_history.findMany({
         where: {
           from_user: recruitedUserId ? Number(recruitedUserId) : recruiterUser,
           to_user: recruiterUser ? Number(session.user.id) : recruitedUserId,

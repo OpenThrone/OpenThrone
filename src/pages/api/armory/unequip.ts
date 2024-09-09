@@ -4,6 +4,8 @@ import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import UserModel from '@/models/Users';
+import { updateUserAndBankHistory } from '@/services';
+import { calculateUserStats } from '@/utils/utilities';
 
 const handler = async (
   req: NextApiRequest,
@@ -72,28 +74,37 @@ const handler = async (
         totalRefund += Math.floor((itemType.cost - ((uModel.priceBonus || 0) / 100) * itemType.cost) * itemData.quantity * 0.75);
       }
 
-      await prisma.users.update({
-        where: { id: userId },
-        data: {
-          gold: BigInt(user.gold) + BigInt(totalRefund),
-          items: updatedItems,
-        },
-      });
+      const unequip = await prisma.$transaction(async (tx) => {
+        const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
+          calculateUserStats(user, updatedItems, 'items');
 
-      await prisma.bank_history.create({
-        data: {
-          gold_amount: BigInt(totalRefund),
-          from_user_id: 0,
-          from_user_account_type: 'BANK',
-          to_user_id: userId,
-          to_user_account_type: 'HAND',
-          date_time: new Date().toISOString(),
-          history_type: 'SALE',
-          stats: {
-            type: 'ARMORY_UNEQUIP',
-            items: items,
-          }
-        },
+        await updateUserAndBankHistory(
+          tx,
+          userId,
+          BigInt(user.gold) + BigInt(totalRefund),
+          updatedItems,
+          killingStrength,
+          defenseStrength,
+          newOffense,
+          newDefense,
+          newSpying,
+          newSentry,
+          {
+            gold_amount: BigInt(totalRefund),
+            from_user_id: 0,
+            from_user_account_type: 'BANK',
+            to_user_id: userId,
+            to_user_account_type: 'HAND',
+            date_time: new Date().toISOString(),
+            history_type: 'SALE',
+            stats: {
+              type: 'ARMORY_UNEQUIP',
+              items: items,
+            },
+          },
+          'items'
+        );
+        
       });
 
       return res.status(200).json({

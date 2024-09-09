@@ -6,75 +6,146 @@ import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import toLocale from '@/utils/numberFormatting';
-import { Table, Group, Avatar, Badge, Text, Indicator } from '@mantine/core';
+import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
 
-const ROWS_PER_PAGE = 10;
-
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const { data: session } = useSession();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
   const colorScheme = user?.colorScheme;
   const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1);
+  const [lastPage, setLastPage] = useState(1);
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'overallrank');
   const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'asc');
   const [players, setPlayers] = useState([]);
   const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [attackRangeMin, setAttackRangeMin] = useState(1);
+  const [attackRangeMax, setAttackRangeMax] = useState(5);
+  const [hasSetPageInitially, setHasSetPageInitially] = useState(false);
 
   useEffect(() => {
-    const start = (page - 1) * ROWS_PER_PAGE;
-    const end = start + ROWS_PER_PAGE;
+    const start = (page - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
     let sortedPlayers = [...allUsers];
+    setLastPage(Math.ceil(allUsers.length / rowsPerPage));
+
+    // Fallback for users where the rank hasn't been calculated yet (and is therefore 0 or null)
+    sortedPlayers.forEach((u) => u.rank = u.rank || Infinity);
 
     if (sortBy === 'overallrank') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? a.score - b.score : b.score - a.score);
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? b.rank - a.rank : a.rank - b.rank);
     } else if (sortBy === 'gold') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.gold) - Number(b.gold) : Number(b.gold) - Number(a.gold));
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.gold) - Number(a.gold) : Number(a.gold) - Number(b.gold));
     } else if (sortBy === 'population') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.population) - Number(b.population) : Number(b.population) - Number(a.population));
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.population) - Number(a.population) : Number(a.population) - Number(b.population));
     } else if (sortBy === 'level') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(a.experience) - Number(b.experience) : Number(b.experience) - Number(a.experience));
+      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.experience) - Number(a.experience) : Number(a.experience) - Number(b.experience));
     }
 
     const paginatedPlayers = sortedPlayers.slice(start, end);
     paginatedPlayers.forEach((player, index) => player.overallrank = (sortDir === 'asc' ? start + index + 1 : allUsers.length - start - index));
 
     setPlayers(paginatedPlayers);
-  }, [page, sortBy, sortDir, allUsers]);
+  }, [page, sortBy, sortDir, allUsers, rowsPerPage]);
 
   useEffect(() => {
     const golds = players.map(player => toLocale(player.gold, user?.locale));
     setFormattedGolds(golds);
   }, [players, user?.locale]);
 
+  useEffect(() => {
+    setAttackRangeMax(user?.attackRange.max);
+    setAttackRangeMin(user?.attackRange.min);
+  }, [user?.attackRange]);
+
   const handleSort = (newSortBy) => {
     const newSortDir = sortBy === newSortBy && sortDir === 'desc' ? 'asc' : 'desc';
     setSortBy(newSortBy);
     setSortDir(newSortDir);
     setPage(1);
-    router.push(`?sortBy=${newSortBy}&sortDir=${newSortDir}&page=1`);
   };
 
   useEffect(() => {
-    const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
-    if (loggedInPlayerIndex !== -1 && !searchParams.get('page') && !searchParams.get('sortBy') && !searchParams.get('sortDir')) {
-      const newPage = Math.floor(loggedInPlayerIndex / ROWS_PER_PAGE) + 1;
-      setPage(newPage);
-      router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
+    if(user){
+      if (!hasSetPageInitially) {
+        const pageParam = searchParams.get('page');
+        const sortByParam = searchParams.get('sortBy');
+        const sortDirParam = searchParams.get('sortDir');
+
+        if (!pageParam && !sortByParam && !sortDirParam) {
+          const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
+          
+          if (loggedInPlayerIndex !== -1) {
+            const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
+            setPage(newPage);
+          }
+        } else {
+          const initialPage = parseInt(pageParam) || 1;
+          setPage(initialPage);
+          setSortBy(sortByParam || 'overallrank');
+          setSortDir(sortDirParam || 'asc');
+        }
+
+        // Mark the initial setting as complete
+        setHasSetPageInitially(true);
+      }
     }
-  }, [user, allUsers, sortBy, sortDir, router, searchParams]);
+  }, [user, allUsers, searchParams, rowsPerPage, hasSetPageInitially]);
+
+  const handleRowsPerPageChange = (newRowsPerPage) => {
+    setRowsPerPage(newRowsPerPage);
+    
+    setPage(1);
+  };
 
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Attack</h2>
+      <Center><p>You can attack players from levels {attackRangeMin} to {attackRangeMax}</p></Center>
+      <div className="mt-4 flex justify-between mb-2">
+        <button
+          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+          onClick={() => {
+            const newPage = Math.max(page - 1, 1);
+            setPage(newPage);
+          }}
+          disabled={page == 1}
+        >
+          Previous
+        </button>
+        <Pagination total={lastPage} siblings={1} value={page} defaultValue={page} onChange={setPage} />
+        <button
+          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+          onClick={() => {
+            const newPage = page + 1;
+            setPage(newPage);
+          }}
+          disabled={players.length < rowsPerPage}
+        >
+          Next
+        </button>
+      </div>
       <div className="overflow-x-auto">
+        <Group>
+          <Text size="sm">Show per page: </Text>
+          {[10, 20, 50, 100].map(option => (
+            <Text
+              key={option}
+              size="sm"
+              c={rowsPerPage === option ? 'dimmed' : 'white'}
+              className='cursor-pointer'
+              onClick={() => handleRowsPerPageChange(option)}
+            >
+              {option}
+            </Text>
+          ))}
+        </Group>
         <Table.ScrollContainer minWidth={400}>
           <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th className="px-1 py-1"><button onClick={() => handleSort('overallrank')}>Rank</button></Table.Th>
+                <Table.Th className="px-1 py-1"><button onClick={() => handleSort('overallrank')}>Rank {sortBy === 'overallrank' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
                 <Table.Th className="px-4 py-2">Username</Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('gold')}>Gold {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('population')}> Population {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
@@ -136,20 +207,19 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           onClick={() => {
             const newPage = Math.max(page - 1, 1);
             setPage(newPage);
-            router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
           disabled={page == 1}
         >
           Previous
         </button>
+        <Pagination total={lastPage} siblings={1} value={page} defaultValue={page} onChange={setPage} />
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
           onClick={() => {
             const newPage = page + 1;
             setPage(newPage);
-            router.push(`?page=${newPage}&sortBy=${sortBy}&sortDir=${sortDir}`);
           }}
-          disabled={players.length < ROWS_PER_PAGE}
+          disabled={players.length < rowsPerPage}
         >
           Next
         </button>
@@ -158,25 +228,26 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   );
 };
 
-const calculateUserScore = (user) => {
-  const unitScore = user.units
-    ? user.units.map((unit) => unit.quantity).reduce((a, b) => a + b, 0)
-    : 0;
-  const itemScore = user.items
-    ? user.items.map((item) => item.quantity * (item.level * 0.1)).reduce((a, b) => a + b, 0)
-    : 0;
-
-  return 0.7 * user.experience +
-    0.2 * user.fort_level +
-    0.1 * user.house_level +
-    0.004 * unitScore +
-    0.003 * itemScore;
-};
-
 
 export const getServerSideProps = async () => {
   try {
-    let allUsers = await prisma.users.findMany({ where: { AND: [{ id: { not: 0 } }, { last_active: { not: null } }] } } );
+    let allUsers = await prisma.users.findMany({
+      where: {
+        AND: [{ id: { not: 0 } }, { last_active: { not: null } }],
+      },
+      select: { // limit the amount of data we're sending back - fixes data prop concerns for performance
+        id: true,
+        display_name: true,
+        rank: true,
+        last_active: true,
+        avatar: true,
+        units: true,
+        gold: true,
+        race: true,
+        class: true,
+        experience: true,
+      },
+    });
     allUsers.forEach(user => {
       const nowdate = new Date();
       const lastActiveTimestamp = new Date(user.last_active).getTime();
@@ -185,8 +256,7 @@ export const getServerSideProps = async () => {
       user.population = population;
       user.isOnline = ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
     });
-    allUsers.forEach(user => user.score = calculateUserScore(user));
-    allUsers.sort((a, b) => b.score - a.score);
+    allUsers.sort((a, b) => a.rank - b.rank);
     return { props: { allUsers } };
   } catch (error) {
     console.error('Error fetching user data:', error);

@@ -8,6 +8,8 @@ import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import { Indicator } from '@mantine/core';
 
+import { PermissionType } from '@prisma/client';
+
 const parentLinks = [
   'Home',
   'Battle',
@@ -90,6 +92,18 @@ export const NavLoggedIn: React.FC = () => {
   const layoutCont = useLayout();
   const [testMenu, setTestMenu] = useState(false);
   const { user } = useUser();
+
+  // Add the administration link only if the user has admin privileges
+  if (
+    user?.permissions?.some((perm) => perm.type === PermissionType.ADMINISTRATOR) &&
+    !subMenus.Home.some((subNav) => subNav.text === 'Administration')
+  ) {
+      subMenus.Home.push({
+        text: 'Administration',
+        href: '/home/admin',
+        parent: 'Home',
+      });
+  }
 
   const handleParentClick = (event: React.MouseEvent, link: string) => {
     event.preventDefault();

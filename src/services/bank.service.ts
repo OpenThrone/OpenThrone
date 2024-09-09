@@ -2,13 +2,13 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import prisma from '@/lib/prisma';
 
 export const deposit = async (userId: number, depositAmount: bigint) => {
-  return await prisma.$transaction(async (prisma) => {
-    const user = await prisma.users.findUnique({ where: { id: userId } });
+  return await prisma.$transaction(async (tx) => {
+    const user = await tx.users.findUnique({ where: { id: userId } });
 
     if (!user) throw new Error('User not found');
     if (depositAmount > BigInt(user.gold)) throw new Error('Not enough gold for deposit');
 
-    const updatedUser = await prisma.users.update({
+    const updatedUser = await tx.users.update({
       where: { id: userId },
       data: {
         gold: user.gold - depositAmount,
@@ -16,7 +16,7 @@ export const deposit = async (userId: number, depositAmount: bigint) => {
       },
     });
 
-    await prisma.bank_history.create({
+    await tx.bank_history.create({
       data: {
         gold_amount: depositAmount,
         from_user_id: userId,
@@ -33,13 +33,13 @@ export const deposit = async (userId: number, depositAmount: bigint) => {
 };
 
 export const withdraw = async (userId: number, withdrawAmount: bigint) => {
-  return await prisma.$transaction(async (prisma) => {
-    const user = await prisma.users.findUnique({ where: { id: userId } });
+  return await prisma.$transaction(async (tx) => {
+    const user = await tx.users.findUnique({ where: { id: userId } });
 
     if (!user) throw new Error('User not found');
     if (withdrawAmount > BigInt(user.gold_in_bank)) throw new Error('Not enough gold for withdrawal');
 
-    const updatedUser = await prisma.users.update({
+    const updatedUser = await tx.users.update({
       where: { id: userId },
       data: {
         gold: user.gold + withdrawAmount,
@@ -47,7 +47,7 @@ export const withdraw = async (userId: number, withdrawAmount: bigint) => {
       },
     });
 
-    await prisma.bank_history.create({
+    await tx.bank_history.create({
       data: {
         gold_amount: withdrawAmount,
         from_user_id: userId,
