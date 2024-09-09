@@ -88,29 +88,11 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   if (training === 'true') {
     transactionConditions.push({
-      OR: [
-        {
-          history_type: { in: ['TRAINING'] },
-          stats: {
-            path: ['type'],
-            string_contains: 'TRAIN',
-          },
-        },
-        {
-          history_type: { in: ['TRAINING'] },
-          stats: {
-            path: ['type'],
-            string_contains: 'UNTRAIN',
-          },
-        },
-        {
-          history_type: { in: ['TRAINING'] },
-          stats: {
-            path: ['type'],
-            string_contains: 'CONVERT',
-          },
-        },
-      ],
+      history_type: { in: ['SALE'] },
+      stats: {
+        path: ['type'],
+        string_contains: 'TRAINING_',
+      },
     });
   }
 
@@ -128,7 +110,7 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     ],
   });
 
-  console.log('conditions: ', JSON.stringify(conditions));
+  //console.log('conditions: ', JSON.stringify(conditions));
   try {
     const bankHistory = await getBankHistory(conditions);
     return res.status(200).json(stringifyObj(bankHistory));

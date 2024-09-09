@@ -368,7 +368,7 @@ const Training = (props) => {
           justify="center"
           gap="xs">
           <Text size='sm'>Total Cost: {toLocale(totalCost)}</Text>
-          <Text size='sm'>Total Refund: {toLocale(totalCost * .75)}</Text>
+          <Text size='sm'>Total Refund: {toLocale(Math.round(totalCost * .75))}</Text>
         </Stack>
         <Flex justify='space-between' m={'xs'}>
           <Button

@@ -188,6 +188,18 @@ const Bank = (props) => {
       return history_type === 'SALE' ? 'Sale' : 'Withdraw';
     }
 
+    // Handle training-related transactions
+    if (history_type === 'SALE') {
+      switch (stats?.type) {
+        case 'TRAINING_UNTRAIN':
+          return 'Untrain Units';
+        case 'TRAINING_TRAIN':
+          return 'Train Units';
+        case 'TRAINING_CONVERSION':
+          return 'Convert Units';
+      }
+    }
+
     // Handle sales and equipment transactions
     if (history_type === 'SALE') {
       if (from_user_id === 0 && from_user_account_type === 'BANK') {
@@ -198,18 +210,6 @@ const Bank = (props) => {
       }
     }
 
-    // Handle training-related transactions
-    if (history_type === 'TRAINING') {
-      switch (stats?.type) {
-        case 'UNTRAIN':
-          return 'Untrain Units';
-        case 'TRAIN':
-          return 'Train Units';
-        case 'CONVERT':
-          return 'Convert Units';
-      }
-    }
-
     // Handle player transfers
     if (history_type === 'PLAYER_TRANSFER') return 'Player Transfer';
 
@@ -217,9 +217,10 @@ const Bank = (props) => {
 
     if (history_type === 'ECONOMY') return 'Income';
 
+    if (history_type === 'WAR_SPOILS') return 'War Spoils';
     // Fallback for unknown types
     console.log('Unknown transaction type:', entry);
-    return 'War Spoils';
+    return 'UNKNOWN';
   };
 
   return (
@@ -414,7 +415,6 @@ const Bank = (props) => {
               <Table.Tbody>
                 {bankHistory.filter((entry)=>entry.from_user_id === entry.to_user_id).slice(0,10).map((entry, index) => {
                   let transactionType = '';
-                  console.log('history type: ', entry.history_type)
                   transactionType = getTransactionType(entry);
 
                   return (
@@ -521,7 +521,7 @@ const Bank = (props) => {
                     <Table.Tr key={index}>
                       <Table.Td>{new Date(entry.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString()}</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
-                      <Table.Td>{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+                      <Table.Td>{(entry.stats.type?.includes(["UN"]) ? '+' : '-') +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
                     </Table.Tr>
                   );
                 })}
