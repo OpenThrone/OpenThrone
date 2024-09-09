@@ -153,16 +153,6 @@ export async function attackHandler(
       if (isAttackerWinner) {
         DefensePlayer.gold = BigInt(DefensePlayer.gold) - battleResults.pillagedGold;
         AttackPlayer.gold = BigInt(AttackPlayer.gold) + battleResults.pillagedGold;
-
-        await createBankHistory({
-          gold_amount: battleResults.pillagedGold,
-          from_user_id: defenderId,
-          from_user_account_type: 'HAND',
-          to_user_id: attackerId,
-          to_user_account_type: 'HAND',
-          date_time: new Date().toISOString(),
-          history_type: 'WAR_SPOILS',
-        }, tx);
       }
 
       const attack_log = await createAttackLog({
@@ -189,6 +179,19 @@ export async function attackHandler(
           defender_losses: battleResults.Losses.Defender,
         },
       }, tx);
+
+      if (isAttackerWinner) {
+        await createBankHistory({
+          gold_amount: battleResults.pillagedGold,
+          from_user_id: defenderId,
+          from_user_account_type: 'HAND',
+          to_user_id: attackerId,
+          to_user_account_type: 'HAND',
+          date_time: new Date().toISOString(),
+          history_type: 'WAR_SPOILS',
+          stats: { type: 'ATTACK', attackID: attack_log.id },
+        }, tx); 
+      }
 
       await incrementUserStats(attackerId, {
         type: 'OFFENSE',

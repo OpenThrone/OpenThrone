@@ -53,7 +53,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const toUnitType = UnitTypes.find((unit) => unit.type === toType && unit.level === toLevel);
     const fromUnitType = UnitTypes.find((unit) => unit.type === fromType && unit.level === fromLevel);
-    const cost = amount * ((toUnitType.cost - (((uModel.priceBonus || 0) / 100) * toUnitType.cost)) - (fromUnitType.cost - (((uModel.priceBonus || 0) / 100) * fromUnitType.cost))) * (toUnitType.level > fromUnitType.level ? 1 : 75 / 100);
+    const cost = Math.ceil(amount * ((toUnitType.cost - (((uModel.priceBonus || 0) / 100) * toUnitType.cost)) - (fromUnitType.cost - (((uModel.priceBonus || 0) / 100) * fromUnitType.cost))) * (toUnitType.level > fromUnitType.level ? 1 : 75 / 100));
 
     if (user.gold < BigInt(cost)) {
       return res.status(400).json({ error: 'Not enough gold' });

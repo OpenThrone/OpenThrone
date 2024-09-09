@@ -34,7 +34,10 @@ const Bank = (props) => {
     withdraws: true,
     war_spoils: true,
     transfers: true,
-    sale:true
+    sale: true,
+    training: true,
+    recruitment: true,
+    economy: true,
   });
 
   useEffect(() => {
@@ -171,6 +174,53 @@ const Bank = (props) => {
       console.error('Error withdrawing:', error);
       alertService.error('Failed to withdraw gold. Please try again.');
     }
+  };
+
+  const getTransactionType = (entry) => {
+    const { from_user_id, to_user_id, from_user_account_type, history_type, stats } = entry;
+
+    // Handle cases where the user is both the sender and receiver
+    if (from_user_id === to_user_id) {
+      if (from_user_account_type === 'HAND') {
+        if (history_type === 'SALE') return 'Purchase';
+        return stats?.type === 'CONVERT' ? 'Unit Conversion' : 'Deposit';
+      }
+      return history_type === 'SALE' ? 'Sale' : 'Withdraw';
+    }
+
+    // Handle training-related transactions
+    if (history_type === 'SALE') {
+      switch (stats?.type) {
+        case 'TRAINING_UNTRAIN':
+          return 'Untrain Units';
+        case 'TRAINING_TRAIN':
+          return 'Train Units';
+        case 'TRAINING_CONVERSION':
+          return 'Convert Units';
+      }
+    }
+
+    // Handle sales and equipment transactions
+    if (history_type === 'SALE') {
+      if (from_user_id === 0 && from_user_account_type === 'BANK') {
+        return 'Sale';
+      }
+      if (from_user_account_type === 'HAND' && to_user_id === 0) {
+        return stats?.type === 'ARMORY_EQUIP' ? 'Purchase' : 'Sale';
+      }
+    }
+
+    // Handle player transfers
+    if (history_type === 'PLAYER_TRANSFER') return 'Player Transfer';
+
+    if (history_type === 'RECRUITMENT') return 'Recruitment';
+
+    if (history_type === 'ECONOMY') return 'Income';
+
+    if (history_type === 'WAR_SPOILS') return 'War Spoils';
+    // Fallback for unknown types
+    console.log('Unknown transaction type:', entry);
+    return 'UNKNOWN';
   };
 
   return (
@@ -365,13 +415,7 @@ const Bank = (props) => {
               <Table.Tbody>
                 {bankHistory.filter((entry)=>entry.from_user_id === entry.to_user_id).slice(0,10).map((entry, index) => {
                   let transactionType = '';
-                  console.log('history type: ', entry.history_type)
-                  if (entry.from_user_id === entry.to_user_id) {
-                    transactionType =
-                      entry.from_user_account_type === 'HAND'
-                        ? (entry.history_type === 'SALE'? 'Purchase' : 'Deposit')
-                      : (entry.history_type === 'SALE' ? 'Sale' : 'Withdraw');
-                  }
+                  transactionType = getTransactionType(entry);
 
                   return (
                     <Table.Tr key={index}>
@@ -429,6 +473,30 @@ const Bank = (props) => {
             >
               Sale
             </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.training}
+              onChange={() => { setFilters({ ...filters, training: !filters.training }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Training
+            </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.recruitment}
+              onChange={() => { setFilters({ ...filters, recruitment: !filters.recruitment }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Recruitment
+            </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.economy}
+              onChange={() => { setFilters({ ...filters, economy: !filters.economy }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Income
+            </Chip>
           </Group>
           {message && <div className="text-center p-4">{message}</div>}
           <Space h="md" />
@@ -447,22 +515,13 @@ const Bank = (props) => {
                 {bankHistory.map((entry, index) => {
                   let transactionType = '';
                   
-                  if (entry.from_user_id === entry.to_user_id) {
-                    transactionType =
-                      entry.from_user_account_type === 'HAND'
-                        ? (entry.history_type === 'SALE' ? 'Purchase' : 'Deposit')
-                        : (entry.history_type === 'SALE' ? 'Sale' : 'Withdraw');
-                  } else if (entry.history_type === 'PLAYER_TRANSFER') {
-                    transactionType = 'Player Transfer';
-                  } else {
-                    transactionType = 'War Spoils';
-                  }
+                  transactionType = getTransactionType(entry);
 
                   return (
                     <Table.Tr key={index}>
                       <Table.Td>{new Date(entry.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString()}</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
-                      <Table.Td>{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+                      <Table.Td>{(entry.stats.type?.includes(["UN"]) || transactionType === 'Recruitment' ? '+' : '-') +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
                     </Table.Tr>
                   );
                 })}

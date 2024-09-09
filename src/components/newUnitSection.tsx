@@ -153,7 +153,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
                             Costs: {toLocale(unit.cost)} Gold
                           </Text>
                           <Text fz="sm" c='#ADB5BD'>
-                            Sale Value: {toLocale(Math.floor(parseInt(unit.cost) * .75))}
+                            Sale Value: {toLocale(Math.round(parseInt(unit.cost) * .75))}
                           </Text>
                         </div>
                       </Group>
@@ -238,7 +238,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
             className="w-40"
           />
           <span>
-            <Text>{toLower ? 'Refund' : 'Cost'}: {toLocale(conversionCost)}</Text>
+            <Text>{toLower ? 'Refund' : 'Cost'}: {toLocale(Math.round(conversionCost))}</Text>
           </span>
           <Button className='mb-1' onClick={handleConvert}>Convert</Button>
         </Group>

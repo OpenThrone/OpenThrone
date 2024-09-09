@@ -177,12 +177,14 @@ export type UnitTotalsType = {
  * PLAYER_TRANSFER - Funds manually transferred by the player.
  * WAR_SPOILS - Gold via combat (or spying)
  * SALE - Gold from buying/selling items and (un)training units
+ * RECRUITMENT - Gold from recruiting units
  */
 export type BankTransferHistoryType =
   | 'ECONOMY'
   | 'PLAYER_TRANSFER'
   | 'WAR_SPOILS'
-  | 'SALE';
+  | 'SALE'
+  | 'RECRUITMENT';
 
 export type UnitProps = {
   requirement?: string;
