@@ -1,4 +1,4 @@
-// pages/api/update-bonus-points.js
+// pages/api/account/bonusPoints.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -11,10 +11,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Retrieve the type to update and user ID from the request body
-  const { typeToUpdate } = req.body;
-  
-  const userId = req.session.user?.id; // Make sure your session object has the correct structure
+  const { changeQueue } = req.body;
+  const userId = req.session.user.id;
   if (!userId) {
     return res.status(403).json({ error: 'User ID is missing from session' , session: session});
   }
@@ -26,39 +24,22 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(404).json({ error: 'User or bonus points not found' });
     }
 
-    if (user.usedProficiencyPoints >= user.level) {
-      return res.status(404).json({ error: 'Not enough proficiency points' });
+    // Calculate the total change requested
+    const totalChange = Object.values(changeQueue).reduce((acc, { change }) => acc + change, 0);
+
+    // Check if the user has enough available proficiency points
+    if (Number(totalChange) > user.availableProficiencyPoints) {
+      return res.status(400).json({ error: 'Not enough proficiency points available' });
     }
 
-    // Define the template for required bonus points
-    const requiredBonusPoints = [
-      { type: "OFFENSE", level: 0 },
-      { type: "DEFENSE", level: 0 },
-      { type: "INCOME", level: 0 },
-      { type: "INTEL", level: 0 },
-      { type: "PRICES", level: 0 },
-    ];
-    
-    // Initialize updatedBonusPoints with existing bonus points or an empty array if not set
-    let updatedBonusPoints = user.bonus_points || [];
-
-    // Ensure all required bonus point types are present, adding any that are missing
-    requiredBonusPoints.forEach((requiredBonus) => {
-      const existingBonus = updatedBonusPoints.find(bonus => bonus.type === requiredBonus.type);
-      if (!existingBonus) {
-        // If the required type is not found, add it with the default level
-        updatedBonusPoints.push(requiredBonus);
-      }
-    });
-
-    // Increment the level of the specified type if present
-    updatedBonusPoints = updatedBonusPoints.map((bonus) => {
-      if (bonus.type === typeToUpdate) {
-        if (bonus.level <= 75) {
-          return { ...bonus, level: bonus.level + 1 };
-        } else {
-          return res.status(404).json({ error: 'Max level reached' });
+    // Iterate over changeQueue to update levels
+    let updatedBonusPoints = user.bonus_points.map((bonus) => {
+      if (changeQueue[bonus.type]?.change > 0) {
+        const newLevel = bonus.level + changeQueue[bonus.type].change;
+        if (newLevel > 75) {
+          throw new Error(`Max level reached for ${bonus.type}`);
         }
+        return { ...bonus, level: newLevel };
       }
       return bonus;
     });
@@ -73,7 +54,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(200).json({ success: true, updatedBonusPoints });
   } catch (error) {
     console.error('Error updating user bonus points:', error, userId);
-    return res.status(500).json({ error: 'Internal Server Error', errorDetails: error });
+    return res.status(500).json({ error: 'Internal Server Error', errorDetails: error.message });
   }
 }
 
