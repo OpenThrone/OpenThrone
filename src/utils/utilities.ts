@@ -130,12 +130,14 @@ const calculateOverallRank = (user) => {
     0.003 * itemScore;
 };
 
-const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | 'items') => {
+const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | 'items' | 'battle_upgrades') => {
   const newUserData = { ...userData };
   if (type === 'units') {
     newUserData.units = updatedData;
   } else if (type === 'items') {
     newUserData.items = updatedData;
+  } else if (type === 'battle_upgrades') {
+    newUserData.battle_upgrades = updatedData;
   }
 
   const newUModel = new UserModel(newUserData);

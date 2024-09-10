@@ -56,7 +56,7 @@ export const updateUserAndBankHistory = async (
   newSpying: number,
   newSentry: number,
   bankData: any,
-  updateType: 'units' | 'items'
+  updateType: 'units' | 'items' | 'battle_upgrades'
 ) => {
   const updateData: any = {
     gold: userGold,
@@ -72,6 +72,8 @@ export const updateUserAndBankHistory = async (
     updateData.units = updatedData;
   } else if (updateType === 'items') {
     updateData.items = updatedData;
+  } else if (updateType === 'battle_upgrades') {
+    updateData.battle_upgrades = updatedData;
   }
 
   await prismaInstance.users.update({

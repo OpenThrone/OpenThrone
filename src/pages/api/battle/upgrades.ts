@@ -4,6 +4,8 @@ import { BattleUpgrades, ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
+import { calculateUserStats } from '@/utils/utilities';
+import { updateUserAndBankHistory } from '@/services';
 
 interface EquipmentProps {
   type: string;
@@ -99,36 +101,40 @@ const handler = async(
     });
 
     await prisma.$transaction(async (tx) => {
-      // Update the user's gold and items in the database
-      await tx.users.update({
-        where: { id: userId },
-        data: {
-          gold: BigInt(user.gold) - BigInt(totalCost),
-          battle_upgrades: updatedItems,
-        },
-      });
-    
-      await tx.bank_history.create({
-        data: {
+      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
+        calculateUserStats(user, JSON.parse(JSON.stringify(updatedItems)), 'battle_upgrades');
+      await updateUserAndBankHistory(
+        tx,
+        userId,
+        BigInt(user.gold) - BigInt(totalCost),
+        updatedItems,
+        killingStrength,
+        defenseStrength,
+        newOffense,
+        newDefense,
+        newSpying,
+        newSentry,
+        {
           gold_amount: BigInt(totalCost),
-          from_user_id: (operation === 'buy' ? userId : 0),
-          from_user_account_type: (operation === 'buy' ? 'HAND' : 'BANK'),
-          to_user_id: (operation === 'buy' ? 0 : userId),
-          to_user_account_type: (operation === 'buy' ? 'BANK' : 'HAND'),
-          date_time: new Date(),
+          from_user_id: userId,
+          from_user_account_type: 'HAND',
+          to_user_id: 0,
+          to_user_account_type: 'BANK',
+          date_time: new Date().toISOString(),
           history_type: 'SALE',
           stats: {
             operation: operation,
-            action: 'battle_upgrade',
+            type: operation === 'buy' ? 'BATTLE_UPGRADES_BUY' : 'BATTLE_UPGRADES_SELL',
             items: itemsToEquip.map(item => ({
               type: item.type,
               level: item.level,
               quantity: item.quantity,
               cost: item.cost,
             }))
-          }
+          },
         },
-      });
+        'battle_upgrades'
+      );
     });
 
     return res.status(200).json({
