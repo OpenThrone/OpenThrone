@@ -535,19 +535,87 @@ class UserModel {
   }
 
   /**
-   * Calculates the total army stat for a given unit type, taking into account the units and weapons owned by the user.
-   * @param type - The type of unit to calculate the army stat for.
-   * @returns The total army stat for the given unit type.
-   */
-  getArmyStat(type: UnitType) {
-    const sortedItems = JSON.parse(JSON.stringify(this.items.filter(item => item.usage === type).sort((a, b) => b.level - a.level)));
-    const sortedUnits = JSON.parse(JSON.stringify(this.units.filter(unit => unit.type === type).sort((a, b) => b.level - a.level)));
+ * Calculates the total army stat for a given unit type, considering units and weapons owned by the user.
+ * @param type - The type of unit to calculate the army stat for.
+ * @returns The total army stat for the given unit type.
+ */
+  getArmyStat(type: UnitType): number {
+    const sortedItems = this.getSortedItems(type);
+    const sortedUnits = this.getSortedUnits(type);
     let totalStat = 0;
-    const unitCoverage = new Map();  // Keeps track of how many times each unit has been covered
+    const unitCoverage = new Map<number, number>(); // Keeps track of coverage
+
+    totalStat += this.calculateUnitStats(sortedUnits, unitCoverage);
+    totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
+    // Calculate bonuses from upgrades
+    sortedUnits.forEach((unit, index) => {
+      const applicableUpgrades = this.getApplicableUpgrades(unit, type);
+
+      applicableUpgrades.forEach(upgrade => {
+        const userUpgrade = this.getUserUpgrade(upgrade, type);
+        if (userUpgrade && userUpgrade.quantity > 0) {
+          const { totalBonusForUnits, unitsCovered } = this.calculateUpgradeBonus(upgrade, unit, userUpgrade, unitCoverage, index);
+          totalStat += totalBonusForUnits;
+
+          // Update the quantity of the upgrade and track coverage
+          userUpgrade.quantity -= Math.ceil(unitsCovered / upgrade.unitsCovered);
+          unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
+        }
+      });
+    });
+    totalStat = this.applyBonuses(type, totalStat);
+
+    return Math.ceil(totalStat);
+  }
+
+  /**
+   * Sorts and filters items based on type.
+   * @param type - The type of unit.
+   * @returns Sorted items.
+   */
+  private getSortedItems(type: UnitType) {
+    return JSON.parse(JSON.stringify(this.items.filter(item => item.usage === type).sort((a, b) => b.level - a.level)));
+  }
+
+  /**
+   * Sorts and filters units based on type.
+   * @param type - The type of unit.
+   * @returns Sorted units.
+   */
+  private getSortedUnits(type: UnitType) {
+    return JSON.parse(JSON.stringify(this.units.filter(unit => unit.type === type).sort((a, b) => b.level - a.level)));
+  }
+
+  /**
+   * Calculates the total stats from units.
+   * @param sortedUnits - Sorted units.
+   * @param unitCoverage - Map tracking unit coverage.
+   * @returns Total unit stats.
+   */
+  private calculateUnitStats(sortedUnits: PlayerUnit[], unitCoverage: Map<number, number>): number {
+    let totalStat = 0;
+
     sortedUnits.forEach((unit, index) => {
       const unitFiltered = UnitTypes.find((unitType) => unitType.type === unit.type && unitType.level === unit.level);
-      if (unitFiltered === undefined) return 0;
-      totalStat += (unitFiltered?.bonus || 0) * unit.quantity;
+      if (!unitFiltered) return 0;
+
+      totalStat += (unitFiltered.bonus || 0) * unit.quantity;
+    });
+
+    return totalStat;
+  }
+
+  /**
+   * Calculates the total stats from items.
+   * @param sortedItems - Sorted items.
+   * @param sortedUnits - Sorted units.
+   * @param unitCoverage - Map tracking unit coverage.
+   * @returns Total item stats.
+   */
+  private calculateItemStats(sortedItems: Item[], sortedUnits: UnitUpgradeType[], unitCoverage: Map<number, number>): number {
+    let totalStat = 0;
+
+    sortedUnits.forEach((unit, index) => {
       const itemCounts: ItemCounts = {};
       sortedItems.forEach((item) => {
         itemCounts[item.type] = itemCounts[item.type] || 0;
@@ -557,77 +625,81 @@ class UserModel {
         item.quantity -= usableQuantity;
         itemCounts[item.type] += usableQuantity;
       });
-    })
-    sortedUnits
-      .filter((u) => u.level >= 2)
-      .forEach((unit, index) => {
-      if (type === 'DEFENSE') {
-        const usersDefenseBattleUpgrades = this.battle_upgrades.filter(upgrade => upgrade.type === 'DEFENSE' && upgrade.quantity > 0);
-        const applicableUpgrades = this.availableDefenseBattleUpgrades
-          .filter(upgrade => unit.level >= upgrade.minUnitLevel)
-          .sort((a, b) => b.level - a.level); // Sort upgrades by level in descending order;
-
-        if (applicableUpgrades.length !== 0) {
-          applicableUpgrades.forEach(upgrade => {
-            const userUpgrade = usersDefenseBattleUpgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
-
-            if (applicableUpgrades.length !== 0) {
-              if (userUpgrade && userUpgrade.quantity > 0) {
-                const bonusPerUnit = upgrade.bonus;
-                let remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
-                const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered); // Ensure not to cover more than upgrade allows
-                const totalBonusForUnits = bonusPerUnit * unitsCovered;
-                totalStat += totalBonusForUnits;
-                // Update the quantity of the upgrade and track coverage
-                userUpgrade.quantity -= Math.ceil(unitsCovered / upgrade.unitsCovered);  // Decrement by the number of upgrades used
-                unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
-              }
-            }
-          });
-        }
-      }
-      if (type === 'OFFENSE') {
-        const usersOffenseBattleUpgrades = this.battle_upgrades.filter(upgrade => upgrade.type === 'OFFENSE');
-        const applicableUpgrades = this.availableOffenseBattleUpgrades
-          .filter(upgrade => unit.level >= upgrade.minUnitLevel)
-          .sort((a, b) => b.level - a.level); // Sort upgrades by level in descending order
-
-        if (applicableUpgrades.length !== 0) {
-          applicableUpgrades.forEach(upgrade => {
-            const userUpgrade = usersOffenseBattleUpgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
-            if (userUpgrade && userUpgrade.quantity > 0) {
-              const bonusPerUnit = upgrade.bonus;
-              let remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
-              const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered); // Ensure not to cover more than upgrade allows
-              const totalBonusForUnits = bonusPerUnit * unitsCovered;
-              totalStat += totalBonusForUnits;
-              
-              // Update the quantity of the upgrade and track coverage
-              userUpgrade.quantity -= Math.ceil(unitsCovered / upgrade.unitsCovered);  // Decrement by the number of upgrades used
-              unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
-            }
-          });
-        }
-      }
     });
+
+    return totalStat;
+  }
+
+  /**
+   * Gets the applicable upgrades based on unit type.
+   * @param unit - The unit.
+   * @param type - The unit type.
+   * @returns Applicable upgrades.
+   */
+  private getApplicableUpgrades(unit: Unit, type: UnitType) {
+    switch (type) {
+      case 'DEFENSE':
+        return this.availableDefenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel).sort((a, b) => b.level - a.level);
+      case 'OFFENSE':
+        return this.availableOffenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel).sort((a, b) => b.level - a.level);
+      case 'SPY':
+        return this.availableSpyBattleUpgrades.sort((a, b) => b.level - a.level);
+      case 'SENTRY':
+        return this.availableSentryBattleUpgrades.sort((a, b) => b.level - a.level);
+      default:
+        return [];
+    }
+  }
+
+  /**
+   * Gets the user upgrade for the specified type and level.
+   * @param upgrade - The upgrade.
+   * @param type - The unit type.
+   * @returns The user upgrade.
+   */
+  private getUserUpgrade(upgrade: UnitUpgradeType, type: UnitType) {
+    return this.battle_upgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
+  }
+
+  /**
+   * Calculates the bonus from the upgrade.
+   * @param upgrade - The upgrade.
+   * @param unit - The unit.
+   * @param userUpgrade - The user upgrade.
+   * @param unitCoverage - Map tracking unit coverage.
+   * @param index - Index of the unit.
+   * @returns Total bonus and units covered.
+   */
+  private calculateUpgradeBonus(upgrade: UnitUpgradeType, unit: UnitUpgradeType, userUpgrade: UnitUpgradeType, unitCoverage: Map<number, number>, index: number) {
+    const bonusPerUnit = upgrade.bonus;
+    const remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
+    const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered);
+    const totalBonusForUnits = bonusPerUnit * unitsCovered;
+
+    return { totalBonusForUnits, unitsCovered };
+  }
+
+  /**
+   * Applies bonuses based on unit type.
+   * @param type - The unit type.
+   * @param totalStat - The total stat to adjust.
+   * @returns Adjusted total stat.
+   */
+  private applyBonuses(type: UnitType, totalStat: number): number {
     switch (type) {
       case 'OFFENSE':
-        totalStat *= 1 + this.attackBonus / 100;
-        break;
+        return totalStat * (1 + this.attackBonus / 100);
       case 'DEFENSE':
-        totalStat *= 1 + this.defenseBonus / 100;
-        break;
+        return totalStat * (1 + this.defenseBonus / 100);
       case 'SPY':
-        totalStat *= 1 + this.spyBonus / 100;
-        break;
+        return totalStat * (1 + this.spyBonus / 100);
       case 'SENTRY':
-        totalStat *= 1 + this.sentryBonus / 100;
-        break;
+        return totalStat * (1 + this.sentryBonus / 100);
       default:
-        break;
+        return totalStat;
     }
-    return Math.ceil(totalStat);
   }
+
 
   /**
    * Determines if the user can attack a certain level based on their experience.
@@ -823,21 +895,21 @@ class UserModel {
 
   /**
    * Returns an array of available spy battle upgrades based on the user's fort level.
-   * @returns {SpyUpgradeType[]} An array of available spy battle upgrades.
+   * @returns {UnitUpgradeType[]} An array of available spy battle upgrades.
    */
-  get availableSpyBattleUpgrades(): SpyUpgradeType[] {
-    return SpyUpgrades.filter(
-      (fort) => fort.fortLevelRequirement <= this.fortLevel + 1
+  get availableSpyBattleUpgrades(): UnitUpgradeType[] {
+    return BattleUpgrades.filter(
+      (fort) => fort.SiegeUpgradeLevel <= this.fortLevel + 1 && fort.type === 'SPY'
     );
   }
   
   /**
    * Returns an array of SentryUpgradeType objects that are available for the user to upgrade their sentry battle.
-   * @returns {SentryUpgradeType[]} An array of SentryUpgradeType objects.
+   * @returns {UnitUpgradeType[]} An array of SentryUpgradeType objects.
    */
-  get availableSentryBattleUpgrades(): SentryUpgradeType[] {
-    return SentryUpgrades.filter(
-      (fort) => fort.fortLevelRequirement <= this.fortLevel + 1
+  get availableSentryBattleUpgrades(): UnitUpgradeType[] {
+    return BattleUpgrades.filter(
+      (fort) => fort.SiegeUpgradeLevel <= this.fortLevel + 1 && fort.type === 'SENTRY'
     );
   }
 
