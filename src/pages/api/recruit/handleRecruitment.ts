@@ -104,15 +104,29 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       });
 
       // Recheck recruitments to confirm no violations
-      const reConfirm = await tx.recruit_history.findMany({
+      const reConfirm = await tx.recruit_history.count({
         where: {
-          from_user: fromUser,
-          to_user: toUser,
-          timestamp: { gte: getOTStartDate() },
+          OR: [
+            {
+              AND: [
+                { to_user: toUser },
+                { from_user: { not: 0 } }, // Exclude from_user = 0
+                { from_user: fromUser },
+                { timestamp: { gte: getOTStartDate() } },
+              ],
+            },
+            {
+              AND: [
+                { to_user: toUser },
+                { ip_addr: req.headers['x-real-ip'] as string },
+                { timestamp: { gte: getOTStartDate() } },
+              ],
+            },
+          ],
         },
       });
 
-      if (reConfirm.length > 5) {
+      if (reConfirm > 5) {
         throw new Error('User has already been recruited 5 times in the last 24 hours.');
       }
 
