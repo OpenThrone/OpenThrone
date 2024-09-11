@@ -172,12 +172,17 @@ const Training = (props) => {
       }),
     });
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 400) {
       throw new Error('Calling training API endpoint ' + endpoint + ' failed.');
       return;
     }
 
     const data = await response.json();
+
+    if (response.status === 400) {
+      throw new Error(data.error);
+      return;
+    }
 
     alertService.success(data.message);
 
@@ -224,8 +229,8 @@ const Training = (props) => {
       const data = await callTrainingApi(submitType, user, unitsToModify);
       updateUnits(data);
     } catch (error) {
-      console.log(error);
-      alertService.error('Failed to ' + submitType + ' units. Please try again.');
+      console.log(error)
+      alertService.error(`${error}. Please try again.`);
     }
   };
 
