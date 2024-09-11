@@ -56,7 +56,7 @@ const handler = async(
     if (history >= 5) {
       return res
         .status(400)
-        .json({ error: 'You can only Recruit up to 5x in 24 hours.' });
+        .json({ error: 'You can only Recruit up to 5x in 24 hours. A', IP: req.headers['cf-connecting-ip'] });
     }
     const toUserHistory = await prisma.recruit_history.count({
       where: {
@@ -97,10 +97,12 @@ const handler = async(
       },
     });
 
+    console.log(history);
+
     if (history >= 5) {
       return res
         .status(400)
-        .json({ error: 'You can only Recruit up to 5x in 24 hours.' });
+        .json({ error: 'You can only Recruit up to 5x in 24 hours. B' + req.headers['cf-connecting-ip'] });
     }
     
     const newRecord = await prisma.recruit_history.create({
