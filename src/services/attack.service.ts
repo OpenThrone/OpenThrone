@@ -317,9 +317,9 @@ export async function getTopRecruitsWithDisplayNames() {
     });
 }
 
-export async function getTopSuccessfulAttacks() {
+export async function getTopSuccessfulAttacks(num: number= 7) {
   const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setHours(sevenDaysAgo.getHours() - (24 * num));
 
   // Fetch attacks within the last 7 days
   const attacks = await prisma.attack_log.findMany({
@@ -492,4 +492,61 @@ export async function getTopWealth() {
   const top10UsersWithWealth = usersWithWealth.slice(0, 10);
 
   return top10UsersWithWealth;
+}
+
+export async function getTopGoldPillagedLast24Hours() {
+  const twentyFourHoursAgo = new Date();
+  twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+  // Fetch attacks within the last 24 hours where gold was pillaged
+  const attacks = await prisma.attack_log.findMany({
+    where: {
+      timestamp: {
+        gte: twentyFourHoursAgo,
+      },
+      type: 'attack',
+    },
+    select: {
+      attacker_id: true,
+      stats: true,
+    },
+  });
+
+  // Aggregate pillaged gold by attacker_id
+  const goldPillaged = attacks.reduce((acc, { attacker_id, stats }) => {
+    const pillagedGold = stats?.pillagedGold || 0; // Extract pillagedGold from stats JSON blob
+    acc[attacker_id] = (acc[attacker_id] || 0) + Number(pillagedGold);
+    return acc;
+  }, {});
+
+  // Convert to array, sort by total gold pillaged, and take the top 10
+  const sortedGoldPillagers = Object.entries(goldPillaged)
+    .map(([attacker_id, stat]) => ({ attacker_id: parseInt(attacker_id, 10), stat }))
+    .sort((a, b) => Number(b.stat) - Number(a.stat))
+    .slice(0, 10);
+
+  // Fetch displayName for each top attacker
+  const attackerDetails = await Promise.all(
+    sortedGoldPillagers.map(async ({ attacker_id }) => {
+      const user = await prisma.users.findUnique({
+        where: {
+          id: attacker_id,
+        },
+        select: {
+          id: true,
+          display_name: true,
+        },
+      });
+      return user ? { attacker_id, display_name: user.display_name } : null;
+    })
+  );
+
+  // Merge attacker details with pillaged gold amounts
+  const detailedGoldPillagers = sortedGoldPillagers.map(pillager => ({
+    ...pillager,
+    id: pillager.attacker_id,
+    display_name: attackerDetails.find(detail => detail && detail.attacker_id === pillager.attacker_id)?.display_name || 'Unknown',
+  }));
+
+  return detailedGoldPillagers;
 }

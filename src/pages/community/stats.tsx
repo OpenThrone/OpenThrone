@@ -1,9 +1,9 @@
 import StatsTable from '@/components/statsTable';
 import { InferGetStaticPropsType } from "next";
-import { getTop10AttacksByTotalCasualties, getTop10TotalAttackerCasualties, getTop10TotalDefenderCasualties, getTopGoldInBank, getTopGoldOnHand, getTopPopulations, getTopRecruitsWithDisplayNames, getTopSuccessfulAttacks, getTopWealth } from '@/services/attack.service';
+import { getTopGoldPillagedLast24Hours, getTop10AttacksByTotalCasualties, getTop10TotalAttackerCasualties, getTop10TotalDefenderCasualties, getTopGoldInBank, getTopGoldOnHand, getTopPopulations, getTopRecruitsWithDisplayNames, getTopSuccessfulAttacks, getTopWealth } from '@/services/attack.service';
 import { Title, Container, Grid, Text } from '@mantine/core';
 
-const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInBank, attackByCas, attackerCas, defenderCas, lastGenerated }: InferGetStaticPropsType<typeof getStaticProps>) => {
+const Stats = ({ attacks7days, attacks24hrs, recruits, population, totalWealth, goldOnHand, goldInBank, attackByCas, attackerCas, defenderCas, lastGenerated, top10goldPillaged }: InferGetStaticPropsType<typeof getStaticProps>) => {
   return (
     <Container>
       <Title order={2} align="center" my="md">Community Stats</Title>
@@ -15,7 +15,7 @@ const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInB
           <StatsTable title="Most Active Recruiters in last 1 day" data={recruits} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Successful Attackers in last 7 days" data={attacks} />
+          <StatsTable title="Top 10 Successful Attackers in last 7 days" data={attacks7days} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
           <StatsTable title="Top 10 Gold on Hand" data={goldOnHand} />
@@ -35,6 +35,12 @@ const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInB
         <Grid.Col span={{ base: 12, md: 6 }}>
           <StatsTable title="Top 10 Attacks by Total Casualties in last 7 days" data={attackByCas} displayButton={false} />
         </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <StatsTable title="Top 10 Gold Pillaged in last 24 hours" data={top10goldPillaged} />
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <StatsTable title="Top 10 Successful Attacks in last 24 hours" data={attacks24hrs} />
+        </Grid.Col>
       </Grid>
       <Text align="center" mt="lg">Last generated: {new Date(lastGenerated).toLocaleString()}</Text>
     </Container>
@@ -50,12 +56,14 @@ export const getStaticProps = async (context: any) => {
       totalWealth: await getTopWealth(),
       goldOnHand: await getTopGoldOnHand(),
       goldInBank: await getTopGoldInBank(),
-      attacks: await getTopSuccessfulAttacks(),
+      attacks7days: await getTopSuccessfulAttacks(7),
+      attacks24hrs: await getTopSuccessfulAttacks(1),
       recruits: await getTopRecruitsWithDisplayNames(),
       population: await getTopPopulations(),
       attackByCas: await getTop10AttacksByTotalCasualties(24 * 60 * 60 * 1000 * 7),
       attackerCas: await getTop10TotalAttackerCasualties(24 * 60 * 60 * 1000 * 7),
       defenderCas: await getTop10TotalDefenderCasualties(24 * 60 * 60 * 1000 * 7),
+      top10goldPillaged: await getTopGoldPillagedLast24Hours(),
       lastGenerated: new Date().toISOString(),
     },
     revalidate: 60 * 60 * 24 + (60 * 10), // 24 hours + 10 minutes, a cron should revalidate it instead
