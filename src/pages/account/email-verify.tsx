@@ -1,30 +1,36 @@
 import Alert from "@/components/alert";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services";
-import { Button, Grid, Space, Text, TextInput } from "@mantine/core";
+import { Button, Grid, Space, Text, TextInput, Modal } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
+import router from "next/router";
 import { useState, useEffect } from "react";
 
 const EmailVerify = (props) => {
   const searchParams = useSearchParams();
   const [input, setInput] = useState('');
-  const {user} = useUser();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { user } = useUser();
+  const [opened, setOpened] = useState(false);
 
   useEffect(() => {
-    // Set input from URL parameter if available
     if (searchParams.has('code')) {
       setInput(searchParams.get('code'));
     }
   }, [searchParams]);
 
   const onChange = (event) => {
-    setInput(event.currentTarget.value);
+    const { name, value } = event.currentTarget;
+    if (name === 'code') setInput(value);
+    if (name === 'password') setPassword(value);
+    if (name === 'email') setEmail(value);
   };
 
   const handleSubmit = async (event) => {
+    if (!user) return;
     event.preventDefault();
-    // Handle the form submission logic here
-    console.log("Verification Code Submitted:", input);
+
     const response = await fetch('/api/account/verify', {
       method: 'POST',
       headers: {
@@ -33,16 +39,41 @@ const EmailVerify = (props) => {
       body: JSON.stringify({
         email: user.email,
         verify: input,
+        password,
       }),
     });
+
     const data = await response.json();
-    if(response.ok){
-      console.log("Verification Success:", data);
-      alertService.success("Verification Success");
+    if (response.ok) {
+      // Open confirmation modal
+      setOpened(true);
+    } else {
+      alertService.error("Verification failed: " + data.error);
     }
-    else{
-      console.error("Verification Error:", data);
-      alertService.error("Verification Error: " + data.error);
+  };
+
+  const handleEmailUpdate = async () => {
+    if(!user) return;
+    setOpened(false); // Close the modal after confirming
+    // Send the request to update the email
+    const updateResponse = await fetch('/api/account/update-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        newEmail: email,
+        password,
+        verify: input,
+      }),
+    });
+
+    if (updateResponse.ok) {
+      alertService.success("Email updated successfully", true);
+      return router.push('/home/settings'); 
+    } else {
+      const data = await updateResponse.json();
+      return alertService.error("Failed to update email: " + data.error);
     }
   };
 
@@ -73,16 +104,53 @@ const EmailVerify = (props) => {
               onChange={onChange}
             />
             <Space h='xs' />
+            <Text>New Email</Text>
+            <TextInput
+              id="email"
+              placeholder="Enter New Email"
+              required
+              name="email"
+              value={email}
+              onChange={onChange}
+            />
+            <Space h='xs' />
+            <Text>Current Password</Text>
+            <TextInput
+              id="password"
+              placeholder="Enter Current Password"
+              required
+              name="password"
+              type="password"
+              value={password}
+              onChange={onChange}
+            />
+            <Space h='xs' />
             <Button
               type="submit"
               size="lg"
               fullWidth
             >
-              Verify
+              Verify and Change Email
             </Button>
           </Grid.Col>
         </Grid>
       </form>
+
+      <Modal
+        opened={opened}
+        onClose={() => setOpened(false)}
+        title="Confirm Email Change"
+      >
+        <Text>You're changing your email from {user?.email} to {email}. Are you sure?</Text>
+        <Space h="md" />
+        <Button onClick={handleEmailUpdate} fullWidth>
+          Confirm
+        </Button>
+        <Space h="md" />
+        <Button onClick={() => setOpened(false)} fullWidth color="red">
+          Cancel
+        </Button>
+      </Modal>
     </div>
   );
 };

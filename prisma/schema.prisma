@@ -85,6 +85,8 @@ model PasswordReset {
   verificationCode String
   createdAt        DateTime @default(now()) @db.Timestamptz(3)
   status           Int      @default(0) // 0 = Active, 1 = Used, 2 = Expired
+  type             String   @default("PASSWORD") // PASSWORD || EMAIL
+  oldEmail         String?
 }
 
 model attack_log {

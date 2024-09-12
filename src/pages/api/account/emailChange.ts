@@ -61,21 +61,28 @@ export default async function handler(
       data: {
         userId: parseInt(uModel.id.toString()),
         verificationCode: resetToken,
+        type: 'EMAIL',
       },
     });
 
     // Configure Nodemailer
     const transporter = nodemailer.createTransport(smtpConfig);
+
     // Send email
     const info = await transporter.sendMail({
       from: `<OpenThrone> ${process.env.SMTP_FROM_EMAIL}`,
       to: uModel.email,
       subject: 'Email Change',
       text: `Your email change token is: ${resetToken}\n 
-      Please use this token to reset your password here <a href='${process.env.NEXT_PUBLIC_URL_ROOT}/account/email-verify'>${process.env.NEXT_PUBLIC_URL_ROOT}/account/email-verify</a>\n
-      If you were not expecting this email, please ignore it.`,
+  Please use this token to reset your password here: ${process.env.NEXT_PUBLIC_URL_ROOT}/account/email-verify?token=${resetToken}\n
+  If you were not expecting this email, please ignore it.`,
+      html: `
+    <p>Your email change token is: <strong>${resetToken}</strong></p>
+    <p>Please use this token to reset your email <a href="${process.env.NEXT_PUBLIC_URL_ROOT}/account/email-verify?token=${resetToken}">here</a>.</p>
+    <p>If you were not expecting this email, please ignore it.</p>
+  `,
     });
-    
+
     return res.json({
       status: true,
       message: 'Email change request sent',

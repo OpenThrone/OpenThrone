@@ -84,7 +84,6 @@ const Settings = (props) => {
   };
 
   const updateEmail = async () => {
-    alertService.error("This feature is not yet implemented.");
     const response = await fetch("/api/account/emailChange", {
       method: "POST",
       headers: {
@@ -259,7 +258,7 @@ const Settings = (props) => {
 
         <Grid.Col span={6}>
           <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw='bolder'>Change Email - Not Implemented yet</Text>
+            <Text size="xl" fw='bolder'>Change Email</Text>
             <Text>Current Email</Text>
             <Text c="dimmed" size="md">{userEmail}</Text>
             <Text>New Email</Text>
