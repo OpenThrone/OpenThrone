@@ -84,7 +84,15 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
         string_contains: 'ARMORY',
       }
     });
+    transactionConditions.push({
+      history_type: 'SALE',
+      stats: {
+        path: ['type'],
+        string_contains: 'BATTLE_UPGRADES',
+      }
+    });
   }
+
 
   if (training === 'true') {
     transactionConditions.push({

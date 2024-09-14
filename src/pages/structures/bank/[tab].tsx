@@ -197,6 +197,10 @@ const Bank = (props) => {
           return 'Train Units';
         case 'TRAINING_CONVERSION':
           return 'Convert Units';
+        case 'BATTLE_UPGRADES_BUY':
+          return 'Battle Upgrade Purchase';
+        case 'BATTLE_UPGRADES_SELL':
+          return 'Battle Upgrade Sale';
       }
     }
 

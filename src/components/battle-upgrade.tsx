@@ -1,5 +1,4 @@
-/* eslint-disable jsx-a11y/control-has-associated-label */
-// components/ItemSection.tsx
+// components/battle-upgrade.tsx
 
 import React, { useEffect, useState } from 'react';
 
@@ -15,94 +14,59 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   items,
 }) => {
   const { user, forceUpdate } = useUser();
-  const [getItems, setItems] = useState<UnitProps[] | []>(items || []);
+  const [getItems, setItems] = useState<UnitProps[]>(items || []);
   const [sectionEnabled, setSectionEnabled] = useState(false);
+  const [itemsToEquip, setItemsToEquip] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     if (items) {
-      items.forEach((item) => {
-        if (item.enabled) {
-          setSectionEnabled(true);
-          return;
-        }
-      });
       setItems(items);
+      setSectionEnabled(items.some(item => item.enabled));
+      // Initialize itemsToEquip with default value 0
+      const initialValues = items.reduce((acc, item) => {
+        acc[item.id] = 0;
+        return acc;
+      }, {} as { [key: string]: number });
+      setItemsToEquip(initialValues);
     }
   }, [items]);
 
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    let { value } = event.target;
-    if (value === '') {
-      value = '0';
-    }
-
-    const formattedValue = toLocale(
-      parseInt(value.replace(/,/g, ''), 10),
-      user?.locale,
-    );
-    value = formattedValue === 'NaN' ? '0' : formattedValue;
+  const handleInputChange = (unitId: string, value: number | undefined) => {
+    setItemsToEquip(prev => ({
+      ...prev,
+      [unitId]: value ?? 0,
+    }));
   };
-
-  useEffect(() => {
-    const computeTotalCostForSection = () => {
-      let sectionCost = 0;
-      items?.forEach((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-        // Parse the value to number for calculation
-        const iValue = parseInt(
-          (inputElement as HTMLInputElement)?.value.replace(/,/g, '') || '0',
-          10,
-        );
-        sectionCost += iValue * parseInt(unit.cost.replace(/,/g, ''), 10);
-      });
-      //updateTotalCost(sectionCost);
-    };
-    if (items) {
-      items.forEach((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-        inputElement?.addEventListener('input', computeTotalCostForSection);
-      });
-    }
-
-    return () => {
-      if (items) {
-        items.forEach((unit) => {
-          const inputElement = document.querySelector(
-            `input[name="${unit.id}"]`,
-          );
-          inputElement?.removeEventListener(
-            'input',
-            computeTotalCostForSection,
-          );
-        });
-      }
-    };
-  }, [getItems, items]);
 
   const handleEquip = async (operation: string) => {
     if (!getItems || getItems.length === 0) return;
 
-    const itemsToEquip = getItems
-      .map((item) => {
-        const inputElement = document.querySelector(
-          `input[name="${item.id}"]`,
-        ) as HTMLInputElement;
-        if (!inputElement) return null; // Handle the case where the element is not found
-        return {
-          type: item.id?.split('_')[0] || '', // Provide a fallback value for type
-          quantity: parseInt(inputElement.value, 10),
-          usage: item.usage,
-          level: parseInt(item.id?.split('_')[1] || '0', 10), // Provide a fallback for level
-        };
-      })
-      .filter(Boolean); // Filter out null values
+    // Initialize a new variable to collect items to equip
+    const itemsToEquipList = getItems.map((item) => {
+      const inputElement = document.querySelector(
+        `input[name="${item.id}"]`,
+      ) as HTMLInputElement;
+      if (!inputElement) return null; // Handle the case where the element is not found
+      return {
+        type: item.id?.split('_')[0] || '', // Provide a fallback value for type
+        quantity: parseInt(inputElement.value, 10),
+        usage: item.usage,
+        level: parseInt(item.id?.split('_')[1] || '0', 10), // Provide a fallback for level
+      };
+    }).filter(Boolean); // Filter out null values
+
+    // Initialize the itemsToEquip object for lookup
+    const itemsToEquipObject = itemsToEquipList.reduce((acc, item) => {
+      acc[`${item.type}_${item.level}`] = item.quantity;
+      return acc;
+    }, {} as Record<string, number>);
 
     if (!user) {
       // Handle the case where user is null
       alertService.error('User not found');
       return;
     }
-    if (itemsToEquip.length === 0) {
+    if (itemsToEquipList.length === 0) {
       alertService.error('Please select items to equip');
       return;
     }
@@ -114,7 +78,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
         },
         body: JSON.stringify({
           userId: user.id,
-          items: itemsToEquip,
+          items: itemsToEquipList,
           operation: operation,
         }),
       });
@@ -135,11 +99,9 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
           });
         });
         getItems.forEach((item) => {
-          // console.log(item)
           const inputElement = document.querySelector(
             `input[name="${item.id}"]`,
           );
-          // console.log(inputElement)
           if (inputElement instanceof HTMLInputElement) {
             inputElement.value = '0';
           }
@@ -169,7 +131,6 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
           {getItems.map((item: UnitProps) => {
             if (item.enabled) {
               return (
-
                 <Table.Tr key={item.id}>
                   <Table.Td>
                     <Group gap={'sm'} grow>
@@ -186,9 +147,8 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
                           Costs: {toLocale(item.cost)} Gold
                         </Text>
                         <Text fz="sm" c='#ADB5BD'>
-                          Sale Value: {toLocale(Number(item.cost.replace(/,/g, '')) *0.75)} Gold
+                          Sale Value: {toLocale(Number(item.cost.replace(/,/g, '')) * 0.75)} Gold
                         </Text>
-
                       </div>
                     </Group>
                   </Table.Td>
@@ -196,13 +156,13 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
                     <Group gap={'sm'} grow>
                       <div>
                         <Text fz="sm" c='#ADB5BD'>
-                        <span className='font-medieval'>Owned: </span><span id={`${item.id}_owned`}>{toLocale(item.ownedItems)}</span>
-                      </Text>
+                          <span className='font-medieval'>Owned: </span><span id={`${item.id}_owned`}>{toLocale(item.ownedItems)}</span>
+                        </Text>
                         <Text fz="sm" c='#ADB5BD'>
-                        <span className='font-medieval'>Holds: {item.unitsCovered} Units</span>
-                      </Text>
+                          <span className='font-medieval'>Holds: {item.unitsCovered} Units</span>
+                        </Text>
                         <Text fz="sm" c='#ADB5BD'>
-                        <span className='font-medieval'>Min Unit Level: {item.minUnitLevel}</span>
+                          <span className='font-medieval'>Min Unit Level: {item.minUnitLevel}</span>
                         </Text>
                       </div>
                     </Group>
@@ -213,12 +173,11 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
                       name={`${item.type}_${item.level}`}
                       min={0}
                       className="w-full rounded-md bg-gray-900 p-2"
-                      onChange={(value: number | undefined) => handleInputChange}
+                      value={itemsToEquip[`${item.type}_${item.level}`] || 0}
+                      onChange={(value: number | undefined) => handleInputChange(`${item.type}_${item.level}`, value)}
                       allowNegative={false}
                     />
                   </Table.Td>
-
-
                 </Table.Tr>
               );
             } else {
@@ -227,8 +186,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
                   <Table.Td>
                     <Group gap={'sm'} grow>
                       <div>
-                        <Text fz="lg" fw={500} className='font-medieval'>{item.name}
-                        </Text>
+                        <Text fz="lg" fw={500} className='font-medieval'>{item.name}</Text>
                       </div>
                     </Group>
                   </Table.Td>
