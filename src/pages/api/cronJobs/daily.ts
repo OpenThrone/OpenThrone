@@ -85,7 +85,6 @@ const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
   const { TASK_SECRET } = process.env;
   if (process.env.DO_DAILY_UPDATES === 'true' && req.headers['authorization'] !== `Bearer ${TASK_SECRET}`) {
     const allUsers = await prisma.users.findMany({ where: { id: 1 } });
-    console.log(allUsers.length)
 
     const updatePromises = allUsers.map((singleUser) => updateUserPerDay(new UserModel(singleUser)));
     Promise.all(updatePromises).then(() => console.log('Updated users for day change.'));
