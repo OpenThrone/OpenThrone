@@ -59,7 +59,7 @@ const updateUserPerTurn = (currentUser, rank) => {
 };
 
 const turnCron = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (process.env.DO_TURN_UPDATES === 'true') {
+  if (process.env.DO_TURN_UPDATES === 'true' && req.headers['authorization'] === process.env.TASK_SECRET) {
     const allUsers = await prisma.users.findMany();
 
     const userRanks = allUsers.map((user) => {
@@ -78,6 +78,10 @@ const turnCron = async (req: NextApiRequest, res: NextApiResponse) => {
     const updatePromises = userRanks.map((userRank, index) => updateUserPerTurn(userRank.newUser, index + 1));
 
     Promise.all(updatePromises).then(() => console.log('Updated users for turn change.'));
+    return res.status(200).json({ message: 'Turns cron job executed successfully.' });
+  }
+  else {
+    return res.status(200).json({ message: 'Unauthorized or Disabled Task' });
   }
 };
 

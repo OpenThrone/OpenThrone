@@ -83,7 +83,7 @@ const doDailyCleanup = () => {
 
 const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
   const { TASK_SECRET } = process.env;
-  if (process.env.DO_DAILY_UPDATES === 'true' && req.headers['authorization'] !== `Bearer ${TASK_SECRET}`) {
+  if (process.env.DO_DAILY_UPDATES === 'true' && req.headers['authorization'] === TASK_SECRET) {
     const allUsers = await prisma.users.findMany({ where: { id: 1 } });
 
     const updatePromises = allUsers.map((singleUser) => updateUserPerDay(new UserModel(singleUser)));
@@ -94,7 +94,7 @@ const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(200).json({ message: 'Daily cron job executed successfully.' });
   }else
   {
-    res.status(401).json({ message: 'Unauthorized', headers: req.headers['authorization'], secret: TASK_SECRET });
+    res.status(401).json({ message: 'Unauthorized or Disabled Task' });
   }
 };
 
