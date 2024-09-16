@@ -1,12 +1,12 @@
 # OpenThrone - NextJS Project
 #### Forked from NextJs-Boilerplate by CreativeDesignsGuru
 
-
+  
 ## Background
 OpenThrone is a community project hoping to recreate the TextBased MMORPG called DarkThrone which has gone dark after almost 20years of service. While we are not affiliated with the original DarkThrone project, our community hopes to be able to deliver a game that can pick up where DT left off and bring forth many of the enhancements and hopes that we were patiently waiting for.
 
 ## Development Notes
-OpenThrone started out as a fork of the Dark Curse project which was originally started by Moppler (Matt Gibney) here: https://github.com/MattGibney/DarkCurse. This project has been archived and is no longer being updated. We've since decided to port it to NextJS/React, while trying to keep a lot of the heavy lift that was already done previously from a design perspective. 
+OpenThrone started out as a fork of the Dark Curse project which was originally started by Moppler (Matt Gibney) here: https://github.com/MattGibney/DarkCurse. This project has been archived and is no longer being updated. We've since decided to port it to NextJS/React, while trying to keep a lot of the heavy lift that was already done previously from a design perspective.
 
 ## Game Status - PRE-ALPHA / LIVE DEVELOPMENT
 There's currently a live server running at [OpenThrone.Dev](https://openthrone.dev), however it should be noted that at this time, this server is a live development server and will be reset often and sometimes without notice.
@@ -44,35 +44,68 @@ A few notes about how to get the game running locally (for dev work or otherwise
 
 When you pull the latest updates from the upstream repository, there may be new migrations, dependencies, or configuration changes. Follow these steps to ensure everything runs smoothly:
 
-1. **Pull the Latest Updates:**
-   ```bash
-   git pull upstream main
-   ```
+  
 
-2. **Install New Dependencies:**
-    - If there are updates to `package.json`, you may need to install new dependencies:
-    ```bash
-    npm install
-    ```
+1.  **Pull the Latest Updates:**
 
-3. **Update the Database Schema:**
-   - If there are new Prisma migrations, run the following command to apply them:
-     ```bash
-     npx prisma migrate dev
-     ```
-   - This command will apply the latest migrations and sync your database schema with the code.
+```bash
+git pull upstream main
+```
 
-4. **Rebuild the Project (if necessary):**
-   - If there are changes in TypeScript types or other build-related changes, you may need to rebuild the project:
-     ```bash
-     npm run build
-     ```
+  
 
-5. **Restart the Development Server:**
-   - Ensure the server is restarted to pick up all changes:
-     ```bash
-     npm run bun-dev
-     ```
+2.  **Install New Dependencies:**
+
+- If there are updates to `package.json`, you may need to install new dependencies:
+```bash
+npm install
+```
+
+  
+
+3.  **Update the Database Schema:**
+
+- If there are new Prisma migrations, run the following command to apply them:
+```bash
+npx prisma migrate dev
+```
+- This command will apply the latest migrations and sync your database schema with the code.
+
+  
+
+4.  **Rebuild the Project (if necessary):**
+
+- If there are changes in TypeScript types or other build-related changes, you may need to rebuild the project:
+```bash
+npm run build
+```
+
+  
+
+5.  **Restart the Development Server:**
+
+- Ensure the server is restarted to pick up all changes:
+```bash
+npm run bun-dev
+```
+## Cron Jobs / Scheduled Tasks
+
+To facilitate the job of providing a set of scheduled jobs, such as providing turns every 30minutes or new citizens every day, you'll have to use an external scheduler such as Crontab. The following will list out a number of tasks that can be scheduled
+
+### Daily Citizens
+
+ - crontab entry
+```0 0 * * * /usr/bin/curl -X POST -H "Authorization: SECRET_KEY_FROM_ENV" https://<url>/api/cronJobs/daily```
+- .env value to enable: ```DO_DAILY_UPDATES=true```
+
+### 30minute turn and gold generation
+- crontab entry
+```0,30 * * * * /usr/bin/curl -X POST -H "Authorization: SECRET_KEY_FROM_ENV" https://<url>/api/cronJobs/turns```
+- .env value to enable: ```DO_DAILY_UPDATES=true```
+
+### .ENV Secrets
+Make sure you update your secret in your .env file
+```TASK_SECRET="TESTING"```
 
 ## Other Information
 ### VSCode information (optional)
