@@ -1,6 +1,7 @@
 import UserModel from "@/models/Users";
 import md5 from "md5";
 import { NextApiRequest, NextApiResponse } from "next";
+import prisma from "@/lib/prisma";
 
 /**
  * Update a single user for a new day.

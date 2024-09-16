@@ -2,6 +2,7 @@ import UserModel from "@/models/Users";
 import { newCalculateStrength } from "@/utils/attackFunctions";
 import { calculateOverallRank } from "@/utils/utilities";
 import { NextApiRequest, NextApiResponse } from "next";
+import prisma from "@/lib/prisma";
 
 /**
  * Update a single user for a turn change.
