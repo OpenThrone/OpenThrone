@@ -43,18 +43,20 @@ const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
         },
       });
 
-      if (attacks.map((attack) => {
+      // Initialize the user's beenAttacked and detectedSpy properties
+      user.beenAttacked = false;
+      user.detectedSpy = false;
+
+      if (attacks.some((attack) => {
         if(attack.type === 'attack') {
           return attack;
         }
-      }).length > 0) {
+      })) {
         user.beenAttacked = true;
       }
-      if(attacks.map((attack) => {
-        if(attack.type !== 'attack' && attack.winner === user.id) {
-          return attack;
-        }
-      }).length > 0) {
+      if (attacks.some((attack) => {
+        return attack.type !== 'attack' && attack.winner === user.id;
+      })) {
         user.detectedSpy = true;
       }
     }
