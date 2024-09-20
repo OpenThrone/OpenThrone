@@ -169,13 +169,13 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
           <Pill size='lg'>
             <Text>
-              Your rank: {myRank}
+              Your {getRankLabel()}: {myRank}
             </Text>
           </Pill>
           <Pill
             onClick={() => setPage(myPage)}
             disabled={myPage === page}
-            size='md'
+            size='lg'
             bg={myPage === page ? theme.colors.gray : theme.colors.brand[8]}
             onMouseOver={(e) => e.currentTarget.style.cursor = myPage !== page ? 'pointer' : 'default'}
           >
