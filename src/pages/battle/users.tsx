@@ -6,8 +6,9 @@ import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import toLocale from '@/utils/numberFormatting';
-import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center, Button } from '@mantine/core';
+import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center, Button, Paper, Pill, useMantineTheme } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
+import { usePagination } from '@mantine/hooks';
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const searchParams = useSearchParams();
@@ -24,6 +25,9 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const [attackRangeMax, setAttackRangeMax] = useState(5);
   const [hasSetPageInitially, setHasSetPageInitially] = useState(false);
   const [myPage, setMyPage] = useState(1);
+  const [myRank, setMyRank] = useState(1);
+  const pagination = usePagination({ total: lastPage, initialPage: 1 });
+  const theme = useMantineTheme();
 
   const getRankLabel = () => {
     switch (sortBy) {
@@ -66,6 +70,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     setPlayers(paginatedPlayers);
 
     setMyPage(playerPage);
+    setMyRank(loggedInPlayerIndex + 1);
 
   }, [page, sortBy, sortDir, allUsers, rowsPerPage]);
 
@@ -135,7 +140,14 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
         >
           Previous
         </button>
-        <Pagination total={lastPage} siblings={1} value={page} defaultValue={page} onChange={setPage} />
+        <Pagination
+          total={lastPage}
+          siblings={1}
+          value={page}
+          defaultValue={page}
+          onChange={(xval) => { setPage(xval); pagination.setPage(xval); }}
+        />
+
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
           onClick={() => {
@@ -147,6 +159,30 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           Next
         </button>
       </div>
+      <div className="overflow-x-auto">
+        <Group position="apart" className="mb-2">
+          <Pill size='lg'>
+            <Text>
+              Sorted By: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
+            </Text>
+          </Pill>
+
+          <Pill size='lg'>
+            <Text>
+              Your rank: {myRank}
+            </Text>
+          </Pill>
+          <Pill
+            onClick={() => setPage(myPage)}
+            disabled={myPage === page}
+            size='md'
+            bg={myPage === page ? theme.colors.gray : theme.colors.brand[8]}
+            onMouseOver={(e) => e.currentTarget.style.cursor = myPage !== page ? 'pointer' : 'default'}
+          >
+            Go to My Rank
+          </Pill>
+        </Group>
+        </div>
       <div className="overflow-x-auto">
         <Group>
           <Text size="sm">Show per page: </Text>
@@ -161,14 +197,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               {option}
             </Text>
           ))}
-
-          <Button
-            onClick={() => setPage(myPage)}
-            disabled={myPage === page}
-            size='xs'
-          >
-            Go to My Page
-          </Button>
         </Group>
         <Table.ScrollContainer minWidth={400}>
           <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
