@@ -117,7 +117,7 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
           <Space h='10' />
           <div className="text-container inline-block align-middle">
             <Text color="white" fw="bolder" size='xl' className="font-medieval">
-              Intelligence Report
+              Infiltration Report
             </Text>
             {isViewerAttacker && (
               <Text className="text-lg text-white font-semibold">
@@ -178,89 +178,11 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
         </Grid.Col>
       </Grid>
       <div className="intel-report mt-10">
-        
-        <Grid grow gutter={'xs'}>
-          <Grid.Col span={4} md={6} className="text-center">
-            {isAttackerWinner && unitSegments.length > 0 && (
-              <Paper withBorder p="md" radius="md" mt="xl">
-                <Text fz="xl" fw={700} mb="md">
-                  TOTAL POPULATION
-                </Text>
-                <center>
-                  <RingProgress
-                    size={170}
-                    thickness={16}
-                    label={
-                      <Text size="xs" ta="center" px="xs" style={{ pointerEvents: 'none' }}>
-                        Hover sections to see tooltips <br />Total Pop: {battle.stats.spyResults.defender.units.reduce((acc, unit) => acc + unit.quantity, 0)}
-                      </Text>
-                    }
-                    sections={unitSegments.map(segment => ({
-                      value: Math.min(Math.max(segment.part, 0), 100), // Ensure value is between 0 and 100
-                      color: segment.color,
-                      tooltip: `${segment.quantity} ${segment.label}`,
-                    }))}
-                  />
-                </center>
-                <Box mt="md" className="unit-segments-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {unitSegments.map((segment, index) => (
-                    <Box key={index} className="unit-segment p-2" bg={'gray'}>
-                      <Text tt="uppercase" fz="xs" c="dimmed" fw={700}>
-                        {segment.label}
-                      </Text>
-                      <Group justify="space-between" align="flex-end" gap={0}>
-                        <Text fw={700}>{Math.max(segment.quantity, 0)} Units found</Text>
-                      </Group>
-                    </Box>
-                  ))}
-                </Box>
-              </Paper>
-            )}
-          </Grid.Col>
-          {isAttackerWinner &&
-            itemsByCategory.length > 0 &&
-            itemsByCategory.map((category, index) => (
-              <Grid.Col span={4} md={6} className="text-center" key={index}>
-                <Paper withBorder p="md" radius="md" mt="xl">
-                  <Text fz="xl" fw={700} mb="md">
-                    {category.name} ARMORY
-                  </Text>
-                  <center>
-                    <RingProgress
-                      size={170}
-                      thickness={16}
-                      label={
-                        <Text size="xs" ta="center" px="xs" style={{ pointerEvents: 'none' }}>
-                          {category.name} <br />Units Found: {category.total}
-                        </Text>
-                      }
-                      sections={category.itemsBreakdown.map(item => ({
-                        value: (item.percentage / 100) * (100 / category.itemsBreakdown.length), // Scale the percentage relative to the number of items
-                        color: itemColors[item.type], // Use itemColors for each item type
-                        tooltip: `${item.quantity} ${item.type}`,
-                      }))}
-                    />
-
-                  </center>
-                  <Box mt="md" className="unit-segments-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {category.itemsBreakdown.map((item, idx) => (
-                      <Box key={idx} className="unit-segment p-2" mb="xs" bg='gray'>
-                        <Text tt="uppercase" fz="xs" c="dimmed" fw={700}>
-                          {item.type}
-                        </Text>
-                        <Group justify="space-between" align="flex-end" gap={0}>
-                          <Text fw={700}>
-                            {item.quantity} {item.percentage !== null && `(${item.percentage.toFixed(2)}%)`}
-                          </Text>
-                        </Group>
-                      </Box>
-                    ))}
-                  </Box>
-                </Paper>
-              </Grid.Col>
-            ))
-          }
-        </Grid>
+        <Text>You sent {stats.spyResults.spiesSent} {stats.spyResults.spiesSent > 1 ? 'Infiltrators' : 'Infiltrator'} to attack {defenderPlayer.display_name} Fort</Text>
+        <Text>You were {isAttackerWinner ? 'successful' : 'unsuccessful'} in your mission {
+          isAttackerWinner ? `and managed to cause ${stats.spyResults.fortDmg} damage to the fort` : ''
+        }.</Text>
+       
       </div>
       <Text size='lg' fw='bold' className="text-2xl">
         Report last generated: {new Date(lastGenerated).toLocaleString()}

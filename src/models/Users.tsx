@@ -368,6 +368,26 @@ class UserModel {
   }
 
   /**
+  * Returns the missions that are enabled for the user based on their level.
+  * @returns {Object} An object containing the enabled missions.
+  */
+  get spyMissions() {
+    const missions = [
+      { name: 'infil', requiredLevel: 7 },
+      { name: 'assass', requiredLevel: 16 },
+      { name: 'intel', requiredLevel: 0 },
+    ];
+
+    return missions.reduce((availableMissions, mission) => {
+      availableMissions[mission.name] = {
+        enabled: this.spyLevel >= mission.requiredLevel,
+        requiredLevel: mission.requiredLevel
+      };
+      return availableMissions;
+    }, {});
+  }
+
+  /**
    * Returns the total recruiting bonus for the user.
    * @returns {number} The total recruiting bonus.
    */
