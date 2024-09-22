@@ -78,25 +78,25 @@ const handler = async (req, res) => {
         return res
           .status(200)
           .json(
-            await spyHandler(
+            stringifyObj(await spyHandler(
               parseInt(session.user.id.toString()),
               parseInt(req.query.id),
               parseInt(req.body.spies),
               req.body.type,
               req.body.unit
-            )
+            ))
           );
       case 'INFILTRATE':
         return res
           .status(200)
           .json(
-            await spyHandler(
+            stringifyObj(await spyHandler(
               parseInt(session.user.id.toString()),
               parseInt(req.query.id),
               parseInt(req.body.spies),
               req.body.type,
               req.body.unit
-            )
+            ))
           );
     }
   }

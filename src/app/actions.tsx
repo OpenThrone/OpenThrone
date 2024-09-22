@@ -33,62 +33,73 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     return { status: 'failed', message: 'Insufficient Spy Offense' };
   }
   const Winner = attacker.spy > defender.sentry ? attacker : defender;
-  let spyLevel = 1;
-  if (type === 'INTEL') {
-    spyResults = simulateIntel(attacker, defender, spies);
+  try {
+    const prismaTx = await prisma.$transaction(async (tx) => {
+      if (type === 'INTEL') {
+        spyResults = simulateIntel(attacker, defender, spies);
 
-  } else if (type === 'ASSASSINATE') {
-    spyResults = simulateAssassination(attacker, defender, spies, unit);
+      } else if (type === 'ASSASSINATE') {
+        if (attacker.units.find((u) => u.type === 'SPY' && u.level === 3) === undefined || attacker.units.find((u) => u.type === 'SPY' && u.level === 2).quantity < spies) {
+          console.log('Insufficient Assassins');
+          return { status: 'failed', message: 'Insufficient Assassins' };
+        }
+        spyResults = simulateAssassination(attacker, defender, spies, unit);
 
-    spyLevel = 2;
-    await updateUserUnits(defenderId,
-      defender.units,
-    );
-    //return spyResults;
-  } else if(type === 'INFILTRATE') {
-    spyResults = simulateInfiltration(attacker, defender, spies);
-    spyLevel = 3;
-    await updateUserUnits(defenderId,
-      defender.units,
-    );
-    await updateFortHitpoints(defenderId, defender.fortHitpoints);
+        await updateUserUnits(defenderId,
+          defender.units,
+          tx
+        );
+        //return spyResults;
+      } else if (type === 'INFILTRATE') {
+        spyResults = simulateInfiltration(attacker, defender, spies);
+        await updateUserUnits(defenderId,
+          defender.units,
+          tx
+        );
+        await updateFortHitpoints(defenderId, defender.fortHitpoints, tx);
 
+      }
+      if (spyResults.spiesLost > 0) {
+        await updateUserUnits(attackerId,
+          attacker.units,
+          tx);
+      }
+
+      const attack_log = await createAttackLog({
+        attacker_id: attackerId,
+        defender_id: defenderId,
+        timestamp: new Date().toISOString(),
+        winner: Winner.id,
+        type: type,
+        stats: { spyResults },
+      }, tx);
+
+      await incrementUserStats(attackerId, {
+        type: 'SPY',
+        subtype: (attackerId === Winner.id) ? 'WON' : 'LOST',
+      }, tx);
+      await incrementUserStats(defenderId, {
+        type: 'SENTRY',
+        subtype: (defenderId === Winner.id) ? 'WON' : 'LOST',
+      }, tx);
+      
+      return {
+        status: 'success',
+        result: spyResults,
+        attack_log: attack_log.id,
+        //attacker: attacker,
+        //defender: defender,
+        extra_variables: {
+          spies,
+          spyResults,
+        },
+      };
+    });
+    return prismaTx;
+  } catch (ex) {
+    console.error('Transaction failed: ', ex);
+    return { status: 'failed', message: 'Transaction failed.' };
   }
-  if (spyResults.spiesLost > 0) {
-    await updateUserUnits(attackerId,
-      attacker.units,
-    );
-  }
-
-  const attack_log = await createAttackLog({
-    attacker_id: attackerId,
-    defender_id: defenderId,
-    timestamp: new Date().toISOString(),
-    winner: Winner.id,
-    type: type,
-    stats: { spyResults },
-  });
-
-  await incrementUserStats(attackerId, {
-    type: 'SPY',
-    subtype: (attackerId === Winner.id) ? 'WON' : 'LOST',
-  });
-  await incrementUserStats(defenderId, {
-    type: 'SENTRY',
-    subtype: (defenderId === Winner.id) ? 'WON' : 'LOST',
-  });
-
-  return {
-    status: 'success',
-    result: spyResults,
-    attack_log: attack_log.id,
-    //attacker: attacker,
-    //defender: defender,
-    extra_variables: {
-      spies,
-      spyResults,
-    },
-  };
 }
 
 export async function attackHandler(
