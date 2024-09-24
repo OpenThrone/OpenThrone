@@ -10,6 +10,7 @@ import router from 'next/router';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { Button, NumberInput, Modal, Group, Select, Text, Paper, Divider, Title } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { SpyUpgrades } from '@/constants';
 
 interface ModalProps {
   isOpen: boolean;
@@ -64,8 +65,9 @@ const CustomButton: FC<CustomButtonProps> = ({
     size="lg"
     variant="filled"
     mb={'lg'}
+    
   >
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '2px' }}>
       {children}
     </div>
   </Button>
@@ -89,17 +91,21 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
   const [intelSpies, setIntelSpies] = useState(1);
   const [assassinateUnit, setAssassinateUnit] = useState('CITIZEN/WORKERS');
 
-  const [isAssassinateDisabled, setIsAssassinateDisabled] = useState(false);
-  const [isInfiltrationDisabled, setIsInfiltrationDisabled] = useState(false);
-  const [isIntelDisabled, setIsIntelDisabled] = useState(false);
+  const [isAssassinateDisabled, setIsAssassinateDisabled] = useState(true);
+  const [isInfiltrationDisabled, setIsInfiltrationDisabled] = useState(true);
+  const [isIntelDisabled, setIsIntelDisabled] = useState(true);
   const { user } = useUser();
   const [units, setUnits] = useState({ SPY: 0, ASSASSIN: 0, INFILTRATOR: 0 });
 
+  const getUpgradeInfo = (level: number = 1) => {
+    return SpyUpgrades[level].name;
+  }
+
   useEffect(() => {
     if (user) {
-      if (user.level >= 15) setIsInfiltrationDisabled(false);
-      if (user.level >= 10) setIsAssassinateDisabled(false);
-      if (user.level >= 5) setIsIntelDisabled(false);
+      setIsInfiltrationDisabled(!user.spyMissions['infil'].enabled);
+      setIsAssassinateDisabled(!user.spyMissions['assass'].enabled);
+      setIsIntelDisabled(!user.spyMissions['intel'].enabled);
       setUnits({
         SPY:
           user.units.find((unit) => unit.type === 'SPY' && unit.level === 1)
@@ -234,18 +240,6 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <small>Send up to 10 Spies to collect Intel</small>
           </CustomButton>
           <CustomButton
-            onClick={() => setCurrentPanel('assassination')}
-            disabled={isAssassinateDisabled}
-          >
-            <span>🗡️ Assassination</span>
-            <small>Attempt to assassinate player&apos;s Defenders</small>
-            {isAssassinateDisabled && (
-              <b>
-                <small className="text-black"> Requires Fort: ###</small>
-              </b>
-            )}
-          </CustomButton>
-          <CustomButton
             onClick={() => setCurrentPanel('infiltration')}
             disabled={isInfiltrationDisabled}
           >
@@ -253,7 +247,19 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <small>Infiltrate and Destroy the Fort</small>
             {isInfiltrationDisabled && (
               <b>
-                <small className="text-white"> Requires Fort: ###</small>
+                <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['infil'].requiredLevel)}</small>
+              </b>
+            )}
+          </CustomButton>
+          <CustomButton
+            onClick={() => setCurrentPanel('assassination')}
+            disabled={isAssassinateDisabled}
+          >
+            <span>🗡️ Assassination</span>
+            <small>Attempt to assassinate player&apos;s Defenders</small>
+            {isAssassinateDisabled && (
+              <b>
+                <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['assass'].requiredLevel)}</small>
               </b>
             )}
           </CustomButton>

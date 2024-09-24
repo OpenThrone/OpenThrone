@@ -6,6 +6,7 @@ import IntelResult from '@/components/IntelResult';
 import AssassinateResult from '@/components/AssassinateResult';
 import { InferGetStaticPropsType } from "next";
 import { useRouter } from 'next/router';
+import InfiltrationResult from '@/components/InfiltrationResult';
 
 const ResultsPage = ({ battle, lastGenerated }: InferGetStaticPropsType<typeof getStaticProps>) => {
   const { data: session, status } = useSession();
@@ -31,8 +32,10 @@ const ResultsPage = ({ battle, lastGenerated }: InferGetStaticPropsType<typeof g
         <AttackResult battle={battle} viewerID={session.user.id} />
       ) : battle.type === 'ASSASSINATE' ? (
         <AssassinateResult battle={battle} viewerID={session.user.id} />
+      ) : battle.type === 'INFILTRATE' ? (
+        <InfiltrationResult battle={battle} viewerID={session.user.id} lastGenerated={lastGenerated} />      
       ) : (
-            <IntelResult battle={battle} viewerID={session.user.id} lastGenerated={lastGenerated} />
+        <IntelResult battle={battle} viewerID={session.user.id} lastGenerated={lastGenerated} />
       )}
     </div>
   );
