@@ -9,7 +9,7 @@ import prisma from "@/lib/prisma";
  * @param {Object} currentUser
  * @return {Promise}
  */
-const updateUserPerDay = (currentUser) => {
+const updateUserPerDay = async (currentUser) => {
   try {
     // Find the CITIZEN unit
     let citizenUnit = currentUser.units.find(unit => unit.type === 'CITIZEN');
@@ -31,7 +31,7 @@ const updateUserPerDay = (currentUser) => {
       currentUser.units.push(citizenUnit);
     }
 
-    prisma.bank_history.create({
+    await prisma.bank_history.create({
       data: {
         from_user_id: 0,
         to_user_id: currentUser.id,
@@ -48,7 +48,7 @@ const updateUserPerDay = (currentUser) => {
       },
     });
 
-    return prisma.users.update({
+    return await prisma.users.update({
       where: { id: currentUser.id },
       data: {
         units: currentUser.units,
@@ -65,7 +65,7 @@ const updateUserPerDay = (currentUser) => {
  *
  * @return {Promise[]}
  */
-const doDailyCleanup = () => {
+const doDailyCleanup = async () => {
   const twentyDaysAgo = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000);
   const tablesToClean = [
     { name: 'attack_log', dateField: 'timestamp' },
@@ -73,7 +73,7 @@ const doDailyCleanup = () => {
     { name: 'recruit_history', dateField: 'timestamp' },
   ];
 
-  return tablesToClean.map((table) => prisma[table.name].deleteMany({
+  return tablesToClean.map(async (table) => await prisma[table.name].deleteMany({
     where: {
       [table.dateField]: {
         lt: twentyDaysAgo,
@@ -85,13 +85,16 @@ const doDailyCleanup = () => {
 const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
   const { TASK_SECRET } = process.env;
   if (process.env.DO_DAILY_UPDATES === 'true' && req.headers['authorization'] === TASK_SECRET) {
-    const allUsers = await prisma.users.findMany({ where: { id: 1 } });
+    const allUsers = await prisma.users.findMany();
 
     const updatePromises = allUsers.map((singleUser) => updateUserPerDay(new UserModel(singleUser)));
-    Promise.all(updatePromises).then(() => console.log('Updated users for day change.'));
+    await Promise.all(updatePromises);
+    console.log('Updated users for day change.');
 
-    const cleanupPromises = doDailyCleanup();
-    Promise.all(cleanupPromises).then(() => console.log('Cleaned up database for day change.'));
+    const cleanupPromises = await doDailyCleanup();
+    await Promise.all(cleanupPromises);
+    console.log('Cleaned up database for day change.');
+
     return res.status(200).json({ message: 'Daily cron job executed successfully.' });
   }else
   {
