@@ -6,8 +6,9 @@ import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import toLocale from '@/utils/numberFormatting';
-import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center } from '@mantine/core';
+import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center, Button, Paper, Pill, useMantineTheme } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
+import { usePagination } from '@mantine/hooks';
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const searchParams = useSearchParams();
@@ -15,14 +16,31 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const colorScheme = user?.colorScheme;
   const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1);
   const [lastPage, setLastPage] = useState(1);
-  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'overallrank');
-  const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'asc');
+  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'level');
+  const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'desc');
   const [players, setPlayers] = useState([]);
   const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [attackRangeMin, setAttackRangeMin] = useState(1);
   const [attackRangeMax, setAttackRangeMax] = useState(5);
   const [hasSetPageInitially, setHasSetPageInitially] = useState(false);
+  const [myPage, setMyPage] = useState(1);
+  const [myRank, setMyRank] = useState(1);
+  const pagination = usePagination({ total: lastPage, initialPage: 1 });
+  const theme = useMantineTheme();
+
+  const getRankLabel = () => {
+    switch (sortBy) {
+      case 'gold':
+        return 'Gold Rank';
+      case 'level':
+        return 'Lvl Rank';
+      case 'population':
+        return 'Pop Rank';
+      default:
+        return 'Rank';
+    }
+  };
 
   useEffect(() => {
     const start = (page - 1) * rowsPerPage;
@@ -33,9 +51,8 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     // Fallback for users where the rank hasn't been calculated yet (and is therefore 0 or null)
     sortedPlayers.forEach((u) => u.rank = u.rank || Infinity);
 
-    if (sortBy === 'overallrank') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? b.rank - a.rank : a.rank - b.rank);
-    } else if (sortBy === 'gold') {
+    // Sorting logic
+    if (sortBy === 'gold') {
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.gold) - Number(a.gold) : Number(a.gold) - Number(b.gold));
     } else if (sortBy === 'population') {
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.population) - Number(a.population) : Number(a.population) - Number(b.population));
@@ -43,11 +60,20 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.experience) - Number(a.experience) : Number(a.experience) - Number(b.experience));
     }
 
+    // Recalculate the page of the logged-in player
+    const loggedInPlayerIndex = sortedPlayers.findIndex((player) => player.id === user?.id);
+    const playerPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
+
     const paginatedPlayers = sortedPlayers.slice(start, end);
-    paginatedPlayers.forEach((player, index) => player.overallrank = (sortDir === 'asc' ? start + index + 1 : allUsers.length - start - index));
+    paginatedPlayers.forEach((player, index) => player.overallrank = (sortDir === 'asc' ? allUsers.length - start - index : start + index + 1));
 
     setPlayers(paginatedPlayers);
+
+    setMyPage(playerPage);
+    setMyRank(loggedInPlayerIndex + 1);
+
   }, [page, sortBy, sortDir, allUsers, rowsPerPage]);
+
 
   useEffect(() => {
     const golds = players.map(player => toLocale(player.gold, user?.locale));
@@ -83,7 +109,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
         } else {
           const initialPage = parseInt(pageParam) || 1;
           setPage(initialPage);
-          setSortBy(sortByParam || 'overallrank');
+          setSortBy(sortByParam || 'level');
           setSortDir(sortDirParam || 'asc');
         }
 
@@ -114,7 +140,14 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
         >
           Previous
         </button>
-        <Pagination total={lastPage} siblings={1} value={page} defaultValue={page} onChange={setPage} />
+        <Pagination
+          total={lastPage}
+          siblings={1}
+          value={page}
+          defaultValue={page}
+          onChange={(xval) => { setPage(xval); pagination.setPage(xval); }}
+        />
+
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
           onClick={() => {
@@ -126,6 +159,30 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           Next
         </button>
       </div>
+      <div className="overflow-x-auto">
+        <Group position="apart" className="mb-2">
+          <Pill size='lg'>
+            <Text>
+              Sorted By: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
+            </Text>
+          </Pill>
+
+          <Pill size='lg'>
+            <Text>
+              Your {getRankLabel()}: {myRank}
+            </Text>
+          </Pill>
+          <Pill
+            onClick={() => setPage(myPage)}
+            disabled={myPage === page}
+            size='lg'
+            bg={myPage === page ? theme.colors.gray : theme.colors.brand[8]}
+            onMouseOver={(e) => e.currentTarget.style.cursor = myPage !== page ? 'pointer' : 'default'}
+          >
+            Go to My Rank
+          </Pill>
+        </Group>
+        </div>
       <div className="overflow-x-auto">
         <Group>
           <Text size="sm">Show per page: </Text>
@@ -145,7 +202,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th className="px-1 py-1"><button onClick={() => handleSort('overallrank')}>Rank {sortBy === 'overallrank' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
+                <Table.Th className="px-1 py-1" style={{ width: '100px' }}>{getRankLabel()}</Table.Th>
                 <Table.Th className="px-4 py-2">Username</Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('gold')}>Gold {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('population')}> Population {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
@@ -212,7 +269,9 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
         >
           Previous
         </button>
+
         <Pagination total={lastPage} siblings={1} value={page} defaultValue={page} onChange={setPage} />
+
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
           onClick={() => {
@@ -224,6 +283,8 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           Next
         </button>
       </div>
+
+
     </div>
   );
 };
