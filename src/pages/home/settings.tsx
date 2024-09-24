@@ -31,12 +31,15 @@ const Settings = (props) => {
   const { updateOptions } = useLayout();
   const [colorScheme, setColorScheme] = useState(user?.colorScheme || "UNDEAD");
   const [locale, setLocale] = useState(user?.locale || "en-US");
+  const [userEmail, setUserEmail] = useState(user?.email || "");
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetPassword, setResetPassword] = useState("");
   const [opened, { toggle }] = useDisclosure(false);
   const [debouncedNewPassword] = useDebouncedValue(newPassword, 300);
   const [debouncedConfirmPassword] = useDebouncedValue(confirmPassword, 300);
+  const [newEmail, setNewEmail] = useState("");
+  const [debouncedEmail] = useDebouncedValue(newEmail, 300);
 
   const checkPasswordsMatch = useCallback(() => {
     setPasswordsMatch(debouncedNewPassword === debouncedConfirmPassword);
@@ -46,6 +49,7 @@ const Settings = (props) => {
     if (user) {
       setColorScheme(user.colorScheme);
       setLocale(user.locale);
+      setUserEmail(user.email);
     }
   }, [user]);
 
@@ -78,6 +82,28 @@ const Settings = (props) => {
       alertService.error(data.error);
     }
   };
+
+  const updateEmail = async () => {
+    const response = await fetch("/api/account/emailChange", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ newEmail, userEmail }),
+    });
+
+    const data = await response.json();
+    // Handle the response
+    if (response.ok) {
+      alertService.success(
+        "Email request sent successfully. Follow the instructions in the email to complete the process."
+      );
+      //forceUpdate();
+      updateOptions();
+    } else {
+      alertService.error(data.error);
+    }
+  }
 
   const updateLocale = async () => {
     const response = await fetch("/api/account/settings", {
@@ -227,6 +253,28 @@ const Settings = (props) => {
                 Reset Account
               </Button>
             </Collapse>
+          </Card>
+        </Grid.Col>
+
+        <Grid.Col span={6}>
+          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
+            <Text size="xl" fw='bolder'>Change Email</Text>
+            <Text>Current Email</Text>
+            <Text c="dimmed" size="md">{userEmail}</Text>
+            <Text>New Email</Text>
+            <TextInput
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              className={raceClasses.bgClass}
+            />
+            <Text size="sm" c="dimmed">An email confirmation will be sent out to confirm this change.</Text>
+            <Space h="md" />
+            <Button
+              className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+              onClick={updateEmail}
+            >
+              Save
+            </Button>
           </Card>
         </Grid.Col>
       </Grid>

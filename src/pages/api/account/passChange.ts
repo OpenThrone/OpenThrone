@@ -26,6 +26,7 @@ export default async function handler(
         createdAt: {
           gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3),
         },
+        type: 'PASSWORD'
       },
     });
 

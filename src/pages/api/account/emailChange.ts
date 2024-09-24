@@ -27,10 +27,9 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed!' });
   }
   // handle password reset
-  const { email } = req.body;
+  const { userEmail } = req.body;
   try {
-    const user = await prisma.users.findUnique({ where: { email } });
-    console.log('user', user)
+    const user = await prisma.users.findUnique({ where: { email: userEmail } });
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -41,10 +40,11 @@ export default async function handler(
       where: {
         userId: uModel.id,
         status: 0,
-        type: "PASSWORD",
+        createdAt: {
+          gte: new Date(new Date().getTime() - 60000 * 30), // 30 minutes
+        }
       },
     });
-    console.log('existingReset', existingReset)
     for (const reset of existingReset) {
       await prisma.passwordReset.update({
         where: { id: reset.id },
@@ -59,24 +59,31 @@ export default async function handler(
       data: {
         userId: parseInt(uModel.id.toString()),
         verificationCode: resetToken,
-        type: 'PASSWORD',
+        type: 'EMAIL',
       },
     });
 
     // Configure Nodemailer
     const transporter = nodemailer.createTransport(smtpConfig);
+
     // Send email
     const info = await transporter.sendMail({
       from: `<OpenThrone> ${process.env.SMTP_FROM_EMAIL}`,
       to: uModel.email,
-      subject: 'Password Reset',
-      text: `Your password reset token is: ${resetToken} 
-      Please use this token to reset your password here <a href='https://openthrone.dev/account/password-reset/verify'>https://openthrone.dev/account/password-reset/verify</a>`,
+      subject: 'Email Change',
+      text: `Your email change token is: ${resetToken}\n 
+  Please use this token to reset your password here: ${process.env.NEXT_PUBLIC_URL_ROOT}/account/email-verify?token=${resetToken}\n
+  If you were not expecting this email, please ignore it.`,
+      html: `
+    <p>Your email change token is: <strong>${resetToken}</strong></p>
+    <p>Please use this token to reset your email <a href="${process.env.NEXT_PUBLIC_URL_ROOT}/account/email-verify?token=${resetToken}">here</a>.</p>
+    <p>If you were not expecting this email, please ignore it.</p>
+  `,
     });
-    
+
     return res.json({
       status: true,
-      message: 'Password reset email sent',
+      message: 'Email change request sent',
       id: resetReq.id,
       uId: uModel.id,
       info

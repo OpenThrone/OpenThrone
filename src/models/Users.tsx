@@ -239,6 +239,9 @@ class UserModel {
     return this.stats.find(stat => stat.type === type && stat.subtype === subType)?.stat || 0;
   }
 
+  get netWorth() {
+    return this.gold + this.goldInBank;
+  }
 
   /**
    * Returns the number of available proficiency points for the user.
