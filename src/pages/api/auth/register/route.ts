@@ -1,7 +1,5 @@
 import prisma from "@/lib/prisma";
-import user from "@/pages/messaging/compose/[user]";
 import { createUser, userExists } from "@/services";
-import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
