@@ -1,8 +1,15 @@
-// pages/api/account/bonusPoints.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
+import { DefaultLevelBonus } from '@/constants/Bonuses';
+import { BonusType } from '@/types/typings';
+
+
+interface BonusPointsItem {
+  type: BonusType;
+  level: number;
+}
 
 // Handler function for the API route
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -14,14 +21,21 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { changeQueue } = req.body;
   const userId = req.session.user.id;
   if (!userId) {
-    return res.status(403).json({ error: 'User ID is missing from session' , session: session});
+    return res.status(403).json({ error: 'User ID is missing from session' });
   }
 
   try {
     // Retrieve the current user's bonus points
-    const user = new UserModel(await prisma.users.findUnique({ where: { id: userId } }));
-    if (!user || !user.bonus_points) {
-      return res.status(404).json({ error: 'User or bonus points not found' });
+    const userRecord = await prisma.users.findUnique({ where: { id: userId } });
+    const user = new UserModel(userRecord);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Ensure bonus_points is initialized
+    if (!user.bonus_points) {
+      user.bonus_points = [];
     }
 
     // Calculate the total change requested
@@ -32,16 +46,24 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(400).json({ error: 'Not enough proficiency points available' });
     }
 
-    // Iterate over changeQueue to update levels
-    let updatedBonusPoints = user.bonus_points.map((bonus) => {
-      if (changeQueue[bonus.type]?.change > 0) {
-        const newLevel = bonus.level + changeQueue[bonus.type].change;
-        if (newLevel > 75) {
-          throw new Error(`Max level reached for ${bonus.type}`);
-        }
-        return { ...bonus, level: newLevel };
+    // Create a lookup for user's current bonus levels
+    const userBonusPoints: { [key in BonusType]?: number } = {};
+    user.bonus_points.forEach((bonus: BonusPointsItem) => {
+      userBonusPoints[bonus.type] = bonus.level;
+    });
+
+    // Iterate over all default bonus types to update levels
+    const updatedBonusPoints: BonusPointsItem[] = DefaultLevelBonus.map((defaultBonus) => {
+      const { type } = defaultBonus;
+      const currentLevel = userBonusPoints[type] || 0;
+      const change = changeQueue[type]?.change || 0;
+      const newLevel = currentLevel + change;
+
+      if (newLevel > 75) {
+        throw new Error(`Max level reached for ${type}`);
       }
-      return bonus;
+
+      return { type, level: newLevel };
     });
 
     // Update the user's bonus points in the database
@@ -56,6 +78,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     console.error('Error updating user bonus points:', error, userId);
     return res.status(500).json({ error: 'Internal Server Error', errorDetails: error.message });
   }
-}
+};
 
 export default withAuth(handler);
