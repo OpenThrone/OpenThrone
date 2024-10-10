@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 
 import type { AlertType } from '../services/alert.service';
 import { alertService } from '../services/alert.service';
-import { faRectangleXmark } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert, Text } from '@mantine/core';
 
 const AlertComponent: React.FC = () => {
@@ -37,6 +35,11 @@ const AlertComponent: React.FC = () => {
       <div className="my-3">
         <Alert variant='filled' className={'alert-' + alert.type} title={alert.type.toUpperCase()} withCloseButton onClose={alertService.clear}>
           <Text className='text-shadow-xs text-gray-800'>{alert.message}</Text>
+          {alert.showButton && (
+            <>
+              {alert.button}
+            </>
+          )}
         </Alert>
       </div>
     </div>
