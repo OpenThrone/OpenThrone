@@ -4,19 +4,19 @@ import { withAuth } from '@/middleware/auth';
 
 const handler = async (req, res) => {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_FOUND' });
   }
   const session = req.session;
   if (!session || !session.user || !session.user.id) {
     console.log(session)
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
   }
 
   const userId = session.user.id;
   const MAX_SESSIONS_PER_USER = 2; // Limit to 1 active session per user
 
   // Clean up expired sessions (older than 30 minutes)
-  const expirationTime = new Date(Date.now() - 30 * 60 * 1000);
+  const expirationTime = new Date(Date.now() - 1 * 60 * 1000);
   await prisma.autoRecruitSession.deleteMany({
     where: {
       userId,
@@ -30,7 +30,7 @@ const handler = async (req, res) => {
   });
 
   if (activeSessions >= MAX_SESSIONS_PER_USER) {
-    return res.status(429).json({ error: 'Too many active sessions' });
+    return res.status(429).json({ error: 'Too many active sessions', code: 'TOO_MANY_SESSIONS' });
   }
 
   // Create a new session

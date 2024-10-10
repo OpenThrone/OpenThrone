@@ -5,18 +5,18 @@ import { getSession } from 'next-auth/react';
 
 const handler = async (req, res) => {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_FOUND' });
   }
   const session = req.session;
   if (!session || !session.user || !session.user.id) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
   }
 
   const userId = session.user.id;
   const { sessionId } = req.body;
 
   if (!sessionId) {
-    return res.status(400).json({ error: 'Session ID is required' });
+    return res.status(400).json({ error: 'Session ID is required', code: 'SESSION_ID_REQ' });
   }
 
   // Delete the session

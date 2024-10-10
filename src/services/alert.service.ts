@@ -4,6 +4,8 @@ export interface AlertType {
   type: 'success' | 'error';
   message: string;
   showAfterRedirect: boolean;
+  showButton: boolean;
+  button: string;
 }
 
 const alertSubject = new BehaviorSubject<AlertType | null>(null);
@@ -11,9 +13,11 @@ const alertSubject = new BehaviorSubject<AlertType | null>(null);
 function showAlert(
   type: 'success' | 'error',
   message: string,
-  showAfterRedirect = false
+  showAfterRedirect = false,
+  showButton = false,
+  button: string = ''
 ): void {
-  alertSubject.next({ type, message, showAfterRedirect });
+  alertSubject.next({ type, message, showAfterRedirect, showButton, button });
 }
 
 // clear alerts
