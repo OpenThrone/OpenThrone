@@ -176,6 +176,25 @@ export function computeAmpFactor(targetPop: number): number {
 }
 
 /**
+ * Calculates a level factor based on the defender's level.
+ * levels less than 10 get more protection, but levels 10-15 get less protection.
+ * @param defenderLevel - The level of the defender.
+ * @returns The level factor.
+  */
+function calculateDefenderLevelFactor(defenderLevel: number): number {
+  if (defenderLevel >= 15) {
+    return 1; // Full loot potential
+  } else if (defenderLevel < 10) {
+    // Scale between 0.5 (50%) at level 1 to 0.75 (75%) at level 9
+    return 0.5 + (defenderLevel - 1) * ((0.75 - 0.5) / 8);
+  } else {
+    // Scale between 0.75 (75%) at level 10 to 1 (100%) at level 15
+    return 0.75 + (defenderLevel - 10) * ((1 - 0.75) / 5);
+  }
+}
+
+
+/**
  * Calculates the loot that the attacker will receive from the defender.
  * @param attacker - The attacking user.
  * @param defender - The defending user.
@@ -184,20 +203,27 @@ export function computeAmpFactor(targetPop: number): number {
  */
 export function calculateLoot(attacker: UserModel, defender: UserModel, turns: number): bigint {
   const uniformFactor = mtRand(90, 99) / 100; // Always between 0.90 and 0.99
-  const turnFactor = mtRand(100 + turns * 10, 100 + turns * 20) / 100; // Always positive
-  const levelDifferenceFactor = Math.max(1, 1 + Math.min(0.5, Math.min(5, Math.abs(defender.level - attacker.level)) * 0.05)); // Ensure it never goes below 1
+  const turnFactor = mtRand(100 + turns * 10, 100 + turns * 20) / 371;
+  const levelDifferenceFactor = Math.max(
+    1,
+    1 + Math.min(
+      0.5,
+      Math.min(5, Math.abs(defender.level - attacker.level)) * 0.05
+    )
+  );
 
-  const lootFactor = uniformFactor * turnFactor * levelDifferenceFactor;
+  // New defender level factor
+  const defenderLevelFactor = calculateDefenderLevelFactor(defender.level);
 
-  let defenderGold = BigInt(defender.gold);
-  let calculatedLoot = Number(defenderGold) * lootFactor;
+  const lootFactor = uniformFactor * turnFactor * levelDifferenceFactor * defenderLevelFactor;
+
+  const defenderGold = BigInt(defender.gold);
+  const calculatedLoot = Number(defenderGold) * lootFactor;
   let loot = BigInt(Math.floor(calculatedLoot));
-  let maxUserGoldLoot = defenderGold * BigInt(75) / BigInt(100);
 
-  // Ensure loot is never negative and never more than maxUserGoldLoot
-  loot = loot > maxUserGoldLoot ? maxUserGoldLoot : loot;
   return loot < BigInt(0) ? BigInt(0) : loot;
 }
+
 
 
 
