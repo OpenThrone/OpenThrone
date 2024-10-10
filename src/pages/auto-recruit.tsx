@@ -1,9 +1,11 @@
+// src/pages/auto-recruit.tsx
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Recruiter from '../components/recruiter';
 import Alert from '../components/alert';
 import { alertService } from '@/services';
-import { Button, Space, Container, Text, Title, Center, LoadingOverlay, Flex } from '@mantine/core';
+import { Button, Space, Container, Text, Title, Center, Flex } from '@mantine/core';
 import { useUser } from '@/context/users';
+import SessionModal from '@/components/SessionModal';
 
 export default function AutoRecruiter(props) {
   const [consecutiveSuccesses, setConsecutiveSuccesses] = useState(0);
@@ -15,10 +17,11 @@ export default function AutoRecruiter(props) {
   const [lastSuccess, setLastSuccess] = useState(false);
   const [totalLeft, setTotalLeft] = useState(0);
   const { forceUpdate, user: viewer } = useUser();
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const intervalRef = useRef(null);
+  const [sessionId, setSessionId] = useState<number | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sessionIdRef = useRef(sessionId);
   const isPausedRef = useRef(isPaused);
+  const [sessionModalOpened, setSessionModalOpened] = useState(false);
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -27,6 +30,21 @@ export default function AutoRecruiter(props) {
   useEffect(() => {
     isPausedRef.current = isPaused;
   }, [isPaused]);
+
+  const handleInvalidSession = () => {
+    // Clear the session ID
+    setSessionId(null);
+    sessionIdRef.current = null;
+
+    // Reset recruiting state
+    setIsRecruiting(false);
+    setIsPaused(false);
+    setHasEnded(false);
+    setUser(null);
+
+    // Notify the user
+    alertService.error('Your session has ended or is no longer valid. Please start a new session.');
+  };
 
   const fetchRandomUser = useCallback(async () => {
     if (!sessionIdRef.current) {
@@ -41,7 +59,7 @@ export default function AutoRecruiter(props) {
       const response = await fetch('/api/recruit/getRandomUser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId: sessionIdRef.current }),
       });
       const data = await response.json();
 
@@ -49,10 +67,14 @@ export default function AutoRecruiter(props) {
         setUser(data.randomUser);
         setTotalLeft(data.totalLeft);
       } else {
-        setHasEnded(true);
-        setIsPaused(true);
-        alertService.error(data.error);
-        console.error('Error fetching new user:', data.error);
+        if (data.error === 'Invalid session ID') {
+          handleInvalidSession();
+        } else {
+          setHasEnded(true);
+          setIsPaused(true);
+          alertService.error(data.error);
+          console.error('Error fetching new user:', data.error);
+        }
       }
     } catch (error) {
       setHasEnded(true);
@@ -60,7 +82,7 @@ export default function AutoRecruiter(props) {
       alertService.error('Error fetching new user');
       console.error('Caught Error fetching user:', error);
     }
-  }, [sessionId]);
+  }, []);
 
   const startCountdown = useCallback(() => {
     setCountdown(3);
@@ -71,8 +93,10 @@ export default function AutoRecruiter(props) {
         setCountdown(timer - 1);
       } else {
         setCountdown(0);
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         if (sessionIdRef.current && !isPausedRef.current) {
           await fetchRandomUser();
         }
@@ -80,7 +104,7 @@ export default function AutoRecruiter(props) {
       }
       timer -= 1;
     }, 1000);
-  }, [fetchRandomUser, sessionId]);
+  }, [fetchRandomUser]);
 
   const handleRecruitment = useCallback(async () => {
     if (!sessionId) {
@@ -117,12 +141,17 @@ export default function AutoRecruiter(props) {
           }
         }
       } else {
-        console.error('Error handling recruitment, ln88:', data.error);
-        console.log('startingCountdown after error ');
-        startCountdown();
+        if (data.error === 'Invalid session ID') {
+          handleInvalidSession();
+        } else {
+          console.error('Error handling recruitment:', data.error);
+          alertService.error(data.error);
+          startCountdown();
+        }
       }
     } catch (error) {
-      console.error('Error handling recruitment, ln 93:', error);
+      console.error('Error handling recruitment:', error);
+      alertService.error('Error handling recruitment. Please try again.');
       startCountdown();
     }
   }, [user, sessionId, isPaused, startCountdown, forceUpdate, totalLeft]);
@@ -137,6 +166,7 @@ export default function AutoRecruiter(props) {
     console.log('isOkay?', response.ok);
     console.log('data', data);
     if (response.ok) {
+      alertService.clear();
       setSessionId(data.sessionId);
       setIsRecruiting(true);
       setIsPaused(false);
@@ -144,8 +174,44 @@ export default function AutoRecruiter(props) {
       setHasEnded(false);
       setLastSuccess(false);
     } else {
-      alertService.error(data.error);
-      console.log('Error starting session:', data.error);
+      switch (data.code) {
+        case 'TOO_MANY_SESSIONS':
+          alertService.error('You have too many active sessions. Please try again later or end another session.');
+          break;
+        default:
+          alertService.error(data.error);
+          break;
+      }
+    }
+  };
+
+  const resumeRecruiting = async () => {
+    if (!sessionId) {
+      //alertService.error('No active session found. Please start a new session.');
+      startRecruiting();
+      //setUser(null);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/recruit/verifySession', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+      const data = await response.json();
+
+      if (response.ok && data.valid) {
+        // Session is valid, resume recruiting
+        setIsPaused(false);
+        alertService.clear();
+      } else {
+        // Session is invalid
+        handleInvalidSession();
+      }
+    } catch (error) {
+      console.error('Error verifying session:', error);
+      alertService.error('Error verifying session. Please try again.');
     }
   };
 
@@ -153,7 +219,8 @@ export default function AutoRecruiter(props) {
     if (sessionId) {
       fetchRandomUser();
     }
-  }, [sessionId, fetchRandomUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
 
   const stopRecruiting = async (endSession = false) => {
     setIsPaused(true); // Pause the countdown
@@ -174,6 +241,7 @@ export default function AutoRecruiter(props) {
         body: JSON.stringify({ sessionId: sessionIdRef.current }),
       });
       setSessionId(null);
+      sessionIdRef.current = null;
     }
   };
 
@@ -189,10 +257,14 @@ export default function AutoRecruiter(props) {
             {!hasEnded && <Text>Click Start to begin the Auto-Recruit, a new user will appear.</Text>}
             <Center>
               <Button color="dark" onClick={startRecruiting}>
-                {!hasEnded ? 'Start' : 'Stop'} Recruiting
+                Start Recruiting
               </Button>
             </Center>
           </Container>
+          <SessionModal
+            opened={sessionModalOpened}
+            onClose={() => setSessionModalOpened(false)}
+          />
         </Center>
       </Container>
     );
@@ -209,20 +281,20 @@ export default function AutoRecruiter(props) {
           {!hasEnded ? (
             <div>
               <Center>
-              <Text>
-                Loading{countdown > 0 ? ` next user in ${countdown} seconds...` : '...'}
-              </Text>
-              <Space h="md" />
-              <Center>
-                <Button loading color="dark" onClick={() => stopRecruiting()}>
-                  Stop Recruiting
-                </Button>
+                <Text>
+                  Loading{countdown > 0 ? ` next user in ${countdown} seconds...` : '...'}
+                </Text>
+                <Space h="md" />
+                <Center>
+                  <Button loading color="dark" onClick={() => stopRecruiting()}>
+                    Stop Recruiting
+                  </Button>
                 </Center>
               </Center>
             </div>
           ) : (
             <Center>
-              <Button color="dark" onClick={() => startRecruiting()}>
+              <Button color="dark" onClick={startRecruiting}>
                 Restart Recruiting
               </Button>
             </Center>
@@ -247,13 +319,13 @@ export default function AutoRecruiter(props) {
       <Space h="md" />
       <Flex justify={'center'} align={'center'} direction={'column'}>
         {!isPaused && lastSuccess && (
-            <Text>
-              Loading{countdown > 0 ? ` next user in ${countdown} seconds...` : '...'}
-            </Text>
+          <Text>
+            Loading{countdown > 0 ? ` next user in ${countdown} seconds...` : '...'}
+          </Text>
         )}
         <Space h="md" />
         {isPaused ? (
-          <Button color="dark" onClick={startRecruiting}>
+          <Button color="dark" onClick={resumeRecruiting}>
             Resume Recruiting
           </Button>
         ) : (
