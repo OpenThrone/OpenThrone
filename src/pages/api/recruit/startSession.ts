@@ -8,15 +8,14 @@ const handler = async (req, res) => {
   }
   const session = req.session;
   if (!session || !session.user || !session.user.id) {
-    console.log(session)
     return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
   }
 
   const userId = session.user.id;
   const MAX_SESSIONS_PER_USER = 2; // Limit to 1 active session per user
 
-  // Clean up expired sessions (older than 30 minutes)
-  const expirationTime = new Date(Date.now() - 1 * 60 * 1000);
+  // Clean up expired sessions (older than 5 minutes)
+  const expirationTime = new Date(Date.now() - 5 * 60 * 1000);
   await prisma.autoRecruitSession.deleteMany({
     where: {
       userId,
