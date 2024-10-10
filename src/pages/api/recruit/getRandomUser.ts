@@ -8,12 +8,30 @@ const handler = async (
   req: NextApiRequest,
   res: NextApiResponse,
 ) => {
-  if (req.method !== 'GET') {
+  if (req.method !== 'POST') {
     return res.status(405).end(); // Method not allowed
   }
 
   const { session } = req;
   const recruiterID = session ? parseInt(session.user?.id.toLocaleString()) : 0;
+  const { sessionId } = req.body;
+  if (!sessionId) {
+    return res.status(400).json({ error: 'Session ID is required' });
+  }
+
+  const sessionRecord = await prisma.autoRecruitSession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!sessionRecord || sessionRecord.userId !== recruiterID) {
+    return res.status(403).json({ error: 'Invalid session ID' });
+  }
+
+  // Update lastActivityAt to keep the session active
+  await prisma.autoRecruitSession.update({
+    where: { id: sessionId },
+    data: { lastActivityAt: new Date() },
+  });
 
   // Fetch all users
   const users = await prisma.users.findMany({
