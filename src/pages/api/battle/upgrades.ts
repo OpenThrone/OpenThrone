@@ -55,7 +55,7 @@ const handler = async(
       if (operation === 'buy') {
         totalCost += itemCost;
       } else { // selling items
-        totalCost -= itemCost;
+        totalCost -= Math.floor(itemCost * 0.75); // 75% of the cost
       }
     }
 
