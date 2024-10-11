@@ -1,21 +1,22 @@
+import { ReactNode } from 'react';
 import { BehaviorSubject } from 'rxjs';
 
 export interface AlertType {
   type: 'success' | 'error';
-  message: string;
+  message: ReactNode;
   showAfterRedirect: boolean;
   showButton: boolean;
-  button: string;
+  button: ReactNode;
 }
 
 const alertSubject = new BehaviorSubject<AlertType | null>(null);
 
 function showAlert(
   type: 'success' | 'error',
-  message: string,
+  message: ReactNode,
   showAfterRedirect = false,
   showButton = false,
-  button: string = ''
+  button: ReactNode = ''
 ): void {
   alertSubject.next({ type, message, showAfterRedirect, showButton, button });
 }
@@ -32,9 +33,9 @@ function clear(): void {
 
 export const alertService = {
   alert: alertSubject.asObservable(),
-  success: (message: string, showAfterRedirect?: boolean) =>
+  success: (message: ReactNode, showAfterRedirect?: boolean) =>
     showAlert('success', message, showAfterRedirect),
-  error: (message: string, showAfterRedirect?: boolean) =>
-    showAlert('error', message, showAfterRedirect),
+  error: (message: ReactNode, showAfterRedirect?: boolean, showButton: boolean = false, button: ReactNode = '' ) =>
+    showAlert('error', message, showAfterRedirect, showButton, button),
   clear,
 };

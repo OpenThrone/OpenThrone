@@ -176,7 +176,16 @@ export default function AutoRecruiter(props) {
     } else {
       switch (data.code) {
         case 'TOO_MANY_SESSIONS':
-          alertService.error('You have too many active sessions. Please try again later or end another session.');
+          alertService.error(
+            <>
+              <Text>
+                You have too many active sessions. Please end one or more sessions to continue.
+              </Text>
+              <Button onClick={() => setSessionModalOpened(true)} mb="md">
+                Manage Sessions
+              </Button>
+            </>
+          );
           break;
         default:
           alertService.error(data.error);

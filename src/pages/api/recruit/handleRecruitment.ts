@@ -131,7 +131,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       return { success: true };
-    });
+    }, { timeout: 15000, maxWait: 5000 });
 
     return res.status(200).json(result);
   } catch (error) {
