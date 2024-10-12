@@ -22,6 +22,9 @@ export default function AutoRecruiter(props) {
   const sessionIdRef = useRef(sessionId);
   const isPausedRef = useRef(isPaused);
   const [sessionModalOpened, setSessionModalOpened] = useState(false);
+  const [isFetchingUser, setIsFetchingUser] = useState(false);
+  const [isHandlingRecruitment, setIsHandlingRecruitment] = useState(false);
+
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -30,6 +33,14 @@ export default function AutoRecruiter(props) {
   useEffect(() => {
     isPausedRef.current = isPaused;
   }, [isPaused]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const handleInvalidSession = () => {
     // Clear the session ID
@@ -43,10 +54,14 @@ export default function AutoRecruiter(props) {
     setUser(null);
 
     // Notify the user
-    alertService.error('Your session has ended or is no longer valid. Please start a new session.');
+    alertService.error('Your session has ended or is no longer valid. Please start a new session.', false, false, '', 5000);
   };
 
   const fetchRandomUser = useCallback(async () => {
+    if (isFetchingUser) {
+      return;
+    }
+    setIsFetchingUser(true);
     if (!sessionIdRef.current) {
       console.error('No session ID', sessionIdRef.current);
       return;
@@ -81,10 +96,16 @@ export default function AutoRecruiter(props) {
       setIsPaused(true);
       alertService.error('Error fetching new user');
       console.error('Caught Error fetching user:', error);
+    } finally {
+      setIsFetchingUser(false);
     }
   }, []);
 
   const startCountdown = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     setCountdown(3);
     let timer = 3;
     intervalRef.current = setInterval(async () => {
@@ -107,6 +128,10 @@ export default function AutoRecruiter(props) {
   }, [fetchRandomUser]);
 
   const handleRecruitment = useCallback(async () => {
+    if (isHandlingRecruitment) {
+      return;
+    }
+    setIsHandlingRecruitment(true);
     if (!sessionId) {
       console.error('No session ID');
       return;
@@ -153,8 +178,10 @@ export default function AutoRecruiter(props) {
       console.error('Error handling recruitment:', error);
       alertService.error('Error handling recruitment. Please try again.');
       startCountdown();
+    } finally {
+      setIsHandlingRecruitment(false);
     }
-  }, [user, sessionId, isPaused, startCountdown, forceUpdate, totalLeft]);
+  }, [isHandlingRecruitment, user, sessionId, isPaused, startCountdown, forceUpdate, totalLeft]);
 
   const startRecruiting = async () => {
     const response = await fetch('/api/recruit/startSession', {
@@ -233,6 +260,8 @@ export default function AutoRecruiter(props) {
 
   const stopRecruiting = async (endSession = false) => {
     setIsPaused(true); // Pause the countdown
+    setIsHandlingRecruitment(false);
+    setIsFetchingUser(false);
     if (endSession) {
       setHasEnded(true); // End the session
     }
