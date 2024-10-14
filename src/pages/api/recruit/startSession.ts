@@ -6,12 +6,12 @@ const handler = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_FOUND' });
   }
+  let userId = 0;
   const session = req.session;
-  if (!session || !session.user || !session.user.id) {
-    return res.status(401).json({ error: 'Unauthorized', code: 'UNAUTHORIZED' });
+  if (session) {
+    userId = session.user.id;
   }
 
-  const userId = session.user.id;
   const MAX_SESSIONS_PER_USER = 2; // Limit to 1 active session per user
 
   // Clean up expired sessions (older than 5 minutes)
@@ -40,4 +40,4 @@ const handler = async (req, res) => {
   return res.status(200).json({ sessionId: newSession.id });
 }
 
-export default withAuth(handler);
+export default withAuth(handler, true);

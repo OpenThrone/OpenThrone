@@ -22,7 +22,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const session = req.session;
   const recruiterUserId = session ? session.user.id : 0;
-  let { recruitedUserId, selfRecruit } = req.body;
+  let { recruitedUserId, selfRecruit, sessionId } = req.body;
 
   try {
     if (!Number.isInteger(recruitedUserId)) {
@@ -30,6 +30,21 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         where: { recruit_link: recruitedUserId },
       });
       recruitedUserId = recruitedUser?.id || 0;
+    }
+
+    // Differentiate between manual and auto-clicker sessions
+    if (sessionId) {
+      // Validate the session ID for auto-clicker recruitment
+      const activeSessions = await prisma.autoRecruitSession.count({
+        where: { userId: recruiterUserId, id: sessionId },
+      });
+
+      if (activeSessions === 0) {
+        return res.status(429).json({ error: 'Invalid session ID' });
+      }
+    } else {
+      // If sessionId is not provided, treat it as a manual recruitment
+      sessionId = null; // Explicitly set sessionId to null for manual
     }
 
     const result = await prisma.$transaction(async (tx) => {
