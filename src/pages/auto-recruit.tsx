@@ -87,14 +87,14 @@ export default function AutoRecruiter(props) {
         } else {
           setHasEnded(true);
           setIsPaused(true);
-          alertService.error(data.error);
+          alertService.error(data.error, false, false, '', 5000);
           console.error('Error fetching new user:', data.error);
         }
       }
     } catch (error) {
       setHasEnded(true);
       setIsPaused(true);
-      alertService.error('Error fetching new user');
+      alertService.error('Error fetching new user', false, false, '', 5000);
       console.error('Caught Error fetching user:', error);
     } finally {
       setIsFetchingUser(false);
@@ -170,13 +170,13 @@ export default function AutoRecruiter(props) {
           handleInvalidSession();
         } else {
           console.error('Error handling recruitment:', data.error);
-          alertService.error(data.error);
+          alertService.error(data.error, false, false, '', 5000);
           startCountdown();
         }
       }
     } catch (error) {
       console.error('Error handling recruitment:', error);
-      alertService.error('Error handling recruitment. Please try again.');
+      alertService.error('Error handling recruitment. Please try again.', false, false, '', 5000);
       startCountdown();
     } finally {
       setIsHandlingRecruitment(false);
@@ -215,7 +215,7 @@ export default function AutoRecruiter(props) {
           );
           break;
         default:
-          alertService.error(data.error);
+          alertService.error(data.error, false, false, '', 5000);
           break;
       }
     }
@@ -247,7 +247,7 @@ export default function AutoRecruiter(props) {
       }
     } catch (error) {
       console.error('Error verifying session:', error);
-      alertService.error('Error verifying session. Please try again.');
+      alertService.error('Error verifying session. Please try again.', false, false, '', 5000);
     }
   };
 
