@@ -190,8 +190,6 @@ export default function AutoRecruiter(props) {
     });
     const data = await response.json();
 
-    console.log('isOkay?', response.ok);
-    console.log('data', data);
     if (response.ok) {
       alertService.clear();
       setSessionId(data.sessionId);
@@ -223,9 +221,7 @@ export default function AutoRecruiter(props) {
 
   const resumeRecruiting = async () => {
     if (!sessionId) {
-      //alertService.error('No active session found. Please start a new session.');
       startRecruiting();
-      //setUser(null);
       return;
     }
 
