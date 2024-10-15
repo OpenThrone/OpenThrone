@@ -5,10 +5,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { alertService } from '@/services';
 import type { UnitProps, UnitSectionProps } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
-
 import { useUser } from '../context/users';
 import { Table, Text, Group, TextInput, NumberInput, Paper, Select, Button } from '@mantine/core';
-import user from '@/pages/messaging/compose/[user]';
+import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
 
 // Utility function outside the component
 const getIconClass = (heading: string) => {
@@ -45,17 +46,41 @@ const NewItemSection = ({
   const [conversionAmount, setConversionAmount] = useState(0);
   const [fromItem, setFromItem] = useState('');
   const [toItem, setToItem] = useState('');
-  //const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
   const [conversionCost, setConversionCost] = useState(0);
   const [toLower, setToLower] = useState(false);
-  
+  const [highestUnlockedLevel, setHighestUnlockedLevel] = useState(0);
+  const [collapsedItems, setCollapsedItems] = useState<{ [key: string]: boolean }>({});
+
+
   useEffect(() => {
     // Set initial items on component mount
-    if(items)
-      setCurrentItems(items);
-    if(units)
-    setCurrentUnits(units);
-  }, [items, units]);
+    if (items) setCurrentItems(items);
+    if (units) setCurrentUnits(units);
+
+    // Initialize collapsedItems
+    const initialCollapsedState: { [key: string]: boolean } = {};
+    currentItems.forEach((item) => {
+      if (!item.enabled) {
+        // "Unlocked At" items, collapsed by default
+        initialCollapsedState[item.id] = true;
+      } else {
+        const itemLevel = item.armoryLevel ?? 0;
+        const userOwnsItem = item.ownedItems > 0;
+
+        if (itemLevel > highestUnlockedLevel) {
+          setHighestUnlockedLevel(itemLevel);
+        }
+
+        if (itemLevel < highestUnlockedLevel && !userOwnsItem) {
+          initialCollapsedState[item.id] = true; // Auto-collapse
+        } else {
+          initialCollapsedState[item.id] = false; // Expanded
+        }
+        console.log(item.id)
+      }
+    });
+    setCollapsedItems(initialCollapsedState);
+  }, [items, units, currentItems, highestUnlockedLevel]);
 
   const getItems = useMemo(() => {
     return (
@@ -197,6 +222,13 @@ const NewItemSection = ({
     }
   };
 
+  const toggleCollapse = (itemId: string) => {
+    setCollapsedItems((prevState) => ({
+      ...prevState,
+      [itemId]: !prevState[itemId],
+    }));
+  };
+
   const formatHeading = (SecHeading: string) => {
     return SecHeading.split(' ')
       .map((word) =>
@@ -287,7 +319,7 @@ const NewItemSection = ({
   }, [fromItem, toItem, conversionAmount, getItems, toLower]);
 
   return (
-    <Paper className="my-10 rounded-lg ">
+    <Paper className="my-10 rounded-lg">
       <Table striped className="w-full table-fixed pb-2">
         <Table.Thead>
           <Table.Tr>
@@ -298,77 +330,120 @@ const NewItemSection = ({
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {getItems.map((unit) =>
-            unit.enabled ? (
-              <Table.Tr key={unit.id}>
-                <Table.Td className="w-80 px-4 py-2">
-                  <Group gap={'sm'} grow>
-                    <div>
-                      <Text fz="lg" fw={500} className='font-medieval'>
-                        {unit.name}
-                        <span className='text-xs font-medieval'>
-                          {' '}(+{unit.bonus} {unit.usage})
-                        </span>
-                      </Text>
-                      <Text fz="sm" c='#ADB5BD'>
-                        Costs: {toLocale(unit.cost)} Gold
-                      </Text>
-                      <Text fz="sm" c='#ADB5BD'>
-                        Sale Value: {toLocale(Math.floor(parseInt(unit.cost) * .75))} 
-                      </Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td className="w-80 px-4 py-2">
-                  <Group>
-                    <Text fz="med" fw={500}>
-                      <span className='font-medieval'>Owned: </span><span id={`${unit.id}_owned`}>{toLocale(unit.ownedItems)}</span>
-                    </Text>
-                    <Text fz="med" fw={500}>
-                      <span className='font-medieval'>Units: </span><span id={`${unit.id}_total`}>{toLocale(currentUnits)}</span>
-                    </Text>
-                  </Group>
-                  
-                </Table.Td>
-                <Table.Td className="w-40 px-4 py-2">
-                  <NumberInput
-                    aria-labelledby={unit.id}
-                    name={unit.id}
-                    value={itemCosts[unit.id] || 0}
-                    onChange={(value: number | undefined) => handleInputChange(unit.id, value)}
-                    min={0}
-                    className="w-full rounded-md "
-                    allowNegative={false}
-                  />
-                </Table.Td>
-              </Table.Tr>
-            ) : (
+          {getItems.map((unit) => {
+            const isCollapsed = collapsedItems[unit.id] ?? false;
+
+            if (!unit.enabled) {
+              // "Unlocked At" row
+              return (
                 <Table.Tr key={unit.id}>
                   <Table.Td className="px-4 py-2">
-                    <Group gap={'sm'} grow>
+                    <Group gap={'sm'} grow={false}>
+                      <span
+                        onClick={() => toggleCollapse(unit.id)}
+                        style={{ cursor: 'pointer' }}
+                        aria-expanded={!isCollapsed}
+                        role="button"
+                      >
+                        {isCollapsed ? (
+                          <FontAwesomeIcon icon={faPlus} size="sm" />
+                        ) : (
+                          <FontAwesomeIcon icon={faMinus} size="sm" />
+                        )}
+                      </span>
                       <div>
-                        <Text fz="lg" fw={500} className='font-medieval'>
+                        <Text fz="lg" fw={500} className="font-medieval">
                           {unit.name}
-                          <span className='text-xs font-medieval'>
-                            {' '}(+{unit.bonus} {unit.usage})
+                          <span className="text-xs font-medieval">
+                            {' '}
+                            (+{unit.bonus} {unit.usage})
                           </span>
                         </Text>
-                        <Text fz="sm" c='#ADB5BD'>
+                        {!isCollapsed && (
+                        <Text fz="sm" c="#ADB5BD">
                           Costs: -
-                        </Text>
+                          </Text>
+                        )}
                       </div>
                     </Group>
                   </Table.Td>
-                  <Table.Td colSpan='2' className="px-4 py-2">
+                  <Table.Td colSpan={2} className="px-4 py-2">
                     <Group>
-                      <Text fz="med" fw={500} className='text-center'>
+                      <Text fz="med" fw={500} className="text-center">
                         Unlocked with {unit.fortName}
                       </Text>
                     </Group>
                   </Table.Td>
                 </Table.Tr>
-            ),
-          )}
+              );
+            } else {
+              // Expandable/Collapsible row
+              return (
+                <Table.Tr key={unit.id}>
+                  <Table.Td className="w-80 px-4 py-2">
+                    <Group gap={'sm'} grow={false} align="flex-start">
+                      <span
+                        onClick={() => toggleCollapse(unit.id)}
+                        style={{ cursor: 'pointer' }}
+                        aria-expanded={!isCollapsed}
+                        role="button"
+                      >
+                        {isCollapsed ? (
+                          <FontAwesomeIcon icon={faPlus} size="sm" />
+                        ) : (
+                          <FontAwesomeIcon icon={faMinus} size="sm" />
+                        )}
+                      </span>
+                      <div>
+                        <Text fz="lg" fw={500} className="font-medieval">
+                          {unit.name}
+                          <span className="text-xs font-medieval">
+                            {' '}
+                            (+{unit.bonus} {unit.usage})
+                          </span>
+                        </Text>
+                        {!isCollapsed && (
+                          <>
+                            <Text fz="sm" c="#ADB5BD">
+                              Costs: {toLocale(unit.cost)} Gold
+                            </Text>
+                            <Text fz="sm" c="#ADB5BD">
+                              Sale Value: {toLocale(Math.floor(parseInt(unit.cost) * 0.75))}
+                            </Text>
+                          </>
+                        )}
+                      </div>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td className="w-80 px-4 py-2">
+                    <Group>
+                      <Text fz="med" fw={500}>
+                        <span className="font-medieval">Owned: </span>
+                        <span id={`${unit.id}_owned`}>{toLocale(unit.ownedItems)}</span>
+                      </Text>
+                      <Text fz="med" fw={500}>
+                        <span className="font-medieval">Units: </span>
+                        <span id={`${unit.id}_total`}>{toLocale(currentUnits)}</span>
+                      </Text>
+                    </Group>
+                  </Table.Td>
+                  <Table.Td className="w-40 px-4 py-2">
+                    <NumberInput
+                      aria-labelledby={unit.id}
+                      name={unit.id}
+                      value={itemCosts[unit.id] || 0}
+                      onChange={(value: number | undefined) =>
+                        handleInputChange(unit.id, value)
+                      }
+                      min={0}
+                      className="w-full rounded-md"
+                      allowNegative={false}
+                    />
+                  </Table.Td>
+                </Table.Tr>
+              );
+            }
+          })}
           <Table.Tr>
             <Table.Td colSpan="3" className="px-4 py-2">
               <Group spacing="xs" grow>
@@ -381,8 +456,11 @@ const NewItemSection = ({
                   allowNegative={false}
                 />
                 <Select
-                  data={getItems.filter(
-                    (item) => (item?.armoryLevel ?? 0) <= (user?.armoryLevel ?? 0)).map((item) => ({ value: item.id, label: item.name }))}
+                  data={getItems
+                    .filter(
+                      (item) => (item?.armoryLevel ?? 0) <= (user?.armoryLevel ?? 0),
+                    )
+                    .map((item) => ({ value: item.id, label: item.name }))}
                   value={fromItem}
                   onChange={(value) => setFromItem(value)}
                   placeholder="Select Item"
@@ -390,15 +468,20 @@ const NewItemSection = ({
                 />
                 <Text>to</Text>
                 <Select
-                  data={getItems.filter(
-                    (item) => (item?.armoryLevel ?? 0) <= (user?.armoryLevel ?? 0) && item.name !== fromItem).map((item) => ({ value: item.id, label: item.name }))}
+                  data={getItems
+                    .filter(
+                      (item) =>
+                        (item?.armoryLevel ?? 0) <= (user?.armoryLevel ?? 0) &&
+                        item.name !== fromItem,
+                    )
+                    .map((item) => ({ value: item.id, label: item.name }))}
                   value={toItem}
                   onChange={(value) => setToItem(value)}
                   placeholder="Select Item"
                   className="w-40"
                 />
                 <span>
-                  <Text>{toLower? 'Refund': 'Cost'}: {toLocale(conversionCost)}</Text>
+                  <Text>{toLower ? 'Refund' : 'Cost'}: {toLocale(conversionCost)}</Text>
                 </span>
                 <Button onClick={handleConvert}>Convert</Button>
               </Group>
@@ -406,7 +489,6 @@ const NewItemSection = ({
           </Table.Tr>
         </Table.Tbody>
       </Table>
-      
     </Paper>
   );
 };
