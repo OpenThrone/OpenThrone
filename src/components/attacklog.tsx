@@ -51,6 +51,7 @@ interface StatsListProps {
 interface PlayerOutcomeProps {
   log: Log;
   type: string;
+  collapsed?: boolean;
 }
 
 interface AttackLogTableProps {
@@ -138,7 +139,7 @@ const renderOutcome = (log: Log, type: string) => {
   return log.winner === log.attacker_id ? <FontAwesomeIcon icon={faCheck} color='lightgreen' size='lg' /> : <FontAwesomeIcon icon={faXmark} color='red' size='lg'/>;
 };
 
-const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => {
+const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type, collapsed }) => {
   const [formattedDate, setFormattedDate] = useState('');
 
   useEffect(() => {
@@ -156,9 +157,19 @@ const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => {
           ? <Link href={`/userprofile/${log.attackerPlayer?.id}`} className='text-white'>{log.attackerPlayer?.display_name}</Link> ?? 'Unknown'
           : <Link href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</Link> ?? 'Unknown'}
         <br />
-        {formattedDate}
-        <br />
-        Battle ID: {log.id}
+        {collapsed && (
+          <>
+            {formattedDate}
+          </>
+        )}
+        {!collapsed && (
+          <>
+          { formattedDate }
+          < br />
+            Battle ID: {log.id}
+          </>
+        )}
+        
       </td>
     </>
   );
@@ -223,12 +234,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
                   </td>
                   {!isCollapsed && (
                     <>
-                      <td className="border-b px-1 py-2 text-center">
-                        {renderOutcome(log, type)}
-                      </td>
-                      <td className="border-b px-4 py-2">
-                        {type === 'defense' ? log.attackerPlayer?.display_name : log.defenderPlayer?.display_name}
-                      </td>
+                        <PlayerOutcome log={log} type={type} collapsed={isCollapsed} />
                       <td className="border-b px-4 py-2">
                         <StatsList id={log.id} stats={log.stats} type={type} subType={log.type} collapsed={false} />
                       </td>
@@ -295,12 +301,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
                   )}
                   {isCollapsed && (
                     <>
-                      <td className="border-b px-1 py-2 text-center">
-                        {renderOutcome(log, type)}
-                      </td>
-                      <td className="border-b px-4 py-2">
-                        {type === 'defense' ? log.attackerPlayer?.display_name : log.defenderPlayer?.display_name}
-                      </td>
+                        <PlayerOutcome log={log} type={type} collapsed={isCollapsed} />
                       <td className="border-b px-4 py-2">
                         <StatsList stats={log.stats} type={type} subType={log.type} collapsed={true} />
                       </td>
