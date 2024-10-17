@@ -7,11 +7,19 @@ const handler = async (req, res) => {
   const session = req.session;
   if (session) {
     if (req.body.turns <= 0) {
-      return res.status(400).json({ status: 'failed' });
+      return res.status(400).json({ status: 'failed', message: 'Invalid number of turns' });
     }
 
     if (req.body.turns > 10) {
-      return res.status(400).json({ status: 'failed' });
+      return res.status(400).json({ status: 'failed', message: 'Max 10 turns' });
+    }
+
+    if (!req.query.id) {
+      return res.status(400).json({ status: 'failed', message: 'Missing ID' });
+    }
+
+    if (session.user.id === parseInt(req.query.id)) {
+      return res.status(400).json({ status: 'failed', message: 'Cannot attack yourself' });
     }
 
     const myUser = await prisma?.users.findUnique({
