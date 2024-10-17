@@ -5,8 +5,9 @@ import IntelResult from '@/components/IntelResult';
 import AssassinateResult from '@/components/AssassinateResult';
 import InfiltrationResult from '@/components/InfiltrationResult';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { InferGetServerSidePropsType } from "next";
 
-const ResultsPage = ({ battle, lastGenerated }) => {
+const ResultsPage = ({ battle, lastGenerated, viewerID }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   if (!battle) {
     return <p>You do not have permission to view this battle log.</p>;
   }
@@ -15,13 +16,13 @@ const ResultsPage = ({ battle, lastGenerated }) => {
     <div className="mainArea pb-10">
       <h2 className="page-title">Battle Results</h2>
       {battle.type === 'attack' ? (
-        <AttackResult battle={battle} />
+        <AttackResult battle={battle} viewerID={viewerID} />
       ) : battle.type === 'ASSASSINATE' ? (
-        <AssassinateResult battle={battle} />
+          <AssassinateResult battle={battle} viewerID={viewerID} />
       ) : battle.type === 'INFILTRATE' ? (
-        <InfiltrationResult battle={battle} lastGenerated={lastGenerated} />
+            <InfiltrationResult battle={battle} lastGenerated={lastGenerated} viewerID={viewerID} />
       ) : (
-        <IntelResult battle={battle} lastGenerated={lastGenerated} />
+              <IntelResult battle={battle} lastGenerated={lastGenerated} viewerID={viewerID} />
       )}
     </div>
   );
@@ -123,6 +124,7 @@ export const getServerSideProps = async (context) => {
     props: {
       battle,
       lastGenerated: new Date().toISOString(),
+      viewerID: session.user.id,
     },
   };
 };
