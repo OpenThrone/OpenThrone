@@ -1,6 +1,5 @@
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
-import { getServerSession } from 'next-auth';
 
 const handle = async (req, res) => {
   const session = req.session

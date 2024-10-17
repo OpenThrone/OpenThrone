@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { Fortifications } from '@/constants';
-import { getServerSession } from 'next-auth';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
 
