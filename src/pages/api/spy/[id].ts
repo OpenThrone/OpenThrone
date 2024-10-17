@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { spyHandler } from '@/app/actions';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from "@/middleware/auth";
+import UserModel from "@/models/Users";
 
 const handler = async (req, res) => {
   const session = req.session;
@@ -38,6 +39,9 @@ const handler = async (req, res) => {
   }
 
   if (session) {
+    const myUser = await prisma?.users.findUnique({
+      where: { id: session.user.id },
+    });
     switch (req.body.type) {
       case 'INTEL':
         if (req.body.spies <= 0) {
@@ -47,10 +51,6 @@ const handler = async (req, res) => {
         if (req.body.spies > 10) {
           return res.status(400).json({ status: 'failed', message: 'You can only send up to 10 spies'});
         }
-
-        const myUser = await prisma?.users.findUnique({
-          where: { id: session.user.id },
-        });
 
         if (!myUser) {
           return res.status(400).json({ status: 'failed', message: 'User not found' });
@@ -87,6 +87,30 @@ const handler = async (req, res) => {
             ))
           );
       case 'INFILTRATE':
+        const spyLog = await prisma.attack_log.count({
+          where: {
+            attacker_id: parseInt(session.user.id.toString()),
+            type: 'INFILTRATE',
+            defender_id: parseInt(req.query.id),
+            timestamp: {
+              gte: new Date(new Date().getTime() - 86400000), //gte 24 hours ago
+            },
+          },
+        })
+        const uModel = new UserModel(myUser);
+        console.log(uModel.spyLimits)
+        if (spyLog >= uModel.spyLimits.infil.perUser || spyLog >= uModel.spyLimits.infil.perDay) {
+          return res.status(400).json({ status: 'failed', message: 'You have infiltrated too many times today' });
+        }
+        if (req.body.spies <= 0) {
+          return res.status(400).json({ status: 'failed', message: 'You need to send at least 1 infiltrator' });
+        }
+        if (req.body.spies > uModel.spyLimits.infil.perMission) {
+          return res.status(400).json({ status: 'failed', message: `You can only send up to ${uModel.spyLimits.infil.perMission} infiltrators per mission` });
+        }
+        if (req.body.spies > myUser.units.find((u) => u.type === 'SPY' && u.level === 2).quantity) {
+          return res.status(400).json({ status: 'failed', message: 'You do not have enough infiltrators' });
+        }
         return res
           .status(200)
           .json(

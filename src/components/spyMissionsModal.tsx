@@ -96,6 +96,16 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
   const [isIntelDisabled, setIsIntelDisabled] = useState(true);
   const { user } = useUser();
   const [units, setUnits] = useState({ SPY: 0, ASSASSIN: 0, INFILTRATOR: 0 });
+  const [spyLimits, setSpyLimits] = useState({
+    INFIL: {
+      perUser: 0,
+      perDay: 0,
+      perMission: 0,
+    }, ASSASS: {
+      perUser: 0,
+      perDay: 0,
+      perMission: 0,
+  } });
 
   const getUpgradeInfo = (level: number = 1) => {
     return SpyUpgrades[level].name;
@@ -116,6 +126,18 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         INFILTRATOR:
           user.units.find((unit) => unit.type === 'SPY' && unit.level === 2)
             ?.quantity ?? 0,
+      });
+      setSpyLimits({
+        INFIL: {
+          perUser: user.spyLimits.infil.perUser,
+          perDay: user.spyLimits.infil.perDay,
+          perMission: user.spyLimits.infil.perMission,
+        },
+        ASSASS: {
+          perUser: user.spyLimits.assass.perUser,
+          perDay: user.spyLimits.assass.perDay,
+          perMission: user.spyLimits.assass.perMission,
+        },
       });
     }
   }, [user]);
@@ -191,7 +213,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         <div className="mt-4">
           <Text align="center" size="lg" weight={700}>Assassination Information</Text>
           <Text mt="md">Total Assassins: {units.ASSASSIN}</Text>
-          <Text>You can send a maximum of 5 assassins per mission.</Text>
+          <Text>You can send a maximum of  assassins per mission.</Text>
           <Text mt="md">Assassination Attempts Available: ##</Text>
           <Text>
             You can only send 1 assassination attempt per 24 hours.
@@ -217,10 +239,10 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         <div className="mt-4">
           <Text align="center" size="lg" weight={700}>Infiltration Information</Text>
           <Text mt="md">Total Spies: {units.INFILTRATOR}</Text>
-          <Text>You can send a maximum of 3 spies per infiltration mission.</Text>
-          <Text mt="md">Infiltration Attempts Available: ##</Text>
+          <Text>You can send a maximum of {spyLimits.INFIL.perMission} spies per infiltration mission.</Text>
+          <Text mt="md">Infiltration Attempts Available: </Text>
           <Text>
-            You can only send 1 infiltration attempt per 24 hours.
+            You can only send {spyLimits.INFIL.perDay} infiltration attempts per 24 hours.
             To increase the number of attempts per day, upgrade your spy structure!
           </Text>
         </div>
