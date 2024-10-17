@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { PlayerUnit, Unit } from '@/types/typings';
+import { PlayerUnit } from '@/types/typings';
 import { withAuth } from '@/middleware/auth';
 import { getOTStartDate } from '@/utils/timefunctions';
 

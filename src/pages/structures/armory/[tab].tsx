@@ -36,10 +36,14 @@ const useItems = (user: UserModel, armoryLevel: unknown) => {
             [type]: {
               ...prevItems[type],
               [category]: user.availableItemTypes
-                .filter((unit: { usage: string; type: string; }) => unit.usage === type && unit.type === category)
+                .filter((unit: { usage: string; type: string; }) => unit.usage === type && unit.type === category && (unit.race === 'ALL' || unit.race === user.race))
                 .map((unit: any) =>
                   itemMapFunction(unit, type, category, user, armoryLevel),
-                ),
+                ).sort((a, b) => {
+                  if (a.level < b.level) return -1;
+                  if (a.level > b.level) return 1;
+                  return 0;
+                }),
             },
           }));
         });
@@ -49,9 +53,12 @@ const useItems = (user: UserModel, armoryLevel: unknown) => {
   return items;
 };
 
-const itemMapFunction = (item: { level: any; name: any; bonus: any; type: any; usage: any; cost: number; armoryLevel: number; }, itemType: string, idPrefix: string, user: { items: any[]; priceBonus: number; locale: string; }, armoryLevel: number) => {
+const itemMapFunction = (item: { id: string; level: number; name: string; bonus: number; type: string; usage: string; cost: number; armoryLevel: number; race: string }, itemType: string, idPrefix: string, user: { items: any[]; priceBonus: number; locale: string; race: string }, armoryLevel: number) => {
+  //if (item.race !== 'ALL' || item.race !== user.race)
+   // return;
+
   return {
-    id: `${itemType}_${idPrefix}_${item.level}`,
+    id: `${itemType}_${item.id}`,
     name: item.name,
     bonus: item.bonus,
     ownedItems:

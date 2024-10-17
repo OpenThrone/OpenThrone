@@ -1,4 +1,4 @@
-import { ItemTypes } from '@/constants';
+import { BattleUpgrades, ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import { getOTStartDate } from '@/utils/timefunctions';
 
@@ -231,6 +231,7 @@ export const getTop10TotalDefenderCasualties = async (timeFrame) => {
 export async function getRecruitmentCounts(days: number = 7) {
   const startDate = new Date(Number(getOTStartDate()) - days * 24 * 60 * 60 * 1000); // The start of the specified days ago
   const endDate = new Date(Number(getOTStartDate()) - (days - 1) * 24 * 60 * 60 * 1000); // The start of the next day
+
   const recruitmentCounts = await prisma.recruit_history.groupBy({
     by: ['to_user'],
     _count: {
@@ -462,6 +463,7 @@ export async function getTopWealth() {
       gold: true,
       items: true,
       gold_in_bank: true,
+      battle_upgrades: true,
     },
     where: {
       id: { not: 0 },
@@ -474,9 +476,18 @@ export async function getTopWealth() {
     }, 0);
   };
 
+  const calculateBattleUpgradeValue = (items) => {
+    return items.reduce((total, item) => {
+      const battleUpgrade = BattleUpgrades.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type);
+      if(!battleUpgrade) return total;
+      return total + (item.quantity * BattleUpgrades.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type).cost); // Assuming the value is quantity * level
+    }, 0);
+  };
+
   const usersWithWealth = users.map((user) => {
     const itemsValue = user.items ? calculateItemsValue(user.items) : 0;
-    const wealth = user.gold + user.gold_in_bank + BigInt(itemsValue);
+    const battleUpgradesValue = user.battle_upgrades ? calculateBattleUpgradeValue(user.battle_upgrades) : 0;
+    const wealth = user.gold + user.gold_in_bank + BigInt(itemsValue) + BigInt(battleUpgradesValue);
 
     return {
       ...user,

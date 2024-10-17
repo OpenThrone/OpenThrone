@@ -390,6 +390,21 @@ class UserModel {
     }, {});
   }
 
+  get spyLimits() {
+    return {
+      infil: {
+        perUser: SpyUpgrades[this?.spyLevel].maxInfiltratorsPerUser,
+        perMission: SpyUpgrades[this?.spyLevel].maxInfiltratorsPerMission,
+        perDay: SpyUpgrades[this?.spyLevel].maxInfiltrations,
+      },
+      assass: {
+        perDay: SpyUpgrades[this?.spyLevel].maxAssassinations,
+        perMission: SpyUpgrades[this?.spyLevel].maxAssassinsPerMission,
+        perUser: SpyUpgrades[this?.spyLevel].maxAssassinationsPerUser,
+      },
+    }
+  }
+
   /**
    * Returns the total recruiting bonus for the user.
    * @returns {number} The total recruiting bonus.

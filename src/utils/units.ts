@@ -54,7 +54,7 @@ export const updateUnitsMap = (
     } else if (isTraining) {
       unitsMap.set(unitKey, { ...unitData });
     } else {
-      throw new Error(`Cannot untrain units that the user does not have: ${unitData.type} level ${unitData.level}`);
+      return; // We don't need to throw an error for this
     }
   });
 

@@ -1,88 +1,105 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { getSession, useSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 import AttackResult from '@/components/attackResult';
 import IntelResult from '@/components/IntelResult';
 import AssassinateResult from '@/components/AssassinateResult';
-import { InferGetStaticPropsType } from "next";
-import { useRouter } from 'next/router';
 import InfiltrationResult from '@/components/InfiltrationResult';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 
-const ResultsPage = ({ battle, lastGenerated }: InferGetStaticPropsType<typeof getStaticProps>) => {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+const ResultsPage = ({ battle, lastGenerated }) => {
 
-  if (status === 'loading') {
-    return <p>Loading...</p>;
-  }
-
-  if (session) {
-    console.log('session', session)
-  }
-
-  if (status === 'unauthenticated') {
-    router.replace('/auth/signin');
-    return null;
+  if (!battle) {
+    return <p>You do not have permission to view this battle log.</p>;
   }
 
   return (
     <div className="mainArea pb-10">
       <h2 className="page-title">Battle Results</h2>
       {battle.type === 'attack' ? (
-        <AttackResult battle={battle} viewerID={session.user.id} />
+        <AttackResult battle={battle} />
       ) : battle.type === 'ASSASSINATE' ? (
-        <AssassinateResult battle={battle} viewerID={session.user.id} />
+        <AssassinateResult battle={battle} />
       ) : battle.type === 'INFILTRATE' ? (
-        <InfiltrationResult battle={battle} viewerID={session.user.id} lastGenerated={lastGenerated} />      
+        <InfiltrationResult battle={battle} lastGenerated={lastGenerated} />
       ) : (
-        <IntelResult battle={battle} viewerID={session.user.id} lastGenerated={lastGenerated} />
+        <IntelResult battle={battle} lastGenerated={lastGenerated} />
       )}
     </div>
   );
 };
 
-export const getStaticProps = async (context) => {
-  const { params } = context;
-  const id = parseInt(params.id, 10);
+// Server-Side Rendering with session and permission check
+export const getServerSideProps = async (context) => {
+  const session = await getServerSession(context.req, context.res, authOptions);
 
-  const results = await prisma.attack_log.findFirst({
-    where: { id },
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/auth/signin',
+        permanent: false,
+      },
+    };
+  }
+
+  const { params } = context;
+  const battleId = parseInt(params.id, 10);
+
+  // Get the current user's permissions
+  const userPermissions = await prisma.permissionGrant.findMany({
+    where: {
+      user_id: session.user.id,
+    },
+  });
+
+  // Check if the user has "MODERATOR" or "ADMINISTRATOR" permission
+  const hasPermission = userPermissions.some(
+    (perm) => perm.type === 'MODERATOR' || perm.type === 'ADMINISTRATOR'
+  );
+
+  if (!hasPermission) {
+    return {
+      props: {
+        battle: null,
+      },
+    };
+  }
+
+  // Fetch battle details from the database
+  const battle = await prisma.attack_log.findFirst({
+    where: { id: battleId },
     include: {
       attackerPlayer: {
         select: {
           id: true,
           display_name: true,
-          race: true,
         },
       },
       defenderPlayer: {
         select: {
           id: true,
           display_name: true,
-          race: true,
+        },
+      },
+      acl: {
+        include: {
+          shared_with_user: true, // Check if shared with specific users
+          shared_with_alliance: true, // Check if shared with an alliance
         },
       },
     },
   });
 
-  return {
-    props: { battle: results, lastGenerated: new Date().toISOString() },
-    revalidate: 60, // Revalidate the page every 60 seconds
-  };
-};
-
-export const getStaticPaths = async () => {
-  const battles = await prisma.attack_log.findMany({
-    select: { id: true },
-  });
-
-  const paths = battles.map((battle) => ({
-    params: { id: battle.id.toString() },
-  }));
+  if (!battle) {
+    return {
+      notFound: true,
+    };
+  }
 
   return {
-    paths,
-    fallback: 'blocking', // Use 'blocking' to generate paths on-demand if not pre-rendered
+    props: {
+      battle,
+      lastGenerated: new Date().toISOString(),
+    },
   };
 };
 

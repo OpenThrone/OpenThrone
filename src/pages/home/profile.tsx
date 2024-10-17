@@ -15,6 +15,7 @@ import {
   Grid,
 } from "@mantine/core";
 import Alert from "@/components/alert";
+import Link from "next/link";
 
 const Profile = (props) => {
   const [file, setFile] = useState<File | null>(null);
@@ -109,9 +110,11 @@ const Profile = (props) => {
           >
             Save Profile
           </Button>
-          <Button className="rounded bg-green-700 px-4 py-2 font-bold text-white hover:bg-blue-700">
+          <Link href={'/userprofile/' + user.id}>
+            <Button className="rounded bg-green-700 px-4 py-2 font-bold text-white hover:bg-blue-700">
             View Profile
-          </Button>
+            </Button>
+          </Link>
         </Group>
       </Card>
     </div>

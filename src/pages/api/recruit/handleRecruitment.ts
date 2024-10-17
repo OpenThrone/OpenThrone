@@ -4,6 +4,7 @@ import { withAuth } from '@/middleware/auth';
 import { PlayerUnit } from '@/types/typings';
 import mtrand from '@/utils/mtrand';
 import { getOTStartDate } from '@/utils/timefunctions';
+import Error from 'next/error';
 
 function increaseCitizens(units: PlayerUnit[]) {
   const citizen = units.find((unit) => unit.type === 'CITIZEN');
@@ -22,7 +23,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const session = req.session;
   const recruiterUserId = session ? session.user.id : 0;
-  let { recruitedUserId, selfRecruit } = req.body;
+  let { recruitedUserId, selfRecruit, sessionId } = req.body;
 
   try {
     if (!Number.isInteger(recruitedUserId)) {
@@ -30,6 +31,21 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         where: { recruit_link: recruitedUserId },
       });
       recruitedUserId = recruitedUser?.id || 0;
+    }
+
+    // Differentiate between manual and auto-clicker sessions
+    if (sessionId) {
+      // Validate the session ID for auto-clicker recruitment
+      const activeSessions = await prisma.autoRecruitSession.count({
+        where: { userId: recruiterUserId, id: sessionId },
+      });
+
+      if (activeSessions === 0) {
+        return res.status(429).json({ error: 'Invalid session ID' });
+      }
+    } else {
+      // If sessionId is not provided, treat it as a manual recruitment
+      sessionId = null; // Explicitly set sessionId to null for manual
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -131,12 +147,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       return { success: true };
-    });
+    }, { timeout: 15000, maxWait: 5000 });
 
     return res.status(200).json(result);
   } catch (error) {
-    console.error('Error in recruitment:', error);
-    const statusCode = error.message.includes('recruited 5 times')
+    console.log('Error in recruitment:', error.props, "IPAddr: " + req.headers['cf-connecting-ip'] as string, 'PlayerID: ' + recruitedUserId, 'RecruiterID: ' + recruiterUserId);
+    const statusCode = error.props.includes('recruited 5 times')
       ? 400
       : 500;
     return res.status(statusCode).json({ error: error.message });

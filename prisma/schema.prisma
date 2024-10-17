@@ -63,6 +63,7 @@ model users {
   socialRelationsAsPlayer social[]               @relation("PlayerRelations")
   socialRelationsAsFriend social[]               @relation("FriendRelations")
   permissions             PermissionGrant[]      @relation("PermissionGrants")
+  AutoRecruitSession      AutoRecruitSession[]
 }
 
 model social {
@@ -233,9 +234,19 @@ enum PermissionType {
 }
 
 model PermissionGrant {
-  id          Int                    @id @default(autoincrement())
-  type        PermissionType
-  user_id     Int
-  user        users                  @relation("PermissionGrants", fields: [user_id], references: [id])
-  created_at  DateTime               @default(now())
+  id         Int            @id @default(autoincrement())
+  type       PermissionType
+  user_id    Int
+  user       users          @relation("PermissionGrants", fields: [user_id], references: [id])
+  created_at DateTime       @default(now())
+}
+
+model AutoRecruitSession {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           users    @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
+  lastActivityAt DateTime @updatedAt
+
+  @@index([userId])
 }

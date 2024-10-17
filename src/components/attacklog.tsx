@@ -1,13 +1,13 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import type { BattleUnits } from '@/types/typings';
 import { formatDate } from '@/utils/utilities';
-import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faMinus, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useEffect, useState } from 'react';
 import Modal from './modal';
 import toLocale from '@/utils/numberFormatting';
 import Link from 'next/link';
-import { Button, HoverCard, List, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core';
+import { Button, Chip, Group, HoverCard, List, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core';
 import router from 'next/router';
 
 interface Loss {
@@ -21,6 +21,8 @@ interface Stats {
   turns?: number;
   attacker_losses?: Loss;
   defender_losses?: Loss;
+  forthpAtStart?: number;
+  forthpAtEnd?: number;
 }
 
 interface Log {
@@ -43,11 +45,13 @@ interface StatsListProps {
   stats: Stats;
   type: string;
   subType: string;
+  collapsed: boolean;
 }
 
 interface PlayerOutcomeProps {
   log: Log;
   type: string;
+  collapsed?: boolean;
 }
 
 interface AttackLogTableProps {
@@ -97,19 +101,35 @@ const LossesList: React.FC<LossesListProps> = ({ losses }) => {
   );
 };
 
-const StatsList: React.FC<StatsListProps> = ({ id, stats, type, subType }) => (
-  <ul>
-    {subType === 'attack' &&
+const StatsList: React.FC<StatsListProps> = ({ id, stats, type, subType, collapsed }) => (
+  <>
+  { subType === 'attack' && 
       (
-      <>
-        <li>Pillaged Gold: {toLocale(stats.pillagedGold.toLocaleString())}</li>
-        <li>XP Earned: {(typeof stats.xpEarned === 'object' ? (type === 'defense' ? stats.xpEarned.defender : stats.xpEarned.attacker ) : String(stats.xpEarned))}</li>
-        {type === 'attack' ? <li>Turns Used: {stats.turns}</li> : ''}
-      </>
+    <>
+        {collapsed === true ? (
+          <Group
+            align='center'
+            justify='center'
+          >
+            <Chip><i className="ra ra-gem ra-fw" /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}</Chip>
+            <Chip>XP: {typeof stats.xpEarned === 'object' ? stats.xpEarned.attacker : stats.xpEarned}</Chip>
+          </Group>
+        ) : (
+            <Stack
+              align="center"
+              justify="center"
+              gap="xs"
+            >
+            <Chip><i className="ra ra-gem ra-fw" /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}</Chip>
+            <Chip>XP: {typeof stats.xpEarned === 'object' ? stats.xpEarned.attacker : stats.xpEarned}</Chip>
+            <Chip>Turns: {stats.turns}</Chip>
+          </Stack>
         )
-    }
-    
-  </ul>
+        }
+    </>
+    )
+  }
+  </>
 );
 
 const renderOutcome = (log: Log, type: string) => {
@@ -119,7 +139,7 @@ const renderOutcome = (log: Log, type: string) => {
   return log.winner === log.attacker_id ? <FontAwesomeIcon icon={faCheck} color='lightgreen' size='lg' /> : <FontAwesomeIcon icon={faXmark} color='red' size='lg'/>;
 };
 
-const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => {
+const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type, collapsed }) => {
   const [formattedDate, setFormattedDate] = useState('');
 
   useEffect(() => {
@@ -137,9 +157,19 @@ const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => {
           ? <Link href={`/userprofile/${log.attackerPlayer?.id}`} className='text-white'>{log.attackerPlayer?.display_name}</Link> ?? 'Unknown'
           : <Link href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</Link> ?? 'Unknown'}
         <br />
-        {formattedDate}
-        <br />
-        Battle ID: {log.id}
+        {collapsed && (
+          <>
+            {formattedDate}
+          </>
+        )}
+        {!collapsed && (
+          <>
+          { formattedDate }
+          < br />
+            Battle ID: {log.id}
+          </>
+        )}
+        
       </td>
     </>
   );
@@ -148,10 +178,17 @@ const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type }) => {
 const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
   const isEmpty = logs.length === 0;
   const tableHeaders =
-    ['Outcome', 'Attack on player', 'Pillage and Experience', 'Casualties', 'Action'];
+    ['','Outcome', 'Attack on player', 'Pillage and Experience', 'Casualties', 'Action'];
 
   const [openModalId, setOpenModalId] = useState<number | null>(null);
+  const [collapsedLogs, setCollapsedLogs] = useState<{ [key: string]: boolean }>({});
 
+  const toggleCollapse = (logId: string) => {
+    setCollapsedLogs((prevState) => ({
+      ...prevState,
+      [logId]: !prevState[logId],
+    }));
+  };
   const toggleModal = (id: number) => {
     if (openModalId === id) {
       setOpenModalId(null); // Close modal
@@ -180,65 +217,143 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
             </td>
           </tr>
         ) : (
-          logs.map((log) => (
-            <tr key={log.id} className='odd:bg-table-odd even:bg-table-even'>
-              
-              <PlayerOutcome log={log} type={type} />
-              <td className="border-b px-4 py-2">
-                <StatsList id={log.id} stats={log.stats} type={type} subType={log.type} />
-              </td>
-              <td className="border-b px-4 py-2">
-                <ul>
-                  <li>
-                    Attacker Losses:{' '}
-                    <LossesList losses={log.stats.attacker_losses || {}} />
-                  </li>
-                  <li>
-                    Defender Losses:{' '}
-                    <LossesList losses={log.stats.defender_losses || {}} />
-                  </li>
-                </ul>
-                </td>
-              <td className="border-b px-4 py-2 text-center">
-                <SimpleGrid cols={2} mt='sm' mb={'sm'}>
-                {type === 'defense' ? (
-                  <>
-                    <Button
-                      type="button"
-                      onClick={(() => toggleModal(parseInt(log.attacker_id)))}
-                      color={"brand"}
-                        className={`font-bold py-2 px-4 rounded `}
-                        size='xs'
+          logs.map((log) => {
+            const isCollapsed = collapsedLogs[log.id] ?? true; // Default to collapsed
 
-                      >Attack Back
-                    </Button>
-                    <Modal
-                      isOpen={openModalId === parseInt(log.attacker_id)}
-                      toggleModal={(() => toggleModal(parseInt(log.attacker_id)))}
-                      profileID={parseInt(log.attacker_id)}
-                    /></>
-                  ) : <>
-                      <Button
-                        type="button"
-                        onClick={(() => toggleModal(parseInt(log.attacker_id)))}
-                        color={"brand"}
-                        className={`font-bold py-2 px-4 rounded `}
-                        size='xs'
-
-                      >Attack Again
-                      </Button>
-                      <Modal
-                        isOpen={openModalId === parseInt(log.defender_id)}
-                        toggleModal={(() => toggleModal(parseInt(log.defender_id)))}
-                        profileID={parseInt(log.defender_id)}
-                      /></>
-                  }    
-                
-                  <Button onClick={()=>router.push(`/battle/results/${log.id}`)} size='xs' className='font-bold py-2 px-4 rounded' color="brand.5">View Battle</Button>
-                </SimpleGrid>
-              </td>
-            </tr>
-          ))
+            return (
+              <React.Fragment key={log.id}>
+                <tr className='odd:bg-table-odd even:bg-table-even'>
+                  <td className='border-b px-1 py-2 text-center'>
+                    <span onClick={() => toggleCollapse(log.id)} style={{ cursor: 'pointer' }} aria-expanded={!isCollapsed} role="button">
+                      {isCollapsed ? (
+                        <FontAwesomeIcon icon={faPlus} size="sm" />
+                      ) : (
+                        <FontAwesomeIcon icon={faMinus} size="sm" />
+                      )}
+                    </span>
+                  </td>
+                  {!isCollapsed && (
+                    <>
+                        <PlayerOutcome log={log} type={type} collapsed={isCollapsed} />
+                      <td className="border-b px-4 py-2">
+                        <StatsList id={log.id} stats={log.stats} type={type} subType={log.type} collapsed={false} />
+                      </td>
+                      <td className="border-b px-4 py-2">
+                        <Stack
+                          align="center"
+                          justify="center"
+                          gap="xs"
+                        >
+                          <Chip>
+                            Attacker Losses: <LossesList losses={log.stats.attacker_losses || {}} />
+                          </Chip>
+                          <Chip>
+                            Defender Losses: <LossesList losses={log.stats.defender_losses || {}} />
+                          </Chip>
+                          <Chip>
+                            Fort Damage: {log.stats.forthpAtStart - log.stats.forthpAtEnd || 0}
+                          </Chip>
+                        </Stack>
+                      </td>
+                      <td className="border-b px-4 py-2 text-center">
+                        <SimpleGrid cols={2} mt='sm' mb={'sm'}>
+                          {type === 'defense' ? (
+                            <>
+                              <Button
+                                type="button"
+                                onClick={() => toggleModal(parseInt(log.attacker_id))}
+                                color={"brand"}
+                                className={`font-bold py-2 px-4 rounded `}
+                                size='xs'
+                              >
+                                Attack Back
+                              </Button>
+                              <Modal
+                                isOpen={openModalId === parseInt(log.attacker_id)}
+                                toggleModal={() => toggleModal(parseInt(log.attacker_id))}
+                                profileID={parseInt(log.attacker_id)}
+                              />
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                type="button"
+                                onClick={() => toggleModal(parseInt(log.attacker_id))}
+                                color={"brand"}
+                                className={`font-bold py-2 px-4 rounded `}
+                                size='xs'
+                              >
+                                Attack Again
+                              </Button>
+                              <Modal
+                                isOpen={openModalId === parseInt(log.defender_id)}
+                                toggleModal={() => toggleModal(parseInt(log.defender_id))}
+                                profileID={parseInt(log.defender_id)}
+                              />
+                            </>
+                          )}
+                          <Button onClick={() => router.push(`/battle/results/${log.id}`)} size='xs' className='font-bold py-2 px-4 rounded' color="brand.5">
+                            View Battle
+                          </Button>
+                        </SimpleGrid>
+                      </td>
+                    </>
+                  )}
+                  {isCollapsed && (
+                    <>
+                        <PlayerOutcome log={log} type={type} collapsed={isCollapsed} />
+                      <td className="border-b px-4 py-2">
+                        <StatsList stats={log.stats} type={type} subType={log.type} collapsed={true} />
+                      </td>
+                      <td className="border-b px-4 py-2">...</td>
+                      <td className="border-b px-4 py-2 text-center">
+                        <SimpleGrid cols={2} mt='sm' mb={'sm'}>
+                          {type === 'defense' ? (
+                            <>
+                              <Button
+                                type="button"
+                                onClick={() => toggleModal(parseInt(log.attacker_id))}
+                                color={"brand"}
+                                className={`font-bold py-2 px-4 rounded `}
+                                size='xs'
+                              >
+                                Attack Back
+                              </Button>
+                              <Modal
+                                isOpen={openModalId === parseInt(log.attacker_id)}
+                                toggleModal={() => toggleModal(parseInt(log.attacker_id))}
+                                profileID={parseInt(log.attacker_id)}
+                              />
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                type="button"
+                                onClick={() => toggleModal(parseInt(log.attacker_id))}
+                                color={"brand"}
+                                className={`font-bold py-2 px-4 rounded `}
+                                size='xs'
+                              >
+                                Attack Again
+                              </Button>
+                              <Modal
+                                isOpen={openModalId === parseInt(log.defender_id)}
+                                toggleModal={() => toggleModal(parseInt(log.defender_id))}
+                                profileID={parseInt(log.defender_id)}
+                              />
+                            </>
+                          )}
+                          <Button onClick={() => router.push(`/battle/results/${log.id}`)} size='xs' className='font-bold py-2 px-4 rounded' color="brand.5">
+                            View Battle
+                          </Button>
+                        </SimpleGrid>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              </React.Fragment>
+            );
+          })
         )}
       </tbody>
     </table>

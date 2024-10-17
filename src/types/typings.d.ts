@@ -136,6 +136,10 @@ export type SpyUpgradeType = {
   offenseBonusPercentage: number;
   maxInfiltrations: number;
   maxAssassinations: number;
+  maxInfiltratorsPerMission: number;
+  maxInfiltratorsPerUser: number;
+  maxAssassinsPerMission: number;
+  maxAssassinationsPerUser: number;
   cost: number;
   level: number;
 };

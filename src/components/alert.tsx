@@ -4,17 +4,26 @@ import { useEffect, useState } from 'react';
 
 import type { AlertType } from '../services/alert.service';
 import { alertService } from '../services/alert.service';
-import { faRectangleXmark } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Alert, Text } from '@mantine/core';
 
 const AlertComponent: React.FC = () => {
   const router = useRouter();
   const [alert, setAlert] = useState<AlertType | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
     // subscribe to new alert notifications
-    const subscription = alertService.alert.subscribe(setAlert);
+    const subscription = alertService.alert.subscribe((newAlert) => {
+      setAlert(newAlert);
+      if (newAlert && newAlert.timeout) {
+        setTimeLeft(newAlert.timeout / 1000);
+        const interval = setInterval(() => {
+          setTimeLeft((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
+        }, 1000);
+
+        return () => clearInterval(interval);
+      }
+    });
 
     // unsubscribe when the component unmounts
     return () => subscription.unsubscribe();
@@ -37,6 +46,12 @@ const AlertComponent: React.FC = () => {
       <div className="my-3">
         <Alert variant='filled' className={'alert-' + alert.type} title={alert.type.toUpperCase()} withCloseButton onClose={alertService.clear}>
           <Text className='text-shadow-xs text-gray-800'>{alert.message}</Text>
+          {timeLeft !== null && <Text c='gray' size='sm' className=' mt-1'>Alert Clearing In: {timeLeft} seconds</Text>}
+          {alert.showButton && (
+            <>
+              {alert.button}
+            </>
+          )}
         </Alert>
       </div>
     </div>

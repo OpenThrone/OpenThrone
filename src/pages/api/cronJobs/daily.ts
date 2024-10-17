@@ -2,6 +2,7 @@ import UserModel from "@/models/Users";
 import md5 from "md5";
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
+import Error from "next/error";
 
 /**
  * Update a single user for a new day.
@@ -10,10 +11,11 @@ import prisma from "@/lib/prisma";
  * @return {Promise}
  */
 const updateUserPerDay = async (currentUser) => {
-  try {
+  try {    
     // Find the CITIZEN unit
     let citizenUnit = currentUser.units.find(unit => unit.type === 'CITIZEN');
     const originalCitizens = currentUser.citizens;
+
     if (citizenUnit) {
       if (!citizenUnit.quantity) {
         // Catch if something caused the quantity to be null at some point
@@ -26,7 +28,7 @@ const updateUserPerDay = async (currentUser) => {
       citizenUnit = {
         type: 'CITIZEN',
         level: 1,
-        quantity: currentUser.recruitingBonus
+        quantity: currentUser.recruitingBonus,
       };
       currentUser.units.push(citizenUnit);
     }
@@ -48,15 +50,18 @@ const updateUserPerDay = async (currentUser) => {
       },
     });
 
-    return await prisma.users.update({
+    await prisma.users.update({
       where: { id: currentUser.id },
       data: {
         units: currentUser.units,
         ...(!currentUser.recruitingLink && { recruit_link: md5(currentUser.id.toString()) }),
       },
     });
+
+    return true; // Update was successful
   } catch (error) {
     console.log(`Error updating user ${currentUser.id}: ${error.message}`);
+    return false; // Update failed
   }
 };
 
@@ -84,11 +89,38 @@ const doDailyCleanup = async () => {
 
 const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
   const { TASK_SECRET } = process.env;
-  if (process.env.DO_DAILY_UPDATES === 'true' && req.headers['authorization'] === TASK_SECRET) {
+  if (
+    process.env.DO_DAILY_UPDATES === 'true' &&
+    req.headers['authorization'] === TASK_SECRET
+  ) {
     const allUsers = await prisma.users.findMany();
 
-    const updatePromises = allUsers.map((singleUser) => updateUserPerDay(new UserModel(singleUser)));
-    await Promise.all(updatePromises);
+    // Initialize the queue with users and attempt counts
+    let queue = allUsers.map((singleUser) => ({
+      user: new UserModel(singleUser),
+      attempts: 0,
+    }));
+
+    // Process the queue
+    while (queue.length > 0) {
+      const currentTask = queue.shift(); // Get the first user in the queue
+
+      const success = await updateUserPerDay(currentTask.user);
+
+      if (!success) {
+        currentTask.attempts += 1;
+        if (currentTask.attempts < 3) {
+          // Move the user to the end of the queue for another attempt
+          queue.push(currentTask);
+        } else {
+          console.log(
+            `Failed to update user ${currentTask.user.id} after 3 attempts.`
+          );
+        }
+      }
+      // If successful, no action needed (user is removed from queue)
+    }
+
     console.log('Updated users for day change.');
 
     const cleanupPromises = await doDailyCleanup();
@@ -96,8 +128,7 @@ const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
     console.log('Cleaned up database for day change.');
 
     return res.status(200).json({ message: 'Daily cron job executed successfully.' });
-  }else
-  {
+  } else {
     res.status(401).json({ message: 'Unauthorized or Disabled Task' });
   }
 };

@@ -74,7 +74,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
   const handleConvert = async () => {
     // Conversion logic here
     if (!fromItem || !toItem || !conversionAmount) {
-      alertService.error('Please select items and provide a valid quantity to convert.');
+      alertService.error('Please select items and provide a valid quantity to convert.', false, false, '', 5000);
       return;
     }
     if (conversionCost > user?.gold) {
