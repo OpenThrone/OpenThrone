@@ -1,11 +1,10 @@
-// pages/warhistory.tsx
+// pages/battle/history.tsx
 
-import { useRouter } from 'next/router';
 import { getSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import AttackLogTable from '@/components/attacklog';
 import prisma from '@/lib/prisma';
-import { Pagination, Group, Text } from '@mantine/core';
+import { Pagination } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
 
 const ROWS_PER_PAGE = 5; // Match rows per page with Battle Users page
