@@ -52,12 +52,14 @@ export const getServerSideProps = async (context) => {
         select: {
           id: true,
           display_name: true,
+          race: true,
         },
       },
       defenderPlayer: {
         select: {
           id: true,
           display_name: true,
+          race: true
         },
       },
       acl: {
