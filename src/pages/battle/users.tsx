@@ -248,7 +248,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                       </Group>
                     </Table.Td>
                     <Table.Td className="px-4 py-2">{toLocale(formattedGolds[index])}</Table.Td>
-                    <Table.Td className="px-4 py-2">{toLocale(player.population)}</Table.Td>
+                    <Table.Td className="px-4 py-2">{toLocale(nplayer.population)}</Table.Td>
                     <Table.Td className="px-4 py-2">{player.level}</Table.Td>
                   </Table.Tr>
                 );
@@ -295,7 +295,7 @@ export const getServerSideProps = async () => {
       where: {
         AND: [{ id: { not: 0 } }, { last_active: { not: null } }],
       },
-      select: { // limit the amount of data we're sending back - fixes data prop concerns for performance
+      select: { 
         id: true,
         display_name: true,
         rank: true,
@@ -308,16 +308,30 @@ export const getServerSideProps = async () => {
         experience: true,
       },
     });
-    allUsers.forEach(user => {
+    const sanitizedUsers = allUsers.map(user => {
       const nowdate = new Date();
       const lastActiveTimestamp = new Date(user.last_active).getTime();
       const nowTimestamp = nowdate.getTime();
       const population = user.units.reduce((acc, unit) => acc + unit.quantity, 0);
-      user.population = population;
-      user.isOnline = ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
+
+      // remove the units so there's no leakage of data
+      return {
+        id: user.id,
+        display_name: user.display_name,
+        rank: user.rank,
+        last_active: user.last_active,
+        avatar: user.avatar,
+        gold: user.gold,
+        race: user.race,
+        class: user.class,
+        experience: user.experience,
+        population: population,
+        isOnline: ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15),
+      };
     });
-    allUsers.sort((a, b) => a.rank - b.rank);
-    return { props: { allUsers } };
+
+    sanitizedUsers.sort((a, b) => a.rank - b.rank);
+    return { props: { allUsers: sanitizedUsers } };
   } catch (error) {
     console.error('Error fetching user data:', error);
     return { props: { allUsers: [] } };
