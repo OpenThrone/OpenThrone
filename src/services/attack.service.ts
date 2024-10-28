@@ -472,20 +472,24 @@ export async function getTopWealth() {
 
   const calculateItemsValue = (items) => {
     return items.reduce((total, item) => {
-      return total + (item.quantity * ItemTypes.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type).cost); // Assuming the value is quantity * level
+      const iType = ItemTypes.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type);
+      if (!iType) return 0;
+      return total + (item.quantity * iType.cost); 
     }, 0);
   };
 
   const calculateBattleUpgradeValue = (items) => {
     return items.reduce((total, item) => {
       const battleUpgrade = BattleUpgrades.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type);
-      if(!battleUpgrade) return total;
-      return total + (item.quantity * BattleUpgrades.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type).cost); // Assuming the value is quantity * level
+      //console.log('battleUpgrade', total);
+      if (!battleUpgrade) return total;
+      return total + (item.quantity * battleUpgrade.cost);
     }, 0);
   };
 
   const usersWithWealth = users.map((user) => {
-    const itemsValue = user.items ? calculateItemsValue(user.items) : 0;
+    const ivalue = calculateItemsValue(user.items);
+    const itemsValue = user.items ? ivalue : 0;
     const battleUpgradesValue = user.battle_upgrades ? calculateBattleUpgradeValue(user.battle_upgrades) : 0;
     const wealth = user.gold + user.gold_in_bank + BigInt(itemsValue) + BigInt(battleUpgradesValue);
 
