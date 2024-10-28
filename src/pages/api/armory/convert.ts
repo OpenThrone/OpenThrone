@@ -39,27 +39,38 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(400).json({ error: 'Invalid conversion amount' });
     }
 
-    // Split the fromItem and toItem strings to get the type, usage, and level
-    const [fromUsage, fromType, fromLevelStr] = fromItem.split('_');
-    const [toUsage, toType, toLevelStr] = toItem.split('_');
-    const fromLevel = parseInt(fromLevelStr, 10);
-    const toLevel = parseInt(toLevelStr, 10);
+    const [fromUsage, fromType] = fromItem.split('_');
+    const [toUsage, toType] = toItem.split('_');
+
+    const toItemType = ItemTypes.find((item) => item.id === toType && item.usage === toUsage );
+    const fromItemType = ItemTypes.find((item) => item.id === fromType && item.usage === fromUsage );
+
+    if (!toItemType || !fromItemType) {
+      return res.status(400).json({ error: 'Invalid item types' });
+    }
 
     // Fetch user's items and perform the conversion logic here
     const fromItemData = user.items.find(
-      (item) => item.type === fromType && item.usage === fromUsage && item.level === fromLevel
+      (item) => item.type === fromItemType.type && item.usage === fromUsage && item.level === fromItemType.level
     );
-    const toItemData = user.items.find(
-      (item) => item.type === toType && item.usage === toUsage && item.level === toLevel
+    let toItemData = user.items.find(
+      (item) => item.type === toItemType.type && item.usage === toUsage && item.level === toItemType.level
     );
+
+    // If the target item does not exist, create it
+    if (!toItemData) {
+      toItemData = {
+        type: toItemType.type,
+        usage: toItemType.usage,
+        level: toItemType.level,
+        quantity: 0, // Initialize with 0 quantity
+      };
+      user.items.push(toItemData); // Add it to user's items
+    }
 
     if (!fromItemData || fromItemData.quantity < amount) {
       return res.status(400).json({ error: 'Not enough items to convert' });
     }
-
-    const toItemType = ItemTypes.find((item) => item.type === toType && item.usage === toUsage && item.level === toLevel);
-    const fromItemType = ItemTypes.find((item) => item.type === fromType && item.usage === fromUsage && item.level === fromLevel);
-
     const cost = BigInt(amount) * (BigInt(toItemType.cost - ((uModel?.priceBonus / 100) * toItemType.cost)) - BigInt(fromItemType.cost - ((uModel?.priceBonus / 100) * fromItemType.cost))) * (toItemType.level > fromItemType.level ? BigInt(1) : BigInt(75) / BigInt(100));
 
     if (user.gold < cost) {
@@ -68,11 +79,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Deduct items and gold, add converted items
     fromItemData.quantity = parseInt(fromItemData.quantity) - amount;
-    if (toItemData) {
-      toItemData.quantity = parseInt(toItemData.quantity) + amount;
-    } else {
-      user.items.push({ type: toType, usage: toUsage, level: toLevel, quantity: amount });
-    }
+
+    toItemData.quantity = parseInt(toItemData.quantity) + amount;
 
     user.gold -= BigInt(cost);
 

@@ -220,8 +220,8 @@ export function calculateLoot(attacker: UserModel, defender: UserModel, turns: n
   const defenderGold = BigInt(defender.gold);
   const calculatedLoot = Number(defenderGold) * lootFactor;
   let loot = BigInt(Math.floor(calculatedLoot));
-
-  return loot < BigInt(0) ? BigInt(0) : loot;
+  loot = loot < BigInt(0) ? BigInt(0) : loot;
+  return loot > defenderGold ? defenderGold : loot;
 }
 
 
