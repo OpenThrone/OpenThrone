@@ -2,6 +2,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
+import { listSessions } from '@/services/sessions.service';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const { session } = req;
@@ -11,15 +12,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const sessions = await prisma.autoRecruitSession.findMany({
-    where: { userId: Number(userId) },
-    select: {
-      id: true,
-      createdAt: true,
-      lastActivityAt: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  const sessions = await listSessions(userId);
 
   return res.status(200).json({ sessions });
 };

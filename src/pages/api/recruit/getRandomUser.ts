@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import mtrand from '@/utils/mtrand';
 import { getOTStartDate, getOTTime} from '@/utils/timefunctions';
+import { getSession, updateSessionActivity } from '@/services/sessions.service';
 
 const handler = async (
   req: NextApiRequest,
@@ -19,20 +20,14 @@ const handler = async (
     return res.status(400).json({ error: 'Session ID is required' });
   }
 
-  const sessionRecord = await prisma.autoRecruitSession.findUnique({
-    where: { id: sessionId },
-  });
+  const sessionRecord = await getSession(recruiterID, sessionId);
 
   if (!sessionRecord || sessionRecord.userId !== recruiterID) {
     return res.status(403).json({ error: 'Invalid session ID' });
   }
 
   // Update lastActivityAt to keep the session active
-  await prisma.autoRecruitSession.update({
-    where: { id: sessionId },
-    data: { lastActivityAt: new Date() },
-  });
-
+  await updateSessionActivity(recruiterID, sessionId);
   // Fetch all users
   const users = await prisma.users.findMany({
     select: {

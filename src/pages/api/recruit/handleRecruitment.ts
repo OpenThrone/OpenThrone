@@ -5,6 +5,7 @@ import { PlayerUnit } from '@/types/typings';
 import mtrand from '@/utils/mtrand';
 import { getOTStartDate } from '@/utils/timefunctions';
 import Error from 'next/error';
+import { endSession, getSession, validateSession } from '@/services/sessions.service';
 
 function increaseCitizens(units: PlayerUnit[]) {
   const citizen = units.find((unit) => unit.type === 'CITIZEN');
@@ -36,12 +37,17 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     // Differentiate between manual and auto-clicker sessions
     if (sessionId) {
       // Validate the session ID for auto-clicker recruitment
-      const activeSessions = await prisma.autoRecruitSession.count({
-        where: { userId: recruiterUserId, id: sessionId },
-      });
+      const activeSessions = await validateSession(recruiterUserId, sessionId);
 
-      if (activeSessions === 0) {
+      if (!activeSessions) {
         return res.status(429).json({ error: 'Invalid session ID' });
+      }
+
+      const sessionData = await getSession(recruiterUserId, sessionId);
+
+      if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) {
+        await endSession(recruiterUserId, sessionId);
+        return res.status(429).json({ error: 'Session expired' });
       }
     } else {
       // If sessionId is not provided, treat it as a manual recruitment
@@ -83,7 +89,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         },
       });
 
-      if (recruitments.length > 5) {
+      if (recruitments.length > 2) {
         throw new Error('User has already been recruited 5 times in the last 24 hours.');
       }
 
