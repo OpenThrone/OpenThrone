@@ -113,7 +113,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
       }
     } catch (error) {
       alertService.error('Failed to equip items. Please try again.');
-      console.log(error);
+      console.error(error);
     }
   };
 

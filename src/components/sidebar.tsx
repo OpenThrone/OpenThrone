@@ -165,8 +165,6 @@ const Sidebar: React.FC = () => {
     const user = usersData.find(u => u.label.toLowerCase() === searchValue.toLowerCase());
     if (user) {
       router.push(`/userprofile/${user.id}`);
-    } else {
-      console.log("No matching user found.");
     }
   };
 

@@ -2,7 +2,6 @@ import { Flex, Paper, Space, Title, Text, Checkbox, Badge, Divider } from "@mant
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import { forwardRef } from "react";
 
 const BlogPost = ({ post, loggedIn, handleReadChange }) => {
 

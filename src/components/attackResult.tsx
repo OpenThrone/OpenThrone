@@ -13,7 +13,6 @@ const attackResults = ({ battle, viewerID }) => {
   const isViewerDefender = viewerID === defenderPlayer.id;
   const isPlayerWinner = winner === viewerID;
   const isAttackerWinner = winner === attackerPlayer.id;
-  console.log(stats);
   const [isOpen, setIsOpen] = useState(false);
   const lines = [];
   const defenderRace = defenderPlayer?.race ?? 'ELF';

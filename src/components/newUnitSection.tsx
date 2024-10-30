@@ -112,7 +112,6 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
       }
 
       const data = await response.json();
-      console.log('Conversion successful', data);
       alertService.success('Conversion successful');
       resetConversion();
       forceUpdate();

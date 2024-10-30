@@ -109,7 +109,6 @@ export default function AutoRecruiter(props) {
     setCountdown(3);
     let timer = 3;
     intervalRef.current = setInterval(async () => {
-      console.log('Timer:', timer);
       if (timer > 1) {
         setCountdown(timer - 1);
       } else {

@@ -11,8 +11,6 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
   const isViewerAttacker = viewerID === attackerPlayer.id;
   const isAttackerWinner = winner === attackerPlayer.id;
-  console.log('isAttackerWinner', isAttackerWinner)
-  console.log('isViewerAttacker', isViewerAttacker)
   const [unitSegments, setUnitSegments] = useState([]);
   const [itemsByCategory, setItemsByCategory] = useState([]);
   const itemColors = {

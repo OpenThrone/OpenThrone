@@ -45,7 +45,6 @@ const Layout = (props: IMainProps) => {
 
   useEffect(() => {
     if (isDevelopment) {
-      console.log('fetching git info');
       fetch('/api/general/git-info')
         .then(response => {
           if (!response.ok) {
@@ -66,7 +65,6 @@ const Layout = (props: IMainProps) => {
 
   useEffect(() => {
     if (!isDevelopment) {
-      console.log('fetching online player info');
       fetch('/api/general/getOnlinePlayers')
         .then(response => {
           if (!response.ok) {
