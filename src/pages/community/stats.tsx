@@ -45,11 +45,30 @@ export const getStaticProps = async (context: any) => {
   // Get the current date and time
   const now = new Date();
 
+  const totalWealth = (await getTopWealth()).map(entry => ({
+    ...entry,
+    gold: entry.gold.toString(),
+    gold_in_bank: entry.gold_in_bank.toString(),
+    stat: entry.stat.toString(),
+  }));
+
+  const goldOnHand = (await getTopGoldOnHand()).map(entry => ({
+    ...entry,
+    gold: entry.gold.toString(),
+    stat: entry.stat.toString(),
+  }));
+
+  const goldInBank = (await getTopGoldInBank()).map(entry => ({
+    ...entry,
+    gold_in_bank: entry.gold_in_bank.toString(),
+    stat: entry.stat.toString(),
+  }));
+
   return {
     props: {
-      totalWealth: await getTopWealth(),
-      goldOnHand: await getTopGoldOnHand(),
-      goldInBank: await getTopGoldInBank(),
+      totalWealth,
+      goldOnHand,
+      goldInBank,
       attacks: await getTopSuccessfulAttacks(),
       recruits: await getTopRecruitsWithDisplayNames(),
       population: await getTopPopulations(),

@@ -9,7 +9,7 @@ import Error from 'next/error';
 import { InferGetServerSidePropsType } from "next";
 import BlogPost from '@/components/blogPost';
 
-const News = ({ posts: serverPosts, loggedIn, userId }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })).sort((a, b) => b.created_timestamp - a.created_timestamp));
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '' });
@@ -116,6 +116,19 @@ const News = ({ posts: serverPosts, loggedIn, userId }: InferGetServerSidePropsT
   );
 };
 
+function serializeDates(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => {
+      if (value instanceof Date) {
+        return [key, value.toISOString()];
+      } else if (typeof value === 'object' && value !== null) {
+        return [key, serializeDates(value)]; // Recursively handle nested objects
+      }
+      return [key, value];
+    })
+  );
+}
+
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
   let posts;
@@ -146,18 +159,18 @@ export const getServerSideProps = async (context) => {
       return {
         ...post,
         isRead: readStatus,
-        lastReadAt: readStatus ? post.postReadStatus[0].last_read_at : null,
       };
     });
     return {
-      props: { posts: postsWithReadStatus, loggedIn: true, userId},
+      props: { posts: postsWithReadStatus.map(post => serializeDates(post)), loggedIn: true, userId},
     };
   } 
   // Fetch posts without the read status
   posts = await prisma.blog_posts.findMany();
   
   return {
-    props: { posts, loggedIn: false },
+    props: {
+      posts: posts.map(post => serializeDates(post)), loggedIn: false },
   };
 };
 
