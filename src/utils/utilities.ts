@@ -153,5 +153,17 @@ const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | '
   };
 };
 
+const serializeDates = (obj) => {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => {
+      if (value instanceof Date) {
+        return [key, value.toISOString()];
+      } else if (typeof value === 'object' && value !== null) {
+        return [key, serializeDates(value)]; // Recursively handle nested objects
+      }
+      return [key, value];
+    })
+  );
+}
 
-export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats };
+export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats, serializeDates };

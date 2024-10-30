@@ -8,6 +8,7 @@ import { Button, Modal, Space, Textarea, TextInput } from '@mantine/core';
 import Error from 'next/error';
 import { InferGetServerSidePropsType } from "next";
 import BlogPost from '@/components/blogPost';
+import { serializeDates } from '@/utils/utilities';
 
 const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })).sort((a, b) => b.created_timestamp - a.created_timestamp));
@@ -115,19 +116,6 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
     </div>
   );
 };
-
-function serializeDates(obj) {
-  return Object.fromEntries(
-    Object.entries(obj).map(([key, value]) => {
-      if (value instanceof Date) {
-        return [key, value.toISOString()];
-      } else if (typeof value === 'object' && value !== null) {
-        return [key, serializeDates(value)]; // Recursively handle nested objects
-      }
-      return [key, value];
-    })
-  );
-}
 
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);

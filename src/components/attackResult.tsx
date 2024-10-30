@@ -40,8 +40,12 @@ const attackResults = ({ battle, viewerID }) => {
   const summaryLines = []
 
   const countUnitsOfType = (units, type) => {
-    return toLocale(units.filter(unit => unit.type === type)
-      .reduce((acc, curr) => acc + curr.quantity, 0));
+    const unitsArray = Array.isArray(units) ? units : Object.values(units);
+    return toLocale(
+      unitsArray
+        .filter(unit => unit.type === type)
+        .reduce((acc, curr) => acc + curr.quantity, 0)
+    );
   }
 
   summaryLines.push(`Battle ID: ${battle.id}`);
