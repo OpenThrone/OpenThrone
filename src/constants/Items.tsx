@@ -58,7 +58,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 45
   },
   {
-    id: 'BATTLE_AXE',
+    id: 'BATTLE-AXE',
     name: 'Battle Axe',
     usage: 'OFFENSE',
     level: 5,
@@ -72,7 +72,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 140
   },
   {
-    id: 'SHORT_SWORD',
+    id: 'SHORT-SWORD',
     name: 'Short Sword',
     usage: 'OFFENSE',
     level: 6,
@@ -86,7 +86,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 200
   },
   {
-    id: 'LONG_SWORD',
+    id: 'LONG-SWORD',
     name: 'Long Sword',
     usage: 'OFFENSE',
     level: 7,
@@ -100,7 +100,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 300
   },
   {
-    id: 'PADDED_HOOD',
+    id: 'PADDED-HOOD',
     name: 'Padded Hood',
     usage: 'OFFENSE',
     level: 1,
@@ -114,7 +114,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'LEATHER_HOOD',
+    id: 'LEATHER-HOOD',
     name: 'Leather Hood',
     usage: 'OFFENSE',
     level: 2,
@@ -128,7 +128,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'STUDDED_LEATHER_HOOD',
+    id: 'STUDDED-LEATHER-HOOD',
     name: 'Studded Leather Hood',
     usage: 'OFFENSE',
     level: 3,
@@ -142,7 +142,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'PADDED_ARMOR',
+    id: 'PADDED-ARMOR',
     name: 'Padded Armor',
     usage: 'OFFENSE',
     level: 1,
@@ -156,7 +156,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 15
   },
   {
-    id: 'LEATHER_ARMOR',
+    id: 'LEATHER-ARMOR',
     name: 'Leather Armor',
     usage: 'OFFENSE',
     level: 2,
@@ -170,7 +170,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 30
   },
   {
-    id: 'STUDDED_LEATHER_ARMOR',
+    id: 'STUDDED-LEATHER-ARMOR',
     name: 'Studded Leather Armor',
     usage: 'OFFENSE',
     level: 3,
@@ -184,7 +184,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 60
   },
   {
-    id: 'PADDED_BOOTS',
+    id: 'PADDED-BOOTS',
     name: 'Padded Boots',
     usage: 'OFFENSE',
     level: 1,
@@ -198,7 +198,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'LEATHER_BOOTS',
+    id: 'LEATHER-BOOTS',
     name: 'Leather Boots',
     usage: 'OFFENSE',
     level: 2,
@@ -212,7 +212,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'STUDDED_LEATHER_BOOTS',
+    id: 'STUDDED-LEATHER-BOOTS',
     name: 'Studded Leather Boots',
     usage: 'OFFENSE',
     level: 3,
@@ -226,7 +226,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'PADDED_BRACERS',
+    id: 'PADDED-BRACERS',
     name: 'Padded Bracers',
     usage: 'OFFENSE',
     level: 1,
@@ -240,7 +240,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 2
   },
   {
-    id: 'LEATHER_BRACERS',
+    id: 'LEATHER-BRACERS',
     name: 'Leather Bracers',
     usage: 'OFFENSE',
     level: 2,
@@ -254,7 +254,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 3
   },
   {
-    id: 'STUDDED_LEATHER_BRACERS',
+    id: 'STUDDED-LEATHER-BRACERS',
     name: 'Studded Leather Bracers',
     usage: 'OFFENSE',
     level: 3,
@@ -268,7 +268,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'SMALL_WOODEN_SHIELD',
+    id: 'SMALL-WOODEN-SHIELD',
     name: 'Small Wooden Shield',
     usage: 'OFFENSE',
     level: 1,
@@ -282,7 +282,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'MEDIUM_WOODEN_SHIELD',
+    id: 'MEDIUM-WOODEN-SHIELD',
     name: 'Medium Wooden Shield',
     usage: 'OFFENSE',
     level: 2,
@@ -296,7 +296,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'LARGE_WOODEN_SHIELD',
+    id: 'LARGE-WOODEN-SHIELD',
     name: 'Large Wooden Shield',
     usage: 'OFFENSE',
     level: 3,
@@ -352,7 +352,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'PADDED_HOOD',
+    id: 'PADDED-HOOD',
     name: 'Padded Hood',
     usage: 'DEFENSE',
     level: 1,
@@ -366,7 +366,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'LEATHER_HOOD',
+    id: 'LEATHER-HOOD',
     name: 'Leather Hood',
     usage: 'DEFENSE',
     level: 2,
@@ -380,7 +380,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'STUDDED_LEATHER_HOOD',
+    id: 'STUDDED-LEATHER-HOOD',
     name: 'Studded Leather Hood',
     usage: 'DEFENSE',
     level: 3,
@@ -394,7 +394,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'PADDED_ARMOR',
+    id: 'PADDED-ARMOR',
     name: 'Padded Armor',
     usage: 'DEFENSE',
     level: 1,
@@ -408,7 +408,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 15
   },
   {
-    id: 'LEATHER_ARMOR',
+    id: 'LEATHER-ARMOR',
     name: 'Leather Armor',
     usage: 'DEFENSE',
     level: 2,
@@ -422,7 +422,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 30
   },
   {
-    id: 'STUDDED_LEATHER_ARMOR',
+    id: 'STUDDED-LEATHER-ARMOR',
     name: 'Studded Leather Armor',
     usage: 'DEFENSE',
     level: 3,
@@ -436,7 +436,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 60
   },
   {
-    id: 'PADDED_BOOTS',
+    id: 'PADDED-BOOTS',
     name: 'Padded Boots',
     usage: 'DEFENSE',
     level: 1,
@@ -450,7 +450,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'LEATHER_BOOTS',
+    id: 'LEATHER-BOOTS',
     name: 'Leather Boots',
     usage: 'DEFENSE',
     level: 2,
@@ -464,7 +464,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'STUDDED_LEATHER_BOOTS',
+    id: 'STUDDED-LEATHER-BOOTS',
     name: 'Studded Leather Boots',
     usage: 'DEFENSE',
     level: 3,
@@ -478,7 +478,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'PADDED_BRACERS',
+    id: 'PADDED-BRACERS',
     name: 'Padded Bracers',
     usage: 'DEFENSE',
     level: 1,
@@ -492,7 +492,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 2
   },
   {
-    id: 'LEATHER_BRACERS',
+    id: 'LEATHER-BRACERS',
     name: 'Leather Bracers',
     usage: 'DEFENSE',
     level: 2,
@@ -506,7 +506,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 3
   },
   {
-    id: 'STUDDED_LEATHER_BRACERS',
+    id: 'STUDDED-LEATHER-BRACERS',
     name: 'Studded Leather Bracers',
     usage: 'DEFENSE',
     level: 3,
@@ -520,7 +520,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'SMALL_WOODEN_SHIELD',
+    id: 'SMALL-WOODEN-SHIELD',
     name: 'Small Wooden Shield',
     usage: 'DEFENSE',
     level: 1,
@@ -534,7 +534,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'MEDIUM_WOODEN_SHIELD',
+    id: 'MEDIUM-WOODEN-SHIELD',
     name: 'Medium Wooden Shield',
     usage: 'DEFENSE',
     level: 2,
@@ -548,7 +548,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'LARGE_WOODEN_SHIELD',
+    id: 'LARGE-WOODEN-SHIELD',
     name: 'Large Wooden Shield',
     usage: 'DEFENSE',
     level: 3,
@@ -576,7 +576,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'BRASS_KNUCKLES',
+    id: 'BRASS-KNUCKLES',
     name: 'Brass Knuckles',
     usage: 'SPY',
     level: 2,
@@ -618,7 +618,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 45
   },
   {
-    id: 'CLOTH_CAP',
+    id: 'CLOTH-CAP',
     name: 'Cloth Cap',
     usage: 'SPY',
     level: 1,
@@ -632,7 +632,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'PADDED_CAP',
+    id: 'PADDED-CAP',
     name: 'Padded Cap',
     usage: 'SPY',
     level: 2,
@@ -646,7 +646,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'LEATHER_CAP',
+    id: 'LEATHER-CAP',
     name: 'Leather Cap',
     usage: 'SPY',
     level: 3,
@@ -660,7 +660,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'CLOTH_HOOD',
+    id: 'CLOTH-HOOD',
     name: 'Cloth Hood',
     usage: 'SPY',
     level: 4,
@@ -674,7 +674,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 40
   },
   {
-    id: 'DARK_CLOTH_ARMOR',
+    id: 'DARK-CLOTH-ARMOR',
     name: 'Dark Cloth Armor',
     usage: 'SPY',
     level: 1,
@@ -688,7 +688,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 15
   },
   {
-    id: 'PADDED_CLOTH_ARMOR',
+    id: 'PADDED-CLOTH-ARMOR',
     name: 'Padded Cloth Armor',
     usage: 'SPY',
     level: 2,
@@ -702,7 +702,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 30
   },
   {
-    id: 'LEATHER_ARMOR',
+    id: 'LEATHER-ARMOR',
     name: 'Leather Armor',
     usage: 'SPY',
     level: 3,
@@ -716,7 +716,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 60
   },
   {
-    id: 'PADDED_LEATHER_ARMOR',
+    id: 'PADDED-LEATHER-ARMOR',
     name: 'Padded Leather Armor',
     usage: 'SPY',
     level: 4,
@@ -730,7 +730,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 90
   },
   {
-    id: 'CLOTH_BOOTS',
+    id: 'CLOTH-BOOTS',
     name: 'Cloth Boots',
     usage: 'SPY',
     level: 1,
@@ -744,7 +744,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'PADDED_BOOTS',
+    id: 'PADDED-BOOTS',
     name: 'Padded Boots',
     usage: 'SPY',
     level: 2,
@@ -758,7 +758,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'LEATHER_BOOTS',
+    id: 'LEATHER-BOOTS',
     name: 'Leather Boots',
     usage: 'SPY',
     level: 3,
@@ -772,7 +772,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'PADDED_LEATHER_BOOTS',
+    id: 'PADDED-LEATHER-BOOTS',
     name: 'Padded Leather Boots',
     usage: 'SPY',
     level: 4,
@@ -786,7 +786,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 30
   },
   {
-    id: 'CLOTH_BRACERS',
+    id: 'CLOTH-BRACERS',
     name: 'Cloth Bracers',
     usage: 'SPY',
     level: 1,
@@ -800,7 +800,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 2
   },
   {
-    id: 'PADDED_BRACERS',
+    id: 'PADDED-BRACERS',
     name: 'Padded Bracers',
     usage: 'SPY',
     level: 2,
@@ -814,7 +814,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 3
   },
   {
-    id: 'LEATHER_BRACERS',
+    id: 'LEATHER-BRACERS',
     name: 'Leather Bracers',
     usage: 'SPY',
     level: 3,
@@ -828,7 +828,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'PADDED_LEATHER_BRACERS',
+    id: 'PADDED-LEATHER-BRACERS',
     name: 'Padded Leather Bracers',
     usage: 'SPY',
     level: 4,
@@ -912,7 +912,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 140
   },
   {
-    id: 'PADDED_HOOD',
+    id: 'PADDED-HOOD',
     name: 'Padded Hood',
     usage: 'SENTRY',
     level: 1,
@@ -926,7 +926,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'LEATHER_HOOD',
+    id: 'LEATHER-HOOD',
     name: 'Leather Hood',
     usage: 'SENTRY',
     level: 2,
@@ -940,7 +940,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'STUDDED_LEATHER_HOOD',
+    id: 'STUDDED-LEATHER-HOOD',
     name: 'Studded Leather Hood',
     usage: 'SENTRY',
     level: 3,
@@ -954,7 +954,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'BRONZE_CAP',
+    id: 'BRONZE-CAP',
     name: 'Bronze Cap',
     usage: 'SENTRY',
     level: 4,
@@ -968,7 +968,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 40
   },
   {
-    id: 'PADDED_ARMOR',
+    id: 'PADDED-ARMOR',
     name: 'Padded Armor',
     usage: 'SENTRY',
     level: 1,
@@ -982,7 +982,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 15
   },
   {
-    id: 'LEATHER_ARMOR',
+    id: 'LEATHER-ARMOR',
     name: 'Leather Armor',
     usage: 'SENTRY',
     level: 2,
@@ -996,7 +996,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 30
   },
   {
-    id: 'STUDDED_LEATHER_ARMOR',
+    id: 'STUDDED-LEATHER-ARMOR',
     name: 'Studded Leather Armor',
     usage: 'SENTRY',
     level: 3,
@@ -1010,7 +1010,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 60
   },
   {
-    id: 'BRONZE_CHAINMAIL',
+    id: 'BRONZE-CHAINMAIL',
     name: 'Bronze Chainmail',
     usage: 'SENTRY',
     level: 4,
@@ -1024,7 +1024,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 90
   },
   {
-    id: 'PADDED_BOOTS',
+    id: 'PADDED-BOOTS',
     name: 'Padded Boots',
     usage: 'SENTRY',
     level: 1,
@@ -1038,7 +1038,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'LEATHER_BOOTS',
+    id: 'LEATHER-BOOTS',
     name: 'Leather Boots',
     usage: 'SENTRY',
     level: 2,
@@ -1052,7 +1052,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'STUDDED_LEATHER_GREAVES',
+    id: 'STUDDED-LEATHER-GREAVES',
     name: 'Studded Leather Greaves',
     usage: 'SENTRY',
     level: 3,
@@ -1066,7 +1066,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'BRONZE_CHAIN_GREAVES',
+    id: 'BRONZE-CHAIN-GREAVES',
     name: 'Bronze Chain Greaves',
     usage: 'SENTRY',
     level: 4,
@@ -1080,7 +1080,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 30
   },
   {
-    id: 'PADDED_BRACERS',
+    id: 'PADDED-BRACERS',
     name: 'Padded Bracers',
     usage: 'SENTRY',
     level: 1,
@@ -1094,7 +1094,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 2
   },
   {
-    id: 'LEATHER_BRACERS',
+    id: 'LEATHER-BRACERS',
     name: 'Leather Bracers',
     usage: 'SENTRY',
     level: 2,
@@ -1108,7 +1108,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 3
   },
   {
-    id: 'STUDDED_LEATHER_BRACERS',
+    id: 'STUDDED-LEATHER-BRACERS',
     name: 'Studded Leather Bracers',
     usage: 'SENTRY',
     level: 3,
@@ -1122,7 +1122,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 5
   },
   {
-    id: 'BRONZE_CHAIN_BRACERS',
+    id: 'BRONZE-CHAIN-BRACERS',
     name: 'Bronze Chain Bracers',
     usage: 'SENTRY',
     level: 4,
@@ -1136,7 +1136,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 12
   },
   {
-    id: 'SMALL_WOODEN_SHIELD',
+    id: 'SMALL-WOODEN-SHIELD',
     name: 'Small Wooden Shield',
     usage: 'SENTRY',
     level: 1,
@@ -1150,7 +1150,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 10
   },
   {
-    id: 'MEDIUM_WOODEN_SHIELD',
+    id: 'MEDIUM-WOODEN-SHIELD',
     name: 'Medium Wooden Shield',
     usage: 'SENTRY',
     level: 2,
@@ -1164,7 +1164,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 20
   },
   {
-    id: 'LARGE_WOODEN_SHIELD',
+    id: 'LARGE-WOODEN-SHIELD',
     name: 'Large Wooden Shield',
     usage: 'SENTRY',
     level: 3,
@@ -1178,7 +1178,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 40
   },
   {
-    id: 'BRONZE_STUDDED_SHIELD',
+    id: 'BRONZE-STUDDED-SHIELD',
     name: 'Bronze Studded Shield',
     usage: 'SENTRY',
     level: 4,
@@ -1192,7 +1192,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 60
   },
   {
-    id: 'GREAT_SWORD',
+    id: 'GREAT-SWORD',
     name: 'Great Sword',
     usage: 'OFFENSE',
     level: 6,
@@ -1206,7 +1206,7 @@ export const ItemTypes: Item[] = [
     defenseStrength: 240
   },
   {
-    id: 'ELVEN_LONGBOW',
+    id: 'ELVEN-LONGBOW',
     name: 'Elven Longbow',
     usage: 'OFFENSE',
     level: 6,
