@@ -9,15 +9,6 @@ module.exports = withBundleAnalyzer({
   experimental: {
     reactCompiler: true,
     // serverActions: true,
-    swcPlugins: [
-      [
-        'next-superjson-plugin',
-        {
-          excluded: [],
-        },
-      ],
-    ],
-    instrumentationHook: true,
   },
   eslint: {
     dirs: ['.'],
