@@ -21,13 +21,6 @@ enum AccountStatus {
   SUSPENDED
 }
 
-enum SuspensionAction {
-  BANNED
-  TIMEOUT
-  SUSPENDED
-  WARNING
-}
-
 enum PermissionType {
   ADMINISTRATOR
   MODERATOR
@@ -72,38 +65,17 @@ model users {
   created_at         DateTime  @default(now())
   updated_at         DateTime  @default(now()) @updatedAt
 
-  // Account status tracking
-  status              AccountStatus @default(ACTIVE)
-  vacation_start_date DateTime?
-  vacation_end_date   DateTime?
-  closed_on_date      DateTime?
-  reset_new_user_id   Int?
-  previous_user_id    Int?
-  account_reset_count Int           @default(0)
-  banned_until        DateTime?
-  suspension_reason   String?
-
-  // Relations
-
-  // Self-relations for account resets
-  newUserAfterReset users?  @relation("UserResetNew", fields: [reset_new_user_id], references: [id])
-  oldUserResets     users[] @relation("UserResetNew") // This user is the new user after reset for multiple old users
-
-  previousUserBeforeReset users?  @relation("UserResetPrevious", fields: [previous_user_id], references: [id])
-  nextUserResets          users[] @relation("UserResetPrevious") // This user is the previous user before reset for multiple new users
-
   // Relations to account reset history
   resetHistories         AccountResetHistory[] // Relation to account reset history as user
   accountResetsAsNewUser AccountResetHistory[] @relation("NewUserAfterReset") // Relation as newUser in AccountResetHistory
 
+  // Relations to account status histories
+  statusHistories       AccountStatusHistory[] // User's own status changes
+  enforcedStatusChanges AccountStatusHistory[] @relation("AccountStatusAdmin") // Status changes enforced by this user
+
   // Relations to password resets
   passwordResets PasswordReset[]
 
-  // Relations to suspension histories
-  suspensionHistories UserSuspensionHistory[] // Relation to user's own suspensions
-  enforcedSuspensions UserSuspensionHistory[] @relation("AdminUser") // Suspensions enforced by this user
-
-  // Existing relations...
   sentMessages            messages[]             @relation("from_user")
   receivedMessages        messages[]             @relation("to_user")
   attacksMade             attack_log[]           @relation("AttackLogs")
@@ -122,6 +94,24 @@ model users {
   AutoRecruitSession      AutoRecruitSession[]
 }
 
+model AccountStatusHistory {
+  id         Int           @id @default(autoincrement())
+  user_id    Int
+  status     AccountStatus
+  start_date DateTime      @default(now())
+  end_date   DateTime?
+  reason     String?
+  admin_id   Int?
+  created_at DateTime      @default(now())
+  updated_at DateTime      @default(now()) @updatedAt
+
+  // Relations
+  user  users  @relation(fields: [user_id], references: [id])
+  admin users? @relation("AccountStatusAdmin", fields: [admin_id], references: [id])
+
+  @@index([user_id, start_date])
+}
+
 model AccountResetHistory {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -134,22 +124,6 @@ model AccountResetHistory {
   newUser users? @relation("NewUserAfterReset", fields: [newUserId], references: [id])
 
   @@index([userId, resetDate])
-}
-
-model UserSuspensionHistory {
-  id         Int              @id @default(autoincrement())
-  userId     Int
-  action     SuspensionAction
-  reason     String?
-  startDate  DateTime         @default(now()) @db.Timestamptz(3)
-  endDate    DateTime?
-  enforcedBy Int? // Admin user ID who enforced the action
-
-  // Relations
-  user  users  @relation(fields: [userId], references: [id])
-  admin users? @relation("AdminUser", fields: [enforcedBy], references: [id])
-
-  @@index([userId, startDate])
 }
 
 model social {

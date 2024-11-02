@@ -11,10 +11,10 @@ interface UserContextType {
   forceUpdate: () => void;
   loading: boolean;
 }
-// Updated UserContext with forceUpdate function
+
 const UserContext = createContext<UserContextType>({
-  user: null, // Default value for user is null
-  forceUpdate: () => {},
+  user: null,
+  forceUpdate: () => { },
   loading: true,
 });
 
@@ -29,16 +29,18 @@ const isPublicPath = (path: string | null) => {
     /^\/account\/password-reset\/verify$/,
     /^\/community\/news$/,
     /^\/$/,
-    /^\/userprofile\/[a-z0-9]+$/i, // Updated to include letters or numbers
-    /^\/recruit\/[a-z0-9]+$/i, // New regex for /recruit/
-    /^\/auto-recruit$/, // New regex for /auto-recruit/
+    /^\/userprofile\/[a-z0-9]+$/i,
+    /^\/recruit\/[a-z0-9]+$/i,
+    /^\/auto-recruit$/,
   ];
   if (path === null) return false;
   return publicPathsRegex.some((regex) => regex.test(path));
 };
+
 interface UsersProviderProps {
   children: ReactNode;
 }
+
 export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const router = useRouter();
   const pathName = usePathname();
@@ -52,27 +54,32 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     try {
       const response = await fetch(`/api/general/getUser`);
       if (!response.ok) {
-        // Handle HTTP errors
-        const errorText = await response.text(); // or response.json() if the server responds with JSON
+        const errorText = await response.text();
         alertService.error(`Error fetching user data: ${errorText}`);
         signOut();
         throw new Error('Failed to fetch user data');
       }
       const userData = await response.json();
-      setUser(new UserModel(userData, false));
-      if (userData?.beenAttacked) {
-        alertService.error(
-          'You have been attacked since you were last active!'
-        );
+      const uModel = new UserModel(userData, false);
+      setUser(uModel);
+
+      // Check for status that requires sign-out
+      if (['CLOSED', 'BANNED', 'VACATION'].includes(userData.status)) {
+        alertService.info(`Your account is currently in ${userData.status} mode.`, true);
+        await signOut();
+        await router.push('/account/login');
+        return; // Prevent further execution if signed out
       }
-      if(userData?.detectedSpy) {
-        alertService.error(
-          'You have detected a Spy attempt since you were last active!'
-        );
+
+      // Alerts for beenAttacked and detectedSpy
+      if (userData?.beenAttacked) {
+        alertService.error('You have been attacked since you were last active!');
+      }
+      if (userData?.detectedSpy) {
+        alertService.error('You have detected a Spy attempt since you were last active!');
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
-      // Consider setting an error state here as well
     } finally {
       setLoading(false);
     }

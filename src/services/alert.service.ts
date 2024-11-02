@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { BehaviorSubject } from 'rxjs';
 
 export interface AlertType {
-  type: 'success' | 'error';
+  type: 'success' | 'error' | 'info';
   message: ReactNode;
   timestamp: Date;
   showAfterRedirect: boolean;
@@ -15,7 +15,7 @@ const alertSubject = new BehaviorSubject<AlertType | null>(null);
 let defaultTimeout: number | null = null;
 
 function showAlert(
-  type: 'success' | 'error',
+  type: 'success' | 'error' | 'info',
   message: ReactNode,
   showAfterRedirect: boolean = false,
   showButton: boolean = false,
@@ -54,6 +54,8 @@ export const alertService = {
     showAlert('success', message, showAfterRedirect, false, '', timeout),
   error: (message: ReactNode, showAfterRedirect?: boolean, showButton: boolean = false, button: ReactNode = '', timeout?: number) =>
     showAlert('error', message, showAfterRedirect, showButton, button, timeout),
+  info: (message: ReactNode, showAfterRedirect: boolean = false, timeout: number | null = defaultTimeout) =>
+    showAlert('info', message, showAfterRedirect, false, '', timeout),
   clear,
   setDefaultTimeout: (timeout: number | null) => {
     defaultTimeout = timeout;

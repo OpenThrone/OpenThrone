@@ -3,8 +3,17 @@
 
 CREATE TYPE "AccountStatus" AS ENUM ('ACTIVE', 'VACATION', 'CLOSED', 'IDLE', 'RESET', 'BANNED', 'TIMEOUT', 'SUSPENDED');
 
--- CreateEnum
-CREATE TYPE "SuspensionAction" AS ENUM ('BANNED', 'TIMEOUT', 'SUSPENDED', 'WARNING');
+CREATE TABLE "AccountStatusHistory" (
+  "id" SERIAL PRIMARY KEY,
+  "user_id" INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "status" "AccountStatus" NOT NULL,
+  "start_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "end_date" TIMESTAMP,
+  "reason" TEXT,
+  "admin_id" INTEGER REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 -- DropForeignKey
 ALTER TABLE "AutoRecruitSession" DROP CONSTRAINT "AutoRecruitSession_userId_fkey";
@@ -30,16 +39,7 @@ ALTER COLUMN "require_auth" SET NOT NULL;
 ALTER TABLE "recruit_history" ADD COLUMN     "usersId" INTEGER;
 
 -- AlterTable
-ALTER TABLE "users" ADD COLUMN     "account_reset_count" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN     "banned_until" TIMESTAMP(3),
-ADD COLUMN     "closed_on_date" TIMESTAMP(3),
-ADD COLUMN     "previous_user_id" INTEGER,
-ADD COLUMN     "reset_new_user_id" INTEGER,
-ADD COLUMN     "status" "AccountStatus" NOT NULL DEFAULT 'ACTIVE',
-ADD COLUMN     "suspension_reason" TEXT,
-ADD COLUMN     "vacation_end_date" TIMESTAMP(3),
-ADD COLUMN     "vacation_start_date" TIMESTAMP(3),
-ALTER COLUMN "fort_hitpoints" SET DEFAULT 50,
+ALTER TABLE "users" ALTER COLUMN "fort_hitpoints" SET DEFAULT 50,
 ALTER COLUMN "attack_turns" SET DEFAULT 50,
 ALTER COLUMN "battle_upgrades" SET DEFAULT '[{"type": "OFFENSE", "level": 1, "quantity": 0}, {"type": "SPY", "level": 1, "quantity": 0}, {"type": "SENTRY", "level": 1, "quantity": 0}, {"type": "DEFENSE", "level": 1, "quantity": 0}]',
 ALTER COLUMN "bonus_points" SET DEFAULT '[{"type": "OFFENSE", "level":0}, {"type": "DEFENSE", "level":0}, {"type": "INCOME", "level":0}, {"type": "INTEL", "level":0}, {"type": "PRICES", "level":0}]';
@@ -55,41 +55,13 @@ CREATE TABLE "AccountResetHistory" (
     CONSTRAINT "AccountResetHistory_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "UserSuspensionHistory" (
-    "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "action" "SuspensionAction" NOT NULL,
-    "reason" TEXT,
-    "startDate" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "endDate" TIMESTAMP(3),
-    "enforcedBy" INTEGER,
-
-    CONSTRAINT "UserSuspensionHistory_pkey" PRIMARY KEY ("id")
-);
-
 CREATE INDEX "AccountResetHistory_userId_resetDate_idx" ON "AccountResetHistory"("userId", "resetDate");
-
--- CreateIndex
-CREATE INDEX "UserSuspensionHistory_userId_startDate_idx" ON "UserSuspensionHistory"("userId", "startDate");
-
--- AddForeignKey
-ALTER TABLE "users" ADD CONSTRAINT "users_reset_new_user_id_fkey" FOREIGN KEY ("reset_new_user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "users" ADD CONSTRAINT "users_previous_user_id_fkey" FOREIGN KEY ("previous_user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AccountResetHistory" ADD CONSTRAINT "AccountResetHistory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AccountResetHistory" ADD CONSTRAINT "AccountResetHistory_newUserId_fkey" FOREIGN KEY ("newUserId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "UserSuspensionHistory" ADD CONSTRAINT "UserSuspensionHistory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "UserSuspensionHistory" ADD CONSTRAINT "UserSuspensionHistory_enforcedBy_fkey" FOREIGN KEY ("enforcedBy") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PasswordReset" ADD CONSTRAINT "PasswordReset_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
