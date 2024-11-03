@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
 import prisma from '@/lib/prisma';
-import { getUpdatedStatus } from '@/utils/utilities';
+import { getUpdatedStatus } from '@/services/user.service';
 
 const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
   try {

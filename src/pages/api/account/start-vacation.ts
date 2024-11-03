@@ -1,7 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
-import { getSession } from 'next-auth/react';
-import { getUpdatedStatus } from '@/utils/utilities';
 import { withAuth } from '@/middleware/auth';
 
 export const handler = async (req: NextApiRequest, res: NextApiResponse) => {

@@ -6,7 +6,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from '@/lib/prisma';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { IUserSession } from '@/types/typings';
-import { getUpdatedStatus } from '@/utils/utilities';
+import { getUpdatedStatus } from '@/services/user.service';
 
 const argon2 = require('argon2');
 

@@ -166,82 +166,12 @@ const serializeDates = (obj) => {
   );
 }
 
-const idleThresholdDate = (days = 60) => { //60days is default
+export const idleThresholdDate = (days = 60) => { //60days is default
   const now = new Date();
   // if last_active is more than 60 days, set account status to IDLE
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 }
 
-const getUpdatedStatus = async (userId: number) => {
-  const now = new Date();
-
-  // Fetch the latest status history record for the user
-  let statusHistory = await prisma.accountStatusHistory.findFirst({
-    where: {
-      user_id: userId,
-      start_date: {
-        lte: now,
-      },
-    },
-    orderBy: {
-      start_date: 'desc',
-    },
-  });
-
-  // If no status history exists, default to ACTIVE
-  if (!statusHistory) {
-    // Optionally, you can create an ACTIVE status record here
-    await prisma.accountStatusHistory.create({
-      data: {
-        user_id: userId,
-        status: 'ACTIVE',
-        start_date: now,
-      },
-    });
-    return 'ACTIVE';
-  }
-
-  // Check if the current status has expired
-  if (statusHistory.end_date && statusHistory.end_date <= now) {
-    // Status has expired, update to ACTIVE
-    await prisma.accountStatusHistory.create({
-      data: {
-        user_id: userId,
-        status: 'ACTIVE',
-        start_date: now,
-        reason: 'Status expired, reverting to ACTIVE',
-      },
-    });
-    return 'ACTIVE';
-  }
-
-  // Handle IDLE status based on last_active timestamp
-  const user = await prisma.users.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      last_active: true,
-    },
-  });
-
-  if (statusHistory.status !== 'IDLE' && user?.last_active && user.last_active < idleThresholdDate(60)) {
-    // User has been idle for over 60 days, update status to IDLE
-    await prisma.accountStatusHistory.create({
-      data: {
-        user_id: userId,
-        status: 'IDLE',
-        start_date: now,
-        reason: 'User has been idle for over 60 days',
-      },
-    });
-    return 'IDLE';
-  }
-
-  // Return the current status
-  return statusHistory.status;
-};
 
 
-
-export { getUpdatedStatus, formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats, serializeDates };
+export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats, serializeDates };
