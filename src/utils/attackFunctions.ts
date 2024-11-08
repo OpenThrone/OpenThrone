@@ -60,7 +60,7 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
   return Math.ceil(strength);
 }
 
-export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 'SENTRY', spiesSent: number): {spyStrength: number, sentryStrength: number} {
+export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 'SENTRY', spiesSent: number, spyID?: number): {spyStrength: number, sentryStrength: number} {
   let strength = 0;
   let KS = 0;
   let DS = 0;
@@ -68,7 +68,7 @@ export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 
   const unitMultiplier = 1 + parseInt(((unitType === 'SPY' ? user.spyBonus.toString() : user.sentryBonus.toString())), 10) / 100;
   user.units.filter((u) => u.type === unitType).forEach((unit) => {
     const unitInfo = UnitTypes.find(
-      (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
+      (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type) && (unitType.level === spyID || !spyID)
     );
     if(unitInfo) {
       KS += (unitInfo.killingStrength || 0) * Math.min(unit.quantity, spiesSent);

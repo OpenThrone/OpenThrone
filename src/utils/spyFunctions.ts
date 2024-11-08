@@ -220,8 +220,8 @@ export const simulateAssassination = (
   result.spiesLost = isSuccessful ? 0 : spies;
 
   if (isSuccessful) {
-    const { spyStrength: attackerKS, sentryStrength: attackerDS } = calculateClandestineStrength(attacker, 'SPY', 5);
-    const { spyStrength: defenderKS, sentryStrength: defenderDS } = calculateClandestineStrength(defender, 'SENTRY', 5);
+    const { spyStrength: attackerKS, sentryStrength: attackerDS } = calculateClandestineStrength(attacker, 'SPY', 5, 3);
+    const { spyStrength: defenderKS, sentryStrength: defenderDS } = calculateClandestineStrength(defender, 'SENTRY', 5, 3);
     let defenderUnitCount = () => {
       if (unit === 'OFFENSE') {
         return Math.min(spies * 2, defender.unitTotals.offense);
@@ -239,7 +239,7 @@ export const simulateAssassination = (
     result.spiesLost = attackerCasualties;
 
     if (result.spiesLost > 0) {
-      attacker.units.filter((u) => u.type === 'SPY' && u.level === 22).forEach((u) => u.quantity = u.quantity - attackerCasualties);
+      attacker.units.filter((u) => u.type === 'SPY' && u.level === 3).forEach((u) => u.quantity = u.quantity - attackerCasualties);
     }
     result.unitsKilled = defenderCasualties;
     console.log('result thus far: ', result)

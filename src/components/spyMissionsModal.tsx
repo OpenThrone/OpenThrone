@@ -175,7 +175,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       <div>
         <Title align="center" order={3} weight={700} mb="md">Intelligence Gathering</Title>
         <Text>How many spies would you like to send?</Text>
-        <Group position="apart" mt="md">
+        <Group mt="md">
           <NumberInput
             max={10}
             min={1}
@@ -209,6 +209,12 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           onChange={(value) => setIntelSpies(value)}
           mt="md"
         />
+        <Text>What Unit Type would you like to target?</Text>
+        <Select>
+          <option value="CITIZEN/WORKERS">Citizen/Workers</option>
+          <option value="OFFENSE">Offense</option>
+          <option value="DEFENSE">Defense</option>
+        </Select>
         <Button onClick={handleSpyMission} fullWidth mt="md">Assassinate</Button>
         <div className="mt-4">
           <Text align="center" size="lg" weight={700}>Assassination Information</Text>
@@ -227,7 +233,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       <div>
         <Text align="center" size="lg" weight={700} mb="md">Infiltration</Text>
         <Text>How many spies would you like to send to infiltrate?</Text>
-        <Group position="apart" mt="md">
+        <Group mt="md">
           <NumberInput
             max={3}
             min={1}

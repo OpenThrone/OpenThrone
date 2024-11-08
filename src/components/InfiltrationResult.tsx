@@ -34,7 +34,7 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
     const fetchData = async () => {
       const filteredUnits = stats.spyResults.intelligenceGathered?.units?.filter((unit) => unit.quantity > 0) || [];
       const totalUnits = filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0);
-      const totalPopulation = stats.spyResults.defender.units.reduce((acc, unit) => acc + unit.quantity, 0);
+      const totalPopulation = Object.values(stats.spyResults.defender?.units).reduce((acc, unit) => acc + unit.quantity, 0);
       const unknownUnits = totalPopulation - totalUnits;
       const unitColors = {
         CITIZEN: 'grey',
@@ -66,9 +66,10 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
       const itemTypes = ['HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD', 'WEAPON'];
 
       const newItemsByCategory = itemCategories.map((category) => {
+        console.log('category', category);
         const categoryUnits = filteredUnits.filter((unit) => unit.type === category).reduce((acc, unit) => acc + unit.quantity, 0);
         const categoryItems = stats.spyResults.intelligenceGathered?.items?.filter((item) => item.usage === category) || [];
-
+        console.log('categoryItems', categoryItems);
         const combinedItems = itemTypes.map((type) => {
           const totalQuantity = categoryItems
             .filter((item) => item.type === type)
