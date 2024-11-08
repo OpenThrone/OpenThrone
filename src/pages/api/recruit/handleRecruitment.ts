@@ -88,7 +88,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         },
       });
 
-      if (recruitments.length > 2) {
+      if (recruitments.length > 5) {
         throw new Error('User has already been recruited 5 times in the last 24 hours.');
       }
 
