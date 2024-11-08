@@ -9,13 +9,12 @@ const handler = async (
   req: NextApiRequest,
   res: NextApiResponse,
 ) => {
-  if (req.method !== 'POST') {
-    return res.status(405).end(); // Method not allowed
-  }
 
   const { session } = req;
   const recruiterID = session ? parseInt(session.user?.id.toLocaleString()) : 0;
   const { sessionId } = req.body;
+  if (req.method === 'POST') {
+    
   if (!sessionId) {
     return res.status(400).json({ error: 'Session ID is required' });
   }
@@ -26,8 +25,10 @@ const handler = async (
     return res.status(403).json({ error: 'Invalid session ID' });
   }
 
-  // Update lastActivityAt to keep the session active
-  await updateSessionActivity(recruiterID, sessionId);
+    // Update lastActivityAt to keep the session active
+    await updateSessionActivity(recruiterID, sessionId);
+
+  }
   // Fetch all users
   const users = await prisma.users.findMany({
     select: {
@@ -71,7 +72,6 @@ const handler = async (
   }
   )
 
-  console.log(getOTTime());
   if (!validUsers.length) {
     return res.status(404).json({ error: 'No valid users available for recruitment.' });
   }
