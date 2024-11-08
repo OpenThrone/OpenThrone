@@ -75,7 +75,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
       const nowTimestamp = nowdate.getTime();
 
       setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
-      setLastActive(profile.last_active.toDateString());
+      setLastActive(new Date(profile.last_active).toDateString());
     }
   }, [profile, users, user, isPlayer]);
 
@@ -406,6 +406,11 @@ export const getServerSideProps = async ({ query }) => {
   const userData = {
     ...userWithoutPassword, 
     bionew: await serialize(user.bio),
+    gold: user.gold.toString(),
+    gold_in_bank: user.gold_in_bank.toString(),
+    last_active: user.last_active.toISOString(),
+    created_at: user.created_at.toISOString(),
+    updated_at: user.updated_at.toISOString(),
   };
 
   return { props: { users: userData } };

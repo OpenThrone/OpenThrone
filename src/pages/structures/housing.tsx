@@ -74,7 +74,7 @@ const Housing = (props) => {
 
       <SimpleGrid cols={{ base: 1, md: 2 }}>
         <Paper withBorder radius="md" p="md" className="w-full mb-4">
-          <Group position="apart" align="flex-start">
+          <Group align="flex-start">
             <Stack spacing="xs">
                 
               <Text>
@@ -98,7 +98,7 @@ const Housing = (props) => {
           </Group>
         </Paper>
         <Paper withBorder radius="md" p="md" className="w-full mb-4">
-          <Group position="apart" align="flex-start">
+          <Group align="flex-start">
             <Stack spacing="xs">
               <Text>
                 <Text fw={700} size="xl" className='font-medieval'>

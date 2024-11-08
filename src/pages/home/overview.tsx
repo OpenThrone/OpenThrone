@@ -46,7 +46,7 @@ const Overview = (props) => {
       <Space h="md" />
       <Center>
         <Paper w={{ sm: '100%', md: '80%' }} shadow="sm" ps="sm" pb='md' radius="md">
-          <Group position="apart" grow>
+          <Group grow>
             <Alert />
           </Group>
           <Space h="md" />

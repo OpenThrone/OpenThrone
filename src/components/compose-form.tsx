@@ -164,7 +164,7 @@ export default function ComposeForm({ onClose }: ComposeFormProps) {
           <RichTextEditor.Content />
         </RichTextEditor>
 
-        <Group position="right" mt="md">
+        <Group mt="md">
           <Button onClick={handleSubmit} disabled={recipients.length === 0}>
             Send
           </Button>

@@ -30,12 +30,12 @@ const SamplePage = (props) => {
         </Title>
       </Center>
       <Space h="md" />
-      <Group position="center" spacing="md">
+      <Group align="center" spacing="md">
         <Button color="brand">Primary Button</Button>
         <Button color="secondary" variant='filled'>Secondary Button</Button>
       </Group>
       <Space h="md" />
-      <Group position="center" spacing="md">
+      <Group align="center" spacing="md">
         <Button color="brand" variant="outline">
           Outline Button
         </Button>
@@ -53,7 +53,7 @@ const SamplePage = (props) => {
         <Text align="center">
           This is a card component to show off the brand and secondary colors of the selected theme.
         </Text>
-        <Group position="center" spacing="md" style={{ marginTop: '1rem' }}>
+        <Group align="center" spacing="md" style={{ marginTop: '1rem' }}>
           <Button color="brand">Action 1</Button>
           <Button color="secondary">Action 2</Button>
         </Group>
@@ -97,7 +97,7 @@ const SamplePage = (props) => {
       </Center>
       <Space h="md" />
       <Card shadow="sm" padding="lg" style={{ maxWidth: 400, margin: 'auto' }}>
-        <Group position="center">
+        <Group align="center">
           <Button color="secondary" onClick={() => setOpened(!opened)}>
             Toggle Alert
           </Button>
@@ -118,7 +118,7 @@ const SamplePage = (props) => {
         )}
       </Card>
       <Space h="md" />
-      <Group position="center" spacing="md">
+      <Group align="center" spacing="md">
         <Card shadow="sm" padding="lg" style={{ maxWidth: 400, margin: 'auto' }}>
           <Title order={3}>Brand Colors</Title>
           <Space h="md" />
@@ -128,7 +128,7 @@ const SamplePage = (props) => {
         </Card>
       </Group>
       <Space h="md" />
-      <Group position="center" spacing="md">
+      <Group align="center" spacing="md">
         <Card shadow="sm" padding="lg" style={{ maxWidth: 400, margin: 'auto' }}>
           <Title order={3}>Secondary Colors</Title>
           <Space h="md" />
