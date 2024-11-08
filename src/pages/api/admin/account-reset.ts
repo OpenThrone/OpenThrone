@@ -4,7 +4,7 @@ import { getSession } from 'next-auth/react';
 import { isAdmin } from '@/utils/authorization';
 import { withAuth } from '@/middleware/auth';
 
-export const handler = async(req: NextApiRequest, res: NextApiResponse) {
+export const handler = async(req: NextApiRequest, res: NextApiResponse) => {
   const session = req?.session;
   if (!session || !session.user || !(await isAdmin(session.user.id))) {
     return res.status(401).json({ error: 'Unauthorized' });
