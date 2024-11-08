@@ -4,7 +4,6 @@ import { getLevelFromXP } from "@/utils/utilities";
 import { Group, Avatar, Text, Card, Autocomplete, Button, Select, Badge, Stack } from "@mantine/core";
 import { useDebouncedCallback } from "@mantine/hooks";
 import { PermissionType } from "@prisma/client";
-import Error from "next/error";
 
 const GrantUserForm = () => {
   const [grantUser, setGrantUser] = useState("");

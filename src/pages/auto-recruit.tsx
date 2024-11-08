@@ -342,6 +342,12 @@ export default function AutoRecruiter(props) {
       <Title order={2} className="page-title">Auto Recruiter</Title>
       <Space h="md" />
       <Alert />
+      <Space h="sm" />
+      {/* Display Total Daily Recruits left */}
+      <Text size="lg">
+        Total Daily Recruits left: {totalLeft}
+      </Text>
+
       <Space h="md" />
       <Recruiter
         key={user.id}

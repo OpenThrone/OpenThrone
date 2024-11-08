@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { getSession } from 'next-auth/react';
 import prisma from '@/lib/prisma';
 import { Button, Modal, Space, Textarea, TextInput } from '@mantine/core';
-import Error from 'next/error';
 import { InferGetServerSidePropsType } from "next";
 import BlogPost from '@/components/blogPost';
 import { serializeDates } from '@/utils/utilities';

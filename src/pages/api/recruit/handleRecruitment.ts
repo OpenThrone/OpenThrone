@@ -4,7 +4,6 @@ import { withAuth } from '@/middleware/auth';
 import { PlayerUnit } from '@/types/typings';
 import mtrand from '@/utils/mtrand';
 import { getOTStartDate } from '@/utils/timefunctions';
-import Error from 'next/error';
 import { endSession, getSession, validateSession } from '@/services/sessions.service';
 
 function increaseCitizens(units: PlayerUnit[]) {
@@ -157,8 +156,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     return res.status(200).json(result);
   } catch (error) {
-    console.log('Error in recruitment:', error.props, "IPAddr: " + req.headers['cf-connecting-ip'] as string, 'PlayerID: ' + recruitedUserId, 'RecruiterID: ' + recruiterUserId);
-    const statusCode = error.props.includes('recruited 5 times')
+    console.log('Error in recruitment:', error.message, "IPAddr: " + req.headers['cf-connecting-ip'] as string, 'PlayerID: ' + recruitedUserId, 'RecruiterID: ' + recruiterUserId);
+    const statusCode = error.message.includes('recruited 5 times')
       ? 400
       : 500;
     return res.status(statusCode).json({ error: error.message });
