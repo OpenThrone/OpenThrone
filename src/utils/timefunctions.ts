@@ -27,9 +27,9 @@ const getOTTime = () => {
 };
 
 // Get a Date object representing the beginning of this day
-const getOTStartDate = () => {
+const getOTStartDate = (add:number = 0) => {
   const OTTime = getOTTime();
-  return new Date(OTTime.getFullYear(), OTTime.getMonth(), OTTime.getDate());
+  return new Date(OTTime.getFullYear(), OTTime.getMonth(), OTTime.getDate()+add);
 };
 
 export { getTimeRemaining, getTimeToNextTurn, getOTTime, getOTStartDate };

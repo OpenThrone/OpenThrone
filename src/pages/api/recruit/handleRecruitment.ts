@@ -5,6 +5,8 @@ import { PlayerUnit } from '@/types/typings';
 import mtrand from '@/utils/mtrand';
 import { getOTStartDate } from '@/utils/timefunctions';
 import { endSession, getSession, validateSession } from '@/services/sessions.service';
+import { createRecruitmentRecord, hasExceededRecruitmentLimit, updateUserAfterRecruitment, createBankHistoryRecord } from '@/services/recruitment.service';
+import { getIpAddress } from '@/utils/ipUtils';
 
 function increaseCitizens(units: PlayerUnit[]) {
   const citizen = units.find((unit) => unit.type === 'CITIZEN');
@@ -53,110 +55,54 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       sessionId = null; // Explicitly set sessionId to null for manual
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      const fromUser = recruiterUserId ? recruitedUserId : recruiterUserId;
-      const toUser = recruiterUserId ? recruiterUserId : recruitedUserId;
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const fromUser = recruiterUserId ? recruitedUserId : recruiterUserId;
+        const toUser = recruiterUserId ? recruiterUserId : recruitedUserId;
 
-      // Save the recruitment record
-      await tx.recruit_history.create({
-        data: {
-          from_user: fromUser,
-          to_user: toUser,
-          ip_addr:
-            // Prefer IP address as reported by CloudFlare, if available.
-            (req.headers['cf-connecting-ip'] as string) ||
-            // Fallback to the IP address we received the request from
-            req.connection.remoteAddress ||
-            // Otherwise, no dice - but fail gracefully.
-            'No IP address detected.',
-          timestamp: new Date(),
-        },
-      });
+        const ipAddress = getIpAddress(req);
 
-      // Wait for a random delay
-      await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
+        // Save the recruitment record
+        await createRecruitmentRecord({ fromUser, toUser, ipAddress });
 
-      // Check recruitments within the last 24 hours
-      const recruitments = await tx.recruit_history.findMany({
-        where: {
-          from_user: fromUser,
-          to_user: toUser,
-          timestamp: { gte: getOTStartDate() },
-          ...(recruiterUserId === 0 && {
-            ip_addr: req.headers['cf-connecting-ip'] as string,
-          }),
-        },
-      });
+        // Wait for a random delay
+        await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
 
-      if (recruitments.length > 5) {
-        throw new Error('User has already been recruited 5 times in the last 24 hours.');
-      }
-
-      let userToUpdate = await tx.users.findUnique({
-        where: { id: Number(toUser) },
-      });
-
-      if (selfRecruit) {
-        userToUpdate = await tx.users.findUnique({
-          where: { id: Number(recruitedUserId) },
+        // Check if recruitment limit has been exceeded
+        const exceededLimit = await hasExceededRecruitmentLimit({
+          fromUser,
+          toUser,
+          ipAddress,
+          recruiterUserId,
         });
-      }
 
-      // Update the number of citizens and gold for the user
-      const updatedUnits = increaseCitizens(userToUpdate.units as PlayerUnit[]);
-      await tx.users.update({
-        where: { id: userToUpdate.id },
-        data: {
-          units: updatedUnits,
-          gold: { increment: 250 },
-        },
-      });
+        if (exceededLimit) {
+          throw new Error('User has already been recruited 5 times in the last 24 hours.');
+        }
 
-      await tx.bank_history.create({
-        data: {
-          from_user_id: 0,
-          to_user_id: userToUpdate.id,
-          to_user_account_type: 'HAND',
-          from_user_account_type: 'BANK',
-          date_time: new Date(),
-          gold_amount: 250,
-          history_type: 'RECRUITMENT',
-        },
-      });
+        let userToUpdate = await tx.users.findUnique({
+          where: { id: Number(toUser) },
+        });
 
-      // Recheck recruitments to confirm no violations
-      const reConfirm = await tx.recruit_history.count({
-        where: {
-          OR: [
-            {
-              AND: [
-                { to_user: toUser },
-                { from_user: { not: 0 } }, // Exclude from_user = 0
-                { from_user: fromUser },
-                { timestamp: { gte: getOTStartDate() } },
-              ],
-            },
-            {
-              AND: [
-                { to_user: toUser },
-                { ip_addr: req.headers['x-real-ip'] as string },
-                { timestamp: { gte: getOTStartDate() } },
-              ],
-            },
-          ],
-        },
-      });
+        if (selfRecruit) {
+          userToUpdate = await tx.users.findUnique({
+            where: { id: Number(recruitedUserId) },
+          });
+        }
 
-      if (reConfirm > 5) {
-        throw new Error('User has already been recruited 5 times in the last 24 hours.');
-      }
+        // Update the number of citizens and gold for the user
+        await updateUserAfterRecruitment(userToUpdate.id, userToUpdate.units);
 
-      return { success: true };
-    }, { timeout: 15000, maxWait: 5000 });
+        await createBankHistoryRecord(userToUpdate.id);
+
+        return { success: true };
+      },
+      { timeout: 15000, maxWait: 5000 },
+    );
 
     return res.status(200).json(result);
   } catch (error) {
-    console.log('Error in recruitment:', error.message, "IPAddr: " + req.headers['cf-connecting-ip'] as string, 'PlayerID: ' + recruitedUserId, 'RecruiterID: ' + recruiterUserId);
+    console.log('Error in recruitment:', error.message, "IPAddr: " + getIpAddress(req), 'PlayerID: ' + recruitedUserId, 'RecruiterID: ' + recruiterUserId);
     const statusCode = error.message.includes('recruited 5 times')
       ? 400
       : 500;

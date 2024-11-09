@@ -80,7 +80,7 @@ export default function AutoRecruiter(props) {
 
       if (response.ok) {
         setUser(data.randomUser);
-        setTotalLeft(data.totalLeft);
+        setTotalLeft(data.recruitsLeft);
       } else {
         if (data.error === 'Invalid session ID') {
           handleInvalidSession();
