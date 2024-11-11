@@ -10,7 +10,7 @@ import SpyMissionsModal from '@/components/spyMissionsModal';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { alertService } from '@/services';
+import { alertService, getUpdatedStatus } from '@/services';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
 import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid, Center, Space, Flex, Container } from '@mantine/core';
@@ -37,6 +37,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [composeModalOpen, setComposeModalOpen] = useState(false);
+  const [userStatus, setUserStatus] = useState('OFFLINE');
 
   // State to control the Spy Missions Modal
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
@@ -48,6 +49,9 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     }
   }, [user])
 
+  useEffect(() => {
+    setUserStatus(users.status);
+  }, [users]);
 
   useEffect(() => {
     fetch('/api/social/listAll?type=FRIEND&limit=5&playerId=' + profile.id)
@@ -57,9 +61,11 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
         setLoading(false);
       });
   }, [profile.id]);
+
   const toggleModal = () => {
     setIsOpen(!isOpen);
   };
+
   useEffect(() => {
     if (profile.id !== users.id) setUser(new UserModel(users, true));
     if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
@@ -228,7 +234,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 </div>
               ) : (
                 <div className="alert alert-error">
-                  <h6>Offline</h6>
+                  <h6>{userStatus === 'ACTIVE' ? 'OFFLINE' : userStatus}</h6>
                 </div>
               )}
             </div>
@@ -240,11 +246,12 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
           </SimpleGrid>
         </div>
         <div className="col-span-1">
-          {hideSidebar || isPlayer ? (
+          {hideSidebar || isPlayer || userStatus !== 'ACTIVE' ? (
             <div className="list-group mb-4">
               <Link
                 href={`/recruit/${profile?.recruitingLink}`}
                 className="list-group-item list-group-item-action"
+                style={{ display: userStatus !== 'ACTIVE' ? 'none' : 'block' }}
               >
                 Recruit this Player
               </Link>
@@ -411,6 +418,7 @@ export const getServerSideProps = async ({ query }) => {
     last_active: user.last_active.toISOString(),
     created_at: user.created_at.toISOString(),
     updated_at: user.updated_at.toISOString(),
+    status: await getUpdatedStatus(user.id),
   };
 
   return { props: { users: userData } };
