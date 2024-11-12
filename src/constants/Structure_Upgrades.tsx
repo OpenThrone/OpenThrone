@@ -84,7 +84,7 @@ export const EconomyUpgrades = [
   },
 ];
 
-export const OffenseiveUpgrades: OffensiveUpgradeType[] = [
+export const OffensiveUpgrades: OffensiveUpgradeType[] = [
   {
     name: 'Dagger Training',
     fortLevelRequirement: 1, // Manor
