@@ -9,20 +9,18 @@ import { SpyUserModel } from "@/models/SpyUser";
 export function computeSpyAmpFactor(targetPop: number): number {
   let ampFactor = 0.4;
 
-  const breakpoints = [
-    { limit: 10, factor: 1.6 },
-    { limit: 9, factor: 1.5 },
-    { limit: 7, factor: 1.35 },
-    { limit: 5, factor: 1.2 },
-    { limit: 3, factor: 0.95 },
-    { limit: 1, factor: 0.75 },
-  ];
-
-  for (const bp of breakpoints) {
-    if (targetPop <= bp.limit) {
-      ampFactor *= bp.factor;
-      break;
-    }
+  if (targetPop <= 1) {
+    ampFactor *= 0.75;
+  } else if (targetPop <= 3) {
+    ampFactor *= 0.95;
+  } else if (targetPop <= 5) {
+    ampFactor *= 1.2;
+  } else if (targetPop <= 7) {
+    ampFactor *= 1.35;
+  } else if (targetPop <= 9) {
+    ampFactor *= 1.5;
+  } else if (targetPop <= 10) {
+    ampFactor *= 1.6;
   }
 
   return ampFactor;
