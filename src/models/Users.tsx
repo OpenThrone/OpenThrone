@@ -580,26 +580,33 @@ class UserModel {
 
     totalStat += this.calculateUnitStats(sortedUnits, unitCoverage);
     totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
+
     // Calculate bonuses from upgrades
     sortedUnits.forEach((unit, index) => {
       const applicableUpgrades = this.getApplicableUpgrades(unit, type);
 
       applicableUpgrades.forEach(upgrade => {
-        const userUpgrade = this.getUserUpgrade(upgrade, type);
+        // Clone userUpgrade for this calculation to avoid side effects
+        const userUpgrade = { ...this.getUserUpgrade(upgrade, type) };
+
         if (userUpgrade && userUpgrade.quantity > 0) {
           const { totalBonusForUnits, unitsCovered } = this.calculateUpgradeBonus(upgrade, unit, userUpgrade, unitCoverage, index);
           totalStat += totalBonusForUnits;
 
-          // Update the quantity of the upgrade and track coverage
-          userUpgrade.quantity -= Math.ceil(unitsCovered / upgrade.unitsCovered);
+          // Use a local variable instead of modifying userUpgrade.quantity directly
+          const remainingQuantity = userUpgrade.quantity - Math.ceil(unitsCovered / upgrade.unitsCovered);
+
+          // Update unit coverage without modifying external state
           unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
         }
       });
     });
+
     totalStat = this.applyBonuses(type, totalStat);
 
     return Math.ceil(totalStat);
   }
+
 
   /**
    * Sorts and filters items based on type.
