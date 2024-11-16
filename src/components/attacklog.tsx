@@ -17,7 +17,7 @@ interface Loss {
 
 interface Stats {
   pillagedGold: number;
-  xpEarned: {defender: number, attacker: number} | number;
+  xpEarned: {defender: number, attacker: number};
   turns?: number;
   attacker_losses?: Loss;
   defender_losses?: Loss;
@@ -30,8 +30,8 @@ interface Log {
   winner: string;
   attacker_id: string;
   defender_id: string;
-  attackerPlayer?: { display_name: string };
-  defenderPlayer?: { display_name: string };
+  attackerPlayer?: { display_name: string, id: number };
+  defenderPlayer?: { display_name: string, id: number };
   timestamp: string;
   stats: Stats;
   type: string;
@@ -101,7 +101,7 @@ const LossesList: React.FC<LossesListProps> = ({ losses }) => {
   );
 };
 
-const StatsList: React.FC<StatsListProps> = ({ id, stats, type, subType, collapsed }) => (
+const StatsList: React.FC<StatsListProps> = ({ stats, type, subType, collapsed }) => (
   <>
   { subType === 'attack' && 
       (
@@ -112,7 +112,7 @@ const StatsList: React.FC<StatsListProps> = ({ id, stats, type, subType, collaps
             justify='center'
           >
             <Chip><i className="ra ra-gem ra-fw" /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}</Chip>
-            <Chip>XP: {typeof stats.xpEarned === 'object' ? stats.xpEarned.attacker : stats.xpEarned}</Chip>
+            <Chip>XP: {(type === 'defense' ? stats.xpEarned.defender : stats.xpEarned.attacker) }</Chip>
           </Group>
         ) : (
             <Stack
@@ -121,7 +121,7 @@ const StatsList: React.FC<StatsListProps> = ({ id, stats, type, subType, collaps
               gap="xs"
             >
             <Chip><i className="ra ra-gem ra-fw" /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}</Chip>
-            <Chip>XP: {typeof stats.xpEarned === 'object' ? stats.xpEarned.attacker : stats.xpEarned}</Chip>
+              <Chip>XP: {(type === 'defense' ? stats.xpEarned.defender : stats.xpEarned.attacker)}</Chip>
             <Chip>Turns: {stats.turns}</Chip>
           </Stack>
         )
@@ -154,8 +154,8 @@ const PlayerOutcome: React.FC<PlayerOutcomeProps> = ({ log, type, collapsed }) =
       </td>
       <td className="border-b px-4 py-2">
         {type === 'defense'
-          ? <Link href={`/userprofile/${log.attackerPlayer?.id}`} className='text-white'>{log.attackerPlayer?.display_name}</Link> ?? 'Unknown'
-          : <Link href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</Link> ?? 'Unknown'}
+          ? <Link href={`/userprofile/${log.attackerPlayer?.id}`} className='text-white'>{log.attackerPlayer?.display_name}</Link>
+          : <Link href={`/userprofile/${log.defenderPlayer?.id}`} className='text-white'>{log.defenderPlayer?.display_name}</Link>}
         <br />
         {collapsed && (
           <>
