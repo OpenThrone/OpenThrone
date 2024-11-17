@@ -231,3 +231,20 @@ export type IUserSession  ={
   race: PlayerRace;
   colorScheme: string;
 }
+
+export interface Log {
+  id: string;
+  winner: string;
+  attacker_id: string;
+  defender_id: string;
+  attackerPlayer?: { display_name: string, id: number };
+  defenderPlayer?: { display_name: string, id: number };
+  timestamp: string;
+  stats: Stats;
+  type: string;
+}
+
+export interface Loss {
+  total: number;
+  units: BattleUnits[];
+}
