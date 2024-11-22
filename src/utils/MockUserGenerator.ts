@@ -16,7 +16,7 @@ export default class MockUserGenerator {
       race: 'HUMAN',
       class: 'FIGHTER',
       units: [
-        { type: 'CITIZEN', level: 1, quantity: 50 },
+        { type: 'CITIZEN', level: 1, quantity: 0 },
         { type: 'WORKER', level: 1, quantity: 0 },
         { type: 'OFFENSE', level: 1, quantity: 0 },
         { type: 'DEFENSE', level: 1, quantity: 0 },
@@ -36,10 +36,6 @@ export default class MockUserGenerator {
       ],
       house_level: 0,
       economy_level: 0,
-      killing_str: 1,
-      defense_str: 1,
-      spying_str: 1,
-      sentry_str: 1,
       offense: 0,
       defense: 0,
       spy: 0,
@@ -196,6 +192,64 @@ export default class MockUserGenerator {
       }
     });
     return this;
+  }
+
+  setOffense(offense: number): this {
+    this.user.offense = offense;
+    return this;
+  }
+
+  setDefense(defense: number): this {
+    this.user.defense = defense;
+    return this;
+  }
+
+  setSpy(spy: number): this {
+    this.user.spy = spy;
+    return this;
+  }
+
+  setSentry(sentry: number): this {
+    this.user.sentry = sentry;
+    return this;
+  }
+
+  setFortLevel(level: number): this {
+    this.user.fort_level = level;
+    return this;
+  }
+
+  setFortHitpoints(hitpoints: number): this {
+    this.user.fort_hitpoints = hitpoints;
+    return this;
+  }
+
+  setStructureUpgrade(type: string, level: number): this {
+    const existingUpgrade = this.user.structure_upgrades.find(
+      (upgrade) => upgrade.type === type
+    );
+    if (existingUpgrade) {
+      existingUpgrade.level = level; // Update the level of the existing upgrade
+    } else {
+      this.user.structure_upgrades.push({ type, level }); // Add a new upgrade if it doesn't exist
+    }
+    return this;
+  }
+
+  setSpyUpgrade(level: number): this {
+    return this.setStructureUpgrade('SPY', level);
+  }
+
+  setOffenseUpgrade(level: number): this {
+    return this.setStructureUpgrade('OFFENSE', level);
+  }
+
+  setSentryUpgrade(level: number): this {
+    return this.setStructureUpgrade('SENTRY', level);
+  }
+
+  setArmoryUpgrade(level: number): this {
+    return this.setStructureUpgrade('ARMORY', level);
   }
 
 }
