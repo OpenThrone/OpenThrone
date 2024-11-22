@@ -39,8 +39,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(400).json({ error: 'Invalid conversion amount' });
     }
 
-    const [fromUsage, fromType] = fromItem.split('_');
-    const [toUsage, toType] = toItem.split('_');
+    const [fromUsage, fromType] = fromItem.split(/_(.+)/);
+    const [toUsage, toType] = toItem.split(/_(.+)/);
 
     const toItemType = ItemTypes.find((item) => item.id === toType && item.usage === toUsage );
     const fromItemType = ItemTypes.find((item) => item.id === fromType && item.usage === fromUsage );
