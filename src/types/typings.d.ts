@@ -188,6 +188,8 @@ export type UnitTotalsType = {
   offense: number;
   defense: number;
   spies: number;
+  assassins: number;
+  infiltrators: number;
   sentries: number;
 };
 /**
@@ -282,10 +284,6 @@ export interface User {
   items: PlayerItem[];
   house_level: number;
   economy_level: number;
-  killing_str: number;
-  defense_str: number;
-  spying_str: number;
-  sentry_str: number;
   offense: number;
   defense: number;
   spy: number;
@@ -302,3 +300,13 @@ export interface User {
   created_at: Date;
   updated_at: Date;
 }
+
+type SpyCasualtiesParams = {
+  attackerKS: number;
+  defenderDS: number;
+  defenderKS: number;
+  attackerDS: number;
+  attackerPop: number;
+  defenderPop: number;
+  maxMultiplier?: number; // Optional, defaults to 3
+};

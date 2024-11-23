@@ -32,6 +32,7 @@ import {
   levelXPArray,
 } from '../constants';
 import { getLevelFromXP } from '@/utils/utilities';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 class UserModel {
   public id: number;
@@ -110,17 +111,10 @@ class UserModel {
 
   public sentry: number;
 
-  public killing_str: number;
-
-  public defense_str: number;
-
-  public spying_str: number;
-
-  public sentry_str: number;
-
   public permissions: any[];
 
-  constructor(userData?: any, filtered: boolean = true) {
+  constructor(userData?: any, filtered: boolean = true, checkStats: boolean = true) {
+    userData = JSON.parse(JSON.stringify(stringifyObj(userData)));
     this.id = 0;
     this.displayName = '';
     this.email = '';
@@ -174,8 +168,8 @@ class UserModel {
       this.race = userData.race;
       this.class = userData.class;
       this.experience = userData.experience;
-      this.gold = userData.gold;
-      this.goldInBank = userData.gold_in_bank;
+      this.gold = BigInt(userData.gold);
+      this.goldInBank = BigInt(userData.gold_in_bank);
       this.battle_upgrades = userData.battle_upgrades;
       this.fortLevel = userData.fort_level;
       this.fortHitpoints = userData?.fort_hitpoints || userData?.fortHitpoints || 0;
@@ -196,10 +190,6 @@ class UserModel {
       this.stats = userData.stats;
       this.structure_upgrades = userData.structure_upgrades;
       this.locale = userData.locale;
-      this.killing_str = userData.killing_str;
-      this.defense_str = userData.defense_str;
-      this.spying_str = userData.spying_str;
-      this.sentry_str = userData.sentry_str;
       this.offense = userData.offense;
       this.defense = userData.defense;
       this.spy = userData.spy;
@@ -212,6 +202,15 @@ class UserModel {
 
       this.permissions = userData.permissions;
     }
+    if (checkStats)
+      this.updateStats()
+  }
+
+  updateStats() {
+    this.offense = this.getArmyStat('OFFENSE');
+    this.defense = this.getArmyStat('DEFENSE');
+    this.spy = this.getArmyStat('SPY');
+    this.sentry = this.getArmyStat('SENTRY');
   }
 
   get attacksWon(): number {
@@ -776,6 +775,14 @@ class UserModel {
       .filter((unitgroup) => unitgroup.type === 'SPY')
       .map((unit) => unit.quantity)
       .reduce((acc, quant) => acc + quant, 0);
+    const assassins = units
+      .filter((unitgroup) => unitgroup.type === 'SPY' && unitgroup.level === 3)
+      .map((unit) => unit.quantity)
+      .reduce((acc, quant) => acc + quant, 0);
+    const infiltrators = units
+      .filter((unitgroup) => unitgroup.type === 'SPY' && unitgroup.level === 2)
+      .map((unit) => unit.quantity)
+      .reduce((acc, quant) => acc + quant, 0);
     const sentries = units
       .filter((unitgroup) => unitgroup.type === 'SENTRY')
       .map((unit) => unit.quantity)
@@ -786,6 +793,8 @@ class UserModel {
       offense,
       defense,
       spies,
+      assassins,
+      infiltrators,
       sentries,
     };
   }

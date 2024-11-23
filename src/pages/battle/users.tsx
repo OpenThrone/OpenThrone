@@ -210,7 +210,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
             </Table.Thead>
             <Table.Tbody>
               {players.map((nplayer, index) => {
-                const player = new UserModel(nplayer);
+                const player = new UserModel(nplayer, true, false);
                 if (player.id === user?.id) player.is_player = true;
                 return (
                   <Table.Tr
@@ -341,7 +341,6 @@ export const getServerSideProps = async () => {
     });
 
     sanitizedUsers.sort((a, b) => a.rank - b.rank);
-    console.log(sanitizedUsers.length)
     return { props: { allUsers: sanitizedUsers } };
   } catch (error) {
     console.error('Error fetching user data:', error);
