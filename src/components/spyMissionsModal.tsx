@@ -113,9 +113,17 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
 
   useEffect(() => {
     if (user) {
-      setIsInfiltrationDisabled(!user.spyMissions['infil'].enabled);
-      setIsAssassinateDisabled(!user.spyMissions['assass'].enabled);
-      setIsIntelDisabled(!user.spyMissions['intel'].enabled);
+      setIsInfiltrationDisabled(
+        !(user.spyMissions['infil'].enabled && process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS === 'true')
+      );
+
+      setIsAssassinateDisabled(
+        !(user.spyMissions['assass'].enabled && process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true')
+      );
+
+      setIsIntelDisabled(
+        !(user.spyMissions['intel'].enabled && process.env.NEXT_PUBLIC_ENABLE_INTEL === 'true')
+      );
       setUnits({
         SPY:
           user.units.find((unit) => unit.type === 'SPY' && unit.level === 1)
@@ -275,7 +283,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <small>Infiltrate and Destroy the Fort</small>
             {isInfiltrationDisabled && (
               <b>
-                <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['infil'].requiredLevel)}</small>
+                {process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS === 'true' ?
+                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['infil'].requiredLevel)}</small>
+                  :
+                  <small className="text-slate-300"> This mission is disabled by the Administrators</small>
+                }
               </b>
             )}
           </CustomButton>
@@ -287,7 +299,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <small>Attempt to assassinate player&apos;s Defenders</small>
             {isAssassinateDisabled && (
               <b>
-                <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['assass'].requiredLevel)}</small>
+                {process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true' ?
+                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['assass'].requiredLevel)}</small>
+                  :
+                  <small className="text-slate-300"> This mission is disabled by the Administrators</small>
+                }
               </b>
             )}
           </CustomButton>
