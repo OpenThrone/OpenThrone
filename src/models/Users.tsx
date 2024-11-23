@@ -168,8 +168,8 @@ class UserModel {
       this.race = userData.race;
       this.class = userData.class;
       this.experience = userData.experience;
-      this.gold = BigInt(userData.gold);
-      this.goldInBank = BigInt(userData.gold_in_bank);
+      this.gold = BigInt(userData.gold | 0);
+      this.goldInBank = BigInt(userData.gold_in_bank | 0);
       this.battle_upgrades = userData.battle_upgrades;
       this.fortLevel = userData.fort_level;
       this.fortHitpoints = userData?.fort_hitpoints || userData?.fortHitpoints || 0;
