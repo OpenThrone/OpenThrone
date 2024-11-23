@@ -1,8 +1,9 @@
+// pages/api/armory/convert.ts
+import type { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
 import { ItemTypes } from "@/constants";
 import { withAuth } from "@/middleware/auth";
 import UserModel from "@/models/Users";
-import { NextApiRequest, NextApiResponse } from "next";
 import { updateUserAndBankHistory } from "@/services";
 import { calculateUserStats } from "@/utils/utilities";
 
@@ -13,7 +14,6 @@ interface ConvertRequest {
   conversionAmount: string; // Amount in string format to handle locale-specific formats
   locale?: string; // Optional locale parameter
 }
-
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
@@ -26,6 +26,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(400).json({ error: 'Invalid input data' });
   }
 
+  if (userId !== req.session.user.id) return res.status(401).json({ error: 'Unauthorized' });
+
   try {
     const user = await prisma.users.findUnique({ where: { id: Number(userId) } });
     if (!user) {
@@ -33,7 +35,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const amount = Number(conversionAmount);
-    const uModel = new UserModel(user );
+    const uModel = new UserModel(user);
+
     // Validate the amount
     if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) {
       return res.status(400).json({ error: 'Invalid conversion amount' });
@@ -42,8 +45,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const [fromUsage, fromType] = fromItem.split('_');
     const [toUsage, toType] = toItem.split('_');
 
-    const toItemType = ItemTypes.find((item) => item.id === toType && item.usage === toUsage );
-    const fromItemType = ItemTypes.find((item) => item.id === fromType && item.usage === fromUsage );
+    const toItemType = ItemTypes.find((item) => item.id === toType && item.usage === toUsage);
+    const fromItemType = ItemTypes.find((item) => item.id === fromType && item.usage === fromUsage);
 
     if (!toItemType || !fromItemType) {
       return res.status(400).json({ error: 'Invalid item types' });
@@ -56,33 +59,67 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     let toItemData = user.items.find(
       (item) => item.type === toItemType.type && item.usage === toUsage && item.level === toItemType.level
     );
+    if (!toItemType || !fromItemType) {
+      return res.status(400).json({ error: 'Invalid item types or usages' });
+    }
 
+    const isUpgrade = fromItemData.level < toItemData.level ? true : false;
+      
     // If the target item does not exist, create it
     if (!toItemData) {
       toItemData = {
         type: toItemType.type,
-        usage: toItemType.usage,
+        usage: toUsage,
         level: toItemType.level,
         quantity: 0, // Initialize with 0 quantity
       };
-      user.items.push(toItemData); // Add it to user's items
+      user.items.push(toItemData as any); // Add it to user's items
     }
 
     if (!fromItemData || fromItemData.quantity < amount) {
       return res.status(400).json({ error: 'Not enough items to convert' });
     }
-    const cost = BigInt(amount) * (BigInt(toItemType.cost - ((uModel?.priceBonus / 100) * toItemType.cost)) - BigInt(fromItemType.cost - ((uModel?.priceBonus / 100) * fromItemType.cost))) * (toItemType.level > fromItemType.level ? BigInt(1) : BigInt(75) / BigInt(100));
 
-    if (user.gold < cost) {
+    // Calculate the base cost difference
+    const baseCostDifference =
+      (toItemType.cost - ((uModel?.priceBonus || 0) / 100) * toItemType.cost) -
+      (fromItemType.cost - ((uModel?.priceBonus || 0) / 100) * fromItemType.cost);
+
+    // Apply multiplier based on conversion direction
+    const multiplier = isUpgrade ? 1 : 0.75;
+
+    // Calculate the final cost
+    let cost = Math.ceil(amount * baseCostDifference * multiplier);
+
+    // For downgrades, cost represents a refund, so we make it positive
+    if (!isUpgrade) {
+      cost = Math.ceil(amount * baseCostDifference * multiplier);
+      // Ensure the refund is a positive value
+      if (cost < 0) cost = -cost;
+    }
+
+    // Check if user has enough gold for upgrade or handle refund for downgrade
+    if (isUpgrade && user.gold < BigInt(cost)) {
       return res.status(400).json({ error: 'Not enough gold' });
     }
 
-    // Deduct items and gold, add converted items
-    fromItemData.quantity = parseInt(fromItemData.quantity) - amount;
-
-    toItemData.quantity = parseInt(toItemData.quantity) + amount;
-
-    user.gold -= BigInt(cost);
+    // Deduct items and add/remove gold based on conversion direction
+    fromItemData.quantity -= amount;
+    if (toItemData) {
+      toItemData.quantity += amount;
+    } else {
+      user.items.push({
+        type: toItemType.type,
+        usage: toUsage,
+        level: toItemType.level,
+        quantity: amount,
+      } as any);
+    }
+    if (isUpgrade) {
+      user.gold = BigInt(user.gold) - BigInt(cost);
+    } else {
+      user.gold = BigInt(user.gold) + BigInt(cost);
+    }
 
     const conversion = await prisma.$transaction(async (tx) => {
       const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
@@ -91,7 +128,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       await updateUserAndBankHistory(
         tx,
         user.id,
-        BigInt(user.gold),
+        user.gold,
         JSON.parse(JSON.stringify(user.items)),
         killingStrength,
         defenseStrength,
@@ -102,9 +139,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         {
           gold_amount: BigInt(cost),
           from_user_id: Number(userId),
-          from_user_account_type: 'HAND',
+          from_user_account_type: isUpgrade ? 'HAND' : 'BANK',
           to_user_id: Number(userId),
-          to_user_account_type: 'BANK',
+          to_user_account_type: isUpgrade ? 'BANK' : 'HAND',
           date_time: new Date().toISOString(),
           history_type: 'SALE',
           stats: {
@@ -116,7 +153,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         },
         'items'
       );
-    })
+    });
 
     return res.status(200).json({
       message: 'Conversion successful',
