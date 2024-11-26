@@ -2,102 +2,77 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
 import prisma from '@/lib/prisma';
+import { getUpdatedStatus } from '@/services/user.service';
 
 const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
-
   try {
     const session = req.session;
-    // Fetch the user based on the session's user ID
+    const userId = typeof session.user.id === 'string' ? parseInt(session.user.id) : session.user.id;
+
     const user = await prisma.users.findUnique({
-      where: {
-        id: typeof(session.user.id) === 'string' ? parseInt(session.user.id) : session.user.id,
-      },
-      include: {
-        permissions: true,
-      },
+      where: { id: userId },
+      include: { permissions: true },
     });
 
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    const updateLastActive = async (id: number) => {
-      console.log('setting last active for user: ' + id, new Date());
-      return prisma.users.update({
-        where: { id },
-        data: { last_active: new Date() },
+    // Update last active if over 10 minutes
+    const now = new Date();
+    const timeSinceLastActive = now.getTime() - new Date(user.last_active).getTime();
+    if (timeSinceLastActive > 10 * 60 * 1000) {
+      console.log('Updating last active for user:', userId);
+      await prisma.users.update({
+        where: { id: userId },
+        data: { last_active: now },
       });
+    }
+
+    // Get and update user's current status
+    const currentStatus = await getUpdatedStatus(user.id);
+
+    // If user's status is not ACTIVE, handle accordingly
+    if (['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT', 'VACATION'].includes(currentStatus)) {
+      return res.status(403).json({ error: `Account is ${currentStatus.toLowerCase()}` });
+    }
+
+    // Check if the user has been attacked since last active
+    const lastActiveTimestamp = new Date(user.last_active);
+    const attacks = await prisma.attack_log.findMany({
+      where: {
+        defender_id: user.id,
+        timestamp: { gte: lastActiveTimestamp },
+      },
+    });
+
+    // Attach attack status to user object
+    const userData = {
+      ...user,
+      beenAttacked: attacks.some(attack => attack.type === 'attack'),
+      detectedSpy: attacks.some(attack => attack.type !== 'attack' && attack.winner === user.id),
     };
-    if ((new Date() - new Date(user.last_active)) > 1000 * 60 * 10) {
-      await updateLastActive(user.id);
-      // Calculate the timestamp of user.last_active
-      const userLastActiveTimestamp = new Date(user.last_active);
-      // Check if there was an attack since user.last_active
-      const attacks = await prisma.attack_log.findMany({
-        where: {
-          defender_id: user.id,
-          timestamp: {
-            gte: userLastActiveTimestamp,
-          },
-        },
-      });
 
-      // Initialize the user's beenAttacked and detectedSpy properties
-      user.beenAttacked = false;
-      user.detectedSpy = false;
+    // Count won attacks, won defends, total attacks, and total defends
+    const [wonAttacks, wonDefends, totalAttacks, totalDefends] = await Promise.all([
+      prisma.attack_log.count({ where: { attacker_id: user.id, winner: user.id } }),
+      prisma.attack_log.count({ where: { defender_id: user.id, winner: user.id } }),
+      prisma.attack_log.count({ where: { attacker_id: user.id } }),
+      prisma.attack_log.count({ where: { defender_id: user.id } }),
+    ]);
 
-      if (attacks.some((attack) => {
-        if(attack.type === 'attack') {
-          return attack;
-        }
-      })) {
-        user.beenAttacked = true;
-      }
-      if (attacks.some((attack) => {
-        return attack.type !== 'attack' && attack.winner === user.id;
-      })) {
-        user.detectedSpy = true;
-      }
-    }
+    // Attach counts to userData object
+    userData.won_attacks = wonAttacks;
+    userData.won_defends = wonDefends;
+    userData.totalAttacks = totalAttacks;
+    userData.totalDefends = totalDefends;
 
-    // Count the number of won attacks
-    const wonAttacks = await prisma.attack_log.count({
-      where: {
-        attacker_id: user.id,
-        winner: user.id,
-      },
-    });
+    // Attach current status to userData
+    userData.currentStatus = currentStatus;
 
-    // Count the number of won defends
-    const wonDefends = await prisma.attack_log.count({
-      where: {
-        defender_id: user.id,
-        winner: user.id,
-      },
-    });
-
-    const totalAttacks = await prisma.attack_log.count({
-      where: {
-        attacker_id: user.id,
-      },
-    });
-
-    const totalDefends = await prisma.attack_log.count({
-      where: {
-        defender_id: user.id,
-      },
-    });
-
-
-    // Add the counts to the user object
-    user.won_attacks = wonAttacks;
-    user.won_defends = wonDefends;
-    user.totalAttacks = totalAttacks;
-    user.totalDefends = totalDefends;
-    res.status(200).json(stringifyObj(user));
+    res.status(200).json(stringifyObj(userData));
   } catch (error) {
-    console.log(error);
+    console.error('Error in getUser:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

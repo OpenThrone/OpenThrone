@@ -110,9 +110,9 @@ const Repair = (props) => {
 
       <SimpleGrid cols={{ base: 1, md: 2 }}>
       <Paper withBorder radius="md" p="md" className="w-full mb-4"> 
-          <Group position="apart" align="flex-start">
+          <Group align="flex-start">
             <Stack spacing="xs">
-              <Group position="apart" align="center" spacing="xs">
+              <Group align="center" spacing="xs">
                 <Text fw={700} size="xl" className='font-medieval'>
                   {fortification?.name}
                 </Text>

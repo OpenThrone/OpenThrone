@@ -6,6 +6,7 @@ import AssassinateResult from '@/components/AssassinateResult';
 import InfiltrationResult from '@/components/InfiltrationResult';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { InferGetServerSidePropsType } from "next";
+import { serializeDates } from '@/utils/utilities';
 
 const ResultsPage = ({ battle, lastGenerated, viewerID }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   if (!battle) {
@@ -124,7 +125,7 @@ export const getServerSideProps = async (context) => {
 
   return {
     props: {
-      battle,
+      battle: serializeDates(battle),
       lastGenerated: new Date().toISOString(),
       viewerID: session.user.id,
     },

@@ -51,7 +51,6 @@ const ItemSection: React.FC<UnitSectionProps> = ({
   }, [currentItems, user]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('handleInputChange', event.target.value);
     let { value } = event.target;
     if (value === '') {
       value = '0';
@@ -170,7 +169,6 @@ const ItemSection: React.FC<UnitSectionProps> = ({
       }
     } catch (error) {
       alertService.error('Failed to equip items. Please try again.');
-      console.log(error);
     }
   };
 

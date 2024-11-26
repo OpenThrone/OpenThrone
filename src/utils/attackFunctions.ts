@@ -60,7 +60,7 @@ export function calculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEFENS
   return Math.ceil(strength);
 }
 
-export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 'SENTRY', spiesSent: number): {spyStrength: number, sentryStrength: number} {
+export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 'SENTRY', spiesSent: number, spyID?: number): {spyStrength: number, sentryStrength: number} {
   let strength = 0;
   let KS = 0;
   let DS = 0;
@@ -68,7 +68,7 @@ export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 
   const unitMultiplier = 1 + parseInt(((unitType === 'SPY' ? user.spyBonus.toString() : user.sentryBonus.toString())), 10) / 100;
   user.units.filter((u) => u.type === unitType).forEach((unit) => {
     const unitInfo = UnitTypes.find(
-      (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
+      (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type) && (unitType.level === spyID || !spyID)
     );
     if(unitInfo) {
       KS += (unitInfo.killingStrength || 0) * Math.min(unit.quantity, spiesSent);
@@ -156,20 +156,18 @@ export function newCalculateStrength(user: UserModel, unitType: 'OFFENSE' | 'DEF
 export function computeAmpFactor(targetPop: number): number {
   let ampFactor = 0.4;
 
-  const breakpoints = [
-    { limit: 1000, factor: 1.6 },
-    { limit: 5000, factor: 1.5 },
-    { limit: 10000, factor: 1.35 },
-    { limit: 50000, factor: 1.2 },
-    { limit: 100000, factor: 0.95 },
-    { limit: 150000, factor: 0.75 },
-  ];
-
-  for (const bp of breakpoints) {
-    if (targetPop <= bp.limit) {
-      ampFactor *= bp.factor;
-      break;
-    }
+  if (targetPop <= 1000) {
+    ampFactor *= 1.6;
+  } else if (targetPop <= 5000) {
+    ampFactor *= 1.5;
+  } else if (targetPop <= 10000) {
+    ampFactor *= 1.35;
+  } else if (targetPop <= 50000) {
+    ampFactor *= 1.2;
+  } else if (targetPop <= 100000) {
+    ampFactor *= 0.95;
+  } else if (targetPop <= 150000) {
+    ampFactor *= 0.75;
   }
 
   return ampFactor;

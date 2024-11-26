@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Fortifications, OffenseiveUpgrades } from '@/constants';
+import { Fortifications, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
@@ -26,7 +26,7 @@ const OffenseUpgrade: React.FC<BattleUpgradeProps> = ({
         </tr>
       </thead>
       <tbody className="">
-        {Object.values(OffenseiveUpgrades)
+        {Object.values(OffensiveUpgrades)
           .filter((item) => item.level <= fortLevel + 2)
           .map((item, index) => {
             return (

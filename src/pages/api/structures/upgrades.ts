@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import UserModel from '@/models/Users';
-import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, OffenseiveUpgrades, SpyUpgrades } from '@/constants';
+import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, OffensiveUpgrades, SpyUpgrades } from '@/constants';
 import { withAuth } from "@/middleware/auth";
 
 const upgrades = async(req, res) => {
@@ -119,23 +119,23 @@ const upgrades = async(req, res) => {
         });
         break;
       case 'offense':
-        if (userMod.offensiveLevel < OffenseiveUpgrades[index].fortLevel) {
+        if (userMod.offensiveLevel < OffensiveUpgrades[index].fortLevel) {
           return res.status(400).json({ error: 'Invalid Offensive Upgrade Level to purchase upgrade' });
         }
-        if (userMod.gold < OffenseiveUpgrades[index].cost) {
+        if (userMod.gold < OffensiveUpgrades[index].cost) {
           return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
         }
         
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - BigInt(OffenseiveUpgrades[index].cost),
+            gold: userMod.gold - BigInt(OffensiveUpgrades[index].cost),
             structure_upgrades: structure_upgrades('OFFENSE'),
           },
         });
         await prisma.bank_history.create({
           data: {
-            gold_amount: BigInt(OffenseiveUpgrades[index].cost),
+            gold_amount: BigInt(OffensiveUpgrades[index].cost),
             from_user_id: session.user.id,
             from_user_account_type: 'HAND',
             to_user_id: 0,
@@ -144,7 +144,7 @@ const upgrades = async(req, res) => {
             history_type: 'SALE',
             stats: {
               action: 'offense_upgrade',
-              new_structure: OffenseiveUpgrades[index]
+              new_structure: OffensiveUpgrades[index]
             }
           },
         });

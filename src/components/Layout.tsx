@@ -45,7 +45,6 @@ const Layout = (props: IMainProps) => {
 
   useEffect(() => {
     if (isDevelopment) {
-      console.log('fetching git info');
       fetch('/api/general/git-info')
         .then(response => {
           if (!response.ok) {
@@ -66,7 +65,6 @@ const Layout = (props: IMainProps) => {
 
   useEffect(() => {
     if (!isDevelopment) {
-      console.log('fetching online player info');
       fetch('/api/general/getOnlinePlayers')
         .then(response => {
           if (!response.ok) {
@@ -94,9 +92,9 @@ const Layout = (props: IMainProps) => {
         className={`w-full grow ${
           authorized ? layoutCont.raceClasses.bgClass : 'bg-elf-header-bgcolor'
           } px-1 text-yellow-400 antialiased`}>
-        <div className="mx-auto max-w-screen-2xl">
+        <div className="mx-auto">
           <header
-            className={`mx-auto max-w-screen-2xl ${layoutCont.raceClasses.borderBottomClass}`}
+            className={`mx-auto ${layoutCont.raceClasses.borderBottomClass}`}
           >
             <div
               style={{ backgroundImage: `url('${getAssetPath('Elf-wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}}
