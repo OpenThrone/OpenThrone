@@ -29,7 +29,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const [isAPlayer, setIsAPlayer] = useState(false);
 
   const router = useRouter();
-  const [profile, setUser] = useState<UserModel>(() => new UserModel(users, true));
+  const [profile, setUser] = useState<UserModel>(() => new UserModel(users, true, false));
   const [canAttack, setCanAttack] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
@@ -38,7 +38,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const [loading, setLoading] = useState(true);
   const [composeModalOpen, setComposeModalOpen] = useState(false);
   const [userStatus, setUserStatus] = useState('OFFLINE');
-
   // State to control the Spy Missions Modal
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
 
@@ -67,7 +66,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   };
 
   useEffect(() => {
-    if (profile.id !== users.id) setUser(new UserModel(users, true));
+    if (profile.id !== users.id) setUser(new UserModel(users, true, false));
     if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
     if (profile) {
@@ -89,6 +88,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   if (!profile) return <p>User not found</p>;
   if (lastActive === 'Never logged in') return <p>User is currently inactive</p>;
 
+  console.log('userprofile 92')
   const handleAddFriend = async () => {
     const res = await fetch('/api/social/add', {
       method: 'POST',
@@ -176,7 +176,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
 
   const isFriend = friends.some(friend => friend.friend.id === profile.id);
   const friendsList = friends.length > 0 ? friends.map(friend => {
-    const player = new UserModel(friend.friend);
+    const player = new UserModel(friend.friend, true, false);
     return (
       <FriendCard key={player.id} player={player} />
     );

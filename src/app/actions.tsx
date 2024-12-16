@@ -143,8 +143,8 @@ export async function attackHandler(
   }
 
   const startOfAttack = {
-    Attacker: JSON.parse(JSON.stringify(stringifyObj(AttackPlayer))),
-    Defender: JSON.parse(JSON.stringify(stringifyObj(DefensePlayer))),
+    Attacker: JSON.parse(JSON.stringify(AttackPlayer)),
+    Defender: JSON.parse(JSON.stringify(DefensePlayer)),
   };
 
   const battleResults = simulateBattle(

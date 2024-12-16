@@ -66,7 +66,7 @@ const getLevelFromXP = (xp: number): number => {
  * @param {string} [race] The race associated with the asset, if applicable
  * @returns {string} The path for the specified asset, fit for use in HTML tags
  */
-const getAssetPath = (name, size, race) => {
+const getAssetPath = (name, size?, race?) => {
   let path = '';
   if (process.env.NEXT_PUBLIC_USE_AWS) {
     path += process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + '/images';
@@ -172,6 +172,13 @@ export const idleThresholdDate = (days = 60) => { //60days is default
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 }
 
-
+/**
+ * Ensures the result is at least 0.
+ * @param {number} value - The input number to check.
+ * @returns {number} - The input value if it's 0 or greater, otherwise 0.
+ */
+export const atLeastZero = (value: number):number => {
+  return Math.max(0, value);
+}
 
 export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats, serializeDates };

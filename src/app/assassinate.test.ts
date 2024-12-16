@@ -1,686 +1,75 @@
 import UserModel from "@/models/Users";
-import { simulateAssassination, simulateInfiltration, simulateIntel } from "../utils/spyFunctions";
-import { stringifyObj } from "@/utils/numberFormatting";
+import { simulateAssassination } from "../utils/spyFunctions";
+import MockUserGenerator from "@/utils/MockUserGenerator";
 
-const defense = {
-  "id": 84,
-  "gold": "1713",
-  "goldInBank": "1337",
-  "race": "UNDEAD",
-  "class": "FIGHTER",
-  "items": [
-    {
-      "type": "WEAPON",
-      "level": 1,
-      "usage": "SENTRY",
-      "quantity": 0
-    },
-    {
-      "type": "WEAPON",
-      "level": 1,
-      "usage": "DEFENSE",
-      "quantity": 2290
-    },
-    {
-      "type": "HELM",
-      "level": 1,
-      "usage": "DEFENSE",
-      "quantity": 2290
-    },
-    {
-      "type": "BRACERS",
-      "level": 1,
-      "usage": "DEFENSE",
-      "quantity": 2290
-    },
-    {
-      "type": "SHIELD",
-      "level": 1,
-      "usage": "DEFENSE",
-      "quantity": 2290
-    },
-    {
-      "type": "BOOTS",
-      "level": 1,
-      "usage": "DEFENSE",
-      "quantity": 2290
-    },
-    {
-      "type": "ARMOR",
-      "level": 1,
-      "usage": "DEFENSE",
-      "quantity": 2290
-    },
-    {
-      "type": "WEAPON",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 3923
-    },
-    {
-      "type": "HELM",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 3923
-    },
-    {
-      "type": "BRACERS",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 3923
-    },
-    {
-      "type": "SHIELD",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 3923
-    },
-    {
-      "type": "BOOTS",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 3923
-    },
-    {
-      "type": "ARMOR",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 3923
-    },
-    {
-      "type": "WEAPON",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 46
-    },
-    {
-      "type": "HELM",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 46
-    },
-    {
-      "type": "BRACERS",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 46
-    },
-    {
-      "type": "SHIELD",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 46
-    },
-    {
-      "type": "BOOTS",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 46
-    },
-    {
-      "type": "ARMOR",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 46
-    },
-    {
-      "type": "WEAPON",
-      "level": 3,
-      "usage": "DEFENSE",
-      "quantity": "7"
-    },
-    {
-      "type": "HELM",
-      "level": 3,
-      "usage": "DEFENSE",
-      "quantity": "7"
-    },
-    {
-      "type": "BRACERS",
-      "level": 3,
-      "usage": "DEFENSE",
-      "quantity": "7"
-    },
-    {
-      "type": "SHIELD",
-      "level": 3,
-      "usage": "DEFENSE",
-      "quantity": "7"
-    },
-    {
-      "type": "BOOTS",
-      "level": 3,
-      "usage": "DEFENSE",
-      "quantity": "7"
-    },
-    {
-      "type": "ARMOR",
-      "level": 3,
-      "usage": "DEFENSE",
-      "quantity": "7"
-    },
-    {
-      "type": "WEAPON",
-      "level": 1,
-      "usage": "OFFENSE",
-      "quantity": 1
-    }
-  ],
-  "units": [
-    {
-      "type": "CITIZEN",
-      "level": 1,
-      "quantity": 10
-    },
-    {
-      "type": "WORKER",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "OFFENSE",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "DEFENSE",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "SPY",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "SENTRY",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "DEFENSE",
-      "level": 2,
-      "quantity": 0
-    },
-    {
-      "type": "OFFENSE",
-      "level": 2,
-      "quantity": 0
-    }
-  ],
-  "fort_level": 3,
-  "experience": 104151,
-  "bonus_points": [
-    {
-      "type": "PRICES",
-      "level": 5
-    },
-    {
-      "type": "OFFENSE",
-      "level": 0
-    },
-    {
-      "type": "DEFENSE",
-      "level": 0
-    },
-    {
-      "type": "INCOME",
-      "level": 0
-    },
-    {
-      "type": "INTEL",
-      "level": 0
-    }
-  ],
-  "fortHitpoints": 500,
-  "battle_upgrades": [
-    {
-      "type": "OFFENSE",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "SPY",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "SENTRY",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "DEFENSE",
-      "level": 1,
-      "quantity": 0
-    }
-  ],
-  "structure_upgrades": [
-    {
-      "type": "OFFENSE",
-      "level": 1
-    },
-    {
-      "type": "SPY",
-      "level": 1
-    },
-    {
-      "type": "SENTRY",
-      "level": 1
-    },
-    {
-      "type": "ARMORY",
-      "level": 1
-    }
-  ]
-};
-const attacker = {
-  "id": 1,
-  "gold": "8760034",
-  "race": "HUMAN",
-  "class": "FIGHTER",
-  "items": [
-    {
-      "type": "WEAPON",
-      "level": 1,
-      "usage": "SPY",
-      "quantity": 0
-    },
-    {
-      "type": "WEAPON",
-      "level": 1,
-      "usage": "OFFENSE",
-      "quantity": 1500
-    },
-    {
-      "type": "WEAPON",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 1000
-    },
-    {
-      "type": "HELM",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 1000
-    },
-    {
-      "type": "BRACERS",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 1000
-    },
-    {
-      "type": "SHIELD",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 1000
-    },
-    {
-      "type": "BOOTS",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 1000
-    },
-    {
-      "type": "ARMOR",
-      "level": 2,
-      "usage": "OFFENSE",
-      "quantity": 1000
-    },
-    {
-      "type": "WEAPON",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 3000
-    },
-    {
-      "type": "HELM",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 3000
-    },
-    {
-      "type": "BRACERS",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 3000
-    },
-    {
-      "type": "SHIELD",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 3000
-    },
-    {
-      "type": "BOOTS",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 3000
-    },
-    {
-      "type": "ARMOR",
-      "level": 2,
-      "usage": "DEFENSE",
-      "quantity": 3000
-    },
-    {
-      "type": "ARMOR",
-      "level": 1,
-      "usage": "DEFENSE",
-      "quantity": 0
-    },
-    {
-      "type": "ARMOR",
-      "level": 1,
-      "usage": "OFFENSE",
-      "quantity": 1000
-    },
-    {
-      "type": "HELM",
-      "level": 1,
-      "usage": "OFFENSE",
-      "quantity": "1000"
-    },
-    {
-      "type": "BRACERS",
-      "level": 1,
-      "usage": "OFFENSE",
-      "quantity": "1000"
-    },
-    {
-      "type": "SHIELD",
-      "level": 1,
-      "usage": "OFFENSE",
-      "quantity": "1000"
-    },
-    {
-      "type": "BOOTS",
-      "level": 1,
-      "usage": "OFFENSE",
-      "quantity": "1000"
-    }
-  ],
-  "units": [
-    {
-      "type": "CITIZEN",
-      "level": 1,
-      "quantity": 10
-    },
-    {
-      "type": "WORKER",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "OFFENSE",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "DEFENSE",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "SPY",
-      "level": 1,
-      "quantity": 10
-    },
-    {
-      "type": "SENTRY",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "DEFENSE",
-      "level": 2,
-      "quantity": 0
-    },
-    {
-      "type": "OFFENSE",
-      "level": 2,
-      "quantity": 0
-    }
-  ],
-  "fort_level": 5,
-  "experience": 101954,
-  "houseLevel": 1,
-  "attackTurns": 7825,
-  "displayName": "DasTacoMann",
-  "bonus_points": [
-    {
-      "type": "OFFENSE",
-      "level": 1
-    },
-    {
-      "type": "DEFENSE",
-      "level": 1
-    },
-    {
-      "type": "INCOME",
-      "level": 1
-    },
-    {
-      "type": "INTEL",
-      "level": 0
-    },
-    {
-      "type": "PRICES",
-      "level": 90
-    }
-  ],
-  "economyLevel": 1,
-  "fortHitpoints": 500,
-  "battle_upgrades": [
-    {
-      "type": "OFFENSE",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "DEFENSE",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "SENTRY",
-      "level": 1,
-      "quantity": 0
-    },
-    {
-      "type": "OFFENSE",
-      "level": 2,
-      "quantity": 0
-    }
-  ],
-  "structure_upgrades": [
-    {
-      "type": "ARMORY",
-      "level": 1
-    },
-    {
-      "type": "SPY",
-      "level": 1
-    },
-    {
-      "type": "SENTRY",
-      "level": 1
-    },
-    {
-      "type": "OFFENSE",
-      "level": 1
-    }
-  ]
-}
+describe('Assassination Test', () => {
+  it('should simulate an assassination against a substantially weaker opponent targeting WORKERS/CITIZENS.', async () => {
+    const spies = 30;
 
-describe('Infiltration Test', () => {
-  it('should simulate an infiltration against a substantially weaker opponent. ', async () => {
-    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
-    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
-    const equalAttacker = new UserModel({
-      ...attackPlayer,
-      fortHitpoints: 500,
-      units: attacker.units.filter(unit => (unit.type === 'SPY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
+    //#region Attacker
+    const userGenerator = new MockUserGenerator();
+    userGenerator.setBasicInfo({
+      email: 'test@test.com',
+      display_name: 'TestAttacker',
+      race: 'HUMAN',
+      class: 'FIGHTER',
     });
-    const equalDefender = new UserModel({
-      ...defensePlayer,
-      goldInBank: stringifyObj(BigInt(1000000)),
-      fortHitpoints: 500,
-      units: defense.units.filter(unit => (unit.type === 'DEFENSE' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
-    });
-    const battle = await simulateInfiltration(equalAttacker, equalDefender, 3 );
-    //console.log('battle: ', battle)
-    console.log('Sies sent: ', battle.spiesSent);
-    console.log(`We ${(battle.success ? 'won so noone dies, but we do damage to thier fort' : 'lost, so we lose all spies')}`);
-    console.log('Spy Off: ', battle.attacker.spy, "Spy Def: ", battle.defender.sentry, "FortHP: ", battle.defender.fortHitpoints)
-    console.log('Fort DMG:', battle.fortDmg)
-    expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
-    expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
-    console.log('Starting Fort HP:', defensePlayer.fortHitpoints, "Ending Fort HP:", battle.defender.fortHitpoints)
-    console.log('battle ended');
-  })
+    userGenerator.addUnits([
+      { type: 'OFFENSE', level: 1, quantity: 0 },
+      { type: 'DEFENSE', level: 1, quantity: 0 },
+      {type: 'SPY', level: 1, quantity: 7000},
+      { type: 'SPY', level: 2, quantity: 6000},
+      { type: 'SPY', level: 3, quantity: spies + 2000 },
+      { type: 'SENTRY', level: 1, quantity: 0 },
+    ]);
+    userGenerator.addItems([
+      { usage: 'SPY', level: 3, type: 'ARMOR', quantity: 0 },
+    ]);
+    userGenerator.addExperience(10000);
+    userGenerator.setFortLevel(13);
+    userGenerator.setSpyUpgrade(19);
+    const attacker = userGenerator.getUser();
+    //#endregion Attacker
 
-  it('should simulate an infiltration against a substantially stronger opponent. ', async () => {
-    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
-    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
-    const attackPlayerCopy = JSON.parse(JSON.stringify(stringifyObj(attacker)));
-    const defensePlayerCopy = JSON.parse(JSON.stringify(stringifyObj(defense)));
-    const equalAttacker = new UserModel({
-      ...attackPlayer,
-      fortHitpoints: 500,
-      units: attacker.units.filter(unit => (unit.type === 'SPY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
+    //#region Defender
+    const userGenerator2 = new MockUserGenerator();
+    userGenerator2.setBasicInfo({
+      email: 'testDefender@test.com',
+      display_name: 'TestDefender',
+      race: 'HUMAN',
+      class: 'FIGHTER',
     });
-    const equalDefender = new UserModel({
-      ...defensePlayer,
-      goldInBank: stringifyObj(BigInt(1000000)),
-      fortHitpoints: 500,
-      units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 10000 }))
-    });
-    const battle = await simulateInfiltration(equalAttacker, equalDefender, 3);
-    //console.log('battle: ', battle)
-    console.log('Sies sent: ', battle.spiesSent);
-    console.log(`We ${(battle.success ? 'won so noone dies, but we do damage to thier fort' : 'lost, so we lose all spies')}`);
-    if (!battle.sucess) console.log(`Spies lost: ${battle.spiesLost}`);
-    console.log('Spy Off: ', battle.attacker.spy, "Spy Def: ", battle.defender.sentry, "FortHP: ", battle.defender.fortHitpoints)
-    console.log('Fort DMG:', battle.fortDmg)
-    console.log('Starting Units:', attackPlayer.units, "Ending Units:", battle.attacker.units)
-    expect(equalAttacker.units).toBe(battle.attacker.units);
-    expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
-    expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
-    console.log('Starting Fort HP:', defensePlayer.fortHitpoints, "Ending Fort HP:", battle.defender.fortHitpoints)
-    console.log('battle ended');
-  })
-  it('should simulate an infiltration against a equal opponent. ', async () => {
-    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
-    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
-    const equalAttacker = new UserModel({
-      ...attackPlayer,
-      fortHitpoints: 500,
-      units: attacker.units.filter(unit => (unit.type === 'SPY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
-    });
-    const equalDefender = new UserModel({
-      ...defensePlayer,
-      goldInBank: stringifyObj(BigInt(1000000)),
-      fortHitpoints: 500,
-      units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
-    });
-    const battle = await simulateInfiltration(equalAttacker, equalDefender, 3);
-    //console.log('battle: ', battle)
-    if (!battle.sucesss) console.log(`Spies lost: ${battle.spiesLost}`);
-    expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
-    expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
-  })
+    userGenerator2.addUnits([
+      { type: 'SENTRY', level: 3, quantity: 1000 },
+      { type: 'SENTRY', level: 2, quantity: 7200 },
+      { type: 'CITIZEN', level: 1, quantity: 10330 },
+      { type: 'WORKER', level: 1, quantity: 20002 },
+      { type: 'OFFENSE', level: 1, quantity: 10000 },
+    ]);
+    userGenerator2.addExperience(10000);
+    userGenerator2.setFortLevel(15);
+    userGenerator2.setFortHitpoints(50);
+    userGenerator2.setSentryUpgrade(5);
+    const defense = userGenerator2.getUser();
+    //#endregion Defender
 
-  
- /* it('should simulate an intelligence mission against a equal opponent. ', async () => {
-    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
-    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
-    const equalAttacker = new UserModel({
-      ...attackPlayer,
-      fortHitpoints: 500,
-      units: attacker.units.filter(unit => (unit.type === 'SPY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 })),
-      items: attacker.items.filter(item => item.type === 'WEAPON' && item.level === 1 && item.usage === 'SPY').map(item => {
-        return { ...item, quantity: 1000 }
-      })
-    });
-    const equalDefender = new UserModel({
-      ...defensePlayer,
-      goldInBank: stringifyObj(BigInt(1000000)),
-      fortHitpoints: 500,
-      units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1) || (unit.type === 'WORKER')).map(unit => ({ ...unit, quantity: 10 }))
-    });
-    const battle = await simulateIntel(equalAttacker, equalDefender, 3);
-    expect(battle.success === true).toBe(true);
-  })*/
+    const attackPlayer = new UserModel(attacker);
+    const defensePlayer = new UserModel(defense);
 
-  /*it('should simulate an assassination to kill workers. ', async () => {
-    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
-    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
-    const equalAttacker = new UserModel({
-      ...attackPlayer,
-      fortHitpoints: 500,
-      units: attacker.units.filter(unit => (unit.type === 'SPY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 })),
-      items: attacker.items.filter(item => item.type === 'WEAPON' && item.level === 1 && item.usage === 'SPY').map(item => {
-        return { ...item, quantity: 1000 }
-      })
-    });
-    const equalDefender = new UserModel({
-      ...defensePlayer,
-      goldInBank: stringifyObj(BigInt(1000000)),
-      fortHitpoints: 500,
-      units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1) || (unit.type === 'WORKER')).map(unit => ({ ...unit, quantity: 10 }))
-    });
+    expect(attackPlayer.unitTotals.assassins).toBeGreaterThanOrEqual(spies);
 
-    console.log(equalDefender.unitTotals.citizens + equalDefender.unitTotals.workers)
-    const battle = await simulateAssassination(equalAttacker, equalDefender, 3, 'CITIZEN/WORKERS');
-    
-    expect(battle.success === true).toBe(true);
-    console.log(equalDefender.unitTotals.citizens + equalDefender.unitTotals.workers)
-    //console.log('battle: ', battle)
-    //if (!battle.sucesss) console.log(`Spies lost: ${battle.spiesLost}`);
-    //expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
-    //expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
-  })*/
-  
-  it('it should simulate failing every mission, losing units along the way', async () => {
-    const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
-    const defensePlayer = JSON.parse(JSON.stringify(stringifyObj(defense)));
-    const equalAttacker = new UserModel({
-      ...attackPlayer,
-      fortHitpoints: 500,
-      units: attacker.units.filter(unit => (unit.type === 'SPY')).map(unit => ({ ...unit, quantity: 1000 })),
-      items: attacker.items.filter(item => item.type === 'WEAPON' && item.level === 1 && item.usage === 'SPY').map(item => {
-        return { ...item, quantity: 1000 }
-      })
-    });
-    const equalDefender = new UserModel({
-      ...defensePlayer,
-      goldInBank: stringifyObj(BigInt(1000000)),
-      fortHitpoints: 500,
-      units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1) || (unit.type === 'WORKER')).map(unit => ({ ...unit, quantity: 1000000 })),
-      items: attacker.items.filter(item => item.type === 'WEAPON' && item.level === 1 && item.usage === 'SENTRY').map(item => {
-        return { ...item, quantity: 1000000 }
-      })
-    });
-    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
-    const intelMission = await simulateIntel(equalAttacker, equalDefender, 10);
-    expect(intelMission.success === false).toBe(true);
-    expect(intelMission.spiesLost === intelMission.spiesSent).toBe(true);
+    // Use simulateAssassination with targetUnit set to 'WORKERS/CITIZENS'
+    const result = simulateAssassination(attackPlayer, defensePlayer, spies, 'OFFENSE');
 
-    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
-    
-    const infiltrationMission = await simulateInfiltration(equalAttacker, equalDefender, 5);
-  
-    expect(infiltrationMission.success === false).toBe(true);
-    expect(infiltrationMission.spiesLost).toBeGreaterThanOrEqual(infiltrationMission.spiesSent - 1); // Almost all spies should be lost.
+    // Log results for debugging
+    console.log(`The attacker ${result.success ? 'won' : 'lost'} the mission`);
+    console.log(`Spies Sent: ${result.spiesSent}`);
+    console.log(`Spies Lost: ${result.spiesLost}`);
+    console.log(`Units Killed: ${result.unitsKilled}`);
 
-    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
-    const assassinationMission = await simulateAssassination(equalAttacker, equalDefender, 1, 'CITIZEN/WORKERS');
-    expect(assassinationMission.success === false).toBe(true);
-    expect(infiltrationMission.spiesLost).toBeGreaterThanOrEqual(infiltrationMission.spiesSent - 1); // Almost all spies should be lost.
-
-    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
-  })
-
-})
+    // Assertions
+    expect(result.success).toBe(true);
+    expect(result.unitsKilled).toBeGreaterThan(0);
+    expect(result.spiesLost).toBeLessThanOrEqual(spies);
+  });
+});

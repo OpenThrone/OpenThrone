@@ -392,10 +392,14 @@ class UserModel {
         perDay: SpyUpgrades[this?.spyLevel].maxInfiltrations,
       },
       assass: {
-        perDay: SpyUpgrades[this?.spyLevel].maxAssassinations,
-        perMission: SpyUpgrades[this?.spyLevel].maxAssassinsPerMission,
-        perUser: SpyUpgrades[this?.spyLevel].maxAssassinationsPerUser,
+        perDay: SpyUpgrades[this?.spyLevel]?.maxAssassinations,
+        perMission: SpyUpgrades[this?.spyLevel]?.maxAssassinsPerMission,
+        perUser: SpyUpgrades[this?.spyLevel]?.maxAssassinationsPerUser,
       },
+      stats: {
+        level: this?.spyLevel,
+        all: SpyUpgrades[this?.spyLevel]
+      }
     }
   }
 
@@ -562,7 +566,7 @@ class UserModel {
       case 'SPY':
         return this.fortLevel;
       default:
-        return 0;
+        return 1;
     }
   }
 
@@ -602,7 +606,6 @@ class UserModel {
     });
 
     totalStat = this.applyBonuses(type, totalStat);
-
     return Math.ceil(totalStat);
   }
 
@@ -613,7 +616,11 @@ class UserModel {
    * @returns Sorted items.
    */
   private getSortedItems(type: UnitType): Item[] {
-    return JSON.parse(JSON.stringify(this.items.filter(item => item.usage === type).sort((a, b) => b.level - a.level)));
+    const filteredItems = this.items.filter(item => item.usage === type).sort((a, b) => b.level - a.level);
+    if(filteredItems.length > 0)
+      return JSON.parse(JSON.stringify(filteredItems));
+    
+    return []
   }
 
   /**
