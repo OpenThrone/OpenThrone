@@ -92,7 +92,7 @@ const Layout = (props: IMainProps) => {
         className={`w-full grow ${
           authorized ? layoutCont.raceClasses.bgClass : 'bg-elf-header-bgcolor'
           } px-1 text-yellow-400 antialiased`}>
-        <div className="mx-auto">
+        <div className="mx-auto max-w-screen-2xl">
           <header
             className={`mx-auto ${layoutCont.raceClasses.borderBottomClass}`}
           >
