@@ -82,7 +82,7 @@ export const NavLoggedIn: React.FC = () => {
     { text: string; href: string; parent: string, target?: string }[]
   >([]);
   const [activeParentLink, setActiveParentLink] = useState<string>('');
-  const [, setActiveSubLink] = useState<string>('');
+  const [activeSubLink, setActiveSubLink] = useState<string>('');
 
   const [defaultSubMenu, setDefaultSubMenu] = useState<
     { text: string; href: string; parent: string }[]
@@ -132,12 +132,18 @@ export const NavLoggedIn: React.FC = () => {
     } else {
       setTestMenu(false);
     }
-
-    if (currentPath === 'userprofile') {
+    if (currentPath === 'userprofile' || (currentPath === 'battle' && secondPath === 'users')) {
       setActiveParentLink('Battle');
       const subMenu = subMenus.Battle || [];
       setActiveSubMenu(subMenu);
       setActiveSubLink('Attack');
+      setDefaultParentLink('Battle');
+      setDefaultSubMenu(subMenus.Battle || []);
+    } else if (secondPath === 'history') {
+      setActiveParentLink('Battle');
+      const subMenu = subMenus.Battle || [];
+      setActiveSubMenu(subMenu);
+      setActiveSubLink('War History');
       setDefaultParentLink('Battle');
       setDefaultSubMenu(subMenus.Battle || []);
     } else {
@@ -219,10 +225,10 @@ export const NavLoggedIn: React.FC = () => {
       </nav>
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
         <nav
-          className={`hidden h-8 ${layoutCont.raceClasses.menuPrimaryClass} md:block`}
+          className={`hidden h-10 ${layoutCont.raceClasses.menuPrimaryClass} md:block`}
           onMouseEnter={clearReset}
         >
-          <div className="mx-auto max-w-screen-md md:block justify-center">
+          <div className="mx-auto max-w-screen-lg md:block justify-center">
             <ul className="flex flex-wrap items-center justify-center text-center text-xl">
               {parentLinks.map((link) => {
                 return (
@@ -233,7 +239,7 @@ export const NavLoggedIn: React.FC = () => {
                         activeParentLink === link
                           ? layoutCont.raceClasses.navActiveClass
                           : 'text-elf-link-link'
-                      } hover:text-elf-link-hover `}
+                      } hover:text-elf-link-hover text-shadow-bevel text-uppercase-menu`}
                       onMouseOver={() => {
                         setActiveSubMenu(subMenus[link] || []);
                       }}
@@ -251,7 +257,7 @@ export const NavLoggedIn: React.FC = () => {
                     activeParentLink === 'signout'
                       ? 'text-elf-link-current'
                       : 'text-elf-link-link'
-                  } hover:text-elf-link-hover `}
+                  } hover:text-elf-link-hover text-shadow-bevel text-uppercase-menu`}
                 >
                   Sign Out
                 </button>
@@ -261,11 +267,11 @@ export const NavLoggedIn: React.FC = () => {
         </nav>
         {!testMenu && (
           <nav
-            className={`hidden h-8 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
+            className={`hidden h-10 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
             onMouseEnter={clearReset}
           >
-            <div className="mx-auto max-w-screen-md">
-              <ul className="flex flex-wrap justify-evenly text-center text-xl">
+            <div className="mx-auto max-w-screen-lg md:block justify-center">
+              <ul className="flex flex-wrap items-center justify-evenly text-center text-xl py-1">
                 {activeSubMenu.map((item) => (
                   <li
                     key={`${item.text}.${item.href}`}
@@ -274,8 +280,12 @@ export const NavLoggedIn: React.FC = () => {
                     <Indicator inline offset={-10} position="middle-end" color='brand.2' size={8} processing disabled>
                       <Link
                         href={item.href}
-                        className={`
-                        text-elf-link-link
+                        className={`border-none
+                        ${
+                          activeSubLink === item.text
+                            ? layoutCont.raceClasses.navActiveClass
+                            : 'text-elf-link-link'
+                      } hover:text-elf-link-hover text-shadow-bevel
                       `}
                         target={item.target ? item.target : '_self'}
                       >

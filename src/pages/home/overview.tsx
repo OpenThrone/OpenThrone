@@ -87,12 +87,12 @@ const Overview = (props) => {
         className="my-4"
       >
         <Card shadow="sm" ps="xs" pb='md' radius="md" className="w-full">
-          <Table striped highlightOnHover verticalSpacing="md" className="text-white">
+          <Table striped highlightOnHover verticalSpacing="sm" className="text-white">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th colSpan={2}>
                   <Center>
-                    <Text size='md' fw={'bolder'} className='font-medieval'>Statistics</Text>
+                    <Text size='lg' fw={'bolder'} className='font-medieval'>Statistics</Text>
                   </Center>
                 </Table.Th>
               </Table.Tr>
@@ -211,10 +211,10 @@ const Overview = (props) => {
           </Table>
         </Card>
         <Card shadow="sm" ps="md" pb='md' radius="md" className="w-full">
-          <Table striped highlightOnHover verticalSpacing="md" className="text-white">
+          <Table striped highlightOnHover verticalSpacing="sm" className="text-white">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th colSpan={2}><Center><Text size='md' fw={'bolder'} className='font-medieval'>War Statistics</Text></Center></Table.Th>
+                <Table.Th colSpan={2}><Center><Text size='lg' fw={'bolder'} className='font-medieval'>War Statistics</Text></Center></Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>

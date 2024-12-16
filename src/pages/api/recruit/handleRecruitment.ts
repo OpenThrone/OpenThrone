@@ -62,12 +62,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
         const ipAddress = getIpAddress(req);
 
-        // Save the recruitment record
-        await createRecruitmentRecord({ fromUser, toUser, ipAddress });
-
-        // Wait for a random delay
-        await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
-
         // Check if recruitment limit has been exceeded
         const exceededLimit = await hasExceededRecruitmentLimit({
           fromUser,
@@ -79,6 +73,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         if (exceededLimit) {
           throw new Error('User has already been recruited 5 times in the last 24 hours.');
         }
+
+
+        // Save the recruitment record
+        await createRecruitmentRecord({ fromUser, toUser, ipAddress });
+
+        // Wait for a random delay
+        await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
 
         let userToUpdate = await tx.users.findUnique({
           where: { id: Number(toUser) },
