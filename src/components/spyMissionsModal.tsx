@@ -113,9 +113,17 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
 
   useEffect(() => {
     if (user) {
-      setIsInfiltrationDisabled(!user.spyMissions['infil'].enabled);
-      setIsAssassinateDisabled(!user.spyMissions['assass'].enabled);
-      setIsIntelDisabled(!user.spyMissions['intel'].enabled);
+      setIsInfiltrationDisabled(
+        !(user.spyMissions['infil'].enabled && process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS === 'true')
+      );
+
+      setIsAssassinateDisabled(
+        !(user.spyMissions['assass'].enabled && process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true')
+      );
+
+      setIsIntelDisabled(
+        !(user.spyMissions['intel'].enabled && process.env.NEXT_PUBLIC_ENABLE_INTEL === 'true')
+      );
       setUnits({
         SPY:
           user.units.find((unit) => unit.type === 'SPY' && unit.level === 1)
@@ -175,7 +183,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       <div>
         <Title align="center" order={3} weight={700} mb="md">Intelligence Gathering</Title>
         <Text>How many spies would you like to send?</Text>
-        <Group position="apart" mt="md">
+        <Group mt="md">
           <NumberInput
             max={10}
             min={1}
@@ -209,6 +217,12 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           onChange={(value) => setIntelSpies(value)}
           mt="md"
         />
+        <Text>What Unit Type would you like to target?</Text>
+        <Select>
+          <option value="CITIZEN/WORKERS">Citizen/Workers</option>
+          <option value="OFFENSE">Offense</option>
+          <option value="DEFENSE">Defense</option>
+        </Select>
         <Button onClick={handleSpyMission} fullWidth mt="md">Assassinate</Button>
         <div className="mt-4">
           <Text align="center" size="lg" weight={700}>Assassination Information</Text>
@@ -227,7 +241,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       <div>
         <Text align="center" size="lg" weight={700} mb="md">Infiltration</Text>
         <Text>How many spies would you like to send to infiltrate?</Text>
-        <Group position="apart" mt="md">
+        <Group mt="md">
           <NumberInput
             max={3}
             min={1}
@@ -269,7 +283,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <small>Infiltrate and Destroy the Fort</small>
             {isInfiltrationDisabled && (
               <b>
-                <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['infil'].requiredLevel)}</small>
+                {process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS === 'true' ?
+                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['infil'].requiredLevel)}</small>
+                  :
+                  <small className="text-slate-300"> This mission is disabled by the Administrators</small>
+                }
               </b>
             )}
           </CustomButton>
@@ -281,7 +299,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <small>Attempt to assassinate player&apos;s Defenders</small>
             {isAssassinateDisabled && (
               <b>
-                <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['assass'].requiredLevel)}</small>
+                {process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true' ?
+                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['assass'].requiredLevel)}</small>
+                  :
+                  <small className="text-slate-300"> This mission is disabled by the Administrators</small>
+                }
               </b>
             )}
           </CustomButton>

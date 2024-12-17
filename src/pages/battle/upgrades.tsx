@@ -1,5 +1,5 @@
 import BattleUpgradesSection from '@/components/battle-upgrade';
-import { BattleUpgrades, OffenseiveUpgrades } from '@/constants';
+import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import Alert from '@/components/alert';
@@ -55,7 +55,7 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
     SiegeUpgradeLevel: item.SiegeUpgradeLevel,
     unitsCovered: item.unitsCovered,
     minUnitLevel: item.minUnitLevel,
-    SiegeUpgrade: OffenseiveUpgrades.find((f) => f.level === item.SiegeUpgradeLevel)?.name,
+    SiegeUpgrade: OffensiveUpgrades.find((f) => f.level === item.SiegeUpgradeLevel)?.name,
   };
 };
 

@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-const plugin = require('tailwindcss/plugin')
+const plugin = require('tailwindcss/plugin');
 const navLinkColor = 'rgb(253, 226, 101)';
 const titleColor = 'rgb(221, 149, 63)';
 
@@ -41,6 +41,7 @@ function generateRaceColors(
     border: menuSecondary,
   };
 }
+
 module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
   safelist: {
@@ -63,65 +64,71 @@ module.exports = {
       '4xl': '2.25rem',
       '5xl': '3rem',
       '6xl': '4rem',
+      menu: '24px', // Added custom font size for menu
     },
-    
     extend: {
       fontFamily: {
         medieval: ['MedievalSharp', 'cursive'],
       },
-       textShadow: {
-         DEFAULT: '0 2px 4px var(--tw-shadow-color)',
-         xs: '0 1px 1px var(--tw-shadow-color)', // Extra Small shadow
-        sm: '0 1px 2px var(--tw-shadow-color)', // Small shadow
-        md: '0 3px 6px var(--tw-shadow-color)', // Medium shadow
-        lg: '0 8px 16px var(--tw-shadow-color)', // Large shadow
-        xl: '0 12px 24px var(--tw-shadow-color)', // Extra Large shadow
-        xxl: '0 20px 40px var(--tw-shadow-color)', // Double Extra Large shadow
+      textShadow: {
+        DEFAULT: '0 2px 4px var(--tw-shadow-color)',
+        xs: '0 1px 1px var(--tw-shadow-color)',
+        sm: '0 1px 2px var(--tw-shadow-color)',
+        md: '0 3px 6px var(--tw-shadow-color)',
+        lg: '0 8px 16px var(--tw-shadow-color)',
+        xl: '0 12px 24px var(--tw-shadow-color)',
+        xxl: '0 20px 40px var(--tw-shadow-color)',
+        bevel: [
+          '0px 4px 4px rgba(0, 0, 0, 0.25)',
+          '1px 1px 4px rgba(253, 226, 101, 0.25)',
+          '0px 4px 4px rgba(0, 0, 0, 0.25)',
+          '1px 1px 2px rgba(0, 0, 0, 0.25)',
+        ].join(', '),
       },
       colors: {
         elf: generateRaceColors(
-          'rgb(236,155,0)', // navActive
-          'rgb(236,155,0)', // navHover
-          '#0B2012', // bg
-          'rgb(10,61,31)', // menuPrimary
-          'rgb(13,97,46)', // menuSecondary
-          'rgb(11,32,18)', // sidebarBg
-          'rgb(11,32,18)', // heading
-          'rgb(11,32,18)', // bodyBg
-          'rgb(11,32,18)' // footer
+          'rgb(236,155,0)',
+          'rgb(236,155,0)',
+          '#0B2012',
+          'rgb(10,61,31)',
+          'rgb(13,97,46)',
+          'rgb(11,32,18)',
+          'rgb(11,32,18)',
+          'rgb(11,32,18)',
+          'rgb(11,32,18)'
         ),
         goblin: generateRaceColors(
-          'rgb(236,155,0)', // navActive
-          'rgb(236,155,0)', // navHover
-          'rgb(45, 12, 12)', // bg
-          '#70301a', // menuPrimary
-          'rgb(46, 12, 12)', // menuSecondary
-          '#70301a', // sidebarBg
-          'rgb(45, 12, 12)', // heading
-          'rgb(45, 12, 12)', // bodyBg
-          'rgb(11,32,18)' // footer
+          'rgb(236,155,0)',
+          'rgb(236,155,0)',
+          'rgb(45, 12, 12)',
+          '#70301a',
+          'rgb(46, 12, 12)',
+          '#70301a',
+          'rgb(45, 12, 12)',
+          'rgb(45, 12, 12)',
+          'rgb(11,32,18)'
         ),
         human: generateRaceColors(
-          'rgb(236,155,0)', // navActive
-          'rgb(236,155,0)', // navHover
-          'rgb(14, 31, 53)', // bg
-          'rgb(14, 31, 53)', // menuPrimary
-          'rgb(26, 55, 93)', // menuSecondary
-          'rgb(14, 31, 53)', // sidebarBg
-          'rgb(26, 55, 93)', // heading
-          'rgb(26, 55, 93)', // bodyBg
-          'rgb(11,32,18)' // footer
+          'rgb(236,155,0)',
+          'rgb(236,155,0)',
+          'rgb(14, 31, 53)',
+          'rgb(14, 31, 53)',
+          'rgb(26, 55, 93)',
+          'rgb(14, 31, 53)',
+          'rgb(26, 55, 93)',
+          'rgb(26, 55, 93)',
+          'rgb(11,32,18)'
         ),
         undead: generateRaceColors(
-          'rgb(236,155,0)', // navActive
-          'rgb(236,155,0)', // navHover
-          'rgb(33, 33, 33)', // bg
-          'rgb(77, 77, 77)', // menuPrimary
-          'rgb(33, 33, 33)', // menuSecondary
-          'rgb(77, 77, 77)', // sidebarBg
-          'rgb(33, 33, 33)', // heading
-          'rgb(77, 77, 77)', // bodyBg
-          'rgb(11,32,18)' // footer
+          'rgb(236,155,0)',
+          'rgb(236,155,0)',
+          'rgb(33, 33, 33)',
+          'rgb(77, 77, 77)',
+          'rgb(33, 33, 33)',
+          'rgb(77, 77, 77)',
+          'rgb(33, 33, 33)',
+          'rgb(77, 77, 77)',
+          'rgb(11,32,18)'
         ),
         table: {
           odd: '#2c3034',
@@ -153,15 +160,29 @@ module.exports = {
     },
   },
   plugins: [
-    plugin(function ({ matchUtilities, theme }) {
-      matchUtilities(
-        {
-          'text-shadow': (value) => ({
-            textShadow: value,
-          }),
+    plugin(function ({ addUtilities, theme }) {
+      const textShadows = theme('textShadow', {});
+      const textShadowUtilities = Object.entries(textShadows).reduce(
+        (acc, [key, value]) => {
+          acc[`.text-shadow-${key}`] = { textShadow: value };
+          return acc;
         },
-        { values: theme('textShadow') }
-      )
+        {}
+      );
+
+      // Adding the `text-uppercase-menu` utility
+      addUtilities(
+        {
+          '.text-uppercase-menu': {
+            fontSize: theme('fontSize.menu'), // Custom font size
+            textShadow: theme('textShadow.lg'), // Thick drop shadow
+            textTransform: 'uppercase', // Uppercase transformation
+          },
+        },
+        ['responsive', 'hover']
+      );
+
+      addUtilities(textShadowUtilities, ['responsive', 'hover']);
     }),
   ],
 };

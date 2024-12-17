@@ -119,8 +119,8 @@ export const UnitTypes: Unit[] = [
     cost: 25000,
     fortLevel: 12,
     hp: 30,
-    killingStrength: 40,
-    defenseStrength: 10,
+    killingStrength: 270,
+    defenseStrength: 225,
   },
   {
     name: 'Sentry',
@@ -141,8 +141,8 @@ export const UnitTypes: Unit[] = [
     cost: 10000,
     fortLevel: 8,
     hp: 20,
-    killingStrength: 5,
-    defenseStrength: 2,
+    killingStrength: 15,
+    defenseStrength: 20,
   },
   {
     name: 'Inquisitor',
@@ -152,7 +152,7 @@ export const UnitTypes: Unit[] = [
     cost: 25000,
     fortLevel: 12,
     hp: 30,
-    killingStrength: 40,
-    defenseStrength: 10,
+    killingStrength: 225,
+    defenseStrength: 250,
   },
 ];

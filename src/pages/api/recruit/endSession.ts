@@ -1,7 +1,6 @@
 // pages/api/recruit/endSession.ts
-import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
-import { getSession } from 'next-auth/react';
+import { endSession } from '@/services/sessions.service';
 
 const handler = async (req, res) => {
   if (req.method !== 'POST') {
@@ -20,9 +19,7 @@ const handler = async (req, res) => {
   }
 
   // Delete the session
-  await prisma.autoRecruitSession.deleteMany({
-    where: { id: sessionId, userId },
-  });
+  await endSession(userId, sessionId);
 
   return res.status(200).json({ message: 'Session ended' });
 }

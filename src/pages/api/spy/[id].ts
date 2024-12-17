@@ -98,7 +98,6 @@ const handler = async (req, res) => {
           },
         })
         const uModel = new UserModel(myUser);
-        console.log(uModel.spyLimits)
         if (spyLog >= uModel.spyLimits.infil.perUser || spyLog >= uModel.spyLimits.infil.perDay) {
           return res.status(400).json({ status: 'failed', message: 'You have infiltrated too many times today' });
         }

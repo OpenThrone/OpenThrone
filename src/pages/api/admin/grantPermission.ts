@@ -26,7 +26,7 @@ const handler = async (
     return res.status(401).json({ error: 'Unauthorized', msg: 'Current user is not an administrator.'});
   }
 
-  const { user, permission } = req.body;
+  const { user, permissions: permission } = req.body;
 
   try {
     const currentUser = await prisma.users.findUnique({ where: { display_name: user } });

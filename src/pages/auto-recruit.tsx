@@ -80,7 +80,7 @@ export default function AutoRecruiter(props) {
 
       if (response.ok) {
         setUser(data.randomUser);
-        setTotalLeft(data.totalLeft);
+        setTotalLeft(data.recruitsLeft);
       } else {
         if (data.error === 'Invalid session ID') {
           handleInvalidSession();
@@ -109,7 +109,6 @@ export default function AutoRecruiter(props) {
     setCountdown(3);
     let timer = 3;
     intervalRef.current = setInterval(async () => {
-      console.log('Timer:', timer);
       if (timer > 1) {
         setCountdown(timer - 1);
       } else {
@@ -343,6 +342,12 @@ export default function AutoRecruiter(props) {
       <Title order={2} className="page-title">Auto Recruiter</Title>
       <Space h="md" />
       <Alert />
+      <Space h="sm" />
+      {/* Display Total Daily Recruits left */}
+      <Text size="lg">
+        Total Daily Recruits left: {totalLeft}
+      </Text>
+
       <Space h="md" />
       <Recruiter
         key={user.id}

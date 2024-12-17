@@ -106,6 +106,18 @@ export type Item = {
   killingStrength?: number;
   defenseStrength?: number;
 };
+
+export type PlayerItem = {
+  usage: UnitType;
+  type: ItemType;
+  level: number;
+  quantity: number;
+}
+export type PlayerBattleUpgrade = {
+  type: UnitType;
+  level: number;
+  quantity: number;
+}
 export type Fortification = {
   name: string;
   level: number;
@@ -143,12 +155,14 @@ export type SpyUpgradeType = {
   cost: number;
   level: number;
 };
+
 export type SentryUpgradeType = {
   name: string;
   fortLevelRequirement: number;
   defenseBonusPercentage: number;
   cost: number;
 };
+
 export type UnitUpgradeType = {
   type: UnitType;
   name: string;
@@ -174,6 +188,8 @@ export type UnitTotalsType = {
   offense: number;
   defense: number;
   spies: number;
+  assassins: number;
+  infiltrators: number;
   sentries: number;
 };
 /**
@@ -217,17 +233,80 @@ export type UnitSectionProps = {
 export type IMetaProps = {
   title: string;
   description: string;
-  canonical ?: string;
+  canonical?: string;
 };
 
 export interface ComposeFormProps {
   onClose: () => void;
 }
 
-export type IUserSession  ={ 
+export type IUserSession = {
   id: number;
   display_name: string;
   class: PlayerClass;
   race: PlayerRace;
   colorScheme: string;
 }
+
+export interface Log {
+  id: string;
+  winner: string;
+  attacker_id: string;
+  defender_id: string;
+  attackerPlayer?: { display_name: string, id: number };
+  defenderPlayer?: { display_name: string, id: number };
+  timestamp: string;
+  stats: Stats;
+  type: string;
+}
+
+export interface Loss {
+  total: number;
+  units: BattleUnits[];
+}
+
+export interface User {
+  id: number;
+  email: string;
+  display_name: string;
+  password_hash?: string;
+  race: PlayerRace;
+  class: PlayerClass;
+  units: PlayerUnit[];
+  experience: number;
+  gold: bigint;
+  gold_in_bank: bigint;
+  fort_level: number;
+  fort_hitpoints: number;
+  attack_turns: number;
+  last_active?: Date;
+  rank: number;
+  items: PlayerItem[];
+  house_level: number;
+  economy_level: number;
+  offense: number;
+  defense: number;
+  spy: number;
+  sentry: number;
+  battle_upgrades: PlayerBattleUpgrade[];
+  structure_upgrades: StructureUpgrade[];
+  bonus_points: BonusPoint[];
+  stats: any[];
+  bio: string;
+  colorScheme?: string;
+  recruit_link: string;
+  locale: string;
+  avatar?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+type SpyCasualtiesParams = {
+  attackerKS: number;
+  defenderDS: number;
+  defenderKS: number;
+  attackerDS: number;
+  attackerPop: number;
+  defenderPop: number;
+  maxMultiplier?: number; // Optional, defaults to 3
+};

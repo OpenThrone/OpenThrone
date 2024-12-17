@@ -39,7 +39,7 @@ const handler = async (req, res) => {
     user.population = population;
     user.ks = calculateStrength(uModel, 'OFFENSE');
     user.ds = calculateStrength(uModel, 'DEFENSE');
-    user.networth = uModel.networth;
+    user.networth = uModel.netWorth;
   });
 
   const originalAllUsers = JSON.parse(JSON.stringify(stringifyObj(allUsers)));

@@ -2,7 +2,7 @@
 
 import { UnitTypes } from '@/constants';
 import UserModel from '@/models/Users';
-import { PlayerUnit } from '@/types/typings';
+import { PlayerUnit, UnitType } from '@/types/typings';
 
 export const calculateTotalCost = (units: PlayerUnit[], uModel: UserModel): number => {
   let totalCost = 0;
@@ -61,12 +61,28 @@ export const updateUnitsMap = (
   return unitsMap;
 };
 
-
-
-
 export const validateUnits = (units: PlayerUnit[]): boolean => {
   return units.every(unitData => {
     const unitType = UnitTypes.find(u => u.type === unitData.type && u.level === unitData.level);
     return unitType && unitData.quantity >= 0;
   });
 };
+
+export const getAverageLevelAndHP = (units: PlayerUnit[], unitType: UnitType, level: number | string = "all") => {
+  const filteredUnits = units.filter((unit) => unit.type === unitType && unit.quantity > 0 && (Number.isInteger(level)?unit.level ===level:true));
+  console.log('filteredUnits', filteredUnits)
+  let totalLevel = 0;
+  let totalHP = 0;
+  let totalQuantity = 0;
+  for (const unit of filteredUnits) {
+    const unitHP = unit.level * 50; // Assuming base HP is 50 per level
+    totalLevel += unit.level * unit.quantity;
+    totalHP += unitHP * unit.quantity;
+    totalQuantity += unit.quantity;
+  }
+  if (totalQuantity === 0) return { averageLevel: 0, averageHP: 0 };
+  return {
+    averageLevel: Math.ceil(totalLevel / totalQuantity),
+    averageHP: Math.ceil(totalHP / totalQuantity),
+  };
+}

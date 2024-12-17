@@ -6,12 +6,10 @@ const NewsBulletin: React.FC = () => {
     process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE
   );
   useEffect(() => {
-    if (
-      process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE &&
-      process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE !== ''
-    ) {
-      setMessage(process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE);
+    if (!process || !process.env || !process.env.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE) {
+      return;
     }
+      setMessage(process.env.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE);
   }, []);
   return (
     <div className="container mx-auto px-4">

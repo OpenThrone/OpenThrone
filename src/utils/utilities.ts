@@ -66,7 +66,7 @@ const getLevelFromXP = (xp: number): number => {
  * @param {string} [race] The race associated with the asset, if applicable
  * @returns {string} The path for the specified asset, fit for use in HTML tags
  */
-const getAssetPath = (name, size, race) => {
+const getAssetPath = (name, size?, race?) => {
   let path = '';
   if (process.env.NEXT_PUBLIC_USE_AWS) {
     path += process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + '/images';
@@ -153,5 +153,32 @@ const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | '
   };
 };
 
+const serializeDates = (obj) => {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => {
+      if (value instanceof Date) {
+        return [key, value.toISOString()];
+      } else if (typeof value === 'object' && value !== null) {
+        return [key, serializeDates(value)]; // Recursively handle nested objects
+      }
+      return [key, value];
+    })
+  );
+}
 
-export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats };
+export const idleThresholdDate = (days = 60) => { //60days is default
+  const now = new Date();
+  // if last_active is more than 60 days, set account status to IDLE
+  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Ensures the result is at least 0.
+ * @param {number} value - The input number to check.
+ * @returns {number} - The input value if it's 0 or greater, otherwise 0.
+ */
+export const atLeastZero = (value: number):number => {
+  return Math.max(0, value);
+}
+
+export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats, serializeDates };

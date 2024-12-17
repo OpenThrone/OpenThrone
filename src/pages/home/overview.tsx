@@ -5,7 +5,7 @@ import { toLocale } from '@/utils/numberFormatting';
 import { useEffect, useState } from 'react';
 import { Text, Card, Space, Table, Group, Center, Flex, ThemeIcon, Paper } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faShieldAlt, faUserShield, faCoins, faLevelUpAlt, faSyncAlt, faStar, faPiggyBank, faTrophy, faMedal, faUserSecret, faCrown, faEye, faShieldVirus } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faShieldAlt, faUserShield, faCoins, faLevelUpAlt, faSyncAlt, faStar, faPiggyBank, faTrophy, faMedal, faUserSecret, faCrown, faEye, faShieldVirus, faMoneyBills } from '@fortawesome/free-solid-svg-icons';
 
 const Overview = (props) => {
   const [getNews, setNews] = useState(['no news']);
@@ -46,7 +46,7 @@ const Overview = (props) => {
       <Space h="md" />
       <Center>
         <Paper w={{ sm: '100%', md: '80%' }} shadow="sm" ps="sm" pb='md' radius="md">
-          <Group position="apart" grow>
+          <Group grow>
             <Alert />
           </Group>
           <Space h="md" />
@@ -87,12 +87,12 @@ const Overview = (props) => {
         className="my-4"
       >
         <Card shadow="sm" ps="xs" pb='md' radius="md" className="w-full">
-          <Table striped highlightOnHover verticalSpacing="md" className="text-white">
+          <Table striped highlightOnHover verticalSpacing="sm" className="text-white">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th colSpan={2}>
                   <Center>
-                    <Text size='md' fw={'bolder'} className='font-medieval'>Statistics</Text>
+                    <Text size='lg' fw={'bolder'} className='font-medieval'>Statistics</Text>
                   </Center>
                 </Table.Th>
               </Table.Tr>
@@ -194,14 +194,27 @@ const Overview = (props) => {
                   </Group>
                 </Table.Td>
               </Table.Tr>
+              <Table.Tr>
+                <Table.Td>
+                  <Group wrap='nowrap'>
+                    <ThemeIcon c='white'>
+                      <FontAwesomeIcon icon={faMoneyBills} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="md" weight={700} color="dimmed">Net Worth</Text>
+                      <Text>{toLocale(user?.netWorth, user?.locale)}</Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
             </Table.Tbody>
           </Table>
         </Card>
         <Card shadow="sm" ps="md" pb='md' radius="md" className="w-full">
-          <Table striped highlightOnHover verticalSpacing="md" className="text-white">
+          <Table striped highlightOnHover verticalSpacing="sm" className="text-white">
             <Table.Thead>
               <Table.Tr>
-                <Table.Th colSpan={2}><Center><Text size='md' fw={'bolder'} className='font-medieval'>War Statistics</Text></Center></Table.Th>
+                <Table.Th colSpan={2}><Center><Text size='lg' fw={'bolder'} className='font-medieval'>War Statistics</Text></Center></Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>

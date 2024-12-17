@@ -9,19 +9,13 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Optional: Check for a secret token to secure this endpoint
   const token = req.headers.authorization;
   if (token !== process.env.TASK_SECRET) {
     return res.status(403).json({
-      message: `Unauthorized: ${token} ${process.env.TASK_SECRET}`,
+      message: `Unauthorized: Token Invalid`,
     });
   }
 
-
-
-  // Start your task logic here
-
-  // Example: Fetch all users
   const allUsers = await prisma.users.findMany();
 
   const updatePromises = allUsers.map((user) => {
