@@ -1,22 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
-import { PlayerUnit } from '@/types/typings';
 import mtrand from '@/utils/mtrand';
-import { getOTStartDate } from '@/utils/timefunctions';
 import { endSession, getSession, validateSession } from '@/services/sessions.service';
 import { createRecruitmentRecord, hasExceededRecruitmentLimit, updateUserAfterRecruitment, createBankHistoryRecord } from '@/services/recruitment.service';
 import { getIpAddress } from '@/utils/ipUtils';
-
-function increaseCitizens(units: PlayerUnit[]) {
-  const citizen = units.find((unit) => unit.type === 'CITIZEN');
-  if (citizen) {
-    citizen.quantity += 1;
-  } else {
-    units.push({ type: 'CITIZEN', level: 1, quantity: 1 });
-  }
-  return units;
-}
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
@@ -46,7 +34,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       const sessionData = await getSession(recruiterUserId, sessionId);
 
-      if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) {
+      if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) { // 1 minute
         await endSession(recruiterUserId, sessionId);
         return res.status(429).json({ error: 'Session expired' });
       }

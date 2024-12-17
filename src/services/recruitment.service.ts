@@ -42,7 +42,6 @@ export async function hasExceededRecruitmentLimit({
       }),
     },
   });
-  console.log(recruitments.length, 'fromUser:', fromUser, 'toUser:', toUser, 'ipAddress:', ipAddress, getOTStartDate());
   return recruitments.length >= 5;
 }
 
