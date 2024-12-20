@@ -9,6 +9,7 @@ import { useUser } from '@/context/users';
 import { Indicator } from '@mantine/core';
 
 import { PermissionType } from '@prisma/client';
+import { getAssetPath } from '@/utils/utilities';
 
 const parentLinks = [
   'Home',
@@ -203,7 +204,10 @@ export const NavLoggedIn: React.FC = () => {
             <li className="mr-6" key={link}>
               <Link
                 href="#"
-                className="border-none text-gray-700 hover:text-gray-900"
+                className={`${activeParentLink === link
+                  ? 'bg-orange-gradient text-gradient-orange'
+                  : 'text-elf-link-link'
+                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-sm`}
                 onClick={(event) => handleParentClick(event, link)}
               >
                 {link}
@@ -215,7 +219,13 @@ export const NavLoggedIn: React.FC = () => {
                       className="mr-6 pl-4"
                       key={`${subLink.href}.${subLink.text}`}
                     >
-                      <Link href={subLink.href} target={subLink.target ? subLink.target : '_self'}>{subLink.text}</Link>                    </li>
+                      <Link href={subLink.href} target={subLink.target ? subLink.target : '_self'}
+                        className={`border-none
+                      ${activeSubLink === subLink.text
+                            ? 'text-gradient-orange bg-orange-gradient'
+                            : 'text-elf-link-link'
+                          } bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-xs
+                    `} >{subLink.text}</Link>                    </li>
                   ))}
                 </ul>
               )}
@@ -226,30 +236,31 @@ export const NavLoggedIn: React.FC = () => {
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
         <nav
           className={`hidden h-10 ${layoutCont.raceClasses.menuPrimaryClass} md:block`}
+          style={{backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme)}')`}}
           onMouseEnter={clearReset}
         >
           <div className="mx-auto max-w-screen-lg md:block justify-center">
-            <ul className="flex flex-wrap items-center justify-center text-center text-xl">
+            <ul className="flex flex-wrap items-center justify-center text-center text-lg md:text-xl py-1">
               {parentLinks.map((link) => {
                 return (
-                  <li className="px-6" key={link}>
+                  <li className="px-4 lg:px-6 " key={link}>
                     <Link
                       href="/"
                       className={`border-none ${
                         activeParentLink === link
-                          ? layoutCont.raceClasses.navActiveClass
+                        ? 'bg-orange-gradient text-gradient-orange'
                           : 'text-elf-link-link'
-                      } hover:text-elf-link-hover text-shadow-bevel text-uppercase-menu`}
+                      }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-sm`}
                       onMouseOver={() => {
                         setActiveSubMenu(subMenus[link] || []);
                       }}
                     >
-                      {link}
+                        {link}
                     </Link>
                   </li>
                 );
               })}
-              <li className="px-6" key={'signOut'}>
+              <li className="xs:px-6 px-3" key={'signOut'}>
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: '/' })}
@@ -257,7 +268,7 @@ export const NavLoggedIn: React.FC = () => {
                     activeParentLink === 'signout'
                       ? 'text-elf-link-current'
                       : 'text-elf-link-link'
-                  } hover:text-elf-link-hover text-shadow-bevel text-uppercase-menu`}
+                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-sm`}
                 >
                   Sign Out
                 </button>
@@ -265,39 +276,39 @@ export const NavLoggedIn: React.FC = () => {
             </ul>
           </div>
         </nav>
-        {!testMenu && (
-          <nav
-            className={`hidden h-10 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
-            onMouseEnter={clearReset}
-          >
-            <div className="mx-auto max-w-screen-lg md:block justify-center">
-              <ul className="flex flex-wrap items-center justify-evenly text-center text-xl py-1">
-                {activeSubMenu.map((item) => (
-                  <li
-                    key={`${item.text}.${item.href}`}
-                    className="mx-4 cursor-pointer"
-                  >
-                    <Indicator inline offset={-10} position="middle-end" color='brand.2' size={8} processing disabled>
-                      <Link
-                        href={item.href}
-                        className={`border-none
-                        ${
-                          activeSubLink === item.text
-                            ? layoutCont.raceClasses.navActiveClass
-                            : 'text-elf-link-link'
-                      } hover:text-elf-link-hover text-shadow-bevel
-                      `}
-                        target={item.target ? item.target : '_self'}
-                      >
-                        {item.text}
-                      </Link>
-                    </Indicator>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </nav>
-        )}
+        <nav
+          className={`hidden h-10 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
+          style={{ backgroundImage: `url('${getAssetPath('bottom-menu', null, user?.colorScheme)}')` }}
+
+          onMouseEnter={clearReset}
+        >
+          <div className="mx-auto max-w-screen-lg md:block justify-center">
+            <ul className="flex flex-wrap items-center justify-center text-center text-xl py-1">
+              {activeSubMenu.map((item) => (
+                <li
+                  key={`${item.text}.${item.href}`}
+                  className="px-10"
+                >
+                  <Indicator inline offset={-10} position="middle-end" color='brand.2' size={8} processing disabled>
+                    <Link
+                      href={item.href}
+                      className={`border-none
+                      ${
+                        activeSubLink === item.text
+                        ? 'text-gradient-orange bg-orange-gradient'
+                          : 'text-elf-link-link'
+                    } bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-xs
+                    `}
+                      target={item.target ? item.target : '_self'}
+                    >
+                      {item.text}
+                    </Link>
+                  </Indicator>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </nav>
       </div>
     </>
   );

@@ -2,12 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faArrowRight, faRefresh } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faCircleInfo, faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { getTimeRemaining, getTimeToNextTurn, getOTTime } from '@/utils/timefunctions';
-import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List } from '@mantine/core';
-import { useDebouncedCallback } from '@mantine/hooks';
+import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List, Progress, Popover } from '@mantine/core';
+import { useDebouncedCallback, useDisclosure } from '@mantine/hooks';
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
+import { levelXPArray } from '@/constants/XPLevels';
 
 const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
@@ -18,6 +19,7 @@ const Sidebar: React.FC = () => {
   const [searchValue, setSearchValue] = useState('');
   const [usersData, setUsersData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [nextLevelOpened, { close, open }] = useDisclosure(false);
 
   const [sidebar, setSidebar] = useState({
     gold: '0',
@@ -26,6 +28,7 @@ const Sidebar: React.FC = () => {
     xp: '0',
     turns: '0',
     xpNextLevel: '0',
+    progress: '0'
   });
 
   useEffect(() => {
@@ -73,12 +76,26 @@ const Sidebar: React.FC = () => {
         const seconds = String(remaining.seconds).padStart(2, '0');
         setTime(`${minutes}:${seconds}`);
         setOTTime(getOTTime().toLocaleTimeString('en-us', {timeStyle: 'short', hour12: false}));
+        const currentLevelInfo = levelXPArray.find((l) => l.level === user?.level);
+        const nextLevelInfo = levelXPArray.find((l) => l.level === user?.level + 1);
+
+        const xpForCurrentLevel = currentLevelInfo?.xp ?? 0;
+        const xpForNextLevel = nextLevelInfo?.xp ?? xpForCurrentLevel;
+
+        const xpNeededForNextLevel = xpForNextLevel - xpForCurrentLevel;
+        const xpGainedThisLevel = user?.experience - xpForCurrentLevel;
+
+        const progressPercentage = xpNeededForNextLevel > 0
+          ? (xpGainedThisLevel / xpNeededForNextLevel) * 100
+          : 100;
+        
         setSidebar({
           gold: toLocale(user.gold, user?.locale),
           citizens: toLocale(user.citizens, user?.locale),
           level: toLocale(user.level, user?.locale),
           xp: toLocale(user.experience, user?.locale),
           xpNextLevel: toLocale(user.xpToNextLevel, user?.locale),
+          progress: progressPercentage,
           turns: toLocale(user.attackTurns, user?.locale),
         });
       }
@@ -181,7 +198,7 @@ const Sidebar: React.FC = () => {
     <div className="block sm:block">
       <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg min-h-96 h-96" style={{
         height: '100%',
-        backgroundImage: 'url(https://assets.openthrone.dev/images%2Fbackground%2Fadvisor-scroll_25.webp)',
+        backgroundImage: 'url(https://assets.openthrone.dev/images/background/advisor-scroll-side.webp)',
         backgroundSize: '100% 100%',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -191,12 +208,12 @@ const Sidebar: React.FC = () => {
         paddingBottom: '30px',
       }}>
         <div className="p-10 md:p-4 mt-2">
-          <h6 className="advisor-title text-center font-medieval font-bold text-xl">
+          <h6 className="advisor-title text-center font-medieval font-bold text-xl text-shadow-xs">
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px 0' }} onClick={handlePrevAdvisor} /> Advisor <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px 0' }} onClick={handleNextAdvisor} />
           </h6>
-          <Text size='sm' fw={'bold'} className='text-black' style={{minHeight: '105px'}}>{messages[currentMessageIndex]}</Text>
+          <Text size='sm' fw={'bold'} className='text-black text-center' style={{minHeight: '105px'}}>{messages[currentMessageIndex]}</Text>
 
-          <h6 className="text-center font-medieval font-bold text-xl mt-2">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
+          <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow-xs">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
           <List size={'sm'}>
             <List.Item>
               <i className="ra ra-gem ra-fw" /> Gold:{' '}
@@ -214,11 +231,16 @@ const Sidebar: React.FC = () => {
               Experience:{' '}
               <span id="experience">
                 {sidebar.xp}{' '}
-                <span className="xpNextLevel">
-                  (next level in{' '}
-                  <span id="xpToNextLevel">{sidebar.xpNextLevel}</span>)
-                </span>
+                <Popover width={200} position="bottom" withArrow shadow="md" opened={nextLevelOpened}>
+                  <Popover.Target>
+                    <FontAwesomeIcon icon={faCircleInfo} onMouseEnter={open} onMouseLeave={close} />
+                  </Popover.Target>
+                  <Popover.Dropdown style={{ pointerEvents: 'none' }}>
+                    <Text size="sm">You are { user?.xpToNextLevel} XP away from the next level</Text>
+                  </Popover.Dropdown>
+                </Popover>
               </span>
+              <Progress value={Number(sidebar.progress)} size={'md'} />
             </List.Item>
             <List.Item>
               Turns Available: <span id="attackTurns">{sidebar.turns}</span>
@@ -230,10 +252,11 @@ const Sidebar: React.FC = () => {
               OT Time: <span id="otTime">{OTTime}</span>
             </List.Item>
           </List>
-          <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2">
+          <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2 text-shadow-xs">
             <span> </span> Search <span> </span>
           </h6>
           <form onSubmit={handleSubmit}>
+            <center>
             <Autocomplete
               value={searchValue}
               onChange={setSearchValue}
@@ -249,6 +272,7 @@ const Sidebar: React.FC = () => {
               variant='filled'
               bg={'dark'}
             />
+            </center>
             <center>
               <Button type="submit" color='bluishGray' variant='brand'>Submit</Button>
             </center>

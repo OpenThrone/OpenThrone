@@ -97,7 +97,7 @@ const Layout = (props: IMainProps) => {
             className={`mx-auto ${layoutCont.raceClasses.borderBottomClass}`}
           >
             <div
-              style={{ backgroundImage: `url('${getAssetPath('Elf-wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}}
+              style={{ backgroundImage: `url('${getAssetPath('wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}}
               className={`${
                 authorized
                   ? layoutCont.raceClasses.bgClass
@@ -120,15 +120,15 @@ const Layout = (props: IMainProps) => {
             {authorized ? <NavLoggedIn /> : <NavLoggedOut />}
           </header>
 
-          <main className="container mx-auto h-full grow overflow-y-auto pb-8">
+          <main className="lg:container mx-auto h-full grow overflow-y-auto pb-8">
             <div className="flex h-full flex-wrap">
               {authorized ? (
                 <>
-                  <div className="w-full px-3 sm:w-1/5" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
+                  <div className="w-full px-3 md:w-1/5" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
                     <Sidebar />
                   </div>
                   <div
-                    className={`w-full bg-black ${layoutCont.raceClasses.borderClass} px-3 sm:w-4/5`}
+                    className={`w-full bg-black ${layoutCont.raceClasses.borderClass} px-3 md:w-4/5`}
                   >
                     <NewsBulletin />
                     {props.children}

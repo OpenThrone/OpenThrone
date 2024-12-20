@@ -69,7 +69,7 @@ class UserModel {
 
   public bio: string;
 
-  public colorScheme: string;
+  public colorScheme: PlayerRace | string;
 
   public is_player: boolean;
 

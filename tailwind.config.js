@@ -53,6 +53,10 @@ module.exports = {
     variants: ['sm', 'md', 'lg', 'xl', '2xl'],
   },
   theme: {
+    backgroundImage: {
+      'link-gradient': 'linear-gradient(90deg, rgb(253, 226, 101), rgb(253, 226, 101))',
+      'orange-gradient': 'linear-gradient(360deg, orange, darkorange)',
+    },
     fontSize: {
       xs: '0.75rem',
       sm: '0.875rem',
@@ -64,26 +68,22 @@ module.exports = {
       '4xl': '2.25rem',
       '5xl': '3rem',
       '6xl': '4rem',
-      menu: '24px', // Added custom font size for menu
+      menu: '24px', // Custom font size for menu
     },
     extend: {
       fontFamily: {
         medieval: ['MedievalSharp', 'cursive'],
       },
+      // Note: We remove color values from textShadow definitions here.
+      // Just define offset and blur. The color will be set via a separate variable.
       textShadow: {
-        DEFAULT: '0 2px 4px var(--tw-shadow-color)',
-        xs: '0 1px 1px var(--tw-shadow-color)',
-        sm: '0 1px 2px var(--tw-shadow-color)',
-        md: '0 3px 6px var(--tw-shadow-color)',
-        lg: '0 8px 16px var(--tw-shadow-color)',
-        xl: '0 12px 24px var(--tw-shadow-color)',
-        xxl: '0 20px 40px var(--tw-shadow-color)',
-        bevel: [
-          '0px 4px 4px rgba(0, 0, 0, 0.25)',
-          '1px 1px 4px rgba(253, 226, 101, 0.25)',
-          '0px 4px 4px rgba(0, 0, 0, 0.25)',
-          '1px 1px 2px rgba(0, 0, 0, 0.25)',
-        ].join(', '),
+        DEFAULT: '1px 2px 4px',
+        xs: '1px 1px 1px',
+        sm: '1px 2px 2px',
+        md: '1px 3px 6px',
+        lg: '1px 1px 1px',
+        xl: '1px 12px 24px',
+        xxl: '1px 20px 40px',
       },
       colors: {
         elf: generateRaceColors(
@@ -162,27 +162,74 @@ module.exports = {
   plugins: [
     plugin(function ({ addUtilities, theme }) {
       const textShadows = theme('textShadow', {});
-      const textShadowUtilities = Object.entries(textShadows).reduce(
-        (acc, [key, value]) => {
-          acc[`.text-shadow-${key}`] = { textShadow: value };
-          return acc;
-        },
-        {}
-      );
+      const textShadowColors = theme('colors', {});
 
-      // Adding the `text-uppercase-menu` utility
+      // Base .text-shadow class that uses CSS vars
+      const baseUtilities = {
+        '.text-shadow': {
+          '--ts-offsets': textShadows.DEFAULT || '1px 2px 4px',
+          '--ts-color': 'rgba(0,0,0,0.25)', // default color
+          textShadow: 'var(--ts-offsets) var(--ts-color)',
+        },
+      };
+
+      // Generate offset utilities like .text-shadow-md that only set --ts-offsets
+      const textShadowOffsetUtilities = Object.entries(textShadows).reduce((acc, [key, value]) => {
+        acc[`.text-shadow-${key}`] = {
+          '--ts-offsets': value,
+        };
+        return acc;
+      }, {});
+
+      // Generate color utilities like .text-shadow-color-blue-500 that only set --ts-color
+      const textShadowColorUtilities = {};
+      function addColorUtilities(obj, prefix = '') {
+        for (const [colorName, colorValue] of Object.entries(obj)) {
+          if (typeof colorValue === 'string') {
+            textShadowColorUtilities[`.text-shadow-color-${prefix}${colorName}`] = {
+              '--ts-color': colorValue,
+            };
+          } else if (typeof colorValue === 'object') {
+            addColorUtilities(colorValue, `${prefix}${colorName}-`);
+          }
+        }
+      }
+      addColorUtilities(textShadowColors);
+
+      // Add the combined utilities
+      addUtilities(baseUtilities, ['responsive', 'hover']);
+      addUtilities(textShadowOffsetUtilities, ['responsive', 'hover']);
+      addUtilities(textShadowColorUtilities, ['responsive', 'hover']);
+
+      // Adding the text-uppercase-menu utility
       addUtilities(
         {
           '.text-uppercase-menu': {
             fontSize: theme('fontSize.menu'), // Custom font size
-            textShadow: theme('textShadow.lg'), // Thick drop shadow
-            textTransform: 'uppercase', // Uppercase transformation
+            // Here we rely on the inherited text-shadow from `.text-shadow`
+            // combined with a chosen offset if desired.
+            // For a thicker drop shadow, you can use .text-shadow-md or another offset class
+            textTransform: 'uppercase',
           },
         },
         ['responsive', 'hover']
       );
 
-      addUtilities(textShadowUtilities, ['responsive', 'hover']);
+      // Gradient text utilities
+      addUtilities({
+        '.text-gradient-link': {
+          '-webkit-background-clip': 'text',
+          '-moz-background-clip': 'text',
+          '-webkit-text-fill-color': 'transparent',
+          '-moz-text-fill-color': 'transparent',
+        },
+        '.text-gradient-orange': {
+          '-webkit-background-clip': 'text',
+          '-moz-background-clip': 'text',
+          '-webkit-text-fill-color': 'transparent',
+          '-moz-text-fill-color': 'transparent',
+        },
+      });
     }),
   ],
 };
