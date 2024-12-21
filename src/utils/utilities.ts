@@ -1,6 +1,6 @@
 import { levelXPArray, UnitTypes } from '@/constants';
 import UserModel from '@/models/Users';
-import type { UnitType } from '@/types/typings';
+import type { PlayerRace, UnitType } from '@/types/typings';
 import { newCalculateStrength } from './attackFunctions';
 
 /**
@@ -66,7 +66,7 @@ const getLevelFromXP = (xp: number): number => {
  * @param {string} [race] The race associated with the asset, if applicable
  * @returns {string} The path for the specified asset, fit for use in HTML tags
  */
-const getAssetPath = (name, size?, race?) => {
+const getAssetPath = (name, size?, race: PlayerRace = 'ELF') => {
   let path = '';
   if (process.env.NEXT_PUBLIC_USE_AWS) {
     path += process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + '/images';
@@ -86,11 +86,23 @@ const getAssetPath = (name, size?, race?) => {
       }
       path += 'advisor-scroll.webp';
       break;
-    case 'Elf-wall-header':
-      path += '/header/Elf-wall-header.webp';
+    case 'wall-header':
+      path += `/header/${race}-wall-header.webp`;
+      break;
+    case 'top-menu':
+      path += `/header/${race}_nav_top.png`;
+      break;
+    case 'bottom-menu':
+      path += `/header/${race}_nav_bottom.png`;
       break;
     case 'OpenThrone':
       path += '/header/OpenThrone.webp';
+      break;
+    case 'corner-double-border':
+      path += '/background/ELF_top_left_double_border.svg';
+      break;
+    case 'double-border':
+      path += '/background/ELF_top_double_border.svg';
       break;
     default:
   }

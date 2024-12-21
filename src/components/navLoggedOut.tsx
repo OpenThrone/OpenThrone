@@ -71,7 +71,7 @@ export const NavLoggedOut: React.FC = () => {
                     className={`border-none ${activeParentLink === link.url
                         ? 'bg-orange-gradient text-gradient-orange'
                         : 'text-elf-link-link'
-                      }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-sm`}
+                      }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-sm`}
                   >
                     {link.title}
                   </Link>

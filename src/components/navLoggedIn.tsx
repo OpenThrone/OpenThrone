@@ -10,6 +10,7 @@ import { Indicator } from '@mantine/core';
 
 import { PermissionType } from '@prisma/client';
 import { getAssetPath } from '@/utils/utilities';
+import { PlayerRace } from '@/types/typings';
 
 const parentLinks = [
   'Home',
@@ -207,7 +208,7 @@ export const NavLoggedIn: React.FC = () => {
                 className={`${activeParentLink === link
                   ? 'bg-orange-gradient text-gradient-orange'
                   : 'text-elf-link-link'
-                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-sm`}
+                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-md text-shadow-color-black`}
                 onClick={(event) => handleParentClick(event, link)}
               >
                 {link}
@@ -250,7 +251,7 @@ export const NavLoggedIn: React.FC = () => {
                         activeParentLink === link
                         ? 'bg-orange-gradient text-gradient-orange'
                           : 'text-elf-link-link'
-                      }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-sm`}
+                      }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-xs`}
                       onMouseOver={() => {
                         setActiveSubMenu(subMenus[link] || []);
                       }}
@@ -268,7 +269,7 @@ export const NavLoggedIn: React.FC = () => {
                     activeParentLink === 'signout'
                       ? 'text-elf-link-current'
                       : 'text-elf-link-link'
-                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-sm`}
+                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-sm`}
                 >
                   Sign Out
                 </button>
@@ -278,7 +279,7 @@ export const NavLoggedIn: React.FC = () => {
         </nav>
         <nav
           className={`hidden h-10 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
-          style={{ backgroundImage: `url('${getAssetPath('bottom-menu', null, user?.colorScheme)}')` }}
+          style={{ backgroundImage: `url('${getAssetPath('bottom-menu', null, user?.colorScheme as PlayerRace)}')` }}
 
           onMouseEnter={clearReset}
         >
@@ -297,7 +298,7 @@ export const NavLoggedIn: React.FC = () => {
                         activeSubLink === item.text
                         ? 'text-gradient-orange bg-orange-gradient'
                           : 'text-elf-link-link'
-                    } bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-xs
+                    } bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-xs
                     `}
                       target={item.target ? item.target : '_self'}
                     >
