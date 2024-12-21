@@ -34,7 +34,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
     const fetchData = async () => {
       const filteredUnits = stats.spyResults.intelligenceGathered?.units?.filter((unit) => unit.quantity > 0) || [];
       const totalUnits = filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0);
-      const totalPopulation = stats.spyResults.defender.units.reduce((acc, unit) => acc + unit.quantity, 0);
+      const totalPopulation = Object.values(stats.spyResults.defender.units).reduce((acc, unit) => acc + unit.quantity, 0);
       const unknownUnits = totalPopulation - totalUnits;
       const unitColors = {
         CITIZEN: 'grey',
