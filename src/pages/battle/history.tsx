@@ -6,6 +6,7 @@ import AttackLogTable from '@/components/attacklog';
 import prisma from '@/lib/prisma';
 import { Pagination } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
+import MainArea from '@/components/MainArea';
 
 const ROWS_PER_PAGE = 5; // Match rows per page with Battle Users page
 
@@ -29,8 +30,7 @@ const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typ
   );
 
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="page-title mb-4 text-2xl font-bold">War History</h2>
+    <MainArea title="War History">
 
       {/* Attack Log Section */}
       <section className="mb-8">
@@ -101,7 +101,7 @@ const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typ
           </button>
         </div>
       </section>
-    </div>
+    </MainArea>
   );
 };
 

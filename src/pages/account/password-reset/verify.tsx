@@ -4,6 +4,7 @@ import { showNotification } from '@mantine/notifications';
 import { alertService } from '@/services';
 import { Space, TextInput, Button, Container, Title, Paper } from '@mantine/core';
 import classes from './floatinginput.module.css';
+import MainArea from '@/components/MainArea';
 
 const Index = (props) => {
   const [verify, setVerify] = useState('');
@@ -82,8 +83,7 @@ const Index = (props) => {
   if (!verified) {
     // Verification form
     return (
-      <Container>
-        <Title order={2} className="mainArea pb-10">Password Reset</Title>
+      <MainArea title="Password Reset">
         <Container size='lg' className="py-2 md:col-span-9">
           <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565' }}>
             <form onSubmit={handleVerifySubmit}>
@@ -135,12 +135,11 @@ const Index = (props) => {
             </form>
           </Paper>
         </Container>
-      </Container>
+      </MainArea>
     );
   } else {
     return (
-      <Container>
-        <Title order={2} className="mainArea pb-10">Set New Password</Title>
+      <MainArea title="Set New Password">
         <Container size="xs" className="py-2 md:col-span-9">
           <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565' }}>
             <form onSubmit={handlePasswordReset}>
@@ -166,7 +165,7 @@ const Index = (props) => {
             </form>
           </Paper>
         </Container>
-      </Container>
+      </MainArea>
     );
   }
 };

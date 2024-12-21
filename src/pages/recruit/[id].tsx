@@ -7,6 +7,7 @@ import { alertService } from '@/services';
 import Image from 'next/image';
 import { useUser } from '@/context/users';
 import { getAssetPath } from '@/utils/utilities';
+import MainArea from '@/components/MainArea';
 
 interface RecruitProps {
   id: string;
@@ -131,11 +132,7 @@ export default function Recruit(props) {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Recruiter</h2>
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
+    <MainArea title='Recruiter'>
       {userInfo && (
         <div className="mb-5 text-center items-center">
           <p>
@@ -198,6 +195,6 @@ export default function Recruit(props) {
           </Paper>
         </div>
       </div>
-    </div>
+    </MainArea>
   );
 }

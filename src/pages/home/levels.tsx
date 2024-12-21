@@ -6,6 +6,7 @@ import { Text, Space, Button, Center } from '@mantine/core';
 import styles from './levels.module.css';
 import LevelCard from '@/components/levelCard';
 import { alertService } from '@/services';
+import MainArea from '@/components/MainArea';
 
 const Levels = () => {
   const { user, forceUpdate } = useUser();
@@ -93,18 +94,7 @@ const Levels = () => {
 
 
   return (
-    <div className="mainArea pb-10">
-      <Text
-        style={{
-          background: 'linear-gradient(360deg, orange, darkorange)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-        }}
-      >
-        Levels
-      </Text>
+    <MainArea title="Levels">
       <Space h="md" />
       <Text size="lg">You currently have {proficiencyPoints} proficiency points available.</Text>
       <Text size="sm">Maximum % is 75</Text>
@@ -174,7 +164,7 @@ const Levels = () => {
           </Button>
         </Center>
       )}
-    </div>
+    </MainArea>
   );
 };
 

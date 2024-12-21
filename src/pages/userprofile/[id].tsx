@@ -17,6 +17,7 @@ import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid
 import { InferGetServerSidePropsType } from "next";
 import Image from 'next/image';
 import FriendCard from '@/components/friendCard';
+import MainArea from '@/components/MainArea';
 
 interface IndexProps {
   users: UserModel;
@@ -76,6 +77,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
         setLastActive('Never logged in');
         return;
       }
+      console.log(profile.spyLimits)
       const lastActiveTimestamp = new Date(profile.last_active).getTime();
       const nowTimestamp = nowdate.getTime();
 
@@ -182,13 +184,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     );
   }) : <p>No friends found.</p>;
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">{profile?.displayName}</h2>
-
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
-
+    <MainArea title={profile?.displayName}>
       <Container className="container mx-auto">
         <Text className="text-center">
           <span className="text-white">{profile?.displayName}</span> is a{profile.race === 'ELF' || profile.race === 'UNDEAD' ? 'n ':' '}
@@ -382,7 +378,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
           </h6>
         </div>
       </div>
-    </div>
+    </MainArea>
   );
 };
 

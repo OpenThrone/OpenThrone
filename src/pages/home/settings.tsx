@@ -20,6 +20,7 @@ import {
 import { useDisclosure, useDebouncedValue } from "@mantine/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
+import MainArea from "@/components/MainArea";
 
 const Settings = (props) => {
   const locales: Locales[] = ["en-US", "es-ES"];
@@ -171,19 +172,7 @@ const Settings = (props) => {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <Text
-        style={{
-          background: 'linear-gradient(360deg, orange, darkorange)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-        }}
-      >
-        Settings
-      </Text>
-      <Alert />
+    <MainArea title="Settings">
       <Grid gutter="lg">
         <Grid.Col span={6}>
           <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
@@ -356,7 +345,7 @@ const Settings = (props) => {
           </Group>
         </div>
       </Modal>
-    </div>
+    </MainArea>
   );
 
 };

@@ -208,12 +208,12 @@ const Sidebar: React.FC = () => {
         paddingBottom: '30px',
       }}>
         <div className="p-10 md:p-4 mt-2">
-          <h6 className="advisor-title text-center font-medieval font-bold text-xl text-shadow-xs">
+          <h6 className="advisor-title text-center font-medieval font-bold text-xl text-shadow text-shadow-xs">
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px 0' }} onClick={handlePrevAdvisor} /> Advisor <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px 0' }} onClick={handleNextAdvisor} />
           </h6>
           <Text size='sm' fw={'bold'} className='text-black text-center' style={{minHeight: '105px'}}>{messages[currentMessageIndex]}</Text>
 
-          <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow-xs">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
+          <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
           <List size={'sm'}>
             <List.Item>
               <i className="ra ra-gem ra-fw" /> Gold:{' '}
@@ -252,7 +252,7 @@ const Sidebar: React.FC = () => {
               OT Time: <span id="otTime">{OTTime}</span>
             </List.Item>
           </List>
-          <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2 text-shadow-xs">
+          <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
             <span> </span> Search <span> </span>
           </h6>
           <form onSubmit={handleSubmit}>

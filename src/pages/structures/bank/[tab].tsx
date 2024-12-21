@@ -11,6 +11,7 @@ import { BiCoinStack, BiMoney, BiMoneyWithdraw, BiSolidBank } from "react-icons/
 import classes from './[tab].module.css'
 import user from '@/pages/messaging/compose/[user]';
 import { EconomyUpgrades } from '@/constants';
+import MainArea from '@/components/MainArea';
 
 const Bank = (props) => {
   const tab = usePathname()?.split('/')[3];
@@ -244,11 +245,7 @@ const Bank = (props) => {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Bank</h2>
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
+    <MainArea title="Bank" parentRef>
       <SimpleGrid cols={{base:1, xs:2, md:4}}>
         <Paper withBorder p="sm" radius="md" className={classes.card}>
           <Group justify="space-between">
@@ -621,7 +618,7 @@ const Bank = (props) => {
           </Paper>
         </Flex>
       )}
-    </div>
+    </MainArea>
   );
 };
 

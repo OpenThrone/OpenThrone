@@ -2,20 +2,21 @@ import StatsTable from '@/components/statsTable';
 import { InferGetStaticPropsType } from "next";
 import { getTop10AttacksByTotalCasualties, getTop10TotalAttackerCasualties, getTop10TotalDefenderCasualties, getTopGoldInBank, getTopGoldOnHand, getTopPopulations, getTopRecruitsWithDisplayNames, getTopSuccessfulAttacks, getTopWealth } from '@/services/attack.service';
 import { Title, Container, Grid, Text } from '@mantine/core';
+import MainArea from '@/components/MainArea';
 
 const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInBank, attackByCas, attackerCas, defenderCas, lastGenerated }: InferGetStaticPropsType<typeof getStaticProps>) => {
   return (
-    <Container>
-      <Title order={2} align="center" my="md">Community Stats</Title>
+    <MainArea
+      title="Community Stats">
       <Grid>
         <Grid.Col span={{ base:12, md:6}}>
           <StatsTable title="Top 10 Population" data={population} description="The top 10 population is a list of the ten user accounts with the highest total population over a span." />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <StatsTable title="Most Active Recruiters in last 1 day" data={recruits} />
+          <StatsTable title="Most Active Recruiters (1d)" data={recruits} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Successful Attackers in last 7 days" data={attacks} />
+          <StatsTable title="Top 10 Successful Attackers (7d)" data={attacks} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
           <StatsTable title="Top 10 Gold on Hand" data={goldOnHand} />
@@ -27,17 +28,17 @@ const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInB
           <StatsTable title="Top 10 Gold in Bank" data={goldInBank} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Total Attacker Casualties in last 7 days" data={attackerCas} />
+          <StatsTable title="Top 10 Total Attacker Casualties (7d)" data={attackerCas} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Total Defender Casualties in last 7 days" data={defenderCas} />
+          <StatsTable title="Top 10 Total Defender Casualties (7d)" data={defenderCas} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <StatsTable title="Top 10 Attacks by Total Casualties in last 7 days" data={attackByCas} displayButton={false} />
+          <StatsTable title="Top 10 Attacks by Total Casualties (7d)" data={attackByCas} displayButton={false} />
         </Grid.Col>
       </Grid>
-      <Text align="center" mt="lg">Last generated: {new Date(lastGenerated).toLocaleString()}</Text>
-    </Container>
+      <Text className='text-center' mt="lg">Last generated: {new Date(lastGenerated).toLocaleString()}</Text>
+    </MainArea>
   );
 };
 

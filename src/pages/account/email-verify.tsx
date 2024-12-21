@@ -1,4 +1,5 @@
 import Alert from "@/components/alert";
+import MainArea from "@/components/MainArea";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services";
 import { Button, Grid, Space, Text, TextInput, Modal } from "@mantine/core";
@@ -78,19 +79,8 @@ const EmailVerify = (props) => {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <Text
-        style={{
-          background: 'linear-gradient(360deg, orange, darkorange)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-        }}
-      >
-        Email Verify - Enter Verification Code
-      </Text>
-      <Alert />
+    <MainArea
+      title="Email Verify - Enter Verification Code">
       <form onSubmit={handleSubmit}>
         <Grid gutter="lg">
           <Grid.Col span={6}>
@@ -151,7 +141,7 @@ const EmailVerify = (props) => {
           Cancel
         </Button>
       </Modal>
-    </div>
+    </MainArea>
   );
 };
 

@@ -1,4 +1,3 @@
-import Alert from '@/components/alert';
 import NewsAccordion from '@/components/newsAccordion';
 import { useUser } from '@/context/users';
 import { toLocale } from '@/utils/numberFormatting';
@@ -6,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Text, Card, Space, Table, Group, Center, Flex, ThemeIcon, Paper } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faShieldAlt, faUserShield, faCoins, faLevelUpAlt, faSyncAlt, faStar, faPiggyBank, faTrophy, faMedal, faUserSecret, faCrown, faEye, faShieldVirus, faMoneyBills } from '@fortawesome/free-solid-svg-icons';
+import MainArea from '@/components/MainArea';
 
 const Overview = (props) => {
   const [getNews, setNews] = useState(['no news']);
@@ -31,25 +31,10 @@ const Overview = (props) => {
   const { user } = useUser();
 
   return (
-    <div className="mainArea pb-10">
-      <Text
-        style={{
-          background: 'linear-gradient(360deg, orange, darkorange)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-        }}
-      >
-        Overview
-      </Text>
-      <Space h="md" />
+    <MainArea
+      title="Overview">
       <Center>
         <Paper w={{ sm: '100%', md: '80%' }} shadow="sm" ps="sm" pb='md' radius="md">
-          <Group grow>
-            <Alert />
-          </Group>
-          <Space h="md" />
           <Center>
             <div className='hidden md:block'>
               <Text size="lg" align="center">
@@ -325,7 +310,7 @@ const Overview = (props) => {
       <Text size="xl" weight={700} align="center">Recent News</Text>
       <Space h="md" />
       <NewsAccordion news={getNews} />
-    </div>
+    </MainArea>
   );
 };
 

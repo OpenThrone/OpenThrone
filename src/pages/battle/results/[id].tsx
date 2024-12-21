@@ -15,7 +15,7 @@ const ResultsPage = ({ battle, lastGenerated, viewerID }: InferGetServerSideProp
 
   return (
     <div className="mainArea pb-10">
-      <h2 className="page-title">Battle Results</h2>
+      <h2 className="page-title text-shadow text-shadow-xs">Battle Results</h2>
       {battle.type === 'attack' ? (
         <AttackResult battle={battle} viewerID={viewerID} />
       ) : battle.type === 'ASSASSINATE' ? (

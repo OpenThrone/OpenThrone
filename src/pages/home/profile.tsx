@@ -28,6 +28,7 @@ import {
 } from "@mantine/core";
 import Alert from "@/components/alert";
 import Link from "next/link";
+import MainArea from "@/components/MainArea";
 
 const Profile = (props) => {
   const [file, setFile] = useState<File | null>(null);
@@ -146,19 +147,8 @@ const Profile = (props) => {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <Text
-        style={{
-          background: 'linear-gradient(360deg, orange, darkorange)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-        }}
-      >
-        Profile
-      </Text>
-      <Alert />
+    <MainArea
+      title="My Profile">
       <Grid gutter="lg">
         <Grid.Col span={6}>
           <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
@@ -262,7 +252,7 @@ const Profile = (props) => {
           </Link>
         </Group>
       </Card>
-    </div>
+    </MainArea>
   );
 };
 

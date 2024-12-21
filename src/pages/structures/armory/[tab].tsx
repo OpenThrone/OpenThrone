@@ -13,6 +13,7 @@ import UserModel from '@/models/Users';
 import { BiCoinStack, BiSolidBank, BiMoney } from 'react-icons/bi';
 import { faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import MainArea from '@/components/MainArea';
 
 const useItems = (user: UserModel, armoryLevel: unknown) => {
   const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
@@ -384,11 +385,7 @@ const ArmoryTab = (props) => {
   }, [stickyRef, parentRef]);
 
   return (
-    <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
-      <h2 className="text-2xl font-bold page-title">Armory</h2>
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
+    <MainArea title='Armory' parentRef={parentRef}>
       <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
         <Paper withBorder p="sm" radius="md">
           <Group justify="space-between">
@@ -556,7 +553,7 @@ const ArmoryTab = (props) => {
             </>
           ),
       )}
-    </div>
+    </MainArea>
   );
 };
 

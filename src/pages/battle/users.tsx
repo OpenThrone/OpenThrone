@@ -8,6 +8,7 @@ import toLocale from '@/utils/numberFormatting';
 import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center, Button, Paper, Pill, useMantineTheme } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
 import { usePagination } from '@mantine/hooks';
+import MainArea from '@/components/MainArea';
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const searchParams = useSearchParams();
@@ -125,8 +126,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   };
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Attack</h2>
+    <MainArea title="Attack Users">
       <Center><p>You can attack players from levels {attackRangeMin} to {attackRangeMax}</p></Center>
       <div className="mt-4 flex justify-between mb-2">
         <button
@@ -284,7 +284,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
       </div>
 
 
-    </div>
+    </MainArea>
   );
 };
 

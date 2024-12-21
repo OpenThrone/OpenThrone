@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Loader, Group, Paper } from '@mantine/core';
+import MainArea from '@/components/MainArea';
 
 const Enemies = (props) => {
   const [enemies, setEnemies] = useState([]);
@@ -24,8 +25,7 @@ const Enemies = (props) => {
   ));
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Enemies</h2>
+    <MainArea title="Enemies">
       <Paper shadow="xs" p="md">
         <Table className="min-w-full" striped>
           <Table.Thead>
@@ -37,7 +37,7 @@ const Enemies = (props) => {
           <Table.Tbody>{rows}</Table.Tbody>
         </Table>
       </Paper>
-    </div>
+    </MainArea>
   );
 };
 

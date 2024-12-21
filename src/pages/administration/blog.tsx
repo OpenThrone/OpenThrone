@@ -17,6 +17,7 @@ import { Title, Text, Table as MantineTable, Center, Space } from '@mantine/core
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import MainArea from '@/components/MainArea';
 
 // Initial Markdown content
 const initialContent = '# Welcome to the Mantine rich text editor\n\nThis is a sample post. You can format your text, add headings, lists, and more.';
@@ -75,20 +76,7 @@ const Admin = (props) => {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <Text
-        style={{
-          background: 'linear-gradient(360deg, orange, darkorange)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontSize: '1.5rem',
-          fontWeight: 'bold',
-        }}
-      >
-        Overview
-      </Text>
-      <Space h="md" />
-      <Center></Center>
+    <MainArea title="Blog Administration">
       <div>
       <RichTextEditor editor={editor}>
         <RichTextEditor.Toolbar sticky stickyOffset={60}>
@@ -178,7 +166,7 @@ const Admin = (props) => {
       </ReactMarkdown>
 
       </div>
-    </div>
+    </MainArea>
   );
 };
 
