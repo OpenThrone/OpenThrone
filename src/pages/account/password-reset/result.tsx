@@ -1,5 +1,4 @@
 import MainArea from '@/components/MainArea';
-import MainArea from '@/components/MainArea';
 import { Container, Title, Paper, Text } from '@mantine/core';
 
 const Result = (props) => {
