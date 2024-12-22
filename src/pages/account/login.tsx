@@ -4,8 +4,8 @@ import React from 'react';
 
 import Form from '@/components/form';
 import { useLayout } from '@/context/LayoutContext';
-import Alert from '@/components/alert';
 import MainArea from '@/components/MainArea';
+import { Alert, Space } from '@mantine/core';
 
 const Login = (props) => {
   const { setMeta, meta } = useLayout();
@@ -22,11 +22,6 @@ const Login = (props) => {
 
   const [errorMessage, setErrorMessage] = useState<string>('');
 
-  const handlePasswordReset = async () => {
-    // Logic to handle password reset
-    // This will involve sending the reset email to `resetEmail`
-  };
-
   return (
     <>
       <MainArea
@@ -38,6 +33,14 @@ const Login = (props) => {
             )}
             <div className="flex justify-center">
               <div className="xs:w-96 md:w-5/12">
+                {(process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true') && (
+                  <>
+                    <Alert variant='filled' color='red' title='Login is disabled'>Please check Discord or our News for updates.
+                    </Alert>
+                    <Space h="md" />
+                  </>
+                )
+              }
                 <Form type="login" setErrorMessage={setErrorMessage} />
               </div>
             </div>

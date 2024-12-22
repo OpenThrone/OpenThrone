@@ -135,12 +135,28 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        turnstileToken: { label: 'Turnstile Token', type: 'text' },
       },
       async authorize(credentials) {
         const { email, password } = credentials ?? {};
+        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true') {
+          throw new Error('Login is disabled');
+        }
+        const { turnstileToken } = credentials;
+        const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: turnstileToken }),
+        });
+        const captchaData = await captchaRes.json();
+        if (!captchaData.success) {
+          throw new Error('Captcha verification failed');
+        }
         if (!email || !password) {
           throw new Error('Missing username or password');
         }
+
+        //const ip = req?.headers?.['x-forwarded-for'] || req?.socket?.remoteAddress || '';
 
         const user = await validateCredentials(email, password);
 

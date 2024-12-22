@@ -17,12 +17,18 @@ import {
 import toast from 'react-hot-toast';
 import LoadingDots from '@/components/loading-dots';
 import Link from 'next/link';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: string) => void }) => {
   const [loading, setLoading] = useState(false);
   const [showVacationModal, setShowVacationModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
+  const [turnstileToken, setTurnstileToken] = useState('');
+
+  const handleTurnstileSuccess = (token: string) => {
+    setTurnstileToken(token);
+  };
 
   const [formData, setFormData] = useState({
     display_name: '',
@@ -74,6 +80,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
         redirect: false,
         email,
         password,
+        turnstileToken,
       });
 
       if (res?.ok) {
@@ -112,18 +119,14 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
             setLoading(true);
             try {
               if (type === 'login') {
-                const email = e.currentTarget.email.value;
-                const password = e.currentTarget.password.value;
-                // Update formData with the latest email and password
-                setFormData((prevData) => ({ ...prevData, email, password }));
-                await handleLogin(email, password);
+                await handleLogin(e.currentTarget.email.value, e.currentTarget.password.value, turnstileToken);
               } else {
                 const res = await fetch('/api/auth/register/route', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                   },
-                  body: JSON.stringify(formData),
+                  body: JSON.stringify({ ...formData, turnstileToken }),
                 });
 
                 if (res.status === 200) {
@@ -269,6 +272,10 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
                 instead.
               </Text>
             )}
+            <Turnstile
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+              onSuccess={handleTurnstileSuccess}
+            />
           </Flex>
         </form>
 

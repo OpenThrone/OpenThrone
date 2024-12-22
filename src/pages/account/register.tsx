@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
 import Form from '@/components/form';
-import Alert from '@/components/alert';
 import MainArea from '@/components/MainArea';
+import { Alert, Space } from '@mantine/core';
 
 const Register = (props) => {
   const [errorMessage, setErrorMessage] = useState('');
@@ -18,6 +18,14 @@ const Register = (props) => {
             )}
             <div className="flex justify-center">
               <div className="xs:w-96 md:w-5/12">
+                {(process.env.NEXT_PUBLIC_DISABLE_REGISTRATION === 'true') && (
+                  <>
+                    <Alert variant='filled' color='red' title='Registration is disabled'>Please check Discord or our News for updates.
+                    </Alert>
+                    <Space h="md" />
+                  </>
+                )
+                }
                 <Form type="register" setErrorMessage={setErrorMessage} />
               </div>
             </div>
