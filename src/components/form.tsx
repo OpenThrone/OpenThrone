@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -25,6 +25,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
   const [turnstileToken, setTurnstileToken] = useState('');
+  const turnsTileRef = useRef();
 
   const handleTurnstileSuccess = (token: string) => {
     setTurnstileToken(token);
@@ -103,6 +104,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
       console.error(error);
       setErrorMessage('Something went wrong!');
     } finally {
+      turnsTileRef.current?.reset();
       setLoading(false);
     }
   };
@@ -275,6 +277,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
             <Turnstile
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
               onSuccess={handleTurnstileSuccess}
+              ref={turnsTileRef}
             />
           </Flex>
         </form>
