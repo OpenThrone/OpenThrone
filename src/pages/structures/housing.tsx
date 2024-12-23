@@ -112,7 +112,7 @@ const Housing = (props) => {
                 Fortification Required: <Text component="span" color="lightgray">{Fortifications[nextUpgrade.fortLevel].name}</Text>
               </Text>
               <Text size="sm" color="dimmed">
-                Cost: <Text component="span" color="lightgray">{nextUpgrade.cost} Gold</Text>
+                Cost: <Text component="span" color="lightgray">{toLocale(nextUpgrade.cost, user?.locale)} Gold</Text>
               </Text>
             </Stack>
           </Group>
