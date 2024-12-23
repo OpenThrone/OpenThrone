@@ -325,6 +325,10 @@ export default function AutoRecruiter(props) {
               </Button>
             </Center>
           )}
+          <SessionModal
+            opened={sessionModalOpened}
+            onClose={() => setSessionModalOpened(false)}
+          />
         </Center>
       </MainArea>
     );
