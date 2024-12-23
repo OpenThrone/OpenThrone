@@ -71,7 +71,7 @@ const UpgradeTab = (props) => {
       
       
       <div className="mb-4 flex justify-center">
-        <h2 className='page-title text-shadow text-shadow-xs'>
+        <h2 className='page-title bg-orange-gradient text-gradient-orange text-shadow text-shadow-color-bg-gray-500 text-shadow-xs'>
         {currentPage === 'fortifications' && ('Fortifications')}
         {currentPage === 'offense' && ('Siege Upgrades')}
         {currentPage === 'intel' && ('Clandestine Upgrades')}
