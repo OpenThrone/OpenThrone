@@ -92,7 +92,6 @@ export const NavLoggedIn: React.FC = () => {
   const [defaultParentLink, setDefaultParentLink] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const layoutCont = useLayout();
-  const [testMenu, setTestMenu] = useState(false);
   const { user } = useUser();
 
   // Add the administration link only if the user has admin privileges
@@ -129,11 +128,6 @@ export const NavLoggedIn: React.FC = () => {
       secondPath = 'overview';
     }
 
-    if (searchParms.get('test') === 'menu') {
-      setTestMenu(true);
-    } else {
-      setTestMenu(false);
-    }
     if (currentPath === 'userprofile' || (currentPath === 'battle' && secondPath === 'users')) {
       setActiveParentLink('Battle');
       const subMenu = subMenus.Battle || [];
@@ -148,6 +142,13 @@ export const NavLoggedIn: React.FC = () => {
       setActiveSubLink('War History');
       setDefaultParentLink('Battle');
       setDefaultSubMenu(subMenus.Battle || []);
+    } else if(currentPath === 'auto-recruit') {
+      setActiveParentLink('Community');
+      const subMenu = subMenus.Community || [];
+      setActiveSubMenu(subMenu);
+      setActiveSubLink('Auto Recruit');
+      setDefaultParentLink('Community');
+      setDefaultSubMenu(subMenus.Community || []);
     } else {
       const activeLink = parentLinks.find(
         (link) => link.toLowerCase() === currentPath
