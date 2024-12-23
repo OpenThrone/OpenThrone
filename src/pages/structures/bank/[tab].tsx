@@ -1,19 +1,16 @@
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 import { alertService } from '@/services';
 import { useUser } from '@/context/users';
-import Alert from '@/components/alert';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
 import { Chip, Group, Paper, Table, Tabs, SimpleGrid, Text, Space, NumberInput, rem, ThemeIcon, Button, Flex, Divider } from '@mantine/core';
 import { BiCoinStack, BiMoney, BiMoneyWithdraw, BiSolidBank } from "react-icons/bi";
 import classes from './[tab].module.css'
-import user from '@/pages/messaging/compose/[user]';
 import { EconomyUpgrades } from '@/constants';
 import MainArea from '@/components/MainArea';
 
-const Bank = (props) => {
+const Bank = () => {
   const tab = usePathname()?.split('/')[3];
   const { user, forceUpdate } = useUser();
   const [depositAmount, setDepositAmount] = useState(BigInt(0));
@@ -245,7 +242,7 @@ const Bank = (props) => {
   };
 
   return (
-    <MainArea title="Bank" parentRef>
+    <MainArea title="Bank">
       <SimpleGrid cols={{base:1, xs:2, md:4}}>
         <Paper withBorder p="sm" radius="md" className={classes.card}>
           <Group justify="space-between">
