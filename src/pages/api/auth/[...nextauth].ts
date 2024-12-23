@@ -7,6 +7,7 @@ import prisma from '@/lib/prisma';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { IUserSession } from '@/types/typings';
 import { getUpdatedStatus } from '@/services/user.service';
+import { isAdmin, isModerator } from '@/utils/authorization';
 
 const argon2 = require('argon2');
 
@@ -139,9 +140,6 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         const { email, password } = credentials ?? {};
-        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true') {
-          throw new Error('Login is disabled');
-        }
         const { turnstileToken } = credentials;
         const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
           method: 'POST',
@@ -168,6 +166,10 @@ export const authOptions: NextAuthOptions = {
             throw new Error(JSON.stringify({ message: user.error, userID: user.userID }));
           }
           throw new Error(user.error);
+        }
+
+        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && !isAdmin(user.id) && !isModerator(user.id)) {
+          throw new Error('Login is disabled');
         }
 
         return user;
