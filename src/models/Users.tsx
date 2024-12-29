@@ -49,9 +49,9 @@ class UserModel {
 
   public experience: number;
 
-  public gold: bigint;
+  public gold: bigint | string;
 
-  public goldInBank: bigint;
+  public goldInBank: bigint | string;
 
   public fortLevel: number;
 
@@ -122,8 +122,8 @@ class UserModel {
     this.race = 'ELF';
     this.class = 'ASSASSIN';
     this.experience = 0;
-    this.gold = BigInt(0);
-    this.goldInBank = BigInt(0);
+    this.gold = '0';
+    this.goldInBank = '0';
 
     this.fortLevel = 0;
     this.fortHitpoints = 0;
@@ -168,8 +168,8 @@ class UserModel {
       this.race = userData.race;
       this.class = userData.class;
       this.experience = userData.experience;
-      this.gold = BigInt(userData.gold | 0);
-      this.goldInBank = BigInt(userData.gold_in_bank | 0);
+      this.gold = userData.gold || '0';
+      this.goldInBank = userData.gold_in_bank || '0';
       this.battle_upgrades = userData.battle_upgrades;
       this.fortLevel = userData.fort_level;
       this.fortHitpoints = userData?.fort_hitpoints || userData?.fortHitpoints || 0;
