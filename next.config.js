@@ -20,7 +20,13 @@ module.exports = withBundleAnalyzer({
   poweredByHeader: true,
   trailingSlash: false,
   images: {
-    domains: ['assets.openthrone.dev'], 
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'assets.openthrone.dev',
+        pathname: '/**',
+      },
+    ], 
   },
   publicRuntimeConfig: {
     apiUrl:
