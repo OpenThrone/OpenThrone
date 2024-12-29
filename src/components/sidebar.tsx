@@ -95,7 +95,7 @@ const Sidebar: React.FC = () => {
           level: toLocale(user.level, user?.locale),
           xp: toLocale(user.experience, user?.locale),
           xpNextLevel: toLocale(user.xpToNextLevel, user?.locale),
-          progress: progressPercentage,
+          progress: progressPercentage.toString(),
           turns: toLocale(user.attackTurns, user?.locale),
         });
       }
