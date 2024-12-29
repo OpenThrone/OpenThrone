@@ -3,7 +3,7 @@ import { Text, Title } from '@mantine/core';
 
 const NewsBulletin: React.FC = () => {
   const [message, setMessage] = useState(
-    process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE
+    process?.env?.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE ??  ''
   );
   useEffect(() => {
     if (!process || !process.env || !process.env.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE) {
