@@ -61,8 +61,6 @@ export const updateUserAndBankHistory = async (
 ) => {
   const updateData: any = {
     gold: userGold,
-    killing_str: killingStrength,
-    defense_str: defenseStrength,
     offense: newOffense,
     defense: newDefense,
     spy: newSpying,
