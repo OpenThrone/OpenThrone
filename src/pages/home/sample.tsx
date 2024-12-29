@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Card, Center, Checkbox, Group, Space, Table, Text, Title, useMantineTheme } from '@mantine/core';
+import ThemedCard from '@/components/themedCard';
 
 const SamplePage = (props) => {
   const theme = useMantineTheme();
@@ -137,6 +138,7 @@ const SamplePage = (props) => {
           </Center>
         </Card>
       </Group>
+      <ThemedCard />
     </div>
   );
 };
