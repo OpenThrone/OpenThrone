@@ -71,11 +71,10 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         }
 
         console.log('Sending requestUserData via WebSocket for user ID:', uID);
-        socket.send(
-          JSON.stringify({
-            event: 'requestUserData',
-            payload: { userId: uID },
-          })
+        socket.emit(
+            'requestUserData',
+            { userId: uID },
+          
         );
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -89,7 +88,6 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
 
     // Define handlers once
     const handleUserData = (userData: any) => {
-      console.log('Received userData:', userData);
       const uModel = new UserModel(userData, false);
       setUser(uModel);
 

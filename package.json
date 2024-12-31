@@ -104,6 +104,7 @@
     "remark-rehype": "^11.1.1",
     "rpg-awesome": "^0.2.0",
     "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1",
     "superjson": "^1.13.3",
     "swr": "^2.2.5",
     "tailwindcss": "^3.4.17",

@@ -124,8 +124,6 @@ const Bank = () => {
 
       if (data.error) {
         alertService.error(data.error);
-
-        // Handle error
       } else {
         // Update the user context or fetch new data
         forceUpdate();
