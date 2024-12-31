@@ -45,7 +45,7 @@ const AlertComponent: React.FC = () => {
     <div className="container mx-auto px-4">
       <div className="my-3">
         <Alert variant='filled' className={'alert-' + alert.type} title={alert.type.toUpperCase()} withCloseButton onClose={alertService.clear}>
-          <Text className='text-shadow text-shadow-xs text-gray-800'>{alert.message}</Text>
+          <Text className='text-shadow text-shadow-xs text-gray-800 w-auto'>{alert.message}</Text>
           {timeLeft !== null && <Text c='gray' size='sm' className=' mt-1'>Alert Clearing In: {timeLeft} seconds</Text>}
           {alert.showButton && (
             <>
