@@ -412,7 +412,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     level: 13,
   },
   {
-    name: 'Languages',
+    name: 'Language Training',
     fortLevelRequirement: 14,
     offenseBonusPercentage: 65,
     maxInfiltrations: 8,
@@ -425,7 +425,7 @@ export const SpyUpgrades: SpyUpgradeType[] = [
     level: 14,
   },
   {
-    name: 'Languages',
+    name: 'Advanced Language Training',
     fortLevelRequirement: 15,
     offenseBonusPercentage: 70,
     maxInfiltrations: 9,
