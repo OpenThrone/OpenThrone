@@ -2,6 +2,7 @@ import { getUpdatedStatus } from '@/services';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
+import prisma from './prisma';
 
 let io: Server | null = null;
 
@@ -9,7 +10,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
   if (!io) {
     io = new Server(httpServer, {
       cors: {
-        origin: "*",
+        origin: "*.openthrone.dev",
         methods: ["GET", "POST"],
       },
       path: '/socket.io',
@@ -104,6 +105,16 @@ export const initializeSocket = (httpServer: HttpServer) => {
             io.to(socketId).emit('userUpdate', { message: `Update for user ${userId}` });
           });
         }
+      });
+
+      socket.on('notifyAttack', ({ userId, battleId }) => { 
+        io.to(`user-${userId}`).emit('attackNotification', { message: `You were attacked in battle ${battleId}` });
+      })
+
+      // Ping-pong event
+      socket.on('ping', ({userId}) => {
+        console.log('Ping received to user:', userId);
+        io.to(`user-${userId}`).emit('pong');
       });
 
       socket.on('disconnect', () => {

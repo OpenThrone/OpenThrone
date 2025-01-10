@@ -70,7 +70,6 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
           return;
         }
 
-        console.log('Sending requestUserData via WebSocket for user ID:', uID);
         socket.emit(
             'requestUserData',
             { userId: uID },
@@ -86,7 +85,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    // Define handlers once
+    // Define handlers for socketIO
     const handleUserData = (userData: any) => {
       const uModel = new UserModel(userData, false);
       setUser(uModel);
@@ -113,14 +112,42 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       setLoading(false);
     };
 
+    const handlePong = () => {
+      console.log('Pong!');
+      alert('Pong!');
+    };
+    const handleAttackNotification = (data: any) => {
+      console.log('Attack Notification:', data);
+      alertService.error(data.message);
+    }
+    /* 
+    TODO: remove comments
+      need to add a const for the function
+      add to an eventlistener
+      remember to remove the event listener
+
+      server needs to act like router for the socket
+      will need to refactor this later, but the user context seems fitting
+
+      client __ server
+      userData == requestUserData
+      pong == ping
+      ?? == attackNotification
+      ?? == notifyFriendRequest
+    */
+
     // Attach listeners
     addEventListener('userData', handleUserData);
     addEventListener('userDataError', handleUserDataError);
+    addEventListener('pong', handlePong);
+    addEventListener('attackNotification', handlePong);
 
     // Cleanup on unmount or when dependencies change
     return () => {
       removeEventListener('userData', handleUserData);
       removeEventListener('userDataError', handleUserDataError);
+      removeEventListener('pong', handlePong);
+      removeEventListener('attackNotification', handlePong);
     };
   }, [socket, isConnected, addEventListener, removeEventListener, router]); 
 

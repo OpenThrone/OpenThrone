@@ -34,6 +34,7 @@ interface LayoutContextProps {
   setMeta?: (meta: { title?: string; description?: string }) => void;
   raceClasses: RaceColors;
   meta: { title: string; description: string };
+  updateOptions?: () => void;
 }
 
 // Function to generate color classes based on race
