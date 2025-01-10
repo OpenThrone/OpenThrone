@@ -10,7 +10,7 @@ import classes from './[tab].module.css'
 import { EconomyUpgrades } from '@/constants';
 import MainArea from '@/components/MainArea';
 
-const Bank = () => {
+const Bank = (props) => {
   const tab = usePathname()?.split('/')[3];
   const { user, forceUpdate } = useUser();
   const [depositAmount, setDepositAmount] = useState(BigInt(0));
@@ -36,6 +36,7 @@ const Bank = () => {
     training: true,
     recruitment: true,
     economy: true,
+    fortification: true,
   });
 
   useEffect(() => {
@@ -216,6 +217,8 @@ const Bank = () => {
     if (history_type === 'RECRUITMENT') return 'Recruitment';
 
     if (history_type === 'ECONOMY') return 'Income';
+
+    if (history_type === 'FORT_REPAIR') return 'Fort Repair';
 
     if (history_type === 'WAR_SPOILS') return 'War Spoils';
     // Fallback for unknown types
@@ -508,6 +511,14 @@ const Bank = () => {
               color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
             >
               Income
+            </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.fortification}
+              onChange={() => { setFilters({ ...filters, fortification: !filters.fortification }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Fort Repairs
             </Chip>
           </Group>
           {message && <div className="text-center p-4">{message}</div>}

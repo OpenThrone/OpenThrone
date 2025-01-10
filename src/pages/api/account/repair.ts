@@ -38,14 +38,33 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     let newFortHitpoints = user.fort_hitpoints + repairPoints;
     if (newFortHitpoints > fortification.hitpoints) newFortHitpoints = fortification.hitpoints;
     
-    // Update the user's gold and fort hitpoints in the database
-    await prisma.users.update({
-      where: { id: userId },
-      data: {
-        gold: user.gold - BigInt(totalCost),
-        fort_hitpoints: newFortHitpoints,
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.bank_history.create({
+        data: {
+          from_user_id: user.id,
+          to_user_id: 0,
+          to_user_account_type: 'HAND',
+          from_user_account_type: 'BANK',
+          date_time: new Date(),
+          gold_amount: totalCost,
+          history_type: 'FORT_REPAIR',
+          stats: {
+            currentFortHP: user.fort_hitpoints,
+            newFortHP: newFortHitpoints,
+            increase: repairPoints,
+          },
+        },
+      });
+      // Update the user's gold and fort hitpoints in the database
+      await tx.users.update({
+        where: { id: userId },
+        data: {
+          gold: user.gold - BigInt(totalCost),
+          fort_hitpoints: newFortHitpoints,
+        },
+      });
     });
+    
 
     // Return success response with new gold and fort hitpoints values
     return res.status(200).json(stringifyObj({ success: true, newGold: user.gold - BigInt(totalCost), newFortHitpoints }));
