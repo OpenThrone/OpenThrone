@@ -90,7 +90,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   if (!profile) return <p>User not found</p>;
   if (lastActive === 'Never logged in') return <p>User is currently inactive</p>;
 
-  console.log('userprofile 92')
   const handleAddFriend = async () => {
     const res = await fetch('/api/social/add', {
       method: 'POST',
@@ -154,26 +153,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   // Function to toggle the Spy Missions Modal
   const toggleSpyModal = () => {
     setIsSpyModalOpen(!isSpyModalOpen);
-  };
-
-  const handleSubmit = async (turns: number) => {
-    if (!turns) turns = 1;
-    const res = await fetch(`/api/attack/${profile.id}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ turns }),
-    });
-    const results = await res.json();
-
-    if (results.status === 'failed') {
-      alertService.error(results.status);
-    } else {
-      forceUpdate();
-      router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
-    }
   };
 
   const isFriend = friends.some(friend => friend.friend.id === profile.id);
