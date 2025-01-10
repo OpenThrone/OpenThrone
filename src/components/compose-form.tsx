@@ -102,15 +102,9 @@ export default function ComposeForm({ onClose }: ComposeFormProps) {
           value={recipients}
           onChange={setRecipients}
           searchable
-          creatable
-          getCreateLabel={(query) => `+ Add ${query}`}
-          onCreate={(query) => addRecipient(query)}
-          onItemSubmit={(item) => addRecipient(item.value)}
           onSearchChange={handleRecipientChange}
           label="Recipients"
-          nothingFound="No matches"
           searchValue={recipient}
-          onSearchValueChange={setRecipient}
         />
 
 

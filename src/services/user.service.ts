@@ -104,7 +104,6 @@ export const getUpdatedStatus = async (userId: number) => {
 
   // If no status history exists, default to ACTIVE
   if (!statusHistory) {
-    // Optionally, you can create an ACTIVE status record here
     await prisma.accountStatusHistory.create({
       data: {
         user_id: userId,
@@ -117,7 +116,6 @@ export const getUpdatedStatus = async (userId: number) => {
 
   // Check if the current status has expired
   if (statusHistory.end_date && statusHistory.end_date <= now) {
-    // Status has expired, update to ACTIVE
     await prisma.accountStatusHistory.create({
       data: {
         user_id: userId,
@@ -129,18 +127,26 @@ export const getUpdatedStatus = async (userId: number) => {
     return 'ACTIVE';
   }
 
-  // Handle IDLE status based on last_active timestamp
+  // Check if user should transition from IDLE to ACTIVE
   const user = await prisma.users.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      last_active: true,
-    },
+    where: { id: userId },
+    select: { last_active: true },
   });
 
-  if (statusHistory.status !== 'IDLE' && (!user.last_active || user?.last_active && user.last_active < idleThresholdDate(60))) {
-    // User has been idle for over 60 days, update status to IDLE
+  if (statusHistory.status === 'IDLE' && user?.last_active && user.last_active >= idleThresholdDate(60)) {
+    await prisma.accountStatusHistory.create({
+      data: {
+        user_id: userId,
+        status: 'ACTIVE',
+        start_date: now,
+        reason: 'User activity detected, transitioning to ACTIVE',
+      },
+    });
+    return 'ACTIVE';
+  }
+
+  // Check if user should transition to IDLE
+  if (statusHistory.status !== 'IDLE' && (!user?.last_active || user.last_active < idleThresholdDate(60))) {
     await prisma.accountStatusHistory.create({
       data: {
         user_id: userId,

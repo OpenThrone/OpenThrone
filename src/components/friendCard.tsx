@@ -11,7 +11,7 @@ const FriendCard: React.FC<FriendCardProps> = ({ player }) => (
     <Indicator color={player.is_online ? 'teal' : 'red'} style={{ display: 'block', textAlign: 'center' }}>
       <Avatar src={player?.avatar} size={40} radius={40} mx="auto" />
     </Indicator>
-    <Text size="sm" weight={500} align="center" mt="md">
+    <Text size="sm" fw={500} ta="center" mt="md">
       <Link
         href={`/userprofile/${player.id}`}
         className='text-blue-500 hover:text-blue-700 font-bold'
@@ -25,7 +25,7 @@ const FriendCard: React.FC<FriendCardProps> = ({ player }) => (
               : 'blue'
           ))} ml={5}>You</Badge>}
     </Text>
-    <Text size="xs" color="dimmed" align="center">
+    <Text size="xs" color="dimmed" ta="center">
       {player.race} {player.class}
     </Text>
   </Paper>

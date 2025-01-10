@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faArrowRight, faCircleInfo, faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { getTimeRemaining, getTimeToNextTurn, getOTTime } from '@/utils/timefunctions';
 import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List, Progress, Popover } from '@mantine/core';
-import { useDebouncedCallback, useDisclosure } from '@mantine/hooks';
+import { useDebouncedCallback, useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
 import { levelXPArray } from '@/constants/XPLevels';
@@ -20,6 +20,7 @@ const Sidebar: React.FC = () => {
   const [usersData, setUsersData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [nextLevelOpened, { close, open }] = useDisclosure(false);
+  const isMobile = useMediaQuery('(max-width: 768px)'); // Adjust breakpoint for mobile devices
 
   const [sidebar, setSidebar] = useState({
     gold: '0',
@@ -208,13 +209,13 @@ const Sidebar: React.FC = () => {
         paddingBottom: '30px',
       }}>
         <div className="p-10 md:p-4 mt-2">
-          <h6 className="advisor-title text-center font-medieval font-bold text-xl text-shadow text-shadow-xs">
+          <h3 className="advisor-title text-center font-medieval font-bold text-xl text-shadow text-shadow-xs">
             <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px 0' }} onClick={handlePrevAdvisor} /> Advisor <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px 0' }} onClick={handleNextAdvisor} />
-          </h6>
-          <Text size='sm' fw={'bold'} className='text-black text-center' style={{minHeight: '105px'}}>{messages[currentMessageIndex]}</Text>
+          </h3>
+          <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-black text-center' style={{minHeight: '105px'}}>{messages[currentMessageIndex]}</Text>
 
           <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
-          <List size={'sm'}>
+          <List size={isMobile ? 'xl' : 'sm'} className={ isMobile? 'text-sm ml-2': 'text-base' } style={isMobile ? {marginLeft: '14px'} : {}}>
             <List.Item>
               <i className="ra ra-gem ra-fw" /> Gold:{' '}
               <span id="gold">{sidebar.gold}</span>

@@ -112,7 +112,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
   return (
     <Center>
       <Paper withBorder shadow="md" p={30} radius="md" style={{ width: '100%', maxWidth: 400 }}>
-        <Title order={2} align="center" mb="md" c={'gray'}>
+        <Title order={2} ta="center" mb="md" c={'gray'}>
           {type === 'login' ? 'Sign In' : 'Sign Up'}
         </Title>
         <form
@@ -254,7 +254,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
             </Button>
             <Space h="md" />
             {type === 'login' ? (
-              <Text align="center" size="sm" c={'gray'}>
+              <Text ta="center" size="sm" c={'gray'}>
                 Don&apos;t have an account?{' '}
                 <Link href="/account/register">
                   <Text component="span" color="blue" inherit>
@@ -264,7 +264,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
                 for free.
               </Text>
             ) : (
-              <Text align="center" size="sm" c={'gray'}>
+              <Text ta="center" size="sm" c={'gray'}>
                 Already have an account?{' '}
                 <Link href="/account/login">
                   <Text component="span" color="blue" inherit>

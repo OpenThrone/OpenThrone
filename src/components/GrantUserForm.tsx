@@ -99,11 +99,11 @@ const GrantUserForm = () => {
     <Group gap="sm">
       <Avatar src={option.image} size={50} radius="xl" />
       <div>
-        <Text size="sm" weight="bold">{option.label}</Text>
+        <Text size="sm" fw="bold">{option.label}</Text>
         <Text size="xs" opacity={0.5}>
           Experience Level: {option.experience} | Race: {option.race} | Class: {option.class}
         </Text>
-        <Group spacing="xs" mt="xs">
+        <Group mt="xs">
           Permissions:
           {option.permissions.length > 0 ? (
             option.permissions.map((perm) => (
@@ -131,29 +131,26 @@ const GrantUserForm = () => {
 
   return (
     <Card shadow="sm" padding="lg" style={{ backgroundColor: "#1A1B1E" }}>
-      <Stack spacing="md">
+      <Stack>
         <Card.Section>
           <div style={{ padding: "16px" }}> {/* Add padding here */}
-            <Text size="xl" weight="bold">User Information</Text>
+            <Text size="xl" fw="bold">User Information</Text>
             <Autocomplete
               value={grantUser}
               onChange={setGrantUser}
               data={usersData}
               placeholder="Type to search for a user..."
-              nothingFound="No users found"
               maxDropdownHeight={300}
               renderOption={renderAutocompleteOption}
-              onSearchChange={handleSearch}
               limit={5}
-              loading={loading}
             />
           </div>
         </Card.Section>
 
         <Card.Section mt="md">
           <div style={{ padding: "16px" }}> {/* Add padding here */}
-            <Text size="xl" weight="bold">Modify Permissions</Text>
-            <Group spacing="xs" mt="sm">
+            <Text size="xl" fw="bold">Modify Permissions</Text>
+            <Group mt="sm">
               {isUserValid ? (
                 Array.isArray(grantLevel) && grantLevel.length > 0 ? (
                   grantLevel.map((perm) => (
@@ -183,8 +180,9 @@ const GrantUserForm = () => {
 
             <Select
               data={Object.keys(PermissionType).map((permType) => ({ value: permType, label: permType }))}
-              value={grantLevel}
-              onChange={(values) => setGrantLevel(values || [])} // Ensure it's always an array
+              value={grantLevel.toLocaleString()}
+              //TODO: fix this
+              //onChange={(values) => setGrantLevel([values] || [])} // Ensure it's always an array
               multiple
               placeholder="Add or remove permissions"
               mt="md"

@@ -17,7 +17,7 @@ import {
   Text,
   Grid
 } from "@mantine/core";
-import { useDisclosure, useDebouncedValue } from "@mantine/hooks";
+import { useDisclosure, useDebouncedValue, useLocalStorage } from "@mantine/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 import MainArea from "@/components/MainArea";
@@ -30,8 +30,14 @@ const Settings = (props) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const { user, forceUpdate } = useUser();
   const { updateOptions } = useLayout();
-  const [colorScheme, setColorScheme] = useState(user?.colorScheme || "UNDEAD");
-  const [locale, setLocale] = useState(user?.locale || "en-US");
+  const [colorScheme, setColorScheme] = useLocalStorage<Partial<PlayerRace>>({
+    key: 'theme',
+    defaultValue: 'ELF',
+  });
+  const [locale, setLocale] = useLocalStorage<Partial<string>>({
+    key: 'locale',
+    defaultValue: 'en-US',
+  });
   const [userEmail, setUserEmail] = useState(user?.email || "");
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
