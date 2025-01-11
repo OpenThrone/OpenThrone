@@ -30,14 +30,8 @@ const Settings = (props) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const { user, forceUpdate } = useUser();
   const { updateOptions } = useLayout();
-  const [colorScheme, setColorScheme] = useLocalStorage<Partial<PlayerRace>>({
-    key: 'theme',
-    defaultValue: 'ELF',
-  });
-  const [locale, setLocale] = useLocalStorage<Partial<string>>({
-    key: 'locale',
-    defaultValue: 'en-US',
-  });
+  const [colorScheme, setColorScheme] = useState(user?.colorScheme || "ELF");
+  const [locale, setLocale] = useState(user?.locale || "en-US");
   const [userEmail, setUserEmail] = useState(user?.email || "");
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -59,7 +53,7 @@ const Settings = (props) => {
       setLocale(user.locale);
       setUserEmail(user.email);
     }
-  }, [user]);
+  }, [setColorScheme, setLocale, user]);
 
   useEffect(() => {
     checkPasswordsMatch();
