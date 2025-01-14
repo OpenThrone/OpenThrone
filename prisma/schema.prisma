@@ -6,8 +6,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 enum AccountStatus {
@@ -27,83 +27,80 @@ enum PermissionType {
 }
 
 model users {
-  id                 Int       @id @default(autoincrement())
-  email              String    @unique
-  display_name       String    @unique
-  password_hash      String
-  race               String
-  class              String
-  units              Json?     @default("[{\"type\": \"CITIZEN\", \"level\": 1, \"quantity\": 50}, {\"type\": \"WORKER\", \"level\": 1, \"quantity\": 0}, {\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}]")
-  experience         Int       @default(0)
-  gold               BigInt    @default(25000)
-  gold_in_bank       BigInt    @default(0)
-  fort_level         Int       @default(1)
-  fort_hitpoints     Int       @default(50)
-  attack_turns       Int       @default(50)
-  last_active        DateTime? @db.Timestamptz(3)
-  rank               Int       @default(0)
-  items              Json?     @default("[{\"type\": \"WEAPON\", \"level\": 1, \"quantity\": 0, \"usage\": \"OFFENSE\"}]")
-  house_level        Int       @default(0)
-  economy_level      Int       @default(0)
-  offense            Int       @default(0)
-  defense            Int       @default(0)
-  spy                Int       @default(0)
-  sentry             Int       @default(0)
-  battle_upgrades    Json?     @default("[{\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}]")
-  structure_upgrades Json?     @default("[{\"type\": \"OFFENSE\", \"level\": 1}, {\"type\": \"SPY\", \"level\": 1}, {\"type\": \"SENTRY\", \"level\": 1}, {\"type\":\"ARMORY\",\"level\":1}]")
-  bonus_points       Json?     @default("[{\"type\": \"OFFENSE\", \"level\":0}, {\"type\": \"DEFENSE\", \"level\":0}, {\"type\": \"INCOME\", \"level\":0}, {\"type\": \"INTEL\", \"level\":0}, {\"type\": \"PRICES\", \"level\":0}]")
-  stats              Json?     @default("[{\"type\": \"OFFENSE\", \"subtype\":\"WON\", \"stat\": 0}, {\"type\": \"OFFENSE\", \"subtype\":\"LOST\", \"stat\": 0}, {\"type\": \"DEFENSE\", \"subtype\":\"WON\", \"stat\": 0}, {\"type\": \"DEFENSE\", \"subtype\":\"LOST\", \"stat\": 0}, {\"type\": \"SPY\", \"subtype\":\"WON\", \"stat\": 0}, {\"type\": \"SPY\", \"subtype\":\"LOST\", \"stat\": 0}, {\"type\": \"SENTRY\", \"subtype\":\"WON\", \"stat\": 0}, {\"type\": \"SENTRY\", \"subtype\":\"LOST\", \"stat\": 0}]")
-  bio                String    @default("")
-  colorScheme        String?
-  recruit_link       String    @unique @default("")
-  locale             String
-  avatar             String?   @default("SHIELD")
-  created_at         DateTime  @default(now())
-  updated_at         DateTime  @default(now()) @updatedAt
+  id                                    Int                    @id @default(autoincrement())
+  email                                 String                 @unique
+  display_name                          String                 @unique
+  password_hash                         String
+  race                                  String
+  class                                 String
+  units                                 Json?                  @default("[{\"type\": \"CITIZEN\", \"level\": 1, \"quantity\": 50}, {\"type\": \"WORKER\", \"level\": 1, \"quantity\": 0}, {\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}]")
+  experience                            Int                    @default(0)
+  gold                                  BigInt                 @default(25000)
+  gold_in_bank                          BigInt                 @default(0)
+  fort_level                            Int                    @default(1)
+  fort_hitpoints                        Int                    @default(50)
+  attack_turns                          Int                    @default(50)
+  last_active                           DateTime?              @db.Timestamptz(3)
+  rank                                  Int                    @default(0)
+  items                                 Json?                  @default("[{\"type\": \"WEAPON\", \"level\": 1, \"usage\": \"OFFENSE\", \"quantity\": 0}]")
+  house_level                           Int                    @default(0)
+  battle_upgrades                       Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}]")
+  structure_upgrades                    Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 1}, {\"type\": \"SPY\", \"level\": 1}, {\"type\": \"SENTRY\", \"level\": 1}, {\"type\": \"ARMORY\", \"level\": 1}]")
+  bonus_points                          Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 0}, {\"type\": \"DEFENSE\", \"level\": 0}, {\"type\": \"INCOME\", \"level\": 0}, {\"type\": \"INTEL\", \"level\": 0}, {\"type\": \"PRICES\", \"level\": 0}]")
+  bio                                   String                 @default("")
+  colorScheme                           String?
+  recruit_link                          String                 @unique @default("")
+  locale                                String
+  economy_level                         Int                    @default(0)
+  avatar                                String?                @default("SHIELD")
+  created_at                            DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at                            DateTime?              @default(now()) @updatedAt @db.Timestamp(6)
+  stats                                 Json?
+  killing_str                           Int?                   @default(1)
+  defense_str                           Int?                   @default(1)
+  spying_str                            Int?                   @default(1)
+  sentry_str                            Int?                   @default(1)
+  offense                               Int?                   @default(0)
+  defense                               Int?                   @default(0)
+  spy                                   Int?                   @default(0)
+  sentry                                Int?                   @default(0)
+  accountResetsAsNewUser                AccountResetHistory[]  @relation("NewUserAfterReset")
+  resetHistories                        AccountResetHistory[]
+  enforcedStatusChanges                 AccountStatusHistory[] @relation("AccountStatusAdmin")
+  statusHistories                       AccountStatusHistory[]
+  AutoRecruitSession                    AutoRecruitSession[]
+  passwordResets                        PasswordReset[]
+  permissions                           PermissionGrant[]      @relation("PermissionGrants")
+  alliance_memberships                  alliance_memberships[]
+  ledAlliances                          alliances[]            @relation("AllianceLeader")
+  attacksMade                           attack_log[]           @relation("AttackLogs")
+  attacksDefended                       attack_log[]           @relation("DefenseLogs")
+  sharedAttackLogs                      attack_log_acl[]       @relation("SharedAttackLogs")
+  blogPosts                             blog_posts[]
+  messages_messages_from_user_idTousers messages[]             @relation("messages_from_user_idTousers")
+  messages_messages_to_user_idTousers   messages[]             @relation("messages_to_user_idTousers")
+  postReadStatuses                      post_read_status[]
+  recruitHistoriesFrom                  recruit_history[]      @relation("FromUserRelation")
+  recruitHistoriesTo                    recruit_history[]      @relation("ToUserRelation")
+  recruitHistories                      recruit_history[]
+  socialRelationsAsFriend               social[]               @relation("FriendRelations")
+  socialRelationsAsPlayer               social[]               @relation("PlayerRelations")
 
-  // Relations to account reset history
-  resetHistories         AccountResetHistory[] // Relation to account reset history as user
-  accountResetsAsNewUser AccountResetHistory[] @relation("NewUserAfterReset") // Relation as newUser in AccountResetHistory
-
-  // Relations to account status histories
-  statusHistories       AccountStatusHistory[] // User's own status changes
-  enforcedStatusChanges AccountStatusHistory[] @relation("AccountStatusAdmin") // Status changes enforced by this user
-
-  // Relations to password resets
-  passwordResets PasswordReset[]
-
-  sentMessages            messages[]             @relation("from_user")
-  receivedMessages        messages[]             @relation("to_user")
-  attacksMade             attack_log[]           @relation("AttackLogs")
-  attacksDefended         attack_log[]           @relation("DefenseLogs")
-  recruitHistories        recruit_history[]
-  recruitHistoriesFrom    recruit_history[]      @relation("FromUserRelation")
-  recruitHistoriesTo      recruit_history[]      @relation("ToUserRelation")
-  blogPosts               blog_posts[] // Relation to blog posts by this user
-  postReadStatuses        post_read_status[] // Relation to post read statuses
-  sharedAttackLogs        attack_log_acl[]       @relation("SharedAttackLogs")
-  ledAlliances            alliances[]            @relation("AllianceLeader")
-  alliance_memberships    alliance_memberships[]
-  socialRelationsAsPlayer social[]               @relation("PlayerRelations")
-  socialRelationsAsFriend social[]               @relation("FriendRelations")
-  permissions             PermissionGrant[]      @relation("PermissionGrants")
-  AutoRecruitSession      AutoRecruitSession[]
+  @@index([created_at])
 }
 
 model AccountStatusHistory {
   id         Int           @id @default(autoincrement())
   user_id    Int
   status     AccountStatus
-  start_date DateTime      @default(now())
-  end_date   DateTime?
+  start_date DateTime      @default(now()) @db.Timestamp(6)
+  end_date   DateTime?     @db.Timestamp(6)
   reason     String?
   admin_id   Int?
-  created_at DateTime      @default(now())
-  updated_at DateTime      @default(now()) @updatedAt
-
-  // Relations
-  user  users  @relation(fields: [user_id], references: [id])
-  admin users? @relation("AccountStatusAdmin", fields: [admin_id], references: [id])
+  created_at DateTime      @default(now()) @db.Timestamp(6)
+  updated_at DateTime      @default(now()) @updatedAt @db.Timestamp(6)
+  admin      users?        @relation("AccountStatusAdmin", fields: [admin_id], references: [id])
+  user       users         @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, start_date])
 }
@@ -112,12 +109,10 @@ model AccountResetHistory {
   id        Int      @id @default(autoincrement())
   userId    Int
   resetDate DateTime @default(now()) @db.Timestamptz(3)
-  newUserId Int? // If a new user ID is created upon reset
-  reason    String? // Optional: reason for reset
-
-  // Relations
-  user    users  @relation(fields: [userId], references: [id])
-  newUser users? @relation("NewUserAfterReset", fields: [newUserId], references: [id])
+  newUserId Int?
+  reason    String?
+  newUser   users?   @relation("NewUserAfterReset", fields: [newUserId], references: [id])
+  user      users    @relation(fields: [userId], references: [id])
 
   @@index([userId, resetDate])
 }
@@ -127,13 +122,15 @@ model social {
   playerId         Int
   friendId         Int
   relationshipType String
-  requestDate      DateTime  @default(now())
-  acceptanceDate   DateTime?
-  endDate          DateTime?
-  status           String    @default("requested") // "requested", "accepted", "ended"
+  requestDate      DateTime  @default(now()) @db.Timestamptz(6)
+  acceptanceDate   DateTime? @db.Timestamptz(6)
+  endDate          DateTime? @db.Timestamptz(6)
+  status           String    @default("requested")
+  friend           users     @relation("FriendRelations", fields: [friendId], references: [id])
+  player           users     @relation("PlayerRelations", fields: [playerId], references: [id])
 
-  player users @relation("PlayerRelations", fields: [playerId], references: [id])
-  friend users @relation("FriendRelations", fields: [friendId], references: [id])
+  @@index([friendId], map: "idx_social_friendId")
+  @@index([playerId], map: "idx_social_playerId")
 }
 
 model PasswordReset {
@@ -142,29 +139,27 @@ model PasswordReset {
   verificationCode String
   createdAt        DateTime @default(now()) @db.Timestamptz(3)
   status           Int      @default(0) // 0 = Active, 1 = Used, 2 = Expired
-  type             String   @default("PASSWORD") // PASSWORD || EMAIL
-  oldEmail         String?
-
-  // Relations
-  user users @relation(fields: [userId], references: [id])
-
-  // Add opposite field in users model:
-  // In users model: passwordResets PasswordReset[]
+  type             String   @default("'PASSWORD'::text")
+  oldEmail         String?  @default("NULL")
+  user             users    @relation(fields: [userId], references: [id])
 }
 
 model attack_log {
-  id          Int              @id @default(autoincrement())
-  attacker_id Int
-  defender_id Int
-  timestamp   DateTime?        @db.Timestamptz(3)
-  winner      Int
-  type        String           @default("attack")
-  stats       Json
-  acl         attack_log_acl[]
+  id             Int              @id @default(autoincrement())
+  attacker_id    Int
+  defender_id    Int
+  timestamp      DateTime?        @db.Timestamptz(3)
+  winner         Int
+  stats          Json
+  type           String           @default("attack")
+  attackerPlayer users            @relation("AttackLogs", fields: [attacker_id], references: [id])
+  defenderPlayer users            @relation("DefenseLogs", fields: [defender_id], references: [id])
+  acl            attack_log_acl[]
 
-  // Relations
-  attackerPlayer users @relation("AttackLogs", fields: [attacker_id], references: [id])
-  defenderPlayer users @relation("DefenseLogs", fields: [defender_id], references: [id])
+  @@index([attacker_id, defender_id, timestamp])
+  @@index([attacker_id])
+  @@index([defender_id])
+  @@index([winner])
 }
 
 model bank_history {
@@ -178,133 +173,108 @@ model bank_history {
   history_type           String
   stats                  Json?     @default("[]")
 
-  @@index([from_user_id, to_user_id, date_time], name: "bank_history_from_user_id_to_user_id_date_time_idx")
-}
-
-model messages {
-  id           Int       @id @default(autoincrement())
-  subject      String
-  from_user_id Int
-  to_user_id   Int
-  date_time    DateTime? @default(now()) @db.Timestamptz(3)
-  created_date DateTime? @default(now()) @db.Timestamptz(3)
-  updated_date DateTime? @default(now()) @db.Timestamptz(3)
-  body         String
-  unread       Boolean   @default(true)
-
-  // Relations
-  from_user users @relation("from_user", fields: [from_user_id], references: [id])
-  to_user   users @relation("to_user", fields: [to_user_id], references: [id])
+  @@index([from_user_id, to_user_id, date_time])
 }
 
 model recruit_history {
-  id        Int       @id @default(autoincrement())
-  from_user Int?
-  to_user   Int
-  ip_addr   String
-  timestamp DateTime? @db.Timestamptz(3)
-
-  // Relations
-  from_userObj users? @relation("FromUserRelation", fields: [from_user], references: [id])
-  to_userObj   users  @relation("ToUserRelation", fields: [to_user], references: [id])
-  users        users? @relation(fields: [usersId], references: [id])
+  id           Int       @id @default(autoincrement())
+  from_user    Int?
+  to_user      Int
+  ip_addr      String
+  timestamp    DateTime? @db.Timestamptz(3)
   usersId      Int?
+  from_userObj users?    @relation("FromUserRelation", fields: [from_user], references: [id])
+  to_userObj   users     @relation("ToUserRelation", fields: [to_user], references: [id])
+  users        users?    @relation(fields: [usersId], references: [id])
 
-  @@index([to_user, from_user, timestamp], name: "recruit_history_to_user_from_user_timestamp_idx")
+  @@index([to_user, from_user, timestamp])
 }
 
 model blog_posts {
-  id                Int      @id @default(autoincrement())
+  id                Int                @id @default(autoincrement())
   title             String
-  created_timestamp DateTime @default(now()) @db.Timestamptz(3)
-  updated_timestamp DateTime @updatedAt @db.Timestamptz(3)
+  created_timestamp DateTime           @default(now()) @db.Timestamptz(3)
+  updated_timestamp DateTime           @updatedAt @db.Timestamptz(3)
   postedby_id       Int
   content           String
-
-  // Relations
-  postedBy       users              @relation(fields: [postedby_id], references: [id])
-  postReadStatus post_read_status[]
+  postedBy          users              @relation(fields: [postedby_id], references: [id])
+  postReadStatus    post_read_status[]
 }
 
 model post_read_status {
   post_id      Int
+  last_read_at DateTime   @db.Timestamptz(3)
   user_id      Int
-  last_read_at DateTime @db.Timestamptz(3)
-
-  // Relations
-  post blog_posts @relation(fields: [post_id], references: [id])
-  user users      @relation(fields: [user_id], references: [id])
+  post         blog_posts @relation(fields: [post_id], references: [id])
+  user         users      @relation(fields: [user_id], references: [id])
 
   @@id([post_id, user_id])
 }
 
 model attack_log_acl {
-  id                      Int  @id @default(autoincrement())
+  id                      Int        @id @default(autoincrement())
   attack_log_id           Int
   shared_with_user_id     Int?
   shared_with_alliance_id Int?
+  attack_log              attack_log @relation(fields: [attack_log_id], references: [id])
+  shared_with_alliance    alliances? @relation(fields: [shared_with_alliance_id], references: [id])
+  shared_with_user        users?     @relation("SharedAttackLogs", fields: [shared_with_user_id], references: [id])
 
-  // Relations
-  attack_log           attack_log @relation(fields: [attack_log_id], references: [id])
-  shared_with_user     users?     @relation("SharedAttackLogs", fields: [shared_with_user_id], references: [id])
-  shared_with_alliance alliances? @relation(fields: [shared_with_alliance_id], references: [id])
-
-  @@index([shared_with_user_id], name: "idx_acl_user")
-  @@index([shared_with_alliance_id], name: "idx_acl_alliance")
+  @@index([shared_with_user_id], map: "idx_acl_user")
+  @@index([shared_with_alliance_id], map: "idx_acl_alliance")
 }
 
 model alliances {
-  id                Int      @id @default(autoincrement())
+  id                Int                    @id @default(autoincrement())
   name              String
   leader_id         Int
-  gold_in_bank      BigInt   @default(0)
-  avatar            String?
-  bannerimg         String?
+  avatar            String?                @db.VarChar(255)
   motto             String?
   comments          String?
-  is_public         Boolean  @default(true)
-  require_auth      Boolean  @default(false)
-  closed_enrollment Boolean  @default(false)
-  created_at        DateTime @default(now())
-  updated_at        DateTime @default(now()) @updatedAt
+  is_public         Boolean                @default(true)
+  require_auth      Boolean                @default(false)
+  closed_enrollment Boolean                @default(false)
+  gold_in_bank      BigInt?                @default(0)
+  created_at        DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?              @default(now()) @updatedAt @db.Timestamptz(6)
+  bannerimg         String?                @db.VarChar
+  slug              String?
+  members           alliance_memberships[]
+  alliance_roles    alliance_roles[]
+  leader            users                  @relation("AllianceLeader", fields: [leader_id], references: [id])
+  sharedAttackLogs  attack_log_acl[]
 
-  // Relations
-  leader           users                  @relation("AllianceLeader", fields: [leader_id], references: [id])
-  members          alliance_memberships[]
-  sharedAttackLogs attack_log_acl[]
-  alliance_roles   alliance_roles[]
-
-  @@index([leader_id], name: "idx_alliance_leader")
+  @@index([leader_id], map: "idx_alliance_leader")
 }
 
 model alliance_memberships {
-  id          Int @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   alliance_id Int
   user_id     Int
   role_id     Int
-
-  // Relations
-  alliance alliances      @relation(fields: [alliance_id], references: [id])
-  user     users          @relation(fields: [user_id], references: [id])
-  role     alliance_roles @relation(fields: [role_id], references: [id])
+  created_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  alliance    alliances      @relation(fields: [alliance_id], references: [id])
+  role        alliance_roles @relation(fields: [role_id], references: [id])
+  user        users          @relation(fields: [user_id], references: [id])
 
   @@unique([alliance_id, user_id], name: "unique_alliance_user")
-  @@index([user_id], name: "idx_membership_user")
-  @@index([alliance_id], name: "idx_membership_alliance")
-  @@index([role_id], name: "idx_membership_role")
+  @@index([user_id], map: "idx_membership_user")
+  @@index([alliance_id], map: "idx_membership_alliance")
+  @@index([role_id], map: "idx_membership_role")
 }
 
 model alliance_roles {
-  id          Int    @id @default(autoincrement())
+  id          Int                    @id @default(autoincrement())
   name        String
   alliance_id Int
-  permissions Json
+  created_at  DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?              @default(now()) @db.Timestamptz(6)
+  permissions Json?                  @default("{\"invite_member\": false, \"grant_access\": false, \"edit_ranks\": false, \"send_messages\": false, \"edit_profile\": false, \"manage_allies\": false, \"manage_enemies\": false, \"edit_list\": false, \"view_list\": false}") @db.Json
+  members     alliance_memberships[]
+  alliance    alliances              @relation(fields: [alliance_id], references: [id])
 
-  // Relations
-  alliance alliances              @relation(fields: [alliance_id], references: [id])
-  members  alliance_memberships[]
-
-  @@index([alliance_id], name: "idx_role_alliance")
+  @@index([alliance_id], map: "idx_role_alliance")
 }
 
 model PermissionGrant {
@@ -312,9 +282,7 @@ model PermissionGrant {
   type       PermissionType
   user_id    Int
   created_at DateTime       @default(now())
-
-  // Relations
-  user users @relation("PermissionGrants", fields: [user_id], references: [id])
+  user       users          @relation("PermissionGrants", fields: [user_id], references: [id])
 }
 
 model AutoRecruitSession {
@@ -322,9 +290,21 @@ model AutoRecruitSession {
   userId         Int
   createdAt      DateTime @default(now())
   lastActivityAt DateTime @updatedAt
-
-  // Relations
-  user users @relation(fields: [userId], references: [id])
+  user           users    @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+model messages {
+  id                                 Int       @id @default(autoincrement())
+  subject                            String
+  from_user_id                       Int
+  to_user_id                         Int
+  date_time                          DateTime? @default(now()) @db.Timestamptz(3)
+  created_date                       DateTime? @default(now()) @db.Timestamptz(3)
+  updated_date                       DateTime? @default(now()) @db.Timestamptz(3)
+  body                               String
+  unread                             Boolean   @default(true)
+  users_messages_from_user_idTousers users     @relation("messages_from_user_idTousers", fields: [from_user_id], references: [id])
+  users_messages_to_user_idTousers   users     @relation("messages_to_user_idTousers", fields: [to_user_id], references: [id])
 }
