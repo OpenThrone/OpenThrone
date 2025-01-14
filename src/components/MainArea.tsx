@@ -7,13 +7,12 @@ interface MainAreaProps {
   title: string;
   children: React.ReactNode;
   paperWidth?: { sm: string; md: string };
-  parentRef?: React.RefObject<HTMLDivElement>;
 }
 
 const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
-  function MainArea({ title, children, parentRef}) {
+  function MainArea({ title, children }, ref) {
     return (
-      <div className="mainArea pb-10 w-full" ref={parentRef || null}>
+      <div className="mainArea pb-10 w-full" ref={ref || null}>
         <h2 className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs">
           {title}
         </h2>
