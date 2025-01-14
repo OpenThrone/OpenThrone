@@ -115,6 +115,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             quantity: 0
           }
         ],
+        battle_upgrades: [],
+        stats:[]
       };
 
       await tx.users.update({

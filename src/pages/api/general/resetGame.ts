@@ -24,9 +24,11 @@ export default async function handler(
       const updateData = {
         gold: 25000,
         attack_turns: 50,
+        experience: 0,
+        rank: 0,
         gold_in_bank: 0,
         fort_level: 1,
-        fort_hitpoints: 100,
+        fort_hitpoints: 50,
         items: [
           {
             type: 'WEAPON',
@@ -58,6 +60,18 @@ export default async function handler(
             "type": "OFFENSE",
             "level": 0
           }
+        ],
+        battle_upgrades: [
+          {
+            "type": "OFFENSE",
+            "level": 1,
+            "quantity": 0
+          },
+          {
+            "type": "DEFENSE",
+            "level": 1,
+            "quantity": 0
+          },
         ],
         colorScheme: newUser.colorScheme,
         economy_level: 0,
@@ -101,6 +115,13 @@ export default async function handler(
             quantity: 0
           }
         ],
+        defense: 0,
+        offense: 0,
+        killing_str: 0,
+        defense_str: 0,
+        sentry: 0,
+        spy: 0,
+        stats: []
 
       }
 
