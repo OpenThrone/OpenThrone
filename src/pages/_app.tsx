@@ -14,9 +14,11 @@ import React, { Suspense, useEffect, useState } from 'react';
 import Layout from '@/components/Layout'; // Import the Layout component
 import { LayoutProvider } from '@/context/LayoutContext';
 import { UserProvider, useUser } from '@/context/users';
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, MantineTheme } from '@mantine/core';
 import LoadingDots from '@/components/loading-dots';
 import { themes } from '@/styles/themes';
+import { PlayerRace } from '@/types/typings';
+import { useLocalStorage } from '@mantine/hooks';
 
 const MyApp = ({ Component, pageProps: { session, ...pageProps } }) => (
   <Suspense fallback={<LoadingDots />}>
@@ -31,15 +33,16 @@ const MyApp = ({ Component, pageProps: { session, ...pageProps } }) => (
 const AppWithTheme = ({ Component, pageProps }: AppProps) => {
   const { data: session, status } = useSession();
   const { user } = useUser();
+  const [colorScheme, setColorScheme] = useLocalStorage<PlayerRace | string>({ key: 'colorScheme', defaultValue:'ELF'});
   const [theme, setTheme] = useState(themes.ELF); // Default to ELF theme
-
   useEffect(() => {
     const applyTheme = (colorScheme: string) => {
       const selectedTheme = themes[colorScheme] || themes.ELF;
       setTheme(selectedTheme);
     };
 
-    if (session?.user?.colorScheme) {
+    if (session?.user?.colorScheme && session.user.colorScheme !== colorScheme) {
+      setColorScheme(session.user.colorScheme);
       applyTheme(session.user.colorScheme);
     }
 
