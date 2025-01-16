@@ -385,7 +385,7 @@ const ArmoryTab = (props) => {
   }, [stickyRef, parentRef]);
 
   return (
-    <MainArea title='Armory' parentRef={parentRef}>
+    <MainArea title='Armory' ref={parentRef}>
       <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
         <Paper withBorder p="sm" radius="md">
           <Group justify="space-between">

@@ -288,7 +288,7 @@ const Training = (props) => {
   }, [stickyRef, parentRef]);
 
   return (
-    <MainArea title="Training" parentRef={parentRef}>
+    <MainArea title="Training" ref={parentRef}>
       <SimpleGrid cols={{ base: 1, xs: 2, sm:3, md: 4 }}>
         <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
           <Group justify='space-between'>
