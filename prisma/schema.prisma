@@ -85,6 +85,9 @@ model users {
   recruitHistories                      recruit_history[]
   socialRelationsAsFriend               social[]               @relation("FriendRelations")
   socialRelationsAsPlayer               social[]               @relation("PlayerRelations")
+  ChatRoom                              ChatRoom[]
+  ChatRoomParticipant                   ChatRoomParticipant[]
+  ChatMessage                           ChatMessage[]
 
   @@index([created_at])
 }
@@ -307,4 +310,48 @@ model messages {
   unread                             Boolean   @default(true)
   users_messages_from_user_idTousers users     @relation("messages_from_user_idTousers", fields: [from_user_id], references: [id])
   users_messages_to_user_idTousers   users     @relation("messages_to_user_idTousers", fields: [to_user_id], references: [id])
+}
+
+model ChatRoom {
+  id           Int                   @id @default(autoincrement())
+  name         String? // Optional room name (e.g., for group chats)
+  isPrivate    Boolean               @default(true) // If true, only participants can join
+  createdById  Int // User who created the room
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  participants ChatRoomParticipant[]
+  messages     ChatMessage[]
+  creator      users                 @relation(fields: [createdById], references: [id])
+
+  @@index([createdById])
+}
+
+model ChatRoomParticipant {
+  id       Int      @id @default(autoincrement())
+  roomId   Int // ChatRoom ID
+  userId   Int // Participant ID
+  role     ChatRole @default(MEMBER) // Role in the room (e.g., ADMIN, MEMBER)
+  joinedAt DateTime @default(now())
+  canWrite Boolean  @default(true) // Whether the user can send messages
+  room     ChatRoom @relation(fields: [roomId], references: [id])
+  user     users    @relation(fields: [userId], references: [id])
+
+  @@unique([roomId, userId]) // Each user can only join a room once
+}
+
+model ChatMessage {
+  id       Int      @id @default(autoincrement())
+  roomId   Int // ChatRoom ID
+  senderId Int // User who sent the message
+  content  String // Message content
+  sentAt   DateTime @default(now())
+  room     ChatRoom @relation(fields: [roomId], references: [id])
+  sender   users    @relation(fields: [senderId], references: [id])
+
+  @@index([roomId, sentAt])
+}
+
+enum ChatRole {
+  ADMIN
+  MEMBER
 }
