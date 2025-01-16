@@ -23,10 +23,10 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
         <header
           style={
             {
-               height: '56px',
-               borderBottom: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))'
+              height: '56px',
+              borderBottom: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))'
             }
-        }>
+          }>
           <Container
             size="lg"
             style={
@@ -38,8 +38,8 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
               }
             }
           >
-          <Title order={2} className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs">
-            {title}
+            <Title order={2} className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs">
+              {title}
             </Title>
             {authorized && (
               <Group gap={'lg'} visibleFrom='md'>
@@ -51,7 +51,6 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
                   onClose={() => setUserMenuOpened(false)}
                   onOpen={() => setUserMenuOpened(true)}
                   withinPortal
-                
                 >
                   <Menu.Target>
                     <i className="ra ra-player ra-fw text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs" style={{ cursor: 'pointer' }} />
@@ -82,15 +81,15 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
               </Group>
             )}
           </Container>
-          </header>
+        </header>
         <Space h="md" />
-          <SimpleGrid cols={1}>
+        <SimpleGrid cols={1}>
           {alertService.alert && (
             <Group grow>
               <Alert />
             </Group>
-            )}
-          </SimpleGrid>
+          )}
+        </SimpleGrid>
         <Space h="md" />
         {children}
       </div>
