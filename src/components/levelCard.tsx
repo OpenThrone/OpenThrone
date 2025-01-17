@@ -28,13 +28,13 @@ const LevelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canRedu
   return (
     <Card className={styles.starPoint}>
       <Tooltip label={tooltipText} withArrow>
-        <Text size="lg" fw={700} align="center" style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}>
+        <Text size="lg" fw={700} ta="center" style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}>
           {title}
         </Text>
       </Tooltip>
       <Space h="md" />
-      <Text align="center" c='yellow'>Current Bonus: {currentLevel - (changeQueue[type]?.change ?? 0)}%</Text>
-      <Text align="center">New Pending: {currentLevel}%</Text>
+      <Text ta="center" c='yellow'>Current Bonus: {currentLevel - (changeQueue[type]?.change ?? 0)}%</Text>
+      <Text ta="center">New Pending: {currentLevel}%</Text>
       <Space h="md" />
       <Center>
         {Init ? (

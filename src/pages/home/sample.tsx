@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Card, Center, Checkbox, Group, Space, Table, Text, Title, useMantineTheme } from '@mantine/core';
+import ThemedCard from '@/components/themedCard';
 
 const SamplePage = (props) => {
   const theme = useMantineTheme();
@@ -30,12 +31,12 @@ const SamplePage = (props) => {
         </Title>
       </Center>
       <Space h="md" />
-      <Group position="center" spacing="md">
+      <Group align="center">
         <Button color="brand">Primary Button</Button>
         <Button color="secondary" variant='filled'>Secondary Button</Button>
       </Group>
       <Space h="md" />
-      <Group position="center" spacing="md">
+      <Group align="center">
         <Button color="brand" variant="outline">
           Outline Button
         </Button>
@@ -50,10 +51,10 @@ const SamplePage = (props) => {
             <Title order={2}>Card Title</Title>
           </Center>
         </Card.Section>
-        <Text align="center">
+        <Text ta="center">
           This is a card component to show off the brand and secondary colors of the selected theme.
         </Text>
-        <Group position="center" spacing="md" style={{ marginTop: '1rem' }}>
+        <Group ta="center" style={{ marginTop: '1rem' }}>
           <Button color="brand">Action 1</Button>
           <Button color="secondary">Action 2</Button>
         </Group>
@@ -97,14 +98,14 @@ const SamplePage = (props) => {
       </Center>
       <Space h="md" />
       <Card shadow="sm" padding="lg" style={{ maxWidth: 400, margin: 'auto' }}>
-        <Group position="center">
+        <Group align="center">
           <Button color="secondary" onClick={() => setOpened(!opened)}>
             Toggle Alert
           </Button>
         </Group>
         {opened && (
           <Text
-            align="center"
+            ta="center"
             style={{
               marginTop: '1rem',
               backgroundColor: theme.colors.secondary[1],
@@ -118,25 +119,26 @@ const SamplePage = (props) => {
         )}
       </Card>
       <Space h="md" />
-      <Group position="center" spacing="md">
+      <Group align="center">
         <Card shadow="sm" padding="lg" style={{ maxWidth: 400, margin: 'auto' }}>
           <Title order={3}>Brand Colors</Title>
           <Space h="md" />
           <Center>
-            {renderColorSquares(theme.colors.brand)}
+            {renderColorSquares(theme.colors.brand.slice(1))}
           </Center>
         </Card>
       </Group>
       <Space h="md" />
-      <Group position="center" spacing="md">
+      <Group align="center">
         <Card shadow="sm" padding="lg" style={{ maxWidth: 400, margin: 'auto' }}>
           <Title order={3}>Secondary Colors</Title>
           <Space h="md" />
           <Center>
-            {renderColorSquares(theme.colors.secondary)}
+            {renderColorSquares(theme.colors.secondary.slice(1))}
           </Center>
         </Card>
       </Group>
+      <ThemedCard />
     </div>
   );
 };

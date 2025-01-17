@@ -34,6 +34,8 @@ interface LayoutContextProps {
   setMeta?: (meta: { title?: string; description?: string }) => void;
   raceClasses: RaceColors;
   meta: { title: string; description: string };
+  updateOptions?: () => void;
+  authorized: boolean;
 }
 
 // Function to generate color classes based on race
@@ -74,6 +76,7 @@ const defaultLayoutContextProps: LayoutContextProps = {
   description: undefined,
   setMeta: undefined,
   meta: { title: '', description: '' },
+  authorized: false,
 };
 
 // Create Context with default value
@@ -92,6 +95,7 @@ interface LayoutProviderProps {
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const [meta, setMetaState] = useState({ title: '', description: '' });
   const { user } = useUser();
+  const [authorized, setAuthorized] = useState(false);
   const [derivedRaceClasses, setDerivedRaceClasses] = useState<RaceColors>(
     raceClasses.ELF
   );
@@ -116,15 +120,24 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
     updateOptions();
   }, [user, updateOptions]);
 
+  useEffect(() => {
+    if (user) {
+      setAuthorized(true);
+    } else {
+      setAuthorized(false);
+    }
+  }, [user]);
+
   const providerValue = useMemo(
     () => ({
       ...meta,
       setMeta,
       raceClasses: derivedRaceClasses,
       updateOptions,
-      meta
+      meta,
+      authorized,
     }),
-    [meta, setMeta, derivedRaceClasses, updateOptions]
+    [meta, setMeta, derivedRaceClasses, updateOptions, authorized]
   );
 
   return (

@@ -10,13 +10,14 @@ import SpyMissionsModal from '@/components/spyMissionsModal';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { alertService } from '@/services';
+import { alertService, getUpdatedStatus } from '@/services';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
 import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid, Center, Space, Flex, Container } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
 import Image from 'next/image';
 import FriendCard from '@/components/friendCard';
+import MainArea from '@/components/MainArea';
 
 interface IndexProps {
   users: UserModel;
@@ -29,7 +30,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const [isAPlayer, setIsAPlayer] = useState(false);
 
   const router = useRouter();
-  const [profile, setUser] = useState<UserModel>(() => new UserModel(users, true));
+  const [profile, setUser] = useState<UserModel>(() => new UserModel(users, true, false));
   const [canAttack, setCanAttack] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
@@ -37,7 +38,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [composeModalOpen, setComposeModalOpen] = useState(false);
-
+  const [userStatus, setUserStatus] = useState('OFFLINE');
   // State to control the Spy Missions Modal
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
 
@@ -48,6 +49,9 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     }
   }, [user])
 
+  useEffect(() => {
+    setUserStatus(users.status);
+  }, [users]);
 
   useEffect(() => {
     fetch('/api/social/listAll?type=FRIEND&limit=5&playerId=' + profile.id)
@@ -57,11 +61,13 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
         setLoading(false);
       });
   }, [profile.id]);
+
   const toggleModal = () => {
     setIsOpen(!isOpen);
   };
+
   useEffect(() => {
-    if (profile.id !== users.id) setUser(new UserModel(users, true));
+    if (profile.id !== users.id) setUser(new UserModel(users, true, false));
     if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
     if (profile) {
@@ -71,11 +77,12 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
         setLastActive('Never logged in');
         return;
       }
+      console.log(profile.spyLimits)
       const lastActiveTimestamp = new Date(profile.last_active).getTime();
       const nowTimestamp = nowdate.getTime();
 
       setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
-      setLastActive(profile.last_active.toDateString());
+      setLastActive(new Date(profile.last_active).toDateString());
     }
   }, [profile, users, user, isPlayer]);
 
@@ -148,41 +155,15 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     setIsSpyModalOpen(!isSpyModalOpen);
   };
 
-  const handleSubmit = async (turns: number) => {
-    if (!turns) turns = 1;
-    const res = await fetch(`/api/attack/${profile.id}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ turns }),
-    });
-    const results = await res.json();
-
-    if (results.status === 'failed') {
-      alertService.error(results.status);
-    } else {
-      forceUpdate();
-      router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
-    }
-  };
-
   const isFriend = friends.some(friend => friend.friend.id === profile.id);
   const friendsList = friends.length > 0 ? friends.map(friend => {
-    const player = new UserModel(friend.friend);
+    const player = new UserModel(friend.friend, true, false);
     return (
       <FriendCard key={player.id} player={player} />
     );
   }) : <p>No friends found.</p>;
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">{profile?.displayName}</h2>
-
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
-
+    <MainArea title={profile?.displayName}>
       <Container className="container mx-auto">
         <Text className="text-center">
           <span className="text-white">{profile?.displayName}</span> is a{profile.race === 'ELF' || profile.race === 'UNDEAD' ? 'n ':' '}
@@ -228,7 +209,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 </div>
               ) : (
                 <div className="alert alert-error">
-                  <h6>Offline</h6>
+                  <h6>{userStatus === 'ACTIVE' ? 'OFFLINE' : userStatus}</h6>
                 </div>
               )}
             </div>
@@ -240,11 +221,12 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
           </SimpleGrid>
         </div>
         <div className="col-span-1">
-          {hideSidebar || isPlayer ? (
+          {hideSidebar || isPlayer || userStatus !== 'ACTIVE' ? (
             <div className="list-group mb-4">
               <Link
                 href={`/recruit/${profile?.recruitingLink}`}
                 className="list-group-item list-group-item-action"
+                style={{ display: userStatus !== 'ACTIVE' ? 'none' : 'block' }}
               >
                 Recruit this Player
               </Link>
@@ -375,7 +357,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
           </h6>
         </div>
       </div>
-    </div>
+    </MainArea>
   );
 };
 
@@ -406,6 +388,12 @@ export const getServerSideProps = async ({ query }) => {
   const userData = {
     ...userWithoutPassword, 
     bionew: await serialize(user.bio),
+    gold: user.gold.toString(),
+    gold_in_bank: user.gold_in_bank.toString(),
+    last_active: user.last_active.toISOString(),
+    created_at: user.created_at.toISOString(),
+    updated_at: user.updated_at.toISOString(),
+    status: await getUpdatedStatus(user.id),
   };
 
   return { props: { users: userData } };

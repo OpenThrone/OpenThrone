@@ -12,6 +12,7 @@ import ArmoryUpgradesTab from '@/components/armory-upgrades';
 import ClandestineUpgrade from '@/components/clandestineupgrades';
 import { Tabs } from '@mantine/core';
 import router from 'next/router';
+import MainArea from '@/components/MainArea';
 
 const UpgradeTab = (props) => {
   const tab = usePathname()?.split('/')[3];
@@ -25,11 +26,7 @@ const UpgradeTab = (props) => {
   }, [currentPage]);
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Structure Upgrades</h2>
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
+    <MainArea title="Structure Upgrades">
       <Tabs variant="pills" defaultValue={currentPage} className="mb-2 font-medieval">
         <Tabs.List grow justify="center">
           <Tabs.Tab value="fortifications" onClick={() => {
@@ -74,12 +71,14 @@ const UpgradeTab = (props) => {
       
       
       <div className="mb-4 flex justify-center">
-        {currentPage === 'fortifications' && (<h2  className='page-title'>Fortifications</h2>)}
-        {currentPage === 'offense' && (<h2  className='page-title'>Siege Upgrades</h2>)}
-        {currentPage === 'intel' && (<h2  className='page-title'>Clandestine Upgrades</h2>)}
-        {currentPage === 'armory' && (<h2  className='page-title'>Armory Upgrades</h2>)}
-        {currentPage === 'houses' && (<h2  className='page-title'>Housing Upgrades</h2>)}
-        {currentPage === 'economy' && (<h2  className='page-title'>Economy Upgrades</h2>)}
+        <h2 className='page-title bg-orange-gradient text-gradient-orange text-shadow text-shadow-color-bg-gray-500 text-shadow-xs'>
+        {currentPage === 'fortifications' && ('Fortifications')}
+        {currentPage === 'offense' && ('Siege Upgrades')}
+        {currentPage === 'intel' && ('Clandestine Upgrades')}
+        {currentPage === 'armory' && ('Armory Upgrades')}
+        {currentPage === 'houses' && ('Housing Upgrades')}
+        {currentPage === 'economy' && ('Economy Upgrades')}
+        </h2>
       </div>
       <div className="mb-4 flex justify-center my-10 rounded-lg bg-gray-800">
         {currentPage === 'fortifications' && <FortificationsTab userLevel={user?.level} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
@@ -89,7 +88,7 @@ const UpgradeTab = (props) => {
         {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
         {currentPage === 'intel' && <ClandestineUpgrade userLevel={user?.spyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
       </div>
-    </div>
+    </MainArea>
   );
 };
 export default UpgradeTab;

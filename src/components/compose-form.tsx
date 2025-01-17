@@ -102,15 +102,9 @@ export default function ComposeForm({ onClose }: ComposeFormProps) {
           value={recipients}
           onChange={setRecipients}
           searchable
-          creatable
-          getCreateLabel={(query) => `+ Add ${query}`}
-          onCreate={(query) => addRecipient(query)}
-          onItemSubmit={(item) => addRecipient(item.value)}
           onSearchChange={handleRecipientChange}
           label="Recipients"
-          nothingFound="No matches"
           searchValue={recipient}
-          onSearchValueChange={setRecipient}
         />
 
 
@@ -164,7 +158,7 @@ export default function ComposeForm({ onClose }: ComposeFormProps) {
           <RichTextEditor.Content />
         </RichTextEditor>
 
-        <Group position="right" mt="md">
+        <Group mt="md">
           <Button onClick={handleSubmit} disabled={recipients.length === 0}>
             Send
           </Button>

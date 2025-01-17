@@ -1,4 +1,4 @@
-import { BattleUpgrades, Fortifications, UnitTypes, levelXPArray, OffenseiveUpgrades, EconomyUpgrades, SpyUpgrades, SentryUpgrades, ArmoryUpgrades, HouseUpgrades, ItemTypes } from '@/constants';
+import { BattleUpgrades, Fortifications, UnitTypes, levelXPArray, OffensiveUpgrades, EconomyUpgrades, SpyUpgrades, SentryUpgrades, ArmoryUpgrades, HouseUpgrades, ItemTypes } from '@/constants';
 import { withAuth } from '@/middleware/auth';
 
 const handler = async (req, res) => {
@@ -13,7 +13,7 @@ const handler = async (req, res) => {
     const battle_upgrades = BattleUpgrades
     const levels = levelXPArray
     const eco = EconomyUpgrades
-    const offense = OffenseiveUpgrades
+    const offense = OffensiveUpgrades
     const spy = SpyUpgrades
     const sentry = SentryUpgrades
     const armory = ArmoryUpgrades

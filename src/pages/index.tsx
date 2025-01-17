@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 
 import { useLayout } from '@/context/LayoutContext';
+import MainArea from '@/components/MainArea';
 
 const Index = (props) => {
   const { setMeta, meta } = useLayout();
@@ -15,9 +16,8 @@ const Index = (props) => {
   }, [meta, setMeta]);
   return (
     <>
-      <div className="mainArea pb-10">
-        <h2 className="page-title">Open Throne</h2>
-      </div>
+      <MainArea
+        title="Open Throne">
       <div className="mx-auto xs:w-96 md:w-3/4 py-2 md:col-span-9">
         <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">
           <div className="flex justify-center">
@@ -47,7 +47,8 @@ const Index = (props) => {
             </ul>
           </div>
         </div>
-      </div>
+        </div>
+        </MainArea>
     </>
   );
 };

@@ -112,7 +112,6 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
       }
 
       const data = await response.json();
-      console.log('Conversion successful', data);
       alertService.success('Conversion successful');
       resetConversion();
       forceUpdate();
@@ -212,6 +211,8 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
           })()}
         </Table.Tbody>
       </Table>
+      {units.length > 1 ? (
+      <>
       <div className='mt-3 ml-3 mr-3'>
         <Group spacing="xs" grow>
           <Text>Convert</Text>
@@ -223,7 +224,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
             allowNegative={false}
           />
           <Select
-            data={units.map((item) => ({ value: item.id, label: item.name }))}
+            data={units.filter((unit)=>unit.ownedUnits > 0 ).map((item) => ({ value: item.id, label: item.name }))}
             value={fromItem}
             onChange={setFromItem}
             placeholder="Select Unit"
@@ -244,6 +245,8 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
         </Group>
       </div>
       <Space h="xs" />
+      </>
+      ): null}
     </Paper>
   );
 };

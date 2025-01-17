@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator } from '@mantine/core';
 import UserModel from '@/models/Users';
 import Link from 'next/link';
+import MainArea from '@/components/MainArea';
 
 const Friends = (props) => {
   const [friends, setFriends] = useState([]);
@@ -53,8 +54,7 @@ const Friends = (props) => {
   });
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Friends</h2>
+    <MainArea title="Friends">
       <Paper shadow="xs" p="md">
         <Table className="min-w-full" striped>
           <Table.Thead>
@@ -66,7 +66,7 @@ const Friends = (props) => {
           <Table.Tbody>{rows}</Table.Tbody>
         </Table>
       </Paper>
-    </div>
+    </MainArea>
   );
 };
 

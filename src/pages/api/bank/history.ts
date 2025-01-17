@@ -13,7 +13,7 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment } = req.query;
+  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification } = req.query;
   const conditions = [];
   const transactionConditions = [];
 
@@ -66,6 +66,13 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     transactionConditions.push({
       history_type: 'ECONOMY',
       to_user_id: session.user.id,
+    });
+  }
+
+  if (fortification === 'true') {
+    transactionConditions.push({
+      history_type: 'FORT_REPAIR',
+      from_user_id: session.user.id,
     });
   }
 

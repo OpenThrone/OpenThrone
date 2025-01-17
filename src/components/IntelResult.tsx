@@ -13,6 +13,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   const isAttackerWinner = winner === attackerPlayer.id;
   const [unitSegments, setUnitSegments] = useState([]);
   const [itemsByCategory, setItemsByCategory] = useState([]);
+  const [totalPopulation, setTotalPopulation] = useState(0);
   const itemColors = {
     HELM: 'grey',
     ARMOR: 'yellow',
@@ -32,10 +33,11 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   
   useEffect(() => {
     const fetchData = async () => {
-      const filteredUnits = stats.spyResults.intelligenceGathered?.units?.filter((unit) => unit.quantity > 0) || [];
+      const filteredUnits = (stats.spyResults.intelligenceGathered?.units.length > 0 ? stats.spyResults.intelligenceGathered?.units?.filter((unit) => unit.quantity > 0) :[]);
       const totalUnits = filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0);
-      const totalPopulation = stats.spyResults.defender.units.reduce((acc, unit) => acc + unit.quantity, 0);
-      const unknownUnits = totalPopulation - totalUnits;
+      const totalPop = Object.values(stats.spyResults.defender.units).reduce((acc, unit) => acc + unit.quantity, 0) || 0
+      setTotalPopulation(totalPop);
+      const unknownUnits = totalPop - totalUnits;
       const unitColors = {
         CITIZEN: 'grey',
         WORKER: 'yellow',
@@ -43,7 +45,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
         DEFENSE: 'blue',
         SPY: 'green',
         SENTRY: 'purple',
-        UNKNOWN: 'black',
+        UNKNOWN: 'white',
       };
 
       const newUnitSegments = [
@@ -142,13 +144,13 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                     toggleModal={toggleSpyModal}
                     defenderID={defenderPlayer?.id}
                   />
-                <Button onClick={toggleSpyModal}>
+                  <Button onClick={toggleSpyModal} disabled={Boolean(process.env.NEXT_PUBLIC_ENABLE_INTEL)}>
                   Infiltrate
                 </Button>
-                  <Button onClick={toggleSpyModal}>
+                  <Button onClick={toggleSpyModal} disabled={Boolean(process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS)}>
                   Assassinate
                   </Button>
-                  <Button onClick={toggleAttackModal}>
+                  <Button onClick={toggleAttackModal} disabled={Boolean(process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS)}>
                     Attack
                   </Button>
                   <Modal
@@ -190,7 +192,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                     thickness={16}
                     label={
                       <Text size="xs" ta="center" px="xs" style={{ pointerEvents: 'none' }}>
-                        Hover sections to see tooltips <br />Total Pop: {battle.stats.spyResults.defender.units.reduce((acc, unit) => acc + unit.quantity, 0)}
+                        Hover sections to see tooltips <br />Total Pop: {totalPopulation}
                       </Text>
                     }
                     sections={unitSegments.map(segment => ({

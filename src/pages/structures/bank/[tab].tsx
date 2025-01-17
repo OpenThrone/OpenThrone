@@ -1,16 +1,14 @@
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 import { alertService } from '@/services';
 import { useUser } from '@/context/users';
-import Alert from '@/components/alert';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
 import { Chip, Group, Paper, Table, Tabs, SimpleGrid, Text, Space, NumberInput, rem, ThemeIcon, Button, Flex, Divider } from '@mantine/core';
 import { BiCoinStack, BiMoney, BiMoneyWithdraw, BiSolidBank } from "react-icons/bi";
 import classes from './[tab].module.css'
-import user from '@/pages/messaging/compose/[user]';
 import { EconomyUpgrades } from '@/constants';
+import MainArea from '@/components/MainArea';
 
 const Bank = (props) => {
   const tab = usePathname()?.split('/')[3];
@@ -38,6 +36,7 @@ const Bank = (props) => {
     training: true,
     recruitment: true,
     economy: true,
+    fortification: true,
   });
 
   useEffect(() => {
@@ -126,8 +125,6 @@ const Bank = (props) => {
 
       if (data.error) {
         alertService.error(data.error);
-
-        // Handle error
       } else {
         // Update the user context or fetch new data
         forceUpdate();
@@ -221,6 +218,8 @@ const Bank = (props) => {
 
     if (history_type === 'ECONOMY') return 'Income';
 
+    if (history_type === 'FORT_REPAIR') return 'Fort Repair';
+
     if (history_type === 'WAR_SPOILS') return 'War Spoils';
     // Fallback for unknown types
     console.log('Unknown transaction type:', entry);
@@ -244,11 +243,7 @@ const Bank = (props) => {
   };
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Bank</h2>
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
+    <MainArea title="Bank">
       <SimpleGrid cols={{base:1, xs:2, md:4}}>
         <Paper withBorder p="sm" radius="md" className={classes.card}>
           <Group justify="space-between">
@@ -517,6 +512,14 @@ const Bank = (props) => {
             >
               Income
             </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.fortification}
+              onChange={() => { setFilters({ ...filters, fortification: !filters.fortification }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Fort Repairs
+            </Chip>
           </Group>
           {message && <div className="text-center p-4">{message}</div>}
           <Space h="md" />
@@ -621,7 +624,7 @@ const Bank = (props) => {
           </Paper>
         </Flex>
       )}
-    </div>
+    </MainArea>
   );
 };
 

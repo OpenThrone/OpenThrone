@@ -13,7 +13,6 @@ const attackResults = ({ battle, viewerID }) => {
   const isViewerDefender = viewerID === defenderPlayer.id;
   const isPlayerWinner = winner === viewerID;
   const isAttackerWinner = winner === attackerPlayer.id;
-  console.log(stats);
   const [isOpen, setIsOpen] = useState(false);
   const lines = [];
   const defenderRace = defenderPlayer?.race ?? 'ELF';
@@ -41,14 +40,18 @@ const attackResults = ({ battle, viewerID }) => {
   const summaryLines = []
 
   const countUnitsOfType = (units, type) => {
-    return toLocale(units.filter(unit => unit.type === type)
-      .reduce((acc, curr) => acc + curr.quantity, 0));
+    const unitsArray = Array.isArray(units) ? units : Object.values(units);
+    return toLocale(
+      unitsArray
+        .filter(unit => unit.type === type)
+        .reduce((acc, curr) => acc + curr.quantity, 0)
+    );
   }
 
   summaryLines.push(`Battle ID: ${battle.id}`);
   summaryLines.push(`${isViewerAttacker ? 'You' : attackerPlayer.display_name} attacked ${isViewerDefender ? 'You' : defenderPlayer.display_name}`);
-  summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${toLocale(new UserModel(stats.startOfAttack.Attacker).offense)} damage`);
-  summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name + "'s"} countered with ${toLocale(new UserModel(stats.startOfAttack.Defender).defense)} damage`);
+  summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${toLocale(new UserModel(stats.startOfAttack.Attacker, true, false).offense)} damage`);
+  summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name + "'s"} countered with ${toLocale(new UserModel(stats.startOfAttack.Defender, true, false).defense)} damage`);
   summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} won the battle`);
   if (typeof stats.xpEarned === 'object') {
     summaryLines.push(`${attackerPlayer.display_name} earned ${toLocale(stats.xpEarned.attacker)} XP`)

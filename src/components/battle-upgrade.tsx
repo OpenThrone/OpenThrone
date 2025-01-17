@@ -20,22 +20,42 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
 
   useEffect(() => {
     if (items) {
-      setItems(items);
+      // Only update owned items, keep local inputs for #282
+      setItems(prevItems => {
+        return items.map(newItem => {
+          const oldItem = prevItems.find(o => o.id === newItem.id);
+          return oldItem
+            ? { ...oldItem, ownedItems: newItem.ownedItems, enabled: newItem.enabled }
+            : newItem;
+        });
+      });
+  
+      // Only set initial input to 0 if we haven't typed anything before
+      setItemsToEquip(prev => {
+        const updated = { ...prev };
+        for (const newItem of items) {
+          if (!(newItem.id in updated)) {
+            updated[newItem.id] = 0;
+          }
+        }
+        return updated;
+      });
       setSectionEnabled(items.some(item => item.enabled));
-      // Initialize itemsToEquip with default value 0
-      const initialValues = items.reduce((acc, item) => {
-        acc[item.id] = 0;
-        return acc;
-      }, {} as { [key: string]: number });
-      setItemsToEquip(initialValues);
+      
     }
   }, [items]);
 
-  const handleInputChange = (unitId: string, value: number | undefined) => {
-    setItemsToEquip(prev => ({
-      ...prev,
-      [unitId]: value ?? 0,
-    }));
+  const handleInputChange = (unitId, value) => {
+    // Attempt to convert the value to an integer to handle something delitin the input
+    const intValue = parseInt(value, 10);
+    if (!isNaN(intValue) || typeof value === 'string') {
+      setItemsToEquip(prev => ({
+        ...prev,
+        [unitId]: !isNaN(intValue)? intValue : 0,
+      }));
+    } else {
+      console.error("Invalid input:", value, "for", unitId);
+    }
   };
 
   const handleEquip = async (operation: string) => {
@@ -113,7 +133,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
       }
     } catch (error) {
       alertService.error('Failed to equip items. Please try again.');
-      console.log(error);
+      console.error(error);
     }
   };
 

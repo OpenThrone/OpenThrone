@@ -8,6 +8,7 @@ import toLocale from '@/utils/numberFormatting';
 import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center, Button, Paper, Pill, useMantineTheme } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
 import { usePagination } from '@mantine/hooks';
+import MainArea from '@/components/MainArea';
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const searchParams = useSearchParams();
@@ -125,8 +126,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   };
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Attack</h2>
+    <MainArea title="Attack Users">
       <Center><p>You can attack players from levels {attackRangeMin} to {attackRangeMax}</p></Center>
       <div className="mt-4 flex justify-between mb-2">
         <button
@@ -159,7 +159,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
         </button>
       </div>
       <div className="overflow-x-auto">
-        <Group position="apart" className="mb-2">
+        <Group  className="mb-2">
           <Pill size='lg'>
             <Text>
               Sorted By: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
@@ -210,7 +210,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
             </Table.Thead>
             <Table.Tbody>
               {players.map((nplayer, index) => {
-                const player = new UserModel(nplayer);
+                const player = new UserModel(nplayer, true, false);
                 if (player.id === user?.id) player.is_player = true;
                 return (
                   <Table.Tr
@@ -284,7 +284,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
       </div>
 
 
-    </div>
+    </MainArea>
   );
 };
 
@@ -293,7 +293,10 @@ export const getServerSideProps = async () => {
   try {
     let allUsers = await prisma.users.findMany({
       where: {
-        AND: [{ id: { not: 0 } }, { last_active: { not: null } }],
+        AND: [
+          { id: { not: 0 } },
+          { last_active: { not: null } },
+        ],
       },
       select: { 
         id: true,
@@ -306,9 +309,15 @@ export const getServerSideProps = async () => {
         race: true,
         class: true,
         experience: true,
+        statusHistories: {
+          orderBy: { created_at: 'desc' },
+          take: 1, // Take only the most recent status
+        },
       },
     });
-    const sanitizedUsers = allUsers.map(user => {
+    const sanitizedUsers = allUsers
+      .filter(user => user.statusHistories[0]?.status === 'ACTIVE')
+      .map(user => {
       const nowdate = new Date();
       const lastActiveTimestamp = new Date(user.last_active).getTime();
       const nowTimestamp = nowdate.getTime();
@@ -319,14 +328,15 @@ export const getServerSideProps = async () => {
         id: user.id,
         display_name: user.display_name,
         rank: user.rank,
-        last_active: user.last_active,
+        last_active: user.last_active.toISOString(),
         avatar: user.avatar,
-        gold: user.gold,
+        gold: user.gold.toString(),
         race: user.race,
         class: user.class,
         experience: user.experience,
         population: population,
         isOnline: ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15),
+        
       };
     });
 

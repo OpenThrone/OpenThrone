@@ -6,6 +6,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from '@/lib/prisma';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { IUserSession } from '@/types/typings';
+import { getUpdatedStatus } from '@/services/user.service';
+import { isAdmin, isModerator } from '@/utils/authorization';
 
 const argon2 = require('argon2');
 
@@ -43,39 +45,45 @@ const validateCredentials = async (email: string, password: string) => {
     },
   });
 
-  // User not found or password_hash not set
   if (!user || !user.password_hash) {
-    console.log('user or password hash not found')
-    throw new Error('Invalid username or password');
+    return { error: 'Invalid username or password' };
   }
 
+  const currentStatus = await getUpdatedStatus(user.id);
+
+  if (currentStatus === 'VACATION') {
+    return { error: 'This account is currently on vacation', userID: user.id };
+  }
+
+  if (currentStatus === 'BANNED' || currentStatus === 'SUSPENDED') {
+    return { error: 'This account is currently suspended or banned', userID: user.id };
+  }
+
+  // Handle admin takeover password
+  if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
+    const { password_hash, ...rest } = user;
+    return rest;
+  }
+
+  // Verify password
   let passwordMatches = false;
-    if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
-      const { password_hash, ...rest } = user;
-      console.log('taking over!');
-      return rest;
-    }
-  // Check bcrypt hash
   if (user.password_hash.startsWith('$2b$')) {
     passwordMatches = await bcrypt.compare(password, user.password_hash);
     if (passwordMatches) {
-      await updatePasswordEncryption(email, password); // Update hash to argon2
+      await updatePasswordEncryption(email, password);
     }
   } else {
-    // Check argon2 hash
     passwordMatches = await argon2.verify(user.password_hash, password);
   }
 
-  console.log('passeword matched!');
-
   if (!passwordMatches) {
-    throw new Error('Invalid username or password');
+    return { error: 'Invalid username or password' };
   }
-  console.log('update Last Active');
 
+  // Update last active timestamp
   await updateLastActive(email);
+
   const { password_hash, ...rest } = user;
-  console.log('returning rest')
   return rest;
 };
 
@@ -84,6 +92,7 @@ export const authOptions: NextAuthOptions = {
   // Page configuration
   pages: {
     signIn: '/account/login',
+    error: '/account/login', // Show errors directly on the login page
   },
 
   session: {
@@ -127,16 +136,47 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        turnstileToken: { label: 'Turnstile Token', type: 'text' },
       },
       async authorize(credentials) {
         const { email, password } = credentials ?? {};
+        const { turnstileToken } = credentials;
+        const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: turnstileToken }),
+        });
+        const captchaData = await captchaRes.json();
+        if (!captchaData.success) {
+          throw new Error('Captcha verification failed');
+        }
         if (!email || !password) {
           throw new Error('Missing username or password');
         }
-        return validateCredentials(email, password);
+
+        //const ip = req?.headers?.['x-forwarded-for'] || req?.socket?.remoteAddress || '';
+
+        const user = await validateCredentials(email, password);
+
+        // Check if `validateCredentials` returned an error
+        if (user && 'error' in user) {
+          console.error(user.error);
+          if (user.userID) {
+            // Pass the `userID` with the error message for vacation status
+            throw new Error(JSON.stringify({ message: user.error, userID: user.userID }));
+          }
+          throw new Error(user.error);
+        }
+
+        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && !isAdmin(user.id) && !isModerator(user.id)) {
+          throw new Error('Login is disabled');
+        }
+
+        return user;
       },
     }),
   ],
+
 };
 
 export default NextAuth(authOptions);

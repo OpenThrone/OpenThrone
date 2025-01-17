@@ -3,7 +3,6 @@ import { newCalculateStrength } from "@/utils/attackFunctions";
 import { calculateOverallRank } from "@/utils/utilities";
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
-import Error from "next/error";
 
 /**
  * Update a single user for a turn change.
@@ -25,8 +24,8 @@ const updateUserPerTurn = async (currentUser, rank) => {
       gold: updatedGold,
       attack_turns: currentUser.attackTurns + 1,
       rank: rank,
-      killing_str: killingStrength,
-      defense_str: defenseStrength,
+      //killing_str: killingStrength,
+      //defense_str: defenseStrength,
       offense: newOffense,
       defense: newDefense,
       spy: newSpying,

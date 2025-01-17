@@ -5,6 +5,7 @@ import { Button, Table, Group, Modal, Title, Container, Paper } from '@mantine/c
 import prisma from '@/lib/prisma';
 import ComposeForm from '@/components/compose-form';
 import { InferGetServerSidePropsType } from "next";
+import MainArea from '@/components/MainArea';
 
 const handleReply = async (message) => {
   const replySubject = `Re: ${message.subject}`;
@@ -58,8 +59,7 @@ const Inbox = ({ messages, session }: InferGetServerSidePropsType<typeof getServ
   const [composeModalOpen, setComposeModalOpen] = useState(false);
 
   return (
-    <Container>
-      <Title order={1} mb="xl">Inbox</Title>
+    <MainArea title='Inbox'>
       <Group mb="xs">
         <Button onClick={() => setComposeModalOpen(true)}>Compose</Button>
       </Group>
@@ -103,7 +103,7 @@ const Inbox = ({ messages, session }: InferGetServerSidePropsType<typeof getServ
         </Table.Tbody>
         </Table>
       </Paper>
-    </Container>
+    </MainArea>
   );
 };
 

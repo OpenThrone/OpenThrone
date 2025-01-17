@@ -1,4 +1,3 @@
-// /pages/api/upload.ts
 import prisma from "@/lib/prisma";
 import type { NextApiRequest, NextApiResponse } from 'next';
 import AWS from 'aws-sdk';
@@ -29,7 +28,7 @@ const saveToLocal = async (file: formidable.File, userId: number): Promise<strin
 const uploadToS3 = (file: formidable.File, uId: Number): Promise<AWS.S3.ManagedUpload.SendData> => {
   // Configure AWS S3
   const s3 = new AWS.S3({
-    endpoint: process.env.AWS_S3_ENDPOINT, 
+    endpoint: process.env.AWS_S3_ENDPOINT,
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     signatureVersion: 'v4',
@@ -43,9 +42,9 @@ const uploadToS3 = (file: formidable.File, uId: Number): Promise<AWS.S3.ManagedU
     Key: `users/${uId}/avatar/${file.originalFilename}`,
     Body: fileStream,
     ACL: 'public-read',
-    ContentType: contentType, 
+    ContentType: contentType,
   };
-  
+
   // Return a promise of the upload
   return s3.upload(params).promise();
 };
@@ -59,7 +58,7 @@ export const config = {
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
     const form = formidable({ multiples: false, maxFileSize: 1.5 * 1024 * 1024 })
-    form.uploadDir = path.join(process.cwd(), 'temp'); 
+    form.uploadDir = path.join(process.cwd(), 'temp');
     form.keepExtensions = true; // Keep file extension
 
     form.parse(req, async (err, fields, files) => {
@@ -68,50 +67,57 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(500).json({ error: err.message });
       }
 
+      // Ensure bio is a string
+      const bio = Array.isArray(fields.bio) ? fields.bio[0] : fields.bio;
       const file = Array.isArray(files.avatar) ? files.avatar[0] : files.avatar;
-      if (!file) {
-        return res.status(400).json({ error: 'No file uploaded' });
+
+      let updateData: any = {};
+
+      if (bio) {
+        updateData.bio = bio;
       }
 
-      // Check image dimensions
-      const dimensions = imageSize(file.filepath);
-      if (dimensions.width > 450 || dimensions.height > 450) {
-        return res.status(400).json({ error: 'Image dimensions must not exceed 450x450px.' });
+      if (file) {
+        // Check image dimensions
+        const dimensions = imageSize(file.filepath);
+        if (dimensions.width > 450 || dimensions.height > 450) {
+          return res.status(400).json({ error: 'Image dimensions must not exceed 450x450px.' });
+        }
+
+        try {
+          if (process.env.NEXT_PUBLIC_USE_AWS === 'true') {
+            // Upload the file to S3
+            const result = await uploadToS3(file, req.session.user.id);
+            updateData.avatar = process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + "/" + result.Key;
+          } else {
+            // Save the file to the local file system
+            const filePath = await saveToLocal(file, req.session.user.id);
+            console.log('File uploaded to:', filePath);
+            updateData.avatar = filePath;
+          }
+        } catch (uploadError) {
+          console.error('Error uploading avatar:', uploadError);
+          return res.status(500).json({ error: 'Error uploading avatar' });
+        }
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: 'No data to update' });
       }
 
       try {
-        if (process.env.NEXT_PUBLIC_USE_AWS === 'true') {
-          // Upload the file to S3
-          const result = await uploadToS3(file, req.session.user.id);
-          const updated = await prisma.users.update({
-            where: { id: req.session.user.id },
-            data: {
-              avatar: process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + "/" + result.Key,
-            },
-          });
-          // Respond back with the result
-          return res.status(200).json({ status: 'success', data: stringifyObj({ result, updated }) });
-        } else {
-          // Save the file to the local file system
-          const filePath = await saveToLocal(file, req.session.user.id);
-          console.log('File uploaded to:', filePath);
-          // Update the user's avatar path in the database
-          const updated = await prisma.users.update({
-            where: { id: req.session.user.id },
-            data: {
-              avatar: filePath,
-            },
-          });
-          // Respond back with the file path
-          return res.status(200).json({ status: 'success', data: stringifyObj({ filePath, updated }) });
-        }
-      } catch (uploadError) {
-        console.error('Error uploading to S3:', uploadError);
-        return res.status(500).json({ error: 'Error uploading to S3' });
+        const updated = await prisma.users.update({
+          where: { id: req.session.user.id },
+          data: updateData,
+        });
+
+        return res.status(200).json({ status: 'success', data: stringifyObj({ updated }) });
+      } catch (updateError) {
+        console.error('Error updating user:', updateError);
+        return res.status(500).json({ error: 'Error updating user profile' });
       }
     });
   } else {
-    // Handle any other HTTP methods
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }

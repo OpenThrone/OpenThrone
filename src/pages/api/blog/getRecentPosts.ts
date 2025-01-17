@@ -2,17 +2,8 @@ import prisma from "@/lib/prisma";
 import { withAuth } from '@/middleware/auth';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const getPosts = async(req: NextApiRequest, res: NextApiResponse) => {
-  // Get the session on the server-side
-  const session = req.session;
-
-  // If there's no session, return an error
-  if (!session) {
-    res.status(401).json({ error: 'Not authenticated' });
-    return;
-  }
-
-  try {
+const getPosts = async (session: boolean | NextApiRequest = false) => {
+  if (session?.user) {
     // Fetch the user based on the session's user ID
     const user = await prisma.users.findUnique({
       where: {
@@ -21,8 +12,7 @@ const getPosts = async(req: NextApiRequest, res: NextApiResponse) => {
     });
 
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
+      return getPosts();
     }
 
     // Fetch posts along with the read status for the current user
@@ -41,6 +31,19 @@ const getPosts = async(req: NextApiRequest, res: NextApiResponse) => {
         created_timestamp: 'desc',
       },
     });
+    return posts;
+  } else {
+    return prisma.blog_posts.findMany();
+  }
+}
+
+const getRecentPostsAPI = async(req: NextApiRequest, res: NextApiResponse) => {
+  // Get the session on the server-side
+  const session = req?.session;
+
+  try {
+
+    const posts = await getPosts(session ? true : false);
 
     res.status(200).json(posts);
   } catch (error) {
@@ -49,4 +52,4 @@ const getPosts = async(req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withAuth(getPosts);
+export default withAuth(getRecentPostsAPI, true);

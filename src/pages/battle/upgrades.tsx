@@ -1,5 +1,5 @@
 import BattleUpgradesSection from '@/components/battle-upgrade';
-import { BattleUpgrades, OffenseiveUpgrades } from '@/constants';
+import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import Alert from '@/components/alert';
@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { SimpleGrid, Paper, Group, Text, Space, ThemeIcon, Tooltip } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuildingColumns, faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
+import MainArea from '@/components/MainArea';
 
 const useItems = (user) => {
   const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
@@ -55,18 +56,14 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
     SiegeUpgradeLevel: item.SiegeUpgradeLevel,
     unitsCovered: item.unitsCovered,
     minUnitLevel: item.minUnitLevel,
-    SiegeUpgrade: OffenseiveUpgrades.find((f) => f.level === item.SiegeUpgradeLevel)?.name,
+    SiegeUpgrade: OffensiveUpgrades.find((f) => f.level === item.SiegeUpgradeLevel)?.name,
   };
 };
 
 const Upgrades = (props) => {
   const { user } = useUser();
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title">Upgrades</h2>
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
+    <MainArea title="Battle Upgrades">
       <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
         <Paper withBorder p="md" radius={'md'} key='GoldOnHand'>
           <Group justify='space-between'>
@@ -137,7 +134,7 @@ const Upgrades = (props) => {
 
         <BattleUpgradesSection heading='Sentry' type='SENTRY' items={useItems(user).SENTRY} />
       </div>
-    </div>
+    </MainArea>
   );
 };
 

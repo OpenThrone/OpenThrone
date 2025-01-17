@@ -1,3 +1,4 @@
+import { getAssetPath } from '@/utils/utilities';
 import { Burger } from '@mantine/core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -40,7 +41,8 @@ export const NavLoggedOut: React.FC = () => {
     <>
       <Burger className="block sm:hidden" opened={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}></Burger>
       
-      <nav className={mobileMenuOpen ? 'block md:hidden' : 'hidden md:hidden'}>
+      <nav className={mobileMenuOpen ? 'block md:hidden' : 'hidden md:hidden'}
+          >
         <ul className="text-center text-xl">
           {parentLinks.map((link) => (
             <div key={link.title}>
@@ -58,18 +60,18 @@ export const NavLoggedOut: React.FC = () => {
         </ul>
       </nav>
       <div>
-        <nav className="hidden bg-elf-menu-primary md:block">
+        <nav className="hidden bg-elf-menu-primary md:block"
+          style={{ backgroundImage: `url('${getAssetPath('top-menu', null, 'ELF')}')` }}>
           <div className="mx-auto max-w-screen-md md:block">
             <ul className="flex flex-wrap items-center justify-evenly text-center text-xl">
               {parentLinks.map((link) => (
                 <li className="mr-6" key={link.title}>
                   <Link
                     href={link.url}
-                    className={`border-none ${
-                      activeParentLink === link.url
-                        ? 'text-elf-link-current'
+                    className={`border-none ${activeParentLink === link.url
+                        ? 'bg-orange-gradient text-gradient-orange'
                         : 'text-elf-link-link'
-                    } hover:text-elf-link-hover`}
+                      }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-sm`}
                   >
                     {link.title}
                   </Link>

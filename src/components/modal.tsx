@@ -5,6 +5,7 @@ import { alertService } from '@/services';
 import router from 'next/router';
 import { useUser } from '@/context/users';
 import result from '@/pages/account/password-reset/result';
+import useSocket from '@/hooks/useSocket';
 
 interface ModalProps {
   isOpen: boolean;
@@ -14,8 +15,9 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
   const [turns, setTurns] = useState(1);
-  const context = useUser();
+  const {user, forceUpdate} = useUser();
   const [error, setError] = useState('');
+  const { socket } = useSocket(user?.id); 
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,7 +37,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
       setError(`Failed to execute attack. ${results?.message}`);
     } else {
       setError('');
-      context.forceUpdate();
+      forceUpdate();
+      if (socket) {
+        socket.emit('notifyAttack', { userId: profileID });
+      }
       router.push(`/battle/results/${results.attack_log}`);
       toggleModal();
     }

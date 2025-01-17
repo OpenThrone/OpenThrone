@@ -11,7 +11,7 @@ const StatsTable = ({ title, data, description = "description", displayButton = 
       <center>
         <Popover withArrow shadow="md" width={250} opened={opened} position="bottom">
           <Popover.Target>
-            <h2 className="text-xl font-semibold mb-2" onMouseEnter={open} onMouseLeave={close}>{title}</h2>
+            <h2 className="text-xl font-semibold mb-2 bg-link-gradient text-gradient-link text-shadow text-shadow-color-slate-800 text-shadow-md " onMouseEnter={open} onMouseLeave={close}>{title}</h2>
           </Popover.Target>
           <Popover.Dropdown style={{ pointerEvents: 'none' }}>
             <Text>{description}</Text>

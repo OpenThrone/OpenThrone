@@ -6,6 +6,7 @@ import { alertService } from '@/services';
 import { Button, Space, Container, Text, Title, Center, Flex } from '@mantine/core';
 import { useUser } from '@/context/users';
 import SessionModal from '@/components/SessionModal';
+import MainArea from '@/components/MainArea';
 
 export default function AutoRecruiter(props) {
   const [consecutiveSuccesses, setConsecutiveSuccesses] = useState(0);
@@ -80,7 +81,7 @@ export default function AutoRecruiter(props) {
 
       if (response.ok) {
         setUser(data.randomUser);
-        setTotalLeft(data.totalLeft);
+        setTotalLeft(data.recruitsLeft);
       } else {
         if (data.error === 'Invalid session ID') {
           handleInvalidSession();
@@ -109,7 +110,6 @@ export default function AutoRecruiter(props) {
     setCountdown(3);
     let timer = 3;
     intervalRef.current = setInterval(async () => {
-      console.log('Timer:', timer);
       if (timer > 1) {
         setCountdown(timer - 1);
       } else {
@@ -281,11 +281,7 @@ export default function AutoRecruiter(props) {
 
   if (!isRecruiting) {
     return (
-      <Container className="mainArea" pb="xl">
-        <Title order={2} className="page-title">Auto Recruiter</Title>
-        <Space h="md" />
-        <Alert />
-        <Space h="md" />
+      <MainArea title="Auto Recruiter">
         <Center>
           <Container>
             {!hasEnded && <Text>Click Start to begin the Auto-Recruit, a new user will appear.</Text>}
@@ -300,17 +296,13 @@ export default function AutoRecruiter(props) {
             onClose={() => setSessionModalOpened(false)}
           />
         </Center>
-      </Container>
+      </MainArea>
     );
   }
 
   if (!user) {
     return (
-      <Container className="mainArea" pb="xl">
-        <Title order={2} className="page-title">Auto Recruiter</Title>
-        <Space h="md" />
-        <Alert />
-        <Space h="md" />
+      <MainArea title='Auto Recruiter'>
         <Center>
           {!hasEnded ? (
             <div>
@@ -333,16 +325,22 @@ export default function AutoRecruiter(props) {
               </Button>
             </Center>
           )}
+          <SessionModal
+            opened={sessionModalOpened}
+            onClose={() => setSessionModalOpened(false)}
+          />
         </Center>
-      </Container>
+      </MainArea>
     );
   }
 
   return (
-    <Container className="mainArea" pb="xl" size={'xl'}>
-      <Title order={2} className="page-title">Auto Recruiter</Title>
-      <Space h="md" />
-      <Alert />
+    <MainArea title="Auto Recruiter">
+      {/* Display Total Daily Recruits left */}
+      <Text size="lg">
+        Total Daily Recruits left: {totalLeft}
+      </Text>
+
       <Space h="md" />
       <Recruiter
         key={user.id}
@@ -368,6 +366,6 @@ export default function AutoRecruiter(props) {
           </Button>
         )}
       </Flex>
-    </Container>
+    </MainArea>
   );
 }

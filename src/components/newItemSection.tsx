@@ -76,7 +76,6 @@ const NewItemSection = ({
         } else {
           initialCollapsedState[item.id] = false; // Expanded
         }
-        console.log(item.id)
       }
     });
     setCollapsedItems(initialCollapsedState);
@@ -150,7 +149,7 @@ const NewItemSection = ({
       }
     } catch (error) {
       alertService.error('Failed to equip items. Please try again.');
-      console.log(error);
+      console.error(error);
     }
   };
 
@@ -298,7 +297,6 @@ const NewItemSection = ({
       }
 
       const data = await response.json();
-      console.log('Conversion successful', data);
       alertService.success('Conversion successful');
       forceUpdate();
     } catch (error) {

@@ -47,7 +47,7 @@ export const UserCardImage = ({ name, members, description, gold, joinText, imgs
   );
 };
 
-const Browse = () => {
+const Browse = (props) => {
   const [alliances, setAlliances] = useState([]);
 
   useEffect(() => {
@@ -59,8 +59,6 @@ const Browse = () => {
         }
         const data = await response.json();
         setAlliances(data);
-
-        console.log('alliances: ',data)
       } catch (error) {
         console.error('Failed to fetch alliances:', error);
       }

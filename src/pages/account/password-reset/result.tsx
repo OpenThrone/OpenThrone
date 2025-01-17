@@ -1,9 +1,9 @@
+import MainArea from '@/components/MainArea';
 import { Container, Title, Paper, Text } from '@mantine/core';
 
 const Result = (props) => {
   return (
-    <Container>
-      <Title order={2} className="mainArea pb-10">Password Reset Results</Title>
+    <MainArea title="Password Reset">
       <Container size="xs" className="py-2 md:col-span-9">
         <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565' }}>
           <div className="flex justify-center">
@@ -13,7 +13,7 @@ const Result = (props) => {
           </div>
         </Paper>
       </Container>
-    </Container>
+    </MainArea>
   );
 }
 

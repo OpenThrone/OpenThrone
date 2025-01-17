@@ -6,6 +6,7 @@ import classes from './housing.module.css';
 import { useEffect, useState } from 'react';
 import toLocale from '@/utils/numberFormatting';
 import Alert from '@/components/alert';
+import MainArea from '@/components/MainArea';
 
 const Housing = (props) => {
   const { user } = useUser();
@@ -36,11 +37,7 @@ const Housing = (props) => {
   if (!mounted) return null; // Render nothing on the server
 
   return (
-    <div className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
-      <h2 className="text-2xl font-bold page-title">Housing</h2>
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
+    <MainArea title='Housing'>
       <SimpleGrid cols={{ base: 1, xs: 2, md: 2 }}>
         <Paper withBorder p="sm" radius="md">
           <Group justify="space-between">
@@ -74,7 +71,7 @@ const Housing = (props) => {
 
       <SimpleGrid cols={{ base: 1, md: 2 }}>
         <Paper withBorder radius="md" p="md" className="w-full mb-4">
-          <Group position="apart" align="flex-start">
+          <Group align="flex-start">
             <Stack spacing="xs">
                 
               <Text>
@@ -98,7 +95,7 @@ const Housing = (props) => {
           </Group>
         </Paper>
         <Paper withBorder radius="md" p="md" className="w-full mb-4">
-          <Group position="apart" align="flex-start">
+          <Group align="flex-start">
             <Stack spacing="xs">
               <Text>
                 <Text fw={700} size="xl" className='font-medieval'>
@@ -115,15 +112,13 @@ const Housing = (props) => {
                 Fortification Required: <Text component="span" color="lightgray">{Fortifications[nextUpgrade.fortLevel].name}</Text>
               </Text>
               <Text size="sm" color="dimmed">
-                Cost: <Text component="span" color="lightgray">{nextUpgrade.cost} Gold</Text>
+                Cost: <Text component="span" color="lightgray">{toLocale(nextUpgrade.cost, user?.locale)} Gold</Text>
               </Text>
             </Stack>
           </Group>
         </Paper>
       </SimpleGrid>
-
-      
-    </div>
+    </MainArea>
   );
 };
 

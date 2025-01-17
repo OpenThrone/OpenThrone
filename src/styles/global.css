@@ -226,14 +226,6 @@ body{
  /*   background-image: linear-gradient(360deg, orange, darkorange);
     font-weight: bold;
 }*/
-.page-title {
-  -webkit-background-clip: text;
-    -moz-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    -moz-text-fill-color: transparent;
-    background-image: linear-gradient(360deg, orange, darkorange);
-    font-weight: bold;
-}
 .mainArea {
   padding-bottom: 10px
 }

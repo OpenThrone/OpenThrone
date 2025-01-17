@@ -9,15 +9,6 @@ module.exports = withBundleAnalyzer({
   experimental: {
     reactCompiler: true,
     // serverActions: true,
-    swcPlugins: [
-      [
-        'next-superjson-plugin',
-        {
-          excluded: [],
-        },
-      ],
-    ],
-    instrumentationHook: true,
   },
   eslint: {
     dirs: ['.'],
@@ -29,7 +20,13 @@ module.exports = withBundleAnalyzer({
   poweredByHeader: true,
   trailingSlash: false,
   images: {
-    domains: ['assets.openthrone.dev'], 
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'assets.openthrone.dev',
+        pathname: '/**',
+      },
+    ], 
   },
   publicRuntimeConfig: {
     apiUrl:

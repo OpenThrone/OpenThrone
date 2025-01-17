@@ -36,7 +36,8 @@ const getSearchResults = async (req: NextApiRequest, res: NextApiResponse) => {
         class: true,
         race: true,
         avatar: true,
-        experience:true
+        experience: true,
+        permissions: true,
       },
     });
 

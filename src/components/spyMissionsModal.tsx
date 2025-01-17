@@ -7,7 +7,6 @@ import { alertService } from '@/services';
 
 import Alert from './alert';
 import router from 'next/router';
-import { stringifyObj } from '@/utils/numberFormatting';
 import { Button, NumberInput, Modal, Group, Select, Text, Paper, Divider, Title } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { SpyUpgrades } from '@/constants';
@@ -113,9 +112,17 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
 
   useEffect(() => {
     if (user) {
-      setIsInfiltrationDisabled(!user.spyMissions['infil'].enabled);
-      setIsAssassinateDisabled(!user.spyMissions['assass'].enabled);
-      setIsIntelDisabled(!user.spyMissions['intel'].enabled);
+      setIsInfiltrationDisabled(
+        !(user.spyMissions['infil'].enabled && process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS === 'true')
+      );
+
+      setIsAssassinateDisabled(
+        !(user.spyMissions['assass'].enabled && process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true')
+      );
+
+      setIsIntelDisabled(
+        !(user.spyMissions['intel'].enabled && process.env.NEXT_PUBLIC_ENABLE_INTEL === 'true')
+      );
       setUnits({
         SPY:
           user.units.find((unit) => unit.type === 'SPY' && unit.level === 1)
@@ -173,19 +180,19 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
   const MissionPanels: Record<MissionPanelKey, JSX.Element> = {
     intelligence: (
       <div>
-        <Title align="center" order={3} weight={700} mb="md">Intelligence Gathering</Title>
+        <Title ta="center" order={3} fw={700} mb="md">Intelligence Gathering</Title>
         <Text>How many spies would you like to send?</Text>
-        <Group position="apart" mt="md">
+        <Group mt="md">
           <NumberInput
             max={10}
             min={1}
             value={intelSpies}
-            onChange={(value) => setIntelSpies(value)}
+            onChange={(value) => setIntelSpies(Number(value))}
           />
           <Button onClick={handleSpyMission}>Send Spies</Button>
         </Group>
         <div className="mt-4">
-          <Title align="center" order={3} weight={700}>Intelligence Information</Title>
+          <Title ta="center" order={3} fw={700}>Intelligence Information</Title>
           <Text mt="md">Spies Trained: {units.SPY}</Text>
           <Text>You can send a maximum of 10 spies per mission.</Text>
         </div>
@@ -193,7 +200,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     ),
     assassination: (
       <div>
-        <Text align="center" size="lg" weight={700} mb="md">Assassination</Text>
+        <Text ta="center" size="lg" fw={700} mb="md">Assassination</Text>
         <Text>What type of units would you like to assassinate?</Text>
         <Select
           value={assassinateUnit}
@@ -206,12 +213,18 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           max={5}
           min={1}
           value={intelSpies}
-          onChange={(value) => setIntelSpies(value)}
+          onChange={(value) => setIntelSpies(Number(value))}
           mt="md"
         />
+        <Text>What Unit Type would you like to target?</Text>
+        <Select>
+          <option value="CITIZEN/WORKERS">Citizen/Workers</option>
+          <option value="OFFENSE">Offense</option>
+          <option value="DEFENSE">Defense</option>
+        </Select>
         <Button onClick={handleSpyMission} fullWidth mt="md">Assassinate</Button>
         <div className="mt-4">
-          <Text align="center" size="lg" weight={700}>Assassination Information</Text>
+          <Text ta="center" size="lg" fw={700}>Assassination Information</Text>
           <Text mt="md">Total Assassins: {units.ASSASSIN}</Text>
           <Text>You can send a maximum of  assassins per mission.</Text>
           <Text mt="md">Assassination Attempts Available: ##</Text>
@@ -225,19 +238,19 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     ),
     infiltration: (
       <div>
-        <Text align="center" size="lg" weight={700} mb="md">Infiltration</Text>
+        <Text ta="center" size="lg" fw={700} mb="md">Infiltration</Text>
         <Text>How many spies would you like to send to infiltrate?</Text>
-        <Group position="apart" mt="md">
+        <Group mt="md">
           <NumberInput
             max={3}
             min={1}
             value={intelSpies}
-            onChange={(value) => setIntelSpies(value)}
+            onChange={(value) => setIntelSpies(Number(value))}
           />
           <Button onClick={handleSpyMission}>Infiltrate</Button>
         </Group>
         <div className="mt-4">
-          <Text align="center" size="lg" weight={700}>Infiltration Information</Text>
+          <Text ta="center" size="lg" fw={700}>Infiltration Information</Text>
           <Text mt="md">Total Spies: {units.INFILTRATOR}</Text>
           <Text>You can send a maximum of {spyLimits.INFIL.perMission} spies per infiltration mission.</Text>
           <Text mt="md">Infiltration Attempts Available: </Text>
@@ -269,7 +282,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <small>Infiltrate and Destroy the Fort</small>
             {isInfiltrationDisabled && (
               <b>
-                <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['infil'].requiredLevel)}</small>
+                {process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS === 'true' ?
+                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['infil'].requiredLevel)}</small>
+                  :
+                  <small className="text-slate-300"> This mission is disabled by the Administrators</small>
+                }
               </b>
             )}
           </CustomButton>
@@ -281,7 +298,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <small>Attempt to assassinate player&apos;s Defenders</small>
             {isAssassinateDisabled && (
               <b>
-                <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['assass'].requiredLevel)}</small>
+                {process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true' ?
+                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['assass'].requiredLevel)}</small>
+                  :
+                  <small className="text-slate-300"> This mission is disabled by the Administrators</small>
+                }
               </b>
             )}
           </CustomButton>
@@ -289,7 +310,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       ) : (
         <>
           <Button
-            leftIcon={<FontAwesomeIcon icon={faBackwardStep} size={'1x'} />}
+            leftSection={<FontAwesomeIcon icon={faBackwardStep} size={'1x'} />}
             onClick={() => setCurrentPanel('')}
             mb="md"
           >

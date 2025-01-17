@@ -143,8 +143,8 @@ export async function attackHandler(
   }
 
   const startOfAttack = {
-    Attacker: JSON.parse(JSON.stringify(stringifyObj(AttackPlayer))),
-    Defender: JSON.parse(JSON.stringify(stringifyObj(DefensePlayer))),
+    Attacker: JSON.parse(JSON.stringify(AttackPlayer)),
+    Defender: JSON.parse(JSON.stringify(DefensePlayer)),
   };
 
   const battleResults = simulateBattle(
@@ -234,8 +234,8 @@ export async function attackHandler(
         defense: newAttDefense,
         spy: newAttSpying,
         sentry: newAttSentry,
-        killing_str: attackerKS,
-        defense_str: attackerDS,
+        //killing_str: attackerKS,
+        //defense_str: attackerDS,
       },tx);
 
       await updateUser(defenderId, {
@@ -247,8 +247,8 @@ export async function attackHandler(
         defense: newDefDefense,
         spy: newDefSpying,
         sentry: newDefSentry,
-        killing_str: defenderKS,
-        defense_str: defenderDS,
+        //killing_str: defenderKS,
+        //defense_str: defenderDS,
       },tx);
 
       return attack_log;

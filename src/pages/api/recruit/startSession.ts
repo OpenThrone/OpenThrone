@@ -1,6 +1,7 @@
 // pages/api/recruit/startSession.ts
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
+import { countSessions, createSession, expireOldSessions } from '@/services/sessions.service';
 
 const handler = async (req, res) => {
   if (req.method !== 'POST') {
@@ -14,29 +15,18 @@ const handler = async (req, res) => {
 
   const MAX_SESSIONS_PER_USER = 2; // Limit to 1 active session per user
 
-  // Clean up expired sessions (older than 5 minutes)
-  const expirationTime = new Date(Date.now() - 5 * 60 * 1000);
-  await prisma.autoRecruitSession.deleteMany({
-    where: {
-      userId,
-      lastActivityAt: { lt: expirationTime },
-    },
-  });
+  await expireOldSessions(userId);
 
   // Count active sessions
-  const activeSessions = await prisma.autoRecruitSession.count({
-    where: { userId },
-  });
+  const activeSessions = await countSessions(userId);
 
   if (activeSessions >= MAX_SESSIONS_PER_USER) {
     return res.status(429).json({ error: 'Too many active sessions', code: 'TOO_MANY_SESSIONS' });
   }
 
   // Create a new session
-  const newSession = await prisma.autoRecruitSession.create({
-    data: { userId },
-  });
-
+  const newSession = await createSession(userId);
+  
   return res.status(200).json({ sessionId: newSession.id });
 }
 

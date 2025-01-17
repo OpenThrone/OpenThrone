@@ -3,33 +3,28 @@ import { getAssetPath } from '@/utils/utilities';
 
 import type {
   BonusPointsItem,
-  DefensiveUpgradeType,
   FortHealth,
   Fortification,
   Locales,
-  OffensiveUpgradeType,
   PlayerClass,
   PlayerRace,
   PlayerUnit,
-  SentryUpgradeType,
-  SpyUpgradeType,
   Unit,
   UnitTotalsType,
   UnitType,
   Item,
   ItemCounts,
   UnitUpgradeType,
-  PermissionGrant,
+  PlayerBonus,
 } from '@/types/typings';
 
 import {
-  ArmoryUpgrades,
   BattleUpgrades,
   Bonuses,
   EconomyUpgrades,
   Fortifications,
   HouseUpgrades,
-  OffenseiveUpgrades,
+  OffensiveUpgrades,
   SentryUpgrades,
   SpyUpgrades,
   UnitTypes,
@@ -37,6 +32,7 @@ import {
   levelXPArray,
 } from '../constants';
 import { getLevelFromXP } from '@/utils/utilities';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 class UserModel {
   public id: number;
@@ -53,9 +49,9 @@ class UserModel {
 
   public experience: number;
 
-  public gold: bigint;
+  public gold: bigint | string;
 
-  public goldInBank: bigint;
+  public goldInBank: bigint | string;
 
   public fortLevel: number;
 
@@ -73,7 +69,7 @@ class UserModel {
 
   public bio: string;
 
-  public colorScheme: string;
+  public colorScheme: PlayerRace | string;
 
   public is_player: boolean;
 
@@ -115,17 +111,10 @@ class UserModel {
 
   public sentry: number;
 
-  public killing_str: number;
-
-  public defense_str: number;
-
-  public spying_str: number;
-
-  public sentry_str: number;
-
   public permissions: any[];
 
-  constructor(userData?: any, filtered: boolean = true) {
+  constructor(userData?: any, filtered: boolean = true, checkStats: boolean = true) {
+    userData = JSON.parse(JSON.stringify(stringifyObj(userData)));
     this.id = 0;
     this.displayName = '';
     this.email = '';
@@ -133,8 +122,8 @@ class UserModel {
     this.race = 'ELF';
     this.class = 'ASSASSIN';
     this.experience = 0;
-    this.gold = BigInt(0);
-    this.goldInBank = BigInt(0);
+    this.gold = '0';
+    this.goldInBank = '0';
 
     this.fortLevel = 0;
     this.fortHitpoints = 0;
@@ -179,8 +168,8 @@ class UserModel {
       this.race = userData.race;
       this.class = userData.class;
       this.experience = userData.experience;
-      this.gold = userData.gold;
-      this.goldInBank = userData.gold_in_bank;
+      this.gold = userData.gold || '0';
+      this.goldInBank = userData.gold_in_bank || '0';
       this.battle_upgrades = userData.battle_upgrades;
       this.fortLevel = userData.fort_level;
       this.fortHitpoints = userData?.fort_hitpoints || userData?.fortHitpoints || 0;
@@ -201,10 +190,6 @@ class UserModel {
       this.stats = userData.stats;
       this.structure_upgrades = userData.structure_upgrades;
       this.locale = userData.locale;
-      this.killing_str = userData.killing_str;
-      this.defense_str = userData.defense_str;
-      this.spying_str = userData.spying_str;
-      this.sentry_str = userData.sentry_str;
       this.offense = userData.offense;
       this.defense = userData.defense;
       this.spy = userData.spy;
@@ -217,6 +202,15 @@ class UserModel {
 
       this.permissions = userData.permissions;
     }
+    if (checkStats)
+      this.updateStats()
+  }
+
+  updateStats() {
+    this.offense = this.getArmyStat('OFFENSE');
+    this.defense = this.getArmyStat('DEFENSE');
+    this.spy = this.getArmyStat('SPY');
+    this.sentry = this.getArmyStat('SENTRY');
   }
 
   get attacksWon(): number {
@@ -227,7 +221,7 @@ class UserModel {
     return this.defends_won;
   }
 
-  statistics(type: String, subType: String): number {
+  statistics(type: string, subType: string): number {
     // Return 0 for unsupported types or subtypes
     if (!['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].includes(type) ||
       !['WON', 'LOST'].includes(subType)) {
@@ -239,7 +233,7 @@ class UserModel {
     return this.stats.find(stat => stat.type === type && stat.subtype === subType)?.stat || 0;
   }
 
-  get netWorth() {
+  get netWorth(): BigInt | number {
     return this.gold + this.goldInBank;
   }
 
@@ -248,7 +242,7 @@ class UserModel {
    * This is calculated by subtracting the sum of bonus points' levels from the user's level.
    * @returns {number} The number of available proficiency points.
    */
-  get availableProficiencyPoints() {
+  get availableProficiencyPoints(): number {
     return (
       this.level -
       this.bonus_points.reduce((acc, bonus) => acc + bonus.level, 0)
@@ -260,7 +254,7 @@ class UserModel {
    * This is calculated by subtracting the sum of bonus points' levels from the user's level.
    * @returns {number} The number of available proficiency points.
    */
-  get usedProficiencyPoints() {
+  get usedProficiencyPoints(): number {
     return (
       this.bonus_points.reduce((acc, bonus) => acc + bonus.level, 0)
     );
@@ -268,9 +262,9 @@ class UserModel {
 
   /**
    * Returns an array of bonuses that are applicable to the user's race or class.
-   * @returns {Array<Bonus>} An array of Bonus objects.
+   * @returns {Array<PlayerBonus>} An array of Bonus objects.
    */
-  get playerBonuses() {
+  get playerBonuses(): PlayerBonus[] {
     return Bonuses.filter(
       (bonus) => bonus.race === this.race || bonus.race === this.class
     );
@@ -280,7 +274,7 @@ class UserModel {
    * Calculates the total income bonus for the user based on their race, class, and bonus points.
    * @returns The total income bonus for the user.
    */
-  get incomeBonus() {
+  get incomeBonus(): number {
     const income = Bonuses.filter(
       (bonus) =>
         (bonus.race === this.race || bonus.race === this.class) &&
@@ -299,7 +293,7 @@ class UserModel {
    * The recruiting link is generated by hashing the user's ID using the MD5 algorithm.
    * @returns {string} The recruiting link for the user.
    */
-  get recruitingLink() {
+  get recruitingLink(): string {
     return md5(this.id.toString());
   }
 
@@ -307,7 +301,7 @@ class UserModel {
    * Returns the total attack bonus for the user.
    * @returns {number} The total attack bonus.
    */
-  get attackBonus() {
+  get attackBonus(): number {
     const attack = Bonuses.filter(
       (bonus) =>
         (bonus.race === this.race || bonus.race === this.class) &&
@@ -318,7 +312,7 @@ class UserModel {
     const offenseLevelBonus = this.bonus_points
       .filter((bonus) => bonus.type === 'OFFENSE')
       .reduce((acc, bonus) => acc + bonus.level, 0);
-    const siegeUpgradeBonus = OffenseiveUpgrades.filter(
+    const siegeUpgradeBonus = OffensiveUpgrades.filter(
       (upgrade) => upgrade.level === this.structure_upgrades.find((upgrade) => upgrade.type === 'OFFENSE')?.level
     ).reduce((acc, upgrade) => acc + upgrade.offenseBonusPercentage, 0);
     
@@ -348,7 +342,7 @@ class UserModel {
    * Calculates the total intelligence bonus for the user.
    * @returns {number} The total intelligence bonus.
    */
-  get intelBonus() {
+  get intelBonus(): number {
     const intel = Bonuses.filter(
       (bonus) =>
         (bonus.race === this.race || bonus.race === this.class) &&
@@ -362,11 +356,11 @@ class UserModel {
     return intel + intelLevelBonus;
   }
 
-  get spyBonus() {
+  get spyBonus(): number {
     return SpyUpgrades[this?.spyLevel].offenseBonusPercentage + this.intelBonus;
   }
 
-  get sentryBonus() {
+  get sentryBonus(): number {
     return SentryUpgrades[this?.sentryLevel].defenseBonusPercentage + this.intelBonus;
   }
 
@@ -374,7 +368,7 @@ class UserModel {
   * Returns the missions that are enabled for the user based on their level.
   * @returns {Object} An object containing the enabled missions.
   */
-  get spyMissions() {
+  get spyMissions(): any { //TODO: fix any type for spyMissions
     const missions = [
       { name: 'infil', requiredLevel: 7 },
       { name: 'assass', requiredLevel: 16 },
@@ -390,7 +384,7 @@ class UserModel {
     }, {});
   }
 
-  get spyLimits() {
+  get spyLimits(): any { //TODO: fix any type for spyLimits
     return {
       infil: {
         perUser: SpyUpgrades[this?.spyLevel].maxInfiltratorsPerUser,
@@ -398,10 +392,14 @@ class UserModel {
         perDay: SpyUpgrades[this?.spyLevel].maxInfiltrations,
       },
       assass: {
-        perDay: SpyUpgrades[this?.spyLevel].maxAssassinations,
-        perMission: SpyUpgrades[this?.spyLevel].maxAssassinsPerMission,
-        perUser: SpyUpgrades[this?.spyLevel].maxAssassinationsPerUser,
+        perDay: SpyUpgrades[this?.spyLevel]?.maxAssassinations,
+        perMission: SpyUpgrades[this?.spyLevel]?.maxAssassinsPerMission,
+        perUser: SpyUpgrades[this?.spyLevel]?.maxAssassinationsPerUser,
       },
+      stats: {
+        level: this?.spyLevel,
+        all: SpyUpgrades[this?.spyLevel]
+      }
     }
   }
 
@@ -409,7 +407,7 @@ class UserModel {
    * Returns the total recruiting bonus for the user.
    * @returns {number} The total recruiting bonus.
    */
-  get recruitingBonus() {
+  get recruitingBonus(): number {
     const recruiting = Bonuses.filter(
       (bonus) =>
         (bonus.race === this.race || bonus.race === this.class) &&
@@ -425,7 +423,7 @@ class UserModel {
    * Returns the total casualty bonus for the user based on their race and class.
    * @returns {number} The total casualty bonus.
    */
-  get casualtyBonus() {
+  get casualtyBonus(): number {
     const casualty = Bonuses.filter(
       (bonus) =>
         (bonus.race === this.race || bonus.race === this.class) &&
@@ -440,7 +438,7 @@ class UserModel {
    * Returns the total charisma bonus for the user based on their race and class
    * @returns {number} The total price bonus.
    */
-  get priceBonus() {
+  get priceBonus(): number {
     const price = Bonuses.filter(
       (bonus) =>
         (bonus.race === this.race || bonus.race === this.class) &&
@@ -465,7 +463,7 @@ class UserModel {
    * Returns the total population of the user, calculated by summing the quantity of all units.
    * @returns {number} The total population of the user.
    */
-  get population() {
+  get population(): number {
     return this.units.reduce((acc, unit) => acc + unit.quantity, 0);
   }
 
@@ -557,7 +555,7 @@ class UserModel {
     return workerGoldPerTurn;
   }
 
-  getLevelForUnit(type: UnitType) {
+  getLevelForUnit(type: UnitType): number {
     switch (type) {
       case 'OFFENSE':
         return this.fortLevel;
@@ -568,7 +566,7 @@ class UserModel {
       case 'SPY':
         return this.fortLevel;
       default:
-        return 0;
+        return 1;
     }
   }
 
@@ -585,34 +583,44 @@ class UserModel {
 
     totalStat += this.calculateUnitStats(sortedUnits, unitCoverage);
     totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
+
     // Calculate bonuses from upgrades
     sortedUnits.forEach((unit, index) => {
       const applicableUpgrades = this.getApplicableUpgrades(unit, type);
 
       applicableUpgrades.forEach(upgrade => {
-        const userUpgrade = this.getUserUpgrade(upgrade, type);
+        // Clone userUpgrade for this calculation to avoid side effects
+        const userUpgrade = { ...this.getUserUpgrade(upgrade, type) };
+
         if (userUpgrade && userUpgrade.quantity > 0) {
           const { totalBonusForUnits, unitsCovered } = this.calculateUpgradeBonus(upgrade, unit, userUpgrade, unitCoverage, index);
           totalStat += totalBonusForUnits;
 
-          // Update the quantity of the upgrade and track coverage
-          userUpgrade.quantity -= Math.ceil(unitsCovered / upgrade.unitsCovered);
+          // Use a local variable instead of modifying userUpgrade.quantity directly
+          const remainingQuantity = userUpgrade.quantity - Math.ceil(unitsCovered / upgrade.unitsCovered);
+
+          // Update unit coverage without modifying external state
           unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
         }
       });
     });
-    totalStat = this.applyBonuses(type, totalStat);
 
+    totalStat = this.applyBonuses(type, totalStat);
     return Math.ceil(totalStat);
   }
+
 
   /**
    * Sorts and filters items based on type.
    * @param type - The type of unit.
    * @returns Sorted items.
    */
-  private getSortedItems(type: UnitType) {
-    return JSON.parse(JSON.stringify(this.items.filter(item => item.usage === type).sort((a, b) => b.level - a.level)));
+  private getSortedItems(type: UnitType): Item[] {
+    const filteredItems = this.items.filter(item => item.usage === type).sort((a, b) => b.level - a.level);
+    if(filteredItems.length > 0)
+      return JSON.parse(JSON.stringify(filteredItems));
+    
+    return []
   }
 
   /**
@@ -620,7 +628,7 @@ class UserModel {
    * @param type - The type of unit.
    * @returns Sorted units.
    */
-  private getSortedUnits(type: UnitType) {
+  private getSortedUnits(type: UnitType): PlayerUnit[] {
     return JSON.parse(JSON.stringify(this.units.filter(unit => unit.type === type).sort((a, b) => b.level - a.level)));
   }
 
@@ -674,7 +682,7 @@ class UserModel {
    * @param type - The unit type.
    * @returns Applicable upgrades.
    */
-  private getApplicableUpgrades(unit: Unit, type: UnitType) {
+  private getApplicableUpgrades(unit: Unit, type: UnitType): any[] | UnitUpgradeType[] {
     switch (type) {
       case 'DEFENSE':
         return this.availableDefenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel).sort((a, b) => b.level - a.level);
@@ -695,7 +703,7 @@ class UserModel {
    * @param type - The unit type.
    * @returns The user upgrade.
    */
-  private getUserUpgrade(upgrade: UnitUpgradeType, type: UnitType) {
+  private getUserUpgrade(upgrade: UnitUpgradeType, type: UnitType): UnitUpgradeType {
     return this.battle_upgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
   }
 
@@ -708,7 +716,7 @@ class UserModel {
    * @param index - Index of the unit.
    * @returns Total bonus and units covered.
    */
-  private calculateUpgradeBonus(upgrade: UnitUpgradeType, unit: UnitUpgradeType, userUpgrade: UnitUpgradeType, unitCoverage: Map<number, number>, index: number) {
+  private calculateUpgradeBonus(upgrade: UnitUpgradeType, unit: UnitUpgradeType, userUpgrade: UnitUpgradeType, unitCoverage: Map<number, number>, index: number): { totalBonusForUnits: number, unitsCovered: number } {
     const bonusPerUnit = upgrade.bonus;
     const remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
     const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered);
@@ -774,6 +782,14 @@ class UserModel {
       .filter((unitgroup) => unitgroup.type === 'SPY')
       .map((unit) => unit.quantity)
       .reduce((acc, quant) => acc + quant, 0);
+    const assassins = units
+      .filter((unitgroup) => unitgroup.type === 'SPY' && unitgroup.level === 3)
+      .map((unit) => unit.quantity)
+      .reduce((acc, quant) => acc + quant, 0);
+    const infiltrators = units
+      .filter((unitgroup) => unitgroup.type === 'SPY' && unitgroup.level === 2)
+      .map((unit) => unit.quantity)
+      .reduce((acc, quant) => acc + quant, 0);
     const sentries = units
       .filter((unitgroup) => unitgroup.type === 'SENTRY')
       .map((unit) => unit.quantity)
@@ -784,6 +800,8 @@ class UserModel {
       offense,
       defense,
       spies,
+      assassins,
+      infiltrators,
       sentries,
     };
   }
@@ -840,7 +858,7 @@ class UserModel {
    * Increases the level of a given stat by 1. Returns the entire object.
    * @param {string} type - The type of stat to increase.
    */
-  increaseStatLevel(type: string) {
+  increaseStatLevel(type: string): any[] {
     return this.structure_upgrades.map(stat => {
       if (stat.type === type) {
         return { ...stat, level: stat.level + 1 };
@@ -849,34 +867,12 @@ class UserModel {
     });
   }
 
-  // https://www.sitepoint.com/build-javascript-countdown-timer-no-dependencies/
-  /**
-   * Calculates the time remaining between the current time and a given end time.
-   * @param {string} endtime - The end time to calculate the time remaining until.
-   * @returns {Object} An object containing the total time remaining in milliseconds, as well as the number of days, hours, minutes, and seconds remaining.
-   */
-  getTimeRemaining(endtime: string) {
-    const total = Date.parse(endtime) - new Date().getTime();
-    const seconds = Math.floor((total / 1000) % 60);
-    const minutes = Math.floor((total / 1000 / 60) % 60);
-    const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
-    const days = Math.floor(total / (1000 * 60 * 60 * 24));
-
-    return {
-      total,
-      days,
-      hours,
-      minutes,
-      seconds,
-    };
-  }
-
   /**
    * Calculates the time to the next turn based on the current date.
    * @param date - The current date. Defaults to the current time.
    * @returns The time of the next turn.
    */
-  getTimeToNextTurn(date = new Date()) {
+  getTimeToNextTurn(date = new Date()): Date {
     const ms = 1800000; // 30mins in ms
     const nextTurn = new Date(Math.ceil(date.getTime() / ms) * ms);
     return nextTurn;

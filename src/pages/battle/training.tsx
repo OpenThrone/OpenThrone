@@ -8,6 +8,7 @@ import toLocale from '@/utils/numberFormatting';
 import { Paper, Group, SimpleGrid, Title, Text, ThemeIcon, Badge, Tooltip, Button, Space, Flex, Stack } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuildingColumns, faCoins, faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
+import MainArea from '@/components/MainArea';
 
 const Training = (props) => {
   //const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
@@ -287,11 +288,7 @@ const Training = (props) => {
   }, [stickyRef, parentRef]);
 
   return (
-    <div ref={parentRef} className="mainArea" style={{ position: 'relative', paddingBottom: '50px' }}>
-      <h2 className="page-title text-2xl font-bold">Training</h2>
-      <div className="my-5 flex justify-between">
-        <Alert />
-      </div>
+    <MainArea title="Training" ref={parentRef}>
       <SimpleGrid cols={{ base: 1, xs: 2, sm:3, md: 4 }}>
         <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
           <Group justify='space-between'>
@@ -391,7 +388,7 @@ const Training = (props) => {
           </Button>
         </Flex>
       </Flex>
-    </div>
+    </MainArea>
   );
 };
 
