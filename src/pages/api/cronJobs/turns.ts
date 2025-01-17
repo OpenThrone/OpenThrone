@@ -13,7 +13,7 @@ import prisma from "@/lib/prisma";
  */
 const updateUserPerTurn = async (currentUser, rank) => {
   try {
-    const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + currentUser.gold;
+    const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + BigInt(currentUser.gold);
     const { killingStrength, defenseStrength } = newCalculateStrength(currentUser, 'OFFENSE');
     const newOffense = currentUser.getArmyStat('OFFENSE');
     const newDefense = currentUser.getArmyStat('DEFENSE');
