@@ -37,6 +37,7 @@ const Bank = (props) => {
     recruitment: true,
     economy: true,
     fortification: true,
+    daily: true,
   });
 
   useEffect(() => {
@@ -221,6 +222,7 @@ const Bank = (props) => {
     if (history_type === 'FORT_REPAIR') return 'Fort Repair';
 
     if (history_type === 'WAR_SPOILS') return 'War Spoils';
+    if (history_type === 'DAILY_RECRUIT') return 'Daily Reward';
     // Fallback for unknown types
     console.log('Unknown transaction type:', entry);
     return 'UNKNOWN';
@@ -520,6 +522,14 @@ const Bank = (props) => {
             >
               Fort Repairs
             </Chip>
+            <Chip
+              variant="filled"
+              checked={filters.daily}
+              onChange={() => { setFilters({ ...filters, daily: !filters.daily }) }}
+              color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'gray' : 'blue'))}
+            >
+              Daily Rewards
+            </Chip>
           </Group>
           {message && <div className="text-center p-4">{message}</div>}
           <Space h="md" />
@@ -544,7 +554,7 @@ const Bank = (props) => {
                     <Table.Tr key={index}>
                       <Table.Td>{new Date(entry.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString()}</Table.Td>
                       <Table.Td>{transactionType}</Table.Td>
-                      <Table.Td>{getGoldTxSymbol(entry) +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+                      <Table.Td>{(transactionType === 'Daily Reward' ? `+${entry.stats.recruitingBonus} Citizens` : getGoldTxSymbol(entry) + toLocale(entry.gold_amount, user?.locale) + 'gold')}</Table.Td>
                     </Table.Tr>
                   );
                 })}
