@@ -6,12 +6,10 @@ import { useState } from "react";
 import { InferGetServerSidePropsType } from "next";
 import router from "next/router";
 
-const Compose = ({ messages, session }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Compose = ({ session }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
 
   return (
-    <>
-      <ComposeModal onClose={() => { router.push('/messaging/inbox') }} />
-    </>
+    <ComposeModal onClose={() => { router.push('/messaging/inbox') }} />
   );
 };
 
@@ -29,19 +27,8 @@ export const getServerSideProps = async (context: any) => {
     };
   }
 
-  // Fetch messages for the logged-in user, including the from_user relation
-  const messages = await prisma.messages.findMany({
-    where: {
-      to_user_id: session.user.id,
-    },
-    include: {
-      from_user: true,  // Include the from_user relation
-    },
-  });
-
   return {
     props: {
-      messages,
       session,
     },
   };
