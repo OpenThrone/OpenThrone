@@ -1,7 +1,7 @@
 import UserModel from "@/models/Users";
 import toLocale from "@/utils/numberFormatting";
 import { getLevelFromXP, getAssetPath } from "@/utils/utilities";
-import { Grid, Space, Group, Button, Text, Paper } from "@mantine/core";
+import { Grid, Space, Group, Button, Text, Paper, Title } from "@mantine/core";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Modal from "./modal";
@@ -90,9 +90,13 @@ const attackResults = ({ battle, viewerID }) => {
   return (
     <div>
       <Grid grow className="gap-5">
-        <Grid.Col span={3} md={4} className="text-center">
-          <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}</h4>
+        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
+          <Title order={3} mt="md">
+            {attackerPlayer?.display_name}
+          </Title>
+          <Text size="sm" fw={500} ta={'center'} mt={'xs'}>
+            Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
+          </Text>
           <center>
             <Image
               src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
@@ -103,7 +107,7 @@ const attackResults = ({ battle, viewerID }) => {
             />
           </center>
         </Grid.Col>
-        <Grid.Col span={6} md={4} className="text-center">
+        <Grid.Col span={{ base: 6, md: 4 }} className="text-center">
           <Space h='10' />
           <div className="text-container inline-block align-middle">
             <Text color="white" fw="bolder" size='xl' className="font-medieval">
@@ -133,9 +137,13 @@ const attackResults = ({ battle, viewerID }) => {
             
           </div>
         </Grid.Col>
-        <Grid.Col span={3} md={4} className="text-center">
-          <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}</h4>
+        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
+          <Title order={3} mt="md">
+            {defenderPlayer?.display_name}
+          </Title>
+          <Text size="sm" fw={500} ta={'center'} mt={'xs'}>
+            Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}
+          </Text>
           <center>
             <Image
               src={getAssetPath('shields', '150x150', defenderPlayer?.race)}

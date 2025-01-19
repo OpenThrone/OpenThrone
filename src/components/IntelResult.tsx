@@ -1,5 +1,5 @@
 import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
-import { Box, Text, Group, Paper, Grid, RingProgress, Button, Space, Container } from '@mantine/core';
+import { Box, Text, Group, Paper, Grid, RingProgress, Button, Space, Container, Title } from '@mantine/core';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import SpyMissionsModal from './spyMissionsModal';
@@ -100,9 +100,11 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   return (
     <Container size='xl' p={'md'} style={{ backgroundColor: 'black', color: 'white' }} >
       <Grid grow className="gap-5">
-        <Grid.Col span={3} md={4} className="text-center">
-          <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.spyResults.attacker.experience)}</h4>
+        <Grid.Col span={3} className="text-center">
+          <Title order={3} mt="md">{attackerPlayer?.display_name}</Title>
+          <Text size="sm" fw={500} ta={'center'} mt={'xs'}>
+            Level: {getLevelFromXP(stats.spyResults.attacker.experience)}
+          </Text>
           <center>
             <Image
               src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
@@ -113,7 +115,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
             />
           </center>
         </Grid.Col>
-        <Grid.Col span={6} md={4} className="text-center">
+        <Grid.Col span={{ base: 6, md: 4 }} className="text-center">
           <Space h='10' />
           <div className="text-container inline-block align-middle">
             <Text color="white" fw="bolder" size='xl' className="font-medieval">
@@ -163,9 +165,13 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
             )}
           </div>
         </Grid.Col>
-        <Grid.Col span={3} md={4} className="text-center">
-          <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.spyResults.defender.experience)}</h4>
+        <Grid.Col span={{ base: 6, md: 4 }} className="text-center">
+          <Title order={3} ta="center" mt="md">
+            {defenderPlayer?.display_name}
+          </Title>
+          <Text size="sm" fw={500} mt={'xs'}>
+            Level: {getLevelFromXP(stats.spyResults.defender.experience)}
+          </Text>
           <center>
             <Image
               src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
@@ -180,7 +186,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
       <div className="intel-report mt-10">
         
         <Grid grow gutter={'xs'}>
-          <Grid.Col span={4} md={6} className="text-center">
+          <Grid.Col span={{ base: 4, md: 6 }} className="text-center">
             {isAttackerWinner && unitSegments.length > 0 && (
               <Paper withBorder p="md" radius="md" mt="xl">
                 <Text fz="xl" fw={700} mb="md">
@@ -220,7 +226,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
           {isAttackerWinner &&
             itemsByCategory.length > 0 &&
             itemsByCategory.map((category, index) => (
-              <Grid.Col span={4} md={6} className="text-center" key={index}>
+              <Grid.Col span={{ base: 4, md: 6 }} className="text-center" key={index}>
                 <Paper withBorder p="md" radius="md" mt="xl">
                   <Text fz="xl" fw={700} mb="md">
                     {category.name} ARMORY
@@ -262,7 +268,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
           }
         </Grid>
       </div>
-      <Text size='lg' fw='bold' className="text-2xl">
+      <Text size='xs' fw='bold' className="text-2xl">
         Report last generated: {new Date(lastGenerated).toLocaleString()}
         </Text>
     </Container>
