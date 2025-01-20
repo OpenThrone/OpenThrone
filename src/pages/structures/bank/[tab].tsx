@@ -1,4 +1,4 @@
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 import { alertService } from '@/services';
@@ -26,6 +26,9 @@ const Bank = (props) => {
   const [nextDepositAvailable, setNextDepositAvailable] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const [depositError, setDepositError] = useState('');
   const [withdrawError, setWithdrawError] = useState('');
+  const searchParams = useSearchParams();
+  const [page, setPage] = useState(Number(searchParams.get('page'))); //todo add pagination
+  const [limit, setLimit] = useState(Number(searchParams.get('limit')));
 
   const [filters, setFilters] = useState({
     deposits: true,
@@ -58,7 +61,7 @@ const Bank = (props) => {
           }
         });
 
-        fetch(`/api/bank/history?${queryParams.toString()}`)
+        fetch(`/api/bank/history?${queryParams.toString()}&page=${page?page:0}&limit=${limit?limit:100}`)
           .then((response) => response.json())
           .then((data) => {
             setBankHistory(data);
@@ -85,7 +88,7 @@ const Bank = (props) => {
           setMessage('Failed to fetch deposits');
         });
 
-  }, [currentPage, filters]);
+  }, [currentPage, filters, limit, page]);
 
 
   useEffect(() => {
@@ -241,6 +244,10 @@ const Bank = (props) => {
     }
     return '-';
   };
+
+  function handleRowsPerPageChange(option: number): void {
+    setLimit(option);
+  }
 
   return (
     <MainArea title="Bank">
@@ -419,12 +426,13 @@ const Bank = (props) => {
           </Paper>
           <Space h="md" />
           <Paper shadow="xs" p="md">
+            <Table.ScrollContainer minWidth={800}>
             <Table className="min-w-full border-neutral-500" striped>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Date</Table.Th>
-                  <Table.Th>Transaction Type</Table.Th>
-                  <Table.Th>Amount</Table.Th>
+                  <Table.Th c='dimmed'>Date</Table.Th>
+                  <Table.Th c='dimmed'>Transaction Type</Table.Th>
+                  <Table.Th c='dimmed'>Amount</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -441,7 +449,8 @@ const Bank = (props) => {
                   );
                 })}
               </Table.Tbody>
-            </Table>
+              </Table>
+              </Table.ScrollContainer>
           </Paper>
         </>
       )}
@@ -525,31 +534,47 @@ const Bank = (props) => {
           <Space h="md" />
           {message === '' && bankHistory.length > 0 ? (
             
-            <Paper shadow="xs" >
-            <Table className="min-w-full border-neutral-500" striped>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Date</Table.Th>
-                  <Table.Th>Transaction Type</Table.Th>
-                  <Table.Th>Amount</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {bankHistory.map((entry, index) => {
-                  let transactionType = '';
-                  
-                  transactionType = getTransactionType(entry);
+            <Paper shadow="xs" p="md">
+              <Group>
+                <Text size="sm">Show per page: </Text>
+                {[10, 20, 50, 100].map(option => (
+                  <Text
+                    key={option}
+                    size="sm"
+                    c={Number(limit) === option ? 'dimmed' : 'white'}
+                    className='cursor-pointer'
+                    onClick={() => handleRowsPerPageChange(option)}
+                  >
+                    {option}
+                  </Text>
+                ))}
+              </Group>
+              <Table.ScrollContainer minWidth={800}>
+                <Table className="min-w-full border-neutral-500" striped>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th c='dimmed'>Date</Table.Th>
+                      <Table.Th c='dimmed'>Transaction Type</Table.Th>
+                      <Table.Th c='dimmed'>Amount</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {bankHistory.map((entry, index) => {
+                    let transactionType = '';
+                    
+                    transactionType = getTransactionType(entry);
 
-                  return (
-                    <Table.Tr key={index}>
-                      <Table.Td>{new Date(entry.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString()}</Table.Td>
-                      <Table.Td>{transactionType}</Table.Td>
-                      <Table.Td>{getGoldTxSymbol(entry) +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
-                    </Table.Tr>
-                  );
-                })}
-              </Table.Tbody>
-              </Table>
+                    return (
+                      <Table.Tr key={index}>
+                        <Table.Td>{new Date(entry.date_time).toLocaleDateString()} {new Date(entry?.date_time).toLocaleTimeString()}</Table.Td>
+                        <Table.Td>{transactionType}</Table.Td>
+                        <Table.Td>{getGoldTxSymbol(entry) +toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+                      </Table.Tr>
+                    );
+                  })}
+                </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
             </Paper>
           ) : (
             <div className="text-center p-4">No Records Found</div>
