@@ -132,12 +132,18 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   //console.log('conditions: ', JSON.stringify(conditions));
   try {
-    console.log('conditions: ', conditions);
-    console.log('limit: ', limit);
-    console.log('page: ', page);
-    const bankHistory = await getBankHistory(conditions, Number(limit), Number(page)) || [];
-    console.log('bankHistory: ', bankHistory);
-    return res.status(200).json(stringifyObj(bankHistory));
+    
+    const { rows, total } = await getBankHistory(conditions, Number(limit), Number(page));
+    // We can calculate totalPages if desired, as:
+    const totalPages = Math.ceil(total / Number(limit));
+
+    return res.status(200).json({
+      rows: stringifyObj(rows),
+      total,
+      totalPages,
+      currentPage: Number(page),
+      limit: Number(limit),
+    });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

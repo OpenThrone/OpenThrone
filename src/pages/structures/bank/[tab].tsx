@@ -68,6 +68,7 @@ export default function Bank() {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get('page')) || 0; //todo add pagination
   const limit = Number(searchParams.get('limit')) || 10;
+  const [totalPages, setTotalPages] = useState(0);
 
   function handleRowsPerPageChange(option: number): void {
     router.push(`/structures/bank/history?page=0&limit=${option}`);
@@ -131,7 +132,7 @@ export default function Bank() {
       fetch('/api/bank/history?deposits=true&withdraws=true&limit=10&page=0')
         .then((response) => response.json())
         .then((data) => {
-          setDepositWithdrawHistory(data);
+          setDepositWithdrawHistory(data.rows);
           setMessage('');
         })
         .catch((error) => {
@@ -154,7 +155,8 @@ export default function Bank() {
         fetch(`/api/bank/history?${queryParams.toString()}`)
           .then((response) => response.json())
           .then((data) => {
-            setFilteredBankHistory(data);
+            setFilteredBankHistory(data.rows);
+            setTotalPages(data.totalPages);
             setMessage('');
           })
           .catch((error) => {
@@ -352,6 +354,7 @@ export default function Bank() {
             handleRowsPerPageChange={handleRowsPerPageChange}
             limit={limit}
             page={page}
+            totalPages={totalPages}
           />
         </div>
       )}

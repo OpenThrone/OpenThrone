@@ -82,7 +82,13 @@ export const getDepositHistory = async (userId: number) => {
 };
 
 export const getBankHistory = async (conditions: any, limit: number = 10, skip:number = 0) => {
-  return await prisma.bank_history.findMany({
+  const total = await prisma.bank_history.findMany({
+    where: {
+      AND: conditions,
+    },
+  });
+
+  const rows = await prisma.bank_history.findMany({
     where: {
       AND: conditions,
     },
@@ -92,4 +98,6 @@ export const getBankHistory = async (conditions: any, limit: number = 10, skip:n
       date_time: 'desc',
     },
   });
+
+  return { rows, total: total.length };
 };
