@@ -36,7 +36,7 @@ const upgrades = async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - BigInt(Fortifications[index].cost),
+            gold: BigInt(userMod.gold.toString()) - BigInt(Fortifications[index].cost.toString()),
             fort_level: index + 1,
             // Set hitpoints to full (for free - may change in the future)
             fort_hitpoints: Fortifications[index].hitpoints,
@@ -68,7 +68,7 @@ const upgrades = async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - BigInt(HouseUpgrades[index].cost),
+            gold: BigInt(userMod.gold.toString()) - BigInt(HouseUpgrades[index].cost),
             house_level: index,
           },
         });
@@ -92,13 +92,13 @@ const upgrades = async(req, res) => {
         if (userMod.fortLevel < EconomyUpgrades[index].fortLevel) {
           return res.status(400).json({ error: 'Invalid Fortification Level to purchase upgrade' });
         }
-        if (userMod.gold < EconomyUpgrades[index].cost) {
+        if (BigInt(userMod.gold.toString()) < EconomyUpgrades[index].cost) {
           return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
         }
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - BigInt(EconomyUpgrades[index].cost),
+            gold: BigInt(userMod.gold.toString()) - BigInt(EconomyUpgrades[index].cost),
             economy_level: index,
           },
         });
@@ -122,14 +122,14 @@ const upgrades = async(req, res) => {
         if (userMod.offensiveLevel < OffensiveUpgrades[index].fortLevel) {
           return res.status(400).json({ error: 'Invalid Offensive Upgrade Level to purchase upgrade' });
         }
-        if (userMod.gold < OffensiveUpgrades[index].cost) {
+        if (BigInt(userMod.gold.toString()) < OffensiveUpgrades[index].cost) {
           return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
         }
         
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - BigInt(OffensiveUpgrades[index].cost),
+            gold: BigInt(userMod.gold.toString()) - BigInt(OffensiveUpgrades[index].cost),
             structure_upgrades: structure_upgrades('OFFENSE'),
           },
         });
@@ -153,7 +153,7 @@ const upgrades = async(req, res) => {
         if (userMod.armoryLevel < ArmoryUpgrades[index].level - 1) {
           return res.status(400).json({ error: 'Invalid Armory Upgrade Level to purchase upgrade' });
         }
-        if (userMod.gold < ArmoryUpgrades[index].cost) {
+        if (BigInt(userMod.gold.toString()) < ArmoryUpgrades[index].cost) {
           return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
         }
         if (userMod.fortLevel < ArmoryUpgrades[index].fortLevel) {
@@ -162,7 +162,7 @@ const upgrades = async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - BigInt(ArmoryUpgrades[index].cost),
+            gold: BigInt(userMod.gold.toString()) - BigInt(ArmoryUpgrades[index].cost),
             structure_upgrades: structure_upgrades('ARMORY'),
           },
         });
@@ -186,7 +186,7 @@ const upgrades = async(req, res) => {
         if (userMod.spyLevel < SpyUpgrades[index].level - 1) {
           return res.status(400).json({ error: 'Invalid Spy Upgrade Level to purchase upgrade' });
         }
-        if (userMod.gold < SpyUpgrades[index].cost) {
+        if (BigInt(userMod.gold) < SpyUpgrades[index].cost) {
           return res.status(400).json({ error: 'Not enough gold to purchase upgrade' });
         }
         if (userMod.fortLevel < SpyUpgrades[index].fortLevel) {
@@ -195,7 +195,7 @@ const upgrades = async(req, res) => {
         await prisma.users.update({
           where: { id: session.user.id },
           data: {
-            gold: userMod.gold - BigInt(SpyUpgrades[index].cost),
+            gold: BigInt(userMod.gold) - BigInt(SpyUpgrades[index].cost),
             structure_upgrades: structure_upgrades('SPY'),
           },
         });
