@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import ChatRoomList from '@/components/ChatRoomList';
+import { Space } from '@mantine/core';
+import MainArea from '@/components/MainArea';
 
 const MessageList = (props) => {
   const [rooms, setRooms] = useState([]);
@@ -16,7 +18,7 @@ const MessageList = (props) => {
   }, []);
 
   return (
-    <div className="container mx-auto p-4">
+    <MainArea title="Messaging">
       <button
         className="bg-blue-500 text-white px-4 py-2 rounded"
         onClick={() => router.push('/messaging/new')}
@@ -24,9 +26,11 @@ const MessageList = (props) => {
         New Message
       </button>
 
+      <Space h="md" />
+
       {/* Chat Room List */}
       <ChatRoomList rooms={rooms} />
-    </div>
+    </MainArea>
   );
 };
 

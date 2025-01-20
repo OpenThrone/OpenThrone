@@ -43,7 +43,12 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
             </Title>
             {authorized && (
               <Group gap={'lg'} visibleFrom='md'>
-                <FontAwesomeIcon icon={faComments} visibility={'hidden'} />
+                
+<FontAwesomeIcon
+                  icon={faComments}
+                  visibility={(process.env.NEXT_PUBLIC_ENABLE_MESSAGING === 'false' ? 'hidden' : '')}
+                    color='orange'
+                  />
                 <Menu
                   width={260}
                   position="bottom-end"
@@ -53,7 +58,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
                   withinPortal
                 >
                   <Menu.Target>
-                    <i className="ra ra-player ra-fw text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs" style={{ cursor: 'pointer' }} />
+                    <i className="ra ra-player ra-fw text-shadow text-[#fba72f]"  style={{ cursor: 'pointer' }} />
                   </Menu.Target>
                   <Menu.Dropdown>
                     <Menu.Label>Settings</Menu.Label>

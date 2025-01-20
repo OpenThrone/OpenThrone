@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import MainArea from '@/components/MainArea';
 
-const NewMessage = () => {
+const NewMessage = (props) => {
   const [recipients, setRecipients] = useState('');
   const [message, setMessage] = useState('');
   const router = useRouter();
@@ -21,7 +22,7 @@ const NewMessage = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <MainArea title="New Message">
       <input
         type="text"
         className="w-full p-2 border rounded"
@@ -41,7 +42,7 @@ const NewMessage = () => {
       >
         Create
       </button>
-    </div>
+    </MainArea>
   );
 };
 

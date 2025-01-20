@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import clsx from 'clsx';
 import { useUser } from '@/context/users';
-import { Indicator, Avatar, Text, Alert } from '@mantine/core';
+import { Indicator, Avatar, Text, Alert, ScrollArea } from '@mantine/core';
+import MainArea from '@/components/MainArea';
 
 const MessageDetail = (props) => {
   const router = useRouter();
@@ -100,9 +101,10 @@ const MessageDetail = (props) => {
   }
 
   return (
-    <div className="container mx-auto p-4 h-screen flex flex-col">
+    <MainArea title="Chat Room">
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto space-y-4">
+        <ScrollArea className='h-full' >
         {groupedMessages.map((group, idx) => {
           const isCurrentUser = group[0].senderId === currentUserId;
           return (
@@ -137,6 +139,7 @@ const MessageDetail = (props) => {
             </div>
           );
         })}
+          </ScrollArea>
         <div ref={bottomRef}></div>
       </div>
 
@@ -157,7 +160,7 @@ const MessageDetail = (props) => {
           Send
         </button>
       </div>
-    </div>
+    </MainArea>
   );
 };
 
