@@ -1,5 +1,5 @@
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
 import {
   Paper,
   Tabs,
@@ -40,7 +40,7 @@ const defaultFilters = {
   fortification: true,
   daily: true,
 };
-export default function Bank(props) {
+export default function Bank() {
   const tab = usePathname()?.split('/')[3];
   const router = useRouter();
   const [filters, setFilters] = useLocalStorage({
@@ -65,6 +65,13 @@ export default function Bank(props) {
   const [message, setMessage] = useState('');
   const [colorScheme, setColorScheme] = useState('ELF');
   const [citizenUnit, setCitizenUnit] = useState(0);
+  const searchParams = useSearchParams();
+  const page = Number(searchParams.get('page')) || 0; //todo add pagination
+  const limit = Number(searchParams.get('limit')) || 10;
+
+  function handleRowsPerPageChange(option: number): void {
+    router.push(`/structures/bank/history?page=0&limit=${option}`);
+  }
 
   const getTransactionType = (entry) => {
     const { from_user_id, to_user_id, from_user_account_type, history_type, stats } = entry;
@@ -121,7 +128,7 @@ export default function Bank(props) {
     // Only fetch history for the deposit or history pages
     if (currentPage === 'deposit')
     {
-      fetch('/api/bank/history')
+      fetch('/api/bank/history?deposits=true&withdraws=true&limit=10&page=0')
         .then((response) => response.json())
         .then((data) => {
           setDepositWithdrawHistory(data);
@@ -140,6 +147,9 @@ export default function Bank(props) {
             queryParams.append(key, 'true');
           }
         });
+
+        queryParams.set('page', page.toString());
+        queryParams.set('limit', limit.toString());
 
         fetch(`/api/bank/history?${queryParams.toString()}`)
           .then((response) => response.json())
@@ -170,18 +180,13 @@ export default function Bank(props) {
         console.error('Error fetching deposits:', error);
         setMessage('Failed to fetch deposits');
       });
-  }, [currentPage, filters, user]);
+  }, [currentPage, filters, user, page, limit]);
 
   useEffect(() => {
     if (user?.units) {
       setCitizenUnit(user.units.find((u) => u.type === 'WORKER')?.quantity ?? 0);
     }
   }, [user]);
-
-  // Handler for child filter updates (from BankHistoryFilters)
-  const handleFiltersChange = (updatedFilters) => {
-    setFilters(updatedFilters);
-  };
 
   return (
     <MainArea title="Bank">
@@ -344,6 +349,9 @@ export default function Bank(props) {
             message={message}
             getTransactionType={getTransactionType}
             getGoldTxSymbol={getGoldTxSymbol}
+            handleRowsPerPageChange={handleRowsPerPageChange}
+            limit={limit}
+            page={page}
           />
         </div>
       )}

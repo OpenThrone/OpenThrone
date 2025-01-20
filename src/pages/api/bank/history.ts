@@ -13,7 +13,7 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification, daily } = req.query;
+  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification, daily, page = 0, limit = 10 } = req.query;
   const conditions = [];
   const transactionConditions = [];
 
@@ -132,7 +132,11 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   //console.log('conditions: ', JSON.stringify(conditions));
   try {
-    const bankHistory = await getBankHistory(conditions);
+    console.log('conditions: ', conditions);
+    console.log('limit: ', limit);
+    console.log('page: ', page);
+    const bankHistory = await getBankHistory(conditions, Number(limit), Number(page)) || [];
+    console.log('bankHistory: ', bankHistory);
     return res.status(200).json(stringifyObj(bankHistory));
   } catch (error) {
     return res.status(400).json({ error: error.message });

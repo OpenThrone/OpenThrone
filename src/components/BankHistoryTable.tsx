@@ -1,14 +1,20 @@
-import React from 'react';
-import { Paper, Table, Space } from '@mantine/core';
+import React, { useEffect, useState } from 'react';
+import { Paper, Table, Space, Group, Text } from '@mantine/core';
 import toLocale from '@/utils/numberFormatting';
+import { useSearchParams } from 'next/navigation';
+import router from 'next/router';
 
 export default function BankHistoryTable({
-  bankHistory,
+  bankHistory = [],
   user,
   message,
   getTransactionType,
   getGoldTxSymbol,
+  handleRowsPerPageChange,
+  limit,
+  page
 }) {
+   
   if (message) {
     return <div className="text-center p-4">{message}</div>;
   }
@@ -21,6 +27,20 @@ export default function BankHistoryTable({
     <>
       <Space h="md" />
       <Paper shadow="xs">
+        <Group>
+          <Text size="sm">Show per page: </Text>
+          {[10, 20, 50, 100].map(option => (
+            <Text
+              key={option}
+              size="sm"
+              c={Number(limit) === option ? 'dimmed' : 'white'}
+              className='cursor-pointer'
+              onClick={() => handleRowsPerPageChange(option)}
+            >
+              {option}
+            </Text>
+          ))}
+        </Group>
         <Table className="min-w-full border-neutral-500" striped>
           <Table.Thead>
             <Table.Tr>

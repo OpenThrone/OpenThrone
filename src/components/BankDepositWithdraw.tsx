@@ -15,6 +15,7 @@ export default function BankDepositWithdraw({
   const [withdrawAmount, setWithdrawAmount] = useState(BigInt(0));
   const [depositError, setDepositError] = useState('');
   const [withdrawError, setWithdrawError] = useState('');
+  const [depositWithdrawRows, setDepositWithdrawRows] = useState([]);
 
   useEffect(() => {
     if (user) {
@@ -130,10 +131,14 @@ export default function BankDepositWithdraw({
     return '-';
   };
 
-  // Show the last 10 deposit/withdraw records
-  const depositWithdrawRows = bankHistory
-    .filter((entry) => entry.from_user_id === entry.to_user_id)
-    .slice(0, 10);
+  
+  useEffect(() => {
+    if (bankHistory.length > 0) {
+      setDepositWithdrawRows(bankHistory
+        .filter((entry) => entry.from_user_id === entry.to_user_id)
+        .slice(0, 10));
+    }
+  },[bankHistory]);
 
   return (
     <>
