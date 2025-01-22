@@ -26,7 +26,7 @@ const Repair = (props) => {
       fetch(`/api/bank/history?fortification=true`)
         .then((res) => res.json())
         .then((data) => {
-          setHistory(data);
+          setHistory(data.rows);
           console.log(data);
         })
         .catch((error) => {
