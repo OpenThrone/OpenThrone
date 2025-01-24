@@ -74,21 +74,28 @@ const upgrades = async (req, res) => {
   const user = await prisma.users.findUnique({ where: { id: req.session.user.id } });
   const userMod = new UserModel(user);
 
-  const upgradeMappings = {
-    fortifications: { data: Fortifications[index], cost: Fortifications[index].cost, update: { fort_level: index + 1, fort_hitpoints: Fortifications[index].hitpoints } },
-    houses: { data: HouseUpgrades[index], cost: HouseUpgrades[index].cost, update: { house_level: index } },
-    economy: { data: EconomyUpgrades[index], cost: EconomyUpgrades[index].cost, update: { economy_level: index } },
-    offense: { data: OffensiveUpgrades[index], cost: OffensiveUpgrades[index].cost, update: { structure_upgrades: userMod.structure_upgrades.map(stat => stat.type === 'OFFENSE' ? { ...stat, level: index + 1 } : stat) } },
-    armory: { data: ArmoryUpgrades[index], cost: ArmoryUpgrades[index].cost, update: { structure_upgrades: userMod.structure_upgrades.map(stat => stat.type === 'ARMORY' ? { ...stat, level: index + 1 } : stat) } },
-    spy: { data: SpyUpgrades[index], cost: SpyUpgrades[index].cost, update: { structure_upgrades: userMod.structure_upgrades.map(stat => stat.type === 'SPY' ? { ...stat, level: index + 1 } : stat) } },
-  };
+  switch (currentPage) {
+    case "fortifications":
+      return await processUpgrade(req, res, currentPage, Fortifications[index], Fortifications[index].cost, { fort_level: index + 1, fort_hitpoints: Fortifications[index].hitpoints });
+    
+    case "houses":
+      return await processUpgrade(req, res, currentPage, HouseUpgrades[index], HouseUpgrades[index].cost, { house_level: index });
 
-  const upgradeData = upgradeMappings[currentPage];
-  if (!upgradeData) {
-    return res.status(400).json({ error: 'Upgrade type not implemented' });
+    case "economy":
+      return await processUpgrade(req, res, currentPage, EconomyUpgrades[index], EconomyUpgrades[index].cost, { economy_level: index });
+
+    case "offense":
+      return await processUpgrade(req, res, currentPage, OffensiveUpgrades[index], OffensiveUpgrades[index].cost, { structure_upgrades: userMod.structure_upgrades.map(stat => stat.type === 'OFFENSE' ? { ...stat, level: index + 1 } : stat) });
+
+    case "armory":
+      return await processUpgrade(req, res, currentPage, ArmoryUpgrades[index], ArmoryUpgrades[index].cost, { structure_upgrades: userMod.structure_upgrades.map(stat => stat.type === 'ARMORY' ? { ...stat, level: index + 1 } : stat) });
+
+    case "spy":
+      return await processUpgrade(req, res, currentPage, SpyUpgrades[index], SpyUpgrades[index].cost, { structure_upgrades: userMod.structure_upgrades.map(stat => stat.type === 'SPY' ? { ...stat, level: index + 1 } : stat) });
+
+    default:
+      return res.status(400).json({ error: 'Upgrade type not implemented' });
   }
-
-  return await processUpgrade(req, res, currentPage, upgradeData.data, upgradeData.cost, upgradeData.update);
 };
 
 export default withAuth(upgrades);
