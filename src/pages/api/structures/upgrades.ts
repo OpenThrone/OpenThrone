@@ -41,7 +41,7 @@ const processUpgrade = async (req, res, upgradeType, upgradeData, goldCost, upda
           date_time: new Date(),
           history_type: 'SALE',
           stats: {
-            action: `${upgradeType}_upgrade`,
+            type: `${upgradeType}_UPGRADES`,
             new_structure: upgradeData,
           },
         },
