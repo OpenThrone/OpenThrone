@@ -2,7 +2,7 @@ import React, { forwardRef, useState } from 'react';
 import { Space, Group, SimpleGrid, Container, Menu, UnstyledButton, Title } from '@mantine/core';
 import Alert from './alert';
 import { alertService } from '../services/alert.service';
-import { faArrowRightFromBracket, faComments, faGear, faIdCard } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRightFromBracket, faComments, faGear, faIdCard, faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
@@ -44,6 +44,37 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
             {authorized && (
               <Group gap={'lg'} visibleFrom='md'>
                 <FontAwesomeIcon icon={faComments} visibility={'hidden'} />
+                <Menu
+                  width={260}
+                  position="bottom-end"
+                  transitionProps={{ transition: 'pop-top-right' }}
+                  onClose={() => setUserMenuOpened(false)}
+                  onOpen={() => setUserMenuOpened(true)}
+                  withinPortal
+                >
+                  <Menu.Target>
+                    <i className="ra ra-double-team ra-fw text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs" style={{ cursor: 'pointer' }} />
+                  </Menu.Target>
+
+                  <Menu.Dropdown>
+                    <Menu.Label>Social</Menu.Label>
+                    <Link href="/social/friends" passHref>
+                      <Menu.Item leftSection={<FontAwesomeIcon icon={faIdCard} size={'sm'} stroke={'1.5'} />}>
+                        Friends
+                      </Menu.Item>
+                      </Link>
+                      <Link href="/social/enemies" passHref>
+                      <Menu.Item leftSection={<FontAwesomeIcon icon={faSkullCrossbones} size={'sm'} stroke={'1.5'} />}>
+                          Enemies
+                        </Menu.Item>
+                      </Link>
+                      <Link href="/social/requests" passHref>
+                      <Menu.Item leftSection={<FontAwesomeIcon icon={faComments} size={'sm'} stroke={'1.5'} />}>
+                          Friend Requests
+                        </Menu.Item>
+                    </Link>
+                  </Menu.Dropdown>
+                </Menu>
                 <Menu
                   width={260}
                   position="bottom-end"

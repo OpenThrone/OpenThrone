@@ -39,6 +39,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const [loading, setLoading] = useState(true);
   const [composeModalOpen, setComposeModalOpen] = useState(false);
   const [userStatus, setUserStatus] = useState('OFFLINE');
+  const [socialEnabled, setSocialEnabled] = useState(false);
   // State to control the Spy Missions Modal
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
 
@@ -83,6 +84,9 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
 
       setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
       setLastActive(new Date(profile.last_active).toDateString());
+    }
+    if(process.env.NEXT_PUBLIC_ENABLE_SOCIAL) {
+      setSocialEnabled(true);
     }
   }, [profile, users, user, isPlayer]);
 
@@ -315,7 +319,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
               </button>{*/}
             </div>
           )}
-          {true === false && (
+          {socialEnabled && (
             <>
               <h6 className="border-dark text-center font-bold">
                 Top Friends

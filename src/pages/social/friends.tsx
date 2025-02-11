@@ -20,8 +20,7 @@ const Friends = (props) => {
   if (loading) return <Loader />;
 
   const rows = friends.map(friend => {
-
-    const player = new UserModel(friend.friend);
+    const player = new UserModel(friend.friend, true, false);
     return (
       <Table.Tr key={player.id}>
         <Table.Td>
