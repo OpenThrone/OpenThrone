@@ -1,5 +1,5 @@
 import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
-import { Box, Text, Group, Paper, Grid, RingProgress, Button, Space, Container } from '@mantine/core';
+import { Text, Group, Grid, Button, Space, Container, Title } from '@mantine/core';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import SpyMissionsModal from './spyMissionsModal';
@@ -11,17 +11,7 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
   const isViewerAttacker = viewerID === attackerPlayer.id;
   const isAttackerWinner = winner === attackerPlayer.id;
-  const [unitSegments, setUnitSegments] = useState([]);
-  const [itemsByCategory, setItemsByCategory] = useState([]);
-  const itemColors = {
-    HELM: 'grey',
-    ARMOR: 'yellow',
-    BOOTS: 'red',
-    BRACERS: 'blue',
-    SHIELD: 'green',
-    WEAPON: 'purple',
-  };
-
+  
   const toggleSpyModal = () => {
     setIsSpyModalOpen(!isSpyModalOpen);
   };
@@ -99,9 +89,13 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
   return (
     <Container size='xl' p={'md'} style={{ backgroundColor: 'black', color: 'white' }} >
       <Grid grow className="gap-5">
-        <Grid.Col span={3} md={4} className="text-center">
-          <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.spyResults.attacker.experience)}</h4>
+        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
+          <Title order={3} mt="md">
+            {attackerPlayer?.display_name}
+          </Title>
+          <Text size="sm" fw={500} ta={'center'} mt={'xs'}>
+            Level: {getLevelFromXP(stats.spyResults.attacker.experience)}
+          </Text>
           <center>
             <Image
               src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
@@ -112,7 +106,7 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
             />
           </center>
         </Grid.Col>
-        <Grid.Col span={6} md={4} className="text-center">
+        <Grid.Col span={{ base: 6, md: 4 }} className="text-center">
           <Space h='10' />
           <div className="text-container inline-block align-middle">
             <Text color="white" fw="bolder" size='xl' className="font-medieval">
@@ -162,9 +156,13 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
             )}
           </div>
         </Grid.Col>
-        <Grid.Col span={3} md={4} className="text-center">
-          <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.spyResults.defender.experience)}</h4>
+        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
+          <Title order={3} mt="md">
+            {defenderPlayer?.display_name}
+          </Title>
+          <Text size="sm" fw={500} ta={'center'} mt={'xs'}>
+            Level: {getLevelFromXP(stats.spyResults.defender.experience)}
+          </Text>
           <center>
             <Image
               src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
