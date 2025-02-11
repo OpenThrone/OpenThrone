@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 
 import { useLayout } from '../context/LayoutContext';
-import { alertService } from '@/services';
 import router from 'next/router';
 import { useUser } from '@/context/users';
-import result from '@/pages/account/password-reset/result';
 import useSocket from '@/hooks/useSocket';
 
 interface ModalProps {
