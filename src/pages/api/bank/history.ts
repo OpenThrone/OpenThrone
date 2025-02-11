@@ -13,7 +13,7 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification } = req.query;
+  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification, daily, page = 0, limit = 10 } = req.query;
   const conditions = [];
   const transactionConditions = [];
 
@@ -95,11 +95,18 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
       history_type: 'SALE',
       stats: {
         path: ['type'],
-        string_contains: 'BATTLE_UPGRADES',
+        string_contains: '_UPGRADES',
       }
     });
+    transactionConditions.push({
+      history_type: 'SALE',
+      stats: {
+        path: ['action'],
+        string_contains: '_upgrade',
+      }
+    });
+    console.log(transactionConditions)
   }
-
 
   if (training === 'true') {
     transactionConditions.push({
@@ -111,6 +118,12 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
     });
   }
 
+  if (daily === 'true') {
+    transactionConditions.push({
+      history_type: 'DAILY_RECRUIT',
+      to_user_id: session.user.id,
+    });
+  }
 
   if (transactionConditions.length > 0) {
     conditions.push({
@@ -127,8 +140,18 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   //console.log('conditions: ', JSON.stringify(conditions));
   try {
-    const bankHistory = await getBankHistory(conditions);
-    return res.status(200).json(stringifyObj(bankHistory));
+    
+    const { rows, total } = await getBankHistory(conditions, Number(limit), Number(page));
+    // We can calculate totalPages if desired, as:
+    const totalPages = Math.ceil(total / Number(limit));
+
+    return res.status(200).json({
+      rows: stringifyObj(rows),
+      total,
+      totalPages,
+      currentPage: Number(page),
+      limit: Number(limit),
+    });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

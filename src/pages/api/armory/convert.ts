@@ -63,8 +63,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(400).json({ error: 'Invalid item types or usages' });
     }
 
-    const isUpgrade = fromItemData.level < toItemData.level ? true : false;
-      
+    console.log('fromItemData', fromItemData);
+    console.log('toItemData', toItemData);
+    console.log('toItemType', toItemType);
+  
     // If the target item does not exist, create it
     if (!toItemData) {
       toItemData = {
@@ -76,6 +78,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       user.items.push(toItemData as any); // Add it to user's items
     }
 
+    const isUpgrade = fromItemData.level < toItemData.level ? true : false;
+    
     if (!fromItemData || fromItemData.quantity < amount) {
       return res.status(400).json({ error: 'Not enough items to convert' });
     }

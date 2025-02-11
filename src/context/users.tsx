@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import UserModel from '@/models/Users';
 import { alertService } from '@/services';
 import useSocket from '@/hooks/useSocket';
+import { fetchWithFallback } from '@/utils/socketFunctions';
 
 interface UserContextType {
   user: UserModel | null;
@@ -57,29 +58,35 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const WS_ENABLED = process.env.NEXT_PUBLIC_WS_ENABLED === 'true';
 
+  const fetchSessions = useCallback(
+    async (uID: number) => {
+      console.log('Fetching user data for', uID);
+      await fetchWithFallback(
+        socket,
+        isConnected,
+        'listRecruitingSessions',
+        '/api/recruit/listSessions',
+        { userId: uID },
+        (userData) => setUser(new UserModel(userData, false)),
+        setLoading
+      );
+    },
+    [socket, isConnected]
+  );
+
   const fetchUserData = useCallback(
     async (uID: number) => {
-      setLoading(true);
-      try {
-        if (!WS_ENABLED || !socket || !isConnected) {
-          console.log('WebSocket disabled or not connected, falling back to API', uID);
-          const fallback = await fetch('/api/general/getUser');
-          const uModel = new UserModel(await fallback.json(), false);
-          setUser(uModel);
-          setLoading(false);
-          return;
-        }
-
-        socket.emit(
-            'requestUserData',
-            { userId: uID },
-          
-        );
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
+      await fetchWithFallback(
+        socket,
+        isConnected,
+        'requestUserData',
+        '/api/general/getUser',
+        { userId: uID },
+        (userData) => setUser(new UserModel(userData, false)),
+        setLoading
+      );
     },
-    [WS_ENABLED, socket, isConnected]
+    [socket, isConnected]
   );
 
   useEffect(() => {

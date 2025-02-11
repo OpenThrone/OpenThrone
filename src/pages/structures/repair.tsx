@@ -2,21 +2,38 @@ import { useEffect, useState } from 'react';
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
-import { Badge, Box, Button, Center, Group, NumberInput, Paper, rem, RingProgress, SimpleGrid, Space, Stack, Text, TextInput, ThemeIcon } from '@mantine/core';
+import { Badge, Box, Button, Center, Group, NumberInput, Paper, rem, RingProgress, SimpleGrid, Space, Stack, Table, Text, TextInput, ThemeIcon } from '@mantine/core';
 import Alert from '@/components/alert';
 import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 import MainArea from '@/components/MainArea';
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 const Repair = (props) => {
   const { user, forceUpdate } = useUser();
   const [fortification, setFortification] = useState(Fortifications[0]);
   const [repairPoints, setRepairPoints] = useState(0);
+  const [history, setHistory] = useState([]);
 
   useEffect(() => {
     if (user?.fortLevel) {
       setFortification(Fortifications.find((fort) => fort.level === user.fortLevel));
     }
   }, [user?.fortLevel]);
+
+  useEffect(() => {
+    if (user) {
+      fetch(`/api/bank/history?fortification=true`)
+        .then((res) => res.json())
+        .then((data) => {
+          setHistory(data.rows);
+          console.log(data);
+        })
+        .catch((error) => {
+          console.error('Error fetching bank history:', error);
+        });
+    }
+  },[user]);
 
   const handleRepair = async (e) => {
     e.preventDefault();
@@ -178,7 +195,37 @@ const Repair = (props) => {
             </Text>
           </Box>
         </Paper>
+       
       </SimpleGrid>
+        <Paper withBorder radius="md" p="md" className="w-full mb-4">
+          <Box>
+            <Text size="xl" fw={500} className='font-medieval'>
+              Repair History
+            </Text>
+            <Box className="flex items-center space-x-4 mt-2">
+            <Table striped highlightOnHover>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th c='dimmed'>Repair Date</Table.Th>
+                  <Table.Th c='dimmed'>Repair Points</Table.Th>
+                  <Table.Th c='dimmed'>HP Change</Table.Th>
+                  <Table.Th c='dimmed'>Cost</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {history.map((entry) => (
+                  <Table.Tr key={entry.id}>
+                    <Table.Td>{new Date(entry.date_time).toLocaleString()}</Table.Td>
+                    <Table.Td>+{entry.stats.increase}</Table.Td>
+                    <Table.Td>{entry.stats.currentFortHP} <FontAwesomeIcon icon={faArrowRight} scale={50} /> {entry.stats.newFortHP}</Table.Td>
+                    <Table.Td>-{toLocale(entry.gold_amount, user?.locale)}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+            </Box>
+          </Box>
+        </Paper>
     </MainArea>
   );
 };
