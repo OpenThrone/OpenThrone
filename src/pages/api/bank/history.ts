@@ -95,9 +95,17 @@ const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
       history_type: 'SALE',
       stats: {
         path: ['type'],
-        string_contains: 'BATTLE_UPGRADES',
+        string_contains: '_UPGRADES',
       }
     });
+    transactionConditions.push({
+      history_type: 'SALE',
+      stats: {
+        path: ['action'],
+        string_contains: '_upgrade',
+      }
+    });
+    console.log(transactionConditions)
   }
 
   if (training === 'true') {
