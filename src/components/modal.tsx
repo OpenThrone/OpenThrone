@@ -4,7 +4,6 @@ import { useLayout } from '../context/LayoutContext';
 import router from 'next/router';
 import { useUser } from '@/context/users';
 import useSocket from '@/hooks/useSocket';
-
 interface ModalProps {
   isOpen: boolean;
   toggleModal: () => void;

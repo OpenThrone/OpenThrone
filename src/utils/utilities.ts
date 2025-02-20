@@ -2,6 +2,7 @@ import { levelXPArray, UnitTypes } from '@/constants';
 import UserModel from '@/models/Users';
 import type { PlayerRace, UnitType } from '@/types/typings';
 import { newCalculateStrength } from './attackFunctions';
+import { createHash, webcrypto } from 'crypto';
 
 /**
    * Returns the name of a unit based on its type and level.
@@ -191,6 +192,20 @@ export const idleThresholdDate = (days = 60) => { //60days is default
  */
 export const atLeastZero = (value: number):number => {
   return Math.max(0, value);
+}
+
+export const getSHA256Key = (secret: string) => {
+  return createHash("sha256").update(secret).digest();
+}
+
+export async function importKey(rawKey: Buffer) {
+  return await webcrypto.subtle.importKey(
+    "raw",
+    rawKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["decrypt"]
+  );
 }
 
 export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats, serializeDates };

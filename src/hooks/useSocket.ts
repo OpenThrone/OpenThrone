@@ -23,9 +23,30 @@ export default function useSocket(userId: number | null) {
     (eventListeners.current[event] || []).forEach((listener) => listener(data));
   };
 
+  if (!socketRef.current) {
+    const socket = io(SERVER_URL, { withCredentials: true });
+    console.log('Connecting to Socket.IO:', SERVER_URL);
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('Socket.IO connected');
+      setIsConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Socket.IO disconnected');
+      setIsConnected(false);
+    });
+
+    socket.onAny((event, data) => {
+      dispatchEvent(event, data);
+    });
+  }
+
+  // Handle userId changes
   useEffect(() => {
     if (!userId) {
-      console.log('User ID is null, not connecting to Socket.IO.');
+      console.log('User ID is null, disconnecting from Socket.IO.');
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -34,32 +55,16 @@ export default function useSocket(userId: number | null) {
       return;
     }
 
-    if (!socketRef.current) {
-      const socket = io(SERVER_URL, { query: { userId } });
-      console.log('Connecting to Socket.IO:', SERVER_URL);
-      socketRef.current = socket;
-
-      socket.on('connect', () => {
-        console.log('Socket.IO connected');
-        setIsConnected(true);
-        socket.emit('registerUser', { userId });
-      });
-
-      socket.on('disconnect', () => {
-        console.log('Socket.IO disconnected');
-        setIsConnected(false);
-      });
-
-      socket.onAny((event, data) => {
-        dispatchEvent(event, data);
-      });
+    if (socketRef.current && isConnected) {
+      console.log('Registering user with Socket.IO:', userId);
+      socketRef.current.emit('registerUser', { userId });
     }
 
     return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
+      // socketRef.current?.disconnect(); // Removing this line as the socket is now persistent
+      // socketRef.current = null;
     };
-  }, [userId]);
+  }, [userId, isConnected]);
 
   return {
     socket: socketRef.current,

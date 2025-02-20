@@ -168,11 +168,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error(user.error);
         }
 
-        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && !isAdmin(user.id) && !isModerator(user.id)) {
+        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && !isAdmin((user as any)?.id) && !isModerator((user as any)?.id)) {
           throw new Error('Login is disabled');
         }
 
-        return user;
+        return user as any;
       },
     }),
   ],

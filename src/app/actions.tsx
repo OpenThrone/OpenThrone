@@ -15,6 +15,7 @@ import UserModel from '@/models/Users';
 import { newCalculateStrength, simulateBattle } from '@/utils/attackFunctions';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { AssassinationResult, InfiltrationResult, IntelResult, simulateAssassination, simulateInfiltration, simulateIntel } from '@/utils/spyFunctions';
+import { getSocketIO } from '@/lib/socket';
 
 export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string, unit?: string) {
   const attackerUser = await getUserById(attackerId);
@@ -82,7 +83,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
         type: 'SENTRY',
         subtype: (defenderId === Winner.id) ? 'WON' : 'LOST',
       }, tx);
-      
+
       return {
         status: 'success',
         result: spyResults,
@@ -159,6 +160,7 @@ export async function attackHandler(
 
   AttackPlayer.experience += battleResults.experienceResult.Experience.Attacker;
   DefensePlayer.experience += battleResults.experienceResult.Experience.Defender;
+
   try {
     const attack_log = await prisma.$transaction(async (tx) => {
       if (isAttackerWinner) {
@@ -254,6 +256,21 @@ export async function attackHandler(
       return attack_log;
     });
 
+    // Move Socket.IO logic outside the transaction
+    const io = getSocketIO();
+    if (io) {
+      if (attack_log) {
+        io.to(`user-${defenderId}`).emit('attackNotification', {
+          message: `You were attacked in battle ${attack_log.id}`,
+          defenderId: defenderId,
+        });
+      } else {
+        console.error('attack_log is undefined');
+      }
+    } else {
+      console.error('Socket.IO not initialized');
+    }
+
     return {
       status: 'success',
       result: isAttackerWinner,
@@ -268,5 +285,3 @@ export async function attackHandler(
     return { status: 'failed', message: 'Transaction failed.' };
   }
 }
-
-

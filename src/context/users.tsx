@@ -123,10 +123,23 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       console.log('Pong!');
       alert('Pong!');
     };
+    
     const handleAttackNotification = (data: any) => {
-      console.log('Attack Notification:', data);
-      alertService.error(data.message);
-    }
+      alertService.error(data.message); // TODO: change this to actually implement a message notification
+    };
+
+    const handleFriendRequestNotification = (data: any) => {
+      alertService.success(data.message);// TODO: change this to actually implement a message notification
+    };
+
+    const handleEnemyDeclarationNotification = (data: any) => {
+      alertService.error(data.message);// TODO: change this to actually implement a message notification
+    };
+
+    const handleMessageNotification = (data: any) => {
+      alertService.success(data.message); // TODO: change this to actually implement a message notification
+    };
+
     /* 
     TODO: remove comments
       need to add a const for the function
@@ -139,7 +152,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       client __ server
       userData == requestUserData
       pong == ping
-      ?? == attackNotification
+      notifyAttack == attackNotification
       ?? == notifyFriendRequest
     */
 
@@ -147,14 +160,20 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     addEventListener('userData', handleUserData);
     addEventListener('userDataError', handleUserDataError);
     addEventListener('pong', handlePong);
-    addEventListener('attackNotification', handlePong);
+    addEventListener('attackNotification', handleAttackNotification);
+    addEventListener('friendRequestNotification', handleFriendRequestNotification);
+    addEventListener('enemyDeclarationNotification', handleEnemyDeclarationNotification);
+    addEventListener('messageNotification', handleMessageNotification);
 
     // Cleanup on unmount or when dependencies change
     return () => {
       removeEventListener('userData', handleUserData);
       removeEventListener('userDataError', handleUserDataError);
       removeEventListener('pong', handlePong);
-      removeEventListener('attackNotification', handlePong);
+      removeEventListener('attackNotification', handleAttackNotification);
+      removeEventListener('friendRequestNotification', handleFriendRequestNotification);
+      removeEventListener('enemyDeclarationNotification', handleEnemyDeclarationNotification);
+      removeEventListener('messageNotification', handleMessageNotification);
     };
   }, [socket, isConnected, addEventListener, removeEventListener, router]); 
 
@@ -190,6 +209,9 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     [user, loading, fetchUserData, session]
   );
 
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+  return (
+    <UserContext.Provider value={value}>
+      {children}
+    </UserContext.Provider>
+  );
 };
-
