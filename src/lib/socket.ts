@@ -150,82 +150,88 @@ export const initializeSocket = (httpServer: HttpServer) => {
       try {
         const attackLog = await prisma.attack_log.findUnique({
           where: { id: Number(battleId) },
-        });
+          });
 
-        if (!attackLog) {
-          console.log(`Attack log not found with ID: ${battleId}`);
-          return;
+          if (!attackLog) {
+            console.log(`Attack log not found with ID: ${battleId}`);
+            return;
+          }
+
+          if (attackLog.defender_id !== defenderId) {
+            console.log(`Defender ID ${defenderId} does not match attack log's defender ID ${attackLog.defender_id}`);
+            return;
+          }
+
+          const now = new Date();
+          const attackTime = new Date(attackLog.timestamp);
+          const timeDifference = now.getTime() - attackTime.getTime();
+          const thirtySeconds = 30 * 1000;
+
+          if (timeDifference > thirtySeconds) {
+            console.log(`Notification is too late. Time difference: ${timeDifference}ms`);
+            //return;
+          }
+
+          const message = `You were attacked in battle ${battleId}`;
+          const hash = md5(message + battleId + defenderId);
+
+          // If all checks pass, emit the notification
+          console.log(`Notifying user ${defenderId} of attack in battle ${battleId}`);
+          io.to(`user-${defenderId}`).emit('attackNotification', { message, hash });
+        } catch (error) {
+          console.error('Error validating attack notification:', error);
         }
+      });
 
-        if (attackLog.defender_id !== defenderId) {
-          console.log(`Defender ID ${defenderId} does not match attack log's defender ID ${attackLog.defender_id}`);
-          return;
+      socket.on('notifyFriendRequest', async ({ userId, message }) => {
+        const hash = md5(message + userId);
+        console.log(`Sending friend request notification to user ${userId}`);
+        io.to(`user-${userId}`).emit('friendRequestNotification', { message, hash });
+      });
+
+      socket.on('notifyEnemyDeclaration', async ({ userId, message }) => {
+        const hash = md5(message + userId);
+        console.log(`Notifying user ${userId} of enemy declaration`);
+        io.to(`user-${userId}`).emit('enemyDeclarationNotification', { message, hash });
+      });
+
+      socket.on('notifyMessage', async ({ userId, message }) => {
+        const hash = md5(message + userId);
+        console.log(`Sending message notification to user ${userId}`);
+        io.to(`user-${userId}`).emit('messageNotification', { message, hash });
+      });
+
+      // Alert notification
+      socket.on('alertNotification', (alert) => {
+        console.log('Received alert notification:', alert);
+        io.emit('alertNotification', alert); // Broadcast to all clients
+      });
+
+      // Ping-pong event
+      socket.on('ping', ({userId}) => {
+        console.log('Ping received to user:', userId);
+        io.to(`user-${userId}`).emit('pong');
+      });
+
+      // Handle disconnection
+      socket.on('disconnect', () => {
+        console.log('Socket.IO disconnected:', socket.id);
+        for (const userId in userSockets) {
+          userSockets[userId].delete(socket.id);
+          if (userSockets[userId].size === 0) {
+            delete userSockets[userId];
+          }
         }
-
-        const now = new Date();
-        const attackTime = new Date(attackLog.timestamp);
-        const timeDifference = now.getTime() - attackTime.getTime();
-        const thirtySeconds = 30 * 1000;
-
-        if (timeDifference > thirtySeconds) {
-          console.log(`Notification is too late. Time difference: ${timeDifference}ms`);
-          //return;
-        }
-
-        const message = `You were attacked in battle ${battleId}`;
-        const hash = md5(message + battleId + defenderId);
-
-        // If all checks pass, emit the notification
-        console.log(`Notifying user ${defenderId} of attack in battle ${battleId}`);
-        io.to(`user-${defenderId}`).emit('attackNotification', { message, hash });
-      } catch (error) {
-        console.error('Error validating attack notification:', error);
-      }
+      });
     });
+    return io;
+  };
 
-    socket.on('notifyFriendRequest', async ({ userId, message }) => {
-      const hash = md5(message + userId);
-      console.log(`Sending friend request notification to user ${userId}`);
-      io.to(`user-${userId}`).emit('friendRequestNotification', { message, hash });
-    });
-
-    socket.on('notifyEnemyDeclaration', async ({ userId, message }) => {
-      const hash = md5(message + userId);
-      console.log(`Notifying user ${userId} of enemy declaration`);
-      io.to(`user-${userId}`).emit('enemyDeclarationNotification', { message, hash });
-    });
-
-    socket.on('notifyMessage', async ({ userId, message }) => {
-      const hash = md5(message + userId);
-      console.log(`Sending message notification to user ${userId}`);
-      io.to(`user-${userId}`).emit('messageNotification', { message, hash });
-    });
-
-    // Ping-pong event
-    socket.on('ping', ({userId}) => {
-      console.log('Ping received to user:', userId);
-      io.to(`user-${userId}`).emit('pong');
-    });
-
-    // Handle disconnection
-    socket.on('disconnect', () => {
-      console.log('Socket.IO disconnected:', socket.id);
-      for (const userId in userSockets) {
-        userSockets[userId].delete(socket.id);
-        if (userSockets[userId].size === 0) {
-          delete userSockets[userId];
-        }
-      }
-    });
-  });
-  return io;
-};
-
-export const getSocketIO = () => {
-  if (!io) {
-    console.error('Socket.IO has not been initialized!');
-    return null;
-  }
-  console.log('Returning Socket.IO instance');
-  return io;
-};
+  export const getSocketIO = () => {
+    if (!io) {
+      console.error('Socket.IO has not been initialized!');
+      return null;
+    }
+    console.log('Returning Socket.IO instance');
+    return io;
+  };

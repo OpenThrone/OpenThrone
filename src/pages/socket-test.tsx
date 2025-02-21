@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import useSocket from '@/hooks/useSocket';
 import { useUser } from '@/context/users';
+import { alertService } from '@/services';
+import MainArea from '@/components/MainArea';
 
 const SocketTestPage = (props) => {
   const { user } = useUser();
@@ -92,12 +94,15 @@ const SocketTestPage = (props) => {
 
   
   return (
-    <div>
-      <h1>Socket Test</h1>
+    <MainArea
+      title="Socket Test"
+      >
       <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
 
       {/* Ping Pong Test */}
-      <button onClick={handlePing}>Send Ping</button>
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        onClick={handlePing}>Send Ping</button>
 
       {/* Attack Notification Test */}
       <div className="flex items-center space-x-2">
@@ -159,6 +164,16 @@ const SocketTestPage = (props) => {
         Send Message
       </button>
 
+      {/* Trigger Alert Test */}
+      <button
+        className="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        onClick={() => {
+          alertService.success('This is a test alert!');
+        }}
+      >
+        Trigger Alert
+      </button>
+
       {/* Message Log */}
       <div>
         <h3>Message Log:</h3>
@@ -168,7 +183,7 @@ const SocketTestPage = (props) => {
           ))}
         </ul>
       </div>
-    </div>
+    </MainArea>
   );
 };
 

@@ -100,8 +100,27 @@ class UserModel {
   public avatar: string;
 
   public battle_upgrades: UnitUpgradeType[] | [];
-  
   public stats: any[];
+  
+  public won_attacks: number;
+  
+  public won_defends: number;
+  
+  public totalAttacks: number;
+  
+  public totalDefends: number;
+  
+  public currentStatus: string;
+  
+  public offense: number;
+  
+  public defense: number;
+  
+  public spy: number;
+  
+  public sentry: number;
+  
+  public permissions: any[];
 
   public offense: number;
 
@@ -110,8 +129,6 @@ class UserModel {
   public spy: number;
 
   public sentry: number;
-
-  public permissions: any[];
 
   constructor(userData?: any, filtered: boolean = true, checkStats: boolean = true) {
     userData = JSON.parse(JSON.stringify(stringifyObj(userData)));
@@ -149,6 +166,11 @@ class UserModel {
     this.battle_upgrades = [];
     this.locale = 'en-US';
     this.avatar = '';
+    this.won_attacks = 0;
+    this.won_defends = 0;
+    this.totalAttacks = 0;
+    this.totalDefends = 0;
+    this.currentStatus = '';
     this.permissions = [];
     if (userData) {
       this.id = userData.id;
@@ -185,8 +207,11 @@ class UserModel {
       this.attacks_made = userData.totalAttacks;
       this.attacks_defended = userData.totalDefends;
       this.bonus_points = userData.bonus_points;
-      this.attacks_won = userData.won_attacks;
-      this.defends_won = userData.won_defends;
+      this.attacks_won = userData.won_attacks || 0;
+      this.defends_won = userData.won_defends || 0;
+      this.totalAttacks = userData.totalAttacks || 0;
+      this.totalDefends = userData.totalDefends || 0;
+      this.currentStatus = userData.currentStatus || '';
       this.stats = userData.stats;
       this.structure_upgrades = userData.structure_upgrades;
       this.locale = userData.locale;
@@ -234,7 +259,7 @@ class UserModel {
   }
 
   get netWorth(): BigInt | number {
-    return this.gold + this.goldInBank;
+    return BigInt(this.gold) + BigInt(this.goldInBank);
   }
 
   /**
@@ -703,8 +728,8 @@ class UserModel {
    * @param type - The unit type.
    * @returns The user upgrade.
    */
-  private getUserUpgrade(upgrade: UnitUpgradeType, type: UnitType): UnitUpgradeType {
-    return this.battle_upgrades.find(u => u.level === upgrade.level && u.type === upgrade.type);
+  private getUserUpgrade(upgrade: UnitUpgradeType | any, type: UnitType): UnitUpgradeType | undefined {
+    return this.battle_upgrades.find(u => (u as any)?.level === (upgrade as any)?.level && (u as any)?.type === (upgrade as any)?.type);
   }
 
   /**
@@ -754,8 +779,8 @@ class UserModel {
    */
   canAttack(level: number): boolean {
     return (
-      getLevelFromXP(this.experience) >= level - 25 && //TODO: Revert back to 5
-      getLevelFromXP(this.experience) <= level + 25
+      getLevelFromXP(this.experience) >= level - parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10) && 
+      getLevelFromXP(this.experience) <= level + parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10) 
     );
   }
 

@@ -140,6 +140,10 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       alertService.success(data.message); // TODO: change this to actually implement a message notification
     };
 
+    const handleAlertNotification = (alertData: any) => {
+      alertService.success(alertData);
+    };
+
     /* 
     TODO: remove comments
       need to add a const for the function
@@ -164,6 +168,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     addEventListener('friendRequestNotification', handleFriendRequestNotification);
     addEventListener('enemyDeclarationNotification', handleEnemyDeclarationNotification);
     addEventListener('messageNotification', handleMessageNotification);
+    addEventListener('alertNotification', handleAlertNotification);
 
     // Cleanup on unmount or when dependencies change
     return () => {
@@ -174,6 +179,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       removeEventListener('friendRequestNotification', handleFriendRequestNotification);
       removeEventListener('enemyDeclarationNotification', handleEnemyDeclarationNotification);
       removeEventListener('messageNotification', handleMessageNotification);
+      removeEventListener('alertNotification', handleAlertNotification);
     };
   }, [socket, isConnected, addEventListener, removeEventListener, router]); 
 
