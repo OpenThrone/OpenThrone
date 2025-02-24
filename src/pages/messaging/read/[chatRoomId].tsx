@@ -7,7 +7,7 @@ import MainArea from '@/components/MainArea';
 
 const MessageDetail = (props) => {
   const router = useRouter();
-  const { roomid } = router.query;
+  const { chatRoomId } = router.query;
   const { user } = useUser();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -15,10 +15,10 @@ const MessageDetail = (props) => {
   const [hasAccess, setHasAccess] = useState(true); // Track access
   const bottomRef = useRef(null);
 
-  const fetchMessages = async (roomid) => {
-    if (!roomid) return;
+  const fetchMessages = async (chatRoomId) => {
+    if (!chatRoomId) return;
     try {
-      const response = await fetch(`/api/messages/${roomid}`);
+      const response = await fetch(`/api/messages/${chatRoomId}`);
       if (response.status === 403) {
         setHasAccess(false); // User does not have access
         setMessages([]);
@@ -36,21 +36,21 @@ const MessageDetail = (props) => {
 
   useEffect(() => {
     if (user) {
-      fetchMessages(roomid);
+      fetchMessages(chatRoomId);
       setCurrentUserId(user.id);
     }
-  }, [user, roomid]);
+  }, [user, chatRoomId]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !hasAccess) return;
 
-    await fetch(`/api/messages/${roomid}`, {
+    await fetch(`/api/messages/${chatRoomId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: newMessage }),
     });
     setNewMessage('');
-    fetchMessages(roomid);
+    fetchMessages(chatRoomId);
   };
 
   const formatTimestamp = (date) => {
@@ -61,7 +61,7 @@ const MessageDetail = (props) => {
     if (!prev) return false;
     return (
       prev.senderId === current.senderId &&
-      new Date(current.sentAt) - new Date(prev.sentAt) < 60000
+      new Date(current.sentAt).getTime() - new Date(prev.sentAt).getTime() < 60000
     );
   };
 
@@ -102,63 +102,65 @@ const MessageDetail = (props) => {
 
   return (
     <MainArea title="Chat Room">
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto space-y-4">
-        <ScrollArea className='h-full' >
-        {groupedMessages.map((group, idx) => {
-          const isCurrentUser = group[0].senderId === currentUserId;
-          return (
-            <div
-              key={`group-${idx}`}
-              className={clsx(
-                'flex items-start space-x-2',
-                isCurrentUser ? 'justify-end' : 'justify-start'
-              )}
-            >
-              {!isCurrentUser && (
-                <Indicator color={group[0].sender?.is_online ? 'teal' : 'red'}>
-                  <Avatar src={group[0].sender?.avatar} size={40} radius={40} />
-                </Indicator>
-              )}
+      <div className="flex h-screen flex-col">
+        {/* Messages Container */}
+        <div className="flex-1 overflow-y-auto space-y-4">
+          <ScrollArea className='h-full' >
+          {groupedMessages.map((group, idx) => {
+            const isCurrentUser = group[0].senderId === currentUserId;
+            return (
               <div
+                key={`group-${idx}`}
                 className={clsx(
-                  'max-w-xs px-4 py-2 rounded-lg',
-                  isCurrentUser ? 'bg-gray-700 self-end' : 'bg-gray-800'
+                  'flex items-start space-x-2',
+                  isCurrentUser ? 'justify-end' : 'justify-start'
                 )}
               >
                 {!isCurrentUser && (
-                  <Text className="text-sm font-bold">{group[0]?.sender?.display_name}</Text>
+                  <Indicator color={group[0].sender?.is_online ? 'teal' : 'red'}>
+                    <Avatar src={group[0].sender?.avatar} size={40} radius={40} />
+                  </Indicator>
                 )}
-                {group.map((message) => (
-                  <Text key={message.id}>{message.content}</Text>
-                ))}
-                <span className="text-xs text-gray-500 block mt-1">
-                  {formatTimestamp(group[0]?.sentAt)}
-                </span>
+                <div
+                  className={clsx(
+                    'max-w-xs px-4 py-2 rounded-lg',
+                    isCurrentUser ? 'bg-gray-700 self-end' : 'bg-gray-800'
+                  )}
+                >
+                  {!isCurrentUser && (
+                    <Text className="text-sm font-bold">{group[0]?.sender?.display_name}</Text>
+                  )}
+                  {group.map((message) => (
+                    <Text key={message.id}>{message.content}</Text>
+                  ))}
+                  <span className="text-xs text-gray-500 block mt-1">
+                    {formatTimestamp(group[0]?.sentAt)}
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
-          </ScrollArea>
-        <div ref={bottomRef}></div>
-      </div>
+            );
+          })}
+            </ScrollArea>
+          <div ref={bottomRef}></div>
+        </div>
 
-      {/* Input Box */}
-      <div className="flex items-center space-x-2 mt-4">
-        <textarea
-          className="flex-1 p-2 border rounded"
-          placeholder="Type your message..."
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          disabled={!hasAccess}
-        />
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-          onClick={sendMessage}
-          disabled={!hasAccess}
-        >
-          Send
-        </button>
+        {/* Input Box */}
+        <div className="border-t p-4 bg-gray-900 flex items-center space-x-2">
+          <textarea
+            className="flex-1 p-2 border rounded"
+            placeholder="Type your message..."
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            disabled={!hasAccess}
+          />
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+            onClick={sendMessage}
+            disabled={!hasAccess}
+          >
+            Send
+          </button>
+        </div>
       </div>
     </MainArea>
   );

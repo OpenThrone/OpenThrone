@@ -32,4 +32,16 @@ const getOTStartDate = (add:number = 0) => {
   return new Date(OTTime.getFullYear(), OTTime.getMonth(), OTTime.getDate()+add);
 };
 
-export { getTimeRemaining, getTimeToNextTurn, getOTTime, getOTStartDate };
+const formatLastMessageTime = (lastMessageTime: any): React.ReactNode => {
+    const date = new Date(lastMessageTime);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+
+    if (isToday) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+      return date.toLocaleDateString();
+    }
+  }
+
+export { getTimeRemaining, getTimeToNextTurn, getOTTime, getOTStartDate, formatLastMessageTime };
