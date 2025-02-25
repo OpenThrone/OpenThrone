@@ -50,6 +50,9 @@ const MessageList = (props) => {
 const MessageListComponent = ({ rooms, router, selectedRoomId, setSelectedRoomId, messages }) => {
   return (
     <MainArea title="Messaging">
+      <div className="flex justify-end p-4">
+        <Button onClick={() => router.push('/messaging/new')}>New Message</Button>
+      </div>
       <div className="flex h-screen"> 
         <div className="w-1/4 bg-gray-900 p-2 overflow-y-auto"> {/* Sidebar */}
           <ChatRoomList rooms={rooms} onRoomSelect={setSelectedRoomId} />
@@ -58,8 +61,6 @@ const MessageListComponent = ({ rooms, router, selectedRoomId, setSelectedRoomId
           <ChatMessageList selectedRoomId={selectedRoomId} messages={messages} />
         </div>
       </div>
-      <Space h="md" />
-      <Button onClick={() => router.push('/messaging/create')}>Create New Room</Button>
       <Space h="md" />
     </MainArea>
   );
