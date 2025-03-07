@@ -1,5 +1,5 @@
 import UserModel from "@/models/Users";
-import { newCalculateStrength } from "@/utils/attackFunctions";
+import { calculateStrength } from "@/utils/attackFunctions";
 import { calculateOverallRank } from "@/utils/utilities";
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
@@ -14,7 +14,7 @@ import prisma from "@/lib/prisma";
 const updateUserPerTurn = async (currentUser, rank) => {
   try {
     const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + BigInt(currentUser.gold);
-    const { killingStrength, defenseStrength } = newCalculateStrength(currentUser, 'OFFENSE');
+    const { killingStrength, defenseStrength } = calculateStrength(currentUser, 'OFFENSE');
     const newOffense = currentUser.getArmyStat('OFFENSE');
     const newDefense = currentUser.getArmyStat('DEFENSE');
     const newSpying = currentUser.getArmyStat('SPY');

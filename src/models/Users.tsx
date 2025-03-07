@@ -794,31 +794,31 @@ class UserModel {
     const workers = units
       .filter((unitgroup) => unitgroup.type === 'WORKER')
       .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + quant, 0);
+      .reduce((acc, quant) => acc + Number(quant), 0);
     const offense = units
       .filter((unitgroup) => unitgroup.type === 'OFFENSE')
       .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + quant, 0);
+      .reduce((acc, quant) => acc + Number(quant), 0);
     const defense = units
       .filter((unitgroup) => unitgroup.type === 'DEFENSE')
       .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + quant, 0);
+      .reduce((acc, quant) => acc + Number(quant), 0);
     const spies = units
       .filter((unitgroup) => unitgroup.type === 'SPY')
       .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + quant, 0);
+      .reduce((acc, quant) => acc + Number(quant), 0);
     const assassins = units
       .filter((unitgroup) => unitgroup.type === 'SPY' && unitgroup.level === 3)
       .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + quant, 0);
+      .reduce((acc, quant) => acc + Number(quant), 0);
     const infiltrators = units
       .filter((unitgroup) => unitgroup.type === 'SPY' && unitgroup.level === 2)
       .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + quant, 0);
+      .reduce((acc, quant) => acc + Number(quant), 0);
     const sentries = units
       .filter((unitgroup) => unitgroup.type === 'SENTRY')
       .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + quant, 0);
+      .reduce((acc, quant) => acc + Number(quant), 0);
     return {
       citizens: untrained,
       workers,

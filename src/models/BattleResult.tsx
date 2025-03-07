@@ -17,6 +17,12 @@ class BattleResult {
 
   pillagedGold: number | BigInt | undefined;
 
+  experienceGained: { attacker: number; defender: number };
+
+  finalFortHP: number;
+
+  fortDamaged: boolean;
+
   strength: any[];
 
   Losses: {
@@ -37,6 +43,9 @@ class BattleResult {
     this.turnsTaken = 0;
     this.experienceResult = new BattleSimulationResult();
     this.pillagedGold = 0;
+    this.experienceGained = { attacker: 0, defender: 0 };
+    this.finalFortHP = 0;
+    this.fortDamaged = false;
     this.strength = [];
     this.Losses = {
       Attacker: {

@@ -1,7 +1,7 @@
 import { levelXPArray, UnitTypes } from '@/constants';
 import UserModel from '@/models/Users';
 import type { PlayerRace, UnitType } from '@/types/typings';
-import { newCalculateStrength } from './attackFunctions';
+import { calculateStrength } from './attackFunctions';
 import { createHash, webcrypto } from 'crypto';
 
 /**
@@ -154,7 +154,7 @@ const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | '
   }
 
   const newUModel = new UserModel(newUserData);
-  const { killingStrength, defenseStrength } = newCalculateStrength(newUModel, 'OFFENSE');
+  const { killingStrength, defenseStrength } = calculateStrength(newUModel, 'OFFENSE');
 
   return {
     killingStrength,

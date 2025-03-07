@@ -1,8 +1,6 @@
 import { Fortifications, ItemTypes, UnitTypes } from "@/constants";
 import UserModel from "@/models/Users";
-import { Item, PlayerUnit, UnitType } from "@/types/typings";
-import stringifyObj from "@/utils/numberFormatting";
-import { calculateClandestineStrength, calculateDefenseAgainstAssassination, computeSpyCasualties } from "./attackFunctions";
+import { Item, ItemType, PlayerUnit, UnitType } from "@/types/typings";
 import mtRand from "./mtrand";
 import { SpyUserModel } from "@/models/SpyUser";
 import { getAverageLevelAndHP } from "./units";
@@ -99,49 +97,6 @@ export class InfiltrationResult {
   }
 
 }
-
-export function getSentryStrength(user: UserModel, spies: number): number {
-  let strength = 0;
-  let numSentries = 0;
-  const sentryUnits = user.units.find((u) => u.type === 'SENTRY' && u.level === 1);
-  if (sentryUnits) {
-    numSentries = Math.min(sentryUnits.quantity, spies);
-    if (numSentries === 0)
-      return 0;
-    const unitType = UnitTypes.find((unitType) => unitType.type === sentryUnits.type && unitType.level === 1);
-    if (unitType) {
-      strength += unitType.bonus * numSentries;
-    }
-    const sentryWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.usage === sentryUnits.type.toString() && item.level === 1);
-    if (sentryWeapons) {
-      sentryWeapons.forEach((item) => {
-        const bonus = ItemTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
-        strength += bonus?.bonus * Math.min(item.quantity, numSentries);
-      });
-    }
-  }
-  return strength;
-}
-
-export function getSpyStrength(user: UserModel, attacker: boolean, spies: number): number {
-  let strength = 0;
-  let numSpies = 0;
-  const spyUnits = user.units.find((u) => (attacker ? u.type === 'SPY' : u.type === 'SENTRY') && u.level === 1);
-  if (spyUnits) {
-    numSpies = Math.min(spyUnits.quantity, spies);
-    const unitType = UnitTypes.find((unitType) => unitType.type === spyUnits.type && unitType.level === 1);
-    if (unitType) {
-      strength += unitType.bonus * numSpies;
-    }
-    const spyWeapons = user.items.filter((item) => item.type === 'WEAPON' && item.usage === spyUnits.type.toString() && item.level === 1);
-    spyWeapons.forEach((item) => {
-      const bonus = ItemTypes.find((w) => w.level === item.level && w.usage === item.usage && w.type === item.type);
-      strength += bonus?.bonus * Math.min(item.quantity, numSpies);
-    });
-  }
-  return strength;
-}
-
 
 export function simulateIntel(
   attacker: UserModel,
@@ -447,3 +402,191 @@ export const simulateInfiltration =
       return result;
     }
   }
+
+export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 'SENTRY', limiter: number = 1): {
+  spyStrength: number;
+  sentryStrength: number;
+  avgSpyStrength: number;
+  avgSentryStrength: number;
+} {
+  let KS = 0; // Total Killing Strength
+  let DS = 0; // Total Defense Strength
+  let totalUnits = unitType === 'SENTRY' ? user.unitTotals.sentries : user.unitTotals.spies;
+
+  const unitMultiplier = 1 + parseInt(
+    unitType === 'SPY' ? user.spyBonus.toString() : user.sentryBonus.toString(),
+    10
+  ) / 100;
+
+  user.units.filter((u) => u.type === unitType).forEach((unit) => {
+    if (totalUnits === 0) return;
+
+    const unitInfo = UnitTypes.find(
+      (unitType) =>
+        unitType.type === unit.type &&
+        unitType.fortLevel <= user.getLevelForUnit(unit.type) &&
+        unitType.level === unit.level
+    );
+
+    if (unitInfo) {
+      const usableQuantity = Math.min(unit.quantity, totalUnits);
+      KS += (unitInfo.killingStrength || 0) * usableQuantity;
+      DS += (unitInfo.defenseStrength || 0) * usableQuantity;
+      totalUnits -= usableQuantity;
+    }
+
+    const itemCounts: Record<ItemType, number> = {
+      WEAPON: 0,
+      HELM: 0,
+      BOOTS: 0,
+      BRACERS: 0,
+      SHIELD: 0,
+      ARMOR: 0,
+    };
+
+    user.items.filter((item) => item.usage === unit.type).forEach((item) => {
+      itemCounts[item.type] = itemCounts[item.type] || 0;
+
+      const itemInfo = ItemTypes.find(
+        (w) => w.level === item.level && w.usage === unit.type && w.type === item.type
+      );
+
+      if (itemInfo) {
+        const usableQuantity = Math.min(
+          item.quantity,
+          Math.min(unit.quantity, totalUnits) - itemCounts[item.type]
+        );
+        KS += itemInfo.killingStrength * usableQuantity;
+        DS += itemInfo.defenseStrength * usableQuantity;
+        itemCounts[item.type] += usableQuantity;
+      }
+    });
+  });
+
+  // Calculate average strengths per unit
+  const avgKS = totalUnits > 0 ? KS / totalUnits : 0;
+  const avgDS = totalUnits > 0 ? DS / totalUnits : 0;
+
+  return {
+    spyStrength: Math.ceil(KS * unitMultiplier * limiter),
+    sentryStrength: Math.ceil(DS * unitMultiplier * limiter),
+    avgSpyStrength: avgKS * unitMultiplier,
+    avgSentryStrength: avgDS * unitMultiplier,
+  };
+}
+
+
+export function calculateDefenseAgainstAssassination(user: UserModel, unitType: UnitType, limiter: number = 1): { killingStrength: number, defenseStrength: number } {
+  let KS = 0;
+  let DS = 0;
+  const unitMultiplier = (1 + parseInt(user.defenseBonus.toString(), 10) / 100);
+  user.units.filter((u) => u.type === unitType)
+    .sort((a, b) =>
+      // sort by level from highest to lowest
+      a.level > b.level ? 1 : 0
+    )
+    .forEach((unit) => {
+      const unitInfo = UnitTypes.find(
+        (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
+      );
+      if (unitInfo) {
+        KS += (unitInfo.killingStrength || 0) * unit.quantity;
+        DS += (unitInfo.defenseStrength || 0) * unit.quantity;
+      }
+
+      const itemCounts: Record<ItemType, number> = { WEAPON: 0, HELM: 0, BOOTS: 0, BRACERS: 0, SHIELD: 0, ARMOR: 0 };
+      if (unit.quantity === 0) return;
+
+      user.items.filter((item) => item.usage === unit.type).forEach((item) => {
+        itemCounts[item.type] = itemCounts[item.type] || 0;
+
+        const itemInfo = ItemTypes.find(
+          (w) => w.level === item.level && w.usage === unit.type && w.type === item.type
+        );
+        if (itemInfo) {
+          const usableQuantity = Math.min(item.quantity, unit.quantity - itemCounts[item.type]);
+          KS += itemInfo.killingStrength * usableQuantity;
+          DS += itemInfo.defenseStrength * usableQuantity;
+          itemCounts[item.type] += usableQuantity;
+        }
+      });
+    });
+
+  KS *= unitMultiplier;
+  DS *= unitMultiplier;
+
+  return { killingStrength: Math.ceil(KS * limiter), defenseStrength: Math.ceil(DS * limiter) };
+}
+
+function calculateAverageStrength(Units, targetType) {
+  let totalDefenseStrength = 0;
+  let totalKillingStrength = 0;
+  let totalQuantity = 0;
+
+  Units
+    .filter((unit) => unit.type === targetType)
+    .forEach((unit) => {
+      const unitType = UnitTypes.find((type) => type.type === unit.type && type.level === unit.level);
+      if (unitType) {
+        totalDefenseStrength += unitType.defenseStrength * unit.quantity;
+        totalKillingStrength += unitType.killingStrength * unit.quantity;
+        totalQuantity += unit.quantity;
+      }
+    });
+
+  return {
+    averageDefense: totalQuantity > 0 ? totalDefenseStrength / totalQuantity : 0,
+    averageKilling: totalQuantity > 0 ? totalKillingStrength / totalQuantity : 0
+  };
+}
+
+export function computeSpyCasualties({
+  attackerKS,
+  defenderDS,
+  defenderKS,
+  attackerDS,
+  attackerPop,
+  defenderPop,
+  multiplier = 1,
+  attackerUnits,
+  defenderUnits,
+  spiesSent = 1
+}: {
+  attackerKS: number;
+  defenderDS: number;
+  defenderKS: number;
+  attackerDS: number;
+  attackerPop: number;
+  defenderPop: number;
+  multiplier?: number;
+    attackerUnits: PlayerUnit[];
+    defenderUnits: PlayerUnit[];
+    spiesSent?: number;
+}): { attackerCasualties: number; defenderCasualties: number } {
+  // Calculate ratios
+  const offenseToDefenseRatio = attackerKS / (defenderDS || 1);
+  const defenseToOffenseRatio = defenderKS / (attackerDS || 1);
+  
+  const attackerDiff = (attackerKS - defenderDS) / attackerPop ;
+  const defenderDiff = (defenderKS - attackerDS) / defenderPop ;
+  
+  const { averageKilling: attackerAvgKS, averageDefense: attackerAvgDS } = calculateAverageStrength(attackerUnits, 'SPY')
+  
+  const { averageDefense: defenderAvgDS } = calculateAverageStrength(defenderUnits, defenderUnits.at(0).type)
+
+  console.log('attackerKS / defenderAvgDS', attackerAvgKS / defenderAvgDS)
+
+  console.log({
+    attackerPop,
+    defenderPop,
+    offenseToDefenseRatio,
+    defenseToOffenseRatio,
+    attackerDiff,
+    defenderDiff,
+  })
+
+  return {
+    attackerCasualties: 1,
+    defenderCasualties: 1,
+  };
+}
