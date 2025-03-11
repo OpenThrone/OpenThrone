@@ -28,12 +28,10 @@ const MessageList = (props) => {
     <>
       {session?.user?.id && (
         <RealtimeRooms
-          rooms={rooms}
           setRooms={setRooms}
           userId={session.user.id}
           selectedRoomId={selectedRoomId}
           setMessages={setMessages}
-          setSelectedRoomId={setSelectedRoomId}
         />
       )}
       <MessageListComponent
@@ -67,19 +65,22 @@ const MessageListComponent = ({ rooms, router, selectedRoomId, setSelectedRoomId
 };
 
 const RealtimeRooms = ({
-  rooms,
   setRooms,
   userId,
   selectedRoomId,
   setMessages,
-  setSelectedRoomId,
 }) => {
   const { addEventListener, removeEventListener } = useSocket(userId);
 
   useEffect(() => {
-    // Adjust the event handler to receive the payload
     const handleMessageNotification = async (payload: { chatRoomId: number }) => {
       console.log('Received message notification for room:', payload.chatRoomId);
+      
+      // Always refresh the rooms list to update last message info/unread counts
+      const roomsResponse = await fetch('/api/messages');
+      const roomsData = await roomsResponse.json();
+      setRooms(roomsData);
+      
       // Only fetch messages if the notification matches the currently selected room
       if (selectedRoomId && selectedRoomId === payload.chatRoomId) {
         const response = await fetch(`/api/messages/${selectedRoomId}`);
@@ -93,7 +94,7 @@ const RealtimeRooms = ({
     return () => {
       removeEventListener('messageNotification', handleMessageNotification);
     };
-  }, [addEventListener, removeEventListener, selectedRoomId, setMessages]);
+  }, [addEventListener, removeEventListener, selectedRoomId, setMessages, setRooms]);
 
   return null;
 };
