@@ -18,8 +18,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const messages = await prisma.chatMessage.findMany({
         where: { roomId: Number(chatRoomId) },
         orderBy: { sentAt: 'asc' },
+        include: {
+          sender: {
+            select: { id: true, display_name: true, avatar: true, last_active: true },
+          },
+        }
       });
-      res.status(200).json(messages);
+      // Transform messages to include is_online flag based on last_active
+      const transformedMessages = messages.map(message => {
+        // Consider a user online if they've been active in the last 5 minutes
+        const isOnline = message.sender.last_active ?
+          (new Date().getTime() - new Date(message.sender.last_active).getTime()) < 5 * 60 * 1000
+          : false;
+
+        return {
+          id: message.id,
+          roomId: message.roomId,
+          senderId: message.senderId,
+          content: message.content,
+          sentAt: message.sentAt,
+          sender: {
+            id: message.sender.id,
+            display_name: message.sender.display_name,
+            avatar: message.sender.avatar,
+            is_online: isOnline
+          }
+        };
+      });
+
+      res.status(200).json(transformedMessages);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Failed to fetch messages' });
