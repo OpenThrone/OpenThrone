@@ -76,18 +76,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         // For direct messages, include info about the other person
         participants: room.participants.map(p => ({
           id: p.id,
-          userId: p.userId,
           role: p.role,
           canWrite: p.canWrite,
-          user: {
-            id: p.user.id,
-            display_name: p.user.display_name,
-            avatar: p.user.avatar,
-            is_online: p.user.last_active ? 
+          display_name: p.user.display_name,
+          avatar: p.user.avatar,
+          is_online: p.user.last_active ? 
               (new Date().getTime() - new Date(p.user.last_active).getTime()) < 5 * 60 * 1000 
               : false
           }
-        }))
+        )),
       };
     });
 

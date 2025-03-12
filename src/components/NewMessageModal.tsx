@@ -180,14 +180,14 @@ const NewMessageModal = ({
 
   // Custom item renderer for MultiSelect
   const renderOption = (item: any) => {
-    const { value, image, label, race, class: userClass } = item;
+    const { value, image, label, race, class: userClass } = item.option;
     return (
       <Group gap="sm">
         <Avatar src={image} radius="xl" size="sm">
           {label?.[0]?.toUpperCase() || '?'}
         </Avatar>
         <div>
-          <Text size="sm">{label}</Text>
+          <Text size="sm">{label}{value}</Text>
           <Text size="xs" opacity={0.5}>
             {race} {userClass}
           </Text>

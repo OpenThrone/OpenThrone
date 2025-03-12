@@ -1,8 +1,8 @@
 import { useUser } from '@/context/users';
 import { formatLastMessageTime } from '@/utils/timefunctions';
-import { faComment, faCommentSlash, faEllipsisV, faPaperPlane, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+import { faComment, faCommentSlash, faEllipsisV, faPaperPlane, faTrash, faUserPlus, faUserShield, faUserSlash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ScrollArea, Indicator, Avatar, Text, Center, Title, ActionIcon, Group, Paper, Skeleton, Stack, TextInput, Menu, Tooltip } from '@mantine/core';
+import { ScrollArea, Indicator, Avatar, Text, Center, Title, ActionIcon, Group, Paper, Skeleton, Stack, TextInput, Menu, Tooltip, Badge, Modal, Switch, Table } from '@mantine/core';
 import NewMessageModal from '@/components/NewMessageModal';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
@@ -26,7 +26,7 @@ interface ChatMessageListProps {
     name: string; 
     isDirect: boolean;
     isPrivate: boolean;
-    isAdmin: boolean; // Whether current user is admin
+    isAdmin: boolean;
     createdById: number;
     createdAt: string;
     updatedAt: string;
@@ -54,7 +54,31 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
   const currentUserId = user?.id;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreatingGroupFromDM, setIsCreatingGroupFromDM] = useState(false);
+  const [isManageMembersModalOpen, setIsManageMembersModalOpen] = useState(false);
+  const [isMemberActionLoading, setIsMemberActionLoading] = useState(false);
 
+  const handleMemberAction = async (userId: number, action: 'promote' | 'demote' | 'remove' | 'toggleWrite') => {
+    setIsMemberActionLoading(true);
+    try {
+      const response = await fetch(`/api/messages/${selectedRoomId}/participants/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+
+      if (response.ok) {
+        // Refresh room info to reflect changes
+        const roomResponse = await fetch(`/api/messages/${selectedRoomId}`);
+        // You'll need to handle updating the roomInfo in your parent component
+        // For now, we'll just close the modal and let the user refresh
+        setIsManageMembersModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Error managing member:', error);
+    } finally {
+      setIsMemberActionLoading(false);
+    }
+  };
 
   const fetchMessages = useCallback(async () => {
     if (!selectedRoomId) {
@@ -93,13 +117,12 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
     const messageContent = newMessage;
     const tempId = Date.now(); // Use a timestamp as a temporary ID
 
-    // Create an optimistic message update
     const optimisticMessage: ChatMessage = {
       id: tempId,
       senderId: currentUserId || 0,
       content: messageContent,
       sentAt: new Date().toISOString(),
-      sender: user, // optionally attach sender details
+      sender: user,
     };
 
     setChatMessages((prevMessages) => [...prevMessages, optimisticMessage]);
@@ -256,9 +279,9 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
               {roomInfo?.isDirect && (
                 <Menu.Item
                   leftSection={<FontAwesomeIcon icon={faUserPlus} />}
-                  onClick={() => {
-                    // Alternative way to create group from DM
-                    console.log('Creating group from direct message (menu):', selectedRoomId);
+                    onClick={() => {
+                    setIsCreatingGroupFromDM(true);
+                    setIsModalOpen(true);
                   }}
                 >
                   Create group chat
@@ -267,7 +290,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
               {roomInfo?.isAdmin && !roomInfo.isDirect && (
                 <>
                   <Menu.Label>Admin Controls</Menu.Label>
-                  <Menu.Item>Manage members</Menu.Item>
+                    <Menu.Item onClick={() => setIsManageMembersModalOpen(true)}>Manage members</Menu.Item>
                   <Menu.Item>Edit group info</Menu.Item>
                   <Menu.Divider />
                 </>
@@ -428,6 +451,95 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
         existingUsers={roomInfo?.participants?.map(p => p.id) || []}
         isDirectMessage={isCreatingGroupFromDM && roomInfo?.isDirect}
       />
+      <Modal
+        opened={isManageMembersModalOpen}
+        onClose={() => setIsManageMembersModalOpen(false)}
+        title="Manage Members"
+        size="lg"
+      >
+        <Table>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Member</Table.Th>
+              <Table.Th>Role</Table.Th>
+              <Table.Th>Can Write</Table.Th>
+              <Table.Th>Actions</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {roomInfo?.participants?.map(participant => (
+              <Table.Tr key={participant.id}>
+                <Table.Td>
+                  <Group gap="xs">
+                    <Avatar src={participant.avatar} radius="xl" size="sm">
+                      {participant.display_name?.[0]?.toUpperCase() || '?'}
+                    </Avatar>
+                    <div>
+                      <Text size="sm">{participant.display_name}</Text>
+                      <Text size="xs" c={participant.is_online ? 'teal' : 'dimmed'}>
+                        {participant.is_online ? 'Online' : 'Offline'}
+                      </Text>
+                    </div>
+                  </Group>
+                </Table.Td>
+                <Table.Td>
+                  <Badge color={participant.role === 'ADMIN' ? 'blue' : 'gray'}>
+                    {participant.role}
+                  </Badge>
+                </Table.Td>
+                <Table.Td>
+                  <Switch
+                    checked={participant.canWrite}
+                    disabled={participant.id === currentUserId || !roomInfo?.isAdmin || isMemberActionLoading}
+                    onChange={() => handleMemberAction(participant.id, 'toggleWrite')}
+                  />
+                </Table.Td>
+                <Table.Td>
+                  <Group gap="xs">
+                    {roomInfo?.isAdmin && participant.id !== currentUserId && (
+                      <>
+                        {participant.role === 'MEMBER' ? (
+                          <Tooltip label="Make admin">
+                            <ActionIcon
+                              color="blue"
+                              variant="subtle"
+                              onClick={() => handleMemberAction(participant.id, 'promote')}
+                              loading={isMemberActionLoading}
+                            >
+                              <FontAwesomeIcon icon={faUserShield} />
+                            </ActionIcon>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip label="Remove admin">
+                            <ActionIcon
+                              color="yellow"
+                              variant="subtle"
+                              onClick={() => handleMemberAction(participant.id, 'demote')}
+                              loading={isMemberActionLoading}
+                            >
+                              <FontAwesomeIcon icon={faUserSlash} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
+                        <Tooltip label="Remove from group">
+                          <ActionIcon
+                            color="red"
+                            variant="subtle"
+                            onClick={() => handleMemberAction(participant.id, 'remove')}
+                            loading={isMemberActionLoading}
+                          >
+                            <FontAwesomeIcon icon={faTrash} />
+                          </ActionIcon>
+                        </Tooltip>
+                      </>
+                    )}
+                  </Group>
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Modal>
     </div>
     
   );
