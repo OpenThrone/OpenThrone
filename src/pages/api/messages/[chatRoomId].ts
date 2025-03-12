@@ -4,13 +4,48 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import { getSocketIO } from '@/lib/socket';
+import { withAuth } from '@/middleware/auth';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { chatRoomId } = req.query;
-  const session = await getServerSession(req, res, authOptions);
+  const session = req.session;
 
   if (!session) {
     return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  // We need to check if the user is part of the chat room
+  const isUserInRoom = await prisma.chatRoom.findFirst({
+    where: {
+      id: Number(chatRoomId),
+      participants: {
+        some: {
+          userId: Number(session.user.id),  // Ensure the user is part of the room
+        },
+      },
+    },
+    select: {
+      id: true,
+      participants: {
+        select: {
+          id: true,
+          userId: true, // Include userId
+          role: true, // Might be useful for permission checks
+          user: {
+            select: {
+              id: true,
+              display_name: true,
+              avatar: true,
+              last_active: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!isUserInRoom) {
+    return res.status(403).json({ message: 'Forbidden' });
   }
 
   if (req.method === 'GET') {
@@ -74,3 +109,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).json({ message: 'Method Not Allowed' });
   }
 }
+
+export default withAuth(handler);

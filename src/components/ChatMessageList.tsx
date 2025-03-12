@@ -1,9 +1,9 @@
 import { useUser } from '@/context/users';
 import { formatLastMessageTime } from '@/utils/timefunctions';
-import { faComment, faCommentSlash, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import { faComment, faCommentSlash, faEllipsisV, faPaperPlane, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ScrollArea, Indicator, Avatar, Text, Center, Title, ActionIcon, Group, Paper, Skeleton, Stack, TextInput } from '@mantine/core';
-import clsx from 'clsx';
+import { ScrollArea, Indicator, Avatar, Text, Center, Title, ActionIcon, Group, Paper, Skeleton, Stack, TextInput, Menu, Tooltip } from '@mantine/core';
+import NewMessageModal from '@/components/NewMessageModal';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 interface ChatMessage {
@@ -21,15 +21,40 @@ interface ChatMessage {
 interface ChatMessageListProps {
   selectedRoomId: number | null;
   messages: ChatMessage[];
+  roomInfo?: {
+    id: number;
+    name: string; 
+    isDirect: boolean;
+    isPrivate: boolean;
+    isAdmin: boolean; // Whether current user is admin
+    createdById: number;
+    createdAt: string;
+    updatedAt: string;
+    lastMessage?: string | null;
+    lastMessageTime?: string | null;
+    lastMessageSender?: string | null;
+    unreadCount?: number;
+    participants?: Array<{
+      id: number;
+      role: 'ADMIN' | 'MEMBER';
+      canWrite: boolean;
+      display_name: string;
+      avatar?: string;
+      is_online: boolean;
+    }>;
+  };
 }
 
-const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messages }) => {
+const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messages, roomInfo }) => {
   const [newMessage, setNewMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
   const [isLoading, setIsLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
   const currentUserId = user?.id;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreatingGroupFromDM, setIsCreatingGroupFromDM] = useState(false);
+
 
   const fetchMessages = useCallback(async () => {
     if (!selectedRoomId) {
@@ -146,6 +171,121 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Chat Header */}
+      <Paper p="md" className="w-full border-b border-gray-700" withBorder={false}>
+        <div className="flex justify-between items-center w-full">
+          {/* Room info - left aligned */}
+          <Group gap='xs' className="flex-grow-0">
+            {roomInfo?.isDirect ? (
+              <Avatar
+                size="md"
+                radius="xl"
+                color="blue"
+                src={roomInfo?.participants?.find(p => p.id !== currentUserId)?.avatar}
+              >
+                {(roomInfo?.participants?.find(p => p.id !== currentUserId)?.display_name?.charAt(0) || '?').toUpperCase()}
+              </Avatar>
+            ) : (
+              <Avatar
+                size="md"
+                radius="xl"
+                color="violet"
+              >
+                {(roomInfo?.name?.charAt(0) || '?').toUpperCase()}
+              </Avatar>
+            )}
+            <div>
+              <Text fw={600} size="lg">
+                {roomInfo?.name || 'Chat'}
+              </Text>
+              {roomInfo?.isDirect && (
+                <Text size="xs" c={roomInfo?.participants?.find(p => p.id !== currentUserId)?.is_online ? 'teal' : 'dimmed'}>
+                  {roomInfo?.participants?.find(p => p.id !== currentUserId)?.is_online ? 'Online' : 'Offline'}
+                </Text>
+              )}
+              {!roomInfo?.isDirect && (
+                <Text size="xs" c="dimmed">
+                  {roomInfo?.isPrivate ? 'Private group' : 'Public group'}
+                </Text>
+              )}
+            </div>
+          </Group>
+
+          {/* Action icons - right aligned */}
+          <Group gap='xs' className="flex-grow-0">
+            {/* For direct messages, show "Create group" button */}
+            {roomInfo?.isDirect && (
+              <Tooltip label="Create group chat with this person">
+                <ActionIcon
+                  variant="subtle"
+                  color="blue"
+                  onClick={() => {
+                    setIsCreatingGroupFromDM(true);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faUserPlus} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+
+            {!roomInfo?.isDirect && (roomInfo?.isAdmin || !roomInfo?.isPrivate) && (
+              <Tooltip label="Add members">
+                <ActionIcon
+                  variant="subtle"
+                  color="blue"
+                  onClick={() => {
+                    setIsCreatingGroupFromDM(false);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faUserPlus} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+
+            {/* More options menu */}
+            <Menu shadow="md" width={200} position="bottom-end">
+              <Menu.Target>
+                <ActionIcon variant="subtle">
+                  <FontAwesomeIcon icon={faEllipsisV} />
+                </ActionIcon>
+              </Menu.Target>
+
+            <Menu.Dropdown>
+              {roomInfo?.isDirect && (
+                <Menu.Item
+                  leftSection={<FontAwesomeIcon icon={faUserPlus} />}
+                  onClick={() => {
+                    // Alternative way to create group from DM
+                    console.log('Creating group from direct message (menu):', selectedRoomId);
+                  }}
+                >
+                  Create group chat
+                </Menu.Item>
+              )}
+              {roomInfo?.isAdmin && !roomInfo.isDirect && (
+                <>
+                  <Menu.Label>Admin Controls</Menu.Label>
+                  <Menu.Item>Manage members</Menu.Item>
+                  <Menu.Item>Edit group info</Menu.Item>
+                  <Menu.Divider />
+                </>
+              )}
+              <Menu.Item>Search messages</Menu.Item>
+              <Menu.Item>Mute notifications</Menu.Item>
+              {roomInfo?.isAdmin && !roomInfo.isDirect && (
+                <Menu.Item color="red">Delete group</Menu.Item>
+              )}
+              {roomInfo?.isDirect && (
+                <Menu.Item color="red">Delete conversation</Menu.Item>
+              )}
+            </Menu.Dropdown>
+          </Menu>
+          </Group>
+        </div>
+      </Paper>
+      
       {/* Messages area (scrollable) */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full px-4" type='auto'>
@@ -278,7 +418,18 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
           />
         </Group>
       </Paper>
+      <NewMessageModal
+        opened={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setIsCreatingGroupFromDM(false);
+        }}
+        existingChatId={selectedRoomId}
+        existingUsers={roomInfo?.participants?.map(p => p.id) || []}
+        isDirectMessage={isCreatingGroupFromDM && roomInfo?.isDirect}
+      />
     </div>
+    
   );
 };
 
