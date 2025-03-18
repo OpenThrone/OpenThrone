@@ -29,6 +29,24 @@ class BattleResult {
 
   result: 'WIN' | 'LOSS' | 'UNDECIDED';
 
+  casualtySummary: {
+    attacker: Array<{
+      type: string;
+      level: number;
+      quantity: number;
+      description: string;
+    }>;
+    defender: Array<{
+      type: string;
+      level: number;
+      quantity: number;
+      description: string;
+    }>;
+    attackerTotal: number;
+    defenderTotal: number;
+    fortDamage: number;
+  };
+
   Losses: {
     Attacker: {
       total: number;
@@ -38,6 +56,8 @@ class BattleResult {
       total: number;
       units: BattleUnits[]
     };
+
+    
   };
 
   constructor(attacker: UserModel, defender: UserModel) {
@@ -65,6 +85,7 @@ class BattleResult {
   }
 
   calculateResult(attacker: UserModel, defender: UserModel): 'WIN' | 'LOSS' | 'UNDECIDED' {
+    //TODO: need to really flesh this out
     if (attacker.offense > defender.defense) {
       // Attacker Wins
       return 'WIN';

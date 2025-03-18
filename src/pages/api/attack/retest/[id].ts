@@ -1,6 +1,6 @@
 'use server';
 import prisma from "@/lib/prisma";
-import { simulateBattle as simBattle } from '@/utils/attackFunctions';
+import { simulateBattle } from '@/utils/attackFunctions';
 import { withAuth } from '@/middleware/auth';
 import UserModel from "@/models/Users";
 import { stringifyObj } from "@/utils/numberFormatting";
@@ -21,16 +21,16 @@ const handler = async (req, res) => {
       return res.status(400).json({ status: 'failed, attack not found' });
     }
 
-    const attacker = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Attacker))));
-    const defender = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Defender))));
+    const attacker = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Attacker))), true, false);
+    const defender = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Defender))), true, true);
 
-    const attacker2 = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Attacker))));
-    const defender2 = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Defender))));
+    const attacker2 = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Attacker))), true, false);
+    const defender2 = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Defender))),true, false);
 
-    
+    //console.log(attack.stats.startOfAttack.Defender);
 
-    const results2 = await simBattle(attacker2, defender2, attack.stats.turns);
-    
+    const results2 = await simulateBattle(attacker2, defender2, defender2.fortHitpoints, attack.stats.turns, true);
+    console.log(results2)
     return res
       .status(200)
       .json(
@@ -46,8 +46,8 @@ const handler = async (req, res) => {
           newSimulationDefenderLossesTotal: results2.Losses.Defender.total,
           newSimulationDefenderLossesBreakdown: results2.Losses.Defender,
           fortHPAtEnd: results2.fortHitpoints,
-          attackerWon: results2.experienceResult.Result,
-          strength: results2.strength,
+          attackerWon: results2.result === 'WIN',
+          strength: {attackerOffense: attacker.offense, defenderDefense: defender.defense},
           originalGold: attack.stats.pillagedGold,
           newGold: results2.pillagedGold,
         })

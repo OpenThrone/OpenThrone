@@ -130,6 +130,8 @@ class UserModel {
 
   public sentry: number;
 
+  public checkStats: boolean;
+
   constructor(userData?: any, filtered: boolean = true, checkStats: boolean = true) {
     userData = JSON.parse(JSON.stringify(stringifyObj(userData)));
     this.id = 0;
@@ -141,7 +143,7 @@ class UserModel {
     this.experience = 0;
     this.gold = '0';
     this.goldInBank = '0';
-
+    this.checkStats = checkStats;
     this.fortLevel = 0;
     this.fortHitpoints = 0;
     this.houseLevel = 0;
@@ -174,7 +176,7 @@ class UserModel {
     this.permissions = [];
     if (userData) {
       this.id = userData.id;
-      this.displayName = userData.display_name;
+      this.displayName = userData.display_name || userData.displayName;
       if (!filtered) {
         this.email = userData.email;
         this.passwordHash = userData?.password_hash;
@@ -193,9 +195,9 @@ class UserModel {
       this.gold = userData.gold || '0';
       this.goldInBank = userData.gold_in_bank || '0';
       this.battle_upgrades = userData.battle_upgrades;
-      this.fortLevel = userData.fort_level;
+      this.fortLevel = userData.fort_level || userData.fortLevel || 0;
       this.fortHitpoints = userData?.fort_hitpoints || userData?.fortHitpoints || 0;
-      this.houseLevel = userData.house_level;
+      this.houseLevel = userData.house_level || 0;
 
       this.last_active = userData.last_active;
       this.units = userData.units;
@@ -234,6 +236,7 @@ class UserModel {
   updateStats() {
     this.offense = this.getArmyStat('OFFENSE');
     this.defense = this.getArmyStat('DEFENSE');
+    
     this.spy = this.getArmyStat('SPY');
     this.sentry = this.getArmyStat('SENTRY');
   }
