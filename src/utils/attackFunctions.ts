@@ -157,36 +157,6 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
     includeOffense: includeOffenseUnits
   });
 
-  // Calculate new casualties this turn for logging
-  const attackerLossesThisTurn = state.battleResult.Losses.Attacker.units
-    .filter(newLoss => {
-      // Check if this is a new loss or an increased loss
-      const previousLoss = previousAttackerLosses.find(prev => prev.type === newLoss.type);
-      return !previousLoss || newLoss.quantity > previousLoss.quantity;
-    })
-    .map(loss => {
-      const previousLoss = previousAttackerLosses.find(prev => prev.type === loss.type);
-      const quantityThisTurn = previousLoss ? loss.quantity - previousLoss.quantity : loss.quantity;
-      return { type: loss.type, quantity: quantityThisTurn };
-    })
-    .filter(loss => loss.quantity > 0);
-
-  const defenderLossesThisTurn = state.battleResult.Losses.Defender.units
-    .filter(newLoss => {
-      // Check if this is a new loss or an increased loss
-      const previousLoss = previousDefenderLosses.find(prev => prev.type === newLoss.type);
-      return !previousLoss || newLoss.quantity > previousLoss.quantity;
-    })
-    .map(loss => {
-      const previousLoss = previousDefenderLosses.find(prev => prev.type === loss.type);
-      const quantityThisTurn = previousLoss ? loss.quantity - previousLoss.quantity : loss.quantity;
-      return { type: loss.type, quantity: quantityThisTurn };
-    })
-    .filter(loss => loss.quantity > 0);
-    
-  // Log the casualties for this turn
-  //logUnitCasualties(turn, attackerLossesThisTurn, defenderLossesThisTurn, debug);
-
   // Update state tracking variables based on casualties
   state.attackerOffenseRemaining = Math.max(0, state.attackerOffenseRemaining - casualties.attackerCasualties);
 
@@ -226,9 +196,10 @@ function calculateAttackerStrength(state, turn) {
   console.log(`Stamina Drop for turn ${turn}: ${staminaDrop}`);
   console.log(`Base Attacker KS: ${state.baseAttackerKS}, Base Attacker DS: ${state.baseAttackerDS}`);
   console.log(`Attacker Stamina: ${state.attackerStamina}`);
+  const stamnaImpact = state.attackerStamina * staminaDrop;
   return {
-    KS: Math.ceil(state.baseAttackerKS * state.attackerStamina * staminaDrop),
-    DS: Math.ceil(state.baseAttackerDS * state.attackerStamina * staminaDrop),
+    KS: Math.ceil(state.baseAttackerKS * stamnaImpact),
+    DS: Math.ceil(state.baseAttackerDS * stamnaImpact),
   };
 }
 
@@ -248,7 +219,7 @@ function calculateDefenderStrength(state, turn, debug) {
   if (debug) console.log(`Turn ${turn} - Fort HP: ${state.fortHP}, Critical Threshold: ${Fortifications[state.defender.fortLevel].hitpoints * BATTLE_CONSTANTS.FORT_CRITICAL_THRESHOLD}`);
   if (debug) console.log(`Turn ${turn} - Should Include Offense Units: ${includeOffenseUnits}`);
 
-  let currentDefenderStrength = calculateStrength(state.defender, 'DEFENSE', shouldIncludeCitz);
+  let currentDefenderStrength = calculateStrength(state.defender, 'DEFENSE', shouldIncludeCitz, includeOffenseUnits);
   if(debug) console.log(`Defender Strength: ${JSON.stringify(currentDefenderStrength)}`);
   let defenderKS, defenderDS;
 
@@ -422,8 +393,11 @@ export function calculateStrength(
   if (strengthCache.has(cacheKey)) {
     const cached = strengthCache.get(cacheKey);
     if (cached.killingStrength > 0 || cached.defenseStrength > 0) {
+      console.log(`Using cached strength for ${unitType}: KS=${cached.killingStrength}, DS=${cached.defenseStrength}`);
       return cached;
     }
+    console.log(`Cached strength for ${unitType} is zero, recalculating...`);
+    strengthCache.delete(cacheKey);
   }
 
   let killingStrength = 0;
@@ -563,7 +537,8 @@ export function computeBaseValue(ratio: number): number {
   if (ratio >= 2) return mtRand(0.0009, 0.00105);
   if (ratio >= 1) return mtRand(0.00085, 0.00095);
   if (ratio >= 0.5) return mtRand(0.0005, 0.0006);
-  return mtRand(0.0004, 0.00045);
+  if (ratio >= 0.1) return mtRand(0.0004, 0.00045);
+  return mtRand(0.00025, 0.0003);
 }
 
 export function newComputeCasualties(
@@ -590,18 +565,22 @@ export function newComputeCasualties(
 
   // Adjust for battle phase and fortification status
   let phaseMultiplier = 1.0;
+  let attackerPhaseMultiplier = 1.0;
   
   // Fort status multipliers
   if (fortHitpoints !== undefined) {
     if (fortHitpoints === 0) {
       // Fort destroyed - higher casualties for defender
       phaseMultiplier = 2.5;
+      attackerPhaseMultiplier = 0.6; // Attacker takes fewer casualties when fort is destroyed
     } else if (fortHitpoints < initialFortHP * BATTLE_CONSTANTS.FORT_CRITICAL_THRESHOLD) {
       // Fort critically damaged - moderate casualties
       phaseMultiplier = 1.5;
+      attackerPhaseMultiplier = 0.8; // Attacker takes fewer casualties when fort is critically damaged
     } else if (fortHitpoints < initialFortHP * 0.7) {
       // Fort damaged - slightly increased casualties
       phaseMultiplier = 1.2;
+      attackerPhaseMultiplier = 0.9; // Attacker takes fewer casualties when fort is damaged
     }
   }
   
@@ -629,6 +608,15 @@ export function newComputeCasualties(
     defenderCasualties = Math.max(defenderCasualties, minCasualties);
   }
 
+  // Add minimum attacker casualties based on defender strength
+  // Even powerful attackers should take some losses
+  const minAttackerCasualties = Math.max(
+    1,  // At least 1 casualty
+    Math.ceil(attackerPop * 0.001)  // Or 0.1% of attacker force
+  );
+
+  attackerCasualties = Math.max(attackerCasualties, minAttackerCasualties);
+
   // Cap casualties to reasonable percentages of population
   const maxAttackerCasualties = Math.min(
     attackerPop * 0.05,  // Max 5% per turn
@@ -649,7 +637,8 @@ export function newComputeCasualties(
 export function calculateStaminaModifier(turn: number): number {
   if (turn <= 3) return 1.0;       // Early phase - full stamina
   if (turn <= 7) return 0.85;      // Mid phase - slight fatigue
-  return 0.7;                      // Late phase - significant fatigue
+  if (turn <= 8) return 0.7;       // Mid-late phase - significant fatigue
+  return 0.55;                     // Late phase - significant fatigue
 }
 
 export function calculateReinforcementModifier(turn: number): number {

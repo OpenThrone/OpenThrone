@@ -8,10 +8,11 @@ import MainArea from '@/components/MainArea';
 import ArmyInputForm from '@/components/ArmyInputForm';
 import BattleResults from '@/components/BattleTestResults';
 import MockUserGenerator from '@/utils/MockUserGenerator';
-import { User } from '@/types/typings';
+import { PlayerRace, ShareableArmyData, User } from '@/types/typings';
 import { stringifyObj } from '@/utils/numberFormatting';
-import { useLocalStorage } from '@mantine/hooks';
-
+import { useClipboard, useLocalStorage } from '@mantine/hooks';
+import router from 'next/router';
+import { encodeBattleData, decodeBattleData } from '@/utils/battleEncoding';
 
 const BattleSimulator: NextPage = (props) => {
   const defenderGenerator = useMemo(() => {
@@ -74,6 +75,7 @@ const BattleSimulator: NextPage = (props) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(false);
+  const [forceRefresh, setForceRefresh] = useState(0);
 
   const attackerFormRef = useRef<{ getFormData: () => User }>(null);
   const defenderFormRef = useRef<{ getFormData: () => User }>(null);
@@ -123,6 +125,46 @@ const BattleSimulator: NextPage = (props) => {
     setPendingUpdate(false);
   }, [setAttacker, setDefender]);
 
+  const clipboard = useClipboard();
+
+  const handleCopy = () => {
+    const encoded = encodeBattleData(attacker, defender, turns);
+    const shareableUrl = `${process.env.NEXT_PUBLIC_URL_ROOT}/battle/battleSimulator?battle=${encoded}`;
+    clipboard.copy(shareableUrl);
+  };
+
+  useEffect(() => {
+    if (router.query.battle) {
+      const data = decodeBattleData(router.query.battle as string);
+      if (data) {
+        const convertToUser = (userData: ShareableArmyData, baseUser: User): User => {
+          return {
+            ...baseUser,
+            race: userData.race as PlayerRace,
+            experience: userData.experience,
+            units: userData.units || [],
+            items: userData.items || [],
+            battle_upgrades: userData.battle_upgrades || [],
+            structure_upgrades: userData.structure_upgrades || [],
+            fort_level: userData.fort_level || baseUser.fort_level,
+            fort_hitpoints: userData.fort_hitpoints || baseUser.fort_hitpoints,
+          };
+        };
+        
+        const newAttacker = convertToUser(data.attacker, attacker);
+        const newDefender = convertToUser(data.defender, defender);
+        
+        setAttacker(newAttacker);
+        setDefender(newDefender);
+        setTurns(data.turns);
+        
+        // Force forms to reinitialize with new data
+        setForceRefresh(prev => prev + 1);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.query.battle]); // only triggers when URL changes
+
   return (
     <MainArea title="Battle Simulator">
       <Container size="xl" py="md">
@@ -131,20 +173,22 @@ const BattleSimulator: NextPage = (props) => {
         </Card>
 
         {error && <Alert color="red" mb="lg">{error}</Alert>}
-        
+        <Button onClick={handleCopy}>
+          {clipboard.copied ? 'Copied!' : 'Copy Shareable Link'}
+        </Button>
         <ArmyInputForm
           ref={attackerFormRef}
           title="Attacker"
           armyData={attacker}
           attacker={true}
-          key={`attacker-${JSON.stringify(stringifyObj(attacker))}`}
+          key={`attacker-form-${forceRefresh}`}
         />
         <ArmyInputForm
           ref={defenderFormRef}
           armyData={defender}
           title="Defender"
           attacker={false}
-          key={`defender-${JSON.stringify(stringifyObj(defender))}`}
+          key={`defender-form-${forceRefresh}`}
         />
 
         

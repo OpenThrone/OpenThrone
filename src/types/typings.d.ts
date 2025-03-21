@@ -301,7 +301,7 @@ export interface User {
   updated_at: Date;
 }
 
-type SpyCasualtiesParams = {
+export type SpyCasualtiesParams = {
   attackerKS: number;
   defenderDS: number;
   defenderKS: number;
@@ -309,4 +309,15 @@ type SpyCasualtiesParams = {
   attackerPop: number;
   defenderPop: number;
   maxMultiplier?: number; // Optional, defaults to 3
+};
+
+export interface ShareableArmyData {
+  race: string;
+  experience: number;
+  units: any[];
+  items: any[];
+  battle_upgrades: any[];
+  structure_upgrades: any[];
+  fort_level ?: number;
+  fort_hitpoints ?: number;
 };
