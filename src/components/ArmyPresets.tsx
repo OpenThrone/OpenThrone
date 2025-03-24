@@ -5,6 +5,7 @@ import { faList, faBookmark, faUser } from '@fortawesome/free-solid-svg-icons';
 import { useUser } from '@/context/users';
 import { User, PlayerUnit, PlayerItem, UnitType, ItemType, PlayerBattleUpgrade } from "@/types/typings";
 import UserModel from '@/models/Users';
+import { userModelToUser } from '@/utils/utilities';
 
 // Conversion function: Form Fields -> User
 const formFieldsToUser = (formData: any): Partial<User> => {
@@ -78,6 +79,7 @@ const formFieldsToUser = (formData: any): Partial<User> => {
 const userToFormFields = (user: User | Partial<User>): any => {
   if (!user) return {};
   
+  // Start building the form data
   const formData: any = {
     race: user.race || 'HUMAN',
     class: user.class || 'FIGHTER',
@@ -92,6 +94,28 @@ const userToFormFields = (user: User | Partial<User>): any => {
     const fieldName = `${unit.type.toLowerCase()}${unit.level}`;
     formData[fieldName] = unit.quantity;
   });
+
+  // Process items - create a standalone items map
+  const itemsMap: Record<string, Record<number, number>> = {};
+
+  if (user.items && user.items.length > 0) {
+    user.items.forEach((item) => {
+      // Initialize type container if needed
+      if (!itemsMap[item.type]) {
+        itemsMap[item.type] = {};
+      }
+      
+      // Add quantities, summing if same type/level
+      const existingQuantity = itemsMap[item.type][item.level] || 0;
+      itemsMap[item.type][item.level] = existingQuantity + item.quantity;
+    });
+    
+    console.log('Original items:', user.items);
+    console.log('Transformed items map:', itemsMap);
+  }
+
+  // Set the items in formData - THIS IS THE KEY LINE
+  formData.items = itemsMap;
 
   // Process battle upgrades
   user.battle_upgrades?.forEach((upgrade) => {
@@ -131,7 +155,17 @@ export const presets = {
         { type: 'SENTRY' as UnitType, level: 1, quantity: 100 },
         { type: 'CITIZEN' as UnitType, level: 1, quantity: 500 }
       ] as PlayerUnit[],
-      items: [] as PlayerItem[],
+      items: [{
+        type: 'WEAPON' as ItemType,
+        level: 1,
+        quantity: 1000,
+        usage: 'OFFENSE'
+      }, {
+        type: 'WEAPON' as ItemType,
+        level: 1,
+        quantity: 1000,
+        usage: 'DEFENSE'
+      }] as PlayerItem[],
       battle_upgrades: []
     } as Partial<User>,
   },
@@ -154,7 +188,18 @@ export const presets = {
         { type: 'CITIZEN' as UnitType, level: 1, quantity: 1000 },
         { type: 'WORKER' as UnitType, level: 1, quantity: 500 }
       ] as PlayerUnit[],
-      items: [] as PlayerItem[],
+      items: [
+        { type: 'HELM' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'ARMOR' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'BOOTS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'BRACERS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'SHIELD' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'WEAPON' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
+        { type: 'HELM' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
+        { type: 'ARMOR' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
+        { type: 'BOOTS' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
+        { type: 'BRACERS' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' }
+      ] as PlayerItem[],
       battle_upgrades: [
         { type: 'OFFENSE', level: 1, quantity: 5 },
         { type: 'DEFENSE', level: 1, quantity: 5 }
@@ -177,7 +222,25 @@ export const presets = {
         { type: 'SENTRY' as UnitType, level: 1, quantity: 300 },
         { type: 'CITIZEN' as UnitType, level: 1, quantity: 800 }
       ] as PlayerUnit[],
-      items: [] as PlayerItem[],
+      items: [
+        { type: 'HELM' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'ARMOR' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'BOOTS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'BRACERS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'SHIELD' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { type: 'WEAPON' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
+        { type: 'HELM' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
+        { type: 'ARMOR' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
+        { type: 'BOOTS' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
+        { type: 'BRACERS' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { type: 'WEAPON' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { type: 'HELM' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { type: 'ARMOR' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { type: 'BOOTS' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { type: 'BRACERS' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' }
+
+
+      ] as PlayerItem[],
       battle_upgrades: [
         { type: 'OFFENSE', level: 1, quantity: 15 },
         { type: 'OFFENSE', level: 2, quantity: 5 }
@@ -221,6 +284,15 @@ interface ArmyPresetsProps {
 const ArmyPresets: React.FC<ArmyPresetsProps> = ({ onSelect }) => {
   const { user } = useUser(); 
   
+  // Debug function to check what's being passed to onSelect
+  const handlePresetSelect = (presetData: any) => {
+    const formFields = userToFormFields(presetData);
+    console.log('Selected preset data:', presetData);
+    console.log('Converted form fields:', formFields);
+    console.log('Items in form fields:', formFields.items);
+    onSelect(formFields);
+  };
+  
   return (
     <Menu shadow="md" width={200}>
       <Menu.Target>
@@ -234,7 +306,7 @@ const ArmyPresets: React.FC<ArmyPresetsProps> = ({ onSelect }) => {
         <Menu.Item
           key="current-user"
           leftSection={<FontAwesomeIcon icon={faUser} />}
-          onClick={() => onSelect(user ? userToFormFields(user) : {})}
+          onClick={() => handlePresetSelect(user ? userModelToUser(user) : {})}
         >
           Current User
         </Menu.Item>
@@ -242,7 +314,7 @@ const ArmyPresets: React.FC<ArmyPresetsProps> = ({ onSelect }) => {
           <Menu.Item
             key={key}
             leftSection={<FontAwesomeIcon icon={faBookmark} />}
-            onClick={() => onSelect(userToFormFields(preset.data))}
+            onClick={() => handlePresetSelect(preset.data)}
           >
             {preset.name}
           </Menu.Item>

@@ -190,7 +190,6 @@ const BattleSimulator: NextPage = (props) => {
           attacker={false}
           key={`defender-form-${forceRefresh}`}
         />
-
         
         <Card withBorder mt="lg">
           <NumberInput
@@ -203,7 +202,7 @@ const BattleSimulator: NextPage = (props) => {
           <Button mt="md" loading={loading} onClick={handleRunSimulation} disabled={pendingUpdate}>
             Run Simulation
           </Button>
-          {results && <Button variant="outline" ml="md" onClick={handleReset}>Reset</Button>}
+          {results && <Button variant="outline" mt="md" ml="md" onClick={handleReset}>Reset</Button>}
           <Button mt="md" ml="md" onClick={handleUpdate} loading={pendingUpdate} disabled={loading}>
             {pendingUpdate ? 'Updating...' : 'Update'}
           </Button>

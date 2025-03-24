@@ -1,11 +1,13 @@
 import { ShareableArmyData } from "@/types/typings";
+import LZString from "lz-string";
 
 // Encoding Function
 export function encodeBattleData(attacker: ShareableArmyData, defender: ShareableArmyData, turns: number): string | null {
   try {
     const payload = { attacker, defender, turns };
     const json = JSON.stringify(payload);
-    return encodeURIComponent(Buffer.from(json).toString('base64'));
+    console.log('json', json)
+    return LZString.compressToEncodedURIComponent(json);
   } catch (err) {
     console.error("Encoding failed:", err);
     return null;
@@ -15,7 +17,7 @@ export function encodeBattleData(attacker: ShareableArmyData, defender: Shareabl
 // Decoding Function
 export function decodeBattleData(encoded: string): { attacker: ShareableArmyData, defender: ShareableArmyData, turns: number } | null {
   try {
-    const json = Buffer.from(decodeURIComponent(encoded), 'base64').toString();
+    const json = LZString.decompressFromEncodedURIComponent(encoded);
     return JSON.parse(json);
   } catch (err) {
     console.error("Decoding failed:", err);
