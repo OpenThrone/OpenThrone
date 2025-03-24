@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { useLayout } from '@/context/LayoutContext';
+import RpgAwesomeIcon from './RpgAwesomeIcon';
 
 interface MainAreaProps {
   title: string;
@@ -44,11 +45,11 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
             {authorized && (
               <Group gap={'lg'} visibleFrom='md'>
                 
-<FontAwesomeIcon
+                <FontAwesomeIcon
                   icon={faComments}
                   visibility={(process.env.NEXT_PUBLIC_ENABLE_MESSAGING === 'false' ? 'hidden' : '')}
                     color='orange'
-                  />
+                />
                 <Menu
                   width={260}
                   position="bottom-end"
@@ -58,7 +59,12 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
                   withinPortal
                 >
                   <Menu.Target>
-                    <i className="ra ra-double-team ra-fw text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs" style={{ cursor: 'pointer' }} />
+                    <RpgAwesomeIcon
+                      icon="double-team"
+                      color="orange"
+                      fw
+                      style={{ cursor: 'pointer' }}
+                    />
                   </Menu.Target>
 
                   <Menu.Dropdown>
@@ -89,7 +95,12 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
                   withinPortal
                 >
                   <Menu.Target>
-                    <i className="ra ra-player ra-fw text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs" style={{ cursor: 'pointer' }} />
+                    <RpgAwesomeIcon
+                      icon="player"
+                      color="orange"
+                      fw
+                      style={{ cursor: 'pointer' }}
+                    />
                   </Menu.Target>
                   <Menu.Dropdown>
                     <Menu.Label>Settings</Menu.Label>
