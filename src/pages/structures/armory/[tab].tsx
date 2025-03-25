@@ -14,6 +14,7 @@ import { BiCoinStack, BiSolidBank, BiMoney } from 'react-icons/bi';
 import { faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import MainArea from '@/components/MainArea';
+import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 
 const useItems = (user: UserModel, armoryLevel: unknown) => {
   const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
@@ -433,7 +434,7 @@ const ArmoryTab = (props) => {
               Armory Level
             </Text>
             <ThemeIcon c='white'>
-              <i className='ra ra-trophy'/>
+              <RpgAwesomeIcon icon="trophy" fw />
             </ThemeIcon>
           </Group>
 

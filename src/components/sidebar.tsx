@@ -9,6 +9,7 @@ import { useDebouncedCallback, useDisclosure, useMediaQuery } from '@mantine/hoo
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
 import { levelXPArray } from '@/constants/XPLevels';
+import RpgAwesomeIcon from './RpgAwesomeIcon';
 
 const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
@@ -217,15 +218,15 @@ const Sidebar: React.FC = () => {
           <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">Stats <FontAwesomeIcon icon={faRefresh} className="fas fa-refresh" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} /></h6>
           <List size={isMobile ? 'xl' : 'sm'} className={ isMobile? 'text-sm ml-2': 'text-base' } style={isMobile ? {marginLeft: '14px'} : {}}>
             <List.Item>
-              <i className="ra ra-gem ra-fw" /> Gold:{' '}
+              <RpgAwesomeIcon icon="gem" fw /> Gold:{' '}
               <span id="gold">{sidebar.gold}</span>
             </List.Item>
             <List.Item>
-              <i className="ra ra-player ra-fw" /> Citizens:{' '}
+              <RpgAwesomeIcon icon="player" fw /> Citizens:{' '}
               <span id="citizens">{sidebar.citizens}</span>
             </List.Item>
             <List.Item>
-              <i className="ra ra-tower ra-fw" /> Level:{' '}
+              <RpgAwesomeIcon icon="tower" fw /> Level:{' '}
               <span id="level">{sidebar.level}</span>
             </List.Item>
             <List.Item>

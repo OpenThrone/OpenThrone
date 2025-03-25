@@ -8,6 +8,7 @@ import { SimpleGrid, Paper, Group, Text, Space, ThemeIcon, Tooltip } from '@mant
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuildingColumns, faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
+import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 
 const useItems = (user) => {
   const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
@@ -96,8 +97,8 @@ const Upgrades = (props) => {
         <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>            
           <Group justify='space-between'>
               <Text size="lg" fw={'bold'} c="dimmed">Offensive Units</Text>
-            <ThemeIcon c='white'>
-              <i className="ra ra-crossed-swords ra-fw" />
+              <ThemeIcon c='white'>
+                <RpgAwesomeIcon icon="crossed-swords" fw />
             </ThemeIcon>
           </Group>
           <Group>

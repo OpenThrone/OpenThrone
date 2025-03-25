@@ -9,17 +9,18 @@ import { useUser } from '../context/users';
 import { Table, Text, Group, TextInput, NumberInput, Paper, Select, Button } from '@mantine/core';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import RpgAwesomeIcon from './RpgAwesomeIcon';
 
 
 // Utility function outside the component
 const getIconClass = (heading: string) => {
   const iconMap: { [key: string]: string } = {
-    WEAPON: 'ra ra-sword',
-    SHIELD: 'ra ra-shield',
-    ARMOR: 'ra ra-armor',
-    BOOTS: 'ra ra-boot-stomp',
-    BRACERS: 'ra ra-bracer',
-    HELM: 'ra ra-knight-helmet',
+    WEAPON: 'sword',
+    SHIELD: 'shield',
+    ARMOR: 'spiked-shoulder-armor',
+    BOOTS: 'boot-stomp',
+    BRACERS: 'bracer',
+    HELM: 'knight-helmet',
   };
   if (!heading) return 'default-icon';
 
@@ -322,7 +323,12 @@ const NewItemSection = ({
         <Table.Thead>
           <Table.Tr>
             <Table.Th className="w-60 px-4 py-2">
-              <span className={`ra ${icon}`} />
+              <RpgAwesomeIcon
+                icon={icon}
+                size="md"
+                className="text-shadow text-shadow-xs"
+                fw
+              />
               {` ${formatHeading(heading)}`}
             </Table.Th>
           </Table.Tr>

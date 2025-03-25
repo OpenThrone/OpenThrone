@@ -1,6 +1,6 @@
 import 'tailwindcss/tailwind.css';
 import '@/styles/global.css';
-import 'rpg-awesome/css/rpg-awesome.min.css';
+import '@opendominion/rpg-awesome/css/rpg-awesome.min.css';
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import '@mantine/core/styles.css';
 import '@mantine/tiptap/styles.css';

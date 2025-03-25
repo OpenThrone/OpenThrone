@@ -6,6 +6,7 @@ import { Text, Card, Space, Table, Group, Center, Flex, ThemeIcon, Paper } from 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faShieldAlt, faUserShield, faCoins, faLevelUpAlt, faSyncAlt, faStar, faPiggyBank, faTrophy, faMedal, faUserSecret, faCrown, faEye, faShieldVirus, faMoneyBills } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
+import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 
 const Overview = (props) => {
   const [getNews, setNews] = useState(['no news']);
@@ -206,7 +207,7 @@ const Overview = (props) => {
                 <Table.Td>
                   <Group wrap='nowrap'>
                     <ThemeIcon c='white'>
-                      <i className="ra ra-crossed-swords ra-fw" />
+                      <RpgAwesomeIcon icon="crossed-swords" fw />
                     </ThemeIcon>
                     <div>
                       <Text size="md" fw={700} color="dimmed">Offense</Text>
