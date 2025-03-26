@@ -12,17 +12,38 @@ interface UserContextType {
   user: UserModel | null;
   forceUpdate: () => void;
   loading: boolean;
+  unreadMessages: UnreadMessages[]; // Changed to array
+  unreadMessagesCount: number; // Added count
+  markMessagesAsRead: (messageId: number) => void;
+  markRoomAsRead: (roomId: number) => void;
+  // Add function to manually add an unread message if needed
+  // addUnreadMessage: (message: UnreadMessages) => void;
+}
+
+interface UnreadMessages {
+  id: number;
+  senderId: number;
+  senderName: string;
+  content: string; // Message snippet
+  timestamp: string;
+  isRead: boolean; // Could be useful, though we might just remove from array
+  chatRoomId: number;
 }
 
 const UserContext = createContext<UserContextType>({
   user: null,
   forceUpdate: () => { },
   loading: true,
+  unreadMessages: [],
+  unreadMessagesCount: 0, // Initialize count
+  markMessagesAsRead: (messageId: number) => { },
+  markRoomAsRead: (roomId: number) => { },
 });
 
 export const useUser = () => useContext(UserContext);
 
 const isPublicPath = (path: string | null) => {
+  // ... (isPublicPath function remains the same) ...
   const publicPathsRegex = [
     /^\/account\/login$/,
     /^\/account\/register$/,
@@ -34,6 +55,7 @@ const isPublicPath = (path: string | null) => {
     /^\/userprofile\/[a-z0-9]+$/i,
     /^\/recruit\/[a-z0-9]+$/i,
     /^\/auto-recruit$/,
+    /^\/battle\/battleSimulator$/, // Added simulator
   ];
   if (path === null) return false;
   return publicPathsRegex.some((regex) => regex.test(path));
@@ -48,14 +70,16 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const pathName = usePathname();
   const { data: session, status } = useSession();
   const [user, setUser] = useState<UserModel | null>(null);
-  const userId = user?.id || session?.user?.id || null;
+  // Ensure userId is consistently derived and defaults to null
+  const userId = useMemo(() => (session?.user?.id ? Number(session.user.id) : null), [session]);
   const {
     socket,
     isConnected,
     addEventListener,
     removeEventListener,
-  } = useSocket(userId); 
+  } = useSocket(userId); // Pass derived userId
   const [loading, setLoading] = useState(true);
+  const [unreadMessages, setUnreadMessages] = useState<UnreadMessages[]>([]);
   const WS_ENABLED = process.env.NEXT_PUBLIC_WS_ENABLED === 'true';
 
   const fetchSessions = useCallback(
@@ -89,18 +113,26 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     [socket, isConnected]
   );
 
+  // Fetch initial unread messages state (optional, depends on persistence needs)
+  // useEffect(() => {
+  //   if (userId) {
+  //     // Fetch initial unread messages from API if needed
+  //     // fetch('/api/messages/unread').then(res => res.json()).then(setUnreadMessages);
+  //   }
+  // }, [userId]);
+
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    // Define handlers for socketIO
+    // --- Socket Event Handlers ---
     const handleUserData = (userData: any) => {
+      // ... (handleUserData logic remains the same) ...
       const uModel = new UserModel(userData, false);
       setUser(uModel);
 
-      if (['CLOSED', 'BANNED', 'VACATION'].includes(userData.currentStatus)) {
+      if (['CLOSED', 'BANNED', 'VACATION', 'SUSPENDED'].includes(userData.currentStatus)) {
         alertService.info(`Your account is currently in ${userData.currentStatus} mode.`, true);
-        signOut();
-        router.push('/account/login');
+        signOut({ callbackUrl: '/account/login' }); // Redirect after sign out
         return;
       }
 
@@ -115,50 +147,59 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     };
 
     const handleUserDataError = (error: any) => {
-      alertService.error(error || 'Failed to fetch user data.');
+      console.error("User Data Error:", error);
+      // Only sign out if error implies auth issue, not temporary network error
+      if (error?.error?.toLowerCase().includes('unauthorized') || error?.error?.includes('not found')) {
+        alertService.error(error?.error || 'Failed to fetch user data. Please log in again.', true);
+        signOut({ callbackUrl: '/account/login' });
+      } else {
+        alertService.error(error?.error || 'Failed to fetch user data.');
+      }
       setLoading(false);
     };
 
-    const handlePong = () => {
-      console.log('Pong!');
-      alert('Pong!');
-    };
-    
-    const handleAttackNotification = (data: any) => {
-      alertService.error(data.message); // TODO: change this to actually implement a message notification
-    };
-
-    const handleFriendRequestNotification = (data: any) => {
-      alertService.success(data.message);// TODO: change this to actually implement a message notification
-    };
-
-    const handleEnemyDeclarationNotification = (data: any) => {
-      alertService.error(data.message);// TODO: change this to actually implement a message notification
+    // --- Notification Handlers ---
+    const handleNewMessageNotification = (data: UnreadMessages) => {
+      console.log("Received newMessageNotification:", data);
+      // Avoid adding duplicate notifications if multiple sockets are open
+      setUnreadMessages((prev) => {
+        if (prev.some(msg => msg.id === data.id)) {
+          return prev; // Already exists
+        }
+        // Add new message and limit to e.g., 20 recent unread
+        return [...prev, { ...data, isRead: false }].slice(-20);
+      });
     };
 
-    const handleMessageNotification = (data: any) => {
-      alertService.success(data.message); // TODO: change this to actually implement a message notification
+    const handleAttackNotification = (data: { message: string; hash: string }) => {
+      // Add simple duplicate check based on hash
+      if (!sessionStorage.getItem(data.hash)) {
+        alertService.error(data.message);
+        sessionStorage.setItem(data.hash, 'true');
+        // Optional: remove hash after a while to allow re-notification later
+        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
+      }
     };
 
-    const handleAlertNotification = (alertData: any) => {
-      alertService.success(alertData);
+    const handleFriendRequestNotification = (data: { message: string; hash: string }) => {
+      if (!sessionStorage.getItem(data.hash)) {
+        alertService.success(data.message);
+        sessionStorage.setItem(data.hash, 'true');
+        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
+      }
     };
 
-    /* 
-    TODO: remove comments
-      need to add a const for the function
-      add to an eventlistener
-      remember to remove the event listener
+    const handleEnemyDeclarationNotification = (data: { message: string; hash: string }) => {
+      if (!sessionStorage.getItem(data.hash)) {
+        alertService.error(data.message);
+        sessionStorage.setItem(data.hash, 'true');
+        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
+      }
+    };
 
-      server needs to act like router for the socket
-      will need to refactor this later, but the user context seems fitting
-
-      client __ server
-      userData == requestUserData
-      pong == ping
-      notifyAttack == attackNotification
-      ?? == notifyFriendRequest
-    */
+    // --- Other Handlers ---
+    const handlePong = () => console.log('Pong received!');
+    const handleAlertNotification = (alertData: any) => alertService.success(alertData); // Or other types
 
     // Attach listeners
     addEventListener('userData', handleUserData);
@@ -167,7 +208,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     addEventListener('attackNotification', handleAttackNotification);
     addEventListener('friendRequestNotification', handleFriendRequestNotification);
     addEventListener('enemyDeclarationNotification', handleEnemyDeclarationNotification);
-    addEventListener('messageNotification', handleMessageNotification);
+    addEventListener('newMessageNotification', handleNewMessageNotification); // Listen for notifications
     addEventListener('alertNotification', handleAlertNotification);
 
     // Cleanup on unmount or when dependencies change
@@ -178,41 +219,58 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       removeEventListener('attackNotification', handleAttackNotification);
       removeEventListener('friendRequestNotification', handleFriendRequestNotification);
       removeEventListener('enemyDeclarationNotification', handleEnemyDeclarationNotification);
-      removeEventListener('messageNotification', handleMessageNotification);
+      removeEventListener('newMessageNotification', handleNewMessageNotification);
       removeEventListener('alertNotification', handleAlertNotification);
     };
-  }, [socket, isConnected, addEventListener, removeEventListener, router]); 
+  }, [socket, isConnected, addEventListener, removeEventListener, router]);
 
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.id) {
-      console.log('Session authenticated; fetching user data');
-      fetchUserData(session.user.id);
+    // Request user data when authenticated and socket is connected
+    if (status === 'authenticated' && userId && isConnected) {
+      console.log('User authenticated & socket connected, requesting user data...');
+      socket?.emit('requestUserData');
+    } else if (status === 'unauthenticated' && !isPublicPath(pathName)) {
+      console.log('User unauthenticated, redirecting to login.');
+      router.push('/account/login');
+      setUser(null); // Clear user state
+      setLoading(false);
+    } else if (status !== 'loading') {
+      setLoading(false); // Not loading if not authenticated on public path or finished loading
     }
-  }, [status, session, isConnected, fetchUserData]);
+  }, [status, userId, isConnected, socket, pathName, router]); // Add dependencies
 
-  useEffect(() => {
-    if (pathName && router) {
-      if (status !== 'loading') {
-        if (!session && !isPublicPath(pathName)) {
-          router.push('/account/login');
-        } else if (session && pathName === '/') {
-          router.push('/home/overview');
-        }
-      }
-    }
-  }, [session, pathName, status, router]);
+  // --- Functions to manage unread messages ---
+  const markMessagesAsRead = useCallback((messageId: number) => {
+    // This is more complex if persistence is needed. For client-side only:
+    setUnreadMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+  }, []);
+
+  const markRoomAsRead = useCallback((roomId: number) => {
+    // Remove all messages associated with this room ID
+    setUnreadMessages((prev) => prev.filter((msg) => msg.chatRoomId !== roomId));
+  }, []);
+
+  const unreadMessagesCount = useMemo(() => unreadMessages.length, [unreadMessages]);
 
   const value = useMemo(
     () => ({
       user,
       forceUpdate: () => {
-        if (session?.user?.id) {
-          fetchUserData(session.user.id);
+        if (userId && socket && isConnected) {
+          console.log('forceUpdate triggered: Requesting user data');
+          socket.emit('requestUserData'); // Use socket if available
+        } else if (userId) {
+          console.log('forceUpdate triggered: Fetching user data via API');
+          fetchUserData(userId); // Fallback to API if socket not ready
         }
       },
       loading,
+      unreadMessages,
+      unreadMessagesCount, // Provide the count
+      markMessagesAsRead,
+      markRoomAsRead,
     }),
-    [user, loading, fetchUserData, session]
+    [user, loading, fetchUserData, userId, socket, isConnected, unreadMessages, unreadMessagesCount, markMessagesAsRead, markRoomAsRead]
   );
 
   return (

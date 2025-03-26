@@ -75,7 +75,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         isAdmin: isAdmin,
         // For direct messages, include info about the other person
         participants: room.participants.map(p => ({
-          id: p.id,
+          id: p.user.id,
           role: p.role,
           canWrite: p.canWrite,
           display_name: p.user.display_name,
@@ -148,7 +148,74 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             message: 'Message sent to existing conversation'
           });
         }
+      } else {
+        // For group chats, check if there's already a room with exactly these participants
+        // Get unique recipient IDs (including current user)
+        const allParticipantIds = [...new Set([userId, ...recipients.map(id => Number(id))])];
+
+        // Look for existing rooms where all these users are participants and no one else
+        const existingRooms = await prisma.chatRoom.findMany({
+          where: {
+            // Must include all participants
+            participants: {
+              every: {
+                userId: {
+                  in: allParticipantIds
+                }
+              }
+            },
+            // Must not include any other participants
+            AND: {
+              participants: {
+                none: {
+                  userId: {
+                    notIn: allParticipantIds
+                  }
+                }
+              }
+            },
+            // For named rooms, match the name too
+            ...(name ? { name } : {})
+          },
+          include: {
+            participants: true,
+            _count: {
+              select: {
+                participants: true
+              }
+            }
+          }
+        });
+
+        // If a matching room exists with the exact same participants, use it
+        const exactMatch = existingRooms.find(room =>
+          room._count.participants === allParticipantIds.length
+        );
+
+        if (exactMatch) {
+          // Add new message to existing room
+          if (message && message.trim()) {
+            await prisma.chatMessage.create({
+              data: {
+                roomId: exactMatch.id,
+                senderId: userId,
+                content: message
+              }
+            });
+          }
+
+          return res.json({
+            id: exactMatch.id,
+            isExisting: true,
+            message: 'Message sent to existing conversation'
+          });
+        }
       }
+
+      // If we get here, we need to create a new room
+      // First, deduplicate recipients and ensure current user isn't included twice
+      const uniqueRecipients = [...new Set(recipients.map(id => Number(id)))];
+
       
       // Create a new room
       const newRoom = await prisma.chatRoom.create({
@@ -164,7 +231,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                 role: isDirect ? 'MEMBER' : 'ADMIN' 
               },
               // Add all recipients as participants
-              ...recipients.map((recipientId: number) => ({ 
+              ...uniqueRecipients.map((recipientId: number) => ({ 
                 userId: Number(recipientId),
                 role: 'MEMBER' as const
               }))
@@ -193,6 +260,48 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       });
     } catch (error) {
       console.error('Error creating chat room:', error);
+      // Check if this is a unique constraint error for an existing conversation
+      if (error.code === 'P2002' && error.meta?.target?.includes('roomId_userId')) {
+        // Find existing room with these participants
+        const recipientId = Number(recipients[0]);
+
+        try {
+          // Find the room where both users are participants
+          const existingRoom = await prisma.chatRoom.findFirst({
+            where: {
+              participants: {
+                some: { userId }
+              },
+              AND: {
+                participants: {
+                  some: { userId: recipientId }
+                }
+              }
+            }
+          });
+
+          if (existingRoom) {
+            // Add new message to existing room
+            if (message && message.trim()) {
+              await prisma.chatMessage.create({
+                data: {
+                  roomId: existingRoom.id,
+                  senderId: userId,
+                  content: message
+                }
+              });
+            }
+
+            return res.json({
+              id: existingRoom.id,
+              isExisting: true,
+              message: 'Message sent to existing conversation'
+            });
+          }
+        } catch (recoverError) {
+          console.error('Error recovering from unique constraint:', recoverError);
+        }
+      }
       return res.status(500).json({ message: 'Failed to create conversation' });
     }
   }

@@ -1,10 +1,20 @@
 import { useUser } from '@/context/users';
 import { formatLastMessageTime } from '@/utils/timefunctions';
-import { faComment, faCommentSlash, faEllipsisV, faPaperPlane, faTrash, faUserPlus, faUserShield, faUserSlash } from '@fortawesome/free-solid-svg-icons';
+import {
+  faComment, faCommentSlash, faEllipsisV, faPaperPlane, faTrash,
+  faUserPlus, faUserShield, faUserSlash, faPaperclip // Added Paperclip
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ScrollArea, Indicator, Avatar, Text, Center, Title, ActionIcon, Group, Paper, Skeleton, Stack, TextInput, Menu, Tooltip, Badge, Modal, Switch, Table } from '@mantine/core';
+import {
+  ScrollArea, Indicator, Avatar, Text, Center, Title, ActionIcon, Group, Paper,
+  Skeleton, Stack, TextInput, Menu, Tooltip, Badge, Modal, Switch, Table, Button // Added Button
+} from '@mantine/core';
 import NewMessageModal from '@/components/NewMessageModal';
+import AttackLogShareModal from '@/components/AttackLogShareModal'; // Import the new modal
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import useSocket from '@/hooks/useSocket';
+import { alertService } from '@/services'; // Import alert service
+import Link from 'next/link'; // Import Link
 
 interface ChatMessage {
   id: number;
@@ -21,9 +31,10 @@ interface ChatMessage {
 interface ChatMessageListProps {
   selectedRoomId: number | null;
   messages: ChatMessage[];
+  isLoading: boolean; // Receive loading state
   roomInfo?: {
     id: number;
-    name: string; 
+    name: string;
     isDirect: boolean;
     isPrivate: boolean;
     isAdmin: boolean;
@@ -35,7 +46,7 @@ interface ChatMessageListProps {
     lastMessageSender?: string | null;
     unreadCount?: number;
     participants?: Array<{
-      id: number;
+      id: number; // Participant ID (user ID)
       role: 'ADMIN' | 'MEMBER';
       canWrite: boolean;
       display_name: string;
@@ -45,113 +56,85 @@ interface ChatMessageListProps {
   };
 }
 
-const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messages, roomInfo }) => {
+
+const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messages, roomInfo, isLoading }) => {
   const [newMessage, setNewMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
-  const [isLoading, setIsLoading] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages); // Use local state derived from props
+  //const [isLoading, setIsLoading] = useState(false); // isLoading passed as prop now
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { user } = useUser();
+  const { user, markRoomAsRead } = useUser(); // Get markRoomAsRead
   const currentUserId = user?.id;
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { socket, isConnected } = useSocket(user?.id);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false); // Renamed state
   const [isCreatingGroupFromDM, setIsCreatingGroupFromDM] = useState(false);
   const [isManageMembersModalOpen, setIsManageMembersModalOpen] = useState(false);
   const [isMemberActionLoading, setIsMemberActionLoading] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false); // State for attack log share modal
 
-  const handleMemberAction = async (userId: number, action: 'promote' | 'demote' | 'remove' | 'toggleWrite') => {
-    setIsMemberActionLoading(true);
-    try {
-      const response = await fetch(`/api/messages/${selectedRoomId}/participants/${userId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
 
-      if (response.ok) {
-        // Refresh room info to reflect changes
-        const roomResponse = await fetch(`/api/messages/${selectedRoomId}`);
-        // You'll need to handle updating the roomInfo in your parent component
-        // For now, we'll just close the modal and let the user refresh
-        setIsManageMembersModalOpen(false);
-      }
-    } catch (error) {
-      console.error('Error managing member:', error);
-    } finally {
-      setIsMemberActionLoading(false);
-    }
-  };
-
-  const fetchMessages = useCallback(async () => {
-    if (!selectedRoomId) {
-      setChatMessages([]);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/messages/${selectedRoomId}`);
-      const data = await response.json();
-      setChatMessages(data);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    }
-  }, [selectedRoomId]);
-
-  // Fetch messages when the selected room changes
+  // Update local state when messages prop changes
   useEffect(() => {
-    fetchMessages();
-  }, [selectedRoomId, fetchMessages]);
+    setChatMessages(messages);
+  }, [messages]);
+
+  // Fetch messages moved to parent component (index.tsx)
 
   // Auto-scroll to the bottom on new messages
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatMessages]);
+  }, [chatMessages]); // Trigger scroll when local chatMessages change
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRoomId || !newMessage.trim()) {
+  const handleSendMessage = useCallback((content: string) => {
+    if (!selectedRoomId || !content.trim() || !socket || !isConnected || !currentUserId) {
+      console.log("Cannot send message. Conditions not met.", { selectedRoomId, content, socket, isConnected, currentUserId });
       return;
     }
 
-    const messageContent = newMessage;
+    const messageContent = content.trim();
     const tempId = Date.now(); // Use a timestamp as a temporary ID
 
+    // Optimistic UI update
     const optimisticMessage: ChatMessage = {
       id: tempId,
-      senderId: currentUserId || 0,
+      senderId: currentUserId,
       content: messageContent,
       sentAt: new Date().toISOString(),
-      sender: user,
+      sender: { // Include sender info for optimistic render
+        display_name: user?.displayName,
+        avatar: user?.avatar,
+        is_online: true // Assume online for self
+      },
     };
 
     setChatMessages((prevMessages) => [...prevMessages, optimisticMessage]);
-    setNewMessage('');
+    // Don't clear input here, handle after successful emit if needed
 
-    try {
-      const response = await fetch(`/api/messages/${selectedRoomId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: messageContent }),
-      });
+    console.log(`Emitting sendMessage for room ${selectedRoomId}`);
+    socket.emit('sendMessage', { roomId: selectedRoomId, content: messageContent });
 
-      if (response.ok) {
-        // Re-fetch messages to ensure the UI is in sync with the server
-        fetchMessages();
-      } else {
-        console.error('Failed to send message');
-        // Remove the optimistic message if the request fails
-        setChatMessages((prevMessages) =>
-          prevMessages.filter((msg) => msg.id !== tempId)
-        );
-      }
-    } catch (error) {
-      console.error('Failed to send message', error);
-      // Remove the optimistic message on error
-      setChatMessages((prevMessages) =>
-        prevMessages.filter((msg) => msg.id !== tempId)
-      );
-    }
+    // Mark room as read after sending a message
+    markRoomAsRead(selectedRoomId);
+
+    setNewMessage(''); // Clear input after sending attempt
+
+    // Add optimistic update error handling (optional)
+    // You might add a timeout to check if the server confirmed the message
+    // and remove the optimistic one if confirmation isn't received.
+  }, [selectedRoomId, socket, isConnected, currentUserId, user, markRoomAsRead]); // Add dependencies
+
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSendMessage(newMessage);
+  };
+
+  // --- Attack Log Sharing ---
+  const handleShareAttackLog = (logId: number) => {
+    const shareContent = `[Attack Log: ${logId}]`;
+    handleSendMessage(shareContent); // Use the existing send message logic
+    setIsShareModalOpen(false); // Close the modal
   };
 
   // Group messages by sender and time (within 60 seconds)
@@ -161,11 +144,11 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
 
     chatMessages.forEach((message, index) => {
       const previousMessage = chatMessages[index - 1];
-      if (
-        previousMessage &&
-        previousMessage.senderId === message.senderId &&
-        new Date(message.sentAt).getTime() - new Date(previousMessage.sentAt).getTime() < 60000
-      ) {
+      const isSameSender = previousMessage?.senderId === message.senderId;
+      const timeDiff = previousMessage ? new Date(message.sentAt).getTime() - new Date(previousMessage.sentAt).getTime() : Infinity;
+      const withinTimeThreshold = timeDiff < 60000; // 60 seconds
+
+      if (isSameSender && withinTimeThreshold) {
         currentGroup.push(message);
       } else {
         if (currentGroup.length > 0) {
@@ -179,6 +162,70 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
     }
     return groups;
   }, [chatMessages]);
+
+  // --- Member Management ---
+  const handleMemberAction = async (targetUserId: number, action: 'promote' | 'demote' | 'remove' | 'toggleWrite') => {
+    if (!selectedRoomId || !roomInfo?.isAdmin) return;
+
+    setIsMemberActionLoading(true);
+    try {
+      // Find the current participant data to get `canWrite` status for toggle
+      const targetParticipant = roomInfo?.participants?.find(p => p.id === targetUserId);
+      const currentCanWrite = targetParticipant?.canWrite;
+
+      const response = await fetch(`/api/messages/${selectedRoomId}/participants/${targetUserId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: action === 'toggleWrite' ? 'updatePermissions' : action,
+          // If toggling write, send the new value
+          ...(action === 'toggleWrite' && { canWrite: !currentCanWrite })
+        }),
+      });
+
+      if (response.ok) {
+        alertService.success(`Action '${action}' completed successfully for user.`);
+        // TODO: Ideally, fetch updated roomInfo here instead of closing immediately
+        // For now, close the modal; parent component might need refresh logic
+        setIsManageMembersModalOpen(false);
+        // Trigger a refresh in the parent component if possible
+        // Example: onRoomInfoUpdate(); // Assuming a prop like this exists
+      } else {
+        const errorData = await response.json();
+        alertService.error(`Failed to ${action} member: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error managing member:', error);
+      alertService.error(`An error occurred while trying to ${action} member.`);
+    } finally {
+      setIsMemberActionLoading(false);
+    }
+  };
+
+  // --- Message Rendering ---
+  const renderMessageContent = (content: string) => {
+    const attackLogRegex = /\[Attack Log: (\d+)\]/;
+    const match = content.match(attackLogRegex);
+
+    if (match) {
+      const logId = match[1];
+      const beforeText = content.substring(0, match.index);
+      const afterText = content.substring(match.index + match[0].length);
+
+      return (
+        <>
+          {beforeText}
+          <Link href={`/battle/results/${logId}`} passHref>
+            <Button variant="outline" size="xs" component="a" target="_blank" rel="noopener noreferrer">
+              View Attack Log #{logId}
+            </Button>
+          </Link>
+          {afterText}
+        </>
+      );
+    }
+    return content;
+  };
 
   // Empty state when no chat is selected
   if (!selectedRoomId) {
@@ -197,8 +244,9 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
       {/* Chat Header */}
       <Paper p="md" className="w-full border-b border-gray-700" withBorder={false}>
         <div className="flex justify-between items-center w-full">
-          {/* Room info - left aligned */}
+          {/* Room info */}
           <Group gap='xs' className="flex-grow-0">
+            {/* ... (Avatar and Room Name logic remains the same) ... */}
             {roomInfo?.isDirect ? (
               <Avatar
                 size="md"
@@ -228,15 +276,14 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
               )}
               {!roomInfo?.isDirect && (
                 <Text size="xs" c="dimmed">
-                  {roomInfo?.isPrivate ? 'Private group' : 'Public group'}
+                  {roomInfo?.participants?.length || 0} members · {roomInfo?.isPrivate ? 'Private' : 'Public'}
                 </Text>
               )}
             </div>
           </Group>
-
-          {/* Action icons - right aligned */}
+          {/* Action icons */}
           <Group gap='xs' className="flex-grow-0">
-            {/* For direct messages, show "Create group" button */}
+            {/* ... (Add/Create Group logic remains the same) ... */}
             {roomInfo?.isDirect && (
               <Tooltip label="Create group chat with this person">
                 <ActionIcon
@@ -244,7 +291,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
                   color="blue"
                   onClick={() => {
                     setIsCreatingGroupFromDM(true);
-                    setIsModalOpen(true);
+                    setIsAddUserModalOpen(true); // Use the renamed state
                   }}
                 >
                   <FontAwesomeIcon icon={faUserPlus} />
@@ -259,14 +306,13 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
                   color="blue"
                   onClick={() => {
                     setIsCreatingGroupFromDM(false);
-                    setIsModalOpen(true);
+                    setIsAddUserModalOpen(true); // Use the renamed state
                   }}
                 >
                   <FontAwesomeIcon icon={faUserPlus} />
                 </ActionIcon>
               </Tooltip>
             )}
-
             {/* More options menu */}
             <Menu shadow="md" width={200} position="bottom-end">
               <Menu.Target>
@@ -274,47 +320,36 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
                   <FontAwesomeIcon icon={faEllipsisV} />
                 </ActionIcon>
               </Menu.Target>
-
-            <Menu.Dropdown>
-              {roomInfo?.isDirect && (
-                <Menu.Item
-                  leftSection={<FontAwesomeIcon icon={faUserPlus} />}
-                    onClick={() => {
-                    setIsCreatingGroupFromDM(true);
-                    setIsModalOpen(true);
-                  }}
-                >
-                  Create group chat
-                </Menu.Item>
-              )}
-              {roomInfo?.isAdmin && !roomInfo.isDirect && (
-                <>
-                  <Menu.Label>Admin Controls</Menu.Label>
+              <Menu.Dropdown>
+                {/* ... (Menu items logic remains the same) ... */}
+                {roomInfo?.isAdmin && !roomInfo.isDirect && (
+                  <>
+                    <Menu.Label>Admin Controls</Menu.Label>
                     <Menu.Item onClick={() => setIsManageMembersModalOpen(true)}>Manage members</Menu.Item>
-                  <Menu.Item>Edit group info</Menu.Item>
-                  <Menu.Divider />
-                </>
-              )}
-              <Menu.Item>Search messages</Menu.Item>
-              <Menu.Item>Mute notifications</Menu.Item>
-              {roomInfo?.isAdmin && !roomInfo.isDirect && (
-                <Menu.Item color="red">Delete group</Menu.Item>
-              )}
-              {roomInfo?.isDirect && (
-                <Menu.Item color="red">Delete conversation</Menu.Item>
-              )}
-            </Menu.Dropdown>
-          </Menu>
+                    <Menu.Item>Edit group info</Menu.Item>
+                    <Menu.Divider />
+                  </>
+                )}
+                <Menu.Item>Search messages</Menu.Item>
+                <Menu.Item>Mute notifications</Menu.Item>
+                {roomInfo?.isAdmin && !roomInfo.isDirect && (
+                  <Menu.Item color="red">Delete group</Menu.Item>
+                )}
+                {roomInfo?.isDirect && (
+                  <Menu.Item color="red">Delete conversation</Menu.Item>
+                )}
+              </Menu.Dropdown>
+            </Menu>
           </Group>
         </div>
       </Paper>
-      
-      {/* Messages area (scrollable) */}
+
+      {/* Messages area */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full px-4" type='auto'>
-          {isLoading ? (
+          {isLoading ? ( // Use isLoading prop
             <Stack gap="md" px="md" py="lg">
-              {[...Array(5)].map((_, i) => (
+              {[...Array(5)].map((_, i) => ( /* Skeleton loader */
                 <Paper key={i} p="md" shadow="xs" radius="md" withBorder>
                   <Group>
                     <Skeleton height={40} circle />
@@ -326,14 +361,14 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
                 </Paper>
               ))}
             </Stack>
-          ) : groupedMessages.length === 0 ? (
+          ) : groupedMessages.length === 0 ? ( /* Empty state */
             <Center className="h-full flex-col">
               <FontAwesomeIcon icon={faCommentSlash} size="3x" color="gray" />
               <Text color="dimmed" mt="md">
                 No messages yet. Start the conversation!
               </Text>
             </Center>
-          ) : (
+          ) : ( /* Render messages */
             <Stack gap="lg" py="md">
               {groupedMessages.map((group, idx) => {
                 const isCurrentUser = group[0].senderId === currentUserId;
@@ -343,24 +378,29 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
                     justify={isCurrentUser ? "flex-end" : "flex-start"}
                     gap="xs"
                     p="xs"
-                    align="flex-start"
+                    align="flex-start" // Align avatar to the top
                   >
+                    {/* Avatar for other users */}
                     {!isCurrentUser && (
                       <Indicator
                         color={group[0].sender?.is_online ? 'teal' : 'gray'}
-                        size={12}
+                        size={10} // Smaller indicator
+                        offset={7} // Adjust offset
                         position="bottom-end"
+                        withBorder
                       >
                         <Avatar
                           src={group[0].sender?.avatar}
                           size="md"
                           radius="xl"
                           color="blue"
+                          alt={group[0].sender?.display_name || 'User'}
                         >
-                          {(group[0].sender?.display_name || 'U').charAt(0).toUpperCase()}
+                          {(group[0].sender?.display_name || '?').charAt(0).toUpperCase()}
                         </Avatar>
                       </Indicator>
                     )}
+                    {/* Message Bubble */}
                     <Paper
                       p="md"
                       radius="lg"
@@ -368,37 +408,42 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
                       bg={isCurrentUser ? 'blue.7' : 'dark.5'}
                       style={{
                         maxWidth: '70%',
+                        wordBreak: 'break-word', // Ensure long words wrap
                       }}
                     >
                       {!isCurrentUser && (
-                        <Text size="sm" fw={600} mb={4} color={isCurrentUser ? 'white' : 'blue.3'}>
+                        <Text size="sm" fw={600} mb={4} color='blue.3'>
                           {group[0]?.sender?.display_name || 'Unknown User'}
                         </Text>
                       )}
                       <Stack gap={6}>
                         {group.map((message) => (
                           <Text key={message.id} size="md" color={isCurrentUser ? 'white' : undefined}>
-                            {message.content}
+                            {renderMessageContent(message.content)} {/* Use render function */}
                           </Text>
                         ))}
                       </Stack>
                       <Text size="xs" color={isCurrentUser ? 'blue.0' : 'dimmed'} mt={6} ta="right">
-                        {formatLastMessageTime(group[0]?.sentAt)}
+                        {formatLastMessageTime(group[group.length - 1]?.sentAt)} {/* Time of last message in group */}
                       </Text>
                     </Paper>
+                    {/* Avatar for current user */}
                     {isCurrentUser && (
                       <Indicator
                         color={user?.is_online ? 'teal' : 'gray'}
-                        size={12}
+                        size={10}
+                        offset={7}
                         position="bottom-end"
+                        withBorder
                       >
                         <Avatar
                           src={user?.avatar}
                           size="md"
                           radius="xl"
                           color="blue"
+                          alt="You"
                         >
-                          {(user?.displayName || 'You').charAt(0).toUpperCase()}
+                          {(user?.displayName || 'Y').charAt(0).toUpperCase()}
                         </Avatar>
                       </Indicator>
                     )}
@@ -411,46 +456,76 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
         </ScrollArea>
       </div>
 
-      {/* Input Box fixed to the bottom */}
+      {/* Input Box */}
       <Paper
         component="form"
         onSubmit={handleSubmit}
-        className="border-t p-3 bg-gray-900"
+        className="border-t p-3 bg-gray-900 border-gray-700" // Adjusted border color
         shadow="sm"
       >
-        <Group gap="xs">
+        {/* Check if the current user can write (moved logic to the disabled prop of TextInput) */}
+        {(() => {
+          console.log(roomInfo)
+          return null;
+        })()}
+        <Group gap="xs" wrap="nowrap"> {/* Prevent wrapping */}
+          {/* Attack Log Share Button */}
+          <Tooltip label="Share Attack Log">
+            <ActionIcon
+              variant="subtle"
+              onClick={() => setIsShareModalOpen(true)}
+              size="lg"
+            >
+              <FontAwesomeIcon icon={faPaperclip} />
+            </ActionIcon>
+          </Tooltip>
+
           <TextInput
             placeholder="Type your message..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            style={{ flex: 1 }}
+            style={{ flex: 1 }} // Take remaining space
             radius="xl"
             size="md"
+            // Send button integrated into rightSection
+            rightSectionWidth={42} // Adjust width as needed
             rightSection={
               <ActionIcon
                 type="submit"
                 variant="filled"
                 color="blue"
-                size="lg"
+                size={32} // Adjust size
                 radius="xl"
-                disabled={!newMessage.trim()}
+                disabled={!(roomInfo?.participants?.find(p => p.id === currentUserId)?.canWrite ?? false)} // Disable if user can't write
+                loading={isLoading}
+                style={{ marginRight: 5 }} // Add some margin
               >
                 <FontAwesomeIcon icon={faPaperPlane} size="sm" />
               </ActionIcon>
             }
+            // Disable input if user cannot write
+            disabled={!roomInfo?.participants?.find(p => p.id === currentUserId)?.canWrite}
           />
         </Group>
       </Paper>
+
+      {/* Modals */}
       <NewMessageModal
-        opened={isModalOpen}
+        opened={isAddUserModalOpen} // Use renamed state
         onClose={() => {
-          setIsModalOpen(false);
+          setIsAddUserModalOpen(false);
           setIsCreatingGroupFromDM(false);
         }}
         existingChatId={selectedRoomId}
         existingUsers={roomInfo?.participants?.map(p => p.id) || []}
         isDirectMessage={isCreatingGroupFromDM && roomInfo?.isDirect}
       />
+      <AttackLogShareModal
+        opened={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        onShare={handleShareAttackLog}
+      />
+      {/* Manage Members Modal */}
       <Modal
         opened={isManageMembersModalOpen}
         onClose={() => setIsManageMembersModalOpen(false)}
@@ -541,7 +616,6 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
         </Table>
       </Modal>
     </div>
-    
   );
 };
 

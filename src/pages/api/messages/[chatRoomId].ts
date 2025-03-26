@@ -1,57 +1,44 @@
-// src/pages/api/messages/[chatRoomId].ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
-import { getSocketIO } from '@/lib/socket';
+import { getSocketIO } from '@/lib/socket'; // Import socket instance getter
 import { withAuth } from '@/middleware/auth';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { chatRoomId } = req.query;
-  const session = req.session;
+  const session = req.session; // Auth handled by middleware
 
   if (!session) {
+    // This should ideally not happen if withAuth is working correctly
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  // We need to check if the user is part of the chat room
-  const isUserInRoom = await prisma.chatRoom.findFirst({
-    where: {
-      id: Number(chatRoomId),
-      participants: {
-        some: {
-          userId: Number(session.user.id),  // Ensure the user is part of the room
-        },
-      },
-    },
-    select: {
-      id: true,
-      participants: {
-        select: {
-          id: true,
-          userId: true, // Include userId
-          role: true, // Might be useful for permission checks
-          user: {
-            select: {
-              id: true,
-              display_name: true,
-              avatar: true,
-              last_active: true,
-            },
-          },
-        },
-      },
-    },
+  const userId = Number(session.user.id);
+  const roomId = Number(chatRoomId);
+
+  // Fetch Room and verify participation (as before)
+  const roomParticipant = await prisma.chatRoomParticipant.findUnique({
+    where: { roomId_userId: { roomId: roomId, userId: userId } },
+    include: {
+      room: {
+        include: {
+          participants: {
+            select: { userId: true } // Needed for broadcasting
+          }
+        }
+      }
+    }
   });
 
-  if (!isUserInRoom) {
-    return res.status(403).json({ message: 'Forbidden' });
+  if (!roomParticipant) {
+    return res.status(403).json({ message: 'Forbidden: You are not a participant in this room.' });
   }
 
+  // --- GET Request (Fetching Messages) ---
   if (req.method === 'GET') {
     try {
+      // ... (GET logic remains largely the same, ensure dates are serialized) ...
       const messages = await prisma.chatMessage.findMany({
-        where: { roomId: Number(chatRoomId) },
+        where: { roomId: roomId },
         orderBy: { sentAt: 'asc' },
         include: {
           sender: {
@@ -59,9 +46,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           },
         }
       });
-      // Transform messages to include is_online flag based on last_active
+
       const transformedMessages = messages.map(message => {
-        // Consider a user online if they've been active in the last 5 minutes
         const isOnline = message.sender.last_active ?
           (new Date().getTime() - new Date(message.sender.last_active).getTime()) < 5 * 60 * 1000
           : false;
@@ -71,7 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           roomId: message.roomId,
           senderId: message.senderId,
           content: message.content,
-          sentAt: message.sentAt,
+          sentAt: message.sentAt.toISOString(), // Serialize Date
           sender: {
             id: message.sender.id,
             display_name: message.sender.display_name,
@@ -80,34 +66,108 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           }
         };
       });
-
       res.status(200).json(transformedMessages);
+
     } catch (error) {
-      console.error(error);
+      console.error("GET /api/messages/[chatRoomId] Error:", error);
       res.status(500).json({ message: 'Failed to fetch messages' });
     }
-  } else if (req.method === 'POST') {
+  }
+  // --- POST Request (Sending Message) ---
+  else if (req.method === 'POST') {
+    // Check write permissions
+    if (!roomParticipant.canWrite) {
+      return res.status(403).json({ message: 'Forbidden: You do not have permission to write in this room.' });
+    }
+
     try {
       const { content } = req.body;
+      if (!content || typeof content !== 'string' || content.trim().length === 0) {
+        return res.status(400).json({ message: 'Message content cannot be empty.' });
+      }
+
+      // 1. Save the message
       const newMessage = await prisma.chatMessage.create({
         data: {
-          roomId: Number(chatRoomId),
-          senderId: Number(session.user.id),
-          content: content,
+          roomId: roomId,
+          senderId: userId,
+          content: content.trim(), // Trim content
+        },
+        include: {
+          sender: { // Include sender for broadcast payload
+            select: { id: true, display_name: true, avatar: true, last_active: true },
+          },
         },
       });
 
-      const io = getSocketIO();
-      io?.emit('messageNotification', { chatRoomId: Number(chatRoomId) });
+      // Update room's updatedAt timestamp
+      await prisma.chatRoom.update({
+        where: { id: roomId },
+        data: { updatedAt: new Date() },
+      });
 
-      res.status(201).json(newMessage);
+
+      // 2. Get Socket.IO instance and broadcast
+      const io = getSocketIO();
+      if (io) {
+        // Prepare payloads
+        const messagePayload = {
+          ...newMessage,
+          sentAt: newMessage.sentAt.toISOString(), // Serialize Date
+          sender: {
+            ...newMessage.sender,
+            last_active: newMessage.sender.last_active?.toISOString(), // Serialize date
+            is_online: newMessage.sender.last_active ? (new Date().getTime() - new Date(newMessage.sender.last_active).getTime()) < 5 * 60 * 1000 : false
+          }
+        };
+
+        const notificationPayload = {
+          id: newMessage.id,
+          senderId: userId,
+          senderName: newMessage.sender.display_name,
+          content: content.substring(0, 50) + (content.length > 50 ? '...' : ''), // Snippet
+          timestamp: newMessage.sentAt.toISOString(),
+          isRead: false,
+          chatRoomId: roomId,
+        };
+
+
+        // Emit 'receiveMessage' to the specific chat room channel
+        io.to(`room-${roomId}`).emit('receiveMessage', messagePayload);
+        console.log(`API emitted 'receiveMessage' to room-${roomId}`);
+
+        // Emit 'newMessageNotification' to each participant's user channel (excluding sender)
+        roomParticipant.room.participants.forEach(p => {
+          if (p.userId !== userId) {
+            console.log(`API emitting 'newMessageNotification' to user-${p.userId}`);
+            io.to(`user-${p.userId}`).emit('newMessageNotification', notificationPayload);
+          }
+        });
+      } else {
+        console.warn('Socket.IO not available, skipping broadcast.');
+      }
+
+      // 3. Respond to the original request
+      // Prepare response payload (similar to broadcast payload)
+      const responsePayload = {
+        ...newMessage,
+        sentAt: newMessage.sentAt.toISOString(),
+        sender: {
+          ...newMessage.sender,
+          last_active: newMessage.sender.last_active?.toISOString(),
+          is_online: newMessage.sender.last_active ? (new Date().getTime() - new Date(newMessage.sender.last_active).getTime()) < 5 * 60 * 1000 : false
+        }
+      };
+      res.status(201).json(responsePayload);
+
     } catch (error) {
-      console.error(error);
+      console.error("POST /api/messages/[chatRoomId] Error:", error);
       res.status(500).json({ message: 'Failed to create message' });
     }
   } else {
-    res.status(405).json({ message: 'Method Not Allowed' });
+    res.setHeader('Allow', ['GET', 'POST']);
+    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
   }
 }
 
-export default withAuth(handler);
+export default withAuth(handler); // Apply authentication middleware
