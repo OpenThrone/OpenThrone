@@ -131,8 +131,22 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
   };
 
   // --- Attack Log Sharing ---
-  const handleShareAttackLog = (logId: number) => {
+  const handleShareAttackLog = async (logId: number) => {
     const shareContent = `[Attack Log: ${logId}]`;
+    // We should make an API request to update attack_log_acl
+    // it'll need to grab the participants and give them the same
+    // acl permissions as the current user
+    const result = await fetch(`/api/attack/logs/${logId}/acl`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId: currentUserId, roomId: selectedRoomId }),
+    });
+    if (!result.ok) {
+      alertService.error('Failed to share attack log.');
+      return;
+    }
     handleSendMessage(shareContent); // Use the existing send message logic
     setIsShareModalOpen(false); // Close the modal
   };
