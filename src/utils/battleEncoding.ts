@@ -9,7 +9,7 @@ export function encodeBattleData(attacker: ShareableArmyData, defender: Shareabl
     console.log('json', json)
     return LZString.compressToEncodedURIComponent(json);
   } catch (err) {
-    console.error("Encoding failed:", err);
+    logError("Encoding failed:", err);
     return null;
   }
 }
@@ -20,7 +20,7 @@ export function decodeBattleData(encoded: string): { attacker: ShareableArmyData
     const json = LZString.decompressFromEncodedURIComponent(encoded);
     return JSON.parse(json);
   } catch (err) {
-    console.error("Decoding failed:", err);
+    logError("Decoding failed:", err);
     return null;
   }
 }

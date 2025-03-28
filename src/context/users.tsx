@@ -7,6 +7,7 @@ import UserModel from '@/models/Users';
 import { alertService } from '@/services';
 import useSocket from '@/hooks/useSocket';
 import { fetchWithFallback } from '@/utils/socketFunctions';
+import { logError, logInfo } from '@/utils/logger';
 
 interface UserContextType {
   user: UserModel | null;
@@ -84,7 +85,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
 
   const fetchSessions = useCallback(
     async (uID: number) => {
-      console.log('Fetching user data for', uID);
+      logInfo('Fetching user data for', uID);
       await fetchWithFallback(
         socket,
         isConnected,
@@ -147,7 +148,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     };
 
     const handleUserDataError = (error: any) => {
-      console.error("User Data Error:", error);
+      logError("User Data Error:", error);
       // Only sign out if error implies auth issue, not temporary network error
       if (error?.error?.toLowerCase().includes('unauthorized') || error?.error?.includes('not found')) {
         alertService.error(error?.error || 'Failed to fetch user data. Please log in again.', true);
@@ -160,7 +161,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
 
     // --- Notification Handlers ---
     const handleNewMessageNotification = (data: UnreadMessages) => {
-      console.log("Received newMessageNotification:", data);
+      logInfo("Received newMessageNotification:", data);
       // Avoid adding duplicate notifications if multiple sockets are open
       setUnreadMessages((prev) => {
         if (prev.some(msg => msg.id === data.id)) {
@@ -198,7 +199,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     };
 
     // --- Other Handlers ---
-    const handlePong = () => console.log('Pong received!');
+    const handlePong = () => logInfo('Pong received!');
     const handleAlertNotification = (alertData: any) => alertService.success(alertData); // Or other types
 
     // Attach listeners
@@ -227,10 +228,10 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   useEffect(() => {
     // Request user data when authenticated and socket is connected
     if (status === 'authenticated' && userId && isConnected) {
-      console.log('User authenticated & socket connected, requesting user data...');
+      logInfo('User authenticated & socket connected, requesting user data...');
       socket?.emit('requestUserData');
     } else if (status === 'unauthenticated' && !isPublicPath(pathName)) {
-      console.log('User unauthenticated, redirecting to login.');
+      logInfo('User unauthenticated, redirecting to login.');
       router.push('/account/login');
       setUser(null); // Clear user state
       setLoading(false);
@@ -257,10 +258,10 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       user,
       forceUpdate: () => {
         if (userId && socket && isConnected) {
-          console.log('forceUpdate triggered: Requesting user data');
+          logInfo('forceUpdate triggered: Requesting user data');
           socket.emit('requestUserData'); // Use socket if available
         } else if (userId) {
-          console.log('forceUpdate triggered: Fetching user data via API');
+          logInfo('forceUpdate triggered: Fetching user data via API');
           fetchUserData(userId); // Fallback to API if socket not ready
         }
       },

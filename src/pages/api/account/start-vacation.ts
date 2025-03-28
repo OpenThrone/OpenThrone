@@ -46,7 +46,7 @@ export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       res.status(200).json({ message: 'Vacation mode started', vacationEndDate });
     } catch (error) {
-      console.error('Error starting vacation mode:', error);
+      logError('Error starting vacation mode:', error);
       res.status(500).json({ error: 'Failed to start vacation mode' });
     }
   } else {

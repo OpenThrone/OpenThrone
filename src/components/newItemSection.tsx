@@ -10,6 +10,7 @@ import { Table, Text, Group, TextInput, NumberInput, Paper, Select, Button } fro
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
+import { logError } from '@/utils/logger';
 
 
 // Utility function outside the component
@@ -150,7 +151,7 @@ const NewItemSection = ({
       }
     } catch (error) {
       alertService.error('Failed to equip items. Please try again.');
-      console.error(error);
+      logError(error);
     }
   };
 
@@ -301,7 +302,7 @@ const NewItemSection = ({
       alertService.success('Conversion successful');
       forceUpdate();
     } catch (error) {
-      console.error('Failed to convert items', error);
+      logError('Failed to convert items', error);
       alertService.error('Failed to convert items');
     }
   };

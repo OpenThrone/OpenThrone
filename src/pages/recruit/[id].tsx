@@ -75,7 +75,7 @@ export default function Recruit(props) {
         setUserInfo(data);
       } else {
         // Handle error, maybe set an error state or alert
-        console.error('Error fetching user info:', data.error);
+        logError('Error fetching user info:', data.error);
       }
     };
 

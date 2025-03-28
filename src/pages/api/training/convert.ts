@@ -6,6 +6,7 @@ import UserModel from '@/models/Users';
 import { UnitTypes } from '@/constants';
 import { updateUserAndBankHistory } from '@/services';
 import { calculateUserStats } from '@/utils/utilities';
+import { logError } from '@/utils/logger';
 
 interface ConvertRequest {
   userId: string;
@@ -140,7 +141,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     return res.status(200).json({ message: 'Units converted successfully!', data: user.units });
   } catch (error) {
-    console.error(error);
+    logError("Error during unit conversion:", error);
     return res.status(400).json({ error: 'Failed to convert units' });
   }
 };

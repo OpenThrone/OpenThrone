@@ -6,6 +6,7 @@ import prisma from './prisma';
 import { getToken } from 'next-auth/jwt';
 import cookie from 'cookie';
 import md5 from 'md5';
+import { logError, logInfo } from '@/utils/logger';
 
 let io: Server | null = null;
 // Store mapping of userId to a Set of socketIds
@@ -13,11 +14,11 @@ const userSockets = new Map<number, Set<string>>();
 
 export const initializeSocket = (httpServer: HttpServer) => {
   if (io) {
-    console.log('Socket.IO already initialized');
+    logInfo('Socket.IO already initialized');
     return io;
   }
 
-  console.log('Initializing Socket.IO...');
+  logInfo('Initializing Socket.IO...');
   io = new Server(httpServer, {
     cors: {
       origin: process.env.NEXT_PUBLIC_SOCKET_IO_ORIGIN || '*', // More permissive for dev if needed
@@ -32,7 +33,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
         const sessionTokenCookie = cookies['next-auth.session-token'] || cookies['__Secure-next-auth.session-token'];
 
         if (!sessionTokenCookie) {
-          console.log('Socket Auth: No session token cookie found');
+          logInfo('Socket Auth: No session token cookie found');
           return callback('No session token', false);
         }
 
@@ -49,16 +50,16 @@ export const initializeSocket = (httpServer: HttpServer) => {
         const token = await getToken({ req: minimalReq as any, secret: process.env.JWT_SECRET });
 
         if (!token || !token.user?.id) {
-          console.log('Socket Auth: Invalid or missing token/user ID');
+          logInfo('Socket Auth: Invalid or missing token/user ID');
           return callback('Invalid token', false);
         }
 
         // Attach userId to the underlying socket object for later retrieval
         (req as any).userId = Number(token.user.id);
-        console.log(`Socket Auth: User ${token.user.id} authorized.`);
+        logInfo(`Socket Auth: User ${token.user.id} authorized.`);
         callback(null, true);
       } catch (err: any) {
-        console.log('Socket Auth Error:', err.message);
+        logInfo('Socket Auth Error:', err.message);
         return callback('Authentication error', false);
       }
     }
@@ -69,30 +70,30 @@ export const initializeSocket = (httpServer: HttpServer) => {
     const userId: number | undefined = (socket.request as any).userId; // Retrieve userId attached in allowRequest
 
     if (userId === undefined) {
-      console.error('Socket connected without userId. Disconnecting.');
+      logError('Socket connected without userId. Disconnecting.');
       socket.disconnect(true);
       return;
     }
 
-    console.log(`Socket ${socket.id} connected for user ${userId}`);
+    logInfo(`Socket ${socket.id} connected for user ${userId}`);
 
     // Join a room specific to the user for direct notifications
     socket.join(`user-${userId}`);
-    console.log(`Socket ${socket.id} joined room user-${userId}`);
+    logInfo(`Socket ${socket.id} joined room user-${userId}`);
 
     // Add socket ID to the user's set
     if (!userSockets.has(userId)) {
       userSockets.set(userId, new Set());
     }
     userSockets.get(userId)?.add(socket.id);
-    console.log(`User ${userId} has sockets: ${Array.from(userSockets.get(userId) || [])}`);
+    logInfo(`User ${userId} has sockets: ${Array.from(userSockets.get(userId) || [])}`);
 
 
     // --- User Data Request ---
     socket.on('requestUserData', async () => {
-      console.log(`Fetching data for user: ${userId}`);
+      logInfo(`Fetching data for user: ${userId}`);
       if (isNaN(userId)) {
-        console.error('Invalid userId:', userId);
+        logError('Invalid userId:', userId);
         return;
       }
       try {
@@ -111,7 +112,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
         const now = new Date();
         const timeSinceLastActive = now.getTime() - new Date(user.last_active).getTime();
         if (timeSinceLastActive > 10 * 60 * 1000) {
-          console.log('Updating last active for user:', userId);
+          logInfo('Updating last active for user:', userId);
           await prisma.users.update({
             where: { id: userId },
             data: { last_active: now },
@@ -159,7 +160,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
         // Emit data specifically back to the requesting socket
         socket.emit('userData', stringifyObj(userData as any));
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        logError('Error fetching user data:', error);
         socket.emit('userDataError', { error: 'Internal server error while fetching user data.' });
       }
     });
@@ -167,10 +168,10 @@ export const initializeSocket = (httpServer: HttpServer) => {
     // --- Send Message Handling ---
     socket.on('sendMessage', async (data: { roomId: number; content: string; tempId?: number }) => {
       const { roomId, content } = data;
-      console.log(`sendMessage event received for room ${roomId} from user ${userId}`);
+      logInfo(`sendMessage event received for room ${roomId} from user ${userId}`);
 
       if (!roomId || !content || userId === undefined) {
-        console.log('sendMessage failed: Missing data or userId');
+        logInfo('sendMessage failed: Missing data or userId');
         socket.emit('messageError', { error: 'Invalid message data' });
         return;
       }
@@ -183,13 +184,13 @@ export const initializeSocket = (httpServer: HttpServer) => {
         });
 
         if (!participant) {
-          console.log(`sendMessage failed: User ${userId} not in room ${roomId}`);
+          logInfo(`sendMessage failed: User ${userId} not in room ${roomId}`);
           socket.emit('messageError', { error: 'You are not a participant of this room.' });
           return;
         }
 
         if (!participant.canWrite) {
-          console.log(`sendMessage failed: User ${userId} cannot write in room ${roomId}`);
+          logInfo(`sendMessage failed: User ${userId} cannot write in room ${roomId}`);
           socket.emit('messageError', { error: 'You do not have permission to write in this room.' });
           return;
         }
@@ -241,7 +242,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
         };
 
         io.to(`room-${roomId}`).emit('receiveMessage', messagePayload); // Use a room-specific event channel
-        console.log(`Emitted 'receiveMessage' to room-${roomId}`);
+        logInfo(`Emitted 'receiveMessage' to room-${roomId}`);
 
         // 5. Emit 'newMessageNotification' to each recipient's user-specific room
         const notificationPayload = {
@@ -256,17 +257,17 @@ export const initializeSocket = (httpServer: HttpServer) => {
 
         participants.forEach((p) => {
           const recipientUserId = p.userId;
-          console.log(`Emitting 'newMessageNotification' to user-${recipientUserId}`);
+          logInfo(`Emitting 'newMessageNotification' to user-${recipientUserId}`);
           io.to(`user-${recipientUserId}`).emit('newMessageNotification', notificationPayload);
         });
 
         const roomChannel = `room-${roomId}`;
-        console.log(`<<< SERVER >>> Attempting to emit 'receiveMessage' to ${roomChannel}`, messagePayload);
+        logInfo(`<<< SERVER >>> Attempting to emit 'receiveMessage' to ${roomChannel}`, messagePayload);
         const socketsInRoom = await io.in(roomChannel).fetchSockets();
-        console.log(`<<< SERVER >>> Sockets currently in ${roomChannel}:`, socketsInRoom.map(s => `${s.id} (User: ${(s.data as any).userId})`));
+        logInfo(`<<< SERVER >>> Sockets currently in ${roomChannel}:`, socketsInRoom.map(s => `${s.id} (User: ${(s.data as any).userId})`));
 
       } catch (error) {
-        console.error(`Error handling sendMessage for room ${roomId}:`, error);
+        logError(`Error handling sendMessage for room ${roomId}:`, error);
         socket.emit('messageError', { error: 'Failed to send message.' });
       }
     });
@@ -276,9 +277,9 @@ export const initializeSocket = (httpServer: HttpServer) => {
       if (typeof roomId === 'number' || (typeof roomId === 'string' && !isNaN(Number(roomId)))) {
         const roomChannel = `room-${Number(roomId)}`;
         socket.join(roomChannel);
-        console.log(`<<< SERVER >>> Socket ${socket.id} (User ${userId}) successfully joined ${roomChannel}`); // Added user ID
+        logInfo(`<<< SERVER >>> Socket ${socket.id} (User ${userId}) successfully joined ${roomChannel}`); // Added user ID
       } else {
-        console.error(`<<< SERVER >>> Invalid roomId received for joinRoom from Socket ${socket.id}: ${roomId}`);
+        logError(`<<< SERVER >>> Invalid roomId received for joinRoom from Socket ${socket.id}: ${roomId}`);
       }
     });
 
@@ -287,9 +288,9 @@ export const initializeSocket = (httpServer: HttpServer) => {
       if (typeof roomId === 'number' || (typeof roomId === 'string' && !isNaN(Number(roomId)))) {
         const roomChannel = `room-${Number(roomId)}`;
         socket.leave(roomChannel);
-        console.log(`<<< SERVER >>> Socket ${socket.id} (User ${userId}) left ${roomChannel}`); // Added user ID
+        logInfo(`<<< SERVER >>> Socket ${socket.id} (User ${userId}) left ${roomChannel}`); // Added user ID
       } else {
-        console.error(`<<< SERVER >>> Invalid roomId received for leaveRoom from Socket ${socket.id}: ${roomId}`);
+        logError(`<<< SERVER >>> Invalid roomId received for leaveRoom from Socket ${socket.id}: ${roomId}`);
       }
     });
 
@@ -313,13 +314,13 @@ export const initializeSocket = (httpServer: HttpServer) => {
 
     // Alert notification
     socket.on('alertNotification', (alert) => {
-      console.log('Received alert notification:', alert);
+      logInfo('Received alert notification:', alert);
       io.emit('alertNotification', alert); // Broadcast to all clients
     });
 
     // Ping-pong event
     socket.on('ping', ({ userId: targetUserId }) => {
-      console.log('Ping received for user:', targetUserId);
+      logInfo('Ping received for user:', targetUserId);
       // Respond directly to the sender or broadcast to the user's room
       io.to(`user-${targetUserId}`).emit('pong'); // Use user-specific room if needed
       // Or just socket.emit('pong'); to respond directly
@@ -328,28 +329,28 @@ export const initializeSocket = (httpServer: HttpServer) => {
 
     // --- Disconnection Handling ---
     socket.on('disconnect', (reason) => {
-      console.log(`Socket ${socket.id} disconnected for user ${userId}. Reason: ${reason}`);
+      logInfo(`Socket ${socket.id} disconnected for user ${userId}. Reason: ${reason}`);
       const userSocketSet = userSockets.get(userId);
       if (userSocketSet) {
         userSocketSet.delete(socket.id);
-        console.log(`Removed socket ${socket.id} from user ${userId}. Remaining: ${Array.from(userSocketSet)}`);
+        logInfo(`Removed socket ${socket.id} from user ${userId}. Remaining: ${Array.from(userSocketSet)}`);
         if (userSocketSet.size === 0) {
           userSockets.delete(userId);
-          console.log(`User ${userId} has no active sockets. Removed from map.`);
+          logInfo(`User ${userId} has no active sockets. Removed from map.`);
         }
       }
     });
   });
 
-  console.log('Socket.IO initialized successfully');
+  logInfo('Socket.IO initialized successfully');
   return io;
 };
 
 export const getSocketIO = (): Server | null => {
   if (!io) {
-    console.error('Socket.IO has not been initialized!');
+    logError('Socket.IO has not been initialized!');
     return null;
   }
-  // console.log('Returning Socket.IO instance'); // Too noisy
+  // logInfo('Returning Socket.IO instance'); // Too noisy
   return io;
 };

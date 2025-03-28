@@ -44,7 +44,7 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
       const data = await response.json();
       console.log('Success:', data);
     } catch (error) {
-      console.error('Error updating read status:', error);
+      logError('Error updating read status:', error);
 
       // Revert the UI in case of error
       setPosts(posts.map(post => {
@@ -75,7 +75,7 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
       setModalIsOpen(false);
       setNewPost({ title: '', content: '' });
     } catch (error) {
-      console.error('Error creating new post:', error);
+      logError('Error creating new post:', error);
     }
   };
 

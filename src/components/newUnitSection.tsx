@@ -116,7 +116,7 @@ const NewUnitSection: React.FC<UnitSectionProps> = ({
       resetConversion();
       forceUpdate();
     } catch (error) {
-      console.error('Failed to convert items', error);
+      logError('Failed to convert items', error);
       alertService.error('Failed to convert items');
     }
   };

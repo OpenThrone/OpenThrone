@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { getSession } from 'next-auth/react';
 import { isAdmin } from '@/utils/authorization';
+import { logError } from '@/utils/logger';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req });
@@ -35,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       res.status(200).json({ message: 'Vacation mode started for user', vacationEndDate });
     } catch (error) {
-      console.error('Error starting vacation mode for user:', error);
+      logError('Error starting vacation mode for user:', error);
       res.status(500).json({ error: 'Failed to start vacation mode for user' });
     }
   } else if (action === 'end') {
@@ -65,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       res.status(200).json({ message: 'Vacation mode ended for user' });
     } catch (error) {
-      console.error('Error ending vacation mode for user:', error);
+      logError('Error ending vacation mode for user:', error);
       res.status(500).json({ error: 'Failed to end vacation mode for user' });
     }
   } else {

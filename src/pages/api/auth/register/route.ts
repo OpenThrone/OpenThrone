@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { createUser, userExists } from "@/services";
+import { logError } from "@/utils/logger";
 import type { NextApiRequest, NextApiResponse } from 'next';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
@@ -59,7 +60,7 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
     return res.json(user);
 
   } catch (error) {
-    console.error('Error in handlePOST:', error);
+    logError('Error in handlePOST:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }

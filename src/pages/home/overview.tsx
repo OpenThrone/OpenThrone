@@ -21,7 +21,7 @@ const Overview = (props) => {
         const data = await response.json();
         setNews(data);
       } catch (error) {
-        console.error('Failed to fetch news:', error);
+        logError('Failed to fetch news:', error);
       }
     };
 

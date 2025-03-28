@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { logError } from '@/utils/logger';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow POST requests
@@ -142,7 +143,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       sharedWithExisting: skippedAcls
     });
   } catch (error) {
-    console.error('Error sharing attack log:', error);
+    logError('Error sharing attack log:', error);
     return res.status(500).json({
       message: 'An error occurred while sharing the attack log',
       error: error.message,

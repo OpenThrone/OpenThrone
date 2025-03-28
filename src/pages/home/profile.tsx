@@ -29,6 +29,7 @@ import {
 import Alert from "@/components/alert";
 import Link from "next/link";
 import MainArea from "@/components/MainArea";
+import { logDebug } from "@/utils/logger";
 
 const Profile = (props) => {
   const [file, setFile] = useState<File | null>(null);
@@ -40,6 +41,7 @@ const Profile = (props) => {
   const [charCount, setCharCount] = useState(0);
   const maxChars = 500;
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Underline,
@@ -78,7 +80,7 @@ const Profile = (props) => {
 
   useEffect(() => {
     if (loading) {
-      console.log("Loading is true");
+      logDebug("Loading is true");
       return;
     }
     if (!editor) {
@@ -89,7 +91,7 @@ const Profile = (props) => {
     } else {
       setContentChanged(false);
     }
-  }, [markdownContent, initialContent, loading]);
+  }, [markdownContent, initialContent, loading, editor]);
 
   useEffect(() => {
     if (!editor) {

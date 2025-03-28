@@ -13,6 +13,7 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import { useClipboard, useLocalStorage } from '@mantine/hooks';
 import router from 'next/router';
 import { encodeBattleData, decodeBattleData } from '@/utils/battleEncoding';
+import { logError } from '@/utils/logger';
 
 const BattleSimulator: NextPage = (props) => {
   const defenderGenerator = useMemo(() => {
@@ -43,7 +44,7 @@ const BattleSimulator: NextPage = (props) => {
         console.log("Loaded attacker from localStorage:", parsed);
         return parsed;
       } catch (err) {
-        console.error("Error parsing attacker data:", err);
+        logError("Error parsing attacker data:", err);
         return attackerGenerator.getUser();
       }
     }
@@ -59,7 +60,7 @@ const BattleSimulator: NextPage = (props) => {
         console.log("Loaded defender from localStorage:", parsed);
         return parsed;
       } catch (err) {
-        console.error("Error parsing defender data:", err);
+        logError("Error parsing defender data:", err);
         return defenderGenerator.getUser();
       }
     }

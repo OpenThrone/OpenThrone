@@ -8,6 +8,7 @@ import mime from 'mime-types';
 import { stringifyObj } from '@/utils/numberFormatting';
 import imageSize from 'image-size';
 import { withAuth } from '@/middleware/auth';
+import { logError } from "@/utils/logger";
 
 // Function to save the uploaded file to the local file system
 const saveToLocal = async (file: formidable.File, userId: number): Promise<string> => {
@@ -63,7 +64,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     form.parse(req, async (err, fields, files) => {
       if (err) {
-        console.error('Error parsing the form: ', err);
+        logError('Error parsing the form: ', err);
         return res.status(500).json({ error: err.message });
       }
 
@@ -96,7 +97,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             updateData.avatar = filePath;
           }
         } catch (uploadError) {
-          console.error('Error uploading avatar:', uploadError);
+          logError('Error uploading avatar:', uploadError);
           return res.status(500).json({ error: 'Error uploading avatar' });
         }
       }
@@ -113,7 +114,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
         return res.status(200).json({ status: 'success', data: stringifyObj({ updated }) });
       } catch (updateError) {
-        console.error('Error updating user:', updateError);
+        logError('Error updating user:', updateError);
         return res.status(500).json({ error: 'Error updating user profile' });
       }
     });

@@ -27,6 +27,7 @@ import BankHistoryFilters from '@/components/BankHistoryFilters';
 import BankHistoryTable from '@/components/BankHistoryTable';
 import { EconomyUpgrades } from '@/constants';
 import { useLocalStorage } from '@mantine/hooks';
+import { logError } from '@/utils/logger';
 
 const defaultFilters = {
   deposits: true,
@@ -40,7 +41,7 @@ const defaultFilters = {
   fortification: true,
   daily: true,
 };
-export default function Bank() {
+export default function Bank(props) {
   const tab = usePathname()?.split('/')[3];
   const router = useRouter();
   const [filters, setFilters] = useLocalStorage({
@@ -136,7 +137,7 @@ export default function Bank() {
           setMessage('');
         })
         .catch((error) => {
-          console.error('Error fetching bank history:', error);
+          logError('Error fetching bank history:', error);
           setMessage('Failed to fetch data');
         });
     }
@@ -160,7 +161,7 @@ export default function Bank() {
             setMessage('');
           })
           .catch((error) => {
-            console.error('Error fetching bank history:', error);
+            logError('Error fetching bank history:', error);
             setMessage('Failed to fetch data');
           });
       } else {
@@ -179,7 +180,7 @@ export default function Bank() {
         setMessage('');
       })
       .catch((error) => {
-        console.error('Error fetching deposits:', error);
+        logError('Error fetching deposits:', error);
         setMessage('Failed to fetch deposits');
       });
   }, [currentPage, filters, user, page, limit]);

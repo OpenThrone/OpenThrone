@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { simulateBattle } from '@/utils/attackFunctions';
 import UserModel from '@/models/Users';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { logError } from '@/utils/logger';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -36,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
   } catch (error) {
-    console.error('Battle simulation error:', error);
+    logError('Battle simulation error:', error);
     return res.status(500).json({ message: 'Error simulating battle', error: String(error) });
   }
 }

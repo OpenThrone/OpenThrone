@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { ChatRole } from '@prisma/client';
+import { logError } from '@/utils/logger';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = req.session;
@@ -69,7 +70,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       return res.status(201).json({ message: `${result.count} user(s) added successfully.` });
 
     } catch (error) {
-      console.error("Error adding participants:", error);
+      logError("Error adding participants:", error);
       // Handle potential foreign key constraint errors if user IDs don't exist
       if (error.code === 'P2003' || error.code === 'P2025') {
         return res.status(400).json({ message: 'One or more user IDs are invalid.' });

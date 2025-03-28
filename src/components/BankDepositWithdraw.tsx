@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Paper, Table, Space, NumberInput, Button, Group, Text } from '@mantine/core';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
 import { alertService } from '@/services';
+import { logError } from '@/utils/logger';
 
 export default function BankDepositWithdraw({
   user,
@@ -56,11 +57,11 @@ export default function BankDepositWithdraw({
             setDepositsAvailable(depositData.deposits);
             setNextDepositAvailable(depositData.nextDepositAvailable);
           })
-          .catch((error) => console.error('Error fetching bank deposits:', error));
+          .catch((error) => logError('Error fetching bank deposits:', error));
         setDepositAmount(BigInt(0));
       }
     } catch (error) {
-      console.error('Error depositing:', error);
+      logError('Error depositing:', error);
       alertService.error('Failed to deposit gold. Please try again.');
     }
   };
@@ -83,7 +84,7 @@ export default function BankDepositWithdraw({
         setWithdrawAmount(BigInt(0));
       }
     } catch (error) {
-      console.error('Error withdrawing:', error);
+      logError('Error withdrawing:', error);
       alertService.error('Failed to withdraw gold. Please try again.');
     }
   };

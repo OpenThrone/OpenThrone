@@ -209,7 +209,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
         alertService.error(`Failed to ${action} member: ${errorData.message || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error managing member:', error);
+      logError('Error managing member:', error);
       alertService.error(`An error occurred while trying to ${action} member.`);
     } finally {
       setIsMemberActionLoading(false);

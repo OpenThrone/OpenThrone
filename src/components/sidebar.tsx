@@ -10,6 +10,7 @@ import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
 import { levelXPArray } from '@/constants/XPLevels';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
+import { logError } from '@/utils/logger';
 
 const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
@@ -147,7 +148,7 @@ const Sidebar: React.FC = () => {
         id: user.id
       }));
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      logError("Failed to fetch users:", error);
       return [];
     } finally {
       setLoading(false);
@@ -165,7 +166,7 @@ const Sidebar: React.FC = () => {
       const users = await fetchUsers(query);
       setUsersData(users);
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      logError("Failed to fetch users:", error);
     } finally {
       setLoading(false);
     }

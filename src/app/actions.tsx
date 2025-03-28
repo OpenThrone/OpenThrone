@@ -16,6 +16,7 @@ import { calculateStrength, simulateBattle } from '@/utils/attackFunctions';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { AssassinationResult, InfiltrationResult, IntelResult, simulateAssassination, simulateInfiltration, simulateIntel } from '@/utils/spyFunctions';
 import { getSocketIO } from '@/lib/socket';
+import { logError } from '@/utils/logger';
 
 export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string, unit?: string) {
   const attackerUser = await getUserById(attackerId);
@@ -98,7 +99,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     });
     return prismaTx;
   } catch (ex) {
-    console.error('Transaction failed: ', ex);
+    logError('Transaction failed: ', ex);
     return { status: 'failed', message: 'Transaction failed.' };
   }
 }
@@ -280,10 +281,10 @@ export async function attackHandler(
           isWinner: !isAttackerWinner,
         });
       } else {
-        console.error('attack_log is undefined');
+        logError('attack_log is undefined');
       }
     } else {
-      console.error('Socket.IO not initialized');
+      logError('Socket.IO not initialized');
     }
 
     return {
@@ -296,7 +297,7 @@ export async function attackHandler(
       }),
     };
   } catch (error) {
-    console.error('Transaction failed: ', error);
+    logError('Transaction failed: ', error);
     return { status: 'failed', message: 'Transaction failed.' };
   }
 }

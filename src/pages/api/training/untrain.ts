@@ -7,6 +7,7 @@ import UserModel from '@/models/Users';
 import { PlayerUnit } from '@/types/typings';
 import { calculateUserStats } from '@/utils/utilities';
 import { updateUserAndBankHistory } from '@/services';
+import { logError } from '@/utils/logger';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -63,7 +64,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     return res.status(200).json({ message: 'Units untrained successfully!', data: updatedUnitsArray });
   } catch (error) {
-    console.error(error);
+    logError("Error during untraining units:", error);
     return res.status(400).json({ error: error.message });
   }
 };

@@ -142,7 +142,7 @@ const handler = async(
       data: updatedItems,
     });
   } catch (error) {
-    console.error(error);
+    logError(error);
     return res.status(500).json({ error: 'Failed to equip items', message: error.message });
   }
 }

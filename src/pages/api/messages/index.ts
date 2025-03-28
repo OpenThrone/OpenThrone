@@ -1,6 +1,7 @@
 import { withAuth } from "@/middleware/auth";
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
+import { logError } from "@/utils/logger";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const userId = Number(req.session.user.id);
@@ -259,7 +260,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         message: 'New conversation created'
       });
     } catch (error) {
-      console.error('Error creating chat room:', error);
+      logError('Error creating chat room:', error);
       // Check if this is a unique constraint error for an existing conversation
       if (error.code === 'P2002' && error.meta?.target?.includes('roomId_userId')) {
         // Find existing room with these participants
@@ -299,7 +300,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             });
           }
         } catch (recoverError) {
-          console.error('Error recovering from unique constraint:', recoverError);
+          logError('Error recovering from unique constraint:', recoverError);
         }
       }
       return res.status(500).json({ message: 'Failed to create conversation' });

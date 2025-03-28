@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { ChatRole } from '@prisma/client'; // Import Enum
+import { logError } from '@/utils/logger';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = req.session;
@@ -99,7 +100,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
   } catch (error) {
-    console.error("Error managing participant:", error);
+    logError("Error managing participant:", error);
     res.status(500).json({ message: 'Failed to manage participant.' });
   }
 }

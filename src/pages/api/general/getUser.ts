@@ -3,6 +3,7 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
 import prisma from '@/lib/prisma';
 import { getUpdatedStatus } from '@/services/user.service';
+import { logError } from '@/utils/logger';
 
 const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
@@ -72,7 +73,7 @@ const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
     res.status(200).json(stringifyObj(userData));
   } catch (error) {
-    console.error('Error in getUser:', error);
+    logError('Error in getUser:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import type { AlertType } from '../services/alert.service';
 import { alertService } from '../services/alert.service';
 import { Alert, Text } from '@mantine/core';
+import { logError } from '@/utils/logger';
 
 const AlertComponent: React.FC = () => {
   const router = useRouter();
@@ -53,7 +54,7 @@ const AlertComponent: React.FC = () => {
         body: JSON.stringify({ userId: session?.user?.id }), // Or email / displayName if preferred
       });
     } catch (error) {
-      console.error('Failed to update last active:', error);
+      logError('Failed to update last active:', error);
     }
   };
 

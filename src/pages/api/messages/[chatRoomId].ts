@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { getSocketIO } from '@/lib/socket'; // Import socket instance getter
 import { withAuth } from '@/middleware/auth';
+import { logError } from '@/utils/logger';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { chatRoomId } = req.query;
@@ -69,7 +70,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       res.status(200).json(transformedMessages);
 
     } catch (error) {
-      console.error("GET /api/messages/[chatRoomId] Error:", error);
+      logError("GET /api/messages/[chatRoomId] Error:", error);
       res.status(500).json({ message: 'Failed to fetch messages' });
     }
   }
@@ -161,7 +162,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       res.status(201).json(responsePayload);
 
     } catch (error) {
-      console.error("POST /api/messages/[chatRoomId] Error:", error);
+      logError("POST /api/messages/[chatRoomId] Error:", error);
       res.status(500).json({ message: 'Failed to create message' });
     }
   } else {

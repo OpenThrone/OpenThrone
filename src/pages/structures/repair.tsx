@@ -30,7 +30,7 @@ const Repair = (props) => {
           console.log(data);
         })
         .catch((error) => {
-          console.error('Error fetching bank history:', error);
+          logError('Error fetching bank history:', error);
         });
     }
   },[user]);
@@ -48,7 +48,7 @@ const Repair = (props) => {
 
       if (!response.ok) {
         const data = await response.json();
-        console.error('Error repairing:', data.error);
+        logError('Error repairing:', data.error);
         return;
       }
 
@@ -56,7 +56,7 @@ const Repair = (props) => {
       console.log('Success:', data);
       forceUpdate();
     } catch (error) {
-      console.error('Fetch error:', error);
+      logError('Fetch error:', error);
     }
   };
 
@@ -74,7 +74,7 @@ const Repair = (props) => {
 
       if (!response.ok) {
         const data = await response.json();
-        console.error('Error repairing all:', data.error);
+        logError('Error repairing all:', data.error);
         return;
       }
 
@@ -82,7 +82,7 @@ const Repair = (props) => {
       console.log('Success:', data);
       forceUpdate();
     } catch (error) {
-      console.error('Fetch error:', error);
+      logError('Fetch error:', error);
     }
   };
 

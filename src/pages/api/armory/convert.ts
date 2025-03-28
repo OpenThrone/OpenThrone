@@ -6,6 +6,7 @@ import { withAuth } from "@/middleware/auth";
 import UserModel from "@/models/Users";
 import { updateUserAndBankHistory } from "@/services";
 import { calculateUserStats } from "@/utils/utilities";
+import { logError } from "@/utils/logger";
 
 interface ConvertRequest {
   userId: string;
@@ -164,7 +165,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       data: user.items,
     });
   } catch (error) {
-    console.error(error);
+    logError(error);
     return res.status(500).json({ error: 'Failed to perform conversion' });
   }
 };

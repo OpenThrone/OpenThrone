@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getSession } from 'next-auth/react';
 import { isAdmin } from '@/utils/authorization';
 import { withAuth } from '@/middleware/auth';
+import { logError } from '@/utils/logger';
 
 export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getSession({ req });
@@ -59,7 +60,7 @@ export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     res.status(200).json({ message: `User has been ${action.toLowerCase()}` });
   } catch (error) {
-    console.error(`Error performing ${action} on user:`, error);
+    logError(`Error performing ${action} on user:`, error);
     res.status(500).json({ error: `Failed to perform action ${action}` });
   }
 }

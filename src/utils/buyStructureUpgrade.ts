@@ -20,7 +20,7 @@ const buyUpgrade = async (currentPage: string, index: number, forceUpdate: () =>
     alertService.success(data.message);
   } else {
     // Handle errors
-    console.error(data?.error || data?.message);
+    logError(data?.error || data?.message);
     alertService.error(data?.error || data?.message);
   }
 };

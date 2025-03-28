@@ -70,7 +70,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
         throw new Error('Failed to end vacation mode');
       }
     } catch (error) {
-      console.error(error);
+      logError(error);
       setErrorMessage('Could not end vacation mode');
     }
   };
@@ -101,7 +101,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
         }
       }
     } catch (error) {
-      console.error(error);
+      logError(error);
       setErrorMessage('Something went wrong!');
     } finally {
       turnsTileRef.current?.reset();
@@ -142,7 +142,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
                 }
               }
             } catch (error) {
-              console.error(error);
+              logError(error);
               setErrorMessage('Something went wrong!');
             } finally {
               setLoading(false);

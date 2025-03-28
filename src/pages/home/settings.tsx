@@ -197,7 +197,7 @@ const Settings = (props) => {
             />
             {!passwordsMatch && (
               <Text color="red" size="xs">
-                Passwords don't match.
+                Passwords don&apos;t match.
               </Text>
             )}
               <Space h="md" />

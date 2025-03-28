@@ -3,10 +3,11 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Recruiter from '../components/recruiter';
 import Alert from '../components/alert';
 import { alertService } from '@/services';
-import { Button, Space, Container, Text, Title, Center, Flex } from '@mantine/core';
+import { Button, Space, Container, Text, Title, Center, Flex, Stack } from '@mantine/core';
 import { useUser } from '@/context/users';
 import SessionModal from '@/components/SessionModal';
 import MainArea from '@/components/MainArea';
+import { logError } from '@/utils/logger';
 
 export default function AutoRecruiter(props) {
   const [consecutiveSuccesses, setConsecutiveSuccesses] = useState(0);
@@ -19,7 +20,7 @@ export default function AutoRecruiter(props) {
   const [totalLeft, setTotalLeft] = useState(0);
   const { forceUpdate, user: viewer } = useUser();
   const [sessionId, setSessionId] = useState<number | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionIdRef = useRef(sessionId);
   const isPausedRef = useRef(isPaused);
   const [sessionModalOpened, setSessionModalOpened] = useState(false);
@@ -64,7 +65,7 @@ export default function AutoRecruiter(props) {
     }
     setIsFetchingUser(true);
     if (!sessionIdRef.current) {
-      console.error('No session ID', sessionIdRef.current);
+      logError('No session ID', sessionIdRef.current);
       return;
     }
     if (isPausedRef.current) {
@@ -89,18 +90,18 @@ export default function AutoRecruiter(props) {
           setHasEnded(true);
           setIsPaused(true);
           alertService.error(data.error, false, false, '', 5000);
-          console.error('Error fetching new user:', data.error);
+          logError('Error fetching new user:', data.error);
         }
       }
     } catch (error) {
       setHasEnded(true);
       setIsPaused(true);
       alertService.error('Error fetching new user', false, false, '', 5000);
-      console.error('Caught Error fetching user:', error);
+      logError('Caught Error fetching user:', error);
     } finally {
       setIsFetchingUser(false);
     }
-  }, []);
+  }, [isFetchingUser]);
 
   const startCountdown = useCallback(() => {
     if (intervalRef.current) {
@@ -131,9 +132,10 @@ export default function AutoRecruiter(props) {
     if (isHandlingRecruitment) {
       return;
     }
+    if (!user) return;
     setIsHandlingRecruitment(true);
     if (!sessionId) {
-      console.error('No session ID');
+      logError('No session ID');
       return;
     }
     try {
@@ -169,19 +171,19 @@ export default function AutoRecruiter(props) {
         if (data.error === 'Invalid session ID') {
           handleInvalidSession();
         } else {
-          console.error('Error handling recruitment:', data.error);
+          logError('Error handling recruitment:', data.error);
           alertService.error(data.error, false, false, '', 5000);
           startCountdown();
         }
       }
     } catch (error) {
-      console.error('Error handling recruitment:', error);
+      logError('Error handling recruitment:', error);
       alertService.error('Error handling recruitment. Please try again.', false, false, '', 5000);
       startCountdown();
     } finally {
       setIsHandlingRecruitment(false);
     }
-  }, [isHandlingRecruitment, user, sessionId, isPaused, startCountdown, forceUpdate, totalLeft]);
+  }, [isHandlingRecruitment, sessionId, user, viewer, isPaused, forceUpdate, totalLeft, startCountdown]);
 
   const startRecruiting = async () => {
     const response = await fetch('/api/recruit/startSession', {
@@ -242,7 +244,7 @@ export default function AutoRecruiter(props) {
         handleInvalidSession();
       }
     } catch (error) {
-      console.error('Error verifying session:', error);
+      logError('Error verifying session:', error);
       alertService.error('Error verifying session. Please try again.', false, false, '', 5000);
     }
   };
@@ -286,9 +288,14 @@ export default function AutoRecruiter(props) {
           <Container>
             {!hasEnded && <Text>Click Start to begin the Auto-Recruit, a new user will appear.</Text>}
             <Center>
+              <Stack>
               <Button color="dark" onClick={startRecruiting}>
                 Start Recruiting
               </Button>
+              <Button color="dark" onClick={() => setSessionModalOpened(true)}>
+                Manage Sessions
+                </Button>
+              </Stack>
             </Center>
           </Container>
           <SessionModal

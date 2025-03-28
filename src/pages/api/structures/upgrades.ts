@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import UserModel from '@/models/Users';
 import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, OffensiveUpgrades, SpyUpgrades } from '@/constants';
 import { withAuth } from "@/middleware/auth";
+import { logError } from "@/utils/logger";
 
 const processUpgrade = async (req, res, upgradeType, upgradeData, goldCost, updateData) => {
   try {
@@ -54,7 +55,7 @@ const processUpgrade = async (req, res, upgradeType, upgradeData, goldCost, upda
       data: { upgradeType, upgradeDetails: upgradeData },
     });
   } catch (error) {
-    console.error('Upgrade error:', error);
+    logError('Upgrade error:', error);
     return res.status(500).json({ error: 'An error occurred while processing your upgrade.' });
   }
 };

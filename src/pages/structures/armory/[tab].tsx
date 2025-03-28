@@ -15,6 +15,7 @@ import { faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import MainArea from '@/components/MainArea';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
+import { logError, logError } from '@/utils/logger';
 
 const useItems = (user: UserModel, armoryLevel: unknown) => {
   const [items, setItems] = useState({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
@@ -124,7 +125,7 @@ const ArmoryTab = (props) => {
       }
       return Object.values(totalCost[type]).reduce((acc, curr) => acc + curr, 0);
     } catch (e) {
-      console.error(e);
+      logError(e);
       return 0;
     }
   }, [totalCost]);
@@ -276,7 +277,7 @@ const ArmoryTab = (props) => {
       }
     } catch (error) {
       alertService.error('Failed to buy items. Please try again.');
-      console.log('error', error);
+      logError('Error while buying from Armory', error);
     }
   };
 
@@ -353,7 +354,7 @@ const ArmoryTab = (props) => {
       }
     } catch (error) {
       alertService.error('Failed to unequip items. Please try again.');
-      console.log('error', error);
+      logError('Error while unequipping from Armory', error);
     }
   };
 

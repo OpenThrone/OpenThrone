@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { showNotification } from '@mantine/notifications';
 import classes from './floatinginput.module.css';
 import MainArea from '@/components/MainArea';
+import { logError } from '@/utils/logger';
 
 const Index = (props) => {
   const [email, setEmail] = useState('');
@@ -35,7 +36,7 @@ const Index = (props) => {
         router.push('/account/password-reset/result');
       }, 2000);
     } catch (error) {
-      console.error('Error:', error);
+      logError('Error:', error);
       showNotification({
         title: 'Error',
         message: error.message,

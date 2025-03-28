@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma'; 
 import { withAuth } from '@/middleware/auth';
+import { logError } from '@/utils/logger';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest,
@@ -48,7 +49,7 @@ const handler = async (req: NextApiRequest,
     const message = action === 'accept' ? 'Friend request accepted successfully' : 'Friend request declined successfully';
     return res.status(200).json({ message });
   } catch (error) {
-    console.error(error);
+    logError("Error processing friend request:", error);
     return res.status(500).json({ error: 'Failed to process friend request' });
   }
 };

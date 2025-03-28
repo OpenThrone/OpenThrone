@@ -1,3 +1,5 @@
+import { logInfo, logError } from "./logger";
+
 export const fetchWithFallback = async (
   socket: any,
   isConnected: boolean,
@@ -10,10 +12,10 @@ export const fetchWithFallback = async (
   setLoading(true);
   try {
     if (socket && isConnected) {
-      console.log(`Using WebSocket for ${wsEvent}`, payload);
+      logInfo(`Using WebSocket for ${wsEvent}`, payload);
       socket.emit(wsEvent, payload);
     } else {
-      console.log(`WebSocket unavailable, falling back to API: ${fallbackUrl}`);
+      logInfo(`WebSocket unavailable, falling back to API: ${fallbackUrl}`);
       const response = await fetch(fallbackUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -24,7 +26,7 @@ export const fetchWithFallback = async (
       setData(data);
     }
   } catch (error) {
-    console.error(`Error in fetchWithFallback: ${error}`);
+    logError(`Error in fetchWithFallback: ${error}`);
   } finally {
     setLoading(false);
   }

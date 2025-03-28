@@ -54,7 +54,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
         [unitId]: !isNaN(intValue)? intValue : 0,
       }));
     } else {
-      console.error("Invalid input:", value, "for", unitId);
+      logError("Invalid input:", value, "for", unitId);
     }
   };
 
@@ -133,7 +133,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
       }
     } catch (error) {
       alertService.error('Failed to equip items. Please try again.');
-      console.error(error);
+      logError(error);
     }
   };
 

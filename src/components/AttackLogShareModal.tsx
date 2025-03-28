@@ -3,6 +3,7 @@ import { Modal, Button, Table, ScrollArea, Loader, Text, Group, Pagination, Aler
 import { useUser } from '@/context/users';
 import { formatDate } from '@/utils/utilities';
 import { Log } from '@/types/typings';
+import { logError } from '@/utils/logger';
 
 interface AttackLogShareModalProps {
   opened: boolean;
@@ -42,12 +43,12 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({ opened, onClo
             setAttackLogs(data.data);
             setTotalPages(Math.ceil(data.total / ROWS_PER_PAGE));
           } else {
-            console.error('Unexpected data format:', data);
+            logError('Unexpected data format:', data);
             throw new Error('Invalid data format');
           }
         })
         .catch(err => {
-          console.error("Error fetching attack logs:", err);
+          logError("Error fetching attack logs:", err);
           setError(err.message || 'Could not load logs.');
           setAttackLogs([]);
           setTotalPages(0);

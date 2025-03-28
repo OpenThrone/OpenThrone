@@ -131,7 +131,7 @@ const EmailVerify = (props) => {
         onClose={() => setOpened(false)}
         title="Confirm Email Change"
       >
-        <Text>You're changing your email from {user?.email} to {email}. Are you sure?</Text>
+        <Text>You&apos;re changing your email from {user?.email} to {email}. Are you sure?</Text>
         <Space h="md" />
         <Button onClick={handleEmailUpdate} fullWidth>
           Confirm

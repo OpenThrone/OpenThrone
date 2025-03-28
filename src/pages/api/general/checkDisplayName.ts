@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import prisma from '@/lib/prisma';
+import { logError } from '@/utils/logger';
 
 export default async function handle(
   req: NextApiRequest,
@@ -29,7 +30,7 @@ export default async function handle(
         possibleMatches: displayNames,
       });
     } catch (error) {
-      console.error('Error checking display name:', error);
+      logError('Error checking display name:', error);
       return res.status(500).json({ error: 'Failed to check display name.' });
     }
   } else {

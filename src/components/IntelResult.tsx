@@ -95,7 +95,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
 
     fetchData();
 
-  }, [stats, defenderPlayer]);
+  }, [stats, defenderPlayer, totalPopulation]);
 
   return (
     <Container size='xl' p={'md'} style={{ backgroundColor: 'black', color: 'white' }} >

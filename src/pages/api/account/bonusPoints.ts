@@ -75,7 +75,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     // Return success response with updated bonus points
     return res.status(200).json({ success: true, updatedBonusPoints });
   } catch (error) {
-    console.error('Error updating user bonus points:', error, userId);
+    logError('Error updating user bonus points:', error, userId);
     return res.status(500).json({ error: 'Internal Server Error', errorDetails: error.message });
   }
 };

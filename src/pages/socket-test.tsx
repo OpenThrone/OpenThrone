@@ -90,7 +90,7 @@ const SocketTestPage = (props) => {
       removeEventListener('enemyDeclarationNotification', onEnemyDeclarationNotification);
       removeEventListener('messageNotification', onMessageNotification);
     };
-  }, [socket, addEventListener, removeEventListener]);
+  }, [socket, addEventListener, removeEventListener, receivedHashes]);
 
   
   return (

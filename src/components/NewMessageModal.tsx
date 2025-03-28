@@ -80,7 +80,7 @@ const NewMessageModal = ({
         setAvailableUsers(formattedUsers);
       }
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      logError("Failed to fetch users:", error);
     } finally {
       setLoading(false);
     }
@@ -163,7 +163,7 @@ const NewMessageModal = ({
         }
       }
     } catch (error) {
-      console.error("Error creating or modifying chat:", error);
+      logError("Error creating or modifying chat:", error);
     } finally {
       setSubmitting(false);
       onClose();

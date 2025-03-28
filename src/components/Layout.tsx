@@ -11,6 +11,7 @@ import { AppConfig } from '@/utils/AppConfig';
 import { getAssetPath } from '@/utils/utilities';
 import Image from 'next/image';
 import NewsBulletin from './news-bulletin';
+import { logError } from '@/utils/logger';
 
 interface IMainProps {
   // eslint-disable-next-line react/no-unused-prop-types
@@ -57,14 +58,10 @@ const Layout = (props: IMainProps) => {
           setLoading(false);
         })
         .catch(error => {
-          console.error('Failed to fetch git info:', error);
+          logError('Failed to fetch git info:', error);
           setLoading(false);
         });
-    }
-  }, [isDevelopment]);
-
-  useEffect(() => {
-    if (!isDevelopment) {
+    } else {
       fetch('/api/general/getOnlinePlayers')
         .then(response => {
           if (!response.ok) {
@@ -81,10 +78,11 @@ const Layout = (props: IMainProps) => {
           });
         })
         .catch(error => {
-          console.error('Failed to fetch online player info:', error);
+          logError('Failed to fetch online player info:', error);
         });
     }
-  }, []);
+  }, [isDevelopment]);
+
 
   return (
     <div className="flex min-h-screen flex-col">

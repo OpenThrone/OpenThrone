@@ -1,6 +1,6 @@
 // src/components/SessionModal.tsx
 import { Modal, Table, Button, Text, Group, Switch, Loader } from '@mantine/core';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { alertService } from '@/services';
 
 interface Session {
@@ -22,6 +22,26 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
 
   const AUTO_REFRESH_INTERVAL = 5; // seconds
 
+  const fetchSessions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/recruit/listSessions');
+      const data = await response.json();
+      if (response.ok) {
+        setSessions(data.sessions);
+        if (autoRefresh) {
+          setCountdown(AUTO_REFRESH_INTERVAL);
+        }
+      } else {
+        alertService.error(data.error);
+      }
+    } catch (error) {
+      alertService.error('Failed to fetch sessions');
+    } finally {
+      setLoading(false);
+    }
+  }, [autoRefresh]);
+
   useEffect(() => {
     if (opened) {
       fetchSessions();
@@ -29,7 +49,7 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
       setAutoRefresh(false);
       setCountdown(0);
     }
-  }, [opened]);
+  }, [fetchSessions, opened]);
 
   useEffect(() => {
     let countdownTimer: NodeJS.Timeout | null = null;
@@ -56,27 +76,7 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
         clearInterval(countdownTimer);
       }
     };
-  }, [autoRefresh]);
-
-  const fetchSessions = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/recruit/listSessions');
-      const data = await response.json();
-      if (response.ok) {
-        setSessions(data.sessions);
-        if (autoRefresh) {
-          setCountdown(AUTO_REFRESH_INTERVAL);
-        }
-      } else {
-        alertService.error(data.error);
-      }
-    } catch (error) {
-      alertService.error('Failed to fetch sessions');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [autoRefresh, fetchSessions]);
 
   const endSession = async (sessionId: number) => {
     try {

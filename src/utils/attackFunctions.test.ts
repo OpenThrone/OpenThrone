@@ -8,12 +8,12 @@ describe('calculateStrength', () => {
       { type: 'OFFENSE', quantity: 5, level: 1 },
       { type: 'DEFENSE', quantity: 10, level: 1 },
     ];
-    user.items = [
       user.items = [
         { type: 'WEAPON', level: 1, usage: 'OFFENSE', quantity: 2, name: 'Dagger', bonus: 25, cost: 12500, race: 'ALL', armoryLevel: 1 },
         { type: 'WEAPON', level: 2, usage: 'OFFENSE', quantity: 1, name: 'Hatchet', bonus: 50, cost: 25000, race: 'ALL', armoryLevel: 2 },
         { type: 'HELM', level: 1, usage: 'OFFENSE', quantity: 1, name: 'Padded Hood', bonus: 6, cost: 3000, race: 'ALL', armoryLevel: 1 },
       ];
+    
   
       const strength = calculateStrength(user, 'OFFENSE');
       expect(strength.killingStrength).toBe(106);

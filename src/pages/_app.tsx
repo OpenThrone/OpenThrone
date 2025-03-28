@@ -52,7 +52,7 @@ const AppWithTheme = ({ Component, pageProps }: AppProps) => {
         session.user.colorScheme = user.colorScheme; // Sync session with context user
       }
     }
-  }, [session, user]);
+  }, [colorScheme, session, setColorScheme, user]);
 
   // Show a loading screen while the session data is being loaded
   if (status === 'loading') {

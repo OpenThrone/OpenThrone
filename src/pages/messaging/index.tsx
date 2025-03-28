@@ -37,7 +37,7 @@ const MessageList = (props) => {
         // markRoomAsRead(data[0].id);
       }
     } catch (error) {
-      console.error('Failed to fetch rooms:', error);
+      logError('Failed to fetch rooms:', error);
     }
   }, [roomIdParam, selectedRoomId, markRoomAsRead]); // Add dependencies
 
@@ -63,7 +63,7 @@ const MessageList = (props) => {
             });
           }
         } catch (error) {
-          console.error('Failed to fetch messages:', error);
+          logError('Failed to fetch messages:', error);
           setMessages([]); // Clear messages on error
         } finally {
           setLoadingMessages(false); // Stop loading

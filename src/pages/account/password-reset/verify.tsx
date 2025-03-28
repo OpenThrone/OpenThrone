@@ -40,7 +40,7 @@ const Index = (props) => {
       });
       setVerified(true); // Update the verified status to show the new password form
     } catch (error) {
-      console.error('Error:', error);
+      logError('Error:', error);
       showNotification({
         title: 'Error',
         message: error.message,
@@ -71,7 +71,7 @@ const Index = (props) => {
         router.push('/account/login');
       }, 2000);
     } catch (error) {
-      console.error('Error:', error);
+      logError('Error:', error);
       showNotification({
         title: 'Error',
         message: error.message,
