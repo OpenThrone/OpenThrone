@@ -1,7 +1,5 @@
 import { Locales } from "@/types/typings";
 
-
-
 export const toLocale = (num: number | string | bigint| BigInt, locale?: Locales) => {
   if (typeof num === 'number') {
     return num.toLocaleString(locale || undefined);

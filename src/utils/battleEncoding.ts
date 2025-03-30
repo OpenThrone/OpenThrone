@@ -1,5 +1,6 @@
 import { ShareableArmyData } from "@/types/typings";
 import LZString from "lz-string";
+import { logError } from "./logger";
 
 // Encoding Function
 export function encodeBattleData(attacker: ShareableArmyData, defender: ShareableArmyData, turns: number): string | null {

@@ -7,7 +7,7 @@ import { alertService } from '@/services';
 
 import Alert from './alert';
 import router from 'next/router';
-import { Button, NumberInput, Modal, Group, Select, Text, Paper, Divider, Title } from '@mantine/core';
+import { Button, NumberInput, Modal, Group, Select, Text, Paper, Divider, Title, Tooltip } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { SpyUpgrades } from '@/constants';
 
@@ -29,7 +29,7 @@ const CustomModal: FC<ModalProps> = ({ isOpen, children, toggleModal }) => {
       <Modal.Content>
         <Modal.Header >
           <Modal.Title>
-            <Title order={4}>Spy Mission</Title>
+            Spy Mission
           </Modal.Title>
           <Modal.CloseButton size={'lg'} />
         </Modal.Header>
@@ -177,6 +177,17 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     );
   }
 
+  const hasEnoughUnits = () => {
+    if (currentPanel === 'intelligence') {
+      return units.SPY >= intelSpies;
+    } else if (currentPanel === 'assassination') {
+      return units.ASSASSIN >= intelSpies;
+    } else if (currentPanel === 'infiltration') {
+      return units.INFILTRATOR >= intelSpies;
+    }
+    return false;
+  };
+
   const MissionPanels: Record<MissionPanelKey, JSX.Element> = {
     intelligence: (
       <div>
@@ -189,7 +200,17 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             value={intelSpies}
             onChange={(value) => setIntelSpies(Number(value))}
           />
-          <Button onClick={handleSpyMission}>Send Spies</Button>
+          <Tooltip
+            label={!hasEnoughUnits() ? `You need at least ${intelSpies} spies` : "Send spies on an intelligence mission"}
+            disabled={hasEnoughUnits()}
+          >
+            <Button
+              onClick={handleSpyMission}
+              disabled={!hasEnoughUnits()}
+            >
+              Send Spies
+            </Button>
+          </Tooltip>
         </Group>
         <div className="mt-4">
           <Title ta="center" order={3} fw={700}>Intelligence Information</Title>
@@ -217,12 +238,28 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           mt="md"
         />
         <Text>What Unit Type would you like to target?</Text>
-        <Select>
-          <option value="CITIZEN/WORKERS">Citizen/Workers</option>
-          <option value="OFFENSE">Offense</option>
-          <option value="DEFENSE">Defense</option>
-        </Select>
-        <Button onClick={handleSpyMission} fullWidth mt="md">Assassinate</Button>
+        <Select
+          value={assassinateUnit}
+          onChange={(value) => setAssassinateUnit(value)}
+          data={[
+            { value: 'CITIZEN/WORKERS', label: 'Citizen/Workers' },
+            { value: 'OFFENSE', label: 'Offense' },
+            { value: 'DEFENSE', label: 'Defense' }
+          ]}
+        />
+        <Tooltip
+          label={!hasEnoughUnits() ? `You need at least ${intelSpies} assassins` : "Send assassins on a mission"}
+          disabled={hasEnoughUnits()}
+        >
+          <Button
+            onClick={handleSpyMission}
+            disabled={!hasEnoughUnits()}
+            fullWidth
+            mt="md"
+          >
+            Assassinate
+          </Button>
+        </Tooltip>
         <div className="mt-4">
           <Text ta="center" size="lg" fw={700}>Assassination Information</Text>
           <Text mt="md">Total Assassins: {units.ASSASSIN}</Text>
@@ -247,7 +284,17 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             value={intelSpies}
             onChange={(value) => setIntelSpies(Number(value))}
           />
-          <Button onClick={handleSpyMission}>Infiltrate</Button>
+          <Tooltip
+            label={!hasEnoughUnits() ? `You need at least ${intelSpies} infiltrators` : "Send infiltrators on a mission"}
+            disabled={hasEnoughUnits()}
+          >
+            <Button
+              onClick={handleSpyMission}
+              disabled={!hasEnoughUnits()}
+            >
+              Infiltrate
+            </Button>
+          </Tooltip>
         </Group>
         <div className="mt-4">
           <Text ta="center" size="lg" fw={700}>Infiltration Information</Text>

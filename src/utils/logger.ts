@@ -53,7 +53,7 @@ const formatMessage = (level: LogLevelKey, message: any, ...optionalParams: any[
 // Logger functions
 export const logError = (message: any, ...optionalParams: any[]) => {
   if (currentLogLevel >= LogLevel.ERROR) {
-    logError(formatMessage('ERROR', message, ...optionalParams));
+    console.log(formatMessage('ERROR', message, ...optionalParams));
   }
 };
 
@@ -82,7 +82,6 @@ export const logTrace = (message: any, ...optionalParams: any[]) => {
   }
 };
 
-// Default export (optional, could also just export individual functions)
 const logger = {
   error: logError,
   warn: logWarn,

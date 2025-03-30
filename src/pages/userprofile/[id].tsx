@@ -29,7 +29,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   const [isPlayer, setIsPlayer] = useState(false);
   const [isAPlayer, setIsAPlayer] = useState(false);
 
-  const router = useRouter();
   const [profile, setUser] = useState<UserModel>(() => new UserModel(users, true, false));
   const [canAttack, setCanAttack] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -68,8 +67,8 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   };
 
   useEffect(() => {
-    if (profile.id !== users.id) setUser(new UserModel(users, true, false));
-    if (user?.id === users.id && isPlayer === false) setIsPlayer(true);
+    if (profile.id !== users.id) setUser(new UserModel(users, true, false)); // you're looking at someone else
+    if (user?.id === profile.id) setIsPlayer(true); // you're looking at yourself
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
     if (profile) {
       const nowdate = new Date();
@@ -78,7 +77,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
         setLastActive('Never logged in');
         return;
       }
-      console.log(profile.spyLimits)
+      console.log(user?.spyLimits)
       const lastActiveTimestamp = new Date(profile.last_active).getTime();
       const nowTimestamp = nowdate.getTime();
 

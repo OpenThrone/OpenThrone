@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import SpyMissionsModal from './spyMissionsModal';
 import Modal from './modal';
+import { PlayerItem, PlayerUnit } from '@/types/typings';
 
 const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
@@ -35,7 +36,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
     const fetchData = async () => {
       const filteredUnits = (stats.spyResults.intelligenceGathered?.units.length > 0 ? stats.spyResults.intelligenceGathered?.units?.filter((unit) => unit.quantity > 0) :[]);
       const totalUnits = filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0);
-      const totalPop = Object.values(stats.spyResults.defender.units).reduce((acc, unit) => acc + unit.quantity, 0) || 0
+      const totalPop = Number(Object.values(stats.spyResults.defender.units).reduce((acc: number, unit: PlayerUnit) => acc + unit.quantity, 0)) || 0
       setTotalPopulation(totalPop);
       const unknownUnits = totalPop - totalUnits;
       const unitColors = {
@@ -63,14 +64,23 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
         }
       ];
       setUnitSegments(newUnitSegments);
-
+      if (stats.spyResults.intelligenceGathered?.items?.length === 0) {
+        // If there are no items found, we can return early
+        setItemsByCategory([]); // Clear itemsByCategory if no items found
+        return;
+      }
       const itemCategories = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
       const itemTypes = ['HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD', 'WEAPON'];
 
       const newItemsByCategory = itemCategories.map((category) => {
         const categoryUnits = filteredUnits.filter((unit) => unit.type === category).reduce((acc, unit) => acc + unit.quantity, 0);
-        const categoryItems = stats.spyResults.intelligenceGathered?.items?.filter((item) => item.usage === category) || [];
+        const itemsObject = stats.spyResults.intelligenceGathered?.items; // Get the items object (or null/undefined)
 
+        // Convert the object's values into an array. If itemsObject is null or undefined, default to an empty array.
+        const itemsArray: PlayerItem[] = itemsObject ? Object.values(itemsObject) : [];
+
+        // Now you can safely filter the array
+        const categoryItems = itemsArray.filter((item) => item.usage === category);
         const combinedItems = itemTypes.map((type) => {
           const totalQuantity = categoryItems
             .filter((item) => item.type === type)
@@ -100,7 +110,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   return (
     <Container size='xl' p={'md'} style={{ backgroundColor: 'black', color: 'white' }} >
       <Grid grow className="gap-5">
-        <Grid.Col span={3} md={4} className="text-center">
+        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
           <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
           <h4>Level: {getLevelFromXP(stats.spyResults.attacker.experience)}</h4>
           <center>
@@ -113,7 +123,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
             />
           </center>
         </Grid.Col>
-        <Grid.Col span={6} md={4} className="text-center">
+        <Grid.Col span={{ base: 6, md: 4 }} className="text-center">
           <Space h='10' />
           <div className="text-container inline-block align-middle">
             <Text color="white" fw="bolder" size='xl' className="font-medieval">
@@ -163,7 +173,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
             )}
           </div>
         </Grid.Col>
-        <Grid.Col span={3} md={4} className="text-center">
+        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
           <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
           <h4>Level: {getLevelFromXP(stats.spyResults.defender.experience)}</h4>
           <center>
@@ -180,7 +190,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
       <div className="intel-report mt-10">
         
         <Grid grow gutter={'xs'}>
-          <Grid.Col span={4} md={6} className="text-center">
+          <Grid.Col span={{ base: 4, md: 6 }} className="text-center">
             {isAttackerWinner && unitSegments.length > 0 && (
               <Paper withBorder p="md" radius="md" mt="xl">
                 <Text fz="xl" fw={700} mb="md">
@@ -220,7 +230,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
           {isAttackerWinner &&
             itemsByCategory.length > 0 &&
             itemsByCategory.map((category, index) => (
-              <Grid.Col span={4} md={6} className="text-center" key={index}>
+              <Grid.Col span={{ base: 4, md: 6 }} className="text-center" key={index}>
                 <Paper withBorder p="md" radius="md" mt="xl">
                   <Text fz="xl" fw={700} mb="md">
                     {category.name} ARMORY

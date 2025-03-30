@@ -122,14 +122,6 @@ class UserModel {
   
   public permissions: any[];
 
-  public offense: number;
-
-  public defense: number;
-
-  public spy: number;
-
-  public sentry: number;
-
   public checkStats: boolean;
 
   constructor(userData?: any, filtered: boolean = true, checkStats: boolean = true) {
@@ -415,18 +407,18 @@ class UserModel {
   get spyLimits(): any { //TODO: fix any type for spyLimits
     return {
       infil: {
-        perUser: SpyUpgrades[this?.spyLevel].maxInfiltratorsPerUser,
-        perMission: SpyUpgrades[this?.spyLevel].maxInfiltratorsPerMission,
-        perDay: SpyUpgrades[this?.spyLevel].maxInfiltrations,
+        perUser: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxInfiltratorsPerUser,
+        perMission: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxInfiltratorsPerMission,
+        perDay: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxInfiltrations,
       },
       assass: {
-        perDay: SpyUpgrades[this?.spyLevel]?.maxAssassinations,
-        perMission: SpyUpgrades[this?.spyLevel]?.maxAssassinsPerMission,
-        perUser: SpyUpgrades[this?.spyLevel]?.maxAssassinationsPerUser,
+        perDay: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxAssassinations,
+        perMission: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxAssassinsPerMission,
+        perUser: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxAssassinationsPerUser,
       },
       stats: {
         level: this?.spyLevel,
-        all: SpyUpgrades[this?.spyLevel]
+        all: SpyUpgrades.find((u) => u.level === this?.spyLevel)
       }
     }
   }
