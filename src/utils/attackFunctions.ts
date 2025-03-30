@@ -322,7 +322,7 @@ export function calculateFortDamage(
   if (ratio <= 0.05) damageRange = [0, 1];
   else if (ratio <= 0.5) damageRange = [0, 3];
   else if (ratio <= 1.3) damageRange = [3, 8];
-  else damageRange = [6, 12];
+  else damageRange = [8, 12];
 
   const damage = Math.floor(mtRand(damageRange[0], damageRange[1]));
   return Math.max(damage, 0);

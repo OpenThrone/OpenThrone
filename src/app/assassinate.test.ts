@@ -1,6 +1,7 @@
 import UserModel from "@/models/Users";
 import { simulateAssassination } from "../utils/spyFunctions";
 import MockUserGenerator from "@/utils/MockUserGenerator";
+import { logInfo } from "@/utils/logger";
 
 describe('Assassination Test', () => {
   it('should simulate an assassination against a substantially weaker opponent targeting WORKERS/CITIZENS.', async () => {
@@ -62,10 +63,10 @@ describe('Assassination Test', () => {
     const result = simulateAssassination(attackPlayer, defensePlayer, spies, 'OFFENSE');
 
     // Log results for debugging
-    console.log(`The attacker ${result.success ? 'won' : 'lost'} the mission`);
-    console.log(`Spies Sent: ${result.spiesSent}`);
-    console.log(`Spies Lost: ${result.spiesLost}`);
-    console.log(`Units Killed: ${result.unitsKilled}`);
+    logInfo(`The attacker ${result.success ? 'won' : 'lost'} the mission`);
+    logInfo(`Spies Sent: ${result.spiesSent}`);
+    logInfo(`Spies Lost: ${result.spiesLost}`);
+    logInfo(`Units Killed: ${result.unitsKilled}`);
 
     // Assertions
     expect(result.success).toBe(true);

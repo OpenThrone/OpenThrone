@@ -91,9 +91,10 @@ export type Unit = {
   defenseStrength?: number;
 };
 export interface ItemCounts {
-  [key: string]: number; // This allows any string as a key and number as its value
+  [key: string]: number;
 }
 export type Item = {
+  id: string;
   name: string;
   usage: UnitType;
   type: ItemType;

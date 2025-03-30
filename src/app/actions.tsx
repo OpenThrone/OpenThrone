@@ -42,7 +42,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
 
       } else if (type === 'ASSASSINATE') {
         if (attacker.units.find((u) => u.type === 'SPY' && u.level === 3) === undefined || attacker.units.find((u) => u.type === 'SPY' && u.level === 2).quantity < spies) {
-          console.log('Insufficient Assassins');
+          logError('Insufficient Assassins');
           return { status: 'failed', message: 'Insufficient Assassins' };
         }
         spyResults = simulateAssassination(attacker, defender, spies, unit);

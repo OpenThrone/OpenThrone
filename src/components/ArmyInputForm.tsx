@@ -21,13 +21,13 @@ const userToFormData = (user: Partial<User> | Partial<UserModel>) => {
   const formData: any = {
     id: user.id,
     email: user.email,
-    display_name: (user as any).display_name || (user as any).displayName,
+    display_name: (user as User).display_name || (user as UserModel).displayName,
     race: user.race,
     class: user.class,
     level: (user as any).level === undefined ? getLevelFromXP(user.experience) : (user as any).level,
     experience: user.experience,
-    fortLevel: user.fort_level,
-    fortHitpoints: user.fort_hitpoints,
+    fortLevel: (user as User).fort_level || (user as UserModel).fortLevel,
+    fortHitpoints: (user as User).fort_hitpoints || (user as UserModel).fortHitpoints,
   };
 
   // Process units
@@ -58,7 +58,7 @@ const userToFormData = (user: Partial<User> | Partial<UserModel>) => {
   }
 
   // Process battle upgrades
-  user.battle_upgrades?.forEach((upgrade) => {
+  user.battle_upgrades?.forEach((upgrade: PlayerBattleUpgrade) => {
     if (upgrade.type === 'OFFENSE') {
       formData[`offenseUpgrade${upgrade.level}`] = upgrade.quantity;
     } else if (upgrade.type === 'DEFENSE') {
@@ -128,7 +128,7 @@ const formDataToUser = (formData: any): User => {
   } else {
     // Fallback to legacy item_ fields
     Object.entries(formData).forEach(([key, value]) => {
-      if (key.startsWith('item_') && value > 0) {
+      if (key.startsWith('item_') && typeof value === 'number' && value > 0) {
         const parts = key.split('_');
         const type = parts[1].toUpperCase() as ItemType;
         const level = parseInt(parts[2], 10);
@@ -373,7 +373,7 @@ const ItemRow = React.memo(({
             value={itemData.quantities?.[level] || 0}
             onChange={(value) => {
               if (value !== undefined) {
-                onItemChange(itemType, level, value, itemData.usage);
+                onItemChange(itemType, level, Number(value), itemData.usage);
               }
             }}
             min={0}

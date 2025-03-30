@@ -4,6 +4,7 @@ import { Item, ItemType, PlayerUnit, UnitType } from "@/types/typings";
 import mtRand from "./mtrand";
 import { SpyUserModel } from "@/models/SpyUser";
 import { getAverageLevelAndHP } from "./units";
+import { logDebug, logError } from "./logger";
 
 export function computeSpyAmpFactor(targetPop: number): number {
   let ampFactor = 0.4;
@@ -25,9 +26,9 @@ export function computeSpyAmpFactor(targetPop: number): number {
   return ampFactor;
 }
 
+export const CITIZEN_WORKERS_TARGET = 'CITIZEN_WORKERS';
+
 export class AssassinationResult {
-  //attacker: UserModel;
-  //defender: UserModel;
   spiesSent: number;
   spiesLost: number;
   unitsKilled: number;
@@ -37,9 +38,7 @@ export class AssassinationResult {
   goldStolen: number;
   units: PlayerUnit[];
 
-  constructor(attacker: UserModel, defender: UserModel, spies: number, target: UnitType | string = 'CITIZEN/WORKERS') {
-    //this.attacker = JSON.parse(stringifyObj(attacker));  // deep copy
-    //this.defender = JSON.parse(stringifyObj(defender));  // deep copy
+  constructor(attacker: UserModel, defender: UserModel, spies: number, target: UnitType | typeof CITIZEN_WORKERS_TARGET = CITIZEN_WORKERS_TARGET) {
     this.spiesSent = spies;
     this.spiesLost = 0;
     this.unitsKilled = 0;
@@ -47,7 +46,9 @@ export class AssassinationResult {
     this.success = false;
     this.experienceGained = 0;
     this.goldStolen = 0;
-    this.units = (target === 'CITIZEN/WORKERS'? defender.units.filter((unit)=> unit.type === 'CITIZEN' || unit.type === 'WORKER') : defender.units.filter((unit)=> unit.type === unit));
+    this.units = (target === CITIZEN_WORKERS_TARGET
+      ? defender.units.filter((unit) => unit.type === 'CITIZEN' || unit.type === 'WORKER')
+      : defender.units.filter((unit) => unit.type === target));
   }
 }
 
@@ -111,7 +112,6 @@ export function simulateIntel(
   }
   let { fortHitpoints } = defender;
   const isSuccessful = attacker.spy > defender.sentry;
-  //const defenderSpyUnit = new SpyUserModel(defender, spies * 10)
 
   const result = new IntelResult(attacker, defender, spies);
   result.success = isSuccessful;
@@ -129,8 +129,7 @@ export function simulateIntel(
     const intelKeys = Object.keys(new SpyUserModel(defender, (spies - spiesLost) * 10));
     const selectedKeysCount = Math.ceil(intelKeys.length * intelPercentage / 100);
     const randomizedKeys = intelKeys.sort(() => 0.5 - Math.random()).slice(0, selectedKeysCount);
-    console.log('Random Keys:', randomizedKeys, 'Intel Percentage:', intelPercentage, 'Intel Keys:', intelKeys)
-
+    
     result.intelligenceGathered = randomizedKeys.reduce((partialIntel, key) => {
       const initPartialIntel = partialIntel ?? {
         offense: 0,
@@ -163,36 +162,37 @@ export const simulateAssassination = (
   attacker: UserModel,
   defender: UserModel,
   spiesSent: number,
-  targetUnit: string
+  targetUnit: UnitType | typeof CITIZEN_WORKERS_TARGET
 ) => {
   const result = new AssassinationResult(attacker, defender, spiesSent, targetUnit);
 
   // Step 1: Initial infiltration through sentries
   // Spy score should be greater than sentry to win
   const isSuccessful = attacker.spy > defender.sentry;
+  const spySentryRatio = attacker.spy / (defender.sentry || 1)
   result.success = isSuccessful;
 
-  // If the mission fails at the sentry check, deduct spies and return
-  // it doesn't matter KS/DS, we're just going to cause the attack to lose 
+  // If the mission fails at the sentry check
+  // going to allow some to safely retreat, but some will die
   if (!isSuccessful) {
-    result.spiesLost = spiesSent;
-    // Remove the spies from the attacker's units
-    let spiesToRemove = spiesSent;
+    const lossMultiplier = Math.min(1, Math.max(0, 1 - spySentryRatio) * 0.6 + 0.4);
+    const spiesToRemove = Math.ceil(spiesSent * mtRand(lossMultiplier * 0.9, lossMultiplier * 1.1));
     const assassinUnits = attacker.units.filter((u) => u.type === 'SPY' && u.level === 3);
     for (const unit of assassinUnits) {
       const qtyToRemove = Math.min(unit.quantity, spiesToRemove);
       unit.quantity -= qtyToRemove;
-      spiesToRemove -= qtyToRemove;
       if (spiesToRemove <= 0) break;
     }
-    // Let's exit because its already over
+    result.spiesLost = spiesToRemove;
+    logDebug(`Assassination failed at sentry check. Spies lost: ${result.spiesLost} | Spies sent: ${spiesSent} | AttackID: ${attacker.id} | DefenderID: ${defender.id}`);
     return result;
   }
 
   // Step 2: Combat between attacker's spies and defender's sentries
   // We'll take x% of the Level3 SPY's KS/DS based on number of spies compared to spyLevels maximum amount.
   let spiesRemaining = spiesSent;
-  let limiter = spiesRemaining / attacker.spyLimits.assass.perMission; // TODO: this should be the maximum assassins allowed per mission
+  let limiter = spiesRemaining / (attacker.spyLimits.assass.perMission || 1); // TODO: this should be the maximum assassins allowed per mission
+  // Determine probability/severity of being caught based on ratio
   
   const { spyStrength: attackerKS, sentryStrength: attackerDS } = calculateClandestineStrength(attacker, 'SPY', limiter);
   const { spyStrength: defenderKS, sentryStrength: defenderDS } = calculateClandestineStrength(defender, 'SENTRY', limiter);
@@ -200,26 +200,18 @@ export const simulateAssassination = (
   // Get average HP for attacker spies and defender sentries
   const { averageHP: attackerSpyAvgHP } = getAverageLevelAndHP(attacker.units, 'SPY', 3);
   const { averageHP: defenderSentryAvgHP } = getAverageLevelAndHP(defender.units, 'SENTRY');
-
-  console.log(`KillingStr: ${attackerKS} | DefenseStr: ${defenderDS}`)
-  console.log(`KillingStr: ${defenderKS} | DefenseStr: ${attackerDS}`)
-
+  
   // Calculate casualties using the adjusted formula
-  const casualtyRateInitial = defenderKS / (defenderKS + attackerDS)/100;
-  console.log(`casualtyRateInitial- ${casualtyRateInitial}`)
+  const casualtyRateInitial = defenderKS / ((defenderKS + attackerDS) || 1) / 100;
   const effectiveDefenderKSInitial = defenderKS * casualtyRateInitial;
-  console.log(`effectiveDefenderKSInitial: ${effectiveDefenderKSInitial}`)
-  console.log(`attackerSpyAvgHP ${attackerSpyAvgHP}`)
-  const attackerSpyCasualties = Math.floor(effectiveDefenderKSInitial / attackerSpyAvgHP * limiter);
-  console.log(`attackerSpyCasualties: ${attackerSpyCasualties}`)
-  const killRateInitial = attackerKS / (attackerKS + defenderDS);
+  const attackerSpyCasualties = Math.floor(effectiveDefenderKSInitial / ((attackerSpyAvgHP * limiter) || 1));
+  const killRateInitial = attackerKS / ((attackerKS + defenderDS) || 1);
   const effectiveAttackerKSInitial = attackerKS * killRateInitial;
-  const defenderSentryCasualties = Math.floor(effectiveAttackerKSInitial / defenderSentryAvgHP);
+  const defenderSentryCasualties = Math.floor(effectiveAttackerKSInitial / (defenderSentryAvgHP || 1));
 
   result.spiesLost += Math.min(spiesRemaining, attackerSpyCasualties);
   spiesRemaining -= Math.min(spiesRemaining, attackerSpyCasualties);
 
-  console.log('spiesLost', result.spiesLost)
   // Remove spies lost from attacker
   let spiesToRemove = result.spiesLost;
   const assassinUnits = attacker.units.filter((u) => u.type === 'SPY' && u.level === 3);
@@ -248,7 +240,7 @@ export const simulateAssassination = (
   }
 
   // Step 3: Proceed to attack target units
-  limiter = spiesRemaining / attacker.unitTotals.assassins;
+  limiter = spiesRemaining / (attacker.unitTotals.assassins || 1);
 
   const { spyStrength: attackerKS2, sentryStrength: attackerDS2 } = calculateClandestineStrength(attacker, 'SPY', limiter);
 
@@ -256,7 +248,7 @@ export const simulateAssassination = (
   let unitsKilled;
   let averageHP;
 
-  if (targetUnit === 'WORKERS/CITIZENS') {
+  if (targetUnit === CITIZEN_WORKERS_TARGET) {
     const workerStats = calculateDefenseAgainstAssassination(defender, 'WORKER', limiter);
     const citizenStats = calculateDefenseAgainstAssassination(defender, 'CITIZEN', limiter);
 
@@ -273,33 +265,31 @@ export const simulateAssassination = (
     // Combine average HP weighted by their quantities
     const totalWorkers = defender.unitTotals.workers;
     const totalCitizens = defender.unitTotals.citizens;
-    const totalUnits = totalWorkers + totalCitizens || 1; // Avoid division by zero
+    const totalUnits = totalWorkers + totalCitizens || 1;
 
     averageHP =
-      ((workerAvgHP * totalWorkers) + (citizenAvgHP * totalCitizens)) / totalUnits;
+      ((workerAvgHP * totalWorkers) + (citizenAvgHP * totalCitizens)) / (totalUnits || 1);
 
     // Calculate units killed using the adjusted formula
-    console.log('limiter', limiter)
-    console.log('targetDefenseStats:', targetDefenseStats.defenseStrength)
-    const killRate = attackerKS2 / ( targetDefenseStats.defenseStrength);
+    const killRate = attackerKS2 / (targetDefenseStats.defenseStrength || 1);
     const effectiveAttackerKS = attackerKS2 * (killRate * limiter);
-    unitsKilled = Math.floor(effectiveAttackerKS / averageHP);
+    unitsKilled = Math.floor(effectiveAttackerKS / (averageHP || 1));
 
     result.unitsKilled = Math.ceil(Math.min(
       unitsKilled,
       totalWorkers + totalCitizens
     ));
+    logDebug(`Assassination: ${result.unitsKilled} ${targetUnit} killed | AttackID: ${attacker.id} | DefenderID: ${defender.id}`);
   } else {
     targetDefenseStats = calculateDefenseAgainstAssassination(defender, targetUnit, limiter);
 
     // Calculate average HP for the target unit
     const { averageHP: targetUnitAvgHP } = getAverageLevelAndHP(defender.units, targetUnit);
-    averageHP = targetUnitAvgHP || 1; // Avoid division by zero
+    averageHP = targetUnitAvgHP || 1;
 
     // Calculate units killed using the adjusted formula
 
-    console.log('targetDefenseStats:', targetDefenseStats.defenseStrength)
-    const killRate = attackerKS2 / (attackerKS2 + targetDefenseStats.defenseStrength);
+    const killRate = attackerKS2 / (attackerKS2 + (targetDefenseStats.defenseStrength || 1));
     const effectiveAttackerKS = attackerKS2 * killRate;
     unitsKilled = Math.floor(effectiveAttackerKS / averageHP);
 
@@ -307,12 +297,13 @@ export const simulateAssassination = (
       unitsKilled,
       defender.unitTotals[targetUnit.toLowerCase()] || 0
     );
+    logDebug(`Assassination: ${result.unitsKilled} ${targetUnit} killed | AttackID: ${attacker.id} | DefenderID: ${defender.id}`);
   }
 
   // Remove units killed from defender
   let unitsToRemove = result.unitsKilled;
   const targetUnits = defender.units.filter((u) =>
-    targetUnit === 'WORKERS/CITIZENS'
+    targetUnit === CITIZEN_WORKERS_TARGET
       ? u.type === 'WORKER' || u.type === 'CITIZEN'
       : u.type === targetUnit
   );
@@ -321,26 +312,6 @@ export const simulateAssassination = (
     unit.quantity -= qtyToRemove;
     unitsToRemove -= qtyToRemove;
     if (unitsToRemove <= 0) break;
-  }
-
-  // Calculate additional casualties to attacker's spies from target units
-  const targetKS = targetDefenseStats.killingStrength;
-  const { averageHP: attackerSpyAvgHP2 } = getAverageLevelAndHP(attacker.units, 'SPY');
-
-  const casualtyRate = targetKS / (targetKS + attackerDS2);
-  const effectiveDefenderKS = targetKS * casualtyRate;
-  const additionalSpyCasualties = Math.floor(effectiveDefenderKS / attackerSpyAvgHP2);
-
-  result.spiesLost += Math.min(spiesRemaining, additionalSpyCasualties);
-  spiesRemaining -= Math.min(spiesRemaining, additionalSpyCasualties);
-
-  // Remove additional spies lost from attacker
-  spiesToRemove = additionalSpyCasualties;
-  for (const unit of assassinUnits) {
-    const qtyToRemove = Math.min(unit.quantity, spiesToRemove);
-    unit.quantity -= qtyToRemove;
-    spiesToRemove -= qtyToRemove;
-    if (spiesToRemove <= 0) break;
   }
 
   // Final mission success check
@@ -354,55 +325,71 @@ export const simulateAssassination = (
 
 
 export const simulateInfiltration =
-  (
-    attacker: UserModel,
-    defender: UserModel,
-    spies: number
-  ) => {
-    const isSuccessful = attacker.spy > defender.sentry;
-    const result = new InfiltrationResult(attacker, defender, spies);
-    result.success = isSuccessful;
-    result.spiesLost = isSuccessful ? 0 : spies;
+(
+  attacker: UserModel,
+  defender: UserModel,
+  spies: number
+) => {
+  const spySentryRatio = attacker.spy / (defender.sentry || 1); // Avoid division by zero
+  let spiesLost = 0;
 
-    const { spyStrength: attackerKS, sentryStrength: attackerDS } = calculateClandestineStrength(attacker, 'SPY', 1);
-    const { spyStrength: defenderKS, sentryStrength: defenderDS } = calculateClandestineStrength(defender, 'SENTRY', 1);
-    const { attackerCasualties, defenderCasualties } = computeSpyCasualties(attackerKS, attackerDS, defenderKS, defenderDS, spies, defender.unitTotals.sentries, 1, 1);
-
-    if (!isSuccessful) {
-      attacker.units.filter((u) => u.type === 'SPY' && u.level === 1).forEach((u) => u.quantity = u.quantity - spies);
-      const deathRiskFactor = Math.max(0, 1 - (attacker.spy / defender.sentry));
-
-      let spiesLost = 0;
-      for (let i = 0; i < spies; i++) {
-        if (Math.random() < deathRiskFactor) {
-          spiesLost++;
-        }
-      }
-      result.spiesLost = spiesLost;
-      return result
-    } else {
-      const startHP = result.defender.fortHitpoints;
-      for (var i = 1; i <= spies; i++) {
-        if (result.defender.fortHitpoints > 0) {
-          if (result.attacker.spy / result.defender.sentry <= 0.05)
-            result.defender.fortHitpoints -= Math.floor(mtRand(0, 2))
-          else if (result.attacker.spy / result.defender.sentry > 0.05 && result.attacker.spy / result.defender.sentry <= 0.5)
-            result.defender.fortHitpoints -= Math.floor(mtRand(3, 6));
-          else if (result.attacker.spy / result.defender.sentry > 0.5 && result.attacker.spy / result.defender.sentry <= 1.3)
-            result.defender.fortHitpoints -= Math.floor(mtRand(6, 16));
-          else result.defender.fortHitpoints -= Math.floor(mtRand(12, 24));
-          //}
-          if (result.defender.fortHitpoints < 0) {
-            result.defender.fortHitpoints = 0;
-          }
-        }
-      }
-      result.fortDmg += Number(startHP - result.defender.fortHitpoints);
-
-      return result;
-    }
+  // Implement a curve for spy loss based on the spy/sentry ratio
+  if (spySentryRatio <= 0.5) {
+    // Significant disadvantage - lose most spies
+    spiesLost = Math.ceil(spies * 0.9);
+  } else if (spySentryRatio <= 0.8) {
+    // Moderate disadvantage - lose a significant number of spies
+    spiesLost = Math.ceil(spies * 0.6);
+  } else if (spySentryRatio < 1) {
+    // Slight disadvantage - lose some spies
+    spiesLost = Math.ceil(spies * 0.3);
+  } else if (spySentryRatio <= 1.2) {
+    // Slight advantage - lose a few spies
+    spiesLost = Math.ceil(spies * 0.1);
+  } else {
+    // Significant advantage - lose no spies
+    spiesLost = 0;
   }
 
+  spiesLost = Math.min(spiesLost, spies); // Ensure we don't lose more spies than we sent
+
+  const result = new InfiltrationResult(attacker, defender, spies);
+  result.success = attacker.spy > defender.sentry; // The mission is still considered successful if attacker.spy > defender.sentry, even with spy losses
+  result.spiesLost = (result.success ? spiesLost : spies); // Lost, lose all spies
+
+  // Remove spies lost from attacker
+  let spiesToRemove = result.spiesLost;
+  const infiltratorUnits = attacker.units.filter((u) => u.type === 'SPY' && u.level === 2); // Level 2 SPY
+  for (const unit of infiltratorUnits) {
+    const qtyToRemove = Math.min(unit.quantity, spiesToRemove);
+    unit.quantity -= qtyToRemove;
+    spiesToRemove -= qtyToRemove;
+    if (spiesToRemove <= 0) break;
+  }
+
+  // The rest of the function remains the same
+  if (result.success) {
+    const startHP = result.defender.fortHitpoints;
+    for (let i = 1; i <= spies - spiesLost; i++) { // Only damage with remaining spies
+      if (result.defender.fortHitpoints > 0) {
+        if (result.attacker.spy / (result.defender.sentry || 1) <= 0.05)
+          result.defender.fortHitpoints -= Math.floor(mtRand(0, 2))
+        else if (result.attacker.spy / (result.defender.sentry || 1) > 0.05 && result.attacker.spy / (result.defender.sentry || 1) <= 0.5)
+          result.defender.fortHitpoints -= Math.floor(mtRand(3, 6));
+        else if (result.attacker.spy / (result.defender.sentry || 1) > 0.5 && result.attacker.spy / (result.defender.sentry || 1) <= 1.3)
+          result.defender.fortHitpoints -= Math.floor(mtRand(6, 16));
+        else result.defender.fortHitpoints -= Math.floor(mtRand(12, 24));
+
+        if (result.defender.fortHitpoints < 0) {
+          result.defender.fortHitpoints = 0;
+        }
+      }
+    }
+    result.fortDmg += Number(startHP - result.defender.fortHitpoints);
+  }
+
+  return result;
+  }
 export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 'SENTRY', limiter: number = 1): {
   spyStrength: number;
   sentryStrength: number;
@@ -572,21 +559,14 @@ export function computeSpyCasualties({
   
   const { averageKilling: attackerAvgKS, averageDefense: attackerAvgDS } = calculateAverageStrength(attackerUnits, 'SPY')
   
-  const { averageDefense: defenderAvgDS } = calculateAverageStrength(defenderUnits, defenderUnits.at(0).type)
+  const { averageDefense: defenderAvgDS } = calculateAverageStrength(defenderUnits, defenderUnits.at(0)?.type)
 
-  console.log('attackerKS / defenderAvgDS', attackerAvgKS / defenderAvgDS)
 
-  console.log({
-    attackerPop,
-    defenderPop,
-    offenseToDefenseRatio,
-    defenseToOffenseRatio,
-    attackerDiff,
-    defenderDiff,
-  })
+  const attackerCasualties = Math.ceil(spiesSent * (attackerAvgKS / defenderAvgDS));
+  const defenderCasualties = Math.ceil(spiesSent * (defenderAvgDS / attackerAvgKS));
 
   return {
-    attackerCasualties: 1,
-    defenderCasualties: 1,
+    attackerCasualties,
+    defenderCasualties,
   };
 }

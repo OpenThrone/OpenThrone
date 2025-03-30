@@ -14,10 +14,6 @@ const getRecentAttacks = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const playerId = session.user.id;
-  const { type } = req.query;
-
-
   try {
     const relations = await prisma.attack_log.findMany({
       where: {
