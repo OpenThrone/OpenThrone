@@ -3,7 +3,7 @@ import UserModel from "@/models/Users";
 import { BattleUnits, Fortification, ItemType } from "@/types/typings";
 import mtRand from "./mtrand";
 import BattleResult from "@/models/BattleResult";
-import { type } from "os";
+import { logInfo } from "./logger";
 
 interface BattleState {
   attacker: UserModel;
@@ -473,7 +473,7 @@ export function calculateStrength(
     defenseStrength: Math.ceil(defenseStrength * multiplier),
   };
 
-  console.log(`Final strength for ${unitType}: KS=${result.killingStrength}, DS=${result.defenseStrength}`);
+  logInfo(`Final strength for ${unitType}: KS=${result.killingStrength}, DS=${result.defenseStrength}`);
 
   strengthCache.set(cacheKey, result);
   return result;
