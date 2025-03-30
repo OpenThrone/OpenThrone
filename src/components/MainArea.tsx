@@ -72,7 +72,8 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
                         style={{
                           color: 'orange'
                         }}
-                        size="lg"
+                        fixedWidth
+                        size="sm"
                       />
                       {unreadMessagesCount > 0 && (
                         <Badge
