@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { MDXRemote } from 'next-mdx-remote';
+import { MDXRemote, MDXRemoteSerializeResult } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import React, { useEffect, useState } from 'react';
+import { AccountStatus } from '@prisma/client'; // Import AccountStatus
+import { JsonValue } from '@prisma/client/runtime/library'; // Import JsonValue
 
-import Alert from '@/components/alert';
 import Modal from '@/components/modal';
 import SpyMissionsModal from '@/components/spyMissionsModal';
 import { useUser } from '@/context/users';
@@ -19,10 +19,52 @@ import Image from 'next/image';
 import FriendCard from '@/components/friendCard';
 import MainArea from '@/components/MainArea';
 
-interface IndexProps {
-  users: UserModel;
+interface UserProfileServerData {
+  id: number;
+  email: string;
+  display_name: string;
+  race: string;
+  class: string;
+  units: JsonValue | null;
+  experience: number;
+  gold: string;
+  gold_in_bank: string;
+  fort_level: number;
+  fort_hitpoints: number;
+  attack_turns: number;
+  last_active: string;
+  rank: number;
+  items: JsonValue | null;
+  house_level: number;
+  battle_upgrades: JsonValue | null;
+  structure_upgrades: JsonValue | null;
+  bonus_points: JsonValue | null;
+  bio: string;
+  colorScheme: string | null;
+  recruit_link: string;
+  locale: string;
+  economy_level: number;
+  avatar: string | null;
+  created_at: string;
+  updated_at: string;
+  stats: JsonValue | null;
+  killing_str: number | null;
+  defense_str: number | null;
+  spying_str: number | null;
+  sentry_str: number | null;
+  offense: number | null;
+  defense: number | null;
+  spy: number | null;
+  sentry: number | null;
+  bionew: MDXRemoteSerializeResult<Record<string, unknown>, Record<string, unknown>>;
+  status: AccountStatus | string;
 }
 
+interface IndexProps {
+  users: UserProfileServerData; // Use the new interface
+}
+
+// The component receives props matching IndexProps (which uses UserProfileServerData)
 const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [hideSidebar, setHideSidebar] = useState(true);
   const {user, forceUpdate} = useUser();
@@ -279,7 +321,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
               >
                 Recruit this Player
                 </Link>
-                {true === false && (
+                {socialEnabled && (
                 <>
                 <button
                   type="button"
@@ -386,7 +428,7 @@ export const getServerSideProps = async ({ query }) => {
     return { notFound: true };
   }
 
-  const { password_hash, ...userWithoutPassword } = user;
+  const { password_hash, email, ...userWithoutPassword } = user;
 
   const userData = {
     ...userWithoutPassword, 

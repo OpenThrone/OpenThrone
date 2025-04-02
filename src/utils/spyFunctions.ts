@@ -146,7 +146,11 @@ export function simulateIntel(
       if (key === 'units' || key === 'items') {
         const totalTypes = defender[key].length;
         const typesToInclude = Math.floor(totalTypes * intelPercentage / 100);
-        initPartialIntel[key] = defender[key].sort(() => 0.5 - Math.random()).slice(0, typesToInclude);
+        if (key === 'units') {
+          initPartialIntel[key] = defender[key].sort(() => 0.5 - Math.random()).slice(0, typesToInclude) as PlayerUnit[];
+        } else {
+          initPartialIntel[key] = defender[key].sort(() => 0.5 - Math.random()).slice(0, typesToInclude) as Item[];
+        }
       } else {
         initPartialIntel[key] = defender[key];
       }

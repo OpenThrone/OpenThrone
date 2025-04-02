@@ -68,10 +68,21 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     
 
     // Return success response with new gold and fort hitpoints values
-    return res.status(200).json(stringifyObj({ success: true, newGold: user.gold - BigInt(totalCost), newFortHitpoints }));
+    return res.status(200).json(stringifyObj({
+      success: true,
+      message: 'Fortification repaired successfully',
+      data: {
+        newGold: user.gold - BigInt(totalCost),
+        newFortHitpoints
+      }
+    }));
   } catch (error) {
     logError('Error repairing fortification:', error, userId);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return res.status(500).json({
+      success: false,
+      error: 'An internal server error occurred during repair.',
+      code: 'INTERNAL_SERVER_ERROR'
+    });
   }
 }
 

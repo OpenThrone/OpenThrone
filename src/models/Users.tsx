@@ -1,5 +1,6 @@
 import md5 from 'md5';
 import { getAssetPath } from '@/utils/utilities';
+import { User as PrismaUser } from '@prisma/client'; // Import Prisma User type
 
 import type {
   BonusPointsItem,
@@ -16,6 +17,10 @@ import type {
   ItemCounts,
   UnitUpgradeType,
   PlayerBonus,
+  PlayerItem, // Use this for the items array type
+  PlayerBattleUpgrade, // Use this for battle_upgrades array type
+  StructureUpgrade, // Use this for structure_upgrades array type
+  PlayerStat, // Use this for stats array type
 } from '@/types/typings';
 
 import {
@@ -32,562 +37,394 @@ import {
   levelXPArray,
 } from '../constants';
 import { getLevelFromXP } from '@/utils/utilities';
-import { stringifyObj } from '@/utils/numberFormatting';
+import { stringifyObj } from '@/utils/numberFormatting'; // Keep for constructor usage if needed
 
 class UserModel {
   public id: number;
-
   public displayName: string;
-
   public email: string;
-
   public passwordHash: string;
-
   public race: PlayerRace;
-
   public class: PlayerClass;
-
   public experience: number;
-
-  public gold: bigint | string;
-
-  public goldInBank: bigint | string;
-
+  public gold: bigint; // Use bigint internally
+  public goldInBank: bigint; // Use bigint internally
   public fortLevel: number;
-
   public fortHitpoints: number;
-
   public houseLevel: number;
-
   public attackTurns: number;
-
   public units: PlayerUnit[];
-
-  public items: Item[];
-
-  public last_active: Date;
-
+  public items: PlayerItem[]; // Use specific PlayerItem type
+  public last_active: Date | null; // Allow null
   public bio: string;
-
-  public colorScheme: PlayerRace | string;
-
+  public colorScheme: PlayerRace | string | null; // Allow null
   public is_player: boolean;
-
   public is_online: boolean;
-
   public overallrank: number;
-
   public attacks_made: number;
-
   public attacks_defended: number;
-
   public attacks_won: number;
-
   public defends_won: number;
-
   public bonus_points: BonusPointsItem[];
-
   public economyLevel: number;
+  public structure_upgrades: StructureUpgrade[];
+  public battle_upgrades: PlayerBattleUpgrade[];
+  public stats: PlayerStat[];
+  public beenAttacked: boolean; // we shouldn't need this in the model, just in the context for current user notification
+  public detectedSpy: boolean; // we shouldn't need this in the model, just in the context for current user notification
+  public locale: Locales;
+  public avatar: string | null; // Allow null
+  public permissions: any[]; // Keep as any for now unless specific structure is known
+  public currentStatus: string; // From calculated field in API response
+  public offense: number; // Calculated
+  public defense: number; // Calculated
+  public spy: number; // Calculated
+  public sentry: number; // Calculated
+  private checkStats: boolean; // Internal flag
 
-  public structure_upgrades: any[];
+  constructor(userData?: PrismaUser | null, filtered: boolean = true, checkStats: boolean = true) {
+    // Ensure userData is not null or undefined before processing
+    const safeUserData = userData ? JSON.parse(JSON.stringify(stringifyObj(userData))) : null;
 
-  public beenAttacked: boolean;
-
-  public detectedSpy: boolean;
-
-  public locale: Locales; 
-
-  public avatar: string;
-
-  public battle_upgrades: UnitUpgradeType[] | [];
-  public stats: any[];
-  
-  public won_attacks: number;
-  
-  public won_defends: number;
-  
-  public totalAttacks: number;
-  
-  public totalDefends: number;
-  
-  public currentStatus: string;
-  
-  public offense: number;
-  
-  public defense: number;
-  
-  public spy: number;
-  
-  public sentry: number;
-  
-  public permissions: any[];
-
-  public checkStats: boolean;
-
-  constructor(userData?: any, filtered: boolean = true, checkStats: boolean = true) {
-    userData = JSON.parse(JSON.stringify(stringifyObj(userData)));
-    this.id = 0;
-    this.displayName = '';
-    this.email = '';
-    this.passwordHash = '';
-    this.race = 'ELF';
-    this.class = 'ASSASSIN';
-    this.experience = 0;
-    this.gold = '0';
-    this.goldInBank = '0';
+    this.id = safeUserData?.id ?? 0;
+    this.displayName = safeUserData?.display_name ?? '';
+    this.email = ''; // Only set if not filtered
+    this.passwordHash = ''; // Only set if not filtered
+    this.race = safeUserData?.race ?? 'ELF';
+    this.class = safeUserData?.class ?? 'ASSASSIN';
+    this.experience = safeUserData?.experience ?? 0;
+    this.gold = BigInt(safeUserData?.gold ?? '0'); // Default to BigInt(0)
+    this.goldInBank = BigInt('0'); // Default to BigInt(0)
     this.checkStats = checkStats;
-    this.fortLevel = 0;
-    this.fortHitpoints = 0;
-    this.houseLevel = 0;
-    this.attacks_made = 0;
-    this.attacks_defended = 0;
-    this.bonus_points = [];
-    this.attackTurns = 0;
-    this.last_active = new Date();
-    this.units = [];
-    this.items = [];
-    this.bio = '';
-    this.colorScheme = '';
-    this.is_player = false;
-    this.is_online = false;
-    this.overallrank = 0;
-    this.economyLevel = 0;
-    this.attacks_won = 0;
-    this.defends_won = 0;
-    this.beenAttacked = false;
-    this.detectedSpy = false;
-    this.structure_upgrades = [];
-    this.battle_upgrades = [];
-    this.locale = 'en-US';
-    this.avatar = '';
-    this.won_attacks = 0;
-    this.won_defends = 0;
-    this.totalAttacks = 0;
-    this.totalDefends = 0;
-    this.currentStatus = '';
-    this.permissions = [];
-    if (userData) {
-      this.id = userData.id;
-      this.displayName = userData.display_name || userData.displayName;
-      if (!filtered) {
-        this.email = userData.email;
-        this.passwordHash = userData?.password_hash;
-        this.goldInBank = userData.gold_in_bank;
-      }
-      this.economyLevel = userData.economy_level;
-      const nowdate = new Date();
-      const lastActiveTimestamp = new Date(userData.last_active).getTime();
-      const nowTimestamp = nowdate.getTime();
+    this.fortLevel = safeUserData?.fort_level ?? 0;
+    this.fortHitpoints = safeUserData?.fort_hitpoints ?? 0;
+    this.houseLevel = safeUserData?.house_level ?? 0;
+    this.attackTurns = safeUserData?.attack_turns ?? 0;
+    this.last_active = safeUserData?.last_active ? new Date(safeUserData.last_active) : null;
+    // Safely parse JSON fields, providing default empty arrays
+    this.units = safeUserData?.units ?? [];
+    this.items = safeUserData?.items ?? [];
+    this.bio = safeUserData?.bio ?? '';
+    this.colorScheme = safeUserData?.colorScheme ?? null;
+    this.is_player = false; // Typically set based on comparison elsewhere
+    this.is_online = false; // Calculated later
+    this.overallrank = safeUserData?.rank ?? 0; // Use 'rank' from Prisma
+    this.economyLevel = safeUserData?.economy_level ?? 0;
+    this.bonus_points = safeUserData?.bonus_points ?? [];
+    this.structure_upgrades = safeUserData?.structure_upgrades ?? [];
+    this.battle_upgrades = safeUserData?.battle_upgrades ?? [];
+    this.stats = safeUserData?.stats ?? [];
+    this.locale = safeUserData?.locale ?? 'en-US';
+    this.avatar = safeUserData?.avatar ?? null;
+    this.permissions = safeUserData?.permissions ?? [];
+    // Fields typically added by API/calculations, initialize defaults
+    this.attacks_made = safeUserData?.totalAttacks ?? 0;
+    this.attacks_defended = safeUserData?.totalDefends ?? 0;
+    this.attacks_won = safeUserData?.won_attacks ?? 0;
+    this.defends_won = safeUserData?.won_defends ?? 0;
+    this.beenAttacked = safeUserData?.beenAttacked ?? false;
+    this.detectedSpy = safeUserData?.detectedSpy ?? false;
+    this.currentStatus = safeUserData?.currentStatus ?? 'ACTIVE';
+    this.offense = safeUserData?.offense ?? 0;
+    this.defense = safeUserData?.defense ?? 0;
+    this.spy = safeUserData?.spy ?? 0;
+    this.sentry = safeUserData?.sentry ?? 0;
 
-      this.is_online = (nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15;
-      this.attackTurns = userData.attack_turns;
-      this.race = userData.race;
-      this.class = userData.class;
-      this.experience = userData.experience;
-      this.gold = userData.gold || '0';
-      this.goldInBank = userData.gold_in_bank || '0';
-      this.battle_upgrades = userData.battle_upgrades;
-      this.fortLevel = userData.fort_level || userData.fortLevel || 0;
-      this.fortHitpoints = userData?.fort_hitpoints || userData?.fortHitpoints || 0;
-      this.houseLevel = userData.house_level || 0;
-
-      this.last_active = userData.last_active;
-      this.units = userData.units;
-      this.items = userData.items;
-      this.bio = userData.bio;
-      this.colorScheme = userData.colorScheme;
-      this.is_player = false;
-      this.overallrank = 0;
-      this.attacks_made = userData.totalAttacks;
-      this.attacks_defended = userData.totalDefends;
-      this.bonus_points = userData.bonus_points;
-      this.attacks_won = userData.won_attacks || 0;
-      this.defends_won = userData.won_defends || 0;
-      this.totalAttacks = userData.totalAttacks || 0;
-      this.totalDefends = userData.totalDefends || 0;
-      this.currentStatus = userData.currentStatus || '';
-      this.stats = userData.stats;
-      this.structure_upgrades = userData.structure_upgrades;
-      this.locale = userData.locale;
-      this.offense = userData.offense;
-      this.defense = userData.defense;
-      this.spy = userData.spy;
-      this.sentry = userData.sentry;
-      if(userData.avatar !== 'SHIELD') {
-        this.avatar = userData.avatar;
-      } else {
-        this.avatar = getAssetPath('shields', '150x150', this.race)
-      }
-
-      this.permissions = userData.permissions;
+    // Handle filtered data
+    if (!filtered && safeUserData) {
+      this.email = safeUserData.email;
+      this.passwordHash = safeUserData.password_hash ?? '';
+      this.goldInBank = BigInt(safeUserData.gold_in_bank ?? '0');
     }
-    if (checkStats)
-      this.updateStats()
+
+    // Set avatar path correctly
+    if (this.avatar && this.avatar !== 'SHIELD') {
+      // Keep the provided avatar if it's not the default placeholder
+    } else {
+      this.avatar = getAssetPath('shields', '150x150', this.race); // Use getAssetPath for default
+    }
+
+    // Calculate online status
+    if (this.last_active) {
+      const nowTimestamp = new Date().getTime();
+      const lastActiveTimestamp = this.last_active.getTime();
+      this.is_online = (nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15;
+    }
+
+    // Calculate derived stats if requested
+    if (checkStats) {
+      this.updateStats();
+    }
   }
+
 
   updateStats() {
     this.offense = this.getArmyStat('OFFENSE');
     this.defense = this.getArmyStat('DEFENSE');
-    
     this.spy = this.getArmyStat('SPY');
     this.sentry = this.getArmyStat('SENTRY');
   }
 
   get attacksWon(): number {
-    return this.attacks_won;
+    return this.statistics('OFFENSE', 'WON'); // Use statistics method
   }
 
   get defendsWon(): number {
-    return this.defends_won;
+    return this.statistics('DEFENSE', 'WON'); // Use statistics method
   }
 
-  statistics(type: string, subType: string): number {
-    // Return 0 for unsupported types or subtypes
-    if (!['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].includes(type) ||
-      !['WON', 'LOST'].includes(subType)) {
-      return 0;
-    }
-    if (this.stats?.length === 0 || !this.stats) {
-      return 0;
-    }
-    return this.stats.find(stat => stat.type === type && stat.subtype === subType)?.stat || 0;
+  statistics(type: 'OFFENSE' | 'DEFENSE' | 'SPY' | 'SENTRY', subType: 'WON' | 'LOST' | string): number {
+    if (!this.stats) return 0;
+    return this.stats.find(stat => stat.type === type && stat.subtype === subType)?.stat ?? 0;
   }
 
-  get netWorth(): BigInt | number {
-    return BigInt(this.gold) + BigInt(this.goldInBank);
+  get netWorth(): bigint {
+    // Ensure properties are BigInt before adding
+    const goldOnHand = BigInt(this.gold || 0);
+    const goldInBank = BigInt(this.goldInBank || 0);
+    return goldOnHand + goldInBank;
   }
 
-  /**
-   * Returns the number of available proficiency points for the user.
-   * This is calculated by subtracting the sum of bonus points' levels from the user's level.
-   * @returns {number} The number of available proficiency points.
-   */
   get availableProficiencyPoints(): number {
+    if (!this.bonus_points) return this.level; // Or 0 depending on logic
     return (
       this.level -
-      this.bonus_points.reduce((acc, bonus) => acc + bonus.level, 0)
+      (this.bonus_points || []).reduce((acc, bonus) => acc + bonus.level, 0)
     );
   }
 
-  /**
-   * Returns the number of used proficiency points for the user.
-   * This is calculated by subtracting the sum of bonus points' levels from the user's level.
-   * @returns {number} The number of available proficiency points.
-   */
   get usedProficiencyPoints(): number {
-    return (
-      this.bonus_points.reduce((acc, bonus) => acc + bonus.level, 0)
-    );
+    if (!this.bonus_points) return 0;
+    return (this.bonus_points || []).reduce((acc, bonus) => acc + bonus.level, 0);
   }
 
-  /**
-   * Returns an array of bonuses that are applicable to the user's race or class.
-   * @returns {Array<PlayerBonus>} An array of Bonus objects.
-   */
+
   get playerBonuses(): PlayerBonus[] {
     return Bonuses.filter(
       (bonus) => bonus.race === this.race || bonus.race === this.class
     );
   }
 
-  /**
-   * Calculates the total income bonus for the user based on their race, class, and bonus points.
-   * @returns The total income bonus for the user.
-   */
   get incomeBonus(): number {
-    const income = Bonuses.filter(
-      (bonus) =>
-        (bonus.race === this.race || bonus.race === this.class) &&
-        bonus.bonusType === 'INCOME'
-    ).reduce(function (count, stat) {
-      return count + stat.bonusAmount;
-    }, 0);
-    const incomeLevelBonus = this.bonus_points
+    const baseBonus = (this.playerBonuses || [])
+      .filter((bonus) => bonus.bonusType === 'INCOME')
+      .reduce((sum, bonus) => sum + bonus.bonusAmount, 0);
+
+    const pointsBonus = (this.bonus_points || [])
       .filter((bonus) => bonus.type === 'INCOME')
-      .reduce((acc, bonus) => acc + bonus.level, 0);
-    return income + incomeLevelBonus;
+      .reduce((sum, bonus) => sum + bonus.level, 0);
+
+    return baseBonus + pointsBonus;
   }
 
-  /**
-   * Returns the recruiting link for the user.
-   * The recruiting link is generated by hashing the user's ID using the MD5 algorithm.
-   * @returns {string} The recruiting link for the user.
-   */
+
   get recruitingLink(): string {
     return md5(this.id.toString());
   }
 
-  /**
-   * Returns the total attack bonus for the user.
-   * @returns {number} The total attack bonus.
-   */
   get attackBonus(): number {
-    const attack = Bonuses.filter(
-      (bonus) =>
-        (bonus.race === this.race || bonus.race === this.class) &&
-        bonus.bonusType === 'OFFENSE'
-    ).reduce(function (count, stat) {
-      return count + stat.bonusAmount;
-    }, 0);
-    const offenseLevelBonus = this.bonus_points
+    const baseBonus = (this.playerBonuses || [])
+      .filter((bonus) => bonus.bonusType === 'OFFENSE')
+      .reduce((sum, bonus) => sum + bonus.bonusAmount, 0);
+
+    const pointsBonus = (this.bonus_points || [])
       .filter((bonus) => bonus.type === 'OFFENSE')
-      .reduce((acc, bonus) => acc + bonus.level, 0);
-    const siegeUpgradeBonus = OffensiveUpgrades.filter(
-      (upgrade) => upgrade.level === this.structure_upgrades.find((upgrade) => upgrade.type === 'OFFENSE')?.level
-    ).reduce((acc, upgrade) => acc + upgrade.offenseBonusPercentage, 0);
-    
-    return attack + offenseLevelBonus + siegeUpgradeBonus;
+      .reduce((sum, bonus) => sum + bonus.level, 0);
+
+    const structureBonus = (this.structure_upgrades || [])
+      .filter(upgrade => upgrade.type === 'OFFENSE')
+      .map(upgrade => OffensiveUpgrades.find(u => u.level === upgrade.level)?.offenseBonusPercentage ?? 0)
+      .reduce((sum, bonus) => sum + bonus, 0);
+
+    return baseBonus + pointsBonus + structureBonus;
   }
 
-  /**
-   * Returns the total defense bonus for the user, calculated by summing up the defense bonuses from the user's race and class, as well as any bonus points allocated to defense.
-   * @returns {number} The total defense bonus for the user.
-   */
+
   get defenseBonus(): number {
-    const defense = Bonuses.filter(
-      (bonus) =>
-        (bonus.race === this.race || bonus.race === this.class) &&
-        bonus.bonusType === 'DEFENSE'
-    ).reduce(function (count, stat) {
-      return count + stat.bonusAmount;
-    }, 0);
-    const defenseLevelBonus = this.bonus_points
+    const baseBonus = (this.playerBonuses || [])
+      .filter((bonus) => bonus.bonusType === 'DEFENSE')
+      .reduce((sum, bonus) => sum + bonus.bonusAmount, 0);
+
+    const pointsBonus = (this.bonus_points || [])
       .filter((bonus) => bonus.type === 'DEFENSE')
-      .reduce((acc, bonus) => acc + bonus.level, 0);
-    const fortBonus = Fortifications.find(x => x.level === this.fortLevel)?.defenseBonusPercentage || 0;
-    return defense + defenseLevelBonus + fortBonus;
+      .reduce((sum, bonus) => sum + bonus.level, 0);
+
+    const fortBonus = Fortifications.find(f => f.level === this.fortLevel)?.defenseBonusPercentage ?? 0;
+
+    return baseBonus + pointsBonus + fortBonus;
   }
 
-  /**
-   * Calculates the total intelligence bonus for the user.
-   * @returns {number} The total intelligence bonus.
-   */
+
   get intelBonus(): number {
-    const intel = Bonuses.filter(
-      (bonus) =>
-        (bonus.race === this.race || bonus.race === this.class) &&
-        bonus.bonusType === 'INTEL'
-    ).reduce(function (count, stat) {
-      return count + stat.bonusAmount;
-    }, 0);
-    const intelLevelBonus = this.bonus_points
+    const baseBonus = (this.playerBonuses || [])
+      .filter((bonus) => bonus.bonusType === 'INTEL')
+      .reduce((sum, bonus) => sum + bonus.bonusAmount, 0);
+
+    const pointsBonus = (this.bonus_points || [])
       .filter((bonus) => bonus.type === 'INTEL')
-      .reduce((acc, bonus) => acc + bonus.level, 0);
-    return intel + intelLevelBonus;
+      .reduce((sum, bonus) => sum + bonus.level, 0);
+
+    return baseBonus + pointsBonus;
   }
+
 
   get spyBonus(): number {
-    return SpyUpgrades[this?.spyLevel].offenseBonusPercentage + this.intelBonus;
+    const spyLevel = this.spyLevel; // Get level once
+    const structureBonus = SpyUpgrades.find(u => u.level === spyLevel)?.offenseBonusPercentage ?? 0;
+    return structureBonus + this.intelBonus;
   }
 
   get sentryBonus(): number {
-    return SentryUpgrades[this?.sentryLevel].defenseBonusPercentage + this.intelBonus;
+    const sentryLevel = this.sentryLevel; // Get level once
+    const structureBonus = SentryUpgrades.find(u => u.level === sentryLevel)?.defenseBonusPercentage ?? 0;
+    return structureBonus + this.intelBonus;
   }
 
-  /**
-  * Returns the missions that are enabled for the user based on their level.
-  * @returns {Object} An object containing the enabled missions.
-  */
-  get spyMissions(): any { //TODO: fix any type for spyMissions
+  get spyMissions(): Record<string, { enabled: boolean; requiredLevel: number }> {
     const missions = [
-      { name: 'infil', requiredLevel: 7 },
-      { name: 'assass', requiredLevel: 16 },
-      { name: 'intel', requiredLevel: 0 },
+      { name: 'intel', requiredLevel: SpyUpgrades[0]?.level ?? 1 }, // Level 1 req
+      { name: 'infil', requiredLevel: SpyUpgrades.find(u => u.maxInfiltrations > 0)?.level ?? Infinity }, // Level that unlocks infiltration
+      { name: 'assass', requiredLevel: SpyUpgrades.find(u => u.maxAssassinations > 0)?.level ?? Infinity }, // Level that unlocks assassination
     ];
+    const spyLevel = this.spyLevel;
 
-    return missions.reduce((availableMissions, mission) => {
-      availableMissions[mission.name] = {
-        enabled: this.spyLevel >= mission.requiredLevel,
+    return missions.reduce((acc, mission) => {
+      acc[mission.name] = {
+        enabled: spyLevel >= mission.requiredLevel,
         requiredLevel: mission.requiredLevel
       };
-      return availableMissions;
-    }, {});
+      return acc;
+    }, {} as Record<string, { enabled: boolean; requiredLevel: number }>);
   }
 
-  get spyLimits(): any { //TODO: fix any type for spyLimits
+  get spyLimits(): {
+    infil: { perUser: number; perMission: number; perDay: number };
+    assass: { perUser: number; perMission: number; perDay: number };
+    stats: { level: number; all: any } // Adjust 'any' type if SpyUpgradeType is defined
+  } {
+    const spyLevel = this.spyLevel;
+    const currentSpyUpgrade = SpyUpgrades.find((u) => u.level === spyLevel);
+
     return {
       infil: {
-        perUser: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxInfiltratorsPerUser,
-        perMission: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxInfiltratorsPerMission,
-        perDay: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxInfiltrations,
+        perUser: currentSpyUpgrade?.maxInfiltratorsPerUser ?? 0,
+        perMission: currentSpyUpgrade?.maxInfiltratorsPerMission ?? 0,
+        perDay: currentSpyUpgrade?.maxInfiltrations ?? 0,
       },
       assass: {
-        perDay: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxAssassinations,
-        perMission: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxAssassinsPerMission,
-        perUser: SpyUpgrades.find((u) => u.level === this?.spyLevel)?.maxAssassinationsPerUser,
+        perUser: currentSpyUpgrade?.maxAssassinationsPerUser ?? 0,
+        perMission: currentSpyUpgrade?.maxAssassinsPerMission ?? 0,
+        perDay: currentSpyUpgrade?.maxAssassinations ?? 0,
       },
       stats: {
-        level: this?.spyLevel,
-        all: SpyUpgrades.find((u) => u.level === this?.spyLevel)
+        level: spyLevel,
+        all: currentSpyUpgrade // Contains all details for the current level
       }
-    }
+    };
   }
 
-  /**
-   * Returns the total recruiting bonus for the user.
-   * @returns {number} The total recruiting bonus.
-   */
+
   get recruitingBonus(): number {
-    const recruiting = Bonuses.filter(
-      (bonus) =>
-        (bonus.race === this.race || bonus.race === this.class) &&
-        bonus.bonusType === 'RECRUITING'
-    ).reduce(function (count, stat) {
-      return count + stat.bonusAmount;
-    }, 0);
-    const houseBonus = HouseUpgrades[this.houseLevel as keyof typeof HouseUpgrades].citizensDaily;
-    return recruiting + houseBonus;
+    const baseBonus = (this.playerBonuses || [])
+      .filter((bonus) => bonus.bonusType === 'RECRUITING')
+      .reduce((sum, bonus) => sum + bonus.bonusAmount, 0);
+
+    const houseBonus = HouseUpgrades[this.houseLevel as keyof typeof HouseUpgrades]?.citizensDaily ?? 0;
+
+    return baseBonus + houseBonus;
   }
 
-  /**
-   * Returns the total casualty bonus for the user based on their race and class.
-   * @returns {number} The total casualty bonus.
-   */
   get casualtyBonus(): number {
-    const casualty = Bonuses.filter(
-      (bonus) =>
-        (bonus.race === this.race || bonus.race === this.class) &&
-        bonus.bonusType === 'CASUALTY'
-    ).reduce(function (count, stat) {
-      return count + stat.bonusAmount;
-    }, 0);
-    return casualty;
+    return (this.playerBonuses || [])
+      .filter((bonus) => bonus.bonusType === 'CASUALTY')
+      .reduce((sum, bonus) => sum + bonus.bonusAmount, 0);
   }
 
-  /**
-   * Returns the total charisma bonus for the user based on their race and class
-   * @returns {number} The total price bonus.
-   */
+
   get priceBonus(): number {
-    const price = Bonuses.filter(
-      (bonus) =>
-        (bonus.race === this.race || bonus.race === this.class) &&
-        bonus.bonusType === 'PRICES'
-    ).reduce(function (count, stat) {
-      return count + stat.bonusAmount;
-    }, 0);
-    return price + (this.bonus_points.find((bonus) => bonus.type === 'PRICES')?.level || 0);
+    const baseBonus = (this.playerBonuses || [])
+      .filter((bonus) => bonus.bonusType === 'PRICES')
+      .reduce((sum, bonus) => sum + bonus.bonusAmount, 0);
+
+    const pointsBonus = (this.bonus_points || [])
+      .filter((bonus) => bonus.type === 'PRICES')
+      .reduce((sum, bonus) => sum + bonus.level, 0);
+
+    return baseBonus + pointsBonus;
   }
 
-  /**
-   * Returns the total number of units in the army, excluding CITIZEN and WORKER units.
-   * @returns {number} The total number of units in the army.
-   */
+
   get armySize(): number {
-    return this.units
+    return (this.units || [])
       .filter((unit) => unit.type !== 'CITIZEN' && unit.type !== 'WORKER')
-      .reduce((acc, unit) => acc + unit.quantity, 0);
+      .reduce((acc, unit) => acc + (unit.quantity || 0), 0);
   }
 
-  /**
-   * Returns the total population of the user, calculated by summing the quantity of all units.
-   * @returns {number} The total population of the user.
-   */
   get population(): number {
-    return this.units.reduce((acc, unit) => acc + unit.quantity, 0);
+    return (this.units || []).reduce((acc, unit) => acc + (unit.quantity || 0), 0);
   }
 
-  /**
-   * Returns the number of citizens in the units array.
-   * @returns {number} The number of citizens.
-   */
   get citizens(): number {
-    return this.units.find((unit) => unit.type === 'CITIZEN')?.quantity || 0;
+    return this.units?.find((unit) => unit.type === 'CITIZEN')?.quantity ?? 0;
   }
 
-  /**
-   * Returns the total gold per turn for the user, calculated based on the number of worker units and fortification level.
-   * @returns The total gold per turn for the user.
-   */
-  get goldPerTurn(): BigInt {
-    const workerUnits = this.units.filter((units) => units.type === 'WORKER');
-    const workerGoldPerTurn = workerUnits
-      .map(
-        (unit) =>
-          EconomyUpgrades[this.economyLevel]?.goldPerWorker *
-          unit.quantity *
-          (1 + parseInt(this.incomeBonus.toString(), 10) / 100)
-      )
-      .reduce((acc, gold) => acc + gold, 0);
+  get goldPerTurn(): bigint {
+    const workerUnits = (this.units || []).filter((unit) => unit.type === 'WORKER');
+    const economyUpgrade = EconomyUpgrades[this.economyLevel];
+    const goldPerWorker = economyUpgrade?.goldPerWorker ?? 0; // Default to 0 if not found
+    const incomeBonusPercent = this.incomeBonus;
 
-    const fortificationGoldPerTurn =
-      Fortifications.find((fort) => fort.level === this.fortLevel)?.goldPerTurn;
-    return BigInt(Math.ceil(workerGoldPerTurn + fortificationGoldPerTurn + (this.incomeBonus / 100 * (workerGoldPerTurn + fortificationGoldPerTurn))));
+    const workerGold = workerUnits.reduce((sum, unit) => {
+      const baseWorkerGold = goldPerWorker * (unit.quantity ?? 0);
+      const bonusGold = baseWorkerGold * (incomeBonusPercent / 100);
+      return sum + baseWorkerGold + bonusGold;
+    }, 0);
+
+    const fortGold = Fortifications.find(f => f.level === this.fortLevel)?.goldPerTurn ?? 0;
+    const fortBonusGold = fortGold * (incomeBonusPercent / 100);
+
+    // Use Math.ceil on the final number before converting to BigInt
+    return BigInt(Math.ceil(workerGold + fortGold + fortBonusGold));
   }
 
-  /**
-   * Returns the amount of gold earned per turn based on the current fortification level.
-   * @returns {number} The amount of gold earned per turn.
-   */
+
   get fortificationGoldPerTurn(): number {
-    return Fortifications.find((fort) => fort.level === this.fortLevel)?.goldPerTurn || 0;
+    return Fortifications.find((fort) => fort.level === this.fortLevel)?.goldPerTurn ?? 0;
   }
 
-  /**
-   * Returns the total amount of gold earned per turn by all worker units owned by the user.
-   * @returns The total amount of gold earned per turn by all worker units owned by the user.
-   */
   get workerGoldPerTurn(): number {
-    const workerUnits = this.units.filter(unit => unit.type === 'WORKER');
-    if (!workerUnits.length) {
-      return 0; // No worker units.
-    }
+    const workerUnits = (this.units || []).filter(unit => unit.type === 'WORKER');
+    if (workerUnits.length === 0) return 0;
 
-    // Calculate the total gold
-    let totalGold = 0;
-    for (const unit of workerUnits) {
-      const workerBonus = EconomyUpgrades[this.economyLevel]?.goldPerWorker;
+    const economyUpgrade = EconomyUpgrades[this.economyLevel];
+    const goldPerWorkerBase = economyUpgrade?.goldPerWorker ?? 0;
+    const incomeBonusPercent = this.incomeBonus;
 
-      // Calculate the gold earned by this type of worker after considering incomeBonus.
-      const workerGold = workerBonus * (1 + parseInt(this.incomeBonus.toString(), 10) / 100);
+    const totalGold = workerUnits.reduce((sum, unit) => {
+      const baseGold = goldPerWorkerBase * (unit.quantity ?? 0);
+      const bonusGold = baseGold * (incomeBonusPercent / 100);
+      return sum + baseGold + bonusGold;
+    }, 0);
 
-      totalGold += workerGold * unit.quantity;
-    }
-
-    return totalGold;
+    return totalGold; // Return as number
   }
 
 
-  /**
-   * Returns the amount of gold earned per turn by each worker unit.
-   * This assumes all worker units are of the same type and level.
-   * If there are different types or levels of workers, this will only return the value for the first one.
-   * DT only had 1 type of worker AFAIK
-   * @returns The amount of gold earned per turn by each worker unit.
-   */
   get goldPerWorkerPerTurn(): number {
-    const workerUnit = this.units.find(unit => unit.type === 'WORKER');
-    if (!workerUnit) {
-      return 0; // No worker units.
-    }
+    const economyUpgrade = EconomyUpgrades[this.economyLevel];
+    const goldPerWorkerBase = economyUpgrade?.goldPerWorker ?? 0;
+    const incomeBonusPercent = this.incomeBonus;
 
-    let workerBonus = 50;
-
-    const upgrade = EconomyUpgrades[this.economyLevel as keyof typeof EconomyUpgrades];
-
-    if (typeof upgrade === 'object' && 'goldPerWorker' in upgrade) {
-      workerBonus = upgrade.goldPerWorker;
-    }
-
-    // Calculate the bonus per worker after considering incomeBonus.
-    const workerGoldPerTurn = workerBonus ? workerBonus * (1 + parseInt(this.incomeBonus.toString(), 10) / 100) : 0;
-
-    return workerGoldPerTurn;
+    return goldPerWorkerBase * (1 + incomeBonusPercent / 100);
   }
+
 
   getLevelForUnit(type: UnitType): number {
-    switch (type) {
-      case 'OFFENSE':
-        return this.fortLevel;
-      case 'DEFENSE':
-        return this.fortLevel;
-      case 'SENTRY':
-        return this.fortLevel;
-      case 'SPY':
-        return this.fortLevel;
-      default:
-        return 1;
-    }
+    // Return fortLevel if type is relevant, otherwise 1
+    if (['OFFENSE', 'DEFENSE', 'SENTRY', 'SPY'].includes(type)) {
+      return this.fortLevel;
+    } 
+    return 1;
   }
 
   /**
@@ -599,409 +436,287 @@ class UserModel {
     const sortedItems = this.getSortedItems(type);
     const sortedUnits = this.getSortedUnits(type);
     let totalStat = 0;
-    const unitCoverage = new Map<number, number>(); // Keeps track of coverage
+    const unitCoverage = new Map<number, number>(); // Tracks item/upgrade coverage per unit index
 
-    totalStat += this.calculateUnitStats(sortedUnits, unitCoverage);
+    totalStat += this.calculateUnitStats(sortedUnits);
     totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
-
-    // Calculate bonuses from upgrades
-    sortedUnits.forEach((unit, index) => {
-      const applicableUpgrades = this.getApplicableUpgrades(unit, type);
-
-      applicableUpgrades.forEach(upgrade => {
-        // Clone userUpgrade for this calculation to avoid side effects
-        const userUpgrade = { ...this.getUserUpgrade(upgrade, type) };
-
-        if (userUpgrade && userUpgrade.quantity > 0) {
-          const { totalBonusForUnits, unitsCovered } = this.calculateUpgradeBonus(upgrade, unit, userUpgrade, unitCoverage, index);
-          totalStat += totalBonusForUnits;
-
-          // Use a local variable instead of modifying userUpgrade.quantity directly
-          const remainingQuantity = userUpgrade.quantity - Math.ceil(unitsCovered / upgrade.unitsCovered);
-
-          // Update unit coverage without modifying external state
-          unitCoverage.set(index, (unitCoverage.get(index) || 0) + unitsCovered);
-        }
-      });
-    });
+    totalStat += this.calculateBattleUpgradeStats(sortedUnits, type, unitCoverage);
 
     totalStat = this.applyBonuses(type, totalStat);
     return Math.ceil(totalStat);
   }
 
 
-  /**
-   * Sorts and filters items based on type.
-   * @param type - The type of unit.
-   * @returns Sorted items.
-   */
-  private getSortedItems(type: UnitType): Item[] {
-    const filteredItems = this.items.filter(item => item.usage === type).sort((a, b) => b.level - a.level);
-    if(filteredItems.length > 0)
-      return JSON.parse(JSON.stringify(filteredItems));
-    
-    return []
+
+  private getSortedItems(type: UnitType): PlayerItem[] {
+    return JSON.parse(JSON.stringify(
+      (this.items || []).filter(item => item.usage === type).sort((a, b) => b.level - a.level)
+    ));
   }
 
-  /**
-   * Sorts and filters units based on type.
-   * @param type - The type of unit.
-   * @returns Sorted units.
-   */
   private getSortedUnits(type: UnitType): PlayerUnit[] {
-    return JSON.parse(JSON.stringify(this.units.filter(unit => unit.type === type).sort((a, b) => b.level - a.level)));
+    return JSON.parse(JSON.stringify(
+      (this.units || []).filter(unit => unit.type === type).sort((a, b) => b.level - a.level)
+    ));
   }
 
-  /**
-   * Calculates the total stats from units.
-   * @param sortedUnits - Sorted units.
-   * @param unitCoverage - Map tracking unit coverage.
-   * @returns Total unit stats.
-   */
-  private calculateUnitStats(sortedUnits: PlayerUnit[], unitCoverage: Map<number, number>): number {
+  private calculateUnitStats(sortedUnits: PlayerUnit[]): number {
+    return sortedUnits.reduce((stat, unit) => {
+      const unitInfo = UnitTypes.find(u => u.type === unit.type && u.level === unit.level);
+      return stat + (unitInfo?.bonus ?? 0) * (unit.quantity ?? 0);
+    }, 0);
+  }
+
+  private calculateItemStats(sortedItems: PlayerItem[], sortedUnits: PlayerUnit[], unitCoverage: Map<number, number>): number {
     let totalStat = 0;
+    const itemCountsByTypeLevel: { [itemType: string]: { [level: number]: number } } = {}; // Track used item quantities
 
-    sortedUnits.forEach((unit, index) => {
-      const unitFiltered = UnitTypes.find((unitType) => unitType.type === unit.type && unitType.level === unit.level);
-      if (!unitFiltered) return 0;
+    sortedUnits.forEach((unit, unitIndex) => {
+      if (unit.quantity <= 0) return; // Skip if unit quantity is zero
 
-      totalStat += (unitFiltered.bonus || 0) * unit.quantity;
+      const unitCurrentCoverage = unitCoverage.get(unitIndex) || 0;
+      let unitNeedsCoverage = unit.quantity - unitCurrentCoverage; // How many units still need items
+
+      if (unitNeedsCoverage <= 0) return; // Skip if unit is already fully covered by previous calculations (e.g., upgrades)
+
+      const itemsApplicableToUnit = sortedItems.filter(item => item.usage === unit.type);
+
+      itemsApplicableToUnit.forEach(item => {
+        if (unitNeedsCoverage <= 0) return; // Stop if this unit is covered
+
+        const itemInfo = ItemTypes.find(w => w.level === item.level && w.usage === item.usage && w.type === item.type);
+        if (!itemInfo) return;
+
+        // Initialize tracking for this item type/level if needed
+        if (!itemCountsByTypeLevel[item.type]) itemCountsByTypeLevel[item.type] = {};
+        if (!itemCountsByTypeLevel[item.type][item.level]) itemCountsByTypeLevel[item.type][item.level] = 0;
+
+        const availableItemQuantity = item.quantity - itemCountsByTypeLevel[item.type][item.level];
+        if (availableItemQuantity <= 0) return; // No more of this specific item available
+
+        // Determine how many units can receive this item
+        const quantityToApply = Math.min(unitNeedsCoverage, availableItemQuantity);
+
+        totalStat += (itemInfo.bonus ?? 0) * quantityToApply;
+
+        // Update counts
+        itemCountsByTypeLevel[item.type][item.level] += quantityToApply;
+        unitNeedsCoverage -= quantityToApply;
+      });
+
+      // Update the overall coverage for this unit index (items applied in this step)
+      unitCoverage.set(unitIndex, unit.quantity - unitNeedsCoverage);
     });
 
     return totalStat;
   }
 
-  /**
-   * Calculates the total stats from items.
-   * @param sortedItems - Sorted items.
-   * @param sortedUnits - Sorted units.
-   * @param unitCoverage - Map tracking unit coverage.
-   * @returns Total item stats.
-   */
-  private calculateItemStats(sortedItems: Item[], sortedUnits: UnitUpgradeType[], unitCoverage: Map<number, number>): number {
+  private calculateBattleUpgradeStats(sortedUnits: PlayerUnit[], type: UnitType, unitCoverage: Map<number, number>): number {
     let totalStat = 0;
+    const applicableUpgrades = (this.battle_upgrades || [])
+      .filter(up => up.type === type)
+      .sort((a, b) => b.level - a.level); // Process higher level upgrades first
 
-    sortedUnits.forEach((unit, index) => {
-      const itemCounts: ItemCounts = {};
-      sortedItems.forEach((item) => {
-        itemCounts[item.type] = itemCounts[item.type] || 0;
-        const weaponBonus = ItemTypes.find((w) => w.level === item.level && w.usage === unit.type && w.type === item.type)?.bonus || 0;
-        const usableQuantity = Math.min(item.quantity, unit.quantity - itemCounts[item.type]);
-        totalStat += weaponBonus * usableQuantity;
-        item.quantity -= usableQuantity;
-        itemCounts[item.type] += usableQuantity;
+    applicableUpgrades.forEach(upgrade => {
+      const upgradeInfo = BattleUpgrades.find(bu => bu.type === upgrade.type && bu.level === upgrade.level);
+      if (!upgradeInfo || upgrade.quantity <= 0) return;
+
+      let remainingUpgradeQuantity = upgrade.quantity; // How many of this upgrade are available
+
+      sortedUnits.forEach((unit, unitIndex) => {
+        if (remainingUpgradeQuantity <= 0) return; // No more of this upgrade left
+        if (unit.quantity <= 0 || unit.level < upgradeInfo.minUnitLevel) return; // Unit not eligible
+
+        const unitCurrentCoverage = unitCoverage.get(unitIndex) || 0;
+        const unitNeedsCoverage = unit.quantity - unitCurrentCoverage;
+        if (unitNeedsCoverage <= 0) return; // Unit already fully covered
+
+        // How many units can this upgrade *potentially* cover?
+        const maxUnitsUpgradeable = remainingUpgradeQuantity * upgradeInfo.unitsCovered;
+
+        // How many units actually get the upgrade in this step?
+        const unitsToUpgrade = Math.min(unitNeedsCoverage, maxUnitsUpgradeable);
+
+        if (unitsToUpgrade > 0) {
+          totalStat += (upgradeInfo.bonus ?? 0) * unitsToUpgrade;
+
+          // Update coverage and remaining upgrade quantity
+          unitCoverage.set(unitIndex, unitCurrentCoverage + unitsToUpgrade);
+          remainingUpgradeQuantity -= Math.ceil(unitsToUpgrade / upgradeInfo.unitsCovered);
+        }
       });
     });
 
     return totalStat;
   }
 
-  /**
-   * Gets the applicable upgrades based on unit type.
-   * @param unit - The unit.
-   * @param type - The unit type.
-   * @returns Applicable upgrades.
-   */
-  private getApplicableUpgrades(unit: Unit, type: UnitType): any[] | UnitUpgradeType[] {
-    switch (type) {
-      case 'DEFENSE':
-        return this.availableDefenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel).sort((a, b) => b.level - a.level);
-      case 'OFFENSE':
-        return this.availableOffenseBattleUpgrades.filter(upgrade => unit.level >= upgrade.minUnitLevel).sort((a, b) => b.level - a.level);
-      case 'SPY':
-        return this.availableSpyBattleUpgrades.sort((a, b) => b.level - a.level);
-      case 'SENTRY':
-        return this.availableSentryBattleUpgrades.sort((a, b) => b.level - a.level);
-      default:
-        return [];
-    }
-  }
 
-  /**
-   * Gets the user upgrade for the specified type and level.
-   * @param upgrade - The upgrade.
-   * @param type - The unit type.
-   * @returns The user upgrade.
-   */
-  private getUserUpgrade(upgrade: UnitUpgradeType | any, type: UnitType): UnitUpgradeType | undefined {
-    return this.battle_upgrades.find(u => (u as any)?.level === (upgrade as any)?.level && (u as any)?.type === (upgrade as any)?.type);
-  }
-
-  /**
-   * Calculates the bonus from the upgrade.
-   * @param upgrade - The upgrade.
-   * @param unit - The unit.
-   * @param userUpgrade - The user upgrade.
-   * @param unitCoverage - Map tracking unit coverage.
-   * @param index - Index of the unit.
-   * @returns Total bonus and units covered.
-   */
-  private calculateUpgradeBonus(upgrade: UnitUpgradeType, unit: UnitUpgradeType, userUpgrade: UnitUpgradeType, unitCoverage: Map<number, number>, index: number): { totalBonusForUnits: number, unitsCovered: number } {
-    const bonusPerUnit = upgrade.bonus;
-    const remainingCoverage = unit.quantity - (unitCoverage.get(index) || 0);
-    const unitsCovered = Math.min(remainingCoverage, userUpgrade.quantity * upgrade.unitsCovered);
-    const totalBonusForUnits = bonusPerUnit * unitsCovered;
-
-    return { totalBonusForUnits, unitsCovered };
-  }
-
-  /**
-   * Applies bonuses based on unit type.
-   * @param type - The unit type.
-   * @param totalStat - The total stat to adjust.
-   * @returns Adjusted total stat.
-   */
   private applyBonuses(type: UnitType, totalStat: number): number {
+    let bonusPercent = 0;
     switch (type) {
-      case 'OFFENSE':
-        return totalStat * (1 + this.attackBonus / 100);
-      case 'DEFENSE':
-        return totalStat * (1 + this.defenseBonus / 100);
-      case 'SPY':
-        return totalStat * (1 + this.spyBonus / 100);
-      case 'SENTRY':
-        return totalStat * (1 + this.sentryBonus / 100);
-      default:
-        return totalStat;
+      case 'OFFENSE': bonusPercent = this.attackBonus; break;
+      case 'DEFENSE': bonusPercent = this.defenseBonus; break;
+      case 'SPY': bonusPercent = this.spyBonus; break;
+      case 'SENTRY': bonusPercent = this.sentryBonus; break;
     }
+    return totalStat * (1 + bonusPercent / 100);
   }
 
-
-  /**
-   * Determines if the user can attack a certain level based on their experience.
-   * @param level - The level to check if the user can attack.
-   * @returns True if the user can attack the level, false otherwise.
-   */
   canAttack(level: number): boolean {
-    return (
-      getLevelFromXP(this.experience) >= level - parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10) && 
-      getLevelFromXP(this.experience) <= level + parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10) 
-    );
+    const userLevel = this.level;
+    const levelRange = parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10);
+    return userLevel >= level - levelRange && userLevel <= level + levelRange;
   }
 
-  /**
-   * Returns an object containing the total number of units for each type and the number of untrained citizens.
-   * @returns {UnitTotalsType} An object containing the total number of units for each type and the number of untrained citizens.
-   */
+
   get unitTotals(): UnitTotalsType {
-    const { units } = this;
-    const untrained = this.citizens;
-    const workers = units
-      .filter((unitgroup) => unitgroup.type === 'WORKER')
-      .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + Number(quant), 0);
-    const offense = units
-      .filter((unitgroup) => unitgroup.type === 'OFFENSE')
-      .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + Number(quant), 0);
-    const defense = units
-      .filter((unitgroup) => unitgroup.type === 'DEFENSE')
-      .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + Number(quant), 0);
-    const spies = units
-      .filter((unitgroup) => unitgroup.type === 'SPY')
-      .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + Number(quant), 0);
-    const assassins = units
-      .filter((unitgroup) => unitgroup.type === 'SPY' && unitgroup.level === 3)
-      .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + Number(quant), 0);
-    const infiltrators = units
-      .filter((unitgroup) => unitgroup.type === 'SPY' && unitgroup.level === 2)
-      .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + Number(quant), 0);
-    const sentries = units
-      .filter((unitgroup) => unitgroup.type === 'SENTRY')
-      .map((unit) => unit.quantity)
-      .reduce((acc, quant) => acc + Number(quant), 0);
-    return {
-      citizens: untrained,
-      workers,
-      offense,
-      defense,
-      spies,
-      assassins,
-      infiltrators,
-      sentries,
+    const totals: UnitTotalsType = {
+      citizens: 0, workers: 0, offense: 0, defense: 0,
+      spies: 0, sentries: 0, assassins: 0, infiltrators: 0
     };
+    (this.units || []).forEach(unit => {
+      switch (unit.type) {
+        case 'CITIZEN': totals.citizens += unit.quantity; break;
+        case 'WORKER': totals.workers += unit.quantity; break;
+        case 'OFFENSE': totals.offense += unit.quantity; break;
+        case 'DEFENSE': totals.defense += unit.quantity; break;
+        case 'SPY':
+          totals.spies += unit.quantity;
+          if (unit.level === 2) totals.infiltrators += unit.quantity;
+          if (unit.level === 3) totals.assassins += unit.quantity;
+          break;
+        case 'SENTRY': totals.sentries += unit.quantity; break;
+      }
+    });
+    return totals;
   }
 
-  /**
-   * Returns the level of the user based on their experience points.
-   * If the user has 0 experience points, their level is 1.
-   * @returns The level of the user.
-   */
   get level(): number {
-    if (this.experience === 0) return 1;
-
     return getLevelFromXP(this.experience);
   }
 
-  /**
-   * Returns the amount of experience points required to reach the next level.
-   * @returns The amount of experience points required to reach the next level.
-   */
   xpRequiredForLevel(level: number): number {
     const levelInfo = levelXPArray.find(l => l.level === level);
-    return levelInfo ? levelInfo.xp : Math.floor(level ** 2.5 * 1000); // Fallback to formula if level not in array
+    return levelInfo?.xp ?? Infinity; // Return Infinity if level not found
   }
 
-  /**
-   * Calculates the amount of experience points required to reach the next level using the levelXPArray.
-   * @param currentLevel - The current level of the user.
-   * @param currentXP - The current XP of the user.
-   * @returns The amount of experience points required to reach the next level.
-   */
+
   get xpToNextLevel(): number {
-    const nextLevelInfo = levelXPArray.find(l => l.level === this.level + 1);
-    return nextLevelInfo ? nextLevelInfo.xp - this.experience : 0;
+    const nextLevelXP = this.xpRequiredForLevel(this.level + 1);
+    return nextLevelXP === Infinity ? 0 : Math.max(0, nextLevelXP - this.experience);
   }
 
-  /**
-   * Returns an object containing the current and maximum fort health, as well as the percentage of current health relative to maximum health.
-   * If the fort level is not defined, returns an object with all values set to 0.
-   * @returns {FortHealth} An object containing the current and maximum fort health, as well as the percentage of current health relative to maximum health.
-   */
-  get fortHealth(): FortHealth {
-    if (!this.fortLevel) return { current: 0, max: 0, percentage: 0 };
 
+  get fortHealth(): FortHealth {
+    const maxHP = Fortifications.find(f => f.level === this.fortLevel)?.hitpoints ?? 0;
     return {
-      current: this.fortHitpoints,
-      max: Fortifications[this.fortLevel-1].hitpoints,
-      percentage: Math.floor(
-        (this.fortHitpoints / Fortifications.find((fort) => fort.level === this.fortLevel).hitpoints) * 100
-      ),
+      current: this.fortHitpoints ?? 0,
+      max: maxHP,
+      percentage: maxHP > 0 ? Math.floor(((this.fortHitpoints ?? 0) / maxHP) * 100) : 0,
     };
   }
 
-  /**
-   * Increases the level of a given stat by 1. Returns the entire object.
-   * @param {string} type - The type of stat to increase.
-   */
-  increaseStatLevel(type: string): any[] {
-    return this.structure_upgrades.map(stat => {
+
+  increaseStatLevel(type: string): StructureUpgrade[] {
+    let found = false;
+    const newUpgrades = (this.structure_upgrades || []).map(stat => {
       if (stat.type === type) {
+        found = true;
         return { ...stat, level: stat.level + 1 };
       }
       return stat;
     });
+    // If the stat type wasn't found, add it with level 1 (or appropriate starting level)
+    if (!found) {
+      newUpgrades.push({ type: type as StructureUpgrade['type'], level: 1 });
+    }
+    this.structure_upgrades = newUpgrades; // Update the instance property
+    return newUpgrades;
   }
 
-  /**
-   * Calculates the time to the next turn based on the current date.
-   * @param date - The current date. Defaults to the current time.
-   * @returns The time of the next turn.
-   */
   getTimeToNextTurn(date = new Date()): Date {
     const ms = 1800000; // 30mins in ms
-    const nextTurn = new Date(Math.ceil(date.getTime() / ms) * ms);
-    return nextTurn;
+    return new Date(Math.ceil(date.getTime() / ms) * ms);
   }
 
-  
-  /**
-   * Returns an array of available unit types based on the user's fort level.
-   * @returns {Unit[]} An array of available unit types.
-   */
+
   get availableUnitTypes(): Unit[] {
-    return UnitTypes.filter((unitType) => (unitType.type === 'OFFENSE' ? unitType.fortLevel <= this.offensiveLevel + 8 :
-     unitType.type === 'DEFENSE' ? unitType.fortLevel <= this.fortLevel + 8 :
-      unitType.level <= this.fortLevel + 1));
+    // Use optional chaining and default empty array
+    return (UnitTypes || []).filter(unitType => {
+      const requiredFortLevel = unitType.fortLevel ?? 1; // Default requirement if not specified
+      return requiredFortLevel <= this.fortLevel;
+    });
   }
 
-  /**
-   * Returns an array of available weapons based on the user's fort level.
-   * @returns {Item[]} An array of available weapons.
-   */
-  get availableItemTypes(): Item[] {
-    return ItemTypes.filter(
-      (unitType) => unitType.level <= this.fortLevel + 1
-    );
+  get availableItemTypes(): Item[] { // Assuming Item type includes armoryLevel
+    const armoryLvl = this.armoryLevel;
+    // Use optional chaining and default empty array
+    return (ItemTypes || []).filter(item => (item.armoryLevel ?? 1) <= armoryLvl);
   }
 
-  /**
-   * Returns an array of fortifications that are available to the user based on their fortification level.
-   * @returns {Fortification[]} An array of fortifications.
-   */
+
   get availableFortifications(): Fortification[] {
-    return Fortifications.filter((fort) => fort.level <= this.fortLevel + 2);
+    // Use optional chaining and default empty array
+    return (Fortifications || []).filter((fort) => fort.level <= (this.fortLevel || 0) + 2);
   }
 
-  /**
-   * Returns an array of available defensive upgrades based on the user's fort level.
-   * @returns {UnitUpgradeType[]} An array of available defensive upgrades.
-   */
+
+  private getAvailableBattleUpgrades(type: UnitType | string): UnitUpgradeType[] {
+    const requiredSiegeLevel = this.offensiveLevel; // Assuming offensiveLevel determines siege upgrade level
+    // Use optional chaining and default empty array
+    return (BattleUpgrades || [])
+      .filter(up => up.type === type && (up.SiegeUpgradeLevel ?? 1) <= requiredSiegeLevel);
+  }
+
   get availableDefenseBattleUpgrades(): UnitUpgradeType[] {
-    return BattleUpgrades.filter(
-      (fort) => fort.SiegeUpgradeLevel <= this.offensiveLevel + 1 && fort.type === 'DEFENSE'
-    );
+    return this.getAvailableBattleUpgrades('DEFENSE');
   }
 
-  /**
-   * Returns an array of available offensive battle upgrades based on the user's fort level.
-   * @returns {UnitUpgradeType[]} An array of available offensive battle upgrades.
-   */
   get availableOffenseBattleUpgrades(): UnitUpgradeType[] {
-    return BattleUpgrades.filter(
-      (fort) => fort.SiegeUpgradeLevel <= this.offensiveLevel + 5 && fort.type === 'OFFENSE'
-    );
+    return this.getAvailableBattleUpgrades('OFFENSE');
   }
 
-  /**
-   * Returns an array of available spy battle upgrades based on the user's fort level.
-   * @returns {UnitUpgradeType[]} An array of available spy battle upgrades.
-   */
   get availableSpyBattleUpgrades(): UnitUpgradeType[] {
-    return BattleUpgrades.filter(
-      (fort) => fort.SiegeUpgradeLevel <= this.fortLevel + 1 && fort.type === 'SPY'
-    );
-  }
-  
-  /**
-   * Returns an array of SentryUpgradeType objects that are available for the user to upgrade their sentry battle.
-   * @returns {UnitUpgradeType[]} An array of SentryUpgradeType objects.
-   */
-  get availableSentryBattleUpgrades(): UnitUpgradeType[] {
-    return BattleUpgrades.filter(
-      (fort) => fort.SiegeUpgradeLevel <= this.fortLevel + 1 && fort.type === 'SENTRY'
-    );
+    return this.getAvailableBattleUpgrades('SPY');
   }
 
-  /**
-   * Returns the maximum number of deposits in a 24hr period
-   * @returns {number}
-   */
-  get maximumBankDeposits(): number {
-    const max = EconomyUpgrades[this.economyLevel]?.depositsPerDay || 0;
-    return max;
+  get availableSentryBattleUpgrades(): UnitUpgradeType[] {
+    return this.getAvailableBattleUpgrades('SENTRY');
   }
+
+
 
   get armoryLevel(): number {
-    return this.structure_upgrades.find((struc)=> struc.type === 'ARMORY')?.level || 0;
+    return (this.structure_upgrades || []).find(s => s.type === 'ARMORY')?.level ?? 0;
   }
 
   get offensiveLevel(): number {
-    return this.structure_upgrades.find((struc)=> struc.type === 'OFFENSE')?.level || 0;
+    return (this.structure_upgrades || []).find(s => s.type === 'OFFENSE')?.level ?? 0;
   }
 
   get spyLevel(): number {
-    return this.structure_upgrades.find((struc)=> struc.type === 'SPY')?.level || 0;
+    return (this.structure_upgrades || []).find(s => s.type === 'SPY')?.level ?? 0;
   }
 
   get sentryLevel(): number {
-    return this.structure_upgrades.find((struc)=> struc.type === 'SENTRY')?.level || 0;
+    return (this.structure_upgrades || []).find(s => s.type === 'SENTRY')?.level ?? 0;
   }
 
-  get attackRange(): {
-    min: number;
-    max: number;
-  } {
+
+  get maximumBankDeposits(): number {
+    const upgrade = EconomyUpgrades[this.economyLevel];
+    return upgrade?.depositsPerDay ?? 0; // Default to 0 if not found
+  }
+
+
+  get attackRange(): { min: number; max: number } {
+    const levelRange = parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10);
+    const currentLevel = this.level;
     return {
-      min: Math.max(1, this.level - 5), //min is 1 or 5 levels below current level
-      max: this.level + 5, //max is 5 levels above current level
+      min: Math.max(1, currentLevel - levelRange),
+      max: currentLevel + levelRange,
     };
   }
-
 }
 
 export default UserModel;

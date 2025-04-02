@@ -8,6 +8,8 @@ import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 import MainArea from '@/components/MainArea';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { alertService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const Repair = (props) => {
   const { user, forceUpdate } = useUser();
@@ -46,15 +48,17 @@ const Repair = (props) => {
         body: JSON.stringify({ repairPoints }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        logError('Error repairing:', data.error);
+      const data = await response.json();
+      if (!response.ok || !data?.success) {
+        const errorMessage = data.error || `Repair failed: ${response.statusText}`;
+        logError('Error repairing:', errorMessage, data);
+        alertService.error(errorMessage, false,false,null, 3000);
         return;
       }
 
-      const data = await response.json();
-      console.log('Success:', data);
-      forceUpdate();
+      alertService.success(data.message || 'Repair successful!', false, 3000);
+      forceUpdate(); 
+      setRepairPoints(0);
     } catch (error) {
       logError('Fetch error:', error);
     }
@@ -72,15 +76,17 @@ const Repair = (props) => {
         body: JSON.stringify({ repairPoints: maxRepairPoints }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        logError('Error repairing all:', data.error);
+      const data = await response.json();
+      if (!response.ok || !data?.success) {
+        const errorMessage = data.error || `All repairs failed: ${response.statusText}`;
+        logError('Error repairing all:', errorMessage, data);
+        alertService.error(errorMessage, false, false, null,3000);
         return;
       }
 
-      const data = await response.json();
-      console.log('Success:', data);
+      alertService.success(data.message || 'All repairs successful!', false, 3000);
       forceUpdate();
+      setRepairPoints(maxRepairPoints);
     } catch (error) {
       logError('Fetch error:', error);
     }

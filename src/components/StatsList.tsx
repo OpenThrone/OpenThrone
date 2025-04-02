@@ -28,14 +28,14 @@ const StatsList: React.FC<StatsListProps> = ({ stats, type, subType, collapsed }
   return collapsed ? (
     <Group align="center" justify="center">
       <Chip>
-        <RpgAwesomeIcon icon="gem" fw /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}
+        <RpgAwesomeIcon icon="gold-bar" fw /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}
       </Chip>
       <Chip>XP: {xp}</Chip>
     </Group>
   ) : (
     <Stack align="center" justify="center" gap="xs">
       <Chip>
-          <RpgAwesomeIcon icon="gem" fw /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}
+          <RpgAwesomeIcon icon="gold-bar" fw /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}
       </Chip>
       <Chip>XP: {xp}</Chip>
       <Chip>Turns: {stats.turns ?? 0}</Chip>
