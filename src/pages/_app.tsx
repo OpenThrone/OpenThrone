@@ -14,23 +14,23 @@ import React, { Suspense, useEffect, useState } from 'react';
 import Layout from '@/components/Layout'; // Import the Layout component
 import { LayoutProvider } from '@/context/LayoutContext';
 import { UserProvider, useUser } from '@/context/users';
-import { MantineProvider, MantineTheme } from '@mantine/core';
+import { Center, MantineProvider, Loader } from '@mantine/core';
 import LoadingDots from '@/components/loading-dots';
 import { themes } from '@/styles/themes';
 import { PlayerRace } from '@/types/typings';
 import { useLocalStorage } from '@mantine/hooks';
 
-const MyApp = ({ Component, pageProps: { session, ...pageProps } }) => (
+const MyApp = ({ Component, pageProps: { session, ...pageProps }, router }) => (
   <Suspense fallback={<LoadingDots />}>
     <SessionProvider session={session}>
       <UserProvider>
-        <AppWithTheme Component={Component} pageProps={pageProps} />
+        <AppWithTheme Component={Component} pageProps={pageProps} router={router} />
       </UserProvider>
     </SessionProvider>
   </Suspense>
 );
 
-const AppWithTheme = ({ Component, pageProps }: AppProps) => {
+const AppWithTheme = ({ Component, pageProps, router }: AppProps) => {
   const { data: session, status } = useSession();
   const { user } = useUser();
   const [colorScheme, setColorScheme] = useLocalStorage<PlayerRace | string>({ key: 'colorScheme', defaultValue:'ELF'});
@@ -55,9 +55,19 @@ const AppWithTheme = ({ Component, pageProps }: AppProps) => {
   }, [colorScheme, session, setColorScheme, user]);
 
   // Show a loading screen while the session data is being loaded
-  if (status === 'loading') {
-    return <LoadingDots />;
-  }
+  <MantineProvider defaultColorScheme="dark" theme={theme}>
+    {status === 'loading' ? (
+      <Center style={{ minHeight: '100vh' }}>
+        <Loader size="xl" />
+      </Center>
+    ) : (
+      <LayoutProvider>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      </LayoutProvider>
+    )}
+  </MantineProvider>
 
   return (
     <MantineProvider defaultColorScheme="dark" theme={theme}>

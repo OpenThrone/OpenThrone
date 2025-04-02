@@ -36,6 +36,7 @@ interface LayoutContextProps {
   meta: { title: string; description: string };
   updateOptions?: () => void;
   authorized: boolean;
+  userLoading: boolean; // Add the userLoading state prop
 }
 
 // Function to generate color classes based on race
@@ -77,6 +78,7 @@ const defaultLayoutContextProps: LayoutContextProps = {
   setMeta: undefined,
   meta: { title: '', description: '' },
   authorized: false,
+  userLoading: true,
 };
 
 // Create Context with default value
@@ -94,18 +96,19 @@ interface LayoutProviderProps {
 // LayoutProvider Component
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const [meta, setMetaState] = useState({ title: '', description: '' });
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser(); // Access user and loading state from useUser
+
   const [authorized, setAuthorized] = useState(false);
   const [derivedRaceClasses, setDerivedRaceClasses] = useState<RaceColors>(
     raceClasses.ELF
   );
 
   const setMeta = useCallback((newMeta: { title?: string; description?: string }) => {
-      setMetaState((prevMeta) => ({
-        ...prevMeta,
-        ...newMeta,
-      }));
-    }, [setMetaState]);
+    setMetaState((prevMeta) => ({
+      ...prevMeta,
+      ...newMeta,
+    }));
+  }, [setMetaState]);
 
   const updateOptions = useCallback(() => {
     let race = user?.colorScheme || user?.race || 'ELF';
@@ -115,10 +118,6 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
     }
     setDerivedRaceClasses(raceClasses[race as keyof typeof raceClasses]);
   }, [user]);
-
-  useEffect(() => {
-    updateOptions();
-  }, [user, updateOptions]);
 
   useEffect(() => {
     if (user) {
@@ -136,8 +135,9 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
       updateOptions,
       meta,
       authorized,
+      userLoading // Pass the loading prop to the context
     }),
-    [meta, setMeta, derivedRaceClasses, updateOptions, authorized]
+    [meta, setMeta, derivedRaceClasses, updateOptions, authorized, userLoading]
   );
 
   return (

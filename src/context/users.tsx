@@ -3,32 +3,33 @@ import { signOut, useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import UserModel from '@/models/Users';
+import UserModel from '@/models/Users'; // Import UserModel
 import { alertService } from '@/services';
 import useSocket from '@/hooks/useSocket';
 import { fetchWithFallback } from '@/utils/socketFunctions';
-import { logError, logInfo } from '@/utils/logger';
+import { logError, logInfo, logWarn } from '@/utils/logger';
+import type { UserApiResponse, IUserSession } from '@/types/typings'; // Import UserApiResponse
+import { users as PrismaUser } from '@prisma/client';
 
-interface UserContextType {
-  user: UserModel | null;
-  forceUpdate: () => void;
-  loading: boolean;
-  unreadMessages: UnreadMessages[]; // Changed to array
-  unreadMessagesCount: number; // Added count
-  markMessagesAsRead: (messageId: number) => void;
-  markRoomAsRead: (roomId: number) => void;
-  // Add function to manually add an unread message if needed
-  // addUnreadMessage: (message: UnreadMessages) => void;
-}
-
+// Define UnreadMessages interface locally or import if moved to typings.d.ts
 interface UnreadMessages {
   id: number;
   senderId: number;
   senderName: string;
   content: string; // Message snippet
-  timestamp: string;
-  isRead: boolean; // Could be useful, though we might just remove from array
+  timestamp: string; // ISO String date
+  isRead: boolean;
   chatRoomId: number;
+}
+
+interface UserContextType {
+  user: UserModel | null; // Use UserModel here
+  forceUpdate: () => void;
+  loading: boolean;
+  unreadMessages: UnreadMessages[];
+  unreadMessagesCount: number;
+  markMessagesAsRead: (messageId: number) => void;
+  markRoomAsRead: (roomId: number) => void;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -36,7 +37,7 @@ const UserContext = createContext<UserContextType>({
   forceUpdate: () => { },
   loading: true,
   unreadMessages: [],
-  unreadMessagesCount: 0, // Initialize count
+  unreadMessagesCount: 0,
   markMessagesAsRead: (messageId: number) => { },
   markRoomAsRead: (roomId: number) => { },
 });
@@ -70,118 +71,101 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const router = useRouter();
   const pathName = usePathname();
   const { data: session, status } = useSession();
-  const [user, setUser] = useState<UserModel | null>(null);
-  // Ensure userId is consistently derived and defaults to null
+  const [user, setUser] = useState<UserModel | null>(null); // State holds UserModel instance
   const userId = useMemo(() => (session?.user?.id ? Number(session.user.id) : null), [session]);
-  const {
-    socket,
-    isConnected,
-    addEventListener,
-    removeEventListener,
-  } = useSocket(userId); // Pass derived userId
+  const { socket, isConnected, addEventListener, removeEventListener } = useSocket(userId);
   const [loading, setLoading] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState<UnreadMessages[]>([]);
   const WS_ENABLED = process.env.NEXT_PUBLIC_WS_ENABLED === 'true';
 
-  const fetchSessions = useCallback(
-    async (uID: number) => {
-      logInfo('Fetching user data for', uID);
-      await fetchWithFallback(
-        socket,
-        isConnected,
-        'listRecruitingSessions',
-        '/api/recruit/listSessions',
-        { userId: uID },
-        (userData) => setUser(new UserModel(userData, false)),
-        setLoading
-      );
-    },
-    [socket, isConnected]
-  );
-
-  const fetchUserData = useCallback(
-    async (uID: number) => {
-      await fetchWithFallback(
-        socket,
-        isConnected,
-        'requestUserData',
-        '/api/general/getUser',
-        { userId: uID },
-        (userData) => setUser(new UserModel(userData, false)),
-        setLoading
-      );
-    },
-    [socket, isConnected]
-  );
-
-  // Fetch initial unread messages state (optional, depends on persistence needs)
-  // useEffect(() => {
-  //   if (userId) {
-  //     // Fetch initial unread messages from API if needed
-  //     // fetch('/api/messages/unread').then(res => res.json()).then(setUnreadMessages);
-  //   }
-  // }, [userId]);
-
-  useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    // --- Socket Event Handlers ---
-    const handleUserData = (userData: any) => {
-      // ... (handleUserData logic remains the same) ...
-      const uModel = new UserModel(userData, false);
+  const processAndSetUserData = useCallback((userData: UserApiResponse | PrismaUser) => {
+    try {
+      // Ensure necessary fields exist before creating UserModel
+      if (!userData || typeof userData.id !== 'number') {
+        logError("Received invalid user data structure:", userData);
+        throw new Error("Invalid user data received");
+      }
+      const uModel = new UserModel(userData as PrismaUser, false); // Cast to PrismaUser
       setUser(uModel);
 
       if (['CLOSED', 'BANNED', 'VACATION', 'SUSPENDED'].includes(userData.currentStatus)) {
         alertService.info(`Your account is currently in ${userData.currentStatus} mode.`, true);
-        signOut({ callbackUrl: '/account/login' }); // Redirect after sign out
-        return;
+        signOut({ callbackUrl: '/account/login' });
+        return false; // Indicate failure/redirect
       }
 
-      if (userData?.beenAttacked) {
+      if ((userData as UserApiResponse).beenAttacked) {
         alertService.error('You have been attacked since you were last active!');
       }
-      if (userData?.detectedSpy) {
+      if ((userData as UserApiResponse).detectedSpy) {
         alertService.error('You have detected a Spy attempt since you were last active!');
       }
-
+      return true; // Indicate success
+    } catch (error) {
+      logError("Error processing user data:", error, userData);
+      // Handle specific error cases if needed
+      alertService.error("Failed to process user data.");
+      return false; // Indicate failure
+    } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const fetchUserData = useCallback(
+    async (uID: number) => {
+      setLoading(true); // Set loading true at the start of fetch
+      await fetchWithFallback(
+        socket,
+        isConnected,
+        'requestUserData', // WebSocket event
+        '/api/general/getUser', // Fallback API URL
+        { userId: uID },
+        (data: UserApiResponse | PrismaUser) => { // Expect raw data here
+          processAndSetUserData(data);
+        },
+        () => { } // Let processAndSetUserData handle final loading state
+      );
+    },
+    [socket, isConnected] // processAndSetUserData is stable if defined outside or memoized
+  );
+
+
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleUserData = (userData: UserApiResponse | PrismaUser) => { // Expect raw data
+      logInfo("Socket received userData:", userData.id);
+      processAndSetUserData(userData);
     };
 
     const handleUserDataError = (error: any) => {
-      logError("User Data Error:", error);
-      // Only sign out if error implies auth issue, not temporary network error
+      logError("User Data Error from Socket:", error);
       if (error?.error?.toLowerCase().includes('unauthorized') || error?.error?.includes('not found')) {
-        alertService.error(error?.error || 'Failed to fetch user data. Please log in again.', true);
+        alertService.error(error?.error || 'Session invalid. Please log in again.', true);
         signOut({ callbackUrl: '/account/login' });
       } else {
-        alertService.error(error?.error || 'Failed to fetch user data.');
+        alertService.error(error?.error || 'Failed to fetch user data via WebSocket.');
       }
+      setUser(null); // Clear user on significant error
       setLoading(false);
     };
 
     // --- Notification Handlers ---
     const handleNewMessageNotification = (data: UnreadMessages) => {
       logInfo("Received newMessageNotification:", data);
-      // Avoid adding duplicate notifications if multiple sockets are open
       setUnreadMessages((prev) => {
-        if (prev.some(msg => msg.id === data.id)) {
-          return prev; // Already exists
-        }
-        // Add new message and limit to e.g., 20 recent unread
+        if (prev.some(msg => msg.id === data.id)) return prev;
         return [...prev, { ...data, isRead: false }].slice(-20);
       });
     };
-
+    // ... other notification handlers (handleAttackNotification, etc.) remain the same ...
     const handleAttackNotification = (data: { message: string; hash: string }) => {
-      // Add simple duplicate check based on hash
       if (!sessionStorage.getItem(data.hash)) {
         alertService.error(data.message);
         sessionStorage.setItem(data.hash, 'true');
-        // Optional: remove hash after a while to allow re-notification later
         setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
       }
     };
-
     const handleFriendRequestNotification = (data: { message: string; hash: string }) => {
       if (!sessionStorage.getItem(data.hash)) {
         alertService.success(data.message);
@@ -189,7 +173,6 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
       }
     };
-
     const handleEnemyDeclarationNotification = (data: { message: string; hash: string }) => {
       if (!sessionStorage.getItem(data.hash)) {
         alertService.error(data.message);
@@ -197,22 +180,19 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
       }
     };
-
-    // --- Other Handlers ---
     const handlePong = () => logInfo('Pong received!');
     const handleAlertNotification = (alertData: any) => alertService.success(alertData); // Or other types
 
-    // Attach listeners
+
     addEventListener('userData', handleUserData);
     addEventListener('userDataError', handleUserDataError);
     addEventListener('pong', handlePong);
     addEventListener('attackNotification', handleAttackNotification);
     addEventListener('friendRequestNotification', handleFriendRequestNotification);
     addEventListener('enemyDeclarationNotification', handleEnemyDeclarationNotification);
-    addEventListener('newMessageNotification', handleNewMessageNotification); // Listen for notifications
+    addEventListener('newMessageNotification', handleNewMessageNotification);
     addEventListener('alertNotification', handleAlertNotification);
 
-    // Cleanup on unmount or when dependencies change
     return () => {
       removeEventListener('userData', handleUserData);
       removeEventListener('userDataError', handleUserDataError);
@@ -223,31 +203,38 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       removeEventListener('newMessageNotification', handleNewMessageNotification);
       removeEventListener('alertNotification', handleAlertNotification);
     };
-  }, [socket, isConnected, addEventListener, removeEventListener, router]);
+  }, [socket, isConnected, addEventListener, removeEventListener, processAndSetUserData]); // Added processAndSetUserData dependency
 
   useEffect(() => {
-    // Request user data when authenticated and socket is connected
-    if (status === 'authenticated' && userId && isConnected) {
-      logInfo('User authenticated & socket connected, requesting user data...');
-      socket?.emit('requestUserData');
+    if (status === 'authenticated' && userId && (isConnected || !WS_ENABLED)) { // Check WS_ENABLED flag
+      logInfo(`User authenticated. WS_ENABLED: ${WS_ENABLED}, isConnected: ${isConnected}. Requesting user data...`);
+      if (isConnected && WS_ENABLED) {
+        socket?.emit('requestUserData');
+      } else if (!WS_ENABLED) {
+        fetchUserData(userId); // Use API fallback if WS disabled
+      } else {
+        // If WS is enabled but not connected yet, wait for connection or fetch after timeout?
+        // For now, let's rely on the socket connection logic to eventually trigger the request.
+        // Or, trigger fetchUserData immediately as fallback if connection is slow:
+        // fetchUserData(userId);
+      }
     } else if (status === 'unauthenticated' && !isPublicPath(pathName)) {
-      logInfo('User unauthenticated, redirecting to login.');
+      logInfo('User unauthenticated on private path, redirecting to login.');
       router.push('/account/login');
-      setUser(null); // Clear user state
+      setUser(null);
       setLoading(false);
     } else if (status !== 'loading') {
-      setLoading(false); // Not loading if not authenticated on public path or finished loading
+      setLoading(false);
     }
-  }, [status, userId, isConnected, socket, pathName, router]); // Add dependencies
+  }, [status, userId, isConnected, socket, pathName, router, fetchUserData, WS_ENABLED]); // Added WS_ENABLED
+
 
   // --- Functions to manage unread messages ---
   const markMessagesAsRead = useCallback((messageId: number) => {
-    // This is more complex if persistence is needed. For client-side only:
     setUnreadMessages((prev) => prev.filter((msg) => msg.id !== messageId));
   }, []);
 
   const markRoomAsRead = useCallback((roomId: number) => {
-    // Remove all messages associated with this room ID
     setUnreadMessages((prev) => prev.filter((msg) => msg.chatRoomId !== roomId));
   }, []);
 
@@ -255,24 +242,30 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
 
   const value = useMemo(
     () => ({
-      user,
+      user, // This is the UserModel instance
       forceUpdate: () => {
-        if (userId && socket && isConnected) {
-          logInfo('forceUpdate triggered: Requesting user data');
-          socket.emit('requestUserData'); // Use socket if available
-        } else if (userId) {
-          logInfo('forceUpdate triggered: Fetching user data via API');
-          fetchUserData(userId); // Fallback to API if socket not ready
+        if (userId) { // Check if userId is valid
+          logInfo('forceUpdate triggered');
+          if (socket && isConnected && WS_ENABLED) { // Check WS_ENABLED flag
+            logInfo('forceUpdate: Requesting user data via WebSocket');
+            socket.emit('requestUserData');
+          } else {
+            logInfo('forceUpdate: Fetching user data via API');
+            fetchUserData(userId); // Use API if socket not ready or WS disabled
+          }
+        } else {
+          logWarn('forceUpdate called without a valid userId.');
         }
       },
       loading,
       unreadMessages,
-      unreadMessagesCount, // Provide the count
+      unreadMessagesCount,
       markMessagesAsRead,
       markRoomAsRead,
     }),
-    [user, loading, fetchUserData, userId, socket, isConnected, unreadMessages, unreadMessagesCount, markMessagesAsRead, markRoomAsRead]
+    [user, loading, fetchUserData, userId, socket, isConnected, unreadMessages, unreadMessagesCount, markMessagesAsRead, markRoomAsRead, WS_ENABLED] // Added WS_ENABLED
   );
+
 
   return (
     <UserContext.Provider value={value}>
