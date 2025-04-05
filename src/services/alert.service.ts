@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { BehaviorSubject } from 'rxjs';
 
 export interface AlertType {
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warn' | 'loading';
   message: ReactNode;
   timestamp: Date;
   showAfterRedirect: boolean;
@@ -26,7 +26,7 @@ function generateHash(obj: any): string {
 }
 
 function showAlert(
-  type: 'success' | 'error' | 'info',
+  type: 'success' | 'error' | 'info' | 'warn' | 'loading',
   message: ReactNode,
   showAfterRedirect: boolean = false,
   showButton: boolean = false,
@@ -52,7 +52,7 @@ function showAlert(
     alertSubject.next(alert);
   }
 
-  if (timeout !== null) {
+  if (timeout !== null && type !== 'loading') {
     setTimeout(clear, timeout);
   }
 }
@@ -80,9 +80,19 @@ export const alertService = {
     showAlert('error', message, showAfterRedirect, showButton, button, timeout),
   info: (message: ReactNode, showAfterRedirect: boolean = false, timeout: number | null = defaultTimeout) =>
     showAlert('info', message, showAfterRedirect, false, '', timeout),
+  warn: (message: ReactNode, showAfterRedirect: boolean = false, timeout: number | null = defaultTimeout) =>
+    showAlert('warn', message, showAfterRedirect, false, '', timeout),
+  loading: (message: ReactNode, showAfterRedirect: boolean = false, timeout: number | null = null) =>
+    showAlert('loading', message, showAfterRedirect, false, '', timeout),
   clear,
   setDefaultTimeout: (timeout: number | null) => {
     defaultTimeout = timeout;
   },
   clearAlertHash,
+  updateLoading: (newType: 'success' | 'error', message: ReactNode, timeout: number | null = defaultTimeout) => {
+    const currentAlert = alertSubject.value;
+    if (currentAlert?.type === 'loading') {
+      showAlert(newType, message, false, false, '', timeout);
+    }
+  }
 };

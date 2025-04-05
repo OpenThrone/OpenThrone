@@ -13,6 +13,7 @@ import ClandestineUpgrade from '@/components/clandestineupgrades';
 import { Tabs } from '@mantine/core';
 import router from 'next/router';
 import MainArea from '@/components/MainArea';
+import ContentCard from '@/components/ContentCard';
 
 const UpgradeTab = (props) => {
   const tab = usePathname()?.split('/')[3];
@@ -20,10 +21,18 @@ const UpgradeTab = (props) => {
   const currentPage = tab || 'fortifications';
   const colorScheme = user?.colorScheme;
 
-  useEffect(() => {
-    if (currentPage === 'fortifications') {
+  // Get the title for the current tab
+  const getTabTitle = () => {
+    switch (currentPage) {
+      case 'fortifications': return 'Fortifications';
+      case 'offense': return 'Siege Upgrades';
+      case 'intel': return 'Clandestine Upgrades';
+      case 'armory': return 'Armory Upgrades';
+      case 'houses': return 'Housing Upgrades';
+      case 'economy': return 'Economy Upgrades';
+      default: return 'Structure Upgrades';
     }
-  }, [currentPage]);
+  };
 
   return (
     <MainArea title="Structure Upgrades">
@@ -69,26 +78,26 @@ const UpgradeTab = (props) => {
         </Tabs.List>
       </Tabs>
       
-      
-      <div className="mb-4 flex justify-center">
-        <h2 className='page-title bg-orange-gradient text-gradient-orange text-shadow text-shadow-color-bg-gray-500 text-shadow-xs'>
-        {currentPage === 'fortifications' && ('Fortifications')}
-        {currentPage === 'offense' && ('Siege Upgrades')}
-        {currentPage === 'intel' && ('Clandestine Upgrades')}
-        {currentPage === 'armory' && ('Armory Upgrades')}
-        {currentPage === 'houses' && ('Housing Upgrades')}
-        {currentPage === 'economy' && ('Economy Upgrades')}
-        </h2>
-      </div>
-      <div className="mb-4 flex justify-center my-10 rounded-lg bg-gray-800">
-        {currentPage === 'fortifications' && <FortificationsTab userLevel={user?.level} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
-        {currentPage === 'offense' && <OffenseUpgrade userLevel={user?.offensiveLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
-        {currentPage === 'houses' && <HousingTab userLevel={user?.houseLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
-        {currentPage === 'armory' && <ArmoryUpgradesTab userLevel={user?.armoryLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/> }
-        {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
-        {currentPage === 'intel' && <ClandestineUpgrade userLevel={user?.spyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
+      <div className="container mx-auto px-4 my-6">
+        <ContentCard 
+          title={getTabTitle()}
+          variant="highlight" 
+          titlePosition="center"
+          titleSize="xl"
+          className="max-w-7xl mx-auto"
+        >
+          <div className="p-4">
+            {currentPage === 'fortifications' && <FortificationsTab userLevel={user?.level} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
+            {currentPage === 'offense' && <OffenseUpgrade userLevel={user?.offensiveLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
+            {currentPage === 'houses' && <HousingTab userLevel={user?.houseLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
+            {currentPage === 'armory' && <ArmoryUpgradesTab userLevel={user?.armoryLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/> }
+            {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
+            {currentPage === 'intel' && <ClandestineUpgrade userLevel={user?.spyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
+          </div>
+        </ContentCard>
       </div>
     </MainArea>
   );
 };
+
 export default UpgradeTab;

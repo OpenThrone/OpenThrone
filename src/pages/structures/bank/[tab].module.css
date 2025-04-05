@@ -17,3 +17,6 @@
     var(--mantine-font-family);
   line-height: 1;
 }
+.text-gold-glow {
+  text-shadow: 0 0 4px #facc15, 0 0 6px #f59e0b;
+}

@@ -149,7 +149,7 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
             }
           }}
         >
-          <Flex direction="column" spacing="md" grow="true">
+          <Flex direction="column" gap="md" grow="true">
             {type === 'login' ? (
               <>
                 <TextInput

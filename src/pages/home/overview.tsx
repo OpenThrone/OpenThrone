@@ -7,6 +7,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faShieldAlt, faUserShield, faCoins, faLevelUpAlt, faSyncAlt, faStar, faPiggyBank, faTrophy, faMedal, faUserSecret, faCrown, faEye, faShieldVirus, faMoneyBills } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
+import ContentCard from '@/components/ContentCard';
+import { logError } from '@/utils/logger';
 
 const Overview = (props) => {
   const [getNews, setNews] = useState(['no news']);
@@ -34,7 +36,7 @@ const Overview = (props) => {
     <MainArea
       title="Overview">
       <Center>
-        <Paper w={{ sm: '100%', md: '80%' }} shadow="sm" ps="sm" pb='md' radius="md">
+        <ContentCard className="my-4" titlePosition='center' w={{ sm: '100%', md: '80%' }} variant='highlight'>
           <Center>
             <div className='hidden md:block'>
               <Text size="lg" ta="center">
@@ -63,7 +65,7 @@ const Overview = (props) => {
               </a>
             </Text>
           </Center>
-        </Paper>
+        </ContentCard>
       </Center>
       <Space h="md" />
       <Flex
@@ -71,17 +73,9 @@ const Overview = (props) => {
         gap="md"
         className="my-4"
       >
-        <Card shadow="sm" ps="xs" pb='md' radius="md" className="w-full">
+        <ContentCard className="w-full" title="Kingdom Stats" titleSize="lg" titlePosition='center'>
           <Table striped highlightOnHover verticalSpacing="sm" className="text-white">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th colSpan={2}>
-                  <Center>
-                    <Text size='lg' fw={'bolder'} className='font-medieval'>Statistics</Text>
-                  </Center>
-                </Table.Th>
-              </Table.Tr>
-            </Table.Thead>
+
             <Table.Tbody>
               <Table.Tr>
                 <Table.Td>
@@ -194,14 +188,9 @@ const Overview = (props) => {
               </Table.Tr>
             </Table.Tbody>
           </Table>
-        </Card>
-        <Card shadow="sm" ps="md" pb='md' radius="md" className="w-full">
+        </ContentCard>
+        <ContentCard className="w-full" title="Military Stats" titleSize="lg" titlePosition='center'>
           <Table striped highlightOnHover verticalSpacing="sm" className="text-white">
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th colSpan={2}><Center><Text size='lg' fw={'bolder'} className='font-medieval'>War Statistics</Text></Center></Table.Th>
-              </Table.Tr>
-            </Table.Thead>
             <Table.Tbody>
               <Table.Tr>
                 <Table.Td>
@@ -305,11 +294,11 @@ const Overview = (props) => {
               </Table.Tr>
             </Table.Tbody>
           </Table>
-        </Card>
+        </ContentCard>
       </Flex>
-      <Text size="xl" fw={700} ta="center">Recent News</Text>
-      <Space h="md" />
-      <NewsAccordion news={getNews} />
+      <ContentCard className="my-4" title="Kingdom News" titleSize="lg" titlePosition='center'>
+        <NewsAccordion news={getNews} />
+      </ContentCard>
     </MainArea>
   );
 };

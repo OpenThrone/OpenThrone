@@ -256,9 +256,8 @@ export type UnitProps = {
 export type UnitSectionProps = {
   heading: string;
   items: UnitProps[]; 
-  updateTotalCost: (costChange: number) => void;
+  updateTotalCost?: (costChange: number) => void;
   type?: string; 
-  // Removed onTrain/onUntrain as they seem specific to unitsection.tsx
   units?: any; 
   itemCosts?: { [key: string]: number }; 
   setItemCosts?: React.Dispatch<React.SetStateAction<{ [key: string]: number }>>; // 

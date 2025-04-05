@@ -1,16 +1,17 @@
 import { Fortifications, HouseUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
-import { Group, Paper, rem, ThemeIcon, Text, SimpleGrid, Center, RingProgress, Space, Stack } from '@mantine/core';
-import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
-import classes from './housing.module.css';
+import { Group, rem, Text, SimpleGrid, Space, Stack, Button } from '@mantine/core';
+import { BiCoinStack, BiSolidBank, BiHome, BiUpArrowAlt } from 'react-icons/bi';
 import { useEffect, useState } from 'react';
 import toLocale from '@/utils/numberFormatting';
-import Alert from '@/components/alert';
 import MainArea from '@/components/MainArea';
+import ContentCard from '@/components/ContentCard';
+import StatCard from '@/components/StatCard';
+import buyUpgrade from '@/utils/buyStructureUpgrade';
 
 const Housing = (props) => {
-  const { user } = useUser();
-  const [mounted, setMounted] = useState(false); // Track if component is mounted
+  const { user, forceUpdate } = useUser();
+  const [mounted, setMounted] = useState(false);
   const [houseLevel, setHouseLevel] = useState(1);
   const [gold, setGold] = useState(BigInt(0));
   const [goldInBank, setGoldInBank] = useState(BigInt(0));
@@ -18,9 +19,10 @@ const Housing = (props) => {
   const [citizensDaily, setCitizensDaily] = useState(0);
   const [houseUpgrade, setHouseUpgrade] = useState(HouseUpgrades[houseLevel]);
   const [nextUpgrade, setNextUpgrade] = useState(HouseUpgrades[houseLevel + 1]);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   useEffect(() => {
-    setMounted(true); // Set mounted to true when component mounts
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -34,89 +36,123 @@ const Housing = (props) => {
     setCitizensDaily(HouseUpgrades[user.houseLevel].citizensDaily);
   }, [user]);
 
-  if (!mounted) return null; // Render nothing on the server
+  const handleBuyUpgrade = async () => {
+    if (isUpgrading) return;
+    setIsUpgrading(true);
+    
+    try {
+      await buyUpgrade('house');
+      forceUpdate();
+    } catch (error) {
+      console.error('Failed to upgrade housing:', error);
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
 
+  if (!mounted) return null;
+
+  const canUpgrade = user?.gold >= BigInt(nextUpgrade.cost) && user?.fortLevel >= nextUpgrade.fortLevel;
+  
   return (
     <MainArea title='Housing'>
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 2 }}>
-        <Paper withBorder p="sm" radius="md">
-          <Group justify="space-between">
-            <Text size="lg" fw={'bold'} c="dimmed">
-              Gold In Hand
-            </Text>
-            <ThemeIcon c='white'>
-              <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
-            </ThemeIcon>
-          </Group>
-          <Group align="flex-end" gap="xs" mt={10}>
-            <Text>{parseInt(user?.gold?.toString() ?? "0").toLocaleString()}</Text>
-          </Group>
-        </Paper>
-        <Paper withBorder p="sm" radius="md">
-          <Group justify="space-between">
-            <Text size="lg" fw={'bold'} c="dimmed">
-              Banked Gold
-            </Text>
-            <ThemeIcon c='white'>
-              <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
-            </ThemeIcon>
-          </Group>
-          <Group align="flex-end" gap="xs" mt={10}>
-            <Text>{parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}</Text>
-          </Group>
-        </Paper>
+      {/* Resource Stats */}
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} className="mb-6">
+        <StatCard 
+          title="Gold In Hand"
+          value={parseInt(user?.gold?.toString() ?? "0").toLocaleString()}
+          icon={<BiCoinStack size={18} />}
+        />
+        <StatCard 
+          title="Banked Gold"
+          value={parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}
+          icon={<BiSolidBank size={18} />}
+        />
+        <StatCard 
+          title="Citizens"
+          value={user?.citizens?.toLocaleString() ?? "0"}
+          subtitle={`+${citizensDaily} daily`}
+          icon={<BiHome size={18} />}
+        />
       </SimpleGrid>
 
       <Space h="md" />
 
-      <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <Paper withBorder radius="md" p="md" className="w-full mb-4">
-          <Group align="flex-start">
-            <Stack spacing="xs">
-                
-              <Text>
-                <Text fw={700} size="xl" className='font-medieval'>
-                  {houseUpgrade.name}
-                </Text>
-                <Text size="xs" color='dimmed'>
-                  Housing brings new citizens to your fortification every day.
-                </Text>
+      {/* Current Housing */}
+      <SimpleGrid cols={{ base: 1, md: 2 }} gap="xl">
+        <ContentCard
+          title="Current Housing"
+          icon={<BiHome size={18} />}
+          variant="default"
+          titlePosition="left"
+        >
+          <Stack gap="md" className="p-2">
+            <Text fw={700} size="xl" className="font-medieval text-center">
+              {houseUpgrade.name}
+            </Text>
+            
+            <Text size="sm" color="dimmed" className="text-center">
+              Housing brings new citizens to your fortification every day.
+            </Text>
+            
+            <Group position="apart" className="bg-gray-800/30 p-4 rounded">
+              <Text size="sm">New Citizens Per Day:</Text>
+              <Text fw={600}>{houseUpgrade.citizensDaily}</Text>
+            </Group>
+            
+            <Text size="xs" color="dimmed" className="italic text-center">
+              You will gain the above citizens every day at midnight OT time.
+            </Text>
+          </Stack>
+        </ContentCard>
+
+        {/* Next Upgrade */}
+        <ContentCard
+          title="Next Upgrade"
+          icon={<BiUpArrowAlt size={18} />}
+          variant={canUpgrade ? "highlight" : "default"}
+          titlePosition="left"
+        >
+          <Stack gap="md" className="p-2">
+            <Text fw={700} size="xl" className="font-medieval text-center">
+              {nextUpgrade.name}
+            </Text>
+            
+            <Text size="sm" color="dimmed" className="text-center">
+              Upgrade your housing to bring more citizens to your fortification every day.
+            </Text>
+            
+            <Group position="apart" className="bg-gray-800/30 p-4 rounded">
+              <Text size="sm">New Citizens Per Day:</Text>
+              <Text fw={600}>{nextUpgrade.citizensDaily}</Text>
+            </Group>
+            
+            <Group position="apart" className="bg-gray-800/30 p-4 rounded">
+              <Text size="sm">Fortification Required:</Text>
+              <Text fw={600} color={user?.fortLevel < nextUpgrade.fortLevel ? "red" : "inherit"}>
+                {Fortifications[nextUpgrade.fortLevel].name}
               </Text>
-              
-              <Text>
-              <Text size="sm" color="dimmed">
-                New Citizens Per Day: <Text component="span" color="lightgray">{houseUpgrade.citizensDaily}</Text>
-                </Text>
-                <Text size='xs' color='dimmed'>
-                  You will gain the above citizens every day at midnight OT time.
-                  </Text>
+            </Group>
+            
+            <Group position="apart" className="bg-gray-800/30 p-4 rounded">
+              <Text size="sm">Cost:</Text>
+              <Text fw={600} color={user?.gold < BigInt(nextUpgrade.cost) ? "red" : "inherit"}>
+                {toLocale(nextUpgrade.cost, user?.locale)} Gold
               </Text>
-            </Stack>
-          </Group>
-        </Paper>
-        <Paper withBorder radius="md" p="md" className="w-full mb-4">
-          <Group align="flex-start">
-            <Stack spacing="xs">
-              <Text>
-                <Text fw={700} size="xl" className='font-medieval'>
-                  <span color='dimmed'>Next Upgrade:</span> {nextUpgrade.name}
-                </Text>
-                <Text size="xs" color='dimmed'>
-                  Upgrade your housing to bring more citizens to your fortification every day.
-                </Text>
-              </Text>
-              <Text size="sm" color="dimmed">
-                New Citizens Per Day: <Text component="span" color="lightgray">{nextUpgrade.citizensDaily}</Text>
-              </Text>
-              <Text size="sm" color="dimmed">
-                Fortification Required: <Text component="span" color="lightgray">{Fortifications[nextUpgrade.fortLevel].name}</Text>
-              </Text>
-              <Text size="sm" color="dimmed">
-                Cost: <Text component="span" color="lightgray">{toLocale(nextUpgrade.cost, user?.locale)} Gold</Text>
-              </Text>
-            </Stack>
-          </Group>
-        </Paper>
+            </Group>
+            
+            <Button
+              color="brand"
+              fullWidth
+              onClick={handleBuyUpgrade}
+              loading={isUpgrading}
+              disabled={!canUpgrade}
+              className="mt-2"
+            >
+              {canUpgrade ? "Upgrade Now" : "Cannot Upgrade Yet"}
+            </Button>
+          </Stack>
+        </ContentCard>
       </SimpleGrid>
     </MainArea>
   );

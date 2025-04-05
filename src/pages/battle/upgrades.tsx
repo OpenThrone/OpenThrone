@@ -4,11 +4,14 @@ import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 import Alert from '@/components/alert';
 import { useEffect, useState } from 'react';
-import { SimpleGrid, Paper, Group, Text, Space, ThemeIcon, Tooltip } from '@mantine/core';
+import { SimpleGrid, Group, Text, Space, Tooltip } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuildingColumns, faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
+import StatCard from '@/components/StatCard';
+import ContentCard from '@/components/ContentCard';
+import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 
 const useItems = (user) => {
   const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
@@ -63,78 +66,66 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
 
 const Upgrades = (props) => {
   const { user } = useUser();
+  
+  // Calculate total offensive and defensive units (level 2+)
+  const offensiveUnits = user?.units
+    .filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)
+    .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
+    
+  const defensiveUnits = user?.units
+    .filter((unit) => unit.type === 'DEFENSE' && unit.level > 1)
+    .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
+  
   return (
     <MainArea title="Battle Upgrades">
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
-        <Paper withBorder p="md" radius={'md'} key='GoldOnHand'>
-          <Group justify='space-between'>
-            <Text size="lg" fw={'bold'} c="dimmed">Gold On Hand</Text>
-
-            <ThemeIcon c='white'>
-              <FontAwesomeIcon icon={faCoins} />
-            </ThemeIcon>
-          </Group>
-          <Group>
-            <Text>
-              {toLocale(user?.gold, user?.locale)}
-            </Text>
-          </Group>
-        </Paper>
-        <Paper withBorder p="md" radius={'md'} key='BankedGold'>
-          <Group justify='space-between'>
-            <Text size="lg" fw={'bold'} c="dimmed">Banked Gold</Text>
-            <ThemeIcon c='white'>
-              <FontAwesomeIcon icon={faBuildingColumns} />
-            </ThemeIcon>
-          </Group>
-          <Group>
-            <Text>
-              {toLocale(user?.goldInBank, user?.locale)}
-            </Text>
-          </Group>
-        </Paper>
+      {/* Stats Section */}
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} className="mb-6">
+        <StatCard 
+          title="Gold On Hand"
+          value={toLocale(user?.gold) ?? 0}
+          icon={<BiCoinStack size={18} />}
+        />
+        <StatCard 
+          title="Banked Gold"
+          value={toLocale(user?.goldInBank) ?? 0}
+          icon={<BiSolidBank size={18} />}
+        />
         <Tooltip label='Only Level 2+ Units'>
-        <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>            
-          <Group justify='space-between'>
-              <Text size="lg" fw={'bold'} c="dimmed">Offensive Units</Text>
-              <ThemeIcon c='white'>
-                <RpgAwesomeIcon icon="crossed-swords" fw />
-            </ThemeIcon>
-          </Group>
-          <Group>
-            <Text>
-                {user?.units.filter((unit) => unit.type === 'OFFENSE' && unit.level > 1).reduce((acc, unit) => acc + unit.quantity, 0)}
-            </Text>
-              </Group>
-        </Paper>
+          <div>
+            <StatCard 
+              title="Offensive Units"
+              value={offensiveUnits}
+              icon={<RpgAwesomeIcon icon="crossed-swords" size={18} />}
+            />
+          </div>
         </Tooltip>
         <Tooltip label='Only Level 2+ Units'>
-          <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
-            <Group justify='space-between'>
-              <Text size="lg" fw={'bold'} c="dimmed">Defensive Units</Text>
-              <ThemeIcon c='white'>
-                <FontAwesomeIcon icon={faShield} />
-              </ThemeIcon>
-            </Group>
-            <Group>
-              <Text>
-                {user?.units.filter((unit) => unit.type === 'DEFENSE' && unit.level > 1).reduce((acc, unit) => acc + unit.quantity, 0)}
-              </Text>
-            </Group>
-          </Paper>
+          <div>
+            <StatCard 
+              title="Defensive Units"
+              value={defensiveUnits}
+              icon={<FontAwesomeIcon icon={faShield} style={{ width: '18px', height: '18px' }} />}
+            />
+          </div>
         </Tooltip>
       </SimpleGrid>
-      <Space h="md" />
-      <Text size='lg'>Only Level 2 and higher units can use battle upgrades.</Text>
-      <div className="mb-4 flex flex-col justify-around">
+
+      <ContentCard 
+        title="Battle Upgrade Information"
+        variant="default"
+        titlePosition="left"
+        className="mb-6"
+      >
+        <Text size='md' p="md">
+          Only Level 2 and higher units can use battle upgrades. Battle upgrades provide stat bonuses to your units in combat.
+        </Text>
+      </ContentCard>
+
+      
         <BattleUpgradesSection heading='Offense' type='OFFENSE' items={useItems(user).OFFENSE} />
-
-        <BattleUpgradesSection heading='Defense' type='DEFENSE' items={useItems(user).DEFENSE} />
-
+        <BattleUpgradesSection heading='Defense' type='DEFENSE' items={useItems(user).DEFENSE} />     
         <BattleUpgradesSection heading='Spy' type='SPY' items={useItems(user).SPY} />
-
         <BattleUpgradesSection heading='Sentry' type='SENTRY' items={useItems(user).SENTRY} />
-      </div>
     </MainArea>
   );
 };

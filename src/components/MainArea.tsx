@@ -31,12 +31,13 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
     };
 
     return (
-      <div className="mainArea pb-10 w-full" ref={ref || null}>
+      <div className="mainArea pb-10 w-full flex flex-col flex-grow overflow-y-auto" ref={ref || null}>
         <header
           style={
             {
               height: '56px',
-              borderBottom: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))'
+              borderBottom: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
+              flexShrink: 0,
             }
           }>
           <Container
@@ -57,13 +58,13 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
               <Group gap={'lg'} visibleFrom='md'>
 
                 <Menu
-                  width={320} // Increased width
+                  width={320}
                   position="bottom-end"
                   transitionProps={{ transition: 'pop-top-right' }}
                   onClose={() => setMessageMenuOpened(false)}
                   onOpen={() => setMessageMenuOpened(true)}
                   withinPortal
-                  shadow="md" // Added shadow
+                  shadow="md"
                 >
                   <Menu.Target>
                     <div style={{ position: 'relative', cursor: 'pointer' }}>
@@ -142,7 +143,6 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
                     </Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
-                {/* --- Other Menus (Social, User Settings) remain the same --- */}
                 <Menu
                   width={260}
                   position="bottom-end"

@@ -2,67 +2,68 @@
 
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-async function handler(req, res) {
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
-  console.log('Fetching attack logs for user:', req.session);
-  if (req.session.user.id) {
-    const page = parseInt(req.query.page, 10) || 0;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const skip = page * limit;
-    // Count total records for pagination
-    const totalCount = await prisma.attack_log.count({
-      where: {
-        OR: [
-          { attacker_id: parseInt(req.session.user.id, 10) },
-          { defender_id: parseInt(req.session.user.id, 10) },
-        ],
-      },
-    });
-    // Get logs with player information
-    const results = await prisma.attack_log.findMany({
-      where: {
-        OR: [
-          { attacker_id: parseInt(req.session.user.id, 10) },
-          { defender_id: parseInt(req.session.user.id, 10) },
-        ],
-      },
-      orderBy: {
-        timestamp: 'desc', // Most recent first
-      },
-      skip,
-      take: limit,
-      include: {
-        // Include attacker information
-        attackerPlayer: {
-          select: {
-            id: true,
-            display_name: true,
-            race: true,
-          },
-        },
-        // Include defender information
-        defenderPlayer: {
-          select: {
-            id: true,
-            display_name: true,
-            race:true
-          },
-        },
-      },
-    });
-    res.status(200).json({
-      data: results,
-      page,
-      limit,
-      total: totalCount,
-      totalPages: Math.ceil(totalCount / limit),      timestamp: new Date().toISOString()
-    });
-  } else {
-    res.status(401).json({ message: 'Unauthorized' });
+
+  const session = req.session;
+  if (!session?.user?.id) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
+
+  const {
+    page = 0,
+    limit = 10,
+    player,
+    minPillage,
+    maxPillage,
+    sortBy,
+    sortOrder
+  } = req.query;
+
+  const skip = parseInt(page.toString(), 10) * parseInt(limit.toString(), 10);
+
+  const whereClause = {
+    OR: [
+      { attacker_id: session.user.id },
+      { defender_id: session.user.id },
+    ],
+    ...(player ? {
+      OR: [
+        { attackerPlayer: { display_name: { contains: player as string, mode: 'insensitive' } } },
+        { defenderPlayer: { display_name: { contains: player as string, mode: 'insensitive' } } },
+      ],
+    } : {}),
+    ...(minPillage ? { stats: { path: ['pillagedGold'], gt: parseInt(minPillage.toString(), 10) } } : {}),
+    ...(maxPillage ? { stats: { path: ['pillagedGold'], lt: parseInt(maxPillage.toString(), 10) } } : {}),
+  };
+
+  const orderByClause = sortBy && sortOrder ? { [sortBy as string]: sortOrder } : { timestamp: 'desc' };
+  const results = await prisma.attack_log.findMany({
+    where: whereClause,
+    orderBy: orderByClause,
+    skip: skip,
+    take: parseInt(limit.toString(), 10),
+    include: {
+      attackerPlayer: { select: { id: true, display_name: true, avatar: true } },
+      defenderPlayer: { select: { id: true, display_name: true, avatar: true } },
+    },
+  });
+
+  const totalCount = await prisma.attack_log.count({ where: whereClause });
+
+  res.status(200).json({
+    data: results,
+    page,
+    limit,
+    total: totalCount,
+    totalPages: Math.ceil(totalCount / parseInt(limit.toString(), 10)),
+    timestamp: new Date().toISOString()
+  });
 }
 
 export default withAuth(handler)

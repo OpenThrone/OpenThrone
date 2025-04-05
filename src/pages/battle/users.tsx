@@ -200,7 +200,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           ))}
         </Group>
         <Table.ScrollContainer minWidth={400}>
-          <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
+          <Table verticalgap={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th className="px-1 py-1" style={{ width: '100px' }}>{getRankLabel()}</Table.Th>

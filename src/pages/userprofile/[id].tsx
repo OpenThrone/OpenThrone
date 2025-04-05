@@ -366,7 +366,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 Top Friends
               </h6>
               <Paper shadow="sm" p="md" className="my-5">
-                <SimpleGrid cols={3} spacing={4}>
+                <SimpleGrid cols={3} gap={4}>
                   {friendsList}
                 </SimpleGrid>
               </Paper>

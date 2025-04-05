@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Paper, Table, Space, NumberInput, Button, Group, Text } from '@mantine/core';
+import { Table, Space, NumberInput, Button, Group, Text } from '@mantine/core';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
 import { alertService } from '@/services';
 import { logError } from '@/utils/logger';
+import ContentCard from './ContentCard';
 
 export default function BankDepositWithdraw({
   user,
@@ -144,22 +145,23 @@ export default function BankDepositWithdraw({
   return (
     <>
       <Group align="stretch" grow>
-        <Paper shadow="xs" p="md" className="flex flex-col">
+        <ContentCard 
+          title="Deposit Gold" 
+          fullHeight
+        >
           {/* Deposit Form */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleDeposit();
             }}
-            className="flex flex-col justify-between flex-grow"
+            className="flex flex-col justify-between h-full"
           >
             <div>
-              <label htmlFor="depositAmount" className="block">
-                Amount to Deposit
-              </label>
-              <label className="text-sm text-gray-600 mb-2 block">
+              <Text fw={500} mb={5}>Amount to Deposit</Text>
+              <Text size="sm" c="dimmed" mb={10}>
                 You can deposit up to 80% of your gold per transaction
-              </label>
+              </Text>
               <NumberInput
                 value={depositAmount.toString()}
                 onChange={(value) => setDepositAmount(BigInt(value))}
@@ -201,23 +203,25 @@ export default function BankDepositWithdraw({
               Deposit
             </Button>
           </form>
-        </Paper>
-        <Paper shadow="xs" p="md" className="flex flex-col">
+        </ContentCard>
+
+        <ContentCard 
+          title="Withdraw Gold" 
+          fullHeight
+        >
           {/* Withdraw Form */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleWithdraw();
             }}
-            className="flex flex-col justify-between flex-grow"
+            className="flex flex-col justify-between h-full"
           >
             <div>
-              <label htmlFor="withdrawAmount" className="block">
-                Amount to Withdraw
-              </label>
-              <label className="text-sm text-gray-600 mb-2 block">
+              <Text fw={500} mb={5}>Amount to Withdraw</Text>
+              <Text size="sm" c="dimmed" mb={10}>
                 There are no limits to the amount you can withdraw
-              </label>
+              </Text>
               <NumberInput
                 value={withdrawAmount.toString()}
                 onChange={(value) => setWithdrawAmount(BigInt(value))}
@@ -307,14 +311,16 @@ export default function BankDepositWithdraw({
               Withdraw
             </Button>
           </form>
-        </Paper>
+        </ContentCard>
       </Group>
 
       <Space h="md" />
 
       {/* Last 10 Deposit/Withdraw Records */}
-      <Paper shadow="xs" p="md">
-        <Table className="min-w-full border-neutral-500" striped>
+      <ContentCard 
+        title="Recent Transactions" 
+      >
+        <Table className="min-w-full" striped>
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Date</Table.Th>
@@ -323,26 +329,34 @@ export default function BankDepositWithdraw({
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {depositWithdrawRows.map((entry, index) => {
-              const transactionType = getTransactionType(entry);
-              return (
-                <Table.Tr key={index}>
-                  <Table.Td>
-                    {new Date(entry?.date_time).toLocaleDateString()}{' '}
-                    {new Date(entry?.date_time).toLocaleTimeString()}
-                  </Table.Td>
-                  <Table.Td>{transactionType}</Table.Td>
-                  <Table.Td>
-                    {getGoldTxSymbol(entry) +
-                      toLocale(entry.gold_amount, user?.locale)}{' '}
-                    gold
-                  </Table.Td>
-                </Table.Tr>
-              );
-            })}
+            {depositWithdrawRows.length > 0 ? (
+              depositWithdrawRows.map((entry, index) => {
+                const transactionType = getTransactionType(entry);
+                return (
+                  <Table.Tr key={index}>
+                    <Table.Td>
+                      {new Date(entry?.date_time).toLocaleDateString()}{' '}
+                      {new Date(entry?.date_time).toLocaleTimeString()}
+                    </Table.Td>
+                    <Table.Td>{transactionType}</Table.Td>
+                    <Table.Td>
+                      {getGoldTxSymbol(entry) +
+                        toLocale(entry.gold_amount, user?.locale)}{' '}
+                      gold
+                    </Table.Td>
+                  </Table.Tr>
+                );
+              })
+            ) : (
+              <Table.Tr>
+                <Table.Td colSpan={3} align="center">
+                  <Text c="dimmed">No recent transactions</Text>
+                </Table.Td>
+              </Table.Tr>
+            )}
           </Table.Tbody>
         </Table>
-      </Paper>
+      </ContentCard>
     </>
   );
 }

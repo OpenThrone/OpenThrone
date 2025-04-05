@@ -4,7 +4,7 @@ import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faArrowRight, faCircleInfo, faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { getTimeRemaining, getTimeToNextTurn, getOTTime } from '@/utils/timefunctions';
-import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List, Progress, Popover, Skeleton } from '@mantine/core';
+import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List, Progress, Popover, Skeleton, Stack, Title, Divider } from '@mantine/core';
 import { useDebouncedCallback, useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
@@ -201,17 +201,27 @@ const Sidebar: React.FC = () => {
 
     return (
       <>
-        <List.Item>
-          Time Until Next Turn: <span id="nextTurnTimestamp">{time}</span>
-        </List.Item>
-        <List.Item>
-          OT Time: <span id="otTime">{OTTime}</span>
-        </List.Item>
+        <Title order={5} className={"text-center"}>Time Until Next Turn</Title>
+        <Title order={4} ta="center" fw="bold"><span id="nextTurnTimestamp">{time}</span></Title>
+        
+        <Title order={5} className={"text-center"} >OT Time:</Title>
+        <Title order={3} ta="center" fw="bold"><span id="otTime">{OTTime}</span></Title>
       </>
     );
   });
 
   SidebarTimeInfo.displayName = 'SidebarTimeInfo';
+
+  // Stat Row Component for consistent styling and layout
+  const StatRow: React.FC<{ label: string; value: string | React.ReactNode; icon?: React.ReactNode }> = ({ label, value, icon }) => (
+    <Group justify="space-between" wrap="nowrap" gap="xs">
+      <Group gap="xs" wrap="nowrap">
+        {icon && <span className="w-4 text-center" style={{ paddingLeft: '5px' }}>{icon}</span>} {/* Icon wrapper */}
+        <Text size="md" c="black" fw="bold" lh="xs">{label}</Text>
+      </Group>
+      <Text size="md" fw='bold' ta="right" pr="10px">{value}</Text>
+    </Group>
+  );
 
   return (
     <div className="block sm:block">
@@ -256,39 +266,30 @@ const Sidebar: React.FC = () => {
               <List.Item><Skeleton height={16} width="70%" radius="sm" mt={6} /></List.Item>
             </List>
           ) : (
-            <List size={isMobile ? 'xl' : 'sm'} className={isMobile ? 'text-sm ml-2' : 'text-base'} style={isMobile ? { marginLeft: '14px' } : {}}>
-              <List.Item>
-                <RpgAwesomeIcon icon="gem" fw /> Gold:{' '}
-                <span id="gold">{sidebar.gold}</span>
-              </List.Item>
-              <List.Item>
-                <RpgAwesomeIcon icon="player" fw /> Citizens:{' '}
-                <span id="citizens">{sidebar.citizens}</span>
-              </List.Item>
-              <List.Item>
-                <RpgAwesomeIcon icon="tower" fw /> Level:{' '}
-                <span id="level">{sidebar.level}</span>
-              </List.Item>
-              <List.Item>
-                Experience:{' '}
-                <span id="experience">
-                  {sidebar.xp}{' '}
-                  <Popover width={200} position="bottom" withArrow shadow="md" opened={nextLevelOpened}>
-                    <Popover.Target>
-                      <FontAwesomeIcon icon={faCircleInfo} onMouseEnter={open} onMouseLeave={close} />
-                    </Popover.Target>
-                    <Popover.Dropdown style={{ pointerEvents: 'none' }}>
-                      <Text size="sm">You are {sidebar.xpNextLevel} XP away from the next level</Text>
-                    </Popover.Dropdown>
-                  </Popover>
-                </span>
-                <Progress value={Number(sidebar.progress)} size={'md'} />
-              </List.Item>
-                {!userLoading && <SidebarTimeInfo user={user} userLoading={userLoading} />}
-              <List.Item>
-                OT Time: <span id="otTime">{OTTime}</span>
-              </List.Item>
-            </List>
+              
+              <>
+                <Stack gap="xs">
+                  <StatRow label="Gold" value={<span id="gold">{sidebar.gold}</span>} icon={<RpgAwesomeIcon icon="gold-bar" fw />} />
+                  <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
+                  <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
+                  <StatRow label="Experience" value={<span id="experience">{sidebar.xp}</span>} icon={
+                    <>
+                      <RpgAwesomeIcon icon="experience" fw />
+                      <Popover width={200} position="bottom" withArrow shadow="md" opened={nextLevelOpened}>
+                        <Popover.Target>
+                          <FontAwesomeIcon icon={faCircleInfo} onMouseEnter={open} onMouseLeave={close} />
+                        </Popover.Target>
+                        <Popover.Dropdown style={{ pointerEvents: 'none' }}>
+                          <Text size="sm">You are {sidebar.xpNextLevel} XP away from the next level</Text>
+                        </Popover.Dropdown>
+                      </Popover>
+                    </>
+                  } />
+                  <StatRow label="Turns" value={<span id="turns">{sidebar.turns}</span>} icon={<RpgAwesomeIcon icon="turn" fw />} />
+                  <Divider my="md" c="gray" variant="dashed" />
+                  {!userLoading && <SidebarTimeInfo user={user} userLoading={userLoading} />}
+                </Stack>
+              </>
           )}
 
           {/* Search Section */}

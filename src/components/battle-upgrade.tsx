@@ -8,6 +8,8 @@ import toLocale from '@/utils/numberFormatting';
 import { useUser } from '../context/users';
 import { alertService } from '@/services';
 import { Button, Flex, Group, NumberInput, Paper, Table, Text, Title } from '@mantine/core';
+import { logError } from '@/utils/logger';
+import ContentCard from './ContentCard';
 
 const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   heading,
@@ -137,16 +139,37 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
     }
   };
 
+  const footer = (<Flex justify={'space-between'} mb="xs">
+    <Button
+      type="button"
+      size='md'
+      color='brand.5'
+      className={`rounded px-4 py-2 ml-2 font-bold text-white  ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
+      disabled={!sectionEnabled}
+      onClick={async () => await handleEquip('buy')}
+    >
+      Buy
+    </Button>
+    <Button
+      type="button"
+      size='md'
+      color='brand'
+      className={`rounded px-4 py-2 mr-2 font-bold text-white ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
+      onClick={async () => await handleEquip('sell')}
+      disabled={!sectionEnabled}
+    >
+      Sell
+    </Button>
+  </Flex>);
+
   return (
-    <Paper className="my-10 rounded-lg bg-gray-800">
+    <ContentCard
+      title={heading}
+      titleSize='lg'
+      className='mb-4'
+      footer={footer}
+    >
       <Table striped highlightOnHover>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th className="w-60 px-4 py-2">
-              <Title order={6}>{heading}</Title>
-            </Table.Th>
-          </Table.Tr>
-        </Table.Thead>
         <Table.Tbody>
           {getItems.map((item: UnitProps) => {
             if (item.enabled) {
@@ -219,29 +242,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
           })}
         </Table.Tbody>
       </Table>
-      <Flex justify={'space-between'} mb="xs">
-        <Button
-          type="button"
-          size='md'
-          color='brand.5'
-          className={`rounded px-4 py-2 ml-2 font-bold text-white  ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
-          disabled={!sectionEnabled}
-          onClick={async () => await handleEquip('buy')}
-        >
-          Buy
-        </Button>
-        <Button
-          type="button"
-          size='md'
-          color='brand'
-          className={`rounded px-4 py-2 mr-2 font-bold text-white ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
-          onClick={async () => await handleEquip('sell')}
-          disabled={!sectionEnabled}
-        >
-          Sell
-        </Button>
-      </Flex>
-    </Paper>
+    </ContentCard>
   );
 };
 

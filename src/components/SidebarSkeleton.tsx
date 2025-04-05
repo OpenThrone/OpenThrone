@@ -18,7 +18,7 @@ const SidebarSkeleton: React.FC = () => {
           {/* Stats Title Skeleton */}
           <Skeleton height={16} width="40%" mx="auto" mb="xs" />
           {/* Stats List Skeleton */}
-          <List spacing="xs" size="sm">
+          <List gap="xs" size="sm">
             {[...Array(7)].map((_, index) => (
               <List.Item key={`stat-${index}`}>
                 <Skeleton height={10} width={`${Math.random() * 30 + 60}%`} radius="sm" />
