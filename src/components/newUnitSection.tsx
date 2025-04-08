@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { NumberInput, Group, Text, Table, Select, Button, Space, Box, Stack, Flex } from '@mantine/core';
+import { NumberInput, Group, Text, Table, Select, Button, Box, Stack, Flex } from '@mantine/core';
 import toLocale from '@/utils/numberFormatting';
 import { alertService } from '@/services';
 import { useUser } from '@/context/users';
@@ -7,8 +7,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle, faCoins, faShieldHalved, faUserSecret, faEye, faHammer, faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import ContentCard from './ContentCard';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
-import { logError } from '@/utils/logger';
+import { logError, logInfo } from '@/utils/logger';
 import { UnitType, UnitProps } from '@/types/typings';
+import ImageWithFallback from './ImagWithFallback';
 
 const formatHeading = (secHeading: string): string => {
   return secHeading
@@ -26,7 +27,7 @@ const getSectionIcon = (heading: string) => {
     return <FontAwesomeIcon icon={faCoins} />;
   }
   if (lowerHeading.includes('offense')) {
-    return <RpgAwesomeIcon icon="crossed-swords" />; // Example using RpgAwesome
+    return <RpgAwesomeIcon icon="crossed-swords" />;
   }
   if (lowerHeading.includes('defense')) {
     return <FontAwesomeIcon icon={faShieldHalved} />;
@@ -395,6 +396,22 @@ const footerContent = (
   </Flex>
 );
 
+  const getCharacterImage = (unit: UnitProps) => {
+    if (!unit) {
+      return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Characters/default-character.webp`; // Fallback image
+    }
+    
+    // Get the base name from the unit ID (like "WORKER" from "WORKER_1")
+    const baseUnitName = unit.id.split('_')[0].charAt(0).toUpperCase() + unit.id.split('_')[0].slice(1).toLowerCase();
+    
+    // Convert race to proper case (e.g., "ELF" to "Elf")
+    const raceProperCase = user.race ? 
+      user.race.charAt(0).toUpperCase() + user.race.slice(1).toLowerCase() : 
+      'Unknown';
+    
+    return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Characters/${raceProperCase}/L${unit.level}${baseUnitName}.webp`;
+  }
+
 return (
   <ContentCard
     title={formatHeading(heading)}
@@ -421,6 +438,17 @@ return (
                     <Box onClick={() => toggleCollapse(unit.id)} style={{ cursor: 'pointer', paddingTop: '4px' }} aria-expanded={!isCollapsed} role="button">
                       {isCollapsed ? <FontAwesomeIcon icon={faPlus} size="sm" /> : <FontAwesomeIcon icon={faMinus} size="sm" />}
                     </Box>
+                    {process.env.NEXT_PUBLIC_SHOW_AI_IMAGES ? (
+                      <ImageWithFallback
+                        fallbackSrc={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Characters/default-character.webp`} // Fallback image
+                        src={getCharacterImage(unit)}
+                        alt={unit.name}
+                        width={80}
+                        height={80}
+                        className="rounded-full"
+                        style={{ display: isCollapsed ? 'none' : 'block' }} // Hide image when collapsed                        
+                      />
+                    ) : ''}
                     <div>
                       <Text fz="md" fw={500} className='font-medieval'>
                         {unit.name}

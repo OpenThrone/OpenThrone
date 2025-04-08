@@ -33,7 +33,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
         const sessionTokenCookie = cookies['next-auth.session-token'] || cookies['__Secure-next-auth.session-token'];
 
         if (!sessionTokenCookie) {
-          logInfo('Socket Auth: No session token cookie found');
+          //logInfo('Socket Auth: No session token cookie found');
           return callback('No session token', false);
         }
 

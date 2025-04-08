@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 import { logError } from '@/utils/logger';
 import ContentCard from './ContentCard';
+import ImageWithFallback from './ImagWithFallback';
 
 const getIconClass = (heading: string) => {
   const iconMap: { [key: string]: string } = {
@@ -342,6 +343,29 @@ const NewItemSection = React.memo(({
           {getItems.map((unit) => {
             const isCollapsed = collapsedItems[unit.id] ?? false;
             if (unit.enabled) {
+              const getArmoryImage = (unit: UnitProps): string => {
+                if (!unit) {
+                  return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Armory/default-item.webp`; 
+                }
+
+                // Get the base item type (like "SWORD" from "SWORD_1")
+                //const baseItemType = unit.type.split('_')[0].charAt(0).toUpperCase() + unit.type.split('_')[0].slice(1).toLowerCase();
+                const baseItemType = unit.type.toLowerCase();
+                // for now, we're only showing default items. 
+                // TODO: finish this
+                return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Armory/default-${baseItemType}.webp`;
+                // Get the item level
+                const itemLevel = unit.level || 1;
+
+                // Convert race to proper case for path (e.g., "ELF" to "Elf")
+                const raceProperCase = user?.race ?
+                  user.race.charAt(0).toUpperCase() + user.race.slice(1).toLowerCase() :
+                  'Human'; // Default to Human if race not specified
+
+                // Return path to armory image
+                return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Armory/${raceProperCase}/L${itemLevel}${baseItemType}.webp`;
+              }
+
               return (
                 <Table.Tr key={unit.id}>
                   <Table.Td className="w-80 px-4 py-2">
@@ -349,6 +373,17 @@ const NewItemSection = React.memo(({
                       <span onClick={() => toggleCollapse(unit.id)} style={{ cursor: 'pointer' }} aria-expanded={!isCollapsed} role="button">
                         {isCollapsed ? <FontAwesomeIcon icon={faPlus} size="sm" /> : <FontAwesomeIcon icon={faMinus} size="sm" />}
                       </span>
+                      {process.env.NEXT_PUBLIC_SHOW_AI_IMAGES ? (
+                        <ImageWithFallback
+                          fallbackSrc={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Armory/default-item.webp`} // Fallback image
+                          src={getArmoryImage(unit)}
+                          alt={unit.name}
+                          width={80}
+                          height={80}
+                          className="rounded-full"
+                          style={{ display: isCollapsed ? 'none' : 'block' }} // Hide image when collapsed                        
+                        />
+                      ) : ''}
                       <div>
                         <Text fz="lg" fw={500} className="font-medieval">
                           {unit.name}
