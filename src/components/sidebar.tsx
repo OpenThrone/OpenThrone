@@ -240,9 +240,9 @@ const Sidebar: React.FC = () => {
         <div className="p-10 md:p-4 mt-2">
           {/* Advisor Title and Text */}
           <h3 className="advisor-title text-center font-medieval font-bold text-xl text-shadow text-shadow-xs">
-            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px 0', cursor: 'pointer' }} onClick={handlePrevAdvisor} />
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handlePrevAdvisor} />
             Advisor
-            <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px 0', cursor: 'pointer' }} onClick={handleNextAdvisor} />
+            <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handleNextAdvisor} />
           </h3>
           <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-black text-center' style={{ minHeight: '105px' }}>
             {messages[currentMessageIndex]}
@@ -272,7 +272,7 @@ const Sidebar: React.FC = () => {
                   <StatRow label="Gold" value={<span id="gold">{sidebar.gold}</span>} icon={<RpgAwesomeIcon icon="gold-bar" fw />} />
                   <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
                   <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
-                  <StatRow label="Experience" value={<span id="experience">{sidebar.xp}</span>} icon={
+                  <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
                     <>
                       <RpgAwesomeIcon icon="experience" fw />
                       <Popover width={200} position="bottom" withArrow shadow="md" opened={nextLevelOpened}>
