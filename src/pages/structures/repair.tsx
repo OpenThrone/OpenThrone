@@ -12,7 +12,7 @@ import { logError } from '@/utils/logger';
 import ContentCard from '@/components/ContentCard';
 import StatCard from '@/components/StatCard';
 
-const Repair = () => {
+const Repair = (props) => {
   const { user, forceUpdate } = useUser();
   const [fortification, setFortification] = useState(Fortifications[0]);
   const [repairPoints, setRepairPoints] = useState(0);
@@ -111,12 +111,12 @@ const Repair = () => {
       <SimpleGrid cols={{ base: 1, xs: 2, md: 2 }} className="mb-6">
         <StatCard 
           title="Gold In Hand"
-          value={parseInt(user?.gold?.toString() ?? "0").toLocaleString()}
+          value={toLocale(user?.gold ?? 0)}
           icon={<BiCoinStack size={18} />}
         />
         <StatCard 
           title="Banked Gold"
-          value={parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}
+          value={toLocale(user?.goldInBank ?? 0)}
           icon={<BiSolidBank size={18} />}
         />
       </SimpleGrid>

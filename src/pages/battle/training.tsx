@@ -3,7 +3,7 @@ import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants'; 
 import { useUser } from '@/context/users';
 import { alertService } from '@/services'; 
-import toLocale from '@/utils/numberFormatting'; 
+import toLocale, { toLocale } from '@/utils/numberFormatting'; 
 import { Group, SimpleGrid, Text, Button, Flex, Stack, Box, rem } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
@@ -37,7 +37,7 @@ interface UnitTypeIndex {
   updateFn: React.Dispatch<React.SetStateAction<UnitData[] | null>>;
 }
 
-const Training: React.FC = () => { // Use React.FC for functional components
+const Training: React.FC = (props) => { // Use React.FC for functional components
   const { user, forceUpdate } = useUser(); // Assuming useUser provides User | null type
   const [totalCost, setTotalCost] = useState(0);
   const [unitCosts, setUnitCosts] = useState<{ [key: string]: number }>({});
@@ -354,12 +354,12 @@ const Training: React.FC = () => { // Use React.FC for functional components
         />
         <StatCard
           title="Gold On Hand"
-          value={user.gold ?? 0}
+          value={toLocale(user.gold) ?? 0}
           icon={<BiCoinStack style={{ width: rem(15), height: rem(15) }} />}
         />
         <StatCard
           title="Banked Gold"
-          value={user.goldInBank ?? 0}
+          value={toLocale(user.goldInBank) ?? 0}
           icon={<BiSolidBank style={{ width: rem(15), height: rem(15) }} />}
         />
         <StatCard

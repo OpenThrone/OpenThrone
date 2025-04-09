@@ -342,13 +342,13 @@ const ArmoryTab = (props) => {
         />
         <StatCard
           title="Gold In Hand"
-          value={parseInt(user?.gold?.toString() ?? "0")}
+          value={toLocale(user?.gold ?? 0)}
           icon={<BiCoinStack style={{ width: rem(15), height: rem(15) }} />}
           iconPosition="right"
         />
         <StatCard
           title="Banked Gold"
-          value={parseInt(user?.goldInBank?.toString() ?? "0")}
+          value={toLocale(user?.goldInBank ?? 0)}
           icon={<BiSolidBank style={{ width: rem(15), height: rem(15) }} />}
         />
         <StatCard

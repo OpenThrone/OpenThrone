@@ -60,18 +60,18 @@ const Housing = (props) => {
       <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} className="mb-6">
         <StatCard 
           title="Gold In Hand"
-          value={parseInt(user?.gold?.toString() ?? "0").toLocaleString()}
+          value={toLocale(user?.gold ?? 0)}
           icon={<BiCoinStack size={18} />}
         />
         <StatCard 
           title="Banked Gold"
-          value={parseInt(user?.goldInBank?.toString() ?? "0").toLocaleString()}
+          value={toLocale(user?.goldInBank ?? 0)}
           icon={<BiSolidBank size={18} />}
         />
         <StatCard 
           title="Citizens"
-          value={user?.citizens?.toLocaleString() ?? "0"}
-          subtitle={`+${citizensDaily} daily`}
+          value={toLocale(user?.citizens ?? 0)}
+          subtitle={`+${citizensDaily} daily`} // not build yet
           icon={<BiHome size={18} />}
         />
       </SimpleGrid>

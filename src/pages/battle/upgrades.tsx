@@ -94,7 +94,7 @@ const Upgrades = (props) => {
           <div>
             <StatCard 
               title="Offensive Units"
-              value={offensiveUnits}
+              value={toLocale(offensiveUnits)}
               icon={<RpgAwesomeIcon icon="crossed-swords" size={18} />}
             />
           </div>
@@ -103,7 +103,7 @@ const Upgrades = (props) => {
           <div>
             <StatCard 
               title="Defensive Units"
-              value={defensiveUnits}
+              value={toLocale(defensiveUnits)}
               icon={<FontAwesomeIcon icon={faShield} style={{ width: '18px', height: '18px' }} />}
             />
           </div>
