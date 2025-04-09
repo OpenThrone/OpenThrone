@@ -94,18 +94,22 @@ const Sidebar: React.FC = () => {
     });
   }, [user, userLoading]);
 
-  const renderAutocompleteOption: AutocompleteProps['renderOption'] = React.memo(({ option }) => (
-    <Group gap="sm">
-      <Avatar src={getAvatarSrc(option.image, option.race)} size={50} radius="xl" />
-      <div>
-        <Text size="sm">{option.label}</Text>
-        <Text size="xs" opacity={0.5}>
-          Lvl {option.experience} {option.race} {option.class}
-        </Text>
-      </div>
-    </Group>
-  ));
-  renderAutocompleteOption.displayName = 'renderAutocompleteOption'; // For memoization
+  const renderAutocompleteOption = React.useCallback<AutocompleteProps['renderOption']>(
+    ({ option }) => {
+      return (
+        <Group gap="sm">
+          <Avatar src={getAvatarSrc(option.image, option.race)} size={50} radius="xl" />
+          <div>
+            <Text size="sm">{option.label}</Text>
+            <Text size="xs" opacity={0.5}>
+              Lvl {option.experience} {option.race} {option.class}
+            </Text>
+          </div>
+        </Group>
+      );
+    },
+    []
+  );
 
   const fetchUsers = async (searchTerm: string): Promise<any[]> => { // Return type clarification
     if (!searchTerm.trim()) return [];
@@ -155,8 +159,11 @@ const Sidebar: React.FC = () => {
   }, [searchValue, handleSearch]);
 
 
-  const handleItemSubmit = (item: { id: number }) => { // Type the item parameter
-    router.push(`/userprofile/${item.id}`);
+  const handleItemSubmit = (value: string) => {
+    const selectedUser = usersData.find(u => u.label === value);
+    if (selectedUser) {
+      router.push(`/userprofile/${selectedUser.id}`);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => { // Type the event
