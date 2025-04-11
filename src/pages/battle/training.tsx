@@ -3,7 +3,7 @@ import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants'; 
 import { useUser } from '@/context/users';
 import { alertService } from '@/services'; 
-import toLocale, { toLocale } from '@/utils/numberFormatting'; 
+import toLocale  from '@/utils/numberFormatting'; 
 import { Group, SimpleGrid, Text, Button, Flex, Stack, Box, rem } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
@@ -349,7 +349,7 @@ const Training: React.FC = (props) => { // Use React.FC for functional component
       <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} mb="lg">
         <StatCard
           title="Untrained Citizens"
-          value={citizenCount}
+          value={toLocale(citizenCount)}
           icon={<FontAwesomeIcon icon={faPeopleGroup} style={{ width: rem(15), height: rem(15) }} />}
         />
         <StatCard
