@@ -189,30 +189,50 @@ const Sidebar: React.FC = () => {
   const SidebarTimeInfo = React.memo(({ user, userLoading }: { user: UserModel | null, userLoading: boolean }) => {
     const [time, setTime] = useState('--:--');
     const [OTTime, setOTTime] = useState('--:--');
+    const hasInitializedRef = useRef(false);
+    
+    // Define the medieval font style to be used with Mantine components
+    const medievalFontStyle = { fontFamily: 'MedievalSharp, cursive' };
 
     useEffect(() => {
-      const interval = setInterval(() => {
-        if (user && !userLoading) {
-          const remaining = getTimeRemaining(getTimeToNextTurn());
-          const minutes = String(remaining.minutes).padStart(2, '0');
-          const seconds = String(remaining.seconds).padStart(2, '0');
-          setTime(`${minutes}:${seconds}`);
-          setOTTime(getOTTime().toLocaleTimeString('en-us', { timeStyle: 'short', hour12: false }));
-        } else {
-          setTime('--:--');
-          setOTTime('--:--');
-        }
-      }, 1000);
+      // Only show '--:--' on initial load before we have user data
+      if ((!user || userLoading) && !hasInitializedRef.current) {
+        return;
+      }
+
+      // Once we have user data, we'll start the timer and never go back to '--:--'
+      if (user && !hasInitializedRef.current) {
+        hasInitializedRef.current = true;
+      }
+
+      const updateTimes = () => {
+        const nextTurnTime = getTimeToNextTurn();
+        const remaining = getTimeRemaining(nextTurnTime);
+        
+        // Format the time
+        const minutes = String(remaining.minutes).padStart(2, '0');
+        const seconds = String(remaining.seconds).padStart(2, '0');
+        
+        setTime(`${minutes}:${seconds}`);
+        setOTTime(getOTTime().toLocaleTimeString('en-us', { timeStyle: 'short', hour12: false }));
+      };
+      
+      // Update immediately
+      updateTimes();
+      
+      // Then set interval for updates
+      const interval = setInterval(updateTimes, 1000);
+
       return () => clearInterval(interval);
     }, [user, userLoading]);
 
     return (
       <>
-        <Title order={5} className={"text-center"}>Time Until Next Turn</Title>
-        <Title order={4} ta="center" fw="bold"><span id="nextTurnTimestamp">{time}</span></Title>
+        <Title order={5} className={"text-center"} style={medievalFontStyle}>Time Until Next Turn</Title>
+        <Title order={4} ta="center" fw="bold" style={medievalFontStyle}><span id="nextTurnTimestamp">{time}</span></Title>
         
-        <Title order={5} className={"text-center"} >OT Time:</Title>
-        <Title order={3} ta="center" fw="bold"><span id="otTime">{OTTime}</span></Title>
+        <Title order={5} className={"text-center"} style={medievalFontStyle}>OT Time:</Title>
+        <Title order={3} ta="center" fw="bold" style={medievalFontStyle}><span id="otTime">{OTTime}</span></Title>
       </>
     );
   });
