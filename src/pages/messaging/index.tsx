@@ -7,103 +7,171 @@ import { Space, Button } from '@mantine/core';
 import MainArea from '@/components/MainArea';
 import { useSession } from 'next-auth/react';
 import NewMessageModal from '@/components/NewMessageModal';
-import { useUser } from '@/context/users'; // Import useUser
+import { useUser } from '@/context/users';
+import { logError, logInfo } from '@/utils/logger';
+
+// Define a type for the message structure used in the frontend state
+interface FrontendMessage {
+  id: number;
+  roomId: number;
+  senderId: number;
+  content: string;
+  messageType: string;
+  sentAt: string; // ISO string
+  sender: {
+    id: number;
+    display_name: string;
+    avatar: string | null;
+    is_online: boolean;
+  };
+  reactions: {
+    userId: number;
+    reaction: string;
+    userDisplayName: string;
+  }[];
+  readBy: {
+    userId: number;
+    readAt: string; // ISO string
+    userDisplayName: string;
+  }[];
+  replyToMessage: {
+    id: number;
+    content: string;
+    sender: { id: number; display_name: string };
+  } | null;
+  sharedAttackLog: {
+    id: number;
+    attacker_id: number;
+    defender_id: number;
+    winner: number;
+    timestamp: string | null; // ISO string
+  } | null;
+  isOptimistic?: boolean;
+  tempId?: number;
+}
+
+// Define type for Room state
+interface FrontendRoom {
+  id: number;
+  name: string | null;
+  isPrivate: boolean;
+  isDirect: boolean;
+  createdById: number;
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
+  lastMessage: string | null;
+  lastMessageTime: string | null; // ISO string
+  lastMessageSender: string | null;
+  unreadCount: number;
+  isAdmin: boolean;
+  participants: {
+    id: number;
+    role: "ADMIN" | "MEMBER";
+    canWrite: boolean;
+    display_name: string;
+    avatar: string | null;
+    is_online: boolean;
+  }[];
+}
+
 
 const MessageList = (props) => {
-  const [rooms, setRooms] = useState([]);
+  const [rooms, setRooms] = useState<FrontendRoom[]>([]);
   const router = useRouter();
   const { data: session } = useSession();
   const { roomId: roomIdParam } = router.query;
-  const { markRoomAsRead } = useUser(); // Get the function from context
+  const { markRoomAsRead } = useUser();
 
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
-  const [messages, setMessages] = useState([]);
-  const [loadingMessages, setLoadingMessages] = useState(false); // Add loading state
+  const [messages, setMessages] = useState<FrontendMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   const fetchRooms = useCallback(async () => {
     try {
       const response = await fetch('/api/messages');
       if (!response.ok) throw new Error('Failed to fetch rooms');
-      const data = await response.json();
+      const data: FrontendRoom[] = await response.json();
       setRooms(data);
 
-      // If we have a roomId in the URL and rooms are loaded, select that room
-      if (roomIdParam && !selectedRoomId && data.some(room => room.id === Number(roomIdParam))) {
-        setSelectedRoomId(Number(roomIdParam));
-        markRoomAsRead(Number(roomIdParam)); // Mark as read when selected via URL
-      } else if (!roomIdParam && data.length > 0 && !selectedRoomId) {
-        // Optionally select the first room if none specified
-        // setSelectedRoomId(data[0].id);
-        // markRoomAsRead(data[0].id);
+      // Auto-select room based on URL param or first room *only if no room is currently selected*
+      if (selectedRoomId === null) { // Check if a room isn't already selected
+        let roomToSelect: number | null = null;
+        const paramRoomId = roomIdParam ? Number(roomIdParam) : null;
+
+        if (paramRoomId && data.some(room => room.id === paramRoomId)) {
+          // Select room from URL parameter if valid
+          roomToSelect = paramRoomId;
+        } else if (data.length > 0) {
+          // Otherwise, select the first room in the list
+          roomToSelect = data[0].id;
+        }
+
+        // If we found a room to auto-select, update the state
+        if (roomToSelect !== null) {
+           logInfo(`Auto-selecting room ${roomToSelect}`);
+           setSelectedRoomId(roomToSelect);
+           markRoomAsRead(roomToSelect);
+        }
       }
+
     } catch (error) {
       logError('Failed to fetch rooms:', error);
     }
-  }, [roomIdParam, selectedRoomId, markRoomAsRead]); // Add dependencies
+  }, [roomIdParam, markRoomAsRead, selectedRoomId]);
 
   useEffect(() => {
     fetchRooms();
-  }, [fetchRooms]); // Fetch rooms on mount
+  }, [fetchRooms]);
 
-  // Fetch messages when selectedRoomId changes
   useEffect(() => {
     const fetchMessages = async () => {
       if (selectedRoomId) {
-        setLoadingMessages(true); // Start loading
+        setLoadingMessages(true);
         try {
           const response = await fetch(`/api/messages/${selectedRoomId}`);
           if (!response.ok) throw new Error('Failed to fetch messages');
-          const data = await response.json();
+          const data: FrontendMessage[] = await response.json();
           setMessages(data);
 
-          // Update URL if needed without full page reload
           if (router.query.roomId !== selectedRoomId.toString()) {
-            router.push(`/messaging?roomId=${selectedRoomId}`, undefined, {
-              shallow: true
-            });
+            router.push(`/messaging?roomId=${selectedRoomId}`, undefined, { shallow: true });
           }
         } catch (error) {
           logError('Failed to fetch messages:', error);
-          setMessages([]); // Clear messages on error
+          setMessages([]);
         } finally {
-          setLoadingMessages(false); // Stop loading
+          setLoadingMessages(false);
         }
       } else {
-        setMessages([]); // Clear messages if no room selected
+        setMessages([]);
       }
     };
     fetchMessages();
-  }, [selectedRoomId, router]); // Add router to dependency array
+  }, [selectedRoomId, router]);
 
-  // Custom room selection handler
   const handleRoomSelect = useCallback((roomId: number) => {
     setSelectedRoomId(roomId);
-    markRoomAsRead(roomId); // Mark room as read when selected by user
-  }, [markRoomAsRead]); // Add dependency
-
-  // Refresh rooms when a new message notification arrives globally
-  const handleNewMessageGlobally = useCallback(() => {
-    fetchRooms(); // Refetch rooms list to update last message etc.
-  }, [fetchRooms]);
+    markRoomAsRead(roomId);
+  }, [markRoomAsRead]);
 
   return (
     <>
       {session?.user?.id && (
         <RealtimeMessageHandler
-          userId={Number(session.user.id)} // Ensure userId is number
+          userId={Number(session.user.id)}
           selectedRoomId={selectedRoomId}
-          setMessages={setMessages} // Pass setter to update messages directly
-          onNewMessageNotification={handleNewMessageGlobally} // Callback to refresh rooms
-          setRooms={setRooms} // Pass down for updating rooms
+          setMessages={setMessages}
+          fetchRooms={fetchRooms} // Pass fetchRooms directly
+          setRooms={setRooms}
         />
       )}
       <MessageListComponent
         rooms={rooms}
-        setRooms={setRooms} // Pass down for modal callback
+        setRooms={setRooms}
         selectedRoomId={selectedRoomId}
         setSelectedRoomId={handleRoomSelect}
         messages={messages}
-        loadingMessages={loadingMessages} // Pass loading state
+        loadingMessages={loadingMessages}
       />
     </>
   );
@@ -111,21 +179,30 @@ const MessageList = (props) => {
 
 const MessageListComponent = ({
   rooms,
-  setRooms, // Receive setRooms
+  setRooms,
   selectedRoomId,
   setSelectedRoomId,
   messages,
-  loadingMessages, // Receive loading state
+  loadingMessages,
+}: {
+  rooms: FrontendRoom[];
+  setRooms: React.Dispatch<React.SetStateAction<FrontendRoom[]>>;
+  selectedRoomId: number | null;
+  setSelectedRoomId: (id: number) => void;
+  messages: FrontendMessage[];
+  loadingMessages: boolean;
 }) => {
   const selectedRoom = useMemo(() => rooms.find(room => room.id === selectedRoomId) || null, [rooms, selectedRoomId]);
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
 
-  // Simplified handler: relies on RealtimeMessageHandler to update rooms
   const handleNewMessage = (newRoomId?: number) => {
     if (newRoomId) {
-      setSelectedRoomId(newRoomId); // Select the new room
+      setSelectedRoomId(newRoomId);
     }
-    // No need to manually fetch rooms here if RealtimeMessageHandler does it
+    fetch('/api/messages')
+      .then(res => res.json())
+      .then(data => setRooms(data))
+      .catch(err => logError("Error refetching rooms after modal", err));
   };
 
   return (
@@ -133,7 +210,7 @@ const MessageListComponent = ({
       <div className="flex justify-end p-4">
         <Button onClick={() => setIsNewMessageModalOpen(true)}>New Message</Button>
       </div>
-      <div className="flex h-[calc(100vh-250px)]"> {/* Adjust height calculation as needed */}
+      <div className="flex h-[calc(100vh-250px)]">
         <div className="w-1/4 bg-gray-900 p-2 overflow-y-auto border-r border-gray-700">
           <ChatRoomList
             rooms={rooms}
@@ -146,7 +223,7 @@ const MessageListComponent = ({
             selectedRoomId={selectedRoomId}
             messages={messages}
             roomInfo={selectedRoom}
-            isLoading={loadingMessages} // Pass loading state
+            isLoading={loadingMessages}
           />
         </div>
       </div>
@@ -160,105 +237,174 @@ const MessageListComponent = ({
   );
 };
 
-// Renamed component to better reflect its purpose
+// Component to handle WebSocket logic separately
 const RealtimeMessageHandler = ({
   userId,
   selectedRoomId,
-  setMessages, // Keep this for updating the current room
-  setRooms, // ADD setRooms prop
-  onNewMessageNotification,
+  setMessages,
+  setRooms,
+  fetchRooms, // Receive fetchRooms prop
+}: {
+  userId: number;
+  selectedRoomId: number | null;
+  setMessages: React.Dispatch<React.SetStateAction<FrontendMessage[]>>;
+  setRooms: React.Dispatch<React.SetStateAction<FrontendRoom[]>>;
+  fetchRooms: () => Promise<void>; // Type fetchRooms prop
 }) => {
-  const { addEventListener, removeEventListener, socket, isConnected } = useSocket(userId); // Add isConnected
+  const { addEventListener, removeEventListener, socket, isConnected } = useSocket(userId);
   const currentRoomRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!socket || !userId || !isConnected ) return;
+    if (!socket || !userId || !isConnected) return;
 
-    // Join/Leave Room Logic
+    // --- Join/Leave Room Logic ---
     if (selectedRoomId !== currentRoomRef.current) {
-      // Leave previous room if applicable
       if (currentRoomRef.current !== null) {
-        console.log(`Socket ${socket.id} leaving room-${currentRoomRef.current}`);
+        logInfo(`Socket ${socket.id} leaving room-${currentRoomRef.current}`);
         socket.emit('leaveRoom', currentRoomRef.current);
       }
-      // Join new room if selected
       if (selectedRoomId !== null) {
-        console.log(`Socket ${socket.id} joining room-${selectedRoomId}`);
+        logInfo(`Socket ${socket.id} joining room-${selectedRoomId}`);
         socket.emit('joinRoom', selectedRoomId);
         currentRoomRef.current = selectedRoomId;
       } else {
-        currentRoomRef.current = null; // No room selected
+        currentRoomRef.current = null;
       }
     }
 
-    // Handler for receiving a message in a specific room
-    const handleReceiveMessage = (messageData: any) => {
-      console.log('Received socket message in room:', messageData.roomId, 'Selected room:', selectedRoomId);
-      
+    // --- Define Event Handlers ---
+    const handleReceiveMessage = (messageData: FrontendMessage) => {
+      logInfo(`[User ${userId}] handleReceiveMessage CALLED. Msg ID: ${messageData.id}, Msg Room: ${messageData.roomId}, Selected Room: ${selectedRoomId}`);
       if (messageData.roomId === selectedRoomId) {
-        console.log('Adding message to current room:', messageData);
         setMessages((prev) => {
-          // Replace optimistic message or add new one
           const optimisticIndex = prev.findIndex(msg => msg.isOptimistic && msg.tempId === messageData.tempId);
           if (optimisticIndex > -1) {
-            // Found the optimistic message, replace it with the confirmed one
             const newState = [...prev];
-            newState[optimisticIndex] = { ...messageData, isOptimistic: false }; // Mark as not optimistic
+            newState[optimisticIndex] = { ...messageData, isOptimistic: false };
             return newState;
           } else if (!prev.some(msg => msg.id === messageData.id)) {
-            // Didn't find optimistic, and don't have confirmed one yet, add it
             return [...prev, { ...messageData, isOptimistic: false }];
           }
-          // Already have the confirmed message, do nothing
           return prev;
         });
-      } else {
-         console.log(`Message for room ${messageData.roomId}, but currently viewing ${selectedRoomId}`);
-         // Optimistically update the specific room in the list
-        setRooms(prevRooms => {
-          return prevRooms.map(room => {
-            if (room.id === messageData.roomId) {
-              return {
-                ...room,
-                lastMessage: messageData.content.substring(0, 50) + (messageData.content.length > 50 ? '...' : ''),
-                lastMessageTime: messageData.sentAt,
-                lastMessageSender: messageData.sender?.display_name || 'Unknown',
-                updatedAt: messageData.sentAt,
-              };
-            }
-            return room;
-          }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      }
+      setRooms(prevRooms => {
+        let roomUpdated = false;
+        const updatedRooms = prevRooms.map(room => {
+          if (room.id === messageData.roomId) {
+            roomUpdated = true;
+            return {
+              ...room,
+              lastMessage: messageData.content.substring(0, 50) + (messageData.content.length > 50 ? '...' : ''),
+              lastMessageTime: messageData.sentAt,
+              lastMessageSender: messageData.sender?.display_name || 'Unknown',
+              updatedAt: messageData.sentAt,
+              unreadCount: (messageData.senderId !== userId && messageData.roomId !== selectedRoomId) ? (room.unreadCount || 0) + 1 : room.unreadCount,
+            };
+          }
+          return room;
         });
-        onNewMessageNotification(); // Trigger global notification count update
+        if (!roomUpdated) {
+           fetchRooms(); // Trigger full refresh if room wasn't found (edge case)
+           return prevRooms;
+        }
+        return updatedRooms.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      });
+      // Trigger global notification update if message is for another room
+      if (messageData.roomId !== selectedRoomId) {
+         fetchRooms(); // Refresh room list to get latest unread counts
       }
     };
 
-    // Handler for global new message notifications (still useful for global count)
-    const handleNewMessage = (notificationData: any) => {
-       console.log('Received global notification (context handles count):', notificationData);
-       // Trigger the original callback if it does more than just fetchRooms
-       onNewMessageNotification();
+    const handleNewMessageNotification = (notificationData: any) => {
+      logInfo('Received global notification, triggering fetchRooms:', notificationData);
+      fetchRooms(); // Call the passed fetchRooms directly
     };
 
-    console.log('Setting up message listeners for userId:', userId);
+    const handleReactionAdded = (data: { messageId: number; userId: number; reaction: string; userDisplayName: string }) => {
+      logInfo('Received reactionAdded:', data);
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) => {
+          if (msg.id === data.messageId) {
+            const reactionExists = msg.reactions?.some(r => r.userId === data.userId && r.reaction === data.reaction);
+            if (!reactionExists) {
+              const newReaction = { userId: data.userId, reaction: data.reaction, userDisplayName: data.userDisplayName };
+              return { ...msg, reactions: [...(msg.reactions || []), newReaction] };
+            }
+          }
+          return msg;
+        })
+      );
+    };
+
+    const handleReactionRemoved = (data: { messageId: number; userId: number; reaction: string }) => {
+       logInfo('Received reactionRemoved:', data);
+       setMessages((prevMessages) =>
+         prevMessages.map((msg) => {
+           if (msg.id === data.messageId) {
+             const updatedReactions = (msg.reactions || []).filter(r => !(r.userId === data.userId && r.reaction === data.reaction));
+             return { ...msg, reactions: updatedReactions };
+           }
+           return msg;
+         })
+       );
+    };
+
+    const handleMessagesRead = (data: { roomId: number; updates: { messageId: number; userId: number; readAt: string }[] }) => {
+      logInfo('Received messagesRead:', data);
+      if (data.roomId === selectedRoomId) {
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) => {
+            const readUpdate = data.updates.find(update => update.messageId === msg.id);
+            if (readUpdate) {
+              const readerExists = msg.readBy?.some(r => r.userId === readUpdate.userId);
+              if (!readerExists) {
+                 const updatedReadBy = [...(msg.readBy || [])];
+                 updatedReadBy.push({ userId: readUpdate.userId, readAt: readUpdate.readAt, userDisplayName: 'Reader' /* Placeholder */ });
+                 return { ...msg, readBy: updatedReadBy };
+              }
+            }
+            return msg;
+          })
+        );
+      }
+       setRooms(prevRooms => prevRooms.map(room => {
+           if (room.id === data.roomId) {
+               const currentUserRead = data.updates.some(u => u.userId === userId);
+               return { ...room, unreadCount: currentUserRead ? 0 : room.unreadCount };
+           }
+           return room;
+       }));
+    };
+
+    // --- Setup Listeners ---
+    logInfo(`[User ${userId}] Setting up ALL message listeners for selectedRoomId: ${selectedRoomId}`);
     addEventListener('receiveMessage', handleReceiveMessage);
-    addEventListener('newMessageNotification', handleNewMessage);
+    addEventListener('newMessageNotification', handleNewMessageNotification);
+    addEventListener('reactionAdded', handleReactionAdded);
+    addEventListener('reactionRemoved', handleReactionRemoved);
+    addEventListener('messagesRead', handleMessagesRead);
 
     if (isConnected) {
        socket.emit('registerUser', { userId });
     }
 
+    // --- Cleanup ---
     return () => {
-      console.log('Cleaning up message listeners');
+      logInfo(`[User ${userId}] Cleaning up ALL message listeners for selectedRoomId: ${currentRoomRef.current}`);
       removeEventListener('receiveMessage', handleReceiveMessage);
-      removeEventListener('newMessageNotification', handleNewMessage);
-      // Leave the current room on cleanup if component unmounts while in a room
+      removeEventListener('newMessageNotification', handleNewMessageNotification);
+      removeEventListener('reactionAdded', handleReactionAdded);
+      removeEventListener('reactionRemoved', handleReactionRemoved);
+      removeEventListener('messagesRead', handleMessagesRead);
+
       if (currentRoomRef.current !== null && socket) {
-        console.log(`Socket ${socket.id} leaving room-${currentRoomRef.current} on cleanup`);
+        logInfo(`Socket ${socket.id} leaving room-${currentRoomRef.current} on cleanup`);
         socket.emit('leaveRoom', currentRoomRef.current);
       }
     };
-  }, [socket, userId, selectedRoomId, setMessages, setRooms, addEventListener, removeEventListener, onNewMessageNotification, isConnected]);
+    // Aggressively refined dependencies: Only include values that truly dictate when the effect *must* re-run
+  }, [socket, userId, selectedRoomId, isConnected, addEventListener, removeEventListener]); // Removed fetchRooms, setMessages, setRooms
 
   return null;
 };

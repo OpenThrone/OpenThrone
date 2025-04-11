@@ -1,5 +1,5 @@
 import { logInfo } from '@/utils/logger';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
@@ -7,21 +7,35 @@ const SERVER_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
 export default function useSocket(userId: number | null) {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const eventListeners = useRef<{ [key: string]: Function[] }>({});
+  const eventListeners = useRef<{ [key: string]: Set<Function> }>({}); // Use Set for easier removal
 
-  const addEventListener = (event: string, listener: Function) => {
+  // Memoize addEventListener to ensure stable reference
+  const addEventListener = useCallback((event: string, listener: Function) => {
     if (!eventListeners.current[event]) {
-      eventListeners.current[event] = [];
+      eventListeners.current[event] = new Set();
     }
-    eventListeners.current[event].push(listener);
-  };
+    eventListeners.current[event].add(listener);
+    logInfo(`Added listener for event: ${event}`);
+  }, []); // Empty dependency array means this function reference never changes
 
-  const removeEventListener = (event: string, listener: Function) => {
-    eventListeners.current[event] = (eventListeners.current[event] || []).filter((l) => l !== listener);
-  };
+  // Memoize removeEventListener
+  const removeEventListener = useCallback((event: string, listener: Function) => {
+    if (eventListeners.current[event]) {
+      eventListeners.current[event].delete(listener);
+      logInfo(`Removed listener for event: ${event}`);
+    }
+  }, []); // Empty dependency array
 
+  // Dispatch event helper (doesn't need memoization as it's internal)
   const dispatchEvent = (event: string, data: any) => {
-    (eventListeners.current[event] || []).forEach((listener) => listener(data));
+    logInfo(`Dispatching event: ${event}`, data);
+    eventListeners.current[event]?.forEach((listener) => {
+      try {
+        listener(data);
+      } catch (error) {
+        console.error(`Error in listener for event ${event}:`, error);
+      }
+    });
   };
 
   if (!socketRef.current) {
@@ -67,10 +81,30 @@ export default function useSocket(userId: number | null) {
     };
   }, [userId, isConnected]);
 
+  // --- Emitter Functions ---
+  const emitAddReaction = (data: { messageId: number; reaction: string; roomId: number }) => {
+    socketRef.current?.emit('addReaction', data);
+  };
+
+  const emitRemoveReaction = (data: { messageId: number; reaction: string; roomId: number }) => {
+    socketRef.current?.emit('removeReaction', data);
+  };
+
+  const emitMarkAsRead = (data: { messageId: number; roomId: number } | { messageIds: number[]; roomId: number }) => {
+    socketRef.current?.emit('markAsRead', data);
+  };
+
+  // Add other emitters here if needed (e.g., for typing indicators)
+
+
   return {
     socket: socketRef.current,
     isConnected,
     addEventListener,
     removeEventListener,
+    // Expose emitter functions
+    emitAddReaction,
+    emitRemoveReaction,
+    emitMarkAsRead,
   };
 }

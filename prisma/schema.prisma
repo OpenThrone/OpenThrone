@@ -88,6 +88,8 @@ model users {
   ChatRoom                              ChatRoom[]
   ChatRoomParticipant                   ChatRoomParticipant[]
   ChatMessage                           ChatMessage[]
+  messageReactions                      ChatMessageReaction[] // Added for reactions
+  readMessages                          ChatMessageReadStatus[] // Added for read receipts
 
   @@index([created_at])
 }
@@ -158,6 +160,7 @@ model attack_log {
   attackerPlayer users            @relation("AttackLogs", fields: [attacker_id], references: [id])
   defenderPlayer users            @relation("DefenseLogs", fields: [defender_id], references: [id])
   acl            attack_log_acl[]
+  chatMessages   ChatMessage[] // Added for shared logs relation
 
   @@index([attacker_id, defender_id, timestamp])
   @@index([attacker_id])
@@ -246,6 +249,7 @@ model alliances {
   alliance_roles    alliance_roles[]
   leader            users                  @relation("AllianceLeader", fields: [leader_id], references: [id])
   sharedAttackLogs  attack_log_acl[]
+  chatRooms         ChatRoom[] // Added for alliance chat relation
 
   @@index([leader_id], map: "idx_alliance_leader")
 }
@@ -322,6 +326,8 @@ model ChatRoom {
   participants ChatRoomParticipant[]
   messages     ChatMessage[]
   creator      users                 @relation(fields: [createdById], references: [id])
+  allianceId   Int? // Added for alliance specific rooms
+  alliance     alliances? @relation(fields: [allianceId], references: [id], onDelete: Cascade) // Added for alliance specific rooms
 
   @@index([createdById])
 }
@@ -340,15 +346,54 @@ model ChatRoomParticipant {
 }
 
 model ChatMessage {
-  id       Int      @id @default(autoincrement())
-  roomId   Int // ChatRoom ID
-  senderId Int // User who sent the message
-  content  String // Message content
-  sentAt   DateTime @default(now())
-  room     ChatRoom @relation(fields: [roomId], references: [id])
-  sender   users    @relation(fields: [senderId], references: [id])
+  id                Int      @id @default(autoincrement())
+  roomId            Int // ChatRoom ID
+  senderId          Int // User who sent the message
+  content           String // Message content
+  sentAt            DateTime @default(now())
+  messageType       String   @default("TEXT") // Added: e.g., TEXT, ATTACK_LOG_SHARE
+  replyToMessageId  Int?                      // Added for replies
+  sharedAttackLogId Int?                      // Added for sharing attack logs
+
+  room              ChatRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade) // Added onDelete Cascade
+  sender            users         @relation(fields: [senderId], references: [id], onDelete: Cascade) // Added onDelete Cascade
+  replyToMessage    ChatMessage?  @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction) // Added for replies
+  sharedAttackLog   attack_log?   @relation(fields: [sharedAttackLogId], references: [id], onDelete: SetNull) // Added for sharing attack logs
+
+  replies           ChatMessage[] @relation("MessageReplies") // Added for replies
+  reactions         ChatMessageReaction[]   // Added for reactions
+  readBy            ChatMessageReadStatus[] // Added for read receipts
 
   @@index([roomId, sentAt])
+  @@index([replyToMessageId]) // Added index
+  @@index([sharedAttackLogId]) // Added index
+}
+
+model ChatMessageReaction {
+  id        Int      @id @default(autoincrement())
+  messageId Int
+  userId    Int
+  reaction  String   // Consider using an enum if the set of reactions is fixed
+  createdAt DateTime @default(now())
+
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      users       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, reaction]) // Prevent duplicate reactions per user per message
+  @@index([messageId])
+  @@index([userId])
+}
+
+model ChatMessageReadStatus {
+  messageId Int
+  userId    Int
+  readAt    DateTime @updatedAt // Use @updatedAt to track the latest read time
+
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      users       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId]) // Composite primary key ensures one read status per user per message
+  @@index([userId]) // Index for querying user's read statuses quickly
 }
 
 enum ChatRole {

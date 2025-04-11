@@ -4,13 +4,46 @@ import { Avatar, Text, Group } from '@mantine/core';
 import clsx from 'clsx';
 import { formatLastMessageTime } from '@/utils/timefunctions';
 
-interface ChatRoomListProps {
-  rooms: any[];
-  selectedRoomId?: any;
-  onRoomSelect: (roomId: any) => void;
+/**
+ * Represents the data structure for a single chat room displayed in the list.
+ */
+interface RoomListItem {
+  /** Unique identifier for the chat room. */
+  id: number;
+  /** The display name of the room (null for unnamed DMs). */
+  name: string | null;
+  /** Flag indicating if it's a direct message (true) or a group chat (false). */
+  isDirect: boolean;
+  /** Optional URL for the room's avatar image. */
+  image?: string | null;
+  /** The content of the most recent message. */
+  lastMessage: string | null;
+  /** ISO timestamp string of the most recent message. */
+  lastMessageTime: string | null;
+  /** Display name of the sender of the most recent message. */
+  lastMessageSender: string | null;
+  /** Count of unread messages for the current user in this room. */
+  unreadCount: number;
 }
 
-const ChatRoomList: React.FC<ChatRoomListProps> = ({ rooms, selectedRoomId = 0, onRoomSelect }) => {
+/**
+ * Props for the ChatRoomList component.
+ */
+interface ChatRoomListProps {
+  /** Array of chat room data objects to display. */
+  rooms: RoomListItem[];
+  /** The ID of the currently selected room, if any. */
+  selectedRoomId?: number | null;
+  /** Callback function triggered when a room is clicked. */
+  onRoomSelect: (roomId: number) => void;
+}
+
+/**
+ * Renders a list of chat rooms, allowing users to select one.
+ * Displays room name, avatar, last message preview, timestamp, and unread count.
+ * Highlights the currently selected room.
+ */
+const ChatRoomList: React.FC<ChatRoomListProps> = ({ rooms, selectedRoomId = null, onRoomSelect }) => {
   const router = useRouter();
 
   
@@ -23,19 +56,19 @@ const ChatRoomList: React.FC<ChatRoomListProps> = ({ rooms, selectedRoomId = 0, 
           onClick={() => onRoomSelect(room.id)}
         >
           <Avatar
-            src={room.image || undefined} // Not used yet
+            src={room.image || undefined} // TODO: Use actual room image when available
             size={40}
             radius="xl"
             className="mr-3"
           >
-            {room.name ? room.name[0]?.toUpperCase() : 'R'}
+            {/* Fallback avatar uses first letter of name, or 'U' for Direct, 'G' for Group */}
+            {room.name ? room.name[0]?.toUpperCase() : (room.isDirect ? 'U' : 'G')}
           </Avatar>
 
-          {/* Room Details */}
           <div className="flex-1">
             <div className="flex justify-between items-center">
-              <Text size="sm" className="text-white font-medium">
-                {room.name || `Room #${room.id}`}
+              <Text size="sm" className="text-white font-medium truncate">
+                {room.name || `Direct Message`}
               </Text>
               {room.lastMessageTime && (
                 <Text size="sm" className="text-gray-400">
@@ -50,7 +83,7 @@ const ChatRoomList: React.FC<ChatRoomListProps> = ({ rooms, selectedRoomId = 0, 
             </Text>
           </div>
 
-          {/* Metadata (e.g., unread count) */}
+          {/* Unread count badge */}
           {room.unreadCount > 0 && (
             <div className="ml-2 text-sm text-blue-400 font-bold">{room.unreadCount}</div>
           )}
