@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
-import Sidebar from '@/components/sidebar';
+import Sidebar from '@/components/Sidebar';
 import { AppConfig } from '@/utils/AppConfig';
 
 interface IMainProps {

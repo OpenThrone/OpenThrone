@@ -312,7 +312,7 @@ const Sidebar: React.FC = () => {
                       </Popover>
                     </>
                   } />
-                  <StatRow label="Turns" value={<span id="turns">{sidebar.turns}</span>} icon={<RpgAwesomeIcon icon="turn" fw />} />
+                  <StatRow label="Turns" value={<span id="turns">{sidebar.turns}</span>} icon={<RpgAwesomeIcon icon="clockwork" fw />} />
                   <Divider my="md" c="gray" variant="dashed" />
                   {!userLoading && <SidebarTimeInfo user={user} userLoading={userLoading} />}
                 </Stack>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
-import Sidebar from '@/components/sidebar';
+import Sidebar from '@/components/Sidebar';
 import { useLayout } from '@/context/LayoutContext';
 import { AppConfig } from '@/utils/AppConfig';
 import { getAssetPath } from '@/utils/utilities';
@@ -117,12 +117,16 @@ const Layout = (props: IMainProps) => {
 
           <main className="lg:container mx-auto h-full grow overflow-y-auto pb-8">
             <div className="flex h-full flex-wrap">
-              {structureReady ? ( // New check for structureReady
+              {structureReady ? (
                 <>
-                  <div className="w-full px-3 md:w-1/5" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
-                    {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
-                  </div>
-                  <div className={`w-full bg-black ${raceClasses.borderClass} px-3 md:w-4/5`}>
+                  {/* Conditionally render Sidebar based on authentication status */}
+                  {status === 'authenticated' && (
+                    <div className="w-full px-3 md:w-1/5" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                      {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
+                    </div>
+                  )}
+                  {/* Adjust main content width based on authentication status */}
+                  <div className={`w-full bg-black ${raceClasses.borderClass} px-3 ${status === 'authenticated' ? 'md:w-4/5' : 'md:w-full'}`}>
                     <NewsBulletin />
                     {layoutLoading ? <MainAreaSkeleton /> : props.children}
                   </div>
