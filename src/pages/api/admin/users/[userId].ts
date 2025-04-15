@@ -1,17 +1,18 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { isAdmin } from '@/utils/authorization';
 import { logDebug, logError } from '@/utils/logger';
 import { PermissionType } from '@prisma/client';
 import { stringifyObj } from '@/utils/numberFormatting';
+import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const session = req.session;
   const { userId } = req.query;
 
-  // Check admin authorization
-  if (!session || !session.user || !(await isAdmin(session.user.id))) {
+  // Check admin authorization (handle potentially undefined session/user/id)
+  if (!session?.user?.id || !(await isAdmin(session.user.id))) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

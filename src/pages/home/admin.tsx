@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Alert from "@/components/alert";
 import {
   Text,
@@ -33,35 +33,53 @@ const Admin = (props) => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  const handleSearch = useCallback(async (filters: Record<string, string>) => {
-    console.log("Searching with filters:", filters);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [sortBy, setSortBy] = useState('id');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSearch = useCallback(async (filters: Record<string, string> = {}) => {
     setIsLoading(true);
-    
     try {
       const queryParams = new URLSearchParams();
-      
-      // Add filters to query params
+      queryParams.append('limit', '10');
+      queryParams.append('offset', ((page - 1) * 10).toString());
+      queryParams.append('sort', sortBy);
+      queryParams.append('order', sortOrder);
+
       if (filters.id) queryParams.append('id', filters.id);
       if (filters.username) queryParams.append('username', filters.username);
       if (filters.email) queryParams.append('email', filters.email);
       if (filters.status) queryParams.append('status', filters.status);
-      
+
       const response = await fetch(`/api/admin/users?${queryParams.toString()}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-      
       const data = await response.json();
       setUsers(data.users || []);
+      setTotalPages(Math.ceil((data.total || 0) / 10));
     } catch (error) {
-      console.error("Error fetching users:", error);
-      setUsers([]); // Clear users on error
-      // You could add an Alert component here to display the error
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page, sortBy, sortOrder]);
+
+  useEffect(() => {
+    handleSearch({});
+  }, [sortBy, sortOrder, page]);
+
+  const handleSortChange = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+    setPage(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
   // Handler for when the edit button is clicked in the list
   const handleEditUser = useCallback((userId: string) => {
@@ -100,7 +118,17 @@ const Admin = (props) => {
           <Grid.Col span={12}>
             <Title order={3} mb="sm">User Management</Title>
             <UserSearchFilter onSearch={handleSearch} />
-            <UserList users={users} onEditUser={handleEditUser} isLoading={isLoading} />
+            <UserList
+              users={users}
+              onEditUser={handleEditUser}
+              isLoading={isLoading}
+              page={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortChange={handleSortChange}
+            />
           </Grid.Col>
         </Grid>
         
