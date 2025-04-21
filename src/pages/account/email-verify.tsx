@@ -1,4 +1,3 @@
-import Alert from "@/components/alert";
 import MainArea from "@/components/MainArea";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services";

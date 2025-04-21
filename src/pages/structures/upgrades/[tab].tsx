@@ -7,7 +7,6 @@ import FortificationsTab from '@/components/fortification-upgrades';
 import HousingTab from '@/components/housing-upgrades';
 import EconomyTab from '@/components/economy-upgrades';
 import OffenseUpgrade from '@/components/offenseupgrade';
-import Alert from '@/components/alert';
 import ArmoryUpgradesTab from '@/components/armory-upgrades';
 import ClandestineUpgrade from '@/components/clandestineupgrades';
 import { Tabs } from '@mantine/core';

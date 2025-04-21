@@ -1,9 +1,10 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { getBankHistory } from '@/services/bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
+import type { AuthenticatedRequest } from '@/types/api';
 
-const historyHandler = async (req: NextApiRequest, res: NextApiResponse) => {
+const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
   }

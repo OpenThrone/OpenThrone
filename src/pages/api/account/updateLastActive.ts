@@ -1,10 +1,11 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import prisma from '@/lib/prisma'; // Adjust based on your Prisma setup
 import { getSession } from 'next-auth/react';
 import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
+import type { AuthenticatedRequest } from '@/types/api';
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }

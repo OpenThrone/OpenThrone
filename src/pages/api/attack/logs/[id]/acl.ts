@@ -1,10 +1,11 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { logError } from '@/utils/logger';
+import type { AuthenticatedRequest } from '@/types/api';
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });

@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from "react";
-import Alert from "@/components/alert";
 import { raceClasses, useLayout } from "@/context/LayoutContext";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services";

@@ -4,6 +4,14 @@ import { getSession } from 'next-auth/react';
 import { isAdmin } from '@/utils/authorization';
 import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
+import { z } from 'zod';
+
+const AccountActionSchema = z.object({
+  userId: z.number().int(),
+  action: z.enum(['SUSPENDED', 'BANNED', 'CLOSED', 'ACTIVE']),
+  duration: z.number().int().optional(),
+  reason: z.string().optional()
+});
 
 export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getSession({ req });
@@ -15,16 +23,11 @@ export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userId, action, duration, reason } = req.body;
-
-  if (!userId || !action) {
-    return res.status(400).json({ error: 'Missing userId or action' });
+  const parseResult = AccountActionSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
   }
-
-  const validActions = ['SUSPENDED', 'BANNED', 'CLOSED', 'ACTIVE'];
-  if (!validActions.includes(action)) {
-    return res.status(400).json({ error: 'Invalid action' });
-  }
+  const { userId, action, duration, reason } = parseResult.data;
 
   try {
     const now = new Date();

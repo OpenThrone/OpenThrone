@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { NumberInput, Group, Text, Table, Select, Button, Box, Stack, Flex } from '@mantine/core';
+import { NumberInput, Group, Text, Table, Select, Button, Box, Stack, Flex, Tooltip } from '@mantine/core';
 import toLocale from '@/utils/numberFormatting';
 import { alertService } from '@/services';
 import { useUser } from '@/context/users';
@@ -8,9 +8,14 @@ import { faQuestionCircle, faCoins, faShieldHalved, faUserSecret, faEye, faHamme
 import ContentCard from './ContentCard';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 import { logError, logInfo } from '@/utils/logger';
-import { UnitType, UnitProps } from '@/types/typings';
 import ImageWithFallback from './ImagWithFallback';
+import { PlayerUnit, UnitProps, UnitType } from '@/types/typings';
 
+/**
+ * Formats a section heading string to title case.
+ * @param secHeading - The raw heading string (e.g., "OFFENSE UNITS").
+ * @returns The formatted heading string (e.g., "Offense Units").
+ */
 const formatHeading = (secHeading: string): string => {
   return secHeading
     .split(' ')
@@ -20,7 +25,11 @@ const formatHeading = (secHeading: string): string => {
     .join(' ');
 };
 
-// Helper to get an icon based on section heading/type
+/**
+ * Gets the appropriate FontAwesome or RPG Awesome icon based on the section heading.
+ * @param heading - The section heading string.
+ * @returns A React element representing the icon.
+ */
 const getSectionIcon = (heading: string) => {
   const lowerHeading = heading.toLowerCase();
   if (lowerHeading.includes('economy') || lowerHeading.includes('worker')) {
@@ -41,15 +50,29 @@ const getSectionIcon = (heading: string) => {
   return <FontAwesomeIcon icon={faQuestionCircle} />; // Default icon
 };
 
+/**
+ * Props for the NewUnitSection component.
+ */
 type NewUnitSectionProps = {
+  /** The title/heading for this unit section (e.g., "OFFENSE"). */
   heading: string;
+  /** Array of unit data objects to display in this section. */
   units: UnitProps[];
+  /** Callback to update the total cost in the parent component for this specific unit type. */
   updateTotalCost: (sectionType: UnitType, cost: number) => void;
+  /** State object mapping unit IDs to their quantities for train/untrain actions. */
   unitCosts: { [key: string]: number };
+  /** Function to update the unitCosts state. */
   setUnitCosts: React.Dispatch<React.SetStateAction<{ [key: string]: number }>>;
+  /** The type of units in this section (e.g., 'OFFENSE', 'DEFENSE'). */
   unitType: UnitType;
 };
 
+/**
+ * A component section displaying units of a specific type (e.g., Offense, Defense).
+ * Allows users to train, untrain, and convert units within the section.
+ * Displays unit details, costs, owned quantities, and handles API interactions.
+ */
 const NewUnitSection: React.FC<NewUnitSectionProps> = ({
   heading,
   units,
@@ -67,6 +90,11 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
   const [toLower, setToLower] = useState(false);
   const [collapsedItems, setCollapsedItems] = useState<{ [key: string]: boolean }>({});
   const [highestUnlockedLevel, setHighestUnlockedLevel] = useState(0);
+  const [trainUntrainError, setTrainUntrainError] = useState<string | null>(null); // State for train/untrain errors
+  const [convertError, setConvertError] = useState<string | null>(null); // State for convert errors
+  const [isProcessingTrain, setIsProcessingTrain] = useState(false); // Loading state for train
+  const [isProcessingUntrain, setIsProcessingUntrain] = useState(false); // Loading state for untrain
+  const [isProcessingConvert, setIsProcessingConvert] = useState(false); // Loading state for convert
 
   useEffect(() => {
     setCurrentUnits(units);
@@ -109,7 +137,12 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
 
   }, [fromUnitId, toUnitId, conversionAmount, units]);
 
-  // Callback for input changes
+  /**
+   * Handles changes in the NumberInput fields for unit quantities.
+   * Updates the unitCosts state and recalculates the total cost for the section.
+   * @param unitId - The ID of the unit whose quantity is being changed.
+   * @param value - The new value from the NumberInput.
+   */
   const handleInputChange = useCallback((unitId: string, value: number | string | undefined) => {
     const numericValue = value === undefined || value === '' || isNaN(Number(value)) ? 0 : Math.max(0, Number(value));
     const newCosts = {
@@ -129,7 +162,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       logError(`[NewUnitSection] Calculated sectionCost is NaN for section ${unitType}. Resetting to 0.`);
       sectionCost = 0; // Prevent passing NaN up
     }
-    updateTotalCost(unitType, sectionCost); // Pass unitType as the key
+    updateTotalCost(unitType, sectionCost);
 
   }, [unitCosts, setUnitCosts, units, updateTotalCost, unitType]);
 
@@ -145,6 +178,10 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     return cost;
   }, [units, unitCosts]);
 
+  /**
+   * Resets the input quantities for all units within this section to zero
+   * and updates the total cost in the parent component.
+   */
   const resetSectionCosts = useCallback(() => {
     const sectionUnitIds = units.map(u => u.id);
     const newCosts = { ...unitCosts };
@@ -164,13 +201,22 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       updateTotalCost(unitType, 0);
     }
 
-  }, [units, unitCosts, setUnitCosts, updateTotalCost, unitType]); // Dependencies
+  }, [units, unitCosts, setUnitCosts, updateTotalCost, unitType]);
 
 
-  // Handle section-specific Train API call
+  /**
+   * Handles the "Train Section" action.
+   * Gathers units with quantities > 0, validates gold and citizen requirements,
+   * sends a request to the '/api/training/train' endpoint, and updates state.
+   */
   const handleTrainSection = useCallback(async () => {
+    if (isProcessingTrain || isProcessingUntrain || isProcessingConvert) return;
+    setIsProcessingTrain(true);
+    setTrainUntrainError(null);
+
     if (!user) {
-      alertService.error('User not found.');
+      setTrainUntrainError('User data not available.');
+      setIsProcessingTrain(false);
       return;
     }
     const unitsToTrain = units
@@ -181,7 +227,8 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       .filter(unit => unit.quantity > 0 && unit.enabled);
 
     if (unitsToTrain.length === 0) {
-      alertService.warn(`No ${heading} units selected to train.`);
+      setTrainUntrainError(`No ${heading} units selected to train.`);
+      setIsProcessingTrain(false);
       return;
     }
 
@@ -191,9 +238,20 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     }, 0);
 
 
-    if (currentSectionCost > (Number(user.gold) ?? 0)) {
-      alertService.error(`Insufficient gold for this section. Needs ${toLocale(currentSectionCost, user.locale)}, have ${toLocale(user.gold ?? 0, user.locale)}.`);
+    const userGold = BigInt(user.gold?.toString() ?? '0');
+    if (BigInt(currentSectionCost) > userGold) {
+      setTrainUntrainError(`Insufficient gold. Needs ${toLocale(currentSectionCost, user.locale)}.`);
+      setIsProcessingTrain(false);
       return;
+    }
+
+    // Check citizens
+    const citizensRequired = unitsToTrain.reduce((acc, unit) => acc + unit.quantity, 0);
+    const availableCitizens = user.units?.find(u => u.type === 'CITIZEN' && u.level === 1)?.quantity ?? 0;
+    if (citizensRequired > availableCitizens) {
+        setTrainUntrainError(`Insufficient citizens. Needs ${toLocale(citizensRequired, user.locale)}, have ${toLocale(availableCitizens, user.locale)}.`);
+        setIsProcessingTrain(false);
+        return;
     }
 
     const apiPayload = unitsToTrain.map(unit => ({
@@ -214,18 +272,29 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
         throw new Error(data?.error || `Training ${heading} units failed.`);
       }
       alertService.success(data.message || `${heading} units trained successfully!`);
-      resetSectionCosts(); // Reset costs for this section
-      forceUpdate(); // Update user context
+      resetSectionCosts();
+      forceUpdate();
     } catch (error: any) {
-      logError(`Error training ${heading} units`, error);
-      alertService.error(error.message || `Failed to train ${heading} units.`);
+      logError(`Error training ${heading} units:`, error);
+      setTrainUntrainError(error.message || `Failed to train ${heading} units.`);
+    } finally {
+        setIsProcessingTrain(false);
     }
-  }, [user, units, unitCosts, unitType, heading, resetSectionCosts, forceUpdate]);
+  }, [user, units, unitCosts, unitType, heading, resetSectionCosts, forceUpdate, isProcessingConvert, isProcessingTrain, isProcessingUntrain]);
 
-  // Handle section-specific Untrain API call
+  /**
+   * Handles the "Untrain Section" action.
+   * Gathers units with quantities > 0, validates ownership,
+   * sends a request to the '/api/training/untrain' endpoint, and updates state.
+   */
   const handleUntrainSection = useCallback(async () => {
+    if (isProcessingTrain || isProcessingUntrain || isProcessingConvert) return;
+    setIsProcessingUntrain(true);
+    setTrainUntrainError(null);
+
      if (!user) {
-      alertService.error('User not found.');
+      setTrainUntrainError('User data not available.');
+      setIsProcessingUntrain(false);
       return;
     }
     const unitsToUntrain = units
@@ -236,7 +305,8 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       .filter(unit => unit.quantity > 0 && unit.enabled);
 
     if (unitsToUntrain.length === 0) {
-      alertService.warn(`No ${heading} units selected to untrain.`);
+      setTrainUntrainError(`No ${heading} units selected to untrain.`);
+      setIsProcessingUntrain(false);
       return;
     }
 
@@ -244,7 +314,8 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     for (const unit of unitsToUntrain) {
         const owned = unit.ownedUnits || 0;
         if (unit.quantity > owned) {
-            alertService.error(`Cannot untrain ${toLocale(unit.quantity, user.locale)} ${unit.name}(s), you only own ${toLocale(owned, user.locale)}.`);
+            setTrainUntrainError(`Not enough ${unit.name} to untrain (Own: ${toLocale(owned, user.locale)}).`);
+            setIsProcessingUntrain(false);
             return;
         }
     }
@@ -266,13 +337,15 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
         throw new Error(data?.error || `Untraining ${heading} units failed.`);
       }
       alertService.success(data.message || `${heading} units untrained successfully!`);
-      resetSectionCosts(); // Reset costs for this section
-      forceUpdate(); // Update user context
+      resetSectionCosts();
+      forceUpdate();
     } catch (error: any) {
-      logError(`Error untraining ${heading} units`, error);
-      alertService.error(error.message || `Failed to untrain ${heading} units.`);
+      logError(`Error untraining ${heading} units:`, error);
+      setTrainUntrainError(error.message || `Failed to untrain ${heading} units.`);
+    } finally {
+        setIsProcessingUntrain(false);
     }
-  }, [user, units, unitCosts, unitType, heading, resetSectionCosts, forceUpdate]);
+  }, [user, units, unitCosts, unitType, heading, resetSectionCosts, forceUpdate, isProcessingConvert, isProcessingTrain, isProcessingUntrain]);
 
 
   // Get memoized list of units (no filtering needed here as collapsing handles visibility)
@@ -281,7 +354,9 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     return [...units].sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
   }, [units]);
 
-  // Reset conversion form
+  /**
+   * Resets the state variables related to the unit conversion form.
+   */
   const resetConversion = useCallback(() => {
     setConversionAmount(0);
     setFromUnitId(null);
@@ -290,30 +365,43 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     setToLower(false);
   }, []);
 
-  // Handle conversion API call
+  /**
+   * Handles the "Convert" action.
+   * Validates selected units, quantity, and gold, sends a request to the
+   * '/api/training/convert' endpoint, and updates state.
+   */
   const handleConvert = useCallback(async () => {
+    if (isProcessingTrain || isProcessingUntrain || isProcessingConvert) return;
+    setIsProcessingConvert(true);
+    setConvertError(null);
+
     if (!fromUnitId || !toUnitId || !conversionAmount || conversionAmount <= 0) {
-      alertService.error('Please select units and provide a valid quantity > 0 to convert.');
+      setConvertError('Select units and enter quantity > 0.');
+      setIsProcessingConvert(false);
       return;
     }
     if (!user) {
-      alertService.error('User not found.');
+       setConvertError('User data not available.');
+       setIsProcessingConvert(false);
       return;
     }
 
     const fromUnitData = getUnits.find((item) => item.id === fromUnitId);
     if (!fromUnitData) {
-      alertService.error('Invalid "from" unit selected for conversion.');
+      setConvertError('Invalid "from" unit selected.');
+      setIsProcessingConvert(false);
       return;
     }
     if ((fromUnitData.ownedUnits || 0) < conversionAmount) {
-      alertService.error(`You only own ${toLocale(fromUnitData.ownedUnits || 0, user.locale)} ${fromUnitData.name}(s). Cannot convert ${toLocale(conversionAmount, user.locale)}.`);
+      setConvertError(`Not enough ${fromUnitData.name} to convert (Own: ${toLocale(fromUnitData.ownedUnits || 0, user.locale)}).`);
+      setIsProcessingConvert(false);
       return;
     }
 
-    // Check gold only if converting to a *higher* level unit
-    if (!toLower && conversionCost > (Number(user.gold) ?? 0)) {
-      alertService.error(`Insufficient gold. Conversion costs ${toLocale(conversionCost, user.locale)}, but you only have ${toLocale(user.gold ?? 0, user.locale)}.`);
+    const userGold = BigInt(user.gold?.toString() ?? '0');
+    if (!toLower && BigInt(conversionCost) > userGold) {
+      setConvertError(`Insufficient gold (Cost: ${toLocale(conversionCost, user.locale)}).`);
+      setIsProcessingConvert(false);
       return;
     }
 
@@ -324,9 +412,9 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          fromUnitId: fromUnitId, // Send IDs
-          toUnitId: toUnitId,     // Send IDs
-          quantity: conversionAmount, // Use 'quantity' field matching typical APIs
+          fromUnit: fromUnitId, // API expects fromUnit
+          toUnit: toUnitId,     // API expects toUnit
+          conversionAmount: conversionAmount, // API expects conversionAmount
           locale: user?.locale || 'en-US',
         }),
       });
@@ -342,12 +430,17 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       forceUpdate(); // Update user context to reflect changes
 
     } catch (error: any) {
-      logError('Failed to convert units', error);
-      alertService.error(error.message || 'Failed to convert units. Please try again.');
+      logError('Failed to convert units:', error);
+      setConvertError(error.message || 'Conversion failed. Please try again.');
+    } finally {
+        setIsProcessingConvert(false);
     }
-  }, [user, fromUnitId, toUnitId, conversionAmount, conversionCost, toLower, getUnits, resetConversion, forceUpdate]);
+  }, [user, fromUnitId, toUnitId, conversionAmount, conversionCost, toLower, getUnits, resetConversion, forceUpdate, isProcessingConvert, isProcessingTrain, isProcessingUntrain]);
 
-  // Toggle collapse state
+  /**
+   * Toggles the collapsed/expanded state of a specific unit row in the table.
+   * @param unitId - The ID of the unit row to toggle.
+   */
   const toggleCollapse = (unitId: string) => {
     setCollapsedItems((prevState) => ({
       ...prevState,
@@ -368,66 +461,100 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     availableUnitsForConversion.filter(unit => unit.value !== fromUnitId)
     , [availableUnitsForConversion, fromUnitId]);
 
-// Define footer content similar to NewItemSection
-const footerContent = (
-  <Flex justify='space-between' align="center" p="xs">
-    <Stack gap="xs">
-      <Text size='sm'>Section Cost: {toLocale(sectionTotalCost, user?.locale)}</Text>
-      <Text size='sm' c="dimmed">Section Refund: {toLocale(Math.floor(sectionTotalCost * 0.75), user?.locale)}</Text>
-    </Stack>
-    <Group gap="sm">
-      <Button
-        color='green'
-        onClick={handleTrainSection}
-        disabled={sectionTotalCost <= 0 || sectionTotalCost > (Number(user?.gold) ?? 0)}
-        size="xs" // Match convert button size
-      >
-        Train Section
-      </Button>
-      <Button
-        color='red'
-        onClick={handleUntrainSection}
-        disabled={sectionTotalCost <= 0}
-        size="xs" // Match convert button size
-      >
-        Untrain Section
-      </Button>
-    </Group>
-  </Flex>
-);
-
+  /**
+   * Generates the S3 URL for the character's image based on its type, level, and user's race.
+   * Includes fallback logic.
+   * @param unit - The unit data.
+   * @returns The URL string for the character image.
+   */
   const getCharacterImage = (unit: UnitProps) => {
-    if (!unit) {
+    if (!unit || !user) {
       return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Characters/default-character.webp`; // Fallback image
     }
-    
+
     // Get the base name from the unit ID (like "WORKER" from "WORKER_1")
     const baseUnitName = unit.id.split('_')[0].charAt(0).toUpperCase() + unit.id.split('_')[0].slice(1).toLowerCase();
-    
+
     // Convert race to proper case (e.g., "ELF" to "Elf")
-    const raceProperCase = user.race ? 
-      user.race.charAt(0).toUpperCase() + user.race.slice(1).toLowerCase() : 
-      'Unknown';
-    
+    const raceProperCase = user.race ?
+      user.race.charAt(0).toUpperCase() + user.race.slice(1).toLowerCase() :
+      'Human'; // Default to Human if race not specified
+
     return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Characters/${raceProperCase}/L${unit.level}${baseUnitName}.webp`;
   }
+
+const userGold = BigInt(user?.gold?.toString() ?? '0');
+const trainDisabled = sectionTotalCost <= 0 || BigInt(sectionTotalCost) > userGold || isProcessingTrain || isProcessingUntrain || isProcessingConvert;
+// Add check for owned units for untrain if needed (currently done inside handler)
+const untrainDisabled = sectionTotalCost <= 0 || isProcessingTrain || isProcessingUntrain || isProcessingConvert;
+
+const trainTooltip =
+    sectionTotalCost <= 0 ? 'Enter quantities to train.' :
+    BigInt(sectionTotalCost) > userGold ? `Not enough gold (Cost: ${toLocale(sectionTotalCost, user?.locale)})` :
+    // Add citizen check tooltip if applicable
+    '';
+const untrainTooltip = sectionTotalCost <= 0 ? 'Enter quantities to untrain.' : '';
+
+
+const footerContent = (
+  <>
+    {/* Inline Error Display for Train/Untrain */}
+    {trainUntrainError && (
+        <Text color="red" size="sm" ta="center" mb="xs">
+            {trainUntrainError}
+        </Text>
+    )}
+    <Flex justify='space-between' align="center" p="xs">
+      <Stack gap="xs">
+        <Text size='sm'>Section Cost: {toLocale(sectionTotalCost, user?.locale)}</Text>
+        <Text size='sm' c="dimmed">Section Refund: {toLocale(Math.floor(sectionTotalCost * 0.75), user?.locale)}</Text>
+      </Stack>
+      <Group gap="sm">
+        <Tooltip label={trainTooltip} disabled={!trainDisabled || isProcessingTrain} withArrow>
+          <div style={{ width: 'auto' }}> {/* Wrapper for disabled tooltip */}
+            <Button
+              color='green'
+              onClick={handleTrainSection}
+              disabled={trainDisabled}
+              loading={isProcessingTrain}
+              size="xs"
+            >
+              Train Section
+            </Button>
+          </div>
+        </Tooltip>
+        <Tooltip label={untrainTooltip} disabled={!untrainDisabled || isProcessingUntrain} withArrow>
+           <div style={{ width: 'auto' }}> {/* Wrapper for disabled tooltip */}
+              <Button
+                color='red'
+                onClick={handleUntrainSection}
+                disabled={untrainDisabled}
+                loading={isProcessingUntrain}
+                size="xs"
+              >
+                Untrain Section
+              </Button>
+           </div>
+        </Tooltip>
+      </Group>
+    </Flex>
+  </>
+);
 
 return (
   <ContentCard
     title={formatHeading(heading)}
     icon={getSectionIcon(heading)}
-    iconPosition="title-left" // Match Armory style
-    className="my-6" // Adjust margin as needed
-    footer={footerContent} // *** ADDED FOOTER PROP ***
+    iconPosition="title-left"
+    className="my-6"
+    footer={footerContent}
   >
     <Table striped highlightOnHover verticalSpacing="sm">
-      {/* Removed Thead for cleaner look matching ItemSection */}
       <Table.Tbody>
         {getUnits.map((unit) => {
           const isCollapsed = collapsedItems[unit.id] ?? false;
           // Determine if this is the *first* disabled unit to show its requirement
           // This logic is simplified compared to the original, focusing on enabled/disabled state
-          // const isFirstDisabled = !unit.enabled && getUnits.findIndex(u => !u.enabled) === index;
 
           if (unit.enabled) {
             return (
@@ -446,7 +573,7 @@ return (
                         width={80}
                         height={80}
                         className="rounded-full"
-                        style={{ display: isCollapsed ? 'none' : 'block' }} // Hide image when collapsed                        
+                        style={{ display: isCollapsed ? 'none' : 'block' }} // Hide image when collapsed
                       />
                     ) : ''}
                     <div>
@@ -478,7 +605,7 @@ return (
                     value={unitCosts[unit.id] || 0}
                     onChange={(value) => handleInputChange(unit.id, value)}
                     min={0}
-                    step={100} // Optional: Add step for easier large inputs
+                    step={1}
                     allowNegative={false}
                     size='sm'
                   />
@@ -486,7 +613,7 @@ return (
               </Table.Tr>
             );
           } else {
-            // Render locked units (only if not collapsed)
+            // Render locked units
             return (
               <Table.Tr key={unit.id}>
                 <Table.Td>
@@ -544,24 +671,31 @@ return (
             <Text size='xs'>{toLower ? 'Refund:' : 'Cost:'}</Text>
             <Text size='sm' fw={500}>{toLocale(conversionCost, user?.locale)}</Text>
           </Stack>
-          <Button
-            onClick={handleConvert}
-            disabled={!fromUnitId || !toUnitId || conversionAmount <= 0}
-            size="xs"
-            variant='outline'
-            style={{ flexBasis: 'auto', flexGrow: 0 }}
-          >
-            Convert
-          </Button>
+          <Tooltip label={convertError || (!fromUnitId || !toUnitId ? 'Select units' : conversionAmount <= 0 ? 'Enter quantity' : !toLower && BigInt(conversionCost) > userGold ? 'Not enough gold' : '')} disabled={!(!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(conversionCost) > userGold)) || isProcessingConvert} withArrow>
+             <div style={{ width: 'auto' }}> {/* Wrapper for disabled tooltip */}
+                <Button
+                  onClick={handleConvert}
+                  disabled={!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(conversionCost) > userGold) || isProcessingTrain || isProcessingUntrain || isProcessingConvert}
+                  loading={isProcessingConvert}
+                  size="xs"
+                  variant='outline'
+                  style={{ flexBasis: 'auto', flexGrow: 0 }}
+                >
+                  Convert
+                </Button>
+             </div>
+          </Tooltip>
         </Group>
+        {/* Inline Error Display for Convert */}
+        {convertError && (
+            <Text color="red" size="xs" ta="center" mt="xs">
+                {convertError}
+            </Text>
+        )}
       </Box>
     )}
   </ContentCard>
 );
 }
 
-// Memoization (Optional but potentially useful if props don't change often)
-// const MemoizedNewUnitSection = React.memo(NewUnitSection);
-// export default MemoizedNewUnitSection;
-
-export default NewUnitSection; // Export non-memoized version for now
+export default NewUnitSection;

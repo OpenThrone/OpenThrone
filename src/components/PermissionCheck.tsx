@@ -1,6 +1,5 @@
 import { useUser } from "@/context/users";
 import { Text } from "@mantine/core";
-import Alert from "./alert";
 import { PermissionType } from "@prisma/client";
 
 const PermissionCheck = ({ children, permission }) => {

@@ -1,11 +1,12 @@
 import prisma from "@/lib/prisma";
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { deposit, getDepositHistory } from '@/services/bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
 import UserModel from '@/models/Users';
+import type { AuthenticatedRequest } from '@/types/api';
 
-const depositHandler = async (req: NextApiRequest, res: NextApiResponse) => {
+const depositHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }

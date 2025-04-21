@@ -19,13 +19,18 @@ import LoadingDots from '@/components/loading-dots';
 import { themes } from '@/styles/themes';
 import { PlayerRace } from '@/types/typings';
 import { useLocalStorage } from '@mantine/hooks';
+import { SnackbarProvider } from '@/context/snackbar-context';
+import SnackbarBridge from '@/components/SnackbarBridge';
 
 const MyApp = ({ Component, pageProps: { session, ...pageProps }, router }) => (
   <Suspense fallback={<LoadingDots />}>
     <SessionProvider session={session}>
-      <UserProvider>
-        <AppWithTheme Component={Component} pageProps={pageProps} router={router} />
-      </UserProvider>
+      <SnackbarProvider>
+        <UserProvider>
+          <SnackbarBridge />
+          <AppWithTheme Component={Component} pageProps={pageProps} router={router} />
+        </UserProvider>
+      </SnackbarProvider>
     </SessionProvider>
   </Suspense>
 );

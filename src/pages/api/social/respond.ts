@@ -1,9 +1,10 @@
 import prisma from '@/lib/prisma'; 
 import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
+import type { AuthenticatedRequest } from '@/types/api';
 
-const handler = async (req: NextApiRequest,
+const handler = async (req: AuthenticatedRequest,
   res: NextApiResponse,) => {
   if (req.method !== 'PUT') {
     return res.status(405).json({ error: 'Method not allowed' });

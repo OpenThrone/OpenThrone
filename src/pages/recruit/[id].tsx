@@ -2,7 +2,6 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Divider, Group, Paper, Space, Text } from '@mantine/core';
-import Alert from '@/components/alert';
 import { alertService } from '@/services';
 import Image from 'next/image';
 import { useUser } from '@/context/users';

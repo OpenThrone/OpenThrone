@@ -2,7 +2,6 @@ import BattleUpgradesSection from '@/components/battle-upgrade';
 import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
-import Alert from '@/components/alert';
 import { useEffect, useState } from 'react';
 import { SimpleGrid, Group, Text, Space, Tooltip } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -95,7 +94,7 @@ const Upgrades = (props) => {
             <StatCard 
               title="Offensive Units"
               value={toLocale(offensiveUnits)}
-              icon={<RpgAwesomeIcon icon="crossed-swords" size={18} />}
+              icon={<RpgAwesomeIcon icon="crossed-swords" size="lg" />}
             />
           </div>
         </Tooltip>

@@ -13,101 +13,226 @@ import {
   Center,
   Flex,
   Space,
+  ComboboxItem,
 } from '@mantine/core';
 import toast from 'react-hot-toast';
 import LoadingDots from '@/components/loading-dots';
 import Link from 'next/link';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { useForm, Controller, FieldErrors, FieldErrorsImpl, Merge } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { logError } from '@/utils/logger';
 
-const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: string) => void }) => {
+/**
+ * Zod schema for user registration data validation.
+ */
+const registerSchema = z.object({
+  /** User's chosen display name (min 3 characters). */
+  display_name: z.string().min(3, 'Display name must be at least 3 characters long.'),
+  /** User's email address. */
+  email: z.string().email('Invalid email address.'),
+  /** User's password (min 8 characters). */
+  password: z.string().min(8, 'Password must be at least 8 characters long.'),
+  /** Password confirmation field. */
+  password_confirm: z.string(),
+  /** Selected player race. */
+  race: z.enum(['HUMAN', 'UNDEAD', 'GOBLIN', 'ELF']),
+  /** Selected player class. */
+  class: z.enum(['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF']),
+}).refine(data => data.password === data.password_confirm, {
+  message: "Passwords don't match",
+  path: ["password_confirm"], // Specify the field for the error message
+});
+
+/**
+ * Zod schema for user login data validation.
+ */
+const loginSchema = z.object({
+    /** User's email address. */
+    email: z.string().email('Invalid email address.'),
+    /** User's password. */
+    password: z.string().min(1, 'Password is required.'),
+});
+
+/** Type inferred from the registerSchema. */
+type RegisterFormData = z.infer<typeof registerSchema>;
+/** Type inferred from the loginSchema. */
+type LoginFormData = z.infer<typeof loginSchema>;
+
+/** Combined type for potential form errors (login or register). */
+type FormErrors = Merge<FieldErrorsImpl<RegisterFormData>, FieldErrorsImpl<LoginFormData>>;
+
+/**
+ * Props for the Form component.
+ */
+interface FormProps {
+  /** Specifies whether the form is for 'login' or 'register'. */
+  type: 'login' | 'register';
+  /** Callback function to set an error message to be displayed outside the form. */
+  setErrorMessage: (msg: string) => void;
+}
+
+/**
+ * A reusable form component for user login and registration.
+ * Handles input validation using Zod and react-hook-form,
+ * integrates with Cloudflare Turnstile for bot protection,
+ * and manages API interactions for login/registration, including vacation mode handling.
+ */
+const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
   const [loading, setLoading] = useState(false);
   const [showVacationModal, setShowVacationModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
   const [turnstileToken, setTurnstileToken] = useState('');
-  const turnsTileRef = useRef();
+  const turnsTileRef = useRef<any>();
 
+  const form = useForm<RegisterFormData | LoginFormData>({
+    resolver: zodResolver(type === 'register' ? registerSchema : loginSchema),
+    defaultValues: type === 'register' ? {
+        display_name: '',
+        email: '',
+        password: '',
+        password_confirm: '',
+        race: 'HUMAN',
+        class: 'FIGHTER',
+    } : {
+        email: '',
+        password: '',
+    },
+  });
+
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = form;
+
+  /**
+   * Callback function executed when Turnstile verification is successful.
+   * @param token - The verification token provided by Turnstile.
+   */
   const handleTurnstileSuccess = (token: string) => {
     setTurnstileToken(token);
   };
 
-  const [formData, setFormData] = useState({
-    display_name: '',
-    email: '',
-    password: '',
-    race: 'HUMAN',
-    class: 'FIGHTER',
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
-  };
-
   const inputStyles = {
     label: {
-      color: 'darkgray', // Tailwind's gray-400 color
+      color: 'darkgray',
       fontWeight: 'bolder',
       shadow: 'md',
     },
   };
 
+  /**
+   * Handles the action when a user confirms they want to end vacation mode.
+   * Sends a request to the API and attempts to log the user in upon success.
+   */
   const handleVacationOverride = async () => {
-    try {
-      const res = await fetch('/api/account/end-vacation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }),
-      });
-      if (res.ok) {
-        setShowVacationModal(false);
-        toast.success('Vacation mode ended. Logging in...');
-        // Retry login after ending vacation mode
-        await handleLogin(formData.email, formData.password);
-      } else {
-        throw new Error('Failed to end vacation mode');
-      }
-    } catch (error) {
-      logError(error);
-      setErrorMessage('Could not end vacation mode');
-    }
+     try {
+       const res = await fetch('/api/account/end-vacation', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({ userId }),
+       });
+       if (res.ok) {
+         setShowVacationModal(false);
+         toast.success('Vacation mode ended. Logging in...');
+         const loginValues = form.getValues() as LoginFormData;
+         await handleLogin(loginValues.email, loginValues.password);
+       } else {
+         throw new Error('Failed to end vacation mode');
+       }
+     } catch (error) {
+       logError(error);
+       setErrorMessage('Could not end vacation mode');
+     }
   };
 
+  /**
+   * Attempts to log the user in using NextAuth credentials provider.
+   * Handles successful login, vacation mode detection, and other errors.
+   * @param email - The user's email.
+   * @param password - The user's password.
+   */
   const handleLogin = async (email: string, password: string) => {
-    try {
-      const res = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-        turnstileToken,
-      });
+     try {
+       const res = await signIn('credentials', {
+         redirect: false,
+         email,
+         password,
+         turnstileToken,
+       });
 
-      if (res?.ok) {
-        router.push('/home/overview');
+       if (res?.ok) {
+         router.push('/home/overview');
+       } else {
+         const error = res?.error;
+         try {
+           const errorObj = JSON.parse(error || '{}');
+           if (errorObj.message?.includes('on vacation')) {
+             setShowVacationModal(true);
+             setUserId(errorObj.userID);
+           } else {
+             setErrorMessage(errorObj.message || 'Invalid credentials or server error.');
+           }
+         } catch (parseError) {
+           setErrorMessage(error || 'Invalid credentials or server error.');
+         }
+       }
+     } catch (error) {
+       logError(error);
+       setErrorMessage('Something went wrong during login!');
+     } finally {
+       turnsTileRef.current?.reset();
+       setLoading(false); // Ensure loading is set to false after login attempt
+     }
+  };
+
+  /**
+   * Handles the form submission for both login and registration.
+   * Validates data, interacts with the appropriate API endpoint,
+   * and manages loading state and error messages.
+   * @param data - The validated form data (either RegisterFormData or LoginFormData).
+   */
+  const onSubmit = async (data: RegisterFormData | LoginFormData) => {
+    setLoading(true);
+    setErrorMessage('');
+    try {
+      if (type === 'login') {
+        const loginData = data as LoginFormData;
+        await handleLogin(loginData.email, loginData.password);
       } else {
-        const error = res?.error;
-        try {
-          const errorObj = JSON.parse(error); // Parse error if it contains JSON
-          if (errorObj.message.includes('on vacation')) {
-            setShowVacationModal(true);
-            setUserId(errorObj.userID); // Set the `userID` for vacation override
-          } else {
-            setErrorMessage(errorObj.message || 'Something went wrong!');
-          }
-        } catch (parseError) {
-          setErrorMessage(error || 'Something went wrong!');
+        const registerData = data as RegisterFormData;
+        const { password_confirm, ...apiData } = registerData;
+        const res = await fetch('/api/auth/register/route', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...apiData, turnstileToken }),
+        });
+
+        if (res.status === 200) {
+          toast.success('Account created! Redirecting to login...');
+          setTimeout(() => {
+            router.push('/account/login');
+          }, 2000);
+        } else {
+          const message = await res.json();
+          setErrorMessage(message.error || 'Registration failed.');
+          turnsTileRef.current?.reset(); // Reset turnstile on registration failure
         }
+         setLoading(false); // Set loading false after registration attempt
       }
     } catch (error) {
       logError(error);
       setErrorMessage('Something went wrong!');
-    } finally {
-      turnsTileRef.current?.reset();
-      setLoading(false);
+      setLoading(false); // Ensure loading is false on catch
+      turnsTileRef.current?.reset(); // Reset turnstile on error
     }
   };
+
+  // Cast errors to the helper type for safe access
+  const formErrors = errors as FormErrors;
 
   return (
     <Center>
@@ -115,82 +240,47 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
         <Title order={2} ta="center" mb="md" c={'gray'}>
           {type === 'login' ? 'Sign In' : 'Sign Up'}
         </Title>
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setLoading(true);
-            try {
-              if (type === 'login') {
-                await handleLogin(e.currentTarget.email.value, e.currentTarget.password.value, turnstileToken);
-              } else {
-                const res = await fetch('/api/auth/register/route', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ ...formData, turnstileToken }),
-                });
-
-                if (res.status === 200) {
-                  toast.success('Account created! Redirecting to login...');
-                  setTimeout(() => {
-                    router.push('/account/login');
-                  }, 2000);
-                } else {
-                  const message = await res.json();
-                  setErrorMessage(message.error);
-                }
-              }
-            } catch (error) {
-              logError(error);
-              setErrorMessage('Something went wrong!');
-            } finally {
-              setLoading(false);
-            }
-          }}
-        >
-          <Flex direction="column" gap="md" grow="true">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <Flex direction="column" gap="md">
             {type === 'login' ? (
               <>
                 <TextInput
                   id="email"
-                  name="email"
-                  type="email"
                   label="Email Address"
                   placeholder="username@email.com"
                   autoComplete="email"
                   required
                   size="md"
                   styles={inputStyles}
-                  onChange={handleChange}
+                  {...register('email')}
+                  error={formErrors.email?.message}
                 />
                 <PasswordInput
                   id="password"
-                  name="password"
                   label="Password"
                   placeholder="Password"
                   required
                   size="md"
                   styles={inputStyles}
-                  onChange={handleChange}
+                  {...register('password')}
+                  error={formErrors.password?.message}
                 />
               </>
             ) : (
               <>
                 <TextInput
                   id="display_name"
-                  name="display_name"
                   label="User Name"
                   placeholder="DisplayName"
-                  autoComplete="display_name"
+                  autoComplete="username"
                   required
                   size="md"
                   styles={inputStyles}
-                  onChange={handleChange}
+                  {...register('display_name')}
+                  error={formErrors.display_name?.message}
                 />
                 <TextInput
                   id="email"
-                  name="email"
                   type="email"
                   label="Email Address"
                   placeholder="username@email.com"
@@ -198,59 +288,79 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
                   required
                   size="md"
                   styles={inputStyles}
-                  onChange={handleChange}
+                  {...register('email')}
+                  error={formErrors.email?.message}
                 />
                 <PasswordInput
                   id="password"
-                  name="password"
                   label="Password"
                   placeholder="Password"
                   required
                   size="md"
                   styles={inputStyles}
-                  onChange={handleChange}
+                  {...register('password')}
+                  error={formErrors.password?.message}
                 />
-                <Select
-                  id="race"
+                <PasswordInput
+                  id="password_confirm"
+                  label="Confirm Password"
+                  placeholder="Confirm Password"
+                  required
+                  size="md"
+                  styles={inputStyles}
+                  {...register('password_confirm')}
+                  error={formErrors.password_confirm?.message}
+                />
+                <Controller
                   name="race"
-                  label="Race"
-                  placeholder="Pick one"
-                  value={formData.race}
-                  onChange={(value) =>
-                    setFormData((prevData) => ({ ...prevData, race: value || 'HUMAN' }))
-                  }
-                  data={[
-                    { value: 'HUMAN', label: 'HUMAN' },
-                    { value: 'UNDEAD', label: 'UNDEAD' },
-                    { value: 'GOBLIN', label: 'GOBLIN' },
-                    { value: 'ELF', label: 'ELF' },
-                  ]}
-                  size="md"
-                  styles={inputStyles}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Select
+                      id="race-select"
+                      label="Race"
+                      placeholder="Pick one"
+                      required
+                      data={[
+                        { value: 'HUMAN', label: 'HUMAN' },
+                        { value: 'UNDEAD', label: 'UNDEAD' },
+                        { value: 'GOBLIN', label: 'GOBLIN' },
+                        { value: 'ELF', label: 'ELF' },
+                      ]}
+                      size="md"
+                      styles={inputStyles}
+                      {...field}
+                      error={fieldState.error?.message}
+                    />
+                  )}
                 />
-                <Select
-                  id="class"
+                <Controller
                   name="class"
-                  label="Class"
-                  placeholder="Pick one"
-                  value={formData.class}
-                  onChange={(value) =>
-                    setFormData((prevData) => ({ ...prevData, class: value || 'FIGHTER' }))
-                  }
-                  data={[
-                    { value: 'FIGHTER', label: 'FIGHTER' },
-                    { value: 'CLERIC', label: 'CLERIC' },
-                    { value: 'ASSASSIN', label: 'ASSASSIN' },
-                    { value: 'THIEF', label: 'THIEF' },
-                  ]}
-                  size="md"
-                  styles={inputStyles}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Select
+                      id="class-select"
+                      label="Class"
+                      placeholder="Pick one"
+                      required
+                      data={[
+                        { value: 'FIGHTER', label: 'FIGHTER' },
+                        { value: 'CLERIC', label: 'CLERIC' },
+                        { value: 'ASSASSIN', label: 'ASSASSIN' },
+                        { value: 'THIEF', label: 'THIEF' },
+                      ]}
+                      size="md"
+                      styles={inputStyles}
+                      {...field}
+                      error={fieldState.error?.message}
+                    />
+                  )}
                 />
               </>
             )}
             <Space h="md" />
-            <Button disabled={loading} type="submit" fullWidth size="md">
-              {loading ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
+            {/* Disable button while loading OR form is submitting */}
+            <Button disabled={loading || isSubmitting} type="submit" fullWidth size="md">
+              {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
             </Button>
             <Space h="md" />
             {type === 'login' ? (
@@ -274,11 +384,11 @@ const Form = ({ type, setErrorMessage }: { type: string; setErrorMessage: (msg: 
                 instead.
               </Text>
             )}
-            <Turnstile
-              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-              onSuccess={handleTurnstileSuccess}
-              ref={turnsTileRef}
-            />
+             <Turnstile
+               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+               onSuccess={handleTurnstileSuccess}
+               ref={turnsTileRef}
+             />
           </Flex>
         </form>
 

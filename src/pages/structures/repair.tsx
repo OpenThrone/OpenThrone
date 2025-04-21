@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
-import { Badge, Button, Center, Group, NumberInput, rem, RingProgress, SimpleGrid, Space, Stack, Table, Text } from '@mantine/core';
+import { Badge, Button, Center, Group, NumberInput, rem, RingProgress, SimpleGrid, Space, Stack, Table, Text, Tooltip } from '@mantine/core';
 import { BiCoinStack, BiSolidBank, BiWrench, BiHistory } from 'react-icons/bi';
 import MainArea from '@/components/MainArea';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
@@ -12,12 +12,18 @@ import { logError } from '@/utils/logger';
 import ContentCard from '@/components/ContentCard';
 import StatCard from '@/components/StatCard';
 
-const Repair = (props) => {
+/**
+ * Page component for repairing the user's fortification.
+ * Displays fortification status, allows repairing specific amounts or all damage,
+ * and shows repair history.
+ */
+const Repair = () => {
   const { user, forceUpdate } = useUser();
   const [fortification, setFortification] = useState(Fortifications[0]);
   const [repairPoints, setRepairPoints] = useState(0);
   const [history, setHistory] = useState([]);
   const [isRepairing, setIsRepairing] = useState(false);
+  const [inlineError, setInlineError] = useState<string | null>(null); // State for inline errors
 
   useEffect(() => {
     if (user?.fortLevel) {
@@ -38,11 +44,17 @@ const Repair = (props) => {
     }
   }, [user]);
 
+  /**
+   * Handles the repair action for a specific number of hitpoints.
+   * Validates input, sends a request to the '/api/account/repair' endpoint,
+   * manages loading state, and displays success/error messages.
+   * @param e - The form submission event.
+   */
   const handleRepair = async (e) => {
     e.preventDefault();
     if (isRepairing) return;
     setIsRepairing(true);
-    
+    setInlineError(null); // Clear previous errors
     try {
       const response = await fetch('/api/account/repair', {
         method: 'POST',
@@ -56,25 +68,32 @@ const Repair = (props) => {
       if (!response.ok || !data?.success) {
         const errorMessage = data.error || `Repair failed: ${response.statusText}`;
         logError('Error repairing:', errorMessage, data);
-        alertService.error(errorMessage, false, false, null, 3000);
+        setInlineError(errorMessage); // Set inline error instead
         return;
       }
 
-      alertService.success(data.message || 'Repair successful!', false, 3000);
-      forceUpdate(); 
+      alertService.success(data.message || 'Repair successful!', false, 3000); // Keep success alert
+      forceUpdate();
       setRepairPoints(0);
-    } catch (error) {
-      logError('Fetch error:', error);
+    } catch (error: any) {
+      logError('Fetch error in handleRepair:', error);
+      setInlineError(error.message || 'An unexpected error occurred.');
     } finally {
       setIsRepairing(false);
     }
   };
 
+  /**
+   * Handles the "Repair All" action.
+   * Calculates maximum repair points needed, sends a request to the '/api/account/repair' endpoint,
+   * manages loading state, and displays success/error messages.
+   */
   const handleRepairAll = async () => {
     const maxRepairPoints = (fortification?.hitpoints ?? 0) - (user?.fortHitpoints ?? 0);
     if (maxRepairPoints <= 0 || isRepairing) return;
-    
+
     setIsRepairing(true);
+    setInlineError(null); // Clear previous errors
     try {
       const response = await fetch('/api/account/repair', {
         method: 'POST',
@@ -88,33 +107,52 @@ const Repair = (props) => {
       if (!response.ok || !data?.success) {
         const errorMessage = data.error || `All repairs failed: ${response.statusText}`;
         logError('Error repairing all:', errorMessage, data);
-        alertService.error(errorMessage, false, false, null, 3000);
+        setInlineError(errorMessage); // Set inline error instead
         return;
       }
 
-      alertService.success(data.message || 'All repairs successful!', false, 3000);
+      alertService.success(data.message || 'All repairs successful!', false, 3000); // Keep success alert
       forceUpdate();
-    } catch (error) {
-      logError('Fetch error:', error);
+    } catch (error: any) {
+      logError('Fetch error in handleRepairAll:', error);
+      setInlineError(error.message || 'An unexpected error occurred.');
     } finally {
       setIsRepairing(false);
     }
   };
 
   const remainingHitpoints = (fortification?.hitpoints || 0) - (user?.fortHitpoints || 0);
-  const repairCost = repairPoints * (fortification?.costPerRepairPoint || 0);
-  const healthPercentage = Math.floor(((fortification?.hitpoints - remainingHitpoints) / fortification?.hitpoints) * 100);
+  const repairCost = BigInt(repairPoints) * BigInt(fortification?.costPerRepairPoint || 0); // Use BigInt
+  const healthPercentage = fortification?.hitpoints ? Math.floor(((user?.fortHitpoints ?? 0) / fortification.hitpoints) * 100) : 0;
+  const userGold = BigInt(user?.gold?.toString() ?? '0'); // Ensure userGold is BigInt
+
+  // Determine disable reasons and tooltips
+  const isAtFullHealth = remainingHitpoints <= 0;
+  const repairDisabledReason =
+      isAtFullHealth ? 'Fortification is at full health.' :
+      repairPoints <= 0 ? 'Enter repair points.' :
+      repairCost > userGold ? `Not enough gold (Cost: ${toLocale(repairCost, user?.locale)}).` :
+      '';
+  const repairAllCost = BigInt(remainingHitpoints) * BigInt(fortification?.costPerRepairPoint || 0);
+  const repairAllDisabledReason =
+      isAtFullHealth ? 'Fortification is at full health.' :
+      repairAllCost > userGold ? `Not enough gold (Cost: ${toLocale(repairAllCost, user?.locale)}).` :
+      '';
+
+  const repairButtonDisabled = isAtFullHealth || repairPoints <= 0 || repairCost > userGold || isRepairing;
+  const repairAllButtonDisabled = isAtFullHealth || repairAllCost > userGold || isRepairing;
+
 
   return (
     <MainArea title="Repair Fortification">
       {/* Resource Stats */}
       <SimpleGrid cols={{ base: 1, xs: 2, md: 2 }} className="mb-6">
-        <StatCard 
+        <StatCard
           title="Gold In Hand"
           value={toLocale(user?.gold ?? 0)}
           icon={<BiCoinStack size={18} />}
         />
-        <StatCard 
+        <StatCard
           title="Banked Gold"
           value={toLocale(user?.goldInBank ?? 0)}
           icon={<BiSolidBank size={18} />}
@@ -142,31 +180,31 @@ const Repair = (props) => {
                   {remainingHitpoints === 0 ? 'Fully Repaired' : 'Needs Repair'}
                 </Badge>
               </Group>
-              
+   
               <div className="space-y-2">
-                <Group position="apart" className="bg-gray-800/30 p-3 rounded">
+                <Group justify="space-between" className="bg-gray-800/30 p-3 rounded">
                   <Text size="sm" color="dimmed">Level:</Text>
                   <Text size="sm">{fortification?.level}</Text>
                 </Group>
-                
-                <Group position="apart" className="bg-gray-800/30 p-3 rounded">
+   
+                <Group justify="space-between" className="bg-gray-800/30 p-3 rounded">
                   <Text size="sm" color="dimmed">Health:</Text>
                   <Text size="sm" color={healthPercentage < 50 ? "red" : healthPercentage < 80 ? "yellow" : "green"}>
                     {user?.fortHitpoints} / {fortification?.hitpoints}
                   </Text>
                 </Group>
-                
-                <Group position="apart" className="bg-gray-800/30 p-3 rounded">
+   
+                <Group justify="space-between" className="bg-gray-800/30 p-3 rounded">
                   <Text size="sm" color="dimmed">Defense Bonus:</Text>
                   <Text size="sm">{fortification?.defenseBonusPercentage}%</Text>
                 </Group>
-                
-                <Group position="apart" className="bg-gray-800/30 p-3 rounded">
+   
+                <Group justify="space-between" className="bg-gray-800/30 p-3 rounded">
                   <Text size="sm" color="dimmed">Gold Per Turn:</Text>
                   <Text size="sm">{fortification?.goldPerTurn}</Text>
                 </Group>
-                
-                <Group position="apart" className="bg-gray-800/30 p-3 rounded">
+   
+                <Group justify="space-between" className="bg-gray-800/30 p-3 rounded">
                   <Text size="sm" color="dimmed">Cost:</Text>
                   <Text size="sm">{toLocale(fortification?.cost || 0, user?.locale)} Gold</Text>
                 </Group>
@@ -178,9 +216,9 @@ const Repair = (props) => {
                 size={120}
                 roundCaps
                 thickness={8}
-                sections={[{ 
-                  value: healthPercentage, 
-                  color: healthPercentage < 50 ? 'red' : healthPercentage < 80 ? 'yellow' : 'green' 
+                sections={[{
+                  value: healthPercentage,
+                  color: healthPercentage < 50 ? 'red' : healthPercentage < 80 ? 'yellow' : 'green'
                 }]}
                 label={
                   <Center>
@@ -199,19 +237,19 @@ const Repair = (props) => {
           titlePosition="left"
           className="h-full"
         >
-          <Stack spacing="md" className="p-4">
+          <Stack gap="md" className="p-4">
             <Text size="sm" color="dimmed">
               Repair your fortification to restore its hitpoints and maintain your defensive capabilities.
             </Text>
 
-            <Group position="apart" className="bg-gray-800/30 p-3 rounded">
+            <Group justify="space-between" className="bg-gray-800/30 p-3 rounded">
               <Text size="sm" color="dimmed">Repair Cost Per HP:</Text>
               <Text size="sm">{fortification?.costPerRepairPoint} Gold</Text>
             </Group>
-            
-            <Group position="apart" className="bg-gray-800/30 p-3 rounded">
+
+            <Group justify="space-between" className="bg-gray-800/30 p-3 rounded">
               <Text size="sm" color="dimmed">Total Repair Cost:</Text>
-              <Text size="sm" color={repairCost > parseInt(user?.gold?.toString() || "0") ? "red" : "inherit"}>
+              <Text size="sm" color={repairCost > userGold ? "red" : "inherit"}>
                 {toLocale(repairCost, user?.locale)} Gold
               </Text>
             </Group>
@@ -226,9 +264,9 @@ const Repair = (props) => {
                 min={0}
                 allowNegative={false}
               />
-              
-              <Button 
-                color="gray" 
+
+              <Button
+                color="gray"
                 size="sm"
                 onClick={() => setRepairPoints(remainingHitpoints)}
                 disabled={remainingHitpoints === 0}
@@ -237,18 +275,29 @@ const Repair = (props) => {
               </Button>
             </div>
 
+            {/* Inline Error Display */}
+            {inlineError && (
+                <Text color="red" size="sm" ta="center" mt="xs">
+                    {inlineError}
+                </Text>
+            )}
+
             <Group grow mt="sm">
-              <Button 
-                color="brand" 
-                onClick={handleRepair}
-                loading={isRepairing}
-                disabled={repairPoints <= 0 || repairCost > parseInt(user?.gold?.toString() || "0")}
-              >
-                Repair
-              </Button>
-              
-              <Button 
-                color="red" 
+               <Tooltip label={repairDisabledReason} disabled={!repairButtonDisabled} withArrow position="bottom">
+                 <div style={{ width: '100%' }}> {/* Wrapper for disabled tooltip */}
+                    <Button
+                      color="brand"
+                      onClick={handleRepair}
+                      loading={isRepairing}
+                      disabled={repairButtonDisabled}
+                    >
+                      Repair
+                    </Button>
+                 </div>
+               </Tooltip>
+
+              <Button
+                color="red"
                 variant="outline"
                 onClick={() => setRepairPoints(0)}
                 disabled={repairPoints === 0}
@@ -256,20 +305,21 @@ const Repair = (props) => {
                 Reset
               </Button>
             </Group>
-            
-            <Button 
-              color="brand" 
-              variant="light"
-              fullWidth
-              onClick={handleRepairAll}
-              loading={isRepairing}
-              disabled={
-                remainingHitpoints === 0 || 
-                remainingHitpoints * (fortification?.costPerRepairPoint || 0) > parseInt(user?.gold?.toString() || "0")
-              }
-            >
-              Repair All ({remainingHitpoints} HP)
-            </Button>
+
+            <Tooltip label={repairAllDisabledReason} disabled={!repairAllButtonDisabled} withArrow position="bottom">
+               <div style={{ width: '100%' }}> {/* Wrapper for disabled tooltip */}
+                  <Button
+                    color="brand"
+                    variant="light"
+                    fullWidth
+                    onClick={handleRepairAll}
+                    loading={isRepairing}
+                    disabled={repairAllButtonDisabled}
+                  >
+                    Repair All ({remainingHitpoints > 0 ? remainingHitpoints : 0} HP)
+                  </Button>
+               </div>
+            </Tooltip>
           </Stack>
         </ContentCard>
       </SimpleGrid>

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
-import Alert from '@/components/alert';
 import NewItemSection from '@/components/newItemSection';
 import { ArmoryUpgrades, ItemTypes } from '@/constants';
 import { useUser } from '@/context/users';

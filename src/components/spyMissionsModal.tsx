@@ -4,21 +4,28 @@ import { faBackwardStep } from '@fortawesome/free-solid-svg-icons';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
-
-import Alert from './alert';
 import router from 'next/router';
-import { Button, NumberInput, Modal, Group, Select, Text, Paper, Divider, Title, Tooltip } from '@mantine/core';
+import { Button, NumberInput, Modal, Group, Select, Text, Paper, Divider, Title, Tooltip, Alert } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { SpyUpgrades } from '@/constants';
 
+/**
+ * Props for the CustomModal component.
+ */
 interface ModalProps {
+  /** Whether the modal is currently open. */
   isOpen: boolean;
+  /** Function to toggle the modal's visibility. */
   toggleModal: () => void;
+  /** The content to display inside the modal body. */
   children: React.ReactNode;
 }
 
+/**
+ * A reusable modal component with a standard header and structure for spy missions.
+ */
 const CustomModal: FC<ModalProps> = ({ isOpen, children, toggleModal }) => {
-  const layoutCont = useLayout();
+  const layoutCont = useLayout(); // Note: layoutCont is declared but not used. Consider removing if unnecessary.
 
   return (
     <Modal.Root
@@ -45,12 +52,21 @@ const CustomModal: FC<ModalProps> = ({ isOpen, children, toggleModal }) => {
   );
 };
 
+/**
+ * Props for the CustomButton component.
+ */
 interface CustomButtonProps {
+  /** Whether the button should be disabled. */
   disabled: boolean;
+  /** Function to call when the button is clicked. */
   onClick: () => void;
+  /** The content to display inside the button. */
   children: React.ReactNode;
 }
 
+/**
+ * A styled button component used for selecting spy mission types.
+ */
 const CustomButton: FC<CustomButtonProps> = ({
   onClick,
   disabled,
@@ -64,7 +80,7 @@ const CustomButton: FC<CustomButtonProps> = ({
     size="lg"
     variant="filled"
     mb={'lg'}
-    
+
   >
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '2px' }}>
       {children}
@@ -73,22 +89,35 @@ const CustomButton: FC<CustomButtonProps> = ({
 );
 
 
+/**
+ * Props for the SpyMissionsModal component.
+ */
 interface SpyMissionProps {
+  /** Whether the modal is currently open. */
   isOpen: boolean;
+  /** Function to toggle the modal's visibility. */
   toggleModal: () => void;
+  /** The ID of the user being targeted by the spy mission. */
   defenderID: number;
 }
 
+/** Type definition for the keys representing different spy mission panels. */
 type MissionPanelKey = 'intelligence' | 'assassination' | 'infiltration';
 
+/**
+ * A modal component for initiating various spy missions (Intel, Assassination, Infiltration).
+ * Allows the user to select a mission type, specify the number of spies/units,
+ * and confirms the action. Handles enabling/disabling missions based on user upgrades
+ * and environment variables.
+ */
 const SpyMissionsModal: FC<SpyMissionProps> = ({
   isOpen,
   toggleModal,
   defenderID,
 }) => {
   const [currentPanel, setCurrentPanel] = useState<MissionPanelKey | ''>('');
-  const [intelSpies, setIntelSpies] = useState(1);
-  const [assassinateUnit, setAssassinateUnit] = useState('CITIZEN/WORKERS');
+  const [intelSpies, setIntelSpies] = useState(1); // Used for spy/assassin/infiltrator count
+  const [assassinateUnit, setAssassinateUnit] = useState('CITIZEN/WORKERS'); // Target for assassination
 
   const [isAssassinateDisabled, setIsAssassinateDisabled] = useState(true);
   const [isInfiltrationDisabled, setIsInfiltrationDisabled] = useState(true);
@@ -96,59 +125,59 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
   const { user } = useUser();
   const [units, setUnits] = useState({ SPY: 0, ASSASSIN: 0, INFILTRATOR: 0 });
   const [spyLimits, setSpyLimits] = useState({
-    INFIL: {
-      perUser: 0,
-      perDay: 0,
-      perMission: 0,
-    }, ASSASS: {
-      perUser: 0,
-      perDay: 0,
-      perMission: 0,
-  } });
+    INFIL: { perUser: 0, perDay: 0, perMission: 0 },
+    ASSASS: { perUser: 0, perDay: 0, perMission: 0 }
+  });
 
-  const getUpgradeInfo = (level: number = 1) => {
-    return SpyUpgrades[level].name;
+  /**
+   * Gets the name of the spy upgrade required for a given level.
+   * @param level - The required upgrade level (defaults to 1).
+   * @returns The name of the spy upgrade.
+   */
+  const getUpgradeInfo = (level: number = 1): string => {
+    // Ensure level is within bounds
+    const validLevel = Math.max(0, Math.min(level, SpyUpgrades.length - 1));
+    return SpyUpgrades[validLevel]?.name ?? 'Unknown Upgrade';
   }
 
+  // Effect to update mission availability and unit counts based on user data
   useEffect(() => {
     if (user) {
       setIsInfiltrationDisabled(
-        !(user.spyMissions['infil'].enabled && process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS === 'true')
+        !(user.spyMissions?.['infil']?.enabled && process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS === 'true')
       );
 
       setIsAssassinateDisabled(
-        !(user.spyMissions['assass'].enabled && process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true')
+        !(user.spyMissions?.['assass']?.enabled && process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true')
       );
 
       setIsIntelDisabled(
-        !(user.spyMissions['intel'].enabled && process.env.NEXT_PUBLIC_ENABLE_INTEL === 'true')
+        !(user.spyMissions?.['intel']?.enabled && process.env.NEXT_PUBLIC_ENABLE_INTEL === 'true')
       );
       setUnits({
-        SPY:
-          user.units.find((unit) => unit.type === 'SPY' && unit.level === 1)
-            ?.quantity ?? 0,
-        ASSASSIN:
-          user.units.find((unit) => unit.type === 'SPY' && unit.level === 3)
-            ?.quantity ?? 0,
-        INFILTRATOR:
-          user.units.find((unit) => unit.type === 'SPY' && unit.level === 2)
-            ?.quantity ?? 0,
+        SPY: user.units?.find((unit) => unit.type === 'SPY' && unit.level === 1)?.quantity ?? 0,
+        ASSASSIN: user.units?.find((unit) => unit.type === 'SPY' && unit.level === 3)?.quantity ?? 0,
+        INFILTRATOR: user.units?.find((unit) => unit.type === 'SPY' && unit.level === 2)?.quantity ?? 0,
       });
       setSpyLimits({
         INFIL: {
-          perUser: user.spyLimits.infil.perUser,
-          perDay: user.spyLimits.infil.perDay,
-          perMission: user.spyLimits.infil.perMission,
+          perUser: user.spyLimits?.infil?.perUser ?? 0,
+          perDay: user.spyLimits?.infil?.perDay ?? 0,
+          perMission: user.spyLimits?.infil?.perMission ?? 0,
         },
         ASSASS: {
-          perUser: user.spyLimits.assass.perUser,
-          perDay: user.spyLimits.assass.perDay,
-          perMission: user.spyLimits.assass.perMission,
+          perUser: user.spyLimits?.assass?.perUser ?? 0,
+          perDay: user.spyLimits?.assass?.perDay ?? 0,
+          perMission: user.spyLimits?.assass?.perMission ?? 0,
         },
       });
     }
   }, [user]);
 
+  /**
+   * Handles the submission of a spy mission.
+   * Sends the mission details to the appropriate API endpoint and redirects to results on success.
+   */
   const handleSpyMission = async () => {
     let type = 'INTEL';
     if (currentPanel === "assassination") {
@@ -156,12 +185,16 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     } else if (currentPanel === "infiltration") {
       type = 'INFILTRATE';
     }
+    const bodyPayload = currentPanel === "assassination"
+        ? { type, spies: intelSpies, unit: assassinateUnit }
+        : { type, spies: intelSpies };
+
     const res = await fetch(`/api/spy/${defenderID}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify((currentPanel === "assassination" ? { type, spies: intelSpies, unit: assassinateUnit } : { type, spies: intelSpies })),
+      body: JSON.stringify(bodyPayload),
     });
     const results = await res.json();
 
@@ -173,11 +206,15 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     toggleModal();
 
     alertService.success(
-      `You have sent ${intelSpies} spies.`
+      `You have sent ${intelSpies} ${currentPanel === 'assassination' ? 'assassins' : currentPanel === 'infiltration' ? 'infiltrators' : 'spies'}.`
     );
   }
 
-  const hasEnoughUnits = () => {
+  /**
+   * Checks if the user has enough units (spies, assassins, or infiltrators) for the selected mission panel.
+   * @returns True if the user has enough units, false otherwise.
+   */
+  const hasEnoughUnits = (): boolean => {
     if (currentPanel === 'intelligence') {
       return units.SPY >= intelSpies;
     } else if (currentPanel === 'assassination') {
@@ -188,6 +225,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     return false;
   };
 
+  /** JSX elements for each specific mission panel within the modal. */
   const MissionPanels: Record<MissionPanelKey, JSX.Element> = {
     intelligence: (
       <div>
@@ -195,7 +233,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         <Text>How many spies would you like to send?</Text>
         <Group mt="md">
           <NumberInput
-            max={10}
+            max={10} // Example limit, adjust as needed
             min={1}
             value={intelSpies}
             onChange={(value) => setIntelSpies(Number(value))}
@@ -204,12 +242,15 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             label={!hasEnoughUnits() ? `You need at least ${intelSpies} spies` : "Send spies on an intelligence mission"}
             disabled={hasEnoughUnits()}
           >
-            <Button
-              onClick={handleSpyMission}
-              disabled={!hasEnoughUnits()}
-            >
-              Send Spies
-            </Button>
+            {/* Tooltip requires a single direct child */}
+            <span>
+              <Button
+                onClick={handleSpyMission}
+                disabled={!hasEnoughUnits()}
+              >
+                Send Spies
+              </Button>
+            </span>
           </Tooltip>
         </Group>
         <div className="mt-4">
@@ -222,16 +263,9 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     assassination: (
       <div>
         <Text ta="center" size="lg" fw={700} mb="md">Assassination</Text>
-        <Text>What type of units would you like to assassinate?</Text>
-        <Select
-          value={assassinateUnit}
-          onChange={(value) => setAssassinateUnit(value)}
-          data={['CITIZEN/WORKERS', 'OFFENSE', 'DEFENSE']}
-          mt="md"
-        />
         <Text mt="md">How many assassins would you like to send?</Text>
         <NumberInput
-          max={5}
+          max={spyLimits.ASSASS.perMission}
           min={1}
           value={intelSpies}
           onChange={(value) => setIntelSpies(Number(value))}
@@ -240,7 +274,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         <Text>What Unit Type would you like to target?</Text>
         <Select
           value={assassinateUnit}
-          onChange={(value) => setAssassinateUnit(value)}
+          onChange={(value) => setAssassinateUnit(value ?? 'CITIZEN/WORKERS')} // Handle null case
           data={[
             { value: 'CITIZEN/WORKERS', label: 'Citizen/Workers' },
             { value: 'OFFENSE', label: 'Offense' },
@@ -251,22 +285,24 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           label={!hasEnoughUnits() ? `You need at least ${intelSpies} assassins` : "Send assassins on a mission"}
           disabled={hasEnoughUnits()}
         >
-          <Button
-            onClick={handleSpyMission}
-            disabled={!hasEnoughUnits()}
-            fullWidth
-            mt="md"
-          >
-            Assassinate
-          </Button>
+          <span>
+            <Button
+              onClick={handleSpyMission}
+              disabled={!hasEnoughUnits()}
+              fullWidth
+              mt="md"
+            >
+              Assassinate
+            </Button>
+          </span>
         </Tooltip>
         <div className="mt-4">
           <Text ta="center" size="lg" fw={700}>Assassination Information</Text>
           <Text mt="md">Total Assassins: {units.ASSASSIN}</Text>
-          <Text>You can send a maximum of  assassins per mission.</Text>
-          <Text mt="md">Assassination Attempts Available: ##</Text>
+          <Text>You can send a maximum of {spyLimits.ASSASS.perMission} assassins per mission.</Text>
+          <Text mt="md">Assassination Attempts Available: {spyLimits.ASSASS.perUser} / {spyLimits.ASSASS.perDay} today</Text>
           <Text>
-            You can only send 1 assassination attempt per 24 hours.
+            You can only send {spyLimits.ASSASS.perDay} assassination attempt(s) per 24 hours.
             To increase the number of attempts per day, upgrade your spy
             structure!
           </Text>
@@ -279,7 +315,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         <Text>How many spies would you like to send to infiltrate?</Text>
         <Group mt="md">
           <NumberInput
-            max={3}
+            max={spyLimits.INFIL.perMission}
             min={1}
             value={intelSpies}
             onChange={(value) => setIntelSpies(Number(value))}
@@ -288,21 +324,23 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             label={!hasEnoughUnits() ? `You need at least ${intelSpies} infiltrators` : "Send infiltrators on a mission"}
             disabled={hasEnoughUnits()}
           >
-            <Button
-              onClick={handleSpyMission}
-              disabled={!hasEnoughUnits()}
-            >
-              Infiltrate
-            </Button>
+            <span>
+              <Button
+                onClick={handleSpyMission}
+                disabled={!hasEnoughUnits()}
+              >
+                Infiltrate
+              </Button>
+            </span>
           </Tooltip>
         </Group>
         <div className="mt-4">
           <Text ta="center" size="lg" fw={700}>Infiltration Information</Text>
-          <Text mt="md">Total Spies: {units.INFILTRATOR}</Text>
+          <Text mt="md">Total Infiltrators: {units.INFILTRATOR}</Text>
           <Text>You can send a maximum of {spyLimits.INFIL.perMission} spies per infiltration mission.</Text>
-          <Text mt="md">Infiltration Attempts Available: </Text>
+          <Text mt="md">Infiltration Attempts Available: {spyLimits.INFIL.perUser} / {spyLimits.INFIL.perDay} today</Text>
           <Text>
-            You can only send {spyLimits.INFIL.perDay} infiltration attempts per 24 hours.
+            You can only send {spyLimits.INFIL.perDay} infiltration attempt(s) per 24 hours.
             To increase the number of attempts per day, upgrade your spy structure!
           </Text>
         </div>
@@ -330,7 +368,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             {isInfiltrationDisabled && (
               <b>
                 {process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS === 'true' ?
-                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['infil'].requiredLevel)}</small>
+                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions?.['infil']?.requiredLevel)}</small>
                   :
                   <small className="text-slate-300"> This mission is disabled by the Administrators</small>
                 }
@@ -342,11 +380,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             disabled={isAssassinateDisabled}
           >
             <span>🗡️ Assassination</span>
-            <small>Attempt to assassinate player&apos;s Defenders</small>
+            <small>Attempt to assassinate player's Defenders</small>
             {isAssassinateDisabled && (
               <b>
                 {process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true' ?
-                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions['assass'].requiredLevel)}</small>
+                  <small className="text-slate-300"> Requires Upgrade: {getUpgradeInfo(user?.spyMissions?.['assass']?.requiredLevel)}</small>
                   :
                   <small className="text-slate-300"> This mission is disabled by the Administrators</small>
                 }

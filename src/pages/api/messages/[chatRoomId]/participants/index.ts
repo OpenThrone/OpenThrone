@@ -1,10 +1,11 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { ChatRole } from '@prisma/client';
 import { logError } from '@/utils/logger';
+import type { AuthenticatedRequest } from '@/types/api';
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const session = req.session;
   if (!session) {
     return res.status(401).json({ message: 'Unauthorized' });

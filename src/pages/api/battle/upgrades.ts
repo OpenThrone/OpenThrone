@@ -6,6 +6,19 @@ import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
 import { calculateUserStats } from '@/utils/utilities';
 import { updateUserAndBankHistory } from '@/services';
+import { z } from 'zod';
+import { logError } from '@/utils/logger';
+
+const BattleUpgradeItemSchema = z.object({
+  type: z.string(),
+  level: z.number().int(),
+  quantity: z.number().int().nonnegative({ message: 'Quantity must be non-negative integer.' })
+});
+const BattleUpgradesSchema = z.object({
+  userId: z.number().int(),
+  operation: z.enum(['buy', 'sell']).optional(),
+  items: z.array(BattleUpgradeItemSchema).min(1, { message: 'At least one item must be provided.' })
+});
 
 interface EquipmentProps {
   type: string;
@@ -19,12 +32,13 @@ const handler = async(
 ) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
-  }  
-
-  const { userId, items: itemsToEquip, operation = 'buy' } = req.body;
-  if (!userId || !Array.isArray(itemsToEquip) || !['buy', 'sell'].includes(operation)) {
-    return res.status(400).json({ error: 'Invalid input data' });
   }
+
+  const parseResult = BattleUpgradesSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+  }
+  const { userId, items: itemsToEquip, operation = 'buy' } = parseResult.data;
 
   try {
     const user = await prisma.users.findUnique({ where: { id: req.session.user.id } });

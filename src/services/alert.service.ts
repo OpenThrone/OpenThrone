@@ -1,3 +1,4 @@
+import { logDebug } from '@/utils/logger';
 import { ReactNode } from 'react';
 import { BehaviorSubject } from 'rxjs';
 
@@ -13,17 +14,6 @@ export interface AlertType {
 
 const alertSubject = new BehaviorSubject<AlertType | null>(null);
 let defaultTimeout: number | null = null;
-
-function generateHash(obj: any): string {
-  const jsonString = JSON.stringify(obj);
-  let hash = 0;
-  for (let i = 0; i < jsonString.length; i++) {
-    const char = jsonString.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return hash.toString();
-}
 
 function showAlert(
   type: 'success' | 'error' | 'info' | 'warn' | 'loading',
@@ -43,23 +33,12 @@ function showAlert(
     timeout: timeout ?? null,
   };
 
-  const alertHash = generateHash(alert);
-  const localStorageKey = 'alertHash';
-  const storedHash = localStorage.getItem(localStorageKey);
-
-  if (storedHash !== alertHash) {
-    localStorage.setItem(localStorageKey, alertHash);
-    alertSubject.next(alert);
-  }
+  // Always emit the alert, do not deduplicate by hash/localStorage
+  alertSubject.next(alert);
 
   if (timeout !== null && type !== 'loading') {
     setTimeout(clear, timeout);
   }
-}
-
-// Function to clear the alert hash from localStorage
-function clearAlertHash(): void {
-  localStorage.removeItem('alertHash');
 }
 
 // clear alerts
@@ -88,7 +67,6 @@ export const alertService = {
   setDefaultTimeout: (timeout: number | null) => {
     defaultTimeout = timeout;
   },
-  clearAlertHash,
   updateLoading: (newType: 'success' | 'error', message: ReactNode, timeout: number | null = defaultTimeout) => {
     const currentAlert = alertSubject.value;
     if (currentAlert?.type === 'loading') {

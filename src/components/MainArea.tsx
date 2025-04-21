@@ -1,6 +1,5 @@
 import React, { forwardRef, useEffect, useState } from 'react';
-import { Space, Group, SimpleGrid, Container, Menu, UnstyledButton, Title, Badge, Text, ScrollArea } from '@mantine/core'; // Added ScrollArea
-import Alert from './alert';
+import { Space, Group, SimpleGrid, Container, Menu, UnstyledButton, Title, Badge, Text, ScrollArea, Alert } from '@mantine/core'; // Added ScrollArea
 import { alertService } from '../services/alert.service';
 import { faArrowRightFromBracket, faComments, faGear, faIdCard, faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -223,14 +222,6 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
             )}
           </Container>
         </header>
-        <Space h="md" />
-        <SimpleGrid cols={1}>
-          {alertService.alert && (
-            <Group grow>
-              <Alert />
-            </Group>
-          )}
-        </SimpleGrid>
         <Space h="md" />
         {children}
       </div>

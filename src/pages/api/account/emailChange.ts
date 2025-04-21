@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -26,8 +27,14 @@ export default async function handler(
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed!' });
   }
-  // handle password reset
-  const { userEmail } = req.body;
+
+  const EmailChangeSchema = z.object({ userEmail: z.string().email({ message: 'Invalid email format.' }) });
+  const parseResult = EmailChangeSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+  }
+  const { userEmail } = parseResult.data;
+
   try {
     const user = await prisma.users.findUnique({ where: { email: userEmail } });
     if (!user) {

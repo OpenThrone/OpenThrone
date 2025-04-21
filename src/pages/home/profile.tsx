@@ -26,7 +26,6 @@ import {
   FileButton,
   Grid
 } from "@mantine/core";
-import Alert from "@/components/alert";
 import Link from "next/link";
 import MainArea from "@/components/MainArea";
 import { logDebug } from "@/utils/logger";

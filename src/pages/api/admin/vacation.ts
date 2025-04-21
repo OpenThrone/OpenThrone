@@ -3,6 +3,12 @@ import prisma from '@/lib/prisma';
 import { getSession } from 'next-auth/react';
 import { isAdmin } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
+import { z } from 'zod';
+
+const AdminVacationSchema = z.object({
+  userId: z.number().int(),
+  action: z.enum(['start', 'end'])
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req });
@@ -10,11 +16,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { userId, action } = req.body;
-
-  if (!userId || !action) {
-    return res.status(400).json({ error: 'Missing userId or action' });
+  const parseResult = AdminVacationSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
   }
+  const { userId, action } = parseResult.data;
 
   if (action === 'start') {
     // Admin starting vacation for a user

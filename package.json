@@ -110,7 +110,8 @@
     "tailwindcss": "^3.4.17",
     "tiptap-markdown": "^0.8.10",
     "use-async-effect": "^2.2.7",
-    "yup": "^1.6.1"
+    "yup": "^1.6.1",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "latest",

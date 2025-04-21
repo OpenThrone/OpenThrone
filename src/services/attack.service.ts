@@ -1,43 +1,84 @@
 import { BattleUpgrades, ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import { getOTStartDate } from '@/utils/timefunctions';
+import { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
+import type { PlayerStat, PlayerUnit, PlayerItem, PlayerBattleUpgrade } from '@/types/typings'; // Import custom types
 
-export const getUserById = async (userId) => {
+// Define the type for the transaction client
+type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+
+/**
+ * Retrieves a user by their ID.
+ * @param userId - The ID of the user to retrieve.
+ * @returns The user object or null if not found.
+ */
+export const getUserById = async (userId: number) => {
   return await prisma.users.findUnique({
     where: { id: userId },
   });
 };
 
+/**
+ * Retrieves the IDs of all users.
+ * @returns An array of objects containing user IDs.
+ */
 export const getAllUserIds = async () => {
   return await prisma.users.findMany({
     select: { id: true },
   });
 };
 
-export const updateUserUnits = async (userId, units, txClient) => {
+/**
+ * Updates the units JSON for a specific user within a transaction.
+ * @param userId - The ID of the user to update.
+ * @param units - The new units JSON array.
+ * @param txClient - The Prisma transaction client.
+ */
+export const updateUserUnits = async (userId: number, units: PlayerUnit[], txClient: TransactionClient) => {
   await txClient.users.update({
     where: { id: userId },
     data: { units },
   });
 };
 
-export const updateFortHitpoints = async (userId, hitpoints, txClient) => {
+/**
+ * Updates the fortification hitpoints for a specific user within a transaction.
+ * @param userId - The ID of the user to update.
+ * @param hitpoints - The new hitpoint value.
+ * @param txClient - The Prisma transaction client.
+ */
+export const updateFortHitpoints = async (userId: number, hitpoints: number, txClient: TransactionClient) => {
   await txClient.users.update({
     where: { id: userId },
     data: { fort_hitpoints: hitpoints },
   });
 }
 
-export const createAttackLog = async (logData, txClient) => {
+/**
+ * Creates a new attack log entry within a transaction.
+ * @param logData - The data for the attack log entry.
+ * @param txClient - The Prisma transaction client.
+ * @returns The created attack log entry.
+ */
+export const createAttackLog = async (logData: Prisma.attack_logCreateInput, txClient: TransactionClient) => {
   return await txClient.attack_log.create({
     data: logData,
   });
 };
 
-// { type: 'OFFENSE', subtype: 'TOTAL', stat: 1 } +1
-// { type: 'OFFENSE', subtype: 'WON', stat: 12 } +12
-// { type: 'DEFENSE', subtype: 'LOST' } +1 (defaults to 1 if not specified)
-export const incrementUserStats = async (userId, newStat, txClient) => {
+// Example newStat structure:
+// { type: 'OFFENSE', subtype: 'TOTAL', stat: 1 } // Increments OFFENSE/TOTAL by 1
+// { type: 'OFFENSE', subtype: 'WON', stat: 12 } // Increments OFFENSE/WON by 12 (Note: current implementation only increments by 1)
+// { type: 'DEFENSE', subtype: 'LOST' } // Increments DEFENSE/LOST by 1 (defaults to 1 if stat not specified)
+/**
+ * Increments a specific user statistic within a transaction.
+ * If the stat type/subtype exists, it increments the count by 1.
+ * If it doesn't exist, it creates the stat with a count of 1.
+ * @param userId - The ID of the user whose stats to update.
+ * @param newStat - An object containing the 'type' and 'subtype' of the stat to increment.
+ * @param txClient - The Prisma transaction client.
+ */
+export const incrementUserStats = async (userId: number, newStat: { type: string, subtype: string }, txClient: TransactionClient) => {
   const user = await txClient.users.findUnique({
     where: { id: userId },
     select: {
@@ -47,85 +88,115 @@ export const incrementUserStats = async (userId, newStat, txClient) => {
 
   if (!user) {
     throw new Error("User not found");
+  throw new Error("User not found");
+}
+
+// Safely handle the stats array from Prisma JSON
+let userStats: PlayerStat[] = [];
+if (Array.isArray(user.stats)) {
+  // Assume the array elements *should* conform to PlayerStat,
+  // but treat as 'any' temporarily for manipulation.
+  // More robust validation could be added here if needed.
+  userStats = user.stats as any[];
+}
+
+const existingStatIndex = userStats.findIndex(stat => stat.type === newStat.type && stat.subtype === newStat.subtype);
+
+if (existingStatIndex >= 0) {
+  // Ensure the stat property exists and is a number before incrementing
+  let currentStatValue = userStats[existingStatIndex].stat;
+  if (typeof currentStatValue !== 'number') {
+      currentStatValue = 0;
   }
-
-  if (!user.stats) {
-    user.stats = [];
-  }
-
-  const existingStatIndex = user.stats.findIndex(stat => stat.type === newStat.type && stat.subtype === newStat.subtype);
-
-  if (existingStatIndex >= 0) {
-    if (user.stats[existingStatIndex].stat === null) {
-      user.stats[existingStatIndex].stat = 0;
-    }
-    user.stats[existingStatIndex].stat += 1;
-  } else {
-    user.stats.push({
-      type: newStat.type,
-      subtype: newStat.subtype,
-      stat: 1,
-    });
-  }
-
-  // Update the user's stats
-  await txClient.users.update({
-    where: { id: userId },
-    data: { stats: user.stats },
+  userStats[existingStatIndex].stat = currentStatValue + 1;
+} else {
+  userStats.push({
+    type: newStat.type as PlayerStat['type'], // Cast to specific type
+    subtype: newStat.subtype,
+    stat: 1,
   });
 }
 
+// Update the user's stats
+await txClient.users.update({
+  where: { id: userId },
+  // Prisma expects JsonValue for JSON fields
+  data: { stats: userStats as Prisma.InputJsonValue },
+});
+}
 
-export const updateUser = async (userId, data, txClient) => {
+/**
+ * Updates a user's data within a transaction.
+ * @param userId - The ID of the user to update.
+ * @param data - An object containing the fields to update.
+ * @param txClient - The Prisma transaction client.
+ */
+export const updateUser = async (userId: number, data: Prisma.usersUpdateInput, txClient: TransactionClient) => {
   await txClient.users.update({
     where: { id: userId },
     data,
   });
 };
 
-export const createBankHistory = async (historyData, txClient) => {
+/**
+ * Creates a new bank history entry within a transaction.
+ * @param historyData - The data for the bank history entry.
+ * @param txClient - The Prisma transaction client.
+ */
+export const createBankHistory = async (historyData: Prisma.bank_historyCreateInput, txClient: TransactionClient) => {
   await txClient.bank_history.create({
     data: historyData,
   });
 };
 
-export const canAttack = async (attacker, defender) => {
+/**
+ * Checks if an attacker can attack a defender based on recent attack history (max 5 attacks in 24 hours).
+ * @param attacker - The attacker user object.
+ * @param defender - The defender user object.
+ * @returns True if the attack is allowed, false otherwise.
+ */
+export const canAttack = async (attacker: { id: number }, defender: { id: number }) => {
   const history = await prisma.attack_log.count({
     where: {
       AND: [
         { attacker_id: attacker.id },
         { defender_id: defender.id },
         { type: 'attack' },
-        { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } },
+        { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } }, // Last 24 hours
       ]
     },
-    orderBy: {
-      timestamp: 'desc',
-    },
   });
-  if (history >= 5) return false;
-  return true;
+  return history < 5; // Allow if less than 5 attacks
 };
 
-export const canAssassinate = async (attacker, defender) => {
+/**
+ * Checks if an attacker can assassinate a defender based on recent intel history (max 5 intel missions in 24 hours).
+ * Note: This currently checks 'INTEL' type, adjust if assassination has its own type or limit.
+ * @param attacker - The attacker user object.
+ * @param defender - The defender user object.
+ * @returns True if the assassination is allowed, false otherwise.
+ */
+export const canAssassinate = async (attacker: { id: number }, defender: { id: number }) => {
   const history = await prisma.attack_log.count({
     where: {
       AND: [
         { attacker_id: attacker.id },
         { defender_id: defender.id },
-        { type: 'INTEL' },
+        { type: 'INTEL' }, // Assuming assassination limit is tied to INTEL missions
         { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } },
       ]
     },
-    orderBy: {
-      timestamp: 'desc',
-    },
   });
-  if (history >= 5) return false;
-  return true;
+  return history < 5;
 };
 
-export const canInfiltrate = async (attacker, defender) => {
+/**
+ * Checks if an attacker can infiltrate a defender based on recent infiltration history (max 5 infiltrations in 24 hours).
+ * @param attacker - The attacker user object.
+ * @param defender - The defender user object.
+ * @returns True if the infiltration is allowed, false otherwise.
+ */
+export const canInfiltrate = async (attacker: { id: number }, defender: { id: number }) => {
   const history = await prisma.attack_log.count({
     where: {
       AND: [
@@ -135,15 +206,16 @@ export const canInfiltrate = async (attacker, defender) => {
         { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } },
       ]
     },
-    orderBy: {
-      timestamp: 'desc',
-    },
   });
-  if (history >= 5) return false;
-  return true;
+  return history < 5;
 };
 
-export const getTop10AttacksByTotalCasualties = async (timeFrame) => {
+/**
+ * Retrieves the top 10 attacks ranked by total casualties (attacker + defender) within a given timeframe.
+ * @param timeFrame - The timeframe in milliseconds (e.g., 24 * 60 * 60 * 1000 for 24 hours).
+ * @returns An array of the top 10 attacks with rank, display name (Attacker vs Defender), and total casualties.
+ */
+export const getTop10AttacksByTotalCasualties = async (timeFrame: number) => {
   const relations = await prisma.attack_log.findMany({
     where: {
       timestamp: {
@@ -160,17 +232,27 @@ export const getTop10AttacksByTotalCasualties = async (timeFrame) => {
     }
   });
 
-  const sortedAttacks = relations.map(attack => ({
-    rank: 0,
-    display_name: attack.attackerPlayer.display_name + " vs " + attack.defenderPlayer.display_name,
-    stat: (attack.stats.attacker_losses?.total || 0) + (attack.stats.defender_losses?.total || 0)
-  })).sort((a, b) => b.stat - a.stat).slice(0, 10);
+  const sortedAttacks = relations.map(attack => {
+    // Safely access nested stats properties
+    const attackerLosses = (attack.stats as any)?.attacker_losses?.total ?? 0;
+    const defenderLosses = (attack.stats as any)?.defender_losses?.total ?? 0;
+    return {
+      rank: 0,
+      display_name: `${attack.attackerPlayer?.display_name ?? 'Unknown'} vs ${attack.defenderPlayer?.display_name ?? 'Unknown'}`,
+      stat: attackerLosses + defenderLosses
+    };
+  }).sort((a, b) => b.stat - a.stat).slice(0, 10);
 
   return sortedAttacks.map((attack, index) => ({ ...attack, rank: index + 1 }));
 };
 
 
-export const getTop10TotalAttackerCasualties = async (timeFrame) => {
+/**
+ * Retrieves the top 10 attackers ranked by their total casualties inflicted within a given timeframe.
+ * @param timeFrame - The timeframe in milliseconds.
+ * @returns An array of the top 10 attackers with rank, display name, and total casualties inflicted.
+ */
+export const getTop10TotalAttackerCasualties = async (timeFrame: number) => {
   const relations = await prisma.attack_log.findMany({
     where: {
       timestamp: {
@@ -184,12 +266,12 @@ export const getTop10TotalAttackerCasualties = async (timeFrame) => {
     }
   });
 
-  const attackerCasualties = {};
+  const attackerCasualties: { [key: number]: { display_name: string, stat: number } } = {};
 
   relations.forEach(attack => {
-    const losses = attack.stats.attacker_losses?.total || 0;
+    const losses = (attack.stats as any)?.attacker_losses?.total ?? 0;
     if (!attackerCasualties[attack.attacker_id]) {
-      attackerCasualties[attack.attacker_id] = { display_name: attack.attackerPlayer.display_name, stat: 0 };
+      attackerCasualties[attack.attacker_id] = { display_name: attack.attackerPlayer?.display_name ?? 'Unknown', stat: 0 };
     }
     attackerCasualties[attack.attacker_id].stat += losses;
   });
@@ -199,7 +281,12 @@ export const getTop10TotalAttackerCasualties = async (timeFrame) => {
   return sortedCasualties.map((attacker, index) => ({ rank: index + 1, ...attacker }));
 };
 
-export const getTop10TotalDefenderCasualties = async (timeFrame) => {
+/**
+ * Retrieves the top 10 defenders ranked by their total casualties suffered within a given timeframe.
+ * @param timeFrame - The timeframe in milliseconds.
+ * @returns An array of the top 10 defenders with rank, display name, and total casualties suffered.
+ */
+export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
   const relations = await prisma.attack_log.findMany({
     where: {
       timestamp: {
@@ -213,12 +300,12 @@ export const getTop10TotalDefenderCasualties = async (timeFrame) => {
     }
   });
 
-  const defenderCasualties = {};
+  const defenderCasualties: { [key: number]: { display_name: string, stat: number } } = {};
 
   relations.forEach(attack => {
-    const losses = attack.stats.defender_losses?.total || 0;
+    const losses = (attack.stats as any)?.defender_losses?.total ?? 0;
     if (!defenderCasualties[attack.defender_id]) {
-      defenderCasualties[attack.defender_id] = { display_name: attack.defenderPlayer.display_name, stat: 0 };
+      defenderCasualties[attack.defender_id] = { display_name: attack.defenderPlayer?.display_name ?? 'Unknown', stat: 0 };
     }
     defenderCasualties[attack.defender_id].stat += losses;
   });
@@ -228,6 +315,12 @@ export const getTop10TotalDefenderCasualties = async (timeFrame) => {
   return sortedCasualties.map((defender, index) => ({ rank: index + 1, ...defender }));
 };
 
+/**
+ * Retrieves recruitment counts grouped by the recruiter (to_user) within a specified number of days.
+ * Filters out self-recruitment records.
+ * @param days - The number of past days to include in the history (default: 7).
+ * @returns An array of recruitment counts with associated valid recruitment records.
+ */
 export async function getRecruitmentCounts(days: number = 7) {
   const startDate = new Date(Number(getOTStartDate()) - days * 24 * 60 * 60 * 1000); // The start of the specified days ago
   const endDate = new Date(Number(getOTStartDate()) - (days - 1) * 24 * 60 * 60 * 1000); // The start of the next day
@@ -239,8 +332,8 @@ export async function getRecruitmentCounts(days: number = 7) {
     },
     where: {
       timestamp: {
-        gte: startDate, // Greater than or equal to the start of the specified days ago
-        lt: endDate,   // Less than the start of the next day
+        gte: startDate,
+        lt: endDate,
       },
       from_user: { not: 0 },
       to_user: { not: 0 }
@@ -256,11 +349,12 @@ export async function getRecruitmentCounts(days: number = 7) {
   const recruitmentCountsWithFilteredRecords = await Promise.all(recruitmentCounts.map(async (recruit) => {
     const validRecruitmentRecords = await prisma.recruit_history.findMany({
       where: {
-        from_user: { not: recruit.to_user },
+        from_user: { not: recruit.to_user }, // Filter out self-recruitment
         to_user: recruit.to_user,
         timestamp: {
           gte: startDate,
-          lt: endDate },
+          lt: endDate
+        },
       },
       select: {
         from_user: true,
@@ -269,17 +363,26 @@ export async function getRecruitmentCounts(days: number = 7) {
       },
     });
 
-    recruit.recruitmentRecords = validRecruitmentRecords;
-    recruit._count.to_user = validRecruitmentRecords.length; // update count based on valid records
-
-    return recruit;
+    // Return structure compatible with expected format, including the filtered records
+    return {
+      ...recruit,
+      recruitmentRecords: validRecruitmentRecords,
+      _count: {
+        to_user: validRecruitmentRecords.length // Update count based on valid records
+      }
+    };
   }));
 
   return recruitmentCountsWithFilteredRecords;
 }
 
+/**
+ * Retrieves the top recruiters based on valid recruitment counts from the previous day,
+ * including their display names.
+ * @returns A sorted array of the top recruiters with id, display_name, and recruitment count (stat).
+ */
 export async function getTopRecruitsWithDisplayNames() {
-  const recruitmentCounts = await getRecruitmentCounts(1);
+  const recruitmentCounts = await getRecruitmentCounts(1); // Get counts for the last day
 
   // Filter out entries with no valid recruitments
   const filteredRecruitmentCounts = recruitmentCounts.filter(recruit =>
@@ -292,7 +395,7 @@ export async function getTopRecruitsWithDisplayNames() {
       where: {
         AND: [
           { id: recruit.to_user },
-          { id: { not: 0 } }
+          { id: { not: 0 } } // Ensure user ID is not 0
         ]
       },
       select: {
@@ -301,23 +404,33 @@ export async function getTopRecruitsWithDisplayNames() {
       }
     });
 
+    // Return null if user is not found or ID is 0, otherwise return the desired structure
+    if (!user || user.id === 0) {
+      return null;
+    }
+
     return {
-      id: user ? user.id : 0,
-      display_name: user ? user.display_name : 'Unknown',
-      stat: recruit._count.to_user,
+      id: user.id,
+      display_name: user.display_name,
+      stat: recruit._count.to_user, // Use the count of valid records
     };
   }));
 
+  // Filter out null entries and sort
   return recruitsWithUser
-    .filter(recruit => recruit !== null)
+    .filter((recruit): recruit is { id: number; display_name: string; stat: number } => recruit !== null)
     .sort((a, b) => {
       if (b.stat !== a.stat) {
-        return b.stat - a.stat; // Sort by stat in descending order
+        return b.stat - a.stat; // Sort by stat descending
       }
-      return a.display_name.localeCompare(b.display_name); // Sort by display_name in ascending order
+      return a.display_name.localeCompare(b.display_name); // Then by display_name ascending
     });
 }
 
+/**
+ * Retrieves the top 10 attackers based on the number of successful attacks in the last 7 days.
+ * @returns An array of the top 10 attackers with id, display_name, and successful attack count (stat).
+ */
 export async function getTopSuccessfulAttacks() {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -336,7 +449,7 @@ export async function getTopSuccessfulAttacks() {
   const successfulAttacks = attacks.filter(attack => attack.winner === attack.attacker_id);
 
   // Aggregate successful attacks by attacker_id
-  const attackCounts = successfulAttacks.reduce((acc, { attacker_id }) => {
+  const attackCounts = successfulAttacks.reduce((acc: { [key: number]: number }, { attacker_id }) => {
     acc[attacker_id] = (acc[attacker_id] || 0) + 1;
     return acc;
   }, {});
@@ -359,20 +472,31 @@ export async function getTopSuccessfulAttacks() {
           display_name: true,
         },
       });
+      // Return null if user not found, otherwise return details
       return user ? { attacker_id, display_name: user.display_name } : null;
     })
   );
 
-  // Merge attacker details with attack counts
-  const detailedAttackCounts = sortedAttackers.map(attacker => ({
-    ...attacker,
-    id: attacker.attacker_id,
-    display_name: attackerDetails.find(detail => detail && detail.attacker_id === attacker.attacker_id)?.display_name || 'Unknown',
-  }));
+  // Merge attacker details with attack counts, filtering out nulls
+  const detailedAttackCounts = sortedAttackers
+    .map(attacker => {
+      const detail = attackerDetails.find(d => d && d.attacker_id === attacker.attacker_id);
+      if (!detail) return null; // Skip if user details couldn't be found
+      return {
+        ...attacker,
+        id: attacker.attacker_id,
+        display_name: detail.display_name,
+      };
+    })
+    .filter((attacker): attacker is { attacker_id: number; stat: number; id: number; display_name: string } => attacker !== null); // Type guard to filter out nulls
 
   return detailedAttackCounts;
 }
 
+/**
+ * Retrieves the top 10 users ranked by their total population (sum of all unit quantities).
+ * @returns An array of the top 10 users with id, display_name, and total population (stat).
+ */
 export async function getTopPopulations() {
   // Fetch users and their units
   const usersWithUnits = await prisma.users.findMany({
@@ -382,16 +506,18 @@ export async function getTopPopulations() {
       units: true, // Assuming this is the field containing the units JSON
     },
     where: {
-      id: { not: 0 },
+      id: { not: 0 }, // Exclude user ID 0
     }
   });
 
   // Calculate total units for each user
   const usersTotalUnits = usersWithUnits.map(user => {
-    // Parse the units JSON and sum the quantities
-    const totalUnits = user.units.reduce((acc, unit) => acc + unit.quantity, 0);
+    // Safely parse units and calculate total
+    const unitsArray = user.units as PlayerUnit[] ?? [];
+    const totalUnits = unitsArray.reduce((acc, unit) => acc + (unit.quantity ?? 0), 0);
     return {
-      ...user,
+      id: user.id,
+      display_name: user.display_name,
       stat: totalUnits,
     };
   });
@@ -402,6 +528,10 @@ export async function getTopPopulations() {
   return topPopulations;
 }
 
+/**
+ * Retrieves the top 10 users ranked by the amount of gold they have on hand.
+ * @returns An array of the top 10 users with id, display_name, and gold on hand (stat).
+ */
 export async function getTopGoldOnHand() {
   const users = await prisma.users.findMany({
     select: {
@@ -413,21 +543,25 @@ export async function getTopGoldOnHand() {
       gold: 'desc',
     },
     where: {
-      id: { not: 0 },
+      id: { not: 0 }, // Exclude user ID 0
     },
     take: 10,
   });
 
-  const mappedUsers = users.map((user) => {
-    return {
-      ...user,
-      stat: user.gold,
-    }
-  })
+  // Map to the desired output format
+  const mappedUsers = users.map((user) => ({
+    id: user.id,
+    display_name: user.display_name,
+    stat: user.gold, // gold is already BigInt or number
+  }));
 
   return mappedUsers;
 }
 
+/**
+ * Retrieves the top 10 users ranked by the amount of gold they have in the bank.
+ * @returns An array of the top 10 users with id, display_name, and gold in bank (stat).
+ */
 export async function getTopGoldInBank() {
   const users = await prisma.users.findMany({
     select: {
@@ -439,21 +573,26 @@ export async function getTopGoldInBank() {
       gold_in_bank: 'desc',
     },
     where: {
-      id: { not: 0 },
+      id: { not: 0 }, // Exclude user ID 0
     },
     take: 10,
   });
 
-  const mappedUsers = users.map((user) => {
-    return {
-      ...user,
-      stat: user.gold_in_bank,
-    }
-  })
+  // Map to the desired output format
+  const mappedUsers = users.map((user) => ({
+    id: user.id,
+    display_name: user.display_name,
+    stat: user.gold_in_bank, // gold_in_bank is already BigInt or number
+  }));
 
   return mappedUsers;
 }
 
+/**
+ * Calculates the total wealth (gold on hand + gold in bank + item value + battle upgrade value)
+ * for all users and returns the top 10 wealthiest users.
+ * @returns An array of the top 10 users ranked by wealth, including id, display_name, and total wealth (stat).
+ */
 // Wealth is calculated by the amount of gold a user has in bank + the amount of gold a user has in hand + the value (cost) of all the items they hold
 export async function getTopWealth() {
   const users = await prisma.users.findMany({
@@ -466,39 +605,49 @@ export async function getTopWealth() {
       battle_upgrades: true,
     },
     where: {
-      id: { not: 0 },
+      id: { not: 0 }, // Exclude user ID 0
     },
   });
 
-  const calculateItemsValue = (items) => {
+  // Helper function to calculate the total value of items based on their cost
+  const calculateItemsValue = (items: PlayerItem[]): bigint => {
     return items.reduce((total, item) => {
-      const iType = ItemTypes.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type);
-      if (!iType) return 0;
-      return total + (item.quantity * iType.cost); 
-    }, 0);
+      const itemTypeInfo = ItemTypes.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type);
+      if (!itemTypeInfo) return total; // If item type info not found, add 0
+      // Ensure quantity and cost are numbers before calculation
+      const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
+      const cost = typeof itemTypeInfo.cost === 'number' ? itemTypeInfo.cost : 0;
+      return total + BigInt(quantity * cost);
+    }, BigInt(0));
   };
 
-  const calculateBattleUpgradeValue = (items) => {
-    return items.reduce((total, item) => {
-      const battleUpgrade = BattleUpgrades.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type);
-      //console.log('battleUpgrade', total);
-      if (!battleUpgrade) return total;
-      return total + (item.quantity * battleUpgrade.cost);
-    }, 0);
+  // Helper function to calculate the total value of battle upgrades based on their cost
+  const calculateBattleUpgradeValue = (upgrades: PlayerBattleUpgrade[]): bigint => {
+    return upgrades.reduce((total, upgrade) => {
+      const battleUpgradeInfo = BattleUpgrades.find((upg) => upg.level === upgrade.level && upgrade.type === upg.type);
+      if (!battleUpgradeInfo) return total; // If upgrade info not found, add 0
+      // Ensure quantity and cost are numbers
+      const quantity = typeof upgrade.quantity === 'number' ? upgrade.quantity : 0;
+      const cost = typeof battleUpgradeInfo.cost === 'number' ? battleUpgradeInfo.cost : 0;
+      return total + BigInt(quantity * cost);
+    }, BigInt(0));
   };
 
+  // Calculate wealth for each user
   const usersWithWealth = users.map((user) => {
-    const ivalue = calculateItemsValue(user.items);
-    const itemsValue = user.items ? ivalue : 0;
-    const battleUpgradesValue = user.battle_upgrades ? calculateBattleUpgradeValue(user.battle_upgrades) : 0;
-    const wealth = user.gold + user.gold_in_bank + BigInt(itemsValue) + BigInt(battleUpgradesValue);
+    const itemsArray = user.items as PlayerItem[] ?? [];
+    const upgradesArray = user.battle_upgrades as PlayerBattleUpgrade[] ?? [];
+
+    const itemsValue = calculateItemsValue(itemsArray);
+    const battleUpgradesValue = calculateBattleUpgradeValue(upgradesArray);
+    const wealth = BigInt(user.gold ?? 0) + BigInt(user.gold_in_bank ?? 0) + itemsValue + battleUpgradesValue;
 
     return {
-      ...user,
-      itemsValue,
-      stat: wealth,
+      id: user.id,
+      display_name: user.display_name,
+      stat: wealth, // Total wealth as stat
     };
-  })
+  });
 
   // Sort users by wealth in descending order
   usersWithWealth.sort((a, b) => (b.stat > a.stat ? 1 : (b.stat < a.stat ? -1 : 0)));

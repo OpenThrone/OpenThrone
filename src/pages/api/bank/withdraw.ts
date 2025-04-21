@@ -1,9 +1,10 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
+import type { AuthenticatedRequest } from '@/types/api';
 import { withAuth } from '@/middleware/auth';
 import { withdraw } from '@/services/bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
 
-const withdrawHandler = async (req: NextApiRequest, res: NextApiResponse) => {
+const withdrawHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }

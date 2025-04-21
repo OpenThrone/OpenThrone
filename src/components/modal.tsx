@@ -4,21 +4,42 @@ import { useLayout } from '../context/LayoutContext';
 import router from 'next/router';
 import { useUser } from '@/context/users';
 import useSocket from '@/hooks/useSocket';
+
+/**
+ * Props for the attack confirmation Modal component.
+ */
 interface ModalProps {
+  /** Whether the modal is currently visible. */
   isOpen: boolean;
+  /** Function to toggle the modal's visibility. */
   toggleModal: () => void;
+  /** The ID of the user profile being targeted for attack. */
   profileID?: number;
 }
 
+/**
+ * A modal component used to confirm the number of attack turns before initiating an attack.
+ * Handles form submission, API interaction, loading state, error display, and redirection to results.
+ */
 const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
   const [turns, setTurns] = useState(1);
   const {user, forceUpdate} = useUser();
   const [error, setError] = useState('');
-  const { socket } = useSocket(user?.id); 
+  const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const { socket } = useSocket(user?.id);
 
+  /**
+   * Handles the submission of the attack confirmation form.
+   * Sends the attack request to the API, handles the response,
+   * manages loading and error states, and redirects on success.
+   * @param event - The form submission event.
+   */
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!turns) return;
+    if (!turns || isLoading) return; // Prevent multiple submissions
+
+    setIsLoading(true); // Set loading state
+    setError(''); // Clear previous errors
 
     const res = await fetch(`/api/attack/${profileID}`, {
       method: 'POST',
@@ -32,14 +53,17 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
 
     if (results.status === 'failed') {
       setError(`Failed to execute attack. ${results?.message}`);
+      setIsLoading(false); // Reset loading state on failure
     } else {
-      setError('');
+      // No need to set error here as it's cleared at the start
       forceUpdate();
       if (socket) {
         socket.emit('notifyAttack', { defenderId: profileID, battleId: results.attack_log });
       }
       router.push(`/battle/results/${results.attack_log}`);
-      toggleModal();
+      // No need to toggle modal here, let the redirect handle it
+      // Reset loading state on success (though redirect might make this visually brief)
+      setIsLoading(false);
     }
   };
 
@@ -99,16 +123,21 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
                   min="1"
                   placeholder="1"
                   value={turns}
-                  onChange={(e) => setTurns(e.target.value)}
+                  onChange={(e) => setTurns(parseInt(e.target.value, 10) || 0)} // Parse value to integer
                   className="block w-full rounded-md border-gray-300 bg-black p-2.5 leading-6 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 />
               </div>
               <div className="mt-4">
                 <button
                   type="submit"
-                  className="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:text-sm"
+                  className={`inline-flex w-full justify-center rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:text-sm ${
+                    isLoading
+                      ? 'cursor-not-allowed bg-indigo-400'
+                      : 'bg-indigo-600 hover:bg-indigo-700'
+                  }`}
+                  disabled={isLoading} // Disable button when loading
                 >
-                  Submit
+                  {isLoading ? 'Submitting...' : 'Submit'} {/* Change text when loading */}
                 </button>
               </div>
             </form>

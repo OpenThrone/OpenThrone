@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect } from "react";
-import Alert from "@/components/alert";
 import {
   Text,
   Grid,
