@@ -8,7 +8,7 @@ import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List, Pro
 import { useDebouncedCallback, useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
-import { levelXPArray } from '@/constants/XPLevels'; // Assuming constants are correctly exported
+import { levelXPArray } from '@/constants/XPLevels';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 import { logError } from '@/utils/logger';
 import UserModel from '@/models/Users';

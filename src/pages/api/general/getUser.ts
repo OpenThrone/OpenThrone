@@ -65,7 +65,7 @@ const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // If user's status is not ACTIVE, handle accordingly
     if (['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT', 'VACATION'].includes(currentStatus)) {
-      return res.status(403).json({ error: `Account is ${currentStatus.toLowerCase()}` });
+      return res.status(403).json({ error: `Account is in ${currentStatus.toLowerCase()} status` });
     }
 
     // Check if the user has been attacked since last active

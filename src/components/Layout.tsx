@@ -14,7 +14,6 @@ import { logError } from '@/utils/logger';
 import NavSkeleton from './NavSkeleton';
 import MainAreaSkeleton from './MainAreaSkeleton';
 import SidebarSkeleton from './SidebarSkeleton';
-import { useUser } from '@/context/users';
 
 interface IMainProps {
   children: ReactNode;
@@ -26,7 +25,6 @@ const Layout = (props: IMainProps) => {
   const [gitInfo, setGitInfo] = useState({ latestCommit: '', latestCommitMessage: '' });
   const [onlinePlayerInfo, setOnlinePlayerInfo] = useState({ onlinePlayers: 0, totalPlayers: 0, newestPlayer: '', newPlayers: 0 });
   const [isDevelopment, setIsDevelopment] = useState(false);
-  const { user } = useUser();
 
   useEffect(() => {
     setIsDevelopment(process.env.NODE_ENV === 'development');
@@ -120,13 +118,13 @@ const Layout = (props: IMainProps) => {
               {structureReady ? (
                 <>
                   {/* Conditionally render Sidebar based on authentication status */}
-                  {status === 'authenticated' && (
+                  {authorized && (
                     <div className="w-full px-3 md:w-1/5" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
                       {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
                     </div>
                   )}
                   {/* Adjust main content width based on authentication status */}
-                  <div className={`w-full bg-black ${raceClasses.borderClass} px-3 ${status === 'authenticated' ? 'md:w-4/5' : 'md:w-full'}`}>
+                  <div className={`w-full bg-black ${raceClasses.borderClass} px-3 ${authorized ? 'md:w-4/5' : 'md:w-full'}`}>
                     <NewsBulletin />
                     {layoutLoading ? <MainAreaSkeleton /> : props.children}
                   </div>

@@ -137,8 +137,12 @@ export const initializeSocket = (httpServer: HttpServer) => {
 
         const currentStatus = await getUpdatedStatus(user.id);
 
-        if (['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT', 'VACATION'].includes(currentStatus)) {
-          socket.emit('userDataError', { error: `Account is ${currentStatus.toLowerCase()}` });
+        if (["BANNED", "SUSPENDED", "CLOSED", "TIMEOUT"].includes(currentStatus)) {
+          socket.emit('userDataError', { error: `Account is in ${currentStatus.toLowerCase()} status` });
+          return;
+        }
+        if (currentStatus === "VACATION") {
+          socket.emit('userVacation', serializeData({ ...user, currentStatus }));
           return;
         }
 

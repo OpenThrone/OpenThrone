@@ -6,10 +6,15 @@ import Form from '@/components/form';
 import { useLayout } from '@/context/LayoutContext';
 import MainArea from '@/components/MainArea';
 import { Alert, Space } from '@mantine/core';
+import VacationModeModal from '@/components/VacationModeModal';
 
 const Login = (props) => {
   const { setMeta, meta } = useLayout();
   const [resetEmail, setResetEmail] = useState('');
+  const [showVacationModal, setShowVacationModal] = useState(false);
+  const [vacationUserId, setVacationUserId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
 
   useEffect(() => {
     if (setMeta && meta && meta.title !== "OpenThrone - Login") {
@@ -20,7 +25,15 @@ const Login = (props) => {
     }
   }, [meta, setMeta]);
 
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  useEffect(() => {
+    if (!searchParams) return;
+    if (searchParams.get('vacation') === '1') {
+      setShowVacationModal(true);
+      // Optionally set userId if you want to pass it to the modal
+    } else if (searchParams.get('error') === 'account_status') {
+      setErrorMessage('Your account is currently restricted. Please contact support if you believe this is a mistake.');
+    }
+  }, [searchParams]);
 
   return (
     <>
@@ -46,6 +59,12 @@ const Login = (props) => {
             </div>
           </div>
         </div>
+        <VacationModeModal
+          opened={showVacationModal}
+          onClose={() => setShowVacationModal(false)}
+          userId={vacationUserId}
+          onVacationEnd={() => setShowVacationModal(false)}
+        />
       </MainArea>
     </>
   );

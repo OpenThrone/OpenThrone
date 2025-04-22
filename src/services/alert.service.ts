@@ -36,6 +36,15 @@ function showAlert(
   // Always emit the alert, do not deduplicate by hash/localStorage
   alertSubject.next(alert);
 
+  logDebug('AlertService', 'showAlert', {
+    type,
+    message,
+    showAfterRedirect,
+    showButton,
+    button,
+    timeout,
+  } as AlertType, 'Alert emitted');
+
   if (timeout !== null && type !== 'loading') {
     setTimeout(clear, timeout);
   }

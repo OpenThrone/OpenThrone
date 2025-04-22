@@ -2,13 +2,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-
 import UserModel from '@/models/Users'; // Import UserModel
 import { alertService } from '@/services';
 import useSocket from '@/hooks/useSocket';
 import { fetchWithFallback } from '@/utils/socketFunctions';
 import { logError, logInfo, logWarn } from '@/utils/logger';
-import type { UserApiResponse, IUserSession } from '@/types/typings'; // Import UserApiResponse
+import type { UserApiResponse } from '@/types/typings';
 import { users as PrismaUser } from '@prisma/client';
 
 // Define UnreadMessages interface locally or import if moved to typings.d.ts
@@ -76,6 +75,8 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const { socket, isConnected, addEventListener, removeEventListener } = useSocket(userId);
   const [loading, setLoading] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState<UnreadMessages[]>([]);
+  const [showVacationModal, setShowVacationModal] = useState(false);
+  const [vacationUserId, setVacationUserId] = useState<number | null>(null);
   const WS_ENABLED = process.env.NEXT_PUBLIC_WS_ENABLED === 'true';
 
   const processAndSetUserData = useCallback((userData: UserApiResponse | PrismaUser) => {
@@ -88,10 +89,20 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       const uModel = new UserModel(userData as PrismaUser, false); // Cast to PrismaUser
       setUser(uModel);
 
-      if (['CLOSED', 'BANNED', 'VACATION', 'SUSPENDED'].includes(userData.currentStatus)) {
-        alertService.info(`Your account is currently in ${userData.currentStatus} mode.`, true);
-        signOut({ callbackUrl: '/account/login' });
-        return false; // Indicate failure/redirect
+      if ('currentStatus' in userData) {
+        const status = (userData as { currentStatus?: string }).currentStatus || '';
+        if (["BANNED", "SUSPENDED", "CLOSED", "TIMEOUT"].includes(status)) {
+          router.push('/account/login?error=account_status');
+          setUser(null);
+          setLoading(false);
+          return false;
+        }
+        if (status === "VACATION") {
+          router.push('/account/login?vacation=1');
+          setUser(null);
+          setLoading(false);
+          return false;
+        }
       }
 
       if ((userData as UserApiResponse).beenAttacked) {
@@ -109,7 +120,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   const fetchUserData = useCallback(
     async (uID: number) => {
@@ -150,6 +161,13 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       setLoading(false);
     };
 
+    const handleUserVacation = (userData: UserApiResponse | PrismaUser) => {
+      logInfo("Socket received userVacation:", userData.id);
+      setUser(null);
+      router.push('/account/login?vacation=1');
+      setLoading(false);
+    };
+
     // --- Notification Handlers ---
     const handleNewMessageNotification = (data: UnreadMessages) => {
       logInfo("Received newMessageNotification:", data);
@@ -186,6 +204,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
 
     addEventListener('userData', handleUserData);
     addEventListener('userDataError', handleUserDataError);
+    addEventListener('userVacation', handleUserVacation);
     addEventListener('pong', handlePong);
     addEventListener('attackNotification', handleAttackNotification);
     addEventListener('friendRequestNotification', handleFriendRequestNotification);
@@ -196,6 +215,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     return () => {
       removeEventListener('userData', handleUserData);
       removeEventListener('userDataError', handleUserDataError);
+      removeEventListener('userVacation', handleUserVacation);
       removeEventListener('pong', handlePong);
       removeEventListener('attackNotification', handleAttackNotification);
       removeEventListener('friendRequestNotification', handleFriendRequestNotification);
