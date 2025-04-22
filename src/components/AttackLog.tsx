@@ -1,12 +1,14 @@
-import { faPlus, faMinus, faSort, faSortUp, faSortDown } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faMinus, faSort, faSortUp, faSortDown, faEye, faRedo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Stack, Chip, SimpleGrid, Button, Modal } from "@mantine/core";
+import { Stack, Chip } from "@mantine/core";
 import router from "next/router";
 import { useState, useMemo } from "react";
 import LossesList from "./LossesList";
 import PlayerOutcome from "./PlayerOutcome";
 import StatsList from "./StatsList";
 import { Log } from "@/types/typings";
+import AnimatedButtons from "./AnimatedButton";
+import Modal from "../components/modal";
 
 interface AttackLogTableProps {
   logs: Log[];
@@ -158,7 +160,7 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
             return (
               <tr key={log.id} className="odd:bg-table-odd even:bg-table-even">
                 <td className="border-b px-1 py-2 text-center">
-                  <button onClick={() => toggleCollapse(log.id)} aria-expanded={!isCollapsed} className="focus:outline-none">
+                  <button onClick={() => toggleCollapse(log.id.toString())} aria-expanded={!isCollapsed} className="focus:outline-none">
                     <FontAwesomeIcon icon={isCollapsed ? faPlus : faMinus} size="sm" />
                   </button>
                 </td>
@@ -184,30 +186,35 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
                   )}
                 </td>
                 <td className="border-b px-4 py-2 text-center">
-                  <SimpleGrid cols={2} mt="sm" mb="sm">
-                    <Button
-                      type="button"
-                      onClick={() => toggleModal(profileId)}
-                      color="brand"
-                      className="font-bold py-2 px-4 rounded"
-                      size="xs"
-                    >
-                      {modalLabel}
-                    </Button>
-                    <Modal
-                      isOpen={openModalId === profileId}
-                      toggleModal={() => toggleModal(profileId)}
-                      profileID={parseInt(profileId)}
-                    />
-                    <Button
-                      onClick={() => router.push(`/battle/results/${log.id}`)}
-                      size="xs"
-                      className="font-bold py-2 px-4 rounded"
-                      color="brand.5"
-                    >
-                      View Battle
-                    </Button>
-                  </SimpleGrid>
+                  <AnimatedButtons
+                    buttons={[
+                      {
+                        icon: faRedo,
+                        label: modalLabel,
+                        onClick: () => toggleModal(profileId.toString()),
+                        color: "blue",
+                        tooltip: modalLabel,
+                        ariaLabel: modalLabel,
+                      },
+                      {
+                        icon: faEye,
+                        label: "View Battle",
+                        onClick: () => router.push(`/battle/results/${log.id}`),
+                        color: "teal",
+                        tooltip: "View battle details",
+                        ariaLabel: "View Battle",
+                      },
+                    ]}
+                    orientation="vertical"
+                    spacing="xs"
+                  />
+                  <Modal
+                    isOpen={openModalId === profileId.toString()}
+                    toggleModal={() => toggleModal(profileId.toString())}
+                    profileID={profileId}
+                  >
+                  </Modal>
+
                 </td>
               </tr>
             );

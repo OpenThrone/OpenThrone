@@ -157,7 +157,7 @@ export async function attackHandler(
   if (!AttackPlayer.canAttack(DefensePlayer.level)) {
     return {
       status: 'failed',
-      message: 'You can only attack within 25 levels of your own level.', //TODO: Revert to 5 levels
+      message: `You can only attack within ${process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE} levels of your own level.`,
     }
   }
 
@@ -196,10 +196,7 @@ export async function attackHandler(
         AttackPlayer.gold = BigInt(AttackPlayer.gold) + BigInt(battleResults.pillagedGold.toString());
       }
 
-      const attack_log = await createAttackLog({
-        attacker_id: attackerId,
-        defender_id: defenderId,
-        timestamp: new Date().toISOString(),
+      const attack_log = await createAttackLog({        timestamp: new Date().toISOString(),
         winner: isAttackerWinner ? attackerId : defenderId,
         stats: {
           startOfAttack,

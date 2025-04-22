@@ -2,7 +2,7 @@
 
 import { getSession } from 'next-auth/react';
 import { useState } from 'react';
-import AttackLogTable from '@/components/attacklog';
+import AttackLogTable from '@/components/AttackLog';
 import prisma from '@/lib/prisma';
 import { Pagination } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
