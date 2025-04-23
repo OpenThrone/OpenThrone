@@ -10,6 +10,7 @@ import React, {
 import { IMetaProps } from '@/types/typings';
 
 import { useUser } from './users';
+import { logDebug } from '@/utils/logger';
 
 // Define interfaces for typing
 interface RaceColors {
@@ -116,6 +117,7 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
     if (!Object.prototype.hasOwnProperty.call(raceClasses, race)) {
       race = 'ELF'; // Default to 'ELF' if race is not a valid key
     }
+    logDebug('settings Derived Race Classes', race, raceClasses[race as keyof typeof raceClasses]);
     setDerivedRaceClasses(raceClasses[race as keyof typeof raceClasses]);
   }, [user]);
 
@@ -126,6 +128,10 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
       setAuthorized(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    updateOptions();
+  }, [user, updateOptions]);
 
   const providerValue = useMemo(
     () => ({
