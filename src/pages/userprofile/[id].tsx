@@ -121,7 +121,6 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
         setLastActive('Never logged in');
         return;
       }
-      console.log(user?.spyLimits)
       const lastActiveTimestamp = new Date(profile.last_active).getTime();
       const nowTimestamp = nowdate.getTime();
 
@@ -135,6 +134,33 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
 
   if (loading) return <Loader />;
   if (!profile) return <p>User not found</p>;
+
+  // Show status message for blocked statuses
+  const blockedStatuses = ["IDLE", "BANNED", "SUSPENDED", "CLOSED", "TIMEOUT"];
+  if (blockedStatuses.includes(userStatus)) {
+    let statusMessage = "";
+    switch (userStatus) {
+      case "IDLE":
+        statusMessage = "This account is currently idle.";
+        break;
+      case "BANNED":
+        statusMessage = "This account has been banned.";
+        break;
+      case "SUSPENDED":
+        statusMessage = "This account is suspended.";
+        break;
+      case "CLOSED":
+        statusMessage = "This account has been closed.";
+        break;
+      case "TIMEOUT":
+        statusMessage = "This account is in timeout.";
+        break;
+      default:
+        statusMessage = "This account is unavailable.";
+    }
+    return <p>{statusMessage}</p>;
+  }
+
   if (lastActive === 'Never logged in') return <p>User is currently inactive</p>;
 
   const handleAddFriend = async () => {
