@@ -48,6 +48,12 @@ const handler = async(
     const uModel = new UserModel(user);
     let totalCost = 0;
 
+    // Cast battle_upgrades to EquipmentProps[] and ensure quantities are numbers
+    const userBattleUpgrades = (user.battle_upgrades as unknown as EquipmentProps[]).map(item => ({
+      ...item,
+      quantity: typeof item.quantity === 'string' ? parseInt(item.quantity as string, 10) : item.quantity
+    }));
+
     // Validate the items and calculate total cost
     for (const itemData of itemsToEquip) {
       const item = BattleUpgrades.find(
@@ -63,13 +69,12 @@ const handler = async(
           .status(400)
           .json({ error: `Invalid item type, usage, or level` });
       }
-      const itemCost =
-        (item.cost - ((uModel.priceBonus || 0) / 100) * item.cost) *
-        itemData.quantity;
+      // Always round up for costs, down for refunds
+      const itemBaseCost = item.cost - Math.ceil(((uModel.priceBonus || 0) / 100) * item.cost);
       if (operation === 'buy') {
-        totalCost += itemCost;
+        totalCost += Math.ceil(itemBaseCost * itemData.quantity);
       } else { // selling items
-        totalCost -= Math.floor(itemCost * 0.75); // 75% of the cost
+        totalCost -= Math.floor(itemBaseCost * itemData.quantity * 0.75); // 75% of the cost
       }
     }
 
@@ -79,14 +84,16 @@ const handler = async(
     }
 
     // Deduct gold and equip items
-    const updatedItems = user.battle_upgrades.map((userItem: EquipmentProps) => {
+    const updatedItems = userBattleUpgrades.map((userItem: EquipmentProps) => {
       const itemToEquip = itemsToEquip.find(
         (item) => item.type === userItem.type && item.level === userItem.level
       );
       if (itemToEquip) {
+        const userQty = typeof userItem.quantity === 'string' ? parseInt(userItem.quantity as string, 10) : userItem.quantity;
+        const equipQty = typeof itemToEquip.quantity === 'string' ? parseInt(itemToEquip.quantity as string, 10) : itemToEquip.quantity;
         const newQuantity = operation === 'buy' ?
-          userItem.quantity + itemToEquip.quantity : // increase item quantity when buying
-          userItem.quantity - itemToEquip.quantity; // decrease item quantity when selling
+          userQty + equipQty : // increase item quantity when buying
+          userQty - equipQty; // decrease item quantity when selling
 
         if (newQuantity < 0) {
           return res.status(400).json({ error: 'Cannot have negative quantity' });
@@ -143,7 +150,6 @@ const handler = async(
               type: item.type,
               level: item.level,
               quantity: item.quantity,
-              cost: item.cost,
             }))
           },
         },

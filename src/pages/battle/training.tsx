@@ -191,7 +191,7 @@ const Training: React.FC = (props) => { // Removed unused props
    * @returns The API response data on success, or null on failure/no units.
    * @throws Error if the API call fails or returns an error status.
    */
-  const callTrainingApi = async (endpoint: 'train' | 'untrain', user: User, units: { type: UnitType; quantity: number; level: number }[]) => {
+  const callTrainingApi = useCallback(async (endpoint: 'train' | 'untrain', user: User, units: { type: UnitType; quantity: number; level: number }[]) => {
     if (units.length === 0) {
       alertService.warn(`No units selected to ${endpoint}.`);
       return null;
@@ -212,7 +212,7 @@ const Training: React.FC = (props) => { // Removed unused props
       logError(`Error calling ${endpoint} API:`, error); // Use logError
       throw new Error(error.message || `An unexpected error occurred during ${endpoint}.`);
     }
-  };
+  }, []);
 
   /**
    * Updates the local state of unit sections based on the API response after training/untraining.
@@ -445,7 +445,7 @@ const Training: React.FC = (props) => { // Removed unused props
               <Button
                 color='green'
                 onClick={handleTrainAll}
-                disabled={totalCost <= 0 || BigInt(totalCost) > (user.gold ?? 0)} // Use BigInt for comparison
+                disabled={totalCost <= 0 || BigInt(Math.ceil(totalCost)) > (user.gold ?? 0)} // Use Math.ceil to ensure integer
               >
                 Train
               </Button>

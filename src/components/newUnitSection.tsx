@@ -234,7 +234,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
 
     const currentSectionCost = unitsToTrain.reduce((acc, unit) => {
       const unitCostValue = Number(String(unit.cost).replace(/,/g, '')) || 0;
-      return acc + (unit.quantity * unitCostValue);
+      return acc + Math.ceil((unit.quantity * unitCostValue));
     }, 0);
 
 
@@ -399,7 +399,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     }
 
     const userGold = BigInt(user.gold?.toString() ?? '0');
-    if (!toLower && BigInt(conversionCost) > userGold) {
+    if (!toLower && BigInt(Math.ceil(conversionCost)) > userGold) {
       setConvertError(`Insufficient gold (Cost: ${toLocale(conversionCost, user.locale)}).`);
       setIsProcessingConvert(false);
       return;
@@ -484,14 +484,13 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
   }
 
 const userGold = BigInt(user?.gold?.toString() ?? '0');
-const trainDisabled = sectionTotalCost <= 0 || BigInt(sectionTotalCost) > userGold || isProcessingTrain || isProcessingUntrain || isProcessingConvert;
+const trainDisabled = sectionTotalCost <= 0 || BigInt(Math.ceil(sectionTotalCost)) > userGold || isProcessingTrain || isProcessingUntrain || isProcessingConvert;
 // Add check for owned units for untrain if needed (currently done inside handler)
 const untrainDisabled = sectionTotalCost <= 0 || isProcessingTrain || isProcessingUntrain || isProcessingConvert;
 
 const trainTooltip =
     sectionTotalCost <= 0 ? 'Enter quantities to train.' :
-    BigInt(sectionTotalCost) > userGold ? `Not enough gold (Cost: ${toLocale(sectionTotalCost, user?.locale)})` :
-    // Add citizen check tooltip if applicable
+    BigInt(Math.ceil(sectionTotalCost)) > userGold ? `Not enough gold (Cost: ${toLocale(sectionTotalCost, user?.locale)})` :
     '';
 const untrainTooltip = sectionTotalCost <= 0 ? 'Enter quantities to untrain.' : '';
 
@@ -669,13 +668,13 @@ return (
           />
           <Stack gap={0} style={{ flexBasis: '120px', flexGrow: 1, textAlign: 'right' }}>
             <Text size='xs'>{toLower ? 'Refund:' : 'Cost:'}</Text>
-            <Text size='sm' fw={500}>{toLocale(conversionCost, user?.locale)}</Text>
+            <Text size='sm' fw={500}>{toLocale(toLower ? Math.floor(conversionCost) : Math.ceil(conversionCost), user?.locale)}</Text>
           </Stack>
-          <Tooltip label={convertError || (!fromUnitId || !toUnitId ? 'Select units' : conversionAmount <= 0 ? 'Enter quantity' : !toLower && BigInt(conversionCost) > userGold ? 'Not enough gold' : '')} disabled={!(!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(conversionCost) > userGold)) || isProcessingConvert} withArrow>
+          <Tooltip label={convertError || (!fromUnitId || !toUnitId ? 'Select units' : conversionAmount <= 0 ? 'Enter quantity' : !toLower && BigInt(Math.ceil(conversionCost)) > userGold ? 'Not enough gold' : '')} disabled={!(!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(Math.ceil(conversionCost)) > userGold)) || isProcessingConvert} withArrow>
              <div style={{ width: 'auto' }}> {/* Wrapper for disabled tooltip */}
                 <Button
                   onClick={handleConvert}
-                  disabled={!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(conversionCost) > userGold) || isProcessingTrain || isProcessingUntrain || isProcessingConvert}
+                  disabled={!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(Math.ceil(conversionCost)) > userGold) || isProcessingTrain || isProcessingUntrain || isProcessingConvert}
                   loading={isProcessingConvert}
                   size="xs"
                   variant='outline'
