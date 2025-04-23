@@ -18,6 +18,7 @@ import { InferGetServerSidePropsType } from "next";
 import Image from 'next/image';
 import FriendCard from '@/components/friendCard';
 import MainArea from '@/components/MainArea';
+import { logDebug } from '@/utils/logger';
 
 interface UserProfileServerData {
   id: number;
@@ -99,6 +100,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     fetch('/api/social/listAll?type=FRIEND&limit=5&playerId=' + profile.id)
       .then(response => response.json())
       .then(data => {
+        console.log('Friends data:', data);
         setFriends(data);
         setLoading(false);
       });
@@ -200,8 +202,12 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     setIsSpyModalOpen(!isSpyModalOpen);
   };
 
-  const isFriend = friends.some(friend => friend.friend.id === profile.id);
+  // Don't show friend buttons on own profile, and only show Add/Remove appropriately
+  const isOwnProfile = user?.id === profile.id;
+  const isFriend = friends.some(friend => friend.friend.id === user?.id);
+
   const friendsList = friends.length > 0 ? friends.map(friend => {
+    logDebug("Received friend info:", friend);
     const player = new UserModel(friend.friend, true, false);
     return (
       <FriendCard key={player.id} player={player} />
@@ -327,7 +333,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                   type="button"
                   onClick={handleAddFriend}
                   className={`list-group-item list-group-item-action w-full text-left`}
-                  style={{ display: isFriend ? 'none' : 'block' }}
+                  style={{ display: isOwnProfile || isFriend ? 'none' : 'block' }}
                 >
                   Add to Friends List
                 </button>
@@ -335,7 +341,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                   type="button"
                   onClick={handleRemoveFriend}
                   className={`list-group-item list-group-item-action w-full text-left`}
-                  style={{ display: isFriend ? 'block' : 'none' }}
+                  style={{ display: isOwnProfile || !isFriend ? 'none' : 'block' }}
                 >
                   Remove Friend
                 </button>
@@ -435,7 +441,7 @@ export const getServerSideProps = async ({ query }) => {
     bionew: await serialize(user.bio),
     gold: user.gold.toString(),
     gold_in_bank: user.gold_in_bank.toString(),
-    last_active: user.last_active.toISOString(),
+    last_active: user.last_active ? user.last_active.toISOString() : null,
     created_at: user.created_at.toISOString(),
     updated_at: user.updated_at.toISOString(),
     status: await getUpdatedStatus(user.id),
