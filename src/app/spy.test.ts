@@ -532,8 +532,8 @@ describe('Spy Test', () => {
       units: defense.units.filter(unit => (unit.type === 'DEFENSE' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
     });
     const battle = await simulateIntel(equalAttacker, equalDefender, 1);
-    //console.log(battle)
-    //console.log(battle.intelligenceGathered.units)
-    //console.log(battle.intelligenceGathered.items)
+    //logInfo(battle)
+    //logInfo(battle.intelligenceGathered.units)
+    //logInfo(battle.intelligenceGathered.items)
   });
 });

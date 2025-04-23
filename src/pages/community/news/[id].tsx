@@ -35,7 +35,7 @@ const News = ({ post: serverPost, loggedIn }: InferGetServerSidePropsType<typeof
       const data = await response.json();
       console.log('Success:', data);
     } catch (error) {
-      console.error('Error updating read status:', error);
+      logError('Error updating read status:', error);
 
       // Revert the UI in case of error
       setPost({ ...post, isRead: !post.isRead }); // Revert the isRead status

@@ -1,17 +1,30 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
+import type { AuthenticatedRequest } from '@/types/api';
 import { withAuth } from '@/middleware/auth';
 
 import prisma from '@/lib/prisma';
 
 import { PermissionType } from '@prisma/client';
+import { z } from 'zod';
+
+const GrantPermissionSchema = z.object({
+  user: z.string().min(1),
+  permission: z.nativeEnum(PermissionType)
+});
 
 const handler = async (
-  req: NextApiRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse,
 ) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed!' });
   }
+
+  const parseResult = GrantPermissionSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+  }
+  const { user, permission } = parseResult.data;
 
   const session = req.session;
   if (!session) {
@@ -25,8 +38,6 @@ const handler = async (
     // Logged in, but not an admin
     return res.status(401).json({ error: 'Unauthorized', msg: 'Current user is not an administrator.'});
   }
-
-  const { user, permissions: permission } = req.body;
 
   try {
     const currentUser = await prisma.users.findUnique({ where: { display_name: user } });

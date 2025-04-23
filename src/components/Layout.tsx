@@ -1,47 +1,34 @@
-import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
-import Sidebar from '@/components/sidebar';
+import Sidebar from '@/components/Sidebar';
 import { useLayout } from '@/context/LayoutContext';
 import { AppConfig } from '@/utils/AppConfig';
 import { getAssetPath } from '@/utils/utilities';
 import Image from 'next/image';
 import NewsBulletin from './news-bulletin';
+import { logError } from '@/utils/logger';
+import NavSkeleton from './NavSkeleton';
+import MainAreaSkeleton from './MainAreaSkeleton';
+import SidebarSkeleton from './SidebarSkeleton';
 
 interface IMainProps {
-  // eslint-disable-next-line react/no-unused-prop-types
-  // meta: ReactNode;
   children: ReactNode;
 }
+
 const Layout = (props: IMainProps) => {
-  const { data: session, status } = useSession();
-  const [authorized, setAuthorized] = useState(status === 'authenticated');
-  const layoutCont = useLayout();
-  const pathName = usePathname();
+  const { status } = useSession();
+  const { raceClasses, authorized, userLoading: layoutLoading } = useLayout();
   const [gitInfo, setGitInfo] = useState({ latestCommit: '', latestCommitMessage: '' });
-  const [loading, setLoading] = useState(true);
-  const [onlinePlayerInfo, setOnlinePlayerInfo] = useState({ onlinePlayers: 0, totalPlayers: 0, newestPlayer:'', newPlayers: 0 });
+  const [onlinePlayerInfo, setOnlinePlayerInfo] = useState({ onlinePlayers: 0, totalPlayers: 0, newestPlayer: '', newPlayers: 0 });
   const [isDevelopment, setIsDevelopment] = useState(false);
 
   useEffect(() => {
     setIsDevelopment(process.env.NODE_ENV === 'development');
   }, []);
-
-  useEffect(() => {
-    function authCheck(_url: string | null) {
-      // redirect to login page if accessing a private page and not logged in
-
-      if (status === 'loading') {
-        return <div>Loading</div>;
-      }
-      return setAuthorized(status === 'authenticated');
-    }
-    authCheck(pathName);
-  }, [session, pathName, status]);
 
   useEffect(() => {
     if (isDevelopment) {
@@ -54,17 +41,11 @@ const Layout = (props: IMainProps) => {
         })
         .then(data => {
           setGitInfo(data);
-          setLoading(false);
         })
         .catch(error => {
-          console.error('Failed to fetch git info:', error);
-          setLoading(false);
+          logError('Failed to fetch git info:', error);
         });
-    }
-  }, [isDevelopment]);
-
-  useEffect(() => {
-    if (!isDevelopment) {
+    } else {
       fetch('/api/general/getOnlinePlayers')
         .then(response => {
           if (!response.ok) {
@@ -81,28 +62,34 @@ const Layout = (props: IMainProps) => {
           });
         })
         .catch(error => {
-          console.error('Failed to fetch online player info:', error);
+          logError('Failed to fetch online player info:', error);
         });
     }
-  }, []);
+  }, [isDevelopment]);
+
+  const [structureReady, setStructureReady] = useState(false);
+
+  useEffect(() => {
+    if (status === 'authenticated' || status === 'unauthenticated') {
+      setStructureReady(true); // Structure is ready as soon as authentication state is known
+    }
+  }, [status]);
 
   return (
     <div className="flex min-h-screen flex-col">
       <div
-        className={`w-full grow ${
-          authorized ? layoutCont.raceClasses.bgClass : 'bg-elf-header-bgcolor'
+        className={`w-full grow ${authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
           } px-1 text-yellow-400 antialiased`}>
         <div className="mx-auto max-w-screen-2xl">
           <header
-            className={`mx-auto ${layoutCont.raceClasses.borderBottomClass}`}
+            className={`mx-auto ${raceClasses.borderBottomClass}`}
           >
             <div
-              style={{ backgroundImage: `url('${getAssetPath('wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}}
-              className={`${
-                authorized
-                  ? layoutCont.raceClasses.bgClass
+              style={{ backgroundImage: `url('${getAssetPath('wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+              className={`${authorized
+                  ? raceClasses.bgClass
                   : 'bg-elf-header-bgcolor'
-              } pb-10 pt-2`}
+                } pb-10 pt-2`}
             >
               <h1 className="title text-title text-center text-6xl font-medium">
                 <center>
@@ -115,27 +102,38 @@ const Layout = (props: IMainProps) => {
                   />
                 </center>
               </h1>
-              <h2 className="text-center text-xl" style={{textShadow: '0 -1px'}}>{AppConfig.description}</h2>
+              <h2 className="text-center text-xl" style={{ textShadow: '0 -1px' }}>{AppConfig.description}</h2>
             </div>
-            {authorized ? <NavLoggedIn /> : <NavLoggedOut />}
+            {status === 'loading' ? (
+              <NavSkeleton />
+            ) : authorized ? (
+              <NavLoggedIn />
+            ) : (
+              <NavLoggedOut />
+            )}
           </header>
 
           <main className="lg:container mx-auto h-full grow overflow-y-auto pb-8">
             <div className="flex h-full flex-wrap">
-              {authorized ? (
+              {structureReady ? (
                 <>
-                  <div className="w-full px-3 md:w-1/5" style={{backgroundColor: 'rgba(0,0,0,.5)'}}>
-                    <Sidebar />
-                  </div>
-                  <div
-                    className={`w-full bg-black ${layoutCont.raceClasses.borderClass} px-3 md:w-4/5`}
-                  >
+                  {/* Conditionally render Sidebar based on authentication status */}
+                  {authorized && (
+                    <div className="w-full px-3 md:w-1/5" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                      {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
+                    </div>
+                  )}
+                  {/* Adjust main content width based on authentication status */}
+                  <div className={`w-full bg-black ${raceClasses.borderClass} px-3 ${authorized ? 'md:w-4/5' : 'md:w-full'}`}>
                     <NewsBulletin />
-                    {props.children}
+                    {layoutLoading ? <MainAreaSkeleton /> : props.children}
                   </div>
                 </>
               ) : (
-                <div className="w-full bg-black px-3">{props.children}</div>
+                // Show a minimal placeholder while structure is deciding
+                <div className="w-full bg-black px-3">
+                  <MainAreaSkeleton /> {/* Or a very minimal, full-width placeholder */}
+                </div>
               )}
             </div>
           </main>
@@ -157,7 +155,7 @@ const Layout = (props: IMainProps) => {
               <p><strong>Newest Player:</strong> {onlinePlayerInfo.newestPlayer}</p>
             </>
           )}
-          
+
         </div>
       </footer>
     </div>

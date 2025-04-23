@@ -1,6 +1,7 @@
 import { Loss } from "@/types/typings";
 import toLocale from "@/utils/numberFormatting";
 import { Stack, Chip, Group } from "@mantine/core";
+import RpgAwesomeIcon from "./RpgAwesomeIcon";
 
 interface Stats {
   pillagedGold: number;
@@ -27,17 +28,17 @@ const StatsList: React.FC<StatsListProps> = ({ stats, type, subType, collapsed }
   return collapsed ? (
     <Group align="center" justify="center">
       <Chip>
-        <i className="ra ra-gem ra-fw" /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}
+        <RpgAwesomeIcon icon="gold-bar" fw /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}
       </Chip>
       <Chip>XP: {xp}</Chip>
     </Group>
   ) : (
     <Stack align="center" justify="center" gap="xs">
       <Chip>
-        <i className="ra ra-gem ra-fw" /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}
+          <RpgAwesomeIcon icon="gold-bar" fw /> Gold: {toLocale(stats.pillagedGold.toLocaleString())}
       </Chip>
       <Chip>XP: {xp}</Chip>
-      <Chip>Turns: {stats.turns}</Chip>
+      <Chip>Turns: {stats.turns ?? 0}</Chip>
     </Stack>
   );
 };

@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getSession } from 'next-auth/react';
 import { isAdmin } from '@/utils/authorization';
 import { withAuth } from '@/middleware/auth';
+import { logError } from '@/utils/logger';
 
 export const handler = async(req: NextApiRequest, res: NextApiResponse) => {
   const session = req?.session;
@@ -63,7 +64,7 @@ export const handler = async(req: NextApiRequest, res: NextApiResponse) => {
 
     res.status(200).json({ message: 'Account has been reset', newUserId: newUser.id });
   } catch (error) {
-    console.error('Error resetting account:', error);
+    logError('Error resetting account:', error);
     res.status(500).json({ error: 'Failed to reset account' });
   }
 }

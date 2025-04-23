@@ -8,6 +8,7 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import { IUserSession } from '@/types/typings';
 import { getUpdatedStatus } from '@/services/user.service';
 import { isAdmin, isModerator } from '@/utils/authorization';
+import { logError } from '@/utils/logger';
 
 const argon2 = require('argon2');
 
@@ -108,7 +109,7 @@ export const authOptions: NextAuthOptions = {
         session.user = token.user;
         return session;
       } catch (error) {
-        console.error('Session callback error:', error);
+        logError('Session callback error:', error);
         throw error; 
       }
     },
@@ -126,7 +127,7 @@ export const authOptions: NextAuthOptions = {
         }
         return token;
       } catch (error) {
-        console.error('JWT callback error:', error);
+        logError('JWT callback error:', error);
         throw error;
       }
     },
@@ -160,7 +161,7 @@ export const authOptions: NextAuthOptions = {
 
         // Check if `validateCredentials` returned an error
         if (user && 'error' in user) {
-          console.error(user.error);
+          logError(user.error);
           if (user.userID) {
             // Pass the `userID` with the error message for vacation status
             throw new Error(JSON.stringify({ message: user.error, userID: user.userID }));
@@ -168,11 +169,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error(user.error);
         }
 
-        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && !isAdmin(user.id) && !isModerator(user.id)) {
+        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && !isAdmin((user as any)?.id) && !isModerator((user as any)?.id)) {
           throw new Error('Login is disabled');
         }
 
-        return user;
+        return user as any;
       },
     }),
   ],

@@ -1,10 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { useLayout } from '@/context/LayoutContext';
 import MainArea from '@/components/MainArea';
+import { Center, Loader } from '@mantine/core';
+import router from 'next/router';
+import { useSession } from 'next-auth/react';
 
 const Index = (props) => {
   const { setMeta, meta } = useLayout();
+  const { status } = useSession();
+  const [isRedirecting, setIsRedirecting] = useState(true);
 
   useEffect(() => {
     if (setMeta && meta && meta.title !== 'OpenThrone') {
@@ -14,6 +19,33 @@ const Index = (props) => {
       });
     }
   }, [meta, setMeta]);
+
+  useEffect(() => {
+    // Don't redirect until session status is determined
+    if (status === 'loading') {
+      setIsRedirecting(true); // Keep showing loader while session loads
+      return;
+    }
+
+    if (status === 'authenticated') {
+      // User is logged in, redirect to the dashboard
+      console.log("User authenticated, redirecting to /home/overview");
+      router.replace('/home/overview');
+      setIsRedirecting(true);
+    } else {
+      setIsRedirecting(false);
+    }
+  }, [status]);
+
+  if (status === 'loading' || (status === 'authenticated' && isRedirecting)) {
+    return (
+      <MainArea title="Open Throne">
+        <Center style={{ height: '50vh' }}> {/* Adjust height as needed */}
+          <Loader />
+        </Center>
+      </MainArea>
+    );
+  }
   return (
     <>
       <MainArea

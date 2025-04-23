@@ -5,9 +5,11 @@ import { getSession, updateSessionActivity } from '@/services/sessions.service';
 import { getValidUsersForRecruitment } from '@/services/recruitment.service';
 import mtrand from '@/utils/mtrand';
 import { getIpAddress } from '@/utils/ipUtils';
+import { logError } from '@/utils/logger'; // Import logger at the top
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  const { session } = req;
+  // Cast req to any to access session property added by middleware
+  const { session } = req as any;
   const recruiterID = session ? parseInt(session.user?.id.toString()) : 0;
   const { sessionId } = req.body;
 
@@ -33,31 +35,48 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
   const { usersLeft, activeUsers: validUsers } = result;
 
-  if (!validUsers || usersLeft.length === 0) {
+  // Calculate total remaining recruits *before* filtering, ensuring usersLeft is an array
+  const totalRecruitsLeft = Array.isArray(usersLeft)
+    ? usersLeft.reduce((sum, { remainingRecruits }) => sum + remainingRecruits, 0)
+    : 0;
+
+  // Filter usersLeft to only include those who can still be recruited by the recruiter today, ensuring usersLeft is an array
+  const actuallyRecruitableUsers = Array.isArray(usersLeft)
+    ? usersLeft.filter(user => user.remainingRecruits > 0)
+    : [];
+
+  if (!validUsers || actuallyRecruitableUsers.length === 0) {
+    // Send a specific status/error if no one is left *to be recruited by this user*
     return res.status(404).json({
       randomUser: null,
-      error: 'No valid users available for recruitment.',
-      recruitsLeft: usersLeft.reduce((sum, { remainingRecruits }) => sum + remainingRecruits, 0),
+      error: 'NO_RECRUITABLE_USERS_FOUND', // Specific error code for frontend
+      recruitsLeft: 0, // No one recruitable *by you* is left
       totalPlayerCount: validUsers.length,
-      maxRecruitsExpected: validUsers.length * 5, });
+      maxRecruitsExpected: validUsers.length * 5,
+    });
   }
 
-  const randomUserIndex = Math.floor(mtrand(0, usersLeft.length - 1));
-  const randomUser = usersLeft[randomUserIndex];
+  // Select a random user from the *filtered* list
+  const randomUserIndex = Math.floor(mtrand(0, actuallyRecruitableUsers.length - 1));
+  const randomUser = actuallyRecruitableUsers[randomUserIndex];
 
+  // This check should theoretically not be needed now, but keep as safeguard
   if (!randomUser) {
-    return res.status(404).json({ error: `No valid users available for recruitment.2 ${usersLeft}`});
+     logError('Failed to select a random user even though actuallyRecruitableUsers was not empty.', { actuallyRecruitableUsers });
+     return res.status(500).json({ error: 'Internal error selecting recruitable user.' });
   }
 
   return res.status(200).json({
-    randomUser: {
+    randomUser: { // Send the selected recruitable user
       ...randomUser.user,
       remainingRecruits: randomUser.remainingRecruits,
     },
-    recruitsLeft: usersLeft.reduce((sum, { remainingRecruits }) => sum + remainingRecruits, 0),
+    recruitsLeft: totalRecruitsLeft, // Report the total remaining across all users initially fetched
     totalPlayerCount: validUsers.length,
     maxRecruitsExpected: validUsers.length * 5,
   });
 };
+
+// Removed duplicate imports from here
 
 export default withAuth(handler, true);

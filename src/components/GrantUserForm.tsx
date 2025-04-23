@@ -37,7 +37,7 @@ const GrantUserForm = () => {
         permissions: user.permissions
       }));
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      logError("Failed to fetch users:", error);
       return [];
     } finally {
       setLoading(false);
@@ -51,7 +51,7 @@ const GrantUserForm = () => {
       const users = await fetchUsers(query);
       setUsersData(users);
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      logError("Failed to fetch users:", error);
     }
   }, 300);
 

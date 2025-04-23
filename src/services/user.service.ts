@@ -161,3 +161,24 @@ export const getUpdatedStatus = async (userId: number) => {
   // Return the current status
   return statusHistory.status;
 };
+
+export const updateLastActive = async ({ email, userId, displayName }: { email?: string; userId?: number; displayName?: string }) => {
+  if (!email && !userId && !displayName) {
+    throw new Error('At least one identifier (email, userId, or displayName) must be provided');
+  }
+
+  if (email && typeof email !== 'string') {
+    throw new Error('Email must be a string');
+  }
+  if (userId && typeof userId !== 'number') {
+    throw new Error('UserId must be a number');
+  }
+  if (displayName && typeof displayName !== 'string') {
+    throw new Error('DisplayName must be a string');
+  }
+
+  return prisma.users.update({
+    where: email ? { email } : userId ? { id: userId } : { display_name: displayName },
+    data: { last_active: new Date() },
+  });
+};

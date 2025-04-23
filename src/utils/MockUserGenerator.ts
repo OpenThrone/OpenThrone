@@ -1,4 +1,5 @@
 import { Unit, Item, UnitUpgradeType, User, PlayerUnit, PlayerItem, PlayerBattleUpgrade } from "@/types/typings";
+import { getLevelFromXP } from "./utilities";
 
 export default class MockUserGenerator {
   private user: User;
@@ -116,9 +117,10 @@ export default class MockUserGenerator {
   }
 
   addItems(itemsToAdd: PlayerItem[]): this {
+
     itemsToAdd.forEach((itemToAdd) => {
       const existingItem = this.user.items.find(
-        (item) => item.type === itemToAdd.type && item.level === itemToAdd.level
+        (item) => item.type === itemToAdd.type && item.level === itemToAdd.level && item.usage === itemToAdd.usage
       );
       if (existingItem) {
         existingItem.quantity += itemToAdd.quantity;
@@ -171,6 +173,12 @@ export default class MockUserGenerator {
 
   addExperience(amount: number): this {
     this.user.experience += amount;
+    return this;
+  }
+
+  setExperience(amount: number): this {
+    this.user.experience = amount;
+    this.user.level = getLevelFromXP(this.user.experience);
     return this;
   }
 
@@ -246,6 +254,11 @@ export default class MockUserGenerator {
 
   setSentryUpgrade(level: number): this {
     return this.setStructureUpgrade('SENTRY', level);
+  }
+
+  setLevel(level: number): this {
+    this.user.level = level;
+    return this;
   }
 
   setArmoryUpgrade(level: number): this {

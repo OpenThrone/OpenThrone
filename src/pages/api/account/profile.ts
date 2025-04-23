@@ -8,6 +8,8 @@ import mime from 'mime-types';
 import { stringifyObj } from '@/utils/numberFormatting';
 import imageSize from 'image-size';
 import { withAuth } from '@/middleware/auth';
+import { logError } from "@/utils/logger";
+import { AuthenticatedRequest } from "@/types/api";
 
 // Function to save the uploaded file to the local file system
 const saveToLocal = async (file: formidable.File, userId: number): Promise<string> => {
@@ -55,7 +57,7 @@ export const config = {
   },
 };
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
     const form = formidable({ multiples: false, maxFileSize: 1.5 * 1024 * 1024 })
     form.uploadDir = path.join(process.cwd(), 'temp');
@@ -63,7 +65,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     form.parse(req, async (err, fields, files) => {
       if (err) {
-        console.error('Error parsing the form: ', err);
+        logError('Error parsing the form: ', err);
         return res.status(500).json({ error: err.message });
       }
 
@@ -78,8 +80,20 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       if (file) {
+        // Check MIME type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        const mimeType = mime.lookup(file.originalFilename || '') || '';
+        if (!allowedTypes.includes(mimeType)) {
+          return res.status(400).json({ error: 'Only image files (jpg, png, gif, webp) are allowed.' });
+        }
+
         // Check image dimensions
-        const dimensions = imageSize(file.filepath);
+        let dimensions;
+        try {
+          dimensions = imageSize(file.filepath);
+        } catch (e) {
+          return res.status(400).json({ error: 'Uploaded file is not a valid image.' });
+        }
         if (dimensions.width > 450 || dimensions.height > 450) {
           return res.status(400).json({ error: 'Image dimensions must not exceed 450x450px.' });
         }
@@ -96,7 +110,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             updateData.avatar = filePath;
           }
         } catch (uploadError) {
-          console.error('Error uploading avatar:', uploadError);
+          logError('Error uploading avatar:', uploadError);
           return res.status(500).json({ error: 'Error uploading avatar' });
         }
       }
@@ -113,7 +127,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
         return res.status(200).json({ status: 'success', data: stringifyObj({ updated }) });
       } catch (updateError) {
-        console.error('Error updating user:', updateError);
+        logError('Error updating user:', updateError);
         return res.status(500).json({ error: 'Error updating user profile' });
       }
     });

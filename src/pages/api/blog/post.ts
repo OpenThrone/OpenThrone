@@ -1,6 +1,7 @@
 
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
+import { logError } from '@/utils/logger';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -22,7 +23,7 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
     });
     res.status(200).json(newPost);
   } catch (error) {
-    console.error('Error creating new post:', error);
+    logError('Error creating new post:', error);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 }

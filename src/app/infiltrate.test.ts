@@ -1,8 +1,7 @@
 import UserModel from "@/models/Users";
-import { simulateBattle } from "../utils/attackFunctions";
 import { simulateAssassination, simulateInfiltration, simulateIntel } from "../utils/spyFunctions";
-import mtRand from "@/utils/mtrand";
 import { stringifyObj } from "@/utils/numberFormatting";
+import { logInfo } from "@/utils/logger";
 
 const defense = {
   "id": 84,
@@ -532,15 +531,15 @@ describe('Infiltration Test', () => {
       units: defense.units.filter(unit => (unit.type === 'DEFENSE' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
     });
     const battle = await simulateInfiltration(equalAttacker, equalDefender, 3 );
-    //console.log('battle: ', battle)
-    console.log('Sies sent: ', battle.spiesSent);
-    console.log(`We ${(battle.success ? 'won so noone dies, but we do damage to thier fort' : 'lost, so we lose all spies')}`);
-    console.log('Spy Off: ', battle.attacker.spy, "Spy Def: ", battle.defender.sentry, "FortHP: ", battle.defender.fortHitpoints)
-    console.log('Fort DMG:', battle.fortDmg)
+    //logInfo('battle: ', battle)
+    logInfo('Sies sent: ', battle.spiesSent);
+    logInfo(`We ${(battle.success ? 'won so noone dies, but we do damage to thier fort' : 'lost, so we lose all spies')}`);
+    logInfo('Spy Off: ', battle.attacker.spy, "Spy Def: ", battle.defender.sentry, "FortHP: ", battle.defender.fortHitpoints)
+    logInfo('Fort DMG:', battle.fortDmg)
     expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
     expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
-    console.log('Starting Fort HP:', defensePlayer.fortHitpoints, "Ending Fort HP:", battle.defender.fortHitpoints)
-    console.log('battle ended');
+    logInfo('Starting Fort HP:', defensePlayer.fortHitpoints, "Ending Fort HP:", battle.defender.fortHitpoints)
+    logInfo('battle ended');
   })
 
   it('should simulate an infiltration against a substantially stronger opponent. ', async () => {
@@ -560,18 +559,18 @@ describe('Infiltration Test', () => {
       units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 10000 }))
     });
     const battle = await simulateInfiltration(equalAttacker, equalDefender, 3);
-    //console.log('battle: ', battle)
-    console.log('Sies sent: ', battle.spiesSent);
-    console.log(`We ${(battle.success ? 'won so noone dies, but we do damage to thier fort' : 'lost, so we lose all spies')}`);
-    if (!battle.sucess) console.log(`Spies lost: ${battle.spiesLost}`);
-    console.log('Spy Off: ', battle.attacker.spy, "Spy Def: ", battle.defender.sentry, "FortHP: ", battle.defender.fortHitpoints)
-    console.log('Fort DMG:', battle.fortDmg)
-    console.log('Starting Units:', attackPlayer.units, "Ending Units:", battle.attacker.units)
+    //logInfo('battle: ', battle)
+    logInfo('Sies sent: ', battle.spiesSent);
+    logInfo(`We ${(battle.success ? 'won so noone dies, but we do damage to thier fort' : 'lost, so we lose all spies')}`);
+    if (!battle.sucess) logInfo(`Spies lost: ${battle.spiesLost}`);
+    logInfo('Spy Off: ', battle.attacker.spy, "Spy Def: ", battle.defender.sentry, "FortHP: ", battle.defender.fortHitpoints)
+    logInfo('Fort DMG:', battle.fortDmg)
+    logInfo('Starting Units:', attackPlayer.units, "Ending Units:", battle.attacker.units)
     expect(equalAttacker.units).toBe(battle.attacker.units);
     expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
     expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
-    console.log('Starting Fort HP:', defensePlayer.fortHitpoints, "Ending Fort HP:", battle.defender.fortHitpoints)
-    console.log('battle ended');
+    logInfo('Starting Fort HP:', defensePlayer.fortHitpoints, "Ending Fort HP:", battle.defender.fortHitpoints)
+    logInfo('battle ended');
   })
   it('should simulate an infiltration against a equal opponent. ', async () => {
     const attackPlayer = JSON.parse(JSON.stringify(stringifyObj(attacker)));
@@ -588,8 +587,8 @@ describe('Infiltration Test', () => {
       units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1)).map(unit => ({ ...unit, quantity: 1000 }))
     });
     const battle = await simulateInfiltration(equalAttacker, equalDefender, 3);
-    //console.log('battle: ', battle)
-    if (!battle.sucesss) console.log(`Spies lost: ${battle.spiesLost}`);
+    //logInfo('battle: ', battle)
+    if (!battle.sucesss) logInfo(`Spies lost: ${battle.spiesLost}`);
     expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
     expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
   })
@@ -634,13 +633,13 @@ describe('Infiltration Test', () => {
       units: defense.units.filter(unit => (unit.type === 'SENTRY' && unit.level === 1) || (unit.type === 'WORKER')).map(unit => ({ ...unit, quantity: 10 }))
     });
 
-    console.log(equalDefender.unitTotals.citizens + equalDefender.unitTotals.workers)
+    logInfo(equalDefender.unitTotals.citizens + equalDefender.unitTotals.workers)
     const battle = await simulateAssassination(equalAttacker, equalDefender, 3, 'CITIZEN/WORKERS');
     
     expect(battle.success === true).toBe(true);
-    console.log(equalDefender.unitTotals.citizens + equalDefender.unitTotals.workers)
-    //console.log('battle: ', battle)
-    //if (!battle.sucesss) console.log(`Spies lost: ${battle.spiesLost}`);
+    logInfo(equalDefender.unitTotals.citizens + equalDefender.unitTotals.workers)
+    //logInfo('battle: ', battle)
+    //if (!battle.sucesss) logInfo(`Spies lost: ${battle.spiesLost}`);
     //expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
     //expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
   })*/
@@ -665,24 +664,24 @@ describe('Infiltration Test', () => {
         return { ...item, quantity: 1000000 }
       })
     });
-    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
+    logInfo(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
     const intelMission = await simulateIntel(equalAttacker, equalDefender, 10);
     expect(intelMission.success === false).toBe(true);
     expect(intelMission.spiesLost === intelMission.spiesSent).toBe(true);
 
-    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
+    logInfo(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
     
     const infiltrationMission = await simulateInfiltration(equalAttacker, equalDefender, 5);
   
     expect(infiltrationMission.success === false).toBe(true);
     expect(infiltrationMission.spiesLost).toBeGreaterThanOrEqual(infiltrationMission.spiesSent - 1); // Almost all spies should be lost.
 
-    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
+    logInfo(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
     const assassinationMission = await simulateAssassination(equalAttacker, equalDefender, 1, 'CITIZEN/WORKERS');
     expect(assassinationMission.success === false).toBe(true);
     expect(infiltrationMission.spiesLost).toBeGreaterThanOrEqual(infiltrationMission.spiesSent - 1); // Almost all spies should be lost.
 
-    console.log(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
+    logInfo(equalAttacker.units.filter(unit => unit.type === 'SPY').map(unit => unit.quantity))
   })
 
 })

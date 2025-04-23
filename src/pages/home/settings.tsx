@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from "react";
-import Alert from "@/components/alert";
 import { raceClasses, useLayout } from "@/context/LayoutContext";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services";
@@ -197,7 +196,7 @@ const Settings = (props) => {
             />
             {!passwordsMatch && (
               <Text color="red" size="xs">
-                Passwords don't match.
+                Passwords don&apos;t match.
               </Text>
             )}
               <Space h="md" />

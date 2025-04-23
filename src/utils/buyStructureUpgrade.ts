@@ -1,4 +1,5 @@
 import { alertService } from '@/services';
+import { logError } from './logger';
 
 // utils/buyStructureUpgrade.js
 const buyUpgrade = async (currentPage: string, index: number, forceUpdate: () => void) => {
@@ -20,8 +21,8 @@ const buyUpgrade = async (currentPage: string, index: number, forceUpdate: () =>
     alertService.success(data.message);
   } else {
     // Handle errors
-    console.error(data?.error || data?.message);
-    alertService.error(data?.error || data?.message);
+    logError("Error Buying Upgrade", data.error);
+    alertService.error(data?.error);
   }
 };
 

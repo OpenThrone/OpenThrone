@@ -60,7 +60,7 @@ const Browse = (props) => {
         const data = await response.json();
         setAlliances(data);
       } catch (error) {
-        console.error('Failed to fetch alliances:', error);
+        logError('Failed to fetch alliances:', error);
       }
     };
 

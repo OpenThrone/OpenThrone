@@ -157,6 +157,21 @@ module.exports = {
           900: '#2a4365',
         },
       },
+      keyframes: {
+        'pulse-slow': {  // Use quotes for the property name with hyphen
+          '0%, 100%': {
+            opacity: 1,
+            boxShadow: '0 0 10px rgba(234, 179, 8, 0.3)',
+          },
+          '50%': {
+            opacity: 0.9,
+            boxShadow: '0 0 15px rgba(234, 179, 8, 0.5)',
+          },
+        },
+      },
+      animation: {
+        'pulse-slow': 'pulse-slow 3s infinite',
+      },
     },
   },
   plugins: [

@@ -1,11 +1,13 @@
 // pages/api/armory/convert.ts
-import type { NextApiRequest, NextApiResponse } from "next";
+import type { NextApiResponse } from "next"; // Removed NextApiRequest
 import prisma from "@/lib/prisma";
 import { ItemTypes } from "@/constants";
 import { withAuth } from "@/middleware/auth";
+import type { AuthenticatedRequest } from '@/types/api'; // Import AuthenticatedRequest
 import UserModel from "@/models/Users";
 import { updateUserAndBankHistory } from "@/services";
 import { calculateUserStats } from "@/utils/utilities";
+import { logDebug, logError } from "@/utils/logger";
 
 interface ConvertRequest {
   userId: string;
@@ -15,7 +17,15 @@ interface ConvertRequest {
   locale?: string; // Optional locale parameter
 }
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+// Define the structure of items within the user.items array
+interface UserItem {
+  type: string;
+  usage: string;
+  level: number;
+  quantity: number | string; // Allow string initially due to potential DB inconsistencies
+}
+
+const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => { // Use AuthenticatedRequest
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -33,6 +43,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    // Assert user.items is an array of UserItem
+    // We use a type assertion here because Prisma types JSON fields broadly.
+    // Ensure the default value and any updates maintain this structure.
+    // Cast through 'unknown' for stricter type safety.
+    const userItems = user.items as unknown as UserItem[];
 
     const amount = Number(conversionAmount);
     const uModel = new UserModel(user);
@@ -53,10 +69,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Fetch user's items and perform the conversion logic here
-    const fromItemData = user.items.find(
+    const fromItemData = userItems.find(
       (item) => item.type === fromItemType.type && item.usage === fromUsage && item.level === fromItemType.level
     );
-    let toItemData = user.items.find(
+    let toItemData = userItems.find(
       (item) => item.type === toItemType.type && item.usage === toUsage && item.level === toItemType.level
     );
     if (!toItemType || !fromItemType) {
@@ -75,12 +91,17 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         level: toItemType.level,
         quantity: 0, // Initialize with 0 quantity
       };
-      user.items.push(toItemData as any); // Add it to user's items
+      userItems.push(toItemData); // Add it to user's items
     }
 
-    const isUpgrade = fromItemData.level < toItemData.level ? true : false;
-    
-    if (!fromItemData || fromItemData.quantity < amount) {
+    // Ensure fromItemData exists before accessing its level
+    if (!fromItemData) {
+      return res.status(400).json({ error: 'Source item not found for user.' });
+    }
+    const isUpgrade = fromItemData.level < toItemData.level;
+
+    // Ensure quantity is treated as a number for comparison
+    if (!fromItemData || Number(fromItemData.quantity) < amount) {
       return res.status(400).json({ error: 'Not enough items to convert' });
     }
 
@@ -108,16 +129,23 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // Deduct items and add/remove gold based on conversion direction
-    fromItemData.quantity -= amount;
+    // Store the original quantity of the target item before modification
+    const previousToItemQuantity = toItemData ? Number(toItemData.quantity) : 0;
+
+    // Ensure quantity is treated as a number before subtraction
+    fromItemData.quantity = Number(fromItemData.quantity) - amount;
     if (toItemData) {
-      toItemData.quantity += amount;
+      // Ensure quantity is treated as a number before addition
+      toItemData.quantity = previousToItemQuantity + amount; // Use stored previous quantity for calculation
     } else {
-      user.items.push({
+      // This case should technically not be hit if !toItemData check above creates it
+      // But adding for safety, ensuring correct type.
+      userItems.push({
         type: toItemType.type,
         usage: toUsage,
         level: toItemType.level,
         quantity: amount,
-      } as any);
+      });
     }
     if (isUpgrade) {
       user.gold = BigInt(user.gold) - BigInt(cost);
@@ -126,14 +154,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const conversion = await prisma.$transaction(async (tx) => {
+      // Pass the modified userItems array
       const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
-        calculateUserStats(user, JSON.parse(JSON.stringify(user.items)), 'items');
+        calculateUserStats(user, userItems, 'items');
 
+      logDebug(`Converting items: ${fromItem} to ${toItem}, amount: ${amount}, cost: ${cost}`);
       await updateUserAndBankHistory(
         tx,
         user.id,
         user.gold,
-        JSON.parse(JSON.stringify(user.items)),
+        userItems, // Pass the typed array
         killingStrength,
         defenseStrength,
         newOffense,
@@ -152,7 +182,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             type: 'ARMORY_CONVERSION',
             fromItem: fromItem,
             toItem: toItem,
-            amount: conversionAmount,
+            amount: amount, // Log the numeric amount
+            previousToItemQuantity: previousToItemQuantity, // Log the previous quantity
           },
         },
         'items'
@@ -161,10 +192,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     return res.status(200).json({
       message: 'Conversion successful',
-      data: user.items,
+      data: userItems, // Return the modified array
     });
   } catch (error) {
-    console.error(error);
+    logError(error);
     return res.status(500).json({ error: 'Failed to perform conversion' });
   }
 };

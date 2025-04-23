@@ -1,7 +1,8 @@
 import { levelXPArray, UnitTypes } from '@/constants';
 import UserModel from '@/models/Users';
-import type { PlayerRace, UnitType } from '@/types/typings';
-import { newCalculateStrength } from './attackFunctions';
+import type { PlayerRace, UnitType, User } from '@/types/typings';
+import { calculateStrength } from './attackFunctions';
+import { createHash, webcrypto } from 'crypto';
 
 /**
    * Returns the name of a unit based on its type and level.
@@ -14,6 +15,41 @@ const getUnitName = (type: UnitType, level: number): string => {
   return unit ? unit.name : 'Unknown';
 };
 
+/**
+   * Converts a UserModel instance to a user object.
+   * @param user - The UserModel instance to convert.
+   * @returns The converted user object.
+   */
+export const userModelToUser = (user: UserModel): Partial<User> => {
+  return {
+    id: user.id,
+    email: user.email,
+    password_hash: user.passwordHash,
+    display_name: user.displayName,
+    race: user.race,
+    class: user.class,
+    experience: user.experience,
+    gold: BigInt(user.gold),
+    gold_in_bank: BigInt(user.goldInBank || 0),
+    fort_level: user.fortLevel,
+    fort_hitpoints: user.fortHitpoints,
+    house_level: user.houseLevel,
+    economy_level: user.economyLevel,
+    items: user.items,
+    units: user.units,
+    battle_upgrades: (user.battle_upgrades || []).map(upgrade => ({
+      ...upgrade,
+      quantity: upgrade.quantity || 0
+    })),
+    structure_upgrades: user.structure_upgrades,
+    bonus_points: user.bonus_points || [],
+    stats: user.stats || [],
+    offense: user.offense,
+    defense: user.defense,
+    spy: user.spy,
+    sentry: user.sentry,
+  }
+}
 /**
    * Formats a timestamp into a human-readable date and time string.
    * @param timestamp - The timestamp to format.
@@ -153,7 +189,7 @@ const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | '
   }
 
   const newUModel = new UserModel(newUserData);
-  const { killingStrength, defenseStrength } = newCalculateStrength(newUModel, 'OFFENSE');
+  const { killingStrength, defenseStrength } = calculateStrength(newUModel, 'OFFENSE');
 
   return {
     killingStrength,
@@ -191,6 +227,20 @@ export const idleThresholdDate = (days = 60) => { //60days is default
  */
 export const atLeastZero = (value: number):number => {
   return Math.max(0, value);
+}
+
+export const getSHA256Key = (secret: string) => {
+  return createHash("sha256").update(secret).digest();
+}
+
+export async function importKey(rawKey: Buffer) {
+  return await webcrypto.subtle.importKey(
+    "raw",
+    rawKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["decrypt"]
+  );
 }
 
 export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats, serializeDates };

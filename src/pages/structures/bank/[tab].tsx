@@ -1,20 +1,19 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import {
-  Paper,
   Tabs,
   SimpleGrid,
   Text,
   Space,
-  ThemeIcon,
   Flex,
-  Divider,
   rem,
 } from '@mantine/core';
 import {
   BiCoinStack,
+  BiLineChart,
   BiMoney,
   BiSolidBank,
+  BiUserCircle,
 } from 'react-icons/bi';
 
 import MainArea from '@/components/MainArea';
@@ -27,6 +26,9 @@ import BankHistoryFilters from '@/components/BankHistoryFilters';
 import BankHistoryTable from '@/components/BankHistoryTable';
 import { EconomyUpgrades } from '@/constants';
 import { useLocalStorage } from '@mantine/hooks';
+import { logError } from '@/utils/logger';
+import BankCard from '@/components/StatCard';
+import ContentCard from '@/components/ContentCard';
 
 const defaultFilters = {
   deposits: true,
@@ -40,7 +42,7 @@ const defaultFilters = {
   fortification: true,
   daily: true,
 };
-export default function Bank() {
+export default function Bank(props) {
   const tab = usePathname()?.split('/')[3];
   const router = useRouter();
   const [filters, setFilters] = useLocalStorage({
@@ -136,7 +138,7 @@ export default function Bank() {
           setMessage('');
         })
         .catch((error) => {
-          console.error('Error fetching bank history:', error);
+          logError('Error fetching bank history:', error);
           setMessage('Failed to fetch data');
         });
     }
@@ -160,7 +162,7 @@ export default function Bank() {
             setMessage('');
           })
           .catch((error) => {
-            console.error('Error fetching bank history:', error);
+            logError('Error fetching bank history:', error);
             setMessage('Failed to fetch data');
           });
       } else {
@@ -179,7 +181,7 @@ export default function Bank() {
         setMessage('');
       })
       .catch((error) => {
-        console.error('Error fetching deposits:', error);
+        logError('Error fetching deposits:', error);
         setMessage('Failed to fetch deposits');
       });
   }, [currentPage, filters, user, page, limit]);
@@ -192,72 +194,41 @@ export default function Bank() {
 
   return (
     <MainArea title="Bank">
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
-        <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <div className="flex items-center justify-between">
-            <Text size="lg" fw="bold" c="dimmed">
-              Gold On Hand
-            </Text>
-            <ThemeIcon c="white">
-              <BiCoinStack style={{ width: rem(15), height: rem(15) }} />
-            </ThemeIcon>
-          </div>
-          <div className="flex items-end gap-2 mt-2">
-            <Text>
-              {parseInt(user?.gold?.toString() ?? '0').toLocaleString()}
-            </Text>
-          </div>
-        </Paper>
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} gap="lg" verticalgap="xl">
+        {/* Gold On Hand Card */}
+        <BankCard
+          title="Gold On Hand"
+          value={parseInt(user?.gold?.toString() ?? '0')}
+          icon={<BiCoinStack style={{ width: rem(15), height: rem(15) }} />}
+          variant="default"
+        />
 
-        <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <div className="flex items-center justify-between">
-            <Text size="lg" fw="bold" c="dimmed">
-              Banked Gold
-            </Text>
-            <ThemeIcon c="white">
-              <BiSolidBank style={{ width: rem(15), height: rem(15) }} />
-            </ThemeIcon>
-          </div>
-          <div className="flex items-end gap-2 mt-2">
-            <Text>
-              {parseInt(user?.goldInBank?.toString() ?? '0').toLocaleString()}
-            </Text>
-          </div>
-        </Paper>
+        {/* Banked Gold Card */}
+        <BankCard
+          title="Banked Gold"
+          value={parseInt(user?.goldInBank?.toString() ?? '0')}
+          icon={<BiSolidBank style={{ width: rem(15), height: rem(15) }} />}
+          variant="default"
+        />
 
-        <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <div className="flex items-center justify-between">
-            <Text size="lg" fw="bold" c="dimmed">
-              Daily Deposits
-            </Text>
-            <ThemeIcon c="white">
-              <BiMoney style={{ width: rem(15), height: rem(15) }} />
-            </ThemeIcon>
-          </div>
-          <div className="flex items-end gap-2 mt-2">
-            <Text>{depositsMax}</Text>
-          </div>
-        </Paper>
+        {/* Daily Deposits Card */}
+        <BankCard
+          title="Daily Deposits"
+          value={depositsMax}
+          icon={<BiMoney style={{ width: rem(15), height: rem(15) }} />}
+          variant="default"
+        />
 
-        <Paper withBorder p="sm" radius="md" className={classes.card}>
-          <div className="flex items-center justify-between">
-            <Text size="lg" fw="bold" c="dimmed">
-              Deposits Available
-            </Text>
-            <ThemeIcon c="white">
-              <BiMoney style={{ width: rem(15), height: rem(15) }} />
-            </ThemeIcon>
-          </div>
-          <div className="flex items-end gap-2 mt-2">
-            <Text>{despositsAvailable}</Text>
-          </div>
-          {despositsAvailable < depositsMax && (
-            <Text size="sm" c="dimmed">
-              Next deposit available in {nextDepositAvailable.hours}:
-              {nextDepositAvailable.minutes}
-            </Text>
-          )}
-        </Paper>
+        {/* Deposits Available Card */}
+        <BankCard
+          title="Deposits Available"
+          value={despositsAvailable}
+          icon={<BiMoney style={{ width: rem(15), height: rem(15) }} />}
+          variant={despositsAvailable > 0 ? "pulse" : "default"}
+          subtext={despositsAvailable < depositsMax ? 
+            `Next deposit available in ${nextDepositAvailable.hours}:${nextDepositAvailable.minutes}` : 
+            undefined}
+        />
       </SimpleGrid>
 
       <Space h="md" />
@@ -336,7 +307,10 @@ export default function Bank() {
       )}
 
       {currentPage === 'history' && (
-        <div>
+        <ContentCard
+        title="Bank History"
+        icon={<BiSolidBank style={{ width: rem(15), height: rem(15) }} />}
+        >
           {/* Filters */}
           <BankHistoryFilters
             colorScheme={colorScheme}
@@ -356,86 +330,102 @@ export default function Bank() {
             page={page}
             totalPages={totalPages}
           />
-        </div>
+        </ContentCard>
       )}
 
       {currentPage === 'economy' && (
-        <Flex>
+        <Flex gap="md" direction={{ base: 'column', sm: 'row' }}>
           {/* Workers Card */}
-          <Paper className="w-1/2 rounded-lg p-6" shadow="md">
-            <h3 className="text-xl font-semibold">Workers</h3>
-            <Divider my="md" />
-            <div className="space-y-2">
-              <Flex justify="space-between">
-                <Text size="md">Total Workers:</Text>
-                <Text size="sm">{citizenUnit || 0}</Text>
-              </Flex>
-              <Text c="dimmed" size="sm">
-                To increase your workforce, visit the training page.
-              </Text>
-              <Flex justify="space-between">
-                <Text size="md">Gold Per Worker:</Text>
-                <Text size="sm">
-                  {user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn
+          <ContentCard 
+            title="Workers"
+            icon={<BiUserCircle style={{ width: rem(15), height: rem(15) }} />}
+            className="flex-1"
+          >
+            <div className="space-y-4">
+              <div>
+                <Flex justify="space-between" align="center" mb={8}>
+                  <Text fw={500}>Total Workers:</Text>
+                  <Text>{citizenUnit || 0}</Text>
+                </Flex>
+                <Text c="dimmed" size="sm">
+                  To increase your workforce, visit the training page.
                 </Text>
-              </Flex>
-              <Text c="dimmed" size="sm">
-                Upgrade your economy structure to increase gold per worker.
-              </Text>
+              </div>
+              
+              <div>
+                <Flex justify="space-between" align="center" mb={8}>
+                  <Text fw={500}>Gold Per Worker:</Text>
+                  <Text>{user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn</Text>
+                </Flex>
+                <Text c="dimmed" size="sm">
+                  Upgrade your economy structure to increase gold per worker.
+                </Text>
+              </div>
             </div>
-          </Paper>
-
-          <Space w="md" />
+          </ContentCard>
 
           {/* Operations Card */}
-          <Paper className="w-1/2 rounded-lg p-6" shadow="md">
-            <h3 className="text-xl font-semibold">Operations</h3>
-            <Divider my="md" />
+          <ContentCard 
+            title="Operations"
+            icon={<BiLineChart style={{ width: rem(15), height: rem(15) }} />}
+            className="flex-1"
+          >
             <div className="space-y-4">
-              <div className="flex justify-between">
-                <strong>Current Economy Upgrade:</strong>
-                <span>
-                  {
-                    EconomyUpgrades.find(
-                      (eu) => eu.index === user?.economyLevel
-                    )?.name
-                  }
-                </span>
+              <div>
+                <Flex justify="space-between" align="center" mb={8}>
+                  <Text fw={500}>Current Economy Upgrade:</Text>
+                  <Text>
+                    {EconomyUpgrades.find((eu) => eu.index === user?.economyLevel)?.name}
+                  </Text>
+                </Flex>
+                <Text c="dimmed" size="sm">
+                  This Upgrade increases bank deposits or gold per worker
+                </Text>
               </div>
-              <div className="mt-6 text-sm text-gray-600">
-                This Upgrade increases bank deposits or gold per worker
+              
+              <div>
+                <Flex justify="space-between" align="center" mb={8}>
+                  <Text fw={500}>Fortification Gold Per Turn:</Text>
+                  <Text>{user?.fortificationGoldPerTurn.toLocaleString()}</Text>
+                </Flex>
+                <Text c="dimmed" size="sm">
+                  As fortification upgrades, fort gold per turn increases
+                </Text>
               </div>
-              <div className="flex justify-between">
-                <strong>Fortification Gold Per Turn:</strong>
-                <span>{user?.fortificationGoldPerTurn.toLocaleString()}</span>
+              
+              <div>
+                <Flex justify="space-between" align="center" mb={8}>
+                  <Text fw={500}>Worker Gold Per Turn:</Text>
+                  <Text>{user?.workerGoldPerTurn.toLocaleString()}</Text>
+                </Flex>
+                <Text c="dimmed" size="sm">
+                  Increase this by training more workers & upgrading economy
+                </Text>
               </div>
-              <div className="mt-6 text-sm text-gray-600">
-                As fortification upgrades, fort gold per turn increases
+              
+              <div>
+                <Flex justify="space-between" align="center" mb={8}>
+                  <Text fw={500}>Total Gold Per Turn:</Text>
+                  <Text>{user?.goldPerTurn.toLocaleString()}</Text>
+                </Flex>
+                <Text c="dimmed" size="sm">
+                  Includes workers, fort gold, and additional wealth bonus
+                </Text>
               </div>
-              <div className="flex justify-between">
-                <strong>Worker Gold Per Turn:</strong>
-                <span>{user?.workerGoldPerTurn.toLocaleString()}</span>
-              </div>
-              <div className="mt-6 text-sm text-gray-600">
-                Increase this by training more workers & upgrading economy
-              </div>
-              <div className="flex justify-between">
-                <strong>Total Gold Per Turn: </strong>
-                <span>{user?.goldPerTurn.toLocaleString()}</span>
-              </div>
-              <div className="mt-6 text-sm text-gray-600">
-                Includes workers, fort gold, and additional wealth bonus
-              </div>
-              <div className="flex justify-between">
-                <strong>Daily Income:</strong>
-                <span>
-                  {(
-                    (BigInt(user?.goldPerTurn?.toString() || '0') * BigInt(48)) ?? BigInt(0)
-                  ).toLocaleString()}
-                </span>
+              
+              <div>
+                <Flex justify="space-between" align="center" mb={8}>
+                  <Text fw={500}>Daily Income:</Text>
+                  <Text>
+                    {((BigInt(user?.goldPerTurn?.toString() || '0') * BigInt(48)) ?? BigInt(0)).toLocaleString()}
+                  </Text>
+                </Flex>
+                <Text c="dimmed" size="sm">
+                  Based on 48 turns per day
+                </Text>
               </div>
             </div>
-          </Paper>
+          </ContentCard>
         </Flex>
       )}
     </MainArea>

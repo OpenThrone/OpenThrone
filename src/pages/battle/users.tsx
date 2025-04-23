@@ -9,6 +9,7 @@ import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center, Butto
 import { InferGetServerSidePropsType } from "next";
 import { usePagination } from '@mantine/hooks';
 import MainArea from '@/components/MainArea';
+import { logError } from '@/utils/logger';
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const searchParams = useSearchParams();
@@ -43,6 +44,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   };
 
   useEffect(() => {
+    if(!user) return;
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
     let sortedPlayers = [...allUsers];
@@ -72,7 +74,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     setMyPage(playerPage);
     setMyRank(loggedInPlayerIndex + 1);
 
-  }, [page, sortBy, sortDir, allUsers, rowsPerPage]);
+  }, [page, sortBy, sortDir, allUsers, rowsPerPage, user]);
 
 
   useEffect(() => {
@@ -198,7 +200,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           ))}
         </Group>
         <Table.ScrollContainer minWidth={400}>
-          <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
+          <Table verticalgap={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th className="px-1 py-1" style={{ width: '100px' }}>{getRankLabel()}</Table.Th>
@@ -343,7 +345,7 @@ export const getServerSideProps = async () => {
     sanitizedUsers.sort((a, b) => a.rank - b.rank);
     return { props: { allUsers: sanitizedUsers } };
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    logError('Error fetching user data:', error);
     return { props: { allUsers: [] } };
   }
 };

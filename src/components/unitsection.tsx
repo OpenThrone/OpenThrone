@@ -1,60 +1,79 @@
-// components/UnitSection.tsx
-
 import React, { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
-import { UnitProps } from '@/types/typings';
+import { UnitProps, UnitType } from '@/types/typings'; // Import UnitType
 
-
-
+/**
+ * Props for the UnitSection component.
+ * @deprecated Consider using NewUnitSection component instead due to direct DOM manipulation and potential outdated logic.
+ */
 type UnitSectionProps = {
+  /** The heading/title for the unit section (e.g., "Offense"). */
   heading: string;
+  /** An array of unit data objects to display. */
   units: UnitProps[];
-  updateTotalCost: (costChange: number) => void; // New prop
-  onTrain: any; // New prop
-  onUntrain: any; // New prop
+  /** Callback function to update the total cost in the parent component. */
+  updateTotalCost: (costChange: number) => void;
+  /** Callback function triggered after a train action. */
+  onTrain?: (sectionHeading: string) => void; // Optional callback
+  /** Callback function triggered after an untrain action. */
+  onUntrain?: (sectionHeading: string) => void; // Optional callback
 };
 
+/**
+ * @deprecated This component uses direct DOM manipulation and may be outdated.
+ * Consider using the NewUnitSection component for better state management and UI consistency.
+ *
+ * Displays a section for training/untraining specific types of units.
+ */
 const UnitSection: React.FC<UnitSectionProps> = ({
   heading,
   units,
   updateTotalCost,
-  onTrain, // New prop
-  onUntrain, // New prop
+  onTrain,
+  onUntrain,
 }) => {
   const { user, forceUpdate } = useUser();
+  // Note: getUnits state is set but never updated after initialization.
   const [getUnits, setUnits] = useState<UnitProps[]>(units || []);
 
+  // Effect to attach input listeners for cost calculation (uses DOM manipulation)
   useEffect(() => {
     const computeTotalCostForSection = () => {
       let sectionCost = 0;
       units.forEach((unit) => {
         const inputElement = document.querySelector(`input[name="${unit.id}"]`) as HTMLInputElement;
-        sectionCost +=
-          parseInt(inputElement?.value || '0', 10) *
-          parseInt(unit.cost.replace(/,/g, ''), 10);
+        // Ensure cost is parsed correctly, handling potential non-numeric values
+        const unitCost = parseInt(String(unit.cost).replace(/,/g, ''), 10) || 0;
+        const quantity = parseInt(inputElement?.value || '0', 10) || 0;
+        sectionCost += quantity * unitCost;
       });
       updateTotalCost(sectionCost); // Send the total cost for this section
     };
 
-    units.forEach((unit) => {
-      const inputElement = document.querySelector(`input[name="${unit.id}"]`);
-      
+    const inputElements: NodeListOf<HTMLInputElement> = document.querySelectorAll(
+      units.map(unit => `input[name="${unit.id}"]`).join(',')
+    );
+
+    inputElements.forEach(inputElement => {
       inputElement?.addEventListener('input', computeTotalCostForSection);
     });
 
+    // Initial calculation
+    computeTotalCostForSection();
+
     return () => {
-      units.forEach((unit) => {
-        const inputElement = document.querySelector(`input[name="${unit.id}"]`);
+      inputElements.forEach(inputElement => {
         inputElement?.removeEventListener('input', computeTotalCostForSection);
       });
     };
-  }, [units, updateTotalCost]);
+  }, [units, updateTotalCost]); // Dependency array includes units and updateTotalCost
 
   if (!user || !user.id) {
-    alertService.error('User information is not available.');
-    return;
+    // Avoid rendering or causing errors if user data isn't ready
+    // alertService.error('User information is not available.'); // Alerting here might be too early
+    return null; // Render nothing until user is loaded
   }
 
   const handleTrain = async () => {
@@ -64,16 +83,20 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         const inputElement = document.querySelector(
           `input[name="${unit.id}"]`
         ) as HTMLInputElement;
-        if (!inputElement) return null;
+        const quantity = parseInt(inputElement?.value || '0', 10);
+        if (!inputElement || isNaN(quantity) || quantity <= 0) return null; // Skip if no input or invalid/zero quantity
         return {
-          type: unit.id.split('_')[0], // Extracting the unit type from the id
-          quantity: parseInt(inputElement.value, 10),
-          level: parseInt(
-            unit.id.split('_')[1] ? unit.id.split('_')[1] : "1",
-            10
-          ),
+          type: unit.type as UnitType, // Use imported UnitType
+          quantity: quantity,
+          level: unit.level ?? 1, // Default level to 1 if undefined
         };
-      });
+      })
+      .filter((unit): unit is { type: UnitType; quantity: number; level: number } => unit !== null); // Filter out nulls and type guard
+
+    if (unitsToTrain.length === 0) {
+        alertService.warn('No units selected to train.');
+        return;
+    }
 
     try {
       const response = await fetch('/api/training/train', {
@@ -82,7 +105,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user.id, // Assuming you have the user's ID available
+          userId: user.id,
           units: unitsToTrain,
         }),
       });
@@ -90,28 +113,29 @@ const UnitSection: React.FC<UnitSectionProps> = ({
       const data = await response.json();
 
       if (response.ok) {
-        alertService.success(data.message);
-
-        // Update the getUnits state with the new quantities
-        setUnits((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const unitTypeLevel = unit.id.split('_');
-            const updatedUnit = data.data.find(
-              (u: any) =>
-                u.type === unitTypeLevel[0] &&
-                u.level.toString() === unitTypeLevel[1]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        forceUpdate();
+        alertService.success(data.message || 'Units trained successfully!');
+        // Update local state based on the response data structure
+        // Assuming data.data contains the updated unit list for the user
+        if (data.data && Array.isArray(data.data)) {
+            forceUpdate(); // Trigger context update which should refetch user data
+            // Reset inputs after successful train
+            units.forEach((unit) => {
+              if (unit.enabled) {
+                const inputElement = document.querySelector(`input[name="${unit.id}"]`) as HTMLInputElement;
+                if (inputElement) inputElement.value = "0";
+              }
+            });
+            updateTotalCost(0); // Reset cost for this section
+        } else {
+             console.warn("Train API response did not contain expected data structure:", data);
+             // Still force update, maybe the backend updated correctly
+             forceUpdate();
+        }
       } else {
-        alertService.error(data.error);
+        alertService.error(data.error || 'Training failed.');
       }
     } catch (error) {
+      console.error("Training error:", error);
       alertService.error('Failed to train units. Please try again.');
     }
   };
@@ -123,12 +147,37 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         const inputElement = document.querySelector(
           `input[name="${unit.id}"]`
         ) as HTMLInputElement;
+        const quantity = parseInt(inputElement?.value || '0', 10);
+         if (!inputElement || isNaN(quantity) || quantity <= 0) return null; // Skip if no input or invalid/zero quantity
+
+        // Basic check: Ensure we don't try to untrain more than owned
+        if (quantity > (unit.ownedUnits ?? 0)) {
+            alertService.error(`Cannot untrain ${quantity} ${unit.name}(s), you only own ${unit.ownedUnits ?? 0}.`);
+            return 'INVALID_QUANTITY'; // Special marker to indicate invalid input
+        }
+
         return {
-          type: unit.id.split('_')[0], // Extracting the unit type from the id
-          quantity: parseInt(inputElement.value, 10),
-          level: parseInt(unit.id.split('_')[1], 10),
+          type: unit.type as UnitType,
+          quantity: quantity,
+          level: unit.level ?? 1,
         };
-      });
+      })
+      .filter((unit): unit is { type: UnitType; quantity: number; level: number } => unit !== null && unit !== 'INVALID_QUANTITY'); // Filter out nulls and invalid quantities
+
+    // If any quantity was invalid, stop the process
+    if (units.some(unit => {
+        const inputElement = document.querySelector(`input[name="${unit.id}"]`) as HTMLInputElement;
+        const quantity = parseInt(inputElement?.value || '0', 10);
+        return quantity > (unit.ownedUnits ?? 0);
+    })) {
+        return; // Stop if any input quantity exceeds owned units
+    }
+
+
+    if (unitsToUntrain.length === 0) {
+        alertService.warn('No units selected to untrain.');
+        return;
+    }
 
     try {
       const response = await fetch('/api/training/untrain', {
@@ -137,7 +186,7 @@ const UnitSection: React.FC<UnitSectionProps> = ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user.id, // Assuming you have the user's ID available
+          userId: user.id,
           units: unitsToUntrain,
         }),
       });
@@ -145,28 +194,26 @@ const UnitSection: React.FC<UnitSectionProps> = ({
       const data = await response.json();
 
       if (response.ok) {
-        alertService.success(data.message);
-        // Update the getUnits state with the new quantities
-        setUnits((prevUnits) => {
-          return prevUnits.map((unit) => {
-            const unitTypeLevel = unit.id.split('_');
-            const updatedUnit = data.data.find(
-              (u: UnitProps) =>
-                u.type === unitTypeLevel[0] &&
-                u.level?.toString() === unitTypeLevel[1]
-            );
-            if (updatedUnit) {
-              return { ...unit, ownedUnits: updatedUnit.quantity };
-            }
-            return unit;
-          });
-        });
-        forceUpdate();
-        // Optionally, refresh the component or page to reflect the new data
+        alertService.success(data.message || 'Units untrained successfully!');
+         if (data.data && Array.isArray(data.data)) {
+            forceUpdate(); // Trigger context update
+            // Reset inputs after successful untrain
+            units.forEach((unit) => {
+              if (unit.enabled) {
+                const inputElement = document.querySelector(`input[name="${unit.id}"]`) as HTMLInputElement;
+                if (inputElement) inputElement.value = "0";
+              }
+            });
+            updateTotalCost(0); // Reset cost for this section
+        } else {
+             console.warn("Untrain API response did not contain expected data structure:", data);
+             forceUpdate(); // Still force update
+        }
       } else {
-        alertService.error(data.error);
+        alertService.error(data.error || 'Untraining failed.');
       }
     } catch (error) {
+      console.error("Untraining error:", error);
       alertService.error('Failed to untrain units. Please try again.');
     }
   };
@@ -174,12 +221,13 @@ const UnitSection: React.FC<UnitSectionProps> = ({
   const handleTrainClick = () => {
     handleTrain();
     onTrain && onTrain(heading); // Use the passed down handler
+    // Reset inputs via DOM manipulation
     units.forEach((unit) => {
       if (unit.enabled) {
         const inputElement = document.querySelector(
           `input[name="${unit.id}"]`
         ) as HTMLInputElement;
-        inputElement.value = "0";
+        if (inputElement) inputElement.value = "0";
       }
     });
     updateTotalCost(0);
@@ -188,10 +236,11 @@ const UnitSection: React.FC<UnitSectionProps> = ({
   const handleUntrainClick = () => {
     handleUntrain();
     onUntrain && onUntrain(heading); // Use the passed down handler
+    // Reset inputs via DOM manipulation
     units.forEach((unit) => {
       if (unit.enabled) {
         const inputElement = document.querySelector(`input[name="${unit.id}"]`) as HTMLInputElement;
-        inputElement.value = "0";
+        if (inputElement) inputElement.value = "0";
       }
     });
     updateTotalCost(0);
@@ -211,7 +260,15 @@ const UnitSection: React.FC<UnitSectionProps> = ({
         </thead>
         <tbody>
           {(() => {
-            const sortedUnits = getUnits.sort((a, b) => parseInt(a.id,10) - parseInt(b.id,10)); // Ensure units are sorted by ID.
+            // Sort units by level primarily, then by name for consistent order
+            const sortedUnits = [...units].sort((a, b) => {
+                const levelA = a.level ?? 0;
+                const levelB = b.level ?? 0;
+                if (levelA !== levelB) {
+                    return levelA - levelB;
+                }
+                return a.name.localeCompare(b.name);
+            });
             const firstDisabledUnit = sortedUnits.find(u => !u.enabled); // Find the first disabled unit.
             return sortedUnits.map((unit) => {
               if (unit.enabled) {
@@ -220,13 +277,13 @@ const UnitSection: React.FC<UnitSectionProps> = ({
                     <td className="border px-4 py-2">{unit.name}</td>
                     <td className="border px-4 py-2">+{unit.bonus} {heading}</td>
                     <td className="border px-4 py-2">
-                      <span id={`${unit.id}_owned`}>{unit.ownedUnits}</span>
+                      <span id={`${unit.id}_owned`}>{unit.ownedUnits ?? 0}</span> {/* Default to 0 if undefined */}
                     </td>
                     <td className="border px-4 py-2">{unit.cost}</td>
                     <td className="border px-4 py-2">
                       <input
                         type="number"
-                        aria-labelledby={unit.id}
+                        aria-label={`Quantity for ${unit.name}`} // Improved accessibility
                         name={unit.id}
                         defaultValue="0"
                         min="0"

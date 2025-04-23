@@ -1,5 +1,6 @@
 'use server';
 
+import type { UnitType } from '@/types/typings';
 import {
   getUserById,
   updateUserUnits,
@@ -12,11 +13,21 @@ import {
 } from '@/services/attack.service';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { newCalculateStrength, simulateBattle } from '@/utils/attackFunctions';
+import { calculateStrength, simulateBattle } from '@/utils/attackFunctions';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { AssassinationResult, InfiltrationResult, IntelResult, simulateAssassination, simulateInfiltration, simulateIntel } from '@/utils/spyFunctions';
+import { logError } from '@/utils/logger';
 
-export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string, unit?: string) {
+/**
+ * Handles spy missions (Intel, Assassinate, Infiltrate) between two users.
+ * @param attackerId - The ID of the attacking user.
+ * @param defenderId - The ID of the defending user.
+ * @param spies - The number of spies sent on the mission.
+ * @param type - The type of spy mission ('INTEL', 'ASSASSINATE', 'INFILTRATE').
+ * @param unit - (Optional) The specific unit type targeted for assassination (UnitType or "CITIZEN_WORKERS").
+ * @returns An object indicating the status ('success' or 'failed'), results, and attack log ID.
+ */
+export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string, unit?: UnitType | "CITIZEN_WORKERS") {
   const attackerUser = await getUserById(attackerId);
   const defenderUser = await getUserById(defenderId);
   const attacker = new UserModel(attackerUser);
@@ -40,7 +51,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
 
       } else if (type === 'ASSASSINATE') {
         if (attacker.units.find((u) => u.type === 'SPY' && u.level === 3) === undefined || attacker.units.find((u) => u.type === 'SPY' && u.level === 2).quantity < spies) {
-          console.log('Insufficient Assassins');
+          logError('Insufficient Assassins');
           return { status: 'failed', message: 'Insufficient Assassins' };
         }
         spyResults = simulateAssassination(attacker, defender, spies, unit);
@@ -49,7 +60,6 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
           defender.units,
           tx
         );
-        //return spyResults;
       } else if (type === 'INFILTRATE') {
         spyResults = simulateInfiltration(attacker, defender, spies);
         await updateUserUnits(defenderId,
@@ -71,7 +81,11 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
         timestamp: new Date().toISOString(),
         winner: Winner.id,
         type: type,
-        stats: { spyResults },
+        // Stringify complex results for JSON storage
+        stats: { spyResults: JSON.stringify(spyResults) },
+        // Connect to users via relation fields instead of setting IDs directly
+        attackerPlayer: { connect: { id: attackerId } },
+        defenderPlayer: { connect: { id: defenderId } },
       }, tx);
 
       await incrementUserStats(attackerId, {
@@ -82,13 +96,11 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
         type: 'SENTRY',
         subtype: (defenderId === Winner.id) ? 'WON' : 'LOST',
       }, tx);
-      
+
       return {
         status: 'success',
         result: spyResults,
         attack_log: attack_log.id,
-        //attacker: attacker,
-        //defender: defender,
         extra_variables: {
           spies,
           spyResults,
@@ -97,11 +109,18 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     });
     return prismaTx;
   } catch (ex) {
-    console.error('Transaction failed: ', ex);
+    logError('Transaction failed: ', ex);
     return { status: 'failed', message: 'Transaction failed.' };
   }
 }
 
+/**
+ * Handles standard attacks between two users.
+ * @param attackerId - The ID of the attacking user.
+ * @param defenderId - The ID of the defending user.
+ * @param attack_turns - The number of attack turns to use.
+ * @returns An object indicating the status ('success' or 'failed'), results, and attack log ID.
+ */
 export async function attackHandler(
   attackerId: number,
   defenderId: number,
@@ -121,7 +140,14 @@ export async function attackHandler(
   const AttackPlayer = new UserModel(attackerUser);
   const DefensePlayer = new UserModel(defenderUser);
 
-  if (AttackPlayer.offense <= 0) {
+  // Enhanced strength calculation with unit-item allocation and battle upgrades
+  const { killingStrength: attackerOffenseKS, defenseStrength: attackerOffenseDS } = calculateStrength(
+    AttackPlayer,
+    'OFFENSE',
+    false
+  );
+
+  if (attackerOffenseKS <= 0) {
     return {
       status: 'failed',
       message: 'Attack unsuccessful due to negligible offense.',
@@ -131,7 +157,7 @@ export async function attackHandler(
   if (!AttackPlayer.canAttack(DefensePlayer.level)) {
     return {
       status: 'failed',
-      message: 'You can only attack within 25 levels of your own level.', //TODO: Revert to 5 levels
+      message: `You can only attack within ${process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE} levels of your own level.`,
     }
   }
 
@@ -143,57 +169,64 @@ export async function attackHandler(
   }
 
   const startOfAttack = {
-    Attacker: JSON.parse(JSON.stringify(AttackPlayer)),
-    Defender: JSON.parse(JSON.stringify(DefensePlayer)),
+    Attacker: JSON.parse(JSON.stringify(stringifyObj(AttackPlayer))),
+    Defender: JSON.parse(JSON.stringify(stringifyObj(DefensePlayer))),
   };
 
-  const battleResults = simulateBattle(
+  // Enhanced battle simulation with all factors
+  const battleResults = await simulateBattle(
     AttackPlayer,
     DefensePlayer,
+    DefensePlayer.fortHitpoints, // Use existing fort HP or default
     attack_turns
   );
 
-  DefensePlayer.fortHitpoints = battleResults.fortHitpoints;
 
-  const isAttackerWinner = battleResults.experienceResult.Result === 'Win';
+  DefensePlayer.fortHitpoints -= (startOfAttack.Defender.fortHitpoints - battleResults.finalFortHP);
 
-  AttackPlayer.experience += battleResults.experienceResult.Experience.Attacker;
-  DefensePlayer.experience += battleResults.experienceResult.Experience.Defender;
+  const isAttackerWinner = battleResults.result === 'WIN';
+
+  AttackPlayer.experience += battleResults.experienceGained.attacker;
+  DefensePlayer.experience += battleResults.experienceGained.defender;
+
   try {
     const attack_log = await prisma.$transaction(async (tx) => {
       if (isAttackerWinner) {
-        DefensePlayer.gold = BigInt(DefensePlayer.gold) - battleResults.pillagedGold;
-        AttackPlayer.gold = BigInt(AttackPlayer.gold) + battleResults.pillagedGold;
+        DefensePlayer.gold = BigInt(DefensePlayer.gold) - BigInt(battleResults.pillagedGold.toString());
+        AttackPlayer.gold = BigInt(AttackPlayer.gold) + BigInt(battleResults.pillagedGold.toString());
       }
 
-      const attack_log = await createAttackLog({
-        attacker_id: attackerId,
-        defender_id: defenderId,
-        timestamp: new Date().toISOString(),
+      const attack_log = await createAttackLog({        timestamp: new Date().toISOString(),
         winner: isAttackerWinner ? attackerId : defenderId,
         stats: {
           startOfAttack,
           endTurns: AttackPlayer.attackTurns,
-          offensePointsAtEnd: AttackPlayer.offense,
+          offensePointsAtEnd: attackerOffenseKS,
           defensePointsAtEnd: DefensePlayer.defense,
-          pillagedGold: isAttackerWinner ? battleResults.pillagedGold : BigInt(0),
+          // Convert BigInt to string for JSON compatibility
+          pillagedGold: isAttackerWinner ? battleResults.pillagedGold.toString() : '0',
           forthpAtStart: startOfAttack.Defender.fortHitpoints,
           forthpAtEnd: Math.max(DefensePlayer.fortHitpoints, 0),
-          xpEarned: {
-            attacker: Math.ceil(battleResults.experienceResult.Experience.Attacker),
-            defender: Math.ceil(battleResults.experienceResult.Experience.Defender),
-          },
+          // Stringify potentially complex objects within stats
+          xpEarned: JSON.stringify(battleResults.experienceGained),
           turns: attack_turns,
-          attacker_units: AttackPlayer.units,
-          defender_units: DefensePlayer.units,
-          attacker_losses: battleResults.Losses.Attacker,
-          defender_losses: battleResults.Losses.Defender,
+          attacker_units: JSON.stringify(AttackPlayer.units),
+          defender_units: JSON.stringify(DefensePlayer.units),
+          attacker_losses: JSON.stringify(battleResults.Losses.Attacker),
+          defender_losses: JSON.stringify(battleResults.Losses.Defender),
         },
+        // Connect to users via relation fields
+        attackerPlayer: { connect: { id: attackerId } },
+        defenderPlayer: { connect: { id: defenderId } },
       }, tx);
 
       if (isAttackerWinner) {
+        // Ensure gold_amount is passed as primitive bigint or number
+        const goldAmount = typeof battleResults.pillagedGold === 'bigint'
+            ? battleResults.pillagedGold
+            : BigInt(battleResults.pillagedGold.toString()); // Convert BigInt object or number to primitive bigint
         await createBankHistory({
-          gold_amount: battleResults.pillagedGold,
+          gold_amount: goldAmount,
           from_user_id: defenderId,
           from_user_account_type: 'HAND',
           to_user_id: attackerId,
@@ -201,7 +234,7 @@ export async function attackHandler(
           date_time: new Date().toISOString(),
           history_type: 'WAR_SPOILS',
           stats: { type: 'ATTACK', attackID: attack_log.id },
-        }, tx); 
+        }, tx);
       }
 
       await incrementUserStats(attackerId, {
@@ -214,12 +247,22 @@ export async function attackHandler(
         subtype: (!isAttackerWinner) ? 'WON' : 'LOST',
       }, tx);
 
-      const { killingStrength: attackerKS, defenseStrength: attackerDS } = newCalculateStrength(AttackPlayer, 'OFFENSE');
+      // Recalculate final stats for both players after casualties
+      const { killingStrength: finalAttackerKS, defenseStrength: finalAttackerDS } = calculateStrength(
+        AttackPlayer,
+        'OFFENSE',
+        false,
+      );
       const newAttOffense = AttackPlayer.getArmyStat('OFFENSE')
       const newAttDefense = AttackPlayer.getArmyStat('DEFENSE')
       const newAttSpying = AttackPlayer.getArmyStat('SPY')
       const newAttSentry = AttackPlayer.getArmyStat('SENTRY')
-      const { killingStrength: defenderKS, defenseStrength: defenderDS } = newCalculateStrength(DefensePlayer, 'OFFENSE');
+
+      const { killingStrength: finalDefenderKS, defenseStrength: finalDefenderDS } = calculateStrength(
+        DefensePlayer,
+        'DEFENSE',
+        false,
+      );
       const newDefOffense = DefensePlayer.getArmyStat('OFFENSE')
       const newDefDefense = DefensePlayer.getArmyStat('DEFENSE')
       const newDefSpying = DefensePlayer.getArmyStat('SPY')
@@ -234,9 +277,7 @@ export async function attackHandler(
         defense: newAttDefense,
         spy: newAttSpying,
         sentry: newAttSentry,
-        //killing_str: attackerKS,
-        //defense_str: attackerDS,
-      },tx);
+      }, tx);
 
       await updateUser(defenderId, {
         gold: DefensePlayer.gold,
@@ -247,9 +288,7 @@ export async function attackHandler(
         defense: newDefDefense,
         spy: newDefSpying,
         sentry: newDefSentry,
-        //killing_str: defenderKS,
-        //defense_str: defenderDS,
-      },tx);
+      }, tx);
 
       return attack_log;
     });
@@ -264,9 +303,7 @@ export async function attackHandler(
       }),
     };
   } catch (error) {
-    console.error('Transaction failed: ', error);
+    logError('Transaction failed: ', error);
     return { status: 'failed', message: 'Transaction failed.' };
   }
 }
-
-

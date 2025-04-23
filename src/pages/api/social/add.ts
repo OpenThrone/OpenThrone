@@ -1,6 +1,12 @@
 import prisma from "@/lib/prisma";
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
+import { z } from 'zod';
+
+const AddSocialSchema = z.object({
+  friendId: z.number().int(),
+  relationshipType: z.enum(['FRIEND', 'ENEMY'])
+});
 
 const addSocialRelation = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
@@ -12,17 +18,17 @@ const addSocialRelation = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { friendId, relationshipType } = req.body;
-  const playerId = session.user.id;
-  console.log(req.body);
-  console.log(relationshipType)
-
-  if (!['FRIEND', 'ENEMY'].includes(relationshipType)) {
-    return res.status(400).json({ error: 'Invalid relationship type' });
+  const parseResult = AddSocialSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
   }
 
-  try {
+  const { friendId, relationshipType } = parseResult.data;
+  const playerId = session.user.id;
+  console.log(req.body);
+  console.log(relationshipType);
 
+  try {
     const social = await prisma.social.findFirst({
       where: {
         OR: [

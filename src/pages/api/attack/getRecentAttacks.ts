@@ -2,6 +2,7 @@
 import prisma from "@/lib/prisma";
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
+import { logError } from "@/utils/logger";
 
 const getRecentAttacks = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
@@ -12,10 +13,6 @@ const getRecentAttacks = async (req: NextApiRequest, res: NextApiResponse) => {
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  const playerId = session.user.id;
-  const { type } = req.query;
-
 
   try {
     const relations = await prisma.attack_log.findMany({
@@ -51,7 +48,7 @@ const getRecentAttacks = async (req: NextApiRequest, res: NextApiResponse) => {
 
   } catch (error) {
 
-    console.error('Error fetching recent attacks:', error);
+    logError('Error fetching recent attacks:', error);
     res.status(500).json({ error  });
   }
 };

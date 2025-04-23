@@ -1,13 +1,23 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { logError } from '@/utils/logger';
 
 export default async function handle(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   if (req.method === 'POST') {
-    const { displayName } = req.body;
+    const DisplayNameSchema = z.object({ displayName: z.string().min(1) });
+    const parseResult = DisplayNameSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: 'Invalid or missing displayName',
+        details: parseResult.error.flatten().fieldErrors,
+      });
+    }
+    const { displayName } = parseResult.data;
 
     try {
       // Search for users with a displayName that contains the substring provided
@@ -29,7 +39,7 @@ export default async function handle(
         possibleMatches: displayNames,
       });
     } catch (error) {
-      console.error('Error checking display name:', error);
+      logError('Error checking display name:', error);
       return res.status(500).json({ error: 'Failed to check display name.' });
     }
   } else {

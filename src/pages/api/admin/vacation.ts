@@ -2,6 +2,13 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { getSession } from 'next-auth/react';
 import { isAdmin } from '@/utils/authorization';
+import { logError } from '@/utils/logger';
+import { z } from 'zod';
+
+const AdminVacationSchema = z.object({
+  userId: z.number().int(),
+  action: z.enum(['start', 'end'])
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req });
@@ -9,11 +16,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { userId, action } = req.body;
-
-  if (!userId || !action) {
-    return res.status(400).json({ error: 'Missing userId or action' });
+  const parseResult = AdminVacationSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
   }
+  const { userId, action } = parseResult.data;
 
   if (action === 'start') {
     // Admin starting vacation for a user
@@ -35,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       res.status(200).json({ message: 'Vacation mode started for user', vacationEndDate });
     } catch (error) {
-      console.error('Error starting vacation mode for user:', error);
+      logError('Error starting vacation mode for user:', error);
       res.status(500).json({ error: 'Failed to start vacation mode for user' });
     }
   } else if (action === 'end') {
@@ -65,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       res.status(200).json({ message: 'Vacation mode ended for user' });
     } catch (error) {
-      console.error('Error ending vacation mode for user:', error);
+      logError('Error ending vacation mode for user:', error);
       res.status(500).json({ error: 'Failed to end vacation mode for user' });
     }
   } else {

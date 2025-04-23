@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { withAuth } from "@/middleware/auth";
+import { logError } from "@/utils/logger";
 
 const handler = async (req, res) => {
   if (req.method !== 'DELETE') {
@@ -34,7 +35,7 @@ const handler = async (req, res) => {
     });
     return res.status(200).json({ message: 'Friendship ended successfully' });
   } catch (error) {
-    console.error(error);
+    logError("Error ending friendship:", error);
     return res.status(500).json({ error: 'Failed to end friendship' });
   }
 };

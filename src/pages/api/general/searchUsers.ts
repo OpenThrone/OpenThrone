@@ -2,6 +2,9 @@ import prisma from "@/lib/prisma";
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
+import { z } from 'zod';
+
+const SearchUsersSchema = z.object({ name: z.string().min(1) });
 
 const getSearchResults = async (req: NextApiRequest, res: NextApiResponse) => {
   // Get the session on the server-side
@@ -13,11 +16,12 @@ const getSearchResults = async (req: NextApiRequest, res: NextApiResponse) => {
     return;
   }
 
-  const searchTerm = req.body.name;
-  if (!searchTerm) {
-    res.status(400).json({ error: 'No search term provided' });
+  const parseResult = SearchUsersSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    res.status(400).json({ error: 'Invalid or missing search term', details: parseResult.error.flatten().fieldErrors });
     return;
   }
+  const { name: searchTerm } = parseResult.data;
 
   try {
     // Fetch the user based on the session's user ID
@@ -45,7 +49,6 @@ const getSearchResults = async (req: NextApiRequest, res: NextApiResponse) => {
       res.status(404).json({ error: 'No users found' });
       return;
     }
-
 
     res.status(200).json(stringifyObj(users));
   } catch (error) {

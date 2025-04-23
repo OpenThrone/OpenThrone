@@ -11,7 +11,6 @@ import TextAlign from '@tiptap/extension-text-align';
 import Superscript from '@tiptap/extension-superscript';
 import SubScript from '@tiptap/extension-subscript';
 import { Markdown } from 'tiptap-markdown';
-import Alert  from '@/components/alert';
 import { TextInput, Button, Paper, Group, MultiSelect, Space } from '@mantine/core';
 
 export default function ComposeForm({ onClose }: ComposeFormProps) {
@@ -94,7 +93,6 @@ export default function ComposeForm({ onClose }: ComposeFormProps) {
 
   return (
     <>
-      <Alert />
       <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg">
         <MultiSelect
           data={possibleMatches}

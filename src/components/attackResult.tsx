@@ -7,7 +7,7 @@ import Image from "next/image";
 import Modal from "./modal";
 import { useState } from "react";
 
-const attackResults = ({ battle, viewerID }) => {
+const AttackResults = ({ battle, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
   const isViewerAttacker = viewerID === attackerPlayer.id
   const isViewerDefender = viewerID === defenderPlayer.id;
@@ -183,4 +183,4 @@ const attackResults = ({ battle, viewerID }) => {
   );
 };
 
-export default attackResults;
+export default AttackResults;

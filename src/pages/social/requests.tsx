@@ -15,7 +15,7 @@ const Requests = (props) => {
         setRequests(data);
         setLoading(false);
       }).catch(error => {
-        console.error("Error fetching requests:", error);
+        logError("Error fetching requests:", error);
         setLoading(true);
         
       });
@@ -33,7 +33,7 @@ const Requests = (props) => {
         setRequests(currentRequests => currentRequests.filter(request => request.id !== id));
       })
       .catch(error => {
-        console.error("Error responding to request:", error);
+        logError("Error responding to request:", error);
       });
   };
 

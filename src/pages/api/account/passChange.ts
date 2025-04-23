@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 const argon2 = require('argon2');
@@ -10,8 +11,19 @@ export default async function handler(
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed!' });
   }
-  // handle password reset
-  const { email, verify, newPassword } = req.body;
+
+  const PassChangeSchema = z.object({
+    email: z.string().email({ message: 'Invalid email format.' }),
+    verify: z.string().min(1),
+    newPassword: z.string().min(8, { message: 'Password must be at least 8 characters.' })
+  });
+  const parseResult = PassChangeSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+  }
+
+  const { email, verify, newPassword } = parseResult.data;
+
   try {
     const user = await prisma.users.findUnique({ where: { email } });
     if (!user) {

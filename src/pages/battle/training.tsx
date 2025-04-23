@@ -1,393 +1,465 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import Alert from '@/components/alert';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
-import toLocale from '@/utils/numberFormatting';
-import { Paper, Group, SimpleGrid, Title, Text, ThemeIcon, Badge, Tooltip, Button, Space, Flex, Stack } from '@mantine/core';
+import toLocale  from '@/utils/numberFormatting';
+import { Group, SimpleGrid, Text, Button, Flex, Stack, Box, rem } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuildingColumns, faCoins, faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
+import { faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
+import { PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
+import StatCard from '@/components/StatCard';
+import ContentCard from '@/components/ContentCard';
+import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
+import { logDebug, logError } from '@/utils/logger'; // Added logError
 
-const Training = (props) => {
-  //const [data, setData] = useState({ citizens: 0, gold: 0, goldInBank: 0 });
+/**
+ * Represents the data structure for a unit displayed in the training section.
+ */
+interface UnitData {
+  id: string; // Unique identifier (e.g., "OFFENSE_1")
+  name: string;
+  bonus: number;
+  ownedUnits: number;
+  requirement: string; // Fortification name required
+  cost: number; // Adjusted cost including price bonus
+  enabled: boolean; // Whether the user meets the requirements
+  level: number;
+  usage: UnitType; // Should be UnitType, but usage might be legacy? Verify type.
+  fortLevel: number; // Fort level required
+}
+
+/**
+ * Defines the structure for managing different unit type sections.
+ */
+interface UnitTypeIndex {
+  type: UnitType;
+  sectionTitle: string;
+  unitData: UnitData[] | null;
+  updateFn: React.Dispatch<React.SetStateAction<UnitData[] | null>>;
+}
+
+/**
+ * Page component for training and untraining units.
+ * Displays different unit sections (Economy, Offense, Defense, etc.)
+ * and allows users to manage unit quantities. Includes a sticky footer
+ * for order summary and actions.
+ */
+const Training: React.FC = (props) => { // Removed unused props
   const { user, forceUpdate } = useUser();
   const [totalCost, setTotalCost] = useState(0);
+  const [unitCosts, setUnitCosts] = useState<{ [key: string]: number }>({}); // Maps unitId to quantity input
 
-  // Keys we use to add the state objects to each unit type
-  const indexDataKeys = ['unitData', 'updateFn'];
+  // State for each unit section's data
+  const [workerUnits, setWorkerUnits] = useState<UnitData[] | null>(null);
+  const [offenseUnits, setOffenseUnits] = useState<UnitData[] | null>(null);
+  const [defenseUnits, setDefenseUnits] = useState<UnitData[] | null>(null);
+  const [spyUnits, setSpyUnits] = useState<UnitData[] | null>(null);
+  const [sentryUnits, setSentryUnits] = useState<UnitData[] | null>(null);
 
-  // A quick function that turns the useState output into an object with the above keys
-  const getUnitIndexState = () => Object.fromEntries(
-    useState(null).map((s, i) => [indexDataKeys[i], s])
-  );
-
-  // All the things we need for each unit type
-  const unitTypesIndex = [
-    {
-      type: 'WORKER',
-      sectionTitle: 'Economy',
-    },
-    {
-      type: 'OFFENSE',
-      sectionTitle: 'Offense',
-    },
-    {
-      type: 'DEFENSE',
-      sectionTitle: 'Defense',
-    },
-    {
-      type: 'SPY',
-      sectionTitle: 'Spy',
-    },
-    {
-      type: 'SENTRY',
-      sectionTitle: 'Sentry',
-    },
-  // n.b. this returns unitData and updateFn for each unit type, so they're all available
-  ].map((ix) => { return {...ix, ...getUnitIndexState()}});
+  // Memoized index for managing unit sections and their state
+  const unitTypesIndex: UnitTypeIndex[] = useMemo(() => [
+    { type: 'WORKER' as UnitType, sectionTitle: 'Economy', unitData: workerUnits, updateFn: setWorkerUnits },
+    { type: 'OFFENSE' as UnitType, sectionTitle: 'Offense', unitData: offenseUnits, updateFn: setOffenseUnits },
+    { type: 'DEFENSE' as UnitType, sectionTitle: 'Defense', unitData: defenseUnits, updateFn: setDefenseUnits },
+    { type: 'SPY' as UnitType, sectionTitle: 'Spy', unitData: spyUnits, updateFn: setSpyUnits },
+    { type: 'SENTRY' as UnitType, sectionTitle: 'Sentry', unitData: sentryUnits, updateFn: setSentryUnits },
+  ], [workerUnits, offenseUnits, defenseUnits, spyUnits, sentryUnits]);
 
   /**
-   * Gets an object representing the base state of the form, i.e., no units
-   * being trained.
-   * @return {Object<string, number>}
+   * Creates an object with section types as keys and 0 as values, used for initializing section costs.
    */
-  const getBlankSectionCosts = () => {
+  const getBlankSectionCosts = useCallback((): { [key: string]: number } => {
     return Object.fromEntries(
       unitTypesIndex.map((unitType) => [unitType.type, 0])
-    )
-  };
+    );
+  }, [unitTypesIndex]);
 
-  const [sectionCosts, setSectionCosts] = useState(getBlankSectionCosts());
-
-  const [unitCosts, setUnitCosts] = useState<{ [key: string]: number }>({});
+  const [sectionCosts, setSectionCosts] = useState(() => getBlankSectionCosts());
 
   /**
-   * Update the total costs for the units currently slated to be trained in a section.
-   *
-   * @param {string} section The section to update.
-   * @param {number} cost 
+   * Callback function passed to NewUnitSection to update the cost contribution of that section.
+   * Recalculates the total cost across all sections.
+   * @param section - The UnitType of the section updating its cost.
+   * @param cost - The new total cost for that section.
    */
-  const updateTotalCost = (section: string, cost: number) => {
+  const updateTotalCost = useCallback((section: UnitType, cost: number) => {
+    logDebug(`updateTotalCost called with section: ${section}, cost: ${cost}`);
+    const validatedCost = Number.isFinite(cost) ? cost : 0; // Ensure cost is a valid number
     setSectionCosts((prevCosts) => {
-      const updatedCosts = { ...prevCosts, [section]: cost };
+      const updatedCosts = { ...prevCosts, [section]: validatedCost };
+      // Recalculate total cost from the updated section costs
       const newTotalCost = Object.values(updatedCosts).reduce(
-        (acc, curr) => acc + curr,
+        (acc, curr) => acc + (Number.isFinite(curr) ? curr : 0), // Sum only valid numbers
         0
       );
-      setTotalCost(newTotalCost);
+      setTotalCost(Number.isFinite(newTotalCost) ? newTotalCost : 0); // Ensure total cost is valid
       return updatedCosts;
     });
-  };
- 
-  /**
-   * Reset the unit costs to zero (for example, when a previous training action is done)
-   */
-  const resetUnitCosts = () => {
-    setUnitCosts({});
-    setTotalCost(0);
-    setSectionCosts(getBlankSectionCosts());
-  };
+  }, []); // No dependencies needed as it only uses setters
 
   /**
-   * Gives data about a specific unit.
-   *
-   * @param {Object} unit
-   * @param {string} unit.name The name of the unit we want data for.
-   * @return {Object} Includes id, name, ownedUnits, requirement, cost, enabled, and level
+   * Resets the quantities entered in all unit sections and the total cost.
    */
-  const unitMapFunction = useCallback((unit, idPrefix: string) => {
-    if (!user) {
-      return;
-    }
+  const resetUnitCosts = useCallback(() => {
+    setUnitCosts({}); // Clear individual unit quantities
+    setTotalCost(0); // Reset total cost
+    setSectionCosts(getBlankSectionCosts()); // Reset individual section costs
+  }, [getBlankSectionCosts]);
+
+  /**
+   * Maps raw unit data (from constants or user) to the UnitData structure needed by sections.
+   * Calculates adjusted cost based on user's price bonus.
+   * @param unit - The raw unit data.
+   * @param idPrefix - The UnitType prefix for the unit ID.
+   * @returns A UnitData object or undefined if user is not available.
+   */
+  const unitMapFunction = useCallback((unit: any, idPrefix: string): UnitData | undefined => {
+    if (!user) return undefined;
     const bonus =
       unit.name === 'Worker'
-        ? EconomyUpgrades[user?.economyLevel]?.goldPerWorker
+        ? EconomyUpgrades?.[user.economyLevel]?.goldPerWorker // Specific bonus for workers
         : unit.bonus;
-
     const unitId = `${idPrefix}_${unit.level}`;
-
+    const ownedUnit = user.units?.find((u: PlayerUnit) => u.type === unit.type && u.level === unit.level);
+    const requirementFort = Fortifications.find((fort) => fort.level === unit.fortLevel);
+    const baseCost = Number(String(unit.cost || '0').replace(/,/g, '')) || 0;
+    const priceBonusPercent = Number(user.priceBonus || 0) / 100;
     return {
       id: unitId,
       name: unit.name,
-      bonus,
-      ownedUnits:
-        user.units.find((u) => u.type === unit.type && u.level === unit.level)
-          ?.quantity || 0,
-      requirement: Fortifications.find((fort) => {
-        return fort.level === unit.fortLevel;
-      }).name,
-      cost: unit.cost - (user?.priceBonus / 100) * unit.cost,
-      enabled: unit.fortLevel <= user?.fortLevel,
+      bonus: bonus ?? 0,
+      ownedUnits: ownedUnit?.quantity || 0,
+      requirement: requirementFort?.name || 'Unknown',
+      cost: Math.max(0, baseCost - (priceBonusPercent * baseCost)), // Apply price bonus, ensure non-negative
+      enabled: user.fortLevel !== undefined && unit.fortLevel <= user.fortLevel,
       level: unit.level,
+      usage: unit.type as UnitType, // Assuming unit.type is compatible
+      fortLevel: unit.fortLevel,
     };
-  }, [user]);
+  }, [user]); // Depends on user object
 
+  // Effect to populate unit section states when user data is available or changes
   useEffect(() => {
-    if (user && user.availableUnitTypes) {
-      unitTypesIndex.forEach((unitType) => {
-        unitType.updateFn(
-          user.availableUnitTypes
-            .filter((unit) => unit.type === unitType.type)
-            .map((unit) => unitMapFunction(unit, unitType.type))
-        );
-      });
-    }
-  }, [user, unitMapFunction]);
+    if (!user?.availableUnitTypes) return; // Ensure user and available types exist
+
+    let stateChanged = false;
+    unitTypesIndex.forEach((unitTypeInfo) => {
+      const newUnitData = user.availableUnitTypes
+        .filter((unit: any) => unit.type === unitTypeInfo.type)
+        .map((unit: any) => unitMapFunction(unit, unitTypeInfo.type))
+        .filter((unit): unit is UnitData => unit !== undefined); // Ensure map function didn't return undefined
+
+      // Only update state if the data has actually changed to prevent infinite loops
+      if (JSON.stringify(newUnitData) !== JSON.stringify(unitTypeInfo.unitData)) {
+        unitTypeInfo.updateFn(newUnitData);
+        stateChanged = true;
+      }
+    });
+    // Optionally log if state changed, useful for debugging
+    // if (stateChanged) {
+    //   console.log("Unit section data updated.");
+    // }
+  }, [user, unitMapFunction, unitTypesIndex]); // Rerun when user, map function, or index changes
 
   /**
-   * Get type, quantity, and level for each unit.
-   * @return {Object}
+   * Gathers the quantities entered for each unit across all sections.
+   * @returns An array of objects containing unit type, quantity, and level for units with quantity > 0.
    */
-  const getUnitQuantities = () => {
-    return unitTypesIndex.reduce((curVal, unitType) => [...curVal, ...unitType.unitData], [])
-      .filter((unit) => unit.enabled)
+  const getUnitQuantities = useCallback(() => {
+    return unitTypesIndex.reduce<UnitData[]>((curVal, unitType) =>
+      unitType.unitData ? [...curVal, ...unitType.unitData] : curVal, // Flatten unit data from all sections
+      [])
+      .filter((unit): unit is UnitData => unit !== null && unit.enabled) // Filter out null/disabled units
       .map((unit) => {
-        const unitComponents = unit.id.split('_');
+        // const unitComponents = unit.id.split('_'); // ID format like "OFFENSE_1"
         return {
-          type: unitComponents[0],
-          quantity: unitCosts[unit.id] || 0,
-          level: parseInt(unitComponents[1], 10),
+          type: unit.usage, // Use the 'usage' field which should be UnitType
+          quantity: unitCosts[unit.id] || 0, // Get quantity from state
+          level: unit.level, // Use the level directly
         };
+      })
+      .filter(unit => unit.quantity > 0); // Only include units with quantity > 0
+  }, [unitTypesIndex, unitCosts]);
+
+  /**
+   * Calls the backend API to train or untrain units.
+   * @param endpoint - The API endpoint ('train' or 'untrain').
+   * @param user - The current user object.
+   * @param units - An array of units to modify with their quantities and levels.
+   * @returns The API response data on success, or null on failure/no units.
+   * @throws Error if the API call fails or returns an error status.
+   */
+  const callTrainingApi = async (endpoint: 'train' | 'untrain', user: User, units: { type: UnitType; quantity: number; level: number }[]) => {
+    if (units.length === 0) {
+      alertService.warn(`No units selected to ${endpoint}.`);
+      return null;
+    }
+    try {
+      const response = await fetch(`/api/training/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, units: units }),
       });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || `Calling training API endpoint ${endpoint} failed with status ${response.status}.`);
+      }
+      alertService.success(data.message || `${endpoint.charAt(0).toUpperCase() + endpoint.slice(1)} successful!`);
+      return data;
+    } catch (error: any) {
+      logError(`Error calling ${endpoint} API:`, error); // Use logError
+      throw new Error(error.message || `An unexpected error occurred during ${endpoint}.`);
+    }
   };
 
   /**
-   * Calls the named training API endpoint, with the provided user and units.
-   * 
-   * @param {string} endpoint Either 'train' or 'untrain'
-   * @param {User} user
-   * @param {Array} units
-   * @return {Promise}
+   * Updates the local state of unit sections based on the API response after training/untraining.
+   * @param data - The data object returned from the API, expected to contain a `data` array of updated units.
    */
-  const callTrainingApi = async (endpoint, user, units) => {
-    const response = await fetch('/api/training/' + endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        userId: user.id,
-        units: units,
-      }),
+  const updateLocalUnits = useCallback((data: any) => {
+    if (!data?.data || !Array.isArray(data.data)) {
+        console.warn("API response missing expected data structure for unit update.");
+        forceUpdate(); // Force update anyway, maybe backend succeeded
+        return;
+    };
+
+    const updatedUnitMap = new Map<string, number>();
+    // Assuming data.data is an array of { type: UnitType; level: number; quantity: number }
+    data.data.forEach((u: { type: UnitType; level: number; quantity: number }) => {
+      updatedUnitMap.set(`${u.type}_${u.level}`, u.quantity);
     });
 
-    if (!response.ok && response.status !== 400) {
-      throw new Error('Calling training API endpoint ' + endpoint + ' failed.');
-      return;
-    }
-
-    const data = await response.json();
-
-    if (response.status === 400) {
-      throw new Error(data.error);
-      return;
-    }
-
-    alertService.success(data.message);
-
-    return data;
-  };
-
-  /**
-   * Updates the units on the page with data from the API, e.g. after a successful
-   * API call.
-   * @param {Object} data Parsed JSON response from one of the training API endpoints.
-   */
-  const updateUnits = (data) => {
-    unitTypesIndex.forEach((unit) => {
-      unit.updateFn((prevUnits) => {
+    // Update the state for each section
+    unitTypesIndex.forEach((unitTypeInfo) => {
+      unitTypeInfo.updateFn((prevUnits) => {
+        if (!prevUnits) return null;
         return prevUnits.map((unit) => {
-          const updatedUnit = data.data.find(
-            (u) => u.type === unit.id.split('_')[0]
-          );
-          if (updatedUnit) {
-            return { ...unit, ownedUnits: updatedUnit.quantity };
-          }
-          return unit;
+          const updatedQuantity = updatedUnitMap.get(unit.id);
+          // If an updated quantity exists for this unit ID, update ownedUnits
+          return updatedQuantity !== undefined ? { ...unit, ownedUnits: updatedQuantity } : unit;
         });
       });
     });
 
-    resetUnitCosts(); // Reset unit costs to 0
-    forceUpdate();
-  };
+    resetUnitCosts(); // Reset input fields and costs
+    forceUpdate(); // Force user context update
+  }, [unitTypesIndex, resetUnitCosts, forceUpdate]);
 
   /**
-   * Handles either a train or untrain action.
-   * @param {'train'|'untrain'} submitType
+   * Handles the form submission for either training or untraining all selected units.
+   * Validates input, checks gold/citizens, calls the API, and updates local state.
+   * @param submitType - Whether to 'train' or 'untrain'.
    */
-  const handleFormSubmit = async (submitType) => {
+  const handleFormSubmit = useCallback(async (submitType: 'train' | 'untrain') => {
     if (!user) {
       alertService.error('User not found. Please try again.');
       return;
     }
-
     const unitsToModify = getUnitQuantities();
+
+    if (unitsToModify.length === 0) {
+      alertService.warn(`Please enter the quantity of units you wish to ${submitType}.`);
+      return;
+    }
+
+    // Validation for training
+    if (submitType === 'train') {
+        const requiredGold = BigInt(totalCost); // totalCost should be up-to-date number
+        const userGold = BigInt(user.gold ?? 0);
+        if (requiredGold > userGold) {
+            alertService.error(`Insufficient gold. You need ${toLocale(requiredGold, user.locale)} but only have ${toLocale(userGold, user.locale)}.`);
+            return;
+        }
+        const citizensRequired = unitsToModify.reduce((sum, unit) => sum + unit.quantity, 0);
+        const availableCitizens = user.units?.find(u => u.type === 'CITIZEN')?.quantity ?? 0;
+        if (citizensRequired > availableCitizens) {
+             alertService.error(`Insufficient citizens. Need ${toLocale(citizensRequired, user.locale)}, have ${toLocale(availableCitizens, user.locale)}.`);
+             return;
+        }
+    }
+    // Validation for untraining (already partially handled in getUnitQuantities, but double-check here if needed)
+    // Could add a check here to ensure untrain quantity doesn't exceed owned for each unit type again if necessary
 
     try {
       const data = await callTrainingApi(submitType, user, unitsToModify);
-      updateUnits(data);
-    } catch (error) {
-      console.log(error)
-      alertService.error(`${error}. Please try again.`);
+      if (data) {
+        updateLocalUnits(data); // Update UI on success
+      }
+    } catch (error: any) {
+      alertService.error(error.message || `Failed to ${submitType} units. Please try again.`);
     }
-  };
+  }, [user, getUnitQuantities, totalCost, updateLocalUnits, callTrainingApi]); // Added callTrainingApi dependency
 
-  /**
-   * Handles a train action.
-   */
-  const handleTrainAll = async () => {
-    try {
-      handleFormSubmit('train');
-    } catch (error) {
-      console.log(error);
-      return;
-    }
-  };
+  const handleTrainAll = () => handleFormSubmit('train');
+  const handleUntrainAll = () => handleFormSubmit('untrain');
 
-  /**
-   * Handles an untrain action.
-   */
-  const handleUntrainAll = async () => {
-    try {
-      handleFormSubmit('untrain');
-    } catch (error) {
-      console.log(error);
-      return;
-    }
-  };
+  // Refs for sticky footer calculation
+  const parentRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
 
-  const parentRef = useRef(null);
-  const stickyRef = useRef(null);
-
+  // Effect for sticky footer logic
   useEffect(() => {
+    const footerElement = footerRef.current;
+    const scrollContainer = parentRef.current; // Use the MainArea ref
+    if (!footerElement || !scrollContainer) return;
+
+    let lastKnownScrollPosition = 0;
+    let ticking = false;
+    let lastWidth = ''; // Cache last width to avoid unnecessary style updates
+
     const handleScroll = () => {
-      const stickyElement = stickyRef.current;
-      const parentElement = parentRef.current;
-      const { bottom } = parentElement.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      
-      if (bottom <= windowHeight) {
-        stickyElement.style.position = 'absolute';
-        stickyElement.style.bottom = '0';
-        stickyElement.style.width = '100%';
-      } else {
-        stickyElement.style.position = 'fixed';
-        stickyElement.style.bottom = '0';
-        stickyElement.style.width = '69vw';
-        stickyElement.style.maxWidth = '1200px';
+      lastKnownScrollPosition = window.scrollY;
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (!footerElement || !scrollContainer) return; // Re-check elements inside animation frame
+
+          const scrollHeight = document.documentElement.scrollHeight;
+          const clientHeight = window.innerHeight;
+          const scrollableHeight = scrollHeight - clientHeight;
+          const footerHeight = footerElement.offsetHeight;
+
+          // Check if the bottom of the scroll container is visible or nearly visible
+          const parentRect = scrollContainer.getBoundingClientRect();
+          const isNearBottom = lastKnownScrollPosition >= scrollableHeight - (footerHeight + 10); // Adjust threshold as needed
+
+          if (isNearBottom) {
+            // If near bottom, make footer relative
+            if (footerElement.style.position !== 'relative') {
+              footerElement.style.position = 'relative';
+              footerElement.style.bottom = 'auto';
+              footerElement.style.left = 'auto';
+              footerElement.style.width = 'auto'; // Reset width
+            }
+          } else {
+            // If not near bottom, make footer fixed
+            if (footerElement.style.position !== 'fixed') {
+              footerElement.style.position = 'fixed';
+              footerElement.style.bottom = '0';
+              lastWidth = ''; // Reset cached width when switching to fixed
+            }
+            // Update width and left only if necessary
+            const newWidth = `${parentRect.width}px`;
+            if (lastWidth !== newWidth) {
+              footerElement.style.left = `${parentRect.left}px`;
+              footerElement.style.width = newWidth;
+              lastWidth = newWidth; // Cache the new width
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    // Initial call and event listeners
+    handleScroll(); // Call once initially to set position
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Observe parent container resize to recalculate width/position
+    const resizeObserver = new ResizeObserver(() => {
+      lastWidth = ''; // Reset width cache on resize
+      handleScroll(); // Recalculate on resize
+    });
+    if (scrollContainer) {
+      resizeObserver.observe(scrollContainer);
+    }
+
+    // Cleanup listeners
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      if (scrollContainer) {
+        resizeObserver.unobserve(scrollContainer);
+      }
     };
-  }, [stickyRef, parentRef]);
+  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+
+  if (!user) {
+    return <MainArea title="Training"><Text>Loading user data...</Text></MainArea>;
+  }
+
+  const citizenCount = user.units?.find(unit => unit.type === 'CITIZEN')?.quantity ?? 0;
+  const defenseTotal = user.unitTotals?.defense ?? 0;
+  const population = (user.population ?? 0); // Use pre-calculated population if available
+  const defenseRatio = population > 0 ? defenseTotal / population : 0;
 
   return (
     <MainArea title="Training" ref={parentRef}>
-      <SimpleGrid cols={{ base: 1, xs: 2, sm:3, md: 4 }}>
-        <Paper withBorder p="md" radius={'md'} key='UntrainedCitz'>
-          <Group justify='space-between'>
-            <Text size="lg" fw={'bold'} c="dimmed">Untrained Citizens</Text>
-            <ThemeIcon c='white'>
-              <FontAwesomeIcon icon={faPeopleGroup} />
-            </ThemeIcon>
-          </Group>
-          <Group>
-            <Text>
-                {user?.units.filter((unit) => unit.type === 'CITIZEN')[0].quantity}
-            </Text>
-          </Group>
-        </Paper>
-        <Paper withBorder p="md" radius={'md'} key='GoldOnHand'>
-          <Group justify='space-between'>
-            <Text size="lg" fw={'bold'} c="dimmed">Gold On Hand</Text>
-            <ThemeIcon c='white'>
-              <FontAwesomeIcon icon={faCoins} />
-            </ThemeIcon>
-          </Group>
-          <Group>
-            <Text>
-              {toLocale(user?.gold, user?.locale)}
-            </Text>
-          </Group>
-        </Paper>
-        <Paper withBorder p="md" radius={'md'} key='BankedGold'>
-          <Group justify='space-between'>
-            <Text size="lg" fw={'bold'} c="dimmed">Banked Gold</Text>
-            <ThemeIcon c='white'>
-              <FontAwesomeIcon icon={faBuildingColumns} />
-            </ThemeIcon>
-          </Group>
-          <Group>
-            <Text>
-              {toLocale(user?.goldInBank, user?.locale)}
-            </Text>
-          </Group>
-        </Paper>
-        <Paper withBorder p="md" radius={'md'} key='DefenseToPopulation'>
-          <Group justify='space-between'>
-            <Text size="lg" fw={'bold'} c="dimmed">Defense Ratio</Text>
-            <ThemeIcon c='white'>
-              <FontAwesomeIcon icon={faShield} />
-            </ThemeIcon>
-          </Group>
-          <Group>
-            <Text>
-              {toLocale((user?.unitTotals.defense / user?.population) * 100)} %
-            </Text>
-            {(user?.unitTotals.defense / user?.population) < .25 && (
-              <Text size='sm' c='dimmed'>
-                <Tooltip label='It is recommended that you have at least 25% Defense along with a healthy Fort. You may take heavier losses and your Workers and Citizens may be at risk!'>
-                  <Badge color="brand">Advisor: Too low</Badge>
-                </Tooltip>
-            </Text>
-            )}
-          </Group>
-        </Paper>
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} mb="lg">
+        <StatCard
+          title="Untrained Citizens"
+          value={toLocale(citizenCount)}
+          icon={<FontAwesomeIcon icon={faPeopleGroup} style={{ width: rem(15), height: rem(15) }} />}
+        />
+        <StatCard
+          title="Gold On Hand"
+          value={toLocale(user.gold) ?? 0}
+          icon={<BiCoinStack style={{ width: rem(15), height: rem(15) }} />}
+        />
+        <StatCard
+          title="Banked Gold"
+          value={toLocale(user.goldInBank) ?? 0}
+          icon={<BiSolidBank style={{ width: rem(15), height: rem(15) }} />}
+        />
+        <StatCard
+          title="Defense Ratio"
+          value={`${toLocale(defenseRatio * 100, user.locale)} %`}
+          icon={<FontAwesomeIcon icon={faShield} style={{ width: rem(15), height: rem(15) }} />}
+        />
       </SimpleGrid>
-      {
-        unitTypesIndex.filter((unitType) => unitType.unitData !== null)
+      {/* Add padding to the bottom of the main content area to prevent overlap with the fixed footer */}
+      <Box style={{ paddingBottom: '100px' }}>
+        {unitTypesIndex
+          .filter((unitType) => unitType.unitData !== null) // Ensure unitData is loaded
           .map((unitType) => (
-            <NewUnitSection
-              heading={unitType.sectionTitle}
-              units={unitType.unitData.filter((unit) => unit.enabled)}
-              updateTotalCost={(cost) => updateTotalCost(unitType.type, cost)}
-              unitCosts={unitCosts}
-              setUnitCosts={setUnitCosts}
-            />
-          ))
-      }
-      <Flex justify='space-between'
-        ref={stickyRef}
-        className=" mt-8 rounded bg-gray-800 sticky bottom-0 px-4 z-10 sm:w-100 md:w-[69vw]"
+              <NewUnitSection
+                heading={unitType.sectionTitle}
+                units={unitType.unitData?.filter(u => u !== undefined) ?? []} // Filter out undefined and provide default
+                updateTotalCost={updateTotalCost}
+                unitCosts={unitCosts}
+                setUnitCosts={setUnitCosts}
+                unitType={unitType.type}
+                key={unitType.type}
+              />
+          ))}
+      </Box>
+      {/* Sticky Footer */}
+      <div
+        ref={footerRef}
+        className="bottom-0 z-10 w-full" // Ensure width and z-index
+        style={{ position: 'relative' }} // Initial position
       >
-        <Stack
-          justify="center"
-          gap="xs">
-          <Text size='sm'>Total Cost: {toLocale(totalCost)}</Text>
-          <Text size='sm'>Total Refund: {toLocale(Math.round(totalCost * .75))}</Text>
-        </Stack>
-        <Flex justify='space-between' m={'xs'}>
-          <Button
-            color='brand.6'
-            onClick={handleTrainAll}
-          >
-            Train All
-          </Button>
-          <Space w='sm' />
-          <Button
-            color='brand'
-            onClick={handleUntrainAll}
-          >
-            Untrain All
-          </Button>
-        </Flex>
-      </Flex>
+        <ContentCard
+          title="Order Summary"
+          variant="highlight"
+          className="border-t-2 border-yellow-600" // Example styling
+        >
+          <Flex justify='space-between' align="center" p="xs">
+            <Stack gap="xs">
+              <Text size='sm'>Total Cost: {toLocale(totalCost, user.locale)}</Text>
+              <Text size='sm' c="dimmed">Refund: {toLocale(Math.floor(totalCost * 0.75), user.locale)}</Text>
+            </Stack>
+            <Group gap="sm">
+              <Button
+                color='green'
+                onClick={handleTrainAll}
+                disabled={totalCost <= 0 || BigInt(totalCost) > (user.gold ?? 0)} // Use BigInt for comparison
+              >
+                Train
+              </Button>
+              <Button
+                color='red'
+                onClick={handleUntrainAll}
+                disabled={totalCost <= 0} // Basic check, more specific checks in handler
+              >
+                Untrain
+              </Button>
+            </Group>
+          </Flex>
+        </ContentCard>
+      </div>
     </MainArea>
   );
 };

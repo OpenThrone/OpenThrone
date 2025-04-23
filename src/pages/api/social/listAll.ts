@@ -1,9 +1,10 @@
 import prisma from "@/lib/prisma";
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { AuthenticatedRequest } from "@/types/api";
 
-const getTopSocialRelations = async (req: NextApiRequest, res: NextApiResponse) => {
+const getTopSocialRelations = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
   }
@@ -17,12 +18,13 @@ const getTopSocialRelations = async (req: NextApiRequest, res: NextApiResponse) 
     playerId = session.user.id;
   }
 
-  if (!['FRIEND', 'ENEMY', 'REQUESTS'].includes(type)) {
+  const typeStr = Array.isArray(type) ? type[0] : type;
+  if (!['FRIEND', 'ENEMY', 'REQUESTS'].includes(typeStr)) {
     return res.status(400).json({ error: 'Invalid relationship type' });
   }
 
   try {
-    const whereCondition = {
+    const whereCondition: any = {
       AND: [
         {
           OR: [
@@ -46,10 +48,10 @@ const getTopSocialRelations = async (req: NextApiRequest, res: NextApiResponse) 
       where: whereCondition,
       include: {
         player: {
-          select: { id: true, display_name: true, race: true, class: true, avatar: true }
+          select: { id: true, display_name: true, race: true, class: true, avatar: true, last_active: true }
         },
         friend: {
-          select: { id: true, display_name: true, race: true, class: true, avatar: true }
+          select: { id: true, display_name: true, race: true, class: true, avatar: true, last_active: true }
         }
       }
     });

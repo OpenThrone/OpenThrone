@@ -1,4 +1,5 @@
 // pages/home/levels.tsx
+import { logError, logInfo } from '@/utils/logger';
 import { useEffect, useState } from 'react';
 import { DefaultLevelBonus } from '@/constants';
 import { useUser } from '@/context/users';
@@ -8,7 +9,7 @@ import LevelCard from '@/components/levelCard';
 import { alertService } from '@/services';
 import MainArea from '@/components/MainArea';
 
-const Levels = () => {
+const Levels = (props) => {
   const { user, forceUpdate } = useUser();
   const [levels, setLevels] = useState(user?.bonus_points ?? DefaultLevelBonus);
   const [proficiencyPoints, setProficiencyPoints] = useState(user?.availableProficiencyPoints ?? 0);
@@ -25,15 +26,23 @@ const Levels = () => {
   const [changeQueue, setChangeQueue] = useState(defaultChangeQueue);
 
   useEffect(() => {
-    if (user) {
-      setLevels(user.bonus_points);
-      if (!initialized) {
-        setProficiencyPoints(user.availableProficiencyPoints); 
-        setChangeQueue(defaultChangeQueue);
-        setInitialized(true);
-      }
+    if (!user) return;
+    // Check if user.availableProficiencyPoints exists
+    if (user.availableProficiencyPoints === undefined || user.availableProficiencyPoints === null) return;
+    
+    setLevels(user.bonus_points);
+    if (!initialized) {
+      setProficiencyPoints(user.availableProficiencyPoints); 
+      setChangeQueue({
+        OFFENSE: { start: 0, change: 0 },
+        DEFENSE: { start: 0, change: 0 },
+        INCOME: { start: 0, change: 0 },
+        INTEL: { start: 0, change: 0 },
+        PRICES: { start: 0, change: 0 },
+      });
+      setInitialized(true);
     }
-  }, [user?.availableProficiencyPoints, user?.bonus_points]);
+  }, [user, initialized]);
 
   const handleAddBonus = (type) => {
     if (proficiencyPoints > 0 && (!changeQueue[type] || proficiencyPoints > 0)) {
@@ -72,7 +81,7 @@ const Levels = () => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Changes saved successfully:', data.updatedBonusPoints);
+        logInfo('Changes saved successfully:', data.updatedBonusPoints);
         // Optionally, update local state with the new bonus points
         setInitialized(false);
         forceUpdate(); // To trigger re-fetching user data
@@ -84,11 +93,11 @@ const Levels = () => {
         alertService.success('Changes saved successfully');
       } else {
         alertService.error('Failed to save changes:', data.error);
-        console.error('Failed to save changes:', data.error);
+        logError('Failed to save changes:', data.error);
       }
     } catch (error) {
       alertService.error('Error saving changes:', error);
-      console.error('Error saving changes:', error);
+      logError('Error saving changes:', error);
     }
   };
 

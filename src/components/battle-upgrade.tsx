@@ -8,6 +8,8 @@ import toLocale from '@/utils/numberFormatting';
 import { useUser } from '../context/users';
 import { alertService } from '@/services';
 import { Button, Flex, Group, NumberInput, Paper, Table, Text, Title } from '@mantine/core';
+import { logError } from '@/utils/logger';
+import ContentCard from './ContentCard';
 
 const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   heading,
@@ -45,6 +47,16 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
     }
   }, [items]);
 
+  const getSectionTotalCost = () => {
+    return getItems.reduce((total, item) => {
+      if (!item.enabled) return total;
+      const qty = itemsToEquip[`${item.type}_${item.level}`] || 0;
+      // item.cost may be a string with commas, so remove them
+      const cost = Number(String(item.cost).replace(/,/g, ''));
+      return total + qty * cost;
+    }, 0);
+  };
+
   const handleInputChange = (unitId, value) => {
     // Attempt to convert the value to an integer to handle something delitin the input
     const intValue = parseInt(value, 10);
@@ -54,35 +66,25 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
         [unitId]: !isNaN(intValue)? intValue : 0,
       }));
     } else {
-      console.error("Invalid input:", value, "for", unitId);
+      logError("Invalid input:", value, "for", unitId);
     }
   };
 
   const handleEquip = async (operation: string) => {
     if (!getItems || getItems.length === 0) return;
 
-    // Initialize a new variable to collect items to equip
+    // Use itemsToEquip state instead of DOM
     const itemsToEquipList = getItems.map((item) => {
-      const inputElement = document.querySelector(
-        `input[name="${item.id}"]`,
-      ) as HTMLInputElement;
-      if (!inputElement) return null; // Handle the case where the element is not found
+      const qty = itemsToEquip[`${item.type}_${item.level}`] || 0;
       return {
-        type: item.id?.split('_')[0] || '', // Provide a fallback value for type
-        quantity: parseInt(inputElement.value, 10),
+        type: item.type,
+        quantity: qty,
         usage: item.usage,
-        level: parseInt(item.id?.split('_')[1] || '0', 10), // Provide a fallback for level
+        level: item.level,
       };
-    }).filter(Boolean); // Filter out null values
-
-    // Initialize the itemsToEquip object for lookup
-    const itemsToEquipObject = itemsToEquipList.reduce((acc, item) => {
-      acc[`${item.type}_${item.level}`] = item.quantity;
-      return acc;
-    }, {} as Record<string, number>);
+    }).filter((item) => item.quantity > 0);
 
     if (!user) {
-      // Handle the case where user is null
       alertService.error('User not found');
       return;
     }
@@ -106,7 +108,6 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
       const data = await response.json();
       if (response.ok) {
         alertService.success(data.message);
-        // Update the getItems state with the new quantities
         setItems((prevItems) => {
           return prevItems.map((item) => {
             const updatedItem = data.data.find(
@@ -118,35 +119,62 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
             return item;
           });
         });
-        getItems.forEach((item) => {
-          const inputElement = document.querySelector(
-            `input[name="${item.id}"]`,
-          );
-          if (inputElement instanceof HTMLInputElement) {
-            inputElement.value = '0';
-          }
+        // Reset all NumberInputs for this section
+        setItemsToEquip((prev) => {
+          const reset = { ...prev };
+          getItems.forEach((item) => {
+            if (item.enabled) {
+              reset[`${item.type}_${item.level}`] = 0;
+            }
+          });
+          return reset;
         });
-
         forceUpdate();
       } else {
         alertService.error(data.error);
       }
     } catch (error) {
       alertService.error('Failed to equip items. Please try again.');
-      console.error(error);
+      logError(error);
     }
   };
 
+  const footer = (<Flex justify={'space-between'} mb="xs">
+    <Button
+      type="button"
+      size='md'
+      color='brand.5'
+      className={`rounded px-4 py-2 ml-2 font-bold text-white  ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
+      disabled={!sectionEnabled}
+      onClick={async () => await handleEquip('buy')}
+    >
+      Buy
+    </Button>
+    <Button
+      type="button"
+      size='md'
+      color='brand'
+      className={`rounded px-4 py-2 mr-2 font-bold text-white ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
+      onClick={async () => await handleEquip('sell')}
+      disabled={!sectionEnabled}
+    >
+      Sell
+    </Button>
+  </Flex>);
+
   return (
-    <Paper className="my-10 rounded-lg bg-gray-800">
+    <ContentCard
+      title={heading}
+      titleSize='lg'
+      className='mb-4'
+      footer={footer}
+    >
+      <Flex justify="end" align="center" mb="xs">
+        <Text fz="md" fw={500}>
+          Total Cost: {toLocale(getSectionTotalCost(), user?.locale)} Gold
+        </Text>
+      </Flex>
       <Table striped highlightOnHover>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th className="w-60 px-4 py-2">
-              <Title order={6}>{heading}</Title>
-            </Table.Th>
-          </Table.Tr>
-        </Table.Thead>
         <Table.Tbody>
           {getItems.map((item: UnitProps) => {
             if (item.enabled) {
@@ -219,29 +247,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
           })}
         </Table.Tbody>
       </Table>
-      <Flex justify={'space-between'} mb="xs">
-        <Button
-          type="button"
-          size='md'
-          color='brand.5'
-          className={`rounded px-4 py-2 ml-2 font-bold text-white  ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
-          disabled={!sectionEnabled}
-          onClick={async () => await handleEquip('buy')}
-        >
-          Buy
-        </Button>
-        <Button
-          type="button"
-          size='md'
-          color='brand'
-          className={`rounded px-4 py-2 mr-2 font-bold text-white ${!sectionEnabled ? 'cursor-not-allowed ' : ''}`}
-          onClick={async () => await handleEquip('sell')}
-          disabled={!sectionEnabled}
-        >
-          Sell
-        </Button>
-      </Flex>
-    </Paper>
+    </ContentCard>
   );
 };
 
