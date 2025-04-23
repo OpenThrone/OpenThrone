@@ -17,7 +17,7 @@ import StatCard from '@/components/StatCard';
  * Displays fortification status, allows repairing specific amounts or all damage,
  * and shows repair history.
  */
-const Repair = () => {
+const Repair = (props) => {
   const { user, forceUpdate } = useUser();
   const [fortification, setFortification] = useState(Fortifications[0]);
   const [repairPoints, setRepairPoints] = useState(0);
@@ -65,8 +65,8 @@ const Repair = () => {
       });
 
       const data = await response.json();
-      if (!response.ok || !data?.success) {
-        const errorMessage = data.error || `Repair failed: ${response.statusText}`;
+      if (!response.ok) {
+        const errorMessage = data.error || `Repair failed: ${response.status}`;
         logError('Error repairing:', errorMessage, data);
         setInlineError(errorMessage); // Set inline error instead
         return;
