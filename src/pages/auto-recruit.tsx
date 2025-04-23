@@ -36,6 +36,10 @@ export default function AutoRecruiter(props) {
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [isStoppingSession, setIsStoppingSession] = useState(false);
   const [isResumingSession, setIsResumingSession] = useState(false);
+  // New state to track countdown/loading phase
+  const [isCountdown, setIsCountdown] = useState(false);
+  // New state to track recruit status: 'recruiting', 'success', or ''
+  const [recruitStatus, setRecruitStatus] = useState('');
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -69,7 +73,7 @@ export default function AutoRecruiter(props) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
     }
-    alertService.error('Your session has ended or is no longer valid. Please start a new session.', false, 5000); // Simplified call
+    alertService.error('Your session has ended or is no longer valid. Please start a new session.', false); // Simplified call
   }, []); // Added dependency array
 
   /**
@@ -105,7 +109,7 @@ export default function AutoRecruiter(props) {
           // Session ended successfully on server
         } catch (error) {
           logError('Error ending recruitment session:', error);
-          alertService.error('Could not cleanly end server session, but stopping locally.', false, 3000); // Simplified call
+          alertService.error('Could not cleanly end server session, but stopping locally.', false); // Simplified call
         }
       }
     }
@@ -153,14 +157,14 @@ export default function AutoRecruiter(props) {
           // Handle other generic errors from the API
           setHasEnded(true);
           setIsPaused(true);
-          alertService.error(data.error || 'Error fetching new user', false, 5000); // Simplified call
+          alertService.error(data.error || 'Error fetching new user', false); // Simplified call
           logError('Error fetching new user:', data.error || 'Unknown API error');
         }
       }
     } catch (error) {
       setHasEnded(true);
       setIsPaused(true);
-      alertService.error('Network error fetching new user', false, 5000); // Simplified call
+      alertService.error('Network error fetching new user', false); // Simplified call
       logError('Caught Network Error fetching user:', error);
     } finally {
       setIsFetchingUser(false);
@@ -186,23 +190,26 @@ export default function AutoRecruiter(props) {
       intervalRef.current = null;
     }
     setCountdown(3);
+    setIsCountdown(true); // Enter countdown phase
+    setUser(null); // Hide user during countdown/loading
     let timer = 3;
     intervalRef.current = setInterval(async () => {
       timer -= 1; // Decrement timer first
       setCountdown(timer); // Update countdown state
-
       if (timer <= 0) { // Check if timer reached zero
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
         }
+        setIsCountdown(false); // Exit countdown phase
+        setRecruitStatus('recruiting'); // Reset status for next user
         if (sessionIdRef.current && !isPausedRef.current) {
           await fetchRandomUser();
         }
         setLastSuccess(false); // Reset after countdown finishes
       }
     }, 1000);
-  }, [fetchRandomUser]); // Dependency for startCountdown
+  }, [fetchRandomUser]);
 
   /**
    * Handles the recruitment attempt for the currently displayed user.
@@ -225,9 +232,7 @@ export default function AutoRecruiter(props) {
           sessionId: sessionIdRef.current, // Use ref value
         }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         setLastSuccess(true);
         setConsecutiveSuccesses((prev) => prev + 1);
@@ -235,13 +240,18 @@ export default function AutoRecruiter(props) {
           forceUpdate(); // Update context user data
         }
         setTotalLeft(prev => prev > 0 ? prev - 1 : 0); // Decrement totalLeft locally
-
         if (!isPausedRef.current) { // Check pause state via ref
           if (totalLeft -1 <= 0) { // Check if this was the last recruit
             stopRecruiting(true); // End session if no recruits left
             alertService.success('Successfully recruited the last unit for today!');
           } else {
-            startCountdown(); // Start countdown for next user
+            setRecruitStatus('success'); // Show success message
+            setTimeout(() => {
+              setRecruitStatus('');
+              setIsCountdown(true); // Enter countdown phase
+              setUser(null); // Hide user during countdown
+              startCountdown(); // Start countdown for next user
+            }, 1000); // Show success for 1s before countdown
           }
         }
       } else {
@@ -250,18 +260,18 @@ export default function AutoRecruiter(props) {
           handleInvalidSession();
         } else {
           logError('Error handling recruitment:', data.error);
-          alertService.error(data.error || 'Recruitment failed.', false, 5000); // Simplified call
+          alertService.error(data.error || 'Recruitment failed.', false); // Simplified call
         }
       }
     } catch (error) {
       setLastSuccess(false);
       logError('Error handling recruitment:', error);
-      alertService.error('Network error during recruitment. Please try again.', false, 5000); // Simplified call
+      alertService.error('Network error during recruitment. Please try again.', false); // Simplified call
     } finally {
       setIsHandlingRecruitment(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHandlingRecruitment, user, viewer, forceUpdate, totalLeft, startCountdown, handleInvalidSession, stopRecruiting]); // Added stopRecruiting dependency here too
+  }, [isHandlingRecruitment, user, viewer, forceUpdate, totalLeft, startCountdown, handleInvalidSession, stopRecruiting]);
 
   /**
    * Starts a new auto-recruitment session by calling the API.
@@ -301,13 +311,13 @@ export default function AutoRecruiter(props) {
             , true); // Make sticky
             break;
           default:
-            alertService.error(data.error || 'Failed to start session.', false, 5000); // Simplified call
+            alertService.error(data.error || 'Failed to start session.', false); // Simplified call
             break;
         }
       }
     } catch (error) {
         logError('Error starting recruitment session:', error);
-        alertService.error('An error occurred while starting the session.', false, 5000); // Simplified call
+        alertService.error('An error occurred while starting the session.', false); // Simplified call
     } finally {
         setIsStartingSession(false);
     }
@@ -345,7 +355,7 @@ export default function AutoRecruiter(props) {
       }
     } catch (error) {
       logError('Error verifying session:', error);
-      alertService.error('Error verifying session. Please try again.', false, 5000); // Simplified call
+      alertService.error('Error verifying session. Please try again.', false); // Simplified call
     } finally {
         setIsResumingSession(false);
     }
@@ -428,19 +438,20 @@ export default function AutoRecruiter(props) {
       <Text size="lg" ta="center" mb="md"> {/* Centered text */}
         Total Daily Recruits left: {totalLeft}
       </Text>
-      {/* Conditionally render Recruiter only if user exists AND we are not paused or already handling recruitment */}
-      {user && !isHandlingRecruitment && !isPaused && (
+      {/* Conditionally render Recruiter only if user exists, not paused, and not in countdown */}
+      {user && !isPaused && !isCountdown && (
           <Recruiter
             key={user.id}
             user={user}
-            showCaptcha={process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' ? consecutiveSuccesses < 3 : false} // Ensure boolean comparison
+            showCaptcha={process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' ? consecutiveSuccesses < 3 : false}
             onSuccess={handleRecruitment}
+            status={recruitStatus === 'success' ? 'Recruited successfully!' : `Recruiting ${user.display_name} into your army...`}
           />
       )}
       <Space h="md" />
       <Flex justify={'center'} align={'center'} direction={'column'} gap="md"> {/* Added gap */}
         {/* Conditional Loading Text */}
-        {!isPaused && lastSuccess && countdown > 0 && (
+        {!isPaused && isCountdown && countdown > 0 && (
           <Text>
             Loading next user in {countdown} seconds...
           </Text>
