@@ -48,20 +48,20 @@ export const getStaticProps = async (context: any) => {
 
   const totalWealth = (await getTopWealth()).map(entry => ({
     ...entry,
-    gold: entry.gold.toString(),
-    gold_in_bank: entry.gold_in_bank.toString(),
+    gold: entry.stat.toString(),
+    gold_in_bank: entry.stat.toString(),
     stat: entry.stat.toString(),
   }));
 
   const goldOnHand = (await getTopGoldOnHand()).map(entry => ({
     ...entry,
-    gold: entry.gold.toString(),
+    gold: entry.stat.toString(),
     stat: entry.stat.toString(),
   }));
 
   const goldInBank = (await getTopGoldInBank()).map(entry => ({
     ...entry,
-    gold_in_bank: entry.gold_in_bank.toString(),
+    gold_in_bank: entry.stat.toString(),
     stat: entry.stat.toString(),
   }));
 
