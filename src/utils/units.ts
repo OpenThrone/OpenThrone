@@ -12,7 +12,7 @@ export const calculateTotalCost = (units: PlayerUnit[], uModel: UserModel): numb
       totalCost += (unitType.cost - ((uModel.priceBonus || 0) / 100) * unitType.cost) * unitData.quantity;
     }
   });
-  return totalCost;
+  return Math.ceil(totalCost); // Always return an integer
 };
 
 export const updateUnitsMap = (

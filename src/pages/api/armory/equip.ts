@@ -108,9 +108,8 @@ const handler = async (
         });
       }
       // Zod already ensures quantity is positive integer
-      totalCost += Math.floor(
-        (itemDefinition.cost - ((uModel.priceBonus ?? 0) / 100) * itemDefinition.cost) * itemData.quantity
-      );
+      const itemBaseCost = itemDefinition.cost - Math.ceil(((uModel.priceBonus ?? 0) / 100) * itemDefinition.cost);
+      totalCost += Math.ceil(itemBaseCost * itemData.quantity);
     }
 
     // Check if the user has enough gold (convert BigInt for comparison)
@@ -139,7 +138,7 @@ const handler = async (
 
       // Use a Map for efficient updates of existing items
       const currentItemsMap = new Map<string, EquipmentProps>();
-      (currentUser.items as EquipmentProps[]).forEach(item => {
+      (currentUser.items as unknown as EquipmentProps[]).forEach(item => {
         const key = `${item.type}-${item.usage}-${item.level}`;
         currentItemsMap.set(key, item);
       });

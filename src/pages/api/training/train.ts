@@ -87,7 +87,8 @@ const handler = async (
 
       // Calculate total cost using validated unitsToTrain
       const unitList = unitsToTrain as PlayerUnit[];
-      const totalCost = calculateTotalCost(unitList, uModel);
+      let totalCost = calculateTotalCost(unitList, uModel);
+      totalCost = Math.ceil(totalCost); // Ensure integer for BigInt
 
       // Check gold within transaction
       if (user.gold < BigInt(totalCost)) {

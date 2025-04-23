@@ -118,7 +118,7 @@ const NewItemSection: React.FC<NewItemSectionProps> = React.memo(({
     items.forEach((unit) => {
       const quantity = itemCosts[unit.id] || 0;
       const unitCostValue = Number(String(unit.cost).replace(/,/g, '')) || 0;
-      cost += quantity * unitCostValue;
+      cost += Math.ceil(quantity * unitCostValue);
     });
     return cost;
   }, [items, itemCosts]);
@@ -311,7 +311,7 @@ const NewItemSection: React.FC<NewItemSectionProps> = React.memo(({
       setIsProcessingConvert(false);
       return;
     }
-    if (!toLower && BigInt(conversionCost) > userGold) {
+    if (!toLower && BigInt(Math.ceil(conversionCost)) > userGold) {
       setConvertError('Not enough gold for this conversion.');
       setIsProcessingConvert(false);
       return;
@@ -404,12 +404,12 @@ const NewItemSection: React.FC<NewItemSectionProps> = React.memo(({
   };
 
   const userGold = BigInt(user?.gold?.toString() ?? '0');
-  const buyDisabled = sectionTotalCost <= 0 || BigInt(sectionTotalCost) > userGold || isProcessingBuy || isProcessingSell || isProcessingConvert;
+  const buyDisabled = sectionTotalCost <= 0 || BigInt(Math.ceil(sectionTotalCost)) > userGold || isProcessingBuy || isProcessingSell || isProcessingConvert;
   const sellDisabled = sectionTotalCost <= 0 || isProcessingBuy || isProcessingSell || isProcessingConvert; // Add check for owned items later if needed per item
 
   const buyTooltip =
       sectionTotalCost <= 0 ? 'Enter quantities to buy.' :
-      BigInt(sectionTotalCost) > userGold ? `Not enough gold (Cost: ${toLocale(sectionTotalCost, user?.locale)})` :
+      BigInt(Math.ceil(sectionTotalCost)) > userGold ? `Not enough gold (Cost: ${toLocale(sectionTotalCost, user?.locale)})` :
       '';
   const sellTooltip = sectionTotalCost <= 0 ? 'Enter quantities to sell.' : '';
 
@@ -607,15 +607,15 @@ const NewItemSection: React.FC<NewItemSectionProps> = React.memo(({
                 />
                 <Stack gap={0} style={{ flexBasis: '150px', textAlign: 'right' }}>
                   <Text size='sm'>{toLower ? 'Refund:' : 'Cost:'}</Text>
-                  <Text size='sm' color={!toLower && BigInt(conversionCost) > userGold ? 'red' : 'inherit'}>
+                  <Text size='sm' color={!toLower && BigInt(Math.ceil(conversionCost)) > userGold ? 'red' : 'inherit'}>
                       {toLocale(conversionCost, user?.locale)}
                   </Text>
                 </Stack>
-                 <Tooltip label={convertError || (!fromItem || !toItem ? 'Select items' : conversionAmount <= 0 ? 'Enter quantity' : !toLower && BigInt(conversionCost) > userGold ? 'Not enough gold' : '')} disabled={!(!fromItem || !toItem || conversionAmount <= 0 || (!toLower && BigInt(conversionCost) > userGold)) || isProcessingConvert} withArrow>
+                 <Tooltip label={convertError || (!fromItem || !toItem ? 'Select items' : conversionAmount <= 0 ? 'Enter quantity' : !toLower && BigInt(Math.ceil(conversionCost)) > userGold ? 'Not enough gold' : '')} disabled={!(!fromItem || !toItem || conversionAmount <= 0 || (!toLower && BigInt(Math.ceil(conversionCost)) > userGold)) || isProcessingConvert} withArrow>
                    <div style={{ width: 'auto' }}> {/* Wrapper for disabled tooltip */}
                       <Button
                         onClick={handleConvert}
-                        disabled={!fromItem || !toItem || conversionAmount <= 0 || (!toLower && BigInt(conversionCost) > userGold) || isProcessingBuy || isProcessingSell || isProcessingConvert}
+                        disabled={!fromItem || !toItem || conversionAmount <= 0 || (!toLower && BigInt(Math.ceil(conversionCost)) > userGold) || isProcessingBuy || isProcessingSell || isProcessingConvert}
                         loading={isProcessingConvert}
                         size="sm"
                       >

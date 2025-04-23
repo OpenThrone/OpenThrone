@@ -106,21 +106,21 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => { // 
     }
 
     // Calculate the base cost difference
-    const baseCostDifference =
-      (toItemType.cost - ((uModel?.priceBonus || 0) / 100) * toItemType.cost) -
-      (fromItemType.cost - ((uModel?.priceBonus || 0) / 100) * fromItemType.cost);
+    const toBaseCost = toItemType.cost - Math.ceil(((uModel?.priceBonus || 0) / 100) * toItemType.cost);
+    const fromBaseCost = fromItemType.cost - Math.ceil(((uModel?.priceBonus || 0) / 100) * fromItemType.cost);
+    const baseCostDifference = toBaseCost - fromBaseCost;
 
     // Apply multiplier based on conversion direction
     const multiplier = isUpgrade ? 1 : 0.75;
 
     // Calculate the final cost
-    let cost = Math.ceil(amount * baseCostDifference * multiplier);
+    let cost = isUpgrade
+      ? Math.ceil(amount * baseCostDifference * multiplier)
+      : Math.floor(Math.abs(amount * baseCostDifference * multiplier));
 
     // For downgrades, cost represents a refund, so we make it positive
     if (!isUpgrade) {
-      cost = Math.ceil(amount * baseCostDifference * multiplier);
-      // Ensure the refund is a positive value
-      if (cost < 0) cost = -cost;
+      cost = Math.floor(Math.abs(amount * baseCostDifference * multiplier));
     }
 
     // Check if user has enough gold for upgrade or handle refund for downgrade

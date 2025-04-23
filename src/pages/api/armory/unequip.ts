@@ -89,20 +89,18 @@ const handler = async (
         throw new Error('User not found within transaction');
       }
 
-      const uModel = new UserModel(user); // Use user data fetched within transaction
-      let totalRefund = 0;
-
       // Use a Map for efficient lookup and update of user's items
       const userItemsMap = new Map<string, EquipmentProps>();
-      (user.items as EquipmentProps[]).forEach(item => {
+      (user.items as unknown as EquipmentProps[]).forEach(item => {
         // Ensure quantity is number for calculations
-        const quantity = typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : item.quantity;
+        const quantity = typeof item.quantity === 'string' ? parseInt(item.quantity as string, 10) : item.quantity;
         if (isNaN(quantity)) {
             throw new Error(`Invalid quantity format for item ${item.type}-${item.usage}-${item.level} in user inventory.`);
         }
         userItemsMap.set(`${item.type}-${item.usage}-${item.level}`, { ...item, quantity });
       });
 
+      let totalRefund = 0;
 
       // Validate and process items to unequip
       for (const itemData of itemsToUnequip) {
@@ -123,9 +121,8 @@ const handler = async (
         (userItem.quantity as number) -= itemData.quantity;
 
         // Calculate refund for this item
-        totalRefund += Math.floor(
-          (itemDefinition.cost - ((uModel.priceBonus ?? 0) / 100) * itemDefinition.cost) * itemData.quantity * 0.75 // 75% refund
-        );
+        const itemBaseCost = itemDefinition.cost - Math.ceil(((user.priceBonus ?? 0) / 100) * itemDefinition.cost);
+        totalRefund += Math.floor(itemBaseCost * itemData.quantity * 0.75); // 75% refund
       }
 
       // Filter out items with zero quantity
