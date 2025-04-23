@@ -16,7 +16,6 @@ const parentLinks = [
   'Home',
   'Battle',
   'Structures',
-  //'Social',
   // 'Alliances',
   'Community',
 ] as const;
@@ -33,19 +32,12 @@ const subMenus: {
   Home: [
     { text: 'Overview', href: '/home/overview', parent: 'Home' },
     { text: 'Levels', href: '/home/levels', parent: 'Home' },
-    { text: 'Profile', href: '/home/profile', parent: 'Home' },
-    { text: 'Settings', href: '/home/settings', parent: 'Home' },
   ],
   Battle: [
     { text: 'Attack', href: '/battle/users', parent: 'Battle' },
     { text: 'Training', href: '/battle/training', parent: 'Battle' },
     { text: 'Upgrades', href: '/battle/upgrades', parent: 'Battle' },
     { text: 'War History', href: '/battle/history', parent: 'Battle' },
-  ],
-  Social: [
-    { text: 'Friends', href: '/social/friends', parent: 'Social' },
-    { text: 'Enemies', href: '/social/enemies', parent: 'Social' },
-    { text: 'Requests', href: '/social/requests', parent: 'Social' },
   ],
   Structures: [
     { text: 'Bank', href: '/structures/bank', parent: 'Structures' },
@@ -160,7 +152,9 @@ export const NavLoggedIn: React.FC = () => {
 
         // Find the active sub link
         const activeSubLinkItem = subMenu.find(
-          (item) => item.text.toLowerCase() === secondPath
+          (item) =>
+            item.text.toLowerCase() === secondPath &&
+            item.parent === activeLink
         );
         if (activeSubLinkItem) {
           setActiveSubLink(activeSubLinkItem.text);
@@ -262,19 +256,7 @@ export const NavLoggedIn: React.FC = () => {
                   </li>
                 );
               })}
-              <li className="xs:px-6 px-3" key={'signOut'}>
-                <button
-                  type="button"
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  className={`border-none ${
-                    activeParentLink === 'signout'
-                      ? 'text-elf-link-current'
-                      : 'text-elf-link-link'
-                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-sm`}
-                >
-                  Sign Out
-                </button>
-              </li>
+              
             </ul>
           </div>
         </nav>
