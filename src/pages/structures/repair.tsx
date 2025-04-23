@@ -351,7 +351,7 @@ const Repair = (props) => {
                 {history.map((entry) => (
                   <Table.Tr key={entry.id}>
                     <Table.Td>{new Date(entry.date_time).toLocaleString()}</Table.Td>
-                    <Table.Td>+{entry.stats.increase}</Table.Td>
+                    <Table.Td>+{entry.stats.actualRepairAmount}</Table.Td>
                     <Table.Td>
                       {entry.stats.currentFortHP}{" "}
                       <FontAwesomeIcon icon={faArrowRight} size="xs" />{" "}
