@@ -3,7 +3,7 @@ import UserModel from "@/models/Users";
 import { BattleUnits, Fortification, ItemType } from "@/types/typings";
 import mtRand from "./mtrand";
 import BattleResult from "@/models/BattleResult";
-import { logInfo } from "./logger";
+import { logDebug, logInfo } from "./logger";
 
 interface BattleState {
   attacker: UserModel;
@@ -57,7 +57,8 @@ export async function simulateBattle(
   debug: boolean = false
 ): Promise<BattleResult> {
   if (debug) console.log('Simulating battle between', attacker.displayName, 'and', defender.displayName);
-
+  logDebug('simulateBattle')
+  logDebug('setting total turns:', totalTurns);
   let state = initializeBattleState(attacker, defender, initialFortHP, debug);
   state.totalTurns = totalTurns;
   for (let turn = 1; turn <= totalTurns; turn++) {
@@ -193,9 +194,6 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
 
 function calculateAttackerStrength(state, turn) {
   let staminaDrop = calculateStaminaDrop(turn);
-  console.log(`Stamina Drop for turn ${turn}: ${staminaDrop}`);
-  console.log(`Base Attacker KS: ${state.baseAttackerKS}, Base Attacker DS: ${state.baseAttackerDS}`);
-  console.log(`Attacker Stamina: ${state.attackerStamina}`);
   const stamnaImpact = state.attackerStamina * staminaDrop;
   return {
     KS: Math.ceil(state.baseAttackerKS * stamnaImpact),
@@ -226,16 +224,17 @@ function calculateDefenderStrength(state, turn, debug) {
   if (state.fortHP < 0.3 * state.initialFortHP) {
     if (turn <= 5) {
       // Early turns - defense is weakened
-      if (debug) console.log('Fort is critically damaged, applying citizens/workers to calculation');
-      if (debug) console.log(`Turn: ${turn}, Fort HP: ${state.fortHP}, Initial Fort HP: ${state.initialFortHP}`);
+      logDebug('Fort is critically damaged, applying nerf factor to defense units');
+      logDebug('Fort is critically damaged, applying citizens/workers to calculation');
+      logDebug(`Turn: ${turn}, Fort HP: ${state.fortHP}, Initial Fort HP: ${state.initialFortHP}`);
       let nerfFactor = calculateDefenseNerfFactor(turn, state.fortHP, state.initialFortHP);
-      if (debug) console.log(`Nerf Factor: ${nerfFactor}`);
+      logDebug(`Nerf Factor: ${nerfFactor}`);
       defenderKS = currentDefenderStrength.killingStrength * nerfFactor;
       defenderDS = currentDefenderStrength.defenseStrength * nerfFactor;
     } else {
       // Later turns - offense units start joining the defense with reinforcements
       // We still should include citizens/workers in the calculation
-      if (debug) console.log('Fort is critically damaged, applying reinforcements from offense units');
+      logDebug('Fort is critically damaged, applying reinforcements from offense units');
       let reinforcementKS = includeOffenseUnits ? calculateReinforcementModifier(turn) : 0;
       let recoveryFactor = calculateRecoveryFactor(turn);
       defenderKS = (currentDefenderStrength.killingStrength + reinforcementKS) * recoveryFactor;
@@ -250,7 +249,7 @@ function calculateDefenderStrength(state, turn, debug) {
 
 function shouldBattleEndEarly(state, debug) {
   if (state.attackerOffenseRemaining <= 0) {
-    if (debug) console.log('Battle ended early - attacker has no more offense units.');
+    logDebug('Battle ended early - attacker has no more offense units.');
     return true;
   }
 
@@ -265,12 +264,10 @@ function shouldBattleEndEarly(state, debug) {
   );
 
   if (!hasValidDefenderTargets) {
-    if (debug) {
-      console.log('Battle ended early - no valid defender targets remain.');
-      console.log(`Defender Units Remaining - Defense: ${state.defenderDefenseRemaining}, ` +
-        `Citizens: ${state.defenderCitizensRemaining}, Workers: ${state.defenderWorkersRemaining}, ` +
-        `Offense: ${state.defenderOffenseRemaining}`);
-    }
+    logDebug('Battle ended early - no valid defender targets remain.');
+    logDebug(`Defender Units Remaining - Defense: ${state.defenderDefenseRemaining}, ` +
+      `Citizens: ${state.defenderCitizensRemaining}, Workers: ${state.defenderWorkersRemaining}, ` +
+      `Offense: ${state.defenderOffenseRemaining}`);
     return true;
   }
 
@@ -385,9 +382,9 @@ export function calculateStrength(
   const unitString = JSON.stringify(filteredUnits);
   const itemString = JSON.stringify(user.items?.filter(i => i.usage === unitType));
   const cacheKey = `${user.id}-${unitType}-${includeCitz}-${includeOffense}-${unitString}-${itemString}`;
-
-  if (user.units?.filter(u => u.type === unitType).length > 0) {
-    console.log(`Units of type ${unitType}:`, user.units?.filter(u => u.type === unitType));
+  if (!user || !user.units || !user.items) {
+    console.warn(`User or user units/items not found for type: ${unitType}`);
+    return { killingStrength: 0, defenseStrength: 0 };
   }
 
   if (strengthCache.has(cacheKey)) {
@@ -513,15 +510,25 @@ export function calculateLoot(
   const turnLower = 100 + turns * 10;
   const turnUpper = 100 + turns * 20;
   const turnFactor = mtRand(turnLower, turnUpper) / 371;
+  logDebug('turns:', turns);
+  logDebug(`Uniform Factor: ${uniformFactor}, Turn Factor: ${turnFactor}`);
 
   const levelDifference = Math.min(Math.abs(defender.level - attacker.level), 5);
   const levelDifferenceFactor = 1 + Math.min(0.5, levelDifference * 0.05);
+  logDebug(`Level Difference: ${levelDifference}, Level Difference Factor: ${levelDifferenceFactor}`);
 
   const defenderLevelFactor = calculateDefenderLevelFactor(defender.level);
   const lootFactor = uniformFactor * turnFactor * levelDifferenceFactor * defenderLevelFactor;
+  logDebug(`Loot Factor: ${lootFactor}`);
 
   const defenderGold = BigInt(defender.gold);
   const calculatedLoot = Number(defenderGold) * lootFactor;
+  logDebug(`Defender Gold: ${defenderGold}, Calculated Loot: ${calculatedLoot}`);
+  if (!Number.isFinite(calculatedLoot) || isNaN(calculatedLoot) || calculatedLoot < 0) {
+    console.warn(`Calculated loot is invalid: ${calculatedLoot}. Returning 0.`);
+    return BigInt(0);
+  }
+  logDebug(`Calculated loot: ${calculatedLoot}, Defender Gold: ${defenderGold}, Loot Factor: ${lootFactor}`);
   const loot = BigInt(Math.floor(calculatedLoot));
   return loot < BigInt(0)
     ? BigInt(0)
@@ -955,7 +962,6 @@ function calculateAndApplyExperience(
 }
 export function finalizeBattleResult(state: BattleState): void {
   const { attacker, defender, totalTurns, fortHP, initialFortHP, battleResult } = state;
-
   // Fix missing unit levels
   battleResult.Losses.Defender.units.forEach(unit => {
     if (unit.level === undefined) {
@@ -980,6 +986,7 @@ export function finalizeBattleResult(state: BattleState): void {
       }
     }
   });
+  logDebug('Total Turns:', totalTurns);
 
   battleResult.pillagedGold = calculateLoot(attacker, defender, totalTurns);
   battleResult.finalFortHP = fortHP;
