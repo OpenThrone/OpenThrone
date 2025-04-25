@@ -842,43 +842,7 @@ class UserModel {
       max: currentLevel + levelRange,
     };
   }
-  // --- Re-added Missing Methods/Getters ---
 
-  /**
-   * Calculates the total army stat (e.g., offense, defense) for a given unit type,
-   * considering units, items, battle upgrades, and bonuses.
-   * @param type - The UnitType ('OFFENSE', 'DEFENSE', 'SPY', 'SENTRY') to calculate the stat for.
-   * @returns The calculated army stat value, rounded up.
-   */
-  getArmyStat(type: UnitType): number {
-    const sortedItems = this.getSortedItems(type);
-    const sortedUnits = this.getSortedUnits(type);
-    let totalStat = 0;
-    const unitCoverage = new Map<number, number>(); // Tracks item/upgrade coverage per unit index
-
-    totalStat += this.calculateUnitStats(sortedUnits);
-    totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
-    totalStat += this.calculateBattleUpgradeStats(sortedUnits, type, unitCoverage);
-
-    totalStat = this.applyBonuses(type, totalStat);
-    return Math.ceil(totalStat);
-  }
-
-  /** Calculates the user's current level based on their experience. */
-  get level(): number {
-    return getLevelFromXP(this.experience);
-  }
-
-  /** Gets the user's current spy structure level. */
-  get spyLevel(): number {
-    return (this.structure_upgrades || []).find(s => s.type === 'SPY')?.level ?? 0;
-  }
-
-  /** Gets the user's current sentry structure level. */
-  get sentryLevel(): number {
-    return (this.structure_upgrades || []).find(s => s.type === 'SENTRY')?.level ?? 0;
-  }
-  // --- End Re-added ---
 }
 
 export default UserModel;
