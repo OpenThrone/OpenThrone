@@ -7,14 +7,17 @@ import prisma from "@/lib/prisma";
 /**
  * Update a single user for a turn change.
  *
- * @param {Object} currentUser
+ * @param {UserModel} currentUser
  * @param {number} rank Current rank (1-indexed) of this user
  * @return {Promise<boolean>}
  */
-const updateUserPerTurn = async (currentUser, rank) => {
+const updateUserPerTurn = async (currentUser: UserModel, rank: number) => {
   try {
     const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + BigInt(currentUser.gold);
-    const { killingStrength, defenseStrength } = calculateStrength(currentUser, 'OFFENSE');
+    const oldOffense = currentUser.offense;
+    const oldDefense = currentUser.defense;
+    const oldSpy = currentUser.spy;
+    const oldSentry = currentUser.sentry;
     const newOffense = currentUser.getArmyStat('OFFENSE');
     const newDefense = currentUser.getArmyStat('DEFENSE');
     const newSpying = currentUser.getArmyStat('SPY');
@@ -24,8 +27,6 @@ const updateUserPerTurn = async (currentUser, rank) => {
       gold: updatedGold,
       attack_turns: currentUser.attackTurns + 1,
       rank: rank,
-      //killing_str: killingStrength,
-      //defense_str: defenseStrength,
       offense: newOffense,
       defense: newDefense,
       spy: newSpying,
@@ -43,9 +44,17 @@ const updateUserPerTurn = async (currentUser, rank) => {
           gold_amount: currentUser.goldPerTurn,
           history_type: 'ECONOMY',
           stats: {
-            currentGold: currentUser.gold,
-            newGold: updatedGold,
-            increase: currentUser.goldPerTurn,
+            currentGold: currentUser.gold.toString(),
+            newGold: updatedGold.toString(),
+            increase: currentUser.goldPerTurn.toString(),
+            newOffense,
+            newDefense,
+            newSpy: newSpying,
+            newSentry,
+            oldOffense,
+            oldDefense,
+            oldSpy,
+            oldSentry,
           },
         },
       });
