@@ -115,7 +115,13 @@ export const initializeSocket = (httpServer: HttpServer) => {
       try {
         const user = await prisma.users.findUnique({
           where: { id: userId },
-          include: { permissions: true },
+          include: {
+            permissions: true,
+            user_units: true,
+            user_items: true,
+            user_battle_upgrades: true,
+            user_structure_upgrades: true,
+           },
         });
 
         if (!user) {
