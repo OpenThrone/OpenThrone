@@ -21,14 +21,17 @@ import { PlayerRace } from '@/types/typings';
 import { useLocalStorage } from '@mantine/hooks';
 import { SnackbarProvider } from '@/context/snackbar-context';
 import SnackbarBridge from '@/components/SnackbarBridge';
+import { IntlProvider } from 'next-intl';
 
-const MyApp = ({ Component, pageProps: { session, ...pageProps }, router }) => (
+const MyApp = ({ Component, pageProps: { session, messages, locale, ...pageProps }, router }) => (
   <Suspense fallback={<LoadingDots />}>
     <SessionProvider session={session}>
       <SnackbarProvider>
         <UserProvider>
-          <SnackbarBridge />
-          <AppWithTheme Component={Component} pageProps={pageProps} router={router} />
+          <IntlProvider messages={messages} locale={locale || 'en-US'}>
+            <SnackbarBridge />
+            <AppWithTheme Component={Component} pageProps={pageProps} router={router} />
+          </IntlProvider>
         </UserProvider>
       </SnackbarProvider>
     </SessionProvider>

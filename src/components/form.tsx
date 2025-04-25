@@ -23,6 +23,7 @@ import { useForm, Controller, FieldErrors, FieldErrorsImpl, Merge } from 'react-
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { logError } from '@/utils/logger';
+import { useTranslations } from 'next-intl';
 
 /**
  * Zod schema for user registration data validation.
@@ -86,6 +87,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
   const router = useRouter();
   const [turnstileToken, setTurnstileToken] = useState('');
   const turnsTileRef = useRef<any>();
+  const t = useTranslations('Login');
 
   const form = useForm<RegisterFormData | LoginFormData>({
     resolver: zodResolver(type === 'register' ? registerSchema : loginSchema),
@@ -238,7 +240,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
     <Center>
       <Paper withBorder shadow="md" p={30} radius="md" style={{ width: '100%', maxWidth: 400 }}>
         <Title order={2} ta="center" mb="md" c={'gray'}>
-          {type === 'login' ? 'Sign In' : 'Sign Up'}
+          {type === 'login' ? t('loginText') : t('registerTitle')}
         </Title>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Flex direction="column" gap="md">
@@ -246,8 +248,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
               <>
                 <TextInput
                   id="email"
-                  label="Email Address"
-                  placeholder="username@email.com"
+                  label={t('emailAddress')}
+                  placeholder={t('emailPlaceholder')}
                   autoComplete="email"
                   required
                   size="md"
@@ -257,8 +259,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
                 />
                 <PasswordInput
                   id="password"
-                  label="Password"
-                  placeholder="Password"
+                  label={t('password')}
+                  placeholder={t('passwordPlaceholder')}
                   required
                   size="md"
                   styles={inputStyles}
@@ -270,8 +272,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
               <>
                 <TextInput
                   id="display_name"
-                  label="User Name"
-                  placeholder="DisplayName"
+                  label={t('displayName')}
+                  placeholder={t('displayNamePlaceholder')}
                   autoComplete="username"
                   required
                   size="md"
@@ -282,8 +284,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
                 <TextInput
                   id="email"
                   type="email"
-                  label="Email Address"
-                  placeholder="username@email.com"
+                  label={t('emailAddress')}
+                  placeholder={t('emailPlaceholder')}
                   autoComplete="email"
                   required
                   size="md"
@@ -293,8 +295,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
                 />
                 <PasswordInput
                   id="password"
-                  label="Password"
-                  placeholder="Password"
+                  label={t('password')}
+                  placeholder={t('passwordPlaceholder')}
                   required
                   size="md"
                   styles={inputStyles}
@@ -303,8 +305,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
                 />
                 <PasswordInput
                   id="password_confirm"
-                  label="Confirm Password"
-                  placeholder="Confirm Password"
+                  label={t('confirmPassword')}
+                  placeholder={t('confirmPasswordPlaceholder')}
                   required
                   size="md"
                   styles={inputStyles}
@@ -317,8 +319,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
                   render={({ field, fieldState }) => (
                     <Select
                       id="race-select"
-                      label="Race"
-                      placeholder="Pick one"
+                      label={t('RaceTitle')}
+                      placeholder={t('pickRacePlaceholder')}
                       required
                       data={[
                         { value: 'HUMAN', label: 'HUMAN' },
@@ -339,8 +341,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
                   render={({ field, fieldState }) => (
                     <Select
                       id="class-select"
-                      label="Class"
-                      placeholder="Pick one"
+                      label={t('ClassTitle')}
+                      placeholder={t('pickRacePlaceholder')}
                       required
                       data={[
                         { value: 'FIGHTER', label: 'FIGHTER' },
@@ -358,27 +360,26 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
               </>
             )}
             <Space h="md" />
-            {/* Disable button while loading OR form is submitting */}
             <Button disabled={loading || isSubmitting} type="submit" fullWidth size="md">
-              {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
+              {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? t('signInButton') : t('signUpButton')}</Text>}
             </Button>
             <Space h="md" />
             {type === 'login' ? (
               <Text ta="center" size="sm" c={'gray'}>
-                Don&apos;t have an account?{' '}
+                {t("registerLinkQuestion")}{' '}
                 <Link href="/account/register">
                   <Text component="span" color="blue" inherit>
-                    Sign up
+                    {t('registerLink')}
                   </Text>
                 </Link>{' '}
-                for free.
+                {t("registerFinalMessage")}
               </Text>
             ) : (
               <Text ta="center" size="sm" c={'gray'}>
-                Already have an account?{' '}
+                  {t('HaveAccountQuestion')}{' '}
                 <Link href="/account/login">
                   <Text component="span" color="blue" inherit>
-                    Sign in
+                      {t('loginText')}
                   </Text>
                 </Link>{' '}
                 instead.
@@ -395,18 +396,28 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
         <Modal
           opened={showVacationModal}
           onClose={() => setShowVacationModal(false)}
-          title="Vacation Mode Active"
+          title={t('vacationModalTitle')}
         >
           <Text>
-            Your account is currently in vacation mode. Do you want to end vacation mode and log in?
+            {t('vacationModalText')}
           </Text>
           <Button onClick={handleVacationOverride} mt="md" fullWidth>
-            End Vacation Mode
+            {t('vacationModalButton')}
           </Button>
         </Modal>
       </Paper>
     </Center>
   );
 };
+
+export async function getStaticProps(context) {
+  // Load messages for the current locale
+  const  locale  = context?.locale ||  'en-US' ;
+  return {
+    props: {
+      messages: (await import(`../messages/${locale}.json`)).default
+    }
+  };
+}
 
 export default Form;

@@ -3,8 +3,9 @@ import { useState } from 'react';
 import Form from '@/components/form';
 import MainArea from '@/components/MainArea';
 import { Alert, Space } from '@mantine/core';
+import { InferGetStaticPropsType } from "next";
 
-const Register = (props) => {
+const Register = (props: InferGetStaticPropsType<typeof getStaticProps>) => {
   const [errorMessage, setErrorMessage] = useState('');
 
   return (
@@ -35,5 +36,16 @@ const Register = (props) => {
     </>
   );
 };
+
+export async function getStaticProps(context) {
+  // Load messages for the current locale
+  const  locale  = context?.locale ||  'en-US' ;
+  return {
+    props: {
+      messages: (await import(`@/messages/${locale}.json`)).default,
+      locale
+    }
+  };
+}
 
 export default Register;

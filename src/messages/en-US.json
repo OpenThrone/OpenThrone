@@ -1,0 +1,53 @@
+{
+  "Index": {
+    "welcome": "Welcome to OpenThrone!",
+    "login": "Login",
+    "register": "Register",
+    "metaDescription": "OpenThrone is an OpenSource fan-recreation and expansion of Darkthrone, a classic RPG game. Join us in building a community-driven experience with new features and content.",
+    "metaKeywords": "OpenThrone, Darkthrone, RPG, OpenSource, Community, Game, Fantasy"
+  },
+  "Login": {
+    "title": "Login to OpenThrone",
+    "username": "Username",
+    "disabledLoginTitle": "Login Disabled",
+    "disabledLoginMessage": "Login is currently disabled. Please check back later or contact support.",
+    "password": "Password",
+    "rememberMe": "Remember Me",
+    "forgotPassword": "Forgot Password?",
+    "loginButton": "Login",
+    "registerLinkQuestion": "Don't have an account?",
+    "registerLink": "Register Here",
+    "registerText": "Register",
+    "registerTitle": "Create Your Account",
+    "registerFinalMessage": "for Free!",
+    "loginText": "Login",
+    "emailAddress": "Email Address",
+    "confirmPassword": "Confirm Password",
+    "pickRacePlaceholder": "Pick your race",
+    "pickRace": "Pick one",
+    "RaceTitle": "Race",
+    "ClassTitle": "Class",
+    "HaveAccountQuestion": "Already have an account?",
+    "displayName": "User Name",
+    "displayNamePlaceholder": "DisplayName",
+    "emailPlaceholder": "username@email.com",
+    "passwordPlaceholder": "Password",
+    "confirmPasswordPlaceholder": "Confirm Password",
+    "signInButton": "Sign In",
+    "signUpButton": "Sign Up",
+    "vacationModalTitle": "Vacation Mode Active",
+    "vacationModalText": "Your account is currently in vacation mode. Do you want to end vacation mode and log in?",
+    "vacationModalButton": "End Vacation Mode"
+  },
+  "Installer": {
+    "title": "OpenThrone Installer",
+    "step1": "Database Setup",
+    "step2": "Create Admin User",
+    "step3": "Set Default Language",
+    "step4": "Seed Demo Data",
+    "step5": "Configure Features",
+    "step6": "Finish",
+    "chooseLanguage": "Choose your default language",
+    "continue": "Continue"
+  }
+}
