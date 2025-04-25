@@ -14,22 +14,15 @@ import prisma from "@/lib/prisma";
 const updateUserPerTurn = async (currentUser, rank) => {
   try {
     const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + BigInt(currentUser.gold);
-    const { killingStrength, defenseStrength } = calculateStrength(currentUser, 'OFFENSE');
-    const newOffense = currentUser.getArmyStat('OFFENSE');
-    const newDefense = currentUser.getArmyStat('DEFENSE');
-    const newSpying = currentUser.getArmyStat('SPY');
-    const newSentry = currentUser.getArmyStat('SENTRY');
 
     let updateData = {
       gold: updatedGold,
       attack_turns: currentUser.attackTurns + 1,
       rank: rank,
-      //killing_str: killingStrength,
-      //defense_str: defenseStrength,
-      offense: newOffense,
-      defense: newDefense,
-      spy: newSpying,
-      sentry: newSentry,
+      offense: currentUser.offense,
+      defense: currentUser.defense,
+      spy: currentUser.spy,
+      sentry: currentUser.sentry,
     };
 
     await prisma.$transaction(async (tx) => {
@@ -44,7 +37,7 @@ const updateUserPerTurn = async (currentUser, rank) => {
           history_type: 'ECONOMY',
           stats: {
             currentGold: currentUser.gold,
-            newGold: updatedGold,
+            newGold: updatedGold.toString(),
             increase: currentUser.goldPerTurn,
           },
         },
