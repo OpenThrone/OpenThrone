@@ -26,6 +26,46 @@ enum PermissionType {
   MODERATOR
 }
 
+model user_units {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  type      String
+  level     Int
+  quantity  Int
+  user      users  @relation(fields: [userId], references: [id])
+  @@unique([userId, type, level])
+}
+
+model user_items {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  type      String
+  usage     String
+  level     Int
+  quantity  Int
+  user      users  @relation(fields: [userId], references: [id])
+  @@unique([userId, type, usage, level])
+}
+
+model user_battle_upgrades {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  type      String
+  level     Int
+  quantity  Int
+  user      users  @relation(fields: [userId], references: [id])
+  @@unique([userId, type, level])
+}
+
+model user_structure_upgrades {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  type      String
+  level     Int
+  user      users  @relation(fields: [userId], references: [id])
+  @@unique([userId, type])
+}
+
 model users {
   id                                    Int                    @id @default(autoincrement())
   email                                 String                 @unique
@@ -50,7 +90,7 @@ model users {
   bio                                   String                 @default("")
   colorScheme                           String?
   recruit_link                          String                 @unique @default("")
-  locale                                String
+  locale                                String                 @default("en-US")
   economy_level                         Int                    @default(0)
   avatar                                String?                @default("SHIELD")
   created_at                            DateTime?              @default(now()) @db.Timestamp(6)
@@ -88,9 +128,12 @@ model users {
   ChatRoom                              ChatRoom[]
   ChatRoomParticipant                   ChatRoomParticipant[]
   ChatMessage                           ChatMessage[]
-  messageReactions                      ChatMessageReaction[] // Added for reactions
-  readMessages                          ChatMessageReadStatus[] // Added for read receipts
-
+  messageReactions                      ChatMessageReaction[]
+  readMessages                          ChatMessageReadStatus[]
+  user_units                            user_units[]
+  user_items                            user_items[]
+  user_battle_upgrades                  user_battle_upgrades[]
+  user_structure_upgrades               user_structure_upgrades[]
   @@index([created_at])
 }
 
