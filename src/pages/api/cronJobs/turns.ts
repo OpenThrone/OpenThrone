@@ -7,11 +7,11 @@ import prisma from "@/lib/prisma";
 /**
  * Update a single user for a turn change.
  *
- * @param {Object} currentUser
+ * @param {UserModel} currentUser
  * @param {number} rank Current rank (1-indexed) of this user
  * @return {Promise<boolean>}
  */
-const updateUserPerTurn = async (currentUser, rank) => {
+const updateUserPerTurn = async (currentUser: UserModel, rank: number) => {
   try {
     const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + BigInt(currentUser.gold);
 
