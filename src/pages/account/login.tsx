@@ -7,20 +7,23 @@ import { useLayout } from '@/context/LayoutContext';
 import MainArea from '@/components/MainArea';
 import { Alert, Space } from '@mantine/core';
 import VacationModeModal from '@/components/VacationModeModal';
+import { useTranslations } from 'next-intl';
+import { InferGetStaticPropsType } from "next";
 
-const Login = (props) => {
+const Login = (props: InferGetStaticPropsType<typeof getStaticProps>) => {
   const { setMeta, meta } = useLayout();
   const [resetEmail, setResetEmail] = useState('');
   const [showVacationModal, setShowVacationModal] = useState(false);
   const [vacationUserId, setVacationUserId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const t = useTranslations('Login');
 
   useEffect(() => {
     if (setMeta && meta && meta.title !== "OpenThrone - Login") {
       setMeta({
-        title: 'OpenThrone - Login',
-        description: 'Meta Description',
+        title: t('title'),
+        description: t('metaDescription'),
       });
     }
   }, [meta, setMeta]);
@@ -38,7 +41,7 @@ const Login = (props) => {
   return (
     <>
       <MainArea
-        title="Login">
+        title={t('title')}>
         <div className="mx-auto xs:w-96 md:w-3/4 py-2 md:col-span-9">
           <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">
             {errorMessage && (
@@ -48,12 +51,11 @@ const Login = (props) => {
               <div className="xs:w-96 md:w-5/12">
                 {(process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true') && (
                   <>
-                    <Alert variant='filled' color='red' title='Login is disabled'>Please check Discord or our News for updates.
+                    <Alert variant='filled' color='red' title={t('disabledLoginTitle')}>{t('disabledLoginMessage')}
                     </Alert>
                     <Space h="md" />
                   </>
-                )
-              }
+                )}
                 <Form type="login" setErrorMessage={setErrorMessage} />
               </div>
             </div>
@@ -69,5 +71,16 @@ const Login = (props) => {
     </>
   );
 };
+
+export async function getStaticProps(context) {
+  // Load messages for the current locale
+  const  locale  = context?.locale ||  'en-US' ;
+  return {
+    props: {
+      messages: (await import(`../../messages/${locale}.json`)).default,
+      locale
+    }
+  };
+}
 
 export default Login;

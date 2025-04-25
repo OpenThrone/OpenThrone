@@ -78,6 +78,7 @@
     "next": "^15.2.4",
     "next-auth": "^4.24.11",
     "next-auth-client": "^1.5.0",
+    "next-intl": "^4.1.0",
     "next-mdx-remote": "^4.4.1",
     "next-seo": "^6.6.0",
     "next-sitemap": "^4.2.3",

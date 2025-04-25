@@ -5,8 +5,11 @@ import MainArea from '@/components/MainArea';
 import { Center, Loader } from '@mantine/core';
 import router from 'next/router';
 import { useSession } from 'next-auth/react';
+import { InferGetStaticPropsType } from "next";
+import { useTranslations } from 'next-intl';
 
-const Index = (props) => {
+const Index = (props: InferGetStaticPropsType<typeof getStaticProps>) => {
+  const t = useTranslations('Index');
   const { setMeta, meta } = useLayout();
   const { status } = useSession();
   const [isRedirecting, setIsRedirecting] = useState(true);
@@ -15,10 +18,10 @@ const Index = (props) => {
     if (setMeta && meta && meta.title !== 'OpenThrone') {
       setMeta({
         title: 'OpenThrone',
-        description: 'Meta Description',
+        description: t('metaDescription'),
       });
     }
-  }, [meta, setMeta]);
+  }, [meta, setMeta, t]);
 
   useEffect(() => {
     // Don't redirect until session status is determined
@@ -28,8 +31,6 @@ const Index = (props) => {
     }
 
     if (status === 'authenticated') {
-      // User is logged in, redirect to the dashboard
-      console.log("User authenticated, redirecting to /home/overview");
       router.replace('/home/overview');
       setIsRedirecting(true);
     } else {
@@ -40,7 +41,7 @@ const Index = (props) => {
   if (status === 'loading' || (status === 'authenticated' && isRedirecting)) {
     return (
       <MainArea title="Open Throne">
-        <Center style={{ height: '50vh' }}> {/* Adjust height as needed */}
+        <Center style={{ height: '50vh' }}>
           <Loader />
         </Center>
       </MainArea>
@@ -84,5 +85,17 @@ const Index = (props) => {
     </>
   );
 };
+
+export async function getStaticProps(context) {
+  // Load messages for the current locale
+  const  locale  = context?.locale ||  'en-US' ;
+
+  return {
+    props: {
+      messages: (await import(`../messages/${locale}.json`)).default,
+      locale
+    }
+  };
+}
 
 export default Index;
