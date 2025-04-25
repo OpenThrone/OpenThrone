@@ -1,6 +1,12 @@
-import { logDebug } from '@/utils/logger';
+import UserModel from '@/models/Users';
+import { UnitType } from '@/types/typings';
+import { calculateStrength, simulateBattle } from '@/utils/attackFunctions';
+import { logDebug, logError } from '@/utils/logger';
+import { stringifyObj } from '@/utils/numberFormatting';
+import { AssassinationResult, IntelResult, InfiltrationResult, simulateIntel, simulateAssassination, simulateInfiltration } from '@/utils/spyFunctions';
 import { ReactNode } from 'react';
 import { BehaviorSubject } from 'rxjs';
+import { getUserById, updateUserUnits, updateFortHitpoints, createAttackLog, incrementUserStats, canAttack, createBankHistory, updateUser } from './attack.service';
 
 export interface AlertType {
   type: 'success' | 'error' | 'info' | 'warn' | 'loading';
