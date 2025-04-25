@@ -38,6 +38,7 @@ import {
 } from '../constants';
 import { getLevelFromXP } from '@/utils/utilities';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { logDebug } from '@/utils/logger';
 
 /**
  * Represents a User, providing methods to access calculated stats, bonuses,
@@ -292,15 +293,18 @@ class UserModel {
     const baseBonus = (this.playerBonuses || [])
       .filter((bonus) => bonus.bonusType === 'OFFENSE')
       .reduce((sum, bonus) => sum + (bonus.bonusAmount || 0), 0);
+    logDebug(`UserModel.attackBonus: base bonus: ${baseBonus}`);
 
     const pointsBonus = (this.bonus_points || [])
       .filter((bonus) => bonus.type === 'OFFENSE')
       .reduce((sum, bonus) => sum + (bonus.level || 0), 0);
+    logDebug(`UserModel.attackBonus: points bonus: ${pointsBonus}`);
 
     const structureBonus = (this.structure_upgrades || [])
       .filter(upgrade => upgrade.type === 'OFFENSE')
       .map(upgrade => OffensiveUpgrades.find(u => u.level === upgrade.level)?.offenseBonusPercentage ?? 0)
       .reduce((sum, bonus) => sum + bonus, 0);
+    logDebug(`UserModel.attackBonus: structure bonus: ${structureBonus}`);
 
     return baseBonus + pointsBonus + structureBonus;
   }
@@ -508,7 +512,7 @@ class UserModel {
    */
   getLevelForUnit(type: UnitType): number {
     // Return fortLevel if type is relevant, otherwise 1
-    if (['OFFENSE', 'DEFENSE', 'SENTRY', 'SPY'].includes(type)) {
+    if (['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].includes(type)) {
       return this.fortLevel;
     }
     return 1; // Default level requirement
@@ -527,10 +531,14 @@ class UserModel {
     const unitCoverage = new Map<number, number>(); // Tracks item/upgrade coverage per unit index
 
     totalStat += this.calculateUnitStats(sortedUnits);
+    logDebug(`UserModel.getArmyStat: ${type} unit stats: ${totalStat}`);
     totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
+    logDebug(`UserModel.getArmyStat: ${type} item stats: ${totalStat}`);
     totalStat += this.calculateBattleUpgradeStats(sortedUnits, type, unitCoverage);
+    logDebug(`UserModel.getArmyStat: ${type} battle upgrade stats: ${totalStat}`);
 
     totalStat = this.applyBonuses(type, totalStat);
+    logDebug(`UserModel.getArmyStat: ${type} total stat after bonuses: ${totalStat}`);
     return Math.ceil(totalStat);
   }
 
@@ -557,45 +565,40 @@ class UserModel {
 
   private calculateItemStats(sortedItems: PlayerItem[], sortedUnits: PlayerUnit[], unitCoverage: Map<number, number>): number {
     let totalStat = 0;
-    const itemCountsByTypeLevel: { [itemType: string]: { [level: number]: number } } = {}; // Track used item quantities
+    // Track used item quantities by type and level
+    const itemCountsByTypeLevel: { [itemType: string]: { [level: number]: number } } = {};
 
     sortedUnits.forEach((unit, unitIndex) => {
-      if (unit.quantity <= 0) return; // Skip if unit quantity is zero
-
+      if (unit.quantity <= 0) return;
       const unitCurrentCoverage = unitCoverage.get(unitIndex) || 0;
-      let unitNeedsCoverage = unit.quantity - unitCurrentCoverage; // How many units still need items
+      let unitNeedsCoverage = unit.quantity - unitCurrentCoverage;
+      if (unitNeedsCoverage <= 0) return;
 
-      if (unitNeedsCoverage <= 0) return; // Skip if unit is already fully covered
-
-      const itemsApplicableToUnit = sortedItems.filter(item => item.usage === unit.type);
-
-      itemsApplicableToUnit.forEach(item => {
-        if (unitNeedsCoverage <= 0) return; // Stop if this unit is covered
-
-        const itemInfo = ItemTypes.find(w => w.level === item.level && w.usage === item.usage && w.type === item.type);
-        if (!itemInfo) return;
-
-        // Initialize tracking for this item type/level if needed
-        if (!itemCountsByTypeLevel[item.type]) itemCountsByTypeLevel[item.type] = {};
-        if (!itemCountsByTypeLevel[item.type][item.level]) itemCountsByTypeLevel[item.type][item.level] = 0;
-
-        const availableItemQuantity = item.quantity - itemCountsByTypeLevel[item.type][item.level];
-        if (availableItemQuantity <= 0) return; // No more of this specific item available
-
-        // Determine how many units can receive this item
-        const quantityToApply = Math.min(unitNeedsCoverage, availableItemQuantity);
-
-        totalStat += (itemInfo.bonus ?? 0) * quantityToApply;
-
-        // Update counts
-        itemCountsByTypeLevel[item.type][item.level] += quantityToApply;
-        unitNeedsCoverage -= quantityToApply;
+      // Get all item types for this usage (e.g., WEAPON, HELM, etc.)
+      const itemTypesForUsage = Array.from(new Set(sortedItems.filter(item => item.usage === unit.type).map(item => item.type)));
+      // For each item type, assign the best available item (highest level) to as many units as possible (1 per unit per type)
+      itemTypesForUsage.forEach(itemType => {
+        let unitsLeftForType = unitNeedsCoverage;
+        // Get all items of this type and usage, sorted by level descending
+        const itemsOfType = sortedItems.filter(item => item.usage === unit.type && item.type === itemType).sort((a, b) => b.level - a.level);
+        itemsOfType.forEach(item => {
+          if (unitsLeftForType <= 0) return;
+          const itemInfo = ItemTypes.find(w => w.level === item.level && w.usage === item.usage && w.type === item.type);
+          if (!itemInfo) return;
+          if (!itemCountsByTypeLevel[item.type]) itemCountsByTypeLevel[item.type] = {};
+          if (!itemCountsByTypeLevel[item.type][item.level]) itemCountsByTypeLevel[item.type][item.level] = 0;
+          const availableItemQuantity = item.quantity - itemCountsByTypeLevel[item.type][item.level];
+          if (availableItemQuantity <= 0) return;
+          // Each unit can only equip one of this item type
+          const quantityToApply = Math.min(unitsLeftForType, availableItemQuantity);
+          totalStat += (itemInfo.bonus ?? 0) * quantityToApply;
+          itemCountsByTypeLevel[item.type][item.level] += quantityToApply;
+          unitsLeftForType -= quantityToApply;
+        });
       });
-
       // Update the overall coverage for this unit index (items applied in this step)
       unitCoverage.set(unitIndex, unit.quantity - unitNeedsCoverage);
     });
-
     return totalStat;
   }
 
@@ -842,43 +845,6 @@ class UserModel {
       max: currentLevel + levelRange,
     };
   }
-  // --- Re-added Missing Methods/Getters ---
-
-  /**
-   * Calculates the total army stat (e.g., offense, defense) for a given unit type,
-   * considering units, items, battle upgrades, and bonuses.
-   * @param type - The UnitType ('OFFENSE', 'DEFENSE', 'SPY', 'SENTRY') to calculate the stat for.
-   * @returns The calculated army stat value, rounded up.
-   */
-  getArmyStat(type: UnitType): number {
-    const sortedItems = this.getSortedItems(type);
-    const sortedUnits = this.getSortedUnits(type);
-    let totalStat = 0;
-    const unitCoverage = new Map<number, number>(); // Tracks item/upgrade coverage per unit index
-
-    totalStat += this.calculateUnitStats(sortedUnits);
-    totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
-    totalStat += this.calculateBattleUpgradeStats(sortedUnits, type, unitCoverage);
-
-    totalStat = this.applyBonuses(type, totalStat);
-    return Math.ceil(totalStat);
-  }
-
-  /** Calculates the user's current level based on their experience. */
-  get level(): number {
-    return getLevelFromXP(this.experience);
-  }
-
-  /** Gets the user's current spy structure level. */
-  get spyLevel(): number {
-    return (this.structure_upgrades || []).find(s => s.type === 'SPY')?.level ?? 0;
-  }
-
-  /** Gets the user's current sentry structure level. */
-  get sentryLevel(): number {
-    return (this.structure_upgrades || []).find(s => s.type === 'SENTRY')?.level ?? 0;
-  }
-  // --- End Re-added ---
 }
 
 export default UserModel;
