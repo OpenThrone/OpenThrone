@@ -109,7 +109,14 @@ const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typ
 export const getServerSideProps = async (context: any) => {
   const session = await getSession(context);
   const userId = Number(session?.user?.id);
-
+  if (!session || !userId) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    };
+  }
   // Fetch all attack logs where the user is the attacker
   const attackLogs = await prisma.attack_log.findMany({
     where: { attacker_id: userId, type: 'attack' },

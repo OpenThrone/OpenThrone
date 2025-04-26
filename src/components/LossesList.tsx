@@ -1,11 +1,11 @@
-import { BattleUnits, Loss } from "@/types/typings";
+import { BattleUnits } from "@/types/typings";
 import { HoverCard, List } from "@mantine/core";
 
 interface LossesListProps {
-  losses: Loss;
+  losses: string; // JSON string containing total and units
 }
 const LossesList: React.FC<LossesListProps> = ({ losses }) => {
-  const { total, units = [] } = losses;
+  const { total, units = [] } = typeof losses === 'string' ? JSON.parse(losses) : losses;
 
   if (total === 0 || units.length === 0) {
     return <span>0 Units</span>;
