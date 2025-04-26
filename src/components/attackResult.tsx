@@ -58,8 +58,8 @@ const AttackResults = ({ battle, viewerID }) => {
 
   summaryLines.push(`Gold Pillaged: ${isAttackerWinner ? toLocale(stats.pillagedGold.toLocaleString()) : 0}`);
   summaryLines.push(`Fort Damage Dealt by Attacker: ${stats.forthpAtStart - stats.forthpAtEnd}`);
-  summaryLines.push(`Total Units Lost by Attacker: ${JSON.parse(attackerTotalLosses)}`);
-  summaryLines.push(`Total Units Lost by Defender: ${JSON.parse(defenderTotalLosses)}`);
+  summaryLines.push(`Total Units Lost by Attacker: ${attackerTotalLosses}`);
+  summaryLines.push(`Total Units Lost by Defender: ${defenderTotalLosses}`);
   const sentence = {
     hidden: { opacity: 0 },
     visible: {
