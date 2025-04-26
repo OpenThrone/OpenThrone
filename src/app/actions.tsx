@@ -16,7 +16,7 @@ import UserModel from '@/models/Users';
 import { calculateStrength, simulateBattle } from '@/utils/attackFunctions';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { AssassinationResult, InfiltrationResult, IntelResult, simulateAssassination, simulateInfiltration, simulateIntel } from '@/utils/spyFunctions';
-import { logError } from '@/utils/logger';
+import { logDebug, logError } from '@/utils/logger';
 
 /**
  * Handles spy missions (Intel, Assassinate, Infiltrate) between two users.
@@ -28,6 +28,7 @@ import { logError } from '@/utils/logger';
  * @returns An object indicating the status ('success' or 'failed'), results, and attack log ID.
  */
 export async function spyHandler(attackerId: number, defenderId: number, spies: number, type: string, unit?: UnitType | "CITIZEN_WORKERS") {
+  logDebug('Spy mission initiated', { attackerId, defenderId, spies, type, unit });
   const attackerUser = await getUserById(attackerId);
   const defenderUser = await getUserById(defenderId);
   const attacker = new UserModel(attackerUser);
@@ -44,11 +45,11 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     return { status: 'failed', message: 'Insufficient Spy Offense' };
   }
   const Winner = attacker.spy > defender.sentry ? attacker : defender;
+  logDebug('Spy mission winner determined', { winnerId: Winner.id, attackerSpy: attacker.spy, defenderSentry: defender.sentry });
   try {
     const prismaTx = await prisma.$transaction(async (tx) => {
       if (type === 'INTEL') {
         spyResults = simulateIntel(attacker, defender, spies);
-
       } else if (type === 'ASSASSINATE') {
         if (attacker.units.find((u) => u.type === 'SPY' && u.level === 3) === undefined || attacker.units.find((u) => u.type === 'SPY' && u.level === 2).quantity < spies) {
           logError('Insufficient Assassins');
@@ -69,33 +70,37 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
         await updateFortHitpoints(defenderId, defender.fortHitpoints, tx);
 
       }
+
+      logDebug('Check if spies are lost', { spiesLost: spyResults.spiesLost });
       if (spyResults.spiesLost > 0) {
+        logDebug('Updating attacker units after spy mission', { attackerId, spiesLost: spyResults.spiesLost });
         await updateUserUnits(attackerId,
           attacker.units,
           tx);
       }
 
       const attack_log = await createAttackLog({
-        attacker_id: attackerId,
-        defender_id: defenderId,
         timestamp: new Date().toISOString(),
         winner: Winner.id,
         type: type,
         // Stringify complex results for JSON storage
-        stats: { spyResults: JSON.stringify(spyResults) },
+        stats: { spyResults: stringifyObj(spyResults) },
         // Connect to users via relation fields instead of setting IDs directly
         attackerPlayer: { connect: { id: attackerId } },
         defenderPlayer: { connect: { id: defenderId } },
       }, tx);
+      logDebug('Attack log created', { attackLogId: attack_log.id });
 
       await incrementUserStats(attackerId, {
         type: 'SPY',
         subtype: (attackerId === Winner.id) ? 'WON' : 'LOST',
       }, tx);
+      logDebug('Incremented attacker stats', { attackerId, subtype: (attackerId === Winner.id) ? 'WON' : 'LOST' });
       await incrementUserStats(defenderId, {
         type: 'SENTRY',
         subtype: (defenderId === Winner.id) ? 'WON' : 'LOST',
       }, tx);
+      logDebug('Incremented defender stats', { defenderId, subtype: (defenderId === Winner.id) ? 'WON' : 'LOST' });
 
       return {
         status: 'success',

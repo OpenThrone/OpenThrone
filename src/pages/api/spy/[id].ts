@@ -4,8 +4,10 @@ import { spyHandler } from '@/app/actions';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from "@/middleware/auth";
 import UserModel from "@/models/Users";
+import { AuthenticatedRequest } from "@/types/api";
+import type { NextApiResponse } from 'next';
 
-const handler = async (req, res) => {
+const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   const session = req.session;
 
   const checkParams = (body: any, spiesNeeded: number) => {
@@ -42,6 +44,12 @@ const handler = async (req, res) => {
     const myUser = await prisma?.users.findUnique({
       where: { id: session.user.id },
     });
+    if (!myUser) {
+      return res.status(400).json({ status: 'failed', message: 'User not found' });
+    }
+
+    const uModel = new UserModel(myUser);
+
     switch (req.body.type) {
       case 'INTEL':
         if (req.body.spies <= 0) {
@@ -52,11 +60,7 @@ const handler = async (req, res) => {
           return res.status(400).json({ status: 'failed', message: 'You can only send up to 10 spies'});
         }
 
-        if (!myUser) {
-          return res.status(400).json({ status: 'failed', message: 'User not found' });
-        }
-
-        if (req.body.spies > myUser.units.find((u) => u.type === 'SPY' && u.level === 1).quantity) {
+        if (req.body.spies > uModel.units.find((u) => u.type === 'SPY' && u.level === 1).quantity) {
           return res.status(400).json({ status: 'failed', message: 'You do not have enough spies' });
         }
 
@@ -64,8 +68,8 @@ const handler = async (req, res) => {
           .status(200)
           .json(
             stringifyObj(await spyHandler(
-              parseInt(session.user.id.toString()),
-              parseInt(req.query.id),
+              parseInt(session.user.id),
+              parseInt(req.query.id.toString()),
               parseInt(req.body.spies),
               req.body.type
             ))
@@ -79,8 +83,8 @@ const handler = async (req, res) => {
           .status(200)
           .json(
             stringifyObj(await spyHandler(
-              parseInt(session.user.id.toString()),
-              parseInt(req.query.id),
+              parseInt(session.user.id),
+              parseInt(req.query.id.toString()),
               parseInt(req.body.spies),
               req.body.type,
               req.body.unit
@@ -89,15 +93,14 @@ const handler = async (req, res) => {
       case 'INFILTRATE':
         const spyLog = await prisma.attack_log.count({
           where: {
-            attacker_id: parseInt(session.user.id.toString()),
+            attacker_id: parseInt(session.user.id),
             type: 'INFILTRATE',
-            defender_id: parseInt(req.query.id),
+            defender_id: parseInt(req.query.id.toString()),
             timestamp: {
               gte: new Date(new Date().getTime() - 86400000), //gte 24 hours ago
             },
           },
         })
-        const uModel = new UserModel(myUser);
         if (spyLog >= uModel.spyLimits.infil.perUser || spyLog >= uModel.spyLimits.infil.perDay) {
           return res.status(400).json({ status: 'failed', message: 'You have infiltrated too many times today' });
         }
@@ -114,8 +117,8 @@ const handler = async (req, res) => {
           .status(200)
           .json(
             stringifyObj(await spyHandler(
-              parseInt(session.user.id.toString()),
-              parseInt(req.query.id),
+              parseInt(session.user.id),
+              parseInt(req.query.id.toString()),
               parseInt(req.body.spies),
               req.body.type,
               req.body.unit
@@ -123,7 +126,6 @@ const handler = async (req, res) => {
           );
     }
   }
-  console.log('failed: ', session);
   return res.status(401).json({ status: 'failed', message: 'Unauthorized'});
 }
 

@@ -34,9 +34,10 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   
   useEffect(() => {
     const fetchData = async () => {
-      const filteredUnits = (stats.spyResults.intelligenceGathered?.units.length > 0 ? stats.spyResults.intelligenceGathered?.units?.filter((unit) => unit.quantity > 0) :[]);
+      const units = stats.spyResults.intelligenceGathered?.units;
+      const filteredUnits = Array.isArray(units) && units.length > 0 ? units.filter((unit) => unit.quantity > 0) : [];
       const totalUnits = filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0);
-      const totalPop = Number(Object.values(stats.spyResults.defender.units).reduce((acc: number, unit: PlayerUnit) => acc + unit.quantity, 0)) || 0
+      const totalPop = Number(Object.values(stats.spyResults.defender.units).reduce((acc: number, unit: PlayerUnit) => acc + unit.quantity, 0)) || 0;
       setTotalPopulation(totalPop);
       const unknownUnits = totalPop - totalUnits;
       const unitColors = {
