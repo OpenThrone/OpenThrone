@@ -23,8 +23,8 @@ interface StatsListProps {
 const StatsList: React.FC<StatsListProps> = ({ stats, type, subType, collapsed }) => {
   if (subType !== 'attack') return null;
 
-  const xp = type === 'defense' ? stats.xpEarned.defender : stats.xpEarned.attacker;
-
+  const xp = type === 'defense' ? (typeof stats.xpEarned === 'object' ? stats.xpEarned.defender : JSON.parse(stats.xpEarned).defender) : (typeof stats.xpEarned === 'object' ? stats.xpEarned.attacker : JSON.parse(stats.xpEarned).attacker);
+  
   return collapsed ? (
     <Group align="center" justify="center">
       <Chip>

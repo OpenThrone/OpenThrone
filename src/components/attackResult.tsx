@@ -34,8 +34,8 @@ const AttackResults = ({ battle, viewerID }) => {
     else return 0;
   };
 
-  const attackerTotalLosses = toLocale(totalLosses(stats.attacker_losses));
-  const defenderTotalLosses = toLocale(totalLosses(stats.defender_losses));
+  const attackerTotalLosses = toLocale(totalLosses(JSON.parse(stats.attacker_losses)));
+  const defenderTotalLosses = toLocale(totalLosses(JSON.parse(stats.defender_losses)));
 
   const summaryLines = []
 
@@ -53,17 +53,13 @@ const AttackResults = ({ battle, viewerID }) => {
   summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${toLocale(new UserModel(stats.startOfAttack.Attacker, true, false).offense)} damage`);
   summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name + "'s"} countered with ${toLocale(new UserModel(stats.startOfAttack.Defender, true, false).defense)} damage`);
   summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} won the battle`);
-  if (typeof stats.xpEarned === 'object') {
-    summaryLines.push(`${attackerPlayer.display_name} earned ${toLocale(stats.xpEarned.attacker)} XP`)
-    summaryLines.push(`${defenderPlayer.display_name} earned ${toLocale(stats.xpEarned.defender)} XP`)
-  } else {
-    summaryLines.push(`${attackerPlayer.display_name} earned: ${toLocale(stats.xpEarned)} XP`);
-  }
+  summaryLines.push(`${attackerPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).attacker)} XP`)
+  summaryLines.push(`${defenderPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).defender)} XP`)
+
   summaryLines.push(`Gold Pillaged: ${isAttackerWinner ? toLocale(stats.pillagedGold.toLocaleString()) : 0}`);
   summaryLines.push(`Fort Damage Dealt by Attacker: ${stats.forthpAtStart - stats.forthpAtEnd}`);
-  summaryLines.push(`Total Units Lost by Attacker: ${attackerTotalLosses}`);
-  summaryLines.push(`Total Units Lost by Defender: ${defenderTotalLosses}`);
-
+  summaryLines.push(`Total Units Lost by Attacker: ${JSON.parse(attackerTotalLosses)}`);
+  summaryLines.push(`Total Units Lost by Defender: ${JSON.parse(defenderTotalLosses)}`);
   const sentence = {
     hidden: { opacity: 0 },
     visible: {

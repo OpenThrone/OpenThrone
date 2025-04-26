@@ -95,11 +95,11 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
         case 'casualties':
           // Sort by total casualties
           const aCasualties = (type === 'offense' ? 
-            (a.stats.attacker_losses?.total || 0) : 
-            (a.stats.defender_losses?.total || 0));
+            (JSON.parse(a.stats.attacker_losses)?.total || 0) : 
+            (JSON.parse(a.stats.defender_losses)?.total || 0));
           const bCasualties = (type === 'offense' ? 
-            (b.stats.attacker_losses?.total || 0) : 
-            (b.stats.defender_losses?.total || 0));
+            (JSON.parse(b.stats.attacker_losses)?.total || 0) : 
+            (JSON.parse(b.stats.defender_losses)?.total || 0));
           compareResult = aCasualties - bCasualties;
           break;
       }
