@@ -358,8 +358,31 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
               </>
             )}
             <Space h="md" />
-            {/* Disable button while loading OR form is submitting */}
-            <Button disabled={loading || isSubmitting} type="submit" fullWidth size="md">
+            <label
+              htmlFor="captcha"
+              className="mantine-InputWrapper-label"
+              data-size="md"
+              style={{ color: 'darkgray', fontWeight: 'bolder', fontSize: '1.05rem' }}
+            >
+              Captcha
+            </label>
+            <Turnstile
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+              onSuccess={handleTurnstileSuccess}
+              ref={turnsTileRef}
+              style={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
+            />
+            {/* Disable button while loading, submitting, or if Turnstile is enabled and not yet successful */}
+            <Button
+              disabled={
+                loading ||
+                isSubmitting ||
+                (!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID && !turnstileToken)
+              }
+              type="submit"
+              fullWidth
+              size="md"
+            >
               {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
             </Button>
             <Space h="md" />
@@ -384,11 +407,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
                 instead.
               </Text>
             )}
-             <Turnstile
-               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-               onSuccess={handleTurnstileSuccess}
-               ref={turnsTileRef}
-             />
+             
           </Flex>
         </form>
 
