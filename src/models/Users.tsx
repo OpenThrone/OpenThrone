@@ -570,7 +570,6 @@ class UserModel {
 
     sortedUnits.forEach((unit, unitIndex) => {
       if (unit.quantity <= 0) return;
-      if (unit.quantity <= 0) return;
       const unitCurrentCoverage = unitCoverage.get(unitIndex) || 0;
       let unitNeedsCoverage = unit.quantity - unitCurrentCoverage;
       if (unitNeedsCoverage <= 0) return;
@@ -846,7 +845,6 @@ class UserModel {
       max: currentLevel + levelRange,
     };
   }
-
 }
 
 export default UserModel;
