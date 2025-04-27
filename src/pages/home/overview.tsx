@@ -2,7 +2,7 @@ import NewsAccordion from '@/components/newsAccordion';
 import { useUser } from '@/context/users';
 import { toLocale } from '@/utils/numberFormatting';
 import { useEffect, useState } from 'react';
-import { Text, Card, Space, Table, Group, Center, Flex, ThemeIcon, Paper } from '@mantine/core';
+import { Text, Card, Space, Table, Group, Center, Flex, ThemeIcon, Paper, Popover } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faShieldAlt, faUserShield, faCoins, faLevelUpAlt, faSyncAlt, faStar, faPiggyBank, faTrophy, faMedal, faUserSecret, faCrown, faEye, faShieldVirus, faMoneyBills } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
@@ -200,7 +200,146 @@ const Overview = (props) => {
                     </ThemeIcon>
                     <div>
                       <Text size="md" fw={700} color="dimmed">Offense</Text>
-                      <Text>{user ? toLocale(user.offense) : '0'}</Text>
+                      <Popover width={400} position="bottom" withArrow shadow="md" opened={undefined}>
+                        <Popover.Target>
+                          <Text style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}>
+                            {user ? toLocale(user.getArmyStat('OFFENSE', 2)) : '0'}
+                          </Text>
+                        </Popover.Target>
+                        <Popover.Dropdown>
+                          {user && user.getArmyStatBreakdown ? (() => {
+                            const breakdown = user.getArmyStatBreakdown('OFFENSE');
+                            if (!breakdown) return <Text>No breakdown available</Text>;
+                            const { units = [], items = [], battleUpgrades = [], bonuses = [], total, finalTotal } = breakdown;
+                            const unitsTotal = units.reduce((sum, u) => sum + (u.subtotal || 0), 0);
+                            const upgradesTotal = battleUpgrades.reduce((sum, u) => sum + (u.subtotal || 0), 0);
+                            const bonusesTotal = bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0);
+                            // Group items by type
+                            const itemsByType = items.reduce((acc, item) => {
+                              if (!acc[item.type]) acc[item.type] = [];
+                              acc[item.type].push(item);
+                              return acc;
+                            }, {});
+                            const itemsTotal = items.reduce((sum, i) => sum + (i.subtotal || 0), 0);
+                            return (
+                              <div style={{ maxHeight: 350, overflowY: 'auto' }}>
+                                <strong>Offense Breakdown</strong>
+                                {/* Units Table */}
+                                {units.length > 0 && <>
+                                  <Text mt="xs" mb={2} fw={700}>Units</Text>
+                                  <Table withColumnBorders striped highlightOnHover verticalSpacing="xs" mb="xs">
+                                    <Table.Thead>
+                                      <Table.Tr>
+                                        <Table.Th>Name</Table.Th>
+                                        <Table.Th>Quantity</Table.Th>
+                                        <Table.Th>Bonus/ea</Table.Th>
+                                        <Table.Th>Subtotal</Table.Th>
+                                      </Table.Tr>
+                                    </Table.Thead>
+                                    <Table.Tbody>
+                                      {units.map((u, i) => (
+                                        <Table.Tr key={`unit-${i}`}>
+                                          <Table.Td>{u.name}</Table.Td>
+                                          <Table.Td>{u.quantity}</Table.Td>
+                                          <Table.Td>{u.bonus}</Table.Td>
+                                          <Table.Td>{toLocale(u.subtotal)}</Table.Td>
+                                        </Table.Tr>
+                                      ))}
+                                    </Table.Tbody>
+                                  </Table>
+                                </>}
+                                {/* Items Tables by Type */}
+                                {Object.keys(itemsByType).length > 0 && <>
+                                  <Text mt="xs" mb={2} fw={700}>Items</Text>
+                                  {Object.entries(itemsByType).map(([type, itemsArr]) => (
+                                    <div key={type} style={{ marginBottom: 8 }}>
+                                      <Text size="sm" fw={600} mb={2}>{type}</Text>
+                                      <Table withColumnBorders striped highlightOnHover verticalSpacing="xs" mb="xs">
+                                        <Table.Thead>
+                                          <Table.Tr>
+                                            <Table.Th>Name</Table.Th>
+                                            <Table.Th>Quantity</Table.Th>
+                                            <Table.Th>Bonus/ea</Table.Th>
+                                            <Table.Th>Subtotal</Table.Th>
+                                          </Table.Tr>
+                                        </Table.Thead>
+                                        <Table.Tbody>
+                                          {itemsArr.map((it, i) => (
+                                            <Table.Tr key={`item-${type}-${i}`}>
+                                              <Table.Td>{it.name}</Table.Td>
+                                              <Table.Td>{it.quantity}</Table.Td>
+                                              <Table.Td>{it.bonus}</Table.Td>
+                                              <Table.Td>{toLocale(it.subtotal)}</Table.Td>
+                                            </Table.Tr>
+                                          ))}
+                                        </Table.Tbody>
+                                      </Table>
+                                    </div>
+                                  ))}
+                                </>}
+                                {/* Upgrades Table */}
+                                {battleUpgrades.length > 0 && <>
+                                  <Text mt="xs" mb={2} fw={700}>Upgrades</Text>
+                                  <Table withColumnBorders striped highlightOnHover verticalSpacing="xs" mb="xs">
+                                    <Table.Thead>
+                                      <Table.Tr>
+                                        <Table.Th>Name</Table.Th>
+                                        <Table.Th>Bonus</Table.Th>
+                                        <Table.Th>Subtotal</Table.Th>
+                                      </Table.Tr>
+                                    </Table.Thead>
+                                    <Table.Tbody>
+                                      {battleUpgrades.map((up, i) => (
+                                        <Table.Tr key={`upgrade-${i}`}>
+                                          <Table.Td>{up.name}</Table.Td>
+                                          <Table.Td>{up.bonus}</Table.Td>
+                                          <Table.Td>{toLocale(up.subtotal)}</Table.Td>
+                                        </Table.Tr>
+                                      ))}
+                                    </Table.Tbody>
+                                  </Table>
+                                </>}
+                                {/* Bonuses Table */}
+                                {bonuses.length > 0 && <>
+                                  <Text mt="xs" mb={2} fw={700}>Bonuses</Text>
+                                  <Table withColumnBorders striped highlightOnHover verticalSpacing="xs" mb="xs">
+                                    <Table.Thead>
+                                      <Table.Tr>
+                                        <Table.Th>Name</Table.Th>
+                                        <Table.Th>Percent</Table.Th>
+                                        <Table.Th>Applied To</Table.Th>
+                                        <Table.Th>Bonus Amount</Table.Th>
+                                      </Table.Tr>
+                                    </Table.Thead>
+                                    <Table.Tbody>
+                                      {bonuses.map((b, i) => (
+                                        <Table.Tr key={`bonus-${i}`}>
+                                          <Table.Td>{b.name}</Table.Td>
+                                          <Table.Td>{b.percent ? `+${b.percent}%` : ''}</Table.Td>
+                                          <Table.Td>{b.appliedTo ? toLocale(b.appliedTo) : ''}</Table.Td>
+                                          <Table.Td>{toLocale(b.bonusAmount)}</Table.Td>
+                                        </Table.Tr>
+                                      ))}
+                                    </Table.Tbody>
+                                  </Table>
+                                </>}
+                                {/* Equation */}
+                                <div style={{ fontSize: 13, marginTop: 8 }}>
+                                  <strong>Equation:</strong><br />
+                                  ({toLocale(unitsTotal)} units
+                                  {itemsTotal ? ` + ${toLocale(itemsTotal)} items` : ''}
+                                  {upgradesTotal ? ` + ${toLocale(upgradesTotal)} upgrades` : ''}
+                                  )
+                                  {bonusesTotal ? ` + ${toLocale(bonusesTotal)} bonuses` : ''}
+                                  = <strong>{toLocale(finalTotal)}</strong>
+                                </div>
+                              </div>
+                            );
+                          })() : (
+                            <Text>No breakdown available</Text>
+                          )}
+                        </Popover.Dropdown>
+                      </Popover>
                     </div>
                   </Group>
                 </Table.Td>

@@ -40,6 +40,19 @@ import { getLevelFromXP } from '@/utils/utilities';
 import { stringifyObj } from '@/utils/numberFormatting';
 
 /**
+ * Represents the breakdown of army stats, including total values, unit/item details,
+ * applied bonuses, and final totals.
+ */
+type ArmyStatBreakdown = {
+  total: number;
+  units: { name: string; quantity: number; bonus: number; subtotal: number }[];
+  items: { name: string; quantity: number; bonus: number; subtotal: number }[];
+  battleUpgrades: { name: string; quantity: number; bonus: number; subtotal: number }[];
+  bonuses: { name: string; percent: number; appliedTo: number; bonusAmount: number }[];
+  finalTotal: number;
+};
+
+/**
  * Represents a User, providing methods to access calculated stats, bonuses,
  * available units/items, and other derived properties based on the raw user data.
  */
@@ -520,20 +533,229 @@ class UserModel {
    * @param type - The UnitType ('OFFENSE', 'DEFENSE', 'SPY', 'SENTRY') to calculate the stat for.
    * @returns The calculated army stat value, rounded up.
    */
-  getArmyStat(type: UnitType): number {
+  getArmyStat(type: UnitType, v: number = 1): number {
+    if (v === 1) {
+      const sortedItems = this.getSortedItems(type);
+      const sortedUnits = this.getSortedUnits(type);
+      let totalStat = 0;
+      const unitCoverage = new Map<number, number>(); // Tracks item/upgrade coverage per unit index
+
+      totalStat += this.calculateUnitStats(sortedUnits);
+      totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
+      totalStat += this.calculateBattleUpgradeStats(sortedUnits, type, unitCoverage);
+
+      totalStat = this.applyBonuses(type, totalStat);
+      return Math.ceil(totalStat);
+    }
+    else {
+      return this.getArmyStatBreakdown(type).finalTotal;
+    }
+  }
+
+  /**
+   * Applies bonuses to the calculated army stat based on type.
+   * @param type - The UnitType ('OFFENSE', 'DEFENSE', 'SPY', 'SENTRY').
+   * @param totalStat - The total stat before bonuses.
+   * @returns The final stat after applying bonuses.
+   */
+  getArmyStatBreakdown(type: UnitType): ArmyStatBreakdown {
     const sortedItems = this.getSortedItems(type);
     const sortedUnits = this.getSortedUnits(type);
     let totalStat = 0;
-    const unitCoverage = new Map<number, number>(); // Tracks item/upgrade coverage per unit index
+    const unitCoverage = new Map<number, number>();
 
-    totalStat += this.calculateUnitStats(sortedUnits);
-    totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
-    totalStat += this.calculateBattleUpgradeStats(sortedUnits, type, unitCoverage);
+    // Units
+    const unitsBreakdown = sortedUnits.map(unit => {
+      const unitInfo = UnitTypes.find(u => u.type === unit.type && u.level === unit.level);
+      const bonus = unitInfo?.bonus ?? 0;
+      const subtotal = bonus * (unit.quantity ?? 0);
+      return {
+        name: unitInfo?.name || `${unit.type} L${unit.level}`,
+        quantity: unit.quantity ?? 0,
+        bonus,
+        subtotal,
+      };
+    });
+    const unitsTotal = unitsBreakdown.reduce((sum, u) => sum + u.subtotal, 0);
 
-    totalStat = this.applyBonuses(type, totalStat);
-    return Math.ceil(totalStat);
+    // Items
+    const itemsBreakdown: ArmyStatBreakdown['items'] = [];
+    const itemCountsByTypeLevel: { [itemType: string]: { [level: number]: number } } = {};
+    sortedUnits.forEach((unit, unitIndex) => {
+      if (unit.quantity <= 0) return;
+      const unitCurrentCoverage = unitCoverage.get(unitIndex) || 0;
+      let unitNeedsCoverage = unit.quantity - unitCurrentCoverage;
+      if (unitNeedsCoverage <= 0) return;
+
+      const itemTypesForUsage = Array.from(
+        new Set(sortedItems.filter(item => item.usage === unit.type).map(item => item.type))
+      );
+      itemTypesForUsage.forEach(itemType => {
+        let unitsLeftForType = unitNeedsCoverage;
+        const itemsOfType = sortedItems
+          .filter(item => item.usage === unit.type && item.type === itemType)
+          .sort((a, b) => b.level - a.level);
+        itemsOfType.forEach(item => {
+          if (unitsLeftForType <= 0) return;
+          const itemInfo = ItemTypes.find(
+            w => w.level === item.level && w.usage === item.usage && w.type === item.type
+          );
+          if (!itemInfo) return;
+          if (!itemCountsByTypeLevel[item.type]) itemCountsByTypeLevel[item.type] = {};
+          if (!itemCountsByTypeLevel[item.type][item.level]) itemCountsByTypeLevel[item.type][item.level] = 0;
+          const availableItemQuantity = item.quantity - itemCountsByTypeLevel[item.type][item.level];
+          if (availableItemQuantity <= 0) return;
+          const quantityToApply = Math.min(unitsLeftForType, availableItemQuantity);
+          itemsBreakdown.push({
+            name: itemInfo.name,
+            quantity: quantityToApply,
+            bonus: itemInfo.bonus ?? 0,
+            subtotal: (itemInfo.bonus ?? 0) * quantityToApply,
+          });
+          itemCountsByTypeLevel[item.type][item.level] += quantityToApply;
+          unitsLeftForType -= quantityToApply;
+        });
+      });
+      unitCoverage.set(unitIndex, unit.quantity - unitNeedsCoverage);
+    });
+    const itemsTotal = itemsBreakdown.reduce((sum, i) => sum + i.subtotal, 0);
+
+    // Battle Upgrades
+    const battleUpgradesBreakdown: ArmyStatBreakdown['battleUpgrades'] = [];
+    const applicableUpgrades = (this.battle_upgrades || [])
+      .filter(up => up.type === type)
+      .sort((a, b) => b.level - a.level);
+
+    applicableUpgrades.forEach(upgrade => {
+      const upgradeInfo = BattleUpgrades.find(
+        bu => bu.type === upgrade.type && bu.level === upgrade.level
+      );
+      if (!upgradeInfo || upgrade.quantity <= 0) return;
+      let remainingUpgradeQuantity = upgrade.quantity;
+      sortedUnits.forEach((unit, unitIndex) => {
+        if (remainingUpgradeQuantity <= 0) return;
+        if (unit.quantity <= 0 || unit.level < upgradeInfo.minUnitLevel) return;
+        const unitCurrentCoverage = unitCoverage.get(unitIndex) || 0;
+        const unitNeedsCoverage = unit.quantity - unitCurrentCoverage;
+        if (unitNeedsCoverage <= 0) return;
+        const maxUnitsUpgradeable = remainingUpgradeQuantity * upgradeInfo.unitsCovered;
+        const unitsToUpgrade = Math.min(unitNeedsCoverage, maxUnitsUpgradeable);
+        if (unitsToUpgrade > 0) {
+          battleUpgradesBreakdown.push({
+            name: upgradeInfo.name,
+            quantity: unitsToUpgrade,
+            bonus: upgradeInfo.bonus ?? 0,
+            subtotal: (upgradeInfo.bonus ?? 0) * unitsToUpgrade,
+          });
+          unitCoverage.set(unitIndex, unitCurrentCoverage + unitsToUpgrade);
+          remainingUpgradeQuantity -= Math.ceil(unitsToUpgrade / upgradeInfo.unitsCovered);
+        }
+      });
+    });
+    const battleUpgradesTotal = battleUpgradesBreakdown.reduce((sum, b) => sum + b.subtotal, 0);
+
+    // Bonuses
+    let bonusPercent = 0;
+    let bonusSources: ArmyStatBreakdown['bonuses'] = [];
+    switch (type) {
+      case 'OFFENSE':
+        bonusPercent = this.attackBonus;
+        bonusSources = [
+          ...((this.playerBonuses || [])
+            .filter(b => b.bonusType === 'OFFENSE')
+            .map(b => ({
+              name: b.bonusType,
+              percent: b.bonusAmount ?? 0,
+              appliedTo: unitsTotal + itemsTotal + battleUpgradesTotal,
+              bonusAmount: ((b.bonusAmount ?? 0) / 100) * (unitsTotal + itemsTotal + battleUpgradesTotal),
+            }))),
+          ...((this.bonus_points || [])
+            .filter(b => b.type === 'OFFENSE')
+            .map(b => ({
+              name: b.type,
+              percent: b.level ?? 0,
+              appliedTo: unitsTotal + itemsTotal + battleUpgradesTotal,
+              bonusAmount: ((b.level ?? 0) / 100) * (unitsTotal + itemsTotal + battleUpgradesTotal),
+            }))),
+        ];
+        break;
+      case 'DEFENSE':
+        bonusPercent = this.defenseBonus;
+        bonusSources = [
+          ...((this.playerBonuses || [])
+            .filter(b => b.bonusType === 'DEFENSE')
+            .map(b => ({
+              name: b.bonusType,
+              percent: b.bonusAmount ?? 0,
+              appliedTo: unitsTotal + itemsTotal + battleUpgradesTotal,
+              bonusAmount: ((b.bonusAmount ?? 0) / 100) * (unitsTotal + itemsTotal + battleUpgradesTotal),
+            }))),
+          ...((this.bonus_points || [])
+            .filter(b => b.type === 'DEFENSE')
+            .map(b => ({
+              name: b.type,
+              percent: b.level ?? 0,
+              appliedTo: unitsTotal + itemsTotal + battleUpgradesTotal,
+              bonusAmount: ((b.level ?? 0) / 100) * (unitsTotal + itemsTotal + battleUpgradesTotal),
+            }))),
+        ];
+        break;
+      case 'SPY':
+        bonusPercent = this.spyBonus;
+        bonusSources = [
+          ...((this.playerBonuses || [])
+            .filter(b => b.bonusType === 'INTEL')
+            .map(b => ({
+              name: b.bonusType,
+              percent: b.bonusAmount ?? 0,
+              appliedTo: unitsTotal + itemsTotal + battleUpgradesTotal,
+              bonusAmount: ((b.bonusAmount ?? 0) / 100) * (unitsTotal + itemsTotal + battleUpgradesTotal),
+            }))),
+          ...((this.bonus_points || [])
+            .filter(b => b.type === 'INTEL')
+            .map(b => ({
+              name: b.type,
+              percent: b.level ?? 0,
+              appliedTo: unitsTotal + itemsTotal + battleUpgradesTotal,
+              bonusAmount: ((b.level ?? 0) / 100) * (unitsTotal + itemsTotal + battleUpgradesTotal),
+            }))),
+        ];
+        break;
+      case 'SENTRY':
+        bonusPercent = this.sentryBonus;
+        bonusSources = [
+          ...((this.playerBonuses || [])
+            .filter(b => b.bonusType === 'INTEL')
+            .map(b => ({
+              name: b.bonusType,
+              percent: b.bonusAmount ?? 0,
+              appliedTo: unitsTotal + itemsTotal + battleUpgradesTotal,
+              bonusAmount: ((b.bonusAmount ?? 0) / 100) * (unitsTotal + itemsTotal + battleUpgradesTotal),
+            }))),
+          ...((this.bonus_points || [])
+            .filter(b => b.type === 'INTEL')
+            .map(b => ({
+              name: b.type,
+              percent: b.level ?? 0,
+              appliedTo: unitsTotal + itemsTotal + battleUpgradesTotal,
+              bonusAmount: ((b.level ?? 0) / 100) * (unitsTotal + itemsTotal + battleUpgradesTotal),
+            }))),
+        ];
+        break;
+    }
+    const preBonusTotal = unitsTotal + itemsTotal + battleUpgradesTotal;
+    const bonusAmount = preBonusTotal * (bonusPercent / 100);
+    const finalTotal = preBonusTotal + bonusAmount;
+
+    return {
+      total: preBonusTotal,
+      units: unitsBreakdown,
+      items: itemsBreakdown,
+      battleUpgrades: battleUpgradesBreakdown,
+      bonuses: bonusSources,
+      finalTotal: Math.ceil(finalTotal),
+    };
   }
-
 
 
   private getSortedItems(type: UnitType): PlayerItem[] {
