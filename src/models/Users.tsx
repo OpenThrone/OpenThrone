@@ -38,6 +38,7 @@ import {
 } from '../constants';
 import { getLevelFromXP } from '@/utils/utilities';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { logDebug } from '@/utils/logger';
 
 /**
  * Represents a User, providing methods to access calculated stats, bonuses,
@@ -292,15 +293,18 @@ class UserModel {
     const baseBonus = (this.playerBonuses || [])
       .filter((bonus) => bonus.bonusType === 'OFFENSE')
       .reduce((sum, bonus) => sum + (bonus.bonusAmount || 0), 0);
+    logDebug(`UserModel.attackBonus: base bonus: ${baseBonus}`);
 
     const pointsBonus = (this.bonus_points || [])
       .filter((bonus) => bonus.type === 'OFFENSE')
       .reduce((sum, bonus) => sum + (bonus.level || 0), 0);
+    logDebug(`UserModel.attackBonus: points bonus: ${pointsBonus}`);
 
     const structureBonus = (this.structure_upgrades || [])
       .filter(upgrade => upgrade.type === 'OFFENSE')
       .map(upgrade => OffensiveUpgrades.find(u => u.level === upgrade.level)?.offenseBonusPercentage ?? 0)
       .reduce((sum, bonus) => sum + bonus, 0);
+    logDebug(`UserModel.attackBonus: structure bonus: ${structureBonus}`);
 
     return baseBonus + pointsBonus + structureBonus;
   }
@@ -508,7 +512,7 @@ class UserModel {
    */
   getLevelForUnit(type: UnitType): number {
     // Return fortLevel if type is relevant, otherwise 1
-    if (['OFFENSE', 'DEFENSE', 'SENTRY', 'SPY'].includes(type)) {
+    if (['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].includes(type)) {
       return this.fortLevel;
     }
     return 1; // Default level requirement
@@ -527,10 +531,14 @@ class UserModel {
     const unitCoverage = new Map<number, number>(); // Tracks item/upgrade coverage per unit index
 
     totalStat += this.calculateUnitStats(sortedUnits);
+    logDebug(`UserModel.getArmyStat: ${type} unit stats: ${totalStat}`);
     totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
+    logDebug(`UserModel.getArmyStat: ${type} item stats: ${totalStat}`);
     totalStat += this.calculateBattleUpgradeStats(sortedUnits, type, unitCoverage);
+    logDebug(`UserModel.getArmyStat: ${type} battle upgrade stats: ${totalStat}`);
 
     totalStat = this.applyBonuses(type, totalStat);
+    logDebug(`UserModel.getArmyStat: ${type} total stat after bonuses: ${totalStat}`);
     return Math.ceil(totalStat);
   }
 
@@ -561,6 +569,7 @@ class UserModel {
     const itemCountsByTypeLevel: { [itemType: string]: { [level: number]: number } } = {};
 
     sortedUnits.forEach((unit, unitIndex) => {
+      if (unit.quantity <= 0) return;
       if (unit.quantity <= 0) return;
       const unitCurrentCoverage = unitCoverage.get(unitIndex) || 0;
       let unitNeedsCoverage = unit.quantity - unitCurrentCoverage;
