@@ -41,13 +41,14 @@ const BATTLE_CONSTANTS = {
   }
 } as const;
 
-/* 
- * First lets get the base Attacker and Defender KS/DS.
- * If defender's defense units are less than the critical threshold (25%) then we start killing citizens/workers at a low amount
- * If the fortHP is less than the critical threshold (30%), with respect to the defender's defense unit, kill more citizens as they get caught up in the chaos
- * If fortHP is less than critical, there's alot of defense units, and its turns 1-5 then we'd expect few but more than 0, citizens/workers caught up in the chaos
- * If the fortHP is less than the critical threshold and we're on turns 6-10 then start adding reinforcements from the defender's Offense units but they are nerfed
- * If the forthp is ever 0, then massive casualties of citizens/workers
+/**
+ * Simulates a battle between two users, updating their units and fortifications over a series of turns.
+ * @param {UserModel} attacker - The attacking user.
+ * @param {UserModel} defender - The defending user.
+ * @param {number} initialFortHP - The initial hitpoints of the defender's fortification.
+ * @param {number} totalTurns - The number of turns the battle will last.
+ * @param {boolean} [debug=false] - Whether to enable debug logging.
+ * @returns {Promise<BattleResult>} The result of the battle simulation.
  */
 export async function simulateBattle(
   attacker: UserModel,
@@ -72,6 +73,14 @@ export async function simulateBattle(
   return state.battleResult;
 }
 
+/**
+ * Initializes the battle state object with all relevant properties for the simulation.
+ * @param {UserModel} attacker - The attacking user.
+ * @param {UserModel} defender - The defending user.
+ * @param {number} initialFortHP - The initial hitpoints of the defender's fortification.
+ * @param {boolean} debug - Whether to enable debug logging.
+ * @returns {BattleState} The initialized battle state.
+ */
 function initializeBattleState(attacker: UserModel, defender: UserModel, initialFortHP: number, debug: boolean) {
   let fortHP = Fortifications[defender.fortLevel].hitpoints;
   let attackerStamina = 1.0;
@@ -97,6 +106,12 @@ function initializeBattleState(attacker: UserModel, defender: UserModel, initial
   return state;
 }
 
+/**
+ * Executes a single turn of the battle, updating the state with casualties and fortification damage.
+ * @param {any} state - The current battle state.
+ * @param {number} turn - The current turn number.
+ * @param {boolean} debug - Whether to enable debug logging.
+ */
 async function executeBattleTurn(state: any, turn: number, debug: boolean) {
   state.totalTurns = turn;
   
@@ -179,12 +194,6 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
         state.defenderOffenseRemaining = Math.max(0, state.defenderOffenseRemaining - lostUnit.quantity);
         break;
     }
-    
-    // Also update the actual defender units array to reflect casualties
-    const defenderUnit = state.defender.units.find(unit => unit.type === lostUnit.type && unit.level === lostUnit.level);
-    if (defenderUnit) {
-      defenderUnit.quantity = Math.max(0, defenderUnit.quantity - lostUnit.quantity);
-    }
   }
 
   // Update stamina for next turn
@@ -192,6 +201,12 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
   if(debug) console.log('FortHP at end of turn', state.fortHP);
 }
 
+/**
+ * Calculates the attacker's strength for the current turn, factoring in stamina drop.
+ * @param {any} state - The current battle state.
+ * @param {number} turn - The current turn number.
+ * @returns {{KS: number, DS: number}} The attacker's killing and defense strength.
+ */
 function calculateAttackerStrength(state, turn) {
   let staminaDrop = calculateStaminaDrop(turn);
   const stamnaImpact = state.attackerStamina * staminaDrop;
@@ -201,6 +216,13 @@ function calculateAttackerStrength(state, turn) {
   };
 }
 
+/**
+ * Calculates the defender's strength for the current turn, including possible reinforcements and nerfs.
+ * @param {any} state - The current battle state.
+ * @param {number} turn - The current turn number.
+ * @param {boolean} debug - Whether to enable debug logging.
+ * @returns {{defenderKS: number, defenderDS: number}} The defender's killing and defense strength.
+ */
 function calculateDefenderStrength(state, turn, debug) {
   let shouldIncludeCitz =
     state.defenderDefenseRemaining <= (BATTLE_CONSTANTS.LOW_DEFENSE_RATIO * state.defender.population)
@@ -247,6 +269,12 @@ function calculateDefenderStrength(state, turn, debug) {
   return { defenderKS, defenderDS };
 }
 
+/**
+ * Determines if the battle should end early based on remaining units and fortification status.
+ * @param {any} state - The current battle state.
+ * @param {boolean} debug - Whether to enable debug logging.
+ * @returns {boolean} True if the battle should end early, false otherwise.
+ */
 function shouldBattleEndEarly(state, debug) {
   if (state.attackerOffenseRemaining <= 0) {
     logDebug('Battle ended early - attacker has no more offense units.');
@@ -274,6 +302,13 @@ function shouldBattleEndEarly(state, debug) {
   return false;
 }
 
+/**
+ * Calculates the number of casualties for both attacker and defender for the current turn.
+ * @param {any} state - The current battle state.
+ * @param {number} attackerKS - The attacker's killing strength.
+ * @param {object} defenderStats - The defender's stats and flags for including citizens/offense units.
+ * @returns {{attackerCasualties: number, defenderCasualties: number}} The casualties for both sides.
+ */
 function calculateCasualties(state, attackerKS, defenderStats) {
   return newComputeCasualties(
     attackerKS,
