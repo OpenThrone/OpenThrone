@@ -14,9 +14,11 @@ import {
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { calculateStrength, simulateBattle } from '@/utils/attackFunctions';
+import { simulateBattleV2 } from '@/utils/attackFunctionsv2';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { AssassinationResult, InfiltrationResult, IntelResult, simulateAssassination, simulateInfiltration, simulateIntel } from '@/utils/spyFunctions';
 import { logDebug, logError } from '@/utils/logger';
+import { deepClone } from '@/utils/utilities';
 
 /**
  * Handles spy missions (Intel, Assassinate, Infiltrate) between two users.
@@ -34,15 +36,15 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
   const attacker = new UserModel(attackerUser);
   const defender = new UserModel(defenderUser);
   if (!attacker || !defender) {
-    return { status: 'failed', message: 'User not found' };
+    return { status: 'failed', message: 'User not found', code: 'USER_NOT_FOUND' };
   }
   if (attacker.unitTotals.spies < spies) {
-    return { status: 'failed', message: 'Insufficient spies' };
+    return { status: 'failed', message: 'Insufficient spies', code: 'INSUFFICIENT_SPIES' };
   }
 
   let spyResults: AssassinationResult | IntelResult | InfiltrationResult;
   if (attacker.spy === 0) {
-    return { status: 'failed', message: 'Insufficient Spy Offense' };
+    return { status: 'failed', message: 'Insufficient Spy Offense', code: 'INSUFFICIENT_SPY_OFFENSE' };
   }
   const Winner = attacker.spy > defender.sentry ? attacker : defender;
   logDebug('Spy mission winner determined', { winnerId: Winner.id, attackerSpy: attacker.spy, defenderSentry: defender.sentry });
@@ -115,7 +117,7 @@ export async function spyHandler(attackerId: number, defenderId: number, spies: 
     return prismaTx;
   } catch (ex) {
     logError('Transaction failed: ', ex);
-    return { status: 'failed', message: 'Transaction failed.' };
+    return { status: 'failed', message: 'Transaction failed.', code: 'TRANSACTION_FAILED' };
   }
 }
 
@@ -135,11 +137,17 @@ export async function attackHandler(
   const defenderUser = await getUserById(defenderId);
   const attacker = new UserModel(attackerUser);
   const defender = new UserModel(defenderUser);
+
+  if(process.env.NEXT_PUBLIC_ENABLE_ATTACKING === 'false') {
+    return { status: 'failed', message: 'Attacking is currently disabled.', code: 'ATTACKING_DISABLED' };
+  }
+  logDebug('Attack initiated', { attackerId, defenderId, attack_turns });
+  // Check if both users exist and if the attacker has enough attack turns
   if (!attacker || !defender) {
-    return { status: 'failed', message: 'User not found' };
+    return { status: 'failed', message: 'User not found', code: 'USER_NOT_FOUND' };
   }
   if (attacker.attackTurns < attack_turns) {
-    return { status: 'failed', message: 'Insufficient attack turns' };
+    return { status: 'failed', message: 'Insufficient attack turns', code: 'INSUFFICIENT_ATTACK_TURNS' };
   }
 
   const AttackPlayer = new UserModel(attackerUser);
@@ -156,6 +164,7 @@ export async function attackHandler(
     return {
       status: 'failed',
       message: 'Attack unsuccessful due to negligible offense.',
+      code: 'NEGLIGIBLE_OFFENSE',
     };
   }
 
@@ -163,6 +172,7 @@ export async function attackHandler(
     return {
       status: 'failed',
       message: `You can only attack within ${process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE} levels of your own level.`,
+      code: 'LEVEL_RANGE_EXCEEDED',
     }
   }
 
@@ -170,21 +180,26 @@ export async function attackHandler(
     return {
       status: 'failed',
       message: 'You have attacked this player too many times in the last 24 hours.',
+      code: 'TOO_MANY_ATTACKS',
     }
   }
 
   const startOfAttack = {
-    Attacker: JSON.parse(JSON.stringify(stringifyObj(AttackPlayer))),
-    Defender: JSON.parse(JSON.stringify(stringifyObj(DefensePlayer))),
+    Attacker: stringifyObj(deepClone(AttackPlayer)),
+    Defender: stringifyObj(deepClone(DefensePlayer)),
   };
 
   // Enhanced battle simulation with all factors
-  const battleResults = await simulateBattle(
+  const battleResults = (process.env.NEXT_PUBLIC_ATTACK_VERSION === '2' ? await simulateBattleV2(
     AttackPlayer,
     DefensePlayer,
-    DefensePlayer.fortHitpoints, // Use existing fort HP or default
     attack_turns
-  );
+  ) : await simulateBattle(
+    AttackPlayer,
+    DefensePlayer,
+    DefensePlayer.fortHitpoints,
+    attack_turns
+  ));
 
 
   DefensePlayer.fortHitpoints -= (startOfAttack.Defender.fortHitpoints - battleResults.finalFortHP);
@@ -309,6 +324,6 @@ export async function attackHandler(
     };
   } catch (error) {
     logError('Transaction failed: ', error);
-    return { status: 'failed', message: 'Transaction failed.' };
+    return { status: 'failed', message: 'Transaction failed.', code: 'TRANSACTION_FAILED' };
   }
 }
