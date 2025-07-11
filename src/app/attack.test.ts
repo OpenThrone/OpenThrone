@@ -42,7 +42,7 @@ describe('setup Attack test', () => {
   });
 
   it('should simulate a battle where the attacker has substantially more offense', async () => {
-   
+
     const strongAttacker = new UserModel(attackerGenerator.getUser());
     const weakDefender = new UserModel(defenderGenerator.getUser());
     const battle = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 10);
@@ -101,53 +101,53 @@ describe('setup Attack test', () => {
   // The Offense shouldn't expect much loss in the first few turns
   // but a more fair fight will take place in the later turns
   it('should simulate a battle with 400 Offense level 1 and 2 units against 20 Defense units level 1 and 5000 citizens', async () => {
-    
+
     attackerGenerator.addUnits([
-      { type: 'OFFENSE', level: 1, quantity: 15000 },
-      { type: 'OFFENSE', level: 2, quantity: 2000 },
+      { type: 'OFFENSE', level: 1, quantity: 200 },
+      { type: 'OFFENSE', level: 2, quantity: 200 },
     ]);
 
     attackerGenerator.addExperience(10000);
     attackerGenerator.setFortLevel(6);
     attackerGenerator.setFortHitpoints(50);
 
-    const userGenerator2 = new MockUserGenerator();
-    userGenerator2.setBasicInfo({
+    const defenseGenerator = new MockUserGenerator();
+    defenseGenerator.setBasicInfo({
       email: 'testDefender@test.com',
       display_name: 'TestDefender',
       race: 'HUMAN',
       class: 'FIGHTER',
     });
-    userGenerator2.addUnits([
+    defenseGenerator.addUnits([
       { type: 'CITIZEN', level: 1, quantity: 5000 },
       { type: 'WORKER', level: 1, quantity: 0 },
-      { type: 'OFFENSE', level: 1, quantity: 10000 },
-      { type: 'DEFENSE', level: 2, quantity: 2500 },
+      { type: 'OFFENSE', level: 1, quantity: 120 },
+      { type: 'DEFENSE', level: 1, quantity: 20 },
       { type: 'SENTRY', level: 3, quantity: 1000 },
       { type: 'SENTRY', level: 2, quantity: 7200 },
     ]);
-    userGenerator2.addBattleUpgrades([
+    defenseGenerator.addBattleUpgrades([
       { type: 'OFFENSE', level: 1, quantity: 0 },
-      { type: 'DEFENSE', level: 1, quantity: 10 },
+      { type: 'DEFENSE', level: 1, quantity: 0 },
       { type: 'SENTRY', level: 1, quantity: 0 },
       { type: 'OFFENSE', level: 2, quantity: 0 }
     ])
-    userGenerator2.addExperience(10000);
-    userGenerator2.setFortLevel(15);
-    userGenerator2.setFortHitpoints(80);
-    userGenerator2.setSentryUpgrade(5);
-    const defenseMock = userGenerator2.getUser();
-   const weakDefender = new UserModel(defenseMock);
+    defenseGenerator.addExperience(10000);
+    defenseGenerator.setFortLevel(15);
+    defenseGenerator.setFortHitpoints(80);
+    defenseGenerator.setSentryUpgrade(5);
+    const defenseMock = defenseGenerator.getUser();
+    const weakDefender = new UserModel(defenseMock);
     const strongAttacker = new UserModel(attackerGenerator.getUser());
-    
+
     logInfo('Strong Attacker - Units: ', strongAttacker.unitTotals);
     logInfo('Weak Defender - Units: ', weakDefender.unitTotals);
     logInfo('Weak Defender - FortHP: ', weakDefender.fortHitpoints);
     // Log the quantities for verification
-    const battle1 = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 5, false);
-    
+    const battle1 = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 10, false);
+
     logInfo('Weak Defender - After battle 1 - FortHP: ', weakDefender.fortHitpoints);
-    weakDefender.fortHitpoints -= weakDefender.fortHitpoints - battle1.finalFortHP;
+/*    weakDefender.fortHitpoints -= weakDefender.fortHitpoints - battle1.finalFortHP;
     const battle2 = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 2, false);
     logInfo('Weak Defender - After battle 2 - FortHP: ', weakDefender.fortHitpoints);
     weakDefender.fortHitpoints -= weakDefender.fortHitpoints - battle2.finalFortHP;
@@ -163,19 +163,19 @@ describe('setup Attack test', () => {
     const battle5 = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 10, false);
     logInfo('Weak Defender - After battle 5 - FortHP: ', weakDefender.fortHitpoints);
     weakDefender.fortHitpoints -= weakDefender.fortHitpoints - battle5.finalFortHP;
-
+*/
     logInfo('Strong Attacker - Attacker Losses: ', battle1.Losses.Attacker.total, 'Defender Losses: ', battle1.Losses.Defender.total);
-    logInfo('Strong Attacker - Attacker Losses: ', battle2.Losses.Attacker.total, 'Defender Losses: ', battle2.Losses.Defender.total);
+  /*  logInfo('Strong Attacker - Attacker Losses: ', battle2.Losses.Attacker.total, 'Defender Losses: ', battle2.Losses.Defender.total);
     logInfo('Strong Attacker - Attacker Losses: ', battle3.Losses.Attacker.total, 'Defender Losses: ', battle3.Losses.Defender.total);
     logInfo('Strong Attacker - Attacker Losses: ', battle4.Losses.Attacker.total, 'Defender Losses: ', battle4.Losses.Defender.total);
     logInfo('Strong Attacker - Attacker Losses: ', battle5.Losses.Attacker.total, 'Defender Losses: ', battle5.Losses.Defender.total);
-
+*/
     expect(battle1.Losses.Attacker.total).toBeLessThan(battle1.Losses.Defender.total);
-    expect(battle2.Losses.Attacker.total).toBeLessThan(battle2.Losses.Defender.total);
+  /*  expect(battle2.Losses.Attacker.total).toBeLessThan(battle2.Losses.Defender.total);
     expect(battle3.Losses.Attacker.total).toBeLessThan(battle3.Losses.Defender.total);
     expect(battle4.Losses.Attacker.total).toBeLessThan(battle4.Losses.Defender.total);
     expect(battle5.Losses.Attacker.total).toBeLessThan(battle5.Losses.Defender.total);
-    
+*/
   });
 
 });

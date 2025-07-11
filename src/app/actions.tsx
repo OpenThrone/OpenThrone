@@ -14,7 +14,7 @@ import {
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { calculateStrength, simulateBattle } from '@/utils/attackFunctions';
-import { simulateBattleV2 } from '@/utils/attackFunctionsv2';
+//import { simulateBattleV2 } from '@/utils/attackFunctionsv2';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { AssassinationResult, InfiltrationResult, IntelResult, simulateAssassination, simulateInfiltration, simulateIntel } from '@/utils/spyFunctions';
 import { logDebug, logError } from '@/utils/logger';
@@ -190,16 +190,16 @@ export async function attackHandler(
   };
 
   // Enhanced battle simulation with all factors
-  const battleResults = (process.env.NEXT_PUBLIC_ATTACK_VERSION === '2' ? await simulateBattleV2(
+  /*const battleResults = (process.env.NEXT_PUBLIC_ATTACK_VERSION === '2' ? await simulateBattleV2(
     AttackPlayer,
     DefensePlayer,
     attack_turns
-  ) : await simulateBattle(
+  ) :*/ const battleResults = await simulateBattle(
     AttackPlayer,
     DefensePlayer,
     DefensePlayer.fortHitpoints,
     attack_turns
-  ));
+  )//);
 
 
   DefensePlayer.fortHitpoints -= (startOfAttack.Defender.fortHitpoints - battleResults.finalFortHP);
