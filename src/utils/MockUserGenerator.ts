@@ -265,4 +265,13 @@ export default class MockUserGenerator {
     return this.setStructureUpgrade('ARMORY', level);
   }
 
+  public clearUnits(): this {
+    this.user.units = [];
+    return this;
+  }
+  public clearItems(): this {
+    this.user.items = [];
+    return this;
+  }
+
 }

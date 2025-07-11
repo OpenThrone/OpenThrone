@@ -243,4 +243,19 @@ export async function importKey(rawKey: Buffer) {
   );
 }
 
+export const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+
+export const determineHour = (race: PlayerRace = 'ELF') => {
+  const hour = new Date().getUTCHours();
+  let boost = 1.00;
+
+  if (hour % 2 === 0 && ['ELF', 'HUMAN'].includes(race)) {
+    boost = 1.00; // TODO: Adjust boost for even hours
+  } else if (hour % 2 === 1 && ['GOBLIN', 'UNDEAD'].includes(race)) {
+    boost = 1.00; // TODO: Adjust boost for odd hours
+  }
+
+  return boost;
+}
+
 export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats, serializeDates };
