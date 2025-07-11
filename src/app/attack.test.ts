@@ -39,10 +39,21 @@ describe('setup Attack test', () => {
     const equalDefender = new UserModel(defenderGenerator.getUser());
     const battle = await simulateBattle(equalAttacker, equalDefender, equalDefender.fortHitpoints, 1);
     logInfo('Equal Armies - Attacker Losses: ', battle.Losses.Attacker.total, 'Defender Losses: ', battle.Losses.Defender.total);
+    expect(battle.Losses.Attacker.total).toBeGreaterThan(0);
+    expect(battle.Losses.Defender.total).toBeGreaterThan(0);
+    expect(battle.Losses.Attacker.total).toBeLessThanOrEqual(battle.Losses.Defender.total * 1.3); 
+    
   });
 
   it('should simulate a battle where the attacker has substantially more offense', async () => {
-
+    attackerGenerator.addUnits([
+      { type: 'OFFENSE', level: 1, quantity: 2000 },
+    ]);
+    attackerGenerator.addExperience(10000);
+    defenderGenerator.addUnits([
+      { type: 'DEFENSE', level: 1, quantity: 100 },
+    ]);
+    defenderGenerator.addExperience(10000);
     const strongAttacker = new UserModel(attackerGenerator.getUser());
     const weakDefender = new UserModel(defenderGenerator.getUser());
     const battle = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 10);
@@ -51,6 +62,13 @@ describe('setup Attack test', () => {
 
   it('should simulate a battle where the attacker has substantially less offense', async () => {
 
+    attackerGenerator.addUnits([
+      { type: 'OFFENSE', level: 1, quantity: 100 },
+    ]);
+    attackerGenerator.addExperience(10000);
+    defenderGenerator.addUnits([
+      { type: 'DEFENSE', level: 1, quantity: 2000 },
+    ]);
     const weakAttacker = new UserModel(attackerGenerator.getUser());
     const strongDefender = new UserModel(defenderGenerator.getUser());
 
@@ -58,7 +76,9 @@ describe('setup Attack test', () => {
     logInfo(weakAttacker.unitTotals);
     logInfo(strongDefender.unitTotals);
     const battle = await simulateBattle(weakAttacker, strongDefender, strongDefender.fortHitpoints, 10);
-    logInfo('Weak Attacker - Attacker Losses: ', battle.Losses.Attacker.total, 'Defender Losses: ', battle.Losses.Defender.total);
+    expect(battle.Losses.Attacker.total).toBeGreaterThan(0);
+    expect(battle.Losses.Defender.total).toBeGreaterThan(0);
+    expect(battle.Losses.Attacker.total).toBeLessThan(battle.Losses.Defender.total);
   });
 
   it('should simulate a battle with low fortHP (fort breached, extra casualties applied)', async () => {
@@ -147,35 +167,8 @@ describe('setup Attack test', () => {
     const battle1 = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 10, false);
 
     logInfo('Weak Defender - After battle 1 - FortHP: ', weakDefender.fortHitpoints);
-/*    weakDefender.fortHitpoints -= weakDefender.fortHitpoints - battle1.finalFortHP;
-    const battle2 = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 2, false);
-    logInfo('Weak Defender - After battle 2 - FortHP: ', weakDefender.fortHitpoints);
-    weakDefender.fortHitpoints -= weakDefender.fortHitpoints - battle2.finalFortHP;
-
-    const battle3 = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 4, false);
-    logInfo('Weak Defender - After battle 3 - FortHP: ', weakDefender.fortHitpoints);
-    weakDefender.fortHitpoints -= weakDefender.fortHitpoints - battle3.finalFortHP;
-
-    const battle4 = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 1, false);
-    logInfo('Weak Defender - After battle 4 - FortHP: ', weakDefender.fortHitpoints);
-    weakDefender.fortHitpoints -= weakDefender.fortHitpoints - battle4.finalFortHP;
-
-    const battle5 = await simulateBattle(strongAttacker, weakDefender, weakDefender.fortHitpoints, 10, false);
-    logInfo('Weak Defender - After battle 5 - FortHP: ', weakDefender.fortHitpoints);
-    weakDefender.fortHitpoints -= weakDefender.fortHitpoints - battle5.finalFortHP;
-*/
     logInfo('Strong Attacker - Attacker Losses: ', battle1.Losses.Attacker.total, 'Defender Losses: ', battle1.Losses.Defender.total);
-  /*  logInfo('Strong Attacker - Attacker Losses: ', battle2.Losses.Attacker.total, 'Defender Losses: ', battle2.Losses.Defender.total);
-    logInfo('Strong Attacker - Attacker Losses: ', battle3.Losses.Attacker.total, 'Defender Losses: ', battle3.Losses.Defender.total);
-    logInfo('Strong Attacker - Attacker Losses: ', battle4.Losses.Attacker.total, 'Defender Losses: ', battle4.Losses.Defender.total);
-    logInfo('Strong Attacker - Attacker Losses: ', battle5.Losses.Attacker.total, 'Defender Losses: ', battle5.Losses.Defender.total);
-*/
     expect(battle1.Losses.Attacker.total).toBeLessThan(battle1.Losses.Defender.total);
-  /*  expect(battle2.Losses.Attacker.total).toBeLessThan(battle2.Losses.Defender.total);
-    expect(battle3.Losses.Attacker.total).toBeLessThan(battle3.Losses.Defender.total);
-    expect(battle4.Losses.Attacker.total).toBeLessThan(battle4.Losses.Defender.total);
-    expect(battle5.Losses.Attacker.total).toBeLessThan(battle5.Losses.Defender.total);
-*/
   });
 
 });
