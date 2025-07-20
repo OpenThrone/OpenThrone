@@ -122,6 +122,8 @@ export type Unit = {
   hp: number;
   killingStrength?: number;
   defenseStrength?: number;
+  closeCombatPercentage?: number;
+  rangedPercentage?: number;
 };
 export interface ItemCounts {
   [key: string]: number;

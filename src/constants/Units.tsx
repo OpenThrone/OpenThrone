@@ -11,6 +11,8 @@ export const UnitTypes: Unit[] = [
     hp: 10,
     killingStrength: 2,
     defenseStrength: 1,
+    closeCombatPercentage: 100,
+    rangedPercentage: 0,
   },
   {
     name: 'Worker',
@@ -22,6 +24,8 @@ export const UnitTypes: Unit[] = [
     hp: 20,
     killingStrength: 3,
     defenseStrength: 1,
+    closeCombatPercentage: 100,
+    rangedPercentage: 0,
   },
   {
     name: 'Soldier',
@@ -33,6 +37,8 @@ export const UnitTypes: Unit[] = [
     hp: 10,
     killingStrength: 5,
     defenseStrength: 2,
+    closeCombatPercentage: 100,
+    rangedPercentage: 65,
   },
   {
     name: 'Knight',
@@ -44,6 +50,8 @@ export const UnitTypes: Unit[] = [
     hp: 20,
     killingStrength: 15,
     defenseStrength: 5,
+    closeCombatPercentage: 95,
+    rangedPercentage: 45,
   },
   {
     name: 'Berserker',
@@ -55,6 +63,8 @@ export const UnitTypes: Unit[] = [
     hp: 30,
     killingStrength: 40,
     defenseStrength: 10,
+    closeCombatPercentage: 100,
+    rangedPercentage: 10,
   },
   {
     name: 'Guard',
@@ -66,6 +76,8 @@ export const UnitTypes: Unit[] = [
     hp: 10,
     killingStrength: 3,
     defenseStrength: 5,
+    closeCombatPercentage: 100,
+    rangedPercentage: 0,
   },
   {
     name: 'Archer',
@@ -77,6 +89,8 @@ export const UnitTypes: Unit[] = [
     hp: 20,
     killingStrength: 15,
     defenseStrength: 5,
+    closeCombatPercentage: 75,
+    rangedPercentage: 100,
   },
   {
     name: 'Royal Guard',
@@ -88,6 +102,8 @@ export const UnitTypes: Unit[] = [
     hp: 30,
     killingStrength: 40,
     defenseStrength: 10,
+    closeCombatPercentage: 100,
+    rangedPercentage: 10,
   },
   {
     name: 'Spy',
