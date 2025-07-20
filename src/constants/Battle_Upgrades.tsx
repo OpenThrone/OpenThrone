@@ -11,7 +11,9 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     unitsCovered: 1,
     minUnitLevel: 2,
     killingStrength: 150,
-    defenseStrength: 50
+    defenseStrength: 50,
+    closeCombatPercentage: 95,
+    rangedPercentage: 5
   },
   {
     type: 'OFFENSE',
@@ -23,7 +25,9 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     unitsCovered: 1,
     minUnitLevel: 2,
     killingStrength: 750,
-    defenseStrength: 250
+    defenseStrength: 250,
+    closeCombatPercentage: 100,
+    rangedPercentage: 0
   },
   {
     type: 'DEFENSE',
@@ -35,7 +39,9 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     unitsCovered: 5,
     minUnitLevel: 2,
     killingStrength: 50,
-    defenseStrength: 150
+    defenseStrength: 150,
+    closeCombatPercentage: 5,
+    rangedPercentage: 95
   },
   {
     type: 'DEFENSE',
@@ -47,7 +53,9 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     unitsCovered: 1,
     minUnitLevel: 2,
     killingStrength: 250,
-    defenseStrength: 750
+    defenseStrength: 750,
+    closeCombatPercentage: 0,
+    rangedPercentage: 100,
   },
   {
     type: 'SPY',

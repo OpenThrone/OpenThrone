@@ -10,6 +10,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 1000,
     defenseBonusPercentage: 5,
     cost: 0,
+    casualtyMitigation: 0,
   },
   {
     name: 'Village',
@@ -20,6 +21,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 2000,
     defenseBonusPercentage: 10,
     cost: 100000,
+    casualtyMitigation: 1,
   },
   {
     name: 'Town',
@@ -30,6 +32,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 3000,
     defenseBonusPercentage: 15,
     cost: 250000,
+    casualtyMitigation: 2,
   },
   {
     name: 'Outpost',
@@ -40,6 +43,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 4000,
     defenseBonusPercentage: 20,
     cost: 500000,
+    casualtyMitigation: 3,
   },
   {
     name: 'Outpost Level 2',
@@ -50,6 +54,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 5000,
     defenseBonusPercentage: 25,
     cost: 1000000,
+    casualtyMitigation: 4,
   },
   {
     name: 'Outpost Level 3',
@@ -60,6 +65,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 6000,
     defenseBonusPercentage: 30,
     cost: 2000000,
+    casualtyMitigation: 5,
   },
   {
     name: 'Stronghold',
@@ -70,6 +76,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 7000,
     defenseBonusPercentage: 35,
     cost: 3000000,
+    casualtyMitigation: 6,
   },
   {
     name: 'Stronghold Level 2',
@@ -80,6 +87,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 8000,
     defenseBonusPercentage: 40,
     cost: 4000000,
+    casualtyMitigation: 7,
   },
   {
     name: 'Stronghold Level 3',
@@ -90,6 +98,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 9000,
     defenseBonusPercentage: 45,
     cost: 5000000,
+    casualtyMitigation: 8,
   },
   {
     name: 'Fortress',
@@ -100,6 +109,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 10000,
     defenseBonusPercentage: 50,
     cost: 7500000,
+    casualtyMitigation: 9,
   },
   {
     name: 'Fortress Level 2',
@@ -110,6 +120,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 11000,
     defenseBonusPercentage: 55,
     cost: 10000000,
+    casualtyMitigation: 10,
   },
   {
     name: 'Fortress Level 3',
@@ -120,6 +131,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 12000,
     defenseBonusPercentage: 60,
     cost: 15000000,
+    casualtyMitigation: 11,
   },
   {
     name: 'Citadel',
@@ -130,6 +142,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 13000,
     defenseBonusPercentage: 65,
     cost: 20000000,
+    casualtyMitigation: 12,
   },
   {
     name: 'Citadel Level 2',
@@ -140,6 +153,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 14000,
     defenseBonusPercentage: 70,
     cost: 30000000,
+    casualtyMitigation: 13,
   },
   {
     name: 'Citadel Level 3',
@@ -150,6 +164,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 15000,
     defenseBonusPercentage: 75,
     cost: 40000000,
+    casualtyMitigation: 14,
   },
   {
     name: 'Castle',
@@ -160,6 +175,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 16000,
     defenseBonusPercentage: 80,
     cost: 50000000,
+    casualtyMitigation: 15,
   },
   {
     name: 'Castle Level 2',
@@ -170,6 +186,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 17000,
     defenseBonusPercentage: 85,
     cost: 75000000,
+    casualtyMitigation: 16,
   },
   {
     name: 'Castle Level 3',
@@ -180,6 +197,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 18000,
     defenseBonusPercentage: 90,
     cost: 100000000,
+    casualtyMitigation: 17,
   },
   {
     name: 'Kingdom',
@@ -190,6 +208,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 19000,
     defenseBonusPercentage: 95,
     cost: 150000000,
+    casualtyMitigation: 18,
   },
   {
     name: 'Kingdom Level 2',
@@ -200,6 +219,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 20000,
     defenseBonusPercentage: 100,
     cost: 200000000,
+    casualtyMitigation: 19,
   },
   {
     name: 'Kingdom Level 3',
@@ -210,6 +230,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 21000,
     defenseBonusPercentage: 105,
     cost: 250000000,
+    casualtyMitigation: 20,
   },
   {
     name: 'Empire',
@@ -220,6 +241,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 22000,
     defenseBonusPercentage: 110,
     cost: 300000000,
+    casualtyMitigation: 21,
   },
   {
     name: 'Empire Level 2',
@@ -230,6 +252,7 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 23000,
     defenseBonusPercentage: 115,
     cost: 350000000,
+    casualtyMitigation: 22,
   },
   {
     name: 'Empire Level 3',
@@ -240,5 +263,6 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 24000,
     defenseBonusPercentage: 120,
     cost: 400000000,
+    casualtyMitigation: 23,
   },
 ];

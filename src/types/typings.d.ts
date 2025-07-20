@@ -154,6 +154,8 @@ export type UnitUpgradeType = {
   quantity?: number;
   killingStrength?: number;
   defenseStrength?: number;
+  closeCombatPercentage?: number;
+  rangedPercentage?: number;
 };
 export type Fortification = {
   name: string;
@@ -164,6 +166,7 @@ export type Fortification = {
   goldPerTurn: number;
   defenseBonusPercentage: number;
   cost: number;
+  casualtyMitigation: number;
 };
 export type OffensiveUpgradeType = {
   name: string;

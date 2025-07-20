@@ -14,7 +14,8 @@ export const EconomyUpgrades = [
     goldTransferTx: 0,
     cost: 0,
     index: 0,
-    level: 1
+    level: 1,
+    bankCap: 10000000
   },
   {
     name: 'Produce Market',
@@ -25,7 +26,8 @@ export const EconomyUpgrades = [
     goldTransferTx: 0,
     cost: 500000,
     index: 1,
-    level: 2
+    level: 2,
+    bankCap: 25000000
   },
   {
     name: 'Livestock Market',
@@ -36,7 +38,8 @@ export const EconomyUpgrades = [
     goldTransferTx: 0,
     cost: 2000000,
     index: 2,
-    level: 3
+    level: 3,
+    bankCap: 50000000
   },
   {
     name: 'Coal Mine',
@@ -47,7 +50,8 @@ export const EconomyUpgrades = [
     goldTransferTx: 150000,
     cost: 5000000,
     index: 3,
-    level: 4
+    level: 4,
+    bankCap: 100000000
   },
   {
     name: 'Tavern',
@@ -58,7 +62,8 @@ export const EconomyUpgrades = [
     goldTransferTx: 300000,
     cost: 15000000,
     index: 4,
-    level: 5
+    level: 5,
+    bankCap: 200000000
   },
   {
     name: 'Copper Mine',
@@ -69,7 +74,8 @@ export const EconomyUpgrades = [
     goldTransferTx: 600000,
     cost: 37500000,
     index: 5,
-    level: 6
+    level: 6,
+    bankCap: 350000000
   },
   {
     name: 'Meat Market',
@@ -80,7 +86,8 @@ export const EconomyUpgrades = [
     goldTransferTx: 1250000,
     cost: 100000000,
     index: 6,
-    level: 7
+    level: 7,
+    bankCap: 500000000
   },
 ];
 
@@ -711,7 +718,9 @@ export const HouseUpgrades = {
     citizensDaily: 1,
     cost: 0,
     index: 0,
-    level: 1
+    level: 1,
+    softCapBonus: 0,
+    hardCapBonus: 0
   },
   1: {
     name: 'Housing Level 1',
@@ -719,7 +728,9 @@ export const HouseUpgrades = {
     citizensDaily: 10,
     cost: 500000,
     index: 1,
-    level: 2
+    level: 2,
+    softCapBonus: 5000,
+    hardCapBonus: 15000
   },
   2: {
     name: 'Housing Level 2',
@@ -727,7 +738,9 @@ export const HouseUpgrades = {
     citizensDaily: 20,
     cost: 1000000,
     index: 2,
-    level: 3
+    level: 3,
+    softCapBonus: 10000,
+    hardCapBonus: 30000
   },
   3: {
     name: 'Housing Level 3',
@@ -735,7 +748,9 @@ export const HouseUpgrades = {
     citizensDaily: 30,
     cost: 1500000,
     index: 3,
-    level: 4
+    level: 4,
+    softCapBonus: 15000,
+    hardCapBonus: 45000
   },
   4: {
     name: 'Housing Level 4',
@@ -743,7 +758,9 @@ export const HouseUpgrades = {
     citizensDaily: 40,
     cost: 2500000,
     index: 4,
-    level: 5
+    level: 5,
+    softCapBonus: 20000,
+    hardCapBonus: 60000
   },
   5: {
     name: 'Housing Level 5',
@@ -751,7 +768,9 @@ export const HouseUpgrades = {
     citizensDaily: 50,
     cost: 3500000,
     index: 5,
-    level: 6
+    level: 6,
+    softCapBonus: 25000,
+    hardCapBonus: 75000
   },
   6: {
     name: 'Housing Level 6',
@@ -759,6 +778,8 @@ export const HouseUpgrades = {
     citizensDaily: 60,
     cost: 5000000,
     index: 6,
-    level: 7
+    level: 7,
+    softCapBonus: 30000,
+    hardCapBonus: 90000
   },
 };
