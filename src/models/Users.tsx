@@ -873,6 +873,7 @@ class UserModel {
    * @returns True if the target is within the attackable level range, false otherwise.
    */
   canAttack(level: number): boolean {
+    if (process.env.NEXT_PUBLIC_ENABLE_ATTACKING === "false") return false; 
     const userLevel = this.level;
     const levelRange = parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10);
     // Ensure user level is within the allowed range of the target level
