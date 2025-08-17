@@ -6,56 +6,56 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     name: 'Steeds',
     SiegeUpgradeLevel: 6,
     level: 1,
-    bonus: 200,
+    bonus: 200, // This bonus might become redundant or need re-evaluation with new stats
     cost: 100000,
     unitsCovered: 1,
     minUnitLevel: 2,
-    killingStrength: 150,
-    defenseStrength: 50,
-    closeCombatPercentage: 95,
-    rangedPercentage: 5
+    MeleeAtkPower: 150,
+    MeleeDefPower: 50,
+    RangedAtkPower: 0,
+    RangedDefPower: 75,
   },
   {
     type: 'OFFENSE',
     name: 'War Elephant',
     SiegeUpgradeLevel: 6, //16
     level: 2,
-    bonus: 1000,
+    bonus: 1000, // This bonus might become redundant or need re-evaluation with new stats
     cost: 5000000,
     unitsCovered: 1,
     minUnitLevel: 2,
-    killingStrength: 750,
-    defenseStrength: 250,
-    closeCombatPercentage: 100,
-    rangedPercentage: 0
+    MeleeAtkPower: 750,
+    MeleeDefPower: 250,
+    RangedAtkPower: 0,
+    RangedDefPower: 100,
   },
   {
     type: 'DEFENSE',
     name: 'Guard Tower',
     SiegeUpgradeLevel: 6,
     level: 1,
-    bonus: 200,
+    bonus: 200, // This bonus might become redundant or need re-evaluation with new stats
     cost: 100000,
     unitsCovered: 5,
     minUnitLevel: 2,
-    killingStrength: 50,
-    defenseStrength: 150,
-    closeCombatPercentage: 5,
-    rangedPercentage: 95
+    MeleeAtkPower: 0,
+    MeleeDefPower: 150,
+    RangedAtkPower: 50,
+    RangedDefPower: 100,
   },
   {
     type: 'DEFENSE',
     name: 'Catapult',
     SiegeUpgradeLevel: 6, //16
     level: 2,
-    bonus: 1000,
+    bonus: 1000, // This bonus might become redundant or need re-evaluation with new stats
     cost: 5000000,
     unitsCovered: 1,
     minUnitLevel: 2,
-    killingStrength: 250,
-    defenseStrength: 750,
-    closeCombatPercentage: 0,
-    rangedPercentage: 100,
+    MeleeAtkPower: 0,
+    MeleeDefPower: 0,
+    RangedAtkPower: 250,
+    RangedDefPower: 0,
   },
   {
     type: 'SPY',
@@ -66,8 +66,10 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     cost: 100000,
     unitsCovered: 1,
     minUnitLevel: 2,
-    killingStrength: 50,
-    defenseStrength: 150
+    MeleeAtkPower: 0, // Spy upgrades don't have direct combat stats
+    MeleeDefPower: 0,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     type: 'SPY',
@@ -78,8 +80,10 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     cost: 5000000,
     unitsCovered: 1,
     minUnitLevel: 2,
-    killingStrength: 250,
-    defenseStrength: 750
+    MeleeAtkPower: 0, // Spy upgrades don't have direct combat stats
+    MeleeDefPower: 0,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     type: 'SENTRY',
@@ -90,8 +94,10 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     cost: 100000,
     unitsCovered: 1,
     minUnitLevel: 2,
-    killingStrength: 50,
-    defenseStrength: 150
+    MeleeAtkPower: 0, // Sentry upgrades don't have direct combat stats
+    MeleeDefPower: 0,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     type: 'SENTRY',
@@ -102,7 +108,9 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     cost: 5000000,
     unitsCovered: 5,
     minUnitLevel: 2,
-    killingStrength: 250,
-    defenseStrength: 750
+    MeleeAtkPower: 0, // Sentry upgrades don't have direct combat stats
+    MeleeDefPower: 0,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   }
 ];

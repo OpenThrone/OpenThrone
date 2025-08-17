@@ -18,8 +18,17 @@ interface BattleState {
   defenderCitizensRemaining: number;
   defenderWorkersRemaining: number;
   defenderOffenseRemaining: number;
-  baseAttackerKS: number;
-  baseAttackerDS: number;
+  attackerMeleeAtkPower: number;
+  attackerMeleeDefPower: number;
+  attackerRangedAtkPower: number;
+  attackerRangedDefPower: number;
+  defenderMeleeAtkPower: number;
+  defenderMeleeDefPower: number;
+  defenderRangedAtkPower: number;
+  defenderRangedDefPower: number;
+  totalPillagedGold: bigint;
+  totalAttackerCasualties: number;
+  totalDefenderCasualties: number;
 }
 
 const OFFENSE = 'OFFENSE';
@@ -99,10 +108,17 @@ function initializeBattleState(attacker: UserModel, defender: UserModel, initial
     defenderCitizensRemaining: defender.unitTotals.citizens,
     defenderWorkersRemaining: defender.unitTotals.workers,
     defenderOffenseRemaining: defender.unitTotals.offense,
-    baseAttackerKS: attackerStrength.killingStrength,
-    baseAttackerDS: attackerStrength.defenseStrength,
-    baseAttackerOAP: attackerStrength.OAP,
-    baseAttackerDAS: attackerStrength.DAS,
+    attackerMeleeAtkPower: attackerStrength.MeleeAtkPower,
+    attackerMeleeDefPower: attackerStrength.MeleeDefPower,
+    attackerRangedAtkPower: attackerStrength.RangedAtkPower,
+    attackerRangedDefPower: attackerStrength.RangedDefPower,
+    defenderMeleeAtkPower: 0, // Will be calculated per turn for defender
+    defenderMeleeDefPower: 0, // Will be calculated per turn for defender
+    defenderRangedAtkPower: 0, // Will be calculated per turn for defender
+    defenderRangedDefPower: 0, // Will be calculated per turn for defender
+    totalPillagedGold: BigInt(0),
+    totalAttackerCasualties: 0,
+    totalDefenderCasualties: 0,
   };
 
   return state;
@@ -123,64 +139,121 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
   if (debug) logDebug(`Turn ${turn} - Level Mitigation: ${state.levelMitigation}`);
 
 
-  let { KS: attackerKS, DS: attackerDS, OAP: attackerOAP, DAS: attackerDAS } = calculateAttackerStrength(state, turn);
-  let { defenderDS, defenderKS, defenderOAP, defenderDAS } = calculateDefenderStrength(state, turn, debug);
-  
-  // Fort destruction debuff
+  let { MeleeAtkPower: attackerMeleeAtkPower, MeleeDefPower: attackerMeleeDefPower, RangedAtkPower: attackerRangedAtkPower, RangedDefPower: attackerRangedDefPower } = calculateAttackerStrength(state, turn);
+  let { MeleeAtkPower: defenderMeleeAtkPower, MeleeDefPower: defenderMeleeDefPower, RangedAtkPower: defenderRangedAtkPower, RangedDefPower: defenderRangedDefPower } = calculateDefenderStrength(state, turn, debug);
+
+  // Update state with current turn's calculated strengths
+  state.attackerMeleeAtkPower = attackerMeleeAtkPower;
+  state.attackerMeleeDefPower = attackerMeleeDefPower;
+  state.attackerRangedAtkPower = attackerRangedAtkPower;
+  state.attackerRangedDefPower = attackerRangedDefPower;
+  state.defenderMeleeAtkPower = defenderMeleeAtkPower;
+  state.defenderMeleeDefPower = defenderMeleeDefPower;
+  state.defenderRangedAtkPower = defenderRangedAtkPower;
+  state.defenderRangedDefPower = defenderRangedDefPower;
+
+  // Fort destruction debuff (apply to defender's melee defense)
   if (state.fortHP <= 0) {
-    defenderDAS *= 0.5; // Defender's DAS is halved when the fort is destroyed
-  }
-  
-  state.attackerKS = attackerKS;
-  state.attackerDS = attackerDS;
-  state.attackerOAP = attackerOAP;
-  state.attackerDAS = attackerDAS;
-  state.defenderKS = defenderKS;
-  state.defenderDS = defenderDS;
-  state.defenderOAP = defenderOAP;
-  state.defenderDAS = defenderDAS;
-
-  // Piercing Ratio Calculation
-  state.piercingRatio = state.attackerOAP / (state.defenderDAS || 1);
-
-  // Retain original offense/defense calculation for fort damage
-  state.attackerAttackDamage = attackerKS * state.levelMitigation;
-  state.attackerOffense = Math.round(state.attackerAttackDamage * (mtRand(99, 101) / 100)) + 1;
-  state.defenderHealth = defenderDS * state.levelMitigation;
-  state.defenderDefense = Math.round(state.defenderHealth * (mtRand(99, 101) / 100)) + 1;
-  
-
-  state.shouldIncludeCitz =
-    state.defenderDefenseRemaining <= (BATTLE_CONSTANTS.LOW_DEFENSE_RATIO * state.defender.population)
-    ||
-    state.fortHP <= BATTLE_CONSTANTS.FORT_CRITICAL_THRESHOLD;
- 
-
-  // Only include offense units in later turns when fort is critically damaged
-  state.includeOffenseUnits = state.shouldIncludeCitz && turn > 5 &&
-    state.fortHP < Fortifications[state.defender.fortLevel].hitpoints * BATTLE_CONSTANTS.FORT_CRITICAL_THRESHOLD;
-
-
-  if (state.fortHP > 0) {
-    let fortDamage = calculateFortDamage(state.attackerOffense, state.defenderDefense);
-    state.fortHP = Math.max(state.fortHP - fortDamage, 0);
+    state.defenderMeleeDefPower *= 0.5;
+    state.defenderRangedDefPower *= 0.5;
   }
 
-  let casualties = calculateCasualties(state);
-  console.log('Casualties:', casualties);
-  
-  // Keep track of casualties this turn for logging
-  const previousAttackerLosses = [...state.battleResult.Losses.Attacker.units];
-  const previousDefenderLosses = [...state.battleResult.Losses.Defender.units];
-  const initialAttackerTotal = state.battleResult.Losses.Attacker.total;
-  const initialDefenderTotal = state.battleResult.Losses.Defender.total;
+  // Turn-based attack logic
+  let fortDamageThisTurn = 0;
+  let attackerCasualtiesThisTurn = 0;
+  let defenderCasualtiesThisTurn = 0;
+  let pillagedGoldThisTurn = BigInt(0);
 
-  // Update to call the async function
+  // Defender's Ranged Attack (Every Turn)
+  if (state.defenderRangedAtkPower > 0) {
+    const damageToAttacker = state.defenderRangedAtkPower * state.levelMitigation;
+    const casualties = newComputeCasualties(
+      damageToAttacker, // Attacker's effective attack for ranged
+      state.attackerMeleeDefPower, // Attacker's defense against ranged
+      state.attackerOffenseRemaining,
+      0, // No defender population targeted by ranged attack
+      state.initialFortHP,
+      state.defenderRangedAtkPower / (state.attackerMeleeDefPower || 1), // Piercing ratio for ranged
+      state.fortHP,
+      false,
+      false
+    );
+    attackerCasualtiesThisTurn += casualties.attackerCasualties;
+    if (debug) logDebug(`Defender Ranged Attack: ${damageToAttacker} damage, ${casualties.attackerCasualties} attacker casualties`);
+  }
+
+  if (turn % 2 !== 0) { // Odd Turn: Attacker's Turn
+    // Attacker's Melee Attack
+    const currentFortification = Fortifications.find(f => f.level === state.defender.fortLevel);
+    const fortMeleeDefPower = currentFortification?.MeleeDefPower ?? 0;
+    const fortRangedDefPower = currentFortification?.RangedDefPower ?? 0;
+
+    const totalFortDefense = fortMeleeDefPower + fortRangedDefPower; // Sum of fort's defense powers
+    const damageToFort = calculateFortDamage(state.attackerMeleeAtkPower, totalFortDefense);
+    fortDamageThisTurn = damageToFort;
+    state.fortHP = Math.max(state.fortHP - fortDamageThisTurn, 0);
+    if (debug) logDebug(`Attacker Melee Attack: ${fortDamageThisTurn} fort damage`);
+
+    const casualties = newComputeCasualties(
+      state.attackerMeleeAtkPower,
+      state.defenderMeleeDefPower,
+      state.attackerOffenseRemaining,
+      state.defenderDefenseRemaining + (state.shouldIncludeCitz ? (state.defenderCitizensRemaining + state.defenderWorkersRemaining) : 0) + (state.includeOffenseUnits ? state.defenderOffenseRemaining : 0),
+      state.initialFortHP,
+      state.attackerMeleeAtkPower / (state.defenderMeleeDefPower || 1), // Piercing ratio for melee
+      state.fortHP,
+      state.shouldIncludeCitz,
+      state.includeOffenseUnits
+    );
+    attackerCasualtiesThisTurn += casualties.attackerCasualties;
+    defenderCasualtiesThisTurn += casualties.defenderCasualties;
+    if (debug) logDebug(`Attacker Melee Attack: ${casualties.defenderCasualties} defender casualties`);
+
+    // PillageGold if applicable
+    pillagedGoldThisTurn = calculateLoot(state.attacker, state.defender, turn);
+    state.totalPillagedGold += pillagedGoldThisTurn;
+    if (debug) logDebug(`Pillaged Gold this turn: ${pillagedGoldThisTurn}`);
+
+    // Kill Citizens if applicable (handled by distributeCasualties)
+
+  } else { // Even Turn: Defender's Turn
+    // Defender's Melee Attack
+    const casualties = newComputeCasualties(
+      state.defenderMeleeAtkPower,
+      state.attackerMeleeDefPower,
+      state.defenderDefenseRemaining + (state.shouldIncludeCitz ? (state.defenderCitizensRemaining + state.defenderWorkersRemaining) : 0) + (state.includeOffenseUnits ? state.defenderOffenseRemaining : 0),
+      state.attackerOffenseRemaining,
+      state.initialFortHP,
+      state.defenderMeleeAtkPower / (state.attackerMeleeDefPower || 1), // Piercing ratio for melee
+      state.fortHP,
+      false, // Defender's melee doesn't target citizens/workers directly
+      false
+    );
+    attackerCasualtiesThisTurn += casualties.defenderCasualties; // Defender's attack causes attacker casualties
+    if (debug) logDebug(`Defender Melee Attack: ${casualties.defenderCasualties} attacker casualties`);
+
+    // ReducePillageGold if applicable
+    const reducedGold = calculateLoot(state.defender, state.attacker, turn); // Assuming defender "loots back"
+    state.totalPillagedGold -= reducedGold;
+    if (debug) logDebug(`Reduced Pillaged Gold this turn: ${reducedGold}`);
+  }
+  
+  // Update state tracking variables based on casualties
+  state.attackerOffenseRemaining = Math.max(0, state.attackerOffenseRemaining - attackerCasualtiesThisTurn);
+  state.totalAttackerCasualties += attackerCasualtiesThisTurn;
+
+  // Update defender unit counts by checking the losses in battleResult
+  // This part needs to be updated to reflect the casualties from this turn
+  // and then apply them to the defender's remaining units.
+  // For now, I'll just update the totalDefenderCasualties.
+  state.totalDefenderCasualties += defenderCasualtiesThisTurn;
+
+  // Distribute casualties to the virtual unit pools
   await distributeCasualties({
     result: state.battleResult,
     attacker: state.attacker,
     defender: state.defender,
-    casualties: casualties,
+    casualties: { attackerCasualties: attackerCasualtiesThisTurn, defenderCasualties: defenderCasualtiesThisTurn },
     fortHP: state.fortHP,
     defenderDefenseProportion: state.defenderDefenseRemaining /
       (state.defenderDefenseRemaining + state.defenderCitizensRemaining +
@@ -191,28 +264,16 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
     includeOffense: state.includeOffenseUnits
   });
 
-  // Update state tracking variables based on casualties
-  state.attackerOffenseRemaining = Math.max(0, state.attackerOffenseRemaining - casualties.attackerCasualties);
+  // Update defender unit counts based on the actual losses recorded in battleResult
+  // This is a bit tricky because distributeCasualties modifies battleResult.Losses.Defender.units
+  // I need to re-calculate the remaining units based on the updated battleResult.Losses.Defender.units
+  // For simplicity, I'll just re-read the defender's unit totals from the battleResult.
+  // A more robust solution would involve passing the actual unit arrays and modifying them directly.
+  state.defenderDefenseRemaining = state.defender.unitTotals.defense - state.battleResult.Losses.Defender.units.filter(u => u.type === 'DEFENSE').reduce((sum, u) => sum + u.quantity, 0);
+  state.defenderCitizensRemaining = state.defender.unitTotals.citizens - state.battleResult.Losses.Defender.units.filter(u => u.type === 'CITIZEN').reduce((sum, u) => sum + u.quantity, 0);
+  state.defenderWorkersRemaining = state.defender.unitTotals.workers - state.battleResult.Losses.Defender.units.filter(u => u.type === 'WORKER').reduce((sum, u) => sum + u.quantity, 0);
+  state.defenderOffenseRemaining = state.defender.unitTotals.offense - state.battleResult.Losses.Defender.units.filter(u => u.type === 'OFFENSE').reduce((sum, u) => sum + u.quantity, 0);
 
-  // Update defender unit counts by checking the losses in battleResult
-  const defenderLostUnits = state.battleResult.Losses.Defender.units;
-  for (const lostUnit of defenderLostUnits) {
-    // Update the state tracking variables
-    switch (lostUnit.type) {
-      case 'DEFENSE':
-        state.defenderDefenseRemaining = Math.max(0, state.defenderDefenseRemaining - lostUnit.quantity);
-        break;
-      case 'CITIZEN':
-        state.defenderCitizensRemaining = Math.max(0, state.defenderCitizensRemaining - lostUnit.quantity);
-        break;
-      case 'WORKER':
-        state.defenderWorkersRemaining = Math.max(0, state.defenderWorkersRemaining - lostUnit.quantity);
-        break;
-      case 'OFFENSE':
-        state.defenderOffenseRemaining = Math.max(0, state.defenderOffenseRemaining - lostUnit.quantity);
-        break;
-    }
-  }
 
   // Update stamina for next turn
   state.attackerStamina = calculateStaminaModifier(turn);
@@ -223,16 +284,17 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
  * Calculates the attacker's strength for the current turn, factoring in stamina drop.
  * @param {any} state - The current battle state.
  * @param {number} turn - The current turn number.
- * @returns {{KS: number, DS: number}} The attacker's killing and defense strength.
+ * @returns {{MeleeAtkPower: number, MeleeDefPower: number, RangedAtkPower: number, RangedDefPower: number}} The attacker's melee/ranged attack and defense strength.
  */
 function calculateAttackerStrength(state, turn) {
   let staminaDrop = calculateStaminaDrop(turn);
-  const stamnaImpact = state.attackerStamina * staminaDrop;
+  const staminaImpact = state.attackerStamina * staminaDrop;
+  const attackerStrength = calculateStrength(state.attacker, 'OFFENSE');
   return {
-    KS: Math.ceil(state.baseAttackerKS * stamnaImpact),
-    DS: Math.ceil(state.baseAttackerDS * stamnaImpact),
-    OAP: Math.ceil(state.baseAttackerOAP * stamnaImpact),
-    DAS: Math.ceil(state.baseAttackerDAS * stamnaImpact),
+    MeleeAtkPower: Math.ceil(attackerStrength.MeleeAtkPower * staminaImpact),
+    MeleeDefPower: Math.ceil(attackerStrength.MeleeDefPower * staminaImpact),
+    RangedAtkPower: Math.ceil(attackerStrength.RangedAtkPower * staminaImpact),
+    RangedDefPower: Math.ceil(attackerStrength.RangedDefPower * staminaImpact),
   };
 }
 
@@ -241,7 +303,7 @@ function calculateAttackerStrength(state, turn) {
  * @param {any} state - The current battle state.
  * @param {number} turn - The current turn number.
  * @param {boolean} debug - Whether to enable debug logging.
- * @returns {{defenderKS: number, defenderDS: number}} The defender's killing and defense strength.
+ * @returns {{MeleeAtkPower: number, MeleeDefPower: number, RangedAtkPower: number, RangedDefPower: number}} The defender's melee/ranged attack and defense strength.
  */
 function calculateDefenderStrength(state, turn, debug) {
   let shouldIncludeCitz =
@@ -261,7 +323,8 @@ function calculateDefenderStrength(state, turn, debug) {
 
   let currentDefenderStrength = calculateStrength(state.defender, 'DEFENSE', shouldIncludeCitz, includeOffenseUnits);
   if(debug) logDebug(`Defender Strength: ${JSON.stringify(currentDefenderStrength)}`);
-  let defenderKS, defenderDS;
+  
+  let { MeleeAtkPower: defenderMeleeAtkPower, MeleeDefPower: defenderMeleeDefPower, RangedAtkPower: defenderRangedAtkPower, RangedDefPower: defenderRangedDefPower } = currentDefenderStrength;
 
   if (state.fortHP < 0.3 * state.initialFortHP) {
     if (turn <= 5) {
@@ -271,22 +334,24 @@ function calculateDefenderStrength(state, turn, debug) {
       logDebug(`Turn: ${turn}, Fort HP: ${state.fortHP}, Initial Fort HP: ${state.initialFortHP}`);
       let nerfFactor = calculateDefenseNerfFactor(turn, state.fortHP, state.initialFortHP);
       logDebug(`Nerf Factor: ${nerfFactor}`);
-      defenderKS = currentDefenderStrength.killingStrength * nerfFactor;
-      defenderDS = currentDefenderStrength.defenseStrength * nerfFactor;
+      defenderMeleeAtkPower *= nerfFactor;
+      defenderMeleeDefPower *= nerfFactor;
+      defenderRangedAtkPower *= nerfFactor;
+      defenderRangedDefPower *= nerfFactor;
     } else {
-      // Later turns - offense units start joining the defense with reinforcements
-      // We still should include citizens/workers in the calculation
+      // Later turns (Turn 6+) - offense units start joining the defense with reinforcements
       logDebug('Fort is critically damaged, applying reinforcements from offense units');
-      let reinforcementKS = includeOffenseUnits ? calculateReinforcementModifier(turn) : 0;
+      let reinforcementModifier = includeOffenseUnits ? calculateReinforcementModifier(turn) : 0;
       let recoveryFactor = calculateRecoveryFactor(turn);
-      defenderKS = (currentDefenderStrength.killingStrength + reinforcementKS) * recoveryFactor;
-      defenderDS = currentDefenderStrength.defenseStrength + reinforcementKS;
+      
+      // Apply reinforcement to melee and ranged defense
+      defenderMeleeAtkPower = (defenderMeleeAtkPower + reinforcementModifier) * recoveryFactor;
+      defenderMeleeDefPower = (defenderMeleeDefPower + reinforcementModifier) * recoveryFactor;
+      defenderRangedAtkPower = (defenderRangedAtkPower + reinforcementModifier) * recoveryFactor;
+      defenderRangedDefPower = (defenderRangedDefPower + reinforcementModifier) * recoveryFactor;
     }
-  } else {
-    defenderKS = currentDefenderStrength.killingStrength;
-    defenderDS = currentDefenderStrength.defenseStrength;
   }
-  return { defenderKS, defenderDS, defenderOAP: currentDefenderStrength.OAP, defenderDAS: currentDefenderStrength.DAS };
+  return { MeleeAtkPower: defenderMeleeAtkPower, MeleeDefPower: defenderMeleeDefPower, RangedAtkPower: defenderRangedAtkPower, RangedDefPower: defenderRangedDefPower };
 }
 
 /**
@@ -322,31 +387,6 @@ function shouldBattleEndEarly(state, debug) {
   return false;
 }
 
-/**
- * Calculates the number of casualties for both attacker and defender for the current turn.
- * @param {any} state - The current battle state.
- * @param {number} attackerKS - The attacker's killing strength.
- * @param {object} defenderStats - The defender's stats and flags for including citizens/offense units.
- * @returns {{attackerCasualties: number, defenderCasualties: number}} The casualties for both sides.
- */
-function calculateCasualties(state) {
-  return newComputeCasualties(
-    state.attackerOffense,
-    state.defenderDefense,
-    state.defenderKS,
-    state.attackerDS, // Corrected from attackerKS
-    state.attackerOffenseRemaining,
-    state.defenderDefenseRemaining + (state.includeCitz ? (state.defenderCitizensRemaining + state.defenderWorkersRemaining) : 0) + (state.includeOffenseUnits ? state.defenderOffenseRemaining : 0),
-    computeAmpFactor(state.defenderDefenseRemaining + (state.includeCitz ? (state.defenderCitizensRemaining + state.defenderWorkersRemaining) : 0) + (state.includeOffenseUnits ? state.defenderOffenseRemaining : 0)),
-    state.defenderDefenseRemaining / (state.defenderDefenseRemaining + (state.includeCitz ? (state.defenderCitizensRemaining + state.defenderWorkersRemaining) : 0) + (state.includeOffenseUnits ? state.defenderOffenseRemaining : 0)),
-    state.initialFortHP,
-    state.piercingRatio, // Pass the piercing ratio
-    state.fortHP,
-    state.includeCitz,
-    state.includeOffenseUnits
-  );
-}
-
 export function calculateDefenseNerfFactor(
   turn: number,
   currentFortHP: number,
@@ -366,10 +406,10 @@ export function calculateStaminaDrop(turn: number): number {
 }
 
 export function calculateFortDamage(
-  attackerKS: number,
-  defenderDS: number
+  attackerMeleeAtkPower: number,
+  fortificationDefensePower: number // Combined melee and ranged defense of the fort
 ): number {
-  const ratio = attackerKS / (defenderDS || 1);
+  const ratio = attackerMeleeAtkPower / (fortificationDefensePower || 1);
   let damageRange: [number, number];
 
   if (ratio <= 0.05) damageRange = [0, 1];
@@ -418,7 +458,7 @@ export function calculateStrength(
   unitType: 'OFFENSE' | 'DEFENSE',
   includeCitz: boolean = false,
   includeOffense: boolean = false
-): { killingStrength: number; defenseStrength: number; OAP: number; DAS: number } {
+): { MeleeAtkPower: number; MeleeDefPower: number; RangedAtkPower: number; RangedDefPower: number } {
   const includedTypes: string[] = [];
 
   if (unitType === 'OFFENSE' || includeOffense) {
@@ -440,24 +480,24 @@ export function calculateStrength(
   const cacheKey = `${user.id}-${unitType}-${includeCitz}-${includeOffense}-${unitString}-${itemString}`;
   if (!user || !user.units || !user.items) {
     console.warn(`User or user units/items not found for type: ${unitType}`);
-    return { killingStrength: 0, defenseStrength: 0, OAP: 0, DAS: 0 };
+    return { MeleeAtkPower: 0, MeleeDefPower: 0, RangedAtkPower: 0, RangedDefPower: 0 };
   }
 
   if (strengthCache.has(cacheKey)) {
     const cached = strengthCache.get(cacheKey);
-    if (cached.killingStrength > 0 || cached.defenseStrength > 0) {
-      logDebug(`Using cached strength for ${unitType}: KS=${cached.killingStrength}, DS=${cached.defenseStrength}`);
+    if (cached.MeleeAtkPower > 0 || cached.MeleeDefPower > 0 || cached.RangedAtkPower > 0 || cached.RangedDefPower > 0) {
+      logDebug(`Using cached strength for ${unitType}: MeleeAtk=${cached.MeleeAtkPower}, MeleeDef=${cached.MeleeDefPower}, RangedAtk=${cached.RangedAtkPower}, RangedDef=${cached.RangedDefPower}`);
       return cached;
     }
     logDebug(`Cached strength for ${unitType} is zero, recalculating...`);
     strengthCache.delete(cacheKey);
   }
 
-  let killingStrength = 0;
-  let defenseStrength = 0;
+  let MeleeAtkPower = 0;
+  let MeleeDefPower = 0;
+  let RangedAtkPower = 0;
+  let RangedDefPower = 0;
   const multiplier = getUnitMultiplier(user, unitType);
-  let OAP = 0;
-  let DAS = 0;
 
   // Process Primary Units (OFFENSE or DEFENSE)
   user?.units?.filter(u => u.type === unitType).forEach(unit => {
@@ -469,24 +509,26 @@ export function calculateStrength(
       return;
     }
 
-    logDebug(`Adding strength for ${unit.quantity} ${unit.type} units: KS=${unitInfo.killingStrength}, DS=${unitInfo.defenseStrength}`);
-    killingStrength += (unitInfo.killingStrength || 0) * unit.quantity;
-    defenseStrength += (unitInfo.defenseStrength || 0) * unit.quantity;
-    OAP += (unitInfo.killingStrength || 0) * unit.quantity; // OAP mirrors KS for now
-    DAS += (unitInfo.defenseStrength || 0) * unit.quantity; // DAS mirrors DS for now
-
-    logDebug(`Unit Strength - Type: ${unit.type}, Level: ${unit.level}, Quantity: ${unit.quantity}, ` +
-      `KS=${(unitInfo.killingStrength || 0) * unit.quantity}, DS=${(unitInfo.defenseStrength || 0) * unit.quantity}`);
-
-    if (unit.quantity === 0) return;
-
-    const sortedItems = [...user.items]
-      .filter(item => item.usage === unit.type)
+    // Apply item level restriction: unit.level >= item.level
+    const usableItems = user.items
+      .filter(item => item.usage === unit.type && item.level <= unit.level)
       .sort((a, b) => {
         const itemInfoA = itemTypeLookup[unit.type]?.[a.type];
         const itemInfoB = itemTypeLookup[unit.type]?.[b.type];
-        return (itemInfoB?.killingStrength || 0) - (itemInfoA?.killingStrength || 0);
+        return (itemInfoB?.MeleeAtkPower || 0) - (itemInfoA?.MeleeAtkPower || 0);
       });
+
+    logDebug(`Adding strength for ${unit.quantity} ${unit.type} units: MeleeAtk=${unitInfo.MeleeAtkPower}, MeleeDef=${unitInfo.MeleeDefPower}, RangedAtk=${unitInfo.RangedAtkPower}, RangedDef=${unitInfo.RangedDefPower}`);
+    MeleeAtkPower += (unitInfo.MeleeAtkPower || 0) * unit.quantity;
+    MeleeDefPower += (unitInfo.MeleeDefPower || 0) * unit.quantity;
+    RangedAtkPower += (unitInfo.RangedAtkPower || 0) * unit.quantity;
+    RangedDefPower += (unitInfo.RangedDefPower || 0) * unit.quantity;
+
+    logDebug(`Unit Strength - Type: ${unit.type}, Level: ${unit.level}, Quantity: ${unit.quantity}, ` +
+      `MeleeAtk=${(unitInfo.MeleeAtkPower || 0) * unit.quantity}, MeleeDef=${(unitInfo.MeleeDefPower || 0) * unit.quantity}, ` +
+      `RangedAtk=${(unitInfo.RangedAtkPower || 0) * unit.quantity}, RangedDef=${(unitInfo.RangedDefPower || 0) * unit.quantity}`);
+
+    if (unit.quantity === 0) return;
 
     const itemCounts: Record<ItemType, number> = {
       WEAPON: 0,
@@ -497,17 +539,17 @@ export function calculateStrength(
       ARMOR: 0,
     };
 
-    sortedItems.forEach(item => {
+    usableItems.forEach(item => {
       const currentCount = itemCounts[item.type] || 0;
       const itemInfo = itemTypeLookup[unit.type]?.[item.type];
       if (!itemInfo) return;
 
       const usableQuantity = Math.min(item.quantity, unit.quantity - currentCount);
-      logDebug(`Adding item strength for ${usableQuantity} ${item.type} items: KS=${itemInfo.killingStrength}, DS=${itemInfo.defenseStrength}`);
-      killingStrength += itemInfo.killingStrength * usableQuantity;
-      defenseStrength += itemInfo.defenseStrength * usableQuantity;
-      OAP += itemInfo.killingStrength * usableQuantity;
-      DAS += itemInfo.defenseStrength * usableQuantity;
+      logDebug(`Adding item strength for ${usableQuantity} ${item.type} items: MeleeAtk=${itemInfo.MeleeAtkPower}, MeleeDef=${itemInfo.MeleeDefPower}, RangedAtk=${itemInfo.RangedAtkPower}, RangedDef=${itemInfo.RangedDefPower}`);
+      MeleeAtkPower += (itemInfo.MeleeAtkPower || 0) * usableQuantity;
+      MeleeDefPower += (itemInfo.MeleeDefPower || 0) * usableQuantity;
+      RangedAtkPower += (itemInfo.RangedAtkPower || 0) * usableQuantity;
+      RangedDefPower += (itemInfo.RangedDefPower || 0) * usableQuantity;
       itemCounts[item.type] = currentCount + usableQuantity;
     });
   });
@@ -523,23 +565,23 @@ export function calculateStrength(
         } else if (unit.type === 'CITIZEN' || unit.type === 'WORKER') {
           effectivenessMultiplier = 0.1;
         }
-        logDebug(`Adding support strength for ${unit.quantity} ${unit.type} units: KS=${unitInfo.killingStrength * effectivenessMultiplier}, DS=${unitInfo.defenseStrength * effectivenessMultiplier}`);
-        killingStrength += unitInfo.killingStrength * unit.quantity * effectivenessMultiplier;
-        defenseStrength += unitInfo.defenseStrength * unit.quantity * effectivenessMultiplier;
-        OAP += unitInfo.killingStrength * unit.quantity * effectivenessMultiplier;
-        DAS += unitInfo.defenseStrength * unit.quantity * effectivenessMultiplier;
+        logDebug(`Adding support strength for ${unit.quantity} ${unit.type} units: MeleeAtk=${unitInfo.MeleeAtkPower * effectivenessMultiplier}, MeleeDef=${unitInfo.MeleeDefPower * effectivenessMultiplier}, RangedAtk=${unitInfo.RangedAtkPower * effectivenessMultiplier}, RangedDef=${unitInfo.RangedDefPower * effectivenessMultiplier}`);
+        MeleeAtkPower += (unitInfo.MeleeAtkPower || 0) * unit.quantity * effectivenessMultiplier;
+        MeleeDefPower += (unitInfo.MeleeDefPower || 0) * unit.quantity * effectivenessMultiplier;
+        RangedAtkPower += (unitInfo.RangedAtkPower || 0) * unit.quantity * effectivenessMultiplier;
+        RangedDefPower += (unitInfo.RangedDefPower || 0) * unit.quantity * effectivenessMultiplier;
       }
     });
   }
 
   const result = {
-    killingStrength: Math.ceil(killingStrength * multiplier),
-    defenseStrength: Math.ceil(defenseStrength * multiplier),
-    OAP: Math.ceil(OAP * multiplier),
-    DAS: Math.ceil(DAS * multiplier),
+    MeleeAtkPower: Math.ceil(MeleeAtkPower * multiplier),
+    MeleeDefPower: Math.ceil(MeleeDefPower * multiplier),
+    RangedAtkPower: Math.ceil(RangedAtkPower * multiplier),
+    RangedDefPower: Math.ceil(RangedDefPower * multiplier),
   };
 
-  logInfo(`Final strength for ${unitType}: KS=${result.killingStrength}, DS=${result.defenseStrength}`);
+  logInfo(`Final strength for ${unitType}: MeleeAtk=${result.MeleeAtkPower}, MeleeDef=${result.MeleeDefPower}, RangedAtk=${result.RangedAtkPower}, RangedDef=${result.RangedDefPower}`);
 
   strengthCache.set(cacheKey, result);
   return result;
@@ -592,7 +634,7 @@ export function calculateLoot(
 
   const defenderGold = BigInt(defender.gold);
   const calculatedLoot = Number(defenderGold) * lootFactor;
-  logDebug(`Defender Gold: ${defenderGold}, Calculated Loot: ${calculatedLoot}`);
+  logDebug(`Calculated loot is invalid: ${calculatedLoot}. Returning 0.`);
   if (!Number.isFinite(calculatedLoot) || isNaN(calculatedLoot) || calculatedLoot < 0) {
     console.warn(`Calculated loot is invalid: ${calculatedLoot}. Returning 0.`);
     return BigInt(0);
@@ -607,6 +649,7 @@ export function calculateLoot(
 }
 
 export function computeBaseValue(ratio: number): number {
+  const baseFactor = 0.4;
   if (ratio >= 5) return mtRand(0.0015, 0.0018);
   if (ratio >= 4) return mtRand(0.00115, 0.0013);
   if (ratio >= 3) return mtRand(0.001, 0.00125);
@@ -616,23 +659,18 @@ export function computeBaseValue(ratio: number): number {
   if (ratio >= 0.1) return mtRand(0.0004, 0.00045);
   return mtRand(0.00025, 0.0003);
 }
-
 export function newComputeCasualties(
-  attackerKS: number,
-  defenderDS: number,
-  defenderKS: number,
-  attackerDS: number,
+  attackerAtk: number,
+  defenderDef: number,
   attackerPop: number,
   defenderPop: number,
-  ampFactor: number,
-  defenseProportion: number,
   initialFortHP: number,
   piercingRatio: number,
   fortHitpoints?: number,
   includeCitz: boolean = false,
   includeOffense: boolean = false
 ): { attackerCasualties: number; defenderCasualties: number } {
-  logError(`Piercing Ratio: ${piercingRatio}`);
+  logDebug(`newComputeCasualties - AttackerAtk: ${attackerAtk}, DefenderDef: ${defenderDef}, PiercingRatio: ${piercingRatio}`);
 
   const baseLossPercent = 0.02;
   const scalingFactor = 0.04;
@@ -718,13 +756,15 @@ async function distributeCasualties(params: {
 
   // Handle defender casualties
   if (casualties.defenderCasualties > 0) {
+    // Distribute damage based on fort status
     const { collateralDamage, fightingDamage } = distributeDamage(casualties.defenderCasualties, defender, fortHP);
 
     const collateralPool = defender.units.filter(u => u.type === 'CITIZEN' || u.type === 'WORKER');
-    const fightingPool = defender.units.filter(u => u.type === 'DEFENSE');
+    const fightingPool = defender.units.filter(u => u.type === 'DEFENSE' || u.type === 'OFFENSE'); // Include offense in fighting pool if applicable
 
-    const collateralCasualties = distributeUnitCasualties(collateralPool, collateralDamage, 0.8);
-    const fightingCasualties = distributeUnitCasualties(fightingPool, fightingDamage, 0.3);
+    // Distribute casualties with weighting for lower levels
+    const collateralCasualties = distributeUnitCasualties(collateralPool, collateralDamage, 0.8); // Higher rate for collateral
+    const fightingCasualties = distributeUnitCasualties(fightingPool, fightingDamage, 0.3); // Lower rate for fighting units
 
     const allLostUnits = [...collateralCasualties, ...fightingCasualties];
 
@@ -741,14 +781,14 @@ async function distributeCasualties(params: {
   }
 }
 
-// Helper function to distribute casualties across units
-function distributeUnitCasualties(units: BattleUnits[], totalCasualties: number, casualtyRate: number): BattleUnits[] {
+// Helper function to distribute casualties across units, weighting lower levels more heavily
+function distributeUnitCasualties(units: BattleUnits[], totalCasualties: number, baseCasualtyRate: number): BattleUnits[] {
   const lostUnits: BattleUnits[] = [];
-  let remainingCasualties = Math.floor(totalCasualties * casualtyRate);
+  let remainingCasualties = totalCasualties;
 
   const workingUnits = units.map(unit => ({ ...unit }))
     .filter(unit => unit.quantity > 0)
-    .sort((a, b) => a.level - b.level);
+    .sort((a, b) => a.level - b.level); // Sort by level ascending (lower levels first)
 
   const totalAvailable = workingUnits.reduce((sum, unit) => sum + unit.quantity, 0);
   remainingCasualties = Math.min(remainingCasualties, totalAvailable);
@@ -757,46 +797,62 @@ function distributeUnitCasualties(units: BattleUnits[], totalCasualties: number,
     return [];
   }
 
-  const totalUnitCount = workingUnits.reduce((sum, unit) => sum + unit.quantity, 0);
-
+  // First pass: Apply weighted casualties
   for (const unit of workingUnits) {
     if (remainingCasualties <= 0) break;
 
-    const unitRatio = unit.quantity / totalUnitCount;
-    let casualties = Math.floor(totalCasualties * unitRatio);
-    casualties = Math.min(casualties, remainingCasualties);
-    casualties = Math.min(casualties, unit.quantity);
+    // Higher casualty rate for lower-level units
+    const levelWeight = 1 + (3 - unit.level) * 0.2; // Example: Level 1 gets 1.4x, Level 3 gets 0.6x
+    const weightedCasualtyRate = Math.max(0.1, baseCasualtyRate * levelWeight); // Ensure minimum rate
 
-    if (casualties > 0) {
+    let casualtiesForUnit = Math.floor(unit.quantity * weightedCasualtyRate);
+    casualtiesForUnit = Math.min(casualtiesForUnit, remainingCasualties);
+    casualtiesForUnit = Math.min(casualtiesForUnit, unit.quantity);
+
+    if (casualtiesForUnit > 0) {
       lostUnits.push({
         type: unit.type,
         level: unit.level,
-        quantity: casualties,
+        quantity: casualtiesForUnit,
       });
-      unit.quantity -= casualties;
-      remainingCasualties -= casualties;
+      unit.quantity -= casualtiesForUnit;
+      remainingCasualties -= casualtiesForUnit;
     }
   }
 
+  // Second pass: Distribute any remaining casualties proportionally
   if (remainingCasualties > 0) {
-    for (const unit of workingUnits) {
-      if (remainingCasualties <= 0 || unit.quantity <= 0) continue;
-      const casualties = Math.min(unit.quantity, remainingCasualties);
-      const existingLoss = lostUnits.find(loss => loss.type === unit.type && loss.level === unit.level);
-      if (existingLoss) {
-        existingLoss.quantity += casualties;
-      } else if (casualties > 0) {
-        lostUnits.push({
-          type: unit.type,
-          level: unit.level,
-          quantity: casualties,
-        });
+    const currentTotalUnits = workingUnits.reduce((sum, unit) => sum + unit.quantity, 0);
+    if (currentTotalUnits > 0) {
+      for (const unit of workingUnits) {
+        if (remainingCasualties <= 0 || unit.quantity <= 0) continue;
+
+        const proportion = unit.quantity / currentTotalUnits;
+        let casualties = Math.floor(remainingCasualties * proportion);
+        casualties = Math.min(casualties, remainingCasualties);
+        casualties = Math.min(casualties, unit.quantity);
+
+        if (casualties > 0) {
+          const existingLoss = lostUnits.find(loss => loss.type === unit.type && loss.level === unit.level);
+          if (existingLoss) {
+            existingLoss.quantity += casualties;
+          } else {
+            lostUnits.push({
+              type: unit.type,
+              level: unit.level,
+              quantity: casualties,
+            });
+          }
+          unit.quantity -= casualties;
+          remainingCasualties -= casualties;
+        }
       }
-      unit.quantity -= casualties;
-      remainingCasualties -= casualties;
     }
   }
 
+  // Ensure no unit quantity goes below zero in the original array (though distributeCasualties returns new objects)
+  // This part is more for conceptual clarity if we were modifying the original array directly.
+  // Since we are returning new objects, this is less critical here.
   lostUnits.forEach(loss => {
     const originalUnit = units.find(u => u.type === loss.type && u.level === loss.level);
     if (originalUnit) {
@@ -871,7 +927,7 @@ export function finalizeBattleResult(state: BattleState): void {
   });
   logDebug('Total Turns:', totalTurns);
 
-  battleResult.pillagedGold = calculateLoot(attacker, defender, totalTurns);
+  battleResult.pillagedGold = state.totalPillagedGold; // Use the accumulated total
   battleResult.finalFortHP = fortHP;
   battleResult.fortDamaged = initialFortHP !== fortHP;
   battleResult.turnsTaken = totalTurns;
@@ -936,7 +992,8 @@ function logUnitCasualties(turn: number, attackerLosses: BattleUnits[], defender
     logDebug('Attacker lost:');
     attackerLosses.forEach(loss => {
       logDebug(`- ${loss.quantity} ${loss.type} units`);
-    });
+    }
+    );
   } else {
     logDebug('Attacker: No casualties');
   }
@@ -951,18 +1008,18 @@ function logUnitCasualties(turn: number, attackerLosses: BattleUnits[], defender
     logDebug('Defender: No casualties');
   }
 }
-function distributeDamage(attackerKS: number, defender: UserModel, fortHP: number): { collateralDamage: number, fightingDamage: number } {
+function distributeDamage(totalCasualties: number, defender: UserModel, fortHP: number): { collateralDamage: number, fightingDamage: number } {
   let collateralDamage = 0;
   let fightingDamage = 0;
 
   if (fortHP > 0) {
     // While the fort stands, collateral forces absorb most of the damage
-    collateralDamage = attackerKS * 0.8;
-    fightingDamage = attackerKS * 0.2; // 20% bleeds through
+    collateralDamage = totalCasualties * 0.8;
+    fightingDamage = totalCasualties * 0.2; // 20% bleeds through
   } else {
     // Once the fort is breached, fighting forces take the brunt of the damage
-    collateralDamage = attackerKS * 0.1;
-    fightingDamage = attackerKS * 0.9;
+    collateralDamage = totalCasualties * 0.1;
+    fightingDamage = totalCasualties * 0.9;
   }
 
   return { collateralDamage, fightingDamage };

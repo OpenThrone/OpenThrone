@@ -8,7 +8,6 @@ import type {
   Fortification,
   Locales,
   PlayerClass,
-  PlayerRace,
   PlayerUnit,
   Unit,
   UnitTotalsType,
@@ -21,6 +20,7 @@ import type {
   PlayerBattleUpgrade,
   StructureUpgrade,
   PlayerStat,
+  PlayerRace,
 } from '@/types/typings';
 
 import {
@@ -533,23 +533,18 @@ class UserModel {
    * @param type - The UnitType ('OFFENSE', 'DEFENSE', 'SPY', 'SENTRY') to calculate the stat for.
    * @returns The calculated army stat value, rounded up.
    */
-  getArmyStat(type: UnitType, v: number = 1): number {
-    if (v === 1) {
-      const sortedItems = this.getSortedItems(type);
-      const sortedUnits = this.getSortedUnits(type);
-      let totalStat = 0;
-      const unitCoverage = new Map<number, number>(); // Tracks item/upgrade coverage per unit index
+  getArmyStat(type: UnitType): number {
+    const sortedItems = this.getSortedItems(type);
+    const sortedUnits = this.getSortedUnits(type);
+    let totalStat = 0;
+    const unitCoverage = new Map<number, number>(); // Tracks item/upgrade coverage per unit index
 
-      totalStat += this.calculateUnitStats(sortedUnits);
-      totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
-      totalStat += this.calculateBattleUpgradeStats(sortedUnits, type, unitCoverage);
+    totalStat += this.calculateUnitStats(sortedUnits);
+    totalStat += this.calculateItemStats(sortedItems, sortedUnits, unitCoverage);
+    totalStat += this.calculateBattleUpgradeStats(sortedUnits, type, unitCoverage);
 
-      totalStat = this.applyBonuses(type, totalStat);
-      return Math.ceil(totalStat);
-    }
-    else {
-      return this.getArmyStatBreakdown(type).finalTotal;
-    }
+    totalStat = this.applyBonuses(type, totalStat);
+    return Math.ceil(totalStat);
   }
 
   /**
@@ -788,13 +783,13 @@ class UserModel {
       let unitNeedsCoverage = unit.quantity - unitCurrentCoverage;
       if (unitNeedsCoverage <= 0) return;
 
-      // Get all item types for this usage (e.g., WEAPON, HELM, etc.)
-      const itemTypesForUsage = Array.from(new Set(sortedItems.filter(item => item.usage === unit.type).map(item => item.type)));
-      // For each item type, assign the best available item (highest level) to as many units as possible (1 per unit per type)
+      // Filter items by unit level restriction: item.level <= unit.level
+      const itemTypesForUsage = Array.from(new Set(sortedItems.filter(item => item.usage === unit.type && item.level <= unit.level).map(item => item.type)));
+      
       itemTypesForUsage.forEach(itemType => {
         let unitsLeftForType = unitNeedsCoverage;
-        // Get all items of this type and usage, sorted by level descending
-        const itemsOfType = sortedItems.filter(item => item.usage === unit.type && item.type === itemType).sort((a, b) => b.level - a.level);
+        // Get all items of this type and usage, sorted by level descending, and apply unit level restriction
+        const itemsOfType = sortedItems.filter(item => item.usage === unit.type && item.type === itemType && item.level <= unit.level).sort((a, b) => b.level - a.level);
         itemsOfType.forEach(item => {
           if (unitsLeftForType <= 0) return;
           const itemInfo = ItemTypes.find(w => w.level === item.level && w.usage === item.usage && w.type === item.type);
@@ -805,6 +800,7 @@ class UserModel {
           if (availableItemQuantity <= 0) return;
           // Each unit can only equip one of this item type
           const quantityToApply = Math.min(unitsLeftForType, availableItemQuantity);
+          
           totalStat += (itemInfo.bonus ?? 0) * quantityToApply;
           itemCountsByTypeLevel[item.type][item.level] += quantityToApply;
           unitsLeftForType -= quantityToApply;
@@ -966,6 +962,7 @@ class UserModel {
    * Calculates the timestamp for the next attack turn regeneration.
    * @param date - The current date/time (defaults to now).
    * @returns A Date object representing the next turn time.
+   *
    */
   getTimeToNextTurn(date = new Date()): Date {
     const ms = 1800000; // 30mins in ms

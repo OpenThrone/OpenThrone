@@ -12,8 +12,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 20,
-    defenseStrength: 5
+    MeleeAtkPower: 20,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'HATCHET',
@@ -26,8 +28,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 40,
-    defenseStrength: 10
+    MeleeAtkPower: 40,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'QUARTERSTAFF',
@@ -40,8 +44,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 80,
-    defenseStrength: 20
+    MeleeAtkPower: 80,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'MACE',
@@ -54,8 +60,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 180,
-    defenseStrength: 45
+    MeleeAtkPower: 180,
+    MeleeDefPower: 45,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'BATTLE-AXE',
@@ -68,8 +76,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 5,
     quantity: 0,
-    killingStrength: 560,
-    defenseStrength: 140
+    MeleeAtkPower: 560,
+    MeleeDefPower: 140,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'SHORT-SWORD',
@@ -82,8 +92,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 6,
     quantity: 0,
-    killingStrength: 800,
-    defenseStrength: 200
+    MeleeAtkPower: 800,
+    MeleeDefPower: 200,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LONG-SWORD',
@@ -96,8 +108,10 @@ export const ItemTypes: Item[] = [
     race: 'HUMAN',
     armoryLevel: 7,
     quantity: 0,
-    killingStrength: 1200,
-    defenseStrength: 300
+    MeleeAtkPower: 1200,
+    MeleeDefPower: 300,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-HOOD',
@@ -110,8 +124,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 5
+    MeleeAtkPower: 1,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-HOOD',
@@ -124,8 +140,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-HOOD',
@@ -138,8 +156,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-ARMOR',
@@ -152,8 +172,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 4,
-    defenseStrength: 15
+    MeleeAtkPower: 4,
+    MeleeDefPower: 15,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-ARMOR',
@@ -166,8 +188,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 8,
-    defenseStrength: 30
+    MeleeAtkPower: 8,
+    MeleeDefPower: 30,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-ARMOR',
@@ -180,8 +204,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 15,
-    defenseStrength: 60
+    MeleeAtkPower: 15,
+    MeleeDefPower: 60,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-BOOTS',
@@ -194,8 +220,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 5
+    MeleeAtkPower: 1,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-BOOTS',
@@ -208,8 +236,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-BOOTS',
@@ -222,8 +252,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-BRACERS',
@@ -236,8 +268,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 2
+    MeleeAtkPower: 1,
+    MeleeDefPower: 2,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-BRACERS',
@@ -250,8 +284,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 3
+    MeleeAtkPower: 2,
+    MeleeDefPower: 3,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-BRACERS',
@@ -264,8 +300,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 5
+    MeleeAtkPower: 5,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'SMALL-WOODEN-SHIELD',
@@ -278,8 +316,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'MEDIUM-WOODEN-SHIELD',
@@ -292,8 +332,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LARGE-WOODEN-SHIELD',
@@ -306,8 +348,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 10,
-    defenseStrength: 40
+    MeleeAtkPower: 10,
+    MeleeDefPower: 40,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'SLING',
@@ -320,8 +364,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 20,
-    defenseStrength: 5
+    MeleeAtkPower: 5,
+    MeleeDefPower: 5,
+    RangedAtkPower: 20, // Ranged attack for DEFENSE item
+    RangedDefPower: 10,
   },
   {
     id: 'HATCHET',
@@ -334,8 +380,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 40,
-    defenseStrength: 10
+    MeleeAtkPower: 40,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'SPEAR',
@@ -348,8 +396,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 80,
-    defenseStrength: 20
+    MeleeAtkPower: 80,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-HOOD',
@@ -362,8 +412,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 5
+    MeleeAtkPower: 1,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-HOOD',
@@ -376,8 +428,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-HOOD',
@@ -390,8 +444,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-ARMOR',
@@ -404,8 +460,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 4,
-    defenseStrength: 15
+    MeleeAtkPower: 4,
+    MeleeDefPower: 15,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-ARMOR',
@@ -418,8 +476,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 8,
-    defenseStrength: 30
+    MeleeAtkPower: 8,
+    MeleeDefPower: 30,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-ARMOR',
@@ -432,8 +492,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 15,
-    defenseStrength: 60
+    MeleeAtkPower: 15,
+    MeleeDefPower: 60,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-BOOTS',
@@ -446,8 +508,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 5
+    MeleeAtkPower: 1,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-BOOTS',
@@ -460,8 +524,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-BOOTS',
@@ -474,8 +540,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-BRACERS',
@@ -488,8 +556,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 2
+    MeleeAtkPower: 1,
+    MeleeDefPower: 2,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-BRACERS',
@@ -502,8 +572,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 3
+    MeleeAtkPower: 2,
+    MeleeDefPower: 3,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-BRACERS',
@@ -516,8 +588,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 5
+    MeleeAtkPower: 5,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'SMALL-WOODEN-SHIELD',
@@ -530,8 +604,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'MEDIUM-WOODEN-SHIELD',
@@ -544,8 +620,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LARGE-WOODEN-SHIELD',
@@ -558,8 +636,10 @@ export const ItemTypes: Item[] = [
     race: 'ALL',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 10,
-    defenseStrength: 40
+    MeleeAtkPower: 10,
+    MeleeDefPower: 40,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'SLING',
@@ -572,8 +652,10 @@ export const ItemTypes: Item[] = [
     type: 'WEAPON',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 20,
-    defenseStrength: 5
+    MeleeAtkPower: 20,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'BRASS-KNUCKLES',
@@ -586,8 +668,10 @@ export const ItemTypes: Item[] = [
     type: 'WEAPON',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 40,
-    defenseStrength: 10
+    MeleeAtkPower: 40,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'CUDGEL',
@@ -600,8 +684,10 @@ export const ItemTypes: Item[] = [
     type: 'WEAPON',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 80,
-    defenseStrength: 20
+    MeleeAtkPower: 80,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'KNIFE',
@@ -614,8 +700,10 @@ export const ItemTypes: Item[] = [
     type: 'WEAPON',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 180,
-    defenseStrength: 45
+    MeleeAtkPower: 180,
+    MeleeDefPower: 45,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'CLOTH-CAP',
@@ -628,8 +716,10 @@ export const ItemTypes: Item[] = [
     type: 'HELM',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 5
+    MeleeAtkPower: 1,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-CAP',
@@ -642,8 +732,10 @@ export const ItemTypes: Item[] = [
     type: 'HELM',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-CAP',
@@ -656,8 +748,10 @@ export const ItemTypes: Item[] = [
     type: 'HELM',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'CLOTH-HOOD',
@@ -670,8 +764,10 @@ export const ItemTypes: Item[] = [
     type: 'HELM',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 10,
-    defenseStrength: 40
+    MeleeAtkPower: 10,
+    MeleeDefPower: 40,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'DARK-CLOTH-ARMOR',
@@ -684,8 +780,10 @@ export const ItemTypes: Item[] = [
     type: 'ARMOR',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 4,
-    defenseStrength: 15
+    MeleeAtkPower: 4,
+    MeleeDefPower: 15,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-CLOTH-ARMOR',
@@ -698,8 +796,10 @@ export const ItemTypes: Item[] = [
     type: 'ARMOR',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 8,
-    defenseStrength: 30
+    MeleeAtkPower: 8,
+    MeleeDefPower: 30,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-ARMOR',
@@ -712,8 +812,10 @@ export const ItemTypes: Item[] = [
     type: 'ARMOR',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 15,
-    defenseStrength: 60
+    MeleeAtkPower: 15,
+    MeleeDefPower: 60,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-LEATHER-ARMOR',
@@ -726,8 +828,10 @@ export const ItemTypes: Item[] = [
     type: 'ARMOR',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 60,
-    defenseStrength: 90
+    MeleeAtkPower: 60,
+    MeleeDefPower: 90,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'CLOTH-BOOTS',
@@ -740,8 +844,10 @@ export const ItemTypes: Item[] = [
     type: 'BOOTS',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 5
+    MeleeAtkPower: 1,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-BOOTS',
@@ -754,8 +860,10 @@ export const ItemTypes: Item[] = [
     type: 'BOOTS',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-BOOTS',
@@ -768,8 +876,10 @@ export const ItemTypes: Item[] = [
     type: 'BOOTS',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-LEATHER-BOOTS',
@@ -782,8 +892,10 @@ export const ItemTypes: Item[] = [
     type: 'BOOTS',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 20,
-    defenseStrength: 30
+    MeleeAtkPower: 20,
+    MeleeDefPower: 30,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'CLOTH-BRACERS',
@@ -796,8 +908,10 @@ export const ItemTypes: Item[] = [
     type: 'BRACERS',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 2
+    MeleeAtkPower: 1,
+    MeleeDefPower: 2,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-BRACERS',
@@ -810,8 +924,10 @@ export const ItemTypes: Item[] = [
     type: 'BRACERS',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 3
+    MeleeAtkPower: 2,
+    MeleeDefPower: 3,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-BRACERS',
@@ -824,8 +940,10 @@ export const ItemTypes: Item[] = [
     type: 'BRACERS',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 5
+    MeleeAtkPower: 5,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-LEATHER-BRACERS',
@@ -838,8 +956,10 @@ export const ItemTypes: Item[] = [
     type: 'BRACERS',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 8,
-    defenseStrength: 12
+    MeleeAtkPower: 8,
+    MeleeDefPower: 12,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'SLING',
@@ -852,8 +972,10 @@ export const ItemTypes: Item[] = [
     type: 'WEAPON',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 20,
-    defenseStrength: 5
+    MeleeAtkPower: 20,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'DAGGER',
@@ -866,8 +988,10 @@ export const ItemTypes: Item[] = [
     type: 'WEAPON',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 40,
-    defenseStrength: 10
+    MeleeAtkPower: 40,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'HATCHET',
@@ -880,8 +1004,10 @@ export const ItemTypes: Item[] = [
     type: 'WEAPON',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 80,
-    defenseStrength: 20
+    MeleeAtkPower: 80,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'QUARTERSTAFF',
@@ -894,8 +1020,10 @@ export const ItemTypes: Item[] = [
     type: 'WEAPON',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 180,
-    defenseStrength: 45
+    MeleeAtkPower: 180,
+    MeleeDefPower: 45,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'MACE',
@@ -908,8 +1036,10 @@ export const ItemTypes: Item[] = [
     type: 'WEAPON',
     armoryLevel: 5,
     quantity: 0,
-    killingStrength: 560,
-    defenseStrength: 140
+    MeleeAtkPower: 560,
+    MeleeDefPower: 140,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-HOOD',
@@ -922,8 +1052,10 @@ export const ItemTypes: Item[] = [
     type: 'HELM',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 5
+    MeleeAtkPower: 1,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-HOOD',
@@ -936,8 +1068,10 @@ export const ItemTypes: Item[] = [
     type: 'HELM',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-HOOD',
@@ -950,8 +1084,10 @@ export const ItemTypes: Item[] = [
     type: 'HELM',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'BRONZE-CAP',
@@ -964,8 +1100,10 @@ export const ItemTypes: Item[] = [
     type: 'HELM',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 10,
-    defenseStrength: 40
+    MeleeAtkPower: 10,
+    MeleeDefPower: 40,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-ARMOR',
@@ -978,8 +1116,10 @@ export const ItemTypes: Item[] = [
     type: 'ARMOR',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 4,
-    defenseStrength: 15
+    MeleeAtkPower: 4,
+    MeleeDefPower: 15,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-ARMOR',
@@ -992,8 +1132,10 @@ export const ItemTypes: Item[] = [
     type: 'ARMOR',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 8,
-    defenseStrength: 30
+    MeleeAtkPower: 8,
+    MeleeDefPower: 30,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-ARMOR',
@@ -1006,8 +1148,10 @@ export const ItemTypes: Item[] = [
     type: 'ARMOR',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 15,
-    defenseStrength: 60
+    MeleeAtkPower: 15,
+    MeleeDefPower: 60,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'BRONZE-CHAINMAIL',
@@ -1020,8 +1164,10 @@ export const ItemTypes: Item[] = [
     type: 'ARMOR',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 60,
-    defenseStrength: 90
+    MeleeAtkPower: 60,
+    MeleeDefPower: 90,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-BOOTS',
@@ -1034,8 +1180,10 @@ export const ItemTypes: Item[] = [
     type: 'BOOTS',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 5
+    MeleeAtkPower: 1,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-BOOTS',
@@ -1048,8 +1196,10 @@ export const ItemTypes: Item[] = [
     type: 'BOOTS',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-GREAVES',
@@ -1062,8 +1212,10 @@ export const ItemTypes: Item[] = [
     type: 'BOOTS',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'BRONZE-CHAIN-GREAVES',
@@ -1076,8 +1228,10 @@ export const ItemTypes: Item[] = [
     type: 'BOOTS',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 20,
-    defenseStrength: 30
+    MeleeAtkPower: 20,
+    MeleeDefPower: 30,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'PADDED-BRACERS',
@@ -1090,8 +1244,10 @@ export const ItemTypes: Item[] = [
     type: 'BRACERS',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 1,
-    defenseStrength: 2
+    MeleeAtkPower: 1,
+    MeleeDefPower: 2,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LEATHER-BRACERS',
@@ -1104,8 +1260,10 @@ export const ItemTypes: Item[] = [
     type: 'BRACERS',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 3
+    MeleeAtkPower: 2,
+    MeleeDefPower: 3,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'STUDDED-LEATHER-BRACERS',
@@ -1118,8 +1276,10 @@ export const ItemTypes: Item[] = [
     type: 'BRACERS',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 5
+    MeleeAtkPower: 5,
+    MeleeDefPower: 5,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'BRONZE-CHAIN-BRACERS',
@@ -1132,8 +1292,10 @@ export const ItemTypes: Item[] = [
     type: 'BRACERS',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 8,
-    defenseStrength: 12
+    MeleeAtkPower: 8,
+    MeleeDefPower: 12,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'SMALL-WOODEN-SHIELD',
@@ -1146,8 +1308,10 @@ export const ItemTypes: Item[] = [
     type: 'SHIELD',
     armoryLevel: 1,
     quantity: 0,
-    killingStrength: 2,
-    defenseStrength: 10
+    MeleeAtkPower: 2,
+    MeleeDefPower: 10,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'MEDIUM-WOODEN-SHIELD',
@@ -1160,8 +1324,10 @@ export const ItemTypes: Item[] = [
     type: 'SHIELD',
     armoryLevel: 2,
     quantity: 0,
-    killingStrength: 5,
-    defenseStrength: 20
+    MeleeAtkPower: 5,
+    MeleeDefPower: 20,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'LARGE-WOODEN-SHIELD',
@@ -1174,8 +1340,10 @@ export const ItemTypes: Item[] = [
     type: 'SHIELD',
     armoryLevel: 3,
     quantity: 0,
-    killingStrength: 10,
-    defenseStrength: 40
+    MeleeAtkPower: 10,
+    MeleeDefPower: 40,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'BRONZE-STUDDED-SHIELD',
@@ -1188,8 +1356,10 @@ export const ItemTypes: Item[] = [
     type: 'SHIELD',
     armoryLevel: 4,
     quantity: 0,
-    killingStrength: 40,
-    defenseStrength: 60
+    MeleeAtkPower: 40,
+    MeleeDefPower: 60,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'GREAT-SWORD',
@@ -1202,8 +1372,10 @@ export const ItemTypes: Item[] = [
     race: 'HUMAN',
     armoryLevel: 5,
     quantity: 0,
-    killingStrength: 960,
-    defenseStrength: 240
+    MeleeAtkPower: 960,
+    MeleeDefPower: 240,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   },
   {
     id: 'ELVEN-LONGBOW',
@@ -1216,7 +1388,9 @@ export const ItemTypes: Item[] = [
     race: 'ELF',
     armoryLevel: 5,
     quantity: 0,
-    killingStrength: 960,
-    defenseStrength: 240
+    MeleeAtkPower: 960,
+    MeleeDefPower: 240,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
   }
 ];

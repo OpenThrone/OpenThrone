@@ -120,8 +120,10 @@ export type Unit = {
   cost: number;
   fortLevel: number;
   hp: number;
-  killingStrength?: number;
-  defenseStrength?: number;
+  MeleeAtkPower?: number;
+  MeleeDefPower?: number;
+  RangedAtkPower?: number;
+  RangedDefPower?: number;
   closeCombatPercentage?: number;
   rangedPercentage?: number;
 };
@@ -139,8 +141,10 @@ export type Item = {
   race: PlayerRace;
   quantity: number; // Note: This might be redundant if PlayerItem is used in User model
   armoryLevel: number;
-  killingStrength?: number;
-  defenseStrength?: number;
+  MeleeAtkPower?: number;
+  MeleeDefPower?: number;
+  RangedAtkPower?: number;
+  RangedDefPower?: number;
 };
 
 
@@ -158,6 +162,10 @@ export type UnitUpgradeType = {
   defenseStrength?: number;
   closeCombatPercentage?: number;
   rangedPercentage?: number;
+  MeleeAtkPower?: number;
+  MeleeDefPower?: number;
+  RangedAtkPower?: number;
+  RangedDefPower?: number;
 };
 export type Fortification = {
   name: string;
@@ -169,6 +177,8 @@ export type Fortification = {
   defenseBonusPercentage: number;
   cost: number;
   casualtyMitigation: number;
+  MeleeDefPower?: number; // Forts have defense power
+  RangedDefPower?: number; // Forts have ranged defense power
 };
 export type OffensiveUpgradeType = {
   name: string;
@@ -204,6 +214,22 @@ export type SentryUpgradeType = {
   defenseBonusPercentage: number;
   cost: number;
   level?: number;
+};
+
+export type UnitUpgradeType = {
+  type: UnitType | string;
+  name: string;
+  SiegeUpgradeLevel: number;
+  level: number;
+  bonus: number;
+  cost: number;
+  minUnitLevel: number;
+  unitsCovered: number;
+  quantity?: number;
+  MeleeAtkPower?: number;
+  MeleeDefPower?: number;
+  RangedAtkPower?: number;
+  RangedDefPower?: number;
 };
 
 
