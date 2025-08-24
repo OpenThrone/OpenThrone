@@ -11,12 +11,13 @@ import { Indicator } from '@mantine/core';
 import { PermissionType } from '@prisma/client';
 import { getAssetPath } from '@/utils/utilities';
 import { PlayerRace } from '@/types/typings';
+import MobileNavigation from './MobileNavigation';
 
 const parentLinks = [
   'Home',
   'Battle',
   'Structures',
-  //'Social',
+  'Social',
   // 'Alliances',
   'Community',
 ] as const;
@@ -191,54 +192,69 @@ export const NavLoggedIn: React.FC = () => {
       setResetTimer(null);
     }
   };
+  const allMenuItems: {
+    key: string;
+    label: string;
+    href?: string;
+    onClick?: () => void;
+    children?: {
+      key: string;
+      label: string;
+      href?: string;
+      onClick?: () => void;
+    }[];
+  }[] = parentLinks.map((parent) => {
+    const children = subMenus[parent]?.map((item) => ({
+      key: item.href,
+      label: item.text,
+      href: item.href,
+    }));
+    return {
+      key: parent,
+      label: parent,
+      children,
+    };
+  });
+
+  allMenuItems.push({
+    key: 'signout',
+    label: 'Sign Out',
+    onClick: () => signOut({ callbackUrl: '/' }),
+  });
+
   return (
     <>
       <button
         type="button"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="block md:hidden"
+        className="block md:hidden p-2 text-white hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+        onClick={() => setMobileMenuOpen(true)}
+        aria-label="Open menu"
       >
-        {mobileMenuOpen ? 'Close' : 'Open'} Menu
+        <svg
+          className="h-6 w-6"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
       </button>
-      <nav className={mobileMenuOpen ? 'block md:hidden' : 'hidden md:hidden'}>
-        <ul className="text-center text-xl">
-          {parentLinks.map((link) => (
-            <li className="mr-6" key={link}>
-              <Link
-                href="#"
-                className={`${activeParentLink === link
-                  ? 'bg-orange-gradient text-gradient-orange'
-                  : 'text-elf-link-link'
-                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-md text-shadow-color-black`}
-                onClick={(event) => handleParentClick(event, link)}
-              >
-                {link}
-              </Link>
-              {activeParentLink === link && (
-                <ul>
-                  {activeSubMenu.map((subLink) => (
-                    <li
-                      className="mr-6 pl-4"
-                      key={`${subLink.href}.${subLink.text}`}
-                    >
-                      <Link href={subLink.href} target={subLink.target ? subLink.target : '_self'}
-                        className={`border-none
-                      ${activeSubLink === subLink.text
-                            ? 'text-gradient-orange bg-orange-gradient'
-                            : 'text-elf-link-link'
-                          } bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-xs
-                    `} >{subLink.text}</Link>                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <MobileNavigation
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        menuItems={allMenuItems}
+      />
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
         <nav
           className={`hidden h-10 ${layoutCont.raceClasses.menuPrimaryClass} md:block`}
-          style={{backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme)}')`}}
+          style={{backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme as PlayerRace)}')`}}
           onMouseEnter={clearReset}
         >
           <div className="mx-auto max-w-screen-lg md:block justify-center">

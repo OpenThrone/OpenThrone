@@ -1,8 +1,8 @@
 import { getAssetPath } from '@/utils/utilities';
-import { Burger } from '@mantine/core';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import MobileNavigation from './MobileNavigation';
 
 const parentLinks = [
   { title: 'Home', url: '/' },
@@ -18,14 +18,6 @@ export const NavLoggedOut: React.FC = () => {
   const [, setDefaultParentLink] = useState<string>('/');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleParentClick = (event: React.MouseEvent, link: string) => {
-    if (link === activeParentLink) {
-      setActiveParentLink('');
-    } else {
-      setActiveParentLink(link);
-    }
-  };
-
   useEffect(() => {
     const currentPath = pathName;
     const activeLink = parentLinks.find((link) => link.url === currentPath);
@@ -37,31 +29,48 @@ export const NavLoggedOut: React.FC = () => {
     }
   }, [pathName]);
 
+  const menuItems = parentLinks.map((link) => ({
+    key: link.title,
+    label: link.title,
+    href: link.url,
+  }));
+
   return (
     <>
-      <Burger className="block sm:hidden" opened={mobileMenuOpen} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}></Burger>
-      
-      <nav className={mobileMenuOpen ? 'block md:hidden' : 'hidden md:hidden'}
-          >
-        <ul className="text-center text-xl">
-          {parentLinks.map((link) => (
-            <div key={link.title}>
-              <li className="mr-6">
-                <Link
-                  href={link.url}
-                  className="border-none text-gray-700 hover:text-gray-900"
-                  onClick={(event) => handleParentClick(event, link.url)}                  
-                >
-                  {link.title}
-                </Link>
-              </li>
-            </div>
-          ))}
-        </ul>
-      </nav>
+      <button
+        type="button"
+        className="block md:hidden p-2 text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+        onClick={() => setMobileMenuOpen(true)}
+        aria-label="Open menu"
+      >
+        <svg
+          className="h-6 w-6"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </button>
+      <MobileNavigation
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        menuItems={menuItems}
+      />
       <div>
-        <nav className="hidden bg-elf-menu-primary md:block"
-          style={{ backgroundImage: `url('${getAssetPath('top-menu', null, 'ELF')}')` }}>
+        <nav
+          className="hidden bg-elf-menu-primary md:block"
+          style={{
+            backgroundImage: `url('${getAssetPath('top-menu', null, 'ELF')}')`,
+          }}
+        >
           <div className="mx-auto max-w-screen-md md:block">
             <ul className="flex flex-wrap items-center justify-evenly text-center text-xl">
               {parentLinks.map((link) => (

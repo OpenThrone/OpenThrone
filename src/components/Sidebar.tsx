@@ -13,6 +13,7 @@ import RpgAwesomeIcon from './RpgAwesomeIcon';
 import { logError } from '@/utils/logger';
 import UserModel from '@/models/Users';
 import messages from '@/pages/api/messages';
+import CollapsibleSection from './CollapsibleSection';
 
 const Sidebar: React.FC = () => {
   const [time, setTime] = useState('');
@@ -94,21 +95,16 @@ const Sidebar: React.FC = () => {
     });
   }, [user, userLoading]);
 
-  const renderAutocompleteOption = React.useCallback<AutocompleteProps['renderOption']>(
-    ({ option }) => {
-      return (
-        <Group gap="sm">
-          <Avatar src={getAvatarSrc(option.image, option.race)} size={50} radius="xl" />
-          <div>
-            <Text size="sm">{option.label}</Text>
-            <Text size="xs" opacity={0.5}>
-              Lvl {option.experience} {option.race} {option.class}
-            </Text>
-          </div>
-        </Group>
-      );
-    },
-    []
+  const renderAutocompleteOption: AutocompleteProps['renderOption'] = ({ option }) => (
+    <Group gap="sm">
+      <Avatar src={getAvatarSrc((option as any).image, (option as any).race)} size={50} radius="xl" />
+      <div>
+        <Text size="sm">{(option as any).label}</Text>
+        <Text size="xs" opacity={0.5}>
+          Lvl {(option as any).experience} {(option as any).race} {(option as any).class}
+        </Text>
+      </div>
+    </Group>
   );
 
   const fetchUsers = async (searchTerm: string): Promise<any[]> => { // Return type clarification
@@ -252,103 +248,192 @@ const Sidebar: React.FC = () => {
 
   return (
     <div className="block sm:block">
-      {/* Advisor Scroll background and structure */}
-      <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg min-h-96 h-96" style={{ /* ... background styles ... */
-        height: '100%',
-        backgroundImage: 'url(https://assets.openthrone.dev/images/background/advisor-scroll-side.webp)',
-        backgroundSize: '100% 100%',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        paddingLeft: '18px',
-        paddingRight: '18px',
-        paddingTop: '15px',
-        paddingBottom: '30px',
-      }}>
-        <div className="p-10 md:p-4 mt-2">
-          {/* Advisor Title and Text */}
-          <h3 className="advisor-title text-center font-medieval font-bold text-xl text-shadow text-shadow-xs">
-            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handlePrevAdvisor} />
-            Advisor
-            <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handleNextAdvisor} />
-          </h3>
-          <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-black text-center' style={{ minHeight: '105px' }}>
-            {messages[currentMessageIndex]}
-          </Text>
+      {isMobile ? (
+        <CollapsibleSection title="Advisor">
+          <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg" style={{
+            backgroundImage: 'url(https://assets.openthrone.dev/images/background/advisor-scroll-side.webp)',
+            backgroundSize: '100% 100%',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            paddingLeft: '18px',
+            paddingRight: '18px',
+            paddingTop: '15px',
+            paddingBottom: '30px',
+          }}>
+            <div className="p-10 md:p-4 mt-2">
+              <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-black text-center' style={{ minHeight: '105px' }}>
+                {messages[currentMessageIndex]}
+              </Text>
 
-          {/* Stats Section */}
-          <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
-            Stats <FontAwesomeIcon icon={faRefresh} className="cursor-pointer" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} />
-          </h6>
-          {userLoading ? (
-            <List size={isMobile ? 'xl' : 'sm'} className={isMobile ? 'text-sm ml-2' : 'text-base'} style={isMobile ? { marginLeft: '14px' } : {}}>
-              <List.Item><Skeleton height={16} width="80%" radius="sm" /></List.Item>
-              <List.Item><Skeleton height={16} width="70%" radius="sm" mt={6} /></List.Item>
-              <List.Item><Skeleton height={16} width="60%" radius="sm" mt={6} /></List.Item>
-              <List.Item>
-                <Skeleton height={16} width="90%" radius="sm" mt={6} />
-                <Skeleton height={8} width="100%" radius="sm" mt={4} /> {/* Skeleton for progress bar */}
-              </List.Item>
-              <List.Item><Skeleton height={16} width="75%" radius="sm" mt={6} /></List.Item>
-              <List.Item><Skeleton height={16} width="85%" radius="sm" mt={6} /></List.Item>
-              <List.Item><Skeleton height={16} width="70%" radius="sm" mt={6} /></List.Item>
-            </List>
-          ) : (
-              
-              <>
-                <Stack gap="xs">
-                  <StatRow label="Gold" value={<span id="gold">{sidebar.gold}</span>} icon={<RpgAwesomeIcon icon="gold-bar" fw />} />
-                  <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
-                  <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
-                  <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
-                    <>
-                      <RpgAwesomeIcon icon="experience" fw />
-                      <Popover width={200} position="bottom" withArrow shadow="md" opened={nextLevelOpened}>
-                        <Popover.Target>
-                          <FontAwesomeIcon icon={faCircleInfo} onMouseEnter={open} onMouseLeave={close} />
-                        </Popover.Target>
-                        <Popover.Dropdown style={{ pointerEvents: 'none' }}>
-                          <Text size="sm">You are {sidebar.xpNextLevel} XP away from the next level</Text>
-                        </Popover.Dropdown>
-                      </Popover>
-                    </>
-                  } />
-                  <StatRow label="Turns" value={<span id="turns">{sidebar.turns}</span>} icon={<RpgAwesomeIcon icon="clockwork" fw />} />
-                  <Divider my="md" c="gray" variant="dashed" />
-                  {!userLoading && <SidebarTimeInfo user={user} userLoading={userLoading} />}
-                </Stack>
-              </>
-          )}
+              {/* Stats Section */}
+              <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
+                Stats <FontAwesomeIcon icon={faRefresh} className="cursor-pointer" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} />
+              </h6>
+              {userLoading ? (
+                <List size={isMobile ? 'xl' : 'sm'} className={isMobile ? 'text-sm ml-2' : 'text-base'} style={isMobile ? { marginLeft: '14px' } : {}}>
+                  <List.Item><Skeleton height={16} width="80%" radius="sm" /></List.Item>
+                  <List.Item><Skeleton height={16} width="70%" radius="sm" mt={6} /></List.Item>
+                  <List.Item><Skeleton height={16} width="60%" radius="sm" mt={6} /></List.Item>
+                  <List.Item>
+                    <Skeleton height={16} width="90%" radius="sm" mt={6} />
+                    <Skeleton height={8} width="100%" radius="sm" mt={4} /> {/* Skeleton for progress bar */}
+                  </List.Item>
+                  <List.Item><Skeleton height={16} width="75%" radius="sm" mt={6} /></List.Item>
+                  <List.Item><Skeleton height={16} width="85%" radius="sm" mt={6} /></List.Item>
+                  <List.Item><Skeleton height={16} width="70%" radius="sm" mt={6} /></List.Item>
+                </List>
+              ) : (
+                  
+                  <>
+                    <Stack gap="xs">
+                      <StatRow label="Gold" value={<span id="gold">{sidebar.gold}</span>} icon={<RpgAwesomeIcon icon="gold-bar" fw />} />
+                      <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
+                      <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
+                      <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
+                        <>
+                          <RpgAwesomeIcon icon="experience" fw />
+                          <Popover width={200} position="bottom" withArrow shadow="md" opened={nextLevelOpened}>
+                            <Popover.Target>
+                              <FontAwesomeIcon icon={faCircleInfo} onMouseEnter={open} onMouseLeave={close} />
+                            </Popover.Target>
+                            <Popover.Dropdown style={{ pointerEvents: 'none' }}>
+                              <Text size="sm">You are {sidebar.xpNextLevel} XP away from the next level</Text>
+                            </Popover.Dropdown>
+                          </Popover>
+                        </>
+                      } />
+                      <StatRow label="Turns" value={<span id="turns">{sidebar.turns}</span>} icon={<RpgAwesomeIcon icon="clockwork" fw />} />
+                      <Divider my="md" c="gray" variant="dashed" />
+                      {!userLoading && <SidebarTimeInfo user={user} userLoading={userLoading} />}
+                    </Stack>
+                  </>
+              )}
 
-          {/* Search Section */}
-          <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
-            Search
-          </h6>
-          <form onSubmit={handleSubmit}>
-            <center>
-              <Autocomplete
-                value={searchValue}
-                onChange={setSearchValue}
-                onOptionSubmit={handleItemSubmit} // Use onOptionSubmit for selection
-                renderOption={renderAutocompleteOption}
-                data={usersData}
-                maxDropdownHeight={300}
-                placeholder="Type to search..."
-                style={{ width: '95%' }}
-                className='mb-2'
-                comboboxProps={{ width: '250px' }}
-                color='brand' // Consider theme variable if needed
-                variant='filled'
-                loading={loadingSearch}
-              />
-            </center>
-            <center>
-              <Button type="submit" color='gray' variant='filled' size="sm"> {/* Adjusted button appearance */}
+              {/* Search Section */}
+              <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
                 Search
-              </Button>
-            </center>
-          </form>
+              </h6>
+              <form onSubmit={handleSubmit}>
+                <center>
+                  <Autocomplete
+                    value={searchValue}
+                    onChange={setSearchValue}
+                    onOptionSubmit={handleItemSubmit} // Use onOptionSubmit for selection
+                    renderOption={renderAutocompleteOption}
+                    data={usersData}
+                    maxDropdownHeight={300}
+                    placeholder="Type to search..."
+                    style={{ width: '95%' }}
+                    className='mb-2'
+                    comboboxProps={{ width: '250px' }}
+                    color='brand' // Consider theme variable if needed
+                    variant='filled'
+                  />
+                </center>
+                <center>
+                  <Button type="submit" color='gray' variant='filled' size="sm"> {/* Adjusted button appearance */}
+                    Search
+                  </Button>
+                </center>
+              </form>
+            </div>
+          </div>
+        </CollapsibleSection>
+      ) : (
+        <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg" style={{
+          backgroundImage: 'url(https://assets.openthrone.dev/images/background/advisor-scroll-side.webp)',
+          backgroundSize: '100% 100%',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          paddingLeft: '18px',
+          paddingRight: '18px',
+          paddingTop: '15px',
+          paddingBottom: '30px',
+        }}>
+          <div className="p-10 md:p-4 mt-2">
+            <h3 className="advisor-title text-center font-medieval font-bold text-xl text-shadow text-shadow-xs">
+              <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handlePrevAdvisor} />
+              Advisor
+              <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handleNextAdvisor} />
+            </h3>
+            <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-black text-center' style={{ minHeight: '105px' }}>
+              {messages[currentMessageIndex]}
+            </Text>
+
+            {/* Stats Section */}
+            <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
+              Stats <FontAwesomeIcon icon={faRefresh} className="cursor-pointer" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} />
+            </h6>
+            {userLoading ? (
+              <List size={isMobile ? 'xl' : 'sm'} className={isMobile ? 'text-sm ml-2' : 'text-base'} style={isMobile ? { marginLeft: '14px' } : {}}>
+                <List.Item><Skeleton height={16} width="80%" radius="sm" /></List.Item>
+                <List.Item><Skeleton height={16} width="70%" radius="sm" mt={6} /></List.Item>
+                <List.Item><Skeleton height={16} width="60%" radius="sm" mt={6} /></List.Item>
+                <List.Item>
+                  <Skeleton height={16} width="90%" radius="sm" mt={6} />
+                  <Skeleton height={8} width="100%" radius="sm" mt={4} /> {/* Skeleton for progress bar */}
+                </List.Item>
+                <List.Item><Skeleton height={16} width="75%" radius="sm" mt={6} /></List.Item>
+                <List.Item><Skeleton height={16} width="85%" radius="sm" mt={6} /></List.Item>
+                <List.Item><Skeleton height={16} width="70%" radius="sm" mt={6} /></List.Item>
+              </List>
+            ) : (
+                
+                <>
+                  <Stack gap="xs">
+                    <StatRow label="Gold" value={<span id="gold">{sidebar.gold}</span>} icon={<RpgAwesomeIcon icon="gold-bar" fw />} />
+                    <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
+                    <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
+                    <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
+                      <>
+                        <RpgAwesomeIcon icon="experience" fw />
+                        <Popover width={200} position="bottom" withArrow shadow="md" opened={nextLevelOpened}>
+                          <Popover.Target>
+                            <FontAwesomeIcon icon={faCircleInfo} onMouseEnter={open} onMouseLeave={close} />
+                          </Popover.Target>
+                          <Popover.Dropdown style={{ pointerEvents: 'none' }}>
+                            <Text size="sm">You are {sidebar.xpNextLevel} XP away from the next level</Text>
+                          </Popover.Dropdown>
+                        </Popover>
+                      </>
+                    } />
+                    <StatRow label="Turns" value={<span id="turns">{sidebar.turns}</span>} icon={<RpgAwesomeIcon icon="clockwork" fw />} />
+                    <Divider my="md" c="gray" variant="dashed" />
+                    {!userLoading && <SidebarTimeInfo user={user} userLoading={userLoading} />}
+                  </Stack>
+                </>
+            )}
+
+            {/* Search Section */}
+            <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
+              Search
+            </h6>
+            <form onSubmit={handleSubmit}>
+              <center>
+                <Autocomplete
+                  value={searchValue}
+                  onChange={setSearchValue}
+                  onOptionSubmit={handleItemSubmit} // Use onOptionSubmit for selection
+                  renderOption={renderAutocompleteOption}
+                  data={usersData}
+                  maxDropdownHeight={300}
+                  placeholder="Type to search..."
+                  style={{ width: '95%' }}
+                  className='mb-2'
+                  comboboxProps={{ width: '250px' }}
+                  color='brand' // Consider theme variable if needed
+                  variant='filled'
+                />
+              </center>
+              <center>
+                <Button type="submit" color='gray' variant='filled' size="sm"> {/* Adjusted button appearance */}
+                  Search
+                </Button>
+              </center>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
