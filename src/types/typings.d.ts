@@ -216,23 +216,6 @@ export type SentryUpgradeType = {
   level?: number;
 };
 
-export type UnitUpgradeType = {
-  type: UnitType | string;
-  name: string;
-  SiegeUpgradeLevel: number;
-  level: number;
-  bonus: number;
-  cost: number;
-  minUnitLevel: number;
-  unitsCovered: number;
-  quantity?: number;
-  MeleeAtkPower?: number;
-  MeleeDefPower?: number;
-  RangedAtkPower?: number;
-  RangedDefPower?: number;
-};
-
-
 export type PlayerBonus = {
   race: PlayerRace | PlayerClass;
   bonusType: BonusType;
