@@ -1,0 +1,3 @@
+# bunfig.toml
+[test]
+preload = ["./__mocks__/setup.prisma-mock.ts"]
