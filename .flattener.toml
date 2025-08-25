@@ -1,0 +1,78 @@
+# .flattener.toml
+# This configuration is based on the provided command-line arguments.
+# This is for use with CodeFlattener by DasTacoMann
+[profiles.default]
+# =============================================================================
+# FILE SELECTION SETTINGS
+# =============================================================================
+
+# File extensions to include. Corresponds to: -e tsx,css,js
+# Note: The extensions in the include_globs list will be included regardless of this setting.
+# This list is useful if you add directory-based globs like "src/**/*" in the future.
+extensions = [".tsx", ".css", ".js"]
+
+# =============================================================================
+# INCLUDE/EXCLUDE PATTERNS
+# =============================================================================
+
+# Directories to exclude. It's always a good practice to exclude these.
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git"]
+
+# Glob pattern inclusions. This is the most important part of your command.
+# Corresponds to: --include-globs "..."
+include_globs = [
+    "src/pages/_app.tsx",
+    "src/components/Layout.tsx",
+    "src/components/MainArea.tsx",
+    "src/components/navLoggedOut.tsx",
+    "src/components/navLoggedIn.tsx",
+    "src/components/Sidebar.tsx",
+    "src/components/NavSkeleton.tsx",
+    "src/components/MainAreaSkeleton.tsx",
+    "src/components/SidebarSkeleton.tsx",
+    "src/pages/index.tsx",
+    "src/pages/home/overview.tsx",
+    "src/components/news-bulletin.tsx",
+    "src/components/ContentCard.tsx",
+    "src/components/RpgAwesomeIcon.tsx",
+    "src/components/loading-dots.tsx",
+    "src/styles/global.css",
+    "tailwind.config.js",
+    "postcss.config.js"
+]
+
+
+# =============================================================================
+# OUTPUT CONFIGURATION
+# =============================================================================
+
+# Format the output content using Markdown code blocks.
+# Corresponds to: --markdown
+markdown = true
+
+[profiles.battleSystem]
+description = "Encapsulates the battle system logic."
+extensions = [".tsx", "ts", "css"]
+include_globs = [
+    "src/types/typings.d.ts",
+    "src/app/attack.test.ts",
+    "src/utils/numberFormatting.ts",
+    "src/utils/MockUserGenerator.ts",
+    "src/utils/attackFunctions.ts",
+    "src/utils/utilities.ts",
+    "src/utils/logger.ts",
+    "src/utils/mtrand.ts",
+    "src/constants/Fortifications.tsx",
+    "src/constants/Structure_Upgrades.tsx",
+    "src/constants/Items.tsx",
+    "src/constants/index.tsx",
+    "src/constants/XPLevels.tsx",
+    "src/constants/Units.tsx",
+    "src/constants/Bonuses.tsx",
+    "src/constants/Battle_Upgrades.tsx",
+    "src/models/BattleSimulationResult.tsx",
+    "src/models/Users.tsx",
+    "src/models/BattleResult.tsx"
+]
+markdown = true
+gpt4-tokens = true
