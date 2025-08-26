@@ -1,4 +1,3 @@
-import type { PlayerUnit } from '@/types/typings';
 
 class BattleSimulationResult {
   Result: string; // Either 'Win' or 'Lost'

@@ -1,5 +1,5 @@
 import UserModel from "@/models/Users";
-import { simulateBattle } from "@/utils/attackFunctions";
+import { simulateBattle, newComputeCasualties } from "@/utils/attackFunctions";
 import mtRand from "@/utils/mtrand";
 import { stringifyObj } from "@/utils/numberFormatting";
 import MockUserGenerator from "@/utils/MockUserGenerator";
@@ -102,6 +102,7 @@ describe('setup Attack test', () => {
 
   it('should simulate a battle with high fortHP (fort remains mostly intact)', async () => {
     // Create a defender with full fortHP (e.g., 500)
+    defenderGenerator.setFortHitpoints(500);
     const highFortDefender = new UserModel(defenderGenerator.getUser());
 
     // Attacker with a moderate offensive force
@@ -116,6 +117,31 @@ describe('setup Attack test', () => {
     expect(battle.finalFortHP).toBeGreaterThan(300);
     // Expect casualty distribution to be lower (defender retains most defensive units)
     expect(battle.Losses.Defender.total).toBeLessThan(1000);
+    it('should apply new casualty formula correctly for balanced fight', () => {
+      const result = newComputeCasualties(1000, 1000, 10000, 10000, 1000, 1.0, 1000, false, false);
+      expect(result.attackerCasualties).toBeGreaterThanOrEqual(25);
+      expect(result.attackerCasualties).toBeLessThanOrEqual(300);
+      expect(result.defenderCasualties).toBeGreaterThanOrEqual(25);
+      expect(result.defenderCasualties).toBeLessThanOrEqual(500);
+    });
+  
+    it('should apply new casualty formula correctly for overwhelming attacker', () => {
+      const result = newComputeCasualties(5000, 500, 20000, 20000, 1000, 10.0, 0, true, false);
+      expect(result.defenderCasualties).toBeGreaterThan(500);
+      expect(result.attackerCasualties).toBeLessThanOrEqual(600);
+    });
+  
+    it('should wipe out small side in extreme mismatch', () => {
+      const result = newComputeCasualties(100, 5000, 100, 10000, 1000, 0.01, 1000, false, false);
+      expect(result.attackerCasualties).toBe(100);
+      expect(result.defenderCasualties).toBeLessThan(1000);
+    });
+  
+    it('should add collateral casualties after fort destroyed', () => {
+      const fortified = newComputeCasualties(2000, 2000, 15000, 15000, 2000, 1.0, 2000, true, false);
+      const breached = newComputeCasualties(2000, 2000, 15000, 15000, 2000, 1.0, 0, true, false);
+      expect(breached.defenderCasualties).toBeGreaterThanOrEqual(fortified.defenderCasualties);
+    });
   });
 
   it('should simulate a battle with 400 Offense level 1 and 2 units against 20 Defense units level 1 and 5000 citizens', async () => {
@@ -137,12 +163,10 @@ describe('setup Attack test', () => {
       class: 'FIGHTER',
     });
     defenseGenerator.addUnits([
-      { type: 'CITIZEN', level: 1, quantity: 500 },
+      { type: 'CITIZEN', level: 1, quantity: 5000 },
       { type: 'WORKER', level: 1, quantity: 0 },
-      { type: 'OFFENSE', level: 1, quantity: 120 },
-      { type: 'DEFENSE', level: 1, quantity: 300 },
-      { type: 'SENTRY', level: 3, quantity: 1000 },
-      { type: 'SENTRY', level: 2, quantity: 7200 },
+      { type: 'OFFENSE', level: 1, quantity: 0 },
+      { type: 'DEFENSE', level: 1, quantity: 20 },
     ]);
     defenseGenerator.addBattleUpgrades([
       { type: 'OFFENSE', level: 1, quantity: 0 },
@@ -166,7 +190,13 @@ describe('setup Attack test', () => {
 
     logInfo('Weak Defender - After battle 1 - FortHP: ', weakDefender.fortHitpoints);
     logInfo('Strong Attacker - Attacker Losses: ', battle1.Losses.Attacker.total, 'Defender Losses: ', battle1.Losses.Defender.total);
-    expect(battle1.Losses.Attacker.total).toBeLessThan(battle1.Losses.Defender.total);
+    // With Defense Round + Collateral Round, trained defenders should die off quickly and citizens should take meaningful casualties
+    expect(battle1.Losses.Defender.total).toBeGreaterThan(battle1.Losses.Attacker.total);
+    expect(battle1.Losses.Defender.units.find(u => u.type === 'DEFENSE')?.quantity || 0).toBeGreaterThan(0);
+    expect(battle1.Losses.Defender.units.find(u => u.type === 'CITIZEN')?.quantity || 0).toBeGreaterThan(10);
+    expect(battle1.Losses.Attacker.total).toBeLessThan(20);
+
+    logInfo('Defender Losses Breakdown:', battle1.Losses.Defender);
   });
 
   it('should simulate a battle with a "Meat Shield" scenario', async () => {

@@ -634,7 +634,6 @@ export function calculateLoot(
 
   const defenderGold = BigInt(defender.gold);
   const calculatedLoot = Number(defenderGold) * lootFactor;
-  logDebug(`Calculated loot is invalid: ${calculatedLoot}. Returning 0.`);
   if (!Number.isFinite(calculatedLoot) || isNaN(calculatedLoot) || calculatedLoot < 0) {
     console.warn(`Calculated loot is invalid: ${calculatedLoot}. Returning 0.`);
     return BigInt(0);
@@ -648,17 +647,7 @@ export function calculateLoot(
       : loot;
 }
 
-export function computeBaseValue(ratio: number): number {
-  const baseFactor = 0.4;
-  if (ratio >= 5) return mtRand(0.0015, 0.0018);
-  if (ratio >= 4) return mtRand(0.00115, 0.0013);
-  if (ratio >= 3) return mtRand(0.001, 0.00125);
-  if (ratio >= 2) return mtRand(0.0009, 0.00105);
-  if (ratio >= 1) return mtRand(0.00085, 0.00095);
-  if (ratio >= 0.5) return mtRand(0.0005, 0.0006);
-  if (ratio >= 0.1) return mtRand(0.0004, 0.00045);
-  return mtRand(0.00025, 0.0003);
-}
+/* Removed unused function computeBaseValue */
 export function newComputeCasualties(
   attackerAtk: number,
   defenderDef: number,
@@ -672,28 +661,37 @@ export function newComputeCasualties(
 ): { attackerCasualties: number; defenderCasualties: number } {
   logDebug(`newComputeCasualties - AttackerAtk: ${attackerAtk}, DefenderDef: ${defenderDef}, PiercingRatio: ${piercingRatio}`);
 
-  const baseLossPercent = 0.02;
-  const scalingFactor = 0.04;
+  // === New HP-driven casualty model ===
+  const baseLossPercent = 0.0025; // 0.25% floor attrition
+  const scalingFactor = 0.01;     // slower ramp than before
 
   const casualtyFactor = piercingRatio - 1;
 
   let defenderLossPercent = baseLossPercent + (casualtyFactor * scalingFactor);
-  let attackerLossPercent = baseLossPercent - (casualtyFactor * scalingFactor);
+  let attackerLossPercent = baseLossPercent - (casualtyFactor * scalingFactor * 0.5); // attackers punished less
 
+  // Apply clamps
+  // Loosen casualty capping rules under overwhelming offense
   if (piercingRatio > 3) {
+    // In overwhelming scenarios, defenders can take up to 20% losses per turn
+    defenderLossPercent = Math.min(Math.max(defenderLossPercent, baseLossPercent), 0.2);
+    // Attackers take negligible or no casualties once overwhelming
     attackerLossPercent = 0;
+  } else {
+    defenderLossPercent = Math.min(Math.max(defenderLossPercent, baseLossPercent), 0.05); // defenders max 5% casualties/turn
+    attackerLossPercent = Math.min(Math.max(attackerLossPercent, 0), 0.03);              // attackers max 3% casualties/turn
   }
 
-  let defenderCasualties = Math.round(defenderPop * Math.max(0, defenderLossPercent));
-  let attackerCasualties = Math.round(attackerPop * Math.max(0, attackerLossPercent));
+  let defenderCasualties = Math.floor(defenderPop * defenderLossPercent);
+  let attackerCasualties = Math.floor(attackerPop * attackerLossPercent);
 
-
-  // If fort is destroyed, massive casualties for the defender
-  if (fortHitpoints !== undefined && fortHitpoints <= 0) {
-    defenderCasualties += Math.round(defenderPop * mtRand(20, 30) / 100);
+  // If fort is destroyed, civilians exposed gradually
+  if (fortHitpoints !== undefined && fortHitpoints <= 0 && includeCitz) {
+    const collateralExtra = Math.floor(defenderPop * 0.02); // 2% extra spread across turns
+    defenderCasualties += collateralExtra;
   }
 
-  // Cap casualties
+  // Cap casualties so never exceed populations
   attackerCasualties = Math.min(attackerCasualties, attackerPop);
   defenderCasualties = Math.min(defenderCasualties, defenderPop);
 
@@ -1012,14 +1010,26 @@ function distributeDamage(totalCasualties: number, defender: UserModel, fortHP: 
   let collateralDamage = 0;
   let fightingDamage = 0;
 
+  const COLLATERAL_DEFENSE_SHARE = 0.3;
+
+  const defenseCount = defender.unitTotals.defense;
+  const citizenCount = defender.unitTotals.citizens + defender.unitTotals.workers;
+  const totalPool = defenseCount + citizenCount;
+
+  if (totalPool <= 0) {
+    return { collateralDamage: 0, fightingDamage: 0 };
+  }
+
   if (fortHP > 0) {
-    // While the fort stands, collateral forces absorb most of the damage
-    collateralDamage = totalCasualties * 0.8;
-    fightingDamage = totalCasualties * 0.2; // 20% bleeds through
+    // While fort stands, only 30% of citizens count as militia in the defense pool
+    const effectiveCitizenShare = citizenCount * COLLATERAL_DEFENSE_SHARE;
+    const totalDefensePool = defenseCount + effectiveCitizenShare;
+    fightingDamage = totalCasualties * (defenseCount / totalDefensePool);
+    collateralDamage = totalCasualties - fightingDamage;
   } else {
-    // Once the fort is breached, fighting forces take the brunt of the damage
-    collateralDamage = totalCasualties * 0.1;
-    fightingDamage = totalCasualties * 0.9;
+    // Fort is breached: distribute casualties strictly proportional to real counts
+    fightingDamage = totalCasualties * (defenseCount / totalPool);
+    collateralDamage = totalCasualties - fightingDamage;
   }
 
   return { collateralDamage, fightingDamage };
