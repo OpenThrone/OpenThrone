@@ -83,6 +83,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
   const [loading, setLoading] = useState(false);
   const [showVacationModal, setShowVacationModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const router = useRouter();
   const [turnstileToken, setTurnstileToken] = useState('');
   const turnsTileRef = useRef<any>();
@@ -212,10 +213,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
         });
 
         if (res.status === 200) {
-          toast.success('Account created! Redirecting to login...');
-          setTimeout(() => {
-            router.push('/account/login');
-          }, 2000);
+          setRegistrationSuccess(true);
         } else {
           const message = await res.json();
           setErrorMessage(message.error || 'Registration failed.');
@@ -237,179 +235,197 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
   return (
     <Center>
       <Paper withBorder shadow="md" p={30} radius="md" style={{ width: '100%', maxWidth: 400 }}>
-        <Title order={2} ta="center" mb="md" c={'gray'}>
-          {type === 'login' ? 'Sign In' : 'Sign Up'}
-        </Title>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Flex direction="column" gap="md">
-            {type === 'login' ? (
-              <>
-                <TextInput
-                  id="email"
-                  label="Email Address"
-                  placeholder="username@email.com"
-                  autoComplete="email"
-                  required
-                  size="md"
-                  styles={inputStyles}
-                  {...register('email')}
-                  error={formErrors.email?.message}
-                />
-                <PasswordInput
-                  id="password"
-                  label="Password"
-                  placeholder="Password"
-                  required
-                  size="md"
-                  styles={inputStyles}
-                  {...register('password')}
-                  error={formErrors.password?.message}
-                />
-              </>
-            ) : (
-              <>
-                <TextInput
-                  id="display_name"
-                  label="User Name"
-                  placeholder="DisplayName"
-                  autoComplete="username"
-                  required
-                  size="md"
-                  styles={inputStyles}
-                  {...register('display_name')}
-                  error={formErrors.display_name?.message}
-                />
-                <TextInput
-                  id="email"
-                  type="email"
-                  label="Email Address"
-                  placeholder="username@email.com"
-                  autoComplete="email"
-                  required
-                  size="md"
-                  styles={inputStyles}
-                  {...register('email')}
-                  error={formErrors.email?.message}
-                />
-                <PasswordInput
-                  id="password"
-                  label="Password"
-                  placeholder="Password"
-                  required
-                  size="md"
-                  styles={inputStyles}
-                  {...register('password')}
-                  error={formErrors.password?.message}
-                />
-                <PasswordInput
-                  id="password_confirm"
-                  label="Confirm Password"
-                  placeholder="Confirm Password"
-                  required
-                  size="md"
-                  styles={inputStyles}
-                  {...register('password_confirm')}
-                  error={formErrors.password_confirm?.message}
-                />
-                <Controller
-                  name="race"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Select
-                      id="race-select"
-                      label="Race"
-                      placeholder="Pick one"
+        {registrationSuccess ? (
+          <>
+            <Title order={2} ta="center" mb="md" c={'gray'}>
+              Registration Successful!
+            </Title>
+            <Text ta="center" size="sm" c={'gray'}>
+              Your account has been created. You can now{' '}
+              <Link href="/account/login">
+                <Text component="span" color="blue" inherit>
+                  sign in
+                </Text>
+              </Link>
+              .
+            </Text>
+          </>
+        ) : (
+          <>
+            <Title order={2} ta="center" mb="md" c={'gray'}>
+              {type === 'login' ? 'Sign In' : 'Sign Up'}
+            </Title>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Flex direction="column" gap="md">
+                {type === 'login' ? (
+                  <>
+                    <TextInput
+                      id="email"
+                      label="Email Address"
+                      placeholder="username@email.com"
+                      autoComplete="email"
                       required
-                      data={[
-                        { value: 'HUMAN', label: 'HUMAN' },
-                        { value: 'UNDEAD', label: 'UNDEAD' },
-                        { value: 'GOBLIN', label: 'GOBLIN' },
-                        { value: 'ELF', label: 'ELF' },
-                      ]}
                       size="md"
                       styles={inputStyles}
-                      {...field}
-                      error={fieldState.error?.message}
+                      {...register('email')}
+                      error={formErrors.email?.message}
                     />
-                  )}
-                />
-                <Controller
-                  name="class"
-                  control={control}
-                  render={({ field, fieldState }) => (
-                    <Select
-                      id="class-select"
-                      label="Class"
-                      placeholder="Pick one"
+                    <PasswordInput
+                      id="password"
+                      label="Password"
+                      placeholder="Password"
                       required
-                      data={[
-                        { value: 'FIGHTER', label: 'FIGHTER' },
-                        { value: 'CLERIC', label: 'CLERIC' },
-                        { value: 'ASSASSIN', label: 'ASSASSIN' },
-                        { value: 'THIEF', label: 'THIEF' },
-                      ]}
                       size="md"
                       styles={inputStyles}
-                      {...field}
-                      error={fieldState.error?.message}
+                      {...register('password')}
+                      error={formErrors.password?.message}
                     />
-                  )}
+                  </>
+                ) : (
+                  <>
+                    <TextInput
+                      id="display_name"
+                      label="User Name"
+                      placeholder="DisplayName"
+                      autoComplete="username"
+                      required
+                      size="md"
+                      styles={inputStyles}
+                      {...register('display_name')}
+                      error={formErrors.display_name?.message}
+                    />
+                    <TextInput
+                      id="email"
+                      type="email"
+                      label="Email Address"
+                      placeholder="username@email.com"
+                      autoComplete="email"
+                      required
+                      size="md"
+                      styles={inputStyles}
+                      {...register('email')}
+                      error={formErrors.email?.message}
+                    />
+                    <PasswordInput
+                      id="password"
+                      label="Password"
+                      placeholder="Password"
+                      required
+                      size="md"
+                      styles={inputStyles}
+                      {...register('password')}
+                      error={formErrors.password?.message}
+                    />
+                    <PasswordInput
+                      id="password_confirm"
+                      label="Confirm Password"
+                      placeholder="Confirm Password"
+                      required
+                      size="md"
+                      styles={inputStyles}
+                      {...register('password_confirm')}
+                      error={formErrors.password_confirm?.message}
+                    />
+                    <Controller
+                      name="race"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Select
+                          id="race-select"
+                          label="Race"
+                          placeholder="Pick one"
+                          required
+                          data={[
+                            { value: 'HUMAN', label: 'HUMAN' },
+                            { value: 'UNDEAD', label: 'UNDEAD' },
+                            { value: 'GOBLIN', label: 'GOBLIN' },
+                            { value: 'ELF', label: 'ELF' },
+                          ]}
+                          size="md"
+                          styles={inputStyles}
+                          {...field}
+                          error={fieldState.error?.message}
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="class"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Select
+                          id="class-select"
+                          label="Class"
+                          placeholder="Pick one"
+                          required
+                          data={[
+                            { value: 'FIGHTER', label: 'FIGHTER' },
+                            { value: 'CLERIC', label: 'CLERIC' },
+                            { value: 'ASSASSIN', label: 'ASSASSIN' },
+                            { value: 'THIEF', label: 'THIEF' },
+                          ]}
+                          size="md"
+                          styles={inputStyles}
+                          {...field}
+                          error={fieldState.error?.message}
+                        />
+                      )}
+                    />
+                  </>
+                )}
+                <Space h="md" />
+                <label
+                  htmlFor="captcha"
+                  className="mantine-InputWrapper-label"
+                  data-size="md"
+                  style={{ color: 'darkgray', fontWeight: 'bolder', fontSize: '1.05rem' }}
+                >
+                  Captcha
+                </label>
+                <Turnstile
+                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+                  onSuccess={handleTurnstileSuccess}
+                  ref={turnsTileRef}
+                  style={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
                 />
-              </>
-            )}
-            <Space h="md" />
-            <label
-              htmlFor="captcha"
-              className="mantine-InputWrapper-label"
-              data-size="md"
-              style={{ color: 'darkgray', fontWeight: 'bolder', fontSize: '1.05rem' }}
-            >
-              Captcha
-            </label>
-            <Turnstile
-              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-              onSuccess={handleTurnstileSuccess}
-              ref={turnsTileRef}
-              style={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
-            />
-            {/* Disable button while loading, submitting, or if Turnstile is enabled and not yet successful */}
-            <Button
-              disabled={
-                loading ||
-                isSubmitting ||
-                (!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID && !turnstileToken)
-              }
-              type="submit"
-              fullWidth
-              size="md"
-            >
-              {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
-            </Button>
-            <Space h="md" />
-            {type === 'login' ? (
-              <Text ta="center" size="sm" c={'gray'}>
-                Don&apos;t have an account?{' '}
-                <Link href="/account/register">
-                  <Text component="span" color="blue" inherit>
-                    Sign up
+                {/* Disable button while loading, submitting, or if Turnstile is enabled and not yet successful */}
+                <Button
+                  disabled={
+                    loading ||
+                    isSubmitting ||
+                    (!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID && !turnstileToken)
+                  }
+                  type="submit"
+                  fullWidth
+                  size="md"
+                >
+                  {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
+                </Button>
+                <Space h="md" />
+                {type === 'login' ? (
+                  <Text ta="center" size="sm" c={'gray'}>
+                    Don&apos;t have an account?{' '}
+                    <Link href="/account/register">
+                      <Text component="span" color="blue" inherit>
+                        Sign up
+                      </Text>
+                    </Link>{' '}
+                    for free.
                   </Text>
-                </Link>{' '}
-                for free.
-              </Text>
-            ) : (
-              <Text ta="center" size="sm" c={'gray'}>
-                Already have an account?{' '}
-                <Link href="/account/login">
-                  <Text component="span" color="blue" inherit>
-                    Sign in
+                ) : (
+                  <Text ta="center" size="sm" c={'gray'}>
+                    Already have an account?{' '}
+                    <Link href="/account/login">
+                      <Text component="span" color="blue" inherit>
+                        Sign in
+                      </Text>
+                    </Link>{' '}
+                    instead.
                   </Text>
-                </Link>{' '}
-                instead.
-              </Text>
-            )}
-             
-          </Flex>
-        </form>
+                )}
+              </Flex>
+            </form>
+          </>
+        )}
 
         <Modal
           opened={showVacationModal}

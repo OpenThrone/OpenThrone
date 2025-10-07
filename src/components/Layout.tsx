@@ -14,6 +14,7 @@ import { logError } from '@/utils/logger';
 import NavSkeleton from './NavSkeleton';
 import MainAreaSkeleton from './MainAreaSkeleton';
 import SidebarSkeleton from './SidebarSkeleton';
+import gitInfo from '@/pages/api/general/git-info';
 
 interface IMainProps {
   children: ReactNode;
@@ -76,17 +77,25 @@ const Layout = (props: IMainProps) => {
   }, [status]);
 
   return (
+    <>
     <div className="flex min-h-screen flex-col">
-      <div
-        className={`w-full grow ${authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
-          } px-1 text-yellow-400 antialiased`}>
-        <div className="mx-auto max-w-screen-2xl">
-          <header
-            className={`mx-auto ${raceClasses.borderBottomClass}`}
-          >
-            <div
-              style={{ backgroundImage: `url('${getAssetPath('wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
-              className={`${authorized
+        <div
+          className={`w-full grow ${authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
+            } px-1 text-yellow-400 antialiased`}
+          style={{
+            // @ts-ignore
+            '--ot-accent': raceClasses?.accent || '#EAAE2B',
+            '--ot-surface': 'rgba(10,10,12,0.85)',
+            '--ot-surface-2': 'rgba(20,20,24,0.7)',
+            '--ot-text': '#FFE87A',
+            '--ot-border': 'rgba(255,204,102,0.35)',
+          }}
+        >
+          <div className="mx-auto max-w-screen-2xl">
+            <header className={`mx-auto ${raceClasses.borderBottomClass}`}>
+              <div
+                style={{ backgroundImage: `url('${getAssetPath('wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+                className={`${authorized
                   ? raceClasses.bgClass
                   : 'bg-elf-header-bgcolor'
                 } pb-10 pt-2`}
@@ -96,6 +105,7 @@ const Layout = (props: IMainProps) => {
                   <Image
                     src={`${getAssetPath('OpenThrone')}`}
                     alt="OpenThrone"
+                    priority
                     style={{ height: '150px', filter: 'drop-shadow(0px 3px 0px #000000)' }}
                     width={'300'}
                     height={'150'}
@@ -112,26 +122,25 @@ const Layout = (props: IMainProps) => {
               <NavLoggedOut />
             )}
           </header>
-
-          <main className="lg:container mx-auto h-full grow overflow-y-auto pb-8">
-            <div className="flex h-full flex-wrap">
+          <main className="lg:container mx-auto h-full grow overflow-y-auto pb-8" style={{ backgroundImage: `url('${getAssetPath('wall-body')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+            <div className="flex h-full flex-wrap" style={{ background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5))' }}>
               {structureReady ? (
                 <>
                   {/* Conditionally render Sidebar based on authentication status */}
                   {authorized && (
-                    <div className="w-full px-3 md:w-1/5" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
+                    <div className="w-full px-3 md:w-1/5" style={{ backgroundColor: 'var(--ot-surface-2)' }}>
                       {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
                     </div>
                   )}
                   {/* Adjust main content width based on authentication status */}
-                  <div className={`w-full bg-black ${raceClasses.borderClass} px-3 ${authorized ? 'md:w-4/5' : 'md:w-full'}`}>
+                  <div className={`w-full ${raceClasses.borderClass} px-3 ${authorized ? 'md:w-4/5' : 'md:w-full'}`} style={{ backgroundColor: 'var(--ot-surface)' }}>
                     <NewsBulletin />
                     {layoutLoading ? <MainAreaSkeleton /> : props.children}
                   </div>
                 </>
               ) : (
                 // Show a minimal placeholder while structure is deciding
-                <div className="w-full bg-black px-3">
+                <div className="w-full px-3" style={{ backgroundColor: 'var(--ot-surface)' }}>
                   <MainAreaSkeleton /> {/* Or a very minimal, full-width placeholder */}
                 </div>
               )}
@@ -139,7 +148,7 @@ const Layout = (props: IMainProps) => {
           </main>
         </div>
       </div>
-      <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-yellow-500">
+      <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-ot-text">
         © Copyright {new Date().getFullYear()} {AppConfig.title}.
         <br />
         <div className="text-xs">
@@ -158,7 +167,8 @@ const Layout = (props: IMainProps) => {
 
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 };
 
