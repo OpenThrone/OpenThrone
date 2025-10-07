@@ -22,6 +22,14 @@ const parentLinks = [
   'Community',
 ] as const;
 
+const parentHrefs: Record<string, string> = {
+  Home: '/home/overview',
+  Battle: '/battle/users',
+  Structures: '/structures/bank',
+  Social: '/social/friends',
+  Community: '/community/news',
+};
+
 const subMenus: {
   [K in (typeof parentLinks)[number]]?: {
     text: string;
@@ -263,7 +271,7 @@ export const NavLoggedIn: React.FC = () => {
                 return (
                   <li className="px-4 lg:px-6 " key={link}>
                     <Link
-                      href="/"
+                      href={parentHrefs[link] || '/'}
                       className={`border-none ${
                         activeParentLink === link
                         ? 'bg-orange-gradient text-gradient-orange'

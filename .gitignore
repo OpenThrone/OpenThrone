@@ -18,6 +18,7 @@ cypress/videos
 # next.js
 /.next
 /out
+/src/.next
 
 # next-sitemap
 public/robots.txt

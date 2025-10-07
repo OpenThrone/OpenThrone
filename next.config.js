@@ -23,16 +23,14 @@ module.exports = withBundleAnalyzer({
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'assets.openthrone.dev',
+        hostname: process.env.NEXT_PUBLIC_ASSETS_HOSTNAME,
         pathname: '/**',
       },
     ], 
   },
   publicRuntimeConfig: {
-    apiUrl:
-      process.env.NODE_ENV === 'development'
-        ? 'https://alpha.openthrone.dev/api' // development api
-        : 'https://openthrone.dev/api', // production api
+    apiUrl: process.env.NEXT_PUBLIC_API_URL,
+    turnInterval: process.env.TURN_INTERVAL_MINUTES || '30',
   },
   reactStrictMode: true,
 });

@@ -16,8 +16,6 @@ import messages from '@/pages/api/messages';
 import CollapsibleSection from './CollapsibleSection';
 
 const Sidebar: React.FC = () => {
-  const [time, setTime] = useState('');
-  const [OTTime, setOTTime] = useState('');
   const [messages, setMessages] = useState<string[]>([]); // Explicitly type as string array
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const { user, forceUpdate, loading: userLoading } = useUser(); // Get user (UserModel instance) and loading state
@@ -250,25 +248,16 @@ const Sidebar: React.FC = () => {
     <div className="block sm:block">
       {isMobile ? (
         <CollapsibleSection title="Advisor">
-          <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg" style={{
-            backgroundImage: 'url(https://assets.openthrone.dev/images/background/advisor-scroll-side.webp)',
-            backgroundSize: '100% 100%',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            paddingLeft: '18px',
-            paddingRight: '18px',
-            paddingTop: '15px',
-            paddingBottom: '30px',
-          }}>
-            <div className="p-10 md:p-4 mt-2">
-              <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-black text-center' style={{ minHeight: '105px' }}>
+          <div className="card-fantasy text-black font-semibold mt-3 overflow-hidden p-4">
+            <div className="p-4 mt-2">
+              <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-ot-text text-center' style={{ minHeight: '105px', lineHeight: 1.5 }}>
                 {messages[currentMessageIndex]}
               </Text>
 
               {/* Stats Section */}
-              <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
+              <Title order={4} className="text-center font-bold text-xl mt-2 text-shadow text-shadow-xs">
                 Stats <FontAwesomeIcon icon={faRefresh} className="cursor-pointer" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} />
-              </h6>
+              </Title>
               {userLoading ? (
                 <List size={isMobile ? 'xl' : 'sm'} className={isMobile ? 'text-sm ml-2' : 'text-base'} style={isMobile ? { marginLeft: '14px' } : {}}>
                   <List.Item><Skeleton height={16} width="80%" radius="sm" /></List.Item>
@@ -310,9 +299,9 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* Search Section */}
-              <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
+              <Title order={4} className="advisor-title text-center font-bold text-xl mt-2 text-shadow text-shadow-xs">
                 Search
-              </h6>
+              </Title>
               <form onSubmit={handleSubmit}>
                 <center>
                   <Autocomplete
@@ -340,30 +329,21 @@ const Sidebar: React.FC = () => {
           </div>
         </CollapsibleSection>
       ) : (
-        <div className="text-black font-semibold mt-3 overflow-hidden rounded-lg shadow-lg" style={{
-          backgroundImage: 'url(https://assets.openthrone.dev/images/background/advisor-scroll-side.webp)',
-          backgroundSize: '100% 100%',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          paddingLeft: '18px',
-          paddingRight: '18px',
-          paddingTop: '15px',
-          paddingBottom: '30px',
-        }}>
-          <div className="p-10 md:p-4 mt-2">
-            <h3 className="advisor-title text-center font-medieval font-bold text-xl text-shadow text-shadow-xs">
+        <div className="card-fantasy text-black font-semibold mt-3 overflow-hidden p-4">
+          <div className="p-4 mt-2">
+            <Title order={3} className="advisor-title text-center font-bold text-xl text-shadow text-shadow-xs">
               <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handlePrevAdvisor} />
               Advisor
               <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handleNextAdvisor} />
-            </h3>
-            <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-black text-center' style={{ minHeight: '105px' }}>
+            </Title>
+            <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-ot-text text-center' style={{ minHeight: '105px', lineHeight: 1.5 }}>
               {messages[currentMessageIndex]}
             </Text>
 
             {/* Stats Section */}
-            <h6 className="text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
+            <Title order={4} className="text-center font-bold text-xl mt-2 text-shadow text-shadow-xs">
               Stats <FontAwesomeIcon icon={faRefresh} className="cursor-pointer" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} />
-            </h6>
+            </Title>
             {userLoading ? (
               <List size={isMobile ? 'xl' : 'sm'} className={isMobile ? 'text-sm ml-2' : 'text-base'} style={isMobile ? { marginLeft: '14px' } : {}}>
                 <List.Item><Skeleton height={16} width="80%" radius="sm" /></List.Item>
@@ -405,9 +385,9 @@ const Sidebar: React.FC = () => {
             )}
 
             {/* Search Section */}
-            <h6 className="advisor-title text-center font-medieval font-bold text-xl mt-2 text-shadow text-shadow-xs">
+            <Title order={4} className="advisor-title text-center font-bold text-xl mt-2 text-shadow text-shadow-xs">
               Search
-            </h6>
+            </Title>
             <form onSubmit={handleSubmit}>
               <center>
                 <Autocomplete

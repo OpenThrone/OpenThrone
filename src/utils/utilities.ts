@@ -152,7 +152,7 @@ const getAssetPath = (name, size?, race: PlayerRace = 'ELF') => {
   * @param race (optional) - the race of the user
   * @returns The source for the avatar image.
 */
-const getAvatarSrc = (avatar: string, race?: string) => {
+const getAvatarSrc = (avatar: string, race?: PlayerRace) => {
   if(avatar.startsWith('http')) {
     return avatar;
   }
@@ -189,7 +189,9 @@ const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | '
   }
 
   const newUModel = new UserModel(newUserData);
-  const { killingStrength, defenseStrength } = calculateStrength(newUModel, 'OFFENSE');
+  const strength = calculateStrength(newUModel, 'OFFENSE');
+  const killingStrength = strength.MeleeAtkPower + strength.RangedAtkPower;
+  const defenseStrength = strength.MeleeDefPower + strength.RangedDefPower;
 
   return {
     killingStrength,
@@ -243,7 +245,23 @@ export async function importKey(rawKey: Buffer) {
   );
 }
 
-export const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+export const deepClone = (obj) => {
+  const replacer = (key, value) => {
+    if (typeof value === 'bigint') {
+      return value.toString() + 'n';
+    }
+    return value;
+  };
+
+  const reviver = (key, value) => {
+    if (typeof value === 'string' && /^\d+n$/.test(value)) {
+      return BigInt(value.slice(0, -1));
+    }
+    return value;
+  };
+
+  return JSON.parse(JSON.stringify(obj, replacer), reviver);
+};
 
 export const determineHour = (race: PlayerRace = 'ELF') => {
   const hour = new Date().getUTCHours();

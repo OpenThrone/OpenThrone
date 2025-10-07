@@ -98,10 +98,14 @@ To facilitate the job of providing a set of scheduled jobs, such as providing tu
 ```0 0 * * * /usr/bin/curl -X POST -H "Authorization: SECRET_KEY_FROM_ENV" https://<url>/api/cronJobs/daily```
 - .env value to enable: ```DO_DAILY_UPDATES=true```
 
-### 30minute turn and gold generation
+### Turn and Gold Generation
+- The turn interval is configurable via the `TURN_INTERVAL_MINUTES` environment variable. The default is 30 minutes. This is used for the timer, you must still set a cronjob appropriately.
 - crontab entry
+- To run every 30 minutes:
 ```0,30 * * * * /usr/bin/curl -X POST -H "Authorization: SECRET_KEY_FROM_ENV" https://<url>/api/cronJobs/turns```
-- .env value to enable: ```DO_DAILY_UPDATES=true```
+- To run every 5 minutes:
+```*/5 * * * * /usr/bin/curl -X POST -H "Authorization: SECRET_KEY_FROM_ENV" https://<url>/api/cronJobs/turns```
+- .env value to enable: ```DO_TURN_UPDATES=true```
 
 ### .ENV Secrets
 Make sure you update your secret in your .env file

@@ -1,3 +1,5 @@
+import getConfig from 'next/config';
+
 // https://www.sitepoint.com/build-javascript-countdown-timer-no-dependencies/
 const getTimeRemaining = (endtime: string) => {
   const total = Date.parse(endtime) - new Date().getTime();
@@ -16,10 +18,20 @@ const getTimeRemaining = (endtime: string) => {
 };
 
 const getTimeToNextTurn = (date = new Date()) => {
-  const ms = 1800000; // 30mins in ms
+  let turnIntervalMinutes = 30; // Default value
+  const { publicRuntimeConfig } = getConfig() || {};
+  
+  if (publicRuntimeConfig && publicRuntimeConfig.turnInterval) {
+    const parsedInterval = parseInt(publicRuntimeConfig.turnInterval, 10);
+    if (!isNaN(parsedInterval)) {
+      turnIntervalMinutes = parsedInterval;
+    }
+  }
+
+  const ms = turnIntervalMinutes * 60 * 1000;
   const nextTurn = new Date(Math.ceil(date.getTime() / ms) * ms);
   return nextTurn.toString();
-}; 
+};
 
 // Get the current time according to the server
 const getOTTime = () => {

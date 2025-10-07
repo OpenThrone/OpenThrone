@@ -37,6 +37,10 @@ const formatMessage = (level: LogLevelKey, message: any, ...optionalParams: any[
   // Basic handling for additional parameters (stringify objects/arrays)
   if (optionalParams.length > 0) {
     formattedMessage += ' - ' + optionalParams.map(param => {
+      if (param instanceof Error) {
+        // Handle Error objects explicitly for better logging
+        return `{ name: '${param.name}', message: '${param.message}', stack: '${param.stack?.replace(/\n/g, '\\n')}' }`;
+      }
       if (typeof param === 'object' && param !== null) {
         try {
           return JSON.stringify(param);
@@ -53,7 +57,7 @@ const formatMessage = (level: LogLevelKey, message: any, ...optionalParams: any[
 // Logger functions
 export const logError = (message: any, ...optionalParams: any[]) => {
   if (currentLogLevel >= LogLevel.ERROR) {
-    console.log(formatMessage('ERROR', message, ...optionalParams));
+    console.error(formatMessage('ERROR', message, ...optionalParams));
   }
 };
 
@@ -78,7 +82,7 @@ export const logDebug = (message: any, ...optionalParams: any[]) => {
 
 export const logTrace = (message: any, ...optionalParams: any[]) => {
   if (currentLogLevel >= LogLevel.TRACE) {
-    console.log(formatMessage('TRACE', message, ...optionalParams)); // Use console.log for TRACE as well
+    console.trace(formatMessage('TRACE', message, ...optionalParams)); // Use console.log for TRACE as well
   }
 };
 
