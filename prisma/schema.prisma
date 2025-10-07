@@ -31,9 +31,11 @@ model users {
   email                                 String                 @unique
   display_name                          String                 @unique
   password_hash                         String
+  twoFactorSecret                        String?
   race                                  String
   class                                 String
   units                                 Json?                  @default("[{\"type\": \"CITIZEN\", \"level\": 1, \"quantity\": 50}, {\"type\": \"WORKER\", \"level\": 1, \"quantity\": 0}, {\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}]")
+  mercenaries                           Json                   @default("[]")
   experience                            Int                    @default(0)
   gold                                  BigInt                 @default(25000)
   gold_in_bank                          BigInt                 @default(0)
@@ -90,8 +92,14 @@ model users {
   ChatMessage                           ChatMessage[]
   messageReactions                      ChatMessageReaction[] // Added for reactions
   readMessages                          ChatMessageReadStatus[] // Added for read receipts
+  auditLogs                             AuditLog[]             @relation("AuditLogs")
+  userEras                              UserEra[]              @relation("UserEraUsers")
+  currentEraId                          Int?
+  achievements                          Json?                  @default("{}")
+  currentEra                            Era?                   @relation("CurrentUserEra", fields: [currentEraId], references: [id])
 
   @@index([created_at])
+  @@index([currentEraId])
 }
 
 model AccountStatusHistory {
@@ -205,6 +213,7 @@ model blog_posts {
   content           String
   postedBy          users              @relation(fields: [postedby_id], references: [id])
   postReadStatus    post_read_status[]
+
 }
 
 model post_read_status {
@@ -260,7 +269,7 @@ model alliance_memberships {
   user_id     Int
   role_id     Int
   created_at  DateTime?      @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?      @default(now()) @updatedAt @db.Timestamptz(6)
   alliance    alliances      @relation(fields: [alliance_id], references: [id])
   role        alliance_roles @relation(fields: [role_id], references: [id])
   user        users          @relation(fields: [user_id], references: [id])
@@ -276,7 +285,7 @@ model alliance_roles {
   name        String
   alliance_id Int
   created_at  DateTime?              @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?              @default(now()) @updatedAt @db.Timestamptz(6)
   permissions Json?                  @default("{\"invite_member\": false, \"grant_access\": false, \"edit_ranks\": false, \"send_messages\": false, \"edit_profile\": false, \"manage_allies\": false, \"manage_enemies\": false, \"edit_list\": false, \"view_list\": false}") @db.Json
   members     alliance_memberships[]
   alliance    alliances              @relation(fields: [alliance_id], references: [id])
@@ -399,4 +408,43 @@ model ChatMessageReadStatus {
 enum ChatRole {
   ADMIN
   MEMBER
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String
+  ip        String
+  timestamp DateTime @default(now()) @db.Timestamptz(3)
+  details   Json?
+  user      users    @relation("AuditLogs", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+}
+
+model Era {
+  id        Int      @id @default(autoincrement())
+  name      String
+  startDate DateTime @default(now()) @db.Timestamptz(3)
+  endDate   DateTime? @db.Timestamptz(3)
+  users     users[]  @relation("CurrentUserEra")
+  userEras  UserEra[] @relation("UserEraEras")
+
+  @@index([startDate])
+}
+
+model UserEra {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  eraId         Int
+  levelAtStart  Int      @default(1)
+  unitsAtStart  Json     @default("[]")
+  achievements  Json     @default("{}")
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  user          users    @relation("UserEraUsers", fields: [userId], references: [id], onDelete: Cascade)
+  era           Era      @relation("UserEraEras", fields: [eraId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eraId])
+  @@index([userId])
+  @@index([eraId])
 }
