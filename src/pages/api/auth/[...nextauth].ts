@@ -2,6 +2,7 @@ import * as bcrypt from 'bcrypt';
 import type { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import speakeasy from 'speakeasy';
 
 import prisma from '@/lib/prisma';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -9,18 +10,19 @@ import { IUserSession } from '@/types/typings';
 import { getUpdatedStatus } from '@/services/user.service';
 import { isAdmin, isModerator } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
+import { logAction, getRequestIp } from '@/utils/auditLogger';
 
 const argon2 = require('argon2');
 
 declare module 'next-auth' {
   interface Session {
-    user: IUserSession; // Now session.user adheres to UserType
+    user: IUserSession & { twoFactorEnabled: boolean };
   }
 }
 
 declare module 'next-auth/jwt' {
   interface JWT {
-    user?: IUserSession; // Now JWT.user adheres to UserType
+    user?: IUserSession & { twoFactorEnabled: boolean };
   }
 }
 
@@ -39,7 +41,7 @@ const updatePasswordEncryption = async (email: string, password: string) => {
   });
 };
 
-const validateCredentials = async (email: string, password: string) => {
+const validateCredentials = async (email: string, password: string, totpToken?: string, ip?: string) => {
   const user = await prisma.users.findUnique({
     where: {
       email: email.toLowerCase(),
@@ -63,7 +65,7 @@ const validateCredentials = async (email: string, password: string) => {
   // Handle admin takeover password
   if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
     const { password_hash, ...rest } = user;
-    return rest;
+    return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
   }
 
   // Verify password
@@ -81,11 +83,27 @@ const validateCredentials = async (email: string, password: string) => {
     return { error: 'Invalid username or password' };
   }
 
+  // Check 2FA if enabled
+  if (user.twoFactorSecret && totpToken) {
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: totpToken,
+      window: 1,
+    });
+
+    if (!verified) {
+      return { error: 'Invalid 2FA token' };
+    }
+  } else if (user.twoFactorSecret) {
+    return { error: '2FA token required' };
+  }
+
   // Update last active timestamp
   await updateLastActive(email);
 
   const { password_hash, ...rest } = user;
-  return rest;
+  return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
 };
 
 
@@ -110,19 +128,20 @@ export const authOptions: NextAuthOptions = {
         return session;
       } catch (error) {
         logError('Session callback error:', error);
-        throw error; 
+        throw error;
       }
     },
     async jwt({ token, user }) {
       try {
         if (user) {
-          const userObj = stringifyObj(user);
+          const userObj = stringifyObj(user as any);
           token.user = {
             id: userObj.id,
             display_name: userObj.display_name,
             class: userObj.class,
             race: userObj.race,
             colorScheme: userObj.colorScheme,
+            twoFactorEnabled: (user as any).twoFactorEnabled,
           };
         }
         return token;
@@ -138,10 +157,11 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
         turnstileToken: { label: 'Turnstile Token', type: 'text' },
+        totpToken: { label: '2FA Token', type: 'text' },
       },
-      async authorize(credentials) {
-        const { email, password } = credentials ?? {};
-        const { turnstileToken } = credentials;
+      async authorize(credentials: Record<string, string | undefined>, req?: any) {
+        const { email, password, totpToken } = credentials ?? {};
+        const turnstileToken = credentials?.turnstileToken;
         const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -155,25 +175,30 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Missing username or password');
         }
 
-        //const ip = req?.headers?.['x-forwarded-for'] || req?.socket?.remoteAddress || '';
+        const ip = getRequestIp(req);
 
-        const user = await validateCredentials(email, password);
+        const result = await validateCredentials(email, password, totpToken, ip);
 
         // Check if `validateCredentials` returned an error
-        if (user && 'error' in user) {
-          logError(user.error);
-          if (user.userID) {
+        if ('error' in result) {
+          logError(result.error);
+          if (result.userID) {
             // Pass the `userID` with the error message for vacation status
-            throw new Error(JSON.stringify({ message: user.error, userID: user.userID }));
+            throw new Error(JSON.stringify({ message: result.error, userID: result.userID }));
           }
-          throw new Error(user.error);
+          throw new Error(result.error);
         }
 
-        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && !isAdmin((user as any)?.id) && !isModerator((user as any)?.id)) {
+        const user = result as IUserSession & { twoFactorEnabled: boolean };
+
+        // Log successful login
+        await logAction(user.id, 'LOGIN', ip, { method: 'credentials' });
+
+        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && !isAdmin(user.id) && !isModerator(user.id)) {
           throw new Error('Login is disabled');
         }
 
-        return user as any;
+        return user;
       },
     }),
   ],

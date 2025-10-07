@@ -6,6 +6,9 @@ import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 const argon2 = require('argon2');
 
+import { RegisterSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
+
 // SMTP configuration from .env file
 const smtpConfig: SMTPTransport.Options = {
   host: process.env.SMTP_HOST,
@@ -45,19 +48,28 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
     if (!captchaData.success) {
       return res.status(400).json({ error: 'Captcha verification failed' });
     }
-    const { email, password, race, display_name } = await req.body;
-    let exists = await userExists(email);
-    if (exists) {
-      return res.status(400).json({ error: 'User already exists' });
+
+    try {
+      const data = RegisterSchema.parse(req.body);
+      const { email, password, race, display_name, class: userClass } = data;
+      let exists = await userExists(email);
+      if (exists) {
+        return res.status(400).json({ error: 'User already exists' });
+      }
+
+      const phash = await argon2.hash(password);
+      
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      
+      const user = createUser(email, phash, display_name, race, userClass, 'en-US');
+
+      return res.json(user);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: 'Invalid input', details: error.format() });
+      }
+      throw error;
     }
-
-    const phash = await argon2.hash(password);
-    
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    
-    const user = createUser(email, phash, display_name, race, req.body.class, 'en-US');
-
-    return res.json(user);
 
   } catch (error) {
     logError('Error in handlePOST:', error);
