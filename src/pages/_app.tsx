@@ -35,52 +35,29 @@ const MyApp = ({ Component, pageProps: { session, ...pageProps }, router }) => (
   </Suspense>
 );
 
-const AppWithTheme = ({ Component, pageProps, router }: AppProps) => {
-  const { data: session, status } = useSession();
+const AppWithTheme = ({ Component, pageProps }: AppProps) => {
+  const { status } = useSession();
   const { user } = useUser();
-  const [colorScheme, setColorScheme] = useLocalStorage<PlayerRace | string>({ key: 'colorScheme', defaultValue:'ELF'});
-  const [theme, setTheme] = useState(themes.ELF); // Default to ELF theme
+  const [colorScheme, setColorScheme] = useLocalStorage<PlayerRace | string>({ key: 'colorScheme', defaultValue: 'ELF' });
+  const [theme, setTheme] = useState(themes.ELF);
+
   useEffect(() => {
-    const applyTheme = (colorScheme: string) => {
-      const selectedTheme = themes[colorScheme] || themes.ELF;
-      setTheme(selectedTheme);
-    };
-
-    if (session?.user?.colorScheme && session.user.colorScheme !== colorScheme) {
-      setColorScheme(session.user.colorScheme);
-      applyTheme(session.user.colorScheme);
-    }
-
-    if (user?.colorScheme) {
-      applyTheme(user.colorScheme);
-      if (session && session.user) {
-        session.user.colorScheme = user.colorScheme; // Sync session with context user
-      }
-    }
-  }, [colorScheme, session, setColorScheme, user]);
-
-  // Show a loading screen while the session data is being loaded
-  <MantineProvider defaultColorScheme="dark" theme={theme}>
-    {status === 'loading' ? (
-      <Center style={{ minHeight: '100vh' }}>
-        <Loader size="xl" />
-      </Center>
-    ) : (
-      <LayoutProvider>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      </LayoutProvider>
-    )}
-  </MantineProvider>
+    const applyTheme = (cs: string) => setTheme(themes[cs] || themes.ELF);
+    if (user?.colorScheme && user.colorScheme !== colorScheme) setColorScheme(user.colorScheme);
+    applyTheme(user?.colorScheme || (colorScheme as string));
+  }, [user?.colorScheme, colorScheme, setColorScheme]);
 
   return (
     <MantineProvider defaultColorScheme="dark" theme={theme}>
-      <LayoutProvider>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      </LayoutProvider>
+      {status === 'loading' ? (
+        <Center mih="100vh"><Loader size="xl" /></Center>
+      ) : (
+        <LayoutProvider>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </LayoutProvider>
+      )}
     </MantineProvider>
   );
 };
