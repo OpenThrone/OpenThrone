@@ -1,5 +1,6 @@
 import { getUpdatedStatus } from '@/services';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { safeToISOString } from '@/utils/dateHelpers';
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import prisma from './prisma';
@@ -13,11 +14,15 @@ let io: Server | null = null;
 // Store mapping of userId to a Set of socketIds
 const userSockets = new Map<number, Set<string>>();
 
-// Helper to serialize potentially complex message objects including BigInts
+// Helper to serialize potentially complex message objects including BigInts and Dates
 const serializeData = (data: any): any => {
-  return JSON.parse(JSON.stringify(data, (key, value) =>
-    typeof value === 'bigint' ? value.toString() : value
-  ));
+  return JSON.parse(JSON.stringify(data, (key, value) => {
+    if (typeof value === 'bigint') return value.toString();
+    if (value instanceof Date) {
+      return safeToISOString(value);
+    }
+    return value;
+  }));
 };
 
 // Define the payload type for messages including relations
@@ -91,23 +96,23 @@ export const initializeSocket = (httpServer: HttpServer) => {
       return;
     }
 
-    logInfo(`Socket ${socket.id} connected for user ${userId}`);
+    //logInfo(`Socket ${socket.id} connected for user ${userId}`);
 
     // Join user-specific room
     socket.join(`user-${userId}`);
-    logInfo(`Socket ${socket.id} joined room user-${userId}`);
+    //logInfo(`Socket ${socket.id} joined room user-${userId}`);
 
     // Track user sockets
     if (!userSockets.has(userId)) {
       userSockets.set(userId, new Set());
     }
     userSockets.get(userId)?.add(socket.id);
-    logInfo(`User ${userId} has sockets: ${Array.from(userSockets.get(userId) || [])}`);
+    //logInfo(`User ${userId} has sockets: ${Array.from(userSockets.get(userId) || [])}`);
 
 
     // --- User Data Request ---
     socket.on('requestUserData', async () => {
-      logInfo(`Fetching data for user: ${userId}`);
+      //logInfo(`Fetching data for user: ${userId}`);
       if (isNaN(userId)) {
         logError('Invalid userId:', userId);
         return;
@@ -115,14 +120,19 @@ export const initializeSocket = (httpServer: HttpServer) => {
       try {
         const user = await prisma.users.findUnique({
           where: { id: userId },
-          include: { permissions: true },
         });
+
+        console.log('user dateTime:', user.last_active)
+        console.log('type of', typeof user.last_active)
+        console.log('Fetched user data from DB:', user);
 
         if (!user) {
           socket.emit('userDataError', { error: 'User not found' });
           return;
         }
-
+        console.log('user dateTime:', user.last_active)
+        console.log('type of', typeof user.last_active)
+        console.log('Fetched user data from DB:', user);
         // Update last active if needed
         const now = new Date();
         const timeSinceLastActive = user.last_active ? now.getTime() - new Date(user.last_active).getTime() : Infinity;
@@ -134,7 +144,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
           });
           user.last_active = now; // Update in-memory object too
         }
-
+        console.log('User data after potential last_active update:', user);
         const currentStatus = await getUpdatedStatus(user.id);
 
         if (["BANNED", "SUSPENDED", "CLOSED", "TIMEOUT"].includes(currentStatus)) {
@@ -147,11 +157,14 @@ export const initializeSocket = (httpServer: HttpServer) => {
         }
 
         // Check recent attacks since last active
-        const lastActiveTimestamp = user.last_active || new Date(0); // Use epoch if never active
+        let ts = user.last_active ? new Date(user.last_active) : new Date(0);
+        if (isNaN(ts.getTime())) {
+            ts = new Date(0);
+        }
         const attacks = await prisma.attack_log.findMany({
           where: {
             defender_id: user.id,
-            timestamp: { gte: lastActiveTimestamp },
+            timestamp: { gte: ts },
           },
         });
 
@@ -173,10 +186,17 @@ export const initializeSocket = (httpServer: HttpServer) => {
           totalDefends: totalDefends,
           currentStatus: currentStatus,
         };
-
-        socket.emit('userData', serializeData(userData)); // Use serializeData
+        
+        const normalizedUserData = {
+          ...userData,
+          last_active: safeToISOString(userData.last_active),
+          created_at: safeToISOString(userData.created_at),
+          updated_at: safeToISOString(userData.updated_at),
+        };
+        console.log('Final userData to emit:', normalizedUserData);
+        socket.emit('userData', serializeData(normalizedUserData)); // Use serializeData
       } catch (error) {
-        logError('Error fetching user data:', error);
+        logError('Socket || Error fetching user data:', error);
         socket.emit('userDataError', { error: 'Internal server error while fetching user data.' });
       }
     });
@@ -469,7 +489,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
         const readPayloads = results.map(r => ({
           messageId: r.messageId,
           userId: r.userId,
-          readAt: r.readAt.toISOString(),
+          readAt: safeToISOString(r.readAt),
         }));
 
         if (readPayloads.length > 0) {
@@ -587,7 +607,7 @@ async function sendNotifications(roomId: number, senderId: number, message: Mess
      senderId: senderId,
      senderName: message.sender.display_name,
      content: message.content.substring(0, 50) + (message.content.length > 50 ? '...' : ''),
-     timestamp: message.sentAt.toISOString(),
+     timestamp: safeToISOString(message.sentAt),
      isRead: false,
      chatRoomId: roomId,
    };
