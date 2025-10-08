@@ -1,6 +1,4 @@
-'use server';
 import prisma from "@/lib/prisma";
-import { attackHandler } from '@/app/actions';
 import { withAuth } from '@/middleware/auth';
 import { simulateBattle } from "@/utils/attackFunctions";
 import UserModel from "@/models/Users";
@@ -43,11 +41,12 @@ const handler = async (req, res) => {
     const results = await simulateBattle(
       attacker,
       defender,
+      defender.fortHitpoints,
       10
     );
 
     return res.status(200).json({
-      'Attacker': results.attacker.displayName, 
+      'Attacker': results.attacker.displayName,
       'Defender': results.defender.displayName,
       'AttackerResult': results.experienceResult.Result,
       'AttackerLosses': results.Losses.Attacker.total,

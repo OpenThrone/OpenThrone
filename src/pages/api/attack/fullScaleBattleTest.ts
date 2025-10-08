@@ -1,6 +1,4 @@
-'use server';
 import prisma from "@/lib/prisma";
-import { attackHandler } from '@/app/actions';
 import { withAuth } from '@/middleware/auth';
 import { simulateBattle } from "@/utils/attackFunctions";
 import UserModel from "@/models/Users";
@@ -95,7 +93,7 @@ const handler = async (req, res) => {
           orderBy: { experience: 'asc' },
         });
         for (let j = 0; j < allDefenderUsers.length; j++) {
-          logDebug(`Attacker: ${attacker.displayName} - ID: ${attacker.id}, Defender: ${allDefenderUsers[j].displayName} - ID: ${allDefenderUsers[j].id}`);
+          logDebug(`Attacker: ${attacker.displayName} - ID: ${attacker.id}, Defender: ${allDefenderUsers[j].display_name} - ID: ${allDefenderUsers[j].id}`);
           logDebug(`Attacker Offense: ${attacker.offense}, Defender Defense: ${allDefenderUsers[j].defense}`);
           const defender = new UserModel(JSON.parse(JSON.stringify(stringifyObj(allDefenderUsers[j]))));
           const results = await simulateBattle(

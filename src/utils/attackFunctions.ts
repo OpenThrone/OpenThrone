@@ -434,9 +434,26 @@ export function calculateBattleExperience(
 
   const totalXP = (baseXP + levelBonus + fortBonus) * turnsMultiplier;
 
+  const attackerXP = Math.round(isAttackerWinner ? totalXP * 0.75 : totalXP * 0.25);
+  const defenderXP = Math.round(isAttackerWinner ? totalXP * 0.25 : totalXP * 0.75);
+
+  logDebug('XP Calculation Details:', {
+    isAttackerWinner,
+    levelDifference,
+    attackTurns,
+    fortDestroyed,
+    baseXP,
+    levelBonus,
+    fortBonus,
+    turnsMultiplier,
+    totalXP,
+    attackerXP,
+    defenderXP
+  });
+
   return {
-    attackerXP: Math.round(isAttackerWinner ? totalXP * 0.75 : totalXP * 0.25),
-    defenderXP: Math.round(isAttackerWinner ? totalXP * 0.25 : totalXP * 0.75)
+    attackerXP,
+    defenderXP
   };
 }
 
@@ -868,7 +885,7 @@ export function filterUnitsByType(units: BattleUnits[], type: string): BattleUni
     .map(unit => ({ ...unit }))
 }
 
-function calculateAndApplyExperience(
+export function calculateAndApplyExperience(
   result: BattleResult,
   params: {
     attacker: UserModel;
@@ -882,9 +899,48 @@ function calculateAndApplyExperience(
   // Calculate level difference bonus
   const levelDifference = Math.abs(defender.level - attacker.level);
   
+  // Determine winner based on multiple criteria
+  const defenderLosses = result.Losses.Defender.total;
+  const attackerLosses = result.Losses.Attacker.total;
+  
+  // Primary criterion: Unit casualties
+  let isAttackerWinner = defenderLosses > attackerLosses;
+  
+  // Secondary criteria: When casualties are equal, consider additional factors
+  if (defenderLosses === attackerLosses) {
+    // 1. Fort damage dealt by attacker
+    const fortDamage = (result.casualtySummary && result.casualtySummary.fortDamage) || 0;
+    const initialFortHP = params.defender.fortHitpoints || Fortifications[params.defender.fortLevel].hitpoints;
+    
+    // 2. Damage dealt vs damage received (approximated by fort damage and casualty comparison)
+    const attackerDealsMoreDamage = fortDamage > 0;
+    
+    // 3. Consider fort destruction as a clear win condition
+    const fortDestroyed = result.finalFortHP <= 0;
+    
+    // Attacker wins if they dealt fort damage or destroyed the fort
+    isAttackerWinner = attackerDealsMoreDamage || fortDestroyed;
+    
+    logDebug('Battle outcome determined by secondary criteria:', {
+      defenderLosses,
+      attackerLosses,
+      fortDamage,
+      initialFortHP,
+      attackerDealsMoreDamage,
+      fortDestroyed,
+      isAttackerWinner
+    });
+  } else {
+    logDebug('Battle outcome determined by casualties:', {
+      defenderLosses,
+      attackerLosses,
+      isAttackerWinner
+    });
+  }
+  
   // Calculate experience based on battle outcome
   const { attackerXP, defenderXP } = calculateBattleExperience(
-    result.Losses.Defender.total > result.Losses.Attacker.total, // attacker wins if defender lost more
+    isAttackerWinner,
     levelDifference,
     attackTurns,
     fortDestroyed
@@ -896,6 +952,11 @@ function calculateAndApplyExperience(
     attacker: attackerXP,
     defender: defenderXP
   };
+  
+  logDebug('Experience applied to result:', {
+    result: result.result,
+    experienceGained: result.experienceGained
+  });
 }
 export function finalizeBattleResult(state: BattleState): void {
   const { attacker, defender, totalTurns, fortHP, initialFortHP, battleResult } = state;
