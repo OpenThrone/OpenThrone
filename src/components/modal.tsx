@@ -60,8 +60,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
       if (socket) {
         socket.emit('notifyAttack', { defenderId: profileID, battleId: results.attack_log });
       }
+      // Close the modal immediately after successful attack submission
+      toggleModal();
       router.push(`/battle/results/${results.attack_log}`);
-      // No need to toggle modal here, let the redirect handle it
       // Reset loading state on success (though redirect might make this visually brief)
       setIsLoading(false);
     }

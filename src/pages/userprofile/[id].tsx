@@ -33,7 +33,7 @@ interface UserProfileServerData {
   fort_level: number;
   fort_hitpoints: number;
   attack_turns: number;
-  last_active: string;
+  last_active: string | null;
   rank: number;
   items: JsonValue | null;
   house_level: number;
@@ -46,8 +46,8 @@ interface UserProfileServerData {
   locale: string;
   economy_level: number;
   avatar: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
   stats: JsonValue | null;
   killing_str: number | null;
   defense_str: number | null;
@@ -59,6 +59,15 @@ interface UserProfileServerData {
   sentry: number | null;
   bionew: MDXRemoteSerializeResult<Record<string, unknown>, Record<string, unknown>>;
   status: AccountStatus | string;
+  currentEra?: any;
+  latestUserEra?: any;
+  twoFactorSecret?: string;
+  mercenaries?: JsonValue;
+
+  // Additional optional properties that may be present from various DB queries or mocks
+  userEras?: any;
+  currentEraId?: number | null;
+  achievements?: JsonValue | null;
 }
 
 interface IndexProps {
@@ -66,13 +75,13 @@ interface IndexProps {
 }
 
 // The component receives props matching IndexProps (which uses UserProfileServerData)
-const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [hideSidebar, setHideSidebar] = useState(true);
   const {user, forceUpdate} = useUser();
   const [isPlayer, setIsPlayer] = useState(false);
   const [isAPlayer, setIsAPlayer] = useState(false);
 
-  const [profile, setUser] = useState<UserModel>(() => new UserModel(users, true, false));
+  const [profile, setUser] = useState<UserModel>(() => new UserModel(users as any, true, false));
   const [canAttack, setCanAttack] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
@@ -111,22 +120,65 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   };
 
   useEffect(() => {
-    if (profile.id !== users.id) setUser(new UserModel(users, true, false)); // you're looking at someone else
+    if (profile.id !== users.id) setUser(new UserModel(users as any, true, false)); // you're looking at someone else
     if (user?.id === profile.id) setIsPlayer(true); // you're looking at yourself
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
+
+    // Prefer the canonical server-provided value when available (users.last_active).
+    // Fallback to the model's last_active when the server prop is absent.
     if (profile) {
       const nowdate = new Date();
-      if (profile.last_active === null) {
+
+      // Resolve last-active safely without calling toISOString() on an invalid Date object.
+      let rawLastActive: string | null = null;
+      if (users && users.last_active) {
+        rawLastActive = users.last_active;
+      } else if (user && user.last_active) {
+        // user (from context) stores last_active as a Date | null on the UserModel
+        if (user.last_active instanceof Date && !isNaN(user.last_active.getTime())) {
+          rawLastActive = user.last_active.toISOString();
+        } else if (typeof user.last_active === 'string') {
+          rawLastActive = user.last_active;
+        }
+      } else if (profile && profile.last_active) {
+        const p = profile.last_active;
+        if (p instanceof Date) {
+          if (!isNaN(p.getTime())) rawLastActive = p.toISOString();
+        } else {
+          // attempt to parse non-Date values defensively
+          const parsed = new Date(p as any);
+          if (!isNaN(parsed.getTime())) rawLastActive = parsed.toISOString();
+        }
+      }
+
+      // Debugging info for last_active propagation
+      logDebug('userprofile last_active check ->', {
+        users_last_active: users?.last_active,
+        profile_last_active: profile?.last_active,
+        rawLastActive,
+      });
+
+      // Handle missing/null/invalid last_active safely
+      if (!rawLastActive) {
         setIsOnline(false);
         setLastActive('Never logged in');
         return;
       }
-      const lastActiveTimestamp = new Date(profile.last_active).getTime();
+
+      const lastActiveDate = new Date(rawLastActive);
+      const lastActiveTimestamp = lastActiveDate.getTime();
       const nowTimestamp = nowdate.getTime();
 
-      setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
-      setLastActive(new Date(profile.last_active).toDateString());
+      if (!isNaN(lastActiveTimestamp)) {
+        setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
+        setLastActive(lastActiveDate.toDateString());
+      } else {
+        // Defensive fallback for malformed dates
+        setIsOnline(false);
+        setLastActive('Never logged in');
+      }
     }
+
     if(process.env.NEXT_PUBLIC_ENABLE_SOCIAL) {
       setSocialEnabled(true);
     }
@@ -136,7 +188,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
   if (!profile) return <p>User not found</p>;
 
   // Show status message for blocked statuses
-  const blockedStatuses = ["IDLE", "BANNED", "SUSPENDED", "CLOSED", "TIMEOUT"];
+  const blockedStatuses = ["BANNED", "SUSPENDED", "CLOSED", "TIMEOUT"]; //"IDLE",
   if (blockedStatuses.includes(userStatus)) {
     let statusMessage = "";
     switch (userStatus) {
@@ -161,8 +213,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
     return <p>{statusMessage}</p>;
   }
 
-  if (lastActive === 'Never logged in') return <p>User is currently inactive</p>;
-
+  // If we don't know lastActive, continue rendering the profile but show offline status in UI.
   const handleAddFriend = async () => {
     const res = await fetch('/api/social/add', {
       method: 'POST',
@@ -251,6 +302,9 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
       <Flex justify='space-around'>
         <p className="mb-0">Level: {profile?.level}</p>
         <p className="mb-0">Overall Rank: {users?.rank}</p>
+        {users.currentEra && (
+          <p className="mb-0">Current Era: {users.currentEra.name}</p>
+        )}
       </Flex>
 
       <Space h='lg' />
@@ -298,34 +352,32 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
           </SimpleGrid>
         </div>
         <div className="col-span-1">
-          {hideSidebar || isPlayer || userStatus !== 'ACTIVE' ? (
+          {hideSidebar || isPlayer || userStatus !== 'ACTIVE' && userStatus !== 'IDLE' ? (
             <div className="list-group mb-4">
               <Link
                 href={`/recruit/${profile?.recruitingLink}`}
-                className="list-group-item list-group-item-action"
+                className="profile-nav-link"
                 style={{ display: userStatus !== 'ACTIVE' ? 'none' : 'block' }}
               >
                 Recruit this Player
               </Link>
               <Link
                 href={'/account/register'}
-                className={`list-group-item list-group-item-action`}
+                className="profile-nav-link"
               >Join Now</Link>
             </div>
           ) : (
             <div className="list-group mb-4">
               <Link
                   href={`/inbox/compose/new/user/${profile?.id}`}
-                  className={`list-group-item list-group-item-action ${user?.id === 1 || user?.id === 2 ? '' : 'disabled'}`}
+                  className={`profile-nav-link ${user?.id === 1 || user?.id === 2 ? '' : 'disabled'}`}
               >
                 Message this Player
               </Link>
               <button
                 type="button"
                 onClick={toggleModal}
-                className={`list-group-item list-group-item-action w-full text-left ${
-                  canAttack ? '' : 'disabled'
-                }`}
+                className={`profile-nav-link ${canAttack ? '' : 'disabled'}`}
               >
                 Attack this Player
               </button>
@@ -338,7 +390,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 <button
                   type='button'
                   onClick={toggleSpyModal}
-                  className={`list-group-item list-group-item-action w-full text-left ${canAttack ? '' : 'disabled'}`}
+                  className={`profile-nav-link ${canAttack ? '' : 'disabled'}`}
               >
                 Spy Missions
                 </button>
@@ -349,7 +401,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 />
               <Link
                 href={`/recruit/${profile?.recruitingLink}`}
-                className="list-group-item list-group-item-action"
+                className="profile-nav-link"
               >
                 Recruit this Player
                 </Link>
@@ -358,7 +410,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 <button
                   type="button"
                   onClick={handleAddFriend}
-                  className={`list-group-item list-group-item-action w-full text-left`}
+                  className="profile-nav-link"
                   style={{ display: isOwnProfile || isFriend ? 'none' : 'block' }}
                 >
                   Add to Friends List
@@ -366,28 +418,28 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 <button
                   type="button"
                   onClick={handleRemoveFriend}
-                  className={`list-group-item list-group-item-action w-full text-left`}
+                  className="profile-nav-link"
                   style={{ display: isOwnProfile || !isFriend ? 'none' : 'block' }}
                 >
                   Remove Friend
                 </button>
                 <button
                   type="button"
-                  className={`list-group-item list-group-item-action w-full text-left`}
+                  className="profile-nav-link"
                   style={{ display: isFriend ? 'block' : 'none' }}
                 >
                   Transfer Gold
                 </button>
                 <button
                   type="button"
-                  className={`list-group-item list-group-item-action w-full text-left`}
+                  className="profile-nav-link"
                   style={{ display: isFriend ? 'block' : 'none' }}
                 >
                   Request Gold
                     </button>
                   </>
                 )}
-                {/*}<button type='button' className={`list-group-item list-group-item-action w-full text-left ${isFriend ? 'disabled' : ''}`}>
+                {/*}<button type='button' className={`profile-nav-link ${isFriend ? 'disabled' : ''}`}>
                   Add to Enemies List
               </button>{*/}
             </div>
@@ -398,7 +450,7 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
                 Top Friends
               </h6>
               <Paper shadow="sm" p="md" className="my-5">
-                <SimpleGrid cols={3} gap={4}>
+                <SimpleGrid cols={3} spacing={4}>
                   {friendsList}
                 </SimpleGrid>
               </Paper>
@@ -432,6 +484,19 @@ const Index: React.FC<IndexProps> = ({ users }: InferGetServerSidePropsType<type
           <h6 className="border-dark border-b-2 p-2 text-center font-bold">
             Medals
           </h6>
+        
+          {users.latestUserEra && (
+            <Paper shadow="sm" p="md" className="my-5">
+              <h6 className="border-dark border-b-2 p-2 font-bold">Achievements</h6>
+              <ul>
+                {Object.entries(users.latestUserEra.achievements).map(([key, value]) => (
+                  <li key={key}>
+                    {key}: {String(value)}
+                  </li>
+                ))}
+              </ul>
+            </Paper>
+          )}
         </div>
       </div>
     </MainArea>
@@ -454,7 +519,16 @@ export const getServerSideProps = async ({ query }) => {
   }
 
   const whereCondition = id ? { id } : { recruit_link: recruitLink };
-  const user = await prisma.users.findFirst({ where: whereCondition });
+  const user = await prisma.users.findFirst({
+    where: whereCondition,
+    include: {
+      currentEra: true,
+      userEras: {
+        take: 1,
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+  });
 
   if (!user) {
     return { notFound: true };
@@ -462,15 +536,28 @@ export const getServerSideProps = async ({ query }) => {
 
   const { password_hash, email, ...userWithoutPassword } = user;
 
+  // Safely serialize dates coming from the database. Some callers (or mocks) may supply
+  // non-Date values, so validate before calling toISOString().
+  const lastActiveDate = user.last_active ? new Date(user.last_active) : null;
+  const lastActiveStr = lastActiveDate && !isNaN(lastActiveDate.getTime()) ? lastActiveDate.toISOString() : null;
+
+  const createdAtDate = user.created_at ? new Date(user.created_at) : null;
+  const createdAtStr = createdAtDate && !isNaN(createdAtDate.getTime()) ? createdAtDate.toISOString() : null;
+
+  const updatedAtDate = user.updated_at ? new Date(user.updated_at) : null;
+  const updatedAtStr = updatedAtDate && !isNaN(updatedAtDate.getTime()) ? updatedAtDate.toISOString() : null;
+
   const userData = {
-    ...userWithoutPassword, 
+    ...userWithoutPassword,
     bionew: await serialize(user.bio),
     gold: user.gold.toString(),
     gold_in_bank: user.gold_in_bank.toString(),
-    last_active: user.last_active ? user.last_active.toISOString() : null,
-    created_at: user.created_at.toISOString(),
-    updated_at: user.updated_at.toISOString(),
+    last_active: lastActiveStr,
+    created_at: createdAtStr,
+    updated_at: updatedAtStr,
     status: await getUpdatedStatus(user.id),
+    currentEra: user.currentEra ?? null,
+    latestUserEra: (user.userEras && user.userEras.length > 0) ? user.userEras[0] : null,
   };
 
   return { props: { users: userData } };
