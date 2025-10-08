@@ -125,6 +125,7 @@ class UserModel {
   /** Calculated total sentry strength. */
   public sentry: number;
   public achievements: Record<string, any> = {};
+  public twoFactorSecret: string | null = null;
 
   // Domain services (single responsibility)
   private statsService: UserStatsService;
@@ -149,49 +150,99 @@ class UserModel {
    */
   constructor(userData?: PrismaUser | null, filtered: boolean = true, checkStats: boolean = true) {
     const safeUserData = userData ? JSON.parse(JSON.stringify(stringifyObj(userData))) : null;
-    this.id = safeUserData?.id ?? 0;
-    this.displayName = safeUserData?.display_name ?? '';
+    
+    // Handle null/undefined userData safely
+    if (!safeUserData) {
+      this.id = 0;
+      this.displayName = '';
+      this.email = '';
+      this.passwordHash = '';
+      this.race = 'ELF';
+      this.class = 'ASSASSIN';
+      this.experience = 0;
+      this.gold = BigInt(0);
+      this.goldInBank = BigInt(0);
+      this.fortLevel = 0;
+      this.fortHitpoints = 0;
+      this.houseLevel = 0;
+      this.attackTurns = 0;
+      this.last_active = null;
+      this.units = [];
+      this.mercenaries = [];
+      this.items = [];
+      this.bio = '';
+      this.colorScheme = null;
+      this.is_player = false;
+      this.is_online = false;
+      this.overallrank = 0;
+      this.economyLevel = 0;
+      this.bonus_points = [];
+      this.structure_upgrades = [];
+      this.battle_upgrades = [];
+      this.stats = [];
+      this.locale = 'en-US';
+      this.avatar = null;
+      this.permissions = [];
+      this.attacks_made = 0;
+      this.attacks_defended = 0;
+      this.attacks_won = 0;
+      this.defends_won = 0;
+      this.beenAttacked = false;
+      this.detectedSpy = false;
+      this.currentStatus = 'ACTIVE';
+      this.offense = 0;
+      this.defense = 0;
+      this.spy = 0;
+      this.sentry = 0;
+      this.achievements = {};
+      this.twoFactorSecret = null;
+      return;
+    }
+
+    this.id = safeUserData.id ?? 0;
+    this.displayName = safeUserData.display_name ?? '';
     this.email = '';
     this.passwordHash = '';
-    this.race = safeUserData?.race ?? 'ELF';
-    this.class = safeUserData?.class ?? 'ASSASSIN';
-    this.experience = safeUserData?.experience ?? 0;
-    this.gold = BigInt(safeUserData?.gold ?? '0');
+    this.race = safeUserData.race ?? 'ELF';
+    this.class = safeUserData.class ?? 'ASSASSIN';
+    this.experience = safeUserData.experience ?? 0;
+    this.gold = BigInt(safeUserData.gold ?? '0');
     this.goldInBank = BigInt('0');
-    this.fortLevel = safeUserData?.fort_level ?? 0;
-    this.fortHitpoints = safeUserData?.fort_hitpoints ?? 0;
-    this.houseLevel = safeUserData?.house_level ?? 0;
-    this.attackTurns = safeUserData?.attack_turns ?? 0;
-    this.last_active = safeUserData?.last_active ? new Date(safeUserData.last_active) : null;
-    this.units = safeUserData?.units ?? [];
-    this.mercenaries = safeUserData?.mercenaries ? (typeof safeUserData.mercenaries === 'string' ? JSON.parse(safeUserData.mercenaries) : safeUserData.mercenaries) : [];
-    this.items = safeUserData?.items ?? [];
-    this.bio = safeUserData?.bio ?? '';
-    this.colorScheme = safeUserData?.colorScheme ?? null;
+    this.fortLevel = safeUserData.fort_level ?? 0;
+    this.fortHitpoints = safeUserData.fort_hitpoints ?? 0;
+    this.houseLevel = safeUserData.house_level ?? 0;
+    this.attackTurns = safeUserData.attack_turns ?? 0;
+    this.last_active = safeUserData.last_active ? new Date(safeUserData.last_active) : null;
+    this.units = safeUserData.units ?? [];
+    this.mercenaries = safeUserData.mercenaries ? (typeof safeUserData.mercenaries === 'string' ? JSON.parse(safeUserData.mercenaries) : safeUserData.mercenaries) : [];
+    this.items = safeUserData.items ?? [];
+    this.bio = safeUserData.bio ?? '';
+    this.colorScheme = safeUserData.colorScheme ?? null;
     this.is_player = false;
     this.is_online = false;
-    this.overallrank = safeUserData?.rank ?? 0;
-    this.economyLevel = safeUserData?.economy_level ?? 0;
-    this.bonus_points = safeUserData?.bonus_points ?? [];
-    this.structure_upgrades = safeUserData?.structure_upgrades ?? [];
-    this.battle_upgrades = safeUserData?.battle_upgrades ?? [];
-    this.stats = safeUserData?.stats ?? [];
-    this.locale = safeUserData?.locale ?? 'en-US';
-    this.avatar = safeUserData?.avatar ?? null;
-    this.permissions = safeUserData?.permissions ?? [];
-    this.attacks_made = safeUserData?.totalAttacks ?? 0;
-    this.attacks_defended = safeUserData?.totalDefends ?? 0;
-    this.attacks_won = safeUserData?.won_attacks ?? 0;
-    this.defends_won = safeUserData?.won_defends ?? 0;
-    this.beenAttacked = safeUserData?.beenAttacked ?? false;
-    this.detectedSpy = safeUserData?.detectedSpy ?? false;
-    this.currentStatus = safeUserData?.currentStatus ?? 'ACTIVE';
-    this.offense = safeUserData?.offense ?? 0;
-    this.defense = safeUserData?.defense ?? 0;
-    this.spy = safeUserData?.spy ?? 0;
-    this.sentry = safeUserData?.sentry ?? 0;
+    this.overallrank = safeUserData.rank ?? 0;
+    this.economyLevel = safeUserData.economy_level ?? 0;
+    this.bonus_points = safeUserData.bonus_points ?? [];
+    this.structure_upgrades = safeUserData.structure_upgrades ?? [];
+    this.battle_upgrades = safeUserData.battle_upgrades ?? [];
+    this.stats = safeUserData.stats ?? [];
+    this.locale = safeUserData.locale ?? 'en-US';
+    this.avatar = safeUserData.avatar ?? null;
+    this.permissions = safeUserData.permissions ?? [];
+    this.attacks_made = safeUserData.totalAttacks ?? 0;
+    this.attacks_defended = safeUserData.totalDefends ?? 0;
+    this.attacks_won = safeUserData.won_attacks ?? 0;
+    this.defends_won = safeUserData.won_defends ?? 0;
+    this.beenAttacked = safeUserData.beenAttacked ?? false;
+    this.detectedSpy = safeUserData.detectedSpy ?? false;
+    this.currentStatus = safeUserData.currentStatus ?? 'ACTIVE';
+    this.offense = safeUserData.offense ?? 0;
+    this.defense = safeUserData.defense ?? 0;
+    this.spy = safeUserData.spy ?? 0;
+    this.sentry = safeUserData.sentry ?? 0;
   
-    this.achievements = safeUserData?.achievements ? (typeof safeUserData.achievements === 'string' ? JSON.parse(safeUserData.achievements) : safeUserData.achievements) : {};
+    this.achievements = safeUserData.achievements ? (typeof safeUserData.achievements === 'string' ? JSON.parse(safeUserData.achievements) : safeUserData.achievements) : {};
+    this.twoFactorSecret = safeUserData.twoFactorSecret || null;
 
     if (!filtered && safeUserData) {
       this.email = safeUserData.email;
