@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useState } from 'react';
 import { Space, Group, SimpleGrid, Container, Menu, UnstyledButton, Title, Badge, Text, ScrollArea, Alert } from '@mantine/core'; // Added ScrollArea
 import { alertService } from '../services/alert.service';
 import { faArrowRightFromBracket, faComments, faGear, faIdCard, faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
@@ -9,6 +9,7 @@ import { useLayout } from '@/context/LayoutContext';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 import { useUser } from '@/context/users';
 import { formatLastMessageTime } from '@/utils/timefunctions'; // Import time formatter
+import SocialIcon from './SocialIcon';
 
 interface MainAreaProps {
   title: string;
@@ -23,11 +24,32 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
     // Consume unread messages state and functions from context
     const { unreadMessages, unreadMessagesCount, markRoomAsRead } = useUser();
     const [messageMenuOpened, setMessageMenuOpened] = useState(false);
+    const [friendRequestCount, setFriendRequestCount] = useState<number>(0);
+
+
+    const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
+
+    const fetchFriendRequestCount = useCallback(async () => {
+      try {
+        const res = await fetch('/api/social/count');
+        if (!res.ok) return;
+        const data = await res.json();
+        setFriendRequestCount(Number(data.count) || 0);
+      } catch (err) {
+        // log error if needed
+      }
+    }, []);
 
     const handleMessageItemClick = (roomId: number) => {
       markRoomAsRead(roomId); // Mark room as read when clicking a message from it
       // Navigation will be handled by the Link component
     };
+
+    useEffect(() => {
+      fetchFriendRequestCount();
+      const interval = setInterval(fetchFriendRequestCount, 30000);
+      return () => clearInterval(interval);
+    }, [fetchFriendRequestCount]);
 
     return (
       <div className="mainArea pb-10 w-full flex flex-col flex-grow overflow-y-auto" ref={ref || null}>
@@ -151,12 +173,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
                   withinPortal
                 >
                   <Menu.Target>
-                    <RpgAwesomeIcon
-                      icon="double-team"
-                      color="orange"
-                      fw
-                      style={{ cursor: 'pointer' }}
-                    />
+                    <SocialIcon count={friendRequestCount} />
                   </Menu.Target>
 
                   <Menu.Dropdown>
@@ -166,13 +183,22 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
                         Friends
                       </Menu.Item>
                     </Link>
-                    <Link href="/social/enemies" passHref>
+                    <Link href="/social/enemies" passHref hidden={!enableEnemies}>
                       <Menu.Item leftSection={<FontAwesomeIcon icon={faSkullCrossbones} size={'sm'} stroke={'1.5'} />}>
                         Enemies
                       </Menu.Item>
                     </Link>
                     <Link href="/social/requests" passHref>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faComments} size={'sm'} stroke={'1.5'} />}>
+                      <Menu.Item
+                        leftSection={<FontAwesomeIcon icon={faComments} size={'sm'} stroke={'1.5'} />}
+                        rightSection={
+                          friendRequestCount > 0 ? (
+                            <Badge color="red" variant="filled" size="xs">
+                              {friendRequestCount > 9 ? '9+' : friendRequestCount}
+                            </Badge>
+                          ) : undefined
+                        }
+                      >
                         Friend Requests
                       </Menu.Item>
                     </Link>

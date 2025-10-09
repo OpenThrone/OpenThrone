@@ -7,6 +7,7 @@ import { JsonValue } from '@prisma/client/runtime/library'; // Import JsonValue
 
 import Modal from '@/components/modal';
 import SpyMissionsModal from '@/components/spyMissionsModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -93,6 +94,21 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
   const [socialEnabled, setSocialEnabled] = useState(false);
   // State to control the Spy Missions Modal
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
+  
+  // Friend request states
+  const [friendRelationship, setFriendRelationship] = useState(null);
+  const [isFriendLoading, setIsFriendLoading] = useState(false);
+
+  // Enemy relationship states
+  const [enemyRelationship, setEnemyRelationship] = useState(null);
+  const [isEnemyLoading, setIsEnemyLoading] = useState(false);
+
+  // Confirmation modal states
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+
+  // Feature flags
+  const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
 
   useEffect(() => {
     if (user) {
@@ -114,6 +130,69 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
         setLoading(false);
       });
   }, [profile.id]);
+
+  // Fetch friend relationship status
+  useEffect(() => {
+    if (user && profile.id && user.id !== profile.id) {
+      fetchFriendRelationship();
+    }
+  }, [user, profile.id]);
+
+  const fetchFriendRelationship = async () => {
+    setIsFriendLoading(true);
+    try {
+      const response = await fetch(`/api/social/relationship?userId=${user.id}&targetUserId=${profile.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setFriendRelationship(data.relationship);
+      }
+    } catch (error) {
+      console.error('Error fetching friend relationship:', error);
+    } finally {
+      setIsFriendLoading(false);
+    }
+  };
+
+  // Force refresh friend relationship when friends list changes
+  useEffect(() => {
+    if (user && profile.id && user.id !== profile.id) {
+      fetchFriendRelationship();
+    }
+  }, [friends]);
+
+  // Fetch enemy relationship status
+  useEffect(() => {
+    if (user && profile.id && user.id !== profile.id && enableEnemies) {
+      fetchEnemyRelationship();
+    }
+  }, [user, profile.id, enableEnemies]);
+
+  const fetchEnemyRelationship = async () => {
+    setIsEnemyLoading(true);
+    try {
+      const response = await fetch(`/api/social/relationship?userId=${user.id}&targetUserId=${profile.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        // Filter for enemy relationship only
+        if (data.relationship && data.relationship.relationshipType === 'ENEMY') {
+          setEnemyRelationship(data.relationship);
+        } else {
+          setEnemyRelationship(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching enemy relationship:', error);
+    } finally {
+      setIsEnemyLoading(false);
+    }
+  };
+
+  // Force refresh enemy relationship when needed
+  useEffect(() => {
+    if (user && profile.id && user.id !== profile.id && enableEnemies) {
+      fetchEnemyRelationship();
+    }
+  }, [user, profile.id, enableEnemies]);
 
   const toggleModal = () => {
     setIsOpen(!isOpen);
@@ -213,64 +292,150 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
     return <p>{statusMessage}</p>;
   }
 
-  // If we don't know lastActive, continue rendering the profile but show offline status in UI.
+  // Friend request handlers
   const handleAddFriend = async () => {
-    const res = await fetch('/api/social/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ friendId: profile.id, relationshipType: 'FRIEND' }),
-    });
+    if (isFriendLoading) return;
+    
+    setIsFriendLoading(true);
+    try {
+      const res = await fetch('/api/social/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendId: profile.id, relationshipType: 'FRIEND' }),
+      });
 
-    if (res.ok) {
-      alertService.success('Friend added successfully');
-      forceUpdate();
-    } else {
+      if (res.ok) {
+        alertService.success('Friend request sent successfully');
+        await fetchFriendRelationship();
+        forceUpdate();
+      } else {
+        const error = await res.json();
+        alertService.error(error.error || 'Failed to add friend');
+      }
+    } catch (error) {
       alertService.error('Failed to add friend');
+    } finally {
+      setIsFriendLoading(false);
     }
   };
 
-  const handleAddEnemy = async () => {
-    const res = await fetch('/api/social/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ friendId: profile.id, relationshipType: 'ENEMY' }),
-    });
+  const handleCancelFriendRequest = async () => {
+    if (isFriendLoading) return;
+    
+    setIsFriendLoading(true);
+    try {
+      const res = await fetch('/api/social/remove', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendId: profile.id, relationshipType: 'FRIEND' }),
+      });
 
-    if (res.ok) {
-      alertService.success('Friend added successfully');
-      forceUpdate();
-    } else {
-      alertService.error('Failed to add friend');
+      if (res.ok) {
+        alertService.success('Friend request cancelled');
+        await fetchFriendRelationship();
+        forceUpdate();
+      } else {
+        const error = await res.json();
+        alertService.error(error.error || 'Failed to cancel friend request');
+      }
+    } catch (error) {
+      alertService.error('Failed to cancel friend request');
+    } finally {
+      setIsFriendLoading(false);
     }
   };
-
-  const handleRequestTruce = async () => {
-    const res = await fetch('/api/social/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ friendId: profile.id, relationshipType: 'TRUCE' }),
-    });
-
-    if (res.ok) {
-      alertService.success('Truce requested successfully');
-      forceUpdate();
-    } else {
-      alertService.error('Failed to request truce');
-    }
-  }
 
   const handleRemoveFriend = async () => {
-    const res = await fetch('/api/social/remove', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ friendId: profile.id }),
-    });
+    if (isFriendLoading) return;
+    
+    setPendingAction('remove');
+    setShowConfirmationModal(true);
+  };
 
-    if (res.ok) {
-      alertService.success('Friend removed successfully');
-      forceUpdate();
-    } else {
+  const handleConfirmRemoveFriend = async () => {
+    if (isFriendLoading) return;
+
+    setIsFriendLoading(true);
+    try {
+      const res = await fetch('/api/social/remove', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          friendId: profile.id,
+          relationshipType: 'FRIEND'
+        }),
+      });
+
+      if (res.ok) {
+        alertService.success('Friend removed successfully');
+        await fetchFriendRelationship();
+        forceUpdate();
+      } else {
+        const error = await res.json();
+        alertService.error(error.error || 'Failed to remove friend');
+      }
+    } catch (error) {
       alertService.error('Failed to remove friend');
+    } finally {
+      setIsFriendLoading(false);
+      setShowConfirmationModal(false);
+    }
+  };
+
+  // Get friend relationship status
+  const getFriendStatus = () => {
+    logDebug('Evaluating friend relationship:', friendRelationship);
+    if (!friendRelationship) return 'neutral';
+    
+    if (friendRelationship.status === 'requested') {
+      // Check if this is an outgoing or incoming request
+      if (friendRelationship.playerId === user.id) {
+        return 'pending_outgoing';
+      } else {
+        return 'pending_incoming';
+      }
+    }
+    
+    if (friendRelationship.status === 'accepted') {
+      return 'friend';
+    }
+    
+    return 'neutral';
+  };
+
+  // Get friend status display
+  const getFriendStatusDisplay = () => {
+    const status = getFriendStatus();
+    logDebug('Friend status:', status);
+    switch (status) {
+      case 'pending_outgoing':
+        return {
+          text: 'Friend Request is Pending',
+          button: 'Cancel Friend Request',
+          action: handleCancelFriendRequest,
+          type: 'cancel'
+        };
+      case 'pending_incoming':
+        return {
+          text: 'Friend Request from ' + profile.displayName,
+          button: 'Accept',
+          action: () => {}, // Will be handled by accept button
+          type: 'accept'
+        };
+      case 'friend':
+        return {
+          text: 'Friends with ' + profile.displayName,
+          button: 'Remove Friend',
+          action: handleRemoveFriend,
+          type: 'remove'
+        };
+      default:
+        return {
+          text: '',
+          button: 'Add to Friends List',
+          action: handleAddFriend,
+          type: 'add'
+        };
     }
   };
 
@@ -281,7 +446,8 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
 
   // Don't show friend buttons on own profile, and only show Add/Remove appropriately
   const isOwnProfile = user?.id === profile.id;
-  const isFriend = friends.some(friend => friend.friend.id === user?.id);
+  const friendStatus = getFriendStatus();
+  const friendStatusDisplay = getFriendStatusDisplay();
 
   const friendsList = friends.length > 0 ? friends.map(friend => {
     logDebug("Received friend info:", friend);
@@ -407,41 +573,197 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
                 </Link>
                 {socialEnabled && (
                 <>
-                <button
-                  type="button"
-                  onClick={handleAddFriend}
-                  className="profile-nav-link"
-                  style={{ display: isOwnProfile || isFriend ? 'none' : 'block' }}
-                >
-                  Add to Friends List
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRemoveFriend}
-                  className="profile-nav-link"
-                  style={{ display: isOwnProfile || !isFriend ? 'none' : 'block' }}
-                >
-                  Remove Friend
-                </button>
-                <button
-                  type="button"
-                  className="profile-nav-link"
-                  style={{ display: isFriend ? 'block' : 'none' }}
-                >
-                  Transfer Gold
-                </button>
-                <button
-                  type="button"
-                  className="profile-nav-link"
-                  style={{ display: isFriend ? 'block' : 'none' }}
-                >
-                  Request Gold
+                  {friendStatus === 'pending_incoming' ? (
+                      <Paper className="friend-request-button-group">
+                      <div className="friend-request-status">
+                        {friendStatusDisplay.text}
+                      </div>
+                      <div className="friend-request-buttons-container">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (isFriendLoading) return;
+                            
+                            setIsFriendLoading(true);
+                            try {
+                              const res = await fetch('/api/social/respond', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  requestId: friendRelationship.id,
+                                  action: 'accept'
+                                }),
+                              });
+
+                              if (res.ok) {
+                                alertService.success('Friend request accepted');
+                                await fetchFriendRelationship();
+                                forceUpdate();
+                              } else {
+                                const error = await res.json();
+                                alertService.error(error.error || 'Failed to accept friend request');
+                              }
+                            } catch (error) {
+                              alertService.error('Failed to accept friend request');
+                            } finally {
+                              setIsFriendLoading(false);
+                            }
+                          }}
+                          className={`friend-request-button accept ${isFriendLoading ? 'loading' : ''}`}
+                          disabled={isFriendLoading}
+                        >
+                          {isFriendLoading ? (
+                            <div className="flex items-center justify-center">
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Accepting...
+                            </div>
+                          ) : 'Accept'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (isFriendLoading) return;
+                            
+                            setIsFriendLoading(true);
+                            try {
+                              const res = await fetch('/api/social/respond', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  requestId: friendRelationship.id,
+                                  action: 'decline'
+                                }),
+                              });
+
+                              if (res.ok) {
+                                alertService.success('Friend request declined');
+                                await fetchFriendRelationship();
+                                forceUpdate();
+                              } else {
+                                const error = await res.json();
+                                alertService.error(error.error || 'Failed to decline friend request');
+                              }
+                            } catch (error) {
+                              alertService.error('Failed to decline friend request');
+                            } finally {
+                              setIsFriendLoading(false);
+                            }
+                          }}
+                          className={`friend-request-button decline ${isFriendLoading ? 'loading' : ''}`}
+                          disabled={isFriendLoading}
+                        >
+                          {isFriendLoading ? (
+                            <div className="flex items-center justify-center">
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Declining...
+                            </div>
+                          ) : 'Decline'}
+                        </button>
+                      </div>
+                    </Paper>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={friendStatusDisplay.action}
+                      className={`profile-nav-link ${
+                        friendStatus === 'pending_outgoing' ? 'bg-yellow-600 hover:bg-yellow-700' :
+                        friendStatus === 'friend' ? 'bg-red-600 hover:bg-red-700' :
+                        'bg-green-600 hover:bg-green-700'
+                      } ${isFriendLoading || isOwnProfile ? 'opacity-75 cursor-not-allowed' : ''}`}
+                      disabled={isFriendLoading || isOwnProfile}
+                    >
+                      {isFriendLoading ? (
+                        <div className="flex items-center justify-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </div>
+                      ) : friendStatusDisplay.button}
                     </button>
-                  </>
+                  )}
+                  
+                  {friendStatus === 'friend' && (
+                    <>
+                      <button
+                        type="button"
+                        className="profile-nav-link"
+                        style={{ display: 'block' }}
+                      >
+                        Transfer Gold
+                      </button>
+                      <button
+                        type="button"
+                        className="profile-nav-link"
+                        style={{ display: 'block' }}
+                      >
+                        Request Gold
+                      </button>
+                    </>
+                  )}
+                </>
                 )}
-                {/*}<button type='button' className={`profile-nav-link ${isFriend ? 'disabled' : ''}`}>
-                  Add to Enemies List
-              </button>{*/}
+
+                {/* Enemy functionality - only shown when enabled */}
+                {socialEnabled && enableEnemies && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (isEnemyLoading) return;
+
+                      setIsEnemyLoading(true);
+                      try {
+                        const action = enemyRelationship ? 'remove' : 'add';
+                        const res = await fetch(`/api/social/${action}`, {
+                          method: action === 'add' ? 'POST' : 'DELETE',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            friendId: profile.id,
+                            relationshipType: 'ENEMY'
+                          }),
+                        });
+
+                        if (res.ok) {
+                          alertService.success(
+                            enemyRelationship
+                              ? 'Enemy status removed'
+                              : 'Player declared as enemy'
+                          );
+                          await fetchEnemyRelationship();
+                          forceUpdate();
+                        } else {
+                          const error = await res.json();
+                          alertService.error(error.error || `Failed to ${enemyRelationship ? 'remove enemy' : 'declare enemy'}`);
+                        }
+                      } catch (error) {
+                        alertService.error(`Failed to ${enemyRelationship ? 'remove enemy' : 'declare enemy'}`);
+                      } finally {
+                        setIsEnemyLoading(false);
+                      }
+                    }}
+                    className={`profile-nav-link ${
+                      enemyRelationship ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'
+                    } ${isEnemyLoading || isOwnProfile ? 'opacity-75 cursor-not-allowed' : ''}`}
+                    disabled={isEnemyLoading || isOwnProfile}
+                  >
+                    {isEnemyLoading ? (
+                      <div className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </div>
+                    ) : enemyRelationship ? 'Remove Enemy' : 'Declare Enemy'}
+                  </button>
+                )}
             </div>
           )}
           {socialEnabled && (
@@ -499,6 +821,19 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
           )}
         </div>
       </div>
+      
+      {/* Confirmation Modal for removing friend */}
+      <ConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={() => setShowConfirmationModal(false)}
+        onConfirm={handleConfirmRemoveFriend}
+        title="Remove Friend"
+        message={`Are you sure you want to remove ${profile.displayName} from your friends list?`}
+        confirmText="Remove Friend"
+        cancelText="Cancel"
+        isLoading={isFriendLoading}
+        type="remove"
+      />
     </MainArea>
   );
 };

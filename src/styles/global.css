@@ -157,6 +157,83 @@ a:hover {
   background-color: #222;
   border: 1px solid rgba(250, 250, 250, 0.125);
 }
+
+/* Profile action buttons styling */
+.profile-action-button {
+  position: relative;
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #e1e1e1;
+  text-decoration: none;
+  background-color: #2f4d6c;
+  border: 1px solid rgba(250, 250, 250, 0.25);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.profile-action-button:hover:not(.disabled) {
+  background-color: #375a7f;
+  border-color: #4a6f8f;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.profile-action-button.disabled {
+  background-color: #444;
+  border-color: #555;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Profile navigation links styling - same as action buttons but without button styling */
+.profile-nav-link {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  color: #e1e1e1;
+  text-decoration: none;
+  background-color: #222;
+  border: 1px solid rgba(250, 250, 250, 0.125);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.profile-nav-link:hover:not(.disabled) {
+  background-color: #2a2a2a;
+  border-color: rgba(250, 250, 250, 0.25);
+  transform: translateX(2px);
+}
+
+.profile-nav-link.disabled {
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Rounded corners for first and last buttons in profile navigation */
+.list-group .profile-nav-link:first-child {
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.list-group .profile-nav-link:last-child {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+/* Ensure middle buttons have no rounded corners */
+.list-group .profile-nav-link:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
 .content .btn-primary-dark {
   color: #fafafa;
   background-color: #2f4d6c;
@@ -355,4 +432,193 @@ body{
 
 .text-accent {
   color: var(--ot-accent);
+}
+
+/* Social icon (Sidebar) - aligns with existing design */
+.social-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 4px;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  line-height: 1;
+}
+
+/* Slight hover/focus affordance consistent with profile-action-button */
+.social-icon-button:hover:not(:disabled),
+.social-icon-button:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+  opacity: 0.98;
+  outline: none;
+}
+
+/* Target the RPG-Awesome icon element inside the button */
+.social-icon-button i.ra {
+  font-size: 20px; /* default size, overridden inline when necessary */
+  color: var(--ot-accent);
+  display: inline-block;
+}
+
+/* Badge spacing override for Mantine Indicator inside tight header */
+.ra-indicator-override {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hide the desktop-only social icon on small viewports (we show only on desktop) */
+@media (max-width: 768px) {
+  .social-icon-button {
+    display: none !important;
+  }
+}
+
+/* Enhanced Friend Request Button Styling */
+.friend-request-button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid rgba(47, 77, 108, 0.2);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.friend-request-buttons-container {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.friend-request-button {
+  flex: 1;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-height: 48px;
+}
+
+.friend-request-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.friend-request-button:hover::before {
+  left: 100%;
+}
+
+/* Accept Button - Enhanced Styling */
+.friend-request-button.accept {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: 2px solid #10b981;
+}
+
+.friend-request-button.accept:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.friend-request-button.accept:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Decline Button - Enhanced Styling */
+.friend-request-button.decline {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: 2px solid #ef4444;
+}
+
+.friend-request-button.decline:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  border-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+}
+
+.friend-request-button.decline:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+/* Loading state for friend request buttons */
+.friend-request-button.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.friend-request-button.loading::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  top: 50%;
+  left: 50%;
+  margin-left: -10px;
+  margin-top: -10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Friend request status text styling */
+.friend-request-status {
+  text-align: center;
+  margin-bottom: 12px;
+  font-weight: 500;
+  color: #fbbf24;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 640px) {
+  .friend-request-button-group {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+  
+  .friend-request-buttons-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .friend-request-button {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
 }

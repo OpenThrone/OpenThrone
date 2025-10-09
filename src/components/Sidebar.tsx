@@ -12,7 +12,6 @@ import { levelXPArray } from '@/constants/XPLevels';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 import { logError } from '@/utils/logger';
 import UserModel from '@/models/Users';
-import messages from '@/pages/api/messages';
 import CollapsibleSection from './CollapsibleSection';
 
 const Sidebar: React.FC = () => {
@@ -255,7 +254,7 @@ const Sidebar: React.FC = () => {
               </Text>
 
               {/* Stats Section */}
-              <Title order={4} className="text-center font-bold text-xl mt-2 text-shadow text-shadow-xs">
+              <Title order={2} className="text-center font-bold mt-2 text-shadow text-shadow-xs">
                 Stats <FontAwesomeIcon icon={faRefresh} className="cursor-pointer" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} />
               </Title>
               {userLoading ? (
@@ -299,7 +298,7 @@ const Sidebar: React.FC = () => {
               )}
 
               {/* Search Section */}
-              <Title order={4} className="advisor-title text-center font-bold text-xl mt-2 text-shadow text-shadow-xs">
+              <Title order={2} className="advisor-title text-center font-bold mt-2 text-shadow text-shadow-xs">
                 Search
               </Title>
               <form onSubmit={handleSubmit}>
@@ -331,7 +330,7 @@ const Sidebar: React.FC = () => {
       ) : (
         <div className="card-fantasy text-black font-semibold mt-3 overflow-hidden p-4">
           <div className="p-4 mt-2">
-            <Title order={3} className="advisor-title text-center font-bold text-xl text-shadow text-shadow-xs">
+            <Title order={2} className="advisor-title text-center font-bold text-shadow text-shadow-xs">
               <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handlePrevAdvisor} />
               Advisor
               <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handleNextAdvisor} />
@@ -341,7 +340,7 @@ const Sidebar: React.FC = () => {
             </Text>
 
             {/* Stats Section */}
-            <Title order={4} className="text-center font-bold text-xl mt-2 text-shadow text-shadow-xs">
+            <Title order={2} className="text-center font-bold mt-2 text-shadow text-shadow-xs">
               Stats <FontAwesomeIcon icon={faRefresh} className="cursor-pointer" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} />
             </Title>
             {userLoading ? (
@@ -385,7 +384,7 @@ const Sidebar: React.FC = () => {
             )}
 
             {/* Search Section */}
-            <Title order={4} className="advisor-title text-center font-bold text-xl mt-2 text-shadow text-shadow-xs">
+            <Title order={2} className="advisor-title text-center font-bold mt-2 text-shadow text-shadow-xs">
               Search
             </Title>
             <form onSubmit={handleSubmit}>
