@@ -1,8 +1,14 @@
-import prisma from '@/lib/prisma'; 
+import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
 import { NextApiResponse } from 'next';
 import type { AuthenticatedRequest } from '@/types/api';
+import { z } from 'zod';
+
+const RespondSchema = z.object({
+  requestId: z.number().int(),
+  action: z.enum(['accept', 'decline']),
+});
 
 const handler = async (req: AuthenticatedRequest,
   res: NextApiResponse,) => {
@@ -15,15 +21,15 @@ const handler = async (req: AuthenticatedRequest,
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { requestId, action } = req.body;
-
-  if (!requestId || !action) {
-    return res.status(400).json({ error: 'Missing friendId or action' });
+  const parseResult = RespondSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: parseResult.error.flatten().fieldErrors
+    });
   }
 
-  if (!['accept', 'decline'].includes(action)) {
-    return res.status(400).json({ error: 'Invalid action' });
-  }
+  const { requestId, action } = parseResult.data;
 
   const newStatus = action === 'accept' ? 'accepted' : 'declined';
   const acceptanceDate = action === 'accept' ? new Date() : null;
@@ -44,11 +50,22 @@ const handler = async (req: AuthenticatedRequest,
     });
 
     if (updateResult.count === 0) {
-      return res.status(404).json({ error: 'Friend request not found or already processed', id: requestId, user: session.user.id });
+      return res.status(404).json({
+        error: 'Friend request not found or already processed',
+        requestId,
+        userId: session.user.id
+      });
     }
 
-    const message = action === 'accept' ? 'Friend request accepted successfully' : 'Friend request declined successfully';
-    return res.status(200).json({ message });
+    const message = action === 'accept'
+      ? 'Friend request accepted successfully'
+      : 'Friend request declined successfully';
+    
+    return res.status(200).json({
+      message,
+      action,
+      requestId
+    });
   } catch (error) {
     logError("Error processing friend request:", error);
     return res.status(500).json({ error: 'Failed to process friend request' });
