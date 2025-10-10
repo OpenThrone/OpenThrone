@@ -8,6 +8,8 @@ import { JsonValue } from '@prisma/client/runtime/library'; // Import JsonValue
 import Modal from '@/components/modal';
 import SpyMissionsModal from '@/components/spyMissionsModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import { GoldTransferModal } from '@/components/GoldTransferModal';
+import { GoldRequestModal } from '@/components/GoldRequestModal';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -98,6 +100,10 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
   // Friend request states
   const [friendRelationship, setFriendRelationship] = useState(null);
   const [isFriendLoading, setIsFriendLoading] = useState(false);
+
+  // Gold transfer modal states
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   // Enemy relationship states
   const [enemyRelationship, setEnemyRelationship] = useState(null);
@@ -696,6 +702,7 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
                         type="button"
                         className="profile-nav-link"
                         style={{ display: 'block' }}
+                        onClick={() => setIsTransferModalOpen(true)}
                       >
                         Transfer Gold
                       </button>
@@ -703,6 +710,7 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
                         type="button"
                         className="profile-nav-link"
                         style={{ display: 'block' }}
+                        onClick={() => setIsRequestModalOpen(true)}
                       >
                         Request Gold
                       </button>
@@ -834,6 +842,35 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
         isLoading={isFriendLoading}
         type="remove"
       />
+
+      {/* Gold Transfer Modal */}
+      {friendStatus === 'friend' && (
+        <GoldTransferModal
+          isOpen={isTransferModalOpen}
+          onClose={() => setIsTransferModalOpen(false)}
+          targetUserId={profile.id}
+          targetUserName={profile.displayName}
+          userGold={user.gold}
+          onTransferComplete={() => {
+            alertService.success('Gold transfer completed successfully');
+            forceUpdate();
+          }}
+        />
+      )}
+
+      {/* Gold Request Modal */}
+      {friendStatus === 'friend' && (
+        <GoldRequestModal
+          isOpen={isRequestModalOpen}
+          onClose={() => setIsRequestModalOpen(false)}
+          targetUserId={profile.id}
+          targetUserName={profile.displayName}
+          onRequestComplete={() => {
+            alertService.success('Gold request sent successfully');
+            forceUpdate();
+          }}
+        />
+      )}
     </MainArea>
   );
 };

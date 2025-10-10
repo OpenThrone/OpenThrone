@@ -1,4 +1,6 @@
 export * from './alert.service';
 export * from './attack.service';
 export * from './bank.service';
+export * from './config.service';
+export * from './friendTransfer.service';
 export * from './user.service';

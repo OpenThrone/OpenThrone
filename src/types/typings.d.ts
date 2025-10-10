@@ -246,7 +246,9 @@ export type BankTransferHistoryType =
   | 'SALE'
   | 'RECRUITMENT'
   | 'FORT_REPAIR'
-  | 'DAILY_RECRUIT';
+  | 'DAILY_RECRUIT'
+  | 'FRIEND_TRANSFER'
+  | 'FRIEND_REQUEST';
 
 export type UnitProps = {
   requirement?: string;

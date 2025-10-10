@@ -1,4 +1,5 @@
 import { Locales } from "@/types/typings";
+import { stringifyObj as stringifyBigInts } from "@/utils/jsonHelpers";
 
 export const toLocale = (num: number | string | bigint| BigInt, locale?: Locales) => {
   if (typeof num === 'number') {
@@ -69,16 +70,8 @@ const convertToHumanReadable = (num: bigint, locale?: Locales) => {
   return Number(num).toLocaleString(locale || undefined);
 };
 
-export const stringifyObj = (obj) => {
-  for (let key in obj) {
-    if (typeof obj[key] === 'bigint') {
-      obj[key] = obj[key].toString();
-    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-      stringifyObj(obj[key]);
-    }
-  }
-  return obj;
-};
+// Re-export the canonical bigint-aware stringify function from jsonHelpers.
+export const stringifyObj = stringifyBigInts;
 
 export const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
