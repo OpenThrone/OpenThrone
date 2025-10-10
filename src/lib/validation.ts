@@ -38,3 +38,25 @@ export const UserUpdateSchema = z.object({
   email: z.string().email().optional(),
   // TODO: Add other common fields
 });
+
+export const GoldTransferSchema = z.object({
+  amount: z.string().pipe(z.coerce.bigint())
+    .refine((val) => val > BigInt(0), { message: 'Transfer amount must be positive' })
+    .refine((val) => val <= BigInt(Number.MAX_SAFE_INTEGER), { message: 'Amount too large' })
+    .transform((val) => val.toString()),
+  notes: z.string().max(500, { message: 'Notes must be less than 500 characters' }).optional(),
+});
+
+export const GoldRequestSchema = z.object({
+  amount: z.string().pipe(z.coerce.bigint())
+    .refine((val) => val > BigInt(0), { message: 'Request amount must be positive' })
+    .refine((val) => val <= BigInt(Number.MAX_SAFE_INTEGER), { message: 'Amount too large' })
+    .transform((val) => val.toString()),
+  friendId: z.number().int().positive(),
+  notes: z.string().max(500, { message: 'Reason must be less than 500 characters' }).optional(),
+});
+
+export const GoldRequestResponseSchema = z.object({
+  action: z.enum(['accept', 'decline']),
+  message: z.string().max(500, { message: 'Message must be less than 500 characters' }).optional(),
+});

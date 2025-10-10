@@ -3,6 +3,7 @@ import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { deposit, getDepositHistory } from '@/services/bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { parseBigInt } from '@/utils/jsonHelpers';
 import UserModel from '@/models/Users';
 import type { AuthenticatedRequest } from '@/types/api';
 
@@ -11,13 +12,17 @@ const depositHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
     return res.status(405).end();
   }
 
+  console.log('Deposit Request Body:', req.body);
+
   const session = req.session;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  // Use centralized BigInt parser
 
-  const depositAmount = BigInt(req.body.depositAmount);
-  if (depositAmount <= 0) {
+  const depositAmount = parseBigInt(req.body.depositAmount);
+  console.log('Deposit Amount:', req.body.depositAmount, 'parsed:', depositAmount);
+  if (depositAmount === null || depositAmount <= 0) {
     return res.status(400).json({ error: 'Invalid deposit amount' });
   }
 
@@ -26,6 +31,7 @@ const depositHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
     where: { id: Number(session.user.id) },
   });
 
+  console.log('User:', user);
   const uModel = new UserModel(user);
 
   if (uModel.maximumBankDeposits - history.length <= 0) {

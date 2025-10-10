@@ -1,7 +1,7 @@
 import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { getBankHistory } from '@/services/bank.service';
-import { stringifyObj } from '@/utils/numberFormatting';
+import { stringifyObj } from '@/utils/jsonHelpers';
 import type { AuthenticatedRequest } from '@/types/api';
 
 const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
@@ -14,7 +14,7 @@ const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification, daily, page = 0, limit = 10 } = req.query;
+  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification, daily, friend_transfers, page = 0, limit = 10 } = req.query;
   const conditions = [];
   const transactionConditions = [];
 
@@ -123,6 +123,16 @@ const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
     transactionConditions.push({
       history_type: 'DAILY_RECRUIT',
       to_user_id: session.user.id,
+    });
+  }
+
+  if (friend_transfers === 'true') {
+    transactionConditions.push({
+      history_type: { in: ['FRIEND_TRANSFER', 'FRIEND_REQUEST'] },
+      OR: [
+        { from_user_id: session.user.id },
+        { to_user_id: session.user.id }
+      ]
     });
   }
 

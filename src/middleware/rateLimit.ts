@@ -57,3 +57,17 @@ export const highRiskLimiter = rateLimit({
     return ip === '127.0.0.1' || ip === '::1' || ip === '0:0:0:0:0:0:0:1';
   },
 });
+
+// Utility to run express-style middleware (req, res, next) in a Promise-friendly way
+export const runExpressMiddleware = (req: any, res: any, fn: any) => {
+  return new Promise<void>((resolve, reject) => {
+    try {
+      fn(req, res, (err?: any) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
