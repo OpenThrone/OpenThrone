@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUser } from '@/context/users'; // Provides UserModel instance
 import toLocale from '@/utils/numberFormatting';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faArrowRight, faCircleInfo, faRefresh } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faCircleInfo, faRefresh, faCoins } from "@fortawesome/free-solid-svg-icons";
 import { getTimeRemaining, getTimeToNextTurn, getOTTime } from '@/utils/timefunctions';
-import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List, Progress, Popover, Skeleton, Stack, Title, Divider } from '@mantine/core';
+import { Button, Autocomplete, AutocompleteProps, Avatar, Group, Text, List, Progress, Popover, Skeleton, Stack, Title, Divider, Badge } from '@mantine/core';
 import { useDebouncedCallback, useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 import router from 'next/router';
@@ -13,6 +13,7 @@ import RpgAwesomeIcon from './RpgAwesomeIcon';
 import { logError } from '@/utils/logger';
 import UserModel from '@/models/Users';
 import CollapsibleSection from './CollapsibleSection';
+import { GoldRequestNotificationModal } from './GoldRequestNotificationModal';
 
 const Sidebar: React.FC = () => {
   const [messages, setMessages] = useState<string[]>([]); // Explicitly type as string array
@@ -23,6 +24,11 @@ const Sidebar: React.FC = () => {
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [nextLevelOpened, { close, open }] = useDisclosure(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
+  
+  // Gold request notification states
+  const [goldRequestCount, setGoldRequestCount] = useState(0);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [loadingRequests, setLoadingRequests] = useState(false);
 
   // State for sidebar display values, derived from user model
   const [sidebar, setSidebar] = useState({
@@ -91,6 +97,29 @@ const Sidebar: React.FC = () => {
       turns: toLocale(user.attackTurns, user?.locale),
     });
   }, [user, userLoading]);
+
+// Fetch gold request count
+useEffect(() => {
+  if (!user || userLoading) return;
+
+  const fetchGoldRequestCount = async () => {
+    try {
+      const response = await fetch('/api/social/gold-requests/count');
+      if (response.ok) {
+        const data = await response.json();
+        setGoldRequestCount(data.count);
+      }
+    } catch (error) {
+      logError('Failed to fetch gold request count:', error);
+    }
+  };
+
+  fetchGoldRequestCount();
+
+  // Set up periodic refresh every 2 minutes
+  const interval = setInterval(fetchGoldRequestCount, 2 * 60 * 1000);
+  return () => clearInterval(interval);
+}, [user, userLoading]);
 
   const renderAutocompleteOption: AutocompleteProps['renderOption'] = ({ option }) => (
     <Group gap="sm">
@@ -274,7 +303,43 @@ const Sidebar: React.FC = () => {
                   
                   <>
                     <Stack gap="xs">
-                      <StatRow label="Gold" value={<span id="gold">{sidebar.gold}</span>} icon={<RpgAwesomeIcon icon="gold-bar" fw />} />
+                      <StatRow
+                        label="Gold"
+                        value={
+                          <Group gap="xs">
+                            <span id="gold">{sidebar.gold}</span>
+                            {goldRequestCount > 0 && (
+                              <Badge
+                                color="yellow"
+                                size="xs"
+                                variant="filled"
+                                onClick={() => setIsNotificationModalOpen(true)}
+                                style={{ cursor: 'pointer' }}
+                                title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                              >
+                                {goldRequestCount}
+                              </Badge>
+                            )}
+                          </Group>
+                        }
+                        icon={
+                          <Group gap="xs">
+                            <RpgAwesomeIcon icon="gold-bar" fw />
+                            {goldRequestCount > 0 && (
+                              <FontAwesomeIcon
+                                icon={faCoins}
+                                style={{
+                                  color: '#fbbf24',
+                                  cursor: 'pointer',
+                                  fontSize: '12px'
+                                }}
+                                onClick={() => setIsNotificationModalOpen(true)}
+                                title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                              />
+                            )}
+                          </Group>
+                        }
+                      />
                       <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
                       <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
                       <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
@@ -360,7 +425,43 @@ const Sidebar: React.FC = () => {
                 
                 <>
                   <Stack gap="xs">
-                    <StatRow label="Gold" value={<span id="gold">{sidebar.gold}</span>} icon={<RpgAwesomeIcon icon="gold-bar" fw />} />
+                    <StatRow
+                      label="Gold"
+                      value={
+                        <Group gap="xs">
+                          <span id="gold">{sidebar.gold}</span>
+                          {goldRequestCount > 0 && (
+                            <Badge
+                              color="yellow"
+                              size="xs"
+                              variant="filled"
+                              onClick={() => setIsNotificationModalOpen(true)}
+                              style={{ cursor: 'pointer' }}
+                              title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                            >
+                              {goldRequestCount}
+                            </Badge>
+                          )}
+                        </Group>
+                      }
+                      icon={
+                        <Group gap="xs">
+                          <RpgAwesomeIcon icon="gold-bar" fw />
+                          {goldRequestCount > 0 && (
+                            <FontAwesomeIcon
+                              icon={faCoins}
+                              style={{
+                                color: '#fbbf24',
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                              }}
+                              onClick={() => setIsNotificationModalOpen(true)}
+                              title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                            />
+                          )}
+                        </Group>
+                      }
+                    />
                     <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
                     <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
                     <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
@@ -413,6 +514,27 @@ const Sidebar: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Gold Request Notification Modal */}
+      <GoldRequestNotificationModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
+        onRequestComplete={() => {
+          // Refresh the count after handling requests
+          const fetchGoldRequestCount = async () => {
+            try {
+              const response = await fetch('/api/social/gold-requests/count');
+              if (response.ok) {
+                const data = await response.json();
+                setGoldRequestCount(data.count);
+              }
+            } catch (error) {
+              logError('Failed to fetch gold request count:', error);
+            }
+          };
+          fetchGoldRequestCount();
+        }}
+      />
     </div>
   );
 };
