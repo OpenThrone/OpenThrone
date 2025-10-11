@@ -1,9 +1,10 @@
 // pages/api/recruit/startSession.ts
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { withAuth } from '@/middleware/auth';
-import { countSessions, createSession, expireOldSessions } from '@/services/sessions.service';
+import { AuthenticatedRequest } from '@/types/api';
 
-const handler = async (req, res) => {
+const handler = async (req: AuthenticatedRequest, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_FOUND' });
   }
@@ -15,18 +16,37 @@ const handler = async (req, res) => {
 
   const MAX_SESSIONS_PER_USER = 2; // Limit to 1 active session per user
 
-  await expireOldSessions(userId);
+  const expirationTime = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes
 
-  // Count active sessions
-  const activeSessions = await countSessions(userId);
+  const newSession = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // Expire old sessions
+    await tx.autoRecruitSession.deleteMany({
+      where: {
+        userId: userId,
+        lastActivityAt: { lt: expirationTime },
+      },
+    });
 
-  if (activeSessions >= MAX_SESSIONS_PER_USER) {
-    return res.status(429).json({ error: 'Too many active sessions', code: 'TOO_MANY_SESSIONS' });
-  }
+    // Count active sessions (lastActivityAt >= expirationTime)
+    const activeSessions = await tx.autoRecruitSession.count({
+      where: {
+        userId: userId,
+        lastActivityAt: { gte: expirationTime },
+      },
+    });
 
-  // Create a new session
-  const newSession = await createSession(userId);
-  
+    if (activeSessions >= MAX_SESSIONS_PER_USER) {
+      throw new Error('Too many active sessions');
+    }
+
+    // Create a new session
+    return await tx.autoRecruitSession.create({
+      data: {
+        userId: userId,
+      },
+    });
+  });
+
   return res.status(200).json({ sessionId: newSession.id });
 }
 

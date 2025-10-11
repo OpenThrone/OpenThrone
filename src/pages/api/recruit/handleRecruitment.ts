@@ -1,99 +1,172 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { withAuth } from '@/middleware/auth';
 import mtrand from '@/utils/mtrand';
 import { endSession, getSession, validateSession } from '@/services/sessions.service';
-import { createRecruitmentRecord, hasExceededRecruitmentLimit, updateUserAfterRecruitment, createBankHistoryRecord } from '@/services/recruitment.service';
+import { increaseCitizens } from '@/services/recruitment.service';
 import { getIpAddress } from '@/utils/ipUtils';
+import { getOTStartDate } from '@/utils/timefunctions';
+import { logAction } from '@/utils/auditLogger';
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+import { RecruitSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
+import { AuthenticatedRequest } from '@/types/api';
+
+const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end(); // Method not allowed
   }
 
   const session = req.session;
   const recruiterUserId = session ? session.user.id : 0;
-  let { recruitedUserId, selfRecruit, sessionId } = req.body;
+
+  let recruitedUserId: number | string = 0;
+  let selfRecruit: boolean = false;
+  let sessionId: string | null = null;
 
   try {
-    if (!Number.isInteger(recruitedUserId)) {
+    const data = RecruitSchema.parse(req.body);
+    recruitedUserId = data.recruitedUserId || 0;
+    selfRecruit = data.selfRecruit || false;
+    const sessionIdStr = data.sessionId || null;
+    let sessionIdNum: number | null = sessionIdStr ? parseInt(sessionIdStr, 10) : null;
+
+    if (typeof recruitedUserId === 'string' && !Number.isInteger(Number(recruitedUserId))) {
       const recruitedUser = await prisma.users.findFirst({
         where: { recruit_link: recruitedUserId },
       });
       recruitedUserId = recruitedUser?.id || 0;
     }
 
-    // Differentiate between manual and auto-clicker sessions
-    if (sessionId) {
-      // Validate the session ID for auto-clicker recruitment
-      const activeSessions = await validateSession(recruiterUserId, sessionId);
-
-      if (!activeSessions) {
-        return res.status(429).json({ error: 'Invalid session ID' });
-      }
-
-      const sessionData = await getSession(recruiterUserId, sessionId);
-
-      if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) { // 1 minute
-        await endSession(recruiterUserId, sessionId);
-        return res.status(429).json({ error: 'Session expired' });
-      }
-    } else {
-      // If sessionId is not provided, treat it as a manual recruitment
-      sessionId = null; // Explicitly set sessionId to null for manual
+    // Session validation will be moved inside transaction for atomicity
+    if (!sessionIdNum) {
+      sessionIdNum = null; // Explicitly set sessionId to null for manual
     }
 
-    const result = await prisma.$transaction(
-      async (tx) => {
-        const fromUser = recruiterUserId ? recruitedUserId : recruiterUserId;
-        const toUser = recruiterUserId ? recruiterUserId : recruitedUserId;
+    const ipAddress = getIpAddress(req);
+    const fromUser = recruiterUserId ? Number(recruitedUserId) : recruiterUserId;
+    const toUser = recruiterUserId ? recruiterUserId : Number(recruitedUserId);
+    const userIdToLock = selfRecruit ? Number(recruitedUserId) : Number(toUser);
 
-        const ipAddress = getIpAddress(req);
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Lock the user being updated using SELECT ... FOR UPDATE because
+      // Prisma's query helpers don't support a `lock` option on findUnique.
+      // This will return the row and acquire a row-level lock for the duration
+      // of the transaction.
+      const lockedRows: Array<{ id: number; units: string | null; gold: bigint | null }> = await tx.$queryRaw`
+        SELECT id, units, gold
+        FROM users
+        WHERE id = ${userIdToLock}
+        FOR UPDATE
+      ` as any;
+      const lockedUser = lockedRows[0];
+      if (!lockedUser) {
+        throw new Error('User not found');
+      }
 
-        // Check if recruitment limit has been exceeded
-        const exceededLimit = await hasExceededRecruitmentLimit({
-          fromUser,
-          toUser,
-          ipAddress,
-          recruiterUserId,
+      // Validate session inside transaction if present
+      if (sessionIdNum) {
+        const sessionData = await tx.autoRecruitSession.findUnique({
+          where: { id: sessionIdNum, userId: recruiterUserId },
         });
 
-        if (exceededLimit) {
-          throw new Error('User has already been recruited 5 times in the last 24 hours.');
+        if (!sessionData) {
+          throw new Error('Invalid session ID');
         }
 
-
-        // Save the recruitment record
-        await createRecruitmentRecord({ fromUser, toUser, ipAddress });
-
-        // Wait for a random delay
-        await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
-
-        let userToUpdate = await tx.users.findUnique({
-          where: { id: Number(toUser) },
-        });
-
-        if (selfRecruit) {
-          userToUpdate = await tx.users.findUnique({
-            where: { id: Number(recruitedUserId) },
+        if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) { // 1 minute
+          await tx.autoRecruitSession.deleteMany({
+            where: { id: sessionIdNum, userId: recruiterUserId },
           });
+          throw new Error('Session expired');
         }
+      }
 
-        // Update the number of citizens and gold for the user
-        await updateUserAfterRecruitment(userToUpdate.id, userToUpdate.units);
+      // Check recruitment limit inside transaction
+      const recruitmentCount = await tx.recruit_history.count({
+        where: {
+          from_user: fromUser,
+          to_user: toUser,
+          timestamp: { gte: getOTStartDate() },
+          ...(fromUser === 0 && { ip_addr: ipAddress }),
+        },
+      });
 
-        await createBankHistoryRecord(userToUpdate.id);
+      if (recruitmentCount >= 5) {
+        throw new Error('User has already been recruited 5 times in the last 24 hours.');
+      }
 
-        return { success: true };
-      },
-      { timeout: 15000, maxWait: 5000 },
-    );
+      // Create recruitment record
+      await tx.recruit_history.create({
+        data: {
+          from_user: fromUser,
+          to_user: toUser,
+          ip_addr: ipAddress,
+          timestamp: new Date(),
+        },
+      });
+
+      // Wait for a random delay
+      await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
+
+      // Update units and gold
+      // `lockedUser.units` may be stored as a JSON string or already as an object depending
+      // on how the DB/ORM returns it. Handle both cases safely.
+      let units: any;
+      if (typeof lockedUser.units === 'string') {
+        try {
+          units = JSON.parse(lockedUser.units as string);
+        } catch (e) {
+          throw new Error('JSON Parse error: Invalid units format');
+        }
+      } else {
+        units = lockedUser.units as any;
+      }
+      const updatedUnits = increaseCitizens(units);
+      await tx.users.update({
+        where: { id: userIdToLock },
+        data: {
+          units: updatedUnits,
+          gold: { increment: 250 },
+        },
+      });
+
+      // Create bank history record
+      await tx.bank_history.create({
+        data: {
+          from_user_id: 0,
+          to_user_id: userIdToLock,
+          to_user_account_type: 'HAND',
+          from_user_account_type: 'BANK',
+          date_time: new Date(),
+          gold_amount: BigInt(250),
+          history_type: 'RECRUITMENT',
+        },
+      });
+
+      // Update session last activity if present
+      if (sessionIdNum) {
+        await tx.autoRecruitSession.update({
+          where: { id: sessionIdNum },
+          data: { lastActivityAt: new Date() },
+        });
+      }
+
+      return { success: true };
+    }, { timeout: 15000, maxWait: 5000 });
+
+    const ip = getIpAddress(req);
+    await logAction(recruiterUserId || toUser, 'RECRUIT', ip, { recruitedUserId, selfRecruit });
 
     return res.status(200).json(result);
   } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: 'Invalid input', details: error.format() });
+    }
     console.log('Error in recruitment:', error.message, "IPAddr: " + getIpAddress(req), 'PlayerID: ' + recruitedUserId, 'RecruiterID: ' + recruiterUserId);
-    const statusCode = error.message.includes('recruited 5 times')
-      ? 400
+    const statusCode = error.message.includes('recruited 5 times') || error.message.includes('Session')
+      ? 409
       : 500;
     return res.status(statusCode).json({ error: error.message });
   }
