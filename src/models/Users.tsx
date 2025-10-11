@@ -206,8 +206,20 @@ class UserModel {
     this.race = safeUserData.race ?? 'ELF';
     this.class = safeUserData.class ?? 'ASSASSIN';
     this.experience = safeUserData.experience ?? 0;
-    this.gold = BigInt(safeUserData.gold ?? '0');
-    this.goldInBank = BigInt('0');
+    // Normalize gold which may come as string (possibly ending with 'n'), number, or bigint
+    const _rawGold = safeUserData.gold ?? '0';
+    if (typeof _rawGold === 'bigint') {
+      this.gold = _rawGold;
+    } else if (typeof _rawGold === 'number') {
+      this.gold = BigInt(_rawGold);
+    } else if (typeof _rawGold === 'string') {
+      // strip a trailing 'n' if present (some stringify helpers include it)
+      const cleaned = _rawGold.endsWith('n') ? _rawGold.slice(0, -1) : _rawGold;
+      this.gold = cleaned === '' ? BigInt(0) : BigInt(cleaned);
+    } else {
+      this.gold = BigInt(String(_rawGold || '0'));
+    }
+    this.goldInBank = BigInt(0);
     this.fortLevel = safeUserData.fort_level ?? 0;
     this.fortHitpoints = safeUserData.fort_hitpoints ?? 0;
     this.houseLevel = safeUserData.house_level ?? 0;
@@ -247,7 +259,18 @@ class UserModel {
     if (!filtered && safeUserData) {
       this.email = safeUserData.email;
       this.passwordHash = safeUserData.password_hash ?? '';
-      this.goldInBank = BigInt(safeUserData.gold_in_bank ?? '0');
+      // Normalize gold_in_bank similar to gold
+      const _rawBank = safeUserData.gold_in_bank ?? '0';
+      if (typeof _rawBank === 'bigint') {
+        this.goldInBank = _rawBank;
+      } else if (typeof _rawBank === 'number') {
+        this.goldInBank = BigInt(_rawBank);
+      } else if (typeof _rawBank === 'string') {
+        const cleanedBank = _rawBank.endsWith('n') ? _rawBank.slice(0, -1) : _rawBank;
+        this.goldInBank = cleanedBank === '' ? BigInt(0) : BigInt(cleanedBank);
+      } else {
+        this.goldInBank = BigInt(String(_rawBank || '0'));
+      }
     }
 
     if (this.avatar && this.avatar !== 'SHIELD') {
@@ -331,7 +354,8 @@ class UserModel {
     return this.statsService.calculateArmyStat(type);
   }
 
-  getArmyStatBreakdown(type: UnitType) {
+  // Return type intentionally 'any' to avoid exporting internal service types from this facade
+  getArmyStatBreakdown(type: UnitType): any {
     return this.statsService.getArmyStatBreakdown(type);
   }
 
@@ -354,6 +378,11 @@ class UserModel {
 
   get intelBonus(): number {
     return this.statsService.getIntelBonus();
+  }
+
+  // Price bonus convenience getter (delegates to stats service)
+  get priceBonus(): number {
+    return this.statsService.getPriceBonus();
   }
 
   get spyBonus(): number {

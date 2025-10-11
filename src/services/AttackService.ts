@@ -12,7 +12,8 @@ import {
 } from '@/utils/attackFunctions';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { getUserById, updateUser, updateUserUnits, createAttackLog, createBankHistory, incrementUserStats, canAttack } from '@/services/attack.service';
+import { getUserById, updateUser, updateUserUnits, createAttackLog, createBankHistory, incrementUserStats } from '@/services/AttackDataService';
+import { canAttack } from '@/services/AttackValidationService';
 import { logDebug, logError } from '@/utils/logger';
 import { deepClone } from '@/utils/utilities';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -136,11 +137,24 @@ export const AttackService = {
 
       try {
         const attack_log = await prisma.$transaction(async (tx) => {
+          // Clamp and apply pillage inside the transaction to guarantee we never persist negative balances.
           if (isAttackerWinner) {
-            DefensePlayer.gold = BigInt(DefensePlayer.gold) - BigInt(battleResults.pillagedGold.toString());
-            AttackPlayer.gold = BigInt(AttackPlayer.gold) + BigInt(battleResults.pillagedGold.toString());
+            const pillageRaw = typeof battleResults.pillagedGold === 'bigint'
+              ? battleResults.pillagedGold
+              : BigInt(String(battleResults.pillagedGold || '0'));
+            const defenderGoldBig = BigInt(DefensePlayer.gold);
+            const attackerGoldBig = BigInt(AttackPlayer.gold);
+            const pillageToApply = pillageRaw > defenderGoldBig ? defenderGoldBig : pillageRaw;
+    
+            // Apply pillage to the in-memory player objects used for DB writes
+            DefensePlayer.gold = defenderGoldBig - pillageToApply;
+            AttackPlayer.gold = attackerGoldBig + pillageToApply;
+    
+            // Ensure battleResults reflects the actual applied amount (used in logs/history)
+            battleResults.pillagedGold = pillageToApply;
           }
-
+    
+          // Create the attack log (uses the possibly-clamped pillagedGold)
           const attack_log = await createAttackLog({
             timestamp: new Date().toISOString(),
             winner: isAttackerWinner ? attackerId : defenderId,
@@ -165,12 +179,13 @@ export const AttackService = {
             attackerPlayer: { connect: { id: attackerId } },
             defenderPlayer: { connect: { id: defenderId } },
           }, tx);
-
+    
+          // If attacker won, record bank history for the actual applied pillage amount
           if (isAttackerWinner) {
-            // Ensure gold_amount is passed as primitive bigint or number
             const goldAmount = typeof battleResults.pillagedGold === 'bigint'
-                ? battleResults.pillagedGold
-                : BigInt(battleResults.pillagedGold.toString()); // Convert BigInt object or number to primitive bigint
+              ? battleResults.pillagedGold
+              : BigInt(String(battleResults.pillagedGold || '0'));
+    
             await createBankHistory({
               gold_amount: goldAmount,
               from_user_id: defenderId,
@@ -182,17 +197,18 @@ export const AttackService = {
               stats: { type: 'ATTACK', attackID: attack_log.id },
             }, tx);
           }
-
+    
+          // Increment stats for both users
           await incrementUserStats(attackerId, {
             type: 'OFFENSE',
             subtype: (isAttackerWinner) ? 'WON' : 'LOST',
           }, tx);
-
+    
           await incrementUserStats(defenderId, {
             type: 'DEFENSE',
             subtype: (!isAttackerWinner) ? 'WON' : 'LOST',
           }, tx);
-
+    
           // Recalculate final stats for both players after casualties
           const finalAttackerStrength = this.calculateStrength(
             AttackPlayer,
@@ -201,11 +217,11 @@ export const AttackService = {
           );
           const finalAttackerKS = finalAttackerStrength.MeleeAtkPower;
           const finalAttackerDS = finalAttackerStrength.MeleeDefPower;
-          const newAttOffense = AttackPlayer.getArmyStat('OFFENSE')
-          const newAttDefense = AttackPlayer.getArmyStat('DEFENSE')
-          const newAttSpying = AttackPlayer.getArmyStat('SPY')
-          const newAttSentry = AttackPlayer.getArmyStat('SENTRY')
-          
+          const newAttOffense = AttackPlayer.getArmyStat('OFFENSE');
+          const newAttDefense = AttackPlayer.getArmyStat('DEFENSE');
+          const newAttSpying = AttackPlayer.getArmyStat('SPY');
+          const newAttSentry = AttackPlayer.getArmyStat('SENTRY');
+    
           const finalDefenderStrength = this.calculateStrength(
             DefensePlayer,
             'DEFENSE',
@@ -213,11 +229,12 @@ export const AttackService = {
           );
           const finalDefenderKS = finalDefenderStrength.MeleeAtkPower;
           const finalDefenderDS = finalDefenderStrength.MeleeDefPower;
-          const newDefOffense = DefensePlayer.getArmyStat('OFFENSE')
-          const newDefDefense = DefensePlayer.getArmyStat('DEFENSE')
-          const newDefSpying = DefensePlayer.getArmyStat('SPY')
-          const newDefSentry = DefensePlayer.getArmyStat('SENTRY')
-
+          const newDefOffense = DefensePlayer.getArmyStat('OFFENSE');
+          const newDefDefense = DefensePlayer.getArmyStat('DEFENSE');
+          const newDefSpying = DefensePlayer.getArmyStat('SPY');
+          const newDefSentry = DefensePlayer.getArmyStat('SENTRY');
+    
+          // Persist updated user rows with clamped gold values
           await updateUser(attackerId, {
             gold: AttackPlayer.gold,
             attack_turns: AttackPlayer.attackTurns - attack_turns,
@@ -228,7 +245,7 @@ export const AttackService = {
             spy: newAttSpying,
             sentry: newAttSentry,
           }, tx);
-
+    
           await updateUser(defenderId, {
             gold: DefensePlayer.gold,
             fort_hitpoints: Math.max(DefensePlayer.fortHitpoints, 0),
@@ -239,7 +256,7 @@ export const AttackService = {
             spy: newDefSpying,
             sentry: newDefSentry,
           }, tx);
-
+    
           return attack_log;
         });
 

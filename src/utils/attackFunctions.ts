@@ -211,8 +211,16 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
 
     // PillageGold if applicable
     pillagedGoldThisTurn = calculateLoot(state.attacker, state.defender, turn);
-    state.totalPillagedGold += pillagedGoldThisTurn;
-    if (debug) logDebug(`Pillaged Gold this turn: ${pillagedGoldThisTurn}`);
+    // Ensure pillageThis is BigInt and clamp to defender's current gold on-hand.
+    const pillageThis = (typeof pillagedGoldThisTurn === 'bigint')
+      ? pillagedGoldThisTurn
+      : BigInt(String(pillagedGoldThisTurn || '0'));
+    const currentDefGold = BigInt(state.defender.gold ?? BigInt(0));
+    const appliedPillage = pillageThis > currentDefGold ? currentDefGold : pillageThis;
+    // Accumulate and immediately deduct from defender so subsequent turns use remaining gold.
+    state.totalPillagedGold += appliedPillage;
+    state.defender.gold = currentDefGold - appliedPillage;
+    if (debug) logDebug(`Pillaged Gold this turn (requested: ${pillageThis}, applied: ${appliedPillage})`);
 
     // Kill Citizens if applicable (handled by distributeCasualties)
 
@@ -232,10 +240,6 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
     attackerCasualtiesThisTurn += casualties.defenderCasualties; // Defender's attack causes attacker casualties
     if (debug) logDebug(`Defender Melee Attack: ${casualties.defenderCasualties} attacker casualties`);
 
-    // ReducePillageGold if applicable
-    const reducedGold = calculateLoot(state.defender, state.attacker, turn); // Assuming defender "loots back"
-    state.totalPillagedGold -= reducedGold;
-    if (debug) logDebug(`Reduced Pillaged Gold this turn: ${reducedGold}`);
   }
   
   // Update state tracking variables based on casualties
