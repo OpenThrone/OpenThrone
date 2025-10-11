@@ -109,11 +109,13 @@ const handler = async (
       }
       // Zod already ensures quantity is positive integer
       const itemBaseCost = itemDefinition.cost - Math.ceil(((uModel.priceBonus ?? 0) / 100) * itemDefinition.cost);
-      totalCost += Math.ceil(itemBaseCost * itemData.quantity);
+      // Ensure quantity is a number for cost calculation
+      const qty = typeof itemData.quantity === 'string' ? parseInt(itemData.quantity, 10) : itemData.quantity;
+      totalCost += Math.ceil(itemBaseCost * qty);
     }
 
-    // Check if the user has enough gold (convert BigInt for comparison)
-    if (user.gold < BigInt(totalCost)) {
+    // Check if the user has enough gold (compare BigInt)
+    if (BigInt(user.gold) < BigInt(totalCost)) {
       return res.status(400).json({ error: `Not enough gold. Required: ${totalCost}, Available: ${user.gold}` });
     }
 
@@ -132,7 +134,7 @@ const handler = async (
 
       // Recalculate cost based on potentially updated price bonus if needed, or use previous totalCost
       // Re-check gold within transaction to prevent race conditions
-      if (currentUser.gold < BigInt(totalCost)) {
+      if (BigInt(currentUser.gold) < BigInt(totalCost)) {
         throw new Error(`Not enough gold. Required: ${totalCost}, Available: ${currentUser.gold}`);
       }
 
@@ -149,8 +151,9 @@ const handler = async (
         const existingItem = currentItemsMap.get(key);
         if (existingItem) {
           // Ensure quantity is treated as number
-          const currentQuantity = typeof existingItem.quantity === 'string' ? parseInt(existingItem.quantity, 10) : existingItem.quantity;
-          existingItem.quantity = currentQuantity + itemData.quantity;
+          const currentQuantity = typeof existingItem.quantity === 'string' ? parseInt(existingItem.quantity, 10) : existingItem.quantity as number;
+          const incomingQty = typeof itemData.quantity === 'string' ? parseInt(itemData.quantity, 10) : itemData.quantity as number;
+          existingItem.quantity = currentQuantity + incomingQty;
         } else {
           // Explicitly create the EquipmentProps object to satisfy TypeScript
           currentItemsMap.set(key, {
@@ -173,7 +176,7 @@ const handler = async (
       await updateUserAndBankHistory(
         tx,
         userId,
-        currentUser.gold - BigInt(totalCost), // Use gold fetched within transaction
+        BigInt(currentUser.gold) - BigInt(totalCost), // Use gold fetched within transaction (BigInt math)
         updatedItemsArray, // Pass the final array
         killingStrength,
         defenseStrength,

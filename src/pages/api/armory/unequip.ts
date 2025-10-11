@@ -100,7 +100,7 @@ const handler = async (
         userItemsMap.set(`${item.type}-${item.usage}-${item.level}`, { ...item, quantity });
       });
 
-      let totalRefund = 0;
+  let totalRefund = 0;
 
       // Validate and process items to unequip
       for (const itemData of itemsToUnequip) {
@@ -113,16 +113,20 @@ const handler = async (
 
         const userItem = userItemsMap.get(key);
 
-        if (!userItem || (userItem.quantity as number) < itemData.quantity) {
-           throw new Error(`Not enough ${itemDefinition.name} (Level ${itemDefinition.level}) to unequip. Required: ${itemData.quantity}, Available: ${userItem?.quantity ?? 0}`);
+        // Ensure requested quantity is numeric
+        const requestedQty = typeof itemData.quantity === 'string' ? parseInt(itemData.quantity as string, 10) : itemData.quantity;
+
+        if (!userItem || (userItem.quantity as number) < requestedQty) {
+           throw new Error(`Not enough ${itemDefinition.name} (Level ${itemDefinition.level}) to unequip. Required: ${requestedQty}, Available: ${userItem?.quantity ?? 0}`);
         }
 
         // Update quantity (guaranteed to be number here)
-        (userItem.quantity as number) -= itemData.quantity;
+        (userItem.quantity as number) -= requestedQty;
 
-        // Calculate refund for this item
-        const itemBaseCost = itemDefinition.cost - Math.ceil(((user.priceBonus ?? 0) / 100) * itemDefinition.cost);
-        totalRefund += Math.floor(itemBaseCost * itemData.quantity * 0.75); // 75% refund
+  // Calculate refund for this item using UserModel.priceBonus
+  const txUserModel = new UserModel({ ...user, id: userId } as any);
+  const itemBaseCost = itemDefinition.cost - Math.ceil(((txUserModel.priceBonus ?? 0) / 100) * itemDefinition.cost);
+  totalRefund += Math.floor(itemBaseCost * requestedQty * 0.75); // 75% refund
       }
 
       // Filter out items with zero quantity

@@ -124,7 +124,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => { // 
     }
 
     // Check if user has enough gold for upgrade or handle refund for downgrade
-    if (isUpgrade && user.gold < BigInt(cost)) {
+    if (isUpgrade && BigInt(user.gold) < BigInt(cost)) {
       return res.status(400).json({ error: 'Not enough gold' });
     }
 
