@@ -9,7 +9,7 @@ import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center, Butto
 import { InferGetServerSidePropsType } from "next";
 import { usePagination } from '@mantine/hooks';
 import MainArea from '@/components/MainArea';
-import { logError } from '@/utils/logger';
+import { logError, logInfo } from '@/utils/logger';
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const searchParams = useSearchParams();
@@ -67,7 +67,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     const playerPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
 
     const paginatedPlayers = sortedPlayers.slice(start, end);
-    paginatedPlayers.forEach((player, index) => player.overallrank = (sortDir === 'asc' ? allUsers.length - start - index : start + index + 1));
+    paginatedPlayers.forEach((player: any, index) => player.overallrank = (sortDir === 'asc' ? allUsers.length - start - index : start + index + 1));
 
     setPlayers(paginatedPlayers);
 
@@ -177,7 +177,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
             onClick={() => setPage(myPage)}
             disabled={myPage === page}
             size='lg'
-            bg={myPage === page ? theme.colors.gray : theme.colors.brand[8]}
+            color={myPage === page ? 'gray' : 'brand'}
             onMouseOver={(e) => e.currentTarget.style.cursor = myPage !== page ? 'pointer' : 'default'}
           >
             Go to My Rank
@@ -200,7 +200,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           ))}
         </Group>
         <Table.ScrollContainer minWidth={400}>
-          <Table verticalgap={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
+          <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th className="px-1 py-1" style={{ width: '100px' }}>{getRankLabel()}</Table.Th>
@@ -317,31 +317,42 @@ export const getServerSideProps = async () => {
         },
       },
     });
+    logInfo(`Fetched ${allUsers.length} users from database.`);
     const sanitizedUsers = allUsers
       .filter(user => user.statusHistories[0]?.status === 'ACTIVE')
       .map(user => {
       const nowdate = new Date();
-      const lastActiveTimestamp = new Date(user.last_active).getTime();
+      const lastActiveDate = new Date(user.last_active);
+      const lastActiveTimestamp = lastActiveDate.getTime();
       const nowTimestamp = nowdate.getTime();
-      const population = user.units.reduce((acc, unit) => acc + unit.quantity, 0);
+      const units = typeof user.units === 'string' ? JSON.parse(user.units) : user.units;
+      const population = (Array.isArray(units) ? units : []).reduce((acc, unit) => acc + (unit.quantity || 0), 0);
+
+      // prepare safe last_active string and online flag
+      let lastActiveStr: string | null = null;
+      let isOnline = false;
+      if (!isNaN(lastActiveTimestamp)) {
+        lastActiveStr = lastActiveDate.toISOString();
+        isOnline = ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
+      }
 
       // remove the units so there's no leakage of data
       return {
         id: user.id,
         display_name: user.display_name,
         rank: user.rank,
-        last_active: user.last_active.toISOString(),
+        last_active: lastActiveStr,
         avatar: user.avatar,
         gold: user.gold.toString(),
         race: user.race,
         class: user.class,
         experience: user.experience,
         population: population,
-        isOnline: ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15),
+        isOnline: isOnline,
         
       };
     });
-
+    logInfo(`Sanitized ${sanitizedUsers.length} users.`);
     sanitizedUsers.sort((a, b) => a.rank - b.rank);
     return { props: { allUsers: sanitizedUsers } };
   } catch (error) {

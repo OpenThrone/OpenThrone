@@ -125,14 +125,16 @@ const Training: React.FC = (props) => { // Removed unused props
     const ownedUnit = user.units?.find((u: PlayerUnit) => u.type === unit.type && u.level === unit.level);
     const requirementFort = Fortifications.find((fort) => fort.level === unit.fortLevel);
     const baseCost = Number(String(unit.cost || '0').replace(/,/g, '')) || 0;
-    const priceBonusPercent = Number(user.priceBonus || 0) / 100;
+    const userPriceBonus = (user?.priceBonus ?? 0); // e.g. 10 means 10%
+    const discountAmount = Math.ceil((userPriceBonus / 100) * baseCost);
+    const adjustedCost = Math.max(0, baseCost - discountAmount);
     return {
       id: unitId,
       name: unit.name,
       bonus: bonus ?? 0,
       ownedUnits: ownedUnit?.quantity || 0,
       requirement: requirementFort?.name || 'Unknown',
-      cost: Math.max(0, baseCost - (priceBonusPercent * baseCost)), // Apply price bonus, ensure non-negative
+  cost: adjustedCost,
       enabled: user.fortLevel !== undefined && unit.fortLevel <= user.fortLevel,
       level: unit.level,
       usage: unit.type as UnitType, // Assuming unit.type is compatible
@@ -301,78 +303,123 @@ const Training: React.FC = (props) => { // Removed unused props
 
   // Effect for sticky footer logic
   useEffect(() => {
-    const footerElement = footerRef.current;
-    const scrollContainer = parentRef.current; // Use the MainArea ref
-    if (!footerElement || !scrollContainer) return;
+    let mounted = true;
+    let attempts = 0;
+    let retryTimer: number | null = null;
+    let cleanupFn: (() => void) | null = null;
 
-    let lastKnownScrollPosition = 0;
-    let ticking = false;
-    let lastWidth = ''; // Cache last width to avoid unnecessary style updates
+    const tryInit = () => {
+      if (!mounted) return;
+      const footerElement = footerRef.current;
+      const scrollContainer = parentRef.current;
 
-    const handleScroll = () => {
-      lastKnownScrollPosition = window.scrollY;
-
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          if (!footerElement || !scrollContainer) return; // Re-check elements inside animation frame
-
-          const scrollHeight = document.documentElement.scrollHeight;
-          const clientHeight = window.innerHeight;
-          const scrollableHeight = scrollHeight - clientHeight;
-          const footerHeight = footerElement.offsetHeight;
-
-          // Check if the bottom of the scroll container is visible or nearly visible
-          const parentRect = scrollContainer.getBoundingClientRect();
-          const isNearBottom = lastKnownScrollPosition >= scrollableHeight - (footerHeight + 10); // Adjust threshold as needed
-
-          if (isNearBottom) {
-            // If near bottom, make footer relative
-            if (footerElement.style.position !== 'relative') {
-              footerElement.style.position = 'relative';
-              footerElement.style.bottom = 'auto';
-              footerElement.style.left = 'auto';
-              footerElement.style.width = 'auto'; // Reset width
-            }
-          } else {
-            // If not near bottom, make footer fixed
-            if (footerElement.style.position !== 'fixed') {
-              footerElement.style.position = 'fixed';
-              footerElement.style.bottom = '0';
-              lastWidth = ''; // Reset cached width when switching to fixed
-            }
-            // Update width and left only if necessary
-            const newWidth = `${parentRect.width}px`;
-            if (lastWidth !== newWidth) {
-              footerElement.style.left = `${parentRect.left}px`;
-              footerElement.style.width = newWidth;
-              lastWidth = newWidth; // Cache the new width
-            }
-          }
-          ticking = false;
-        });
-        ticking = true;
+      if (!footerElement || !scrollContainer) {
+        attempts += 1;
+        if (attempts <= 10) {
+          // retry after a short delay
+          retryTimer = window.setTimeout(tryInit, 100);
+          //console.log('[Training Footer] refs not ready, retrying...', attempts);
+        } else {
+          //console.log('[Training Footer] refs never became ready after retries');
+        }
+        return;
       }
+
+      //console.log('[Training Footer] initializing sticky footer');
+
+      let lastKnownScrollPosition = 0;
+      let ticking = false;
+      let lastWidth = '';
+
+      const handleScroll = () => {
+        const currentScrollTop = scrollContainer.scrollTop > 0 ? scrollContainer.scrollTop : window.scrollY;
+        lastKnownScrollPosition = currentScrollTop;
+
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            const scrollHeight = scrollContainer.scrollTop > 0 ? scrollContainer.scrollHeight : document.documentElement.scrollHeight;
+            const clientHeight = scrollContainer.scrollTop > 0 ? scrollContainer.clientHeight : window.innerHeight;
+            const scrollableHeight = scrollHeight - clientHeight;
+            const footerHeight = footerElement.offsetHeight;
+
+            const isNearBottom = lastKnownScrollPosition >= scrollableHeight - (footerHeight + 10);
+
+            // Use console.log so messages are visible by default
+           //console.log('[Training Footer] scrollTop:', lastKnownScrollPosition, 'scrollableHeight:', scrollableHeight, 'footerHeight:', footerHeight, 'isNearBottom:', isNearBottom);
+
+            if (isNearBottom) {
+              if (footerElement.style.position !== 'relative') {
+                footerElement.style.position = 'relative';
+                footerElement.style.bottom = 'auto';
+                footerElement.style.left = 'auto';
+                footerElement.style.width = 'auto';
+              }
+            } else {
+              if (footerElement.style.position !== 'fixed') {
+                footerElement.style.position = 'fixed';
+                footerElement.style.bottom = '0';
+              }
+              const parentRect = scrollContainer.getBoundingClientRect();
+              const parentWidth = Math.max(0, Math.floor(parentRect.width));
+
+              if (parentWidth > 0) {
+                const newWidth = `${parentWidth}px`;
+                //console.log('[Training Footer] parentRect:', parentRect, 'newWidth:', newWidth);
+                if (lastWidth !== newWidth) {
+                  footerElement.style.left = `${parentRect.left}px`;
+                  footerElement.style.width = newWidth;
+                  lastWidth = newWidth;
+                }
+              } else {
+                if (lastWidth !== '100%') {
+                  footerElement.style.left = `0px`;
+                  footerElement.style.width = '100%';
+                  lastWidth = '100%';
+                }
+              }
+            }
+            ticking = false;
+          });
+          ticking = true;
+        }
+      };
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      handleScroll();
+
+      const retry1 = window.setTimeout(() => {
+        //console.log('[Training Footer] delayed retry 1');
+        handleScroll();
+      }, 50);
+      const retry2 = window.setTimeout(() => {
+        //console.log('[Training Footer] delayed retry 2');
+        handleScroll();
+      }, 250);
+
+      const resizeObserver = new ResizeObserver(() => {
+        lastWidth = '';
+        handleScroll();
+      });
+      resizeObserver.observe(scrollContainer);
+
+      cleanupFn = () => {
+        window.removeEventListener('scroll', handleScroll);
+        try {
+          resizeObserver.unobserve(scrollContainer);
+        } catch (e) {
+          // ignore
+        }
+        clearTimeout(retry1);
+        clearTimeout(retry2);
+      };
     };
 
-    // Initial call and event listeners
-    handleScroll(); // Call once initially to set position
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    tryInit();
 
-    // Observe parent container resize to recalculate width/position
-    const resizeObserver = new ResizeObserver(() => {
-      lastWidth = ''; // Reset width cache on resize
-      handleScroll(); // Recalculate on resize
-    });
-    if (scrollContainer) {
-      resizeObserver.observe(scrollContainer);
-    }
-
-    // Cleanup listeners
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (scrollContainer) {
-        resizeObserver.unobserve(scrollContainer);
-      }
+      mounted = false;
+      if (retryTimer) clearTimeout(retryTimer);
+      if (cleanupFn) cleanupFn();
     };
   }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
 
@@ -409,14 +456,14 @@ const Training: React.FC = (props) => { // Removed unused props
           icon={<FontAwesomeIcon icon={faShield} style={{ width: rem(15), height: rem(15) }} />}
         />
       </SimpleGrid>
-      {/* Add padding to the bottom of the main content area to prevent overlap with the fixed footer */}
-      <Box style={{ paddingBottom: '100px' }}>
+      {/* Add padding to the bottom of the main content area to prevent overlap with the sticky footer */}
+      <Box style={{ paddingBottom: '120px' }}> {/* Padding for footer height */}
         {unitTypesIndex
           .filter((unitType) => unitType.unitData !== null) // Ensure unitData is loaded
           .map((unitType) => (
               <NewUnitSection
                 heading={unitType.sectionTitle}
-                units={unitType.unitData?.filter(u => u !== undefined) ?? []} // Filter out undefined and provide default
+                units={(unitType.unitData ?? []).filter((u): u is UnitData => u !== undefined).map(u => ({ ...u, type: u.usage, cost: u.cost.toString() }))} // Map to include 'type' and convert 'cost' to string for UnitProps
                 updateTotalCost={updateTotalCost}
                 unitCosts={unitCosts}
                 setUnitCosts={setUnitCosts}
@@ -425,12 +472,9 @@ const Training: React.FC = (props) => { // Removed unused props
               />
           ))}
       </Box>
-      {/* Sticky Footer */}
-      <div
-        ref={footerRef}
-        className="bottom-0 z-10 w-full" // Ensure width and z-index
-        style={{ position: 'relative' }} // Initial position
-      >
+      {/* Sticky Footer - always visible at bottom of screen within main area */}
+      {/* Use a ref and start with relative positioning so the sticky logic can switch to fixed when needed (matches Armory behavior) */}
+      <div ref={footerRef} className="bottom-0 z-10 w-full bg-dark-7" style={{ position: 'relative' }}>
         <ContentCard
           title="Order Summary"
           variant="highlight"

@@ -74,6 +74,7 @@ const itemMapFunction = (item: { id?: string; name?: string; level?: number; bon
         i.level === item.level &&
         i.usage === item.usage,
     )?.quantity || 0,
+    baseCost: (item.cost || 0),
     cost: (item.cost || 0) - ((user?.priceBonus || 0) / 100) * (item.cost || 0),
     enabled: item.armoryLevel <= (armoryLevel || 0),
     level: item.level,

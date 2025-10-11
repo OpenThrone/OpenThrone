@@ -1,6 +1,6 @@
 import StatsTable from '@/components/statsTable';
 import { InferGetStaticPropsType } from "next";
-import { getTop10AttacksByTotalCasualties, getTop10TotalAttackerCasualties, getTop10TotalDefenderCasualties, getTopGoldInBank, getTopGoldOnHand, getTopPopulations, getTopRecruitsWithDisplayNames, getTopSuccessfulAttacks, getTopWealth } from '@/services/attack.service';
+import { getTop10AttacksByTotalCasualties, getTop10TotalAttackerCasualties, getTop10TotalDefenderCasualties, getTopGoldInBank, getTopGoldOnHand, getTopPopulations, getTopRecruitsWithDisplayNames, getTopSuccessfulAttacks, getTopWealth } from '@/services/AttackDataService';
 import { Title, Container, Grid, Text } from '@mantine/core';
 import MainArea from '@/components/MainArea';
 

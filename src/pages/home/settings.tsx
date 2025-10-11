@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { raceClasses, useLayout } from "@/context/LayoutContext";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services";
+import { logInfo, logError } from "@/utils/logger";
 import { Locales, PlayerRace } from "@/types/typings";
 import {
   Modal,
@@ -29,6 +30,11 @@ const Settings = (props) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const { user, forceUpdate } = useUser();
   const { updateOptions } = useLayout();
+  
+  // Add logging for debugging
+  logInfo('Settings page - user object:', user);
+  logInfo('Settings page - user.twoFactorSecret:', user?.twoFactorSecret);
+  
   const [colorScheme, setColorScheme] = useState(user?.colorScheme || "ELF");
   const [locale, setLocale] = useState(user?.locale || "en-US");
   const [userEmail, setUserEmail] = useState(user?.email || "");
@@ -41,6 +47,9 @@ const Settings = (props) => {
   const [debouncedConfirmPassword] = useDebouncedValue(confirmPassword, 300);
   const [newEmail, setNewEmail] = useState("");
   const [debouncedEmail] = useDebouncedValue(newEmail, 300);
+  const [showQR, setShowQR] = useState(false);
+  const [qrCode, setQrCode] = useState('');
+  const [totpToken, setTotpToken] = useState('');
 
   const checkPasswordsMatch = useCallback(() => {
     setPasswordsMatch(debouncedNewPassword === debouncedConfirmPassword);
@@ -170,6 +179,69 @@ const Settings = (props) => {
     setIsResetModalOpen(false);
   };
 
+  const handleToggle2FA = async () => {
+    logInfo('handleToggle2FA called with user:', user);
+    logInfo('handleToggle2FA - user.twoFactorSecret:', user?.twoFactorSecret);
+    
+    if (!user) {
+      logError('handleToggle2FA - user object is null');
+      alertService.error('User not loaded. Please refresh the page.');
+      return;
+    }
+    
+    if (user.twoFactorSecret) {
+      // Disable 2FA
+      const response = await fetch('/api/account/disable-2fa', {
+        method: 'POST',
+      });
+      if (response.ok) {
+        alertService.success('2FA disabled');
+        forceUpdate();
+      } else {
+        alertService.error('Failed to disable 2FA');
+      }
+    } else {
+      // Enable 2FA
+      const response = await fetch('/api/account/enable-2fa', {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setQrCode(data.qrCode);
+        setShowQR(true);
+      } else {
+        alertService.error('Failed to generate 2FA secret');
+      }
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    const response = await fetch('/api/account/verify-2fa', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token: totpToken }),
+    });
+    if (response.ok) {
+      alertService.success('2FA enabled');
+      setShowQR(false);
+      setTotpToken('');
+      forceUpdate();
+    } else {
+      alertService.error('Invalid token');
+    }
+  };
+
+  // Show loading state while user is loading
+  if (!user) {
+    return (
+      <MainArea title="Settings">
+        <div>Loading settings...</div>
+      </MainArea>
+    );
+  }
+
   return (
     <MainArea title="Settings">
       <Grid gutter="lg">
@@ -278,6 +350,33 @@ const Settings = (props) => {
             >
               Start Vacation
             </Button>
+          </Card>
+        </Grid.Col>
+        <Grid.Col span={6}>
+          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
+            <Text size="xl" fw='bolder'>Two-Factor Authentication</Text>
+            <Space h="md" />
+            <Button
+              className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+              onClick={handleToggle2FA}
+            >
+              {user?.twoFactorSecret ? 'Disable 2FA' : 'Enable 2FA'}
+            </Button>
+            {showQR && (
+              <div>
+                <Space h="md" />
+                <img src={qrCode} alt="QR Code" />
+                <Space h="md" />
+                <TextInput
+                  placeholder="Enter 6-digit code"
+                  value={totpToken}
+                  onChange={(e) => setTotpToken(e.target.value)}
+                />
+                <Button onClick={handleVerify2FA}>
+                  Verify
+                </Button>
+              </div>
+            )}
           </Card>
         </Grid.Col>
         <Grid.Col span={6}>

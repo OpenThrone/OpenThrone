@@ -26,7 +26,7 @@ export const SpySchema = z.object({
 export const RecruitSchema = z.object({
   recruitedUserId: z.union([z.number().int().positive(), z.string()]).optional(),
   selfRecruit: z.boolean().optional(),
-  sessionId: z.string().optional(),
+  sessionId: z.union([z.string(), z.number()]).optional().transform((val) => (val === undefined || val === null ? null : String(val))),
 });
 
 export const WithdrawSchema = z.object({
