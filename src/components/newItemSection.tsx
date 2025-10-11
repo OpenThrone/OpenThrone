@@ -4,6 +4,7 @@ import type { UnitProps } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
 import { useUser } from '../context/users';
 import { Table, Text, Group, NumberInput, Select, Button, Flex, Stack, Tooltip } from '@mantine/core';
+import DiscountSummary from './DiscountSummary';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
@@ -523,8 +524,15 @@ const NewItemSection: React.FC<NewItemSectionProps> = React.memo(({
                         </Text>
                         {!isCollapsed && (
                           <>
-                            <Text fz="sm" c="#ADB5BD">Costs: {toLocale(unit.cost, user?.locale)} Gold</Text>
-                            <Text fz="sm" c="#ADB5BD">Sale Value: {toLocale(Math.floor(Number(String(unit.cost).replace(/,/g, '')) * 0.75), user?.locale)}</Text>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <Text fz="sm" c="#ADB5BD">Costs: {toLocale(Number(String(((unit as any).baseCost ?? unit.cost)).replace(/,/g, '')) || 0, user?.locale)} Gold</Text>
+                              <DiscountSummary
+                                user={user}
+                                baseCost={Number(String(((unit as any).baseCost ?? unit.cost)).replace(/,/g, '')) || 0}
+                                discountedCost={Number(String(unit.cost).replace(/,/g, '')) || 0}
+                              />
+                              <Text fz="sm" c="#ADB5BD">Sale Value: {toLocale(Math.floor(Number(String(unit.cost).replace(/,/g, '')) * 0.75), user?.locale)}</Text>
+                            </div>
                           </>
                         )}
                       </div>
