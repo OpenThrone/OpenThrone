@@ -26,78 +26,9 @@ export function computeSpyAmpFactor(targetPop: number): number {
   return ampFactor;
 }
 
-export const CITIZEN_WORKERS_TARGET = 'CITIZEN_WORKERS';
-
-export class AssassinationResult {
-  spiesSent: number;
-  spiesLost: number;
-  unitsKilled: number;
-  targetUnit: string;
-  success: boolean;
-  experienceGained: number;
-  goldStolen: number;
-  units: PlayerUnit[];
-
-  constructor(attacker: UserModel, defender: UserModel, spies: number, target: UnitType | typeof CITIZEN_WORKERS_TARGET = CITIZEN_WORKERS_TARGET) {
-    this.spiesSent = spies;
-    this.spiesLost = 0;
-    this.unitsKilled = 0;
-    this.targetUnit = target;
-    this.success = false;
-    this.experienceGained = 0;
-    this.goldStolen = 0;
-    this.units = (target === CITIZEN_WORKERS_TARGET
-      ? defender.units.filter((unit) => unit.type === 'CITIZEN' || unit.type === 'WORKER')
-      : defender.units.filter((unit) => unit.type === target));
-  }
-}
-
-export class IntelResult {
-  attacker: UserModel;
-  defender: UserModel;
-  spiesSent: number;
-  spiesLost: number;
-  success: boolean;
-  intelligenceGathered: {
-    offense: number | 0;
-    defense: number | 0;
-    spyOffense: number | 0;
-    spyDefense: number | 0;
-    units: PlayerUnit[] | null;
-    items: Item[] | null;
-    fortLevel: number | null;
-    fortHitpoints: number | null;
-    goldInBank: number | null;
-  } | null;
-
-  constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
-    this.attacker = attacker;  // deep copy
-    this.defender = defender;  // deep copy
-    this.spiesSent = spiesSent;
-    this.spiesLost = 0;
-    this.success = false;
-    this.intelligenceGathered = null;
-  }
-}
-
-export class InfiltrationResult {
-  attacker: UserModel;
-  defender: UserModel;
-  spiesSent: number;
-  spiesLost: number;
-  success: boolean;
-  fortDmg: number;
-
-  constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
-    this.attacker = attacker;  // deep copy
-    this.defender = defender;  // deep copy
-    this.spiesSent = spiesSent;
-    this.spiesLost = 0;
-    this.success = false;
-    this.fortDmg = 0;
-  }
-
-}
+import { CITIZEN_WORKERS_TARGET, AssassinationResult, IntelResult, InfiltrationResult } from './spy/results';
+import { Record } from "aws-sdk/clients/cognitosync";
+export { CITIZEN_WORKERS_TARGET };
 
 export function simulateIntel(
   attacker: UserModel,
@@ -111,6 +42,7 @@ export function simulateIntel(
     return { status: 'failed', message: 'Fortification not found', defender: defender.fortLevel };
   }
   let { fortHitpoints } = defender;
+  console.debug('simulateIntel debug', { attackerSpy: attacker.spy, defenderSentry: defender.sentry });
   const isSuccessful = attacker.spy > defender.sentry;
 
   const result = new IntelResult(attacker, defender, spies);
@@ -126,7 +58,7 @@ export function simulateIntel(
       }
     }
     const intelPercentage = Math.min((spies - spiesLost) * 10, 100);
-    const intelKeys = Object.keys(new SpyUserModel(defender, (spies - spiesLost) * 10));
+  const intelKeys = Object.keys(new SpyUserModel(defender as any, (spies - spiesLost) * 10));
     const selectedKeysCount = Math.ceil(intelKeys.length * intelPercentage / 100);
     const randomizedKeys = intelKeys.sort(() => 0.5 - Math.random()).slice(0, selectedKeysCount);
     
@@ -144,15 +76,16 @@ export function simulateIntel(
       };
 
       if (key === 'units' || key === 'items') {
-        const totalTypes = defender[key].length;
+        const sourceArr = (defender as any)[key] ?? [];
+        const totalTypes = Array.isArray(sourceArr) ? sourceArr.length : 0;
         const typesToInclude = Math.floor(totalTypes * intelPercentage / 100);
         if (key === 'units') {
-          initPartialIntel[key] = defender[key].sort(() => 0.5 - Math.random()).slice(0, typesToInclude) as PlayerUnit[];
+          initPartialIntel[key] = (sourceArr as any[]).sort(() => 0.5 - Math.random()).slice(0, typesToInclude) as PlayerUnit[];
         } else {
-          initPartialIntel[key] = defender[key].sort(() => 0.5 - Math.random()).slice(0, typesToInclude) as Item[];
+          initPartialIntel[key] = (sourceArr as any[]).sort(() => 0.5 - Math.random()).slice(0, typesToInclude) as Item[];
         }
       } else {
-        initPartialIntel[key] = defender[key];
+        initPartialIntel[key] = (defender as any)[key];
       }
       return initPartialIntel;
     }, result.intelligenceGathered);
@@ -202,8 +135,8 @@ export const simulateAssassination = (
   const { spyStrength: defenderKS, sentryStrength: defenderDS } = calculateClandestineStrength(defender, 'SENTRY', limiter);
 
   // Get average HP for attacker spies and defender sentries
-  const { averageHP: attackerSpyAvgHP } = getAverageLevelAndHP(attacker.units, 'SPY', 3);
-  const { averageHP: defenderSentryAvgHP } = getAverageLevelAndHP(defender.units, 'SENTRY');
+  const { averageHP: attackerSpyAvgHP } = getAverageLevelAndHP(attacker.units as any as PlayerUnit[], 'SPY', 3);
+  const { averageHP: defenderSentryAvgHP } = getAverageLevelAndHP(defender.units as any as PlayerUnit[], 'SENTRY');
   
   // Calculate casualties using the adjusted formula
   const casualtyRateInitial = defenderKS / ((defenderKS + attackerDS) || 1) / 100;
@@ -263,8 +196,8 @@ export const simulateAssassination = (
     };
 
     // Calculate average HP for WORKERS and CITIZENS separately
-    const { averageHP: workerAvgHP } = getAverageLevelAndHP(defender.units, 'WORKER');
-    const { averageHP: citizenAvgHP } = getAverageLevelAndHP(defender.units, 'CITIZEN');
+  const { averageHP: workerAvgHP } = getAverageLevelAndHP(defender.units as any as PlayerUnit[], 'WORKER');
+  const { averageHP: citizenAvgHP } = getAverageLevelAndHP(defender.units as any as PlayerUnit[], 'CITIZEN');
 
     // Combine average HP weighted by their quantities
     const totalWorkers = defender.unitTotals.workers;
@@ -288,7 +221,7 @@ export const simulateAssassination = (
     targetDefenseStats = calculateDefenseAgainstAssassination(defender, targetUnit, limiter);
 
     // Calculate average HP for the target unit
-    const { averageHP: targetUnitAvgHP } = getAverageLevelAndHP(defender.units, targetUnit);
+  const { averageHP: targetUnitAvgHP } = getAverageLevelAndHP(defender.units as any as PlayerUnit[], targetUnit);
     averageHP = targetUnitAvgHP || 1;
 
     // Calculate units killed using the adjusted formula
@@ -409,7 +342,9 @@ export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 
     10
   ) / 100;
 
-  user.units.filter((u) => u.type === unitType).forEach((unit) => {
+  // Include both regular units and mercenaries
+  const allUnits = [...(user.units || []), ...(user.mercenaries || [])];
+  allUnits.filter((u) => u.type === unitType).forEach((unit) => {
     if (totalUnits === 0) return;
 
     const unitInfo = UnitTypes.find(
@@ -417,38 +352,38 @@ export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 
         unitType.type === unit.type &&
         unitType.fortLevel <= user.getLevelForUnit(unit.type) &&
         unitType.level === unit.level
-    );
+    ) as any;
 
     if (unitInfo) {
       const usableQuantity = Math.min(unit.quantity, totalUnits);
-      KS += (unitInfo.killingStrength || 0) * usableQuantity;
-      DS += (unitInfo.defenseStrength || 0) * usableQuantity;
+      KS += ((unitInfo.killingStrength as number) || 0) * usableQuantity;
+      DS += ((unitInfo.defenseStrength as number) || 0) * usableQuantity;
       totalUnits -= usableQuantity;
     }
 
-    const itemCounts: Record<ItemType, number> = {
+    const itemCounts: { [K in ItemType]?: number } = {
       WEAPON: 0,
       HELM: 0,
       BOOTS: 0,
       BRACERS: 0,
       SHIELD: 0,
       ARMOR: 0,
-    };
+    } as any;
 
     user.items.filter((item) => item.usage === unit.type).forEach((item) => {
       itemCounts[item.type] = itemCounts[item.type] || 0;
 
       const itemInfo = ItemTypes.find(
         (w) => w.level === item.level && w.usage === unit.type && w.type === item.type
-      );
+      ) as any;
 
       if (itemInfo) {
         const usableQuantity = Math.min(
           item.quantity,
           Math.min(unit.quantity, totalUnits) - itemCounts[item.type]
         );
-        KS += itemInfo.killingStrength * usableQuantity;
-        DS += itemInfo.defenseStrength * usableQuantity;
+        KS += ((itemInfo.killingStrength as number) || 0) * usableQuantity;
+        DS += ((itemInfo.defenseStrength as number) || 0) * usableQuantity;
         itemCounts[item.type] += usableQuantity;
       }
     });
@@ -471,7 +406,10 @@ export function calculateDefenseAgainstAssassination(user: UserModel, unitType: 
   let KS = 0;
   let DS = 0;
   const unitMultiplier = (1 + parseInt(user.defenseBonus.toString(), 10) / 100);
-  user.units.filter((u) => u.type === unitType)
+  
+  // Include both regular units and mercenaries
+  const allUnits = [...(user.units || []), ...(user.mercenaries || [])];
+  allUnits.filter((u) => u.type === unitType)
     .sort((a, b) =>
       // sort by level from highest to lowest
       a.level > b.level ? 1 : 0
@@ -481,11 +419,11 @@ export function calculateDefenseAgainstAssassination(user: UserModel, unitType: 
         (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
       );
       if (unitInfo) {
-        KS += (unitInfo.killingStrength || 0) * unit.quantity;
-        DS += (unitInfo.defenseStrength || 0) * unit.quantity;
+        KS += (unitInfo.MeleeAtkPower || 0) * unit.quantity;
+        DS += (unitInfo.MeleeDefPower || 0) * unit.quantity;
       }
 
-      const itemCounts: Record<ItemType, number> = { WEAPON: 0, HELM: 0, BOOTS: 0, BRACERS: 0, SHIELD: 0, ARMOR: 0 };
+  const itemCounts: { [K in ItemType]?: number } = { WEAPON: 0, HELM: 0, BOOTS: 0, BRACERS: 0, SHIELD: 0, ARMOR: 0 } as any;
       if (unit.quantity === 0) return;
 
       user.items.filter((item) => item.usage === unit.type).forEach((item) => {
@@ -496,8 +434,8 @@ export function calculateDefenseAgainstAssassination(user: UserModel, unitType: 
         );
         if (itemInfo) {
           const usableQuantity = Math.min(item.quantity, unit.quantity - itemCounts[item.type]);
-          KS += itemInfo.killingStrength * usableQuantity;
-          DS += itemInfo.defenseStrength * usableQuantity;
+          KS += itemInfo.MeleeAtkPower * usableQuantity;
+          DS += itemInfo.MeleeDefPower * usableQuantity;
           itemCounts[item.type] += usableQuantity;
         }
       });
@@ -519,8 +457,8 @@ function calculateAverageStrength(Units, targetType) {
     .forEach((unit) => {
       const unitType = UnitTypes.find((type) => type.type === unit.type && type.level === unit.level);
       if (unitType) {
-        totalDefenseStrength += unitType.defenseStrength * unit.quantity;
-        totalKillingStrength += unitType.killingStrength * unit.quantity;
+        totalDefenseStrength += (unitType.MeleeDefPower || 0) * unit.quantity;
+        totalKillingStrength += (unitType.MeleeAtkPower || 0) * unit.quantity;
         totalQuantity += unit.quantity;
       }
     });

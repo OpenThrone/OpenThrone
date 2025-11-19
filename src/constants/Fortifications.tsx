@@ -11,8 +11,8 @@ export const Fortifications: Fortification[] = [
     defenseBonusPercentage: 5,
     cost: 0,
     casualtyMitigation: 0,
-    MeleeDefPower: 10, // TODO: adjust as needed
-    RangedDefPower: 5, // TODO: adjust as needed
+    MeleeDefPower: 10,
+    RangedDefPower: 5,
   },
   {
     name: 'Village',

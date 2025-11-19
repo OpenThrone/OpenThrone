@@ -6,7 +6,6 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     name: 'Steeds',
     SiegeUpgradeLevel: 6,
     level: 1,
-    bonus: 200, // This bonus might become redundant or need re-evaluation with new stats
     cost: 100000,
     unitsCovered: 1,
     minUnitLevel: 2,
@@ -20,7 +19,6 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     name: 'War Elephant',
     SiegeUpgradeLevel: 6, //16
     level: 2,
-    bonus: 1000, // This bonus might become redundant or need re-evaluation with new stats
     cost: 5000000,
     unitsCovered: 1,
     minUnitLevel: 2,
@@ -34,7 +32,6 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     name: 'Guard Tower',
     SiegeUpgradeLevel: 6,
     level: 1,
-    bonus: 200, // This bonus might become redundant or need re-evaluation with new stats
     cost: 100000,
     unitsCovered: 5,
     minUnitLevel: 2,
@@ -48,7 +45,6 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     name: 'Catapult',
     SiegeUpgradeLevel: 6, //16
     level: 2,
-    bonus: 1000, // This bonus might become redundant or need re-evaluation with new stats
     cost: 5000000,
     unitsCovered: 1,
     minUnitLevel: 2,
@@ -62,7 +58,6 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     name: 'Disguise Clothes',
     SiegeUpgradeLevel: 6,
     level: 1,
-    bonus: 200,
     cost: 100000,
     unitsCovered: 1,
     minUnitLevel: 2,
@@ -76,7 +71,6 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     name: 'Informant',
     SiegeUpgradeLevel: 6, //16
     level: 2,
-    bonus: 1000,
     cost: 5000000,
     unitsCovered: 1,
     minUnitLevel: 2,
@@ -90,7 +84,6 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     name: 'Guard Dog',
     SiegeUpgradeLevel: 6,
     level: 1,
-    bonus: 200,
     cost: 100000,
     unitsCovered: 1,
     minUnitLevel: 2,
@@ -104,7 +97,6 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     name: 'Watch Tower',
     SiegeUpgradeLevel: 6, //16
     level: 2,
-    bonus: 1000,
     cost: 5000000,
     unitsCovered: 5,
     minUnitLevel: 2,

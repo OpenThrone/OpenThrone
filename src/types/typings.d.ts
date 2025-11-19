@@ -1,59 +1,75 @@
-import { PrismaClient, PermissionType, AccountStatus, User as PrismaUser } from '@prisma/client'; // Import PrismaUser alias
+import {
+  PrismaClient,
+  PermissionType,
+  AccountStatus,
+  User as PrismaUser,
+} from "@prisma/client"; // Import PrismaUser alias
 
 declare global {
   var prisma: PrismaClient | undefined;
 }
-export type PlayerRace = 'UNDEAD' | 'HUMAN' | 'GOBLIN' | 'ELF' | 'ALL';
-export type PlayerClass = 'FIGHTER' | 'CLERIC' | 'ASSASSIN' | 'THIEF';
+export type PlayerRace = "UNDEAD" | "HUMAN" | "GOBLIN" | "ELF" | "ALL";
+export type PlayerClass = "FIGHTER" | "CLERIC" | "ASSASSIN" | "THIEF";
 export type UnitType =
-  | 'CITIZEN'
-  | 'WORKER'
-  | 'OFFENSE'
-  | 'DEFENSE'
-  | 'SPY'
-  | 'SENTRY';
+  | "CITIZEN"
+  | "WORKER"
+  | "OFFENSE"
+  | "DEFENSE"
+  | "SPY"
+  | "SENTRY";
 export type ItemType =
-  | 'WEAPON'
-  | 'HELM'
-  | 'ARMOR'
-  | 'BOOTS'
-  | 'BRACERS'
-  | 'SHIELD';
+  | "WEAPON"
+  | "HELM"
+  | "ARMOR"
+  | "BOOTS"
+  | "BRACERS"
+  | "SHIELD";
+export type ItemUsage = "OFFENSE" | "DEFENSE";
+export type BattleUpgradeType = "OFFENSE" | "DEFENSE" | "SPY" | "SENTRY";
 export type BonusType =
-  | 'OFFENSE'
-  | 'DEFENSE'
-  | 'RECRUITING'
-  | 'CASUALTY'
-  | 'INTEL'
-  | 'INCOME'
-  | 'PRICES';
-export type Locales = 'en-US' | 'es-ES';
+  | "OFFENSE"
+  | "DEFENSE"
+  | "RECRUITING"
+  | "CASUALTY"
+  | "INTEL"
+  | "INCOME"
+  | "PRICES";
+export type Locales = "en-US" | "es-ES";
 
 // Specific type for units stored in User.units JSON
 export type PlayerUnit = {
+  id: number;
+  userId: number;
   level: number;
   type: UnitType;
   quantity: number;
+  isMercenary: boolean;
 };
 
 // Specific type for items stored in User.items JSON
 export type PlayerItem = {
-  usage: UnitType | string;
+  id: number;
+  userId: number;
+  usage: ItemUsage;
   type: ItemType;
   level: number;
   quantity: number;
-}
+};
 
 // Specific type for battle upgrades stored in User.battle_upgrades JSON
 export type PlayerBattleUpgrade = {
-  type: UnitType | string;
+  id: number;
+  userId: number;
+  type: BattleUpgradeType;
   level: number;
   quantity: number;
-}
+};
 
 // Specific type for structure upgrades stored in User.structure_upgrades JSON
 export type StructureUpgrade = {
-  type: 'OFFENSE' | 'SPY' | 'SENTRY' | 'ARMORY';
+  id: number;
+  userId: number;
+  type: "OFFENSE" | "SPY" | "SENTRY" | "ARMORY";
   level: number;
 };
 
@@ -64,19 +80,23 @@ export type BonusPointsItem = {
 };
 
 export interface PlayerStat {
-  type: 'OFFENSE' | 'DEFENSE' | 'SPY' | 'SENTRY';
-  subtype: 'WON' | 'LOST' | string; // Allow for other subtypes if needed
+  type: "OFFENSE" | "DEFENSE" | "SPY" | "SENTRY";
+  subtype: "WON" | "LOST" | string; // Allow for other subtypes if needed
   stat: any;
 }
 
 export type BattleUnits = {
+  id: number; // From UserUnit
+  userId: number; // From UserUnit
   type: UnitType | string;
+  level: number; // Required for PlayerUnit, so make it required here
   quantity: number;
-  level?: number;
+  isMercenary: boolean; // From UserUnit
+  currentHP?: number; // Add current HP for tracking during battle
 };
 
 export interface PageAlert {
-  type: 'SUCCESS' | 'DANGER' | 'INFO';
+  type: "SUCCESS" | "DANGER" | "INFO";
   message: string;
 }
 export interface BattleUpgradeProps {
@@ -106,7 +126,6 @@ export type AttackPlayerUnit = {
   casualties: number; // Assuming this is part of the structure, otherwise remove
 };
 
-
 export type FortHealth = {
   current: number;
   max: number;
@@ -131,7 +150,7 @@ export interface ItemCounts {
   [key: string]: number;
 }
 export type Item = {
-  id: string;
+  id: string; // Now includes usage prefix (e.g., 'OFFENSE_DAGGER')
   name: string;
   usage: UnitType | string; // Allow string for flexibility
   type: ItemType;
@@ -139,7 +158,6 @@ export type Item = {
   bonus: number;
   cost: number;
   race: PlayerRace;
-  quantity: number; // Note: This might be redundant if PlayerItem is used in User model
   armoryLevel: number;
   MeleeAtkPower?: number;
   MeleeDefPower?: number;
@@ -147,13 +165,11 @@ export type Item = {
   RangedDefPower?: number;
 };
 
-
 export type UnitUpgradeType = {
   type: UnitType | string;
   name: string;
   SiegeUpgradeLevel: number;
   level: number;
-  bonus: number;
   cost: number;
   minUnitLevel: number;
   unitsCovered: number;
@@ -221,7 +237,7 @@ export type PlayerBonus = {
   bonusType: BonusType;
   bonusAmount: number;
 };
-export type BankAccountType = 'HAND' | 'BANK';
+export type BankAccountType = "HAND" | "BANK";
 export type UnitTotalsType = {
   citizens: number;
   workers: number;
@@ -240,15 +256,15 @@ export type UnitTotalsType = {
  * RECRUITMENT - Gold from recruiting units
  */
 export type BankTransferHistoryType =
-  | 'ECONOMY'
-  | 'PLAYER_TRANSFER'
-  | 'WAR_SPOILS'
-  | 'SALE'
-  | 'RECRUITMENT'
-  | 'FORT_REPAIR'
-  | 'DAILY_RECRUIT'
-  | 'FRIEND_TRANSFER'
-  | 'FRIEND_REQUEST';
+  | "ECONOMY"
+  | "PLAYER_TRANSFER"
+  | "WAR_SPOILS"
+  | "SALE"
+  | "RECRUITMENT"
+  | "FORT_REPAIR"
+  | "DAILY_RECRUIT"
+  | "FRIEND_TRANSFER"
+  | "FRIEND_REQUEST";
 
 export type UnitProps = {
   requirement?: string;
@@ -266,7 +282,7 @@ export type UnitProps = {
   usage?: UnitType | string;
   minUnitLevel?: number;
   unitsCovered?: number;
-  quantity?: number; // 
+  quantity?: number; //
 };
 
 export type UnitSectionProps = {
@@ -276,7 +292,9 @@ export type UnitSectionProps = {
   type?: string;
   units?: any;
   itemCosts?: { [key: string]: number };
-  setItemCosts?: React.Dispatch<React.SetStateAction<{ [key: string]: number }>>; // 
+  setItemCosts?: React.Dispatch<
+    React.SetStateAction<{ [key: string]: number }>
+  >; //
   locale?: Locales;
 };
 
@@ -296,15 +314,15 @@ export type IUserSession = {
   class: PlayerClass;
   race: PlayerRace;
   colorScheme: string | null; // Allow null
-}
+};
 
 export interface Log {
   id: number; // Changed to number based on Prisma schema
   winner: number; // Changed to number
   attacker_id: number; // Changed to number
   defender_id: number; // Changed to number
-  attackerPlayer?: { display_name: string, id: number, race?: string }; // Added optional race
-  defenderPlayer?: { display_name: string, id: number, race?: string }; // Added optional race
+  attackerPlayer?: { display_name: string; id: number; race?: string }; // Added optional race
+  defenderPlayer?: { display_name: string; id: number; race?: string }; // Added optional race
   timestamp: string; // Keep as string after serialization
   stats: any; // Keep as any for now, complex structure
   type: string;
@@ -320,7 +338,7 @@ export interface ShareableArmyData {
   structure_upgrades: StructureUpgrade[]; // Use specific type
   fort_level?: number;
   fort_hitpoints?: number;
-};
+}
 
 // DTO for /api/general/getUser response
 // Matches Prisma select + calculated fields
@@ -336,16 +354,16 @@ export interface UserApiResponse {
   fort_hitpoints: number;
   house_level: number;
   attack_turns: number;
-  units: PlayerUnit[]; // Use specific type
-  items: PlayerItem[]; // Use specific type
+  UserUnit: any[]; // Temporarily any to allow UserUnit[]
+  UserItem: any[]; // Temporarily any to allow UserItem[]
   last_active: string; // Serialized Date
   bio: string;
   colorScheme: string | null;
   economy_level: number;
   avatar: string | null;
-  structure_upgrades: StructureUpgrade[]; // Use specific type
-  battle_upgrades: PlayerBattleUpgrade[]; // Use specific type
-  bonus_points: BonusPointsItem[]; // Use specific type
+  UserStructureUpgrade: any[]; // Temporarily any to allow UserStructureUpgrade[]
+  UserBattleUpgrade: any[]; // Temporarily any to allow UserBattleUpgrade[]
+  UserBonusPoints: any[]; // Temporarily any to allow UserBonusPoints[]
   locale: Locales;
   stats: PlayerStat[]; // Use specific type
   permissions: { type: PermissionType }[];

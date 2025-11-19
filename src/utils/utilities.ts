@@ -20,7 +20,7 @@ const getUnitName = (type: UnitType, level: number): string => {
    * @param user - The UserModel instance to convert.
    * @returns The converted user object.
    */
-export const userModelToUser = (user: UserModel): Partial<User> => {
+export const userModelToUser = (user: UserModel): any => {
   return {
     id: user.id,
     email: user.email,
@@ -189,9 +189,9 @@ const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | '
   }
 
   const newUModel = new UserModel(newUserData);
-  const strength = calculateStrength(newUModel, 'OFFENSE');
-  const killingStrength = strength.MeleeAtkPower + strength.RangedAtkPower;
-  const defenseStrength = strength.MeleeDefPower + strength.RangedDefPower;
+  const detailed = calculateStrength(newUModel, 'OFFENSE');
+  const killingStrength = detailed.totalStats.MeleeAtkPower + detailed.totalStats.RangedAtkPower;
+  const defenseStrength = detailed.totalStats.MeleeDefPower + detailed.totalStats.RangedDefPower;
 
   return {
     killingStrength,

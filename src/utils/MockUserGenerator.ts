@@ -1,144 +1,179 @@
-import { Unit, Item, UnitUpgradeType, User, PlayerUnit, PlayerItem, PlayerBattleUpgrade } from "@/types/typings";
+import { Unit, Item, UnitUpgradeType, User, PlayerUnit, PlayerItem, PlayerBattleUpgrade, ItemUsage, BattleUpgradeType, UnitType } from "@/types/typings";
 import { getLevelFromXP } from "./utilities";
+import { ItemType, users as PrismaUser } from "@prisma/client";
 
 export default class MockUserGenerator {
-  private user: User;
+  private prismaUser: PrismaUser;
+  private units: PlayerUnit[];
+  private items: PlayerItem[];
+  private battleUpgrades: PlayerBattleUpgrade[];
+  private structureUpgrades: any[];
+  private bonusPoints: any[];
+  private stats: any[];
+  private permissions: any[];
 
   constructor() {
-    this.user = this.createDefaultUser();
+    this.prismaUser = this.createDefaultPrismaUser();
+    this.units = [];
+    this.items = [];
+    this.battleUpgrades = [];
+    this.structureUpgrades = [];
+    this.bonusPoints = [];
+    this.stats = [];
+    this.permissions = [];
+    this.addDefaultUnits();
+    this.addDefaultItems();
+    this.addDefaultBattleUpgrades();
+    this.addDefaultStructureUpgrades();
+    this.addDefaultBonusPoints();
+    this.addDefaultStats();
   }
 
-  private createDefaultUser(): User {
+  private createDefaultPrismaUser(): PrismaUser {
     return {
       id: 1,
       email: 'test@example.com',
       display_name: 'TestUser',
       password_hash: 'hashedpassword',
+      twoFactorSecret: null, // From schema
       race: 'HUMAN',
       class: 'FIGHTER',
-      units: [
-        { type: 'CITIZEN', level: 1, quantity: 0 },
-        { type: 'WORKER', level: 1, quantity: 0 },
-        { type: 'OFFENSE', level: 1, quantity: 0 },
-        { type: 'DEFENSE', level: 1, quantity: 0 },
-        { type: 'SPY', level: 1, quantity: 0 },
-        { type: 'SENTRY', level: 1, quantity: 0 },
-      ],
       experience: 0,
       gold: BigInt(25000),
       gold_in_bank: BigInt(0),
       fort_level: 1,
       fort_hitpoints: 50,
       attack_turns: 50,
+      stamina: 100,
+      maxStamina: 100,
       last_active: new Date(),
       rank: 0,
-      items: [
-        { type: 'WEAPON', level: 1, quantity: 0, usage: 'OFFENSE' },
-      ],
       house_level: 0,
-      economy_level: 0,
-      offense: 0,
-      defense: 0,
-      spy: 0,
-      sentry: 0,
-      battle_upgrades: [
-        { type: 'OFFENSE', level: 1, quantity: 0 },
-        { type: 'SPY', level: 1, quantity: 0 },
-        { type: 'SENTRY', level: 1, quantity: 0 },
-        { type: 'DEFENSE', level: 1, quantity: 0 },
-      ],
-      structure_upgrades: [
-        { type: 'OFFENSE', level: 1 },
-        { type: 'SPY', level: 1 },
-        { type: 'SENTRY', level: 1 },
-        { type: 'ARMORY', level: 1 },
-      ],
-      bonus_points: [
-        { type: 'OFFENSE', level: 0 },
-        { type: 'DEFENSE', level: 0 },
-        { type: 'INCOME', level: 0 },
-        { type: 'INTEL', level: 0 },
-        { type: 'PRICES', level: 0 },
-      ],
-      stats: [
-        { type: 'OFFENSE', subtype: 'WON', stat: 0 },
-        { type: 'OFFENSE', subtype: 'LOST', stat: 0 },
-        { type: 'DEFENSE', subtype: 'WON', stat: 0 },
-        { type: 'DEFENSE', subtype: 'LOST', stat: 0 },
-        { type: 'SPY', subtype: 'WON', stat: 0 },
-        { type: 'SPY', subtype: 'LOST', stat: 0 },
-        { type: 'SENTRY', subtype: 'WON', stat: 0 },
-        { type: 'SENTRY', subtype: 'LOST', stat: 0 },
-      ],
+      battle_upgrades_json: '[]', // From schema
+      structure_upgrades_json: '[]', // From schema
+      bonus_points_json: '[]', // From schema
+      items_json: '[]', // From schema
+      mercenaries_json: '[]', // From schema
+      units_json: '[]', // From schema
       bio: '',
-      colorScheme: undefined,
+      colorScheme: null,
       recruit_link: '',
       locale: 'en-US',
+      economy_level: 0,
       avatar: 'SHIELD',
       created_at: new Date(),
       updated_at: new Date(),
+      stats: '{}', // From schema
+      killing_str: 1, // From schema
+      defense_str: 1, // From schema
+      spying_str: 1, // From schema
+      sentry_str: 1, // From schema
+      offense: 0, // From schema
+      defense: 0, // From schema
+      spy: 0, // From schema
+      sentry: 0, // From schema
+      currentEraId: null, // From schema
+      achievements: '{}', // From schema
     };
   }
 
-  getUser(): User {
-    return this.user;
+  getPrismaUser(): PrismaUser {
+    return this.prismaUser;
   }
 
-  setBasicInfo(info: Partial<Pick<User, 'email' | 'display_name' | 'race' | 'class'>>): this {
-    this.user = { ...this.user, ...info };
+  /**
+   * Compose a full user object shaped like the Prisma user row that tests expect.
+   * This includes units, items, upgrades, bonus points, permissions and stats.
+   */
+  getUser(): any {
+    return {
+      ...this.prismaUser,
+      UserUnit: this.units,
+      UserItem: this.items,
+      UserBattleUpgrade: this.battleUpgrades,
+      UserStructureUpgrade: this.structureUpgrades,
+      UserBonusPoints: this.bonusPoints,
+      permissions: this.permissions || [],
+      stats: this.stats || [],
+    };
+  }
+
+  getUnits(): PlayerUnit[] {
+    return this.units;
+  }
+
+  getItems(): PlayerItem[] {
+    return this.items;
+  }
+
+  getBattleUpgrades(): PlayerBattleUpgrade[] {
+    return this.battleUpgrades;
+  }
+
+  getStructureUpgrades(): any[] {
+    return this.structureUpgrades;
+  }
+
+  getBonusPoints(): any[] {
+    return this.bonusPoints;
+  }
+
+  getStats(): any[] {
+    return this.stats;
+  }
+
+  getPermissions(): any[] {
+    return this.permissions;
+  }
+
+  setBasicInfo(info: Partial<Pick<PrismaUser, 'email' | 'display_name' | 'race' | 'class'>>): this {
+    this.prismaUser = { ...this.prismaUser, ...info };
     return this;
   }
 
   addUnits(unitsToAdd: PlayerUnit[]): this {
     unitsToAdd.forEach((unitToAdd) => {
-      const existingUnit = this.user.units.find(
+      const existingUnit = this.units.find(
         (unit) => unit.type === unitToAdd.type && unit.level === unitToAdd.level
       );
       if (existingUnit) {
-        existingUnit.quantity += unitToAdd.quantity;
+        // If incoming unit has an explicit id (test intent to set/override), replace quantity.
+        // Otherwise accumulate quantities onto defaults.
+        if (unitToAdd.id !== undefined && unitToAdd.id !== null) {
+          existingUnit.quantity = unitToAdd.quantity;
+        } else {
+          existingUnit.quantity += unitToAdd.quantity;
+        }
       } else {
-        this.user.units.push(unitToAdd);
-      }
-    });
-    return this;
-  }
-
-  removeUnits(unitsToRemove: PlayerUnit[]): this {
-    unitsToRemove.forEach((unitToRemove) => {
-      const existingUnit = this.user.units.find(
-        (unit) => unit.type === unitToRemove.type && unit.level === unitToRemove.level
-      );
-      if (existingUnit) {
-        existingUnit.quantity -= unitToRemove.quantity;
-        if (existingUnit.quantity < 0) existingUnit.quantity = 0;
+        this.units.push({
+          id: unitToAdd.id,
+          userId: unitToAdd.userId,
+          type: unitToAdd.type,
+          level: unitToAdd.level,
+          quantity: unitToAdd.quantity,
+          isMercenary: unitToAdd.isMercenary,
+        });
       }
     });
     return this;
   }
 
   addItems(itemsToAdd: PlayerItem[]): this {
-
     itemsToAdd.forEach((itemToAdd) => {
-      const existingItem = this.user.items.find(
+      const existingItem = this.items.find(
         (item) => item.type === itemToAdd.type && item.level === itemToAdd.level && item.usage === itemToAdd.usage
       );
       if (existingItem) {
         existingItem.quantity += itemToAdd.quantity;
       } else {
-        this.user.items.push(itemToAdd);
-      }
-    });
-    return this;
-  }
-
-  removeItems(itemsToRemove: PlayerItem[]): this {
-    itemsToRemove.forEach((itemToRemove) => {
-      const existingItem = this.user.items.find(
-        (item) => item.type === itemToRemove.type && item.level === itemToRemove.level
-      );
-      if (existingItem) {
-        existingItem.quantity -= itemToRemove.quantity;
-        if (existingItem.quantity < 0) existingItem.quantity = 0;
+        this.items.push({
+          id: itemToAdd.id,
+          userId: this.prismaUser.id,
+          type: itemToAdd.type,
+          level: itemToAdd.level,
+          quantity: itemToAdd.quantity,
+          usage: itemToAdd.usage,
+        });
       }
     });
     return this;
@@ -146,100 +181,102 @@ export default class MockUserGenerator {
 
   addBattleUpgrades(upgradesToAdd: PlayerBattleUpgrade[]): this {
     upgradesToAdd.forEach((upgradeToAdd) => {
-      const existingUpgrade = this.user.battle_upgrades.find(
+      const existingUpgrade = this.battleUpgrades.find(
         (upgrade) => upgrade.type === upgradeToAdd.type && upgrade.level === upgradeToAdd.level
       );
       if (existingUpgrade) {
         existingUpgrade.quantity += upgradeToAdd.quantity;
       } else {
-        this.user.battle_upgrades.push(upgradeToAdd);
-      }
-    });
-    return this;
-  }
-
-  removeBattleUpgrades(upgradesToRemove: PlayerBattleUpgrade[]): this {
-    upgradesToRemove.forEach((upgradeToRemove) => {
-      const existingUpgrade = this.user.battle_upgrades.find(
-        (upgrade) => upgrade.type === upgradeToRemove.type && upgrade.level === upgradeToRemove.level
-      );
-      if (existingUpgrade) {
-        existingUpgrade.quantity -= upgradeToRemove.quantity;
-        if (existingUpgrade.quantity < 0) existingUpgrade.quantity = 0;
+        this.battleUpgrades.push({
+          id: upgradeToAdd.id,
+          userId: this.prismaUser.id,
+          type: upgradeToAdd.type,
+          level: upgradeToAdd.level,
+          quantity: upgradeToAdd.quantity,
+        });
       }
     });
     return this;
   }
 
   addExperience(amount: number): this {
-    this.user.experience += amount;
+    this.prismaUser.experience += amount;
     return this;
   }
 
   setExperience(amount: number): this {
-    this.user.experience = amount;
-    this.user.level = getLevelFromXP(this.user.experience);
+    this.prismaUser.experience = amount;
     return this;
   }
 
   adjustGold(amount: bigint): this {
-    this.user.gold += amount;
-    if (this.user.gold < BigInt(0)) this.user.gold = BigInt(0);
+    this.prismaUser.gold += amount;
+    if (this.prismaUser.gold < BigInt(0)) this.prismaUser.gold = BigInt(0);
     return this;
   }
 
   updateStats(statsToUpdate: any[]): this {
     statsToUpdate.forEach((statToUpdate) => {
-      const existingStat = this.user.stats.find(
+      const existingStat = this.stats.find(
         (stat) => stat.type === statToUpdate.type && stat.subtype === statToUpdate.subtype
       );
       if (existingStat) {
         existingStat.stat += statToUpdate.stat;
       } else {
-        this.user.stats.push(statToUpdate);
+        this.stats.push(statToUpdate);
       }
     });
     return this;
   }
 
   setOffense(offense: number): this {
-    this.user.offense = offense;
+    this.prismaUser.offense = offense;
     return this;
   }
 
   setDefense(defense: number): this {
-    this.user.defense = defense;
+    this.prismaUser.defense = defense;
     return this;
   }
 
   setSpy(spy: number): this {
-    this.user.spy = spy;
+    this.prismaUser.spy = spy;
     return this;
   }
 
   setSentry(sentry: number): this {
-    this.user.sentry = sentry;
+    this.prismaUser.sentry = sentry;
     return this;
   }
 
   setFortLevel(level: number): this {
-    this.user.fort_level = level;
+    this.prismaUser.fort_level = level;
     return this;
   }
 
   setFortHitpoints(hitpoints: number): this {
-    this.user.fort_hitpoints = hitpoints;
+    this.prismaUser.fort_hitpoints = hitpoints;
+    return this;
+  }
+
+  setStamina(stamina: number): this {
+    this.prismaUser.stamina = stamina;
+    return this;
+  }
+
+  setMaxStamina(maxStamina: number): this {
+    this.prismaUser.maxStamina = maxStamina;
     return this;
   }
 
   setStructureUpgrade(type: string, level: number): this {
-    const existingUpgrade = this.user.structure_upgrades.find(
+    const existingUpgrade = this.structureUpgrades.find(
       (upgrade) => upgrade.type === type
     );
     if (existingUpgrade) {
-      existingUpgrade.level = level; // Update the level of the existing upgrade
+      existingUpgrade.level = level;
     } else {
-      this.user.structure_upgrades.push({ type, level }); // Add a new upgrade if it doesn't exist
+      this.structureUpgrades.push({ id: 0, userId: this.prismaUser.id, type, level });
     }
     return this;
   }
@@ -256,22 +293,77 @@ export default class MockUserGenerator {
     return this.setStructureUpgrade('SENTRY', level);
   }
 
-  setLevel(level: number): this {
-    this.user.level = level;
-    return this;
-  }
-
   setArmoryUpgrade(level: number): this {
     return this.setStructureUpgrade('ARMORY', level);
   }
 
   public clearUnits(): this {
-    this.user.units = [];
-    return this;
-  }
-  public clearItems(): this {
-    this.user.items = [];
+    this.units = [];
     return this;
   }
 
+  public clearItems(): this {
+    this.items = [];
+    return this;
+  }
+
+  private addDefaultUnits(): void {
+    // Add default units that are commonly expected by tests
+    this.addUnits([
+      { id: 0, userId: this.prismaUser.id, type: 'SPY' as UnitType, level: 1, quantity: 1000, isMercenary: false },
+      { id: 0, userId: this.prismaUser.id, type: 'SPY' as UnitType, level: 2, quantity: 1000, isMercenary: false },
+      { id: 0, userId: this.prismaUser.id, type: 'SPY' as UnitType, level: 3, quantity: 1000, isMercenary: false },
+      { id: 0, userId: this.prismaUser.id, type: 'SENTRY' as UnitType, level: 1, quantity: 500, isMercenary: false },
+      { id: 0, userId: this.prismaUser.id, type: 'SENTRY' as UnitType, level: 2, quantity: 500, isMercenary: false },
+      { id: 0, userId: this.prismaUser.id, type: 'DEFENSE' as UnitType, level: 1, quantity: 1000, isMercenary: false },
+      { id: 0, userId: this.prismaUser.id, type: 'OFFENSE' as UnitType, level: 1, quantity: 500, isMercenary: false },
+      { id: 0, userId: this.prismaUser.id, type: 'CITIZEN' as UnitType, level: 1, quantity: 2000, isMercenary: false },
+      { id: 0, userId: this.prismaUser.id, type: 'WORKER' as UnitType, level: 1, quantity: 1000, isMercenary: false },
+    ]);
+  }
+
+  private addDefaultItems(): void {
+    this.addItems([
+      { id: 0, userId: this.prismaUser.id, type: 'WEAPON' as ItemType, level: 1, quantity: 1, usage: 'OFFENSE' as ItemUsage },
+    ]);
+  }
+
+  private addDefaultBattleUpgrades(): void {
+    this.addBattleUpgrades([
+      { id: 0, userId: this.prismaUser.id, type: 'OFFENSE' as BattleUpgradeType, level: 1, quantity: 1 },
+      { id: 0, userId: this.prismaUser.id, type: 'SPY' as BattleUpgradeType, level: 1, quantity: 1 },
+      { id: 0, userId: this.prismaUser.id, type: 'SENTRY' as BattleUpgradeType, level: 1, quantity: 1 },
+      { id: 0, userId: this.prismaUser.id, type: 'DEFENSE' as BattleUpgradeType, level: 1, quantity: 1 }
+    ]);
+  }
+
+  private addDefaultStructureUpgrades(): void {
+    this.setStructureUpgrade('OFFENSE', 1);
+    this.setStructureUpgrade('SPY', 1);
+    this.setStructureUpgrade('SENTRY', 1);
+    this.setStructureUpgrade('ARMORY', 1);
+  }
+
+  private addDefaultBonusPoints(): void {
+    this.bonusPoints.push(
+      { id: 0, userId: this.prismaUser.id, type: 'OFFENSE', level: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'DEFENSE', level: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'INCOME', level: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'INTEL', level: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'PRICES', level: 0 }
+    );
+  }
+
+  private addDefaultStats(): void {
+    this.stats.push(
+      { id: 0, userId: this.prismaUser.id, type: 'OFFENSE', subtype: 'WON', stat: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'OFFENSE', subtype: 'LOST', stat: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'DEFENSE', subtype: 'WON', stat: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'DEFENSE', subtype: 'LOST', stat: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'SPY', subtype: 'WON', stat: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'SPY', subtype: 'LOST', stat: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'SENTRY', subtype: 'WON', stat: 0 },
+      { id: 0, userId: this.prismaUser.id, type: 'SENTRY', subtype: 'LOST', stat: 0 }
+    );
+  }
 }

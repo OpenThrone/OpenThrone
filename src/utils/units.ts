@@ -52,7 +52,15 @@ export const updateUnitsMap = (
         throw new Error(`Quantity cannot be negative for ${unitData.type} level ${unitData.level}`);
       }
     } else if (isTraining) {
-      unitsMap.set(unitKey, { ...unitData });
+      // When adding a new unit entry, ensure we create a full PlayerUnit shape
+      unitsMap.set(unitKey, {
+        id: 0,
+        userId: 0,
+        type: unitData.type,
+        level: unitData.level,
+        quantity: unitData.quantity,
+        isMercenary: false,
+      } as PlayerUnit);
     } else {
       return; // We don't need to throw an error for this
     }
