@@ -1,106 +1,123 @@
 import type {
-  PlayerUnit,
-  Item,
   Unit,
   UnitTotalsType,
-  UnitType,
-  PlayerItem,
-  StructureUpgrade,
-} from '@/types/typings';
+  UnitType as TUnitType, // Renaming to avoid conflict with enum
+  Item,
+} from "@/types/typings";
+import { UserUnit, UserItem, UserStructureUpgrade } from "@prisma/client";
 
-import {
-  UnitTypes,
-  ItemTypes,
-  SpyUpgrades,
-} from '../constants';
+import { UnitTypes, ItemTypes, SpyUpgrades } from "../constants";
 
 export class UserUnitsService {
-  private units: PlayerUnit[];
-  private items: PlayerItem[];
+  private units: UserUnit[];
+  private items: UserItem[];
   private fortLevel: number;
-  private structure_upgrades: StructureUpgrade[];
-  private mercenaries: PlayerUnit[];
+  private structure_upgrades: UserStructureUpgrade[];
+  private mercenaries: UserUnit[];
 
-  constructor(userData: {
-    units?: PlayerUnit[];
-    items?: PlayerItem[];
-    fortLevel?: number;
-    structure_upgrades?: StructureUpgrade[];
-    mercenaries?: PlayerUnit[];
-  } = {}) {
+  constructor(
+    userData: {
+      units?: UserUnit[];
+      items?: UserItem[];
+      fortLevel?: number;
+      structure_upgrades?: UserStructureUpgrade[];
+      mercenaries?: UserUnit[];
+    } = {},
+  ) {
     this.units = userData.units ?? [];
     this.items = userData.items ?? [];
     this.fortLevel = userData.fortLevel ?? 0;
     this.structure_upgrades = userData.structure_upgrades ?? [];
     this.mercenaries = userData.mercenaries ?? [];
+
   }
 
   getUnitTotals(): UnitTotalsType {
     const totals: UnitTotalsType = {
-      citizens: 0, workers: 0, offense: 0, defense: 0,
-      spies: 0, sentries: 0, assassins: 0, infiltrators: 0
+      citizens: 0,
+      workers: 0,
+      offense: 0,
+      defense: 0,
+      spies: 0,
+      sentries: 0,
+      assassins: 0,
+      infiltrators: 0,
     };
-    this.units.forEach(unit => {
-      switch (unit.type) {
-        case 'CITIZEN': totals.citizens += unit.quantity; break;
-        case 'WORKER': totals.workers += unit.quantity; break;
-        case 'OFFENSE': totals.offense += unit.quantity; break;
-        case 'DEFENSE': totals.defense += unit.quantity; break;
-        case 'SPY':
-          totals.spies += unit.quantity;
-          if (unit.level === 2) totals.infiltrators += unit.quantity;
-          if (unit.level === 3) totals.assassins += unit.quantity;
-          break;
-        case 'SENTRY': totals.sentries += unit.quantity; break;
-      }
-    });
-    this.mercenaries.forEach(unit => {
-      switch (unit.type) {
-        case 'CITIZEN': totals.citizens += unit.quantity; break;
-        case 'WORKER': totals.workers += unit.quantity; break;
-        case 'OFFENSE': totals.offense += unit.quantity; break;
-        case 'DEFENSE': totals.defense += unit.quantity; break;
-        case 'SPY':
-          totals.spies += unit.quantity;
-          if (unit.level === 2) totals.infiltrators += unit.quantity;
-          if (unit.level === 3) totals.assassins += unit.quantity;
-          break;
-        case 'SENTRY': totals.sentries += unit.quantity; break;
-      }
-    });
+
+    // Helper function to process units (both regular and mercenaries)
+    const processUnits = (units: UserUnit[]) => {
+      units.forEach((unit) => {
+        const quantity = unit.quantity || 0;
+        switch (unit.type) {
+          case "CITIZEN":
+            totals.citizens += quantity;
+            break;
+          case "WORKER":
+            totals.workers += quantity;
+            break;
+          case "OFFENSE":
+            totals.offense += quantity;
+            break;
+          case "DEFENSE":
+            totals.defense += quantity;
+            break;
+          case "SPY":
+            totals.spies += quantity;
+            if (unit.level === 2) totals.infiltrators += quantity;
+            if (unit.level === 3) totals.assassins += quantity;
+            break;
+          case "SENTRY":
+            totals.sentries += quantity;
+            break;
+        }
+      });
+    };
+
+    // Process both regular units and mercenaries
+    processUnits(this.units);
+    processUnits(this.mercenaries);
+    
     return totals;
   }
 
   getAvailableUnitTypes(): Unit[] {
     const adjustment = this.fortLevel >= 5 ? 4 : 0;
-    return UnitTypes.filter(unitType => {
+    return UnitTypes.filter((unitType) => {
       const requiredFortLevel = unitType.fortLevel ?? 1;
       return requiredFortLevel <= this.fortLevel + adjustment;
     });
   }
 
   getArmySize(): number {
-    return this.units
-      .filter((unit) => unit.type !== 'CITIZEN' && unit.type !== 'WORKER')
+    const allUnits = [...this.units, ...this.mercenaries];
+    return allUnits
+      .filter((unit) => unit.type && unit.type !== "CITIZEN" && unit.type !== "WORKER")
       .reduce((acc, unit) => acc + (unit.quantity || 0), 0);
   }
 
   getPopulation(): number {
-    return this.units.reduce((acc, unit) => acc + (unit.quantity || 0), 0);
+    const allUnits = [...this.units, ...this.mercenaries];
+    return allUnits.reduce((acc, unit) => acc + (unit.quantity || 0), 0);
   }
 
   getCitizens(): number {
-    return this.units?.find((unit) => unit.type === 'CITIZEN')?.quantity ?? 0;
+    const allUnits = [...this.units, ...this.mercenaries];
+    return allUnits?.find((unit) => unit.type === "CITIZEN")?.quantity ?? 0;
   }
 
-  getSortedUnits(type: UnitType): PlayerUnit[] {
-    return JSON.parse(JSON.stringify(
-      this.units.filter(unit => unit.type === type).sort((a, b) => b.level - a.level)
-    ));
+  getSortedUnits(type: TUnitType): UserUnit[] {
+    const allUnits = [...this.units, ...this.mercenaries];
+    return JSON.parse(
+      JSON.stringify(
+        allUnits
+          .filter((unit) => unit.type === type)
+          .sort((a, b) => (b.level || 0) - (a.level || 0)),
+      ),
+    );
   }
 
-  getLevelForUnit(type: UnitType): number {
-    if (['OFFENSE', 'DEFENSE', 'SENTRY', 'SPY'].includes(type)) {
+  getLevelForUnit(type: TUnitType): number {
+    if (["OFFENSE", "DEFENSE", "SENTRY", "SPY"].includes(type)) {
       return this.fortLevel;
     }
     return 1;
@@ -108,30 +125,44 @@ export class UserUnitsService {
 
   getAvailableItemTypes(): Item[] {
     const armoryLvl = this.getArmoryLevel();
-    return ItemTypes.filter(item => (item.armoryLevel ?? 1) <= armoryLvl);
+    return ItemTypes.filter((item) => (item.armoryLevel ?? 1) <= armoryLvl);
   }
 
-  getSpyMissions(): Record<string, { enabled: boolean; requiredLevel: number }> {
+  getSpyMissions(): Record<
+    string,
+    { enabled: boolean; requiredLevel: number }
+  > {
     const missions = [
-      { name: 'intel', requiredLevel: SpyUpgrades[0]?.level ?? 1 },
-      { name: 'infil', requiredLevel: SpyUpgrades.find(u => u.maxInfiltrations > 0)?.level ?? Infinity },
-      { name: 'assass', requiredLevel: SpyUpgrades.find(u => u.maxAssassinations > 0)?.level ?? Infinity },
+      { name: "intel", requiredLevel: SpyUpgrades[0]?.level ?? 1 },
+      {
+        name: "infil",
+        requiredLevel:
+          SpyUpgrades.find((u) => u.maxInfiltrations > 0)?.level ?? Infinity,
+      },
+      {
+        name: "assass",
+        requiredLevel:
+          SpyUpgrades.find((u) => u.maxAssassinations > 0)?.level ?? Infinity,
+      },
     ];
     const spyLevel = this.getSpyLevel();
 
-    return missions.reduce((acc, mission) => {
-      acc[mission.name] = {
-        enabled: spyLevel >= mission.requiredLevel,
-        requiredLevel: mission.requiredLevel
-      };
-      return acc;
-    }, {} as Record<string, { enabled: boolean; requiredLevel: number }>);
+    return missions.reduce(
+      (acc, mission) => {
+        acc[mission.name] = {
+          enabled: spyLevel >= mission.requiredLevel,
+          requiredLevel: mission.requiredLevel,
+        };
+        return acc;
+      },
+      {} as Record<string, { enabled: boolean; requiredLevel: number }>,
+    );
   }
 
   getSpyLimits(): {
     infil: { perUser: number; perMission: number; perDay: number };
     assass: { perUser: number; perMission: number; perDay: number };
-    stats: { level: number; all: typeof SpyUpgrades[number] | undefined }
+    stats: { level: number; all: (typeof SpyUpgrades)[number] | undefined };
   } {
     const spyLevel = this.getSpyLevel();
     const currentSpyUpgrade = SpyUpgrades.find((u) => u.level === spyLevel);
@@ -149,16 +180,16 @@ export class UserUnitsService {
       },
       stats: {
         level: spyLevel,
-        all: currentSpyUpgrade
-      }
+        all: currentSpyUpgrade,
+      },
     };
   }
 
   private getArmoryLevel(): number {
-    return this.structure_upgrades.find(s => s.type === 'ARMORY')?.level ?? 0;
+    return this.structure_upgrades.find((s) => s.type === "ARMORY")?.level ?? 0;
   }
 
   private getSpyLevel(): number {
-    return this.structure_upgrades.find(s => s.type === 'SPY')?.level ?? 0;
+    return this.structure_upgrades.find((s) => s.type === "SPY")?.level ?? 0;
   }
 }

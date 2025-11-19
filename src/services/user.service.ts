@@ -13,6 +13,8 @@ export const createUser = async (email: string, password_hash: string, display_n
         race,
         class: class_name,
         locale,
+        stamina: 100,
+        maxStamina: 100,
       },
     });
 
@@ -57,7 +59,9 @@ export const updateUserAndBankHistory = async (
   newSpying: number,
   newSentry: number,
   bankData: any,
-  updateType: 'units' | 'items' | 'battle_upgrades'
+  updateType: 'units' | 'items' | 'battle_upgrades',
+  newStamina?: number,
+  newMaxStamina?: number
 ) => {
   const updateData: any = {
     gold: userGold,
@@ -67,18 +71,87 @@ export const updateUserAndBankHistory = async (
     sentry: newSentry,
   };
 
-  if (updateType === 'units') {
-    updateData.units = updatedData;
-  } else if (updateType === 'items') {
-    updateData.items = updatedData;
-  } else if (updateType === 'battle_upgrades') {
-    updateData.battle_upgrades = updatedData;
+  if (newStamina !== undefined) {
+    updateData.stamina = newStamina;
   }
 
+  if (newMaxStamina !== undefined) {
+    updateData.maxStamina = newMaxStamina;
+  }
+
+  // Update user stats
   await prismaInstance.users.update({
     where: { id: userId },
     data: updateData,
   });
+
+  // Handle units update using UserUnit table
+  if (updateType === 'units' && updatedData && updatedData.length > 0) {
+    // Delete existing UserUnit records for this user
+    await prismaInstance.userUnit.deleteMany({
+      where: { userId: userId }
+    });
+
+    // Create new UserUnit records from updatedData
+    for (const unit of updatedData) {
+      if (unit.type && unit.level && unit.quantity !== undefined) {
+        await prismaInstance.userUnit.create({
+          data: {
+            userId: userId,
+            type: unit.type,
+            level: unit.level,
+            quantity: unit.quantity,
+            isMercenary: unit.isMercenary || false
+          }
+        });
+      }
+    }
+  }
+
+  // Handle items update using UserItem table
+  if (updateType === 'items' && updatedData && updatedData.length > 0) {
+    // Delete existing UserItem records for this user
+    await prismaInstance.userItem.deleteMany({
+      where: { userId: userId }
+    });
+
+    // Create new UserItem records from updatedData
+    for (const item of updatedData) {
+      if (item.type && item.level && item.usage && item.quantity !== undefined) {
+        await prismaInstance.userItem.create({
+          data: {
+            userId: userId,
+            type: item.type,
+            level: item.level,
+            usage: item.usage,
+            quantity: item.quantity
+          }
+        });
+      }
+    }
+  }
+
+  // Handle battle_upgrades update using UserBattleUpgrade table
+  if (updateType === 'battle_upgrades' && updatedData && updatedData.length > 0) {
+    // Delete existing UserBattleUpgrade records for this user
+    await prismaInstance.userBattleUpgrade.deleteMany({
+      where: { userId: userId }
+    });
+
+    // Create new UserBattleUpgrade records from updatedData
+    for (const upgrade of updatedData) {
+      if (upgrade.type && upgrade.level && upgrade.quantity !== undefined) {
+        await prismaInstance.userBattleUpgrade.create({
+          data: {
+            userId: userId,
+            type: upgrade.type,
+            level: upgrade.level,
+            quantity: upgrade.quantity
+          }
+        });
+      }
+    }
+  }
 
   // We could probably add this to bank.service instead and call it.
   await prismaInstance.bank_history.create({

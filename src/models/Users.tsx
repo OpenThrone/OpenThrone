@@ -1,27 +1,64 @@
-import md5 from 'md5';
-import { getAssetPath } from '@/utils/utilities';
-import { users as PrismaUser, PermissionType, AccountStatus } from '@prisma/client';
+import md5 from "md5";
+import { getAssetPath } from "@/utils/utilities";
+import {
+  users as PrismaUser,
+  PermissionType,
+  AccountStatus,
+  UserUnit,
+  UserItem,
+  UserStructureUpgrade,
+  UserBattleUpgrade,
+  UserBonusPoints,
+} from "@prisma/client";
 
 import type {
   BonusPointsItem,
   FortHealth,
   Locales,
   PlayerClass,
-  PlayerUnit,
   UnitTotalsType,
-  PlayerItem,
-  PlayerBattleUpgrade,
-  StructureUpgrade,
   PlayerStat,
   PlayerRace,
   UnitType,
-} from '@/types/typings';
+  BattleUnits,
+  PlayerUnit, // Import BattleUnits
+} from "@/types/typings";
 
-import { stringifyObj } from '@/utils/numberFormatting';
+import { stringifyObj } from "@/utils/numberFormatting";
 
-import { UserStatsService } from '@/services/UserStatsService';
-import { UserUnitsService } from '@/services/UserUnitsService';
-import { UserEconomyService } from '@/services/UserEconomyService';
+import { UserStatsService } from "@/services/UserStatsService";
+import { UserUnitsService } from "@/services/UserUnitsService";
+import { UserEconomyService } from "@/services/UserEconomyService";
+import { DetailedCalculatedStrength } from "@/utils/attackFunctions";
+
+/**
+ * Safely converts a value to BigInt, handling various input types
+ * @param value - The value to convert (BigInt, string, number, or null/undefined)
+ * @returns BigInt representation of the value, or BigInt(0) if conversion fails
+ */
+const safeBigInt = (value: any): bigint => {
+  if (value === null || value === undefined) {
+    return BigInt(0);
+  }
+
+  // If it's already a BigInt, return as-is
+  if (typeof value === "bigint") {
+    return value;
+  }
+
+  // Convert to string first to handle numbers and existing strings
+  const stringValue = String(value);
+
+  // Remove any 'n' suffix if present (from JSON.stringify of BigInt)
+  const cleanValue = stringValue.replace(/n$/, "");
+
+  try {
+    return BigInt(cleanValue);
+  } catch (error) {
+    console.warn(`Failed to convert "${value}" to BigInt, using 0`, error);
+    return BigInt(0);
+  }
+};
 
 /**
  * UserModel is now a lightweight facade that holds raw user data,
@@ -31,34 +68,33 @@ import { UserEconomyService } from '@/services/UserEconomyService';
  * into testable, single-responsibility service classes.
  */
 class UserModel {
-
   /** User's unique ID. */
   public id: number;
-  
+
   /** User's chosen display name. */
   public displayName: string;
-  
+
   /** User's email address (may be filtered). */
   public email: string;
-  
+
   /** User's hashed password (may be filtered). */
   public passwordHash: string;
-  
+
   /** User's selected race. */
   public race: PlayerRace;
-  
+
   /** User's selected class. */
   public class: PlayerClass;
-  
+
   /** User's current experience points. */
   public experience: number;
-  
+
   /** User's gold on hand. */
   public gold: bigint;
-  
+
   /** User's gold in the bank (may be filtered). */
   public goldInBank: bigint;
-  
+
   /** User's current fortification level. */
   public fortLevel: number;
   /** User's current fortification hitpoints. */
@@ -67,13 +103,17 @@ class UserModel {
   public houseLevel: number;
   /** User's remaining attack turns. */
   public attackTurns: number;
+  /** User's current stamina. */
+  public stamina: number;
+  /** User's maximum stamina. */
+  public maxStamina: number;
   /** Array of units owned by the user. */
-  public units: PlayerUnit[];
+  public units: BattleUnits[]; // Changed to BattleUnits[]
   /** Mercenary units hired by the user. */
-  public mercenaries: PlayerUnit[];
+  public mercenaries: BattleUnits[]; // Changed to BattleUnits[]
 
   /** Array of items owned by the user. */
-  public items: PlayerItem[];
+  public items: UserItem[];
   /** Timestamp of the user's last activity. */
   public last_active: Date | null;
   /** User profile biography or description. */
@@ -99,9 +139,9 @@ class UserModel {
   /** User's economy development level. */
   public economyLevel: number;
   /** List of structure upgrades and their levels owned by the user. */
-  public structure_upgrades: StructureUpgrade[];
+  public structure_upgrades: UserStructureUpgrade[];
   /** List of battle upgrades purchased by the user. */
-  public battle_upgrades: PlayerBattleUpgrade[];
+  public battle_upgrades: UserBattleUpgrade[];
   /** Array of player stats (e.g., proficiency, passive modifiers). */
   public stats: PlayerStat[];
   /** Whether the user has been attacked recently. */
@@ -148,17 +188,48 @@ class UserModel {
    * @param filtered - If true, sensitive fields like email, passwordHash, and goldInBank are omitted. Defaults to true.
    * @param checkStats - If true, calculates derived stats (offense, defense, etc.) upon initialization. Defaults to true.
    */
-  constructor(userData?: PrismaUser | null, filtered: boolean = true, checkStats: boolean = true) {
-    const safeUserData = userData ? JSON.parse(JSON.stringify(stringifyObj(userData))) : null;
-    
-    // Handle null/undefined userData safely
+  constructor(
+    userData?: PrismaUser | null,
+    // Keep types permissive to support legacy call-sites which passed booleans
+    // as the second/third arguments (e.g. new UserModel(row, true, false)).
+    units?: any,
+    items?: any,
+    structure_upgrades?: any,
+    battle_upgrades?: any,
+    bonus_points?: any,
+    permissions?: any,
+    stats?: any,
+    filtered: boolean = true,
+    checkStats: boolean = true,
+  ) {
+    const safeUserData = userData ?? null;
+
+    // Backward compatibility: older call sites passed `filtered` as the second
+    // argument (e.g. new UserModel(userRow, true, false)). Detect that case
+    // and treat the boolean as the `filtered` flag while leaving the other
+    // relation params undefined.
+    if (typeof units === 'boolean') {
+      const filteredFlag = units as unknown as boolean;
+      const checkStatsFlag = typeof items === 'boolean' ? (items as unknown as boolean) : checkStats;
+      units = undefined as any;
+      items = undefined as any;
+      structure_upgrades = undefined as any;
+      battle_upgrades = undefined as any;
+      bonus_points = undefined as any;
+      permissions = undefined as any;
+      stats = undefined as any;
+      filtered = filteredFlag;
+      checkStats = checkStatsFlag;
+    }
+
     if (!safeUserData) {
+      // Initialize with default values if no user data is provided
       this.id = 0;
-      this.displayName = '';
-      this.email = '';
-      this.passwordHash = '';
-      this.race = 'ELF';
-      this.class = 'ASSASSIN';
+      this.displayName = "";
+      this.email = "";
+      this.passwordHash = "";
+      this.race = "ELF";
+      this.class = "ASSASSIN";
       this.experience = 0;
       this.gold = BigInt(0);
       this.goldInBank = BigInt(0);
@@ -166,11 +237,13 @@ class UserModel {
       this.fortHitpoints = 0;
       this.houseLevel = 0;
       this.attackTurns = 0;
+      this.stamina = 100;
+      this.maxStamina = 100;
       this.last_active = null;
       this.units = [];
       this.mercenaries = [];
       this.items = [];
-      this.bio = '';
+      this.bio = "";
       this.colorScheme = null;
       this.is_player = false;
       this.is_online = false;
@@ -180,7 +253,7 @@ class UserModel {
       this.structure_upgrades = [];
       this.battle_upgrades = [];
       this.stats = [];
-      this.locale = 'en-US';
+      this.locale = "en-US";
       this.avatar = null;
       this.permissions = [];
       this.attacks_made = 0;
@@ -189,7 +262,7 @@ class UserModel {
       this.defends_won = 0;
       this.beenAttacked = false;
       this.detectedSpy = false;
-      this.currentStatus = 'ACTIVE';
+      this.currentStatus = "ACTIVE";
       this.offense = 0;
       this.defense = 0;
       this.spy = 0;
@@ -200,83 +273,130 @@ class UserModel {
     }
 
     this.id = safeUserData.id ?? 0;
-    this.displayName = safeUserData.display_name ?? '';
-    this.email = '';
-    this.passwordHash = '';
-    this.race = safeUserData.race ?? 'ELF';
-    this.class = safeUserData.class ?? 'ASSASSIN';
+    this.displayName = safeUserData.display_name ?? "";
+    this.email = "";
+    this.passwordHash = "";
+    this.race = safeUserData.race as PlayerRace ?? "ELF";
+    this.class = safeUserData.class as PlayerClass ?? "ASSASSIN";
     this.experience = safeUserData.experience ?? 0;
-    // Normalize gold which may come as string (possibly ending with 'n'), number, or bigint
-    const _rawGold = safeUserData.gold ?? '0';
-    if (typeof _rawGold === 'bigint') {
-      this.gold = _rawGold;
-    } else if (typeof _rawGold === 'number') {
-      this.gold = BigInt(_rawGold);
-    } else if (typeof _rawGold === 'string') {
-      // strip a trailing 'n' if present (some stringify helpers include it)
-      const cleaned = _rawGold.endsWith('n') ? _rawGold.slice(0, -1) : _rawGold;
-      this.gold = cleaned === '' ? BigInt(0) : BigInt(cleaned);
-    } else {
-      this.gold = BigInt(String(_rawGold || '0'));
-    }
-    this.goldInBank = BigInt(0);
+    this.gold = safeBigInt(safeUserData.gold);
+    this.goldInBank = safeBigInt(safeUserData.gold_in_bank);
     this.fortLevel = safeUserData.fort_level ?? 0;
     this.fortHitpoints = safeUserData.fort_hitpoints ?? 0;
     this.houseLevel = safeUserData.house_level ?? 0;
     this.attackTurns = safeUserData.attack_turns ?? 0;
-    this.last_active = safeUserData.last_active ? new Date(safeUserData.last_active) : null;
-    this.units = safeUserData.units ?? [];
-    this.mercenaries = safeUserData.mercenaries ? (typeof safeUserData.mercenaries === 'string' ? JSON.parse(safeUserData.mercenaries) : safeUserData.mercenaries) : [];
-    this.items = safeUserData.items ?? [];
-    this.bio = safeUserData.bio ?? '';
+    this.stamina = (safeUserData as any).stamina ?? 100;
+    this.maxStamina = (safeUserData as any).maxStamina ?? 100;
+    this.last_active = safeUserData.last_active
+      ? new Date(safeUserData.last_active)
+      : null;
+    const rawUnits = Array.isArray(units)
+      ? units
+      : Array.isArray((safeUserData as any).UserUnit)
+      ? (safeUserData as any).UserUnit
+      : Array.isArray((safeUserData as any).units)
+      ? (safeUserData as any).units
+      : [];
+
+    // Separate regular units and mercenaries
+    this.units = rawUnits
+      .filter((u) => !u.isMercenary)
+      .map((u) => ({
+        ...u,
+        level: u.level || 1,
+        isMercenary: false,
+      })) as BattleUnits[];
+
+    this.mercenaries = rawUnits
+      .filter((u) => u.isMercenary)
+      .map((u) => ({
+        ...u,
+        level: u.level || 1,
+        isMercenary: true,
+      })) as BattleUnits[];
+
+    const rawItems = Array.isArray(items)
+      ? items
+      : Array.isArray((safeUserData as any).UserItem)
+      ? (safeUserData as any).UserItem
+      : Array.isArray((safeUserData as any).items)
+      ? (safeUserData as any).items
+      : [];
+    this.items = rawItems;
+    this.bio = safeUserData.bio ?? "";
     this.colorScheme = safeUserData.colorScheme ?? null;
     this.is_player = false;
     this.is_online = false;
     this.overallrank = safeUserData.rank ?? 0;
     this.economyLevel = safeUserData.economy_level ?? 0;
-    this.bonus_points = safeUserData.bonus_points ?? [];
-    this.structure_upgrades = safeUserData.structure_upgrades ?? [];
-    this.battle_upgrades = safeUserData.battle_upgrades ?? [];
-    this.stats = safeUserData.stats ?? [];
-    this.locale = safeUserData.locale ?? 'en-US';
+    const rawStructureUpgrades = Array.isArray(structure_upgrades)
+      ? structure_upgrades
+      : Array.isArray((safeUserData as any).UserStructureUpgrade)
+      ? (safeUserData as any).UserStructureUpgrade
+      : Array.isArray((safeUserData as any).structure_upgrades)
+      ? (safeUserData as any).structure_upgrades
+      : [];
+
+    const rawBattleUpgrades = Array.isArray(battle_upgrades)
+      ? battle_upgrades
+      : Array.isArray((safeUserData as any).UserBattleUpgrade)
+      ? (safeUserData as any).UserBattleUpgrade
+      : Array.isArray((safeUserData as any).battle_upgrades)
+      ? (safeUserData as any).battle_upgrades
+      : [];
+
+    const rawBonusPoints = Array.isArray(bonus_points)
+      ? bonus_points
+      : Array.isArray((safeUserData as any).UserBonusPoints)
+      ? (safeUserData as any).UserBonusPoints
+      : Array.isArray((safeUserData as any).bonus_points)
+      ? (safeUserData as any).bonus_points
+      : [];
+
+    const rawStats = Array.isArray(stats)
+      ? stats
+      : Array.isArray((safeUserData as any).stats)
+      ? (safeUserData as any).stats
+      : [];
+
+    this.bonus_points = rawBonusPoints as any;
+    this.structure_upgrades = rawStructureUpgrades as UserStructureUpgrade[];
+    this.battle_upgrades = rawBattleUpgrades as UserBattleUpgrade[];
+    this.stats = rawStats as PlayerStat[];
+    this.locale = safeUserData.locale as Locales ?? "en-US";
     this.avatar = safeUserData.avatar ?? null;
-    this.permissions = safeUserData.permissions ?? [];
-    this.attacks_made = safeUserData.totalAttacks ?? 0;
-    this.attacks_defended = safeUserData.totalDefends ?? 0;
-    this.attacks_won = safeUserData.won_attacks ?? 0;
-    this.defends_won = safeUserData.won_defends ?? 0;
-    this.beenAttacked = safeUserData.beenAttacked ?? false;
-    this.detectedSpy = safeUserData.detectedSpy ?? false;
-    this.currentStatus = safeUserData.currentStatus ?? 'ACTIVE';
-    this.offense = safeUserData.offense ?? 0;
-    this.defense = safeUserData.defense ?? 0;
-    this.spy = safeUserData.spy ?? 0;
-    this.sentry = safeUserData.sentry ?? 0;
-  
-    this.achievements = safeUserData.achievements ? (typeof safeUserData.achievements === 'string' ? JSON.parse(safeUserData.achievements) : safeUserData.achievements) : {};
+    const rawPermissions = Array.isArray(permissions)
+      ? permissions
+      : Array.isArray((safeUserData as any).permissions)
+      ? (safeUserData as any).permissions
+      : [];
+    this.permissions = rawPermissions as { type: PermissionType }[];
+    this.attacks_made = 0;
+    this.attacks_defended = 0;
+    this.attacks_won = 0;
+    this.defends_won = 0;
+    this.beenAttacked = false;
+    this.detectedSpy = false;
+    this.currentStatus = "ACTIVE";
+    this.offense = 0;
+    this.defense = 0;
+    this.spy = 0;
+    this.sentry = 0;
+    this.achievements =
+      typeof safeUserData.achievements === "string"
+        ? JSON.parse(safeUserData.achievements)
+        : (safeUserData.achievements ?? {});
     this.twoFactorSecret = safeUserData.twoFactorSecret || null;
 
-    if (!filtered && safeUserData) {
+    if (!filtered) {
       this.email = safeUserData.email;
-      this.passwordHash = safeUserData.password_hash ?? '';
-      // Normalize gold_in_bank similar to gold
-      const _rawBank = safeUserData.gold_in_bank ?? '0';
-      if (typeof _rawBank === 'bigint') {
-        this.goldInBank = _rawBank;
-      } else if (typeof _rawBank === 'number') {
-        this.goldInBank = BigInt(_rawBank);
-      } else if (typeof _rawBank === 'string') {
-        const cleanedBank = _rawBank.endsWith('n') ? _rawBank.slice(0, -1) : _rawBank;
-        this.goldInBank = cleanedBank === '' ? BigInt(0) : BigInt(cleanedBank);
-      } else {
-        this.goldInBank = BigInt(String(_rawBank || '0'));
-      }
+      this.passwordHash = safeUserData.password_hash ?? "";
     }
 
-    if (this.avatar && this.avatar !== 'SHIELD') {
+    if (this.avatar && this.avatar !== "SHIELD") {
       // keep provided
     } else {
-      this.avatar = getAssetPath('shields', '150x150', this.race);
+      this.avatar = getAssetPath("shields", "150x150", this.race);
     }
 
     if (this.last_active) {
@@ -288,12 +408,11 @@ class UserModel {
     // Instantiate services (order: stats -> units -> economy because economy uses income bonus)
     this.statsService = new UserStatsService({
       experience: this.experience,
-      units: this.units,
+      units: rawUnits, // Pass original units array
       items: this.items,
-      bonus_points: this.bonus_points,
+      bonus_points: this.bonus_points as any,
       structure_upgrades: this.structure_upgrades,
       battle_upgrades: this.battle_upgrades,
-      stats: this.stats,
       fortLevel: this.fortLevel,
       fortHitpoints: this.fortHitpoints,
       race: this.race,
@@ -301,8 +420,8 @@ class UserModel {
     });
 
     this.unitsService = new UserUnitsService({
-      units: this.units,
-      mercenaries: this.mercenaries,
+      units: rawUnits.filter(u => !u.isMercenary), // Pass filtered raw units
+      mercenaries: rawUnits.filter(u => u.isMercenary), // Pass filtered raw mercenaries
       items: this.items,
       fortLevel: this.fortLevel,
       structure_upgrades: this.structure_upgrades,
@@ -312,7 +431,7 @@ class UserModel {
     this.economyService = new UserEconomyService({
       gold: this.gold,
       goldInBank: this.goldInBank,
-      units: this.units,
+      units: convertToPlayerUnit(rawUnits),
       economyLevel: this.economyLevel,
       houseLevel: this.houseLevel,
       incomeBonus,
@@ -344,19 +463,30 @@ class UserModel {
   // Stats & combat
   updateStats() {
     const s = this.statsService.updateStats();
-    this.offense = s.offense;
-    this.defense = s.defense;
-    this.spy = s.spy;
-    this.sentry = s.sentry;
+    this.offense = s.offense.totalStats.MeleeAtkPower; // Using MeleeAtkPower as primary for offense
+    this.defense = s.defense.totalStats.MeleeDefPower; // Using MeleeDefPower as primary for defense
+    this.spy = s.spy.totalStats.MeleeAtkPower; // Using MeleeAtkPower as primary for spy
+    this.sentry = s.sentry.totalStats.MeleeDefPower; // Using MeleeDefPower as primary for sentry
   }
 
   getArmyStat(type: UnitType): number {
+    const stats = this.statsService.calculateArmyStat(type);
+    if (type === "OFFENSE") {
+      return stats.totalStats.MeleeAtkPower + stats.totalStats.RangedAtkPower;
+    } else if (type === "DEFENSE") {
+      return stats.totalStats.MeleeDefPower + stats.totalStats.RangedDefPower;
+    }
+    return 0;
+  }
+
+  // Get detailed stats with totalStats property for use in services
+  getDetailedArmyStat(type: UnitType): DetailedCalculatedStrength {
     return this.statsService.calculateArmyStat(type);
   }
 
   // Return type intentionally 'any' to avoid exporting internal service types from this facade
   getArmyStatBreakdown(type: UnitType): any {
-    return this.statsService.getArmyStatBreakdown(type);
+    return {}; //This method is deprecated
   }
 
   // Bonuses / points
@@ -401,8 +531,8 @@ class UserModel {
     return this.statsService.getUsedProficiencyPoints();
   }
 
-  statistics(type: PlayerStat['type'], subType: string): number {
-    return this.statsService.statistics(type, subType);
+  statistics(type: PlayerStat["type"], subType: string): number {
+    return 0; //This method is deprecated
   }
 
   // Army / units (delegated to units service)
@@ -433,20 +563,26 @@ class UserModel {
   getSortedUnits(type: UnitType) {
     return this.unitsService.getSortedUnits(type);
   }
- 
+
   getLevelForUnit(type: UnitType): number {
     return this.unitsService.getLevelForUnit(type);
   }
 
   /** Spy-related helpers delegated to units service to preserve legacy API */
-  get spyMissions(): Record<string, { enabled: boolean; requiredLevel: number }> {
+  get spyMissions(): Record<
+    string,
+    { enabled: boolean; requiredLevel: number }
+  > {
     return this.unitsService.getSpyMissions();
   }
 
   get spyLimits(): {
     infil: { perUser: number; perMission: number; perDay: number };
     assass: { perUser: number; perMission: number; perDay: number };
-    stats: { level: number; all: typeof import('@/constants').SpyUpgrades[number] | undefined }
+    stats: {
+      level: number;
+      all: (typeof import("@/constants").SpyUpgrades)[number] | undefined;
+    };
   } {
     return this.unitsService.getSpyLimits();
   }
@@ -483,19 +619,30 @@ class UserModel {
 
   // Structure-level helpers (small, read-only helpers left on model)
   get armoryLevel(): number {
-    return (this.structure_upgrades || []).find(s => s.type === 'ARMORY')?.level ?? 0;
+    return (
+      (this.structure_upgrades || []).find((s) => s.type === "ARMORY")?.level ??
+      0
+    );
   }
 
   get offensiveLevel(): number {
-    return (this.structure_upgrades || []).find(s => s.type === 'OFFENSE')?.level ?? 0;
+    return (
+      (this.structure_upgrades || []).find((s) => s.type === "OFFENSE")
+        ?.level ?? 0
+    );
   }
 
   get spyLevel(): number {
-    return (this.structure_upgrades || []).find(s => s.type === 'SPY')?.level ?? 0;
+    return (
+      (this.structure_upgrades || []).find((s) => s.type === "SPY")?.level ?? 0
+    );
   }
 
   get sentryLevel(): number {
-    return (this.structure_upgrades || []).find(s => s.type === 'SENTRY')?.level ?? 0;
+    return (
+      (this.structure_upgrades || []).find((s) => s.type === "SENTRY")?.level ??
+      0
+    );
   }
 
   get fortHealth(): FortHealth {
@@ -506,12 +653,18 @@ class UserModel {
   canAttack(level: number): boolean {
     if (process.env.NEXT_PUBLIC_ENABLE_ATTACKING === "false") return false;
     const userLevel = this.level;
-    const levelRange = parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10);
+    const levelRange = parseInt(
+      process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || "5",
+      10,
+    );
     return userLevel >= level - levelRange && userLevel <= level + levelRange;
   }
 
   get attackRange(): { min: number; max: number } {
-    const levelRange = parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10);
+    const levelRange = parseInt(
+      process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || "5",
+      10,
+    );
     const currentLevel = this.level;
     return {
       min: Math.max(1, currentLevel - levelRange),
@@ -520,9 +673,9 @@ class UserModel {
   }
 
   // Preserve existing mutating helper for structure upgrades (kept on model for API compatibility)
-  increaseStatLevel(type: StructureUpgrade['type']): StructureUpgrade[] {
+  increaseStatLevel(type: UserStructureUpgrade["type"]): UserStructureUpgrade[] {
     let found = false;
-    const newUpgrades = (this.structure_upgrades || []).map(stat => {
+    const newUpgrades = (this.structure_upgrades || []).map((stat) => {
       if (stat.type === type) {
         found = true;
         return { ...stat, level: (stat.level || 0) + 1 };
@@ -530,46 +683,65 @@ class UserModel {
       return stat;
     });
     if (!found) {
-      newUpgrades.push({ type: type, level: 1 });
+      newUpgrades.push({ id: 0, userId: this.id, type: type, level: 1 });
     }
     this.structure_upgrades = newUpgrades;
-    // Rebuild services that depend on structure upgrades
+
+    // Get raw units for service reconstruction
+    const allUnits = [...this.units, ...this.mercenaries];
+    const rawUnits = allUnits.map(bu => ({
+      id: bu.id || 0,
+      userId: bu.userId || this.id,
+      type: bu.type as any,
+      level: bu.level || 1,
+      quantity: bu.quantity || 0,
+      isMercenary: bu.isMercenary || false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })) as UserUnit[];
+
+    // Rebuild services
     this.statsService = new UserStatsService({
       experience: this.experience,
-      units: this.units,
+      units: rawUnits,
       items: this.items,
-      bonus_points: this.bonus_points,
+      bonus_points: this.bonus_points as any,
       structure_upgrades: this.structure_upgrades,
       battle_upgrades: this.battle_upgrades,
-      stats: this.stats,
       fortLevel: this.fortLevel,
       fortHitpoints: this.fortHitpoints,
       race: this.race,
       class: this.class,
     });
+
     this.unitsService = new UserUnitsService({
-      units: this.units,
-      mercenaries: this.mercenaries,
+      units: rawUnits.filter(u => !u.isMercenary),
+      mercenaries: rawUnits.filter(u => u.isMercenary),
       items: this.items,
       fortLevel: this.fortLevel,
       structure_upgrades: this.structure_upgrades,
     });
+
     const income = this.statsService.getIncomeBonus();
     this.economyService = new UserEconomyService({
       gold: this.gold,
       goldInBank: this.goldInBank,
-      units: this.units,
+      units: convertToPlayerUnit(rawUnits),
       economyLevel: this.economyLevel,
       houseLevel: this.houseLevel,
       incomeBonus: income,
       fortLevel: this.fortLevel,
     });
+
     return newUpgrades;
   }
 
   getAchievements() {
     const tracked = {
-      maxLevelReached: Math.max(this.level, (this.achievements || {}).maxLevelReached || 0),
+      maxLevelReached: Math.max(
+        this.level,
+        (this.achievements || {}).maxLevelReached || 0,
+      ),
       totalAttacksWon: this.attacks_won,
       totalDefendsWon: this.defends_won,
       // Add more tracked achievements as needed, e.g., totalGoldEarned if tracked elsewhere
@@ -578,5 +750,18 @@ class UserModel {
   }
 }
 
+// Convert BattleUnits to PlayerUnit format for economy service
+const convertToPlayerUnit = (units: UserUnit[]): PlayerUnit[] => {
+  return Array.isArray(units)
+    ? units.map(unit => ({
+        id: (unit as any).id ?? 0,
+        userId: (unit as any).userId ?? 0,
+        type: unit.type as UnitType,
+        level: unit.level || 1,
+        quantity: unit.quantity || 0,
+        isMercenary: !!(unit as any).isMercenary,
+      }))
+    : [];
+};
 
 export default UserModel;

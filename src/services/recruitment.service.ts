@@ -45,12 +45,11 @@ export async function hasExceededRecruitmentLimit({
   return recruitments.length >= 5;
 }
 
-export async function updateUserAfterRecruitment(userId: number, units: PlayerUnit[]) {
-  const updatedUnits = increaseCitizens(units);
+export async function updateUserAfterRecruitment(userId: number) {
+  // Add 250 gold to the user
   await prisma.users.update({
     where: { id: userId },
     data: {
-      units: updatedUnits,
       gold: { increment: 250 },
     },
   });
@@ -68,16 +67,6 @@ export async function createBankHistoryRecord(userId: number) {
       history_type: 'RECRUITMENT',
     },
   });
-}
-
-export function increaseCitizens(units: PlayerUnit[]) {
-  const citizen = units.find((unit) => unit.type === 'CITIZEN');
-  if (citizen) {
-    citizen.quantity += 1;
-  } else {
-    units.push({ type: 'CITIZEN', level: 1, quantity: 1 });
-  }
-  return units;
 }
 
 export async function getValidUsersForRecruitment(recruiterID: number, ipAddress: string) {
@@ -208,4 +197,16 @@ export async function getRecruitmentRecords(recruiterID: number, startDate: Date
   }));
 
   return usersWithRecruitCount;
+}
+
+// Utility to increase citizen count in a legacy units JSON array
+export function increaseCitizens(units: any[]) {
+  if (!Array.isArray(units)) return units;
+  const citizen = units.find((u) => u.type === 'CITIZEN');
+  if (citizen) {
+    citizen.quantity = (citizen.quantity ?? 0) + 1;
+  } else {
+    units.push({ type: 'CITIZEN', level: 1, quantity: 1 });
+  }
+  return units;
 }
