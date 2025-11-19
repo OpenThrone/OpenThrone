@@ -20,6 +20,8 @@ cypress/videos
 /out
 /src/.next
 
+/src/analyze
+/analyze
 # next-sitemap
 public/robots.txt
 public/sitemap.xml

@@ -1,24 +1,28 @@
 /* eslint-disable no-unused-vars */
-
 /* eslint-disable import/no-extraneous-dependencies */
+
+const path = require('path');
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
 
 module.exports = withBundleAnalyzer({
-  experimental: {
-    reactCompiler: true,
-    // serverActions: true,
-  },
-  eslint: {
-    dirs: ['.'],
-    ignoreDuringBuilds: true,
-  },
+  /** Stop file-tracing from walking your home dir */
+  outputFileTracingRoot: path.join(__dirname),
+
+  /** Optional: smaller deploys; good with Bun + Docker */
+  output: 'standalone',
+
+  reactCompiler: true,
+
+  turbopack: {},
   typescript: {
     ignoreBuildErrors: true,
   },
+
   poweredByHeader: true,
   trailingSlash: false,
+
   images: {
     remotePatterns: [
       {
@@ -26,11 +30,8 @@ module.exports = withBundleAnalyzer({
         hostname: process.env.NEXT_PUBLIC_ASSETS_HOSTNAME,
         pathname: '/**',
       },
-    ], 
+    ],
   },
-  publicRuntimeConfig: {
-    apiUrl: process.env.NEXT_PUBLIC_API_URL,
-    turnInterval: process.env.TURN_INTERVAL_MINUTES || '30',
-  },
+
   reactStrictMode: true,
 });

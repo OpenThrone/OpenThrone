@@ -34,21 +34,23 @@ model users {
   twoFactorSecret                        String?
   race                                  String
   class                                 String
-  units                                 Json?                  @default("[{\"type\": \"CITIZEN\", \"level\": 1, \"quantity\": 50}, {\"type\": \"WORKER\", \"level\": 1, \"quantity\": 0}, {\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}]")
-  mercenaries                           Json                   @default("[]")
   experience                            Int                    @default(0)
   gold                                  BigInt                 @default(25000)
   gold_in_bank                          BigInt                 @default(0)
   fort_level                            Int                    @default(1)
   fort_hitpoints                        Int                    @default(50)
   attack_turns                          Int                    @default(50)
+  stamina                               Int                    @default(100)
+  maxStamina                            Int                    @default(100)
   last_active                           DateTime?              @db.Timestamptz(3)
   rank                                  Int                    @default(0)
-  items                                 Json?                  @default("[{\"type\": \"WEAPON\", \"level\": 1, \"usage\": \"OFFENSE\", \"quantity\": 0}]")
   house_level                           Int                    @default(0)
-  battle_upgrades                       Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}]")
-  structure_upgrades                    Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 1}, {\"type\": \"SPY\", \"level\": 1}, {\"type\": \"SENTRY\", \"level\": 1}, {\"type\": \"ARMORY\", \"level\": 1}]")
-  bonus_points                          Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 0}, {\"type\": \"DEFENSE\", \"level\": 0}, {\"type\": \"INCOME\", \"level\": 0}, {\"type\": \"INTEL\", \"level\": 0}, {\"type\": \"PRICES\", \"level\": 0}]")
+  battle_upgrades_json                  Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}]") // @deprecated("Use UserBattleUpgrade model instead")
+  structure_upgrades_json               Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 1}, {\"type\": \"SPY\", \"level\": 1}, {\"type\": \"SENTRY\", \"level\": 1}, {\"type\": \"ARMORY\", \"level\": 1}]") // @deprecated("Use UserStructureUpgrade model instead")
+  bonus_points_json                     Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 0}, {\"type\": \"DEFENSE\", \"level\": 0}, {\"type\": \"INCOME\", \"level\": 0}, {\"type\": \"INTEL\", \"level\": 0}, {\"type\": \"PRICES\", \"level\": 0}]") // @deprecated("Use UserBonusPoints model instead")
+  items_json                            Json?                  @default("[]") // @deprecated("Use UserItem model instead")
+  mercenaries_json                      Json?                  @default("[]") // @deprecated("Use UserUnit model instead")
+  units_json                            Json?                  @default("[]") // @deprecated("Use UserUnit model instead")
   bio                                   String                 @default("")
   colorScheme                           String?
   recruit_link                          String                 @unique @default("")
@@ -97,6 +99,13 @@ model users {
   currentEraId                          Int?
   achievements                          Json?                  @default("{}")
   currentEra                            Era?                   @relation("CurrentUserEra", fields: [currentEraId], references: [id])
+
+  // New relations to structured data
+  UserUnit                              UserUnit[]
+  UserItem                              UserItem[]
+  UserStructureUpgrade                  UserStructureUpgrade[]
+  UserBattleUpgrade                     UserBattleUpgrade[]
+  UserBonusPoints                       UserBonusPoints[]
 
   @@index([created_at])
   @@index([currentEraId])
@@ -447,4 +456,123 @@ model UserEra {
   @@unique([userId, eraId])
   @@index([userId])
   @@index([eraId])
+}
+
+// This file contains the schema for the JSON objects that are being migrated to their own tables.
+
+// ---------------------------
+// Units and Mercenaries
+// ---------------------------
+model UserUnit {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      UnitType // ENUM for 'CITIZEN', 'WORKER', etc.
+  level     Int
+  quantity  Int
+  isMercenary Boolean  @default(false)
+  user      users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, isMercenary])
+  @@index([userId])
+}
+
+enum UnitType {
+  CITIZEN
+  WORKER
+  OFFENSE
+  DEFENSE
+  SPY
+  SENTRY
+}
+
+// ---------------------------
+// Items
+// ---------------------------
+model UserItem {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  type     ItemType // ENUM for 'WEAPON', 'HELM', etc.
+  level    Int
+  usage    ItemUsage
+  quantity Int
+  user     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, usage])
+  @@index([userId])
+}
+
+enum ItemType {
+  WEAPON
+  HELM
+  ARMOR
+  BOOTS
+  BRACERS
+  SHIELD
+}
+
+enum ItemUsage {
+  OFFENSE
+  DEFENSE
+}
+
+// ---------------------------
+// Upgrades
+// ---------------------------
+model UserStructureUpgrade {
+  id     Int                @id @default(autoincrement())
+  userId Int
+  type   StructureUpgradeType // ENUM for 'OFFENSE', 'ARMORY', etc.
+  level  Int
+  user   users              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+enum StructureUpgradeType {
+  OFFENSE
+  SPY
+  SENTRY
+  ARMORY
+}
+
+model UserBattleUpgrade {
+  id       Int              @id @default(autoincrement())
+  userId   Int
+  type     BattleUpgradeType // ENUM for 'OFFENSE', 'SPY', 'SENTRY', 'DEFENSE'
+  level    Int
+  quantity Int
+  user     users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+enum BattleUpgradeType {
+  OFFENSE
+  SPY
+  SENTRY
+  DEFENSE
+}
+
+// ---------------------------
+// Bonus Points
+// ---------------------------
+model UserBonusPoints {
+  id     Int             @id @default(autoincrement())
+  userId Int
+  type   BonusPointsType // ENUM for 'OFFENSE', 'DEFENSE', etc.
+  level  Int
+  user   users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+enum BonusPointsType {
+  OFFENSE
+  DEFENSE
+  INCOME
+  INTEL
+  PRICES
 }
