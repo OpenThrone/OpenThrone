@@ -5,6 +5,7 @@ import MockUserGenerator from './MockUserGenerator';
 import { Fortifications } from '@/constants';
 import { installMockMtRand, mtRandImpl } from 'test/utils/mockMtRand';
 import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/mockPrisma';
+import { normUnits } from 'test/utils/testFixtures';
 
 // Install deterministic mtRand and Prisma mocks BEFORE requiring modules that import them
 installMockMtRand(vi);
@@ -28,9 +29,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits([
+      attackerUser.addUnits(normUnits([
         { type: 'OFFENSE', quantity: 100, level: 1 }
-      ]);
+      ]));
       const attacker = new UserModel(attackerUser.getUser());
 
       // Create defender with extremely large gold amount (near max safe BigInt)
@@ -43,9 +44,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
       });
       const maxSafeGold = BigInt('9223372036854775807'); // Max safe BigInt
       defenderUser.adjustGold(maxSafeGold);
-      defenderUser.addUnits([
+      defenderUser.addUnits(normUnits([
         { type: 'DEFENSE', quantity: 10, level: 1 }
-      ]);
+      ]));
       const defender = new UserModel(defenderUser.getUser());
 
       // Test loot calculation directly
@@ -95,9 +96,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits([
+      attackerUser.addUnits(normUnits([
         { type: 'OFFENSE', quantity: 50, level: 1 }
-      ]);
+      ]));
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -108,9 +109,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         class: 'FIGHTER',
       });
       defenderUser.adjustGold(BigInt('1000000000000000000')); // 1 quintillion
-      defenderUser.addUnits([
+      defenderUser.addUnits(normUnits([
         { type: 'DEFENSE', quantity: 20, level: 1 }
-      ]);
+      ]));
       const defender = new UserModel(defenderUser.getUser());
 
       // Simulate multi-turn battle
@@ -204,9 +205,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits([
+      attackerUser.addUnits(normUnits([
         { type: 'OFFENSE', quantity: 10, level: 1 }
-      ]);
+      ]));
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -217,9 +218,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         class: 'FIGHTER',
       });
       defenderUser.adjustGold(BigInt(100)); // Small amount
-      defenderUser.addUnits([
+      defenderUser.addUnits(normUnits([
         { type: 'DEFENSE', quantity: 5, level: 1 }
-      ]);
+      ]));
       const defender = new UserModel(defenderUser.getUser());
 
       const battleResult = await simulateBattle(
@@ -245,9 +246,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits([
+      attackerUser.addUnits(normUnits([
         { type: 'OFFENSE', quantity: 30, level: 1 }
-      ]);
+      ]));
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -258,9 +259,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         class: 'FIGHTER',
       });
       defenderUser.adjustGold(BigInt(50000));
-      defenderUser.addUnits([
+      defenderUser.addUnits(normUnits([
         { type: 'DEFENSE', quantity: 15, level: 1 }
-      ]);
+      ]));
       const defender = new UserModel(defenderUser.getUser());
 
       // Test with different turn counts to verify accumulation
@@ -306,9 +307,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits([
+      attackerUser.addUnits(normUnits([
         { type: 'OFFENSE', quantity: 100, level: 1 }
-      ]);
+      ]));
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -319,9 +320,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         class: 'FIGHTER',
       });
       defenderUser.adjustGold(BigInt(100000));
-      defenderUser.addUnits([
+      defenderUser.addUnits(normUnits([
         { type: 'DEFENSE', quantity: 50, level: 1 }
-      ]);
+      ]));
       const defender = new UserModel(defenderUser.getUser());
 
       // Test with maximum turns
@@ -351,7 +352,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.setLevel(20); // High level
+  (attackerUser as any).setLevel(20); // High level
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -361,7 +362,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      defenderUser.setLevel(1); // Low level
+  (defenderUser as any).setLevel(1); // Low level
       defenderUser.adjustGold(BigInt(10000));
       const defender = new UserModel(defenderUser.getUser());
 
@@ -381,7 +382,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.setLevel(level);
+  (attackerUser as any).setLevel(level);
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -391,7 +392,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      defenderUser.setLevel(level);
+  (defenderUser as any).setLevel(level);
       defenderUser.adjustGold(BigInt(5000));
       const defender = new UserModel(defenderUser.getUser());
 

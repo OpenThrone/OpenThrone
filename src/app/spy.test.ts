@@ -1,8 +1,14 @@
-import UserModel from "@/models/Users";
-import { simulateBattle } from "../utils/attackFunctions";
-import { simulateAssassination, simulateInfiltration, simulateIntel } from "../utils/spyFunctions";
-import mtRand from "@/utils/mtrand";
-import { stringifyObj } from "@/utils/numberFormatting";
+import { describe, it, expect, beforeEach, vi } from 'bun:test';
+import { installMockMtRand } from 'test/utils/mockMtRand';
+
+// Install the deterministic mtRand mock before loading modules that import '@/utils/mtrand'
+installMockMtRand(vi);
+
+// Require modules after mock installation so they pick up the mocked mtRand implementation
+const UserModel = require('@/models/Users').default ?? require('@/models/Users');
+const { simulateBattle } = require('../utils/attackFunctions');
+const { simulateAssassination, simulateInfiltration, simulateIntel } = require('../utils/spyFunctions');
+const { stringifyObj } = require('@/utils/numberFormatting');
 
 const defense = {
   "id": 84,

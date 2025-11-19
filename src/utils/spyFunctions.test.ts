@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'bun:test';
 import { installMockMtRand, mtRandImpl } from 'test/utils/mockMtRand';
+import { normUnits } from 'test/utils/testFixtures';
 // Install deterministic mtRand before loading modules that import '@/utils/mtrand'
 installMockMtRand(vi);
 
@@ -65,31 +66,49 @@ describe('computeSpyAmpFactor', () => {
       attackerGenerator = new MockUserGenerator();
       attackerGenerator.setBasicInfo({ display_name: 'AttackerSpy', race: 'ELF', class: 'ASSASSIN' });
       attackerGenerator.setSpyUpgrade(5); // Give some base spy structure level
-      attackerGenerator.addUnits([
+      attackerGenerator.addUnits(normUnits([
         { type: 'SPY', level: 1, quantity: 1000 }, // For Intel
         { type: 'SPY', level: 2, quantity: 1000 }, // For Infiltration
         { type: 'SPY', level: 3, quantity: 1000 }, // For Assassination
-      ]);
+      ]));
       // Add base spy/intel bonus points if needed via generator
       // attackerGenerator.setBonusPoints([{ type: 'INTEL', level: 10 }]);
 
       defenderGenerator = new MockUserGenerator();
       defenderGenerator.setBasicInfo({ display_name: 'DefenderSentry', race: 'HUMAN', class: 'CLERIC' });
       defenderGenerator.setSentryUpgrade(5); // Give some base sentry structure level
-      defenderGenerator.addUnits([
+      defenderGenerator.addUnits(normUnits([
         { type: 'SENTRY', level: 1, quantity: 500 },
         { type: 'SENTRY', level: 2, quantity: 500 },
         { type: 'DEFENSE', level: 1, quantity: 1000 },
         { type: 'OFFENSE', level: 1, quantity: 500 },
         { type: 'CITIZEN', level: 1, quantity: 2000 },
         { type: 'WORKER', level: 1, quantity: 1000 },
-      ]);
+      ]));
       defenderGenerator.setFortLevel(5); // Example fort level
       defenderGenerator.setFortHitpoints(500); // Start with full HP usually
       // defenderGenerator.setBonusPoints([{ type: 'INTEL', level: 5 }]);
 
-      baseAttacker = new UserModel(attackerGenerator.getUser());
-      baseDefender = new UserModel(defenderGenerator.getUser());
+      baseAttacker = new UserModel(
+        attackerGenerator.getUser(),
+        attackerGenerator.getUser().units,
+        attackerGenerator.getUser().items,
+        attackerGenerator.getUser().structure_upgrades,
+        attackerGenerator.getUser().battle_upgrades,
+        attackerGenerator.getUser().bonus_points,
+        attackerGenerator.getUser().permissions,
+        attackerGenerator.getUser().stats
+      );
+      baseDefender = new UserModel(
+        defenderGenerator.getUser(),
+        defenderGenerator.getUser().units,
+        defenderGenerator.getUser().items,
+        defenderGenerator.getUser().structure_upgrades,
+        defenderGenerator.getUser().battle_upgrades,
+        defenderGenerator.getUser().bonus_points,
+        defenderGenerator.getUser().permissions,
+        defenderGenerator.getUser().stats
+      );
     });
 
     // --- simulateIntel Tests ---

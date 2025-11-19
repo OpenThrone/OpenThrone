@@ -1,6 +1,22 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'bun:test';
+import { installMockMtRand, mtRandImpl } from 'test/utils/mockMtRand';
+
+// Use the shared test helper to mock the module before requiring it.
+installMockMtRand(vi);
+
 import { mtRand } from './mtrand';
 
 describe('mtRand', () => {
+  beforeEach(() => {
+    // Set a deterministic implementation for these tests.
+    mtRandImpl.fn = (min = 0, max = 1) => min + 0.5 * (max - min);
+  });
+
+  afterEach(() => {
+    // Reset to default behavior to avoid surprising other code.
+    mtRandImpl.fn = (min = 0, max = 1) => Math.random() * (max - min) + min;
+  });
+
   it('should generate a random number within the specified range', () => {
     const min = 0;
     const max = 10;
