@@ -62,12 +62,12 @@ const handler = async (req, res) => {
           'DefenderArmy': defender.unitTotals.defense + defender.unitTotals.citizens + defender.unitTotals.workers,
           'Offense': attacker.offense,
           'Defense:': defender.defense,
-          'AttackerResult': results.experienceResult.Result,
-          'AttackerLosses': results.Losses.Attacker.total,
-          'DefenderLosses': results.Losses.Defender.total,
+            'AttackerResult': results.result,
+            'AttackerLosses': results.Losses.Attacker.total,
+            'DefenderLosses': results.Losses.Defender.total,
           'PillagedGold': results.pillagedGold.toString(),
-          'XPEarned-Attacker': results.experienceResult.Experience.Attacker,
-          'XPEarned-Defender': results.experienceResult.Experience.Defender,
+            'XPEarned-Attacker': results.experienceGained.attacker,
+            'XPEarned-Defender': results.experienceGained.defender,
           'FortDmg': defender.fortHitpoints - results.fortHitpoints,
         });
       }

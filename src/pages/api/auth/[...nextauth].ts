@@ -14,17 +14,7 @@ import { logAction, getRequestIp } from '@/utils/auditLogger';
 
 const argon2 = require('argon2');
 
-declare module 'next-auth' {
-  interface Session {
-    user: IUserSession & { twoFactorEnabled: boolean };
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    user?: IUserSession & { twoFactorEnabled: boolean };
-  }
-}
+// Rely on project-wide next-auth type augmentations in `src/types/next-auth.d.ts` to avoid duplicate declaration conflicts.
 
 const updateLastActive = async (email: string) => {
   return prisma.users.update({
@@ -123,13 +113,14 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async session({ session, token }) {
-      try {
-        session.user = token.user;
-        return session;
-      } catch (error) {
-        logError('Session callback error:', error);
-        throw error;
-      }
+        try {
+          // token.user may be a partial object at runtime; cast to any for session assignment during migration
+          session.user = token.user as any;
+          return session;
+        } catch (error) {
+          logError('Session callback error:', error);
+          throw error;
+        }
     },
     async jwt({ token, user }) {
       try {

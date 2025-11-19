@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import { withAuth } from '@/middleware/auth';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const getPosts = async (session: boolean | NextApiRequest = false) => {
+const getPosts = async (session: any = null) => {
   if (session?.user) {
     // Fetch the user based on the session's user ID
     const user = await prisma.users.findUnique({
@@ -42,9 +42,8 @@ const getRecentPostsAPI = async(req: NextApiRequest, res: NextApiResponse) => {
   const session = req?.session;
 
   try {
-
-    const posts = await getPosts(session ? true : false);
-
+    // Pass the actual session object to getPosts so it can inspect session.user
+    const posts = await getPosts(session);
     res.status(200).json(posts);
   } catch (error) {
     console.log(error);

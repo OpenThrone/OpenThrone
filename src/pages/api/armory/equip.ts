@@ -73,8 +73,13 @@ const handler = async (
   // Use validated data
   const { userId, items: itemsToEquip } = parseResult.data;
 
-  // Authorization check using validated userId
-  if (userId !== req.session.user.id) {
+  // Normalize the session user id once (guards for string vs number) and use it for authorization
+  const sessionUserId = req.session?.user?.id;
+  const normalizedSessionUserId =
+    typeof sessionUserId === 'string' ? parseInt(sessionUserId, 10) : Number(sessionUserId ?? 0);
+
+  // Authorization check using validated userId against the normalized session id
+  if (userId !== normalizedSessionUserId) {
     return res.status(403).json({ error: 'Forbidden: User ID mismatch' }); // Use 403 for Forbidden
   }
 
@@ -82,7 +87,8 @@ const handler = async (
 
   try {
     // Fetch user outside transaction for initial checks, but re-fetch inside for consistency
-    const user = await prisma.users.findUnique({ where: { id: req.session.user.id } });
+  // Use the validated userId (already authorized above) for DB reads
+  const user = await prisma.users.findUnique({ where: { id: userId } });
     if (!user) {
       // This case should ideally not happen if session/auth middleware is working
       return res.status(404).json({ error: 'User not found' });

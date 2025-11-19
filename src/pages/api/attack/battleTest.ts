@@ -48,12 +48,13 @@ const handler = async (req, res) => {
     return res.status(200).json({
       'Attacker': results.attacker.displayName,
       'Defender': results.defender.displayName,
-      'AttackerResult': results.experienceResult.Result,
+      // Use the current BattleResult shape
+      'AttackerResult': results.result,
       'AttackerLosses': results.Losses.Attacker.total,
       'DefenderLosses': results.Losses.Defender.total,
       'PillagedGold': results.pillagedGold.toString(),
-      'XPEarned': results.experienceResult.Experience,
-      'FortDmg': defender.fortHitpoints - results.fortHitpoints,
+      'XPEarned': results.experienceGained.attacker,
+      'FortDmg': defender.fortHitpoints - results.finalFortHP,
     });
   }
 }

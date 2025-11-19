@@ -76,13 +76,13 @@ const handler = async (
       const user = await tx.users.findUnique({
         where: { id: userId },
         // Select all fields needed for validation and updates for any upgrade type
-        select: {
-            gold: true,
-            fort_level: true,
-            house_level: true,
-            economy_level: true,
-            structure_upgrades: true
-        },
+    select: {
+      gold: true,
+      fort_level: true,
+      house_level: true,
+      economy_level: true,
+      structure_upgrades_json: true
+    },
       });
 
       if (!user) {
@@ -96,13 +96,13 @@ const handler = async (
       let newLevel: number;
 
       // Validate structure_upgrades format if necessary
-      let structureUpgrades: StructureUpgrade[] = [];
-      if (Array.isArray(user.structure_upgrades)) {
-          // Basic validation, refine based on actual structure
-          structureUpgrades = user.structure_upgrades.filter(
-              (upg): upg is StructureUpgrade => typeof upg === 'object' && upg !== null && typeof upg.type === 'string' && typeof upg.level === 'number'
-          );
-      } else {
+    let structureUpgrades: StructureUpgrade[] = [];
+    if (Array.isArray(user.structure_upgrades_json)) {
+      // Basic validation, refine based on actual structure
+      structureUpgrades = user.structure_upgrades_json.filter(
+        (upg): upg is StructureUpgrade => typeof upg === 'object' && upg !== null && typeof upg.type === 'string' && typeof upg.level === 'number'
+      );
+    } else {
           // Handle case where it might be null or invalid JSON
           logError(null, { userId, structure_upgrades: user.structure_upgrades }, 'Invalid structure_upgrades format in DB');
           // Initialize as empty array or throw error depending on requirements
@@ -163,8 +163,8 @@ const handler = async (
           // Update the specific structure level within the array
           const updatedStructures = structureUpgrades.filter(s => s.type !== structureType); // Remove old entry
           updatedStructures.push({ type: structureType, level: newLevel }); // Add new entry
-          // Ensure the payload is valid JSON for Prisma
-          updatePayload = { structure_upgrades: updatedStructures as any }; // Cast needed if Prisma type isn't precise
+          // Ensure the payload uses the Prisma JSON column name
+          updatePayload = { structure_upgrades_json: updatedStructures as any }; // Cast needed if Prisma type isn't precise
           break;
 
         // No default needed due to Zod enum validation

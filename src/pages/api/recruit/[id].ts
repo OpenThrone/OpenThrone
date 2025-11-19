@@ -8,7 +8,7 @@ import { getOTStartDate } from '@/utils/timefunctions';
 import { getIpAddress } from '@/utils/ipUtils';
 import { AuthenticatedRequest } from '@/types/api';
 
-function increaseCitizens(units: PlayerUnit[]) {
+function increaseCitizens(units: any[]) {
   // Find the CITIZEN object
   const citizen = units.find((unit) => unit.type === 'CITIZEN');
   if (citizen) {
@@ -85,7 +85,7 @@ const handler = async(
         where: { id: userIdToUpdate },
         select: {
           id: true,
-          units: true,
+          units_json: true,
           gold: true,
         },
       });
@@ -131,12 +131,22 @@ const handler = async(
       });
 
       // Update units and gold
-      let units = JSON.parse(userToUpdate.units as string);
+      // Parse legacy JSON units stored in units_json
+      let units = [] as any[];
+      if (userToUpdate.units_json) {
+        try {
+          units = JSON.parse(userToUpdate.units_json as string);
+        } catch (e) {
+          // If parsing fails, fallback to empty array
+          units = [];
+        }
+      }
       const updatedUnits = increaseCitizens(units);
       await tx.users.update({
         where: { id: userIdToUpdate },
         data: {
-          units: updatedUnits,
+          // Write back into the deprecated JSON column
+          units_json: updatedUnits as unknown as Prisma.JsonArray,
           gold: { increment: 250 },
         },
       });

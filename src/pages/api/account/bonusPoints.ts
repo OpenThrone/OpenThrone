@@ -144,7 +144,8 @@ const handler = async (
       await tx.users.update({
         where: { id: userId },
         // Ensure the final array structure matches Prisma's expected JSON format
-        data: { bonus_points: updatedBonusPoints as Prisma.JsonArray },
+        // TS requires an intermediate unknown cast when converting complex arrays to Prisma.JsonArray
+        data: { bonus_points: updatedBonusPoints as unknown as Prisma.JsonArray },
       });
 
       return updatedBonusPoints; // Return the updated array from transaction

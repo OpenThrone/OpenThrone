@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const secret = speakeasy.generateSecret({
-      name: `OpenThrone (${session.user.display_name})`,
+      name: `OpenThrone (${(session.user as any)?.display_name ?? 'user'})`,
       issuer: 'OpenThrone',
     });
 

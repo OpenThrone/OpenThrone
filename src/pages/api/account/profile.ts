@@ -27,7 +27,7 @@ const saveToLocal = async (file: formidable.File, userId: number): Promise<strin
 };
 
 // AWS S3 upload function
-const uploadToS3 = (file: formidable.File, uId: Number): Promise<AWS.S3.ManagedUpload.SendData> => {
+const uploadToS3 = (file: formidable.File, uId: number): Promise<AWS.S3.ManagedUpload.SendData> => {
   // Configure AWS S3
   const s3 = new AWS.S3({
     endpoint: process.env.AWS_S3_ENDPOINT,
@@ -101,11 +101,17 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         try {
           if (process.env.NEXT_PUBLIC_USE_AWS === 'true') {
             // Upload the file to S3
-            const result = await uploadToS3(file, req.session.user.id);
+            const userId = typeof req.session?.user?.id === 'string'
+              ? parseInt(req.session.user.id, 10)
+              : Number(req.session?.user?.id ?? 0);
+            const result = await uploadToS3(file, userId);
             updateData.avatar = process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + "/" + result.Key;
           } else {
             // Save the file to the local file system
-            const filePath = await saveToLocal(file, req.session.user.id);
+            const userId = typeof req.session?.user?.id === 'string'
+              ? parseInt(req.session.user.id, 10)
+              : Number(req.session?.user?.id ?? 0);
+            const filePath = await saveToLocal(file, userId);
             console.log('File uploaded to:', filePath);
             updateData.avatar = filePath;
           }
@@ -120,8 +126,11 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       }
 
       try {
+        const userId = typeof req.session?.user?.id === 'string'
+          ? parseInt(req.session.user.id, 10)
+          : Number(req.session?.user?.id ?? 0);
         const updated = await prisma.users.update({
-          where: { id: req.session.user.id },
+          where: { id: userId },
           data: updateData,
         });
 

@@ -54,8 +54,8 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       // Prisma's query helpers don't support a `lock` option on findUnique.
       // This will return the row and acquire a row-level lock for the duration
       // of the transaction.
-      const lockedRows: Array<{ id: number; units: string | null; gold: bigint | null }> = await tx.$queryRaw`
-        SELECT id, units, gold
+      const lockedRows: Array<{ id: number; units_json: string | null; gold: bigint | null }> = await tx.$queryRaw`
+        SELECT id, units_json, gold
         FROM users
         WHERE id = ${userIdToLock}
         FOR UPDATE
@@ -114,20 +114,20 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       // `lockedUser.units` may be stored as a JSON string or already as an object depending
       // on how the DB/ORM returns it. Handle both cases safely.
       let units: any;
-      if (typeof lockedUser.units === 'string') {
+      if (typeof lockedUser.units_json === 'string') {
         try {
-          units = JSON.parse(lockedUser.units as string);
+          units = JSON.parse(lockedUser.units_json as string);
         } catch (e) {
           throw new Error('JSON Parse error: Invalid units format');
         }
       } else {
-        units = lockedUser.units as any;
+        units = lockedUser.units_json as any;
       }
       const updatedUnits = increaseCitizens(units);
       await tx.users.update({
         where: { id: userIdToLock },
         data: {
-          units: updatedUnits,
+          units_json: updatedUnits as unknown as Prisma.JsonArray,
           gold: { increment: 250 },
         },
       });

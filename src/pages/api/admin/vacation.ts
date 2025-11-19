@@ -12,7 +12,7 @@ const AdminVacationSchema = z.object({
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req });
-  if (!session || !session.user || !(await isAdmin(session.user.id))) {
+  if (!session || !session.user || !(await isAdmin(Number(session.user.id)))) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           start_date: now,
           end_date: vacationEndDate,
           reason: 'Admin initiated vacation mode',
-          admin_id: session.user.id,
+          admin_id: Number(session.user.id),
         },
       });
 
@@ -66,7 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           status: 'ACTIVE',
           start_date: new Date(),
           reason: 'Vacation mode ended by admin',
-          admin_id: session.user.id,
+          admin_id: Number(session.user.id),
         },
       });
 

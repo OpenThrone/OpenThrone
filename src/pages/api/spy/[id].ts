@@ -1,6 +1,6 @@
 'use server';
 import prisma from "@/lib/prisma";
-import { spyHandler } from '@/app/actions';
+import SpyService from '@/services/SpyService';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from "@/middleware/auth";
 import UserModel from "@/models/Users";
@@ -67,7 +67,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         return res
           .status(200)
           .json(
-            stringifyObj(await spyHandler(
+            stringifyObj(await SpyService.executeSpyMission(
               parseInt(session.user.id),
               parseInt(req.query.id.toString()),
               parseInt(req.body.spies),
@@ -82,7 +82,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         return res
           .status(200)
           .json(
-            stringifyObj(await spyHandler(
+            stringifyObj(await SpyService.executeSpyMission(
               parseInt(session.user.id),
               parseInt(req.query.id.toString()),
               parseInt(req.body.spies),
@@ -116,7 +116,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         return res
           .status(200)
           .json(
-            stringifyObj(await spyHandler(
+            stringifyObj(await SpyService.executeSpyMission(
               parseInt(session.user.id),
               parseInt(req.query.id.toString()),
               parseInt(req.body.spies),

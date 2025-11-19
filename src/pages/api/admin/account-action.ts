@@ -15,7 +15,7 @@ const AccountActionSchema = z.object({
 
 export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getSession({ req });
-  if (!session || !session.user || !(await isAdmin(session.user.id))) {
+  if (!session || !session.user || !(await isAdmin(Number(session.user.id)))) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

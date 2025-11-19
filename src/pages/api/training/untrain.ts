@@ -106,8 +106,10 @@ const handler = async (
           throw new Error(`Not enough ${unitData.type} (Level ${unitData.level}) to untrain. Required: ${unitData.quantity}, Available: ${userUnit?.quantity ?? 0}`);
         }
 
-        // Calculate refund for this unit type (75% of cost)
-        const unitCost = calculateTotalCost([unitData], uModel); // Cost for the quantity being untrained
+  // Calculate refund for this unit type (75% of cost)
+  // Cast the unitData to a PlayerUnit shape expected by calculateTotalCost
+  const unitForCost = { id: 0, userId: userId, type: unitData.type, level: unitData.level, quantity: unitData.quantity, isMercenary: false } as any;
+  const unitCost = calculateTotalCost([unitForCost], uModel); // Cost for the quantity being untrained
         totalRefund += Math.floor(unitCost * 0.75);
         totalUnitsUntrained += unitData.quantity;
       }
@@ -118,7 +120,9 @@ const handler = async (
 
       // Update units map (pass validated unitsToUntrain)
       // The 'false' indicates untraining (removes units, adds citizens)
-      const updatedUnitsMap = updateUnitsMap(userUnitsMap, unitsToUntrain, false, totalUnitsUntrained);
+  // Map unitsToUntrain into full PlayerUnit shapes before passing to updateUnitsMap
+  const unitsToUntrainFull = unitsToUntrain.map(u => ({ id: 0, userId: userId, type: u.type, level: u.level, quantity: u.quantity, isMercenary: false } as any));
+  const updatedUnitsMap = updateUnitsMap(userUnitsMap as any, unitsToUntrainFull as any, false, totalUnitsUntrained);
       const updatedUnitsArray = Array.from(updatedUnitsMap.values());
 
       // Calculate new stats
