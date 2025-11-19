@@ -12,7 +12,7 @@ type ButtonColor =
   | "gray"
   | "dark";
 
-interface AnimatedButton {
+interface AnimatedButtonItem {
   icon: IconDefinition;
   label: string;
   onClick?: () => void;
@@ -23,7 +23,7 @@ interface AnimatedButton {
 }
 
 interface AnimatedButtonsProps {
-  buttons: AnimatedButton[];
+  buttons: AnimatedButtonItem[];
   orientation?: "horizontal" | "vertical";
   spacing?: number | string;
 }
@@ -34,10 +34,9 @@ export default function AnimatedButtons({
   spacing = "md",
 }: AnimatedButtonsProps) {
   const theme = useMantineTheme();
-  const groupProps =
-    orientation === "vertical"
-      ? { direction: "column", spacing }
-      : { spacing };
+  // Use explicit prop shaping for Mantine Group
+  const groupProps: any =
+    orientation === "vertical" ? { direction: "column", spacing } : { spacing };
 
   return (
     <Group {...groupProps}>
@@ -99,7 +98,7 @@ export default function AnimatedButtons({
                   px-2 py-1 rounded
                   bg-gray-900 bg-opacity-90
                   text-sm
-                  ${theme.colorScheme === "dark"
+                  ${ (theme as any).colorScheme === "dark"
                     ? "text-blue-200"
                     : "text-blue-700"
                   }

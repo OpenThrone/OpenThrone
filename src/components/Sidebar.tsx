@@ -268,7 +268,13 @@ useEffect(() => {
         {icon && <span className="w-4 text-center" style={{ paddingLeft: '5px' }}>{icon}</span>} {/* Icon wrapper */}
         <Text size="md" c="black" fw="bold" lh="xs">{label}</Text>
       </Group>
-      <Text size="md" fw='bold' ta="right" pr="10px">{value}</Text>
+      {React.isValidElement(value) ? (
+        <div className="flex items-end" style={{ paddingRight: '10px' }}>
+          {value}
+        </div>
+      ) : (
+        <Text size="md" fw='bold' ta="right" pr="10px">{value}</Text>
+      )}
     </Group>
   );
 

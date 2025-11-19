@@ -15,6 +15,16 @@ export const withAuth = (handler: NextApiHandler, override: boolean = false) => 
   }
   
   // Cast req to AuthenticatedRequest before assigning the session property
+  // Normalize session.user.id to a number when the provider returns a string ID
+  if (session && session.user && typeof session.user.id === 'string') {
+    // coerce numeric string ids to numbers for compatibility across the codebase
+    const maybeNum = parseInt(session.user.id as unknown as string, 10);
+    if (!isNaN(maybeNum)) {
+      // @ts-ignore - intentionally widen runtime type
+      session.user.id = maybeNum as any;
+    }
+  }
+
   (req as AuthenticatedRequest).session = session ?? undefined; // Assign session or undefined
   
   // Pass the modified request (now conforming to AuthenticatedRequest) to the handler

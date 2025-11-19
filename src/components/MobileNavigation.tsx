@@ -105,6 +105,7 @@ type MobileNavigationProps = {
   open: boolean;
   onClose: () => void;
   menuItems: MenuItem[];
+  sidebarContent?: React.ReactNode; // New prop for sidebar content
   className?: string;
 };
 
@@ -112,6 +113,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   open,
   onClose,
   menuItems,
+  sidebarContent, // Destructure new prop
   className = '',
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -180,6 +182,11 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
               <MenuItemComponent key={item.key} item={item} onItemClick={handleItemClick} />
             ))}
           </ul>
+          {sidebarContent && ( // Render sidebar content if provided
+            <div className="mt-4 p-4 border-t border-gray-700">
+              {sidebarContent}
+            </div>
+          )}
         </div>
       </div>
     </div>

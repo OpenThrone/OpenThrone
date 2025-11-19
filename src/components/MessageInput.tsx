@@ -13,7 +13,7 @@ interface MessageInputProps {
   socket: Socket | null;
   isConnected: boolean;
   currentUserId: number | undefined;
-  user: User | null | undefined;
+  user: any | null | undefined;
   markRoomAsRead: (roomId: number) => void; // Function to mark room as read
   replyingToMessage: ChatMessage | null;
   setReplyingToMessage: (message: ChatMessage | null) => void;

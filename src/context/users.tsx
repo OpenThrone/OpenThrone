@@ -9,6 +9,7 @@ import { fetchWithFallback } from '@/utils/socketFunctions';
 import { logError, logInfo, logWarn } from '@/utils/logger';
 import type { UserApiResponse } from '@/types/typings';
 import { users as PrismaUser } from '@prisma/client';
+import { stringifyObj } from '@/utils/jsonHelpers';
 
 // Define UnreadMessages interface locally or import if moved to typings.d.ts
 interface UnreadMessages {
@@ -86,7 +87,29 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         logError("Received invalid user data structure:", userData);
         throw new Error("Invalid user data received");
       }
-      const uModel = new UserModel(userData as PrismaUser, false); // Cast to PrismaUser
+      
+      // Extract related data from the API response
+      const units = (userData as UserApiResponse).UserUnit || [];
+      const items = (userData as UserApiResponse).UserItem || [];
+      const structure_upgrades = (userData as UserApiResponse).UserStructureUpgrade || [];
+      const battle_upgrades = (userData as UserApiResponse).UserBattleUpgrade || [];
+      const bonus_points = (userData as UserApiResponse).UserBonusPoints || [];
+      const permissions = (userData as UserApiResponse).permissions || [];
+      const stats = (userData as UserApiResponse).stats || [];
+
+      const uModel = new UserModel(
+        userData as PrismaUser,
+        units,
+        items,
+        structure_upgrades,
+        battle_upgrades,
+        bonus_points,
+        permissions,
+        stats,
+        false, // filtered
+        true   // checkStats
+      );
+      console.log(stringifyObj(uModel))
       setUser(uModel);
 
       if ('currentStatus' in userData) {

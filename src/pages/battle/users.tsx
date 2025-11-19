@@ -229,7 +229,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                           <Avatar src={player?.avatar} size={40} radius={40} />
                         </Indicator>
                         <div>
-                          <Text fz="med" fw={500}>
+                          <Text fz="med" fw={500} component="div">
                             <Link
                               href={`/userprofile/${player.id}`}
                               className="text-blue-500 hover:text-blue-700 font-bold"
@@ -300,13 +300,13 @@ export const getServerSideProps = async () => {
           { last_active: { not: null } },
         ],
       },
-      select: { 
+      select: {
         id: true,
         display_name: true,
         rank: true,
         last_active: true,
         avatar: true,
-        units: true,
+        UserUnit: true,
         gold: true,
         race: true,
         class: true,
@@ -325,8 +325,7 @@ export const getServerSideProps = async () => {
       const lastActiveDate = new Date(user.last_active);
       const lastActiveTimestamp = lastActiveDate.getTime();
       const nowTimestamp = nowdate.getTime();
-      const units = typeof user.units === 'string' ? JSON.parse(user.units) : user.units;
-      const population = (Array.isArray(units) ? units : []).reduce((acc, unit) => acc + (unit.quantity || 0), 0);
+      const population = user.UserUnit?.reduce((acc, unit) => acc + (unit.quantity || 0), 0) || 0;
 
       // prepare safe last_active string and online flag
       let lastActiveStr: string | null = null;

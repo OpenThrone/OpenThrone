@@ -4,6 +4,18 @@ import toLocale from '@/utils/numberFormatting';
 import { useSearchParams } from 'next/navigation';
 import router from 'next/router';
 
+interface BankHistoryTableProps {
+  bankHistory?: any[];
+  user?: any;
+  message?: string | null;
+  getTransactionType: (entry: any) => string;
+  getGoldTxSymbol: (entry: any) => string;
+  handleRowsPerPageChange: (limit: number) => void;
+  limit: number;
+  page: number;
+  totalPages: number;
+}
+
 export default function BankHistoryTable({
   bankHistory = [],
   user,
@@ -13,8 +25,8 @@ export default function BankHistoryTable({
   handleRowsPerPageChange,
   limit,
   page,
-  totalPages
-}) {
+  totalPages,
+}: BankHistoryTableProps) {
    
   if (message) {
     return <div className="text-center p-4">{message}</div>;
@@ -43,8 +55,8 @@ export default function BankHistoryTable({
         <Pagination
           total={totalPages}
           siblings={1}
-          page={page}
-          onChange={(xval) => {
+          value={page}
+          onChange={(xval: number) => {
             router.push(`/structures/bank/history?page=${xval}&limit=${limit}`);
           }}
         />

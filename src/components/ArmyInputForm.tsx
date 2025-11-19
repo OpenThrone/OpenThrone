@@ -5,7 +5,7 @@ import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import ArmyPresets from '@/components/ArmyPresets';
 import ItemsInputForm from './ItemsInputForm';
 import MockUserGenerator from '@/utils/MockUserGenerator';
-import { User, PlayerUnit, PlayerItem, PlayerBattleUpgrade, UnitType, ItemType } from "@/types/typings";
+import { User, PlayerUnit, PlayerItem, PlayerBattleUpgrade, UnitType, ItemType, ItemUsage } from "@/types/typings";
 import UserModel from '@/models/Users';
 import { getLevelFromXP } from "@/utils/utilities";
 
@@ -97,9 +97,12 @@ const formDataToUser = (formData: any): User => {
       const key = `${type}${level}`;
       if (formData[key] && formData[key] > 0) {
         units.push({
+          id: 0,
+          userId: 0,
           type: type.toUpperCase() as UnitType,
           level,
-          quantity: formData[key]
+          quantity: formData[key],
+          isMercenary: false,
         });
       }
     }
@@ -117,6 +120,8 @@ const formDataToUser = (formData: any): User => {
       Object.entries(levels as Record<string, number>).forEach(([level, quantity]) => {
         if (quantity > 0) {
           items.push({
+            id: 0,
+            userId: 0,
             type: type as ItemType,
             level: parseInt(level, 10),
             quantity: quantity,
@@ -133,6 +138,8 @@ const formDataToUser = (formData: any): User => {
         const type = parts[1].toUpperCase() as ItemType;
         const level = parseInt(parts[2], 10);
         items.push({
+          id: 0,
+          userId: 0,
           type,
           level,
           quantity: value as number,
@@ -149,10 +156,10 @@ const formDataToUser = (formData: any): User => {
 
   // Add battle upgrades
   const battleUpgrades: PlayerBattleUpgrade[] = [];
-  if (formData.offenseUpgrade1 > 0) battleUpgrades.push({ type: 'OFFENSE', level: 1, quantity: formData.offenseUpgrade1 });
-  if (formData.offenseUpgrade2 > 0) battleUpgrades.push({ type: 'OFFENSE', level: 2, quantity: formData.offenseUpgrade2 });
-  if (formData.defenseUpgrade1 > 0) battleUpgrades.push({ type: 'DEFENSE', level: 1, quantity: formData.defenseUpgrade1 });
-  if (formData.sentryUpgrade1 > 0) battleUpgrades.push({ type: 'SENTRY', level: 1, quantity: formData.sentryUpgrade1 });
+  if (formData.offenseUpgrade1 > 0) battleUpgrades.push({ id: 0, userId: 0, type: 'OFFENSE', level: 1, quantity: formData.offenseUpgrade1 });
+  if (formData.offenseUpgrade2 > 0) battleUpgrades.push({ id: 0, userId: 0, type: 'OFFENSE', level: 2, quantity: formData.offenseUpgrade2 });
+  if (formData.defenseUpgrade1 > 0) battleUpgrades.push({ id: 0, userId: 0, type: 'DEFENSE', level: 1, quantity: formData.defenseUpgrade1 });
+  if (formData.sentryUpgrade1 > 0) battleUpgrades.push({ id: 0, userId: 0, type: 'SENTRY', level: 1, quantity: formData.sentryUpgrade1 });
   
   if (battleUpgrades.length > 0) {
     generator.addBattleUpgrades(battleUpgrades);
@@ -168,17 +175,17 @@ const formDataToUser = (formData: any): User => {
 };
 
 // Helper function to determine item usage based on type
-function getItemUsage(type: ItemType): UnitType {
-  const itemTypeMap: Record<string, UnitType> = {
-    'WEAPON': 'OFFENSE',
-    'ARMOR': 'DEFENSE',
-    'HELM': 'DEFENSE',
-    'BOOTS': 'DEFENSE',
-    'BRACERS': 'OFFENSE',
-    'SHIELD': 'DEFENSE',
+function getItemUsage(type: ItemType): ItemUsage {
+  const itemTypeMap: Record<string, ItemUsage> = {
+    WEAPON: 'OFFENSE',
+    ARMOR: 'DEFENSE',
+    HELM: 'DEFENSE',
+    BOOTS: 'DEFENSE',
+    BRACERS: 'OFFENSE',
+    SHIELD: 'DEFENSE',
   };
-  
-  return itemTypeMap[type];
+
+  return (itemTypeMap[type] || 'OFFENSE') as ItemUsage;
 }
 
 const parseItemsData = (data: any) => {
@@ -237,14 +244,14 @@ const BasicInfoTab = React.memo(({ armyData, handleChange }: {
         <NumberInput
           label="Level"
           value={getLevelFromXP(armyData.experience) || 1}
-          onChange={(value) => handleChange('level', value)}
+          onChange={(value) => handleChange('level', value ?? 1)}
           min={1}
           max={100}
         />
         <NumberInput
           label="Experience"
           value={armyData.experience || 0}
-          onChange={(value) => handleChange('experience', value)}
+          onChange={(value) => handleChange('experience', value ?? 0)}
           min={0}
         />
       </Stack>

@@ -5,14 +5,24 @@ import { useEffect, useState } from 'react';
 import SpyMissionsModal from './spyMissionsModal';
 import Modal from './modal';
 
-const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
+type ItemBreakdown = { type: string; quantity: number; percentage: number | null };
+type ItemsByCategory = { name: string; total: number; itemsBreakdown: ItemBreakdown[]; color: string };
+type UnitSegment = { label: string; quantity: number; part: number; color: string };
+
+interface InfiltrationResultProps {
+  battle: any;
+  viewerID: number;
+  lastGenerated: string | number | Date;
+}
+
+const InfiltrationResult: React.FC<InfiltrationResultProps> = ({ battle, viewerID, lastGenerated }) => {
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
   const [isAttackModalOpen, setIsAttackModalOpen] = useState(false);
-  const { attackerPlayer, defenderPlayer, winner, stats } = battle;
-  const isViewerAttacker = viewerID === attackerPlayer.id;
-  const isAttackerWinner = winner === attackerPlayer.id;
-  const [unitSegments, setUnitSegments] = useState([]);
-  const [itemsByCategory, setItemsByCategory] = useState([]);
+  const { attackerPlayer, defenderPlayer, winner, stats } = battle || {};
+  const isViewerAttacker = viewerID === attackerPlayer?.id;
+  const isAttackerWinner = winner === attackerPlayer?.id;
+  const [unitSegments, setUnitSegments] = useState<UnitSegment[]>([]);
+  const [itemsByCategory, setItemsByCategory] = useState<ItemsByCategory[]>([]);
   const itemColors = {
     HELM: 'grey',
     ARMOR: 'yellow',
@@ -32,10 +42,13 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
   
   useEffect(() => {
     const fetchData = async () => {
-      const filteredUnits = stats.spyResults.intelligenceGathered?.units?.filter((unit) => unit.quantity > 0) || [];
-      const totalUnits = filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0);
-      const totalPopulation = Object.values(stats.spyResults.defender?.units).reduce((acc, unit) => acc + unit.quantity, 0);
-      const unknownUnits = totalPopulation - totalUnits;
+      const spyResults = stats?.spyResults || {};
+      const intelligenceUnits = spyResults.intelligenceGathered?.units ?? [];
+      const filteredUnits = (intelligenceUnits as any[]).filter((unit) => unit.quantity > 0) || [];
+  const totalUnits = Number(filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0));
+  const defenderUnitsObj = spyResults.defender?.units ?? {};
+  const totalPopulation = Number(Object.values(defenderUnitsObj).reduce((acc: number, unit: any) => acc + (Number(unit.quantity) || 0), 0) || 0);
+  const unknownUnits = Math.max(0, totalPopulation - totalUnits);
       const unitColors = {
         CITIZEN: 'grey',
         WORKER: 'yellow',
@@ -46,17 +59,17 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
         UNKNOWN: 'black',
       };
 
-      const newUnitSegments = [
-        ...filteredUnits.map((unit) => ({
+      const newUnitSegments: UnitSegment[] = [
+        ...filteredUnits.map((unit: any) => ({
           label: `${unit.type}`,
-          quantity: unit.quantity,
-          part: Math.min(Math.max(unit.quantity / totalPopulation, 0), 1) * 100,
+          quantity: Number(unit.quantity) || 0,
+          part: totalPopulation > 0 ? Math.min(Math.max((Number(unit.quantity) || 0) / totalPopulation, 0), 1) * 100 : 0,
           color: unitColors[unit.type] || 'black',
         })),
         {
           label: 'UNKNOWN',
           quantity: unknownUnits,
-          part: (unknownUnits / totalPopulation) * 100,
+          part: totalPopulation > 0 ? (unknownUnits / totalPopulation) * 100 : 0,
           color: unitColors.UNKNOWN,
         }
       ];
@@ -65,21 +78,19 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
       const itemCategories = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
       const itemTypes = ['HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD', 'WEAPON'];
 
-      const newItemsByCategory = itemCategories.map((category) => {
-        console.log('category', category);
-        const categoryUnits = filteredUnits.filter((unit) => unit.type === category).reduce((acc, unit) => acc + unit.quantity, 0);
-        const categoryItems = stats.spyResults.intelligenceGathered?.items?.filter((item) => item.usage === category) || [];
-        console.log('categoryItems', categoryItems);
+      const newItemsByCategory: ItemsByCategory[] = itemCategories.map((category) => {
+        const categoryUnits = filteredUnits.filter((unit: any) => unit.type === category).reduce((acc: number, unit: any) => acc + (Number(unit.quantity) || 0), 0);
+        const categoryItems = (spyResults.intelligenceGathered?.items ?? []).filter((item: any) => item.usage === category) || [];
         const combinedItems = itemTypes.map((type) => {
-          const totalQuantity = categoryItems
+          const totalQuantity = (categoryItems as any[])
             .filter((item) => item.type === type)
             .reduce((acc, item) => Number(acc) + Number(item.quantity), 0);
           return {
             type,
             quantity: totalQuantity,
-            percentage: categoryUnits > 0 ? Math.min((Number(totalQuantity) / Number(categoryUnits)) * 100, 100) : null, // Ensure valid percentage
+            percentage: categoryUnits > 0 ? Math.min((Number(totalQuantity) / Number(categoryUnits)) * 100, 100) : null,
           };
-        }).filter((item) => item.quantity > 0); // Filter out items with zero quantity
+        }).filter((item) => item.quantity > 0);
 
         return {
           name: category,
@@ -99,7 +110,7 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
   return (
     <Container size='xl' p={'md'} style={{ backgroundColor: 'black', color: 'white' }} >
       <Grid grow className="gap-5">
-        <Grid.Col span={3} md={4} className="text-center">
+  <Grid.Col {...({ span: 3, md: 4 } as any)} className="text-center">
           <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
           <h4>Level: {getLevelFromXP(stats.spyResults.attacker.experience)}</h4>
           <center>
@@ -112,7 +123,7 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
             />
           </center>
         </Grid.Col>
-        <Grid.Col span={6} md={4} className="text-center">
+  <Grid.Col {...({ span: 6, md: 4 } as any)} className="text-center">
           <Space h='10' />
           <div className="text-container inline-block align-middle">
             <Text color="white" fw="bolder" size='xl' className="font-medieval">
@@ -162,7 +173,7 @@ const InfiltrationResult = ({ battle, viewerID, lastGenerated }) => {
             )}
           </div>
         </Grid.Col>
-        <Grid.Col span={3} md={4} className="text-center">
+  <Grid.Col {...({ span: 3, md: 4 } as any)} className="text-center">
           <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
           <h4>Level: {getLevelFromXP(stats.spyResults.defender.experience)}</h4>
           <center>

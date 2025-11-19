@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useUser } from '@/context/users';
 import { getAssetPath } from '@/utils/utilities';
 import MainArea from '@/components/MainArea';
+import { logError } from '@/utils/logger';
 
 interface RecruitProps {
   id: string;
@@ -25,7 +26,7 @@ export default function Recruit(props) {
   const [showCaptcha, setShowCaptcha] = useState(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const [userInfo, setUserInfo] = useState<RecruitProps | null>(null);
-  const { user } = useUser();
+  const { user, forceUpdate } = useUser();
 
   const autoRecruit = useCallback(async () => {
     // Fetch the next recruitment link immediately
@@ -113,6 +114,8 @@ export default function Recruit(props) {
 
       if (recData.success) {
         alertService.success("You've been recruited into a player's army.", true);
+        // Reload user data like the sidebar refresh button
+        forceUpdate();
         if (autoRecruitParams === '1') {
           await autoRecruit();
           return;

@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { alertService } from "@/services";
 import { getLevelFromXP } from "@/utils/utilities";
-import { Group, Avatar, Text, Card, Autocomplete, Button, Select, Badge, Stack } from "@mantine/core";
+import { Group, Avatar, Text, Card, Autocomplete, Button, MultiSelect, Badge, Stack } from "@mantine/core";
 import { useDebouncedCallback } from "@mantine/hooks";
 import { PermissionType } from "@prisma/client";
 
 const GrantUserForm = () => {
-  const [grantUser, setGrantUser] = useState("");
-  const [grantLevel, setGrantLevel] = useState([]);
-  const [usersData, setUsersData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [isUserValid, setIsUserValid] = useState(false);
+  const [grantUser, setGrantUser] = useState<string>("");
+  const [grantLevel, setGrantLevel] = useState<string[]>([]);
+  const [usersData, setUsersData] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isUserValid, setIsUserValid] = useState<boolean>(false);
 
   const fetchUsers = async (searchTerm) => {
     if (!searchTerm.trim()) return [];
@@ -37,7 +37,7 @@ const GrantUserForm = () => {
         permissions: user.permissions
       }));
     } catch (error) {
-      logError("Failed to fetch users:", error);
+      console.error("Failed to fetch users:", error);
       return [];
     } finally {
       setLoading(false);
@@ -51,7 +51,7 @@ const GrantUserForm = () => {
       const users = await fetchUsers(query);
       setUsersData(users);
     } catch (error) {
-      logError("Failed to fetch users:", error);
+      console.error("Failed to fetch users:", error);
     }
   }, 300);
 
@@ -95,8 +95,8 @@ const GrantUserForm = () => {
     );
   };
 
-  const renderAutocompleteOption = ({ option }) => (
-    <Group gap="sm">
+  const renderAutocompleteOption = ({ option }: { option: any }) => (
+    <Group>
       <Avatar src={option.image} size={50} radius="xl" />
       <div>
         <Text size="sm" fw="bold">{option.label}</Text>
@@ -107,15 +107,14 @@ const GrantUserForm = () => {
           Permissions:
           {option.permissions.length > 0 ? (
             option.permissions.map((perm) => (
-              <Badge
-                key={perm.id}
-                size="xs"
-                color={perm.type === "ADMINISTRATOR" ? "red" : "blue"}
-                variant="filled"
-                mr="xs"
-                onClick={() => handlePermissionToggle(perm.type)}
-                style={{ cursor: "pointer" }}
-              >
+                <Badge
+                  key={perm.id}
+                  size="xs"
+                  color={perm.type === "ADMINISTRATOR" ? "red" : "blue"}
+                  variant="filled"
+                  onClick={() => handlePermissionToggle(perm.type)}
+                  style={{ cursor: "pointer", marginRight: 8 }}
+                >
                 {perm.type === "ADMINISTRATOR" ? "Administrator" : "Moderator"}
               </Badge>
             ))
@@ -150,7 +149,7 @@ const GrantUserForm = () => {
         <Card.Section mt="md">
           <div style={{ padding: "16px" }}> {/* Add padding here */}
             <Text size="xl" fw="bold">Modify Permissions</Text>
-            <Group mt="sm">
+            <Group>
               {isUserValid ? (
                 Array.isArray(grantLevel) && grantLevel.length > 0 ? (
                   grantLevel.map((perm) => (
@@ -178,12 +177,10 @@ const GrantUserForm = () => {
               )}
             </Group>
 
-            <Select
+            <MultiSelect
               data={Object.keys(PermissionType).map((permType) => ({ value: permType, label: permType }))}
-              value={grantLevel.toLocaleString()}
-              //TODO: fix this
-              //onChange={(values) => setGrantLevel([values] || [])} // Ensure it's always an array
-              multiple
+              value={grantLevel}
+              onChange={(value: string[]) => setGrantLevel(value || [])}
               placeholder="Add or remove permissions"
               mt="md"
               disabled={!isUserValid}

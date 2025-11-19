@@ -44,11 +44,11 @@ const ItemRow = React.memo(({
       {levels.map((level) => (
         <Table.Td key={`${itemType}-${level}`}>
           <NumberInput
-            value={itemData.quantities?.[level] || 0}
+            value={Number(itemData.quantities?.[level] ?? 0)}
             onChange={(value) => {
-              if (value !== undefined) {
-                onItemChange(itemType, level, value, itemData.usage);
-              }
+              // coerce undefined to 0 to satisfy handler signature
+              const qty = Number(value ?? 0);
+              onItemChange(itemType, level, qty, itemData.usage);
             }}
             min={0}
             max={1000}

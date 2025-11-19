@@ -150,18 +150,18 @@ export const presets = {
       fort_level: 1,
       fort_hitpoints: 100,
       units: [
-        { type: 'OFFENSE' as UnitType, level: 1, quantity: 1000 },
-        { type: 'DEFENSE' as UnitType, level: 1, quantity: 1000 },
-        { type: 'SENTRY' as UnitType, level: 1, quantity: 100 },
-        { type: 'CITIZEN' as UnitType, level: 1, quantity: 500 }
+        { id: 0, userId: 0, type: 'OFFENSE' as UnitType, level: 1, quantity: 1000, isMercenary: false },
+        { id: 0, userId: 0, type: 'DEFENSE' as UnitType, level: 1, quantity: 1000, isMercenary: false },
+        { id: 0, userId: 0, type: 'SENTRY' as UnitType, level: 1, quantity: 100, isMercenary: false },
+        { id: 0, userId: 0, type: 'CITIZEN' as UnitType, level: 1, quantity: 500, isMercenary: false }
       ] as PlayerUnit[],
       items: [{
-        type: 'WEAPON' as ItemType,
+        id: 0, userId: 0, type: 'WEAPON' as ItemType,
         level: 1,
         quantity: 1000,
         usage: 'OFFENSE'
       }, {
-        type: 'WEAPON' as ItemType,
+        id: 0, userId: 0, type: 'WEAPON' as ItemType,
         level: 1,
         quantity: 1000,
         usage: 'DEFENSE'
@@ -179,26 +179,26 @@ export const presets = {
       fort_level: 6,
       fort_hitpoints: 100,
       units: [
-        { type: 'OFFENSE' as UnitType, level: 1, quantity: 2000 },
-        { type: 'OFFENSE' as UnitType, level: 2, quantity: 500 },
-        { type: 'DEFENSE' as UnitType, level: 1, quantity: 1500 },
-        { type: 'DEFENSE' as UnitType, level: 2, quantity: 300 },
-        { type: 'SENTRY' as UnitType, level: 1, quantity: 800 },
-        { type: 'SENTRY' as UnitType, level: 2, quantity: 200 },
-        { type: 'CITIZEN' as UnitType, level: 1, quantity: 1000 },
-        { type: 'WORKER' as UnitType, level: 1, quantity: 500 }
+        { id: 0, userId: 0, type: 'OFFENSE' as UnitType, level: 1, quantity: 2000, isMercenary: false },
+        { id: 0, userId: 0, type: 'OFFENSE' as UnitType, level: 2, quantity: 500, isMercenary: false },
+        { id: 0, userId: 0, type: 'DEFENSE' as UnitType, level: 1, quantity: 1500, isMercenary: false },
+        { id: 0, userId: 0, type: 'DEFENSE' as UnitType, level: 2, quantity: 300, isMercenary: false },
+        { id: 0, userId: 0, type: 'SENTRY' as UnitType, level: 1, quantity: 800, isMercenary: false },
+        { id: 0, userId: 0, type: 'SENTRY' as UnitType, level: 2, quantity: 200, isMercenary: false },
+        { id: 0, userId: 0, type: 'CITIZEN' as UnitType, level: 1, quantity: 1000, isMercenary: false },
+        { id: 0, userId: 0, type: 'WORKER' as UnitType, level: 1, quantity: 500, isMercenary: false }
       ] as PlayerUnit[],
       items: [
-        { type: 'HELM' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'ARMOR' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'BOOTS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'BRACERS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'SHIELD' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'WEAPON' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
-        { type: 'HELM' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
-        { type: 'ARMOR' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
-        { type: 'BOOTS' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
-        { type: 'BRACERS' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' }
+        { id: 0, userId: 0, type: 'HELM' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'ARMOR' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'BOOTS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'BRACERS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'SHIELD' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'WEAPON' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'HELM' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'ARMOR' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'BOOTS' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'BRACERS' as ItemType, level: 1, quantity: 1000, usage: 'OFFENSE' }
       ] as PlayerItem[],
       battle_upgrades: [
         { type: 'OFFENSE', level: 1, quantity: 5 },
@@ -216,28 +216,28 @@ export const presets = {
       fort_level: 8,
       fort_hitpoints: 80,
       units: [
-        { type: 'OFFENSE' as UnitType, level: 1, quantity: 5000 },
-        { type: 'OFFENSE' as UnitType, level: 2, quantity: 2000 },
-        { type: 'DEFENSE' as UnitType, level: 1, quantity: 500 },
-        { type: 'SENTRY' as UnitType, level: 1, quantity: 300 },
-        { type: 'CITIZEN' as UnitType, level: 1, quantity: 800 }
+        { id: 0, userId: 0, type: 'OFFENSE' as UnitType, level: 1, quantity: 5000, isMercenary: false },
+        { id: 0, userId: 0, type: 'OFFENSE' as UnitType, level: 2, quantity: 2000, isMercenary: false },
+        { id: 0, userId: 0, type: 'DEFENSE' as UnitType, level: 1, quantity: 500, isMercenary: false },
+        { id: 0, userId: 0, type: 'SENTRY' as UnitType, level: 1, quantity: 300, isMercenary: false },
+        { id: 0, userId: 0, type: 'CITIZEN' as UnitType, level: 1, quantity: 800, isMercenary: false }
       ] as PlayerUnit[],
       items: [
-        { type: 'HELM' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'ARMOR' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'BOOTS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'BRACERS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'SHIELD' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
-        { type: 'WEAPON' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
-        { type: 'HELM' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
-        { type: 'ARMOR' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
-        { type: 'BOOTS' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
-        { type: 'BRACERS' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
-        { type: 'WEAPON' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
-        { type: 'HELM' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
-        { type: 'ARMOR' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
-        { type: 'BOOTS' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
-        { type: 'BRACERS' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' }
+        { id: 0, userId: 0, type: 'HELM' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'ARMOR' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'BOOTS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'BRACERS' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'SHIELD' as ItemType, level: 1, quantity: 1000, usage: 'DEFENSE' },
+        { id: 0, userId: 0, type: 'WEAPON' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'HELM' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'ARMOR' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'BOOTS' as ItemType, level: 1, quantity: 5000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'BRACERS' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'WEAPON' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'HELM' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'ARMOR' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'BOOTS' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' },
+        { id: 0, userId: 0, type: 'BRACERS' as ItemType, level: 2, quantity: 5000, usage: 'OFFENSE' }
 
 
       ] as PlayerItem[],
@@ -257,13 +257,13 @@ export const presets = {
       fort_level: 10,
       fort_hitpoints: 100,
       units: [
-        { type: 'OFFENSE' as UnitType, level: 1, quantity: 1000 },
-        { type: 'DEFENSE' as UnitType, level: 1, quantity: 3000 },
-        { type: 'DEFENSE' as UnitType, level: 2, quantity: 1500 },
-        { type: 'DEFENSE' as UnitType, level: 3, quantity: 800 },
-        { type: 'SENTRY' as UnitType, level: 1, quantity: 1000 },
-        { type: 'SENTRY' as UnitType, level: 2, quantity: 500 },
-        { type: 'CITIZEN' as UnitType, level: 1, quantity: 2000 }
+        { id: 0, userId: 0, type: 'OFFENSE' as UnitType, level: 1, quantity: 1000, isMercenary: false },
+        { id: 0, userId: 0, type: 'DEFENSE' as UnitType, level: 1, quantity: 3000, isMercenary: false },
+        { id: 0, userId: 0, type: 'DEFENSE' as UnitType, level: 2, quantity: 1500, isMercenary: false },
+        { id: 0, userId: 0, type: 'DEFENSE' as UnitType, level: 3, quantity: 800, isMercenary: false },
+        { id: 0, userId: 0, type: 'SENTRY' as UnitType, level: 1, quantity: 1000, isMercenary: false },
+        { id: 0, userId: 0, type: 'SENTRY' as UnitType, level: 2, quantity: 500, isMercenary: false },
+        { id: 0, userId: 0, type: 'CITIZEN' as UnitType, level: 1, quantity: 2000, isMercenary: false }
       ] as PlayerUnit[],
       items: [] as PlayerItem[],
       battle_upgrades: [

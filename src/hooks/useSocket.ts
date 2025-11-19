@@ -53,6 +53,16 @@ export default function useSocket(userId: number | null) {
       setIsConnected(false);
     });
 
+    socket.on('reconnect', () => {
+      logInfo('Socket.IO reconnected, re-registering user and rooms');
+      setIsConnected(true);
+      if (userId) {
+        socket.emit('registerUser', { userId });
+        // Re-join any rooms the user was in. This logic would need to be built out.
+        // For example, you might store joined rooms in a state and re-join them here.
+      }
+    });
+
     socket.onAny((event, data) => {
       dispatchEvent(event, data);
     });

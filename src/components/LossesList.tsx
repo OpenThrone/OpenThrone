@@ -1,11 +1,14 @@
 import { BattleUnits } from "@/types/typings";
 import { HoverCard, List } from "@mantine/core";
+import { Record } from "@prisma/client/runtime/library";
 
 interface LossesListProps {
   losses: string; // JSON string containing total and units
 }
 const LossesList: React.FC<LossesListProps> = ({ losses }) => {
-  const { total, units = [] } = typeof losses === 'string' ? JSON.parse(losses) : losses;
+  const parsed: { total: number; units: BattleUnits[] } =
+    typeof losses === 'string' ? (JSON.parse(losses) as { total: number; units: BattleUnits[] }) : (losses as { total: number; units: BattleUnits[] });
+  const { total, units = [] } = parsed;
 
   if (total === 0 || units.length === 0) {
     return <span>0 Units</span>;
