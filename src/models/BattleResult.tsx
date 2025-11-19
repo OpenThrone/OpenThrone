@@ -14,8 +14,6 @@ class BattleResult {
 
   turnsTaken: number;
 
-  experienceResult: BattleSimulationResult;
-
   pillagedGold: bigint;
 
   experienceGained: { attacker: number; defender: number };
@@ -23,8 +21,6 @@ class BattleResult {
   finalFortHP: number;
 
   fortDamaged: boolean;
-
-  strength: BattleUnits[];
 
   result: 'WIN' | 'LOSS' | 'UNDECIDED';
 
@@ -64,13 +60,11 @@ class BattleResult {
     this.defender = JSON.parse(JSON.stringify(stringifyObj(defender))); // deep copy but same as above
     this.fortHitpoints = 0;
     this.turnsTaken = 0;
-    this.experienceResult = new BattleSimulationResult();
     this.pillagedGold = BigInt(0);
     this.experienceGained = { attacker: 0, defender: 0 };
     this.finalFortHP = 0;
     this.fortDamaged = false;
-    this.strength = [];
-    this.result = 'UNDECIDED';
+    this.result = 'UNDECIDED'; // Default value, will be set by calculateAndApplyExperience
     this.Losses = {
       Attacker: {
         total: 0,
@@ -82,19 +76,6 @@ class BattleResult {
       },
     };
   }
-
-  calculateResult(attacker: UserModel, defender: UserModel): 'WIN' | 'LOSS' | 'UNDECIDED' {
-    //TODO: need to really flesh this out
-    if (attacker.offense > defender.defense) {
-      // Attacker Wins
-      return 'WIN';
-    } else {
-      // Defender Wins
-      return 'LOSS';
-    }
-  }
-
-  /* Removed unused distributeCasualties method – logic handled in attackFunctions.ts */
 
 }
 

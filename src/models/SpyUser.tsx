@@ -11,11 +11,11 @@ export class SpyUserModel {
   constructor(defender: UserModel, intelPercentage: number) {
     // Explicitly set each property based on the defender's properties
     this.units = defender.units
-      ? defender.units.map(unit => ({ ...unit, quantity: Math.ceil(unit.quantity * intelPercentage / 100) }))
-      : null;
+      ? (defender.units.map(unit => ({ ...(unit as any), quantity: Math.ceil((unit as any).quantity * intelPercentage / 100) })) as PlayerUnit[])
+      : [];
     this.items = defender.items
-      ? defender.items.map(item => ({ ...item, quantity: Math.ceil(item.quantity * intelPercentage / 100) }))
-      : null;
+      ? (defender.items.map(item => ({ ...(item as any), quantity: Math.ceil((item as any).quantity * intelPercentage / 100) })) as Item[])
+      : [];
     this.fort_level = defender.fortLevel !== null
       ? Math.ceil(defender.fortLevel * intelPercentage / 100)
       : null;

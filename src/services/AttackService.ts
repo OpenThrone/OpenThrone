@@ -9,6 +9,7 @@ import {
   calculateStaminaModifier,
   calculateReinforcementModifier,
   calculateRecoveryFactor,
+  executeAttack,
 } from '@/utils/attackFunctions';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -54,8 +55,8 @@ export const AttackService = {
         return { status: 'failed', message: 'Defender user not found', code: 'DEFENDER_NOT_FOUND' };
       }
 
-      const attacker = new UserModel(attackerUser);
-      const defender = new UserModel(defenderUser);
+      const attacker = new UserModel(attackerUser, attackerUser.UserUnit, attackerUser.UserItem, attackerUser.UserStructureUpgrade, attackerUser.UserBattleUpgrade, attackerUser.UserBonusPoints, attackerUser.permissions.map(p => ({ type: p })), attackerUser.stats);
+      const defender = new UserModel(defenderUser, defenderUser.UserUnit, defenderUser.UserItem, defenderUser.UserStructureUpgrade, defenderUser.UserBattleUpgrade, defenderUser.UserBonusPoints, defenderUser.permissions.map(p => ({ type: p })), defenderUser.stats);
 
       if(process.env.NEXT_PUBLIC_ENABLE_ATTACKING === 'false') {
         return { status: 'failed', message: 'Attacking is currently disabled.', code: 'ATTACKING_DISABLED' };
@@ -71,8 +72,12 @@ export const AttackService = {
         return { status: 'failed', message: 'Insufficient attack turns', code: 'INSUFFICIENT_ATTACK_TURNS' };
       }
 
-      const AttackPlayer = new UserModel(attackerUser);
-      const DefensePlayer = new UserModel(defenderUser);
+      if (attacker.stamina < attack_turns) {
+        return { status: 'failed', message: 'Insufficient stamina', code: 'INSUFFICIENT_STAMINA' };
+      }
+
+      const AttackPlayer = new UserModel(attackerUser, attackerUser.UserUnit, attackerUser.UserItem, attackerUser.UserStructureUpgrade, attackerUser.UserBattleUpgrade, attackerUser.UserBonusPoints, attackerUser.permissions.map(p => ({ type: p })), attackerUser.stats);
+      const DefensePlayer = new UserModel(defenderUser, defenderUser.UserUnit, defenderUser.UserItem, defenderUser.UserStructureUpgrade, defenderUser.UserBattleUpgrade, defenderUser.UserBonusPoints, defenderUser.permissions.map(p => ({ type: p })), defenderUser.stats);
 
       // Enhanced strength calculation with unit-item allocation and battle upgrades
       const attackerStrengthObj = this.calculateStrength(
@@ -99,7 +104,7 @@ export const AttackService = {
         }
       }
 
-      if (await canAttack(AttackPlayer, DefensePlayer) === false) {
+      if (await canAttack({ id: AttackPlayer.id }, { id: DefensePlayer.id }) === false) {
         return {
           status: 'failed',
           message: 'You have attacked this player too many times in the last 24 hours.',
@@ -113,12 +118,14 @@ export const AttackService = {
       };
 
       // Enhanced battle simulation with all factors
-      const battleResults = await this.simulateBattle(
+      const battleResults = await executeAttack(
         AttackPlayer,
         DefensePlayer,
-        DefensePlayer.fortHitpoints,
         attack_turns
       );
+
+      // Consume stamina after successful attack initiation
+      AttackPlayer.stamina = Math.max(0, AttackPlayer.stamina - attack_turns);
 
       DefensePlayer.fortHitpoints -= (startOfAttack.Defender.fortHitpoints - battleResults.finalFortHP);
 
@@ -217,10 +224,12 @@ export const AttackService = {
           );
           const finalAttackerKS = finalAttackerStrength.MeleeAtkPower;
           const finalAttackerDS = finalAttackerStrength.MeleeDefPower;
-          const newAttOffense = AttackPlayer.getArmyStat('OFFENSE');
-          const newAttDefense = AttackPlayer.getArmyStat('DEFENSE');
-          const newAttSpying = AttackPlayer.getArmyStat('SPY');
-          const newAttSentry = AttackPlayer.getArmyStat('SENTRY');
+          
+          // Use the new public method to get detailed stats with totalStats property
+          const newAttOffense = AttackPlayer.getDetailedArmyStat('OFFENSE');
+          const newAttDefense = AttackPlayer.getDetailedArmyStat('DEFENSE');
+          const newAttSpying = AttackPlayer.getDetailedArmyStat('SPY');
+          const newAttSentry = AttackPlayer.getDetailedArmyStat('SENTRY');
     
           const finalDefenderStrength = this.calculateStrength(
             DefensePlayer,
@@ -229,32 +238,33 @@ export const AttackService = {
           );
           const finalDefenderKS = finalDefenderStrength.MeleeAtkPower;
           const finalDefenderDS = finalDefenderStrength.MeleeDefPower;
-          const newDefOffense = DefensePlayer.getArmyStat('OFFENSE');
-          const newDefDefense = DefensePlayer.getArmyStat('DEFENSE');
-          const newDefSpying = DefensePlayer.getArmyStat('SPY');
-          const newDefSentry = DefensePlayer.getArmyStat('SENTRY');
+          
+          // Use the new public method to get detailed stats with totalStats property
+          const newDefOffense = DefensePlayer.getDetailedArmyStat('OFFENSE');
+          const newDefDefense = DefensePlayer.getDetailedArmyStat('DEFENSE');
+          const newDefSpying = DefensePlayer.getDetailedArmyStat('SPY');
+          const newDefSentry = DefensePlayer.getDetailedArmyStat('SENTRY');
     
           // Persist updated user rows with clamped gold values
           await updateUser(attackerId, {
             gold: AttackPlayer.gold,
             attack_turns: AttackPlayer.attackTurns - attack_turns,
+            stamina: AttackPlayer.stamina,
             experience: Math.ceil(AttackPlayer.experience),
-            units: AttackPlayer.units,
-            offense: newAttOffense,
-            defense: newAttDefense,
-            spy: newAttSpying,
-            sentry: newAttSentry,
-          }, tx);
+            offense: newAttOffense.totalStats.MeleeAtkPower,
+            defense: newAttDefense.totalStats.MeleeDefPower,
+            spy: newAttSpying.totalStats.MeleeAtkPower,
+            sentry: newAttSentry.totalStats.MeleeDefPower,
+          } as any, tx);
     
           await updateUser(defenderId, {
             gold: DefensePlayer.gold,
             fort_hitpoints: Math.max(DefensePlayer.fortHitpoints, 0),
-            units: DefensePlayer.units,
             experience: Math.ceil(DefensePlayer.experience),
-            offense: newDefOffense,
-            defense: newDefDefense,
-            spy: newDefSpying,
-            sentry: newDefSentry,
+            offense: newDefOffense.totalStats.MeleeAtkPower,
+            defense: newDefDefense.totalStats.MeleeDefPower,
+            spy: newDefSpying.totalStats.MeleeAtkPower,
+            sentry: newDefSentry.totalStats.MeleeDefPower,
           }, tx);
     
           return attack_log;

@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getOTStartDate } from '@/utils/timefunctions';
 import { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
 import type { PlayerStat, PlayerUnit, PlayerItem, PlayerBattleUpgrade } from '@/types/typings'; // Import custom types
+import { Omit } from '@prisma/client/runtime/library';
 
 // Define the type for the transaction client
 type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
@@ -15,6 +16,14 @@ type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' |
 export const getUserById = async (userId: number) => {
   return await prisma.users.findUnique({
     where: { id: userId },
+    include: {
+      UserUnit: true,
+      UserItem: true,
+      UserStructureUpgrade: true,
+      UserBattleUpgrade: true,
+      UserBonusPoints: true,
+      permissions: true,
+    },
   });
 };
 
@@ -29,16 +38,29 @@ export const getAllUserIds = async () => {
 };
 
 /**
- * Updates the units JSON for a specific user within a transaction.
+ * Updates the units for a specific user within a transaction using the UserUnit table.
  * @param userId - The ID of the user to update.
- * @param units - The new units JSON array.
+ * @param units - The new units array.
  * @param txClient - The Prisma transaction client.
  */
 export const updateUserUnits = async (userId: number, units: PlayerUnit[], txClient: TransactionClient) => {
-  await txClient.users.update({
-    where: { id: userId },
-    data: { units },
+  // Delete existing units for the user
+  await txClient.userUnit.deleteMany({
+    where: { userId }
   });
+
+  // Insert new units
+  if (units && units.length > 0) {
+    await txClient.userUnit.createMany({
+      data: units.map(unit => ({
+        userId,
+        type: unit.type,
+        level: unit.level,
+        quantity: unit.quantity,
+        isMercenary: false // Regular units, not mercenaries
+      }))
+    });
+  }
 };
 
 /**
@@ -86,10 +108,9 @@ export const incrementUserStats = async (userId: number, newStat: { type: string
     },
   });
 
-  if (!user) {
-    throw new Error("User not found");
-  throw new Error("User not found");
-}
+    if (!user) {
+      throw ({ message: "User not found" } as any);
+    }
 
 // Safely handle the stats array from Prisma JSON
 let userStats: PlayerStat[] = [];
@@ -121,7 +142,7 @@ if (existingStatIndex >= 0) {
 await txClient.users.update({
   where: { id: userId },
   // Prisma expects JsonValue for JSON fields
-  data: { stats: userStats as Prisma.InputJsonValue },
+  data: { stats: userStats as unknown as Prisma.InputJsonValue },
 });
 }
 
@@ -396,7 +417,7 @@ export async function getTopSuccessfulAttacks() {
   // Convert to array, sort by count, and take the top 10
   const sortedAttackers = Object.entries(attackCounts)
     .map(([attacker_id, stat]) => ({ attacker_id: parseInt(attacker_id, 10), stat }))
-    .sort((a, b) => b.stat - a.stat)
+    .sort((a, b) => Number(b.stat) - Number(a.stat))
     .slice(0, 10);
 
   // Fetch displayName for each top attacker
@@ -438,11 +459,12 @@ export async function getTopSuccessfulAttacks() {
  */
 export async function getTopPopulations() {
   // Fetch users and their units
+  // Fetch users and their units
   const usersWithUnits = await prisma.users.findMany({
     select: {
       id: true,
       display_name: true,
-      units: true, // Assuming this is the field containing the units JSON
+      UserUnit: true, // Use the new relational structure
     },
     where: {
       id: { not: 0 }, // Exclude user ID 0
@@ -451,16 +473,14 @@ export async function getTopPopulations() {
 
   // Calculate total units for each user
   const usersTotalUnits = usersWithUnits.map(user => {
-    // Safely parse units and calculate total
-    const unitsArray = user.units as PlayerUnit[] ?? [];
-    const totalUnits = unitsArray.reduce((acc, unit) => acc + (unit.quantity ?? 0), 0);
+    // Calculate total from UserUnit relation
+    const totalUnits = user.UserUnit?.reduce((acc, unit) => acc + (unit.quantity ?? 0), 0) || 0;
     return {
       id: user.id,
       display_name: user.display_name,
       stat: totalUnits,
     };
   });
-
   // Sort by total units in descending order and take the top 10
   const topPopulations = usersTotalUnits.sort((a, b) => b.stat - a.stat).slice(0, 10);
 
@@ -539,9 +559,9 @@ export async function getTopWealth() {
       id: true,
       display_name: true,
       gold: true,
-      items: true,
+      UserItem: true,
       gold_in_bank: true,
-      battle_upgrades: true,
+      UserBattleUpgrade: true,
     },
     where: {
       id: { not: 0 }, // Exclude user ID 0
@@ -549,7 +569,7 @@ export async function getTopWealth() {
   });
 
   // Helper function to calculate the total value of items based on their cost
-  const calculateItemsValue = (items: PlayerItem[]): bigint => {
+  const calculateItemsValue = (items: any[]): bigint => {
     return items.reduce((total, item) => {
       const itemTypeInfo = ItemTypes.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type);
       if (!itemTypeInfo) return total; // If item type info not found, add 0
@@ -561,7 +581,7 @@ export async function getTopWealth() {
   };
 
   // Helper function to calculate the total value of battle upgrades based on their cost
-  const calculateBattleUpgradeValue = (upgrades: PlayerBattleUpgrade[]): bigint => {
+  const calculateBattleUpgradeValue = (upgrades: any[]): bigint => {
     return upgrades.reduce((total, upgrade) => {
       const battleUpgradeInfo = BattleUpgrades.find((upg) => upg.level === upgrade.level && upgrade.type === upg.type);
       if (!battleUpgradeInfo) return total; // If upgrade info not found, add 0
@@ -574,11 +594,9 @@ export async function getTopWealth() {
 
   // Calculate wealth for each user
   const usersWithWealth = users.map((user) => {
-    const itemsArray = user.items as PlayerItem[] ?? [];
-    const upgradesArray = user.battle_upgrades as PlayerBattleUpgrade[] ?? [];
+    const itemsValue = calculateItemsValue(user.UserItem || []);
+    const battleUpgradesValue = calculateBattleUpgradeValue(user.UserBattleUpgrade || []);
 
-    const itemsValue = calculateItemsValue(itemsArray);
-    const battleUpgradesValue = calculateBattleUpgradeValue(upgradesArray);
     const wealth = BigInt(user.gold ?? 0) + BigInt(user.gold_in_bank ?? 0) + itemsValue + battleUpgradesValue;
 
     return {
