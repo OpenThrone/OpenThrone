@@ -116,26 +116,22 @@ const validateFriendTransfer = async (fromUserId: number, toUserId: number, amou
 const validateGoldRequest = async (fromUserId: number, toUserId: number, amount: bigint) => {
   const config = getFriendTransferConfig();
   
-    if (!validation.valid) {
-      throw createApiError(validation.error);
-    }
+  // Check if feature is enabled
+  if (!config.enabled) {
+    return { valid: false, error: 'Friend transfers are currently disabled' };
   }
 
   // Validate amount
   if (!isValidTransferAmount(amount)) {
     return { valid: false, error: `Request amount must be between 1 and ${config.maxAmount} gold` };
   }
-    if (!sender) {
-      throw createApiError('Sender not found');
-    }
+
+  // Check if user can make request (cooldown)
+  const existingRequest = await prisma.bank_history.findFirst({
     where: {
-    if (BigInt(sender.gold ?? 0) < params.amount) {
-      throw createApiError('Insufficient gold for transfer');
-    }
-      stats: {
-        path: ['transferType'],
-        equals: 'FRIEND_REQUEST'
-      },
+      from_user_id: fromUserId,
+      to_user_id: toUserId,
+      history_type: 'FRIEND_REQUEST',
       date_time: {
         gte: new Date(Date.now() - friendTransferCompleteConfig.cooldownMs)
       }
@@ -143,17 +139,11 @@ const validateGoldRequest = async (fromUserId: number, toUserId: number, amount:
   });
 
   if (existingRequest) {
-    return { valid: false, error: 'You already have a pending request for this friend' };
+    return { valid: false, error: 'You must wait before making another request to this friend' };
   }
 
   return { valid: true };
 };
-
-/**
-    if (!receiver) {
-      throw createApiError('Receiver not found');
-    }
- */
 export const transferGoldToFriend = async (params: {
   fromUserId: number;
   toUserId: number;

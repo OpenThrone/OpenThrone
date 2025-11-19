@@ -307,6 +307,18 @@ export default class MockUserGenerator {
     return this;
   }
 
+  public clearBattleUpgrades(): this {
+    this.battleUpgrades = [];
+    return this;
+  }
+
+  public setLevel(level: number): this {
+    (this.prismaUser as any).level = level;
+    // Approximate XP for level to ensure consistency if calculated elsewhere
+    this.prismaUser.experience = Math.pow(level, 2) * 1000; 
+    return this;
+  }
+
   private addDefaultUnits(): void {
     // Add default units that are commonly expected by tests
     this.addUnits([

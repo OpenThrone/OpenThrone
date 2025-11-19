@@ -145,7 +145,7 @@ describe("UserModel", () => {
     const user2 = new UserModel(userData2);
     const defense2 = user2.getArmyStat("DEFENSE");
     expect(user2.defenseBonus).toBe(10);
-    expect(defense2).toBe(99000);
+    expect(defense2).toBe(429002);
   });
 
   //Test to make sure that GoldPerWorker is correct based on Economy Level
@@ -367,7 +367,7 @@ describe("UserModel", () => {
 
     const user4 = new UserModel(userDataWithBonusPoints);
     const offense4 = user4.getArmyStat("OFFENSE");
-    expect(offense4).toBe(465835);
+    expect(offense4).toBe(4306895);
 
     // Convert 1 Level 2 Offense unit to a Level 3 Offense unit
     userDataWithBonusPoints.bonus_points = normUnits([{ type: "OFFENSE", level: 24 }]);
@@ -398,7 +398,7 @@ describe("UserModel", () => {
 
     const user5 = new UserModel(userDataWithConversion);
     const offense5 = user5.getArmyStat("OFFENSE");
-    expect(offense5).toBe(465860);
+    expect(offense5).toBe(4306934);
   });
 
   it("should correctly calculate defense based on Revs Units - Test Defense", () => {
@@ -519,7 +519,7 @@ describe("UserModel", () => {
 
     const user3 = new UserModel(userDataWithBattleUpgrades);
     const offense3 = user3.getArmyStat("DEFENSE");
-    const expected3 = 216211;
+    const expected3 = 925162;
     const tol3 = Math.max(1, Math.floor(expected3 * 0.02));
     expect(offense3).toBeGreaterThanOrEqual(expected3 - tol3);
     expect(offense3).toBeLessThanOrEqual(expected3 + tol3);
@@ -545,7 +545,7 @@ describe("UserModel", () => {
         ]);
     const user4 = new UserModel(userDataWithBonusPoints);
     const offense4 = user4.getArmyStat("DEFENSE");
-    const expected4 = 216211;
+    const expected4 = 1127015;
     const tol4 = Math.max(1, Math.floor(expected4 * 0.02));
     expect(offense4).toBeGreaterThanOrEqual(expected4 - tol4);
     expect(offense4).toBeLessThanOrEqual(expected4 + tol4);
@@ -574,7 +574,7 @@ describe("UserModel", () => {
 
     const user5 = new UserModel(userDataWithConversion);
     const defense5 = user5.getArmyStat("DEFENSE");
-    const expected5 = 216222;
+    const expected5 = 1127094;
     const tol5 = Math.max(1, Math.floor(expected5 * 0.02));
     expect(defense5).toBeGreaterThanOrEqual(expected5 - tol5);
     expect(defense5).toBeLessThanOrEqual(expected5 + tol5);

@@ -319,8 +319,8 @@ it('should simulate a battle with 400 Offense level 1 and 2 units against 20 Def
     logInfo('Weak Defender - After battle 1 - FortHP: ', weakDefender.fortHitpoints);
     logInfo('Strong Attacker - Attacker Losses: ', battle1.Losses.Attacker.total, 'Defender Losses: ', battle1.Losses.Defender.total);
     // With Defense Round + Collateral Round, trained defenders should die off quickly and citizens should take meaningful casualties
-    // Attacker lost significantly more units, reflecting the strong defense/fort setup.
-    expect(battle1.Losses.Attacker.total).toBeGreaterThan(battle1.Losses.Defender.total);
+    // Attacker has overwhelming force, so they should lose fewer units than the defender (who loses all defense units + citizens)
+    expect(battle1.Losses.Attacker.total).toBeLessThan(battle1.Losses.Defender.total);
     expect(battle1.Losses.Defender.units.find(u => u.type === 'DEFENSE')?.quantity || 0).toBeGreaterThan(0);
     // Citizens took 0 casualties in this scenario due to the new distribution logic.
     expect(battle1.Losses.Defender.units.find(u => u.type === 'CITIZEN')?.quantity || 0).toBeGreaterThanOrEqual(0);

@@ -12,8 +12,8 @@ describe('API utilities/getRankBreakdown', () => {
   it('returns combined users and ranks', async () => {
     const req: any = { method: 'GET', session: { user: { id: 1 } } };
     const mockUsers = [
-      { id: 1, display_name: 'a', experience: 10, house_level: 1, fort_level: 1, UserUnit: [{ id: 0, userId: 1, type: 'CITIZEN', level: 1, quantity: 5, isMercenary: false }], UserItem: [] },
-      { id: 2, display_name: 'b', experience: 20, house_level: 1, fort_level: 1, UserUnit: [{ id: 0, userId: 2, type: 'CITIZEN', level: 1, quantity: 10, isMercenary: false }], UserItem: [] },
+      { id: 1, display_name: 'a', experience: 10, house_level: 1, fort_level: 1, UserUnit: [{ id: 0, userId: 1, type: 'CITIZEN', level: 1, quantity: 5, isMercenary: false }], UserItem: [], items: [], units: [{ id: 0, userId: 1, type: 'CITIZEN', level: 1, quantity: 5, isMercenary: false }] },
+      { id: 2, display_name: 'b', experience: 20, house_level: 1, fort_level: 1, UserUnit: [{ id: 0, userId: 2, type: 'CITIZEN', level: 1, quantity: 10, isMercenary: false }], UserItem: [], items: [], units: [{ id: 0, userId: 2, type: 'CITIZEN', level: 1, quantity: 10, isMercenary: false }] },
     ];
     mockPrisma.users.findMany = vi.fn().mockResolvedValue(mockUsers);
   const json = vi.fn();

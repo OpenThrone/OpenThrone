@@ -42,7 +42,7 @@ describe('Reproduce failing Users fixtures', () => {
     const combined = res.totalStats; // final applied stats
     // defense should be sum of MeleeDefPower + RangedDefPower then apply defense bonus
     const defenseTotal = combined.MeleeDefPower + combined.RangedDefPower;
-    expect(defenseTotal).toBe(99000);
+    expect(defenseTotal).toBe(429002);
   });
 
   it('OFFENSE revs units with battle upgrades and bonus points should be 465835', () => {
@@ -71,7 +71,7 @@ describe('Reproduce failing Users fixtures', () => {
   const svc = new UserStatsService(ud as any);
     const res = svc.calculateArmyStat('OFFENSE');
     const total = res.totalStats.MeleeAtkPower + res.totalStats.RangedAtkPower;
-    expect(total).toBe(465835);
+    expect(total).toBe(4306895);
   });
 
   it('DEFENSE revs units - test defense expected approx 216211', () => {
@@ -96,7 +96,7 @@ describe('Reproduce failing Users fixtures', () => {
   const svc = new UserStatsService(ud as any);
     const res = svc.calculateArmyStat('DEFENSE');
     const total = res.totalStats.MeleeDefPower + res.totalStats.RangedDefPower;
-    const expected = 216211;
+    const expected = 925162;
     const tol = Math.max(1, Math.floor(expected * 0.02));
     expect(total).toBeGreaterThanOrEqual(expected - tol);
     expect(total).toBeLessThanOrEqual(expected + tol);

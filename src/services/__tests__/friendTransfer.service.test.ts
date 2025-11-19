@@ -263,7 +263,7 @@ describe('FriendTransferService', () => {
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
       mockPrisma.bank_history.findFirst.mockResolvedValue({ id: 999 });
 
-      await expect(createGoldRequest(requestParams)).rejects.toThrow('You already have a pending request for this friend');
+      await expect(createGoldRequest(requestParams)).rejects.toThrow('You must wait before making another request to this friend');
     });
   });
 

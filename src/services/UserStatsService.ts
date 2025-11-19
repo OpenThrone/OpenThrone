@@ -389,9 +389,8 @@ export class UserStatsService {
 
     // Temporary safety gate: battle-upgrade math is complex and under active
     // development. Allow disabling it entirely via env so we can iterate and
-    // keep the test-suite stable. When ENABLE_BATTLE_UPGRADES is set to
-    // '1' the regular algorithm runs; otherwise return zeros.
-    if (!process.env.ENABLE_BATTLE_UPGRADES || process.env.ENABLE_BATTLE_UPGRADES !== '1') {
+    // keep the test-suite stable.
+    if (process.env.ENABLE_BATTLE_UPGRADES === '0') {
       if (process.env.DEBUG_USER_STATS) {
         console.log('[UserStats] battle upgrades are disabled via ENABLE_BATTLE_UPGRADES env flag; skipping computation');
       }
@@ -431,10 +430,13 @@ export class UserStatsService {
       const unitsCovered = Math.min(totalMatchingUnits, totalUpgradeUnitCapacity);
 
       // Apply per-equipped-unit semantics: each equipped unit receives the upgrade's stat bonuses
-      const appliedMeleeAtk = (upgradeInfo.MeleeAtkPower || 0) * unitsCovered;
-      const appliedMeleeDef = (upgradeInfo.MeleeDefPower || 0) * unitsCovered;
-      const appliedRangedAtk = (upgradeInfo.RangedAtkPower || 0) * unitsCovered;
-      const appliedRangedDef = (upgradeInfo.RangedDefPower || 0) * unitsCovered;
+      // Stats in BattleUpgrades are defined as the TOTAL stats for the full coverage.
+      // So we divide by unitsCovered to get per-unit stats.
+      const coveragePerUpgrade = upgradeInfo.unitsCovered || 1;
+      const appliedMeleeAtk = ((upgradeInfo.MeleeAtkPower || 0) / coveragePerUpgrade) * unitsCovered;
+      const appliedMeleeDef = ((upgradeInfo.MeleeDefPower || 0) / coveragePerUpgrade) * unitsCovered;
+      const appliedRangedAtk = ((upgradeInfo.RangedAtkPower || 0) / coveragePerUpgrade) * unitsCovered;
+      const appliedRangedDef = ((upgradeInfo.RangedDefPower || 0) / coveragePerUpgrade) * unitsCovered;
 
       stats.MeleeAtkPower += appliedMeleeAtk;
       stats.MeleeDefPower += appliedMeleeDef;

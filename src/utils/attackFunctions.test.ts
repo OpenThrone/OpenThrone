@@ -68,7 +68,8 @@ describe('calculateStrength', () => {
   it('should handle empty units and items', () => {
     user.clearItems();
     user.clearUnits();
-  user.addUnits(normUnits([]));
+    user.clearBattleUpgrades();
+    user.addUnits(normUnits([]));
     user.addItems([]);
     const userModel = new UserModel(user.getUser(), user.getUser().units as any);
     const strength = calculateStrength(userModel, 'OFFENSE');
@@ -81,6 +82,7 @@ describe('calculateStrength', () => {
   it('should handle completely empty user', () => {
     user.clearItems();
     user.clearUnits();
+    user.clearBattleUpgrades();
     const userModel = new UserModel(user.getUser(), user.getUser().units as any);
 
     const strength = calculateStrength(userModel, 'OFFENSE');
