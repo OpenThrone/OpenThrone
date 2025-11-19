@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach, vi } from 'bun:test';
 import MockUserGenerator from '@/utils/MockUserGenerator';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
+import { normUnits } from 'test/utils/testFixtures';
 import { installMockMtRand, mtRandImpl } from 'test/utils/mockMtRand';
 
 // Install deterministic mtRand before modules that import '@/utils/mtrand'
@@ -84,6 +85,8 @@ function resetInMemoryDB() {
       level: u.level ?? 1,
       displayName: u.displayName ?? `User${id}`,
       id,
+      // Ensure permissions exist for AttackService (it calls .map on permissions)
+      permissions: u.permissions ?? [],
     }));
   });
 
@@ -137,7 +140,7 @@ function createMockUser(opts?: Partial<UserRow>): UserRow {
     attack_turns: opts?.attack_turns ?? 10,
     fort_hitpoints: opts?.fort_hitpoints ?? 100,
     fortLevel: opts?.fortLevel ?? 0,
-    units: opts?.units ?? [],
+    units: normUnits(opts?.units ?? []),
     displayName: opts?.displayName ?? `User${id}`,
     level: opts?.level ?? 1,
     experience: opts?.experience ?? 0,
@@ -154,8 +157,8 @@ describe('Gold pillage comprehensive tests', () => {
     const ATT2 = 3;
 
     createMockUser({ id: DEF_ID, gold: BigInt(1000), displayName: 'Defender' });
-    createMockUser({ id: ATT1, gold: BigInt(100), displayName: 'Attacker1', units: [{ type: 'OFFENSE', quantity: 50, level: 1 }] });
-    createMockUser({ id: ATT2, gold: BigInt(200), displayName: 'Attacker2', units: [{ type: 'OFFENSE', quantity: 50, level: 1 }] });
+    createMockUser({ id: ATT1, gold: BigInt(100), displayName: 'Attacker1', units: normUnits([{ type: 'OFFENSE', quantity: 50, level: 1 }]) });
+    createMockUser({ id: ATT2, gold: BigInt(200), displayName: 'Attacker2', units: normUnits([{ type: 'OFFENSE', quantity: 50, level: 1 }]) });
 
     // Simulate both attackers winning and trying to pillage 900 gold each.
     // This forces the clamping logic to ensure no negative balances are persisted.
@@ -199,7 +202,7 @@ describe('Gold pillage comprehensive tests', () => {
     const ATT_ID = 11;
 
     createMockUser({ id: DEF_ID, gold: BigInt(1500), displayName: 'Defender-Boundary' });
-    createMockUser({ id: ATT_ID, gold: BigInt(500), displayName: 'Attacker-Boundary', units: [{ type: 'OFFENSE', quantity: 80, level: 1 }] });
+    createMockUser({ id: ATT_ID, gold: BigInt(500), displayName: 'Attacker-Boundary', units: normUnits([{ type: 'OFFENSE', quantity: 80, level: 1 }]) });
 
     // Force one attack with pillage larger than defender gold
     mockedSimulateBattle.mockResolvedValue({
@@ -231,7 +234,7 @@ describe('Gold pillage comprehensive tests', () => {
     // Very large gold on defender
     const huge = BigInt('9223372036854775807'); // near signed 64-bit max
     createMockUser({ id: DEF_ID, gold: huge, displayName: 'Defender-Huge' });
-    createMockUser({ id: ATT_ID, gold: BigInt(0), displayName: 'Attacker-Huge', units: [{ type: 'OFFENSE', quantity: 200, level: 1 }] });
+    createMockUser({ id: ATT_ID, gold: BigInt(0), displayName: 'Attacker-Huge', units: normUnits([{ type: 'OFFENSE', quantity: 200, level: 1 }]) });
 
     // Simulate moderate pillage so arithmetic doesn't overflow
     mockedSimulateBattle.mockResolvedValue({
@@ -265,7 +268,7 @@ describe('Gold pillage comprehensive tests', () => {
       // Randomize initial gold within a range
       const startGold = BigInt(Math.floor(Math.random() * 1000000));
       createMockUser({ id: defId, gold: startGold, displayName: `Def-${defId}` });
-      createMockUser({ id: attId, gold: BigInt(0), displayName: `Att-${attId}`, units: [{ type: 'OFFENSE', quantity: 20 + (i % 30), level: 1 }] });
+      createMockUser({ id: attId, gold: BigInt(0), displayName: `Att-${attId}`, units: normUnits([{ type: 'OFFENSE', quantity: 20 + (i % 30), level: 1 }]) });
 
       // Random pillage up to twice the defender gold (to exercise clamping)
       const pillageAttempt = startGold * BigInt(Math.floor(Math.random() * 3));
