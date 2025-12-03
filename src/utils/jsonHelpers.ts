@@ -61,11 +61,17 @@ export const stringifyObj = (obj: any): any => {
     return obj;
   }
 
+  // Dates should be converted to ISO strings so they survive JSON roundtrip.
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+
   // For arrays, map each element through stringifyObj. For plain objects, recurse over own properties.
   if (Array.isArray(obj)) {
     return obj.map((v) => stringifyObj(v));
   }
 
+  // For plain objects, recurse over own enumerable properties.
   const result: any = {};
   for (const key of Object.keys(obj)) {
     result[key] = stringifyObj((obj as any)[key]);
