@@ -3,6 +3,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { withAuth } from '@/middleware/auth';
 import { withdraw } from '@/services/bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { parseBigInt } from '@/utils/jsonHelpers';
 
 const withdrawHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
@@ -14,9 +15,9 @@ const withdrawHandler = async (req: AuthenticatedRequest, res: NextApiResponse) 
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const withdrawAmount = BigInt(req.body.withdrawAmount);
+  const withdrawAmount = parseBigInt(req.body.withdrawAmount);
 
-  if (!withdrawAmount || withdrawAmount <= 0) {
+  if (withdrawAmount === null || withdrawAmount <= 0) {
     return res.status(400).json({ error: 'Invalid withdraw amount' });
   }
 
