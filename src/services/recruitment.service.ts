@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
-import { PlayerUnit } from '@/types/typings';
+import { Prisma } from '@prisma/client';
 import { getOTStartDate } from '@/utils/timefunctions';
+import { getUserById } from '@/services/AttackDataService';
 
 export async function createRecruitmentRecord({
   fromUser,
@@ -68,6 +69,219 @@ export async function createBankHistoryRecord(userId: number) {
     },
   });
 }
+
+type RecruitmentLimitStrategy = 'standard' | 'linkBased';
+type PrismaClientOrTx = Prisma.TransactionClient | typeof prisma;
+
+const resolveDb = (db?: PrismaClientOrTx) => db ?? prisma;
+
+export const countRecruitments = async ({
+  db,
+  fromUser,
+  toUser,
+  ipAddress,
+  includeIpWhenFromZero = false,
+  since = getOTStartDate(),
+}: {
+  db?: PrismaClientOrTx;
+  fromUser: number;
+  toUser: number;
+  ipAddress: string;
+  includeIpWhenFromZero?: boolean;
+  since?: Date;
+}) => {
+  const client = resolveDb(db);
+  return client.recruit_history.count({
+    where: {
+      from_user: fromUser,
+      to_user: toUser,
+      timestamp: { gte: since },
+      ...(includeIpWhenFromZero && fromUser === 0 && { ip_addr: ipAddress }),
+    },
+  });
+};
+
+export const countRecruitmentsForTarget = async ({
+  db,
+  fromUser,
+  toUser,
+  since = getOTStartDate(),
+}: {
+  db?: PrismaClientOrTx;
+  fromUser: number;
+  toUser: number;
+  since?: Date;
+}) => {
+  const client = resolveDb(db);
+  return client.recruit_history.count({
+    where: {
+      from_user: fromUser,
+      to_user: toUser,
+      timestamp: { gte: since },
+    },
+  });
+};
+
+export const ensureRecruitmentLimit = async ({
+  tx,
+  fromUser,
+  toUser,
+  ipAddress,
+  strategy,
+  errorMessage,
+}: {
+  tx: Prisma.TransactionClient;
+  fromUser: number;
+  toUser: number;
+  ipAddress: string;
+  strategy: RecruitmentLimitStrategy;
+  errorMessage: string;
+}) => {
+  const baseTimeConstraint = { gte: getOTStartDate() };
+
+  if (strategy === 'linkBased') {
+    const history = await tx.recruit_history.count({
+      where: {
+        OR: [
+          {
+            AND: [
+              { to_user: toUser },
+              { from_user: { not: 0 } },
+              { from_user: fromUser },
+              { timestamp: baseTimeConstraint },
+            ],
+          },
+          {
+            AND: [
+              { to_user: toUser },
+              { ip_addr: ipAddress },
+              { timestamp: baseTimeConstraint },
+            ],
+          },
+        ],
+      },
+    });
+
+    if (history >= 5) {
+      throw new Error(errorMessage);
+    }
+    return;
+  }
+
+  const recruitmentCount = await tx.recruit_history.count({
+    where: {
+      from_user: fromUser,
+      to_user: toUser,
+      timestamp: baseTimeConstraint,
+      ...(fromUser === 0 && { ip_addr: ipAddress }),
+    },
+  });
+
+  if (recruitmentCount >= 5) {
+    throw new Error(errorMessage);
+  }
+};
+
+export const performRecruitment = async ({
+  tx,
+  fromUser,
+  toUser,
+  userIdToUpdate,
+  ipAddress,
+  strategy = 'standard',
+  goldReward = 250,
+  delayMs,
+  sessionUpdate,
+}: {
+  tx: Prisma.TransactionClient;
+  fromUser: number;
+  toUser: number;
+  userIdToUpdate: number;
+  ipAddress: string;
+  strategy?: RecruitmentLimitStrategy;
+  goldReward?: number;
+  delayMs?: number;
+  sessionUpdate?: { sessionId: number; recruiterUserId: number } | null;
+}) => {
+  const user = await getUserById(userIdToUpdate, tx as any);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  await ensureRecruitmentLimit({
+    tx,
+    fromUser,
+    toUser,
+    ipAddress,
+    strategy,
+    errorMessage:
+      strategy === 'linkBased'
+        ? 'You can only Recruit up to 5x in 24 hours.'
+        : 'User has already been recruited 5 times in the last 24 hours.',
+  });
+
+  await tx.recruit_history.create({
+    data: {
+      from_user: fromUser,
+      to_user: toUser,
+      ip_addr: ipAddress,
+      timestamp: new Date(),
+    },
+  });
+
+  if (delayMs && delayMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  await tx.users.update({
+    where: { id: userIdToUpdate },
+    data: {
+      gold: { increment: goldReward },
+    },
+  });
+
+  await tx.userUnit.upsert({
+    where: {
+      userId_type_isMercenary: {
+        userId: userIdToUpdate,
+        type: 'CITIZEN',
+        isMercenary: false,
+      },
+    },
+    update: {
+      quantity: { increment: 1 },
+      level: 1,
+    },
+    create: {
+      userId: userIdToUpdate,
+      type: 'CITIZEN',
+      level: 1,
+      quantity: 1,
+      isMercenary: false,
+    },
+  });
+
+  await tx.bank_history.create({
+    data: {
+      from_user_id: 0,
+      to_user_id: userIdToUpdate,
+      to_user_account_type: 'HAND',
+      from_user_account_type: 'BANK',
+      date_time: new Date(),
+      gold_amount: BigInt(goldReward),
+      history_type: 'RECRUITMENT',
+    },
+  });
+
+  if (sessionUpdate?.sessionId) {
+    await tx.autoRecruitSession.update({
+      where: { id: sessionUpdate.sessionId, userId: sessionUpdate.recruiterUserId },
+      data: { lastActivityAt: new Date() },
+    });
+  }
+
+  return { success: true };
+};
 
 export async function getValidUsersForRecruitment(recruiterID: number, ipAddress: string) {
   // Fetch users excluding the recruiter and ID 0, created before OT start date
