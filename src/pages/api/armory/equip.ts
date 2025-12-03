@@ -5,7 +5,7 @@ import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
-import { updateUserAndBankHistory } from '@/services';
+import { getUserById, updateUserAndBankHistory } from '@/services';
 import { calculateUserStats } from '@/utils/utilities';
 import { logError } from '@/utils/logger'; // Added logError import
 
@@ -83,12 +83,10 @@ const handler = async (
     return res.status(403).json({ error: 'Forbidden: User ID mismatch' }); // Use 403 for Forbidden
   }
 
-  // Removed old manual validation
-
   try {
     // Fetch user outside transaction for initial checks, but re-fetch inside for consistency
   // Use the validated userId (already authorized above) for DB reads
-  const user = await prisma.users.findUnique({ where: { id: userId } });
+  const user = await getUserById(userId);
     if (!user) {
       // This case should ideally not happen if session/auth middleware is working
       return res.status(404).json({ error: 'User not found' });
@@ -128,11 +126,7 @@ const handler = async (
     // Perform database operations within a transaction
     const updatedItemsResult = await prisma.$transaction(async (tx) => {
       // Fetch the user again *within* the transaction for locking/consistency
-      const currentUser = await tx.users.findUnique({
-        where: { id: userId },
-        select: { items: true, gold: true }, // Select only necessary fields
-      });
-
+      const currentUser = await getUserById(userId, tx as any);
       if (!currentUser) {
         // Should not happen if initial check passed, but good safety measure
         throw new Error('User not found within transaction');
@@ -146,7 +140,7 @@ const handler = async (
 
       // Use a Map for efficient updates of existing items
       const currentItemsMap = new Map<string, EquipmentProps>();
-      (currentUser.items as unknown as EquipmentProps[]).forEach(item => {
+      (currentUser.UserItem as EquipmentProps[]).forEach(item => {
         const key = `${item.type}-${item.usage}-${item.level}`;
         currentItemsMap.set(key, item);
       });

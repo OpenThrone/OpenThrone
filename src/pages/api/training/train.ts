@@ -6,7 +6,7 @@ import { withAuth } from '@/middleware/auth';
 import { calculateTotalCost, updateUnitsMap } from '@/utils/units'; // Removed validateUnits
 import type { PlayerUnit } from '@/types/typings';
 import UserModel from '@/models/Users';
-import { updateUserAndBankHistory } from '@/services';
+import { getUserById, updateUserAndBankHistory } from '@/services';
 import { calculateUserStats } from '@/utils/utilities';
 import { logError } from '@/utils/logger'; // Added logError import
 
@@ -73,11 +73,8 @@ const handler = async (
 
   try {
     const updatedUnitsResult = await prisma.$transaction(async (tx) => {
-      // Fetch user data within the transaction
-      const user = await tx.users.findUnique({
-        where: { id: userId },
-        select: { gold: true, units: true, bonus_points: true }, // Select necessary fields including bonus_points JSON
-      });
+  // Fetch user data within the transaction
+  const user = await getUserById(userId, tx as any);
 
       if (!user) {
         throw new Error('User not found within transaction');
@@ -96,7 +93,7 @@ const handler = async (
       }
 
       // Create map of current units (ensure quantity is number)
-      const userUnitsRaw = user.units as unknown as PlayerUnit[];
+      const userUnitsRaw = user.UserUnit as PlayerUnit[];
       const userUnitsMap = new Map<string, PlayerUnit>();
       userUnitsRaw.forEach(u => {
         const quantity = typeof u.quantity === 'string' ? parseInt(u.quantity, 10) : u.quantity;

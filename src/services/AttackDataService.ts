@@ -13,8 +13,9 @@ type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' |
  * @param userId - The ID of the user to retrieve.
  * @returns The user object or null if not found.
  */
-export const getUserById = async (userId: number) => {
-  return await prisma.users.findUnique({
+export const getUserById = async (userId: number, txClient?: TransactionClient) => {
+  const db = (txClient ?? prisma) as any;
+  return await db.users.findUnique({
     where: { id: userId },
     include: {
       UserUnit: true,
@@ -26,6 +27,23 @@ export const getUserById = async (userId: number) => {
     },
   });
 };
+
+/**
+ * Retrieves all users from the database.
+ * @returns An array of all user objects.
+ */
+export const getAllUsers = async () => {
+  return await prisma.users.findMany({
+    include: {
+      UserUnit: true,
+      UserItem: true,
+      UserStructureUpgrade: true,
+      UserBattleUpgrade: true,
+      UserBonusPoints: true,
+      permissions: true,
+    },
+  });
+}
 
 /**
  * Retrieves the IDs of all users.

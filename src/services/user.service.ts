@@ -23,6 +23,17 @@ export const createUser = async (email: string, password_hash: string, display_n
       data: { recruit_link: md5(user.id.toString()) },
     });
 
+    await tx.UserUnit.createMany({
+      data: [
+        {
+          userId: user.id,
+          type: 'CITIZEN',
+          level: 1,
+          quantity: 50,
+        },
+      ],
+    });
+
     return user;
   });
 }
@@ -86,69 +97,75 @@ export const updateUserAndBankHistory = async (
   });
 
   // Handle units update using UserUnit table
-  if (updateType === 'units' && updatedData && updatedData.length > 0) {
-    // Delete existing UserUnit records for this user
+  if (updateType === 'units') {
+    // Always delete existing UserUnit records for this user to ensure empty arrays clear DB state
     await prismaInstance.userUnit.deleteMany({
       where: { userId: userId }
     });
 
-    // Create new UserUnit records from updatedData
-    for (const unit of updatedData) {
-      if (unit.type && unit.level && unit.quantity !== undefined) {
-        await prismaInstance.userUnit.create({
-          data: {
-            userId: userId,
-            type: unit.type,
-            level: unit.level,
-            quantity: unit.quantity,
-            isMercenary: unit.isMercenary || false
-          }
-        });
+    // Create new UserUnit records from updatedData if any
+    if (updatedData && updatedData.length > 0) {
+      for (const unit of updatedData) {
+        if (unit.type && unit.level && unit.quantity !== undefined) {
+          await prismaInstance.userUnit.create({
+            data: {
+              userId: userId,
+              type: unit.type,
+              level: unit.level,
+              quantity: unit.quantity,
+              isMercenary: unit.isMercenary || false
+            }
+          });
+        }
       }
     }
   }
 
   // Handle items update using UserItem table
-  if (updateType === 'items' && updatedData && updatedData.length > 0) {
-    // Delete existing UserItem records for this user
+  if (updateType === 'items') {
+    // Always delete existing UserItem records for this user to correctly handle empty updatedData arrays
     await prismaInstance.userItem.deleteMany({
       where: { userId: userId }
     });
 
-    // Create new UserItem records from updatedData
-    for (const item of updatedData) {
-      if (item.type && item.level && item.usage && item.quantity !== undefined) {
-        await prismaInstance.userItem.create({
-          data: {
-            userId: userId,
-            type: item.type,
-            level: item.level,
-            usage: item.usage,
-            quantity: item.quantity
-          }
-        });
+    // Create new UserItem records from updatedData if any
+    if (updatedData && updatedData.length > 0) {
+      for (const item of updatedData) {
+        if (item.type && item.level && item.usage && item.quantity !== undefined) {
+          await prismaInstance.userItem.create({
+            data: {
+              userId: userId,
+              type: item.type,
+              level: item.level,
+              usage: item.usage,
+              quantity: item.quantity
+            }
+          });
+        }
       }
     }
   }
 
   // Handle battle_upgrades update using UserBattleUpgrade table
-  if (updateType === 'battle_upgrades' && updatedData && updatedData.length > 0) {
-    // Delete existing UserBattleUpgrade records for this user
+  if (updateType === 'battle_upgrades') {
+    // Always delete existing UserBattleUpgrade records for this user to ensure empty arrays clear DB state
     await prismaInstance.userBattleUpgrade.deleteMany({
       where: { userId: userId }
     });
 
-    // Create new UserBattleUpgrade records from updatedData
-    for (const upgrade of updatedData) {
-      if (upgrade.type && upgrade.level && upgrade.quantity !== undefined) {
-        await prismaInstance.userBattleUpgrade.create({
-          data: {
-            userId: userId,
-            type: upgrade.type,
-            level: upgrade.level,
-            quantity: upgrade.quantity
-          }
-        });
+    // Create new UserBattleUpgrade records from updatedData if any
+    if (updatedData && updatedData.length > 0) {
+      for (const upgrade of updatedData) {
+        if (upgrade.type && upgrade.level && upgrade.quantity !== undefined) {
+          await prismaInstance.userBattleUpgrade.create({
+            data: {
+              userId: userId,
+              type: upgrade.type,
+              level: upgrade.level,
+              quantity: upgrade.quantity
+            }
+          });
+        }
       }
     }
   }

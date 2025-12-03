@@ -7,7 +7,7 @@ import { calculateTotalCost, updateUnitsMap } from '@/utils/units'; // Removed v
 import UserModel from '@/models/Users';
 // Removed PlayerUnit import if UnitProps is used consistently
 import { calculateUserStats } from '@/utils/utilities';
-import { updateUserAndBankHistory } from '@/services';
+import { getUserById, updateUserAndBankHistory } from '@/services';
 import { logError } from '@/utils/logger';
 
 // Zod schema for individual unit untraining request
@@ -72,12 +72,8 @@ const handler = async (
 
   try {
     const updatedUnitsResult = await prisma.$transaction(async (tx) => {
-      // Fetch user data within the transaction
-      const user = await tx.users.findUnique({
-        where: { id: userId },
-        select: { gold: true, units: true }, // Select necessary fields
-      });
-
+  // Fetch user data within the transaction
+  const user = await getUserById(userId, tx as any);
       if (!user) {
         throw new Error('User not found within transaction');
       }
@@ -86,7 +82,7 @@ const handler = async (
 
       // Create map of current units (ensure quantity is number)
       const userUnitsMap = new Map<string, UnitProps>();
-      (user.units as UnitProps[]).forEach(u => {
+      (user.UserUnit as UnitProps[]).forEach(u => {
         const quantity = typeof u.quantity === 'string' ? parseInt(u.quantity, 10) : u.quantity;
         if (isNaN(quantity)) {
             throw new Error(`Invalid quantity format for unit ${u.type}-${u.level} in user inventory.`);

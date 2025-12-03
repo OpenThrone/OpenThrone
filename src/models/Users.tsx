@@ -523,6 +523,10 @@ class UserModel {
     return this.statsService.getSentryBonus();
   }
 
+  get recruitBonus(): number {
+    return this.economyService.getRecruitingBonus();
+  }
+
   get availableProficiencyPoints(): number {
     return this.statsService.getAvailableProficiencyPoints();
   }

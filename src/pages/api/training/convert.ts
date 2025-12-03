@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import UserModel from '@/models/Users';
 import { UnitTypes } from '@/constants';
-import { updateUserAndBankHistory } from '@/services';
+import { getUserById, updateUserAndBankHistory } from '@/services';
 import { calculateUserStats } from '@/utils/utilities';
 import { logDebug, logError, logTrace } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -83,13 +83,8 @@ const handler = async (
 
   try {
     const updatedUnitsResult = await prisma.$transaction(async (tx) => {
-      // Fetch user data within the transaction
-      const user = await tx.users.findUnique({
-        where: { id: userId },
-        select: { gold: true, units: true, bonus_points: true }, // Select necessary fields including bonus_points JSON
-      });
-
-      console.log(`User data fetched in transaction: ${JSON.stringify(stringifyObj(user))}`);
+  // Fetch user data within the transaction
+  const user = await getUserById(userId, tx as any);
 
       if (!user) {
         throw new Error('User not found within transaction');

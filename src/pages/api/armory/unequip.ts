@@ -5,7 +5,7 @@ import { ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import UserModel from '@/models/Users';
-import { updateUserAndBankHistory } from '@/services';
+import { getUserById, updateUserAndBankHistory } from '@/services';
 import { calculateUserStats } from '@/utils/utilities';
 import { logError } from '@/utils/logger'; // Added logError import
 
@@ -78,20 +78,15 @@ const handler = async (
   try {
     // Transaction for atomicity
     const updatedItemsResult = await prisma.$transaction(async (tx) => {
-      // Fetch user within transaction for consistency
-      const user = await tx.users.findUnique({
-        where: { id: userId },
-        select: { items: true, gold: true }, // Select necessary fields
-      });
+  // Fetch user within transaction for consistency
+  const user = await getUserById(userId, tx as any);
 
       if (!user) {
-        // Should not happen if auth check passed, but safety measure
         throw new Error('User not found within transaction');
       }
 
-      // Use a Map for efficient lookup and update of user's items
       const userItemsMap = new Map<string, EquipmentProps>();
-      (user.items as unknown as EquipmentProps[]).forEach(item => {
+      (user.UserItem as EquipmentProps[]).forEach(item => {
         // Ensure quantity is number for calculations
         const quantity = typeof item.quantity === 'string' ? parseInt(item.quantity as string, 10) : item.quantity;
         if (isNaN(quantity)) {

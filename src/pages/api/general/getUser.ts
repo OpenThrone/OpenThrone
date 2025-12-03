@@ -26,8 +26,6 @@ const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
         fort_hitpoints: true,
         house_level: true,
         attack_turns: true,
-        units: true,
-        items: true,
         last_active: true,
         bio: true,
         colorScheme: true,

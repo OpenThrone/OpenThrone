@@ -2,6 +2,7 @@ import UserModel from "@/models/Users";
 import md5 from "md5";
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";
+import { getAllUsers } from "@/services";
 
 /**
  * Update a single user for a new day.
@@ -10,28 +11,37 @@ import prisma from "@/lib/prisma";
  * @return {Promise}
  */
 const updateUserPerDay = async (currentUser) => {
-  try {    
-    // Find the CITIZEN unit
-    let citizenUnit = currentUser.units.find(unit => unit.type === 'CITIZEN');
-    const originalCitizens = currentUser.citizens;
+  try {
+    const originalCitizens = Number(currentUser.citizens ?? 0);
+    // Determine recruiting bonus from the UserModel getter
+    const recruitingBonus = Number(currentUser.recruitBonus ?? 0) || 0;
+    const newCitizens = originalCitizens + recruitingBonus;
+    console.log(`User ${currentUser.id} - Population: ${currentUser.population} - Citizens: ${originalCitizens}`);
+    console.log(`User ${currentUser.id} - Recruiting Bonus: ${recruitingBonus} - Type: ${typeof recruitingBonus}`);
 
-    if (citizenUnit) {
-      if (!citizenUnit.quantity) {
-        // Catch if something caused the quantity to be null at some point
-        citizenUnit.quantity = 0;
-      }
-      // If CITIZEN unit is found, increment its quantity
-      citizenUnit.quantity += currentUser.recruitingBonus;
-    } else {
-      // If CITIZEN unit is not found, create one and set its quantity
-      citizenUnit = {
-        type: 'CITIZEN',
-        level: 1,
-        quantity: currentUser.recruitingBonus,
-      };
-      currentUser.units.push(citizenUnit);
-    }
-
+    await prisma.userUnit.upsert({
+        where: {
+          // Prisma schema defines a compound unique on (userId, type, isMercenary)
+          userId_type_isMercenary: {
+            userId: currentUser.id,
+            type: 'CITIZEN',
+            isMercenary: false,
+          },
+        },
+        update: {
+          quantity: {
+            increment: recruitingBonus,
+          },
+        },
+        create: {
+          userId: currentUser.id,
+          type: 'CITIZEN',
+          level: 1,
+          quantity: recruitingBonus,
+          isMercenary: false,
+        },
+      });
+    
     await prisma.bank_history.create({
       data: {
         from_user_id: 0,
@@ -43,17 +53,9 @@ const updateUserPerDay = async (currentUser) => {
         history_type: 'DAILY_RECRUIT',
         stats: {
           currentCitizens: originalCitizens,
-          newCitizens: citizenUnit.quantity,
+          newCitizens: newCitizens,
           recruitingBonus: currentUser.recruitingBonus,
         },
-      },
-    });
-
-    await prisma.users.update({
-      where: { id: currentUser.id },
-      data: {
-        units: currentUser.units,
-        ...(!currentUser.recruitingLink && { recruit_link: md5(currentUser.id.toString()) }),
       },
     });
 
@@ -92,11 +94,11 @@ const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
     process.env.DO_DAILY_UPDATES === 'true' &&
     req.headers['authorization'] === TASK_SECRET
   ) {
-    const allUsers = await prisma.users.findMany();
+    const allUsers = await getAllUsers(); // Fetch all users from the database
 
     // Initialize the queue with users and attempt counts
     let queue = allUsers.map((singleUser) => ({
-      user: new UserModel(singleUser),
+      user: new UserModel(singleUser, singleUser.UserUnit, singleUser.UserItem, singleUser.UserStructureUpgrade, singleUser.UserBattleUpgrade, singleUser.UserBonusPoints, singleUser.permissions.map(p => ({ type: p })), singleUser.stats),
       attempts: 0,
     }));
 
