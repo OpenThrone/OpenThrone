@@ -8,6 +8,7 @@ import argon2 from 'argon2'; // Import argon2 at the top
 import { Prisma } from '@prisma/client'; // Import Prisma types
 import { Omit } from '@prisma/client/runtime/library';
 import Error from 'next/error';
+import { Fortifications } from '@/constants';
 
 // Zod schema for the request body
 const ResetRequestSchema = z.object({
@@ -25,36 +26,10 @@ const DEFAULT_RESET_STATE: Omit<Prisma.usersUpdateInput, 'colorScheme'> = {
   attack_turns: 50,
   gold_in_bank: 0,
   fort_level: 1,
-  fort_hitpoints: 50, // Fortifications[0].hitpoints
+  fort_hitpoints: Fortifications[0].hitpoints, 
   experience: 0,
-  // Use the Prisma JSON column names (suffixed with _json) for deprecated JSON fields
-  items_json: [
-    { type: 'WEAPON', level: 1, quantity: 0, usage: 'DEFENSE' },
-    { type: 'WEAPON', level: 1, quantity: 0, usage: 'OFFENSE' }
-  ] as Prisma.JsonArray, // Cast to Prisma.JsonArray or specific type
-  structure_upgrades_json: [
-    { type: 'ARMORY', level: 1 },
-    { type: 'SPY', level: 1 },
-    { type: 'SENTRY', level: 1 },
-    { type: 'OFFENSE', level: 1 }
-  ] as Prisma.JsonArray,
   economy_level: 0,
-  house_level: 0,
-  bonus_points_json: [
-    { type: 'OFFENSE', level: 0 },
-    { type: 'DEFENSE', level: 0 },
-    { type: 'INCOME', level: 0 },
-    { type: 'INTEL', level: 0 },
-    { type: 'PRICES', level: 0 }
-  ] as Prisma.JsonArray,
-  units_json: [
-    { type: 'CITIZEN', level: 1, quantity: 100 },
-    { type: 'OFFENSE', level: 1, quantity: 0 },
-    { type: 'DEFENSE', level: 1, quantity: 0 }
-  ] as Prisma.JsonArray,
-  battle_upgrades_json: [] as Prisma.JsonArray,
-  stats: [] as Prisma.JsonArray,
-  // Note: colorScheme is preserved from the existing user
+  house_level: 0,  
 };
 
 
@@ -94,15 +69,15 @@ const handler = async (
 
       if (!user || !user.password_hash) {
         // Added check for password_hash existence
-  // Throw a plain object here to avoid project-specific Error constructor typing during triage
-  throw { message: 'User not found or password hash missing.' };
+        // Throw a plain object here to avoid project-specific Error constructor typing during triage
+        throw { message: 'User not found or password hash missing.' };
       }
 
       // Verify password
       const passwordMatches = await argon2.verify(user.password_hash, password);
       if (!passwordMatches) {
-  // Throw a plain object here to avoid project-specific Error constructor typing during triage
-  throw { message: 'Invalid password.' };
+        // Throw a plain object here to avoid project-specific Error constructor typing during triage
+        throw { message: 'Invalid password.' };
       }
 
       // Prepare update data, preserving colorScheme
@@ -117,8 +92,12 @@ const handler = async (
         data: updateData,
       });
 
-      // Optionally: Log the reset action in a separate audit table if needed
-      // await tx.accountResetHistory.create({ data: { userId: userId, resetAt: new Date() } });
+      await tx.userUnits.deleteMany({ where: { userId: userId } });
+      await tx.userBattleUpgrades.deleteMany({ where: { userId: userId } });
+      await tx.userStructureUpgrades.deleteMany({ where: { userId: userId } });
+      await tx.userBonusPoints.deleteMany({ where: { userId: userId } });
+      await tx.userItems.deleteMany({ where: { userId: userId } });
+       await tx.accountResetHistory.create({ data: { userId: userId, resetAt: new Date() } });
     });
 
     return res.status(200).json({ message: 'Account reset successfully.' });
