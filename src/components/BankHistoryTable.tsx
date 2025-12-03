@@ -103,7 +103,7 @@ export default function BankHistoryTable({
               let displayAmount = '';
               if (transactionType === 'Daily Reward') {
                 // Example: "Daily Reward" might show Citizens instead of gold
-                displayAmount = `+${entry.stats?.recruitingBonus} Citizens`;
+                displayAmount = `+${entry.stats.newCitizens - entry.stats.currentCitizens} Citizens`;
               } else {
                 displayAmount =
                   getGoldTxSymbol(entry) +
