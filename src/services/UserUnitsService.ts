@@ -186,7 +186,7 @@ export class UserUnitsService {
   }
 
   private getArmoryLevel(): number {
-    return this.structure_upgrades.find((s) => s.type === "ARMORY")?.level ?? 0;
+    return this.structure_upgrades.find((s) => s.type === "ARMORY")?.level ?? 1;
   }
 
   private getSpyLevel(): number {
