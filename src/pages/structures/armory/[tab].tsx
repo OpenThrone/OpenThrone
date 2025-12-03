@@ -9,19 +9,18 @@ import { ArmoryUpgrades, ItemTypes } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
-import { Group, Paper, rem, SimpleGrid, Tabs, ThemeIcon, Text, Space, Button, Box } from '@mantine/core'; // Keep Box
+import { Group, Paper, rem, SimpleGrid, Tabs, ThemeIcon, Text, Space, Button, Box, px } from '@mantine/core'; // Keep Box
 import UserModel from '@/models/Users';
 import { BiCoinStack, BiSolidBank, BiMoney } from 'react-icons/bi';
 import { faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import MainArea from '@/components/MainArea';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
-import { logError } from '@/utils/logger';
+import { logError, logDebug } from '@/utils/logger';
 import StatCard from '@/components/StatCard';
 import ContentCard from '@/components/ContentCard';
 
 // --- useItems Hook ---
-// ... (useItems hook code remains the same) ...
 const useItems = (user: UserModel | null, armoryLevel: number) => {
   const [items, setItems] = useState<{ [key: string]: { [key: string]: any[] } }>({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
 
@@ -37,12 +36,16 @@ const useItems = (user: UserModel | null, armoryLevel: number) => {
 
     types.forEach((type) => {
       categories.forEach((category) => {
+        logDebug(`Mapping items for type: ${type}, category: ${category}`); 
+
         const filteredAndMapped = user.availableItemTypes
           .filter((unit: { usage: string; type: string; race: string; }) => unit.usage === type && unit.type === category && (unit.race === 'ALL' || unit.race === user.race))
           .map((unit: any) => itemMapFunction(unit, type, category, user, armoryLevel))
           .filter(item => item !== undefined)
           .sort((a, b) => (a?.level ?? 0) - (b?.level ?? 0));
 
+        logDebug(`Available Item Types for ${type} - ${category}: ${stringifyObj(user.availableItemTypes)}`);
+        logDebug(`Items for ${type} - ${category}: ${stringifyObj(filteredAndMapped)}`);
         newItemsState[type][category] = filteredAndMapped;
       });
     });
@@ -55,7 +58,6 @@ const useItems = (user: UserModel | null, armoryLevel: number) => {
 
 
 // --- itemMapFunction ---
-// ... (itemMapFunction code remains the same) ...
 const itemMapFunction = (item: { id?: string; name?: string; level?: number; bonus?: number; type?: string; usage?: string; cost?: number; armoryLevel?: number; race?: string }, itemType: string, idPrefix: string, user: UserModel, armoryLevel: number) => {
   if (!item || !item.type || !item.usage || item.level === undefined || item.cost === undefined || item.armoryLevel === undefined) {
     return undefined;
