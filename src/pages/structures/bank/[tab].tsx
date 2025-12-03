@@ -29,6 +29,7 @@ import { useLocalStorage } from '@mantine/hooks';
 import { logError } from '@/utils/logger';
 import BankCard from '@/components/StatCard';
 import ContentCard from '@/components/ContentCard';
+import { getTransactionType, getGoldTxSymbol } from '@/utils/utilities';
 
 const defaultFilters = {
   deposits: true,
@@ -75,45 +76,6 @@ export default function Bank(props) {
   function handleRowsPerPageChange(option: number): void {
     router.push(`/structures/bank/history?page=0&limit=${option}`);
   }
-
-  const getTransactionType = (entry) => {
-    const { from_user_id, to_user_id, from_user_account_type, history_type, stats } = entry;
-    if (from_user_id === to_user_id) {
-      if (from_user_account_type === 'HAND') {
-        if (history_type === 'SALE') return 'Purchase';
-        return stats?.type === 'CONVERT' ? 'Unit Conversion' : 'Deposit';
-      }
-      return history_type === 'SALE' ? 'Sale' : 'Withdraw';
-    }
-    if (history_type === 'SALE') {
-      switch (stats?.type) {
-        case 'TRAINING_UNTRAIN':
-          return 'Untrain Units';
-        case 'TRAINING_TRAIN':
-          return 'Train Units';
-        case 'TRAINING_CONVERSION':
-          return 'Convert Units';
-        case 'BATTLE_UPGRADES_BUY':
-          return 'Battle Upgrade Purchase';
-        case 'BATTLE_UPGRADES_SELL':
-          return 'Battle Upgrade Sale';
-      }
-    }
-    if (history_type === 'PLAYER_TRANSFER') return 'Player Transfer';
-    if (history_type === 'RECRUITMENT') return 'Recruitment';
-    if (history_type === 'ECONOMY') return 'Income';
-    if (history_type === 'FORT_REPAIR') return 'Fort Repair';
-    if (history_type === 'WAR_SPOILS') return 'War Spoils';
-    if (history_type === 'DAILY_RECRUIT') return 'Daily Reward';
-    return 'UNKNOWN';
-  };
-
-  const getGoldTxSymbol = (entry) => {
-    const transactionType = getTransactionType(entry);
-    if (transactionType === 'Recruitment' || transactionType === 'Income') return '+';
-    if (transactionType === 'War Spoils' && entry.to_user_id === user?.id) return '+';
-    return '-';
-  };
 
   // Fetch user color scheme
   useEffect(() => {

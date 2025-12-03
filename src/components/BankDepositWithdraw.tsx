@@ -4,6 +4,7 @@ import toLocale, { stringifyObj } from '@/utils/numberFormatting';
 import { alertService } from '@/services';
 import { logError } from '@/utils/logger';
 import ContentCard from './ContentCard';
+import { getTransactionType, getGoldTxSymbol } from '@/utils/utilities';
 
 export default function BankDepositWithdraw({
   user,
@@ -89,50 +90,6 @@ export default function BankDepositWithdraw({
       alertService.error('Failed to withdraw gold. Please try again.');
     }
   };
-
-  // A quick helper to get the transaction type
-  const getTransactionType = (entry) => {
-    const { from_user_id, to_user_id, from_user_account_type, history_type, stats } = entry;
-    // your existing logic
-    if (from_user_id === to_user_id) {
-      if (from_user_account_type === 'HAND') {
-        if (history_type === 'SALE') return 'Purchase';
-        return stats?.type === 'CONVERT' ? 'Unit Conversion' : 'Deposit';
-      }
-      return history_type === 'SALE' ? 'Sale' : 'Withdraw';
-    }
-    if (history_type === 'SALE') {
-      switch (stats?.type) {
-        case 'TRAINING_UNTRAIN':
-          return 'Untrain Units';
-        case 'TRAINING_TRAIN':
-          return 'Train Units';
-        case 'TRAINING_CONVERSION':
-          return 'Convert Units';
-        case 'BATTLE_UPGRADES_BUY':
-          return 'Battle Upgrade Purchase';
-        case 'BATTLE_UPGRADES_SELL':
-          return 'Battle Upgrade Sale';
-      }
-    }
-    if (history_type === 'PLAYER_TRANSFER') return 'Player Transfer';
-    if (history_type === 'RECRUITMENT') return 'Recruitment';
-    if (history_type === 'ECONOMY') return 'Income';
-    if (history_type === 'FORT_REPAIR') return 'Fort Repair';
-    if (history_type === 'WAR_SPOILS') return 'War Spoils';
-    if (history_type === 'DAILY_RECRUIT') return 'Daily Reward';
-    return 'UNKNOWN';
-  };
-
-  const getGoldTxSymbol = (entry) => {
-    const transactionType = getTransactionType(entry);
-    // your existing logic to figure out + or -
-    if (transactionType === 'Recruitment' || transactionType === 'Income') return '+';
-    if (transactionType === 'War Spoils' && entry.to_user_id === user?.id) return '+';
-    // else default
-    return '-';
-  };
-
   
   useEffect(() => {
     if (bankHistory.length > 0) {
