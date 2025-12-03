@@ -6,6 +6,7 @@ import { ZodError } from 'zod';
 import { NextApiResponse } from 'next';
 import { logDebug } from '@/utils/logger';
 import prisma from "@/lib/prisma";
+import { getUserById } from '@/services';
 
 const handler = async (req, res: NextApiResponse) => {
   const session = req.session;
@@ -27,12 +28,8 @@ const handler = async (req, res: NextApiResponse) => {
 
       // Check if both attacker and defender exist
       const [attackerUser, defenderUser] = await Promise.all([
-        prisma.users.findUnique({
-          where: { id: sessionUserId },
-        }),
-        prisma.users.findUnique({
-          where: { id: id },
-        })
+        getUserById(sessionUserId),
+        getUserById(id)
       ]);
       logDebug(`Attacker: ${attackerUser}, Defender: ${defenderUser}`);
 
@@ -46,6 +43,10 @@ const handler = async (req, res: NextApiResponse) => {
 
       if (turns > attackerUser.attack_turns) {
         return res.status(400).json({ status: 'failed', message: 'Insufficient attack turns' });
+      }
+
+      if(attackerUser.UserUnit.filter(unit => unit.type === 'OFFENSE').length === 0) {
+        return res.status(400).json({ status: 'failed', message: 'No offensive units available' });
       }
 
       const results = await AttackService.executeAttack(
