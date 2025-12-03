@@ -166,6 +166,12 @@ class UserModel {
   public sentry: number;
   public achievements: Record<string, any> = {};
   public twoFactorSecret: string | null = null;
+  public currentEra?: {
+    id: number;
+    name: string;
+    startDate?: string | Date | null;
+    endDate?: string | Date | null;
+  };
 
   // Domain services (single responsibility)
   private statsService: UserStatsService;
@@ -387,6 +393,9 @@ class UserModel {
         ? JSON.parse(safeUserData.achievements)
         : (safeUserData.achievements ?? {});
     this.twoFactorSecret = safeUserData.twoFactorSecret || null;
+    if ((safeUserData as any).currentEra) {
+      this.currentEra = (safeUserData as any).currentEra as any;
+    }
 
     if (!filtered) {
       this.email = safeUserData.email;
@@ -625,27 +634,27 @@ class UserModel {
   get armoryLevel(): number {
     return (
       (this.structure_upgrades || []).find((s) => s.type === "ARMORY")?.level ??
-      0
+      1
     );
   }
 
   get offensiveLevel(): number {
     return (
       (this.structure_upgrades || []).find((s) => s.type === "OFFENSE")
-        ?.level ?? 0
+        ?.level ?? 1
     );
   }
 
   get spyLevel(): number {
     return (
-      (this.structure_upgrades || []).find((s) => s.type === "SPY")?.level ?? 0
+      (this.structure_upgrades || []).find((s) => s.type === "SPY")?.level ?? 1
     );
   }
 
   get sentryLevel(): number {
     return (
       (this.structure_upgrades || []).find((s) => s.type === "SENTRY")?.level ??
-      0
+      1
     );
   }
 

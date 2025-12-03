@@ -45,12 +45,6 @@ model users {
   last_active                           DateTime?              @db.Timestamptz(3)
   rank                                  Int                    @default(0)
   house_level                           Int                    @default(0)
-  battle_upgrades_json                  Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SPY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"SENTRY\", \"level\": 1, \"quantity\": 0}, {\"type\": \"DEFENSE\", \"level\": 1, \"quantity\": 0}]") // @deprecated("Use UserBattleUpgrade model instead")
-  structure_upgrades_json               Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 1}, {\"type\": \"SPY\", \"level\": 1}, {\"type\": \"SENTRY\", \"level\": 1}, {\"type\": \"ARMORY\", \"level\": 1}]") // @deprecated("Use UserStructureUpgrade model instead")
-  bonus_points_json                     Json?                  @default("[{\"type\": \"OFFENSE\", \"level\": 0}, {\"type\": \"DEFENSE\", \"level\": 0}, {\"type\": \"INCOME\", \"level\": 0}, {\"type\": \"INTEL\", \"level\": 0}, {\"type\": \"PRICES\", \"level\": 0}]") // @deprecated("Use UserBonusPoints model instead")
-  items_json                            Json?                  @default("[]") // @deprecated("Use UserItem model instead")
-  mercenaries_json                      Json?                  @default("[]") // @deprecated("Use UserUnit model instead")
-  units_json                            Json?                  @default("[]") // @deprecated("Use UserUnit model instead")
   bio                                   String                 @default("")
   colorScheme                           String?
   recruit_link                          String                 @unique @default("")
@@ -450,6 +444,16 @@ model UserEra {
   unitsAtStart  Json     @default("[]")
   achievements  Json     @default("{}")
   createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  rankAtEnd         Int?
+  goldAtEnd         BigInt?   @db.BigInt
+  goldInBankAtEnd   BigInt?   @db.BigInt
+  offenseAtEnd      Int?
+  defenseAtEnd      Int?
+  spyAtEnd          Int?
+  sentryAtEnd       Int?
+  fortLevelAtEnd    Int?
+  houseLevelAtEnd   Int?
+  economyLevelAtEnd Int?
   user          users    @relation("UserEraUsers", fields: [userId], references: [id], onDelete: Cascade)
   era           Era      @relation("UserEraEras", fields: [eraId], references: [id], onDelete: Cascade)
 

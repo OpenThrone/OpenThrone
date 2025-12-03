@@ -2,9 +2,19 @@ import md5 from "md5";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { idleThresholdDate } from "@/utils/utilities";
+import {
+  ensureActiveEra,
+  ERA_DEFAULT_BATTLE_UPGRADES,
+  ERA_DEFAULT_BONUS_POINTS,
+  ERA_DEFAULT_ITEMS,
+  ERA_DEFAULT_STRUCTURE_UPGRADES,
+  ERA_DEFAULT_UNITS,
+} from "./era.service";
 
 export const createUser = async (email: string, password_hash: string, display_name: string, race: string, class_name: string, locale: string = 'en-US') => {
   return await prisma.$transaction(async (tx) => {
+    const activeEra = await ensureActiveEra(tx);
+
     const user = await tx.users.create({
       data: {
         email,
@@ -15,6 +25,7 @@ export const createUser = async (email: string, password_hash: string, display_n
         locale,
         stamina: 100,
         maxStamina: 100,
+        currentEraId: activeEra.id,
       },
     });
 
@@ -23,15 +34,24 @@ export const createUser = async (email: string, password_hash: string, display_n
       data: { recruit_link: md5(user.id.toString()) },
     });
 
-    await tx.UserUnit.createMany({
-      data: [
-        {
-          userId: user.id,
-          type: 'CITIZEN',
-          level: 1,
-          quantity: 50,
-        },
-      ],
+    await tx.userUnit.createMany({
+      data: ERA_DEFAULT_UNITS.map(unit => ({ ...unit, userId: user.id })),
+    });
+
+    await tx.userItem.createMany({
+      data: ERA_DEFAULT_ITEMS.map(item => ({ ...item, userId: user.id })),
+    });
+
+    await tx.userStructureUpgrade.createMany({
+      data: ERA_DEFAULT_STRUCTURE_UPGRADES.map(upgrade => ({ ...upgrade, userId: user.id })),
+    });
+
+    await tx.userBattleUpgrade.createMany({
+      data: ERA_DEFAULT_BATTLE_UPGRADES.map(upgrade => ({ ...upgrade, userId: user.id })),
+    });
+
+    await tx.userBonusPoints.createMany({
+      data: ERA_DEFAULT_BONUS_POINTS.map(bonus => ({ ...bonus, userId: user.id })),
     });
 
     return user;

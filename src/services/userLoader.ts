@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import type { users as PrismaUser } from '@prisma/client';
+import type { Prisma, users as PrismaUser } from '@prisma/client';
 
 /**
  * Fetch a user with the standard set of relations used across services.
@@ -21,8 +21,8 @@ export const getUserWithAllRelations = async (userId: number) => {
   });
 };
 
-export const getUsersWithRelations = async (where = {}) => {
-  return prisma.users.findMany({ where, include: {
+export const getUsersWithRelations = async (where = {}, db: Prisma.TransactionClient | typeof prisma = prisma) => {
+  return db.users.findMany({ where, include: {
     UserUnit: true,
     UserItem: true,
     UserStructureUpgrade: true,

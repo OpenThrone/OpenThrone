@@ -5,3 +5,5 @@ export * from './config.service';
 export * from './friendTransfer.service';
 export * from './user.service';
 export * from './AttackValidationService';
+export * from './recruitment.service';
+export * from './era.service';

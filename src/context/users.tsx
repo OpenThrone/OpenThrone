@@ -109,6 +109,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         false, // filtered
         true   // checkStats
       );
+      (uModel as any).currentEra = (userData as any).currentEra;
       console.log(stringifyObj(uModel))
       setUser(uModel);
 

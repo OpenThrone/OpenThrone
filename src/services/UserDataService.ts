@@ -33,6 +33,12 @@ export interface FullUserData {
   locale: Locales;
   stats: any;
   permissions: any;
+  currentEra?: {
+    id: number;
+    name: string;
+    startDate: string | null;
+    endDate: string | null;
+  };
   UserUnit: any[];
   UserItem: any[];
   UserStructureUpgrade: any[];
@@ -68,6 +74,14 @@ export class UserDataService {
         UserBattleUpgrade: true,
         UserBonusPoints: true,
         permissions: true,
+        currentEra: {
+          select: {
+            id: true,
+            name: true,
+            startDate: true,
+            endDate: true,
+          },
+        },
       },
     });
 
@@ -135,6 +149,14 @@ export class UserDataService {
       locale: user.locale as Locales,
       stats: typeof user.stats === 'string' ? JSON.parse(user.stats) : user.stats,
       permissions: user.permissions,
+      currentEra: user.currentEra
+        ? {
+            id: user.currentEra.id,
+            name: user.currentEra.name,
+            startDate: safeToISOString(user.currentEra.startDate),
+            endDate: safeToISOString(user.currentEra.endDate),
+          }
+        : undefined,
       UserUnit: user.UserUnit,
       UserItem: user.UserItem,
       UserStructureUpgrade: user.UserStructureUpgrade,

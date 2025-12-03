@@ -346,6 +346,11 @@ useEffect(() => {
                           </Group>
                         }
                       />
+                      <StatRow
+                        label="Era"
+                        value={<span>{user?.currentEra?.name ?? 'Unknown'}</span>}
+                        icon={<RpgAwesomeIcon icon="experience" fw />}
+                      />
                       <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
                       <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
                       <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
@@ -468,6 +473,11 @@ useEffect(() => {
                         </Group>
                       }
                     />
+                      <StatRow
+                        label="Era"
+                        value={<span>{user?.currentEra?.name ?? 'Unknown'}</span>}
+                        icon={<RpgAwesomeIcon icon="experience" fw />}
+                      />
                     <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
                     <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
                     <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
