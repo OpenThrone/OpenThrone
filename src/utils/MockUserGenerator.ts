@@ -49,12 +49,6 @@ export default class MockUserGenerator {
       last_active: new Date(),
       rank: 0,
       house_level: 0,
-      battle_upgrades_json: '[]', // From schema
-      structure_upgrades_json: '[]', // From schema
-      bonus_points_json: '[]', // From schema
-      items_json: '[]', // From schema
-      mercenaries_json: '[]', // From schema
-      units_json: '[]', // From schema
       bio: '',
       colorScheme: null,
       recruit_link: '',

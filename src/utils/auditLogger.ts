@@ -1,19 +1,8 @@
-import prisma from '@/lib/prisma';
+import { GeneralService } from '@/services/General.service';
 import { getIpAddress } from './ipUtils';
 
 export async function logAction(userId: number, action: string, ip: string, details: any = {}) {
-  try {
-    await prisma.auditLog.create({
-      data: {
-        userId,
-        action,
-        ip,
-        details,
-      },
-    });
-  } catch (error) {
-    console.error('Failed to log audit action:', error);
-  }
+  await GeneralService.logAuditAction(userId, action, ip, details);
 }
 
 // Helper to get IP from request

@@ -9,6 +9,7 @@ declare module 'next-auth' {
    */
   interface User {
     id: string|number; // Add the `id` field or any other fields you need
+    alliance_id?: number | null;
   }
 
   // Extend the session interface to include the custom user type

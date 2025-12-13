@@ -525,7 +525,7 @@ function getUnitMultiplier(user: UserModel, unitType: 'OFFENSE' | 'DEFENSE'): nu
   return 1 + Number(bonus) / 100;
 }
 
-const itemTypeLookup: Record<string, any[]> = {}; // Map usage -> array of items
+const itemTypeLookup: { [key: string]: any[] } = {}; // Map usage -> array of items
 ItemTypes.forEach(item => {
   if (!itemTypeLookup[item.usage]) {
     itemTypeLookup[item.usage] = [];

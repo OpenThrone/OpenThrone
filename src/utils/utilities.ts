@@ -308,7 +308,7 @@ export const getTransactionType = (entry) => {
   return 'UNKNOWN';
 };
 
-export const getGoldTxSymbol = (entry) => {
+export const getGoldTxSymbol = (entry, user) => {
   const transactionType = getTransactionType(entry);
   if (transactionType === 'Recruitment' || transactionType === 'Income') return '+';
   if (transactionType === 'War Spoils' && entry.to_user_id === user?.id) return '+';

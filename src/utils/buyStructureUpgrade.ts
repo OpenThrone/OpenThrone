@@ -1,4 +1,4 @@
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { logError } from './logger';
 
 // utils/buyStructureUpgrade.js

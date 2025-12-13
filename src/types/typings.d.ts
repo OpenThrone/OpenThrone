@@ -95,6 +95,11 @@ export type BattleUnits = {
   currentHP?: number; // Add current HP for tracking during battle
 };
 
+export type Loss = {
+  total: number;
+  units: BattleUnits[];
+};
+
 export interface PageAlert {
   type: "SUCCESS" | "DANGER" | "INFO";
   message: string;
@@ -283,6 +288,7 @@ export type UnitProps = {
   minUnitLevel?: number;
   unitsCovered?: number;
   quantity?: number; //
+  SiegeUpgrade?: string;
 };
 
 export type UnitSectionProps = {
