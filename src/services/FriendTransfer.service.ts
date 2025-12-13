@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { getFriendTransferConfig, calculateTransferFee, isValidTransferAmount, canMakeTransfer, friendTransferCompleteConfig } from './config.service';
+import { getFriendTransferConfig, calculateTransferFee, isValidTransferAmount, canMakeTransfer, friendTransferCompleteConfig } from './Config.service';
 import ApiError, { createApiError } from '@/utils/api-error';
 import { Omit } from '@prisma/client/runtime/library';
 

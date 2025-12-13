@@ -283,6 +283,62 @@ export const performRecruitment = async ({
   return { success: true };
 };
 
+export const performRecruitmentWithSessionValidation = async ({
+  tx,
+  fromUser,
+  toUser,
+  userIdToUpdate,
+  ipAddress,
+  strategy = 'standard',
+  goldReward = 250,
+  delayMs,
+  sessionId,
+  recruiterUserId,
+}: {
+  tx: Prisma.TransactionClient;
+  fromUser: number;
+  toUser: number;
+  userIdToUpdate: number;
+  ipAddress: string;
+  strategy?: RecruitmentLimitStrategy;
+  goldReward?: number;
+  delayMs?: number;
+  sessionId?: number | null;
+  recruiterUserId: number;
+}) => {
+  // Validate session inside transaction if present
+  if (sessionId) {
+    const sessionData = await tx.autoRecruitSession.findUnique({
+      where: { id: sessionId, userId: recruiterUserId },
+    });
+
+    if (!sessionData) {
+      throw new Error('Invalid session ID');
+    }
+
+    if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) { // 1 minute
+      await tx.autoRecruitSession.deleteMany({
+        where: { id: sessionId, userId: recruiterUserId },
+      });
+      throw new Error('Session expired');
+    }
+  }
+
+  return performRecruitment({
+    tx,
+    fromUser,
+    toUser,
+    userIdToUpdate,
+    ipAddress,
+    strategy,
+    goldReward,
+    delayMs,
+    sessionUpdate: sessionId
+      ? { sessionId, recruiterUserId }
+      : null,
+  });
+};
+
 export async function getValidUsersForRecruitment(recruiterID: number, ipAddress: string) {
   // Fetch users excluding the recruiter and ID 0, created before OT start date
   const usersWithStatus = await prisma.users.findMany({
@@ -411,6 +467,84 @@ export async function getRecruitmentRecords(recruiterID: number, startDate: Date
   }));
 
   return usersWithRecruitCount;
+}
+
+export async function getUserByRecruitLink(recruitLink: string) {
+  return prisma.users.findUnique({
+    where: {
+      recruit_link: recruitLink,
+    },
+  });
+}
+
+export async function getRandomAutoRecruitUser() {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  // Fetch all users
+  const users = await prisma.users.findMany({
+    select: {
+      recruit_link: true,
+      id: true,
+    },
+    where: {
+      NOT: {
+        id: 0,
+      },
+    },
+  });
+
+  if (!users.length) {
+    return null;
+  }
+
+  const userPromises = users.map(async (user: any) => {
+    const totalRecruitments = await prisma.recruit_history.count({
+      where: {
+        from_user: { not: 0 },
+        to_user: user.id,
+        timestamp: {
+          gte: twentyFourHoursAgo,
+        },
+      },
+    });
+    if (totalRecruitments >= 40) return null; // Skip user if recruited more than 40 times
+
+    const recruitmentsCountByRecruiter = await prisma.recruit_history.groupBy({
+      by: ['from_user'],
+      where: {
+        to_user: user.id,
+        timestamp: {
+          gte: twentyFourHoursAgo,
+        },
+        from_user: {
+          not: 0,
+        },
+      },
+      _count: {
+        from_user: true,
+      },
+    });
+
+    const isOverRecruited = recruitmentsCountByRecruiter.some(
+      (recruitment: any) => recruitment._count.from_user >= 5,
+    );
+
+    if (!isOverRecruited) {
+      return user;
+    }
+    return null;
+  });
+
+  const validUsers = (await Promise.all(userPromises)).filter(Boolean);
+
+  if (!validUsers.length) {
+    return null;
+  }
+
+  // Randomly select a user from the validUsers
+  const randomUser = validUsers[Math.floor(Math.random() * validUsers.length)];
+
+  return randomUser;
 }
 
 // Utility to increase citizen count in a legacy units JSON array

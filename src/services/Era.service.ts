@@ -9,7 +9,7 @@ import {
   StructureUpgradeType,
   UnitType,
 } from '@prisma/client';
-import { getUsersWithRelations } from './userLoader';
+import { getUsersWithRelations } from './UserLoader.service';
 
 type Tx = Prisma.TransactionClient;
 

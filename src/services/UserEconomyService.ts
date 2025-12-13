@@ -39,9 +39,10 @@ export class UserEconomyService {
 
   getGoldPerTurn(): bigint {
     const workerUnits = this.units.filter((unit) => unit.type === 'WORKER');
+    console.log(`Calculating gold per turn for ${workerUnits.length} worker units.`);
     const economyUpgrade = EconomyUpgrades[this.economyLevel];
     const goldPerWorker = economyUpgrade?.goldPerWorker ?? 0;
-
+    console.log(`Economy level: ${this.economyLevel}, Gold per worker: ${goldPerWorker}`);
     const workerGold = workerUnits.reduce((sum, unit) => {
       const baseWorkerGold = goldPerWorker * (unit.quantity ?? 0);
       const bonusGold = baseWorkerGold * (this.incomeBonus / 100);

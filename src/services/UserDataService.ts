@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { getUpdatedStatus } from '@/services/user.service';
+import { getUpdatedStatus } from '@/services/User.service';
 import { UserStatsService } from './UserStatsService';
 import { UserUnitsService } from './UserUnitsService';
 import { safeToISOString } from '@/utils/dateHelpers';

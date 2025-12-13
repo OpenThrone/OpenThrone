@@ -4,7 +4,7 @@ import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/mockP
 installMockPrisma(vi);
 
 // Require module under test after mocks installed
-const userService = require('../user.service');
+const userService = require('../User.service');
 const { updateLastActive, userExists } = userService;
 
 describe('user.service', () => {

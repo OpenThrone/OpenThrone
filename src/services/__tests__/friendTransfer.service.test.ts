@@ -7,7 +7,7 @@ let getFriendTransferConfig: any, calculateTransferFee: any, isValidTransferAmou
 type TransactionClient = Omit<any, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
 // Use shared mock helpers
-import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/mockPrisma';
+import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/';
 import { installMockMtRand } from 'test/utils/mockMtRand';
 
 // Install mocks before requiring modules under test
@@ -23,7 +23,7 @@ const mockConfigService = {
 };
 
 // Use typed vi.mock to provide the config service implementation backed by our mockConfigService
-vi.mock('../config.service', () => ({
+vi.mock('../Config.service', () => ({
   getFriendTransferConfig: () => mockConfigService.getFriendTransferConfig(),
   calculateTransferFee: (amount: any) => mockConfigService.calculateTransferFee(amount),
   isValidTransferAmount: (amount: any) => mockConfigService.isValidTransferAmount(amount),
@@ -32,13 +32,13 @@ vi.mock('../config.service', () => ({
 }));
 
 // Require modules after mocks are in place so the modules pick up our mocked implementations
-const configModule = require('../config.service');
+const configModule = require('../Config.service');
 getFriendTransferConfig = configModule.getFriendTransferConfig;
 calculateTransferFee = configModule.calculateTransferFee;
 isValidTransferAmount = configModule.isValidTransferAmount;
 canMakeTransfer = configModule.canMakeTransfer;
 
-const serviceModule = require('../friendTransfer.service');
+const serviceModule = require('../FriendTransfer.service');
 transferGoldToFriend = serviceModule.transferGoldToFriend;
 createGoldRequest = serviceModule.createGoldRequest;
 respondToGoldRequest = serviceModule.respondToGoldRequest;

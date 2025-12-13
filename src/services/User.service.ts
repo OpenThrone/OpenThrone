@@ -9,7 +9,7 @@ import {
   ERA_DEFAULT_ITEMS,
   ERA_DEFAULT_STRUCTURE_UPGRADES,
   ERA_DEFAULT_UNITS,
-} from "./era.service";
+} from "./Era.service";
 
 export const createUser = async (email: string, password_hash: string, display_name: string, race: string, class_name: string, locale: string = 'en-US') => {
   return await prisma.$transaction(async (tx) => {
