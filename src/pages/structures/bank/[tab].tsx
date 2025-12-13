@@ -156,7 +156,7 @@ export default function Bank(props) {
 
   return (
     <MainArea title="Bank">
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} gap="lg" verticalgap="xl">
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
         {/* Gold On Hand Card */}
         <BankCard
           title="Gold On Hand"
@@ -379,7 +379,7 @@ export default function Bank(props) {
                 <Flex justify="space-between" align="center" mb={8}>
                   <Text fw={500}>Daily Income:</Text>
                   <Text>
-                    {((BigInt(user?.goldPerTurn?.toString() || '0') * BigInt(48)) ?? BigInt(0)).toLocaleString()}
+                    {(BigInt(user?.goldPerTurn?.toString() || '0') * BigInt(48)).toLocaleString()}
                   </Text>
                 </Flex>
                 <Text c="dimmed" size="sm">

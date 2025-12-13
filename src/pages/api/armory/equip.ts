@@ -1,12 +1,8 @@
 import type { NextApiResponse } from 'next'; // Removed NextApiRequest
 import type { AuthenticatedRequest } from '@/types/api'; // Import AuthenticatedRequest
 import { z } from 'zod';
-import { ItemTypes } from '@/constants';
-import prisma from '@/lib/prisma';
-import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
-import { getUserById, updateUserAndBankHistory } from '@/services';
-import { calculateUserStats } from '@/utils/utilities';
+import { ArmoryService, ArmoryItem } from '@/services';
 import { logError } from '@/utils/logger'; // Added logError import
 
 // Define Zod schema for request body validation
@@ -34,13 +30,7 @@ const EquipRequestSchema = z.object({
 type ApiErrorResponse = { error: string; details?: any }; // Added optional details
 type ApiSuccessResponse = { message: string; data: any }; // Consider defining a more specific data type
 
-// Define the existing EquipmentProps interface (can be reused or replaced by Zod inferred type if preferred)
-interface EquipmentProps {
-  type: string;
-  usage: string;
-  level: number;
-  quantity: number | string; // Keep string for DB compatibility if needed, Zod handles parsing
-}
+
 
 
 const handler = async (
@@ -84,144 +74,25 @@ const handler = async (
   }
 
   try {
-    // Fetch user outside transaction for initial checks, but re-fetch inside for consistency
-  // Use the validated userId (already authorized above) for DB reads
-  const user = await getUserById(userId);
-    if (!user) {
-      // This case should ideally not happen if session/auth middleware is working
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Removed duplicated uModel and totalCost initialization
-    const uModel = new UserModel(user);
-    let totalCost = 0;
-
-    // Validate items against constants and calculate total cost
-    // itemsToEquip is now guaranteed to be the correct type by Zod
-    for (const itemData of itemsToEquip) {
-      const itemDefinition = ItemTypes.find(
-        (w) =>
-          w.type === itemData.type &&
-          w.level === itemData.level &&
-          w.usage === itemData.usage,
-      );
-
-      if (!itemDefinition) {
-        return res.status(400).json({
-          error: `Invalid item configuration: Type ${itemData.type}, Level ${itemData.level}, Usage ${itemData.usage}`,
-        });
-      }
-      // Zod already ensures quantity is positive integer
-      const itemBaseCost = itemDefinition.cost - Math.ceil(((uModel.priceBonus ?? 0) / 100) * itemDefinition.cost);
-      // Ensure quantity is a number for cost calculation
-      const qty = typeof itemData.quantity === 'string' ? parseInt(itemData.quantity, 10) : itemData.quantity;
-      totalCost += Math.ceil(itemBaseCost * qty);
-    }
-
-    // Check if the user has enough gold (compare BigInt)
-    if (BigInt(user.gold) < BigInt(totalCost)) {
-      return res.status(400).json({ error: `Not enough gold. Required: ${totalCost}, Available: ${user.gold}` });
-    }
-
-    // Perform database operations within a transaction
-    const updatedItemsResult = await prisma.$transaction(async (tx) => {
-      // Fetch the user again *within* the transaction for locking/consistency
-      const currentUser = await getUserById(userId, tx as any);
-      if (!currentUser) {
-        // Should not happen if initial check passed, but good safety measure
-        throw new Error('User not found within transaction');
-      }
-
-      // Recalculate cost based on potentially updated price bonus if needed, or use previous totalCost
-      // Re-check gold within transaction to prevent race conditions
-      if (BigInt(currentUser.gold) < BigInt(totalCost)) {
-        throw new Error(`Not enough gold. Required: ${totalCost}, Available: ${currentUser.gold}`);
-      }
-
-      // Use a Map for efficient updates of existing items
-      const currentItemsMap = new Map<string, EquipmentProps>();
-      (currentUser.UserItem as EquipmentProps[]).forEach(item => {
-        const key = `${item.type}-${item.usage}-${item.level}`;
-        currentItemsMap.set(key, item);
-      });
-
-      // Update quantities or add new items
-      itemsToEquip.forEach(itemData => {
-        const key = `${itemData.type}-${itemData.usage}-${itemData.level}`;
-        const existingItem = currentItemsMap.get(key);
-        if (existingItem) {
-          // Ensure quantity is treated as number
-          const currentQuantity = typeof existingItem.quantity === 'string' ? parseInt(existingItem.quantity, 10) : existingItem.quantity as number;
-          const incomingQty = typeof itemData.quantity === 'string' ? parseInt(itemData.quantity, 10) : itemData.quantity as number;
-          existingItem.quantity = currentQuantity + incomingQty;
-        } else {
-          // Explicitly create the EquipmentProps object to satisfy TypeScript
-          currentItemsMap.set(key, {
-            type: itemData.type,
-            usage: itemData.usage,
-            level: itemData.level,
-            quantity: itemData.quantity,
-          });
-        }
-      });
-
-      const updatedItemsArray = Array.from(currentItemsMap.values());
-
-      // Calculate new stats based on the updated items array
-      // Pass the original full user object to calculateUserStats if it needs more than items
-      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
-        calculateUserStats(user, updatedItemsArray, 'items');
-
-      // Update user and bank history
-      await updateUserAndBankHistory(
-        tx,
-        userId,
-        BigInt(currentUser.gold) - BigInt(totalCost), // Use gold fetched within transaction (BigInt math)
-        updatedItemsArray, // Pass the final array
-        killingStrength,
-        defenseStrength,
-        newOffense,
-        newDefense,
-        newSpying,
-        newSentry,
-        {
-          gold_amount: BigInt(totalCost),
-          from_user_id: userId,
-          from_user_account_type: 'HAND',
-          to_user_id: 0, // 0 is the bank
-          to_user_account_type: 'BANK',
-          date_time: new Date().toISOString(),
-          history_type: 'SALE', // Or 'EQUIP'? Clarify semantics
-          stats: {
-            type: 'ARMORY_EQUIP',
-            items: itemsToEquip, // Log the items that were requested to be equipped
-          },
-        },
-        'items' // Context for updateUserAndBankHistory
-      );
-
-      return updatedItemsArray; // Return the result from the transaction
-    });
+    const result = await ArmoryService.equipItems({ userId, items: itemsToEquip as ArmoryItem[] });
 
     return res.status(200).json({
-      message: 'Items equipped successfully',
-      data: updatedItemsResult, // Return the updated items from the transaction
+      message: result.message,
+      data: result.data,
     });
 
   } catch (error: any) {
-    // Log with validated data if available, otherwise original body
-    const logContext = parseResult.success ? { userId: parseResult.data.userId, items: parseResult.data.items } : { body: req.body };
-    logError(error, logContext, 'API Error: /api/armory/equip');
+    logError(error, { userId, items: itemsToEquip }, 'API Error: /api/armory/equip');
 
-    // Check for specific errors thrown from the transaction
-    if (error.message?.startsWith('Not enough gold')) { // Added optional chaining
+    // Check for specific errors
+    if (error.message?.startsWith('Not enough gold')) {
       return res.status(400).json({ error: error.message });
     }
-    if (error.message === 'User not found within transaction') {
-       return res.status(404).json({ error: 'User data inconsistency during transaction.' });
+    if (error.message === 'User not found') {
+      return res.status(404).json({ error: 'User not found' });
     }
     // Generic internal server error for other cases
-    return res.status(500).json({ error: 'An unexpected error occurred while equipping items.' }); // Slightly improved generic message
+    return res.status(500).json({ error: 'An unexpected error occurred while equipping items.' });
   }
 }
 

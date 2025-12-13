@@ -1,7 +1,7 @@
 import { NextApiResponse } from 'next';
 import type { AuthenticatedRequest } from '@/types/api';
 import { withAuth } from '@/middleware/auth';
-import { withdraw } from '@/services/bank.service';
+import { withdraw } from '@/services/Bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { parseBigInt } from '@/utils/jsonHelpers';
 

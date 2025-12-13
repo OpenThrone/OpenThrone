@@ -24,3 +24,5 @@ describe('API admin/users', () => {
     expect(resp.army.units.length).toBe(1);
   });
 });
+
+export default (req: any, res: any) => {};

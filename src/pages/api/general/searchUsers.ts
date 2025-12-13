@@ -1,7 +1,7 @@
-import prisma from "@/lib/prisma";
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
+import { GeneralService } from '@/services';
 import { z } from 'zod';
 
 const SearchUsersSchema = z.object({ name: z.string().min(1) });
@@ -24,28 +24,9 @@ const getSearchResults = async (req: NextApiRequest, res: NextApiResponse) => {
   const { name: searchTerm } = parseResult.data;
 
   try {
-    // Fetch the user based on the session's user ID
-    const users = await prisma.users.findMany({
-      where: {
-        // Use contains for a "LIKE" search, adjust for case sensitivity if needed
-        display_name: {
-          contains: searchTerm,
-          mode: 'insensitive', // Remove or change to 'sensitive' for case-sensitive
-        },
-      },
-      // Selecting specific fields to return
-      select: {
-        id: true,
-        display_name: true,
-        class: true,
-        race: true,
-        avatar: true,
-        experience: true,
-        permissions: true,
-      },
-    });
+    const users = await GeneralService.searchUsers(searchTerm);
 
-    if (!users) {
+    if (!users || users.length === 0) {
       res.status(404).json({ error: 'No users found' });
       return;
     }

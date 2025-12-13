@@ -22,3 +22,5 @@ describe('API spy/[id]', () => {
     expect(result.status).toBe(400);
   });
 });
+
+export default (req: any, res: any) => {};

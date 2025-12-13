@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
-import prisma from '@/lib/prisma';
+import { AuthService } from '@/services';
 import { logError } from '@/utils/logger';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -15,22 +15,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = session.user.id;
-    const user = await prisma.users.findUnique({
-      where: { id: userId },
-      select: { twoFactorSecret: true },
-    });
+    const userId = parseInt(session.user.id.toString());
 
-    if (!user?.twoFactorSecret) {
-      return res.status(400).json({ error: '2FA not enabled' });
-    }
+    const result = await AuthService.disable2FA(userId);
 
-    await prisma.users.update({
-      where: { id: userId },
-      data: { twoFactorSecret: null },
-    });
-
-    res.status(200).json({ success: true });
+    res.status(200).json(result);
   } catch (error) {
     logError('Disable 2FA error:', error);
     res.status(500).json({ error: 'Internal server error' });

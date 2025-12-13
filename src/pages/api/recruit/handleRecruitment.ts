@@ -8,7 +8,8 @@ import { logAction } from '@/utils/auditLogger';
 import { RecruitSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
 import { AuthenticatedRequest } from '@/types/api';
-import { performRecruitment } from '@/services/recruitment.service';
+import { performRecruitmentWithSessionValidation, getUserByRecruitLink } from '@/services/Recruitment.service';
+import { error } from 'console';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
@@ -28,9 +29,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     let sessionIdNum: number | null = sessionIdStr ? parseInt(sessionIdStr, 10) : null;
 
     if (typeof recruitedUserId === 'string' && !Number.isInteger(Number(recruitedUserId))) {
-      const recruitedUser = await prisma.users.findFirst({
-        where: { recruit_link: recruitedUserId },
-      });
+      const recruitedUser = await getUserByRecruitLink(recruitedUserId);
       recruitedUserId = recruitedUser?.id || 0;
     }
 
@@ -45,26 +44,8 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     const userIdToLock = selfRecruit ? Number(recruitedUserId) : Number(toUser);
     const delayMs = mtrand(5, 17) * 100;
 
-    const result = await prisma.$transaction(async (tx) => {
-      // Validate session inside transaction if present
-      if (sessionIdNum) {
-        const sessionData = await tx.autoRecruitSession.findUnique({
-          where: { id: sessionIdNum, userId: recruiterUserId },
-        });
-
-        if (!sessionData) {
-          throw new Error('Invalid session ID');
-        }
-
-        if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) { // 1 minute
-          await tx.autoRecruitSession.deleteMany({
-            where: { id: sessionIdNum, userId: recruiterUserId },
-          });
-          throw new Error('Session expired');
-        }
-      }
-
-      return performRecruitment({
+    const result = await prisma.$transaction((tx) =>
+      performRecruitmentWithSessionValidation({
         tx,
         fromUser,
         toUser,
@@ -73,11 +54,10 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         strategy: 'standard',
         goldReward: 250,
         delayMs,
-        sessionUpdate: sessionIdNum
-          ? { sessionId: sessionIdNum, recruiterUserId }
-          : null,
-      });
-    }, { timeout: 15000, maxWait: 5000 });
+        sessionId: sessionIdNum,
+        recruiterUserId,
+      })
+    , { timeout: 15000, maxWait: 5000 });
 
     const ip = getIpAddress(req);
     await logAction(recruiterUserId || toUser, 'RECRUIT', ip, { recruitedUserId, selfRecruit });

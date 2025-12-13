@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { raceClasses, useLayout } from "@/context/LayoutContext";
+import { useLayout } from "@/context/LayoutContext";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services";
 import { logInfo, logError } from "@/utils/logger";
@@ -29,7 +29,7 @@ const Settings = (props) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const { user, forceUpdate } = useUser();
-  const { updateOptions } = useLayout();
+  const { updateOptions, raceClasses } = useLayout();
   
   // Add logging for debugging
   logInfo('Settings page - user object:', user);

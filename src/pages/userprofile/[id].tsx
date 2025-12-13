@@ -13,7 +13,7 @@ import { GoldRequestModal } from '@/components/GoldRequestModal';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { alertService, getUpdatedStatus } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
 import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid, Center, Space, Flex, Container } from '@mantine/core';
@@ -905,6 +905,8 @@ export const getServerSideProps = async ({ query }) => {
   if (!user) {
     return { notFound: true };
   }
+
+  const { getUpdatedStatus } = await import('@/services/User.service');
 
   const { password_hash, email, ...userWithoutPassword } = user;
 

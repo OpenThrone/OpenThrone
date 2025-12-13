@@ -6,7 +6,7 @@ import { useUser } from '@/context/users';
 import { Text, Space, Button, Center } from '@mantine/core';
 import styles from './levels.module.css';
 import LevelCard from '@/components/levelCard';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import MainArea from '@/components/MainArea';
 
 const Levels = (props) => {

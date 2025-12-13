@@ -24,3 +24,5 @@ describe('API utilities/getRankBreakdown', () => {
     expect(resp.users.length).toBe(2);
   });
 });
+
+export default (req: any, res: any) => {};

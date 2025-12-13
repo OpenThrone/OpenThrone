@@ -1,6 +1,6 @@
-import prisma from "@/lib/prisma";
 import { withAuth } from "@/middleware/auth";
 import { NextApiResponse } from "next";
+import { SocialService } from '@/services/Social.service';
 import { stringifyObj } from "@/utils/jsonHelpers";
 import type { AuthenticatedRequest } from "@/types/api";
 
@@ -15,24 +15,12 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   }
 
   try {
-    const count = await prisma.bank_history.count({
-      where: {
-        to_user_id: session.user.id,
-        history_type: 'FRIEND_REQUEST',
-        stats: {
-          path: ['transferType'],
-          equals: 'FRIEND_REQUEST'
-        },
-        date_time: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-        }
-      },
-    });
+    const result = await SocialService.countPendingGoldRequests(session.user.id);
 
-    return res.status(200).json(stringifyObj({ count }));
-  } catch (error) {
+    return res.status(200).json(stringifyObj(result));
+  } catch (error: any) {
     console.error("Error fetching gold request count:", error);
-    return res.status(500).json({ error: "Failed to get gold request count" });
+    return res.status(500).json({ error: error.message });
   }
 };
 

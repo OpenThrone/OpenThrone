@@ -62,7 +62,7 @@ const Login = (props) => {
         <VacationModeModal
           opened={showVacationModal}
           onClose={() => setShowVacationModal(false)}
-          userId={vacationUserId}
+          userId={Number(vacationUserId)}
           onVacationEnd={() => setShowVacationModal(false)}
         />
       </MainArea>

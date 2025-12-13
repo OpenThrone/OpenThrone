@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import NewItemSection from '@/components/newItemSection';
 import { ArmoryUpgrades, ItemTypes } from '@/constants';
 import { useUser } from '@/context/users';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
 import { Group, Paper, rem, SimpleGrid, Tabs, ThemeIcon, Text, Space, Button, Box, px } from '@mantine/core'; // Keep Box
 import UserModel from '@/models/Users';
@@ -334,7 +334,7 @@ const ArmoryTab = (props) => {
 
   return (
     <MainArea title='Armory' ref={parentRef}>
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} gap="lg" verticalgap="xl">
+      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
         {/* Stat Cards */}
         <StatCard
           title="Citizens"

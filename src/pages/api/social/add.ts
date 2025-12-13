@@ -1,7 +1,7 @@
-import prisma from "@/lib/prisma";
 import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { z } from 'zod';
+import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 
 const AddSocialSchema = z.object({
@@ -26,65 +26,14 @@ const addSocialRelation = async (req: AuthenticatedRequest, res: NextApiResponse
 
   const { friendId, relationshipType } = parseResult.data;
   const playerId = session.user.id;
-  console.log(req.body);
-  console.log(relationshipType);
 
   try {
-    // Check if user is trying to add relationship with themselves
-    if (playerId === friendId) {
-      return res.status(400).json({ error: 'Cannot create relationship with yourself' });
-    }
+    const result = await SocialService.addRelationship(playerId, { friendId, relationshipType });
 
-    const social = await prisma.social.findFirst({
-      where: {
-        OR: [
-          { AND: [
-            { playerId },
-            { friendId },
-            { relationshipType },
-          ] },
-          { AND: [
-            { playerId: friendId },
-            { friendId: playerId },
-            { relationshipType },
-          ] }
-        ]
-      },
-    });
-
-    if (social) {
-      if (social.status === 'requested') {
-        return res.status(400).json({
-          error: `A ${relationshipType.toLowerCase()} request is already pending between you and this user.`
-        });
-      } else if (social.status === 'accepted') {
-        return res.status(400).json({
-          error: `You already have an active ${relationshipType.toLowerCase()} relationship with this user.`
-        });
-      } else {
-        return res.status(400).json({
-          error: `A ${relationshipType.toLowerCase()} relationship already exists with this user.`
-        });
-      }
-    }
-
-    await prisma.social.create({
-      data: {
-        playerId,
-        friendId,
-        relationshipType,
-        status: 'requested',
-        requestDate: new Date(),
-      },
-    });
-    
-    res.status(200).json({
-      message: `${relationshipType} request sent successfully`,
-      relationshipType
-    });
-  } catch (error) {
+    res.status(200).json(result);
+  } catch (error: any) {
     console.error('Error adding relationship:', error);
-    res.status(500).json({ error: 'Failed to add relationship' });
+    res.status(400).json({ error: error.message });
   }
 };
 

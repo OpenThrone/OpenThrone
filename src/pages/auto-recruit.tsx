@@ -1,7 +1,7 @@
 // src/pages/auto-recruit.tsx
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Recruiter from '../components/recruiter';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { Button, Space, Container, Text, Title, Center, Flex, Stack } from '@mantine/core';
 import { useUser } from '@/context/users';
 import SessionModal from '@/components/SessionModal';

@@ -1,6 +1,6 @@
 import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
-import { getBankHistory } from '@/services/bank.service';
+import { getBankHistory } from '@/services/Bank.service';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import type { AuthenticatedRequest } from '@/types/api';
 

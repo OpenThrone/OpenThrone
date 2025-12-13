@@ -149,7 +149,7 @@ const Admin = (props) => {
           h3: ({ node, ...props }) => <Title order={3} {...props} />,
           h4: ({ node, ...props }) => <Title order={4} {...props} />,
           p: ({ node, ...props }) => (
-            <Text component="p" fw="normal" size="lg" mb="xl" {...props} />
+            <Text component="p" fw="normal" size="lg" mb="xl">{props.children}</Text>
           ),
           table: ({ node, ...props }) => (
             <MantineTable striped highlightOnHover withRowBorders withColumnBorders {...props} />

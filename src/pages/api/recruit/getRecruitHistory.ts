@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { getOTStartDate } from '@/utils/timefunctions';
-import { getRecruitmentRecords } from '@/services/recruitment.service';
+import { getRecruitmentRecords } from '@/services/Recruitment.service';
 
 const handler = async (
   req: NextApiRequest,

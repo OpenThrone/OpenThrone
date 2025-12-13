@@ -7,7 +7,7 @@ import { BiCoinStack, BiSolidBank, BiWrench, BiHistory } from 'react-icons/bi';
 import MainArea from '@/components/MainArea';
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 import ContentCard from '@/components/ContentCard';
 import StatCard from '@/components/StatCard';
@@ -171,8 +171,8 @@ const Repair = (props) => {
           className="h-full"
         >
           <Group align="flex-start" className="p-4">
-            <Stack spacing="md" className="flex-1">
-              <Group align="center" spacing="xs">
+            <Stack className="flex-1">
+              <Group align="center">
                 <Text fw={700} size="xl" className="font-medieval">
                   {fortification?.name}
                 </Text>

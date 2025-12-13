@@ -1,5 +1,5 @@
-import prisma from "@/lib/prisma";
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { AccountService } from '@/services';
 import AWS from 'aws-sdk';
 import formidable from 'formidable';
 import path from 'path';
@@ -129,12 +129,13 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         const userId = typeof req.session?.user?.id === 'string'
           ? parseInt(req.session.user.id, 10)
           : Number(req.session?.user?.id ?? 0);
-        const updated = await prisma.users.update({
-          where: { id: userId },
-          data: updateData,
+
+        const result = await AccountService.updateProfile(userId, {
+          bio: bio || undefined,
+          avatarFile: updateData.avatar, // Pass the avatar path
         });
 
-        return res.status(200).json({ status: 'success', data: stringifyObj({ updated }) });
+        return res.status(200).json({ status: 'success', data: stringifyObj(result) });
       } catch (updateError) {
         logError('Error updating user:', updateError);
         return res.status(500).json({ error: 'Error updating user profile' });

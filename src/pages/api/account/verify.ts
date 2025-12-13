@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-
-import prisma from '@/lib/prisma';
+import { AuthService } from '@/services';
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,30 +11,10 @@ export default async function handler(
   // handle password reset
   const { email, verify } = req.body;
   try {
-    const user = await prisma.users.findUnique({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    
-    const existingReset = await prisma.passwordReset.findMany({
-      where: {
-        userId: user.id,
-        verificationCode: verify,
-        status: 0,
-        createdAt: {
-           gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3),
-        },
-      },
-    });
-
-    if (existingReset.length === 0) {
-      return res.status(404).json({ error: 'Invalid verification code' });
-    }
-    
+    const result = await AuthService.verifyPasswordResetCode(email, verify);
     return res.json({
       status: true,
-      verified: true,
+      verified: result.verified,
     });
   } catch (error: any) {
     return res.status(500).json({

@@ -1,7 +1,7 @@
 import router from 'next/router';
 import { useState } from 'react';
 import { showNotification } from '@mantine/notifications';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { Space, TextInput, Button, Container, Title, Paper } from '@mantine/core';
 import classes from './floatinginput.module.css';
 import MainArea from '@/components/MainArea';

@@ -7,7 +7,7 @@ import speakeasy from 'speakeasy';
 import prisma from '@/lib/prisma';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { IUserSession } from '@/types/typings';
-import { getUpdatedStatus } from '@/services/user.service';
+import { getUpdatedStatus } from '@/services/User.service';
 import { isAdmin, isModerator } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 import { logAction, getRequestIp } from '@/utils/auditLogger';

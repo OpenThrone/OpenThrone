@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import toLocale  from '@/utils/numberFormatting';
 import { Group, SimpleGrid, Text, Button, Flex, Stack, Box, rem } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

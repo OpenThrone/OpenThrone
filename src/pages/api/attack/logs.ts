@@ -1,9 +1,7 @@
-'use server';
-
-import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { NextApiResponse } from 'next';
 import type { AuthenticatedRequest } from '@/types/api';
+import { BattleService } from '@/services';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -15,6 +13,8 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
+  const userId = session.user.id;
+
   const {
     page = 0,
     limit = 10,
@@ -25,45 +25,22 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     sortOrder
   } = req.query;
 
-  const skip = parseInt(page.toString(), 10) * parseInt(limit.toString(), 10);
+  try {
+    const result = await BattleService.getAttackLogs(userId, {
+      page: parseInt(page.toString(), 10),
+      limit: parseInt(limit.toString(), 10),
+      player: player as string,
+      minPillage: minPillage ? parseInt(minPillage.toString(), 10) : undefined,
+      maxPillage: maxPillage ? parseInt(maxPillage.toString(), 10) : undefined,
+      sortBy: sortBy as string,
+      sortOrder: sortOrder as 'asc' | 'desc'
+    });
 
-  const whereClause = {
-    OR: [
-      { attacker_id: session.user.id },
-      { defender_id: session.user.id },
-    ],
-    ...(player ? {
-      OR: [
-        { attackerPlayer: { display_name: { contains: player as string, mode: 'insensitive' } } },
-        { defenderPlayer: { display_name: { contains: player as string, mode: 'insensitive' } } },
-      ],
-    } : {}),
-    ...(minPillage ? { stats: { path: ['pillagedGold'], gt: parseInt(minPillage.toString(), 10) } } : {}),
-    ...(maxPillage ? { stats: { path: ['pillagedGold'], lt: parseInt(maxPillage.toString(), 10) } } : {}),
-  };
-
-  const orderByClause = sortBy && sortOrder ? { [sortBy as string]: sortOrder } : { timestamp: 'desc' };
-  const results = await prisma.attack_log.findMany({
-    where: whereClause,
-    orderBy: orderByClause,
-    skip: skip,
-    take: parseInt(limit.toString(), 10),
-    include: {
-      attackerPlayer: { select: { id: true, display_name: true, avatar: true } },
-      defenderPlayer: { select: { id: true, display_name: true, avatar: true } },
-    },
-  });
-
-  const totalCount = await prisma.attack_log.count({ where: whereClause });
-
-  res.status(200).json({
-    data: results,
-    page,
-    limit,
-    total: totalCount,
-    totalPages: Math.ceil(totalCount / parseInt(limit.toString(), 10)),
-    timestamp: new Date().toISOString()
-  });
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error getting attack logs:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }
 
 export default withAuth(handler)

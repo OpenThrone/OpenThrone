@@ -1,5 +1,5 @@
 'use server';
-import prisma from "@/lib/prisma";
+import { GeneralService } from '@/services';
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
 
@@ -10,10 +10,8 @@ const handler = async(req, res) => {
     if (session.user.id !== 1 && session.user.id !== 2 && session.user.id !== id) {
       return res.status(401).json({ status: 'Not authorized' });
     }
-    const user = await prisma?.users.findUnique({
-      where: { id: Number(id) },
-    });
-    const userMod = new UserModel(user,true);
+    const user = await GeneralService.getUserStats(Number(id));
+    const userMod = new UserModel(user, true);
     return res.status(200).json(
       {
         status: 'success',

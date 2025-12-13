@@ -1,8 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-
-import prisma from '@/lib/prisma';
-const argon2 = require('argon2');
+import { AccountService } from '@/services';
 
 export default async function handler(
   req: NextApiRequest,
@@ -25,40 +23,13 @@ export default async function handler(
   const { email, verify, newPassword } = parseResult.data;
 
   try {
-    const user = await prisma.users.findUnique({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const existingReset = await prisma.passwordReset.findMany({
-      where: {
-        userId: user.id,
-        verificationCode: verify,
-        status: 0,
-        createdAt: {
-          gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3),
-        },
-        type: 'PASSWORD'
-      },
+    const result = await AccountService.resetPasswordWithCode({
+      email,
+      verificationCode: verify,
+      newPassword,
     });
 
-    console.log('existingReset', existingReset)
-
-    if (existingReset.length === 0) {
-      return res.status(404).json({ error: 'Invalid verification code' });
-    }
-
-    const phash = await argon2.hash(newPassword);
-
-    const updatePassword = await prisma.users.update({
-      where: { id: user.id },
-      data: { password_hash: phash },
-    });
-
-    return res.json({
-      status: true,
-      passwordChanged: true
-    });
+    return res.json(result);
   } catch (error: any) {
     return res.status(500).json({
       status: false,

@@ -2,10 +2,11 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Divider, Group, Paper, Space, Text } from '@mantine/core';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import Image from 'next/image';
 import { useUser } from '@/context/users';
 import { getAssetPath } from '@/utils/utilities';
+import { PlayerRace } from '@/types/typings';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
 
@@ -142,7 +143,7 @@ export default function Recruit(props) {
             <span className="text-white">{userInfo.display_name}</span> is a level {userInfo.level} {userInfo.race}{' '}
             {userInfo.class}.
             <center>
-              <Image src={getAssetPath('shields', '150x150', userInfo.race)} width={'150'} height={'150'} alt="" />
+              <Image src={getAssetPath('shields', '150x150', userInfo.race as PlayerRace)} width={'150'} height={'150'} alt="" />
             </center>
             <Text size="md">Please wait for Cloudflare&lsquo;s captcha below.</Text>
 

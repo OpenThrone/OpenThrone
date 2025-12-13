@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import { BlogService } from '@/services';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 
@@ -15,26 +15,23 @@ const updateReadStatus = async(req: NextApiRequest, res: NextApiResponse) => {
     return;
   }
 
-  const { postId, isRead } = req.body;
+  const { postId } = req.body;
 
-  // Update the read status for the current user
-  await prisma.post_read_status.upsert({
-    where: {
-      post_id_user_id: {
-        user_id: parseInt(session.user.id.toString()),
-        post_id: postId,
-      },
-    },
-    update: {
-      last_read_at: new Date(),
-    },
-    create: {
-      user_id: parseInt(session.user.id.toString()),
-      post_id: postId,
-      last_read_at: new Date(),
-    },
-  });
+  try {
+    const result = await BlogService.updateReadStatus({
+      userId: parseInt(session.user.id.toString()),
+      postId,
+    });
 
+    if (result.success) {
+      res.status(200).json({ message: result.message });
+    } else {
+      res.status(400).json({ error: result.message });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
 export default withAuth(updateReadStatus);

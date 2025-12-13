@@ -1,13 +1,8 @@
 import type { NextApiResponse } from 'next';
 import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
-import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
-import { calculateTotalCost, updateUnitsMap } from '@/utils/units'; // Removed validateUnits
-import UserModel from '@/models/Users';
-// Removed PlayerUnit import if UnitProps is used consistently
-import { calculateUserStats } from '@/utils/utilities';
-import { getUserById, updateUserAndBankHistory } from '@/services';
+import { untrainUnits } from '@/services';
 import { logError } from '@/utils/logger';
 
 // Zod schema for individual unit untraining request
@@ -71,89 +66,9 @@ const handler = async (
   }
 
   try {
-    const updatedUnitsResult = await prisma.$transaction(async (tx) => {
-  // Fetch user data within the transaction
-  const user = await getUserById(userId, tx as any);
-      if (!user) {
-        throw new Error('User not found within transaction');
-      }
+    const result = await untrainUnits({ userId, units: unitsToUntrain as { type: string; level: number; quantity: number }[] });
 
-      const uModel = new UserModel(user); // Use user data from transaction
-
-      // Create map of current units (ensure quantity is number)
-      const userUnitsMap = new Map<string, UnitProps>();
-      (user.UserUnit as UnitProps[]).forEach(u => {
-        const quantity = typeof u.quantity === 'string' ? parseInt(u.quantity, 10) : u.quantity;
-        if (isNaN(quantity)) {
-            throw new Error(`Invalid quantity format for unit ${u.type}-${u.level} in user inventory.`);
-        }
-        userUnitsMap.set(`${u.type}_${u.level}`, { ...u, quantity });
-      });
-
-      // Calculate refund and check unit availability
-      let totalRefund = 0;
-      let totalUnitsUntrained = 0;
-
-      for (const unitData of unitsToUntrain) {
-        const key = `${unitData.type}_${unitData.level}`;
-        const userUnit = userUnitsMap.get(key);
-
-        if (!userUnit || (userUnit.quantity as number) < unitData.quantity) {
-          throw new Error(`Not enough ${unitData.type} (Level ${unitData.level}) to untrain. Required: ${unitData.quantity}, Available: ${userUnit?.quantity ?? 0}`);
-        }
-
-  // Calculate refund for this unit type (75% of cost)
-  // Cast the unitData to a PlayerUnit shape expected by calculateTotalCost
-  const unitForCost = { id: 0, userId: userId, type: unitData.type, level: unitData.level, quantity: unitData.quantity, isMercenary: false } as any;
-  const unitCost = calculateTotalCost([unitForCost], uModel); // Cost for the quantity being untrained
-        totalRefund += Math.floor(unitCost * 0.75);
-        totalUnitsUntrained += unitData.quantity;
-      }
-
-       if (totalUnitsUntrained <= 0) {
-           throw new Error('Invalid units quantity: Total quantity to untrain must be positive.');
-       }
-
-      // Update units map (pass validated unitsToUntrain)
-      // The 'false' indicates untraining (removes units, adds citizens)
-  // Map unitsToUntrain into full PlayerUnit shapes before passing to updateUnitsMap
-  const unitsToUntrainFull = unitsToUntrain.map(u => ({ id: 0, userId: userId, type: u.type, level: u.level, quantity: u.quantity, isMercenary: false } as any));
-  const updatedUnitsMap = updateUnitsMap(userUnitsMap as any, unitsToUntrainFull as any, false, totalUnitsUntrained);
-      const updatedUnitsArray = Array.from(updatedUnitsMap.values());
-
-      // Calculate new stats
-      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
-        calculateUserStats(user, updatedUnitsArray, 'units'); // Pass user from tx
-
-      // Update user and bank history
-      await updateUserAndBankHistory(
-        tx,
-        userId,
-        BigInt(user.gold) + BigInt(totalRefund), // Use gold from tx
-        updatedUnitsArray,
-        killingStrength,
-        defenseStrength,
-        newOffense,
-        newDefense,
-        newSpying,
-        newSentry,
-        {
-          gold_amount: BigInt(totalRefund),
-          from_user_id: 0, // Bank/System
-          from_user_account_type: 'BANK',
-          to_user_id: userId,
-          to_user_account_type: 'HAND',
-          date_time: new Date().toISOString(),
-          history_type: 'SALE', // Or 'UNTRAIN'? Clarify semantics
-          stats: { type: 'TRAINING_UNTRAIN', items: unitsToUntrain }, // Log requested units
-        },
-        'units' // Context
-      );
-
-      return updatedUnitsArray; // Return result from transaction
-    });
-
-    return res.status(200).json({ message: 'Units untrained successfully!', data: updatedUnitsResult });
+    return res.status(200).json({ message: result.message, data: result.units });
 
   } catch (error: any) {
     const logContext = parseResult.success ? { userId: parseResult.data.userId, units: parseResult.data.units } : { body: req.body };

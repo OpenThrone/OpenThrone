@@ -1,61 +1,38 @@
-import prisma from "@/lib/prisma";
+import { BattleService } from '@/services';
 import { withAuth } from '@/middleware/auth';
-import { simulateBattle } from "@/utils/attackFunctions";
-import UserModel from "@/models/Users";
-import { stringifyObj } from "@/utils/numberFormatting";
 
 const handler = async (req, res) => {
   const session = req.session;
   if (session) {
 
-    let myUser = await prisma?.users.findUnique({
-      where: { id: parseInt(session.user.id) },
-    });
+    const sessionUserId = parseInt(session.user.id.toString());
+    let attackerId = sessionUserId;
 
-    if ((myUser.id === 1 || myUser.id === 2) && req.query.aId !== undefined) {
-      myUser = await prisma?.users.findUnique({
-        where: { id: parseInt(req.query.aId) },
-      });
-    }
-      
-
-    if (!myUser) {
-      return res.status(400).json({ status: 'failed', msg: 'Attacker not found' });
+    // Allow admins to specify different attacker
+    if ((sessionUserId === 1 || sessionUserId === 2) && req.query.aId !== undefined) {
+      attackerId = parseInt(req.query.aId);
     }
 
     if (req.query.dId === undefined) {
       return res.status(400).json({ status: 'failed', msg: 'Defender ID "dId" not set' });
     }
 
-    const dUser = await prisma?.users.findUnique({
-      where: { id: parseInt(req.query.dId) },
-    });
+    const defenderId = parseInt(req.query.dId);
 
-    /*if (req.body.turns > myUser.attack_turns) {
-      return res.status(400).json({ status: 'failed' });
-    }*/
+    try {
+      const result = await BattleService.simulateBattle({
+        attackerId,
+        defenderId,
+        turns: 10
+      });
 
-    const attacker = new UserModel(JSON.parse(JSON.stringify(stringifyObj(myUser))));
-    const defender = new UserModel(JSON.parse(JSON.stringify(stringifyObj(dUser))));
-
-    const results = await simulateBattle(
-      attacker,
-      defender,
-      defender.fortHitpoints,
-      10
-    );
-
-    return res.status(200).json({
-      'Attacker': results.attacker.displayName,
-      'Defender': results.defender.displayName,
-      // Use the current BattleResult shape
-      'AttackerResult': results.result,
-      'AttackerLosses': results.Losses.Attacker.total,
-      'DefenderLosses': results.Losses.Defender.total,
-      'PillagedGold': results.pillagedGold.toString(),
-      'XPEarned': results.experienceGained.attacker,
-      'FortDmg': defender.fortHitpoints - results.finalFortHP,
-    });
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error('Battle test error:', error);
+      return res.status(500).json({ status: 'failed', message: 'Internal server error' });
+    }
   }
-}
- export default withAuth(handler);
+  return res.status(401).json({ status: 'failed', message: 'Unauthorized' });
+};
+
+export default withAuth(handler);

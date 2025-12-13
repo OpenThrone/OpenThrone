@@ -1,8 +1,8 @@
 // pages/api/getRandomUser.ts
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
-import { getSession, updateSessionActivity } from '@/services/sessions.service';
-import { getValidUsersForRecruitment } from '@/services/recruitment.service';
+import { getSession, updateSessionActivity } from '@/services/Sessions.service';
+import { getValidUsersForRecruitment } from '@/services/Recruitment.service';
 import mtrand from '@/utils/mtrand';
 import { getIpAddress } from '@/utils/ipUtils';
 import { logError } from '@/utils/logger'; // Import logger at the top

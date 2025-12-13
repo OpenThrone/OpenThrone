@@ -2,7 +2,7 @@ import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { z } from 'zod';
-import { transferGoldToFriend } from '@/services/friendTransfer.service';
+import { SocialService } from '@/services/Social.service';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import type { AuthenticatedRequest } from '@/types/api';
 
@@ -37,24 +37,10 @@ const transferHandler = async (req: AuthenticatedRequest, res: NextApiResponse) 
   const fromUserId = session.user.id;
 
   try {
-    // Check if user is trying to transfer to themselves
-    if (fromUserId === friendIdNum) {
-      return res.status(400).json({ error: 'Cannot transfer gold to yourself' });
-    }
+    const result = await SocialService.transferGoldToFriend(fromUserId, friendIdNum, amount, notes);
 
-    const result = await transferGoldToFriend({
-      fromUserId,
-      toUserId: friendIdNum,
-      amount,
-      notes,
-    });
-
-    return res.status(200).json(stringifyObj({
-      message: 'Gold transfer completed successfully',
-      transferId: result.transferId,
-      amount: amount.toString(),
-    }));
-  } catch (error) {
+    return res.status(200).json(stringifyObj(result));
+  } catch (error: any) {
     console.error('Error transferring gold:', error);
     return res.status(400).json({ error: error.message });
   }

@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { AuthenticatedRequest } from '@/types/api';
-import { validateSession } from '@/services/sessions.service';
+import { validateSession } from '@/services/Sessions.service';
 import { z } from 'zod';
 
 const BodySchema = z.object({

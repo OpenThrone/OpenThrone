@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
-import { getDepositHistory } from '@/services/bank.service';
+import { getDepositHistory } from '@/services/Bank.service';
 import UserModel from '@/models/Users';
 
 const getDeposits = async (req: NextApiRequest, res: NextApiResponse) => {

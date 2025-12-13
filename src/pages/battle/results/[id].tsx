@@ -17,13 +17,13 @@ const ResultsPage = ({ battle, lastGenerated, viewerID }: InferGetServerSideProp
     <div className="mainArea pb-10">
       <h2 className="page-title text-shadow text-shadow-xs">Battle Results</h2>
       {battle.type === 'attack' ? (
-        <AttackResult battle={battle} viewerID={viewerID} />
+        <AttackResult battle={battle} viewerID={Number(viewerID)} />
       ) : battle.type === 'ASSASSINATE' ? (
-          <AssassinateResult battle={battle} viewerID={viewerID} />
+          <AssassinateResult battle={battle} viewerID={Number(viewerID)} />
       ) : battle.type === 'INFILTRATE' ? (
-            <InfiltrationResult battle={battle} lastGenerated={lastGenerated} viewerID={viewerID} />
+            <InfiltrationResult battle={battle} lastGenerated={lastGenerated} viewerID={Number(viewerID)} />
       ) : (
-              <IntelResult battle={battle} lastGenerated={lastGenerated} viewerID={viewerID} />
+              <IntelResult battle={battle} lastGenerated={lastGenerated} viewerID={Number(viewerID)} />
       )}
     </div>
   );

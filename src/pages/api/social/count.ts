@@ -1,6 +1,6 @@
-import prisma from "@/lib/prisma";
 import { withAuth } from "@/middleware/auth";
 import { NextApiResponse } from "next";
+import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from "@/types/api";
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
@@ -14,17 +14,12 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   }
 
   try {
-    const count = await prisma.social.count({
-      where: {
-        friendId: session.user.id,
-        status: "requested",
-      },
-    });
+    const result = await SocialService.countPendingRequests(session.user.id);
 
-    return res.status(200).json({ count });
-  } catch (error) {
+    return res.status(200).json(result);
+  } catch (error: any) {
     console.error("Error fetching friend request count:", error);
-    return res.status(500).json({ error: "Failed to get friend request count" });
+    return res.status(500).json({ error: error.message });
   }
 };
 

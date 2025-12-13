@@ -1,8 +1,8 @@
 // pages/api/social/remove.ts
-import prisma from "@/lib/prisma";
 import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { z } from 'zod';
+import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 
 const RemoveSocialSchema = z.object({
@@ -29,27 +29,12 @@ const removeSocialRelation = async (req: AuthenticatedRequest, res: NextApiRespo
   const playerId = session.user.id;
 
   try {
-    const result = await prisma.social.deleteMany({
-      where: {
-        playerId,
-        friendId,
-        relationshipType,
-      },
-    });
+    const result = await SocialService.removeRelationship(playerId, { friendId, relationshipType });
 
-    if (result.count === 0) {
-      return res.status(404).json({
-        error: 'No active relationship found with the specified user'
-      });
-    }
-
-    res.status(200).json({
-      message: `${relationshipType} relationship removed successfully`,
-      relationshipType
-    });
-  } catch (error) {
+    res.status(200).json(result);
+  } catch (error: any) {
     console.error('Error removing relationship:', error);
-    res.status(500).json({ error: 'Failed to remove relationship' });
+    res.status(400).json({ error: error.message });
   }
 };
 

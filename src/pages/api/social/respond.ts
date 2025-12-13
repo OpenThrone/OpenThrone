@@ -1,7 +1,7 @@
-import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
 import { NextApiResponse } from 'next';
+import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
 
@@ -30,45 +30,15 @@ const handler = async (req: AuthenticatedRequest,
   }
 
   const { requestId, action } = parseResult.data;
-
-  const newStatus = action === 'accept' ? 'accepted' : 'declined';
-  const acceptanceDate = action === 'accept' ? new Date() : null;
-  const endDate = action === 'decline' ? new Date() : null;
+  const userId = session.user.id;
 
   try {
-    const updateResult = await prisma.social.updateMany({
-      where: {
-        id: requestId,
-        friendId: session.user.id,
-        status: 'requested'
-      },
-      data: {
-        status: newStatus,
-        acceptanceDate: acceptanceDate,
-        endDate: endDate
-      }
-    });
+    const result = await SocialService.respondToRequest(userId, { requestId, action });
 
-    if (updateResult.count === 0) {
-      return res.status(404).json({
-        error: 'Friend request not found or already processed',
-        requestId,
-        userId: session.user.id
-      });
-    }
-
-    const message = action === 'accept'
-      ? 'Friend request accepted successfully'
-      : 'Friend request declined successfully';
-    
-    return res.status(200).json({
-      message,
-      action,
-      requestId
-    });
+    return res.status(200).json(result);
   } catch (error) {
     logError("Error processing friend request:", error);
-    return res.status(500).json({ error: 'Failed to process friend request' });
+    return res.status(400).json({ error: error.message });
   }
 };
 

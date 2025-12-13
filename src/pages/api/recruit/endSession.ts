@@ -1,6 +1,6 @@
 // pages/api/recruit/endSession.ts
 import { withAuth } from '@/middleware/auth';
-import { endSession } from '@/services/sessions.service';
+import { endSession } from '@/services/Sessions.service';
 
 const handler = async (req, res) => {
   if (req.method !== 'POST') {

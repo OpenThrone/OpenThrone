@@ -4,7 +4,7 @@ import { withAuth } from '@/middleware/auth';
 import { getOTStartDate } from '@/utils/timefunctions';
 import { getIpAddress } from '@/utils/ipUtils';
 import { AuthenticatedRequest } from '@/types/api';
-import { countRecruitments, countRecruitmentsForTarget, performRecruitment } from '@/services/recruitment.service';
+import { countRecruitments, countRecruitmentsForTarget, performRecruitment, getUserByRecruitLink } from '@/services/Recruitment.service';
 
 const handler = async (
   req: AuthenticatedRequest,
@@ -16,11 +16,7 @@ const handler = async (
   if (session) {
     recruiterID = Number(session.user?.id || 0);
   }
-  const recruitedUser = await prisma.users.findUnique({
-    where: {
-      recruit_link: id as string,
-    },
-  });
+  const recruitedUser = await getUserByRecruitLink(id as string);
   if (!recruitedUser) {
     return res.status(400).json({ error: 'Invalid recruitment link.' });
   }

@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-
-import prisma from '@/lib/prisma';
+import { GeneralService } from '@/services';
 import UserModel from '@/models/Users';
 
 export default async function handler(
@@ -16,11 +15,7 @@ export default async function handler(
   const { recruit_link } = parseResult.data;
 
   if (req.method === 'GET') {
-    const user = await prisma.users.findUnique({
-      where: {
-        recruit_link: recruit_link as string,
-      },
-    });
+    const user = await GeneralService.getUserInfoByRecruitLink(recruit_link);
 
     if (!user) {
       return res.status(400).json({ error: 'User not found.' });

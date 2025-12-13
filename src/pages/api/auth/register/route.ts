@@ -1,24 +1,11 @@
-import prisma from "@/lib/prisma";
-import { createUser, userExists } from "@/services";
 import { logError } from "@/utils/logger";
 import type { NextApiRequest, NextApiResponse } from 'next';
-import nodemailer from 'nodemailer';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport';
-const argon2 = require('argon2');
-
+import { AuthService } from '@/services';
 import { RegisterSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
+import { headers } from "next/headers";
 
-// SMTP configuration from .env file
-const smtpConfig: SMTPTransport.Options = {
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587', 10) || 587,
-  secure: true, // true for 465, false for other ports like 587 or 25
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-};
+
 
 export default async function handle(
   req: NextApiRequest,
@@ -52,16 +39,17 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
     try {
       const data = RegisterSchema.parse(req.body);
       const { email, password, race, display_name, class: userClass } = data;
-      let exists = await userExists(email);
-      if (exists) {
-        return res.status(400).json({ error: 'User already exists' });
-      }
 
-      const phash = await argon2.hash(password);
-      
       const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-      
-      const user = createUser(email, phash, display_name, race, userClass, 'en-US');
+
+      const user = await AuthService.registerUser({
+        email,
+        password,
+        display_name,
+        race,
+        class: userClass,
+        ip: ip as string,
+      });
 
       return res.json(user);
     } catch (error) {

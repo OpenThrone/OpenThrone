@@ -1,14 +1,13 @@
 import type { NextApiResponse } from 'next';
 import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
-import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
-import { calculateTotalCost, updateUnitsMap } from '@/utils/units'; // Removed validateUnits
-import type { PlayerUnit } from '@/types/typings';
+import { getUserById, trainUnits, updateUserAndBankHistory } from '@/services';
+import { logError } from '@/utils/logger';
 import UserModel from '@/models/Users';
-import { getUserById, updateUserAndBankHistory } from '@/services';
+import { PlayerUnit } from '@/types/typings';
+import { calculateTotalCost, updateUnitsMap } from '@/utils/units';
 import { calculateUserStats } from '@/utils/utilities';
-import { logError } from '@/utils/logger'; // Added logError import
 
 // Zod schema for individual unit training request
 const TrainUnitSchema = z.object({
@@ -72,86 +71,9 @@ const handler = async (
   }
 
   try {
-    const updatedUnitsResult = await prisma.$transaction(async (tx) => {
-  // Fetch user data within the transaction
-  const user = await getUserById(userId, tx as any);
+    const result = await trainUnits({ userId, units: unitsToTrain as { type: string; level: number; quantity: number }[] });
 
-      if (!user) {
-        throw new Error('User not found within transaction');
-      }
-
-      const uModel = new UserModel(user); // Use user data from transaction
-
-      // Calculate total cost using validated unitsToTrain
-      const unitList = unitsToTrain as PlayerUnit[];
-      let totalCost = calculateTotalCost(unitList, uModel);
-      totalCost = Math.ceil(totalCost); // Ensure integer for BigInt
-
-      // Check gold within transaction
-      if (user.gold < BigInt(totalCost)) {
-        throw new Error(`Not enough gold. Required: ${totalCost}, Available: ${user.gold}`);
-      }
-
-      // Create map of current units (ensure quantity is number)
-      const userUnitsRaw = user.UserUnit as PlayerUnit[];
-      const userUnitsMap = new Map<string, PlayerUnit>();
-      userUnitsRaw.forEach(u => {
-        const quantity = typeof u.quantity === 'string' ? parseInt(u.quantity, 10) : u.quantity;
-        if (isNaN(quantity)) {
-          throw new Error(`Invalid quantity format for unit ${u.type}-${u.level} in user inventory.`);
-        }
-        userUnitsMap.set(`${u.type}_${u.level}`, { ...u, quantity });
-      });
-
-      // Check for sufficient citizens (assuming 'CITIZEN' level 1 represents available population)
-      const citizensRequired = unitsToTrain.reduce((acc, unit) => acc + unit.quantity, 0);
-      const availableCitizens = (userUnitsMap.get('CITIZEN_1')?.quantity as number) ?? 0;
-
-      if (citizensRequired <= 0) {
-        throw new Error('Invalid units quantity: Total quantity must be positive.');
-      }
-      if (availableCitizens < citizensRequired) {
-        throw new Error(`Not enough citizens. Required: ${citizensRequired}, Available: ${availableCitizens}`);
-      }
-
-      // Update units map (pass validated unitsToTrain)
-      // The 'true' indicates training (adds units, consumes citizens)
-      const updatedUnitsMap = updateUnitsMap(userUnitsMap as Map<string, PlayerUnit>, unitList, true, citizensRequired);
-      const updatedUnitsArray = Array.from(updatedUnitsMap.values());
-
-      // Calculate new stats
-      const { killingStrength, defenseStrength, newOffense, newDefense, newSpying, newSentry } =
-        calculateUserStats(user, updatedUnitsArray, 'units'); // Pass user from tx
-
-      // Update user and bank history
-      await updateUserAndBankHistory(
-        tx,
-        userId,
-        BigInt(user.gold) - BigInt(totalCost), // Use gold from tx
-        updatedUnitsArray,
-        killingStrength,
-        defenseStrength,
-        newOffense,
-        newDefense,
-        newSpying,
-        newSentry,
-        {
-          gold_amount: BigInt(totalCost),
-          from_user_id: userId,
-          from_user_account_type: 'HAND',
-          to_user_id: 0, // Bank/System
-          to_user_account_type: 'BANK',
-          date_time: new Date().toISOString(),
-          history_type: 'SALE', // Or 'TRAIN'? Clarify semantics
-          stats: { type: 'TRAINING_TRAIN', items: unitsToTrain }, // Log requested units
-        },
-        'units' // Context
-      );
-
-      return updatedUnitsArray; // Return result from transaction
-    });
-
-    return res.status(200).json({ message: 'Units trained successfully!', data: updatedUnitsResult });
+    return res.status(200).json({ message: result.message, data: result.units });
 
   } catch (error: any) {
     const logContext = parseResult.success ? { userId: parseResult.data.userId, units: parseResult.data.units } : { body: req.body };

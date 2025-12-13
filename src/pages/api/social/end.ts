@@ -1,6 +1,11 @@
-import prisma from "@/lib/prisma";
 import { withAuth } from "@/middleware/auth";
 import { logError } from "@/utils/logger";
+import { SocialService } from '@/services/Social.service';
+import { z } from 'zod';
+
+const EndRelationshipSchema = z.object({
+  friendId: z.number().int()
+});
 
 const handler = async (req, res) => {
   if (req.method !== 'DELETE') {
@@ -12,31 +17,20 @@ const handler = async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { friendId } = req.body;
-
-  if (!friendId) {
-    return res.status(400).json({ error: 'Missing friendId' });
+  const parseResult = EndRelationshipSchema.safeParse(req.body);
+  if (!parseResult.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
   }
 
+  const { friendId } = parseResult.data;
   const playerId = session.user.id;
 
   try {
-    await prisma.social.updateMany({
-      where: {
-        OR: [
-          { playerId: playerId, friendId: friendId, status: 'accepted' },
-          { playerId: friendId, friendId: playerId, status: 'accepted' }
-        ]
-      },
-      data: {
-        status: 'ended',
-        endDate: new Date()
-      }
-    });
-    return res.status(200).json({ message: 'Friendship ended successfully' });
+    const result = await SocialService.endRelationship(playerId, { friendId });
+    return res.status(200).json(result);
   } catch (error) {
     logError("Error ending friendship:", error);
-    return res.status(500).json({ error: 'Failed to end friendship' });
+    return res.status(500).json({ error: error.message });
   }
 };
 

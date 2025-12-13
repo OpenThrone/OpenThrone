@@ -2,7 +2,7 @@ import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { z } from 'zod';
-import { createGoldRequest } from '@/services/friendTransfer.service';
+import { SocialService } from '@/services/Social.service';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import type { AuthenticatedRequest } from '@/types/api';
 
@@ -31,24 +31,10 @@ const requestHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
   const fromUserId = session.user.id;
 
   try {
-    // Check if user is trying to request from themselves
-    if (fromUserId === friendId) {
-      return res.status(400).json({ error: 'Cannot create gold request for yourself' });
-    }
+    const result = await SocialService.createGoldRequest(fromUserId, { friendId, amount, notes });
 
-    const result = await createGoldRequest({
-      fromUserId,
-      toUserId: friendId,
-      amount,
-      notes,
-    });
-
-    return res.status(201).json(stringifyObj({
-      message: 'Gold request created successfully',
-      requestId: result.requestId,
-      amount: amount.toString(),
-    }));
-  } catch (error) {
+    return res.status(201).json(stringifyObj(result));
+  } catch (error: any) {
     console.error('Error creating gold request:', error);
     return res.status(400).json({ error: error.message });
   }

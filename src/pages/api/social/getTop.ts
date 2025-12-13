@@ -1,7 +1,7 @@
 // pages/api/social/getTop.ts
-import prisma from "@/lib/prisma";
 import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
+import { SocialService } from '@/services/Social.service';
 import { z } from 'zod';
 
 const GetTopSocialQuerySchema = z.object({
@@ -27,19 +27,10 @@ const getTopSocialRelations = async (req: NextApiRequest, res: NextApiResponse) 
   const { type } = parseResult.data;
 
   try {
-    const relations = await prisma.social.findMany({
-      where: {
-        playerId,
-        relationshipType: type,
-      },
-      take: 5,
-      include: {
-        friend: true,
-      },
-    });
+    const relations = await SocialService.getTopRelationships(playerId, { type });
     res.status(200).json(relations);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get relationships' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };
 

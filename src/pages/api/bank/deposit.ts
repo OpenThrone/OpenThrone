@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
-import { deposit, getDepositHistory } from '@/services/bank.service';
+import { deposit, getDepositHistory } from '@/services/Bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { parseBigInt } from '@/utils/jsonHelpers';
 import UserModel from '@/models/Users';

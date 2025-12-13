@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import useSocket from '@/hooks/useSocket';
 import { useUser } from '@/context/users';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import MainArea from '@/components/MainArea';
 
 const SocketTestPage = (props) => {

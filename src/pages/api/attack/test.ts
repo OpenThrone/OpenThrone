@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { simulateBattle } from '@/utils/attackFunctions';
+import { BattleService } from '@/services';
 import UserModel from '@/models/Users';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { logError } from '@/utils/logger';
@@ -14,17 +14,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Create mock users from the provided data
     const attackerUser = new UserModel(JSON.parse(attacker));
     const defenderUser = new UserModel(JSON.parse(defender));
-    // Run the simulation
-    const results = await simulateBattle(
-      attackerUser,
-      defenderUser,
-      defenderUser.fortHitpoints,
-      turns || 10,
-      true // enable Debug messages
-    );
+
+    // Use BattleService for simulation
+    const result = await BattleService.simulateBattleWithData(attacker, defender, turns || 10);
 
     return res.status(200).json({
-      results: stringifyObj(results),
+      results: stringifyObj(result),
       attackerStats: {
         unitTotals: attackerUser.unitTotals,
         attackPower: attackerUser.offense,

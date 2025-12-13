@@ -2,7 +2,7 @@ import { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { z } from 'zod';
-import { respondToGoldRequest } from '@/services/friendTransfer.service';
+import { SocialService } from '@/services/Social.service';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import type { AuthenticatedRequest } from '@/types/api';
 
@@ -37,18 +37,10 @@ const respondHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
   const userId = session.user.id;
 
   try {
-    const result = await respondToGoldRequest({
-      requestId: requestIdNum,
-      action,
-      message,
-    });
+    const result = await SocialService.respondToGoldRequest(userId, { requestId: requestIdNum, action, message });
 
-    return res.status(200).json(stringifyObj({
-      message: `Request ${action}ed successfully`,
-      action,
-      requestId: requestIdNum,
-    }));
-  } catch (error) {
+    return res.status(200).json(stringifyObj(result));
+  } catch (error: any) {
     console.error('Error responding to gold request:', error);
     return res.status(400).json({ error: error.message });
   }
