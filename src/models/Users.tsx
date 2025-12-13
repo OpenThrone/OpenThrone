@@ -289,7 +289,7 @@ class UserModel {
     this.goldInBank = safeBigInt(safeUserData.gold_in_bank);
     this.fortLevel = safeUserData.fort_level ?? 0;
     this.fortHitpoints = safeUserData.fort_hitpoints ?? 0;
-    this.houseLevel = safeUserData.house_level ?? 0;
+    this.houseLevel = safeUserData.house_level ?? 1;
     this.attackTurns = safeUserData.attack_turns ?? 0;
     this.stamina = (safeUserData as any).stamina ?? 100;
     this.maxStamina = (safeUserData as any).maxStamina ?? 100;
@@ -377,13 +377,25 @@ class UserModel {
       ? (safeUserData as any).permissions
       : [];
     this.permissions = rawPermissions as { type: PermissionType }[];
-    this.attacks_made = 0;
-    this.attacks_defended = 0;
-    this.attacks_won = 0;
-    this.defends_won = 0;
-    this.beenAttacked = false;
-    this.detectedSpy = false;
-    this.currentStatus = "ACTIVE";
+    this.attacks_made = this.normalizeCount(
+      (safeUserData as any).totalAttacks ??
+        (safeUserData as any).attacks_made,
+    );
+    this.attacks_defended = this.normalizeCount(
+      (safeUserData as any).totalDefends ??
+        (safeUserData as any).attacks_defended,
+    );
+    this.attacks_won = this.normalizeCount(
+      (safeUserData as any).won_attacks ??
+        (safeUserData as any).attacks_won,
+    );
+    this.defends_won = this.normalizeCount(
+      (safeUserData as any).won_defends ??
+        (safeUserData as any).defends_won,
+    );
+    this.beenAttacked = !!(safeUserData as any).beenAttacked;
+    this.detectedSpy = !!(safeUserData as any).detectedSpy;
+    this.currentStatus = (safeUserData as any).currentStatus || "ACTIVE";
     this.offense = 0;
     this.defense = 0;
     this.spy = 0;
@@ -528,10 +540,6 @@ class UserModel {
     return this.statsService.getSpyBonus();
   }
 
-  get sentryBonus(): number {
-    return this.statsService.getSentryBonus();
-  }
-
   get recruitBonus(): number {
     return this.economyService.getRecruitingBonus();
   }
@@ -542,10 +550,6 @@ class UserModel {
 
   get usedProficiencyPoints(): number {
     return this.statsService.getUsedProficiencyPoints();
-  }
-
-  statistics(type: PlayerStat["type"], subType: string): number {
-    return 0; //This method is deprecated
   }
 
   // Army / units (delegated to units service)
@@ -683,6 +687,60 @@ class UserModel {
       min: Math.max(1, currentLevel - levelRange),
       max: currentLevel + levelRange,
     };
+  }
+
+  statistics(
+    type: UnitType | "SPY" | "SENTRY",
+    outcome: "WON" | "LOST",
+  ): number {
+    const category = String(type).toUpperCase();
+    const result = String(outcome).toUpperCase();
+
+    const offenseWon = this.normalizeCount(this.attacks_won);
+    const offenseTotal = this.normalizeCount(this.attacks_made);
+    const defenseWon = this.normalizeCount(this.defends_won);
+    const defenseTotal = this.normalizeCount(this.attacks_defended);
+
+    if (category === "OFFENSE") {
+      return result === "WON"
+        ? offenseWon
+        : Math.max(0, offenseTotal - offenseWon);
+    }
+
+    if (category === "DEFENSE") {
+      return result === "WON"
+        ? defenseWon
+        : Math.max(0, defenseTotal - defenseWon);
+    }
+
+    const spyLikeKey = category === "SPY" ? "spy" : "sentry";
+    const wins = this.normalizeCount(
+      (this as any)[`${spyLikeKey}_won`] ??
+        (this as any)[`${spyLikeKey}Victories`],
+    );
+    const total =
+      this.normalizeCount((this as any)[`${spyLikeKey}_total`]) ||
+      this.normalizeCount((this as any)[`${spyLikeKey}_missions`]) ||
+      wins +
+        this.normalizeCount(
+          (this as any)[`${spyLikeKey}_lost`] ??
+            (this as any)[`${spyLikeKey}Lost`],
+        );
+
+    return result === "WON" ? wins : Math.max(0, total - wins);
+  }
+
+  private normalizeCount(value: any): number {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    return 0;
   }
 
   // Preserve existing mutating helper for structure upgrades (kept on model for API compatibility)

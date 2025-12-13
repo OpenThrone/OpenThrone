@@ -3,7 +3,7 @@ import { signOut, useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import UserModel from '@/models/Users'; // Import UserModel
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import useSocket from '@/hooks/useSocket';
 import { fetchWithFallback } from '@/utils/socketFunctions';
 import { logError, logInfo, logWarn } from '@/utils/logger';
