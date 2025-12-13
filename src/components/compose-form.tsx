@@ -1,4 +1,4 @@
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { ComposeFormProps } from '@/types/typings';
 import React, { useState } from 'react';
 import '@mantine/tiptap/styles.css';

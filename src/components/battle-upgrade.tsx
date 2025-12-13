@@ -6,7 +6,7 @@ import type { UnitProps, UnitSectionProps } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
 
 import { useUser } from '../context/users';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { Button, Flex, Group, NumberInput, Paper, Table, Text, Title } from '@mantine/core';
 import { logError } from '@/utils/logger';
 import ContentCard from './ContentCard';

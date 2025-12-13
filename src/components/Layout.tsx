@@ -81,116 +81,120 @@ const Layout = (props: IMainProps) => {
 
   return (
     <>
-      <div className="flex min-h-screen flex-col">
+      <div
+        className="flex min-h-screen flex-col"
+        style={{
+          // @ts-ignore
+          '--ot-accent': raceClasses?.accent || '#EAAE2B',
+          '--ot-surface': 'rgba(10,10,12,0.85)',
+          '--ot-surface-2': 'rgba(20,20,24,0.7)',
+          '--ot-text': '#FFE87A',
+          '--ot-border': 'rgba(255,204,102,0.35)',
+        }}
+      >
         <div
           className={`w-full grow ${authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
             } px-1 text-yellow-400 antialiased`}
-          style={{
-            // @ts-ignore
-            '--ot-accent': raceClasses?.accent || '#EAAE2B',
-            '--ot-surface': 'rgba(10,10,12,0.85)',
-            '--ot-surface-2': 'rgba(20,20,24,0.7)',
-            '--ot-text': '#FFE87A',
-            '--ot-border': 'rgba(255,204,102,0.35)',
-          }}
         > {/* Added missing closing div tag here */}
-          <header className={`mx-auto ${raceClasses.borderBottomClass}`}>
-            <div
-              style={{ backgroundImage: `url('${getAssetPath('wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
-              className={`${authorized
-                ? raceClasses.bgClass
-                : 'bg-elf-header-bgcolor'
-              } pb-10 pt-2`}
-            >
-              <h1 className="title text-title text-center text-4xl sm:text-5xl md:text-6xl font-medium">
-                <center>
-                  <Image
-                    src={`${getAssetPath('OpenThrone')}`}
-                    alt="OpenThrone"
-                    priority
-                    style={{ height: '100px', width: '200px', filter: 'drop-shadow(0px 3px 0px #000000)' }}
-                    width={'200'}
-                    height={'100'}
-                  />
-                </center>
-              </h1>
-              <h2 className="text-center text-base sm:text-lg md:text-xl" style={{ textShadow: '0 -1px' }}>{AppConfig.description}</h2>
-            </div>
-            {status === 'loading' ? (
-              <NavSkeleton />
-            ) : authorized ? (
-              <NavLoggedIn />
-            ) : (
-              <NavLoggedOut />
-            )}
-            {/* Mobile Navigation Toggle Button */}
-            <div className="lg:hidden flex justify-end p-2">
-              <button
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="text-ot-text focus:outline-none"
-                aria-label="Open mobile menu"
+          <div className="mx-auto w-full max-w-screen-2xl">
+            <header className={`${raceClasses.borderBottomClass}`}>
+              <div
+                style={{ backgroundImage: `url('${getAssetPath('wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+                className={`${authorized
+                  ? raceClasses.bgClass
+                  : 'bg-elf-header-bgcolor'
+                } pb-10 pt-2`}
               >
-                <svg
-                  className="h-8 w-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
+                <h1 className="title text-title text-center text-4xl sm:text-5xl md:text-6xl font-medium">
+                  <center>
+                    <Image
+                      src={`${getAssetPath('OpenThrone')}`}
+                      alt="OpenThrone"
+                      priority
+                      style={{ height: '100px', width: '200px', filter: 'drop-shadow(0px 3px 0px #000000)' }}
+                      width={'200'}
+                      height={'100'}
+                    />
+                  </center>
+                </h1>
+                <h2 className="text-center text-base sm:text-lg md:text-xl" style={{ textShadow: '0 -1px' }}>{AppConfig.description}</h2>
+              </div>
+              {status === 'loading' ? (
+                <NavSkeleton />
+              ) : authorized ? (
+                <NavLoggedIn />
+              ) : (
+                <NavLoggedOut />
+              )}
+              {/* Mobile Navigation Toggle Button */}
+              <div className="lg:hidden flex justify-end p-2">
+                <button
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  className="text-ot-text focus:outline-none"
+                  aria-label="Open mobile menu"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 6h16M4 12h16M4 18h16"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-          </header>
-          <main className="mx-auto h-full grow overflow-y-auto pb-8 px-3" style={{ backgroundImage: `url('${getAssetPath('wall-body')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
-            <div className="flex h-full flex-wrap" style={{ background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5))' }}>
-              {structureReady ? (
-                <>
-                  {/* Conditionally render Sidebar based on authentication status */}
-                  {authorized && (
-                    <div className="w-full lg:w-1/5" style={{ backgroundColor: 'var(--ot-surface-2)' }}>
-                      {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
+                  <svg
+                    className="h-8 w-8"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 6h16M4 12h16M4 18h16"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+            </header>
+            <main className="h-full grow overflow-y-auto pb-8 px-3" style={{ backgroundImage: `url('${getAssetPath('wall-body')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+              <div className="flex h-full flex-wrap" style={{ background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5))' }}>
+                {structureReady ? (
+                  <>
+                    {/* Conditionally render Sidebar based on authentication status */}
+                    {authorized && (
+                      <div className="w-full lg:w-1/5" style={{ backgroundColor: 'var(--ot-surface-2)' }}>
+                        {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
+                      </div>
+                    )}
+                    {/* Adjust main content width based on authentication status */}
+                    <div className={`w-full ${raceClasses.borderClass} ${authorized ? 'lg:w-4/5' : 'lg:w-full'}`} style={{ backgroundColor: 'var(--ot-surface)' }}>
+                      <NewsBulletin />
+                      {layoutLoading ? <MainAreaSkeleton /> : props.children}
                     </div>
-                  )}
-                  {/* Adjust main content width based on authentication status */}
-                  <div className={`w-full ${raceClasses.borderClass} ${authorized ? 'lg:w-4/5' : 'lg:w-full'}`} style={{ backgroundColor: 'var(--ot-surface)' }}>
-                    <NewsBulletin />
-                    {layoutLoading ? <MainAreaSkeleton /> : props.children}
+                  </>
+                ) : (
+                  // Show a minimal placeholder while structure is deciding
+                  <div className="w-full" style={{ backgroundColor: 'var(--ot-surface)' }}>
+                    <MainAreaSkeleton /> {/* Or a very minimal, full-width placeholder */}
                   </div>
-                </>
-              ) : (
-                // Show a minimal placeholder while structure is deciding
-                <div className="w-full" style={{ backgroundColor: 'var(--ot-surface)' }}>
-                  <MainAreaSkeleton /> {/* Or a very minimal, full-width placeholder */}
-                </div>
-              )}
-            </div>
-          </main>
-          <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-ot-text">
-            © Copyright {new Date().getFullYear()} {AppConfig.title}.
-            <br />
-            <div className="text-xs">
-              {isDevelopment ? (
-                <>
-                  <p><strong>Latest Commit:</strong> {gitInfo.latestCommit}</p>
-                  <p><strong>Latest Commit Message:</strong> {gitInfo.latestCommitMessage}</p>
-                </>
-              ) : (
-                <>
-                  <p><strong>Online Players:</strong> {onlinePlayerInfo.onlinePlayers} / {onlinePlayerInfo.totalPlayers}</p>
-                  <p><strong>New Players in last 24hrs:</strong> {onlinePlayerInfo.newPlayers}</p>
-                  <p><strong>Newest Player:</strong> {onlinePlayerInfo.newestPlayer}</p>
-                </>
-              )}
-
-            </div>
-          </footer>
+                )}
+              </div>
+            </main>
+          </div>
         </div> {/* Closing div for the w-full grow div */}
+        <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-ot-text">
+          © Copyright {new Date().getFullYear()} {AppConfig.title}.
+          <br />
+          <div className="text-xs">
+            {isDevelopment ? (
+              <>
+                <p><strong>Latest Commit:</strong> {gitInfo.latestCommit}</p>
+                <p><strong>Latest Commit Message:</strong> {gitInfo.latestCommitMessage}</p>
+              </>
+            ) : (
+              <>
+                <p><strong>Online Players:</strong> {onlinePlayerInfo.onlinePlayers} / {onlinePlayerInfo.totalPlayers}</p>
+                <p><strong>New Players in last 24hrs:</strong> {onlinePlayerInfo.newPlayers}</p>
+                <p><strong>Newest Player:</strong> {onlinePlayerInfo.newestPlayer}</p>
+              </>
+            )}
+
+          </div>
+        </footer>
       </div>
       {/* Render MobileNavigation */}
       {authorized && (

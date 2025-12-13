@@ -1,6 +1,6 @@
 import React, { forwardRef, useCallback, useEffect, useState } from 'react';
 import { Space, Group, SimpleGrid, Container, Menu, UnstyledButton, Title, Badge, Text, ScrollArea, Alert } from '@mantine/core'; // Added ScrollArea
-import { alertService } from '../services/alert.service';
+import { alertService } from '../services/Alert.service';
 import { faArrowRightFromBracket, faComments, faGear, faIdCard, faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Link from 'next/link';

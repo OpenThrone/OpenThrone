@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { NumberInput, Group, Text, Table, Select, Button, Box, Stack, Flex, Tooltip } from '@mantine/core';
 import toLocale from '@/utils/numberFormatting';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { useUser } from '@/context/users';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle, faCoins, faShieldHalved, faUserSecret, faEye, faHammer, faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';

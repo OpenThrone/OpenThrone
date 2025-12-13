@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import type { UnitProps } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
 import { useUser } from '../context/users';
@@ -487,16 +487,6 @@ const NewItemSection: React.FC<NewItemSectionProps> = React.memo(({
                 // for now, we're only showing default items.
                 // TODO: finish this
                 return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Armory/default-${baseItemType}.webp`;
-                // Get the item level
-                const itemLevel = unit.level || 1;
-
-                // Convert race to proper case for path (e.g., "ELF" to "Elf")
-                const raceProperCase = user?.race ?
-                  user.race.charAt(0).toUpperCase() + user.race.slice(1).toLowerCase() :
-                  'Human'; // Default to Human if race not specified
-
-                // Return path to armory image
-                return `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Armory/${raceProperCase}/L${itemLevel}${baseItemType}.webp`;
               }
 
               return (

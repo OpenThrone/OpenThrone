@@ -31,7 +31,7 @@ const BlogPost = ({ post, loggedIn, handleReadChange }) => {
               h1: ({ node, ...props }) => <Title order={1} {...props} />,
               h3: ({ node, ...props }) => <Title order={3} {...props} />,
               h4: ({ node, ...props }) => <Title order={4} {...props} />,
-              p: ({ node, ...props }) => <Text component="p" fw={'normal'} size='lg' mb={'xl'} {...props} />, // Use Text with mb for margin-bottom
+              p: ({ node, ...props }) => <Text component="p" fw={'normal'} size='lg' mb={'xl'}>{props.children}</Text>, // Use Text with mb for margin-bottom
             }}
             className="text-gray-400 font-semibold text-shadow text-shadow-sm shadow-black space-y-100"
           >

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Space, NumberInput, Button, Group, Text } from '@mantine/core';
 import toLocale, { stringifyObj } from '@/utils/numberFormatting';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 import ContentCard from './ContentCard';
 import { getTransactionType, getGoldTxSymbol } from '@/utils/utilities';
@@ -297,7 +297,7 @@ export default function BankDepositWithdraw({
                     </Table.Td>
                     <Table.Td>{transactionType}</Table.Td>
                     <Table.Td>
-                      {getGoldTxSymbol(entry) +
+                      {getGoldTxSymbol(entry, user) +
                         toLocale(entry.gold_amount, user?.locale)}{' '}
                       gold
                     </Table.Td>

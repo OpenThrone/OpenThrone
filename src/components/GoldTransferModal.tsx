@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Modal, Button, TextInput, Textarea, NumberInput, Alert, Group, Stack, Text } from '@mantine/core';
 import { GoldTransferSchema } from '@/lib/validation';
-import { getCompleteFriendTransferConfig, calculateTransferFee } from '@/services/config.service';
+import { getCompleteFriendTransferConfig, calculateTransferFee } from '@/services/Config.service';
 import { useUser } from '@/context/users';
 
 interface GoldTransferModalProps {

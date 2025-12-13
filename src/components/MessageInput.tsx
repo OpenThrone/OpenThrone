@@ -5,7 +5,7 @@ import { faPaperPlane, faPaperclip } from '@fortawesome/free-solid-svg-icons';
 import { Socket } from 'socket.io-client';
 import { User } from 'next-auth';
 import { ChatMessage } from '@/types/typings'; // Import from shared types file
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { logInfo } from '@/utils/logger';
 
 interface MessageInputProps {

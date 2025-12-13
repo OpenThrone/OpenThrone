@@ -1,6 +1,6 @@
 import { Modal, Table, Button, Text, Group, Switch, Loader, Center } from '@mantine/core';
 import { useState, useEffect, useCallback } from 'react';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
 /**

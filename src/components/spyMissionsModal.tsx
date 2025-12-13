@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { faBackwardStep } from '@fortawesome/free-solid-svg-icons';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import router from 'next/router';
 import { Button, NumberInput, Modal, Group, Select, Text, Paper, Divider, Title, Tooltip, Alert } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

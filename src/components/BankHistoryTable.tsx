@@ -9,7 +9,7 @@ interface BankHistoryTableProps {
   user?: any;
   message?: string | null;
   getTransactionType: (entry: any) => string;
-  getGoldTxSymbol: (entry: any) => string;
+  getGoldTxSymbol: (entry: any, user: any) => string;
   handleRowsPerPageChange: (limit: number) => void;
   limit: number;
   page: number;
@@ -106,7 +106,7 @@ export default function BankHistoryTable({
                 displayAmount = `+${entry.stats.newCitizens - entry.stats.currentCitizens} Citizens`;
               } else {
                 displayAmount =
-                  getGoldTxSymbol(entry) +
+                  getGoldTxSymbol(entry, user) +
                   toLocale(entry.gold_amount, user?.locale) +
                   ' gold';
               }

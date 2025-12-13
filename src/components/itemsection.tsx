@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import type { UnitProps, UnitSectionProps } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
 

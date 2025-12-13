@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import { UnitProps, UnitType } from '@/types/typings'; // Import UnitType
 
 /**

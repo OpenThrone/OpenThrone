@@ -86,7 +86,7 @@ const AttackResults = ({ battle, viewerID }) => {
   return (
     <div>
       <Grid grow className="gap-5">
-        <Grid.Col span={3} md={4} className="text-center">
+        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
           <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
           <h4>Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}</h4>
           <center>
@@ -99,7 +99,7 @@ const AttackResults = ({ battle, viewerID }) => {
             />
           </center>
         </Grid.Col>
-        <Grid.Col span={6} md={4} className="text-center">
+        <Grid.Col span={{ base: 6, md: 4 }} className="text-center">
           <Space h='10' />
           <div className="text-container inline-block align-middle">
             <Text color="white" fw="bolder" size='xl' className="font-medieval">
@@ -129,7 +129,7 @@ const AttackResults = ({ battle, viewerID }) => {
             
           </div>
         </Grid.Col>
-        <Grid.Col span={3} md={4} className="text-center">
+        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
           <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
           <h4>Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}</h4>
           <center>

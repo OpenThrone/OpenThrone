@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { alertService, AlertType } from '@/services/alert.service';
+import { alertService, AlertType } from '@/services/Alert.service';
 import { useSnackbar, SnackType } from '@/context/snackbar-context';
 import { logError } from '@/utils/logger';
 

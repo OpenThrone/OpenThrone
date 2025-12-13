@@ -14,7 +14,7 @@ import MessageInput from './MessageInput';
 import ChatMessageGroup from './ChatMessageGroup';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import useSocket from '@/hooks/useSocket';
-import { alertService } from '@/services';
+import { alertService } from '@/services/Alert.service';
 import Link from 'next/link';
 import { logError, logInfo } from '@/utils/logger';
 import { ChatMessage, FrontendRoom } from '@/types/typings';
