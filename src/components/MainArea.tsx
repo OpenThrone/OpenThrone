@@ -1,15 +1,34 @@
-import React, { forwardRef, useCallback, useEffect, useState } from 'react';
-import { Space, Group, SimpleGrid, Container, Menu, UnstyledButton, Title, Badge, Text, ScrollArea, Alert } from '@mantine/core'; // Added ScrollArea
-import { alertService } from '../services/Alert.service';
-import { faArrowRightFromBracket, faComments, faGear, faIdCard, faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import Link from 'next/link';
-import { signOut } from 'next-auth/react';
-import { useLayout } from '@/context/LayoutContext';
-import RpgAwesomeIcon from './RpgAwesomeIcon';
-import { useUser } from '@/context/users';
-import { formatLastMessageTime } from '@/utils/timefunctions'; // Import time formatter
-import SocialIcon from './SocialIcon';
+import React, { forwardRef, useCallback, useEffect, useState } from "react";
+import {
+  Space,
+  Group,
+  SimpleGrid,
+  Container,
+  Menu,
+  UnstyledButton,
+  Title,
+  Badge,
+  Text,
+  ScrollArea,
+  Alert,
+} from "@mantine/core"; // Added ScrollArea
+import { alertService } from "../services/Alert.service";
+import {
+  faArrowRightFromBracket,
+  faComments,
+  faGear,
+  faIdCard,
+  faSkullCrossbones,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Link from "next/link";
+import { signOut } from "next-auth/react";
+import { useLayout } from "@/context/LayoutContext";
+import RpgAwesomeIcon from "./RpgAwesomeIcon";
+import { useUser } from "@/context/users";
+import { formatLastMessageTime } from "@/utils/timefunctions"; // Import time formatter
+import SocialIcon from "./SocialIcon";
+import useSocket from "@/hooks/useSocket";
 
 interface MainAreaProps {
   title: string;
@@ -17,242 +36,355 @@ interface MainAreaProps {
   paperWidth?: { sm: string; md: string };
 }
 
-const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
-  function MainArea({ title, children, paperWidth }, ref) {
-    const { authorized } = useLayout();
-    const [userMenuOpened, setUserMenuOpened] = useState(false);
-    // Consume unread messages state and functions from context
-    const { unreadMessages, unreadMessagesCount, markRoomAsRead } = useUser();
-    const [messageMenuOpened, setMessageMenuOpened] = useState(false);
-    const [friendRequestCount, setFriendRequestCount] = useState<number>(0);
+const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
+  { title, children, paperWidth },
+  ref,
+) {
+  const { authorized } = useLayout();
+  const [userMenuOpened, setUserMenuOpened] = useState(false);
+  // Consume unread messages state and functions from context
+  const { unreadMessages, unreadMessagesCount, markRoomAsRead, user } =
+    useUser();
+  const [messageMenuOpened, setMessageMenuOpened] = useState(false);
+  const [socialNotificationCount, setSocialNotificationCount] =
+    useState<number>(0);
 
+  const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === "true";
 
-    const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
+  // Socket integration for real-time updates
+  const { addEventListener, removeEventListener } = useSocket(user?.id || null);
 
-    const fetchFriendRequestCount = useCallback(async () => {
-      try {
-        const res = await fetch('/api/social/count');
-        if (!res.ok) return;
-        const data = await res.json();
-        setFriendRequestCount(Number(data.count) || 0);
-      } catch (err) {
-        // log error if needed
-      }
-    }, []);
+  const fetchSocialNotificationCount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/social/notifications/count");
+      if (!res.ok) return;
+      const data = await res.json();
+      setSocialNotificationCount(Number(data.count) || 0);
+    } catch (err) {
+      // log error if needed
+    }
+  }, []);
 
-    const handleMessageItemClick = (roomId: number) => {
-      markRoomAsRead(roomId); // Mark room as read when clicking a message from it
-      // Navigation will be handled by the Link component
+  const handleMessageItemClick = (roomId: number) => {
+    markRoomAsRead(roomId); // Mark room as read when clicking a message from it
+    // Navigation will be handled by the Link component
+  };
+
+  useEffect(() => {
+    fetchSocialNotificationCount();
+    const interval = setInterval(fetchSocialNotificationCount, 30000);
+    return () => clearInterval(interval);
+  }, [fetchSocialNotificationCount]);
+
+  // Socket event listeners for real-time social notification updates
+  useEffect(() => {
+    const handleSocialCountUpdate = (data: { count: number }) => {
+      setSocialNotificationCount(data.count);
     };
 
-    useEffect(() => {
-      fetchFriendRequestCount();
-      const interval = setInterval(fetchFriendRequestCount, 30000);
-      return () => clearInterval(interval);
-    }, [fetchFriendRequestCount]);
+    const handleFriendRequestNotification = (data: any) => {
+      // Show toast notification for friend request
+      alertService.success(
+        `New friend request from ${data.senderName || "someone"}`,
+      );
+      // Refresh count
+      fetchSocialNotificationCount();
+    };
 
-    return (
-      <div className="mainArea pb-10 w-full flex flex-col flex-grow overflow-y-auto" ref={ref || null}>
-        <header
-          style={
-            {
-              height: '56px',
-              borderBottom: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
-              flexShrink: 0,
-            }
-          }>
-          <Container
-            size="lg"
-            style={
-              {
-                height: '56px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }
-            }
+    const handleGoldRequestNotification = (data: any) => {
+      // Show toast notification for gold request
+      alertService.success(
+        `New gold request from ${data.senderName || "someone"}`,
+      );
+      // Refresh count
+      fetchSocialNotificationCount();
+    };
+
+    addEventListener("socialCountUpdate", handleSocialCountUpdate);
+    addEventListener(
+      "friendRequestNotification",
+      handleFriendRequestNotification,
+    );
+    addEventListener("goldRequestNotification", handleGoldRequestNotification);
+
+    return () => {
+      removeEventListener("socialCountUpdate", handleSocialCountUpdate);
+      removeEventListener(
+        "friendRequestNotification",
+        handleFriendRequestNotification,
+      );
+      removeEventListener(
+        "goldRequestNotification",
+        handleGoldRequestNotification,
+      );
+    };
+  }, [addEventListener, removeEventListener, fetchSocialNotificationCount]);
+
+  return (
+    <div
+      className="mainArea pb-10 w-full flex flex-col flex-grow overflow-y-auto"
+      ref={ref || null}
+    >
+      <header
+        style={{
+          height: "56px",
+          borderBottom:
+            "1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))",
+          flexShrink: 0,
+        }}
+      >
+        <Container
+          size="lg"
+          style={{
+            height: "56px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Title
+            order={2}
+            className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs"
           >
-            <Title order={2} className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs">
-              {title}
-            </Title>
-            {authorized && (
-              <Group gap={'lg'} visibleFrom='md'>
-
-                <Menu
-                  width={320}
-                  position="bottom-end"
-                  transitionProps={{ transition: 'pop-top-right' }}
-                  onClose={() => setMessageMenuOpened(false)}
-                  onOpen={() => setMessageMenuOpened(true)}
-                  withinPortal
-                  shadow="md"
-                >
-                  <Menu.Target>
-                    <div style={{ position: 'relative', cursor: 'pointer' }}>
-                      <FontAwesomeIcon
-                        icon={faComments}
+            {title}
+          </Title>
+          {authorized && (
+            <Group gap={"lg"} visibleFrom="md">
+              <Menu
+                width={320}
+                position="bottom-end"
+                transitionProps={{ transition: "pop-top-right" }}
+                onClose={() => setMessageMenuOpened(false)}
+                onOpen={() => setMessageMenuOpened(true)}
+                withinPortal
+                shadow="md"
+              >
+                <Menu.Target>
+                  <div style={{ position: "relative", cursor: "pointer" }}>
+                    <FontAwesomeIcon
+                      icon={faComments}
+                      style={{
+                        color: "orange",
+                      }}
+                      fixedWidth
+                      size="sm"
+                    />
+                    {unreadMessagesCount > 0 && (
+                      <Badge
+                        color="red"
+                        variant="filled"
+                        size="xs" // Smaller badge
+                        circle // Make it circular
                         style={{
-                          color: 'orange'
+                          position: "absolute",
+                          top: -5, // Adjust position
+                          right: -8, // Adjust position
+                          minWidth: 16, // Ensure minimum size
+                          height: 16,
+                          padding: "0 4px", // Adjust padding
+                          lineHeight: "16px", // Center text vertically
                         }}
-                        fixedWidth
-                        size="sm"
-                      />
-                      {unreadMessagesCount > 0 && (
+                      >
+                        {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
+                      </Badge>
+                    )}
+                  </div>
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Label>Recent Unread Messages</Menu.Label>
+                  {unreadMessages.length === 0 ? (
+                    <Menu.Item disabled>No unread messages</Menu.Item>
+                  ) : (
+                    // Scrollable area for messages
+                    <ScrollArea.Autosize mah={300}>
+                      {unreadMessages
+                        // Sort by timestamp descending if needed
+                        .sort(
+                          (a, b) =>
+                            new Date(b.timestamp).getTime() -
+                            new Date(a.timestamp).getTime(),
+                        )
+                        .slice(0, 10) // Limit displayed messages
+                        .map((msg) => (
+                          <Menu.Item
+                            key={msg.id}
+                            component={Link}
+                            href={`/messaging?roomId=${msg.chatRoomId}`}
+                            onClick={() =>
+                              handleMessageItemClick(msg.chatRoomId)
+                            } // Use handler
+                            style={{
+                              whiteSpace: "normal", // Allow text wrapping
+                              height: "auto", // Adjust height automatically
+                              paddingTop: "8px",
+                              paddingBottom: "8px",
+                            }}
+                          >
+                            <div>
+                              <Group justify="space-between" mb={4}>
+                                <Text fw={500} size="sm" truncate>
+                                  {msg.senderName}
+                                </Text>
+                                <Text c="dimmed" size="xs">
+                                  {formatLastMessageTime(msg.timestamp)}
+                                </Text>
+                              </Group>
+                              <Text size="xs" lineClamp={2}>
+                                {" "}
+                                {/* Allow 2 lines */}
+                                {msg.content}
+                              </Text>
+                            </div>
+                          </Menu.Item>
+                        ))}
+                    </ScrollArea.Autosize>
+                  )}
+                  <Menu.Divider />
+                  <Menu.Item component={Link} href="/messaging">
+                    See all messages
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+              <Menu
+                width={260}
+                position="bottom-end"
+                transitionProps={{ transition: "pop-top-right" }}
+                onClose={() => setUserMenuOpened(false)}
+                onOpen={() => setUserMenuOpened(true)}
+                withinPortal
+              >
+                <Menu.Target>
+                  <SocialIcon count={socialNotificationCount} />
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Label>Social</Menu.Label>
+                  <Link href="/social/friends" passHref>
+                    <Menu.Item
+                      leftSection={
+                        <FontAwesomeIcon
+                          icon={faIdCard}
+                          size={"sm"}
+                          stroke={"1.5"}
+                        />
+                      }
+                    >
+                      Friends
+                    </Menu.Item>
+                  </Link>
+                  <Link href="/social/enemies" passHref hidden={!enableEnemies}>
+                    <Menu.Item
+                      leftSection={
+                        <FontAwesomeIcon
+                          icon={faSkullCrossbones}
+                          size={"sm"}
+                          stroke={"1.5"}
+                        />
+                      }
+                    >
+                      Enemies
+                    </Menu.Item>
+                  </Link>
+                  <Link href="/social/requests" passHref>
+                    <Menu.Item
+                      leftSection={
+                        <FontAwesomeIcon
+                          icon={faComments}
+                          size={"sm"}
+                          stroke={"1.5"}
+                        />
+                      }
+                      rightSection={
                         <Badge
                           color="red"
                           variant="filled"
-                          size="xs" // Smaller badge
-                          circle // Make it circular
-                          style={{
-                            position: 'absolute',
-                            top: -5, // Adjust position
-                            right: -8, // Adjust position
-                            minWidth: 16, // Ensure minimum size
-                            height: 16,
-                            padding: '0 4px', // Adjust padding
-                            lineHeight: '16px' // Center text vertically
-                          }}
+                          size="xs"
+                          display={
+                            socialNotificationCount > 0 ? "none" : "none"
+                          }
                         >
-                          {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                          {socialNotificationCount > 9
+                            ? "9+"
+                            : socialNotificationCount}
                         </Badge>
-                      )}
-                    </div>
-                  </Menu.Target>
-
-                  <Menu.Dropdown>
-                    <Menu.Label>Recent Unread Messages</Menu.Label>
-                    {unreadMessages.length === 0 ? (
-                      <Menu.Item disabled>No unread messages</Menu.Item>
-                    ) : (
-                      // Scrollable area for messages
-                      <ScrollArea.Autosize mah={300}>
-                        {unreadMessages
-                          // Sort by timestamp descending if needed
-                          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                          .slice(0, 10) // Limit displayed messages
-                          .map((msg) => (
-                            <Menu.Item
-                              key={msg.id}
-                              component={Link}
-                              href={`/messaging?roomId=${msg.chatRoomId}`}
-                              onClick={() => handleMessageItemClick(msg.chatRoomId)} // Use handler
-                              style={{
-                                whiteSpace: 'normal', // Allow text wrapping
-                                height: 'auto', // Adjust height automatically
-                                paddingTop: '8px',
-                                paddingBottom: '8px',
-                              }}
-                            >
-                              <div>
-                                <Group justify="space-between" mb={4}>
-                                  <Text fw={500} size="sm" truncate>{msg.senderName}</Text>
-                                  <Text c="dimmed" size="xs">
-                                    {formatLastMessageTime(msg.timestamp)}
-                                  </Text>
-                                </Group>
-                                <Text size="xs" lineClamp={2}> {/* Allow 2 lines */}
-                                  {msg.content}
-                                </Text>
-                              </div>
-                            </Menu.Item>
-                          ))}
-                      </ScrollArea.Autosize>
-                    )}
-                    <Menu.Divider />
-                    <Menu.Item component={Link} href="/messaging">
-                      See all messages
+                      }
+                    >
+                      Friend Requests
                     </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-                <Menu
-                  width={260}
-                  position="bottom-end"
-                  transitionProps={{ transition: 'pop-top-right' }}
-                  onClose={() => setUserMenuOpened(false)}
-                  onOpen={() => setUserMenuOpened(true)}
-                  withinPortal
-                >
-                  <Menu.Target>
-                    <SocialIcon count={friendRequestCount} />
-                  </Menu.Target>
-
-                  <Menu.Dropdown>
-                    <Menu.Label>Social</Menu.Label>
-                    <Link href="/social/friends" passHref>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faIdCard} size={'sm'} stroke={'1.5'} />}>
-                        Friends
-                      </Menu.Item>
-                    </Link>
-                    <Link href="/social/enemies" passHref hidden={!enableEnemies}>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faSkullCrossbones} size={'sm'} stroke={'1.5'} />}>
-                        Enemies
-                      </Menu.Item>
-                    </Link>
-                    <Link href="/social/requests" passHref>
-                      <Menu.Item
-                        leftSection={<FontAwesomeIcon icon={faComments} size={'sm'} stroke={'1.5'} />}
-                        rightSection={
-                          friendRequestCount > 0 ? (
-                            <Badge color="red" variant="filled" size="xs">
-                              {friendRequestCount > 9 ? '9+' : friendRequestCount}
-                            </Badge>
-                          ) : undefined
-                        }
-                      >
-                        Friend Requests
-                      </Menu.Item>
-                    </Link>
-                  </Menu.Dropdown>
-                </Menu>
-                <Menu
-                  width={260}
-                  position="bottom-end"
-                  transitionProps={{ transition: 'pop-top-right' }}
-                  onClose={() => setUserMenuOpened(false)}
-                  onOpen={() => setUserMenuOpened(true)}
-                  withinPortal
-                >
-                  <Menu.Target>
-                    <RpgAwesomeIcon
-                      icon="player"
-                      color="orange"
-                      fw
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Label>Settings</Menu.Label>
-                    <Link href="/home/settings" passHref>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faGear} size={'sm'} stroke={'1.5'} />}>
-                        <UnstyledButton component="a">
-                          Account settings
-                        </UnstyledButton>
-                      </Menu.Item>
-                    </Link>
-                    <Link href="/home/profile" passHref>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faIdCard} size={'sm'} stroke={'1.5'} />}>
-
-                        Profile Settings
-                      </Menu.Item>
-
-                    </Link>
-                    <Menu.Item leftSection={<FontAwesomeIcon icon={faArrowRightFromBracket} size={'sm'} stroke={'1.5'} color={'indianred'} />}>
-                      <span onClick={() => signOut({ callbackUrl: '/' })}>
-                        Logout
-                      </span>
+                  </Link>
+                </Menu.Dropdown>
+              </Menu>
+              <Menu
+                width={260}
+                position="bottom-end"
+                transitionProps={{ transition: "pop-top-right" }}
+                onClose={() => setUserMenuOpened(false)}
+                onOpen={() => setUserMenuOpened(true)}
+                withinPortal
+              >
+                <Menu.Target>
+                  <RpgAwesomeIcon
+                    icon="player"
+                    color="orange"
+                    fw
+                    style={{ cursor: "pointer" }}
+                  />
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>Settings</Menu.Label>
+                  <Link href="/home/settings" passHref>
+                    <Menu.Item
+                      leftSection={
+                        <FontAwesomeIcon
+                          icon={faGear}
+                          size={"sm"}
+                          stroke={"1.5"}
+                        />
+                      }
+                    >
+                      <UnstyledButton component="a">
+                        Account settings
+                      </UnstyledButton>
                     </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-
-              </Group>
-            )}
-          </Container>
-        </header>
-        <Space h="md" />
-        {children}
-      </div>
-    );
-  }
-);
+                  </Link>
+                  <Link href="/home/profile" passHref>
+                    <Menu.Item
+                      leftSection={
+                        <FontAwesomeIcon
+                          icon={faIdCard}
+                          size={"sm"}
+                          stroke={"1.5"}
+                        />
+                      }
+                    >
+                      Profile Settings
+                    </Menu.Item>
+                  </Link>
+                  <Menu.Item
+                    leftSection={
+                      <FontAwesomeIcon
+                        icon={faArrowRightFromBracket}
+                        size={"sm"}
+                        stroke={"1.5"}
+                        color={"indianred"}
+                      />
+                    }
+                  >
+                    <span onClick={() => signOut({ callbackUrl: "/" })}>
+                      Logout
+                    </span>
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            </Group>
+          )}
+        </Container>
+      </header>
+      <Space h="md" />
+      {children}
+    </div>
+  );
+});
 
 export default MainArea;

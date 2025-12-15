@@ -3,13 +3,16 @@ import React, { useState } from 'react';
 type CollapsibleSectionProps = {
   title: string;
   children: React.ReactNode;
+  /** Whether the section should be open by default (initial state). */
+  defaultOpen?: boolean;
 };
 
 const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   title,
   children,
+  defaultOpen = false,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(Boolean(defaultOpen));
 
   return (
     <div className="border-b border-gray-200 py-4">

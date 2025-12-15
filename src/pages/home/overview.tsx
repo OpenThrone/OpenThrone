@@ -12,9 +12,10 @@ import { logError } from '@/utils/logger';
 import TabbedContent from '@/components/TabbedContent';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { useMediaQuery } from '@mantine/hooks';
+import HeroBanner from '@/components/HeroBanner';
 
 const Overview = (props) => {
-  const [getNews, setNews] = useState(['no news']);
+  const [getNews, setNews] = useState([]);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -35,11 +36,39 @@ const Overview = (props) => {
 
   const { user } = useUser();
   const isMobile = useMediaQuery('(max-width: 768px)');
-
+  console.log('isMobile:', isMobile);
   return (
     <MainArea
       title="Overview">
-      <Center>
+      <Center display={isMobile ? 'none' : 'block'}>
+        <HeroBanner
+          maxWidth={isMobile ? '100%' : '80%'}
+          height={isMobile ? 120 : 140}
+          leftPadding={isMobile ? 130 : 170}
+          title={
+            <>
+              <span className="text-white">{user?.displayName}</span> is a
+              {user?.race === 'ELF' || user?.race === 'UNDEAD' ? 'n ' : ' '}
+              <span style={{ color: '#f8e08a' }}>
+                {user?.race} {user?.class}
+              </span>
+            </>
+          }
+          subtitle={
+            <>
+              Share this link to gain up to 25 citizens per day:{' '}
+              <a
+                href={`${process.env.NEXT_PUBLIC_URL_ROOT}/recruit/${user?.recruitingLink}`}
+                style={{ color: '#7dd3fc', textDecoration: 'none' }}
+              >
+                {user?.recruitingLink}
+              </a>
+            </>
+          }
+        />
+      </Center>
+      <Space h="md" />
+      <Center display={isMobile ? 'block' : 'none'}>
         <ContentCard className="my-4" titlePosition='center' w={{ sm: '100%', md: '80%' }} variant='highlight'>
           <Center>
             <div className='hidden md:block'>
@@ -811,7 +840,7 @@ const Overview = (props) => {
           </ContentCard>
         </Flex>
       )}
-      <CollapsibleSection title="Kingdom News">
+      <CollapsibleSection title="Kingdom News" defaultOpen={true}>
         <NewsAccordion news={getNews} />
       </CollapsibleSection>
     </MainArea>
