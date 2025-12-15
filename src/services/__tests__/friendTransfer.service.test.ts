@@ -7,8 +7,8 @@ let getFriendTransferConfig: any, calculateTransferFee: any, isValidTransferAmou
 type TransactionClient = Omit<any, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
 // Use shared mock helpers
-import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/';
-import { installMockMtRand } from 'test/utils/mockMtRand';
+import { installMockPrisma, mockPrisma, resetMockPrisma } from '../../../test/utils/mockPrisma';
+import { installMockMtRand } from '../../../test/utils/mockMtRand';
 
 // Install mocks before requiring modules under test
 installMockPrisma(vi);

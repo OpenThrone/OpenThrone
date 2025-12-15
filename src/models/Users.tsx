@@ -540,6 +540,10 @@ class UserModel {
     return this.statsService.getSpyBonus();
   }
 
+  get sentryBonus(): number {
+    return this.statsService.getSentryBonus();
+  }
+
   get recruitBonus(): number {
     return this.economyService.getRecruitingBonus();
   }

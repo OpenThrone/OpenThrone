@@ -8,7 +8,7 @@ installMockMtRand(vi);
 installMockPrisma(vi);
 
 const UserModel = require('@/models/Users').default;
-const { simulateAssassination } = require('../utils/spyFunctions');
+const { simulateAssassination, CITIZEN_WORKERS_TARGET } = require('../utils/spyFunctions');
 const MockUserGenerator = require('@/utils/MockUserGenerator').default;
 const { logInfo } = require('@/utils/logger');
 
@@ -74,7 +74,7 @@ describe('Assassination Test', () => {
     expect(attackPlayer.unitTotals.assassins).toBeGreaterThanOrEqual(spies);
 
     // Use simulateAssassination with targetUnit set to 'WORKERS/CITIZENS'
-    const result = simulateAssassination(attackPlayer, defensePlayer, spies, 'OFFENSE');
+    const result = simulateAssassination(attackPlayer, defensePlayer, spies, CITIZEN_WORKERS_TARGET);
 
     // Log results for debugging
     logInfo(`The attacker ${result.success ? 'won' : 'lost'} the mission`);

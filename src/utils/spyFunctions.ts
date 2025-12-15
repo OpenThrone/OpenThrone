@@ -327,6 +327,17 @@ export const simulateInfiltration =
 
   return result;
   }
+/**
+ * Calculates clandestine strength for spy or sentry units, including bonuses.
+ *
+ * Expected UserModel properties:
+ * - units: Array of PlayerUnit with type, level, quantity
+ * - items: Array of items with usage matching unit type
+ * - spyBonus: number (percentage bonus for spy strength, defaults to 0)
+ * - sentryBonus: number (percentage bonus for sentry strength, defaults to 0)
+ * - unitTotals: object with spies/sentries counts
+ * - getLevelForUnit(type): function returning fort level for unit type
+ */
 export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 'SENTRY', limiter: number = 1): {
   spyStrength: number;
   sentryStrength: number;
@@ -337,14 +348,13 @@ export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 
   let DS = 0; // Total Defense Strength
   let totalUnits = unitType === 'SENTRY' ? user.unitTotals.sentries : user.unitTotals.spies;
 
-  const unitMultiplier = 1 + parseInt(
-    unitType === 'SPY' ? user.spyBonus.toString() : user.sentryBonus.toString(),
-    10
-  ) / 100;
+  const bonusValue = unitType === 'SPY' ? user.spyBonus : user.sentryBonus;
+  const unitMultiplier = 1 + parseInt((bonusValue ?? 0).toString(), 10) / 100;
 
   // Include both regular units and mercenaries
   const allUnits = [...(user.units || []), ...(user.mercenaries || [])];
   allUnits.filter((u) => u.type === unitType).forEach((unit) => {
+    if (!unit || typeof unit.quantity !== 'number') return;
     if (totalUnits === 0) return;
 
     const unitInfo = UnitTypes.find(
