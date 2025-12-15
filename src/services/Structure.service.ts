@@ -50,16 +50,16 @@ export class StructureService {
 
         // Validate structure_upgrades format
         let structureUpgrades: any[] = [];
-        if (Array.isArray(user.UserStructureUpgrades)) {
-          structureUpgrades = user.UserStructureUpgrades.filter(
-            (upg) => typeof upg === 'object' && upg !== null && typeof upg.type === 'string' && typeof upg.level === 'number'
+        if (Array.isArray((user as any).structure_upgrades)) {
+          structureUpgrades = (user as any).structure_upgrades.filter(
+            (upg: any) => typeof upg === 'object' && upg !== null && typeof upg.type === 'string' && typeof upg.level === 'number'
           );
         }
 
         // Determine upgrade details based on type
         switch (upgradeType) {
           case 'fortifications':
-            currentLevel = user.fort_level;
+            currentLevel = (user as any).fortLevel ?? (user as any).fort_level ?? 0;
             if (requestedIndex >= Fortifications.length) throw new Error('Upgrade index out of bounds.');
             if (requestedIndex !== currentLevel) throw new Error(`Cannot purchase level ${requestedIndex + 1}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`);
             upgradeData = Fortifications[requestedIndex];
@@ -68,7 +68,7 @@ export class StructureService {
             break;
 
           case 'houses':
-            currentLevel = user.house_level;
+            currentLevel = (user as any).houseLevel ?? (user as any).house_level ?? 0;
             if (!(requestedIndex in HouseUpgrades)) throw new Error('Upgrade index out of bounds.');
             if (requestedIndex !== currentLevel + 1) throw new Error(`Cannot purchase level ${requestedIndex}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`);
             upgradeData = HouseUpgrades[requestedIndex as keyof typeof HouseUpgrades];
@@ -77,7 +77,7 @@ export class StructureService {
             break;
 
           case 'economy':
-            currentLevel = user.economy_level;
+            currentLevel = (user as any).economyLevel ?? (user as any).economy_level ?? 0;
             if (requestedIndex >= EconomyUpgrades.length) throw new Error('Upgrade index out of bounds.');
             if (requestedIndex !== currentLevel + 1) throw new Error(`Cannot purchase level ${requestedIndex}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`);
             upgradeData = EconomyUpgrades[requestedIndex];
@@ -91,7 +91,7 @@ export class StructureService {
             const structureType = upgradeType.toUpperCase();
             const upgradesArray = upgradeType === 'offense' ? OffensiveUpgrades : upgradeType === 'armory' ? ArmoryUpgrades : SpyUpgrades;
             const currentStructure = structureUpgrades.find(s => s.type === structureType);
-            currentLevel = currentStructure ? currentStructure.level : 0;
+            currentLevel = currentStructure ? currentStructure.level : 1;
 
             if (requestedIndex >= upgradesArray.length) throw new Error('Upgrade index out of bounds.');
             if (requestedIndex !== currentLevel) throw new Error(`Cannot purchase level ${requestedIndex + 1}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`);
@@ -124,18 +124,26 @@ export class StructureService {
           select: { gold: true }
         });
 
-        // Update structure upgrades if needed
+        // Update structure upgrades if needed (persist per-type rows)
         if (['offense', 'armory', 'spy'].includes(upgradeType)) {
-          await tx.userStrcutureUpgrades.upsert({
-            where: { user_id: userId },
-            create: {
-              user_id: userId,
-              structure_upgrades_json: structureUpgrades,
-            },
-            update: {
-              structure_upgrades_json: structureUpgrades,
-            },
-          });
+          for (const s of structureUpgrades) {
+            await tx.userStructureUpgrade.upsert({
+              where: {
+                userId_type: {
+                  userId: userId,
+                  type: s.type as any,
+                },
+              },
+              create: {
+                userId: userId,
+                type: s.type as any,
+                level: s.level,
+              },
+              update: {
+                level: s.level,
+              },
+            });
+          }
         }
 
         // Create bank history
