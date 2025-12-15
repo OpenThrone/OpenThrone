@@ -13,6 +13,7 @@ const getRecentPostsAPI = async(req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const result = await BlogService.getRecentPosts(userId);
+    // result.posts are DTOs (serializable) from the service
     res.status(200).json(result.posts);
   } catch (error) {
     console.log(error);

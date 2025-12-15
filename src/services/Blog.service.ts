@@ -14,6 +14,17 @@ export interface BlogPost {
   }[];
 }
 
+// DTO returned to clients/pages (dates are ISO strings)
+export interface BlogPostDTO {
+  id: number;
+  title: string;
+  content: string;
+  postedby_id: number;
+  created_timestamp: string; // ISO
+  isRead: boolean;
+  lastReadAt?: string | null;
+}
+
 export interface CreatePostData {
   userId: number;
   title: string;
@@ -45,7 +56,7 @@ export interface BlogOperationResult {
 }
 
 export interface BlogPostsResult {
-  posts: BlogPost[];
+  posts: BlogPost[] | BlogPostDTO[];
 }
 
 export class BlogService {
@@ -81,9 +92,9 @@ export class BlogService {
    */
   static async getPosts(userId?: number): Promise<BlogPostsResult> {
     try {
+      let posts = [] as any[];
       if (userId) {
-        // Fetch posts along with the read status for the current user
-        const posts = await prisma.blog_posts.findMany({
+        posts = await prisma.blog_posts.findMany({
           include: {
             postReadStatus: {
               where: {
@@ -98,17 +109,29 @@ export class BlogService {
             created_timestamp: 'desc',
           },
         });
-
-        return { posts };
       } else {
-        const posts = await prisma.blog_posts.findMany({
+        posts = await prisma.blog_posts.findMany({
           orderBy: {
             created_timestamp: 'desc',
           },
         });
-
-        return { posts };
       }
+
+      // Transform posts into DTOs (serialize dates and compute read status)
+      const dtos: BlogPostDTO[] = posts.map((p: any) => {
+        const isRead = p.postReadStatus && p.postReadStatus.length > 0;
+        return {
+          id: p.id,
+          title: p.title,
+          content: p.content,
+          postedby_id: p.postedby_id,
+          created_timestamp: p.created_timestamp instanceof Date ? p.created_timestamp.toISOString() : String(p.created_timestamp),
+          isRead: Boolean(isRead),
+          lastReadAt: isRead && p.postReadStatus[0] && p.postReadStatus[0].last_read_at ? (p.postReadStatus[0].last_read_at instanceof Date ? p.postReadStatus[0].last_read_at.toISOString() : String(p.postReadStatus[0].last_read_at)) : null,
+        };
+      });
+
+      return { posts: dtos };
     } catch (error: any) {
       logError('Error getting blog posts', { userId, error });
       throw error;
@@ -120,6 +143,50 @@ export class BlogService {
    */
   static async getRecentPosts(userId?: number): Promise<BlogPostsResult> {
     return this.getPosts(userId);
+  }
+
+  /**
+   * Get a single post by id, optionally including the read status for a user
+   */
+  static async getPost(postId: number, userId?: number): Promise<{ post: BlogPost | null }> {
+    try {
+      const include = userId
+        ? {
+            postReadStatus: {
+              where: {
+                user_id: userId,
+              },
+              select: {
+                last_read_at: true,
+              },
+            },
+          }
+        : undefined;
+
+      const post = await prisma.blog_posts.findUnique({
+        where: { id: postId },
+        include: include as any,
+      });
+
+      if (!post) return { post: null };
+
+      // transform to DTO if include requested or not
+      const isRead = post.postReadStatus && post.postReadStatus.length > 0;
+      const dto: BlogPostDTO = {
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        postedby_id: post.postedby_id,
+        created_timestamp: post.created_timestamp instanceof Date ? post.created_timestamp.toISOString() : String(post.created_timestamp),
+        isRead: Boolean(isRead),
+        lastReadAt: isRead && post.postReadStatus[0] && post.postReadStatus[0].last_read_at ? (post.postReadStatus[0].last_read_at instanceof Date ? post.postReadStatus[0].last_read_at.toISOString() : String(post.postReadStatus[0].last_read_at)) : null,
+      };
+
+      return { post: dto as any };
+    } catch (error: any) {
+      logError('Error getting post', { postId, userId, error });
+      throw error;
+    }
   }
 
   /**

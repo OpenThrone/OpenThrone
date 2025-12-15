@@ -3,15 +3,16 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useState } from 'react';
 import { getSession } from 'next-auth/react';
-import prisma from '@/lib/prisma';
+import { BlogService } from '@/services';
 import { Button, Modal, Space, Textarea, TextInput } from '@mantine/core';
+import ContentCard from '@/components/ContentCard';
+import { logError } from '@/utils/logger';
 import { InferGetServerSidePropsType } from "next";
 import BlogPost from '@/components/blogPost';
-import { serializeDates } from '@/utils/utilities';
 import MainArea from '@/components/MainArea';
 
 const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })).sort((a, b) => b.created_timestamp - a.created_timestamp));
+  const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })).sort((a, b) => new Date(b.created_timestamp).getTime() - new Date(a.created_timestamp).getTime()));
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '' });
   console.log('serverPosts: ', serverPosts);
@@ -87,9 +88,20 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
         </Button>
       )}
       <Space h='sm' />
-      {posts.map((post) => (
-        <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} key={'Post_'+post.id} />
-      ))}
+      {posts.length === 0 ? (
+        <ContentCard title="No News" variant="secondary" titleSize="md">
+          <p className="text-gray-400">There are no news posts yet. Check back later or post a new announcement.</p>
+          {loggedIn && userId === 1 && (
+            <div className="mt-3">
+              <Button onClick={() => setModalIsOpen(true)}>Create first post</Button>
+            </div>
+          )}
+        </ContentCard>
+      ) : (
+        posts.map((post) => (
+          <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} key={'Post_'+post.id} />
+        ))
+      )}
       <Modal
         opened={modalIsOpen}
         onClose={() => setModalIsOpen(false)}
@@ -118,47 +130,19 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
 
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
-  let posts;
-  if (session) {
-    
-    const userId = session?.user?.id;
+  try {
+    if (session) {
+      const userId = typeof session.user.id === 'string' ? parseInt(session.user.id) : session.user.id;
+      const result = await BlogService.getPosts(userId);
+      return { props: { posts: result.posts, loggedIn: true, userId } };
+    }
 
-    // Fetch posts along with the read status for the current user
-    posts = await prisma.blog_posts.findMany({
-      include: {
-        postReadStatus: {
-          where: {
-            user_id: parseInt(userId.toString()),
-          },
-          select: {
-            last_read_at: true, // Select only the last_read_at field
-          },
-        },
-      },
-      orderBy: {
-        created_timestamp: 'desc',
-      },
-    });
-    // Transform the posts to include a read status boolean
-    const postsWithReadStatus = posts.map((post) => {
-      const readStatus = post.postReadStatus.length > 0; // If there's any read status, the post is considered read
-      console.log('readStatus: ', readStatus);
-      return {
-        ...post,
-        isRead: readStatus,
-      };
-    });
-    return {
-      props: { posts: postsWithReadStatus.map(post => serializeDates(post)), loggedIn: true, userId},
-    };
-  } 
-  // Fetch posts without the read status
-  posts = await prisma.blog_posts.findMany();
-  
-  return {
-    props: {
-      posts: posts.map(post => serializeDates(post)), loggedIn: false },
-  };
+    const result = await BlogService.getPosts();
+    return { props: { posts: result.posts, loggedIn: false } };
+  } catch (error) {
+    logError('Error fetching posts for server-side props', error);
+    return { props: { posts: [], loggedIn: false } };
+  }
 };
 
 export default News;
