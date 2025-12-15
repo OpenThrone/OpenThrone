@@ -12,7 +12,7 @@ const { logInfo } = require('@/utils/logger');
 import { normUnits } from 'test/utils/testFixtures';
 // Import the MockUserGenerator type for TypeScript (value is required at runtime above)
 import type MockUserGeneratorType from '@/utils/MockUserGenerator';
-import { UnitType, ItemType, ItemUsage, BattleUpgradeType } from '@prisma/client';
+import { UnitType, ItemType, ItemUsage, BattleUpgradeType } from '@/types/typings';
 type MockUserGenerator = InstanceType<typeof MockUserGeneratorType>;
 
 describe('setup Attack test', () => {

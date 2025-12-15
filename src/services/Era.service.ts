@@ -1,56 +1,56 @@
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import {
-  BattleUpgradeType,
-  BonusPointsType,
-  ItemType,
-  ItemUsage,
   Prisma,
-  StructureUpgradeType,
-  UnitType,
+  type BattleUpgradeType,
+  type BonusPointsType,
+  type StructureUpgradeType,
+  type ItemType,
+  type ItemUsage,
 } from '@prisma/client';
+import { UnitType } from '@/types/typings';
 import { getUsersWithRelations } from './UserLoader.service';
 
 type Tx = Prisma.TransactionClient;
 
 const DEFAULT_UNITS = [
-  { type: UnitType.CITIZEN, level: 1, quantity: 50, isMercenary: false },
-  { type: UnitType.WORKER, level: 1, quantity: 0, isMercenary: false },
-  { type: UnitType.OFFENSE, level: 1, quantity: 0, isMercenary: false },
-  { type: UnitType.DEFENSE, level: 1, quantity: 0, isMercenary: false },
-  { type: UnitType.SPY, level: 1, quantity: 0, isMercenary: false },
-  { type: UnitType.SENTRY, level: 1, quantity: 0, isMercenary: false },
+  { type: 'CITIZEN' as UnitType, level: 1, quantity: 50, isMercenary: false },
+  { type: 'WORKER' as UnitType, level: 1, quantity: 0, isMercenary: false },
+  { type: 'OFFENSE' as UnitType, level: 1, quantity: 0, isMercenary: false },
+  { type: 'DEFENSE' as UnitType, level: 1, quantity: 0, isMercenary: false },
+  { type: 'SPY' as UnitType, level: 1, quantity: 0, isMercenary: false },
+  { type: 'SENTRY' as UnitType, level: 1, quantity: 0, isMercenary: false },
 ];
 
 const DEFAULT_ITEMS = [
   {
-    type: ItemType.WEAPON,
+    type: 'WEAPON' as ItemType,
     level: 1,
-    usage: ItemUsage.OFFENSE,
+    usage: 'OFFENSE' as ItemUsage,
     quantity: 0,
   },
 ];
 
 const DEFAULT_STRUCTURE_UPGRADES = [
-  { type: StructureUpgradeType.OFFENSE, level: 1 },
-  { type: StructureUpgradeType.SPY, level: 1 },
-  { type: StructureUpgradeType.SENTRY, level: 1 },
-  { type: StructureUpgradeType.ARMORY, level: 1 },
+  { type: 'OFFENSE' as StructureUpgradeType, level: 1 },
+  { type: 'SPY' as StructureUpgradeType, level: 1 },
+  { type: 'SENTRY' as StructureUpgradeType, level: 1 },
+  { type: 'ARMORY' as StructureUpgradeType, level: 1 },
 ];
 
 const DEFAULT_BATTLE_UPGRADES = [
-  { type: BattleUpgradeType.OFFENSE, level: 1, quantity: 0 },
-  { type: BattleUpgradeType.SPY, level: 1, quantity: 0 },
-  { type: BattleUpgradeType.SENTRY, level: 1, quantity: 0 },
-  { type: BattleUpgradeType.DEFENSE, level: 1, quantity: 0 },
+  { type: 'OFFENSE' as BattleUpgradeType, level: 1, quantity: 0 },
+  { type: 'SPY' as BattleUpgradeType, level: 1, quantity: 0 },
+  { type: 'SENTRY' as BattleUpgradeType, level: 1, quantity: 0 },
+  { type: 'DEFENSE' as BattleUpgradeType, level: 1, quantity: 0 },
 ];
 
 const DEFAULT_BONUS_POINTS = [
-  { type: BonusPointsType.OFFENSE, level: 0 },
-  { type: BonusPointsType.DEFENSE, level: 0 },
-  { type: BonusPointsType.INCOME, level: 0 },
-  { type: BonusPointsType.INTEL, level: 0 },
-  { type: BonusPointsType.PRICES, level: 0 },
+  { type: 'OFFENSE' as BonusPointsType, level: 0 },
+  { type: 'DEFENSE' as BonusPointsType, level: 0 },
+  { type: 'INCOME' as BonusPointsType, level: 0 },
+  { type: 'INTEL' as BonusPointsType, level: 0 },
+  { type: 'PRICES' as BonusPointsType, level: 0 },
 ];
 
 // Export defaults for reuse when creating users

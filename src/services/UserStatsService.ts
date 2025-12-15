@@ -11,8 +11,8 @@ import {
   UserBattleUpgrade,
   UserStructureUpgrade,
   UserBonusPoints,
-  ItemType,
 } from '@prisma/client';
+import type { ItemType } from '@/types/typings';
 import { CalculatedStrength, DetailedCalculatedStrength } from '@/utils/attackFunctions';
 
 interface ArmyStatBreakdown {

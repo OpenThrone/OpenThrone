@@ -1,6 +1,6 @@
-import { Unit, Item, UnitUpgradeType, User, PlayerUnit, PlayerItem, PlayerBattleUpgrade, ItemUsage, BattleUpgradeType, UnitType } from "@/types/typings";
+import { Unit, Item, UnitUpgradeType, User, PlayerUnit, PlayerItem, PlayerBattleUpgrade, ItemUsage, BattleUpgradeType, UnitType, ItemType } from "@/types/typings";
 import { getLevelFromXP } from "./utilities";
-import { ItemType, users as PrismaUser } from "@prisma/client";
+import { users as PrismaUser } from "@prisma/client";
 
 export default class MockUserGenerator {
   private prismaUser: PrismaUser;

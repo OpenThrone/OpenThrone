@@ -1,16 +1,39 @@
 import { describe, it, expect, beforeEach, vi } from 'bun:test';
-import { installMockPrisma, resetMockPrisma } from 'test/utils/mockPrisma';
+import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/mockPrisma';
 import { installMockMtRand } from 'test/utils/mockMtRand';
 import { normUnits } from 'test/utils/testFixtures';
 // Install shared mocks before requiring modules under test
 installMockPrisma(vi);
 installMockMtRand(vi);
 
+const mockAttackDataService = {
+  getUserById: vi.fn(),
+  updateUser: vi.fn(),
+  updateUserUnits: vi.fn(),
+  createAttackLog: vi.fn(),
+  createBankHistory: vi.fn(),
+  incrementUserStats: vi.fn(),
+};
+
+vi.mock('@/services/AttackDataService', () => mockAttackDataService);
+vi.mock('@/services/AttackValidationService', () => ({
+  canAttack: vi.fn(async () => true),
+}));
+
+mockPrisma.$transaction.mockImplementation(async (cb: any) => {
+  const tx = {
+    users: { update: (...args: any[]) => mockAttackDataService.updateUser(...args) },
+    bank_history: { create: (...args: any[]) => mockAttackDataService.createBankHistory(...args) },
+    attack_log: { create: (...args: any[]) => mockAttackDataService.createAttackLog(...args) },
+  };
+  return cb(tx);
+});
+
 const AttackService = require('../AttackService').default ?? require('../AttackService');
 import UserModel from '@/models/Users';
 import MockUserGenerator from '@/utils/MockUserGenerator';
 import { Fortifications } from '@/constants/Fortifications';
-import { UnitType, ItemType, ItemUsage, BattleUpgradeType } from '@prisma/client';
+import { UnitType, ItemType, ItemUsage, BattleUpgradeType } from '@/types/typings';
 
 describe('AttackService', () => {
   let attackerGenerator: MockUserGenerator;
@@ -58,6 +81,12 @@ describe('AttackService', () => {
     );
     // Reset shared mocks state between tests
     resetMockPrisma();
+    mockAttackDataService.getUserById.mockReset();
+    mockAttackDataService.updateUser.mockReset();
+    mockAttackDataService.updateUserUnits.mockReset();
+    mockAttackDataService.createAttackLog.mockReset();
+    mockAttackDataService.createBankHistory.mockReset();
+    mockAttackDataService.incrementUserStats.mockReset();
   });
 
   describe('calculateStrength', () => {
@@ -119,6 +148,78 @@ describe('AttackService', () => {
       // simulateBattle may compute some pillagedGold even when the defender ultimately 'wins' the fight
       // so accept any non-negative BigInt here to keep the test stable
       expect(result.pillagedGold).toBeGreaterThanOrEqual(BigInt(0));
+    });
+  });
+
+  describe('executeAttack', () => {
+    it('persists mitigation metadata into attack_log.stats', async () => {
+      const attackerId = 1;
+      const defenderId = 2;
+
+      const attackerGen = new MockUserGenerator();
+      attackerGen.getPrismaUser().id = attackerId;
+      attackerGen.setBasicInfo({ display_name: 'Attacker', race: 'HUMAN', class: 'FIGHTER' });
+      attackerGen.clearUnits();
+      attackerGen.addUnits(normUnits([
+        { id: 0, userId: attackerId, type: 'OFFENSE' as const, level: 1, quantity: 200, isMercenary: false },
+      ]));
+      attackerGen.getPrismaUser().attack_turns = 50;
+      attackerGen.setStamina(50);
+      attackerGen.setMaxStamina(50);
+
+      const defenderGen = new MockUserGenerator();
+      defenderGen.getPrismaUser().id = defenderId;
+      defenderGen.setBasicInfo({ display_name: 'Defender', race: 'HUMAN', class: 'FIGHTER' });
+      defenderGen.clearUnits();
+      defenderGen.addUnits(normUnits([
+        { id: 0, userId: defenderId, type: 'DEFENSE' as const, level: 1, quantity: 50, isMercenary: false },
+      ]));
+      defenderGen.setFortLevel(24);
+      defenderGen.setFortHitpoints(Fortifications.find((f) => f.level === 24)?.hitpoints ?? 9500);
+
+      mockAttackDataService.getUserById.mockImplementation(async (id: number) => {
+        if (id === attackerId) {
+          const u = attackerGen.getUser();
+          u.id = attackerId;
+          u.gold = BigInt(100000);
+          u.permissions = [];
+          return u;
+        }
+        if (id === defenderId) {
+          const u = defenderGen.getUser();
+          u.id = defenderId;
+          u.gold = BigInt(100000);
+          u.permissions = [];
+          return u;
+        }
+        return null;
+      });
+
+      mockAttackDataService.updateUser.mockResolvedValue({});
+      mockAttackDataService.updateUserUnits.mockResolvedValue({});
+      mockAttackDataService.createBankHistory.mockResolvedValue({});
+      mockAttackDataService.incrementUserStats.mockResolvedValue({});
+
+      let createdAttackLogPayload: any | null = null;
+      mockAttackDataService.createAttackLog.mockImplementation(async (payload: any) => {
+        createdAttackLogPayload = payload;
+        return { ...payload, id: 123 };
+      });
+
+      const res = await AttackService.executeAttack(attackerId, defenderId, 1);
+      expect(res.status).toBe('success');
+      expect(createdAttackLogPayload).toBeTruthy();
+      expect(createdAttackLogPayload.stats).toBeTruthy();
+      expect(typeof createdAttackLogPayload.stats.mitigation_log).toBe('string');
+
+      const mitigationLog = JSON.parse(createdAttackLogPayload.stats.mitigation_log);
+      expect(Array.isArray(mitigationLog)).toBe(true);
+      expect(mitigationLog.length).toBeGreaterThan(0);
+
+      // Summary should be present (nullable if no attacker damage samples, but usually present)
+      expect('mitigation_summary' in createdAttackLogPayload.stats).toBe(true);
+      expect('fort_breached' in createdAttackLogPayload.stats).toBe(true);
+      expect(createdAttackLogPayload.stats.defender_fort_level).toBeDefined();
     });
   });
 });
