@@ -4,7 +4,7 @@ import { installMockMtRand, mtRandImpl } from 'test/utils/mockMtRand';
 
 // install deterministic mtRand mock before requiring modules that depend on it
 installMockMtRand(vi);
-const { simulateBattle, calculateLoot, calculateStrength, calculateStaminaDrop, calculateStaminaModifier, calculateTurnScaling, getFortBreachState, newComputeCasualties } = require('./attackFunctions');
+const { simulateBattle, calculateLoot, calculateStrength, calculateStaminaDrop, calculateStaminaModifier, calculateTurnScaling, getFortBreachState, newComputeCasualties, distributeCasualties } = require('./attackFunctions');
 const UserModel = require('../models/Users').default;
 const MockUserGenerator = require('./MockUserGenerator').default;
 const { Fortifications } = require('@/constants');
@@ -277,6 +277,111 @@ describe('Casualties', () => {
     const resultWithFort = newComputeCasualties(2000, 1000, 10000, 10000, 1000, 2.0, 1000, false, false);
     const resultWithoutFort = newComputeCasualties(2000, 1000, 10000, 10000, 1000, 2.0, 0, false, false);
     expect(resultWithoutFort.damageDealt).toBeGreaterThan(resultWithFort.damageDealt);
+  });
+
+  it('should apply fort casualty mitigation scaling by fort level and HP', () => {
+    const noMitigation = newComputeCasualties(
+      2000,
+      1000,
+      10000,
+      10000,
+      1000,
+      1.0,
+      1000,
+      false,
+      false,
+      { defenderFortLevel: 1 }
+    );
+    const highFortFullHp = newComputeCasualties(
+      2000,
+      1000,
+      10000,
+      10000,
+      1000,
+      1.0,
+      1000,
+      false,
+      false,
+      { defenderFortLevel: 24 }
+    );
+    const highFortLowHp = newComputeCasualties(
+      2000,
+      1000,
+      10000,
+      10000,
+      1000,
+      1.0,
+      100,
+      false,
+      false,
+      { defenderFortLevel: 24 }
+    );
+    expect(highFortFullHp.damageDealt).toBeLessThan(noMitigation.damageDealt);
+    expect(highFortLowHp.damageDealt).toBeGreaterThan(highFortFullHp.damageDealt);
+  });
+
+  it('should apply structure upgrade mitigation (armory) even when fort is breached', () => {
+    const noArmory = newComputeCasualties(
+      2000,
+      1000,
+      10000,
+      10000,
+      1000,
+      1.0,
+      0,
+      false,
+      false,
+      { defenderFortLevel: 24, defenderStructureUpgrades: [{ type: 'ARMORY', level: 1 }] }
+    );
+    const maxArmory = newComputeCasualties(
+      2000,
+      1000,
+      10000,
+      10000,
+      1000,
+      1.0,
+      0,
+      false,
+      false,
+      { defenderFortLevel: 24, defenderStructureUpgrades: [{ type: 'ARMORY', level: 6 }] }
+    );
+    expect(maxArmory.damageDealt).toBeLessThan(noArmory.damageDealt);
+  });
+
+  it('should only apply remaining damage to collateral units', async () => {
+    const BattleResult = require('../models/BattleResult').default;
+
+    const attackerGen = new MockUserGenerator();
+    attackerGen.clearUnits();
+    attackerGen.addUnits(normUnits([{ type: 'OFFENSE', quantity: 1, level: 1 }]));
+    const attacker = new UserModel(attackerGen.getUser(), attackerGen.getUser().units as any);
+    attacker.mercenaries = [];
+
+    const defenderGen = new MockUserGenerator();
+    defenderGen.clearUnits();
+    defenderGen.addUnits(normUnits([
+      { type: 'DEFENSE', quantity: 2, level: 1 },
+      { type: 'CITIZEN', quantity: 5, level: 1 },
+    ]));
+    const defender = new UserModel(defenderGen.getUser(), defenderGen.getUser().units as any);
+    defender.mercenaries = [];
+
+    const battleResult = new BattleResult(attacker, defender);
+    await distributeCasualties({
+      result: battleResult,
+      attacker,
+      defender,
+      attackerDamageDealt: 15,
+      defenderDamageDealt: 0,
+      fortHP: 0,
+      initialFortHP: 100,
+      includeCitz: true,
+      includeOffense: false,
+      debug: false,
+    });
+
+    expect(battleResult.Losses.Defender.units.find((u: any) => u.type === 'CITIZEN')).toBeUndefined();
+    expect(battleResult.Losses.Defender.units.find((u: any) => u.type === 'DEFENSE')?.quantity).toBe(1);
   });
 });
 
