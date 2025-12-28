@@ -580,7 +580,7 @@ describe('Infiltration Test', () => {
     //logInfo('battle: ', battle)
     logInfo('Sies sent: ', battle.spiesSent);
     logInfo(`We ${(battle.success ? 'won so noone dies, but we do damage to thier fort' : 'lost, so we lose all spies')}`);
-    if (!battle.sucess) logInfo(`Spies lost: ${battle.spiesLost}`);
+    if (!battle.success) logInfo(`Spies lost: ${battle.spiesLost}`);
     logInfo('Spy Off: ', battle.attacker.spy, "Spy Def: ", battle.defender.sentry, "FortHP: ", battle.defender.fortHitpoints)
     logInfo('Fort DMG:', battle.fortDmg)
     logInfo('Starting Units:', attackPlayer.units, "Ending Units:", battle.attacker.units)
@@ -609,7 +609,7 @@ describe('Infiltration Test', () => {
     });
     const battle = await simulateInfiltration(equalAttacker, equalDefender, 3);
     //logInfo('battle: ', battle)
-    if (!battle.sucesss) logInfo(`Spies lost: ${battle.spiesLost}`);
+    if (!battle.success) logInfo(`Spies lost: ${battle.spiesLost}`);
   expect(typeof battle.defender.fortHitpoints).toBe('number');
   expect(battle.defender.fortHitpoints).toBeGreaterThanOrEqual(0);
   expect(battle.defender.fortHitpoints).toBeLessThanOrEqual(defensePlayer.fortHitpoints);
@@ -661,7 +661,7 @@ describe('Infiltration Test', () => {
     expect(battle.success === true).toBe(true);
     logInfo(equalDefender.unitTotals.citizens + equalDefender.unitTotals.workers)
     //logInfo('battle: ', battle)
-    //if (!battle.sucesss) logInfo(`Spies lost: ${battle.spiesLost}`);
+    //if (!battle.success) logInfo(`Spies lost: ${battle.spiesLost}`);
     //expect(equalDefender.fortHitpoints).toBe(battle.defender.fortHitpoints);
     //expect(defensePlayer.fortHitpoints - battle.fortDmg).toBe(battle.defender.fortHitpoints);
   })*/

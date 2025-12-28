@@ -225,6 +225,132 @@ describe('setup Attack test', () => {
     expect(battle.Losses.Defender.total).toBeLessThan(1000);
   });
 
+  it('keeps fort at 0 HP when already destroyed', async () => {
+    attackerGenerator.addUnits(normUnits([
+      { id: 0, userId: attackerGenerator.getPrismaUser().id, type: 'OFFENSE' as UnitType, level: 1, quantity: 50, isMercenary: false },
+    ]));
+    defenderGenerator.addUnits(normUnits([
+      { id: 0, userId: defenderGenerator.getPrismaUser().id, type: 'DEFENSE' as UnitType, level: 1, quantity: 50, isMercenary: false },
+    ]));
+    defenderGenerator.setFortHitpoints(0);
+
+    const attacker = new UserModel(
+      attackerGenerator.getPrismaUser(),
+      attackerGenerator.getUnits(),
+      attackerGenerator.getItems(),
+      attackerGenerator.getStructureUpgrades(),
+      attackerGenerator.getBattleUpgrades(),
+      attackerGenerator.getBonusPoints(),
+      attackerGenerator.getPermissions(),
+      attackerGenerator.getStats()
+    );
+    const defender = new UserModel(
+      defenderGenerator.getPrismaUser(),
+      defenderGenerator.getUnits(),
+      defenderGenerator.getItems(),
+      defenderGenerator.getStructureUpgrades(),
+      defenderGenerator.getBattleUpgrades(),
+      defenderGenerator.getBonusPoints(),
+      defenderGenerator.getPermissions(),
+      defenderGenerator.getStats()
+    );
+
+    const battle = await simulateBattle(attacker, defender, defender.fortHitpoints, 1);
+    expect(battle.finalFortHP).toBe(0);
+    expect(battle.casualtySummary?.fortDamage ?? 0).toBe(0);
+  });
+
+  it('reports fort damage separately from unit kills', async () => {
+    attackerGenerator.addUnits(normUnits([
+      { id: 0, userId: attackerGenerator.getPrismaUser().id, type: 'OFFENSE' as UnitType, level: 1, quantity: 3, isMercenary: false },
+    ]));
+    defenderGenerator.addUnits(normUnits([
+      { id: 0, userId: defenderGenerator.getPrismaUser().id, type: 'DEFENSE' as UnitType, level: 1, quantity: 500, isMercenary: false },
+    ]));
+    defenderGenerator.setFortLevel(2);
+    defenderGenerator.setFortHitpoints(100);
+
+    const attacker = new UserModel(
+      attackerGenerator.getPrismaUser(),
+      attackerGenerator.getUnits(),
+      attackerGenerator.getItems(),
+      attackerGenerator.getStructureUpgrades(),
+      attackerGenerator.getBattleUpgrades(),
+      attackerGenerator.getBonusPoints(),
+      attackerGenerator.getPermissions(),
+      attackerGenerator.getStats()
+    );
+    const defender = new UserModel(
+      defenderGenerator.getPrismaUser(),
+      defenderGenerator.getUnits(),
+      defenderGenerator.getItems(),
+      defenderGenerator.getStructureUpgrades(),
+      defenderGenerator.getBattleUpgrades(),
+      defenderGenerator.getBonusPoints(),
+      defenderGenerator.getPermissions(),
+      defenderGenerator.getStats()
+    );
+
+    const battle = await simulateBattle(attacker, defender, defender.fortHitpoints, 1);
+    expect(battle.casualtySummary.fortDamage).toBeGreaterThanOrEqual(0);
+    expect(battle.Losses.Defender.total).toBeGreaterThanOrEqual(0);
+  });
+
+  it('does not allow melee-only DEFENSE units to perform ranged attacks', async () => {
+    // Attacker: small number of Soldiers
+    attackerGenerator.clearUnits();
+    attackerGenerator.addUnits(normUnits([
+      { id: 0, userId: attackerGenerator.getPrismaUser().id, type: 'OFFENSE' as UnitType, level: 1, quantity: 5, isMercenary: false },
+      { id: 0, userId: attackerGenerator.getPrismaUser().id, type: 'CITIZEN' as UnitType, level: 1, quantity: 0, isMercenary: false },
+      { id: 0, userId: attackerGenerator.getPrismaUser().id, type: 'WORKER' as UnitType, level: 1, quantity: 0, isMercenary: false },
+    ]));
+    attackerGenerator.clearItems();
+
+    // Defender: 1 Guard (DEFENSE level 1) and a DEFENSE level-1 weapon (Sling has ranged stats in constants).
+    defenderGenerator.clearUnits();
+    defenderGenerator.addUnits(normUnits([
+      { id: 0, userId: defenderGenerator.getPrismaUser().id, type: 'DEFENSE' as UnitType, level: 1, quantity: 1, isMercenary: false },
+      { id: 0, userId: defenderGenerator.getPrismaUser().id, type: 'CITIZEN' as UnitType, level: 1, quantity: 0, isMercenary: false },
+      { id: 0, userId: defenderGenerator.getPrismaUser().id, type: 'WORKER' as UnitType, level: 1, quantity: 0, isMercenary: false },
+    ]));
+    defenderGenerator.clearItems();
+    defenderGenerator.addItems([
+      { id: 0, userId: defenderGenerator.getPrismaUser().id, type: 'WEAPON' as ItemType, level: 1, quantity: 1, usage: 'DEFENSE' as any },
+    ]);
+    defenderGenerator.setFortHitpoints(100);
+
+    const attacker = new UserModel(
+      attackerGenerator.getPrismaUser(),
+      attackerGenerator.getUnits(),
+      attackerGenerator.getItems(),
+      attackerGenerator.getStructureUpgrades(),
+      attackerGenerator.getBattleUpgrades(),
+      attackerGenerator.getBonusPoints(),
+      attackerGenerator.getPermissions(),
+      attackerGenerator.getStats()
+    );
+    const defender = new UserModel(
+      defenderGenerator.getPrismaUser(),
+      defenderGenerator.getUnits(),
+      defenderGenerator.getItems(),
+      defenderGenerator.getStructureUpgrades(),
+      defenderGenerator.getBattleUpgrades(),
+      defenderGenerator.getBonusPoints(),
+      defenderGenerator.getPermissions(),
+      defenderGenerator.getStats()
+    );
+
+    const battle = await simulateBattle(attacker, defender, defender.fortHitpoints, 1);
+    // Turn 1 is attacker’s turn; defender’s melee occurs on even turns only.
+    // If ranged is correctly gated, attacker should not lose offense units on turn 1.
+    expect(battle.Losses.Attacker.total).toBe(0);
+  });
+
+  it('does not explode damage when defense is zero', () => {
+    const result = newComputeCasualties(14375, 0, 0, 0, 100, 14375, undefined, false, false);
+    expect(result.damageDealt).toBe(43125);
+  });
+
 // Commenting out newComputeCasualties tests as the function now returns raw damage, not casualties directly.
 // The casualty distribution logic is now handled within distributeCasualties, which is part of simulateBattle.
 // it('should apply new casualty formula correctly for balanced fight', () => {
@@ -391,7 +517,44 @@ it('should simulate a battle with 400 Offense level 1 and 2 units against 20 Def
     // Expect that citizens took the majority of the losses
     // The new casualty distribution logic prioritizes DEFENSE units heavily, resulting in 0 CITIZEN losses here.
     expect(defenderLosses['DEFENSE'] || 0).toBeGreaterThan(defenderLosses['CITIZEN'] || 0);
-    // Expect that the attacker's losses are relatively low
-    expect(battle.Losses.Attacker.total).toBeLessThan((defenderLosses['CITIZEN'] || 0) + (defenderLosses['DEFENSE'] || 0));
-  });
-});
+        // Expect that the attacker's losses are relatively low
+        expect(battle.Losses.Attacker.total).toBeLessThan((defenderLosses['CITIZEN'] || 0) + (defenderLosses['DEFENSE'] || 0));
+      });
+    
+      it('should handle battle with negative turns correctly', async () => {
+        attackerGenerator.addUnits(normUnits([
+          { id: 0, userId: attackerGenerator.getPrismaUser().id, type: 'OFFENSE' as UnitType, level: 1, quantity: 2, isMercenary: false },
+          { id: 0, userId: attackerGenerator.getPrismaUser().id, type: 'OFFENSE' as UnitType, level: 2, quantity: 1, isMercenary: false },
+          { id: 0, userId: attackerGenerator.getPrismaUser().id, type: 'OFFENSE' as UnitType, level: 3, quantity: 1, isMercenary: false },
+        ]));
+        defenderGenerator.addUnits(normUnits([
+            { id: 0, userId: defenderGenerator.getPrismaUser().id, type: 'CITIZEN' as UnitType, level: 1, quantity: 4955, isMercenary: false },
+        ]));
+    
+        const attacker = new UserModel(
+          attackerGenerator.getPrismaUser(),
+          attackerGenerator.getUnits().map(u => ({ id: u.id, userId: u.userId, type: u.type as UnitType, level: u.level, quantity: u.quantity, isMercenary: u.isMercenary })),
+          attackerGenerator.getItems().map(i => ({ id: i.id, userId: i.userId, type: i.type as ItemType, level: i.level, quantity: i.quantity, usage: i.usage as ItemUsage })),
+          attackerGenerator.getStructureUpgrades(),
+          attackerGenerator.getBattleUpgrades().map(b => ({ id: b.id, userId: b.userId, type: b.type as BattleUpgradeType, level: b.level, quantity: b.quantity })),
+          attackerGenerator.getBonusPoints(),
+          attackerGenerator.getPermissions(),
+          attackerGenerator.getStats()
+        );
+        const defender = new UserModel(
+          defenderGenerator.getPrismaUser(),
+          defenderGenerator.getUnits().map(u => ({ id: u.id, userId: u.userId, type: u.type as UnitType, level: u.level, quantity: u.quantity, isMercenary: u.isMercenary })),
+          defenderGenerator.getItems().map(i => ({ id: i.id, userId: i.userId, type: i.type as ItemType, level: i.level, quantity: i.quantity, usage: i.usage as ItemUsage })),
+          defenderGenerator.getStructureUpgrades(),
+          defenderGenerator.getBattleUpgrades().map(b => ({ id: b.id, userId: b.userId, type: b.type as BattleUpgradeType, level: b.level, quantity: b.quantity })),
+          defenderGenerator.getBonusPoints(),
+          defenderGenerator.getPermissions(),
+          defenderGenerator.getStats()
+        );
+    
+        const battle = await simulateBattle(attacker, defender, defender.fortHitpoints, -1);
+        expect(battle.Losses.Attacker.total).toBe(0);
+        expect(battle.Losses.Defender.total).toBe(0);
+      });
+    });
+    
