@@ -4,11 +4,25 @@ import { NextApiResponse } from 'next';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
+import prisma from '@/lib/prisma';
+import { getSocketIO } from '@/lib/socket';
 
 const RespondSchema = z.object({
   requestId: z.number().int(),
   action: z.enum(['accept', 'decline']),
 });
+
+const emitSocialCountUpdate = async (userId: number) => {
+  const io = getSocketIO();
+  if (!io) return;
+
+  const [friendRequests, goldRequests] = await Promise.all([
+    SocialService.countPendingRequests(userId),
+    SocialService.countPendingGoldRequests(userId),
+  ]);
+  const totalCount = (friendRequests.count || 0) + (goldRequests.count || 0);
+  io.to(`user-${userId}`).emit('socialCountUpdate', { count: totalCount });
+};
 
 const handler = async (req: AuthenticatedRequest,
   res: NextApiResponse,) => {
@@ -33,7 +47,17 @@ const handler = async (req: AuthenticatedRequest,
   const userId = session.user.id;
 
   try {
+    const request = await prisma.social.findUnique({
+      where: { id: requestId },
+      select: { playerId: true, friendId: true },
+    });
+
     const result = await SocialService.respondToRequest(userId, { requestId, action });
+
+    await emitSocialCountUpdate(userId);
+    if (request?.playerId) {
+      await emitSocialCountUpdate(request.playerId);
+    }
 
     return res.status(200).json(result);
   } catch (error) {

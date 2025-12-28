@@ -5,6 +5,9 @@ import { z } from 'zod';
 import { SocialService } from '@/services/Social.service';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import type { AuthenticatedRequest } from '@/types/api';
+import prisma from '@/lib/prisma';
+import { getSocketIO } from '@/lib/socket';
+import md5 from 'md5';
 
 const TransferSchema = z.object({
   amount: z.string().transform(val => BigInt(val)),
@@ -38,6 +41,24 @@ const transferHandler = async (req: AuthenticatedRequest, res: NextApiResponse) 
 
   try {
     const result = await SocialService.transferGoldToFriend(fromUserId, friendIdNum, amount, notes);
+
+    if ((result as any)?.success) {
+      const sender = await prisma.users.findUnique({
+        where: { id: fromUserId },
+        select: { display_name: true },
+      });
+      const senderName = sender?.display_name || 'someone';
+      const message = `You received ${amount.toString()} gold from ${senderName}`;
+      const hash = md5(message + friendIdNum + (result as any)?.transferId);
+      const io = getSocketIO();
+      io?.to(`user-${friendIdNum}`).emit('goldTransferReceived', {
+        message,
+        hash,
+        fromUserId,
+        transferId: (result as any)?.transferId,
+        amount: amount.toString(),
+      });
+    }
 
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
