@@ -1,25 +1,634 @@
 # .flattener.toml
-# This configuration is based on the provided command-line arguments.
-# This is for use with CodeFlattener by DasTacoMann
+# Configuration for CodeFlattener by DasTacoMann
+# Profiles for packaging OpenThrone codebase with context-related documents
+
+# =============================================================================
+# ONBOARDING PROFILE - Project Overview & Getting Started
+# =============================================================================
+[profiles.onboarding]
+description = "Complete project overview for new contributors - includes README, contributing guidelines, and agent instructions"
+extensions = [".md", ".json", ".toml", ".js"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    "README.md",
+    "CONTRIBUTING.md",
+    "AGENTS.md",
+    "LICENSE",
+    "package.json",
+    "tsconfig.json",
+    "next.config.js",
+    "tailwind.config.js",
+    ".env.sample",
+    "BattleSystem.md",
+    "simulation_plan.md",
+    "UserUnits_System_Analysis_Report.md",
+    "memory-bank/*.md",
+    # Key server & socket handlers and account logic
+    "src/lib/socket.ts",
+    "src/services/Account.service.ts",
+    "src/lib/prisma.ts",
+    "src/lib/validation.ts",
+    "src/server/index.ts",
+    # UI pages/components relevant to onboarding
+    "src/pages/userprofile/[id].tsx",
+    "src/pages/userprofile/**/*.tsx",
+    "src/components/UserAdminEditor.tsx",
+    # Type definitions and important configs
+    "src/types/**/*.d.ts",
+    "AGENTS.md"
+]
+markdown = true
+
+# =============================================================================
+# ARCHITECTURE PROFILE - Tech Stack & Configuration
+# =============================================================================
+[profiles.architecture]
+description = "Full architecture overview - config files, type definitions, middleware, and project structure"
+extensions = [".json", ".js", ".ts", ".toml", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    "README.md",
+    "AGENTS.md",
+    "package.json",
+    "tsconfig.json",
+    "next.config.js",
+    "tailwind.config.js",
+    "postcss.config.js",
+    "jest.config.js",
+    "cypress.config.js",
+    "ecosystem.config.js",
+    "next-sitemap.config.js",
+    "lint-staged.config.js",
+    "netlify.toml",
+    "src/middleware/*.ts",
+    "src/lib/prisma.ts",
+    "src/lib/rate-limiter.ts",
+    "src/lib/validation.ts",
+    "src/lib/socket.ts",
+    "src/server/index.ts",
+    "src/services/Account.service.ts",
+    "src/pages/userprofile/[id].tsx",
+    "src/pages/userprofile/**/*.tsx",
+    "src/components/UserAdminEditor.tsx",
+    "src/types/**/*.d.ts",
+]
+markdown = true
+
+# =============================================================================
+# BATTLE SYSTEM PROFILE - Game Combat Mechanics
+# =============================================================================
+[profiles.battleSystem]
+description = "Complete battle system - attack logic, spy operations, units, upgrades, and combat calculations"
+extensions = [".tsx", ".ts", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+
+    # Type definitions
+    "src/types/typings.d.ts",
+    "src/types/combat.ts",
+
+    # Core battle logic
+    "src/utils/attackFunctions.ts",
+    "src/utils/battleEncoding.ts",
+    "src/utils/units.ts",
+    "src/utils/utilities.ts",
+    "src/utils/numberFormatting.ts",
+    "src/utils/mtrand.ts",
+    "src/utils/logger.ts",
+
+    # Game constants
+    "src/constants/Units.tsx",
+    "src/constants/Battle_Upgrades.tsx",
+    "src/constants/Fortifications.tsx",
+    "src/constants/Structure_Upgrades.tsx",
+    "src/constants/Items.tsx",
+    "src/constants/Bonuses.tsx",
+    "src/constants/XPLevels.tsx",
+    "src/constants/index.tsx",
+
+    # Models
+    "src/models/BattleSimulationResult.tsx",
+    "src/models/BattleResult.tsx",
+    "src/models/BattleUser.ts",
+    "src/models/BaseUser.ts",
+
+    # Services
+    "src/services/AttackService.ts",
+    "src/services/AttackDataService.ts",
+    "src/services/AttackValidationService.ts",
+    "src/services/UserStatsService.ts",
+    "src/services/UserUnitsService.ts",
+
+    # API Routes
+    "src/pages/api/attack/[id].ts",
+    "src/pages/api/attack/battleTest.ts",
+    "src/pages/api/attack/fullScaleBattleTest.ts",
+    "src/pages/api/attack/getRecentAttacks.ts",
+    "src/pages/api/attack/logs.ts",
+    "src/pages/api/battle/upgrades.ts",
+
+    # UI Components
+    #"src/components/AttackLog.tsx",
+    #"src/components/attackResult.tsx",
+    #"src/components/AttackLogShareModal.tsx",
+    #"src/components/BattleTestResults.tsx",
+    #"src/components/LossesList.tsx",
+    #"src/pages/battle/battleSimulator.tsx",
+    #"src/pages/battle/results/*.tsx",
+
+    # Comprehensive Tests
+    #"src/app/attack.test.ts",
+    #"src/app/assassinate.test.ts",
+    #"src/app/infiltrate.test.ts",
+    #"src/utils/MockUserGenerator.ts",
+    #"src/utils/attackFunctions.test.ts",
+    #"src/utils/attackFunctions.goldPillage.test.ts",
+    #"src/utils/AttackService.attackLogGold.test.ts",
+    #"src/utils/AttackService.goldTransfer.test.ts",
+    #"src/utils/mtrand.test.ts",
+    #"src/utils/numberFormatting.test.ts",
+    #"src/utils/timefunctions.test.ts",
+    #"src/services/__tests__/AttackService.test.ts",
+    #"src/services/__tests__/battleUpgrades.distribution.test.ts",
+    #"src/services/__tests__/UserUnitsService.test.ts",
+]
+markdown = true
+gpt4-tokens = true
+
+# =============================================================================
+# ECONOMY PROFILE - Banking, Gold Flow & Resource Management
+# =============================================================================
+[profiles.economy]
+description = "Economic systems - banking, gold transfers, resource management, and related tests"
+extensions = [".ts", ".tsx", ".md", ".css"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+    "memory-bank/productContext.md",
+
+    # Type definitions
+    "src/types/typings.d.ts",
+
+    # Economic services
+    "src/services/bank.service.ts",
+    "src/services/UserEconomyService.ts",
+    "src/services/friendTransfer.service.ts",
+
+    # Banking & transfers API
+    "src/pages/api/bank/*.ts",
+    "src/pages/api/social/gold-requests/*.ts",
+
+    # Banking UI
+    "src/pages/structures/bank/*.tsx",
+    "src/pages/structures/bank/[tab].module.css",
+    "src/components/BankDepositWithdraw.tsx",
+    "src/components/BankHistoryFilters.tsx",
+    "src/components/BankHistoryTable.tsx",
+    "src/components/GoldTransferModal.tsx",
+    "src/components/GoldRequestModal.tsx",
+    "src/components/GoldRequestNotificationModal.tsx",
+
+    # Supporting utilities
+    "src/utils/numberFormatting.ts",
+    "src/utils/utilities.ts",
+    "src/utils/buyStructureUpgrade.ts",
+
+    # Tests
+    "src/services/__tests__/friendTransfer.service.test.ts",
+    "src/services/__tests__/goldPillage.comprehensive.test.ts"
+]
+markdown = true
+gpt4-tokens = true
+
+# =============================================================================
+# RECRUITMENT PROFILE - Sessions, Links & Auto-Recruit
+# =============================================================================
+[profiles.recruitment]
+description = "Recruitment flows - session handling, referral links, and auto-recruit"
+extensions = [".ts", ".tsx", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+    "memory-bank/productContext.md",
+
+    # Services & validation
+    "src/services/recruitment.service.ts",
+    "src/services/UserSessionService.ts",
+    "src/services/user.service.ts",
+    "src/lib/validation.ts",
+
+    # API Routes
+    "src/pages/api/recruit/*.ts",
+    "src/pages/api/general/getUserInfoByRecruitLink.ts",
+
+    # Pages
+    "src/pages/recruit/[id].tsx",
+    "src/pages/auto-recruit.tsx",
+
+    # UI Components & context
+    "src/components/recruiter.tsx",
+    "src/components/SessionModal.tsx",
+    "src/context/users.tsx"
+]
+markdown = true
+gpt4-tokens = true
+
+# =============================================================================
+# MESSAGING & SOCIAL PROFILE - Chat, Friends & Gold Requests
+# =============================================================================
+[profiles.messagingSocial]
+description = "Real-time messaging, social relationships, sockets, and gold request flows"
+extensions = [".ts", ".tsx", ".css", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+    "memory-bank/productContext.md",
+
+    # API Routes
+    "src/pages/api/messages/*.ts",
+    "src/pages/api/social/**/*.ts",
+
+    # Pages
+    "src/pages/messaging/index.tsx",
+    "src/pages/social/*.tsx",
+
+    # UI Components
+    "src/components/ChatMessageGroup.tsx",
+    "src/components/ChatMessageList.tsx",
+    "src/components/ChatRoomList.tsx",
+    "src/components/MessageInput.tsx",
+    "src/components/NewMessageModal.tsx",
+    "src/components/compose-form.tsx",
+    "src/components/composemodal.tsx",
+    "src/components/friendCard.tsx",
+    "src/components/SocialIcon.tsx",
+    "src/components/GoldRequestModal.tsx",
+    "src/components/GoldRequestNotificationModal.tsx",
+    "src/components/GoldTransferModal.tsx",
+
+    # Sockets & helpers
+    "src/hooks/useSocket.ts",
+    "src/lib/socket.ts",
+    "src/lib/rate-limiter.ts",
+    "src/utils/socketFunctions.ts",
+    "src/context/users.tsx",
+    "src/context/snackbar-context.tsx",
+    "src/server/index.ts"
+]
+markdown = true
+gpt4-tokens = true
+
+# =============================================================================
+# ALLIANCES & COMMUNITY PROFILE - Player Groups & Leaderboards
+# =============================================================================
+[profiles.alliancesCommunity]
+description = "Alliances, player discovery, and community stats"
+extensions = [".ts", ".tsx", ".css", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+    "memory-bank/productContext.md",
+
+    # API Routes
+    "src/pages/api/alliances/*.ts",
+    "src/pages/api/general/compareTop.ts",
+    "src/pages/api/general/getOnlinePlayers.ts",
+    "src/pages/api/general/searchUsers.ts",
+    "src/pages/api/general/getUserBreakdown/[id].ts",
+
+    # Pages
+    "src/pages/alliances/*.tsx",
+    "src/pages/community/**/*.tsx",
+
+    # UI Components
+    "src/components/UserSearchFilter.tsx",
+    "src/components/UserList.tsx",
+    "src/components/levelCard.tsx",
+    "src/components/StatsList.tsx",
+    "src/components/StatCard.tsx",
+    "src/components/statsTable.tsx",
+    "src/components/TabbedContent.tsx",
+    "src/components/ContentCard.tsx"
+]
+markdown = true
+gpt4-tokens = true
+
+# =============================================================================
+# STRUCTURES & TRAINING PROFILE - Armory, Housing & Upgrades
+# =============================================================================
+[profiles.structuresTraining]
+description = "Player structures, armory management, training, and upgrade flows"
+extensions = [".ts", ".tsx", ".css", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+    "memory-bank/productContext.md",
+
+    # API Routes
+    "src/pages/api/structures/upgrades.ts",
+    "src/pages/api/armory/*.ts",
+    "src/pages/api/training/*.ts",
+
+    # Pages
+    "src/pages/structures/**/*",
+
+    # UI Components
+    "src/components/armory-upgrades.tsx",
+    "src/components/fortification-upgrades.tsx",
+    "src/components/economy-upgrades.tsx",
+    "src/components/housing-upgrades.tsx",
+    "src/components/offenseupgrade.tsx",
+    "src/components/clandestineupgrades.tsx",
+    "src/components/unitsection.tsx",
+    "src/components/newUnitSection.tsx",
+    "src/components/itemsection.tsx",
+    "src/components/newItemSection.tsx",
+    "src/components/ItemsInputForm.tsx",
+    "src/components/ArmyInputForm.tsx",
+    "src/components/ArmyPresets.tsx",
+    "src/components/PresetNumberInput.tsx",
+    "src/components/DiscountSummary.tsx",
+    "src/components/StatsList.tsx",
+    "src/components/StatCard.tsx",
+    "src/components/statsTable.tsx",
+
+    # Constants & utilities
+    "src/constants/Structure_Upgrades.tsx",
+    "src/constants/Items.tsx",
+    "src/constants/Units.tsx",
+    "src/utils/buyStructureUpgrade.ts",
+    "src/utils/units.ts",
+    "src/utils/numberFormatting.ts",
+
+    # Services & tests
+    "src/services/UserUnitsService.ts",
+    "src/services/UserStatsService.ts",
+    "src/services/__tests__/UserUnitsService.test.ts",
+    "src/services/__tests__/UserStatsService.test.ts"
+]
+markdown = true
+gpt4-tokens = true
+
+# =============================================================================
+# ACCOUNT & AUTH PROFILE - Authentication, Sessions & Settings
+# =============================================================================
+[profiles.accountAuth]
+description = "Authentication, account management, session handling, and permissions"
+extensions = [".ts", ".tsx", ".css", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+
+    # Pages
+    "src/pages/account/**/*",
+
+    # API Routes
+    "src/pages/api/account/*.ts",
+    "src/pages/api/auth/[...nextauth].ts",
+    "src/pages/api/auth/register/route.ts",
+
+    # Middleware & libs
+    "src/middleware/auth.ts",
+    "src/middleware/rateLimit.ts",
+    "src/lib/prisma.ts",
+    "src/lib/validation.ts",
+    "src/utils/api-error.ts",
+    "src/utils/authorization.ts",
+    "src/utils/auditLogger.ts",
+
+    # Services
+    "src/services/UserSessionService.ts",
+    "src/services/user.service.ts",
+    "src/services/UserDataService.ts",
+    "src/services/UserStatsService.ts",
+    "src/services/sessions.service.ts",
+    "src/services/config.service.ts",
+
+    # UI Components & context
+    "src/components/alert.tsx",
+    "src/components/ConfirmationModal.tsx",
+    "src/components/PermissionCheck.tsx",
+    "src/components/SessionModal.tsx",
+    "src/components/VacationModeModal.tsx",
+    "src/components/SnackbarBridge.tsx",
+    "src/components/modal.tsx",
+    "src/context/users.tsx",
+    "src/context/snackbar-context.tsx",
+
+    # Tests
+    "src/services/__tests__/UserSessionService.test.ts",
+    "src/services/__tests__/user.service.test.ts",
+    "src/services/__tests__/UserDataService.test.ts",
+    "src/services/__tests__/UserStatsService.test.ts"
+]
+markdown = true
+gpt4-tokens = true
+
+# =============================================================================
+# ADMIN & OPERATIONS PROFILE - Moderation, Eras & Cron Jobs
+# =============================================================================
+[profiles.adminOperations]
+description = "Admin tools, era control, permissions, and scheduled jobs"
+extensions = [".ts", ".tsx", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+
+    # API Routes
+    "src/pages/api/admin/**/*",
+    "src/pages/api/cronJobs/*.ts",
+
+    # Pages
+    "src/pages/administration/**/*",
+
+    # Services
+    "src/services/era.service.ts",
+    "src/services/alert.service.ts",
+    "src/services/config.service.ts",
+    "src/services/sessions.service.ts",
+    "src/services/UserDataService.ts",
+
+    # UI Components
+    "src/components/UserAdminEditor.tsx",
+    "src/components/UserAdminTable.tsx",
+    "src/components/UserSearchFilter.tsx",
+    "src/components/UserList.tsx",
+    "src/components/GrantUserForm.tsx",
+    "src/components/SessionModal.tsx",
+    "src/components/PermissionCheck.tsx"
+]
+markdown = true
+gpt4-tokens = true
+
+# =============================================================================
+# BLOG & NEWS PROFILE - Announcements & Updates
+# =============================================================================
+[profiles.blogNews]
+description = "Blog posts, in-game news, and related admin interfaces"
+extensions = [".ts", ".tsx", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+    "memory-bank/productContext.md",
+
+    # API Routes
+    "src/pages/api/blog/*.ts",
+
+    # Pages
+    "src/pages/community/news/*.tsx",
+    "src/pages/administration/blog.tsx",
+
+    # UI Components
+    "src/components/blogPost.tsx",
+    "src/components/news-bulletin.tsx",
+    "src/components/newsAccordion.tsx"
+]
+markdown = true
+
+# =============================================================================
+# SERVICES PROFILE - Shared Backend Business Logic
+# =============================================================================
+[profiles.services]
+description = "Shared backend services for users, sessions, alerts, and configuration"
+extensions = [".ts", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+    "memory-bank/systemPatterns.md",
+
+    # Type definitions
+    "src/types/typings.d.ts",
+
+    # Core services
+    "src/services/*.ts",
+
+    # Utilities
+    "src/utils/logger.ts",
+    "src/utils/utilities.ts"
+]
+markdown = true
+gpt4-tokens = true
+
+# =============================================================================
+# UI COMPONENTS PROFILE - Frontend Components & Styling
+# =============================================================================
+[profiles.uiComponents]
+description = "Frontend UI components - layout, navigation, reusable widgets, and styling"
+extensions = [".tsx", ".css", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+
+    # Main app structure
+    "src/pages/_app.tsx",
+    "src/pages/index.tsx",
+
+    # Layout components
+    "src/components/Layout.tsx",
+    "src/components/MainArea.tsx",
+    "src/components/Sidebar.tsx",
+    "src/components/navLoggedIn.tsx",
+    "src/components/navLoggedOut.tsx",
+    "src/components/MobileNavigation.tsx",
+    "src/components/MobileSidebarContent.tsx",
+
+    # Skeleton loaders
+    "src/components/NavSkeleton.tsx",
+    "src/components/MainAreaSkeleton.tsx",
+    "src/components/SidebarSkeleton.tsx",
+
+    # Reusable components
+    "src/components/ContentCard.tsx",
+    "src/components/RpgAwesomeIcon.tsx",
+    "src/components/loading-dots.tsx",
+    "src/components/CollapsibleSection.tsx",
+    "src/components/TabbedContent.tsx",
+    "src/components/modal.tsx",
+    "src/components/AnimatedButton.tsx",
+
+    # Styles
+    "src/styles/global.css",
+    "src/styles/themes.tsx",
+    "tailwind.config.js",
+    "postcss.config.js"
+]
+markdown = true
+
+# =============================================================================
+# DATABASE PROFILE - Schema, Migrations & Models
+# =============================================================================
+[profiles.database]
+description = "Database schema, migrations, and Prisma configuration"
+extensions = [".prisma", ".sql", ".md", ".ts"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "README.md",
+    "AGENTS.md",
+
+    # Prisma schema & migrations
+    "prisma/schema.prisma",
+    "prisma/migrations/**/*.sql",
+    "temp_initial_migration.sql",
+
+    # Models
+    "src/models/*.tsx",
+
+    # Type definitions
+    "src/types/typings.d.ts"
+]
+markdown = true
+
+# =============================================================================
+# TESTING PROFILE - Test Suite & Testing Utilities
+# =============================================================================
+[profiles.testing]
+description = "Complete testing setup - Jest/Vitest config, utilities, and test files"
+extensions = [".ts", ".js", ".tsx", ".md"]
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
+include_globs = [
+    # Context documents
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+
+    # Test configuration
+    "jest.config.js",
+    "jest.setup.ts",
+    "bunfig.toml",
+
+    # Test utilities
+    "src/utils/MockUserGenerator.ts",
+    "__mocks__/**/*",
+    "test/**/*",
+
+    # Service tests
+    "src/services/__tests__/*.test.ts",
+
+    # App tests
+    "src/app/*.test.ts",
+    "src/components/*.test.tsx",
+    "src/utils/*test.ts",
+    "src/models/*.test.ts"
+]
+markdown = true
+
+# =============================================================================
+# DEFAULT PROFILE - Main App Layout & Core Pages
+# =============================================================================
 [profiles.default]
-# =============================================================================
-# FILE SELECTION SETTINGS
-# =============================================================================
-
-# File extensions to include. Corresponds to: -e tsx,css,js
-# Note: The extensions in the include_globs list will be included regardless of this setting.
-# This list is useful if you add directory-based globs like "src/**/*" in the future.
+description = "Core application layout and main pages"
 extensions = [".tsx", ".css", ".js"]
-
-# =============================================================================
-# INCLUDE/EXCLUDE PATTERNS
-# =============================================================================
-
-# Directories to exclude. It's always a good practice to exclude these.
-exclude_dirs = ["node_modules", ".next", "dist", "build", ".git"]
-
-# Glob pattern inclusions. This is the most important part of your command.
-# Corresponds to: --include-globs "..."
+exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "out"]
 include_globs = [
     "src/pages/_app.tsx",
     "src/components/Layout.tsx",
@@ -40,39 +649,4 @@ include_globs = [
     "tailwind.config.js",
     "postcss.config.js"
 ]
-
-
-# =============================================================================
-# OUTPUT CONFIGURATION
-# =============================================================================
-
-# Format the output content using Markdown code blocks.
-# Corresponds to: --markdown
 markdown = true
-
-[profiles.battleSystem]
-description = "Encapsulates the battle system logic."
-extensions = [".tsx", "ts", "css"]
-include_globs = [
-    "src/types/typings.d.ts",
-    "src/app/attack.test.ts",
-    "src/utils/numberFormatting.ts",
-    "src/utils/MockUserGenerator.ts",
-    "src/utils/attackFunctions.ts",
-    "src/utils/utilities.ts",
-    "src/utils/logger.ts",
-    "src/utils/mtrand.ts",
-    "src/constants/Fortifications.tsx",
-    "src/constants/Structure_Upgrades.tsx",
-    "src/constants/Items.tsx",
-    "src/constants/index.tsx",
-    "src/constants/XPLevels.tsx",
-    "src/constants/Units.tsx",
-    "src/constants/Bonuses.tsx",
-    "src/constants/Battle_Upgrades.tsx",
-    "src/models/BattleSimulationResult.tsx",
-    "src/models/Users.tsx",
-    "src/models/BattleResult.tsx"
-]
-markdown = true
-gpt4-tokens = true

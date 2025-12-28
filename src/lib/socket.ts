@@ -40,6 +40,11 @@ import { CronJobService } from "@/services/CronJob.service";
 import { parseBigInt } from "@/utils/jsonHelpers";
 import UserModel from "@/models/Users";
 import { safeToISOString } from "@/utils/dateHelpers";
+import {
+  DEFAULT_DASHBOARD_TEST_ORIGIN,
+  isOriginAllowed,
+  parseOriginList,
+} from "@/utils/cors";
 import { Server as HttpServer } from "http";
 import { Server, Socket } from "socket.io";
 import prisma from "./prisma";
@@ -76,6 +81,26 @@ const handleConnection = (socket: Socket) => {
     userSockets.set(userId, new Set());
   }
   userSockets.get(userId)?.add(socket.id);
+
+  socket.on("registerUser", (data: { userId: number }) => {
+    const requestedUserId = Number(data?.userId);
+    if (!requestedUserId) return;
+
+    if (requestedUserId !== userId) {
+      logError(
+        `Socket ${socket.id} attempted to register mismatched userId ${requestedUserId} (expected ${userId})`,
+      );
+      return;
+    }
+
+    const targetRoom = `user-${requestedUserId}`;
+    socket.join(targetRoom);
+
+    if (!userSockets.has(requestedUserId)) {
+      userSockets.set(requestedUserId, new Set());
+    }
+    userSockets.get(requestedUserId)?.add(socket.id);
+  });
 
   // Register event handlers
   socket.on("requestUserData", () => handleRequestUserData(socket, userId));
@@ -317,32 +342,73 @@ export const initializeSocket = (httpServer: HttpServer) => {
     return io;
   }
 
+  const socketCorsAllowlist = (() => {
+    const raw =
+      process.env.OT_SOCKET_CORS_ORIGINS ??
+      process.env.NEXT_PUBLIC_SOCKET_IO_ORIGIN ??
+      "*";
+    if (raw.trim() === "*") return ["*"];
+    return Array.from(
+      new Set([...parseOriginList(raw), DEFAULT_DASHBOARD_TEST_ORIGIN]),
+    );
+  })();
+
   logInfo("Initializing Socket.IO...");
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.NEXT_PUBLIC_SOCKET_IO_ORIGIN || "*", // More permissive for dev if needed
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (socketCorsAllowlist.includes("*")) return callback(null, true);
+        return callback(null, isOriginAllowed(origin, socketCorsAllowlist));
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },
     path: "/socket.io",
     allowRequest: async (req, callback) => {
       try {
+        // --- Token Sources ---
+        // 1) Cookie-based next-auth session token (existing behavior)
+        // 2) Authorization: Bearer <token>
+        // 3) Querystring: ?token=<token> (works for socket.io polling transport)
+
+        const parsedUrl = (() => {
+          try {
+            // req.url is typically like "/socket.io/?EIO=4&transport=polling&t=..."
+            return new URL(req.url || "", "http://localhost");
+          } catch {
+            return null;
+          }
+        })();
+
+        const authHeader = String(req.headers.authorization || "");
+        const bearerToken = authHeader.toLowerCase().startsWith("bearer ")
+          ? authHeader.slice("bearer ".length).trim()
+          : "";
+
         const cookies = cookie.parse(req.headers.cookie || "");
         const sessionTokenCookie =
           cookies["next-auth.session-token"] ||
           cookies["__Secure-next-auth.session-token"];
 
-        if (!sessionTokenCookie) {
+        const queryToken = parsedUrl?.searchParams.get("token") || "";
+        const tokenFromClient = bearerToken || queryToken || sessionTokenCookie || "";
+
+        if (!tokenFromClient) {
           return callback("No session token", false);
         }
 
         const minimalReq = {
           headers: req.headers,
           cookies: {
-            "next-auth.session-token": sessionTokenCookie,
-            "__Secure-next-auth.session-token": sessionTokenCookie,
+            "next-auth.session-token": tokenFromClient,
+            "__Secure-next-auth.session-token": tokenFromClient,
           },
         };
+
+        // If the token is coming from Authorization/query, also set Authorization
+        // so next-auth/jwt can pick it up via either mechanism.
+        (minimalReq.headers as any).authorization = `Bearer ${tokenFromClient}`;
 
         const token: any = await getToken({
           req: minimalReq as any,
@@ -1261,6 +1327,17 @@ const handleExecuteAttack = async (
       attackTurns: turns,
     });
     socket.emit("executeAttackSuccess", serializeData(result));
+
+    if (result?.status === "success" && result.attack_log) {
+      const message = `You were attacked in battle ${result.attack_log}`;
+      const hash = md5(message + result.attack_log + defenderId);
+      io?.to(`user-${defenderId}`).emit("attackNotification", {
+        message,
+        hash,
+        battleId: result.attack_log,
+        attackerId: userId,
+      });
+    }
   } catch (error: any) {
     logError("Error executing attack:", error);
     socket.emit("executeAttackError", {
@@ -1726,8 +1803,19 @@ const handleAddFriend = async (
 
     // Notify the target user if it's a friend request
     if (data.relationshipType === "FRIEND") {
-      const message = `You have received a friend request from user ${userId}`;
-      await handleNotifyFriendRequest({ userId: data.friendId, message });
+      const sender = await prisma.users.findUnique({
+        where: { id: userId },
+        select: { display_name: true },
+      });
+      const senderName = sender?.display_name || "someone";
+      const message = `You have received a friend request from ${senderName}`;
+      const hash = md5(message + data.friendId);
+      io?.to(`user-${data.friendId}`).emit("friendRequestNotification", {
+        message,
+        hash,
+        senderId: userId,
+        senderName,
+      });
       // Update social count for the recipient
       await emitSocialCountUpdate(data.friendId);
     }
@@ -1816,6 +1904,21 @@ const handleTransferGold = async (
       data.notes,
     );
     socket.emit("transferGoldSuccess", serializeData(result));
+
+    const sender = await prisma.users.findUnique({
+      where: { id: userId },
+      select: { display_name: true },
+    });
+    const senderName = sender?.display_name || "someone";
+    const message = `You received ${amount.toString()} gold from ${senderName}`;
+    const hash = md5(message + data.friendId + result?.transferId);
+    io?.to(`user-${data.friendId}`).emit("goldTransferReceived", {
+      message,
+      hash,
+      fromUserId: userId,
+      transferId: result?.transferId,
+      amount: amount.toString(),
+    });
   } catch (error: any) {
     logError("Error transferring gold:", error);
     socket.emit("transferGoldError", {
@@ -1847,6 +1950,7 @@ const handleSendGoldRequest = async (
     await handleNotifyGoldRequest({ userId: data.friendId, message });
     // Update social count for the recipient
     await emitSocialCountUpdate(data.friendId);
+    await emitGoldRequestCountUpdate(data.friendId);
   } catch (error: any) {
     logError("Error sending gold request:", error);
     socket.emit("sendGoldRequestError", {
@@ -1866,6 +1970,7 @@ const handleRespondToGoldRequest = async (
 
     // Update social counts for both users
     await emitSocialCountUpdate(userId);
+    await emitGoldRequestCountUpdate(userId);
     // Find the requester's ID from the gold request
     const goldRequest = await prisma.bank_history.findUnique({
       where: { id: data.requestId },
@@ -1874,6 +1979,7 @@ const handleRespondToGoldRequest = async (
     if (goldRequest) {
       const requesterId = goldRequest.from_user_id;
       await emitSocialCountUpdate(requesterId);
+      await emitGoldRequestCountUpdate(requesterId);
     }
   } catch (error: any) {
     logError("Error responding to gold request:", error);
@@ -2465,6 +2571,17 @@ const handleCreateBlogPost = async (
       content: data.content,
     });
     socket.emit("createBlogPostSuccess", serializeData(result));
+
+    if (result?.success && result.data?.id) {
+      const message = `New blog post: ${result.data.title || "Untitled"}`;
+      const hash = md5(message + result.data.id);
+      io?.emit("blogPostNotification", {
+        message,
+        hash,
+        postId: result.data.id,
+        title: result.data.title,
+      });
+    }
   } catch (error: any) {
     logError("Error creating blog post:", error);
     socket.emit("createBlogPostError", {
@@ -2682,7 +2799,6 @@ const handleResetGame = async (socket: Socket, userId: number) => {
 
 const handleRevalidate = async (socket: Socket, userId: number) => {
   try {
-    // This function doesn't exist in GeneralService, so I'll implement it directly
     // Revalidate user data - could trigger a refresh of cached data
     const userData = await UserDataService.getFullUserData(userId);
     socket.emit(

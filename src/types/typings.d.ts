@@ -381,6 +381,7 @@ export interface UserApiResponse {
   totalAttacks: number;
   totalDefends: number;
   currentStatus: AccountStatus | string; // Use AccountStatus enum
+  goldPerTurn: number;
 }
 
 // Define the Prisma User type alias again for internal use if needed

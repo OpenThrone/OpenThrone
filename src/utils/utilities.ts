@@ -204,6 +204,9 @@ const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | '
 };
 
 const serializeDates = (obj) => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
   return Object.fromEntries(
     Object.entries(obj).map(([key, value]) => {
       if (value instanceof Date) {

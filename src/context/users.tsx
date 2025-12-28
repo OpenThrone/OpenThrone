@@ -222,6 +222,28 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
       }
     };
+    const handleSpyDefenseNotification = (data: { message: string; hash: string }) => {
+      if (!sessionStorage.getItem(data.hash)) {
+        alertService.success(data.message);
+        sessionStorage.setItem(data.hash, 'true');
+        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
+      }
+    };
+    const handleBlogPostNotification = (data: { message: string; hash: string; postId?: number }) => {
+      if (!sessionStorage.getItem(data.hash)) {
+        alertService.success(data.message);
+        sessionStorage.setItem(data.hash, 'true');
+        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
+      }
+    };
+    const handleGoldTransferReceived = (data: { message: string; hash: string }) => {
+      if (!sessionStorage.getItem(data.hash)) {
+        alertService.success(data.message);
+        sessionStorage.setItem(data.hash, 'true');
+        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
+      }
+      socket?.emit('requestUserData');
+    };
     const handlePong = () => logInfo('Pong received!');
     const handleAlertNotification = (alertData: any) => alertService.success(alertData); // Or other types
 
@@ -234,6 +256,9 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     addEventListener('friendRequestNotification', handleFriendRequestNotification);
     addEventListener('enemyDeclarationNotification', handleEnemyDeclarationNotification);
     addEventListener('newMessageNotification', handleNewMessageNotification);
+    addEventListener('spyDefenseNotification', handleSpyDefenseNotification);
+    addEventListener('blogPostNotification', handleBlogPostNotification);
+    addEventListener('goldTransferReceived', handleGoldTransferReceived);
     addEventListener('alertNotification', handleAlertNotification);
 
     return () => {
@@ -245,6 +270,9 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       removeEventListener('friendRequestNotification', handleFriendRequestNotification);
       removeEventListener('enemyDeclarationNotification', handleEnemyDeclarationNotification);
       removeEventListener('newMessageNotification', handleNewMessageNotification);
+      removeEventListener('spyDefenseNotification', handleSpyDefenseNotification);
+      removeEventListener('blogPostNotification', handleBlogPostNotification);
+      removeEventListener('goldTransferReceived', handleGoldTransferReceived);
       removeEventListener('alertNotification', handleAlertNotification);
     };
   }, [socket, isConnected, addEventListener, removeEventListener, processAndSetUserData]); // Added processAndSetUserData dependency

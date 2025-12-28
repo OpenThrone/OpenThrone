@@ -309,7 +309,8 @@ body{
     font-weight: bold;
 }*/
 .mainArea {
-  padding-bottom: 10px
+  padding-bottom: 10px;
+  padding-right: 1rem;
 }
 
 .mainArea h2{
