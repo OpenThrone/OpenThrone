@@ -5,6 +5,8 @@ import { IdQuerySchema, AttackSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
 import { NextApiResponse } from 'next';
 import { logDebug } from '@/utils/logger';
+import { getSocketIO } from '@/lib/socket';
+import md5 from 'md5';
 
 const handler = async (req, res: NextApiResponse) => {
   const session = req.session;
@@ -25,6 +27,18 @@ const handler = async (req, res: NextApiResponse) => {
         defenderId: id,
         attackTurns: turns
       });
+
+      if (results?.status === 'success' && results.attack_log) {
+        const io = getSocketIO();
+        const message = `You were attacked in battle ${results.attack_log}`;
+        const hash = md5(message + results.attack_log + id);
+        io?.to(`user-${id}`).emit('attackNotification', {
+          message,
+          hash,
+          battleId: results.attack_log,
+          attackerId: sessionUserId,
+        });
+      }
 
       const ip = getRequestIp(req);
       await logAction(sessionUserId, 'ATTACK', ip, { targetId: id, turns });
