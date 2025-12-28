@@ -50,8 +50,8 @@ const AttackResults = ({ battle, viewerID }) => {
 
   summaryLines.push(`Battle ID: ${battle.id}`);
   summaryLines.push(`${isViewerAttacker ? 'You' : attackerPlayer.display_name} attacked ${isViewerDefender ? 'You' : defenderPlayer.display_name}`);
-  summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${toLocale(new UserModel(stats.startOfAttack.Attacker, true, false).offense)} damage`);
-  summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name + "'s"} countered with ${toLocale(new UserModel(stats.startOfAttack.Defender, true, false).defense)} damage`);
+  summaryLines.push(`${isViewerAttacker ? 'Your' : attackerPlayer.display_name + "'s"} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${toLocale(stats.attackerDamageDealt)} damage`);
+  summaryLines.push(`${isViewerDefender ? 'Your' : defenderPlayer.display_name + "'s"} countered with ${toLocale(stats.defenderDamageDealt)} damage`);
   summaryLines.push(`${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} won the battle`);
   summaryLines.push(`${attackerPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).attacker)} XP`)
   summaryLines.push(`${defenderPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).defender)} XP`)
