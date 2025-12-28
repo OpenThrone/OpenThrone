@@ -16,6 +16,7 @@ import UserModel from '@/models/Users';
 import { alertService } from '@/services/Alert.service';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
+import { serializeDates } from '@/utils/utilities';
 import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid, Center, Space, Flex, Container } from '@mantine/core';
 import { InferGetServerSidePropsType } from "next";
 import Image from 'next/image';
@@ -541,7 +542,14 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
           ) : (
             <div className="list-group mb-4">
               <Link
-                  href={`/inbox/compose/new/user/${profile?.id}`}
+                  href={{
+                    pathname: "/messaging",
+                    query: {
+                      composeToUserId: profile?.id,
+                      composeToName: profile?.display_name,
+                      composeToAvatar: profile?.avatar,
+                    },
+                  }}
                   className={`profile-nav-link ${user?.id === 1 || user?.id === 2 ? '' : 'disabled'}`}
               >
                 Message this Player
@@ -930,8 +938,8 @@ export const getServerSideProps = async ({ query }) => {
     created_at: createdAtStr,
     updated_at: updatedAtStr,
     status: await getUpdatedStatus(user.id),
-    currentEra: user.currentEra ?? null,
-    latestUserEra: (user.userEras && user.userEras.length > 0) ? user.userEras[0] : null,
+    currentEra: serializeDates(user.currentEra),
+    latestUserEra: serializeDates((user.userEras && user.userEras.length > 0) ? user.userEras[0] : null),
   };
 
   return { props: { users: userData } };
