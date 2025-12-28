@@ -169,6 +169,7 @@ export class GeneralService {
         totalAttacks: totalAttacks,
         totalDefends: totalDefends,
         currentStatus: currentStatus as AccountStatus | string,
+        goldPerTurn: user.goldPerTurn,
       };
 
       return responseDto;

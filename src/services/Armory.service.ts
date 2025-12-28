@@ -470,7 +470,13 @@ export class ArmoryService {
         throw new Error('User not found');
       }
 
-      const userItems = user.items as ArmoryItem[];
+      // Normalize items coming from the Prisma user include (UserItem)
+      const userItems: ArmoryItem[] = ((user as any).UserItem || []).map((it: any) => ({
+        type: it.type,
+        usage: it.usage,
+        level: typeof it.level === 'string' ? parseInt(it.level, 10) : it.level,
+        quantity: typeof it.quantity === 'string' ? parseInt(it.quantity, 10) : it.quantity,
+      }));
 
       const amount = conversionAmount;
       const uModel = new UserModel(user);
