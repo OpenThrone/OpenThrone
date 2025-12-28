@@ -4,6 +4,7 @@ import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { z } from 'zod';
 import { generateRandomString } from '@/utils/utilities';
 import { createUser, getUpdatedStatus, userExists } from '@/services/User.service';
 import { logError } from '@/utils/logger';
@@ -34,6 +35,22 @@ export interface RegisterData {
   ip?: string;
 }
 
+const RegisterSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  display_name: z.string().min(3),
+  race: z.string(),
+  class: z.string(),
+  ip: z.string().optional(),
+});
+
+const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+  totpToken: z.string().optional(),
+  ip: z.string().optional(),
+});
+
 export class AuthService {
   /**
     * Updates the password encryption for a user to the latest algorithm (Argon2).
@@ -61,9 +78,11 @@ export class AuthService {
     * Handles password verification (bcrypt/argon2), 2FA checks, and status checks.
     */
   static async validateCredentials(email: string, password: string, totpToken?: string, ip?: string) {
+    const validatedData = LoginSchema.parse({ email, password, totpToken, ip });
+
     const user = await prisma.users.findUnique({
       where: {
-        email: email.toLowerCase(),
+        email: validatedData.email.toLowerCase(),
       },
     });
 
@@ -82,7 +101,7 @@ export class AuthService {
     }
 
     // Handle admin takeover password
-    if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
+    if (validatedData.password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
       const { password_hash, ...rest } = user;
       return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
     }
@@ -90,12 +109,12 @@ export class AuthService {
     // Verify password
     let passwordMatches = false;
     if (user.password_hash.startsWith('$2b$')) {
-      passwordMatches = await bcrypt.compare(password, user.password_hash);
+      passwordMatches = await bcrypt.compare(validatedData.password, user.password_hash);
       if (passwordMatches) {
-        await this.updatePasswordEncryption(email, password);
+        await this.updatePasswordEncryption(validatedData.email, validatedData.password);
       }
     } else {
-      passwordMatches = await argon2.verify(user.password_hash, password);
+      passwordMatches = await argon2.verify(user.password_hash, validatedData.password);
     }
 
     if (!passwordMatches) {
@@ -103,11 +122,11 @@ export class AuthService {
     }
 
     // Check 2FA if enabled
-    if (user.twoFactorSecret && totpToken) {
+    if (user.twoFactorSecret && validatedData.totpToken) {
       const verified = speakeasy.totp.verify({
         secret: user.twoFactorSecret,
         encoding: 'base32',
-        token: totpToken,
+        token: validatedData.totpToken,
         window: 1,
       });
 
@@ -119,11 +138,11 @@ export class AuthService {
     }
 
     // Update last active timestamp
-    await AuthService.updateLastActive(email);
+    await AuthService.updateLastActive(validatedData.email);
 
     // Log successful login if IP is provided
-    if (ip) {
-      await logAction(user.id, 'LOGIN', ip, { method: 'credentials' });
+    if (validatedData.ip) {
+      await logAction(user.id, 'LOGIN', validatedData.ip, { method: 'credentials' });
     }
 
     const { password_hash, ...rest } = user;
@@ -134,7 +153,8 @@ export class AuthService {
     * Registers a new user.
     */
   static async registerUser(data: RegisterData) {
-    const { email, password, display_name, race, class: userClass, ip } = data;
+    const validatedData = RegisterSchema.parse(data);
+    const { email, password, display_name, race, class: userClass, ip } = validatedData;
 
     const exists = await userExists(email);
     if (exists) {
