@@ -40,7 +40,36 @@ class BattleResult {
     attackerTotal: number;
     defenderTotal: number;
     fortDamage: number;
+    mitigation?: {
+      averageMultiplier: number;
+      minMultiplier: number;
+      maxMultiplier: number;
+      samples: number;
+    };
+    fortBreached?: boolean;
+    battleStats?: { attacker: any; defender: any };
   };
+
+  mitigationLog: Array<{
+    turn: number;
+    source: 'ATTACKER' | 'DEFENDER';
+    attackType: 'MELEE' | 'RANGED';
+    rawDamage: number;
+    mitigatedDamage: number;
+    fortSoakMultiplier: number;
+    mitigationMultiplier: number;
+    fortHpStart: number;
+    fortHpEnd: number;
+    fortHpRatio: number;
+    defenderFortLevel?: number;
+    defenderFortMitigationPct?: number;
+    defenderCasualtyBonusPct?: number;
+    defenderStructureMitigationPct?: number;
+    totalMitigationPct?: number;
+    fortBreached: boolean;
+    includeCitz: boolean;
+    includeOffense: boolean;
+  }>;
 
   Losses: {
     Attacker: {
@@ -54,6 +83,8 @@ class BattleResult {
 
     
   };
+  defenderStats: { defenseRemaining: number; meleeAtkPower: number; meleeDefPower: number; rangedAtkPower: number; rangedDefPower: number; };
+  attackerStats: { offenseRemaining: number; meleeAtkPower: number; meleeDefPower: number; rangedAtkPower: number; rangedDefPower: number; };
 
   constructor(attacker: UserModel, defender: UserModel) {
     this.attacker = JSON.parse(JSON.stringify(stringifyObj(attacker))); // deep copy but we don't need email, passwordHash, goldInBank, bio, colorScheme
@@ -65,6 +96,7 @@ class BattleResult {
     this.finalFortHP = 0;
     this.fortDamaged = false;
     this.result = 'UNDECIDED'; // Default value, will be set by calculateAndApplyExperience
+    this.mitigationLog = [];
     this.Losses = {
       Attacker: {
         total: 0,
