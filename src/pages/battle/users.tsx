@@ -1,15 +1,38 @@
+import { InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+
+import {
+  Button,
+  Center,
+  Checkbox,
+  Collapse,
+  Divider,
+  Group,
+  MultiSelect,
+  NumberInput,
+  Pagination,
+  Paper,
+  Pill,
+  SegmentedControl,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Avatar,
+  Badge,
+  Indicator,
+} from '@mantine/core';
+import { usePagination } from '@mantine/hooks';
+
+import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import toLocale from '@/utils/numberFormatting';
-import { Table, Group, Avatar, Badge, Text, Indicator, Pagination, Center, Button, Paper, Pill, useMantineTheme } from '@mantine/core';
-import { InferGetServerSidePropsType } from "next";
-import { usePagination } from '@mantine/hooks';
-import MainArea from '@/components/MainArea';
 import { logError, logInfo } from '@/utils/logger';
+import { getLevelFromXP } from '@/utils/utilities';
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const searchParams = useSearchParams();
@@ -28,7 +51,36 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const [myPage, setMyPage] = useState(1);
   const [myRank, setMyRank] = useState(1);
   const pagination = usePagination({ total: lastPage, initialPage: 1 });
-  const theme = useMantineTheme();
+
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [matchMode, setMatchMode] = useState<'AND' | 'OR'>('AND');
+  const [nameQuery, setNameQuery] = useState('');
+
+  const [includeFriends, setIncludeFriends] = useState(true);
+  const [includeEnemies, setIncludeEnemies] = useState(true);
+  const [includeOthers, setIncludeOthers] = useState(true);
+
+  const [includeAllianceMembers, setIncludeAllianceMembers] = useState(true);
+  const [includeNonAllianceMembers, setIncludeNonAllianceMembers] = useState(true);
+  const [selectedAllianceIds, setSelectedAllianceIds] = useState<string[]>([]);
+
+  const [minGold, setMinGold] = useState<number | null>(null);
+  const [maxGold, setMaxGold] = useState<number | null>(null);
+  const [minLevel, setMinLevel] = useState<number | null>(null);
+  const [maxLevel, setMaxLevel] = useState<number | null>(null);
+
+  const [onlineOnly, setOnlineOnly] = useState(false);
+  const [recentDays, setRecentDays] = useState<number>(7);
+  const [attackedMeRecently, setAttackedMeRecently] = useState(false);
+  const [iBeatRecently, setIBeatRecently] = useState(false);
+  const [theyBeatMeRecently, setTheyBeatMeRecently] = useState(false);
+
+  const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
+  const [enemyIds, setEnemyIds] = useState<Set<number>>(new Set());
+  const [attackedMeIds, setAttackedMeIds] = useState<Set<number>>(new Set());
+  const [iBeatIds, setIBeatIds] = useState<Set<number>>(new Set());
+  const [theyBeatMeIds, setTheyBeatMeIds] = useState<Set<number>>(new Set());
+  const [allianceOptions, setAllianceOptions] = useState<Array<{ value: string; label: string }>>([]);
 
   const getRankLabel = () => {
     switch (sortBy) {
@@ -44,11 +96,182 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   };
 
   useEffect(() => {
+    if (!user) return;
+
+    const fetchSocial = async () => {
+      try {
+        const [friendsRes, enemiesRes] = await Promise.all([
+          fetch('/api/social/listAll?type=FRIEND&limit=100'),
+          fetch('/api/social/listAll?type=ENEMY&limit=100'),
+        ]);
+
+        if (friendsRes.ok) {
+          const friends = await friendsRes.json();
+          setFriendIds(new Set((friends || []).map((r: any) => Number(r.friend?.id)).filter((id: any) => Number.isFinite(id))));
+        }
+        if (enemiesRes.ok) {
+          const enemies = await enemiesRes.json();
+          setEnemyIds(new Set((enemies || []).map((r: any) => Number(r.friend?.id)).filter((id: any) => Number.isFinite(id))));
+        }
+      } catch (e) {
+        // non-fatal: advanced filters will just treat everyone as "other"
+      }
+    };
+
+    fetchSocial();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchMeta = async () => {
+      try {
+        const res = await fetch(`/api/battle/users-filter-meta?days=${recentDays}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setAttackedMeIds(new Set((data.attackedMeIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
+        setIBeatIds(new Set((data.iBeatIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
+        setTheyBeatMeIds(new Set((data.theyBeatMeIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
+      } catch (e) {
+        // non-fatal
+      }
+    };
+
+    fetchMeta();
+  }, [user, recentDays]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchAlliances = async () => {
+      try {
+        const res = await fetch('/api/alliances/getAll');
+        if (!res.ok) return;
+        const alliances = await res.json();
+        setAllianceOptions(
+          (alliances || [])
+            .map((a: any) => ({ value: String(a.id), label: a.name }))
+            .filter((o: any) => o.value && o.label),
+        );
+      } catch (e) {
+        // non-fatal
+      }
+    };
+
+    fetchAlliances();
+  }, [user]);
+
+  const filteredUsers = useMemo(() => {
+    if (!user) return [];
+
+    const normalizedQuery = nameQuery.trim().toLowerCase();
+    const selectedSet = new Set(selectedAllianceIds.map((v) => Number(v)).filter((n) => Number.isFinite(n)));
+
+    const relationshipIsConstrained = !(includeFriends && includeEnemies && includeOthers);
+    const alliancePresenceIsConstrained = !(includeAllianceMembers && includeNonAllianceMembers);
+
+    const predicates: Array<(u: any) => boolean> = [];
+
+    if (normalizedQuery) {
+      predicates.push((u) => String(u.display_name || '').toLowerCase().includes(normalizedQuery));
+    }
+
+    if (relationshipIsConstrained) {
+      predicates.push((u) => {
+        if (u.id === user.id) return true;
+        const isFriend = friendIds.has(u.id);
+        const isEnemy = enemyIds.has(u.id);
+        if (isFriend) return includeFriends;
+        if (isEnemy) return includeEnemies;
+        return includeOthers;
+      });
+    }
+
+    if (alliancePresenceIsConstrained) {
+      predicates.push((u) => {
+        const allianceIds: number[] = Array.isArray(u.allianceIds) ? u.allianceIds : [];
+        const hasAlliance = allianceIds.length > 0;
+        return hasAlliance ? includeAllianceMembers : includeNonAllianceMembers;
+      });
+    }
+
+    if (selectedSet.size > 0) {
+      predicates.push((u) => {
+        const allianceIds: number[] = Array.isArray(u.allianceIds) ? u.allianceIds : [];
+        return allianceIds.some((id) => selectedSet.has(id));
+      });
+    }
+
+    if (minGold !== null || maxGold !== null) {
+      predicates.push((u) => {
+        const gold = Number(u.gold);
+        if (!Number.isFinite(gold)) return false;
+        if (minGold !== null && gold < minGold) return false;
+        if (maxGold !== null && gold > maxGold) return false;
+        return true;
+      });
+    }
+
+    if (minLevel !== null || maxLevel !== null) {
+      predicates.push((u) => {
+        const lvl = getLevelFromXP(Number(u.experience || 0));
+        if (minLevel !== null && lvl < minLevel) return false;
+        if (maxLevel !== null && lvl > maxLevel) return false;
+        return true;
+      });
+    }
+
+    if (onlineOnly) {
+      predicates.push((u) => Boolean(u.isOnline));
+    }
+
+    if (attackedMeRecently) {
+      predicates.push((u) => u.id === user.id || attackedMeIds.has(u.id));
+    }
+
+    if (iBeatRecently) {
+      predicates.push((u) => u.id === user.id || iBeatIds.has(u.id));
+    }
+
+    if (theyBeatMeRecently) {
+      predicates.push((u) => u.id === user.id || theyBeatMeIds.has(u.id));
+    }
+
+    if (predicates.length === 0) return allUsers as any[];
+
+    return (allUsers as any[]).filter((u) => (matchMode === 'AND' ? predicates.every((p) => p(u)) : predicates.some((p) => p(u))));
+  }, [
+    user,
+    allUsers,
+    nameQuery,
+    matchMode,
+    includeFriends,
+    includeEnemies,
+    includeOthers,
+    friendIds,
+    enemyIds,
+    includeAllianceMembers,
+    includeNonAllianceMembers,
+    selectedAllianceIds,
+    minGold,
+    maxGold,
+    minLevel,
+    maxLevel,
+    onlineOnly,
+    attackedMeRecently,
+    iBeatRecently,
+    theyBeatMeRecently,
+    attackedMeIds,
+    iBeatIds,
+    theyBeatMeIds,
+  ]);
+
+  useEffect(() => {
     if(!user) return;
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
-    let sortedPlayers = [...allUsers];
-    setLastPage(Math.ceil(allUsers.length / rowsPerPage));
+    let sortedPlayers = [...filteredUsers];
+    setLastPage(Math.ceil(filteredUsers.length / rowsPerPage));
 
     // Fallback for users where the rank hasn't been calculated yet (and is therefore 0 or null)
     sortedPlayers.forEach((u) => u.rank = u.rank || Infinity);
@@ -67,14 +290,14 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     const playerPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
 
     const paginatedPlayers = sortedPlayers.slice(start, end);
-    paginatedPlayers.forEach((player: any, index) => player.overallrank = (sortDir === 'asc' ? allUsers.length - start - index : start + index + 1));
+    paginatedPlayers.forEach((player: any, index) => player.overallrank = (sortDir === 'asc' ? filteredUsers.length - start - index : start + index + 1));
 
     setPlayers(paginatedPlayers);
 
     setMyPage(playerPage);
     setMyRank(loggedInPlayerIndex + 1);
 
-  }, [page, sortBy, sortDir, allUsers, rowsPerPage, user]);
+  }, [page, sortBy, sortDir, filteredUsers, rowsPerPage, user]);
 
 
   useEffect(() => {
@@ -127,9 +350,153 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     setPage(1);
   };
 
+  const resetAdvancedFilters = () => {
+    setMatchMode('AND');
+    setNameQuery('');
+    setIncludeFriends(true);
+    setIncludeEnemies(true);
+    setIncludeOthers(true);
+    setIncludeAllianceMembers(true);
+    setIncludeNonAllianceMembers(true);
+    setSelectedAllianceIds([]);
+    setMinGold(null);
+    setMaxGold(null);
+    setMinLevel(null);
+    setMaxLevel(null);
+    setOnlineOnly(false);
+    setRecentDays(7);
+    setAttackedMeRecently(false);
+    setIBeatRecently(false);
+    setTheyBeatMeRecently(false);
+  };
+
+  const toNumberOrNull = (value: number | string): number | null => {
+    if (value === '') return null;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
   return (
     <MainArea title="Attack Users">
       <Center><p>You can attack players from levels {attackRangeMin} to {attackRangeMax}</p></Center>
+      <Group justify="space-between" className="mt-4 mb-2">
+        <Button variant="light" onClick={() => setAdvancedOpen((v) => !v)}>
+          {advancedOpen ? 'Hide Advanced Filters' : 'Show Advanced Filters'}
+        </Button>
+        <Text size="sm" c="dimmed">
+          Showing {filteredUsers.length} / {allUsers.length}
+        </Text>
+      </Group>
+      <Collapse in={advancedOpen}>
+        <Paper p="md" withBorder mb="md">
+          <Stack gap="sm">
+            <Group justify="space-between" align="flex-end">
+              <div>
+                <Text size="sm" c="dimmed">
+                  Match mode
+                </Text>
+                <SegmentedControl
+                  value={matchMode}
+                  onChange={(val) => setMatchMode(val as 'AND' | 'OR')}
+                  data={[
+                    { label: 'All (AND)', value: 'AND' },
+                    { label: 'Any (OR)', value: 'OR' },
+                  ]}
+                />
+              </div>
+              <Button variant="default" onClick={resetAdvancedFilters}>
+                Reset
+              </Button>
+            </Group>
+
+            <TextInput
+              label="Name contains"
+              value={nameQuery}
+              onChange={(e) => setNameQuery(e.currentTarget.value)}
+              placeholder="e.g. Tim"
+            />
+
+            <Divider label="Social" />
+            <Group>
+              <Checkbox checked={includeFriends} onChange={(e) => setIncludeFriends(e.currentTarget.checked)} label="Friends" />
+              <Checkbox checked={includeEnemies} onChange={(e) => setIncludeEnemies(e.currentTarget.checked)} label="Enemies" />
+              <Checkbox checked={includeOthers} onChange={(e) => setIncludeOthers(e.currentTarget.checked)} label="Others" />
+            </Group>
+
+            <Divider label="Alliance" />
+            <Group>
+              <Checkbox
+                checked={includeAllianceMembers}
+                onChange={(e) => setIncludeAllianceMembers(e.currentTarget.checked)}
+                label="In an alliance"
+              />
+              <Checkbox
+                checked={includeNonAllianceMembers}
+                onChange={(e) => setIncludeNonAllianceMembers(e.currentTarget.checked)}
+                label="Not in an alliance"
+              />
+            </Group>
+            <MultiSelect
+              label="Specific alliances (optional)"
+              placeholder="Pick alliances"
+              data={allianceOptions}
+              value={selectedAllianceIds}
+              onChange={setSelectedAllianceIds}
+              searchable
+              clearable
+            />
+
+            <Divider label="Stats" />
+            <Group grow>
+              <NumberInput
+                label="Min gold"
+                value={minGold}
+                onChange={(v) => setMinGold(toNumberOrNull(v))}
+                min={0}
+                thousandSeparator=","
+              />
+              <NumberInput
+                label="Max gold"
+                value={maxGold}
+                onChange={(v) => setMaxGold(toNumberOrNull(v))}
+                min={0}
+                thousandSeparator=","
+              />
+            </Group>
+            <Group grow>
+              <NumberInput label="Min level" value={minLevel} onChange={(v) => setMinLevel(toNumberOrNull(v))} min={1} />
+              <NumberInput label="Max level" value={maxLevel} onChange={(v) => setMaxLevel(toNumberOrNull(v))} min={1} />
+            </Group>
+            <Checkbox checked={onlineOnly} onChange={(e) => setOnlineOnly(e.currentTarget.checked)} label="Online only" />
+
+            <Divider label="Recent battles" />
+            <Group grow align="flex-end">
+              <NumberInput
+                label="Lookback (days)"
+                value={recentDays}
+                onChange={(v) => setRecentDays(typeof v === 'number' ? v : 7)}
+                min={1}
+                max={365}
+              />
+              <div />
+            </Group>
+            <Group>
+              <Checkbox
+                checked={attackedMeRecently}
+                onChange={(e) => setAttackedMeRecently(e.currentTarget.checked)}
+                label="Attacked you recently"
+              />
+              <Checkbox checked={iBeatRecently} onChange={(e) => setIBeatRecently(e.currentTarget.checked)} label="You beat recently" />
+              <Checkbox
+                checked={theyBeatMeRecently}
+                onChange={(e) => setTheyBeatMeRecently(e.currentTarget.checked)}
+                label="They beat you recently"
+              />
+            </Group>
+          </Stack>
+        </Paper>
+      </Collapse>
       <div className="mt-4 flex justify-between mb-2">
         <button
           className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
@@ -205,6 +572,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               <Table.Tr>
                 <Table.Th className="px-1 py-1" style={{ width: '100px' }}>{getRankLabel()}</Table.Th>
                 <Table.Th className="px-4 py-2">Username</Table.Th>
+                <Table.Th className="px-4 py-2">Alliance</Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('gold')}>Gold {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('population')}> Population {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
                 <Table.Th className="px-4 py-2"><button onClick={() => handleSort('level')}> Level{sortBy === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
@@ -214,6 +582,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               {players.map((nplayer, index) => {
                 const player = new UserModel(nplayer, true, false);
                 if (player.id === user?.id) player.is_player = true;
+                const allianceName = Array.isArray((nplayer as any).alliances) && (nplayer as any).alliances[0]?.name ? (nplayer as any).alliances[0]?.name : '-';
                 return (
                   <Table.Tr
                     key={player.id}
@@ -249,6 +618,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                         </div>
                       </Group>
                     </Table.Td>
+                    <Table.Td className="px-4 py-2">{allianceName}</Table.Td>
                     <Table.Td className="px-4 py-2">{toLocale(formattedGolds[index])}</Table.Td>
                     <Table.Td className="px-4 py-2">{toLocale(nplayer.population)}</Table.Td>
                     <Table.Td className="px-4 py-2">{player.level}</Table.Td>
@@ -307,6 +677,11 @@ export const getServerSideProps = async () => {
         last_active: true,
         avatar: true,
         UserUnit: true,
+        alliance_memberships: {
+          select: {
+            alliance: { select: { id: true, name: true } },
+          },
+        },
         gold: true,
         race: true,
         class: true,
@@ -348,6 +723,11 @@ export const getServerSideProps = async () => {
         experience: user.experience,
         population: population,
         isOnline: isOnline,
+        alliances: (user.alliance_memberships || []).map((m) => ({
+          id: m.alliance.id,
+          name: m.alliance.name,
+        })),
+        allianceIds: (user.alliance_memberships || []).map((m) => m.alliance.id),
         
       };
     });

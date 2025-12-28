@@ -12,7 +12,8 @@ import {
   executeAttack,
 } from '@/utils/attackFunctions';
 import prisma from '@/lib/prisma';
-import UserModel from '@/models/Users';
+import { BattleUser } from '@/models/BattleUser';
+import { UnitTypes } from '@/constants';
 import { getUserById, updateUser, updateUserUnits, createAttackLog, createBankHistory, incrementUserStats } from '@/services/AttackDataService';
 import { canAttack } from '@/services/AttackValidationService';
 import { logDebug, logError } from '@/utils/logger';
@@ -55,8 +56,8 @@ export const AttackService = {
         return { status: 'failed', message: 'Defender user not found', code: 'DEFENDER_NOT_FOUND' };
       }
 
-      const attacker = new UserModel(attackerUser, attackerUser.UserUnit, attackerUser.UserItem, attackerUser.UserStructureUpgrade, attackerUser.UserBattleUpgrade, attackerUser.UserBonusPoints, attackerUser.permissions.map(p => ({ type: p })), attackerUser.stats);
-      const defender = new UserModel(defenderUser, defenderUser.UserUnit, defenderUser.UserItem, defenderUser.UserStructureUpgrade, defenderUser.UserBattleUpgrade, defenderUser.UserBonusPoints, defenderUser.permissions.map(p => ({ type: p })), defenderUser.stats);
+      const attacker = new BattleUser(attackerUser);
+      const defender = new BattleUser(defenderUser);
 
       if(process.env.NEXT_PUBLIC_ENABLE_ATTACKING === 'false') {
         return { status: 'failed', message: 'Attacking is currently disabled.', code: 'ATTACKING_DISABLED' };
@@ -76,17 +77,13 @@ export const AttackService = {
         return { status: 'failed', message: 'Insufficient stamina', code: 'INSUFFICIENT_STAMINA' };
       }
 
-      const AttackPlayer = new UserModel(attackerUser, attackerUser.UserUnit, attackerUser.UserItem, attackerUser.UserStructureUpgrade, attackerUser.UserBattleUpgrade, attackerUser.UserBonusPoints, attackerUser.permissions.map(p => ({ type: p })), attackerUser.stats);
-      const DefensePlayer = new UserModel(defenderUser, defenderUser.UserUnit, defenderUser.UserItem, defenderUser.UserStructureUpgrade, defenderUser.UserBattleUpgrade, defenderUser.UserBonusPoints, defenderUser.permissions.map(p => ({ type: p })), defenderUser.stats);
+      const AttackPlayer = attacker;
+      const DefensePlayer = defender;
 
       // Enhanced strength calculation with unit-item allocation and battle upgrades
-      const attackerStrengthObj = this.calculateStrength(
-        AttackPlayer,
-        'OFFENSE',
-        false
-      );
-      const attackerOffenseKS = attackerStrengthObj.MeleeAtkPower;
-      const attackerOffenseDS = attackerStrengthObj.MeleeDefPower;
+      const attackerStrengthObj = this.calculateStrength(AttackPlayer, 'OFFENSE', false);
+      const attackerOffenseKS = attackerStrengthObj.totalStats.MeleeAtkPower;
+      const attackerOffenseDS = attackerStrengthObj.totalStats.MeleeDefPower;
 
       if (attackerOffenseKS <= 0) {
         return {
@@ -117,17 +114,47 @@ export const AttackService = {
         Defender: stringifyObj(deepClone(DefensePlayer)),
       };
 
+      logDebug('Start of Attack State:', { startOfAttack });
+
       // Enhanced battle simulation with all factors
       const battleResults = await executeAttack(
         AttackPlayer,
         DefensePlayer,
-        attack_turns
+        attack_turns,
+        DefensePlayer.isProtected()
       );
+
+      const getUnitHp = (type: string, level: number) =>
+        UnitTypes.find(u => u.type === type && u.level === level)?.hp ?? 0;
+
+      const calculateHpDamageFromLosses = (losses: { units?: Array<{ type: string; level: number; quantity: number }> }) =>
+        (losses?.units ?? []).reduce((sum, loss) => sum + getUnitHp(loss.type, loss.level) * loss.quantity, 0);
+
+      const attackerUnitDamageDealt = calculateHpDamageFromLosses(battleResults.Losses.Defender);
+      const defenderUnitDamageDealt = calculateHpDamageFromLosses(battleResults.Losses.Attacker);
+
+      // Apply casualties to player units
+      battleResults.Losses.Attacker.units.forEach(loss => {
+        const unit = AttackPlayer.units.find(u => u.type === loss.type && u.level === loss.level);
+        if (unit) {
+          unit.quantity = Math.max(0, unit.quantity - loss.quantity);
+        }
+      });
+
+      battleResults.Losses.Defender.units.forEach(loss => {
+        const unit = DefensePlayer.units.find(u => u.type === loss.type && u.level === loss.level);
+        if (unit) {
+          unit.quantity = Math.max(0, unit.quantity - loss.quantity);
+        }
+      });
 
       // Consume stamina after successful attack initiation
       AttackPlayer.stamina = Math.max(0, AttackPlayer.stamina - attack_turns);
 
-      DefensePlayer.fortHitpoints -= (startOfAttack.Defender.fortHitpoints - battleResults.finalFortHP);
+      const fortHpAtStart = Number(startOfAttack.Defender.fortHitpoints ?? 0) || 0;
+      const fortHpAtEnd = Math.max(0, Number(battleResults.finalFortHP ?? fortHpAtStart) || 0);
+      const attackerFortDamageDealt = Math.max(0, fortHpAtStart - fortHpAtEnd);
+      DefensePlayer.fortHitpoints = fortHpAtEnd;
 
       const isAttackerWinner = battleResults.result === 'WIN';
 
@@ -168,12 +195,16 @@ export const AttackService = {
             stats: {
               startOfAttack,
               endTurns: AttackPlayer.attackTurns,
-              offensePointsAtEnd: attackerOffenseKS,
+              attackerDamageDealt: attackerUnitDamageDealt + attackerFortDamageDealt,
+              attackerUnitDamageDealt,
+              attackerFortDamageDealt,
+              defenderDamageDealt: defenderUnitDamageDealt,
+              defenderUnitDamageDealt,
               defensePointsAtEnd: DefensePlayer.defense,
               // Convert BigInt to string for JSON compatibility
               pillagedGold: isAttackerWinner ? battleResults.pillagedGold.toString() : '0',
-              forthpAtStart: startOfAttack.Defender.fortHitpoints,
-              forthpAtEnd: Math.max(DefensePlayer.fortHitpoints, 0),
+              forthpAtStart: fortHpAtStart,
+              forthpAtEnd: fortHpAtEnd,
               // Stringify potentially complex objects within stats
               xpEarned: JSON.stringify(battleResults.experienceGained),
               turns: attack_turns,
@@ -181,6 +212,10 @@ export const AttackService = {
               defender_units: JSON.stringify(DefensePlayer.units),
               attacker_losses: JSON.stringify(battleResults.Losses.Attacker),
               defender_losses: JSON.stringify(battleResults.Losses.Defender),
+              mitigation_log: JSON.stringify((battleResults as any).mitigationLog ?? []),
+              mitigation_summary: JSON.stringify((battleResults as any).casualtySummary?.mitigation ?? null),
+              fort_breached: !!((battleResults as any).finalFortHP <= 0),
+              defender_fort_level: DefensePlayer.fortLevel,
             },
             // Connect to users via relation fields
             attackerPlayer: { connect: { id: attackerId } },
@@ -204,6 +239,10 @@ export const AttackService = {
               stats: { type: 'ATTACK', attackID: attack_log.id },
             }, tx);
           }
+    
+          // Persist updated unit counts for both players
+          await updateUserUnits(attackerId, AttackPlayer.getUnitsForDbUpdate(), tx);
+          await updateUserUnits(defenderId, DefensePlayer.getUnitsForDbUpdate(), tx);
     
           // Increment stats for both users
           await incrementUserStats(attackerId, {
@@ -275,7 +314,7 @@ export const AttackService = {
           result: isAttackerWinner,
           attack_log: attack_log.id,
           extra_variables: stringifyObj({
-            fortDmgTotal: startOfAttack.Defender.fortHitpoints - Math.max(DefensePlayer.fortHitpoints, 0),
+            fortDmgTotal: fortHpAtStart - fortHpAtEnd,
             BattleResults: battleResults,
           }),
         };

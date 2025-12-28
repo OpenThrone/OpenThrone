@@ -4,10 +4,12 @@ import { logError } from '@/utils/logger';
 import { BattleUpgrades } from '@/constants';
 import { simulateBattle } from '@/utils/attackFunctions';
 import UserModel from '@/models/Users';
+import { BattleUser } from '@/models/BattleUser';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { getUserById, updateUser, updateUserUnits, createAttackLog, createBankHistory, incrementUserStats } from '@/services/AttackDataService';
 import { canAttack } from '@/services/AttackValidationService';
 import { AttackService } from './AttackService';
+import  {logDebug} from '../utils/logger';
 
 // Type definitions for battle operations
 export interface BattleUpgradeItem {
@@ -377,28 +379,49 @@ export class BattleService {
     const { attackerId, defenderId, turns = 10 } = validatedData;
 
     try {
+      logDebug(`Simulating battle between ${attackerId} and ${defenderId}`, { turns });
       let attackerUser;
       if (attackerId) {
-        attackerUser = await prisma.users.findUnique({ where: { id: attackerId } });
+        attackerUser = await prisma.users.findUnique({
+          where: { id: attackerId }, include: {
+            UserUnit: true,
+            UserItem: true,
+            UserStructureUpgrade: true,
+            UserBattleUpgrade: true,
+          } });
       } else {
         // Default to a test user if no attacker specified
-        attackerUser = await prisma.users.findFirst({ where: { id: { not: 0 } } });
+        attackerUser = await prisma.users.findFirst({
+          where: { id: { not: 0 } }, include: {
+            UserUnit: true,
+            UserItem: true,
+            UserStructureUpgrade: true,
+            UserBattleUpgrade: true,
+          }, });
       }
 
-      const defenderUser = await prisma.users.findUnique({ where: { id: defenderId } });
+      const defenderUser = await prisma.users.findUnique({
+        where: { id: defenderId }, include: {
+          UserUnit: true,
+          UserItem: true,
+          UserStructureUpgrade: true,
+          UserBattleUpgrade: true,
+        }, });
 
       if (!attackerUser || !defenderUser) {
         throw new Error('Attacker or defender user not found');
       }
 
-      const attacker = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attackerUser))));
-      const defender = new UserModel(JSON.parse(JSON.stringify(stringifyObj(defenderUser))));
 
+      const attacker = new BattleUser(attackerUser);
+      const defender = new BattleUser(defenderUser);
       const results = await simulateBattle(
         attacker,
         defender,
         defender.fortHitpoints,
-        turns
+        turns,
+        false,
+        defender.isProtected()
       );
 
       return {
@@ -410,6 +433,8 @@ export class BattleService {
         pillagedGold: results.pillagedGold.toString(),
         xpEarned: results.experienceGained.attacker,
         fortDmg: defender.fortHitpoints - results.finalFortHP,
+        mitigation: results.casualtySummary?.mitigation,
+        fortBreached: results.casualtySummary?.fortBreached ?? results.finalFortHP <= 0,
         strength: {
           attackerOffense: attacker.offense,
           defenderDefense: defender.defense
@@ -804,6 +829,8 @@ export class BattleService {
               'XPEarned-Attacker': results.experienceGained.attacker,
               'XPEarned-Defender': results.experienceGained.defender,
               'FortDmg': results.casualtySummary.fortDamage,
+              'MitigationAvg': results.casualtySummary?.mitigation?.averageMultiplier ?? null,
+              'FortBreached': results.casualtySummary?.fortBreached ?? results.finalFortHP <= 0,
             });
           }
         }
@@ -895,6 +922,8 @@ export class BattleService {
         pillagedGold: results.pillagedGold.toString(),
         xpEarned: results.experienceGained.attacker,
         fortDmg: defenderUser.fortHitpoints - results.finalFortHP,
+        mitigation: results.casualtySummary?.mitigation,
+        fortBreached: results.casualtySummary?.fortBreached ?? results.finalFortHP <= 0,
         strength: {
           attackerOffense: attackerUser.offense,
           defenderDefense: defenderUser.defense

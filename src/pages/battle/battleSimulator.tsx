@@ -92,7 +92,7 @@ const BattleSimulator: NextPage = (props) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/attack/test', {
+      const response = await fetch('/api/attack/battleTest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -225,4 +225,3 @@ const BattleSimulator: NextPage = (props) => {
   );
 }        
   export default BattleSimulator;
-
