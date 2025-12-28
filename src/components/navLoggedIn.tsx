@@ -17,7 +17,6 @@ const parentLinks = [
   'Home',
   'Battle',
   'Structures',
-  'Social',
   // 'Alliances',
   'Community',
 ] as const;
@@ -26,7 +25,6 @@ const parentHrefs: Record<string, string> = {
   Home: '/home/overview',
   Battle: '/battle/users',
   Structures: '/structures/bank',
-  Social: '/social/friends',
   Community: '/community/news',
 };
 
