@@ -1,60 +1,78 @@
 // src/services/sessions.service.ts
 import prisma from '@/lib/prisma';
+import { z } from 'zod';
+
+const SessionSchema = z.object({
+  uID: z.number().int().positive(),
+  sessionId: z.number().int().positive(),
+});
+
+const UserSchema = z.object({
+  uID: z.number().int().positive(),
+});
 
 export const endSession = async (uID, sessionId) => {
+  const validatedData = SessionSchema.parse({ uID, sessionId });
   await prisma.autoRecruitSession.deleteMany({
-    where: { id: sessionId, userId: uID },
+    where: { id: validatedData.sessionId, userId: validatedData.uID },
   });
 }
 
 export const getSession = async (uID, sessionId) => {
+  const validatedData = SessionSchema.parse({ uID, sessionId });
   return await prisma.autoRecruitSession.findUnique({
-    where: { id: sessionId, userId: uID },
+    where: { id: validatedData.sessionId, userId: validatedData.uID },
   });
 }
 
 export const countSessions = async (uID) => {
+  const validatedData = UserSchema.parse({ uID });
   return await prisma.autoRecruitSession.count({
-    where: { userId: uID },
+    where: { userId: validatedData.uID },
   });
 }
 
 export const validateSession = async (uID, sessionId) => {
+  const validatedData = SessionSchema.parse({ uID, sessionId });
   const activeSessions = await prisma.autoRecruitSession.count({
-    where: { userId: uID, id: sessionId },
+    where: { userId: validatedData.uID, id: validatedData.sessionId },
   });
 
   return activeSessions > 0;
 }
 
 export const createSession = async (uID) => {
+  const validatedData = UserSchema.parse({ uID });
   return await prisma.autoRecruitSession.create({
     data: {
-      userId: uID,
+      userId: validatedData.uID,
     },
   });
 }
 
 export const expireOldSessions = async (uID) => {
+  const validatedData = UserSchema.parse({ uID });
   const expirationTime = new Date(Date.now() - 5 * 60 * 1000);
   await prisma.autoRecruitSession.deleteMany({
     where: {
-      userId: uID,
+      userId: validatedData.uID,
       lastActivityAt: { lt: expirationTime },
     },
   });
 }
 
 export const updateSessionActivity = async (uID, sessionId) => {
+  const validatedData = SessionSchema.parse({ uID, sessionId });
   await prisma.autoRecruitSession.update({
-    where: { id: sessionId },
+    where: { id: validatedData.sessionId, userId: validatedData.uID },
     data: { lastActivityAt: new Date() },
   });
 }
 
 export const listSessions = async (uID) => {
+  const validatedData = UserSchema.parse({ uID });
   return await prisma.autoRecruitSession.findMany({
-    where: { userId: uID },
+    where: { userId: validatedData.uID },
     select: {
       id: true,
       createdAt: true,

@@ -10,8 +10,19 @@ import {
 } from '@prisma/client';
 import { UnitType } from '@/types/typings';
 import { getUsersWithRelations } from './UserLoader.service';
+import { z } from 'zod';
 
-type Tx = Prisma.TransactionClient;
+// Zod schemas for validation
+const EraIdSchema = z.number().int().positive();
+const UserIdSchema = z.number().int().positive();
+const EraNameSchema = z.string().min(1);
+const EraDataSchema = z.object({
+  name: EraNameSchema,
+  startDate: z.date(),
+  endDate: z.date().optional().nullable(),
+});
+
+ type Tx = Prisma.TransactionClient;
 
 const DEFAULT_UNITS = [
   { type: 'CITIZEN' as UnitType, level: 1, quantity: 50, isMercenary: false },
@@ -157,8 +168,9 @@ export const startNewEra = async () => {
     let previousEraId: number | null = null;
 
     if (currentEra) {
+      const validatedEraId = EraIdSchema.parse(currentEra.id);
       await tx.era.update({
-        where: { id: currentEra.id },
+        where: { id: validatedEraId },
         data: { endDate: new Date() },
       });
       previousEraId = currentEra.id;
@@ -199,10 +211,12 @@ export const startNewEra = async () => {
       };
 
       if (previousEraId) {
+        const validatedUserId = UserIdSchema.parse(u.id);
+        const validatedPreviousEraId = EraIdSchema.parse(previousEraId);
         await tx.userEra.create({
           data: {
-            userId: u.id,
-            eraId: previousEraId,
+            userId: validatedUserId,
+            eraId: validatedPreviousEraId,
             levelAtStart: userModel.level,
             unitsAtStart: userModel.units,
             achievements: eraAchievements,
@@ -221,13 +235,15 @@ export const startNewEra = async () => {
       }
 
       const lifetimeAchievements = buildLifetimeAchievements(u.achievements, eraAchievements);
-      await resetUserState(tx, u.id, newEra.id, lifetimeAchievements);
+      const validatedNewEraId = EraIdSchema.parse(newEra.id);
+      await resetUserState(tx, u.id, validatedNewEraId, lifetimeAchievements);
     }
 
     // Ensure all users are associated to the newly created era even if a reset was skipped
+    const validatedNewEraId = EraIdSchema.parse(newEra.id);
     await tx.users.updateMany({
       where: {},
-      data: { currentEraId: newEra.id },
+      data: { currentEraId: validatedNewEraId },
     });
 
     return newEra;

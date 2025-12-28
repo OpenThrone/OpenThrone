@@ -1,7 +1,29 @@
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { getOTStartDate } from '@/utils/timefunctions';
 import { getUserById } from '@/services/AttackDataService';
+
+const CreateRecruitmentRecordSchema = z.object({
+  fromUser: z.number().int(),
+  toUser: z.number().int(),
+  ipAddress: z.string().ip(),
+});
+
+const HasExceededRecruitmentLimitSchema = z.object({
+  fromUser: z.number().int(),
+  toUser: z.number().int(),
+  ipAddress: z.string().ip(),
+  recruiterUserId: z.number().int(),
+});
+
+const UpdateUserAfterRecruitmentSchema = z.object({
+  userId: z.number().int().positive(),
+});
+
+const CreateBankHistoryRecordSchema = z.object({
+  userId: z.number().int().positive(),
+});
 
 export async function createRecruitmentRecord({
   fromUser,
@@ -12,11 +34,12 @@ export async function createRecruitmentRecord({
   toUser: number;
   ipAddress: string;
 }) {
+  const validatedData = CreateRecruitmentRecordSchema.parse({ fromUser, toUser, ipAddress });
   return prisma.recruit_history.create({
     data: {
-      from_user: fromUser,
-      to_user: toUser,
-      ip_addr: ipAddress,
+      from_user: validatedData.fromUser,
+      to_user: validatedData.toUser,
+      ip_addr: validatedData.ipAddress,
       timestamp: new Date(),
     },
   });
@@ -33,13 +56,14 @@ export async function hasExceededRecruitmentLimit({
   ipAddress: string;
   recruiterUserId: number;
 }) {
+  const validatedData = HasExceededRecruitmentLimitSchema.parse({ fromUser, toUser, ipAddress, recruiterUserId });
   const recruitments = await prisma.recruit_history.findMany({
     where: {
-      from_user: fromUser,
-      to_user: toUser,
+      from_user: validatedData.fromUser,
+      to_user: validatedData.toUser,
       timestamp: { gte: getOTStartDate() },
-      ...(recruiterUserId === 0 && {
-        ip_addr: ipAddress,
+      ...(validatedData.recruiterUserId === 0 && {
+        ip_addr: validatedData.ipAddress,
       }),
     },
   });
@@ -47,9 +71,10 @@ export async function hasExceededRecruitmentLimit({
 }
 
 export async function updateUserAfterRecruitment(userId: number) {
+  const validatedData = UpdateUserAfterRecruitmentSchema.parse({ userId });
   // Add 250 gold to the user
   await prisma.users.update({
-    where: { id: userId },
+    where: { id: validatedData.userId },
     data: {
       gold: { increment: 250 },
     },
@@ -57,10 +82,11 @@ export async function updateUserAfterRecruitment(userId: number) {
 }
 
 export async function createBankHistoryRecord(userId: number) {
+  const validatedData = CreateBankHistoryRecordSchema.parse({ userId });
   await prisma.bank_history.create({
     data: {
       from_user_id: 0,
-      to_user_id: userId,
+      to_user_id: validatedData.userId,
       to_user_account_type: 'HAND',
       from_user_account_type: 'BANK',
       date_time: new Date(),
@@ -242,9 +268,10 @@ export const performRecruitment = async ({
 
   await tx.userUnit.upsert({
     where: {
-      userId_type_isMercenary: {
+      userId_type_level_isMercenary: {
         userId: userIdToUpdate,
         type: 'CITIZEN',
+        level: 1,
         isMercenary: false,
       },
     },

@@ -5,8 +5,17 @@ import type {
   Item,
 } from "@/types/typings";
 import { UserUnit, UserItem, UserStructureUpgrade } from "@prisma/client";
+import { z } from 'zod';
 
 import { UnitTypes, ItemTypes, SpyUpgrades } from "../constants";
+
+const UserDataSchema = z.object({
+  units: z.array(z.any()).optional(),
+  items: z.array(z.any()).optional(),
+  fortLevel: z.number().int().optional(),
+  structure_upgrades: z.array(z.any()).optional(),
+  mercenaries: z.array(z.any()).optional(),
+});
 
 export class UserUnitsService {
   private units: UserUnit[];
@@ -24,11 +33,12 @@ export class UserUnitsService {
       mercenaries?: UserUnit[];
     } = {},
   ) {
-    this.units = userData.units ?? [];
-    this.items = userData.items ?? [];
-    this.fortLevel = userData.fortLevel ?? 0;
-    this.structure_upgrades = userData.structure_upgrades ?? [];
-    this.mercenaries = userData.mercenaries ?? [];
+    const validatedData = UserDataSchema.parse(userData);
+    this.units = validatedData.units ?? [];
+    this.items = validatedData.items ?? [];
+    this.fortLevel = validatedData.fortLevel ?? 0;
+    this.structure_upgrades = validatedData.structure_upgrades ?? [];
+    this.mercenaries = validatedData.mercenaries ?? [];
 
   }
 

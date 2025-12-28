@@ -4,9 +4,27 @@ import { getOTStartDate } from '@/utils/timefunctions';
 import { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
 import type { PlayerStat, PlayerUnit, PlayerItem, PlayerBattleUpgrade } from '@/types/typings'; // Import custom types
 import { Omit } from '@prisma/client/runtime/library';
+import { z } from 'zod';
 
 // Define the type for the transaction client
 type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+
+// Zod schemas for validation
+const UserIdSchema = z.number().int().positive();
+const PlayerUnitSchema = z.object({
+  id: z.number().int(),
+  type: z.string(),
+  level: z.number().int().min(1),
+  quantity: z.number().int().min(0),
+});
+const PlayerUnitArraySchema = z.array(PlayerUnitSchema);
+const HitpointsSchema = z.number().int().min(0);
+const StatUpdateSchema = z.object({
+  type: z.string(),
+  subtype: z.string(),
+});
+const TimeFrameSchema = z.number().int().positive();
+const DaysSchema = z.number().int().min(1).default(7);
 
 /**
  * Retrieves a user by their ID.
@@ -14,9 +32,10 @@ type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' |
  * @returns The user object or null if not found.
  */
 export const getUserById = async (userId: number, txClient?: TransactionClient) => {
+  const validatedUserId = UserIdSchema.parse(userId);
   const db = (txClient ?? prisma) as any;
   return await db.users.findUnique({
-    where: { id: userId },
+    where: { id: validatedUserId },
     include: {
       UserUnit: true,
       UserItem: true,
@@ -62,17 +81,19 @@ export const getAllUserIds = async () => {
  * @param txClient - The Prisma transaction client.
  */
 export const updateUserUnits = async (userId: number, units: PlayerUnit[], txClient: TransactionClient) => {
+  const validatedUserId = UserIdSchema.parse(userId);
+  const validatedUnits = PlayerUnitArraySchema.parse(units);
   // Delete existing units for the user
   await txClient.userUnit.deleteMany({
-    where: { userId }
+    where: { userId: validatedUserId }
   });
 
   // Insert new units
-  if (units && units.length > 0) {
+  if (validatedUnits && validatedUnits.length > 0) {
     await txClient.userUnit.createMany({
-      data: units.map(unit => ({
-        userId,
-        type: unit.type,
+      data: validatedUnits.map(unit => ({
+        userId: validatedUserId,
+        type: unit.type as any,
         level: unit.level,
         quantity: unit.quantity,
         isMercenary: false // Regular units, not mercenaries
@@ -88,9 +109,11 @@ export const updateUserUnits = async (userId: number, units: PlayerUnit[], txCli
  * @param txClient - The Prisma transaction client.
  */
 export const updateFortHitpoints = async (userId: number, hitpoints: number, txClient: TransactionClient) => {
+  const validatedUserId = UserIdSchema.parse(userId);
+  const validatedHitpoints = HitpointsSchema.parse(hitpoints);
   await txClient.users.update({
-    where: { id: userId },
-    data: { fort_hitpoints: hitpoints },
+    where: { id: validatedUserId },
+    data: { fort_hitpoints: validatedHitpoints },
   });
 }
 
@@ -119,8 +142,10 @@ export const createAttackLog = async (logData: Prisma.attack_logCreateInput, txC
  * @param txClient - The Prisma transaction client.
  */
 export const incrementUserStats = async (userId: number, newStat: { type: string, subtype: string }, txClient: TransactionClient) => {
+  const validatedUserId = UserIdSchema.parse(userId);
+  const validatedNewStat = StatUpdateSchema.parse(newStat);
   const user = await txClient.users.findUnique({
-    where: { id: userId },
+    where: { id: validatedUserId },
     select: {
       stats: true,
     },
@@ -139,7 +164,7 @@ if (Array.isArray(user.stats)) {
   userStats = user.stats as any[];
 }
 
-const existingStatIndex = userStats.findIndex(stat => stat.type === newStat.type && stat.subtype === newStat.subtype);
+const existingStatIndex = userStats.findIndex(stat => stat.type === validatedNewStat.type && stat.subtype === validatedNewStat.subtype);
 
 if (existingStatIndex >= 0) {
   // Ensure the stat property exists and is a number before incrementing
@@ -194,10 +219,11 @@ export const createBankHistory = async (historyData: Prisma.bank_historyCreateIn
  * @returns An array of the top 10 attacks with rank, display name (Attacker vs Defender), and total casualties.
  */
 export const getTop10AttacksByTotalCasualties = async (timeFrame: number) => {
+  const validatedTimeFrame = TimeFrameSchema.parse(timeFrame);
   const relations = await prisma.attack_log.findMany({
     where: {
       timestamp: {
-        gt: new Date(Date.now() - timeFrame)
+        gt: new Date(Date.now() - validatedTimeFrame)
       }
     },
     include: {
@@ -231,10 +257,11 @@ export const getTop10AttacksByTotalCasualties = async (timeFrame: number) => {
  * @returns An array of the top 10 attackers with rank, display name, and total casualties inflicted.
  */
 export const getTop10TotalAttackerCasualties = async (timeFrame: number) => {
+  const validatedTimeFrame = TimeFrameSchema.parse(timeFrame);
   const relations = await prisma.attack_log.findMany({
     where: {
       timestamp: {
-        gt: new Date(Date.now() - timeFrame)
+        gt: new Date(Date.now() - validatedTimeFrame)
       }
     },
     include: {
@@ -265,10 +292,11 @@ export const getTop10TotalAttackerCasualties = async (timeFrame: number) => {
  * @returns An array of the top 10 defenders with rank, display name, and total casualties suffered.
  */
 export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
+  const validatedTimeFrame = TimeFrameSchema.parse(timeFrame);
   const relations = await prisma.attack_log.findMany({
     where: {
       timestamp: {
-        gt: new Date(Date.now() - timeFrame)
+        gt: new Date(Date.now() - validatedTimeFrame)
       }
     },
     include: {
@@ -300,8 +328,9 @@ export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
  * @returns An array of recruitment counts with associated valid recruitment records.
  */
 export async function getRecruitmentCounts(days: number = 7) {
-  const startDate = new Date(Number(getOTStartDate()) - days * 24 * 60 * 60 * 1000); // The start of the specified days ago
-  const endDate = new Date(Number(getOTStartDate()) - (days - 1) * 24 * 60 * 60 * 1000); // The start of the next day
+  const validatedDays = DaysSchema.parse(days);
+  const startDate = new Date(Number(getOTStartDate()) - validatedDays * 24 * 60 * 60 * 1000); // The start of the specified days ago
+  const endDate = new Date(Number(getOTStartDate()) - (validatedDays - 1) * 24 * 60 * 60 * 1000); // The start of the next day
 
   const recruitmentCounts = await prisma.recruit_history.groupBy({
     by: ['to_user'],

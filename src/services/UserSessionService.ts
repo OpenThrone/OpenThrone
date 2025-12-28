@@ -1,8 +1,15 @@
+import { z } from 'zod';
+
+const UserDataSchema = z.object({
+  last_active: z.union([z.date(), z.string(), z.null()]).optional(),
+});
+
 export class UserSessionService {
   private lastActive: Date | null;
 
   constructor(userData: { last_active?: Date | string | null } = {}) {
-    this.lastActive = userData.last_active ? new Date(userData.last_active) : null;
+    const validatedData = UserDataSchema.parse(userData);
+    this.lastActive = validatedData.last_active ? new Date(validatedData.last_active) : null;
   }
 
   isOnline(minutesWindow = 15): boolean {

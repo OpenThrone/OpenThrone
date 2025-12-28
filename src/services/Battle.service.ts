@@ -125,6 +125,8 @@ export interface BattleTestResult {
   pillagedGold?: string;
   xpEarned?: number;
   fortDmg?: number;
+  mitigation?: unknown;
+  fortBreached?: boolean;
   strength?: {
     attackerOffense?: number;
     defenderDefense?: number;

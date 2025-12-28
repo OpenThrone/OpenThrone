@@ -1,5 +1,6 @@
 import { getLevelFromXP } from '@/utils/utilities';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { z } from 'zod';
 import type {
   PlayerBonus,
   UnitType,
@@ -56,6 +57,19 @@ import {
   levelXPArray,
 } from '../constants';
 
+const UserDataSchema = z.object({
+  experience: z.number().optional(),
+  units: z.array(z.any()).optional(),
+  items: z.array(z.any()).optional(),
+  bonus_points: z.array(z.any()).optional(),
+  structure_upgrades: z.array(z.any()).optional(),
+  battle_upgrades: z.array(z.any()).optional(),
+  fortLevel: z.number().optional(),
+  fortHitpoints: z.number().optional(),
+  race: z.string().optional(),
+  class: z.string().optional(),
+});
+
 export class UserStatsService {
   private experience: number;
   private units: UserUnit[];
@@ -80,16 +94,17 @@ export class UserStatsService {
     race?: string;
     class?: string;
   } = {}) {
-    this.experience = userData.experience ?? 0;
-    this.units = Array.isArray(userData.units) ? userData.units : [];
-    this.items = Array.isArray(userData.items) ? userData.items : [];
-    this.bonus_points = Array.isArray(userData.bonus_points) ? userData.bonus_points : [];
-    this.structure_upgrades = Array.isArray(userData.structure_upgrades) ? userData.structure_upgrades : [];
-    this.battle_upgrades = Array.isArray(userData.battle_upgrades) ? userData.battle_upgrades : [];
-    this.fortLevel = userData.fortLevel ?? 0;
-    this.fortHitpoints = userData.fortHitpoints ?? 0;
-    this.race = userData.race ?? 'ELF';
-    this.class = userData.class ?? 'ASSASSIN';
+    const validatedData = UserDataSchema.parse(userData);
+    this.experience = validatedData.experience ?? 0;
+    this.units = Array.isArray(validatedData.units) ? validatedData.units : [];
+    this.items = Array.isArray(validatedData.items) ? validatedData.items : [];
+    this.bonus_points = Array.isArray(validatedData.bonus_points) ? validatedData.bonus_points : [];
+    this.structure_upgrades = Array.isArray(validatedData.structure_upgrades) ? validatedData.structure_upgrades : [];
+    this.battle_upgrades = Array.isArray(validatedData.battle_upgrades) ? validatedData.battle_upgrades : [];
+    this.fortLevel = validatedData.fortLevel ?? 0;
+    this.fortHitpoints = validatedData.fortHitpoints ?? 0;
+    this.race = validatedData.race ?? 'ELF';
+    this.class = validatedData.class ?? 'ASSASSIN';
   }
 
   calculateLevel(): number {

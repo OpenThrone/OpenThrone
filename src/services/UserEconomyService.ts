@@ -1,10 +1,21 @@
 import type { PlayerUnit } from '@/types/typings';
+import { z } from 'zod';
 
 import {
   EconomyUpgrades,
   HouseUpgrades,
   Fortifications,
 } from '../constants';
+
+const UserDataSchema = z.object({
+  gold: z.bigint().optional(),
+  goldInBank: z.bigint().optional(),
+  units: z.array(z.any()).optional(),
+  economyLevel: z.number().int().optional(),
+  houseLevel: z.number().int().optional(),
+  incomeBonus: z.number().int().optional(),
+  fortLevel: z.number().int().optional(),
+});
 
 export class UserEconomyService {
   private gold: bigint;
@@ -24,13 +35,14 @@ export class UserEconomyService {
     incomeBonus?: number;
     fortLevel?: number;
   } = {}) {
-    this.gold = userData.gold ?? BigInt(0);
-    this.goldInBank = userData.goldInBank ?? BigInt(0);
-    this.units = userData.units ?? [];
-    this.economyLevel = userData.economyLevel ?? 0;
-    this.houseLevel = userData.houseLevel ?? 0;
-    this.incomeBonus = userData.incomeBonus ?? 0;
-    this.fortLevel = userData.fortLevel ?? 0;
+    const validatedData = UserDataSchema.parse(userData);
+    this.gold = validatedData.gold ?? BigInt(0);
+    this.goldInBank = validatedData.goldInBank ?? BigInt(0);
+    this.units = validatedData.units ?? [];
+    this.economyLevel = validatedData.economyLevel ?? 0;
+    this.houseLevel = validatedData.houseLevel ?? 0;
+    this.incomeBonus = validatedData.incomeBonus ?? 0;
+    this.fortLevel = validatedData.fortLevel ?? 0;
   }
 
   getNetWorth(): bigint {

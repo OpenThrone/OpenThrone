@@ -4,6 +4,10 @@ import UserModel from '@/models/Users';
 import { getAllUsers } from '@/services';
 import { calculateOverallRank } from '@/utils/utilities';
 import { getUpdatedStatus } from '@/services/User.service';
+import { z } from 'zod';
+
+// Zod schemas for validation
+const RankSchema = z.number().int().positive();
 
 // Type definitions for cron job operations
 export interface CronJobResult {

@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { z } from 'zod';
 import { getUpdatedStatus } from '@/services/User.service';
 import { UserStatsService } from './UserStatsService';
 import { UserUnitsService } from './UserUnitsService';
@@ -57,6 +58,8 @@ export interface FullUserData {
   totalDefensePower: any;
 }
 
+const UserIdSchema = z.number().int().positive();
+
 export class UserDataService {
   /**
    * Fetches and processes all user data, returning a unified DTO.
@@ -64,9 +67,10 @@ export class UserDataService {
    * @returns A promise that resolves to the FullUserData object or null if not found.
    */
   static async getFullUserData(userId: number): Promise<FullUserData | null> {
+    const validatedUserId = UserIdSchema.parse(userId);
     // 1. Centralized Prisma Query
     const user = await prisma.users.findUnique({
-      where: { id: userId },
+      where: { id: validatedUserId },
       include: {
         UserUnit: true,
         UserItem: true,
@@ -255,8 +259,9 @@ export class UserDataService {
    * @returns A promise that resolves when the update is complete.
    */
   static async updateStamina(userId: number, stamina: number): Promise<void> {
+    const validatedUserId = UserIdSchema.parse(userId);
     await prisma.users.update({
-      where: { id: userId },
+      where: { id: validatedUserId },
       data: { stamina },
     });
   }
@@ -268,8 +273,9 @@ export class UserDataService {
    * @returns A promise that resolves when the update is complete.
    */
   static async updateMaxStamina(userId: number, maxStamina: number): Promise<void> {
+    const validatedUserId = UserIdSchema.parse(userId);
     await prisma.users.update({
-      where: { id: userId },
+      where: { id: validatedUserId },
       data: { maxStamina },
     });
   }

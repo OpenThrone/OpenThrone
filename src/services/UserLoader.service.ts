@@ -1,6 +1,12 @@
 import prisma from '@/lib/prisma';
+import { z } from 'zod';
 import UserModel from '@/models/Users';
 import type { Prisma, users as PrismaUser } from '@prisma/client';
+
+const UserIdSchema = z.number().int().positive();
+const UserSchema = z.object({
+  id: z.number().int().positive(),
+});
 
 /**
  * Fetch a user with the standard set of relations used across services.
@@ -8,8 +14,9 @@ import type { Prisma, users as PrismaUser } from '@prisma/client';
  * missing relation includes and subtle bugs.
  */
 export const getUserWithAllRelations = async (userId: number) => {
+  const validatedUserId = UserIdSchema.parse(userId);
   return prisma.users.findUnique({
-    where: { id: userId },
+    where: { id: validatedUserId },
     include: {
       UserUnit: true,
       UserItem: true,
@@ -42,7 +49,8 @@ export const buildUserModel = async (userOrId: number | Partial<PrismaUser> | nu
   // If caller supplied an id, fetch full row
   let row: Partial<PrismaUser> | null = null;
   if (typeof userOrId === 'number') {
-    row = await getUserWithAllRelations(userOrId);
+    const validatedUserId = UserIdSchema.parse(userOrId);
+    row = await getUserWithAllRelations(validatedUserId);
   } else {
     row = userOrId;
   }

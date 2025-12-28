@@ -1,9 +1,20 @@
 import { stringifyObj } from '@/utils/numberFormatting';
 import prisma from '@/lib/prisma';
 import { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
+import { z } from 'zod';
 
 // Define the type for the transaction client
 type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+
+const DepositSchema = z.object({
+  userId: z.number().int().positive(),
+  depositAmount: z.bigint().positive(),
+});
+
+const WithdrawSchema = z.object({
+  userId: z.number().int().positive(),
+  withdrawAmount: z.bigint().positive(),
+});
 
 /**
  * Deposits gold from a user's hand into their bank account within a transaction.
@@ -14,27 +25,29 @@ type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' |
  * @throws Error if user not found or insufficient gold.
  */
 export const deposit = async (userId: number, depositAmount: bigint) => {
+  const validatedData = DepositSchema.parse({ userId, depositAmount });
+
   return await prisma.$transaction(async (tx: TransactionClient) => {
-    const user = await tx.users.findUnique({ where: { id: userId } });
+    const user = await tx.users.findUnique({ where: { id: validatedData.userId } });
 
     if (!user) throw new Error('User not found');
     // Ensure user.gold is treated as BigInt for comparison
-    if (depositAmount > BigInt(user.gold ?? 0)) throw new Error('Not enough gold for deposit');
+    if (validatedData.depositAmount > BigInt(user.gold ?? 0)) throw new Error('Not enough gold for deposit');
 
     const updatedUser = await tx.users.update({
-      where: { id: userId },
+      where: { id: validatedData.userId },
       data: {
-        gold: BigInt(user.gold ?? 0) - depositAmount,
-        gold_in_bank: BigInt(user.gold_in_bank ?? 0) + depositAmount,
+        gold: BigInt(user.gold ?? 0) - validatedData.depositAmount,
+        gold_in_bank: BigInt(user.gold_in_bank ?? 0) + validatedData.depositAmount,
       },
     });
 
     await tx.bank_history.create({
       data: {
-        gold_amount: depositAmount,
-        from_user_id: userId,
+        gold_amount: validatedData.depositAmount,
+        from_user_id: validatedData.userId,
         from_user_account_type: 'HAND',
-        to_user_id: userId,
+        to_user_id: validatedData.userId,
         to_user_account_type: 'BANK',
         date_time: new Date(),
         history_type: 'PLAYER_TRANSFER',
@@ -55,27 +68,29 @@ export const deposit = async (userId: number, depositAmount: bigint) => {
  * @throws Error if user not found or insufficient gold in bank.
  */
 export const withdraw = async (userId: number, withdrawAmount: bigint) => {
+  const validatedData = WithdrawSchema.parse({ userId, withdrawAmount });
+
   return await prisma.$transaction(async (tx: TransactionClient) => {
-    const user = await tx.users.findUnique({ where: { id: userId } });
+    const user = await tx.users.findUnique({ where: { id: validatedData.userId } });
 
     if (!user) throw new Error('User not found');
     // Ensure user.gold_in_bank is treated as BigInt
-    if (withdrawAmount > BigInt(user.gold_in_bank ?? 0)) throw new Error('Not enough gold for withdrawal');
+    if (validatedData.withdrawAmount > BigInt(user.gold_in_bank ?? 0)) throw new Error('Not enough gold for withdrawal');
 
     const updatedUser = await tx.users.update({
-      where: { id: userId },
+      where: { id: validatedData.userId },
       data: {
-        gold: BigInt(user.gold ?? 0) + withdrawAmount,
-        gold_in_bank: BigInt(user.gold_in_bank ?? 0) - withdrawAmount,
+        gold: BigInt(user.gold ?? 0) + validatedData.withdrawAmount,
+        gold_in_bank: BigInt(user.gold_in_bank ?? 0) - validatedData.withdrawAmount,
       },
     });
 
     await tx.bank_history.create({
       data: {
-        gold_amount: withdrawAmount,
-        from_user_id: userId,
+        gold_amount: validatedData.withdrawAmount,
+        from_user_id: validatedData.userId,
         from_user_account_type: 'BANK',
-        to_user_id: userId,
+        to_user_id: validatedData.userId,
         to_user_account_type: 'HAND',
         date_time: new Date(),
         history_type: 'PLAYER_TRANSFER',

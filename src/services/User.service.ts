@@ -1,6 +1,7 @@
 import md5 from "md5";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { z } from 'zod';
 import { idleThresholdDate } from "@/utils/utilities";
 import {
   ensureActiveEra,
@@ -11,18 +12,36 @@ import {
   ERA_DEFAULT_UNITS,
 } from "./Era.service";
 
+const CreateUserSchema = z.object({
+  email: z.string().email(),
+  password_hash: z.string(),
+  display_name: z.string(),
+  race: z.string(),
+  class_name: z.string(),
+  locale: z.string().optional(),
+});
+
+const UpdateLastActiveSchema = z.object({
+  email: z.string().email().optional(),
+  userId: z.number().int().positive().optional(),
+  displayName: z.string().optional(),
+}).refine(data => data.email || data.userId || data.displayName, {
+  message: "At least one identifier (email, userId, or displayName) must be provided",
+});
+
 export const createUser = async (email: string, password_hash: string, display_name: string, race: string, class_name: string, locale: string = 'en-US') => {
+  const validatedData = CreateUserSchema.parse({ email, password_hash, display_name, race, class_name, locale });
   return await prisma.$transaction(async (tx) => {
     const activeEra = await ensureActiveEra(tx);
 
     const user = await tx.users.create({
       data: {
-        email,
-        password_hash,
-        display_name,
-        race,
-        class: class_name,
-        locale,
+        email: validatedData.email,
+        password_hash: validatedData.password_hash,
+        display_name: validatedData.display_name,
+        race: validatedData.race,
+        class: validatedData.class_name,
+        locale: validatedData.locale,
         stamina: 100,
         maxStamina: 100,
         currentEraId: activeEra.id,
@@ -273,22 +292,10 @@ export const getUpdatedStatus = async (userId: number) => {
 };
 
 export const updateLastActive = async ({ email, userId, displayName }: { email?: string; userId?: number; displayName?: string }) => {
-  if (!email && !userId && !displayName) {
-    throw new Error('At least one identifier (email, userId, or displayName) must be provided');
-  }
-
-  if (email && typeof email !== 'string') {
-    throw new Error('Email must be a string');
-  }
-  if (userId && typeof userId !== 'number') {
-    throw new Error('UserId must be a number');
-  }
-  if (displayName && typeof displayName !== 'string') {
-    throw new Error('DisplayName must be a string');
-  }
+  const validatedData = UpdateLastActiveSchema.parse({ email, userId, displayName });
 
   return prisma.users.update({
-    where: email ? { email } : userId ? { id: userId } : { display_name: displayName },
+    where: validatedData.email ? { email: validatedData.email } : validatedData.userId ? { id: validatedData.userId } : { display_name: validatedData.displayName },
     data: { last_active: new Date() },
   });
 };
