@@ -164,7 +164,7 @@ export const ItemTypes: Item[] = [
     MeleeAtkPower: 4,
     MeleeDefPower: 15,
     RangedAtkPower: 0,
-    RangedDefPower: 0,
+    RangedDefPower: 5,
   },
   {
     id: 'OFFENSE_LEATHER-ARMOR',
@@ -179,7 +179,7 @@ export const ItemTypes: Item[] = [
     MeleeAtkPower: 8,
     MeleeDefPower: 30,
     RangedAtkPower: 0,
-    RangedDefPower: 0,
+    RangedDefPower: 10,
   },
   {
     id: 'OFFENSE_STUDDED-LEATHER-ARMOR',
@@ -194,7 +194,7 @@ export const ItemTypes: Item[] = [
     MeleeAtkPower: 15,
     MeleeDefPower: 60,
     RangedAtkPower: 0,
-    RangedDefPower: 0,
+    RangedDefPower: 20,
   },
   {
     id: 'OFFENSE_PADDED-BOOTS',
@@ -299,7 +299,7 @@ export const ItemTypes: Item[] = [
     MeleeAtkPower: 2,
     MeleeDefPower: 10,
     RangedAtkPower: 0,
-    RangedDefPower: 0,
+    RangedDefPower: 5,
   },
   {
     id: 'OFFENSE_MEDIUM-WOODEN-SHIELD',
@@ -314,7 +314,7 @@ export const ItemTypes: Item[] = [
     MeleeAtkPower: 5,
     MeleeDefPower: 20,
     RangedAtkPower: 0,
-    RangedDefPower: 0,
+    RangedDefPower: 10,
   },
   {
     id: 'OFFENSE_LARGE-WOODEN-SHIELD',
@@ -329,7 +329,7 @@ export const ItemTypes: Item[] = [
     MeleeAtkPower: 10,
     MeleeDefPower: 40,
     RangedAtkPower: 0,
-    RangedDefPower: 0,
+    RangedDefPower: 20,
   },
   {
     id: 'DEFENSE_SLING',
@@ -343,8 +343,8 @@ export const ItemTypes: Item[] = [
     armoryLevel: 1,
     MeleeAtkPower: 5,
     MeleeDefPower: 5,
-    RangedAtkPower: 20, // Ranged attack for DEFENSE item
-    RangedDefPower: 10,
+    RangedAtkPower: 5, // Ranged attack for DEFENSE item
+    RangedDefPower: 0,
   },
   {
     id: 'DEFENSE_HATCHET',
@@ -358,7 +358,7 @@ export const ItemTypes: Item[] = [
     armoryLevel: 2,
     MeleeAtkPower: 40,
     MeleeDefPower: 10,
-    RangedAtkPower: 0,
+    RangedAtkPower: 20,
     RangedDefPower: 0,
   },
   {
@@ -373,7 +373,7 @@ export const ItemTypes: Item[] = [
     armoryLevel: 3,
     MeleeAtkPower: 80,
     MeleeDefPower: 20,
-    RangedAtkPower: 0,
+    RangedAtkPower: 40,
     RangedDefPower: 0,
   },
   {

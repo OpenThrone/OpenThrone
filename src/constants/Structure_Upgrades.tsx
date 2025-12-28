@@ -678,36 +678,42 @@ export const ArmoryUpgrades = [
     fortLevel: 0,
     cost: 0,
     level: 1,
+    casualtyMitigationPercentage: 0,
   },
   {
     name: 'Leather Armory 1',
     fortLevel: 5,
     cost: 500000,
     level: 2,
+    casualtyMitigationPercentage: 2,
   },
   {
     name: 'Leather Armory 2',
     fortLevel: 10, // Stronghold Level 3
     cost: 2000000,
     level: 3,
+    casualtyMitigationPercentage: 4,
   },
   {
     name: 'Chainmail Armory 1',
     fortLevel: 13, // Citadel
     cost: 5000000,
     level: 4,
+    casualtyMitigationPercentage: 6,
   },
   {
     name: 'Chainmail Armory 2',
     fortLevel: 17, // Castle Level 2
     cost: 15000000,
     level: 5,
+    casualtyMitigationPercentage: 8,
   },
   {
     name: 'Chainmail Armory 3',
     fortLevel: 21, // Kingdom Level 3
     cost: 37500000,
     level: 6,
+    casualtyMitigationPercentage: 10,
   },
 ];
 
