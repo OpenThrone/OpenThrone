@@ -1,7 +1,24 @@
-import UserModel from "@/models/Users";
-import { Item, PlayerUnit, UnitType } from "@/types/typings";
+import type { Item, PlayerUnit, UnitType } from '@/types/typings';
 
 export const CITIZEN_WORKERS_TARGET = 'CITIZEN_WORKERS';
+
+export type SpyMissionUser = {
+  [key: string]: any;
+  id?: number;
+  fortLevel?: number;
+  fortHitpoints?: number;
+  units?: any[];
+  mercenaries?: any[];
+  items?: any[];
+  spy?: number;
+  sentry?: number;
+  unitTotals?: any;
+  spyLimits?: any;
+  spyBonus?: number;
+  sentryBonus?: number;
+  defenseBonus?: number;
+  getLevelForUnit?: (type: UnitType | string) => number;
+};
 
 export class AssassinationResult {
   spiesSent: number;
@@ -13,7 +30,12 @@ export class AssassinationResult {
   goldStolen: number;
   units: PlayerUnit[];
 
-  constructor(attacker: UserModel, defender: UserModel, spies: number, target: UnitType | typeof CITIZEN_WORKERS_TARGET = CITIZEN_WORKERS_TARGET) {
+  constructor(
+    attacker: SpyMissionUser,
+    defender: SpyMissionUser,
+    spies: number,
+    target: UnitType | typeof CITIZEN_WORKERS_TARGET = CITIZEN_WORKERS_TARGET,
+  ) {
     this.spiesSent = spies;
     this.spiesLost = 0;
     this.unitsKilled = 0;
@@ -30,8 +52,8 @@ export class AssassinationResult {
 }
 
 export class IntelResult {
-  attacker: UserModel;
-  defender: UserModel;
+  attacker: SpyMissionUser;
+  defender: SpyMissionUser;
   spiesSent: number;
   spiesLost: number;
   success: boolean;
@@ -47,7 +69,7 @@ export class IntelResult {
     goldInBank: number | null;
   } | null;
 
-  constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
+  constructor(attacker: SpyMissionUser, defender: SpyMissionUser, spiesSent: number) {
     this.attacker = attacker;  // deep copy
     this.defender = defender;  // deep copy
     this.spiesSent = spiesSent;
@@ -58,14 +80,14 @@ export class IntelResult {
 }
 
 export class InfiltrationResult {
-  attacker: UserModel;
-  defender: UserModel;
+  attacker: SpyMissionUser;
+  defender: SpyMissionUser;
   spiesSent: number;
   spiesLost: number;
   success: boolean;
   fortDmg: number;
 
-  constructor(attacker: UserModel, defender: UserModel, spiesSent: number) {
+  constructor(attacker: SpyMissionUser, defender: SpyMissionUser, spiesSent: number) {
     this.attacker = attacker;  // deep copy
     this.defender = defender;  // deep copy
     this.spiesSent = spiesSent;

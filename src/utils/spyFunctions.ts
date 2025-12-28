@@ -1,5 +1,4 @@
 import { Fortifications, ItemTypes, UnitTypes } from "@/constants";
-import UserModel from "@/models/Users";
 import { Item, ItemType, PlayerUnit, UnitType } from "@/types/typings";
 import mtRand from "./mtrand";
 import { SpyUserModel } from "@/models/SpyUser";
@@ -26,13 +25,13 @@ export function computeSpyAmpFactor(targetPop: number): number {
   return ampFactor;
 }
 
+import type { SpyMissionUser } from './spy/results';
 import { CITIZEN_WORKERS_TARGET, AssassinationResult, IntelResult, InfiltrationResult } from './spy/results';
-import { Record } from "aws-sdk/clients/cognitosync";
 export { CITIZEN_WORKERS_TARGET };
 
 export function simulateIntel(
-  attacker: UserModel,
-  defender: UserModel,
+  attacker: SpyMissionUser,
+  defender: SpyMissionUser,
   spies: number
 ): any {
   spies = Math.max(1, Math.min(spies, 10));
@@ -96,8 +95,8 @@ export function simulateIntel(
 }
 
 export const simulateAssassination = (
-  attacker: UserModel,
-  defender: UserModel,
+  attacker: SpyMissionUser,
+  defender: SpyMissionUser,
   spiesSent: number,
   targetUnit: UnitType | typeof CITIZEN_WORKERS_TARGET
 ) => {
@@ -263,8 +262,8 @@ export const simulateAssassination = (
 
 export const simulateInfiltration =
 (
-  attacker: UserModel,
-  defender: UserModel,
+  attacker: SpyMissionUser,
+  defender: SpyMissionUser,
   spies: number
 ) => {
   const spySentryRatio = attacker.spy / (defender.sentry || 1); // Avoid division by zero
@@ -330,7 +329,7 @@ export const simulateInfiltration =
 /**
  * Calculates clandestine strength for spy or sentry units, including bonuses.
  *
- * Expected UserModel properties:
+ * Expected user properties:
  * - units: Array of PlayerUnit with type, level, quantity
  * - items: Array of items with usage matching unit type
  * - spyBonus: number (percentage bonus for spy strength, defaults to 0)
@@ -338,7 +337,7 @@ export const simulateInfiltration =
  * - unitTotals: object with spies/sentries counts
  * - getLevelForUnit(type): function returning fort level for unit type
  */
-export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 'SENTRY', limiter: number = 1): {
+export function calculateClandestineStrength(user: SpyMissionUser, unitType: 'SPY' | 'SENTRY', limiter: number = 1): {
   spyStrength: number;
   sentryStrength: number;
   avgSpyStrength: number;
@@ -346,7 +345,8 @@ export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 
 } {
   let KS = 0; // Total Killing Strength
   let DS = 0; // Total Defense Strength
-  let totalUnits = unitType === 'SENTRY' ? user.unitTotals.sentries : user.unitTotals.spies;
+  const totals = user.unitTotals ?? { spies: 0, sentries: 0 };
+  let totalUnits = unitType === 'SENTRY' ? totals.sentries : totals.spies;
 
   const bonusValue = unitType === 'SPY' ? user.spyBonus : user.sentryBonus;
   const unitMultiplier = 1 + parseInt((bonusValue ?? 0).toString(), 10) / 100;
@@ -357,10 +357,14 @@ export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 
     if (!unit || typeof unit.quantity !== 'number') return;
     if (totalUnits === 0) return;
 
+    const unitLevelGate = typeof user.getLevelForUnit === 'function'
+      ? user.getLevelForUnit(unit.type)
+      : (user as any).fortLevel ?? 0;
+
     const unitInfo = UnitTypes.find(
       (unitType) =>
         unitType.type === unit.type &&
-        unitType.fortLevel <= user.getLevelForUnit(unit.type) &&
+        unitType.fortLevel <= unitLevelGate &&
         unitType.level === unit.level
     ) as any;
 
@@ -412,10 +416,10 @@ export function calculateClandestineStrength(user: UserModel, unitType: 'SPY' | 
 }
 
 
-export function calculateDefenseAgainstAssassination(user: UserModel, unitType: UnitType, limiter: number = 1): { killingStrength: number, defenseStrength: number } {
+export function calculateDefenseAgainstAssassination(user: SpyMissionUser, unitType: UnitType, limiter: number = 1): { killingStrength: number, defenseStrength: number } {
   let KS = 0;
   let DS = 0;
-  const unitMultiplier = (1 + parseInt(user.defenseBonus.toString(), 10) / 100);
+  const unitMultiplier = (1 + parseInt(String(user.defenseBonus ?? 0), 10) / 100);
   
   // Include both regular units and mercenaries
   const allUnits = [...(user.units || []), ...(user.mercenaries || [])];
@@ -426,7 +430,7 @@ export function calculateDefenseAgainstAssassination(user: UserModel, unitType: 
     )
     .forEach((unit) => {
       const unitInfo = UnitTypes.find(
-        (unitType) => unitType.type === unit.type && unitType.fortLevel <= user.getLevelForUnit(unit.type)
+        (unitType) => unitType.type === unit.type && unitType.fortLevel <= (typeof user.getLevelForUnit === 'function' ? user.getLevelForUnit(unit.type) : ((user as any).fortLevel ?? 0))
       );
       if (unitInfo) {
         KS += (unitInfo.MeleeAtkPower || 0) * unit.quantity;

@@ -6,6 +6,8 @@ import { withAuth } from "@/middleware/auth";
 import UserModel from "@/models/Users";
 import { AuthenticatedRequest } from "@/types/api";
 import type { NextApiResponse } from 'next';
+import { getSocketIO } from '@/lib/socket';
+import md5 from 'md5';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   const session = req.session;
@@ -50,6 +52,24 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
 
     const uModel = new UserModel(myUser);
 
+    const attackerId = parseInt(session.user.id);
+    const defenderId = parseInt(req.query.id.toString());
+
+    const notifySpyDefenseWin = async (attackLogId: number, missionType: string) => {
+      const log = await prisma.attack_log.findUnique({
+        where: { id: attackLogId },
+        select: { winner: true },
+      });
+
+      if (log?.winner !== defenderId) return;
+
+      const message = `You successfully defended against a spy mission (${missionType}).`;
+      const hash = md5(message + defenderId + attackLogId);
+      getSocketIO()
+        ?.to(`user-${defenderId}`)
+        .emit('spyDefenseNotification', { message, hash, attackLogId, missionType });
+    };
+
     switch (req.body.type) {
       case 'INTEL':
         if (req.body.spies <= 0) {
@@ -64,38 +84,46 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
           return res.status(400).json({ status: 'failed', message: 'You do not have enough spies' });
         }
 
-        return res
-          .status(200)
-          .json(
-            stringifyObj(await SpyService.executeSpyMission(
-              parseInt(session.user.id),
-              parseInt(req.query.id.toString()),
+        {
+          const result = stringifyObj(
+            await SpyService.executeSpyMission(
+              attackerId,
+              defenderId,
               parseInt(req.body.spies),
-              req.body.type
-            ))
+              req.body.type,
+            ),
           );
+          if (result?.status === 'success' && result.attack_log) {
+            await notifySpyDefenseWin(Number(result.attack_log), 'INTEL');
+          }
+          return res.status(200).json(result);
+        }
       case 'ASSASSINATE':
         if (checkParams(req.body, 5) === false) {
           return res.status(400).json({ status: 'failed' , message: 'Invalid parameters' });
         }
 
-        return res
-          .status(200)
-          .json(
-            stringifyObj(await SpyService.executeSpyMission(
-              parseInt(session.user.id),
-              parseInt(req.query.id.toString()),
+        {
+          const result = stringifyObj(
+            await SpyService.executeSpyMission(
+              attackerId,
+              defenderId,
               parseInt(req.body.spies),
               req.body.type,
-              req.body.unit
-            ))
+              req.body.unit,
+            ),
           );
+          if (result?.status === 'success' && result.attack_log) {
+            await notifySpyDefenseWin(Number(result.attack_log), 'ASSASSINATE');
+          }
+          return res.status(200).json(result);
+        }
       case 'INFILTRATE':
         const spyLog = await prisma.attack_log.count({
           where: {
-            attacker_id: parseInt(session.user.id),
+            attacker_id: attackerId,
             type: 'INFILTRATE',
-            defender_id: parseInt(req.query.id.toString()),
+            defender_id: defenderId,
             timestamp: {
               gte: new Date(new Date().getTime() - 86400000), //gte 24 hours ago
             },
@@ -113,17 +141,21 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         if (req.body.spies > myUser.units.find((u) => u.type === 'SPY' && u.level === 2).quantity) {
           return res.status(400).json({ status: 'failed', message: 'You do not have enough infiltrators' });
         }
-        return res
-          .status(200)
-          .json(
-            stringifyObj(await SpyService.executeSpyMission(
-              parseInt(session.user.id),
-              parseInt(req.query.id.toString()),
+        {
+          const result = stringifyObj(
+            await SpyService.executeSpyMission(
+              attackerId,
+              defenderId,
               parseInt(req.body.spies),
               req.body.type,
-              req.body.unit
-            ))
+              req.body.unit,
+            ),
           );
+          if (result?.status === 'success' && result.attack_log) {
+            await notifySpyDefenseWin(Number(result.attack_log), 'INFILTRATE');
+          }
+          return res.status(200).json(result);
+        }
     }
   }
   return res.status(401).json({ status: 'failed', message: 'Unauthorized'});

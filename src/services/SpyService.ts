@@ -9,7 +9,7 @@ import {
 } from '@/utils/spyFunctions';
 import { CITIZEN_WORKERS_TARGET } from '@/utils/spy/results';
 import prisma from '@/lib/prisma';
-import UserModel from '@/models/Users';
+import { SpyUser } from '@/models/SpyUser';
 import { getUserById, updateUserUnits, createAttackLog, incrementUserStats } from '@/services/AttackDataService';
 import { logDebug, logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -39,8 +39,8 @@ export const SpyService = {
     
     const attackerUser = await getUserById(attackerId);
     const defenderUser = await getUserById(defenderId);
-    const attacker = new UserModel(attackerUser);
-    const defender = new UserModel(defenderUser);
+    const attacker = new SpyUser(attackerUser);
+    const defender = new SpyUser(defenderUser);
     
     if (!attacker || !defender) {
       return { status: 'failed', message: 'User not found', code: 'USER_NOT_FOUND' };
@@ -53,6 +53,34 @@ export const SpyService = {
     if (attacker.spy === 0) {
       return { status: 'failed', message: 'Insufficient Spy Offense', code: 'INSUFFICIENT_SPY_OFFENSE' };
     }
+
+    if (type === 'INFILTRATE') {
+      const maxPerMission = attacker.spyLimits.infil.perMission || 0;
+      const maxPerUser = attacker.spyLimits.infil.perUser || 0;
+      if (maxPerMission <= 0 || maxPerUser <= 0) {
+        return { status: 'failed', message: 'Infiltration is not unlocked.', code: 'INFILTRATION_LOCKED' };
+      }
+      if (spies > Math.min(maxPerMission, maxPerUser)) {
+        return { status: 'failed', message: 'Too many infiltrators sent.', code: 'INFILTRATION_LIMIT_EXCEEDED' };
+      }
+      if (attacker.unitTotals.infiltrators < spies) {
+        return { status: 'failed', message: 'Insufficient infiltrators', code: 'INSUFFICIENT_INFILTRATORS' };
+      }
+    }
+
+    if (type === 'ASSASSINATE') {
+      const maxPerMission = attacker.spyLimits.assass.perMission || 0;
+      const maxPerUser = attacker.spyLimits.assass.perUser || 0;
+      if (maxPerMission <= 0 || maxPerUser <= 0) {
+        return { status: 'failed', message: 'Assassination is not unlocked.', code: 'ASSASSINATION_LOCKED' };
+      }
+      if (spies > Math.min(maxPerMission, maxPerUser)) {
+        return { status: 'failed', message: 'Too many assassins sent.', code: 'ASSASSINATION_LIMIT_EXCEEDED' };
+      }
+      if (attacker.unitTotals.assassins < spies) {
+        return { status: 'failed', message: 'Insufficient assassins', code: 'INSUFFICIENT_ASSASSINS' };
+      }
+    }
     const Winner = attacker.spy > defender.sentry ? attacker : defender;
     logDebug('Spy mission winner determined', { winnerId: Winner.id, attackerSpy: attacker.spy, defenderSentry: defender.sentry });
     
@@ -61,10 +89,6 @@ export const SpyService = {
         if (type === 'INTEL') {
           spyResults = this.simulateIntel(attacker, defender, spies);
         } else if (type === 'ASSASSINATE') {
-          if (attacker.units.find((u) => u.type === 'SPY' && u.level === 3) === undefined || attacker.units.find((u) => u.type === 'SPY' && u.level === 2).quantity < spies) {
-            logError('Insufficient Assassins');
-            return { status: 'failed', message: 'Insufficient Assassins' };
-          }
           spyResults = this.simulateAssassination(attacker, defender, spies, unit);
 
           await updateUserUnits(defenderId,
