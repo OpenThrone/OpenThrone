@@ -2,6 +2,7 @@ import { withAuth } from "@/middleware/auth";
 import { NextApiResponse } from "next";
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from "@/types/api";
+import { z } from 'zod';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== "GET") {
