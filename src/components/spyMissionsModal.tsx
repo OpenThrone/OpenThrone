@@ -380,7 +380,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             disabled={isAssassinateDisabled}
           >
             <span>🗡️ Assassination</span>
-            <small>Attempt to assassinate player's Defenders</small>
+            <small>Attempt to assassinate player&apos;s Defenders</small>
             {isAssassinateDisabled && (
               <b>
                 {process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS === 'true' ?

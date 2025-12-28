@@ -4,6 +4,12 @@ import { getSession } from 'next-auth/react';
 import { isAdmin } from '@/utils/authorization';
 import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
+import { z } from 'zod';
+
+const AccountResetSchema = z.object({
+  userId: z.number().int(),
+  reason: z.string().optional(),
+});
 
 export const handler = async(req: NextApiRequest, res: NextApiResponse) => {
   const session = req?.session;
@@ -15,7 +21,12 @@ export const handler = async(req: NextApiRequest, res: NextApiResponse) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userId, reason } = req.body;
+  const validatedBody = AccountResetSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+  }
+
+  const { userId, reason } = validatedBody.data;
 
   if (!userId) {
     return res.status(400).json({ error: 'Missing userId' });

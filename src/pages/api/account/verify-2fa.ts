@@ -1,13 +1,23 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import speakeasy from 'speakeasy';
+import { z } from 'zod';
 import { authOptions } from '../auth/[...nextauth]';
 import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
 
+const Verify2faSchema = z.object({
+  token: z.string().min(6).max(6),
+});
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const validatedBody = Verify2faSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ error: 'Invalid token' });
   }
 
   try {
@@ -16,10 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { token } = req.body;
-    if (!token) {
-      return res.status(400).json({ error: 'Token is required' });
-    }
+    const { token } = validatedBody.data;
 
     const userId = session.user.id;
     const user = await prisma.users.findUnique({

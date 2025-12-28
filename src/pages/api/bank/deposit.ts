@@ -6,10 +6,20 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import { parseBigInt } from '@/utils/jsonHelpers';
 import UserModel from '@/models/Users';
 import type { AuthenticatedRequest } from '@/types/api';
+import { z } from 'zod';
+
+const DepositSchema = z.object({
+  depositAmount: z.string().or(z.number()).transform(val => BigInt(val)),
+});
 
 const depositHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
+  }
+
+  const validatedBody = DepositSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ error: 'Invalid deposit amount' });
   }
 
   console.log('Deposit Request Body:', req.body);
@@ -20,7 +30,7 @@ const depositHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
   }
   // Use centralized BigInt parser
 
-  const depositAmount = parseBigInt(req.body.depositAmount);
+  const { depositAmount } = validatedBody.data;
   console.log('Deposit Amount:', req.body.depositAmount, 'parsed:', depositAmount);
   if (depositAmount === null || depositAmount <= 0) {
     return res.status(400).json({ error: 'Invalid deposit amount' });

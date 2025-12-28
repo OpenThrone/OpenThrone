@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { logError } from "@/utils/logger";
 import { BattleService } from '@/services';
+import { z } from 'zod';
 
 const getRecentAttacks = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {

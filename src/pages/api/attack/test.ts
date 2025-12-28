@@ -3,14 +3,26 @@ import { BattleService } from '@/services';
 import UserModel from '@/models/Users';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { logError } from '@/utils/logger';
+import { z } from 'zod';
+
+const TestAttackSchema = z.object({
+  attacker: z.string(),
+  defender: z.string(),
+  turns: z.number().int().optional(),
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
+  const validatedBody = TestAttackSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ message: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+  }
+
   try {
-    const { attacker, defender, turns } = req.body;
+    const { attacker, defender, turns } = validatedBody.data;
     // Create mock users from the provided data
     const attackerUser = new UserModel(JSON.parse(attacker));
     const defenderUser = new UserModel(JSON.parse(defender));

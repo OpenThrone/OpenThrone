@@ -1,9 +1,26 @@
 import { AllianceService } from '@/services';
 import { withAuth } from '@/middleware/auth';
+import { z } from 'zod';
+
+const CreateAllianceSchema = z.object({
+  allianceName: z.string().optional(),
+  name: z.string().optional(),
+  avatar: z.string().optional(),
+  motto: z.string().optional(),
+  comments: z.string().optional(),
+  is_public: z.boolean().optional(),
+  require_auth: z.boolean().optional(),
+  closed_enrollment: z.boolean().optional(),
+});
 
 const createAlliance = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
+  }
+
+  const validatedBody = CreateAllianceSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
   }
 
   const { user } = req.session;
@@ -16,7 +33,7 @@ const createAlliance = async (req, res) => {
     is_public,
     require_auth,
     closed_enrollment,
-  } = req.body || {};
+  } = validatedBody.data;
 
   const resolvedName = (name ?? allianceName ?? "").toString().trim();
   if (!resolvedName) {

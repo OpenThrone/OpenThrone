@@ -1,6 +1,6 @@
 import MainArea from "@/components/MainArea";
 import { useUser } from "@/context/users";
-import { alertService } from "@/services";
+import { alertService } from "@/services/Alert.service";
 import { Button, Grid, Space, Text, TextInput, Modal } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
 import router from "next/router";

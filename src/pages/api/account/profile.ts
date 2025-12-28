@@ -10,6 +10,7 @@ import imageSize from 'image-size';
 import { withAuth } from '@/middleware/auth';
 import { logError } from "@/utils/logger";
 import { AuthenticatedRequest } from "@/types/api";
+import { z } from 'zod';
 
 // Function to save the uploaded file to the local file system
 const saveToLocal = async (file: formidable.File, userId: number): Promise<string> => {
@@ -57,6 +58,10 @@ export const config = {
   },
 };
 
+const ProfileSchema = z.object({
+  bio: z.string().optional(),
+});
+
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
     const form = formidable({ multiples: false, maxFileSize: 1.5 * 1024 * 1024 })
@@ -69,8 +74,13 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         return res.status(500).json({ error: err.message });
       }
 
+      const validatedFields = ProfileSchema.safeParse(fields);
+      if (!validatedFields.success) {
+        return res.status(400).json({ error: 'Invalid fields', details: validatedFields.error.flatten().fieldErrors });
+      }
+
       // Ensure bio is a string
-      const bio = Array.isArray(fields.bio) ? fields.bio[0] : fields.bio;
+      const bio = validatedFields.data.bio;
       const file = Array.isArray(files.avatar) ? files.avatar[0] : files.avatar;
 
       let updateData: any = {};

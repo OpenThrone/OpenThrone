@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { alertService } from "@/services";
+import { alertService } from "@/services/Alert.service";
 import { getLevelFromXP } from "@/utils/utilities";
 import { Group, Avatar, Text, Card, Autocomplete, Button, MultiSelect, Badge, Stack } from "@mantine/core";
 import { useDebouncedCallback } from "@mantine/hooks";

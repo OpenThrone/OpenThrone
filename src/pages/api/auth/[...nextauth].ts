@@ -3,6 +3,7 @@ import type { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import speakeasy from 'speakeasy';
+import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -97,6 +98,12 @@ const validateCredentials = async (email: string, password: string, totpToken?: 
   return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
 };
 
+const CredentialsSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+  turnstileToken: z.string().optional(),
+  totpToken: z.string().optional(),
+});
 
 export const authOptions: NextAuthOptions = {
   // Page configuration
@@ -152,8 +159,12 @@ export const authOptions: NextAuthOptions = {
         totpToken: { label: '2FA Token', type: 'text' },
       },
       async authorize(credentials: Record<string, string | undefined>, req?: any) {
-        const { email, password, totpToken } = credentials ?? {};
-        const turnstileToken = credentials?.turnstileToken;
+        const validatedCredentials = CredentialsSchema.safeParse(credentials);
+        if (!validatedCredentials.success) {
+          throw new Error('Invalid credentials');
+        }
+
+        const { email, password, totpToken, turnstileToken } = validatedCredentials.data;
 
         const requestOrigin = getRequestOrigin(req);
         const bypassTurnstileOrigins = [

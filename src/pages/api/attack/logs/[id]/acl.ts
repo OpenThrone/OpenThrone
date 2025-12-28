@@ -3,6 +3,17 @@ import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
 import type { AuthenticatedRequest } from '@/types/api';
 import { BattleService } from '@/services';
+import { z } from 'zod';
+
+const IdQuerySchema = z.object({
+  id: z.string().pipe(z.coerce.number()),
+});
+
+const AttackLogACLSchema = z.object({
+  userId: z.number(),
+  roomId: z.number(),
+  participantIds: z.array(z.number()).optional(),
+});
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   // Only allow POST requests
@@ -11,18 +22,17 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   }
 
   try {
-    // Extract the log ID from the URL
-    const attackLogId = parseInt(req.query.id as string, 10);
-    if (isNaN(attackLogId)) {
-      return res.status(400).json({ message: 'Invalid log ID' });
+    const queryParse = IdQuerySchema.safeParse(req.query);
+    if (!queryParse.success) {
+      return res.status(400).json({ message: 'Invalid log ID', details: queryParse.error.flatten().fieldErrors });
     }
+    const { id: attackLogId } = queryParse.data;
 
-    // Extract user and room information from the request body
-    const { userId, roomId, participantIds } = req.body;
-
-    if (!userId || !roomId) {
-      return res.status(400).json({ message: 'Missing required parameters' });
+    const bodyParse = AttackLogACLSchema.safeParse(req.body);
+    if (!bodyParse.success) {
+      return res.status(400).json({ message: 'Invalid request body', details: bodyParse.error.flatten().fieldErrors });
     }
+    const { userId, roomId, participantIds } = bodyParse.data;
 
     const result = await BattleService.manageAttackLogACL(attackLogId, {
       userId,

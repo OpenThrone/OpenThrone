@@ -5,19 +5,26 @@ import type { AuthenticatedRequest } from '@/types/api'; // Import Authenticated
 import { ArmoryService } from "@/services";
 import { logError } from "@/utils/logger";
 import { error } from "console";
+import { z } from "zod";
 
-
+const ConvertSchema = z.object({
+  userId: z.number().int(),
+  fromItem: z.string(),
+  toItem: z.string(),
+  conversionAmount: z.number().int(),
+});
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => { // Use AuthenticatedRequest
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userId, fromItem, toItem, conversionAmount } = req.body;
-
-  if (!userId || !fromItem || !toItem || !conversionAmount) {
-    return res.status(400).json({ error: 'Invalid input data' });
+  const validatedBody = ConvertSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ error: 'Invalid input data', details: validatedBody.error.flatten().fieldErrors });
   }
+
+  const { userId, fromItem, toItem, conversionAmount } = validatedBody.data;
 
   if (userId !== req.session.user.id) return res.status(401).json({ error: 'Unauthorized' });
 

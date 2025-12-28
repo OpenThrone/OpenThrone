@@ -1,15 +1,16 @@
 import { BattleService } from '@/services';
 import { withAuth } from '@/middleware/auth';
+import { IdQuerySchema } from '@/lib/validation';
 
 const handler = async (req, res) => {
   const session = req.session;
   if (session) {
 
-    if (!req.query.id){
-      return res.status(400).json({ status: 'failed' });
+    const queryParse = IdQuerySchema.safeParse(req.query);
+    if (!queryParse.success) {
+      return res.status(400).json({ status: 'failed', details: queryParse.error.flatten().fieldErrors });
     }
-
-    const attackLogId = parseInt(req.query.id);
+    const { id: attackLogId } = queryParse.data;
 
     try {
       const result = await BattleService.retestBattle(attackLogId);

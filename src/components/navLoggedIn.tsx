@@ -16,6 +16,7 @@ import MobileNavigation from './MobileNavigation';
 const parentLinks = [
   'Home',
   'Battle',
+  'Social',
   'Structures',
   // 'Alliances',
   'Community',
@@ -24,6 +25,7 @@ const parentLinks = [
 const parentHrefs: Record<string, string> = {
   Home: '/home/overview',
   Battle: '/battle/users',
+  Social: '/social/friends',
   Structures: '/structures/bank',
   Community: '/community/news',
 };

@@ -3,10 +3,32 @@ import { withAuth } from '@/middleware/auth';
 import { getBankHistory } from '@/services/Bank.service';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import type { AuthenticatedRequest } from '@/types/api';
+import { z } from 'zod';
+
+const HistoryQuerySchema = z.object({
+  deposits: z.string().optional(),
+  withdraws: z.string().optional(),
+  war_spoils: z.string().optional(),
+  transfers: z.string().optional(),
+  sale: z.string().optional(),
+  training: z.string().optional(),
+  economy: z.string().optional(),
+  recruitment: z.string().optional(),
+  fortification: z.string().optional(),
+  daily: z.string().optional(),
+  friend_transfers: z.string().optional(),
+  page: z.coerce.number().int().optional().default(0),
+  limit: z.coerce.number().int().optional().default(10),
+});
 
 const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
+  }
+
+  const validatedQuery = HistoryQuerySchema.safeParse(req.query);
+  if (!validatedQuery.success) {
+    return res.status(400).json({ error: 'Invalid query parameters', details: validatedQuery.error.flatten().fieldErrors });
   }
 
   const session = req.session;
@@ -14,7 +36,7 @@ const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification, daily, friend_transfers, page = 0, limit = 10 } = req.query;
+  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification, daily, friend_transfers, page, limit } = validatedQuery.data;
   const conditions = [];
   const transactionConditions = [];
 

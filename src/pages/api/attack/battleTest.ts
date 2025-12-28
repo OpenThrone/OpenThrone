@@ -1,23 +1,33 @@
 import { BattleService } from '@/services';
 import { withAuth } from '@/middleware/auth';
+import { z } from 'zod';
+
+const BattleTestSchema = z.object({
+  aId: z.coerce.number().int().optional(),
+  dId: z.coerce.number().int(),
+});
 
 const handler = async (req, res) => {
   const session = req.session;
   if (session) {
+    const validatedQuery = BattleTestSchema.safeParse(req.query);
+    if (!validatedQuery.success) {
+      return res.status(400).json({ status: 'failed', msg: 'Invalid query parameters', details: validatedQuery.error.flatten().fieldErrors });
+    }
 
     const sessionUserId = parseInt(session.user.id.toString());
     let attackerId = sessionUserId;
 
     // Allow admins to specify different attacker
-    if ((sessionUserId === 1 || sessionUserId === 2) && req.query.aId !== undefined) {
-      attackerId = parseInt(req.query.aId);
+    if ((sessionUserId === 1 || sessionUserId === 2) && validatedQuery.data.aId !== undefined) {
+      attackerId = validatedQuery.data.aId;
     }
 
-    if (req.query.dId === undefined) {
+    if (validatedQuery.data.dId === undefined) {
       return res.status(400).json({ status: 'failed', msg: 'Defender ID "dId" not set' });
     }
 
-    const defenderId = parseInt(req.query.dId);
+    const defenderId = validatedQuery.data.dId;
 
     try {
       const result = await BattleService.simulateBattle({
