@@ -1,16 +1,20 @@
 import { logDebug } from '@/utils/logger';
 import { ReactNode } from 'react';
 import { BehaviorSubject } from 'rxjs';
+import { z } from 'zod';
 
-export interface AlertType {
-  type: 'success' | 'error' | 'info' | 'warn' | 'loading';
-  message: ReactNode;
-  timestamp: Date;
-  showAfterRedirect: boolean;
-  showButton: boolean;
-  button: ReactNode;
-  timeout?: number;
-}
+
+const AlertSchema = z.object({
+  type: z.enum(['success', 'error', 'info', 'warn', 'loading']),
+  message: z.custom<ReactNode>(),
+  timestamp: z.date(),
+  showAfterRedirect: z.boolean(),
+  showButton: z.boolean(),
+  button: z.custom<ReactNode>(),
+  timeout: z.number().optional().nullable(),
+});
+
+export type AlertType = z.infer<typeof AlertSchema>;
 
 const alertSubject = new BehaviorSubject<AlertType | null>(null);
 let defaultTimeout: number | null = null;
@@ -23,7 +27,7 @@ function showAlert(
   button: ReactNode = '',
   timeout: number | null = defaultTimeout
 ): void {
-  const alert: AlertType = {
+  const alert = AlertSchema.parse({
     type,
     message,
     timestamp: new Date(),
@@ -31,7 +35,7 @@ function showAlert(
     showButton: showButton ?? false,
     button,
     timeout: timeout ?? null,
-  };
+  });
 
   // Always emit the alert, do not deduplicate by hash/localStorage
   alertSubject.next(alert);
