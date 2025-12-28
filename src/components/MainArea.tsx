@@ -52,7 +52,9 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
   const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === "true";
 
   // Socket integration for real-time updates
-  const { addEventListener, removeEventListener } = useSocket(user?.id || null);
+  const { addEventListener, isConnected, removeEventListener } = useSocket(
+    user?.id || null,
+  );
 
   const fetchSocialNotificationCount = useCallback(async () => {
     try {
@@ -72,8 +74,30 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
 
   useEffect(() => {
     fetchSocialNotificationCount();
-    const interval = setInterval(fetchSocialNotificationCount, 30000);
+    const interval = setInterval(fetchSocialNotificationCount, 2 * 60 * 1000);
     return () => clearInterval(interval);
+  }, [fetchSocialNotificationCount]);
+
+  useEffect(() => {
+    if (isConnected) {
+      fetchSocialNotificationCount();
+    }
+  }, [fetchSocialNotificationCount, isConnected]);
+
+  useEffect(() => {
+    const handleFocus = () => fetchSocialNotificationCount();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchSocialNotificationCount();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [fetchSocialNotificationCount]);
 
   // Socket event listeners for real-time social notification updates
