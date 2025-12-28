@@ -192,8 +192,32 @@ const MessageListComponent = ({
   messages: FrontendMessage[];
   loadingMessages: boolean;
 }) => {
+  const router = useRouter();
   const selectedRoom = useMemo(() => rooms.find(room => room.id === selectedRoomId) || null, [rooms, selectedRoomId]);
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
+  const composeToUserId = useMemo(() => {
+    const raw = router.query.composeToUserId;
+    const id = Number(Array.isArray(raw) ? raw[0] : raw);
+    return Number.isFinite(id) && id > 0 ? id : null;
+  }, [router.query.composeToUserId]);
+  const prefillRecipient = useMemo(() => {
+    if (!composeToUserId) return null;
+    const rawName = router.query.composeToName;
+    const rawAvatar = router.query.composeToAvatar;
+    const label = String(Array.isArray(rawName) ? rawName[0] : rawName || '').trim();
+    const image = String(Array.isArray(rawAvatar) ? rawAvatar[0] : rawAvatar || '').trim();
+    return {
+      id: composeToUserId,
+      label: label || `User ${composeToUserId}`,
+      image: image || null,
+    };
+  }, [composeToUserId, router.query.composeToAvatar, router.query.composeToName]);
+
+  useEffect(() => {
+    if (!composeToUserId) return;
+    setIsNewMessageModalOpen(true);
+    router.replace("/messaging", undefined, { shallow: true });
+  }, [composeToUserId, router]);
 
   const handleNewMessage = (newRoomId?: number) => {
     if (newRoomId) {
@@ -232,6 +256,7 @@ const MessageListComponent = ({
         opened={isNewMessageModalOpen}
         onClose={() => setIsNewMessageModalOpen(false)}
         onRoomCreated={handleNewMessage}
+        prefillRecipient={prefillRecipient}
       />
     </MainArea>
   );
@@ -310,15 +335,41 @@ const RealtimeMessageHandler = ({
         }
         return updatedRooms.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       });
-      // Trigger global notification update if message is for another room
-      if (messageData.roomId !== selectedRoomId) {
-         fetchRooms(); // Refresh room list to get latest unread counts
-      }
     };
 
     const handleNewMessageNotification = (notificationData: any) => {
-      logInfo('Received global notification, triggering fetchRooms:', notificationData);
-      fetchRooms(); // Call the passed fetchRooms directly
+      logInfo('Received global notification:', notificationData);
+      const roomId = Number(notificationData?.chatRoomId);
+      if (!roomId) return;
+
+      setRooms(prevRooms => {
+        let roomUpdated = false;
+        const updatedRooms = prevRooms.map(room => {
+          if (room.id === roomId) {
+            roomUpdated = true;
+            const content = String(notificationData?.content || '');
+            const timestamp = String(notificationData?.timestamp || new Date().toISOString());
+            const unreadCount =
+              roomId !== selectedRoomId ? (room.unreadCount || 0) + 1 : room.unreadCount;
+
+            return {
+              ...room,
+              lastMessage: content,
+              lastMessageTime: timestamp,
+              lastMessageSender: String(notificationData?.senderName || room.lastMessageSender || 'Unknown'),
+              updatedAt: timestamp,
+              unreadCount,
+            };
+          }
+          return room;
+        });
+
+        if (!roomUpdated) {
+          fetchRooms();
+          return prevRooms;
+        }
+        return updatedRooms.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      });
     };
 
     const handleReactionAdded = (data: { messageId: number; userId: number; reaction: string; userDisplayName: string }) => {

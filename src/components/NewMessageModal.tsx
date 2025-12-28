@@ -23,6 +23,13 @@ interface NewMessageModalProps {
   existingChatId?: number; // If provided, we're adding users to existing chat
   existingUsers?: number[]; // IDs of users already in the chat
   isDirectMessage?: boolean; // Whether this is modifying a direct message
+  prefillRecipient?: {
+    id: number;
+    label?: string;
+    image?: string | null;
+    race?: string;
+    class?: string;
+  } | null;
 }
 
 const NewMessageModal = ({ 
@@ -31,7 +38,8 @@ const NewMessageModal = ({
   onRoomCreated,
   existingChatId, 
   existingUsers = [],
-  isDirectMessage = false
+  isDirectMessage = false,
+  prefillRecipient = null,
 }: NewMessageModalProps) => {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [message, setMessage] = useState('');
@@ -92,6 +100,25 @@ const NewMessageModal = ({
     }
   }, [debouncedSearch, fetchUsers]);
 
+  useEffect(() => {
+    if (!opened || !prefillRecipient?.id) return;
+    const idStr = String(prefillRecipient.id);
+    setSelectedUsers((prev) => (prev.includes(idStr) ? prev : [idStr, ...prev]));
+    setAvailableUsers((prev) => {
+      if (prev.some((u) => u.value === idStr)) return prev;
+      return [
+        {
+          value: idStr,
+          label: prefillRecipient.label || `User ${idStr}`,
+          image: prefillRecipient.image || null,
+          race: prefillRecipient.race,
+          class: prefillRecipient.class,
+        },
+        ...prev,
+      ];
+    });
+  }, [opened, prefillRecipient]);
+
   const handleSubmit = async () => {
     // Validate inputs
     if (selectedUsers.length === 0) return;
@@ -113,7 +140,7 @@ const NewMessageModal = ({
                 ...existingUsers, // Current participants
                 ...selectedUsers.map(id => parseInt(id, 10)) // New users
               ],
-              message: message.trim() ? message : null, // Optional initial message
+              message: message.trim() ? message : undefined, // Optional initial message
               isPrivate: true
             }),
           });
@@ -145,7 +172,7 @@ const NewMessageModal = ({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: groupName.trim() || null, // If no name, it's a direct message
+            name: groupName.trim() || undefined, // If no name, it's a direct message
             recipients: selectedUsers.map(id => parseInt(id, 10)),
             message,
             isPrivate: true

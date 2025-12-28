@@ -3,6 +3,8 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { MessagingService } from "@/services/Messaging.service";
 import { logDebug, logError, logInfo } from "@/utils/logger";
 import { Session } from "next-auth"; // Import Session type
+import prisma from "@/lib/prisma";
+import { getSocketIO } from "@/lib/socket";
 
 // Define a custom request type that includes the session injected by withAuth
 interface AuthenticatedRequest extends NextApiRequest {
@@ -27,9 +29,63 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use
 
   if (req.method === "POST") {
     const { name, recipients, message, isPrivate = true } = req.body;
+    const safeName = typeof name === "string" ? name : undefined;
+    const safeMessage = typeof message === "string" ? message : undefined;
+    const safeRecipients = Array.isArray(recipients)
+      ? recipients.map((r: any) => Number(r)).filter((r: number) => Number.isFinite(r))
+      : [];
 
     try {
-      const result = await MessagingService.createOrFindRoom(userId, { name, recipients, message, isPrivate });
+      const result = await MessagingService.createOrFindRoom(userId, {
+        name: safeName,
+        recipients: safeRecipients,
+        message: safeMessage,
+        isPrivate,
+      });
+
+      if (safeMessage?.trim()) {
+        const io = getSocketIO();
+        if (io) {
+          const [latestMessage, participants] = await Promise.all([
+            prisma.chatMessage.findFirst({
+              where: { roomId: result.id },
+              orderBy: { sentAt: "desc" },
+              select: {
+                id: true,
+                sentAt: true,
+                content: true,
+                sender: { select: { id: true, display_name: true } },
+              },
+            }),
+            prisma.chatRoomParticipant.findMany({
+              where: { roomId: result.id, userId: { not: userId } },
+              select: { userId: true },
+            }),
+          ]);
+
+          if (latestMessage) {
+            const notificationPayload = {
+              id: latestMessage.id,
+              senderId: latestMessage.sender.id,
+              senderName: latestMessage.sender.display_name,
+              content:
+                latestMessage.content.substring(0, 50) +
+                (latestMessage.content.length > 50 ? "..." : ""),
+              timestamp: latestMessage.sentAt.toISOString(),
+              isRead: false,
+              chatRoomId: result.id,
+            };
+
+            participants.forEach((p) => {
+              io.to(`user-${p.userId}`).emit(
+                "newMessageNotification",
+                notificationPayload,
+              );
+            });
+          }
+        }
+      }
+
       return res.status(result.isExisting ? 200 : 201).json(result);
     } catch (error) {
       logError('Error creating or finding chat room', { userId, data: req.body, error });
