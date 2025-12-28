@@ -3,6 +3,7 @@ import { InferGetStaticPropsType } from "next";
 import { getTop10AttacksByTotalCasualties, getTop10TotalAttackerCasualties, getTop10TotalDefenderCasualties, getTopGoldInBank, getTopGoldOnHand, getTopPopulations, getTopRecruitsWithDisplayNames, getTopSuccessfulAttacks, getTopWealth } from '@/services/AttackDataService';
 import { Title, Container, Grid, Text } from '@mantine/core';
 import MainArea from '@/components/MainArea';
+import { logError } from '@/utils/logger';
 
 const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInBank, attackByCas, attackerCas, defenderCas, lastGenerated }: InferGetStaticPropsType<typeof getStaticProps>) => {
   return (
@@ -43,43 +44,59 @@ const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInB
 };
 
 export const getStaticProps = async (context: any) => {
-  // Get the current date and time
-  const now = new Date();
+  try {
+    const totalWealth = (await getTopWealth()).map((entry) => ({
+      ...entry,
+      gold: entry.stat.toString(),
+      gold_in_bank: entry.stat.toString(),
+      stat: entry.stat.toString(),
+    }));
 
-  const totalWealth = (await getTopWealth()).map(entry => ({
-    ...entry,
-    gold: entry.stat.toString(),
-    gold_in_bank: entry.stat.toString(),
-    stat: entry.stat.toString(),
-  }));
+    const goldOnHand = (await getTopGoldOnHand()).map((entry) => ({
+      ...entry,
+      gold: entry.stat.toString(),
+      stat: entry.stat.toString(),
+    }));
 
-  const goldOnHand = (await getTopGoldOnHand()).map(entry => ({
-    ...entry,
-    gold: entry.stat.toString(),
-    stat: entry.stat.toString(),
-  }));
+    const goldInBank = (await getTopGoldInBank()).map((entry) => ({
+      ...entry,
+      gold_in_bank: entry.stat.toString(),
+      stat: entry.stat.toString(),
+    }));
 
-  const goldInBank = (await getTopGoldInBank()).map(entry => ({
-    ...entry,
-    gold_in_bank: entry.stat.toString(),
-    stat: entry.stat.toString(),
-  }));
-
-  return {
-    props: {
-      totalWealth,
-      goldOnHand,
-      goldInBank,
-      attacks: await getTopSuccessfulAttacks(),
-      recruits: await getTopRecruitsWithDisplayNames(),
-      population: await getTopPopulations(),
-      attackByCas: await getTop10AttacksByTotalCasualties(24 * 60 * 60 * 1000 * 7),
-      attackerCas: await getTop10TotalAttackerCasualties(24 * 60 * 60 * 1000 * 7),
-      defenderCas: await getTop10TotalDefenderCasualties(24 * 60 * 60 * 1000 * 7),
-      lastGenerated: new Date().toISOString(),
-    },
-    revalidate: 60 * 60 * 24 + (60 * 10), // 24 hours + 10 minutes, a cron should revalidate it instead
-  };
+    return {
+      props: {
+        totalWealth,
+        goldOnHand,
+        goldInBank,
+        attacks: await getTopSuccessfulAttacks(),
+        recruits: await getTopRecruitsWithDisplayNames(),
+        population: await getTopPopulations(),
+        attackByCas: await getTop10AttacksByTotalCasualties(24 * 60 * 60 * 1000 * 7),
+        attackerCas: await getTop10TotalAttackerCasualties(24 * 60 * 60 * 1000 * 7),
+        defenderCas: await getTop10TotalDefenderCasualties(24 * 60 * 60 * 1000 * 7),
+        lastGenerated: new Date().toISOString(),
+      },
+      revalidate: 60 * 60 * 24 + (60 * 10), // 24 hours + 10 minutes, a cron should revalidate it instead
+    };
+  } catch (error) {
+    logError('Stats getStaticProps failed; returning empty data for build', error);
+    return {
+      props: {
+        totalWealth: [],
+        goldOnHand: [],
+        goldInBank: [],
+        attacks: [],
+        recruits: [],
+        population: [],
+        attackByCas: [],
+        attackerCas: [],
+        defenderCas: [],
+        lastGenerated: new Date().toISOString(),
+      },
+      revalidate: 60 * 5,
+    };
+  }
 };
 
 

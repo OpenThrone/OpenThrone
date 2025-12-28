@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useLayout } from "@/context/LayoutContext";
 import { useUser } from "@/context/users";
-import { alertService } from "@/services";
+import { alertService } from "@/services/Alert.service";
 import { logInfo, logError } from "@/utils/logger";
 import { Locales, PlayerRace } from "@/types/typings";
 import {

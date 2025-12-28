@@ -3,14 +3,21 @@ import { InferGetServerSidePropsType } from 'next';
 import { useState } from 'react';
 import BlogPost from '@/components/blogPost';
 import MainArea from '@/components/MainArea';
-import { BlogService } from '@/services';
+import { BlogService } from '@/services/Blog.service';
+
+type NewsPost = InferGetServerSidePropsType<typeof getServerSideProps>['post'] & {
+  isRead?: boolean;
+};
 
 const News = ({ post: serverPost, loggedIn }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const [post, setPost] = useState({ ...serverPost });
+  const [post, setPost] = useState<NewsPost>(() => ({
+    ...serverPost,
+    isRead: Boolean(serverPost?.postReadStatus?.length),
+  }));
 
   const handleReadChange = async () => {
-    setPost({ ...post, isRead: !post.isRead });
     const newReadStatus = !post.isRead;
+    setPost((prev) => ({ ...prev, isRead: newReadStatus }));
     try {
       const response = await fetch('/api/blog/updateReadStatus', {
         method: 'POST',
@@ -20,7 +27,7 @@ const News = ({ post: serverPost, loggedIn }: InferGetServerSidePropsType<typeof
       if (!response.ok) throw new Error('Network response was not ok');
     } catch (err) {
       // revert on error
-      setPost({ ...post, isRead: !post.isRead });
+      setPost((prev) => ({ ...prev, isRead: !newReadStatus }));
     }
   };
 

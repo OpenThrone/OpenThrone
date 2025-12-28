@@ -14,7 +14,7 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { useUser } from "@/context/users";
-import { alertService } from "@/services";
+import { alertService } from "@/services/Alert.service";
 import {
   Group,
   Table as MantineTable,

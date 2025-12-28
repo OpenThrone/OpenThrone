@@ -1,19 +1,26 @@
 // pages/home/levels.tsx
-import { logError, logInfo } from '@/utils/logger';
-import { useEffect, useState } from 'react';
-import { DefaultLevelBonus } from '@/constants';
-import { useUser } from '@/context/users';
-import { Text, Space, Button, Center } from '@mantine/core';
-import styles from './levels.module.css';
-import LevelCard from '@/components/levelCard';
-import { alertService } from '@/services/Alert.service';
-import MainArea from '@/components/MainArea';
+import { logError } from "@/utils/logger";
+import { useEffect, useState, useRef } from "react";
+import { DefaultLevelBonus } from "@/constants";
+import { useUser } from "@/context/users";
+import { Text, Space, Button, Center } from "@mantine/core";
+import styles from "./levels.module.css";
+import LevelCard from "@/components/levelCard";
+import { alertService } from "@/services/Alert.service";
+import MainArea from "@/components/MainArea";
 
 const Levels = (props) => {
   const { user, forceUpdate } = useUser();
+  const justSavedRef = useRef(false);
+  const originalProficiencyPointsRef = useRef(
+    user?.availableProficiencyPoints ?? 0,
+  );
   const [levels, setLevels] = useState(user?.bonus_points ?? DefaultLevelBonus);
-  const [proficiencyPoints, setProficiencyPoints] = useState(user?.availableProficiencyPoints ?? 0);
+  const [proficiencyPoints, setProficiencyPoints] = useState(
+    user?.availableProficiencyPoints ?? 0,
+  );
   const [initialized, setInitialized] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const defaultChangeQueue = {
     OFFENSE: { start: 0, change: 0 },
     DEFENSE: { start: 0, change: 0 },
@@ -24,15 +31,31 @@ const Levels = (props) => {
 
   // Use defaultChangeQueue to initialize state
   const [changeQueue, setChangeQueue] = useState(defaultChangeQueue);
-
   useEffect(() => {
     if (!user) return;
     // Check if user.availableProficiencyPoints exists
-    if (user.availableProficiencyPoints === undefined || user.availableProficiencyPoints === null) return;
-    
+    if (
+      user.availableProficiencyPoints === undefined ||
+      user.availableProficiencyPoints === null
+    )
+      return;
+
+    // Skip updating levels if we just saved (to prevent overwriting fresh data)
+    if (justSavedRef.current) {
+      justSavedRef.current = false;
+      originalProficiencyPointsRef.current = user.availableProficiencyPoints;
+      return;
+    }
+
     setLevels(user.bonus_points);
+    // Only update proficiencyPoints when not in saving state to prevent visual jitter
+    if (!isSaving) {
+      setProficiencyPoints(user.availableProficiencyPoints);
+      originalProficiencyPointsRef.current = user.availableProficiencyPoints;
+    }
+
+    // Only reset changeQueue and set initialized when not initialized
     if (!initialized) {
-      setProficiencyPoints(user.availableProficiencyPoints); 
       setChangeQueue({
         OFFENSE: { start: 0, change: 0 },
         DEFENSE: { start: 0, change: 0 },
@@ -42,10 +65,13 @@ const Levels = (props) => {
       });
       setInitialized(true);
     }
-  }, [user, initialized]);
+  }, [user, initialized, isSaving]);
 
   const handleAddBonus = (type) => {
-    if (proficiencyPoints > 0 && (!changeQueue[type] || proficiencyPoints > 0)) {
+    if (
+      proficiencyPoints > 0 &&
+      (!changeQueue[type] || proficiencyPoints > 0)
+    ) {
       const updatedQueue = { ...changeQueue };
       updatedQueue[type].change++;
       setProficiencyPoints(proficiencyPoints - 1);
@@ -70,10 +96,13 @@ const Levels = (props) => {
 
   const handleSubmitChanges = async () => {
     try {
-      const response = await fetch('/api/account/bonusPoints', {
-        method: 'POST',
+      setIsSaving(true);
+      const currentProficiencyPoints = proficiencyPoints;
+
+      const response = await fetch("/api/account/bonusPoints", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ changeQueue }),
       });
@@ -81,31 +110,33 @@ const Levels = (props) => {
       const data = await response.json();
 
       if (response.ok) {
-        logInfo('Changes saved successfully:', data.updatedBonusPoints);
-        // Optionally, update local state with the new bonus points
-        setInitialized(false);
-        forceUpdate(); // To trigger re-fetching user data
-        getCurrentLevel('OFFENSE')
-        getCurrentLevel('DEFENSE')
-        getCurrentLevel('INCOME')
-        getCurrentLevel('INTEL')
-        getCurrentLevel('PRICES')
-        alertService.success('Changes saved successfully');
+        const updatedBonusPoints =
+          data.data?.updatedBonusPoints ?? data.updatedBonusPoints;
+        setLevels(updatedBonusPoints);
+        setProficiencyPoints(currentProficiencyPoints);
+        setChangeQueue(defaultChangeQueue);
+
+        justSavedRef.current = true;
+
+        alertService.success("Changes saved successfully");
       } else {
-        alertService.error('Failed to save changes:', data.error);
-        logError('Failed to save changes:', data.error);
+        alertService.error("Failed to save changes:", data.error);
+        logError("Failed to save changes:", data.error);
       }
     } catch (error) {
-      alertService.error('Error saving changes:', error);
-      logError('Error saving changes:', error);
+      alertService.error("Error saving changes:", error);
+      logError("Error saving changes:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
-
 
   return (
     <MainArea title="Levels">
       <Space h="md" />
-      <Text size="lg">You currently have {proficiencyPoints} proficiency points available.</Text>
+      <Text size="lg">
+        You currently have {proficiencyPoints} proficiency points available.
+      </Text>
       <Text size="sm">Maximum % is 75</Text>
       <Space h="md" />
       <div className={styles.starLayout}>
@@ -113,11 +144,16 @@ const Levels = (props) => {
           <LevelCard
             title="Strength (Offense)"
             type="OFFENSE"
-            currentLevel={getCurrentLevel('OFFENSE')}
-            onAdd={() => handleAddBonus('OFFENSE')}
-            onReduce={() => handleReduceBonus('OFFENSE')}
-            canAdd={proficiencyPoints > 0 && getCurrentLevel('OFFENSE') < 75 && (!changeQueue['OFFENSE'] || changeQueue['OFFENSE'].change < proficiencyPoints)}
-            canReduce={changeQueue['OFFENSE']?.change > 0}
+            currentLevel={getCurrentLevel("OFFENSE")}
+            onAdd={() => handleAddBonus("OFFENSE")}
+            onReduce={() => handleReduceBonus("OFFENSE")}
+            canAdd={
+              proficiencyPoints > 0 &&
+              getCurrentLevel("OFFENSE") < 75 &&
+              (!changeQueue["OFFENSE"] ||
+                changeQueue["OFFENSE"].change < proficiencyPoints)
+            }
+            canReduce={changeQueue["OFFENSE"]?.change > 0}
             changeQueue={changeQueue}
           />
         </div>
@@ -125,21 +161,31 @@ const Levels = (props) => {
           <LevelCard
             title="Constitution (Defense)"
             type="DEFENSE"
-            currentLevel={getCurrentLevel('DEFENSE')}
-            onAdd={() => handleAddBonus('DEFENSE')}
-            onReduce={() => handleReduceBonus('DEFENSE')}
-            canAdd={proficiencyPoints > 0 && getCurrentLevel('DEFENSE') < 75 && (!changeQueue['DEFENSE'] || changeQueue['DEFENSE'].change < proficiencyPoints)}
-            canReduce={changeQueue['DEFENSE']?.change > 0}
+            currentLevel={getCurrentLevel("DEFENSE")}
+            onAdd={() => handleAddBonus("DEFENSE")}
+            onReduce={() => handleReduceBonus("DEFENSE")}
+            canAdd={
+              proficiencyPoints > 0 &&
+              getCurrentLevel("DEFENSE") < 75 &&
+              (!changeQueue["DEFENSE"] ||
+                changeQueue["DEFENSE"].change < proficiencyPoints)
+            }
+            canReduce={changeQueue["DEFENSE"]?.change > 0}
             changeQueue={changeQueue}
           />
           <LevelCard
             title="Wealth (Income)"
             type="INCOME"
-            currentLevel={getCurrentLevel('INCOME')}
-            onAdd={() => handleAddBonus('INCOME')}
-            onReduce={() => handleReduceBonus('INCOME')}
-            canAdd={proficiencyPoints > 0 && getCurrentLevel('INCOME') < 75 && (!changeQueue['INCOME'] || changeQueue['INCOME'].change < proficiencyPoints)}
-            canReduce={changeQueue['INCOME']?.change > 0}
+            currentLevel={getCurrentLevel("INCOME")}
+            onAdd={() => handleAddBonus("INCOME")}
+            onReduce={() => handleReduceBonus("INCOME")}
+            canAdd={
+              proficiencyPoints > 0 &&
+              getCurrentLevel("INCOME") < 75 &&
+              (!changeQueue["INCOME"] ||
+                changeQueue["INCOME"].change < proficiencyPoints)
+            }
+            canReduce={changeQueue["INCOME"]?.change > 0}
             changeQueue={changeQueue}
           />
         </div>
@@ -147,28 +193,38 @@ const Levels = (props) => {
           <LevelCard
             title="Dexterity (Spy & Sentry)"
             type="INTEL"
-            currentLevel={getCurrentLevel('INTEL')}
-            onAdd={() => handleAddBonus('INTEL')}
-            onReduce={() => handleReduceBonus('INTEL')}
-            canAdd={proficiencyPoints > 0 && getCurrentLevel('INTEL') < 75 && (!changeQueue['INTEL'] || changeQueue['INTEL'].change < proficiencyPoints)}
-            canReduce={changeQueue['INTEL']?.change > 0}
+            currentLevel={getCurrentLevel("INTEL")}
+            onAdd={() => handleAddBonus("INTEL")}
+            onReduce={() => handleReduceBonus("INTEL")}
+            canAdd={
+              proficiencyPoints > 0 &&
+              getCurrentLevel("INTEL") < 75 &&
+              (!changeQueue["INTEL"] ||
+                changeQueue["INTEL"].change < proficiencyPoints)
+            }
+            canReduce={changeQueue["INTEL"]?.change > 0}
             changeQueue={changeQueue}
           />
           <LevelCard
             title="Charisma (Reduced Prices)"
             type="PRICES"
-            currentLevel={getCurrentLevel('PRICES')}
-            onAdd={() => handleAddBonus('PRICES')}
-            onReduce={() => handleReduceBonus('PRICES')}
-            canAdd={proficiencyPoints > 0 && getCurrentLevel('PRICES') < 75 && (!changeQueue['PRICES'] || changeQueue['PRICES'].change < proficiencyPoints)}
-            canReduce={changeQueue['PRICES']?.change > 0}
+            currentLevel={getCurrentLevel("PRICES")}
+            onAdd={() => handleAddBonus("PRICES")}
+            onReduce={() => handleReduceBonus("PRICES")}
+            canAdd={
+              proficiencyPoints > 0 &&
+              getCurrentLevel("PRICES") < 75 &&
+              (!changeQueue["PRICES"] ||
+                changeQueue["PRICES"].change < proficiencyPoints)
+            }
+            canReduce={changeQueue["PRICES"]?.change > 0}
             changeQueue={changeQueue}
           />
         </div>
       </div>
       {Object.values(changeQueue).some((change) => change.change > 0) && (
         <Center>
-          <Button onClick={handleSubmitChanges} style={{ marginTop: '20px' }}>
+          <Button onClick={handleSubmitChanges} style={{ marginTop: "20px" }}>
             Save Changes
           </Button>
         </Center>

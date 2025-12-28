@@ -3,7 +3,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useState } from 'react';
 import { getSession } from 'next-auth/react';
-import { BlogService } from '@/services';
+import { BlogService } from '@/services/Blog.service';
 import { Button, Modal, Space, Textarea, TextInput } from '@mantine/core';
 import ContentCard from '@/components/ContentCard';
 import { logError } from '@/utils/logger';
