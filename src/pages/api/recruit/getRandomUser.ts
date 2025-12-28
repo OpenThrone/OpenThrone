@@ -6,12 +6,22 @@ import { getValidUsersForRecruitment } from '@/services/Recruitment.service';
 import mtrand from '@/utils/mtrand';
 import { getIpAddress } from '@/utils/ipUtils';
 import { logError } from '@/utils/logger'; // Import logger at the top
+import { z } from 'zod';
+
+const GetRandomUserSchema = z.object({
+  sessionId: z.number().int().optional(),
+});
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Cast req to any to access session property added by middleware
   const { session } = req as any;
   const recruiterID = session ? parseInt(session.user?.id.toString()) : 0;
-  const { sessionId } = req.body;
+  
+  const validatedBody = GetRandomUserSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+  }
+  const { sessionId } = validatedBody.data;
 
   if (req.method === 'POST') {
     if (!sessionId) {

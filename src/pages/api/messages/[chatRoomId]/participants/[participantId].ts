@@ -3,6 +3,17 @@ import { MessagingService } from '@/services/Messaging.service';
 import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
 import type { AuthenticatedRequest } from '@/types/api';
+import { z } from 'zod';
+
+const ParticipantQuerySchema = z.object({
+  chatRoomId: z.string().pipe(z.coerce.number()),
+  participantId: z.string().pipe(z.coerce.number()),
+});
+
+const ParticipantBodySchema = z.object({
+  action: z.enum(['promote', 'demote', 'updatePermissions']),
+  canWrite: z.boolean().optional(),
+});
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const session = req.session;
@@ -10,10 +21,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
+  const queryParse = ParticipantQuerySchema.safeParse(req.query);
+  if (!queryParse.success) {
+    return res.status(400).json({ message: 'Invalid query parameters', details: queryParse.error.flatten().fieldErrors });
+  }
+  const { chatRoomId: roomId, participantId: targetUserId } = queryParse.data;
+
   const currentUserId = Number(session.user.id);
-  const roomId = Number(req.query.chatRoomId);
-  const targetUserId = Number(req.query.participantId); // The user being managed
-  const { action, canWrite } = req.body; // Action like 'promote', 'demote', 'remove', 'updatePermissions'
 
   if (req.method !== 'PATCH' && req.method !== 'DELETE') {
     return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
@@ -21,6 +35,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
 
   try {
     if (req.method === 'PATCH') {
+      const bodyParse = ParticipantBodySchema.safeParse(req.body);
+      if (!bodyParse.success) {
+        return res.status(400).json({ message: 'Invalid request body', details: bodyParse.error.flatten().fieldErrors });
+      }
+      const { action, canWrite } = bodyParse.data;
       const result = await MessagingService.manageParticipant(currentUserId, roomId, targetUserId, { action, canWrite });
       return res.status(200).json(result);
     } else if (req.method === 'DELETE') {

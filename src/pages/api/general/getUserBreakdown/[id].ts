@@ -1,9 +1,14 @@
 'use server';
 import { GeneralService } from '@/services';
 import { withAuth } from "@/middleware/auth";
+import { IdQuerySchema } from '@/lib/validation';
 
 const handler = async (req, res) => {
-    const { id, token } = req.query;
+    const queryParse = IdQuerySchema.safeParse(req.query);
+    if (!queryParse.success) {
+      return res.status(400).json({ status: 'failed', details: queryParse.error.flatten().fieldErrors });
+    }
+    const { id } = queryParse.data;
     const user = await GeneralService.getUserBreakdown(Number(id));
     return res.status(200).json(
       {

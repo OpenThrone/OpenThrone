@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { listSessions } from '@/services/Sessions.service';
 import type { AuthenticatedRequest } from '@/types/api';
+import { z } from 'zod';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   const { session } = req;

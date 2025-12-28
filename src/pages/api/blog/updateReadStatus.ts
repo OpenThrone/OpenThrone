@@ -1,7 +1,10 @@
 import { BlogService } from '@/services';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
-
+import { z } from 'zod';
+const UpdateReadStatusSchema = z.object({
+  postId: z.number().int(),
+});
 
 const updateReadStatus = async(req: NextApiRequest, res: NextApiResponse) => {
   if(req.method !== 'POST') {
@@ -15,7 +18,12 @@ const updateReadStatus = async(req: NextApiRequest, res: NextApiResponse) => {
     return;
   }
 
-  const { postId } = req.body;
+  const validatedBody = UpdateReadStatusSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+  }
+
+  const { postId } = validatedBody.data;
 
   try {
     const result = await BlogService.updateReadStatus({

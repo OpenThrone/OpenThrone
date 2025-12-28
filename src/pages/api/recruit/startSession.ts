@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { withAuth } from '@/middleware/auth';
 import { AuthenticatedRequest } from '@/types/api';
+import { z } from 'zod';
 
 const handler = async (req: AuthenticatedRequest, res) => {
   if (req.method !== 'POST') {

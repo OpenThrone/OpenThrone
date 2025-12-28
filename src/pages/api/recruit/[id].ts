@@ -5,12 +5,26 @@ import { getOTStartDate } from '@/utils/timefunctions';
 import { getIpAddress } from '@/utils/ipUtils';
 import { AuthenticatedRequest } from '@/types/api';
 import { countRecruitments, countRecruitmentsForTarget, performRecruitment, getUserByRecruitLink } from '@/services/Recruitment.service';
+import { z } from 'zod';
+
+const RecruitQuerySchema = z.object({
+  id: z.string(),
+});
+
+const RecruitBodySchema = z.object({
+  self_recruit: z.union([z.string(), z.boolean()]).optional(),
+});
 
 const handler = async (
   req: AuthenticatedRequest,
   res: NextApiResponse
 ) => {
-  const { id } = req.query;
+  const validatedQuery = RecruitQuerySchema.safeParse(req.query);
+  if (!validatedQuery.success) {
+    return res.status(400).json({ error: 'Invalid recruitment link.' });
+  }
+
+  const { id } = validatedQuery.data;
   let recruiterID = 0;
   const session = req.session;
   if (session) {
@@ -53,11 +67,15 @@ const handler = async (
     return res.status(200).json({ showCaptcha: true });
   }
   if (req.method === 'POST') {
-    const selfRecruit = req.body.self_recruit === '1' || req.body.self_recruit === true;
+    const validatedBody = RecruitBodySchema.safeParse(req.body);
+    if (!validatedBody.success) {
+      return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+    }
+    const { self_recruit } = validatedBody.data;
     const ipAddress = getIpAddress(req as any);
     const fromUser = Number(recruitedUser.id);
     const toUser = Number(recruiterID);
-    const userIdToUpdate = selfRecruit ? Number(session?.user.id) : toUser;
+    const userIdToUpdate = self_recruit === '1' || self_recruit === true ? Number(session?.user.id) : toUser;
 
     const result = await prisma.$transaction((tx) =>
       performRecruitment({

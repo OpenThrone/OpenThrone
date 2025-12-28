@@ -3,6 +3,7 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import { withAuth } from '@/middleware/auth';
 import { GeneralService } from '@/services';
 import { logError } from '@/utils/logger';
+import { z } from 'zod';
 
 const getUser = async (req: NextApiRequest, res: NextApiResponse) => {
   try {

@@ -2,11 +2,16 @@
 import { GeneralService } from '@/services';
 import UserModel from '@/models/Users';
 import { withAuth } from '@/middleware/auth';
+import { IdQuerySchema } from '@/lib/validation';
 
 const handler = async(req, res) => {
   const session = req.session;
   if (session) {
-    const { id } = req.query;
+    const queryParse = IdQuerySchema.safeParse(req.query);
+    if (!queryParse.success) {
+      return res.status(400).json({ status: 'failed', details: queryParse.error.flatten().fieldErrors });
+    }
+    const { id } = queryParse.data;
     if (session.user.id !== 1 && session.user.id !== 2 && session.user.id !== id) {
       return res.status(401).json({ status: 'Not authorized' });
     }

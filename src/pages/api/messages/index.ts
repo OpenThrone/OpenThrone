@@ -5,11 +5,19 @@ import { logDebug, logError, logInfo } from "@/utils/logger";
 import { Session } from "next-auth"; // Import Session type
 import prisma from "@/lib/prisma";
 import { getSocketIO } from "@/lib/socket";
+import { z } from "zod";
 
 // Define a custom request type that includes the session injected by withAuth
 interface AuthenticatedRequest extends NextApiRequest {
   session: Session;
 }
+
+const CreateRoomSchema = z.object({
+  name: z.string().optional(),
+  recipients: z.array(z.number().int()),
+  message: z.string().optional(),
+  isPrivate: z.boolean().optional().default(true),
+});
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use AuthenticatedRequest
   const userId = Number(req.session.user.id); // Access session correctly
@@ -28,22 +36,22 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use
   }
 
   if (req.method === "POST") {
-    const { name, recipients, message, isPrivate = true } = req.body;
-    const safeName = typeof name === "string" ? name : undefined;
-    const safeMessage = typeof message === "string" ? message : undefined;
-    const safeRecipients = Array.isArray(recipients)
-      ? recipients.map((r: any) => Number(r)).filter((r: number) => Number.isFinite(r))
-      : [];
+    const validatedBody = CreateRoomSchema.safeParse(req.body);
+    if (!validatedBody.success) {
+      return res.status(400).json({ message: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+    }
+
+    const { name, recipients, message, isPrivate } = validatedBody.data;
 
     try {
       const result = await MessagingService.createOrFindRoom(userId, {
-        name: safeName,
-        recipients: safeRecipients,
-        message: safeMessage,
+        name,
+        recipients,
+        message,
         isPrivate,
       });
 
-      if (safeMessage?.trim()) {
+      if (message?.trim()) {
         const io = getSocketIO();
         if (io) {
           const [latestMessage, participants] = await Promise.all([

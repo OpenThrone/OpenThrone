@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { CronJobService } from "@/services";
+import { z } from 'zod';
 
 const accountStatusCron = async (req: NextApiRequest, res: NextApiResponse) => {
   //if (process.env.DO_TURN_UPDATES === 'true' && req.headers['authorization'] === process.env.TASK_SECRET) {

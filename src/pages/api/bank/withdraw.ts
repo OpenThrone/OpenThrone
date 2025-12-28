@@ -4,10 +4,20 @@ import { withAuth } from '@/middleware/auth';
 import { withdraw } from '@/services/Bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { parseBigInt } from '@/utils/jsonHelpers';
+import { z } from 'zod';
+
+const WithdrawSchema = z.object({
+  withdrawAmount: z.string().or(z.number()).transform(val => BigInt(val)),
+});
 
 const withdrawHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
+  }
+
+  const validatedBody = WithdrawSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ error: 'Invalid withdraw amount' });
   }
 
   const session = req.session;
@@ -15,7 +25,7 @@ const withdrawHandler = async (req: AuthenticatedRequest, res: NextApiResponse) 
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const withdrawAmount = parseBigInt(req.body.withdrawAmount);
+  const { withdrawAmount } = validatedBody.data;
 
   if (withdrawAmount === null || withdrawAmount <= 0) {
     return res.status(400).json({ error: 'Invalid withdraw amount' });

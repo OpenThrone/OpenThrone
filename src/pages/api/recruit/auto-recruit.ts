@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { getRandomAutoRecruitUser } from '@/services/Recruitment.service';
+import { z } from 'zod';
 
 export default async function handler(
   req: NextApiRequest,

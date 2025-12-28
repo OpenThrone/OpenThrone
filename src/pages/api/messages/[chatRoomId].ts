@@ -4,14 +4,23 @@ import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
 import { Session } from 'next-auth'; // Import Session type
+import { z } from 'zod';
 
 // Define a custom request type that includes the session injected by withAuth
 interface AuthenticatedRequest extends NextApiRequest {
   session: Session;
 }
 
+const ChatRoomIdSchema = z.object({
+  chatRoomId: z.coerce.number().int(),
+});
+
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use AuthenticatedRequest
-  const { chatRoomId } = req.query;
+  const validatedQuery = ChatRoomIdSchema.safeParse(req.query);
+  if (!validatedQuery.success) {
+    return res.status(400).json({ message: 'Invalid chatRoomId' });
+  }
+  const { chatRoomId } = validatedQuery.data;
   const session = req.session; // Now correctly typed
 
   if (!session) {

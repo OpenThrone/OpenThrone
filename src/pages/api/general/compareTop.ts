@@ -7,6 +7,7 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import { getIpAddress } from "@/utils/ipUtils";
 import { getLevelFromXP } from "@/utils/utilities";
 import { rateLimiter } from "@/lib/rate-limiter";
+import { z } from 'zod';
 
 const CACHE_TTL_MS = 30_000;
 const MAX_CANDIDATES = 500;

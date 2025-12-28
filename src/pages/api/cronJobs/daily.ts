@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { CronJobService } from "@/services";
+import { z } from 'zod';
 
 const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
   const { TASK_SECRET } = process.env;

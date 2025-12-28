@@ -1,4 +1,9 @@
 import { logError } from "@/utils/logger";
+import { z } from "zod";
+
+const VerifySchema = z.object({
+  token: z.string(),
+});
 
 const verifyEndpoint =
   'https://challenges.cloudflare.com/turnstile/v0/siteverify';
@@ -7,7 +12,12 @@ const secret = process.env.NEXT_PUBLIC_TURNSTILE_SECRET;
 export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
-      const { token } = req.body;
+      const validatedBody = VerifySchema.safeParse(req.body);
+      if (!validatedBody.success) {
+        return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+      }
+
+      const { token } = validatedBody.data;
       const response = await fetch(verifyEndpoint, {
         method: 'POST',
         body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,

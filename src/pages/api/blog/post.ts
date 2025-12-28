@@ -5,6 +5,12 @@ import { logError } from '@/utils/logger';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSocketIO } from '@/lib/socket';
 import md5 from 'md5';
+import { z } from 'zod';
+
+const PostSchema = z.object({
+  title: z.string(),
+  content: z.string(),
+});
 
 export async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = req.session;
@@ -13,7 +19,12 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
-  const { title, content } = req.body;
+  const validatedBody = PostSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({ message: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+  }
+
+  const { title, content } = validatedBody.data;
 
   try {
     const result = await BlogService.createPost({

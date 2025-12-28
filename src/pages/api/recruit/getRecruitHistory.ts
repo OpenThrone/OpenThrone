@@ -3,6 +3,11 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { getOTStartDate } from '@/utils/timefunctions';
 import { getRecruitmentRecords } from '@/services/Recruitment.service';
+import { z } from 'zod';
+
+const GetRecruitHistorySchema = z.object({
+  id: z.coerce.number().int().optional(),
+});
 
 const handler = async (
   req: NextApiRequest,
@@ -12,9 +17,14 @@ const handler = async (
     return res.status(405).end(); // Method not allowed
   }
 
+  const validatedQuery = GetRecruitHistorySchema.safeParse(req.query);
+  if (!validatedQuery.success) {
+    return res.status(400).json({ error: 'Invalid query parameters', details: validatedQuery.error.flatten().fieldErrors });
+  }
+
   const session = req?.session;
-  const requestID = req?.query?.id;
-  const recruiterID = requestID ? parseInt(requestID.toString()) : (session ? parseInt(session.user?.id.toLocaleString()) : 0);
+  const { id } = validatedQuery.data;
+  const recruiterID = id ? id : (session ? parseInt(session.user?.id.toLocaleString()) : 0);
   const startDate = getOTStartDate(); //new Date(Number(getOTStartDate()) - 1 * 24 * 60 * 60 * 1000); // The start of the day 1 day ago
   const endDate = getOTStartDate(1); // The start of current day
   const usersWithRecruitCount = await getRecruitmentRecords(recruiterID, startDate, endDate);

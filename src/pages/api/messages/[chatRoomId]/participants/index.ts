@@ -3,6 +3,15 @@ import { MessagingService } from '@/services/Messaging.service';
 import { withAuth } from '@/middleware/auth';
 import { logError } from '@/utils/logger';
 import type { AuthenticatedRequest } from '@/types/api';
+import { z } from 'zod';
+
+const ChatRoomQuerySchema = z.object({
+  chatRoomId: z.string().pipe(z.coerce.number()),
+});
+
+const AddParticipantsBodySchema = z.object({
+  userIds: z.array(z.number()).min(1),
+});
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const session = req.session;
@@ -10,15 +19,20 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
+  const queryParse = ChatRoomQuerySchema.safeParse(req.query);
+  if (!queryParse.success) {
+    return res.status(400).json({ message: 'Invalid query parameters', details: queryParse.error.flatten().fieldErrors });
+  }
+  const { chatRoomId: roomId } = queryParse.data;
+
   const currentUserId = Number(session.user.id);
-  const roomId = Number(req.query.chatRoomId);
 
   if (req.method === 'POST') {
-    const { userIds } = req.body; // Expecting an array of user IDs to add
-
-    if (!Array.isArray(userIds) || userIds.length === 0) {
-      return res.status(400).json({ message: 'User IDs must be provided as an array.' });
+    const bodyParse = AddParticipantsBodySchema.safeParse(req.body);
+    if (!bodyParse.success) {
+      return res.status(400).json({ message: 'Invalid request body', details: bodyParse.error.flatten().fieldErrors });
     }
+    const { userIds } = bodyParse.data;
 
     try {
       const result = await MessagingService.addParticipants(currentUserId, roomId, { userIds });

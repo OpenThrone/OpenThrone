@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { ItemTypes, UnitTypes } from '@/constants';
 import { withAuth } from '@/middleware/auth';
+import { z } from 'zod';
 
 const handler = async (
   req: NextApiRequest,
