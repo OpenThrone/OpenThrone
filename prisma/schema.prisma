@@ -476,7 +476,7 @@ model UserUnit {
   isMercenary Boolean  @default(false)
   user      users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, type, isMercenary])
+  @@unique([userId, type, level, isMercenary])
   @@index([userId])
 }
 
@@ -501,7 +501,7 @@ model UserItem {
   quantity Int
   user     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, type, usage])
+  @@unique([userId, type, usage, level])
   @@index([userId])
 }
 
@@ -517,6 +517,8 @@ enum ItemType {
 enum ItemUsage {
   OFFENSE
   DEFENSE
+  SPY
+  SENTRY
 }
 
 // ---------------------------
