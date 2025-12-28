@@ -11,6 +11,7 @@ import { getUpdatedStatus } from '@/services/User.service';
 import { isAdmin, isModerator } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 import { logAction, getRequestIp } from '@/utils/auditLogger';
+import { DEFAULT_DASHBOARD_TEST_ORIGIN, getRequestOrigin, isOriginAllowed, parseOriginList, setCorsHeaders } from '@/utils/cors';
 
 const argon2 = require('argon2');
 
@@ -153,14 +154,34 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials: Record<string, string | undefined>, req?: any) {
         const { email, password, totpToken } = credentials ?? {};
         const turnstileToken = credentials?.turnstileToken;
-        const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: turnstileToken }),
-        });
-        const captchaData = await captchaRes.json();
-        if (!captchaData.success) {
-          throw new Error('Captcha verification failed');
+
+        const requestOrigin = getRequestOrigin(req);
+        const bypassTurnstileOrigins = [
+          ...parseOriginList(process.env.OT_TURNSTILE_BYPASS_ORIGINS),
+          DEFAULT_DASHBOARD_TEST_ORIGIN,
+        ];
+        const bypassTurnstileForOrigin = isOriginAllowed(requestOrigin, bypassTurnstileOrigins);
+
+        // Cloudflare Turnstile is required by default, but can be disabled via env.
+        // This is useful for internal dashboards / non-public environments.
+        //
+        // Set one of these to disable:
+        // - DISABLE_TURNSTILE=true
+        // - NEXT_PUBLIC_DISABLE_TURNSTILE=true
+        const disableTurnstile =
+          process.env.DISABLE_TURNSTILE === 'true' ||
+          process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true';
+
+        if (!disableTurnstile && !bypassTurnstileForOrigin) {
+          const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: turnstileToken }),
+          });
+          const captchaData = await captchaRes.json();
+          if (!captchaData.success) {
+            throw new Error('Captcha verification failed');
+          }
         }
         if (!email || !password) {
           throw new Error('Missing username or password');
@@ -196,4 +217,18 @@ export const authOptions: NextAuthOptions = {
 
 };
 
-export default NextAuth(authOptions);
+const authHandler = NextAuth(authOptions);
+
+export default function handler(req: any, res: any) {
+  const corsOrigins = [
+    ...parseOriginList(process.env.OT_AUTH_CORS_ORIGINS),
+    DEFAULT_DASHBOARD_TEST_ORIGIN,
+  ];
+  setCorsHeaders(res, getRequestOrigin(req), corsOrigins);
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  return authHandler(req, res);
+}
