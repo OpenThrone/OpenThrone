@@ -3161,13 +3161,31 @@ const handleAccountStatusCron = async (
 
 const handleVerifyCaptcha = async (
   socket: Socket,
-  userId: number,
+  _userId: number,
   data: { token: string },
 ) => {
   try {
+    const disableTurnstile =
+      process.env.DISABLE_TURNSTILE === "true" ||
+      process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === "true" ||
+      process.env.NEXT_PUBLIC_USE_CAPTCHA === "false";
+    const turnstileConfigured = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SECRET);
+    const enforceTurnstile =
+      !disableTurnstile &&
+      (process.env.NEXT_PUBLIC_USE_CAPTCHA === "true" || turnstileConfigured);
+
+    if (!enforceTurnstile) {
+      socket.emit("verifyCaptchaSuccess", serializeData({ success: true, bypassed: true }));
+      return;
+    }
+
     const verifyEndpoint =
       "https://challenges.cloudflare.com/turnstile/v0/siteverify";
     const secret = process.env.NEXT_PUBLIC_TURNSTILE_SECRET;
+    if (!secret) {
+      socket.emit("verifyCaptchaError", { error: "Captcha is enabled but not configured on the server" });
+      return;
+    }
 
     const response = await fetch(verifyEndpoint, {
       method: "POST",

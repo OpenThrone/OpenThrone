@@ -12,6 +12,22 @@ const secret = process.env.NEXT_PUBLIC_TURNSTILE_SECRET;
 export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
+      const disableTurnstile =
+        process.env.DISABLE_TURNSTILE === 'true' ||
+        process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true' ||
+        process.env.NEXT_PUBLIC_USE_CAPTCHA === 'false';
+      const turnstileConfigured = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SECRET);
+      const enforceTurnstile =
+        !disableTurnstile &&
+        (process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' || turnstileConfigured);
+
+      if (!enforceTurnstile) {
+        return res.status(200).json({ success: true, bypassed: true });
+      }
+      if (!secret) {
+        return res.status(500).json({ error: 'Captcha is enabled but not configured on the server' });
+      }
+
       const validatedBody = VerifySchema.safeParse(req.body);
       if (!validatedBody.success) {
         return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
@@ -37,4 +53,3 @@ export default async function handler(req, res) {
     return res.status(500).send('Internal Server Error');
   }
 }
-

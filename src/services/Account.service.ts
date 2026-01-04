@@ -5,10 +5,12 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { z } from 'zod';
 import { Fortifications } from '@/constants';
 import { DefaultLevelBonus } from '@/constants/Bonuses';
+import { getAntiAbuseExpiry, getAntiAbuseHash } from '@/utils/antiAbuse';
 import { generateRandomString } from '@/utils/utilities';
 import { logError } from '@/utils/logger';
 import UserModel from '@/models/Users';
 import type { BonusPointsType } from '@prisma/client';
+import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
 
 // SMTP Configuration
 const smtpConfig: SMTPTransport.Options = {
@@ -103,6 +105,15 @@ const RepairSchema = z.object({
 
 const AccountResetSchema = z.object({
   password: z.string().min(1, { message: 'Password is required.' }),
+});
+
+const DisableAccountSchema = z.object({
+  password: z.string().min(1, { message: 'Password is required.' }),
+});
+
+const ForgetAccountSchema = z.object({
+  password: z.string().min(1, { message: 'Password is required.' }),
+  reason: z.string().optional(),
 });
 
 const VacationStartSchema = z.object({
@@ -534,7 +545,7 @@ export class AccountService {
         // Fetch user
         const user = await tx.users.findUnique({
           where: { id: userId },
-          select: { password_hash: true, colorScheme: true },
+          select: { password_hash: true, colorScheme: true, race: true },
         });
 
         if (!user || !user.password_hash) {
@@ -548,36 +559,141 @@ export class AccountService {
         }
 
         // Prepare default reset state
-        const updateData = {
-          gold: 25000,
-          attack_turns: 50,
-          gold_in_bank: 0,
-          fort_level: 1,
-          fort_hitpoints: Fortifications[0].hitpoints,
-          experience: 0,
-          economy_level: 0,
-          house_level: 0,
-          colorScheme: user.colorScheme, // Preserve color scheme
-        };
-
         // Update user with default state
         await tx.users.update({
           where: { id: userId },
-          data: updateData,
+          data: {
+            ...buildDefaultUserUpdate(),
+            fort_hitpoints: Fortifications[0].hitpoints,
+            colorScheme: resolveColorScheme(user.colorScheme, user.race),
+          },
         });
 
-        // Clear related data
-        await tx.userUnits.deleteMany({ where: { userId } });
-        await tx.userBattleUpgrades.deleteMany({ where: { userId } });
-        await tx.userStructureUpgrades.deleteMany({ where: { userId } });
-        await tx.userBonusPoints.deleteMany({ where: { userId } });
-        await tx.userItems.deleteMany({ where: { userId } });
-        await tx.accountResetHistory.create({ data: { userId, resetAt: new Date() } });
+        await resetUserRelations(tx, userId);
+        await tx.accountResetHistory.create({ data: { userId, resetDate: new Date() } });
       });
 
       return { message: 'Account reset successfully.' };
     } catch (error: any) {
       logError(error, { userId }, 'Error resetting account');
+      throw error;
+    }
+  }
+
+  /**
+   * Disables an account (soft close) with password verification.
+   */
+  static async disableAccount(userId: number, data: AccountResetData) {
+    const validatedData = DisableAccountSchema.parse(data);
+
+    try {
+      const user = await prisma.users.findUnique({
+        where: { id: userId },
+        select: { password_hash: true },
+      });
+
+      if (!user || !user.password_hash) {
+        throw new Error('User not found or password hash missing.');
+      }
+
+      const passwordMatches = await argon2.verify(user.password_hash, validatedData.password);
+      if (!passwordMatches) {
+        throw new Error('Invalid password.');
+      }
+
+      await prisma.accountStatusHistory.create({
+        data: {
+          user_id: userId,
+          status: 'CLOSED',
+          start_date: new Date(),
+          reason: 'User disabled account',
+        },
+      });
+
+      return { message: 'Account disabled successfully.' };
+    } catch (error: any) {
+      logError(error, { userId }, 'Error disabling account');
+      throw error;
+    }
+  }
+
+  /**
+   * Pseudonymizes account data and stores an anti-abuse hash.
+   */
+  static async forgetAccount(userId: number, data: { password: string; reason?: string }) {
+    const validatedData = ForgetAccountSchema.parse(data);
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        const user = await tx.users.findUnique({
+          where: { id: userId },
+          select: {
+            email: true,
+            display_name: true,
+            password_hash: true,
+            twoFactorSecret: true,
+            avatar: true,
+            bio: true,
+            race: true,
+            colorScheme: true,
+          },
+        });
+
+        if (!user || !user.password_hash) {
+          throw new Error('User not found or password hash missing.');
+        }
+
+        const passwordMatches = await argon2.verify(user.password_hash, validatedData.password);
+        if (!passwordMatches) {
+          throw new Error('Invalid password.');
+        }
+
+        const hash = getAntiAbuseHash(user.email ?? '');
+        const expiresAt = getAntiAbuseExpiry();
+
+        await tx.antiAbuseShadow.upsert({
+          where: { hash },
+          update: {
+            reason: validatedData.reason ?? 'User requested deletion',
+            expiresAt,
+          },
+          create: {
+            hash,
+            reason: validatedData.reason ?? 'User requested deletion',
+            expiresAt,
+          },
+        });
+
+        const anonymizedEmail = `${userId}-deleted@deleted.local`;
+        const anonymizedDisplayName = `deleted-user-${userId}`;
+        const newPasswordHash = await argon2.hash(generateRandomString(24));
+
+        await tx.users.update({
+          where: { id: userId },
+          data: {
+            email: anonymizedEmail,
+            display_name: anonymizedDisplayName,
+            avatar: null,
+            bio: '',
+            twoFactorSecret: null,
+            password_hash: newPasswordHash,
+            colorScheme: resolveColorScheme(user.colorScheme, user.race),
+          },
+        });
+
+        await tx.accountStatusHistory.create({
+          data: {
+            user_id: userId,
+            status: 'CLOSED',
+            start_date: new Date(),
+            reason: validatedData.reason ?? 'User requested deletion',
+          },
+        });
+      });
+
+      return { message: 'Account data removed successfully.' };
+    } catch (error: any) {
+      logError(error, { userId }, 'Error forgetting account');
       throw error;
     }
   }

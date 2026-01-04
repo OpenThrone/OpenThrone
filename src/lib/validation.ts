@@ -10,7 +10,7 @@ export const RegisterSchema = z.object({
   display_name: z.string().min(1).max(50, { message: 'Display name must be 1-50 characters' }),
   race: z.enum(['ELF', 'HUMAN', 'GOBLIN', 'UNDEAD'], { message: 'Invalid race' }),
   class: z.string().optional(),
-  turnstileToken: z.string().min(1, { message: 'Turnstile token required' }),
+  turnstileToken: z.string().min(1, { message: 'Turnstile token required' }).optional(),
 });
 
 export const AttackSchema = z.object({

@@ -15,6 +15,7 @@ enum AccountStatus {
   VACATION
   CLOSED
   IDLE
+  INACTIVE
   RESET
   BANNED
   TIMEOUT
@@ -131,6 +132,15 @@ model AccountResetHistory {
   user      users    @relation(fields: [userId], references: [id])
 
   @@index([userId, resetDate])
+}
+
+model AntiAbuseShadow {
+  id        Int       @id @default(autoincrement())
+  hash      String    @unique
+  reason    String?
+  ipHash    String?
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime? @db.Timestamptz(3)
 }
 
 model social {

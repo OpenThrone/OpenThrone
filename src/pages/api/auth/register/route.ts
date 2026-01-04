@@ -3,9 +3,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { AuthService } from '@/services';
 import { RegisterSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
-import { headers } from "next/headers";
-
-
 
 export default async function handle(
   req: NextApiRequest,
@@ -25,15 +22,36 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
     if (process.env.NEXT_PUBLIC_DISABLE_REGISTRATION === 'true') {
       return res.status(403).json({ error: 'Registrations are disabled' });
     }
-    const { turnstileToken } = req.body;
-    const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
-    method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: turnstileToken }),
-    });
-    const captchaData = await captchaRes.json();
-    if (!captchaData.success) {
-      return res.status(400).json({ error: 'Captcha verification failed' });
+
+    const disableTurnstile =
+      process.env.DISABLE_TURNSTILE === 'true' ||
+      process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true' ||
+      process.env.NEXT_PUBLIC_USE_CAPTCHA === 'false';
+    const turnstileConfigured = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SECRET);
+    const enforceTurnstile =
+      !disableTurnstile &&
+      (process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' || turnstileConfigured);
+
+    if (enforceTurnstile) {
+      if (!process.env.NEXT_PUBLIC_TURNSTILE_SECRET) {
+        logError('Registration captcha enabled but NEXT_PUBLIC_TURNSTILE_SECRET is not set');
+        return res.status(500).json({ error: 'Captcha is enabled but not configured on the server' });
+      }
+
+      const { turnstileToken } = req.body as { turnstileToken?: string };
+      if (!turnstileToken) {
+        return res.status(400).json({ error: 'Captcha token required' });
+      }
+
+      const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: turnstileToken }),
+      });
+      const captchaData = await captchaRes.json();
+      if (!captchaData.success) {
+        return res.status(400).json({ error: 'Captcha verification failed' });
+      }
     }
 
     try {
@@ -64,4 +82,3 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
-

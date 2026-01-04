@@ -1,8 +1,11 @@
 import prisma from '@/lib/prisma';
+import md5 from 'md5';
 import { PermissionType } from '@prisma/client';
 import { z } from 'zod';
 import { isAdmin, isModerator } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
+import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
+import { ensureActiveEra } from './Era.service';
 
 // Type definitions for admin operations
 export interface GrantPermissionData {
@@ -345,69 +348,89 @@ export class AdminService {
     }
 
     try {
-      // Fetch the user's current data
-      const user = await prisma.users.findUnique({ 
-        where: { id: validatedData.userId },
-        select: {
-          email: true,
-          password_hash: true,
-          display_name: true,
-          race: true,
-          class: true,
-          colorScheme: true,
+      return await prisma.$transaction(async (tx) => {
+        // Fetch the user's current data
+        const user = await tx.users.findUnique({ 
+          where: { id: validatedData.userId },
+          select: {
+            email: true,
+            password_hash: true,
+            display_name: true,
+            race: true,
+            class: true,
+            colorScheme: true,
+            locale: true,
+          }
+        });
+
+        if (!user) {
+          throw new Error('User not found');
         }
+
+        const activeEra = await ensureActiveEra(tx);
+        const anonymizedEmail = `${validatedData.userId}-reset@deleted.local`;
+        const anonymizedDisplayName = `reset-user-${validatedData.userId}`;
+
+        // Pseudonymize old account to free unique constraints
+        await tx.users.update({
+          where: { id: validatedData.userId },
+          data: {
+            email: anonymizedEmail,
+            display_name: anonymizedDisplayName,
+            colorScheme: resolveColorScheme(user.colorScheme, user.race),
+          },
+        });
+
+        // Create a new user account with a new userId
+        const newUser = await tx.users.create({
+          data: {
+            email: user.email,
+            password_hash: user.password_hash,
+            display_name: user.display_name,
+            race: user.race,
+            class: user.class,
+            locale: user.locale,
+            currentEraId: activeEra.id,
+            colorScheme: resolveColorScheme(user.colorScheme, user.race),
+            ...buildDefaultUserUpdate(),
+          },
+        });
+
+        await tx.users.update({
+          where: { id: newUser.id },
+          data: { recruit_link: md5(newUser.id.toString()) },
+        });
+
+        await resetUserRelations(tx, newUser.id);
+
+        // Log the reset in AccountResetHistory
+        await tx.accountResetHistory.create({
+          data: {
+            userId: validatedData.userId,
+            resetDate: new Date(),
+            newUserId: newUser.id,
+            reason: validatedData.reason || 'Account reset by admin',
+          },
+        });
+
+        // Set the old user's status to CLOSED
+        await tx.accountStatusHistory.create({
+          data: {
+            user_id: validatedData.userId,
+            status: 'CLOSED',
+            start_date: new Date(),
+            reason: 'Account reset and closed by admin',
+            admin_id: adminUserId,
+          },
+        });
+
+        return {
+          message: 'Account has been reset',
+          oldUserId: validatedData.userId,
+          newUserId: newUser.id,
+          reason: validatedData.reason,
+        };
       });
-
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      // Create a new user account (simulate reset)
-      const newUser = await prisma.users.create({
-        data: {
-          email: user.email,
-          password_hash: user.password_hash,
-          display_name: user.display_name,
-          race: user.race,
-          class: user.class,
-          colorScheme: user.colorScheme,
-          gold: 25000,
-          attack_turns: 50,
-          gold_in_bank: 0,
-          fort_level: 1,
-          fort_hitpoints: 100, // Default fort hitpoints
-          experience: 0,
-          economy_level: 0,
-          house_level: 0,
-        },
-      });
-
-      // Log the reset in AccountResetHistory
-      await prisma.accountResetHistory.create({
-        data: {
-          userId: validatedData.userId,
-          resetAt: new Date(),
-          reason: validatedData.reason || 'Account reset by admin',
-        },
-      });
-
-      // Set the old user's status to CLOSED
-      await prisma.accountStatusHistory.create({
-        data: {
-          user_id: validatedData.userId,
-          status: 'CLOSED',
-          start_date: new Date(),
-          reason: 'Account reset and closed by admin',
-          admin_id: adminUserId,
-        },
-      });
-
-      return {
-        message: 'Account has been reset',
-        oldUserId: validatedData.userId,
-        newUserId: newUser.id,
-        reason: validatedData.reason,
-      };
     } catch (error: any) {
       logError('Error resetting account', { 
         adminUserId, 

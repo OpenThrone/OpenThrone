@@ -11,6 +11,7 @@ import { logError } from '@/utils/logger';
 import { logAction } from '@/utils/auditLogger';
 import { IUserSession } from '@/types/typings';
 import UserModel from '@/models/Users';
+import { getAntiAbuseHash } from '@/utils/antiAbuse';
 
 const argon2 = require('argon2');
 
@@ -159,6 +160,21 @@ export class AuthService {
     const exists = await userExists(email);
     if (exists) {
       throw new Error('User already exists');
+    }
+
+    const antiAbuseHash = getAntiAbuseHash(email);
+    const shadowRecord = await prisma.antiAbuseShadow.findFirst({
+      where: {
+        hash: antiAbuseHash,
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: new Date() } },
+        ],
+      },
+    });
+
+    if (shadowRecord) {
+      throw new Error('Account creation is temporarily restricted.');
     }
 
     const phash = await argon2.hash(password);

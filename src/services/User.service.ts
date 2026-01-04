@@ -5,12 +5,16 @@ import { z } from 'zod';
 import { idleThresholdDate } from "@/utils/utilities";
 import {
   ensureActiveEra,
+} from "./Era.service";
+import {
+  buildDefaultUserUpdate,
   ERA_DEFAULT_BATTLE_UPGRADES,
   ERA_DEFAULT_BONUS_POINTS,
   ERA_DEFAULT_ITEMS,
   ERA_DEFAULT_STRUCTURE_UPGRADES,
   ERA_DEFAULT_UNITS,
-} from "./Era.service";
+  resolveColorScheme,
+} from './UserDefaults.service';
 
 const CreateUserSchema = z.object({
   email: z.string().email(),
@@ -42,9 +46,9 @@ export const createUser = async (email: string, password_hash: string, display_n
         race: validatedData.race,
         class: validatedData.class_name,
         locale: validatedData.locale,
-        stamina: 100,
-        maxStamina: 100,
         currentEraId: activeEra.id,
+        colorScheme: resolveColorScheme(null, validatedData.race),
+        ...buildDefaultUserUpdate(),
       },
     });
 
@@ -231,16 +235,17 @@ export const getUpdatedStatus = async (userId: number) => {
     },
   });
 
-  // If no status history exists, default to ACTIVE
+  // If no status history exists, treat as INACTIVE so login resets to defaults
   if (!statusHistory) {
     await prisma.accountStatusHistory.create({
       data: {
         user_id: userId,
-        status: 'ACTIVE',
+        status: 'INACTIVE',
         start_date: now,
+        reason: 'No status history found, defaulting to INACTIVE',
       },
     });
-    return 'ACTIVE';
+    return 'INACTIVE';
   }
 
   // Check if the current status has expired
@@ -261,6 +266,23 @@ export const getUpdatedStatus = async (userId: number) => {
     where: { id: userId },
     select: { last_active: true },
   });
+
+  if (statusHistory.status === 'INACTIVE') {
+    return 'INACTIVE';
+  }
+
+  const inactiveThreshold = idleThresholdDate(365);
+  if (!user?.last_active || user.last_active < inactiveThreshold) {
+    await prisma.accountStatusHistory.create({
+      data: {
+        user_id: userId,
+        status: 'INACTIVE',
+        start_date: now,
+        reason: 'User has been idle for over 365 days',
+      },
+    });
+    return 'INACTIVE';
+  }
 
   if (statusHistory.status === 'IDLE' && user?.last_active && user.last_active >= idleThresholdDate(60)) {
     await prisma.accountStatusHistory.create({

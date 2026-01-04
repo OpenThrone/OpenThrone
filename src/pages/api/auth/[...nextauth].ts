@@ -181,9 +181,23 @@ export const authOptions: NextAuthOptions = {
         // - NEXT_PUBLIC_DISABLE_TURNSTILE=true
         const disableTurnstile =
           process.env.DISABLE_TURNSTILE === 'true' ||
-          process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true';
+          process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true' ||
+          process.env.NEXT_PUBLIC_USE_CAPTCHA === 'false';
 
-        if (!disableTurnstile && !bypassTurnstileForOrigin) {
+        const turnstileConfigured = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SECRET);
+        const enforceTurnstile =
+          !disableTurnstile &&
+          !bypassTurnstileForOrigin &&
+          (process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' || turnstileConfigured);
+
+        if (enforceTurnstile) {
+          if (!process.env.NEXT_PUBLIC_TURNSTILE_SECRET) {
+            throw new Error('Captcha is enabled but not configured on the server');
+          }
+          if (!turnstileToken) {
+            throw new Error('Captcha token required');
+          }
+
           const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

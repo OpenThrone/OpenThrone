@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { getUpdatedStatus } from '@/services/User.service';
+import { ensureActiveEra } from '@/services/Era.service';
+import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
 import type { UserApiResponse, PlayerRace, PlayerClass, Locales } from '@/types/typings';
 import { AccountStatus } from '@prisma/client';
 
@@ -57,13 +59,13 @@ export class GeneralService {
   static async getUserData(userId: number): Promise<UserApiResponse> {
     try {
       // Select only the fields needed for the DTO and calculations, using new relational tables
-      const user = await prisma.users.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          display_name: true,
-          race: true,
-          class: true,
+    let user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        display_name: true,
+        race: true,
+        class: true,
           experience: true,
           gold: true,
           gold_in_bank: true,
@@ -75,14 +77,16 @@ export class GeneralService {
           bio: true,
           colorScheme: true,
           economy_level: true,
-          avatar: true,
-          locale: true,
-          stats: true,
-          permissions: { select: { type: true } },
-          UserUnit: true,
-          UserItem: true,
-          UserStructureUpgrade: true,
-          UserBattleUpgrade: true,
+        avatar: true,
+        locale: true,
+        stats: true,
+        achievements: true,
+        currentEraId: true,
+        permissions: { select: { type: true } },
+        UserUnit: true,
+        UserItem: true,
+        UserStructureUpgrade: true,
+        UserBattleUpgrade: true,
           UserBonusPoints: true,
         },
       });
@@ -105,7 +109,79 @@ export class GeneralService {
       }
 
       // Get and update user's current status
-      const currentStatus = await getUpdatedStatus(user.id);
+      let currentStatus = await getUpdatedStatus(user.id);
+      const activeEra = await ensureActiveEra(prisma);
+
+      const needsResetForInactive = currentStatus === 'INACTIVE';
+      const needsResetForEra = user.currentEraId !== activeEra.id;
+
+      if (needsResetForInactive || needsResetForEra) {
+        await prisma.$transaction(async (tx) => {
+          await resetUserRelations(tx, userId);
+          await tx.users.update({
+            where: { id: userId },
+            data: {
+              ...buildDefaultUserUpdate(),
+              currentEraId: activeEra.id,
+              achievements: user.achievements ?? {},
+              colorScheme: resolveColorScheme(user.colorScheme, user.race),
+            },
+          });
+
+          if (needsResetForInactive) {
+            await tx.accountStatusHistory.create({
+              data: {
+                user_id: userId,
+                status: 'ACTIVE',
+                start_date: new Date(),
+                reason: 'User returned from inactive, resetting account',
+              },
+            });
+          }
+        });
+
+        if (needsResetForInactive) {
+          currentStatus = 'ACTIVE';
+        }
+
+        const refreshedUser = await prisma.users.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            display_name: true,
+            race: true,
+            class: true,
+            experience: true,
+            gold: true,
+            gold_in_bank: true,
+            fort_level: true,
+            fort_hitpoints: true,
+            house_level: true,
+            attack_turns: true,
+            last_active: true,
+            bio: true,
+            colorScheme: true,
+            economy_level: true,
+            avatar: true,
+            locale: true,
+            stats: true,
+            achievements: true,
+            currentEraId: true,
+            permissions: { select: { type: true } },
+            UserUnit: true,
+            UserItem: true,
+            UserStructureUpgrade: true,
+            UserBattleUpgrade: true,
+            UserBonusPoints: true,
+          },
+        });
+
+        if (!refreshedUser) {
+          throw new Error('User not found');
+        }
+
+        user = refreshedUser;
+      }
 
       // If user's status is not ACTIVE, throw error
       if (['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT', 'VACATION'].includes(currentStatus)) {

@@ -1,6 +1,8 @@
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import { getUpdatedStatus } from '@/services/User.service';
+import { ensureActiveEra } from '@/services/Era.service';
+import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
 import { UserStatsService } from './UserStatsService';
 import { UserUnitsService } from './UserUnitsService';
 import { safeToISOString } from '@/utils/dateHelpers';
@@ -69,7 +71,7 @@ export class UserDataService {
   static async getFullUserData(userId: number): Promise<FullUserData | null> {
     const validatedUserId = UserIdSchema.parse(userId);
     // 1. Centralized Prisma Query
-    const user = await prisma.users.findUnique({
+    let user = await prisma.users.findUnique({
       where: { id: validatedUserId },
       include: {
         UserUnit: true,
@@ -97,7 +99,67 @@ export class UserDataService {
 
     // 2. Encapsulated Business Logic
     await this.updateLastActiveIfNeeded(user);
-    const currentStatus = await getUpdatedStatus(user.id);
+    let currentStatus = await getUpdatedStatus(user.id);
+    const activeEra = await ensureActiveEra(prisma);
+
+    const needsResetForInactive = currentStatus === 'INACTIVE';
+    const needsResetForEra = user.currentEraId !== activeEra.id;
+
+    if (needsResetForInactive || needsResetForEra) {
+      await prisma.$transaction(async (tx) => {
+        await resetUserRelations(tx, user.id);
+        await tx.users.update({
+          where: { id: user.id },
+          data: {
+            ...buildDefaultUserUpdate(),
+            currentEraId: activeEra.id,
+            achievements: user.achievements ?? {},
+            colorScheme: resolveColorScheme(user.colorScheme, user.race),
+          },
+        });
+
+        if (needsResetForInactive) {
+          await tx.accountStatusHistory.create({
+            data: {
+              user_id: user.id,
+              status: 'ACTIVE',
+              start_date: new Date(),
+              reason: 'User returned from inactive, resetting account',
+            },
+          });
+        }
+      });
+
+      if (needsResetForInactive) {
+        currentStatus = 'ACTIVE';
+      }
+
+      const refreshedUser = await prisma.users.findUnique({
+        where: { id: user.id },
+        include: {
+          UserUnit: true,
+          UserItem: true,
+          UserStructureUpgrade: true,
+          UserBattleUpgrade: true,
+          UserBonusPoints: true,
+          permissions: true,
+          currentEra: {
+            select: {
+              id: true,
+              name: true,
+              startDate: true,
+              endDate: true,
+            },
+          },
+        },
+      });
+
+      if (!refreshedUser) {
+        return null;
+      }
+
+      user = refreshedUser;
+    }
 
     // Handle non-active statuses
     if (["BANNED", "SUSPENDED", "CLOSED", "TIMEOUT"].includes(currentStatus)) {

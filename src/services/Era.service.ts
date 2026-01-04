@@ -1,16 +1,13 @@
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import {
-  Prisma,
-  type BattleUpgradeType,
-  type BonusPointsType,
-  type StructureUpgradeType,
-  type ItemType,
-  type ItemUsage,
-} from '@prisma/client';
-import { UnitType } from '@/types/typings';
+import { Prisma } from '@prisma/client';
 import { getUsersWithRelations } from './UserLoader.service';
 import { z } from 'zod';
+import {
+  buildDefaultUserUpdate,
+  resetUserRelations,
+  resolveColorScheme,
+} from './UserDefaults.service';
 
 // Zod schemas for validation
 const EraIdSchema = z.number().int().positive();
@@ -23,53 +20,6 @@ const EraDataSchema = z.object({
 });
 
  type Tx = Prisma.TransactionClient;
-
-const DEFAULT_UNITS = [
-  { type: 'CITIZEN' as UnitType, level: 1, quantity: 50, isMercenary: false },
-  { type: 'WORKER' as UnitType, level: 1, quantity: 0, isMercenary: false },
-  { type: 'OFFENSE' as UnitType, level: 1, quantity: 0, isMercenary: false },
-  { type: 'DEFENSE' as UnitType, level: 1, quantity: 0, isMercenary: false },
-  { type: 'SPY' as UnitType, level: 1, quantity: 0, isMercenary: false },
-  { type: 'SENTRY' as UnitType, level: 1, quantity: 0, isMercenary: false },
-];
-
-const DEFAULT_ITEMS = [
-  {
-    type: 'WEAPON' as ItemType,
-    level: 1,
-    usage: 'OFFENSE' as ItemUsage,
-    quantity: 0,
-  },
-];
-
-const DEFAULT_STRUCTURE_UPGRADES = [
-  { type: 'OFFENSE' as StructureUpgradeType, level: 1 },
-  { type: 'SPY' as StructureUpgradeType, level: 1 },
-  { type: 'SENTRY' as StructureUpgradeType, level: 1 },
-  { type: 'ARMORY' as StructureUpgradeType, level: 1 },
-];
-
-const DEFAULT_BATTLE_UPGRADES = [
-  { type: 'OFFENSE' as BattleUpgradeType, level: 1, quantity: 0 },
-  { type: 'SPY' as BattleUpgradeType, level: 1, quantity: 0 },
-  { type: 'SENTRY' as BattleUpgradeType, level: 1, quantity: 0 },
-  { type: 'DEFENSE' as BattleUpgradeType, level: 1, quantity: 0 },
-];
-
-const DEFAULT_BONUS_POINTS = [
-  { type: 'OFFENSE' as BonusPointsType, level: 0 },
-  { type: 'DEFENSE' as BonusPointsType, level: 0 },
-  { type: 'INCOME' as BonusPointsType, level: 0 },
-  { type: 'INTEL' as BonusPointsType, level: 0 },
-  { type: 'PRICES' as BonusPointsType, level: 0 },
-];
-
-// Export defaults for reuse when creating users
-export const ERA_DEFAULT_UNITS = DEFAULT_UNITS;
-export const ERA_DEFAULT_ITEMS = DEFAULT_ITEMS;
-export const ERA_DEFAULT_STRUCTURE_UPGRADES = DEFAULT_STRUCTURE_UPGRADES;
-export const ERA_DEFAULT_BATTLE_UPGRADES = DEFAULT_BATTLE_UPGRADES;
-export const ERA_DEFAULT_BONUS_POINTS = DEFAULT_BONUS_POINTS;
 
 const buildLifetimeAchievements = (
   current: unknown,
@@ -96,53 +46,20 @@ const buildLifetimeAchievements = (
 };
 
 const resetUserState = async (tx: Tx, userId: number, newEraId: number, achievements: Record<string, any>) => {
-  await Promise.all([
-    tx.userUnit.deleteMany({ where: { userId } }),
-    tx.userItem.deleteMany({ where: { userId } }),
-    tx.userStructureUpgrade.deleteMany({ where: { userId } }),
-    tx.userBattleUpgrade.deleteMany({ where: { userId } }),
-    tx.userBonusPoints.deleteMany({ where: { userId } }),
-  ]);
+  await resetUserRelations(tx, userId);
 
-  await tx.userUnit.createMany({
-    data: DEFAULT_UNITS.map(unit => ({ ...unit, userId })),
-  });
-
-  await tx.userItem.createMany({
-    data: DEFAULT_ITEMS.map(item => ({ ...item, userId })),
-  });
-
-  await tx.userStructureUpgrade.createMany({
-    data: DEFAULT_STRUCTURE_UPGRADES.map(upgrade => ({ ...upgrade, userId })),
-  });
-
-  await tx.userBattleUpgrade.createMany({
-    data: DEFAULT_BATTLE_UPGRADES.map(upgrade => ({ ...upgrade, userId })),
-  });
-
-  await tx.userBonusPoints.createMany({
-    data: DEFAULT_BONUS_POINTS.map(bonus => ({ ...bonus, userId })),
+  const user = await tx.users.findUnique({
+    where: { id: userId },
+    select: { colorScheme: true, race: true },
   });
 
   await tx.users.update({
     where: { id: userId },
     data: {
-      experience: 0,
-      gold: BigInt('25000'),
-      gold_in_bank: BigInt('0'),
-      attack_turns: 50,
-      stamina: 100,
-      maxStamina: 100,
-      fort_hitpoints: 50,
-      fort_level: 1,
-      house_level: 0,
-      economy_level: 0,
-      offense: 0,
-      defense: 0,
-      spy: 0,
-      sentry: 0,
+      ...buildDefaultUserUpdate(),
       currentEraId: newEraId,
       achievements,
+      colorScheme: resolveColorScheme(user?.colorScheme ?? null, user?.race ?? null),
     },
   });
 };
@@ -154,7 +71,7 @@ export const getActiveEra = async (tx: Tx | typeof prisma = prisma) => {
   });
 };
 
-export const ensureActiveEra = async (tx: Tx) => {
+export const ensureActiveEra = async (tx: Tx | typeof prisma = prisma) => {
   const current = await getActiveEra(tx);
   if (current) return current;
   return tx.era.create({
