@@ -431,6 +431,14 @@ body{
   padding: 15px 18px 30px;
 }
 
+@media (max-width: 767px) {
+  .card-fantasy {
+    background-image: none;
+    background-color: rgba(8, 8, 10, 0.95);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  }
+}
+
 .text-accent {
   color: var(--ot-accent);
 }

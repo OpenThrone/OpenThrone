@@ -26,8 +26,16 @@
  * };
  */
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
+
+import { SegmentedControl } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faComments, faGear } from '@fortawesome/free-solid-svg-icons';
+
+import styles from '@/components/MobileNavigation.module.css';
+import RpgAwesomeIcon from './RpgAwesomeIcon';
 
 type MenuItem = {
   key: string;
@@ -36,6 +44,17 @@ type MenuItem = {
   onClick?: () => void;
   children?: MenuItem[];
 };
+
+type QuickActionsData = {
+  unreadMessagesCount: number;
+  socialNotificationCount: number;
+  onMessagesClick: () => void;
+  onSocialClick: () => void;
+  onSettingsClick: () => void;
+};
+
+const FOCUSABLE_ELEMENT_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const MenuItemComponent: React.FC<{
   item: MenuItem;
@@ -55,39 +74,48 @@ const MenuItemComponent: React.FC<{
     }
   };
 
+  const shouldUseButton = Boolean(item.onClick) || hasChildren || !item.href;
+  const itemClasses = `${styles.link} ${isActive || isChildActive ? styles.linkActive : ''}`;
+
   return (
-    <li className="border-b border-gray-700">
-      <button
-        onClick={(e) => {
-          if (item.onClick) {
-            e.preventDefault();
-            onItemClick(item.onClick);
-          } else if (hasChildren) {
-            e.preventDefault();
-            handleToggle();
-          } else {
-            onItemClick();
-          }
-        }}
-        className={`flex w-full min-h-[48px] items-center justify-between rounded-md p-4 text-lg transition-colors hover:bg-gray-700 ${
-          isActive || isChildActive ? 'bg-gray-700' : ''
-        }`}
-        aria-expanded={isOpen}
-      >
-        <span>{item.label}</span>
-        {hasChildren && (
-          <span
-            className={`transform transition-transform ${
-              isOpen ? 'rotate-180' : ''
-            }`}
-            aria-hidden="true"
-          >
-            &#9662;
-          </span>
-        )}
-      </button>
+    <li className={styles.linkItem}>
+      {shouldUseButton ? (
+        <button
+          onClick={(e) => {
+            if (item.onClick) {
+              e.preventDefault();
+              onItemClick(item.onClick);
+            } else if (hasChildren) {
+              e.preventDefault();
+              handleToggle();
+            } else {
+              onItemClick();
+            }
+          }}
+          className={itemClasses}
+          aria-expanded={hasChildren ? isOpen : undefined}
+        >
+          <span>{item.label}</span>
+          {hasChildren && (
+            <span
+              className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}
+              aria-hidden="true"
+            >
+              &#9662;
+            </span>
+          )}
+        </button>
+      ) : (
+        <Link
+          href={item.href}
+          onClick={() => onItemClick()}
+          className={itemClasses}
+        >
+          <span>{item.label}</span>
+        </Link>
+      )}
       {hasChildren && isOpen && (
-        <ul className="pl-4">
+        <ul className={styles.subList}>
           {item.children?.map((child) => (
             <MenuItemComponent
               key={child.key}
@@ -105,6 +133,7 @@ type MobileNavigationProps = {
   open: boolean;
   onClose: () => void;
   menuItems: MenuItem[];
+  quickActions?: QuickActionsData;
   sidebarContent?: React.ReactNode; // New prop for sidebar content
   className?: string;
 };
@@ -114,27 +143,92 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   onClose,
   menuItems,
   sidebarContent, // Destructure new prop
+  quickActions,
   className = '',
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [activeSection, setActiveSection] = useState<'menu' | 'sidebar'>('menu');
+  const hasSidebar = Boolean(sidebarContent);
+  const touchStartX = useRef<number>(0);
 
   useEffect(() => {
+    if (!open) {
+      document.body.style.overflow = '';
+      return undefined;
+    }
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const panel = menuRef.current;
+
+    const getFocusableElements = () => {
+      if (!panel) {
+        return [] as HTMLElement[];
+      }
+      return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENT_SELECTOR)).filter(
+        (element) => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true',
+      );
+    };
+
+    const focusInitialElement = () => {
+      const focusableElements = getFocusableElements();
+      const primaryFocus = closeButtonRef.current ?? focusableElements[0];
+      primaryFocus?.focus();
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
         onClose();
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const focusableElements = getFocusableElements();
+        if (!focusableElements.length) {
+          return;
+        }
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+          event.preventDefault();
+          lastElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+          event.preventDefault();
+          firstElement.focus();
+        }
       }
     };
 
-    if (open) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
+    document.body.style.overflow = 'hidden';
+    focusInitialElement();
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
+      previouslyFocused?.focus();
     };
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (open && hasSidebar) {
+      setActiveSection('menu');
+    }
+  }, [open, hasSidebar]);
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = event.touches[0]?.clientX ?? 0;
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    const endX = event.changedTouches[0]?.clientX ?? 0;
+    const deltaX = touchStartX.current - endX;
+    if (deltaX > 50) {
+      onClose();
+    }
+  };
 
   const handleItemClick = (itemOnClick?: () => void) => {
     if (itemOnClick) {
@@ -142,6 +236,27 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     }
     onClose();
   };
+
+  const renderQuickAction = (
+    icon: React.ReactNode,
+    badgeCount: number | undefined,
+    onClick: () => void,
+    label: string,
+  ) => (
+    <button
+      type="button"
+      className={styles.quickActionButton}
+      onClick={onClick}
+      aria-label={label}
+    >
+      {icon}
+      {badgeCount && badgeCount > 0 && (
+        <span className={styles.quickActionBadge} aria-hidden="true">
+          {badgeCount > 9 ? '9+' : badgeCount}
+        </span>
+      )}
+    </button>
+  );
 
   return (
     <div
@@ -152,7 +267,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     >
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out ${
+        className={`fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
           open ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={onClose}
@@ -162,31 +277,88 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       {/* Menu */}
       <div
         ref={menuRef}
-        className={`fixed top-0 right-0 h-full w-64 bg-gray-800 text-white shadow-xl transform transition-transform duration-300 ease-in-out ${
-          open ? 'translate-x-0' : 'translate-x-full'
+        className={`${styles.panel} ${
+          open ? styles.panelOpen : styles.panelClosed
         }`}
         role="navigation"
         aria-label="Mobile navigation"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
-        <div className="p-4">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 flex h-12 w-12 items-center justify-center rounded-full text-2xl text-white transition-colors hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-            aria-label="Close menu"
-          >
-            &times;
-          </button>
-          <h2 className="mt-12 text-xl font-bold">Menu</h2>
-          <ul className="mt-4">
-            {menuItems.map((item) => (
-              <MenuItemComponent key={item.key} item={item} onItemClick={handleItemClick} />
-            ))}
-          </ul>
-          {sidebarContent && ( // Render sidebar content if provided
-            <div className="mt-4 p-4 border-t border-gray-700">
-              {sidebarContent}
+        <div className="relative flex h-full flex-col p-4">
+          <div className={styles.headerCard}>
+            <div className={styles.eyebrow}>
+              OpenThrone
             </div>
+            <h2 className={styles.title}>
+              Menu
+            </h2>
+            <div className={styles.divider} />
+          </div>
+          {hasSidebar && (
+            <SegmentedControl
+              value={activeSection}
+              onChange={(value) => setActiveSection(value as 'menu' | 'sidebar')}
+              data={[
+                { label: 'Menu', value: 'menu' },
+                { label: 'Sidebar', value: 'sidebar' },
+              ]}
+              data-testid="mobile-nav-segmented"
+              className={styles.segmentedRoot}
+              classNames={{
+                control: styles.segmentedControl,
+                indicator: styles.segmentedIndicator,
+                label: styles.segmentedLabel,
+              }}
+            />
           )}
+          <div className="mt-3 flex-1 overflow-y-auto pr-1">
+            {activeSection === 'menu' && (
+              <ul className={styles.linkList}>
+                {menuItems.map((item) => (
+                  <MenuItemComponent key={item.key} item={item} onItemClick={handleItemClick} />
+                ))}
+              </ul>
+            )}
+            {hasSidebar && activeSection === 'sidebar' && (
+              <div className={styles.sidebarPanel}>
+                {sidebarContent}
+              </div>
+            )}
+          </div>
+          <div className={styles.footer}>
+            {quickActions && (
+              <div className={styles.quickActions}>
+                {renderQuickAction(
+                  <FontAwesomeIcon icon={faComments} size="lg" />, 
+                  quickActions.unreadMessagesCount,
+                  quickActions.onMessagesClick,
+                  'Quick access messages',
+                )}
+                {renderQuickAction(
+                  <RpgAwesomeIcon icon="player" fw style={{ fontSize: 18 }} />, 
+                  quickActions.socialNotificationCount,
+                  quickActions.onSocialClick,
+                  'Quick access social',
+                )}
+                {renderQuickAction(
+                  <FontAwesomeIcon icon={faGear} size="lg" />, 
+                  undefined,
+                  quickActions.onSettingsClick,
+                  'Quick access settings',
+                )}
+              </div>
+            )}
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={onClose}
+              className={styles.closeButton}
+              aria-label="Close navigation panel"
+            >
+              &times;
+            </button>
+          </div>
         </div>
       </div>
     </div>

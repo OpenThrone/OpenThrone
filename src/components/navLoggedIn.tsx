@@ -1,12 +1,13 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
-import { Indicator } from '@mantine/core';
+import { Badge, Indicator } from '@mantine/core';
 
 import { PermissionType } from '@prisma/client';
 import { getAssetPath } from '@/utils/utilities';
@@ -86,9 +87,14 @@ const subMenus: {
   ],
 };
 
-export const NavLoggedIn: React.FC = () => {
+interface NavLoggedInProps {
+  sidebarContent?: ReactNode;
+}
+
+export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
   const pathName = usePathname();
   const searchParms = useSearchParams();
+  const router = useRouter();
   const [activeSubMenu, setActiveSubMenu] = useState<
     { text: string; href: string; parent: string, target?: string }[]
   >([]);
@@ -100,8 +106,9 @@ export const NavLoggedIn: React.FC = () => {
   >([]);
   const [defaultParentLink, setDefaultParentLink] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [socialNotificationCount, setSocialNotificationCount] = useState<number>(0);
   const layoutCont = useLayout();
-  const { user } = useUser();
+  const { user, unreadMessagesCount } = useUser();
 
   // Add the administration link only if the user has admin privileges
   if (
@@ -185,6 +192,44 @@ export const NavLoggedIn: React.FC = () => {
 
   const [resetTimer, setResetTimer] = useState<number | null>(null);
 
+  const fetchSocialNotifications = useCallback(async () => {
+    try {
+      const response = await fetch('/api/social/notifications/count');
+      if (!response.ok) return;
+      const data = await response.json();
+      setSocialNotificationCount(Number(data.count) || 0);
+    } catch (error) {
+      // keep existing count on failure
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSocialNotifications();
+    const focusHandler = () => fetchSocialNotifications();
+    const visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSocialNotifications();
+      }
+    };
+    const intervalId = window.setInterval(fetchSocialNotifications, 2 * 60 * 1000);
+    window.addEventListener('focus', focusHandler);
+    document.addEventListener('visibilitychange', visibilityHandler);
+
+    return () => {
+      window.removeEventListener('focus', focusHandler);
+      document.removeEventListener('visibilitychange', visibilityHandler);
+      window.clearInterval(intervalId);
+    };
+  }, [fetchSocialNotifications]);
+
+  const handleQuickAction = useCallback(
+    (target: string) => () => {
+      setMobileMenuOpen(false);
+      router.push(target);
+    },
+    [router],
+  );
+
   const resetMenu = () => {
     const timer = window.setTimeout(() => {
       setActiveParentLink(defaultParentLink);
@@ -230,42 +275,76 @@ export const NavLoggedIn: React.FC = () => {
     onClick: () => signOut({ callbackUrl: '/' }),
   });
 
+  const notificationSum = unreadMessagesCount + socialNotificationCount;
+  const badgeLabel = notificationSum > 9 ? '9+' : `${notificationSum}`;
+
   return (
     <>
-      <button
-        type="button"
-        className="block md:hidden p-2 text-white hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-        onClick={() => setMobileMenuOpen(true)}
-        aria-label="Open menu"
-      >
-        <svg
-          className="h-6 w-6"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
+      <div className="flex justify-end p-2 lg:hidden">
+        <div className="relative">
+          <button
+            type="button"
+            className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 ${
+              mobileMenuOpen
+                ? 'text-orange-300 bg-white/10'
+                : 'text-white hover:text-gray-200'
+            }`}
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            <svg
+              className={`h-6 w-6 transition-transform ${
+                mobileMenuOpen ? 'rotate-90' : ''
+              }`}
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          {notificationSum > 0 && (
+            <Badge
+              color="red"
+              variant="filled"
+              size="xs"
+              className="absolute -top-1 -right-1"
+              aria-label={`You have ${notificationSum} unread notifications`}
+            >
+              {badgeLabel}
+            </Badge>
+          )}
+        </div>
+      </div>
       <MobileNavigation
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
         menuItems={allMenuItems}
+        quickActions={{
+          unreadMessagesCount,
+          socialNotificationCount,
+          onMessagesClick: handleQuickAction('/messaging'),
+          onSocialClick: handleQuickAction('/social/requests'),
+          onSettingsClick: handleQuickAction('/home/settings'),
+        }}
+        sidebarContent={sidebarContent}
+        className="lg:hidden"
       />
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
         <nav
-          className={`hidden h-10 ${layoutCont.raceClasses.menuPrimaryClass} md:block`}
+          className={`hidden h-10 ${layoutCont.raceClasses.menuPrimaryClass} lg:block`}
           style={{backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme as PlayerRace)}')`}}
           onMouseEnter={clearReset}
         >
-          <div className="mx-auto max-w-screen-lg md:block justify-center">
+          <div className="mx-auto max-w-screen-2xl lg:block justify-center">
             <ul className="flex flex-wrap items-center justify-center text-center text-lg md:text-xl py-1">
               {parentLinks.map((link) => {
                 return (
@@ -303,12 +382,12 @@ export const NavLoggedIn: React.FC = () => {
           </div>
         </nav>
         <nav
-          className={`hidden h-10 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
+          className={`hidden h-10 ${layoutCont.raceClasses.menuSecondaryClass} lg:block`}
           style={{ backgroundImage: `url('${getAssetPath('bottom-menu', null, user?.colorScheme as PlayerRace)}')` }}
 
           onMouseEnter={clearReset}
         >
-          <div className="mx-auto max-w-screen-lg md:block justify-center">
+          <div className="mx-auto max-w-screen-2xl lg:block justify-center">
             <ul className="flex flex-wrap items-center justify-center text-center text-xl py-1">
               {activeSubMenu.map((item) => (
                 <li

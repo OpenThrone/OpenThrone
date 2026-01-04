@@ -92,13 +92,17 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
       return () => clearInterval(interval);
     }, [user, userLoading]);
 
+    const labelOrder = isMobile ? 6 : 5;
+    const valueOrder = isMobile ? 5 : 4;
+    const otValueOrder = isMobile ? 4 : 3;
+
     return (
       <>
-        <Title order={5} className={"text-center"} style={medievalFontStyle}>Time Until Next Turn</Title>
-        <Title order={4} ta="center" fw="bold" style={medievalFontStyle}><span id="nextTurnTimestamp">{time}</span></Title>
-        
-        <Title order={5} className={"text-center"} style={medievalFontStyle}>OT Time:</Title>
-        <Title order={3} ta="center" fw="bold" style={medievalFontStyle}><span id="otTime">{OTTime}</span></Title>
+        <Title order={labelOrder} className={"text-center"} style={medievalFontStyle}>Time Until Next Turn</Title>
+        <Title order={valueOrder} ta="center" fw="bold" style={medievalFontStyle}><span id="nextTurnTimestamp">{time}</span></Title>
+
+        <Title order={labelOrder} className={"text-center"} style={medievalFontStyle}>OT Time:</Title>
+        <Title order={otValueOrder} ta="center" fw="bold" style={medievalFontStyle}><span id="otTime">{OTTime}</span></Title>
       </>
     );
   });
@@ -106,40 +110,63 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
   SidebarTimeInfo.displayName = 'SidebarTimeInfo';
 
   // Stat Row Component for consistent styling and layout
+  const statTextColor = isMobile ? 'var(--ot-text)' : 'black';
   const StatRow: React.FC<{ label: string; value: string | React.ReactNode; icon?: React.ReactNode }> = ({ label, value, icon }) => (
-    <Group justify="space-between" wrap="nowrap" gap="xs">
+    <Group justify="space-between" wrap="nowrap" gap={isMobile ? 'xs' : 'sm'}>
       <Group gap="xs" wrap="nowrap">
-        {icon && <span className="w-4 text-center" style={{ paddingLeft: '5px' }}>{icon}</span>} {/* Icon wrapper */}
-        <Text size="md" c="black" fw="bold" lh="xs">{label}</Text>
+        {icon && <span className="w-4 text-center" style={{ paddingLeft: '4px' }}>{icon}</span>} {/* Icon wrapper */}
+        <Text size={isMobile ? 'sm' : 'md'} c={statTextColor} fw="bold" lh="xs">{label}</Text>
       </Group>
       {React.isValidElement(value) ? (
-        <div className="flex items-end" style={{ paddingRight: '10px' }}>
+        <div
+          className="flex items-end"
+          style={{ paddingRight: isMobile ? '6px' : '10px', color: statTextColor }}
+        >
           {value}
         </div>
       ) : (
-        <Text size="md" fw='bold' ta="right" pr="10px">{value}</Text>
+        <Text size={isMobile ? 'sm' : 'md'} c={statTextColor} fw='bold' ta="right" pr={isMobile ? '6px' : '10px'}>{value}</Text>
       )}
     </Group>
   );
 
+  const baseTextClass = isMobile ? 'text-ot-text' : 'text-black';
+
   return (
-    <div className="card-fantasy text-black font-semibold mt-3 overflow-hidden p-4">
-      <div className="p-4 mt-2">
-        <Title order={2} className="advisor-title text-center font-bold text-shadow text-shadow-xs">
+    <div
+      className={`card-fantasy font-semibold overflow-hidden ${isMobile ? 'mt-2 p-2' : 'mt-3 p-4'}`}
+      style={{ color: isMobile ? 'var(--ot-text)' : 'black' }}
+    >
+      <div className={`${isMobile ? 'p-2' : 'p-4'} mt-2 space-y-3`}>
+        <Title
+          order={isMobile ? 4 : 2}
+          className={`advisor-title text-center font-bold text-shadow text-shadow-xs ${baseTextClass}`}
+        >
           <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handlePrevAdvisor} />
           Advisor
           <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handleNextAdvisor} />
         </Title>
-        <Text size={isMobile ? 'xl' : 'sm'} fw={'bold'} className='text-ot-text text-center' style={{ minHeight: '105px', lineHeight: 1.5 }}>
-          {messages[currentMessageIndex]}
-        </Text>
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="text-center"
+          style={{ minHeight: isMobile ? '48px' : '90px', lineHeight: 1.35 }}
+        >
+          <Text size={isMobile ? 'xs' : 'sm'} fw={'bold'} className={baseTextClass}>
+            {messages[currentMessageIndex]}
+          </Text>
+        </div>
 
         {/* Stats Section */}
-        <Title order={2} className="text-center font-bold mt-2 text-shadow text-shadow-xs">
+        <Title
+          order={isMobile ? 4 : 2}
+          className={`text-center font-bold mt-2 text-shadow text-shadow-xs ${baseTextClass}`}
+        >
           Stats <FontAwesomeIcon icon={faRefresh} className="cursor-pointer" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} />
         </Title>
         {userLoading ? (
-          <List size={isMobile ? 'xl' : 'sm'} className={isMobile ? 'text-sm ml-2' : 'text-base'} style={isMobile ? { marginLeft: '14px' } : {}}>
+          <List size={isMobile ? 'sm' : 'sm'} className={isMobile ? 'text-xs ml-1' : 'text-base'} style={isMobile ? { marginLeft: '6px' } : {}}>
             <List.Item><Skeleton height={16} width="80%" radius="sm" /></List.Item>
             <List.Item><Skeleton height={16} width="70%" radius="sm" mt={6} /></List.Item>
             <List.Item><Skeleton height={16} width="60%" radius="sm" mt={6} /></List.Item>
@@ -208,14 +235,17 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
                   </>
                 } />
                 <StatRow label="Turns" value={<span id="turns">{sidebar.turns}</span>} icon={<RpgAwesomeIcon icon="clockwork" fw />} />
-                <Divider my="md" c="gray" variant="dashed" />
+                <Divider my={isMobile ? 'xs' : 'md'} c="gray" variant="dashed" />
                 {!userLoading && <SidebarTimeInfo user={user} userLoading={userLoading} />}
               </Stack>
             </>
         )}
 
         {/* Search Section */}
-        <Title order={2} className="advisor-title text-center font-bold mt-2 text-shadow text-shadow-xs">
+        <Title
+          order={isMobile ? 4 : 2}
+          className={`advisor-title text-center font-bold mt-2 text-shadow text-shadow-xs ${baseTextClass}`}
+        >
           Search
         </Title>
         <form onSubmit={handleSubmit}>

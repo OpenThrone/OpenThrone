@@ -1,0 +1,95 @@
+import React from 'react';
+import { Box, Table, Text, Badge, ScrollArea } from '@mantine/core';
+import { GameCard } from './GameCard';
+import { faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
+
+// CSS background pattern for the "Tactical" look
+const tacticalGridBg = {
+  backgroundImage: `
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)
+  `,
+  backgroundSize: '20px 20px',
+  backgroundColor: '#0d1117',
+};
+
+const BATTLES = [
+  { id: 1, attacker: 'DasTacoMann', defender: 'uaktags', result: 'VICTORY', gold: 12500, time: '2m ago' },
+  { id: 2, attacker: 'IronBreaker', defender: 'uaktags', result: 'DEFEAT', gold: -5400, time: '15m ago' },
+  { id: 3, attacker: 'uaktags', defender: 'ShadowWeaver', result: 'VICTORY', gold: 8900, time: '1h ago' },
+];
+
+export const WarRoomLog = () => {
+  return (
+    <GameCard title="War Room Logs" icon={faSkullCrossbones}>
+      <Box
+        style={{
+          ...tacticalGridBg,
+          border: '1px solid #30363d',
+          borderRadius: '4px',
+          height: '300px', // Fixed height for scrolling
+          position: 'relative'
+        }}
+      >
+        {/* "Scan Line" Animation (Optional cool effect) */}
+        <Box
+          style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, height: '2px',
+            background: 'rgba(46, 160, 67, 0.3)',
+            boxShadow: '0 0 10px rgba(46, 160, 67, 0.5)',
+            zIndex: 1,
+            opacity: 0.5,
+            pointerEvents: 'none'
+          }}
+        />
+
+        <ScrollArea h="100%">
+          <Table verticalSpacing="xs">
+            <Table.Thead style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}>
+              <Table.Tr>
+                <Table.Th style={{ color: '#6e7681', fontFamily: 'monospace' }}>STATUS</Table.Th>
+                <Table.Th style={{ color: '#6e7681', fontFamily: 'monospace' }}>OPPONENT</Table.Th>
+                <Table.Th style={{ color: '#6e7681', fontFamily: 'monospace' }}>GAINS</Table.Th>
+                <Table.Th style={{ color: '#6e7681', fontFamily: 'monospace', textAlign: 'right' }}>TIMESTAMP</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {BATTLES.map((battle) => (
+                <Table.Tr
+                  key={battle.id}
+                  style={{
+                    borderBottom: '1px dashed #30363d',
+                    transition: 'background 0.15s'
+                  }}
+                >
+                  <Table.Td>
+                    <Badge
+                      variant="dot"
+                      color={battle.result === 'VICTORY' ? 'green' : 'red'}
+                      bg="transparent"
+                      style={{ fontFamily: 'monospace' }}
+                    >
+                      {battle.result}
+                    </Badge>
+                  </Table.Td>
+                  <Table.Td style={{ color: '#c9d1d9', fontFamily: 'monospace', fontWeight: 600 }}>
+                    {battle.attacker === 'uaktags' ? `vs ${battle.defender}` : `def ${battle.attacker}`}
+                  </Table.Td>
+                  <Table.Td style={{ color: battle.gold > 0 ? '#e5c55a' : '#f85149', fontFamily: 'monospace' }}>
+                    {battle.gold > 0 ? '+' : ''}{battle.gold.toLocaleString()}
+                  </Table.Td>
+                  <Table.Td style={{ color: '#8b949e', fontFamily: 'monospace', textAlign: 'right' }}>
+                    {battle.time}
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </ScrollArea>
+      </Box>
+    </GameCard>
+  );
+};
+
+export default WarRoomLog;

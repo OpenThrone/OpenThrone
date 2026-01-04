@@ -63,6 +63,7 @@ export const NavLoggedOut: React.FC = () => {
         open={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
         menuItems={menuItems}
+        className="md:hidden"
       />
       <div>
         <nav
@@ -71,7 +72,7 @@ export const NavLoggedOut: React.FC = () => {
             backgroundImage: `url('${getAssetPath('top-menu', null, 'ELF')}')`,
           }}
         >
-          <div className="mx-auto max-w-screen-md md:block">
+          <div className="mx-auto max-w-screen-2xl md:block">
             <ul className="flex flex-wrap items-center justify-evenly text-center text-xl">
               {parentLinks.map((link) => (
                 <li className="mr-6" key={link.title}>

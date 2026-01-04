@@ -88,6 +88,11 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
   const [turnstileToken, setTurnstileToken] = useState('');
   const turnsTileRef = useRef<any>();
 
+  const captchaDisabled =
+    process.env.NEXT_PUBLIC_USE_CAPTCHA === 'false' ||
+    process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true';
+  const captchaEnabled = !captchaDisabled && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID;
+
   const form = useForm<RegisterFormData | LoginFormData>({
     resolver: zodResolver(type === 'register' ? registerSchema : loginSchema),
     defaultValues: type === 'register' ? {
@@ -160,7 +165,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
          redirect: false,
          email,
          password,
-         turnstileToken,
+         ...(captchaEnabled ? { turnstileToken } : {}),
        });
 
        if (res?.ok) {
@@ -209,7 +214,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ ...apiData, turnstileToken }),
+          body: JSON.stringify({ ...apiData, ...(captchaEnabled ? { turnstileToken } : {}) }),
         });
 
         if (res.status === 200) {
@@ -373,30 +378,35 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
                   </>
                 )}
                 <Space h="md" />
-                <label
-                  htmlFor="captcha"
-                  className="mantine-InputWrapper-label"
-                  data-size="md"
-                  style={{ color: 'darkgray', fontWeight: 'bolder', fontSize: '1.05rem' }}
-                >
-                  Captcha
-                </label>
-                <Turnstile
-                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-                  onSuccess={handleTurnstileSuccess}
-                  ref={turnsTileRef}
-                  style={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
-                />
+                {captchaEnabled && (
+                  <>
+                    <label
+                      htmlFor="captcha"
+                      className="mantine-InputWrapper-label"
+                      data-size="md"
+                      style={{ color: 'darkgray', fontWeight: 'bolder', fontSize: '1.05rem' }}
+                    >
+                      Captcha
+                    </label>
+                    <Turnstile
+                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+                      onSuccess={handleTurnstileSuccess}
+                      ref={turnsTileRef}
+                      style={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
+                    />
+                  </>
+                )}
                 {/* Disable button while loading, submitting, or if Turnstile is enabled and not yet successful */}
                 <Button
                   disabled={
                     loading ||
                     isSubmitting ||
-                    (!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID && !turnstileToken)
+                    (captchaEnabled && !turnstileToken)
                   }
                   type="submit"
                   fullWidth
-                  size="md"
+                    size="md"
+                    id="submit-button"
                 >
                   {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
                 </Button>

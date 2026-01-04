@@ -8,6 +8,8 @@ import {
   Modal,
   Button,
   TextInput,
+  Textarea,
+  Tooltip,
   Select,
   Collapse,
   Group,
@@ -20,6 +22,7 @@ import {
 import { useDisclosure, useDebouncedValue, useLocalStorage } from "@mantine/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
+import Image from "next/image";
 import MainArea from "@/components/MainArea";
 
 const Settings = (props) => {
@@ -40,8 +43,13 @@ const Settings = (props) => {
   const [userEmail, setUserEmail] = useState(user?.email || "");
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
+  const [isForgetModalOpen, setIsForgetModalOpen] = useState(false);
   const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
   const [resetPassword, setResetPassword] = useState("");
+  const [disablePassword, setDisablePassword] = useState("");
+  const [forgetPassword, setForgetPassword] = useState("");
+  const [forgetReason, setForgetReason] = useState("");
   const [opened, { toggle }] = useDisclosure(false);
   const [debouncedNewPassword] = useDebouncedValue(newPassword, 300);
   const [debouncedConfirmPassword] = useDebouncedValue(confirmPassword, 300);
@@ -177,6 +185,50 @@ const Settings = (props) => {
       alertService.error(data.error);
     }
     setIsResetModalOpen(false);
+  };
+
+  const handleDisableAccount = async () => {
+    const response = await fetch("/api/account/disable", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        password: disablePassword,
+      }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      alertService.success("Account disabled successfully.");
+      forceUpdate();
+    } else {
+      alertService.error(data.error);
+    }
+    setIsDisableModalOpen(false);
+    setDisablePassword("");
+  };
+
+  const handleForgetAccount = async () => {
+    const response = await fetch("/api/account/forget", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        password: forgetPassword,
+        reason: forgetReason,
+      }),
+    });
+    const data = await response.json();
+    if (response.ok) {
+      alertService.success("Account data removed successfully.");
+      forceUpdate();
+    } else {
+      alertService.error(data.error);
+    }
+    setIsForgetModalOpen(false);
+    setForgetPassword("");
+    setForgetReason("");
   };
 
   const handleToggle2FA = async () => {
@@ -365,7 +417,7 @@ const Settings = (props) => {
             {showQR && (
               <div>
                 <Space h="md" />
-                <img src={qrCode} alt="QR Code" />
+                <Image src={qrCode} alt="QR Code" width={200} height={200} unoptimized />
                 <Space h="md" />
                 <TextInput
                   placeholder="Enter 6-digit code"
@@ -382,7 +434,7 @@ const Settings = (props) => {
         <Grid.Col span={6}>
           <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
             <Group>
-              <Text size="xl" fw='bolder'>Reset Account</Text>
+              <Text size="xl" fw='bolder'>Account Actions</Text>
               <FontAwesomeIcon
                 icon={opened ? faMinus : faPlus}
                 size="xs"
@@ -390,12 +442,36 @@ const Settings = (props) => {
               />
             </Group>
             <Collapse in={opened}>
-              <Button
-                className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
-                onClick={() => setIsResetModalOpen(true)}
-              >
-                Reset Account
-              </Button>
+
+              <Group mt="md" gap="md" wrap="wrap">
+                <Tooltip label="Resets your account to default stats for the current era." withArrow>
+                  <Button
+                    color="red"
+                    className="rounded px-4 py-2 font-bold"
+                    onClick={() => setIsResetModalOpen(true)}
+                  >
+                    Reset Account
+                  </Button>
+                </Tooltip>
+                <Tooltip label="Closes your account. Reactivation requires support." withArrow>
+                  <Button
+                    color="orange"
+                    className="rounded px-4 py-2 font-bold"
+                    onClick={() => setIsDisableModalOpen(true)}
+                  >
+                    Disable Account
+                  </Button>
+                </Tooltip>
+                <Tooltip label="Removes your email, display name, avatar, bio, and 2FA." withArrow>
+                  <Button
+                    color="red"
+                    className="rounded px-4 py-2 font-bold"
+                    onClick={() => setIsForgetModalOpen(true)}
+                  >
+                    Forget Me
+                  </Button>
+                </Tooltip>
+              </Group>
             </Collapse>
           </Card>
         </Grid.Col>
@@ -439,6 +515,65 @@ const Settings = (props) => {
             </Button>
             <Button color="red" onClick={handleResetAccount}>
               Confirm Reset
+            </Button>
+          </Group>
+        </div>
+      </Modal>
+
+      <Modal
+        opened={isDisableModalOpen}
+        onClose={() => setIsDisableModalOpen(false)}
+        title="Confirm Account Disable"
+      >
+        <div>
+          <Text>Your account will be closed and can only be reactivated by support.</Text>
+          <TextInput
+            type="password"
+            value={disablePassword}
+            onChange={(e) => setDisablePassword(e.target.value)}
+            placeholder="Enter your password to confirm"
+            className="w-full rounded-md border p-2 mt-4"
+          />
+          <Group align="right" mt="md">
+            <Button variant="outline" color="gray" onClick={() => setIsDisableModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button color="orange" onClick={handleDisableAccount}>
+              Confirm Disable
+            </Button>
+          </Group>
+        </div>
+      </Modal>
+
+      <Modal
+        opened={isForgetModalOpen}
+        onClose={() => setIsForgetModalOpen(false)}
+        title="Confirm Account Deletion"
+      >
+        <div>
+          <Text>
+            This will remove your email, display name, avatar, bio, and 2FA. This action cannot be undone.
+          </Text>
+          <TextInput
+            type="password"
+            value={forgetPassword}
+            onChange={(e) => setForgetPassword(e.target.value)}
+            placeholder="Enter your password to confirm"
+            className="w-full rounded-md border p-2 mt-4"
+          />
+          <Textarea
+            value={forgetReason}
+            onChange={(e) => setForgetReason(e.target.value)}
+            placeholder="Optional reason"
+            className="w-full rounded-md border p-2 mt-4"
+            minRows={3}
+          />
+          <Group align="right" mt="md">
+            <Button variant="outline" color="gray" onClick={() => setIsForgetModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button color="red" onClick={handleForgetAccount}>
+              Confirm Delete
             </Button>
           </Group>
         </div>

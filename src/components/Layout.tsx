@@ -1,11 +1,11 @@
 import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
 
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
 import Sidebar from '@/components/Sidebar';
-import MobileNavigation from '@/components/MobileNavigation'; // Import MobileNavigation
 import MobileSidebarContent from '@/components/MobileSidebarContent'; // Import MobileSidebarContent
 import { useLayout } from '@/context/LayoutContext';
 import { AppConfig } from '@/utils/AppConfig';
@@ -25,10 +25,12 @@ interface IMainProps {
 const Layout = (props: IMainProps) => {
   const { status } = useSession();
   const { raceClasses, authorized, userLoading: layoutLoading } = useLayout();
+  const isMobileSidebar = useMediaQuery('(max-width: 767px)', false, {
+    getInitialValueInEffect: true,
+  });
   const [gitInfo, setGitInfo] = useState({ latestCommit: '', latestCommitMessage: '' });
   const [onlinePlayerInfo, setOnlinePlayerInfo] = useState({ onlinePlayers: 0, totalPlayers: 0, newestPlayer: '', newPlayers: 0 });
   const [isDevelopment, setIsDevelopment] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
 
   useEffect(() => {
     setIsDevelopment(process.env.NODE_ENV === 'development');
@@ -122,33 +124,10 @@ const Layout = (props: IMainProps) => {
               {status === 'loading' ? (
                 <NavSkeleton />
               ) : authorized ? (
-                <NavLoggedIn />
+                <NavLoggedIn sidebarContent={<MobileSidebarContent isMobile={isMobileSidebar} />} />
               ) : (
                 <NavLoggedOut />
               )}
-              {/* Mobile Navigation Toggle Button */}
-              <div className="lg:hidden flex justify-end p-2">
-                <button
-                  onClick={() => setIsMobileMenuOpen(true)}
-                  className="text-ot-text focus:outline-none"
-                  aria-label="Open mobile menu"
-                >
-                  <svg
-                    className="h-8 w-8"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4 6h16M4 12h16M4 18h16"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
             </header>
             <main className="h-full grow overflow-y-auto pb-8 px-3" style={{ backgroundImage: `url('${getAssetPath('wall-body')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
               <div className="flex h-full flex-wrap" style={{ background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5))' }}>
@@ -156,7 +135,7 @@ const Layout = (props: IMainProps) => {
                   <>
                     {/* Conditionally render Sidebar based on authentication status */}
                     {authorized && (
-                      <div className="w-full lg:w-1/5" style={{ backgroundColor: 'var(--ot-surface-2)' }}>
+                      <div className="hidden w-full lg:block lg:w-1/5" style={{ backgroundColor: 'var(--ot-surface-2)' }}>
                         {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
                       </div>
                     )}
@@ -196,15 +175,6 @@ const Layout = (props: IMainProps) => {
           </div>
         </footer>
       </div>
-      {/* Render MobileNavigation */}
-      {authorized && (
-        <MobileNavigation
-          open={isMobileMenuOpen}
-          onClose={() => setIsMobileMenuOpen(false)}
-          menuItems={[]} // Define your mobile menu items here
-          sidebarContent={<MobileSidebarContent isMobile={true} />} // Pass the new component here
-        />
-      )}
     </>
   );
 };
