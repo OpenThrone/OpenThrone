@@ -22,7 +22,7 @@ import { InferGetServerSidePropsType } from "next";
 import Image from 'next/image';
 import FriendCard from '@/components/friendCard';
 import MainArea from '@/components/MainArea';
-import { logDebug } from '@/utils/logger';
+import { logDebug, logError } from '@/utils/logger';
 
 interface UserProfileServerData {
   id: number;
@@ -929,9 +929,19 @@ export const getServerSideProps = async ({ query }) => {
   const updatedAtDate = user.updated_at ? new Date(user.updated_at) : null;
   const updatedAtStr = updatedAtDate && !isNaN(updatedAtDate.getTime()) ? updatedAtDate.toISOString() : null;
 
+  let serializedBio;
+  const bioContent = user.bio ?? '';
+
+  try {
+    serializedBio = await serialize(bioContent);
+  } catch (error) {
+    logError('Error serializing user bio', error, { userId: user.id });
+    serializedBio = await serialize('');
+  }
+
   const userData = {
     ...userWithoutPassword,
-    bionew: await serialize(user.bio),
+    bionew: serializedBio,
     gold: user.gold.toString(),
     gold_in_bank: user.gold_in_bank.toString(),
     last_active: lastActiveStr,
