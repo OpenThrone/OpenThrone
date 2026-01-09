@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, Card, Center, Checkbox, Group, Space, Table, Text, Title, useMantineTheme } from '@mantine/core';
 import ThemedCard from '@/components/themedCard';
+import MainArea from '@/components/MainArea';
 
 const SamplePage = (props) => {
   const theme = useMantineTheme();
@@ -24,7 +25,8 @@ const SamplePage = (props) => {
   };
 
   return (
-    <div style={{ padding: '2rem' }}>
+    <MainArea title="Theme Sample">
+      <div style={{ padding: '2rem' }}>
       <Center>
         <Title order={1} style={{ color: theme.colors.brand[9] }}>
           Test the Mantine Theme Options
@@ -138,8 +140,9 @@ const SamplePage = (props) => {
           </Center>
         </Card>
       </Group>
-      <ThemedCard />
-    </div>
+        <ThemedCard />
+      </div>
+    </MainArea>
   );
 };
 

@@ -17,11 +17,9 @@ import { useUser } from "@/context/users";
 import { alertService } from "@/services/Alert.service";
 import {
   Group,
-  Table as MantineTable,
   Space,
   Avatar,
   Button,
-  Card,
   Text,
   FileButton,
   Grid
@@ -29,6 +27,7 @@ import {
 import Link from "next/link";
 import MainArea from "@/components/MainArea";
 import { logDebug } from "@/utils/logger";
+import { GameCard } from "@/components/game/GameCard";
 
 const Profile = (props) => {
   const [file, setFile] = useState<File | null>(null);
@@ -152,40 +151,32 @@ const Profile = (props) => {
       title="My Profile">
       <Grid gutter="lg">
         <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw="bolder">
-              Current Avatar
-            </Text>
-            <Space h="lg" />
+          <GameCard title="Current Avatar">
             <Group align="center" mt="md">
               <Avatar src={user?.avatar} size={150} radius="md" />
             </Group>
-          </Card>
+          </GameCard>
         </Grid.Col>
         <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw="bolder">
-              New Avatar
-            </Text>
-            <Text size="sm" color="dimmed">Limits: 450x450 and 1.5mb</Text>
+          <GameCard title="New Avatar">
+            <Text size="sm" c="dimmed">Limits: 450x450 and 1.5mb</Text>
             <Group align="center" mt="md">
               <Avatar src={file ? URL.createObjectURL(file) : ""} size={150} radius="md" />
               <FileButton accept="image/jpeg, image/jpg, image/gif, image/png, image/webp" onChange={setFile}>
-                {(props) => <Button {...props}>Upload image</Button>}
+                {(props) => <Button {...props} color="yellow">Upload image</Button>}
               </FileButton>
             </Group>
-          </Card>
+          </GameCard>
         </Grid.Col>
       </Grid>
       <Space h="md" />
-      <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
+      <GameCard title="Profile Biography">
         <Space h="md" />
-        <Text size="xl" fw='bolder'>Profile Biography {contentChanged && (
-          <span>
-            <span style={{ color: 'red' }}>*</span>
-            <span style={{ color: 'dimmed' }}>Unsaved changes</span>
-          </span>
-        ) }</Text>
+        {contentChanged && (
+          <Text size="sm" c="red">
+            * Unsaved changes
+          </Text>
+        )}
         <RichTextEditor editor={editor}>
           <RichTextEditor.Toolbar sticky stickyOffset={60}>
             <RichTextEditor.ControlsGroup>
@@ -252,7 +243,7 @@ const Profile = (props) => {
             </Button>
           </Link>
         </Group>
-      </Card>
+      </GameCard>
     </MainArea>
   );
 };

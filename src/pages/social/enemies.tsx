@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Loader, Group, Paper } from '@mantine/core';
+import { Table, Loader } from '@mantine/core';
 import MainArea from '@/components/MainArea';
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
 
 const Enemies = (props) => {
   const [enemies, setEnemies] = useState([]);
@@ -15,28 +17,30 @@ const Enemies = (props) => {
       });
   }, []);
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <MainArea title="Enemies">
+        <GameCard title="Enemies">
+          <Loader />
+        </GameCard>
+      </MainArea>
+    );
+  }
 
   const rows = enemies.map(enemy => (
-    <Table.Tr key={enemy.id}>
-      <Table.Td>{enemy.playerId}</Table.Td>
-      <Table.Td>{enemy.status}</Table.Td>
+    <Table.Tr key={enemy.id} style={{ background: '#0f141a' }}>
+      <Table.Td style={{ borderColor: '#1f2b3b' }}>{enemy.playerId}</Table.Td>
+      <Table.Td style={{ borderColor: '#1f2b3b' }}>{enemy.status}</Table.Td>
     </Table.Tr>
   ));
 
   return (
     <MainArea title="Enemies">
-      <Paper shadow="xs" p="md">
-        <Table className="min-w-full" striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Player ID</Table.Th>
-              <Table.Th>Status</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </Paper>
+      <GameCard title="Enemies List">
+        <StyledTable headers={['Player ID', 'Status']}>
+          {rows}
+        </StyledTable>
+      </GameCard>
     </MainArea>
   );
 };

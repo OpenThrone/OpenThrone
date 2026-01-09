@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator } from '@mantine/core';
-import UserModel from '@/models/Users';
 import Link from 'next/link';
+import { Table, Loader, Group, Avatar, Badge, Text, Indicator } from '@mantine/core';
+import UserModel from '@/models/Users';
 import MainArea from '@/components/MainArea';
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
 
 const Friends = (props) => {
   const [friends, setFriends] = useState([]);
@@ -17,13 +19,21 @@ const Friends = (props) => {
       });
   }, []);
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <MainArea title="Friends">
+        <GameCard title="Friends">
+          <Loader />
+        </GameCard>
+      </MainArea>
+    );
+  }
 
   const rows = friends.map(friend => {
     const player = new UserModel(friend.friend, true, false);
     return (
-      <Table.Tr key={player.id}>
-        <Table.Td>
+      <Table.Tr key={player.id} style={{ background: '#0f141a' }}>
+        <Table.Td style={{ borderColor: '#1f2b3b' }}>
           <Group
             gap={'sm'}
             className='text-justify'
@@ -47,24 +57,18 @@ const Friends = (props) => {
             </div>
           </Group>
         </Table.Td>
-        <Table.Td>{friend.acceptanceDate}</Table.Td>
+        <Table.Td style={{ borderColor: '#1f2b3b' }}>{friend.acceptanceDate}</Table.Td>
       </Table.Tr>
     )
   });
 
   return (
     <MainArea title="Friends">
-      <Paper shadow="xs" p="md">
-        <Table className="min-w-full" striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Username</Table.Th>
-              <Table.Th>Since</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </Paper>
+      <GameCard title="Friends List">
+        <StyledTable headers={['Username', 'Since']}>
+          {rows}
+        </StyledTable>
+      </GameCard>
     </MainArea>
   );
 };

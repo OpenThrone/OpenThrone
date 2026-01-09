@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Table, Loader, Group, Paper, Title } from '@mantine/core';
+import { Button, Table, Loader, Group } from '@mantine/core';
 import { useUser } from '@/context/users';
 import MainArea from '@/components/MainArea';
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
+import { logError } from '@/utils/logger';
 
 const Requests = (props) => {
   const [requests, setRequests] = useState([]);
@@ -37,7 +40,15 @@ const Requests = (props) => {
       });
   };
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <MainArea title="Friend Requests">
+        <GameCard title="Friend Requests">
+          <Loader />
+        </GameCard>
+      </MainArea>
+    );
+  }
 
   const processedRequests = requests.map(request => ({
     ...request,
@@ -52,23 +63,23 @@ const Requests = (props) => {
     console.log(requestsList);
     if (requestsList.length === 0) {
       return (
-        <Table.Tr>
-          <Table.Td colSpan={4}>No requests</Table.Td>
+        <Table.Tr style={{ background: '#0f141a' }}>
+          <Table.Td colSpan={4} style={{ borderColor: '#1f2b3b' }}>No requests</Table.Td>
         </Table.Tr>
       );
     }
 
     return requestsList.map(request => (
-      <Table.Tr key={request.id}>
-        <Table.Td>
+      <Table.Tr key={request.id} style={{ background: '#0f141a' }}>
+        <Table.Td style={{ borderColor: '#1f2b3b' }}>
           {request.friend && request.friend.display_name ? request.friend.display_name : "Unknown Player"} {/* Safe access */}
         </Table.Td>
-        <Table.Td>{new Date(request.requestDate).toLocaleString()}</Table.Td>
-        <Table.Td>{request.status}</Table.Td>
-        <Table.Td>
+        <Table.Td style={{ borderColor: '#1f2b3b' }}>{new Date(request.requestDate).toLocaleString()}</Table.Td>
+        <Table.Td style={{ borderColor: '#1f2b3b' }}>{request.status}</Table.Td>
+        <Table.Td style={{ borderColor: '#1f2b3b' }}>
           {request.type === 'outgoing' ? 'Pending acceptance' : (
             <Group>
-              <Button size="xs" color="green" onClick={() => handleResponse(request.id, 'accept')}>Accept</Button>
+              <Button size="xs" color="yellow" onClick={() => handleResponse(request.id, 'accept')}>Accept</Button>
               <Button size="xs" color="red" onClick={() => handleResponse(request.id, 'decline')}>Decline</Button>
             </Group>
           )}
@@ -79,36 +90,17 @@ const Requests = (props) => {
 
   return (
     <MainArea title="Friend Requests">
-      <Paper shadow="xs" p="md">
-        <Table className="min-w-full border-neutral-500" striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Player</Table.Th>
-              <Table.Th>Date/Time</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{renderRows(incomingRequests)}</Table.Tbody>
-        </Table>
-      </Paper>
+      <GameCard title="Incoming Requests">
+        <StyledTable headers={['Player', 'Date/Time', 'Status', 'Actions']}>
+          {renderRows(incomingRequests)}
+        </StyledTable>
+      </GameCard>
 
-      <Title order={2} className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs pl-5">
-        Outgoing Friend Requests
-      </Title>
-      <Paper shadow="xs" p="md">
-        <Table className="min-w-full border-neutral-500" striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Player ID</Table.Th>
-              <Table.Th>Date/Time</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{renderRows(outgoingRequests)}</Table.Tbody>
-        </Table>
-      </Paper>
+      <GameCard title="Outgoing Requests" mt="md">
+        <StyledTable headers={['Player', 'Date/Time', 'Status', 'Actions']}>
+          {renderRows(outgoingRequests)}
+        </StyledTable>
+      </GameCard>
     </MainArea>
   );
 };

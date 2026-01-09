@@ -1,15 +1,20 @@
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { InferGetServerSidePropsType } from "next";
 import { MDXRemote, MDXRemoteSerializeResult } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
-import React, { useEffect, useState } from 'react';
 import { AccountStatus } from '@prisma/client'; // Import AccountStatus
 import { JsonValue } from '@prisma/client/runtime/library'; // Import JsonValue
+import { Avatar, Badge, Container, Flex, Group, Indicator, Loader, SimpleGrid, Space, Table, Text } from '@mantine/core';
 
 import Modal from '@/components/modal';
 import SpyMissionsModal from '@/components/spyMissionsModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { GoldTransferModal } from '@/components/GoldTransferModal';
 import { GoldRequestModal } from '@/components/GoldRequestModal';
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -17,9 +22,6 @@ import { alertService } from '@/services/Alert.service';
 import { Fortifications } from '@/constants';
 import toLocale from '@/utils/numberFormatting';
 import { serializeDates } from '@/utils/utilities';
-import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator, SimpleGrid, Center, Space, Flex, Container } from '@mantine/core';
-import { InferGetServerSidePropsType } from "next";
-import Image from 'next/image';
 import FriendCard from '@/components/friendCard';
 import MainArea from '@/components/MainArea';
 import { logDebug, logError } from '@/utils/logger';
@@ -138,14 +140,8 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
       });
   }, [profile.id]);
 
-  // Fetch friend relationship status
-  useEffect(() => {
-    if (user && profile.id && user.id !== profile.id) {
-      fetchFriendRelationship();
-    }
-  }, [user, profile.id]);
-
-  const fetchFriendRelationship = async () => {
+  const fetchFriendRelationship = useCallback(async () => {
+    if (!user || !profile.id || user.id === profile.id) return;
     setIsFriendLoading(true);
     try {
       const response = await fetch(`/api/social/relationship?userId=${user.id}&targetUserId=${profile.id}`);
@@ -158,23 +154,10 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
     } finally {
       setIsFriendLoading(false);
     }
-  };
+  }, [profile.id, user]);
 
-  // Force refresh friend relationship when friends list changes
-  useEffect(() => {
-    if (user && profile.id && user.id !== profile.id) {
-      fetchFriendRelationship();
-    }
-  }, [friends]);
-
-  // Fetch enemy relationship status
-  useEffect(() => {
-    if (user && profile.id && user.id !== profile.id && enableEnemies) {
-      fetchEnemyRelationship();
-    }
-  }, [user, profile.id, enableEnemies]);
-
-  const fetchEnemyRelationship = async () => {
+  const fetchEnemyRelationship = useCallback(async () => {
+    if (!user || !profile.id || user.id === profile.id || !enableEnemies) return;
     setIsEnemyLoading(true);
     try {
       const response = await fetch(`/api/social/relationship?userId=${user.id}&targetUserId=${profile.id}`);
@@ -192,14 +175,31 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
     } finally {
       setIsEnemyLoading(false);
     }
-  };
+  }, [enableEnemies, profile.id, user]);
+
+  // Fetch friend relationship status
+  useEffect(() => {
+    fetchFriendRelationship();
+  }, [fetchFriendRelationship]);
+
+  // Force refresh friend relationship when friends list changes
+  useEffect(() => {
+    if (friends.length > 0) {
+      fetchFriendRelationship();
+    }
+  }, [fetchFriendRelationship, friends.length]);
+
+  // Fetch enemy relationship status
+  useEffect(() => {
+    fetchEnemyRelationship();
+  }, [fetchEnemyRelationship]);
 
   // Force refresh enemy relationship when needed
   useEffect(() => {
-    if (user && profile.id && user.id !== profile.id && enableEnemies) {
+    if (friends.length > 0) {
       fetchEnemyRelationship();
     }
-  }, [user, profile.id, enableEnemies]);
+  }, [fetchEnemyRelationship, friends.length]);
 
   const toggleModal = () => {
     setIsOpen(!isOpen);
@@ -484,29 +484,23 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="col-span-1">
-          <Paper>
+          <GameCard title="Profile">
             <div className="flex items-center justify-center">
-                <Image
-                  src={profile?.avatar}
+              <Image
+                src={profile?.avatar}
                 style={{ width: '100%', height: 'auto', marginLeft: 2 }}
-                alt='avatar'
-                  width={484}
-                  height={484}
-                />
-              
+                alt="avatar"
+                width={484}
+                height={484}
+              />
             </div>
             <div className="my-3 mb-4">
               <MDXRemote {...users.bionew} />
-          </div>
-
-          </Paper>
-
-          <SimpleGrid cols={2}>
-          <Paper>
-            <div className="card-header-dark">
-              <h6 className="border-light border-b-2 p-2 font-bold">Status</h6>
             </div>
-            <div className="card-body">
+          </GameCard>
+
+          <SimpleGrid cols={2} mt="md">
+            <GameCard title="Status">
               {isOnline ? (
                 <div className="alert alert-success">
                   <h6>Online</h6>
@@ -516,32 +510,31 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
                   <h6>{userStatus === 'ACTIVE' ? 'OFFLINE' : userStatus}</h6>
                 </div>
               )}
-            </div>
-              </Paper>
-            <Paper>
-                <h6 className="border-dark border-b-2 p-2 font-bold">Last Online</h6>
-                <Text size='sm' p={6}>{lastActive}</Text>
-          </Paper>
+            </GameCard>
+            <GameCard title="Last Online">
+              <Text size="sm">{lastActive}</Text>
+            </GameCard>
           </SimpleGrid>
         </div>
         <div className="col-span-1">
-          {hideSidebar || isPlayer || userStatus !== 'ACTIVE' && userStatus !== 'IDLE' ? (
-            <div className="list-group mb-4">
-              <Link
-                href={`/recruit/${profile?.recruitingLink}`}
-                className="profile-nav-link"
-                style={{ display: userStatus !== 'ACTIVE' ? 'none' : 'block' }}
-              >
-                Recruit this Player
-              </Link>
-              <Link
-                href={'/account/register'}
-                className="profile-nav-link"
-              >Join Now</Link>
-            </div>
-          ) : (
-            <div className="list-group mb-4">
-              <Link
+          <GameCard title="Actions">
+            {hideSidebar || isPlayer || userStatus !== 'ACTIVE' && userStatus !== 'IDLE' ? (
+              <div className="list-group mb-4">
+                <Link
+                  href={`/recruit/${profile?.recruitingLink}`}
+                  className="profile-nav-link"
+                  style={{ display: userStatus !== 'ACTIVE' ? 'none' : 'block' }}
+                >
+                  Recruit this Player
+                </Link>
+                <Link
+                  href={'/account/register'}
+                  className="profile-nav-link"
+                >Join Now</Link>
+              </div>
+            ) : (
+              <div className="list-group mb-4">
+                <Link
                   href={{
                     pathname: "/messaging",
                     query: {
@@ -551,137 +544,145 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
                     },
                   }}
                   className={`profile-nav-link ${user?.id === 1 || user?.id === 2 ? '' : 'disabled'}`}
-              >
-                Message this Player
-              </Link>
-              <button
-                type="button"
-                onClick={toggleModal}
-                className={`profile-nav-link ${canAttack ? '' : 'disabled'}`}
-              >
-                Attack this Player
-              </button>
-              <Modal
-                isOpen={isOpen}
+                >
+                  Message this Player
+                </Link>
+                <button
+                  type="button"
+                  onClick={toggleModal}
+                  className={`profile-nav-link ${canAttack ? '' : 'disabled'}`}
+                >
+                  Attack this Player
+                </button>
+                <Modal
+                  isOpen={isOpen}
                   toggleModal={toggleModal}
                   profileID={users.id}
-              />
+                />
 
                 <button
                   type='button'
                   onClick={toggleSpyModal}
                   className={`profile-nav-link ${canAttack ? '' : 'disabled'}`}
-              >
-                Spy Missions
+                >
+                  Spy Missions
                 </button>
                 <SpyMissionsModal
                   isOpen={isSpyModalOpen}
                   toggleModal={toggleSpyModal}
                   defenderID={profile?.id}
                 />
-              <Link
-                href={`/recruit/${profile?.recruitingLink}`}
-                className="profile-nav-link"
-              >
-                Recruit this Player
+                <Link
+                  href={`/recruit/${profile?.recruitingLink}`}
+                  className="profile-nav-link"
+                >
+                  Recruit this Player
                 </Link>
                 {socialEnabled && (
-                <>
-                  {friendStatus === 'pending_incoming' ? (
-                      <Paper className="friend-request-button-group">
-                      <div className="friend-request-status">
-                        {friendStatusDisplay.text}
-                      </div>
-                      <div className="friend-request-buttons-container">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (isFriendLoading) return;
-                            
-                            setIsFriendLoading(true);
-                            try {
-                              const res = await fetch('/api/social/respond', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  requestId: friendRelationship.id,
-                                  action: 'accept'
-                                }),
-                              });
+                  <>
+                    {friendStatus === 'pending_incoming' ? (
+                      <div
+                        className="friend-request-button-group"
+                        style={{
+                          backgroundColor: '#0f141a',
+                          borderRadius: '6px',
+                          border: '1px solid #1f2b3b',
+                          boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                        }}
+                      >
+                        <div className="friend-request-status">
+                          {friendStatusDisplay.text}
+                        </div>
+                        <div className="friend-request-buttons-container">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (isFriendLoading) return;
 
-                              if (res.ok) {
-                                alertService.success('Friend request accepted');
-                                await fetchFriendRelationship();
-                                forceUpdate();
-                              } else {
-                                const error = await res.json();
-                                alertService.error(error.error || 'Failed to accept friend request');
-                              }
-                            } catch (error) {
-                              alertService.error('Failed to accept friend request');
-                            } finally {
-                              setIsFriendLoading(false);
-                            }
-                          }}
-                          className={`friend-request-button accept ${isFriendLoading ? 'loading' : ''}`}
-                          disabled={isFriendLoading}
-                        >
-                          {isFriendLoading ? (
-                            <div className="flex items-center justify-center">
-                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Accepting...
-                            </div>
-                          ) : 'Accept'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (isFriendLoading) return;
-                            
-                            setIsFriendLoading(true);
-                            try {
-                              const res = await fetch('/api/social/respond', {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  requestId: friendRelationship.id,
-                                  action: 'decline'
-                                }),
-                              });
+                              setIsFriendLoading(true);
+                              try {
+                                const res = await fetch('/api/social/respond', {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    requestId: friendRelationship.id,
+                                    action: 'accept'
+                                  }),
+                                });
 
-                              if (res.ok) {
-                                alertService.success('Friend request declined');
-                                await fetchFriendRelationship();
-                                forceUpdate();
-                              } else {
-                                const error = await res.json();
-                                alertService.error(error.error || 'Failed to decline friend request');
+                                if (res.ok) {
+                                  alertService.success('Friend request accepted');
+                                  await fetchFriendRelationship();
+                                  forceUpdate();
+                                } else {
+                                  const error = await res.json();
+                                  alertService.error(error.error || 'Failed to accept friend request');
+                                }
+                              } catch (error) {
+                                alertService.error('Failed to accept friend request');
+                              } finally {
+                                setIsFriendLoading(false);
                               }
-                            } catch (error) {
-                              alertService.error('Failed to decline friend request');
-                            } finally {
-                              setIsFriendLoading(false);
-                            }
-                          }}
-                          className={`friend-request-button decline ${isFriendLoading ? 'loading' : ''}`}
-                          disabled={isFriendLoading}
-                        >
-                          {isFriendLoading ? (
-                            <div className="flex items-center justify-center">
-                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Declining...
-                            </div>
-                          ) : 'Decline'}
-                        </button>
+                            }}
+                            className={`friend-request-button accept ${isFriendLoading ? 'loading' : ''}`}
+                            disabled={isFriendLoading}
+                          >
+                            {isFriendLoading ? (
+                              <div className="flex items-center justify-center">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Accepting...
+                              </div>
+                            ) : 'Accept'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (isFriendLoading) return;
+
+                              setIsFriendLoading(true);
+                              try {
+                                const res = await fetch('/api/social/respond', {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    requestId: friendRelationship.id,
+                                    action: 'decline'
+                                  }),
+                                });
+
+                                if (res.ok) {
+                                  alertService.success('Friend request declined');
+                                  await fetchFriendRelationship();
+                                  forceUpdate();
+                                } else {
+                                  const error = await res.json();
+                                  alertService.error(error.error || 'Failed to decline friend request');
+                                }
+                              } catch (error) {
+                                alertService.error('Failed to decline friend request');
+                              } finally {
+                                setIsFriendLoading(false);
+                              }
+                            }}
+                            className={`friend-request-button decline ${isFriendLoading ? 'loading' : ''}`}
+                            disabled={isFriendLoading}
+                          >
+                            {isFriendLoading ? (
+                              <div className="flex items-center justify-center">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Declining...
+                              </div>
+                            ) : 'Decline'}
+                          </button>
+                        </div>
                       </div>
-                    </Paper>
-                  ) : (
+                    ) : (
                     <button
                       type="button"
                       onClick={friendStatusDisplay.action}
@@ -782,50 +783,37 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
                 )}
             </div>
           )}
+          </GameCard>
           {socialEnabled && (
-            <>
-              <h6 className="border-dark text-center font-bold">
-                Top Friends
-              </h6>
-              <Paper shadow="sm" p="md" className="my-5">
-                <SimpleGrid cols={3} spacing={4}>
-                  {friendsList}
-                </SimpleGrid>
-              </Paper>
-            </>
+            <GameCard title="Top Friends" mt="md">
+              <SimpleGrid cols={3} spacing={4}>
+                {friendsList}
+              </SimpleGrid>
+            </GameCard>
           )}
-          <Center>
-            <h6 className="border-dark text-center font-bold">
-              Statistics
-            </h6>
-          </Center>
-          <Table striped highlightOnHover>
-            <Table.Tbody>
-              <Table.Tr className="odd:bg-table-odd even:bg-table-even">
-                <Table.Td>Population</Table.Td>
-                <Table.Td>{profile?.population?.toLocaleString()}</Table.Td>
+          <GameCard title="Statistics" mt="md">
+            <StyledTable headers={['Stat', 'Value']}>
+              <Table.Tr style={{ background: '#0f141a' }}>
+                <Table.Td style={{ borderColor: '#1f2b3b' }}>Population</Table.Td>
+                <Table.Td style={{ borderColor: '#1f2b3b' }}>{profile?.population?.toLocaleString()}</Table.Td>
               </Table.Tr>
-              <Table.Tr className="odd:bg-table-odd even:bg-table-even">
-                <Table.Td>Army Size</Table.Td>
-                <Table.Td>{profile?.armySize?.toLocaleString()}</Table.Td>
+              <Table.Tr style={{ background: '#0f141a' }}>
+                <Table.Td style={{ borderColor: '#1f2b3b' }}>Army Size</Table.Td>
+                <Table.Td style={{ borderColor: '#1f2b3b' }}>{profile?.armySize?.toLocaleString()}</Table.Td>
               </Table.Tr>
-              <Table.Tr className="odd:bg-table-odd even:bg-table-even">
-                <Table.Td>Fortification</Table.Td>
-                <Table.Td>{Fortifications.find((fort) => fort.level === profile?.fortLevel).name}</Table.Td>
+              <Table.Tr style={{ background: '#0f141a' }}>
+                <Table.Td style={{ borderColor: '#1f2b3b' }}>Fortification</Table.Td>
+                <Table.Td style={{ borderColor: '#1f2b3b' }}>{Fortifications.find((fort) => fort.level === profile?.fortLevel).name}</Table.Td>
               </Table.Tr>
-              <Table.Tr className="odd:bg-table-odd even:bg-table-even">
-                <Table.Td>Gold</Table.Td>
-                <Table.Td>{toLocale(profile?.gold)}</Table.Td>
+              <Table.Tr style={{ background: '#0f141a' }}>
+                <Table.Td style={{ borderColor: '#1f2b3b' }}>Gold</Table.Td>
+                <Table.Td style={{ borderColor: '#1f2b3b' }}>{toLocale(profile?.gold)}</Table.Td>
               </Table.Tr>
-            </Table.Tbody>
-          </Table>
-          <h6 className="border-dark border-b-2 p-2 text-center font-bold">
-            Medals
-          </h6>
+            </StyledTable>
+          </GameCard>
         
           {users.latestUserEra && (
-            <Paper shadow="sm" p="md" className="my-5">
-              <h6 className="border-dark border-b-2 p-2 font-bold">Achievements</h6>
+            <GameCard title="Achievements" mt="md">
               <ul>
                 {Object.entries(users.latestUserEra.achievements).map(([key, value]) => (
                   <li key={key}>
@@ -833,7 +821,7 @@ const Index = ({ users }: InferGetServerSidePropsType<typeof getServerSideProps>
                   </li>
                 ))}
               </ul>
-            </Paper>
+            </GameCard>
           )}
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { Turnstile } from '@marsidev/react-turnstile';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Divider, Group, Paper, Space, Text } from '@mantine/core';
+import { Button, Divider, Space, Text } from '@mantine/core';
 import { alertService } from '@/services/Alert.service';
 import Image from 'next/image';
 import { useUser } from '@/context/users';
@@ -9,6 +9,7 @@ import { getAssetPath } from '@/utils/utilities';
 import { PlayerRace } from '@/types/typings';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
+import { GameCard } from '@/components/game/GameCard';
 
 interface RecruitProps {
   id: string;
@@ -184,10 +185,9 @@ export default function Recruit(props) {
           <Space h="md" />
           <Divider />
           <Space h="md" />
-          <Paper pl={'md'} pr={'md'} pb={'sm'}>
-            <Text size="xl">Anti Spam Policy</Text>
+          <GameCard title="Anti Spam Policy">
             <Text size="sm">
-            Recruiting is intended to be used with your friends and family. Spam of any kind is not permitted and will result in suspension or ban of your account. Further violations may result in a ban of your IP address. Please be respectful of others and only recruit with permission.
+              Recruiting is intended to be used with your friends and family. Spam of any kind is not permitted and will result in suspension or ban of your account. Further violations may result in a ban of your IP address. Please be respectful of others and only recruit with permission.
             </Text>
             <Space h="md" />
             <Text size="sm">
@@ -195,7 +195,7 @@ export default function Recruit(props) {
               completing this captcha, you are helping us keep the game fair and
               fun for everyone.
             </Text>
-          </Paper>
+          </GameCard>
         </div>
       </div>
     </MainArea>

@@ -1,14 +1,21 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
-import ChatRoomList from '@/components/ChatRoomList';
-import ChatMessageList from '@/components/ChatMessageList';
-import useSocket from '@/hooks/useSocket';
-import { Space, Button } from '@mantine/core';
-import MainArea from '@/components/MainArea';
 import { useSession } from 'next-auth/react';
+
+import { Button, Space, Switch } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
+
+import MainArea from '@/components/MainArea';
+import { GameCard } from '@/components/game/GameCard';
+import ChatMessageListThemed from '@/components/game/ChatMessageListThemed';
+import ChatRoomListThemed from '@/components/game/ChatRoomListThemed';
+import styles from '@/components/game/ChatThemed.module.css';
 import NewMessageModal from '@/components/NewMessageModal';
 import { useUser } from '@/context/users';
+import useSocket from '@/hooks/useSocket';
 import { logError, logInfo } from '@/utils/logger';
+import ChatRoomList from '@/components/ChatRoomList';
+import ChatMessageList from '@/components/ChatMessageList';
 
 // Define a type for the message structure used in the frontend state
 interface FrontendMessage {
@@ -195,6 +202,10 @@ const MessageListComponent = ({
   const router = useRouter();
   const selectedRoom = useMemo(() => rooms.find(room => room.id === selectedRoomId) || null, [rooms, selectedRoomId]);
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
+  const [useThemedChat, setUseThemedChat] = useLocalStorage({
+    key: 'ot-chat-themed',
+    defaultValue: true,
+  });
   const composeToUserId = useMemo(() => {
     const raw = router.query.composeToUserId;
     const id = Number(Array.isArray(raw) ? raw[0] : raw);
@@ -231,26 +242,66 @@ const MessageListComponent = ({
 
   return (
     <MainArea title="Messaging">
-      <div className="flex justify-end p-4">
-        <Button onClick={() => setIsNewMessageModalOpen(true)}>New Message</Button>
+      <div className="p-4">
+        <GameCard
+          title="New Message"
+          action={(
+            <Switch
+              checked={useThemedChat}
+              onChange={(event) => setUseThemedChat(event.currentTarget.checked)}
+              label="Themed chat"
+              size="sm"
+            />
+          )}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-sm text-gray-300">Start a new conversation or manage your chats.</div>
+              <div className="text-xs text-gray-400">Toggle the themed layout any time.</div>
+            </div>
+            <Button color="yellow" onClick={() => setIsNewMessageModalOpen(true)}>
+              Compose
+            </Button>
+          </div>
+        </GameCard>
       </div>
-      <div className="flex h-[calc(100vh-250px)]">
-        <div className="w-1/4 bg-gray-900 p-2 overflow-y-auto border-r border-gray-700">
-          <ChatRoomList
-            rooms={rooms}
-            onRoomSelect={setSelectedRoomId}
-            selectedRoomId={selectedRoomId}
-          />
+      {useThemedChat ? (
+        <div className={styles.chatLayout}>
+          <div className={`${styles.panel} ${styles.roomsPanel}`}>
+            <ChatRoomListThemed
+              rooms={rooms}
+              onRoomSelect={setSelectedRoomId}
+              selectedRoomId={selectedRoomId}
+            />
+          </div>
+          <div className={`${styles.panel} ${styles.messagesPanel}`}>
+            <ChatMessageListThemed
+              selectedRoomId={selectedRoomId}
+              messages={messages}
+              roomInfo={selectedRoom}
+              isLoading={loadingMessages}
+            />
+          </div>
         </div>
-        <div className="w-3/4 bg-gray-800 flex flex-col h-full">
-          <ChatMessageList
-            selectedRoomId={selectedRoomId}
-            messages={messages}
-            roomInfo={selectedRoom}
-            isLoading={loadingMessages}
-          />
+      ) : (
+        <div className="flex h-[calc(100vh-250px)]">
+          <GameCard title="Chat Rooms" className="w-1/4">
+            <ChatRoomList
+              rooms={rooms}
+              onRoomSelect={setSelectedRoomId}
+              selectedRoomId={selectedRoomId}
+            />
+          </GameCard>
+          <GameCard title={selectedRoom?.name || "Select a room"} className="w-3/4">
+            <ChatMessageList
+              selectedRoomId={selectedRoomId}
+              messages={messages}
+              roomInfo={selectedRoom}
+              isLoading={loadingMessages}
+            />
+          </GameCard>
         </div>
-      </div>
+      )}
       <Space h="md" />
       <NewMessageModal
         opened={isNewMessageModalOpen}
@@ -454,8 +505,17 @@ const RealtimeMessageHandler = ({
         socket.emit('leaveRoom', currentRoomRef.current);
       }
     };
-    // Aggressively refined dependencies: Only include values that truly dictate when the effect *must* re-run
-  }, [socket, userId, selectedRoomId, isConnected, addEventListener, removeEventListener]); // Removed fetchRooms, setMessages, setRooms
+  }, [
+    socket,
+    userId,
+    selectedRoomId,
+    isConnected,
+    addEventListener,
+    removeEventListener,
+    fetchRooms,
+    setMessages,
+    setRooms,
+  ]);
 
   return null;
 };

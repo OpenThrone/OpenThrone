@@ -15,7 +15,6 @@ import {
   Group,
   PasswordInput,
   Space,
-  Card,
   Text,
   Grid
 } from "@mantine/core";
@@ -24,6 +23,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 import Image from "next/image";
 import MainArea from "@/components/MainArea";
+import { GameCard } from "@/components/game/GameCard";
 
 const Settings = (props) => {
   const locales: Locales[] = ["en-US", "es-ES"];
@@ -289,7 +289,9 @@ const Settings = (props) => {
   if (!user) {
     return (
       <MainArea title="Settings">
-        <div>Loading settings...</div>
+        <GameCard title="Settings">
+          <div>Loading settings...</div>
+        </GameCard>
       </MainArea>
     );
   }
@@ -298,8 +300,7 @@ const Settings = (props) => {
     <MainArea title="Settings">
       <Grid gutter="lg">
         <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw='bolder'>Change Password</Text>
+          <GameCard title="Change Password">
             <Text>Enter Current Password</Text>
             <PasswordInput
               value={currentPassword}
@@ -330,13 +331,11 @@ const Settings = (props) => {
               >
                 Save
               </Button>
-          </Card>
+          </GameCard>
         </Grid.Col>
 
         <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw='bolder'>Game Options</Text>
-            
+          <GameCard title="Game Options">
               <Text>Locale Formatting</Text>
               <Select
                 value={locale}
@@ -364,12 +363,11 @@ const Settings = (props) => {
               >
                 Save
               </Button>
-          </Card>
+          </GameCard>
         </Grid.Col>
 
         <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw='bolder'>Change Email</Text>
+          <GameCard title="Change Email">
             <Text>Current Email</Text>
             <Text c="dimmed" size="md">{userEmail}</Text>
             <Text>New Email</Text>
@@ -386,11 +384,10 @@ const Settings = (props) => {
             >
               Save
             </Button>
-          </Card>
+          </GameCard>
         </Grid.Col>
         <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw='bolder'>Vacation Mode</Text>
+          <GameCard title="Vacation Mode">
             <Text c="dimmed">Vacation mode allows you to temporarily disable your account.</Text>
             <Text c="dimmed">While in vacation mode, your account will be protected from attacks.</Text>
             <Text c="dimmed">You will not be able to perform any actions while in vacation mode.</Text>
@@ -402,11 +399,10 @@ const Settings = (props) => {
             >
               Start Vacation
             </Button>
-          </Card>
+          </GameCard>
         </Grid.Col>
         <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw='bolder'>Two-Factor Authentication</Text>
+          <GameCard title="Two-Factor Authentication">
             <Space h="md" />
             <Button
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
@@ -429,18 +425,19 @@ const Settings = (props) => {
                 </Button>
               </div>
             )}
-          </Card>
+          </GameCard>
         </Grid.Col>
         <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Group>
-              <Text size="xl" fw='bolder'>Account Actions</Text>
+          <GameCard
+            title="Account Actions"
+            action={(
               <FontAwesomeIcon
                 icon={opened ? faMinus : faPlus}
                 size="xs"
                 onClick={toggle}
               />
-            </Group>
+            )}
+          >
             <Collapse in={opened}>
 
               <Group mt="md" gap="md" wrap="wrap">
@@ -473,7 +470,7 @@ const Settings = (props) => {
                 </Tooltip>
               </Group>
             </Collapse>
-          </Card>
+          </GameCard>
         </Grid.Col>
       </Grid>
 
