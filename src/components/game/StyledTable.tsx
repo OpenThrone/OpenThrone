@@ -1,0 +1,39 @@
+import React from 'react';
+import { Table, Paper, Box, Text, rem, useMantineTheme } from '@mantine/core';
+
+export const StyledTable = ({ headers, children }) => {
+  const theme = useMantineTheme();
+  const accent = theme.colors.secondary?.[4] ?? '#e5c55a';
+
+  return (
+    <Paper
+      radius="sm"
+      style={{
+        backgroundColor: '#131b29',
+        border: '1px solid #2f3e52',
+        overflow: 'hidden',
+      }}
+    >
+      <Table verticalSpacing="sm">
+        <Table.Thead>
+          <Table.Tr style={{ background: '#0e1520' }}>
+            {headers.map((head) => (
+              <Table.Th
+                key={head}
+                style={{
+                  color: '#687b94',
+                  borderBottom: '1px solid #2f3e52',
+                  textTransform: 'uppercase',
+                  fontSize: '11px',
+                }}
+              >
+                {head}
+              </Table.Th>
+            ))}
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>{children}</Table.Tbody>
+      </Table>
+    </Paper>
+  );
+};

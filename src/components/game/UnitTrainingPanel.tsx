@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Group, Text, Button, Badge, Avatar, NumberInput, Grid } from '@mantine/core';
+import { Box, Group, Text, Button, NumberInput, Grid, useMantineTheme } from '@mantine/core';
 import { GameCard } from './GameCard';
 import { faHammer } from '@fortawesome/free-solid-svg-icons';
 import RpgAwesomeIcon from '../RpgAwesomeIcon';
@@ -12,6 +12,11 @@ const UNITS = [
 ];
 
 export const UnitTrainingPanel = () => {
+  const theme = useMantineTheme();
+  const secondary = theme.colors.secondary ?? theme.colors.yellow;
+  const accent = secondary[4] ?? '#e5c55a';
+  const accentDark = secondary[6] ?? accent;
+
   return (
     <GameCard title="Training Grounds" icon={faHammer}>
       <Grid gutter="md">
@@ -30,9 +35,9 @@ export const UnitTrainingPanel = () => {
             color="yellow"
             size="md"
             style={{
-              background: 'linear-gradient(180deg, #e5c55a 0%, #b89b3e 100%)',
+              background: `linear-gradient(180deg, ${accent} 0%, ${accentDark} 100%)`,
               color: '#000',
-              border: '1px solid #ffd700',
+              border: `1px solid ${accent}`,
               boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
             }}
           >
@@ -46,6 +51,10 @@ export const UnitTrainingPanel = () => {
 
 const TrainingSlot = ({ unit }: { unit: any }) => {
   const [value, setValue] = useState<string | number>('');
+  const theme = useMantineTheme();
+  const brand = theme.colors.brand ?? theme.colors.blue;
+  const secondary = theme.colors.secondary ?? theme.colors.yellow;
+  const accent = secondary[4] ?? '#e5c55a';
 
   return (
     <Box
@@ -75,14 +84,14 @@ const TrainingSlot = ({ unit }: { unit: any }) => {
             borderRadius: '4px'
           }}
         >
-          <RpgAwesomeIcon icon={unit.icon} size="2x" color="#6b7280" />
+          <RpgAwesomeIcon icon={unit.icon} size="2x" color={brand[3] ?? '#6b7280'} />
         </Box>
         <Box>
           <Text fw={700} c="gray.3" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             {unit.name}
           </Text>
           <Group gap={6}>
-            <Text size="xs" c="dimmed">Cost: <span style={{ color: '#e5c55a' }}>{unit.cost}</span></Text>
+            <Text size="xs" c="dimmed">Cost: <span style={{ color: accent }}>{unit.cost}</span></Text>
             <Text size="xs" c="dimmed">|</Text>
             <Text size="xs" c="dimmed">Owned: {unit.owned}</Text>
           </Group>
@@ -100,7 +109,7 @@ const TrainingSlot = ({ unit }: { unit: any }) => {
             input: {
               backgroundColor: '#0b1016',
               border: '1px solid #2f3e52',
-              color: '#e5c55a', // Gold text for inputs
+              color: accent, // Accent text for inputs
               fontFamily: 'monospace',
               fontWeight: 700,
               width: '80px',

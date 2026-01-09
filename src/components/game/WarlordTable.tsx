@@ -8,7 +8,8 @@ import {
   Group,
   Badge,
   ScrollArea,
-  rem
+  rem,
+  useMantineTheme
 } from '@mantine/core';
 
 // --- Types ---
@@ -30,19 +31,28 @@ interface WarlordTableProps {
 const DEFAULT_PLAYERS: PlayerData[] = [
   { rank: 1, name: 'DasTacoMann', race: 'HUMAN FIGHTER', gold: '49,063,738', level: 42, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' },
   { rank: 2, name: 'uaktags', race: 'UNDEAD ROGUE', gold: '8,662,220', level: 42, active: true, avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Aneka' },
-  { rank: 3, name: 'IronBreaker', race: 'DWARF PALADIN', gold: '5,100,432', level: 41, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack' },
+  { rank: 3, name: 'IronBreaker', race: 'GOBLIN SHAMAN', gold: '5,100,432', level: 41, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack' },
   { rank: 4, name: 'ShadowWeaver', race: 'ELF MAGE', gold: '4,888,100', level: 40, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lola' },
-  { rank: 5, name: 'BloodRaven', race: 'ORC WARRIOR', gold: '4,102,999', level: 39, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bo' },
+  { rank: 5, name: 'BloodRaven', race: 'HUMAN CLERIC', gold: '4,102,999', level: 39, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bo' },
 ];
 
 export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PLAYERS }) => {
+  const theme = useMantineTheme();
+  const brand = theme.colors.brand ?? theme.colors.blue;
+  const secondary = theme.colors.secondary ?? theme.colors.yellow;
+  const accent = secondary[4] ?? '#e5c55a';
+  const activeText = brand[2] ?? '#93c5fd';
+  const rowGlow = brand[6] ?? '#1d4ed8';
+  const withAlpha = (hex: string, alpha: string) =>
+    hex.startsWith('#') && hex.length === 7 ? `${hex}${alpha}` : hex;
+
   const rows = players.map((player) => (
     <Table.Tr
       key={player.name}
       style={{
         // Gradient creates volume for the row
         background: player.active
-          ? 'linear-gradient(90deg, rgba(29, 78, 216, 0.25) 0%, transparent 100%)'
+          ? `linear-gradient(90deg, ${withAlpha(rowGlow, '40')} 0%, transparent 100%)`
           : 'transparent',
         transition: 'background 0.2s ease',
       }}
@@ -58,8 +68,13 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
             <Avatar src={player.avatar} size={30} radius={0} />
           </Box>
           <Box>
-            <Text size="sm" fw={700} c={player.active ? 'blue.3' : 'white'}>
-              {player.name} {player.active && <Badge size="xs" radius="xs" color="blue" ml={5}>YOU</Badge>}
+            <Text size="sm" fw={700} style={{ color: player.active ? activeText : 'white' }}>
+              {player.name}{' '}
+              {player.active && (
+                <Badge size="xs" radius="xs" color="brand" ml={5}>
+                  YOU
+                </Badge>
+              )}
             </Text>
             <Text size="xs" c="dimmed" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               {player.race}
@@ -71,7 +86,7 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
       <Table.Td style={{ borderColor: '#1f2b3b', color: '#687b94' }}>-</Table.Td>
 
       <Table.Td style={{ borderColor: '#1f2b3b' }}>
-        <Text c="#e5c55a" fw={600} size="sm">{player.gold}</Text>
+        <Text style={{ color: accent }} fw={600} size="sm">{player.gold}</Text>
       </Table.Td>
 
       <Table.Td style={{ borderColor: '#1f2b3b' }}>
@@ -96,7 +111,7 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
         px="lg"
         style={{
           background: 'linear-gradient(180deg, #253346 0%, #1a2533 100%)',
-          borderBottom: '2px solid #e5c55a', // The "Game" Gold Accent
+          borderBottom: `2px solid ${accent}`, // The "Game" Accent
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -106,7 +121,7 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
         <Text
           style={{
             fontFamily: 'MedievalSharp, serif', // Matches your theme
-            color: '#e5c55a',
+            color: accent,
             fontWeight: 700,
             letterSpacing: '1px',
             fontSize: rem(20),

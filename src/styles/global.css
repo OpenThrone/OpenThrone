@@ -129,6 +129,42 @@ a:hover {
   color: var(--bs-table-striped-color);
   box-shadow: inset 0 0 0 9999px var(--bs-table-accent-bg);
 }
+
+@keyframes public-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.public-rise {
+  animation: public-rise 650ms ease-out both;
+}
+
+.public-rise-delay-1 {
+  animation-delay: 120ms;
+}
+
+.public-rise-delay-2 {
+  animation-delay: 220ms;
+}
+
+.public-rise-delay-3 {
+  animation-delay: 320ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-rise,
+  .public-rise-delay-1,
+  .public-rise-delay-2,
+  .public-rise-delay-3 {
+    animation: none;
+  }
+}
 .content .card-dark {
   background-color: #222;
   border: 1px solid rgba(250, 250, 250, 0.125);
@@ -315,6 +351,32 @@ body{
 
 .mainArea h2{
   font-size: x-large
+}
+
+.training-order-summary {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.training-order-summary--inline {
+  position: static;
+  padding-bottom: 0;
+}
+
+@media (min-width: 1024px) {
+  .training-order-summary {
+    left: 260px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .training-order-summary {
+    left: 20%;
+  }
 }
 
 .compose-modal {

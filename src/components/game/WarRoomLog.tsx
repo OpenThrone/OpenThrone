@@ -1,17 +1,7 @@
 import React from 'react';
-import { Box, Table, Text, Badge, ScrollArea } from '@mantine/core';
+import { Box, Table, Text, Badge, ScrollArea, useMantineTheme } from '@mantine/core';
 import { GameCard } from './GameCard';
 import { faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
-
-// CSS background pattern for the "Tactical" look
-const tacticalGridBg = {
-  backgroundImage: `
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)
-  `,
-  backgroundSize: '20px 20px',
-  backgroundColor: '#0d1117',
-};
 
 const BATTLES = [
   { id: 1, attacker: 'DasTacoMann', defender: 'uaktags', result: 'VICTORY', gold: 12500, time: '2m ago' },
@@ -20,11 +10,26 @@ const BATTLES = [
 ];
 
 export const WarRoomLog = () => {
+  const theme = useMantineTheme();
+  const brand = theme.colors.brand ?? theme.colors.blue;
+  const secondary = theme.colors.secondary ?? theme.colors.yellow;
+  const accent = secondary[4] ?? '#e5c55a';
+  const gridLine = brand[7] ?? '#3b82f6';
+  console.log('WarRoomLog theme colors:', theme.colors);
+  console.log('Accent color:', accent);
+  const withAlpha = (hex: string, alpha: string) =>
+    hex.startsWith('#') && hex.length === 7 ? `${hex}${alpha}` : hex;
+
   return (
     <GameCard title="War Room Logs" icon={faSkullCrossbones}>
       <Box
         style={{
-          ...tacticalGridBg,
+          backgroundImage: `
+            linear-gradient(${withAlpha(gridLine, '1f')} 1px, transparent 1px),
+            linear-gradient(90deg, ${withAlpha(gridLine, '1f')} 1px, transparent 1px)
+          `,
+          backgroundSize: '20px 20px',
+          backgroundColor: '#0d1117',
           border: '1px solid #30363d',
           borderRadius: '4px',
           height: '300px', // Fixed height for scrolling
@@ -36,8 +41,8 @@ export const WarRoomLog = () => {
           style={{
             position: 'absolute',
             top: 0, left: 0, right: 0, height: '2px',
-            background: 'rgba(46, 160, 67, 0.3)',
-            boxShadow: '0 0 10px rgba(46, 160, 67, 0.5)',
+            background: withAlpha(brand[4] ?? '#22c55e', '4d'),
+            boxShadow: `0 0 10px ${withAlpha(brand[4] ?? '#22c55e', '80')}`,
             zIndex: 1,
             opacity: 0.5,
             pointerEvents: 'none'
@@ -66,7 +71,7 @@ export const WarRoomLog = () => {
                   <Table.Td>
                     <Badge
                       variant="dot"
-                      color={battle.result === 'VICTORY' ? 'green' : 'red'}
+                      color={battle.result === 'VICTORY' ? 'brand' : 'red'}
                       bg="transparent"
                       style={{ fontFamily: 'monospace' }}
                     >
@@ -76,7 +81,7 @@ export const WarRoomLog = () => {
                   <Table.Td style={{ color: '#c9d1d9', fontFamily: 'monospace', fontWeight: 600 }}>
                     {battle.attacker === 'uaktags' ? `vs ${battle.defender}` : `def ${battle.attacker}`}
                   </Table.Td>
-                  <Table.Td style={{ color: battle.gold > 0 ? '#e5c55a' : '#f85149', fontFamily: 'monospace' }}>
+                  <Table.Td style={{ color: battle.gold > 0 ? accent : '#f85149', fontFamily: 'monospace' }}>
                     {battle.gold > 0 ? '+' : ''}{battle.gold.toLocaleString()}
                   </Table.Td>
                   <Table.Td style={{ color: '#8b949e', fontFamily: 'monospace', textAlign: 'right' }}>

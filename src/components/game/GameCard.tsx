@@ -1,11 +1,13 @@
-import React from 'react';
-import { Box, Paper, Text, Group, PaperProps, rem } from '@mantine/core';
+import React, { useEffect } from 'react';
+import { Box, Paper, Text, Group, PaperProps, rem, useMantineTheme } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import {useUser} from "@/context/users";
+import { first } from 'rxjs';
 
 interface GameCardProps extends PaperProps {
   title: string;
-  icon?: IconDefinition;
+  icon?: IconDefinition | React.ReactNode;
   children: React.ReactNode;
   action?: React.ReactNode;
   goldAccent?: boolean; // If true, adds the gold glow/border
@@ -20,6 +22,24 @@ export const GameCard: React.FC<GameCardProps> = ({
   style,
   ...others
 }) => {
+  const theme = useMantineTheme();
+  const brand = theme.colors.brand ?? theme.colors.blue;
+  const [accent, setAccent] = React.useState<string>(theme.colors.secondary[5] ?? '#e5c55a');
+  const { user } = useUser();
+  const [colorScheme, setColorScheme] = React.useState('ELF');
+  useEffect(() => {
+    if(!user) return;
+    setColorScheme(user?.colorScheme || 'ELF');
+    console.log('User color scheme:', user?.colorScheme);
+    console.log('Secondary 2:', theme.colors.secondary[2]);
+    console.log('Secondary 5:', theme.colors.secondary[5]);
+    setAccent(user?.colorScheme === 'UNDEAD' ? theme.colors.secondary[2] : theme.colors.secondary[5] ?? '#e5c55a');
+    console.log('Accent color set to:', accent);
+  }, [user, colorScheme, theme.colors.secondary, accent]);
+  
+  const isIconDefinition = (value: GameCardProps['icon']): value is IconDefinition =>
+    Boolean(value && typeof value === 'object' && 'iconName' in value);
+
   return (
     <Paper
       radius="sm"
@@ -40,7 +60,7 @@ export const GameCard: React.FC<GameCardProps> = ({
         px="lg"
         style={{
           background: 'linear-gradient(180deg, #253346 0%, #1a2533 100%)',
-          borderBottom: goldAccent ? '2px solid #e5c55a' : '1px solid #2f3e52',
+          borderBottom: goldAccent ? `2px solid ${accent}` : '1px solid #2f3e52',
           borderTop: '1px solid rgba(255,255,255,0.1)', // Highlight for 3D effect
           display: 'flex',
           justifyContent: 'space-between',
@@ -50,15 +70,21 @@ export const GameCard: React.FC<GameCardProps> = ({
       >
         <Group gap="xs">
           {icon && (
-            <FontAwesomeIcon
-              icon={icon}
-              style={{ color: goldAccent ? '#e5c55a' : '#9ca3af', fontSize: '14px' }}
-            />
+            isIconDefinition(icon) ? (
+              <FontAwesomeIcon
+                icon={icon}
+                style={{ color: goldAccent ? accent : brand[2], fontSize: '14px' }}
+              />
+            ) : (
+              <Box style={{ color: goldAccent ? accent : brand[2], fontSize: '14px' }}>
+                {icon}
+              </Box>
+            )
           )}
           <Text
             style={{
               fontFamily: 'MedievalSharp, serif', // Matches your theme
-              color: goldAccent ? '#e5c55a' : '#e5e7eb',
+              color: goldAccent ? accent : '#e5e7eb',
               fontWeight: 700,
               letterSpacing: '1px',
               fontSize: rem(18),
