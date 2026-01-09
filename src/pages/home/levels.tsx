@@ -1,232 +1,131 @@
-// pages/home/levels.tsx
-import { logError } from "@/utils/logger";
 import { useEffect, useState, useRef } from "react";
 import { DefaultLevelBonus } from "@/constants";
 import { useUser } from "@/context/users";
-import { Text, Space, Button, Center } from "@mantine/core";
-import styles from "./levels.module.css";
-import LevelCard from "@/components/levelCard";
+import { Text, Space, Button, Center, SimpleGrid, Group, Box } from "@mantine/core";
 import { alertService } from "@/services/Alert.service";
+import { GameCard } from "@/components/game/GameCard";
+import { faPlus, faMinus, faStar } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MainArea from "@/components/MainArea";
 
-const Levels = (props) => {
+const StatCard = ({ title, currentLevel, onAdd, onReduce, canAdd, canReduce }) => (
+  <GameCard title={title} icon={faStar}>
+    <Box
+      style={{
+        backgroundColor: '#0f141a',
+        borderRadius: '6px',
+        border: '1px solid #1f2b3b',
+        boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+        padding: '12px',
+      }}
+    >
+      <Group justify="space-between">
+        <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+          Current Bonus
+        </Text>
+        <Text size="lg" fw={800} style={{ fontFamily: 'monospace' }}>
+          {currentLevel}%
+        </Text>
+      </Group>
+    </Box>
+    <Group justify="center" mt="md" gap="xs">
+      <Button onClick={onReduce} disabled={!canReduce} variant="outline" size="xs">
+        <FontAwesomeIcon icon={faMinus} />
+      </Button>
+      <Button onClick={onAdd} disabled={!canAdd} size="xs" color="yellow">
+        <FontAwesomeIcon icon={faPlus} />
+      </Button>
+    </Group>
+  </GameCard>
+);
+
+const Levels = () => {
   const { user, forceUpdate } = useUser();
   const justSavedRef = useRef(false);
-  const originalProficiencyPointsRef = useRef(
-    user?.availableProficiencyPoints ?? 0,
-  );
   const [levels, setLevels] = useState(user?.bonus_points ?? DefaultLevelBonus);
-  const [proficiencyPoints, setProficiencyPoints] = useState(
-    user?.availableProficiencyPoints ?? 0,
-  );
+  const [proficiencyPoints, setProficiencyPoints] = useState(user?.availableProficiencyPoints ?? 0);
   const [initialized, setInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const defaultChangeQueue = {
-    OFFENSE: { start: 0, change: 0 },
-    DEFENSE: { start: 0, change: 0 },
-    INCOME: { start: 0, change: 0 },
-    INTEL: { start: 0, change: 0 },
-    PRICES: { start: 0, change: 0 },
-  };
+  const [changeQueue, setChangeQueue] = useState({
+    OFFENSE: { change: 0 }, DEFENSE: { change: 0 }, INCOME: { change: 0 }, INTEL: { change: 0 }, PRICES: { change: 0 },
+  });
 
-  // Use defaultChangeQueue to initialize state
-  const [changeQueue, setChangeQueue] = useState(defaultChangeQueue);
   useEffect(() => {
-    if (!user) return;
-    // Check if user.availableProficiencyPoints exists
-    if (
-      user.availableProficiencyPoints === undefined ||
-      user.availableProficiencyPoints === null
-    )
-      return;
-
-    // Skip updating levels if we just saved (to prevent overwriting fresh data)
-    if (justSavedRef.current) {
+    if (!user || justSavedRef.current) {
       justSavedRef.current = false;
-      originalProficiencyPointsRef.current = user.availableProficiencyPoints;
       return;
     }
-
     setLevels(user.bonus_points);
-    // Only update proficiencyPoints when not in saving state to prevent visual jitter
-    if (!isSaving) {
-      setProficiencyPoints(user.availableProficiencyPoints);
-      originalProficiencyPointsRef.current = user.availableProficiencyPoints;
-    }
-
-    // Only reset changeQueue and set initialized when not initialized
+    if (!isSaving) setProficiencyPoints(user.availableProficiencyPoints);
     if (!initialized) {
-      setChangeQueue({
-        OFFENSE: { start: 0, change: 0 },
-        DEFENSE: { start: 0, change: 0 },
-        INCOME: { start: 0, change: 0 },
-        INTEL: { start: 0, change: 0 },
-        PRICES: { start: 0, change: 0 },
-      });
+      setChangeQueue({ OFFENSE: { change: 0 }, DEFENSE: { change: 0 }, INCOME: { change: 0 }, INTEL: { change: 0 }, PRICES: { change: 0 } });
       setInitialized(true);
     }
   }, [user, initialized, isSaving]);
 
-  const handleAddBonus = (type) => {
-    if (
-      proficiencyPoints > 0 &&
-      (!changeQueue[type] || proficiencyPoints > 0)
-    ) {
-      const updatedQueue = { ...changeQueue };
-      updatedQueue[type].change++;
-      setProficiencyPoints(proficiencyPoints - 1);
-      setChangeQueue(updatedQueue);
+  const handleBonusChange = (type, amount) => {
+    if ((amount > 0 && proficiencyPoints > 0) || (amount < 0 && changeQueue[type].change > 0)) {
+      setChangeQueue(prev => ({ ...prev, [type]: { change: prev[type].change + amount } }));
+      setProficiencyPoints(prev => prev - amount);
     }
   };
 
-  const handleReduceBonus = (type) => {
-    if (changeQueue[type] && changeQueue[type].change > 0) {
-      const updatedQueue = { ...changeQueue };
-      updatedQueue[type].change--;
-      setProficiencyPoints(proficiencyPoints + 1);
-      setChangeQueue(updatedQueue);
-    }
-  };
-
-  const getCurrentLevel = (type) => {
-    const baseLevel = levels.find((level) => level.type === type)?.level ?? 0;
-    const queuedChange = changeQueue[type]?.change ?? 0;
-    return baseLevel + queuedChange;
-  };
+  const getCurrentLevel = (type) => (levels.find(l => l.type === type)?.level ?? 0) + (changeQueue[type]?.change ?? 0);
 
   const handleSubmitChanges = async () => {
+    setIsSaving(true);
     try {
-      setIsSaving(true);
-      const currentProficiencyPoints = proficiencyPoints;
-
       const response = await fetch("/api/account/bonusPoints", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ changeQueue }),
       });
-
       const data = await response.json();
-
-      if (response.ok) {
-        const updatedBonusPoints =
-          data.data?.updatedBonusPoints ?? data.updatedBonusPoints;
-        setLevels(updatedBonusPoints);
-        setProficiencyPoints(currentProficiencyPoints);
-        setChangeQueue(defaultChangeQueue);
-
-        justSavedRef.current = true;
-
-        alertService.success("Changes saved successfully");
-      } else {
-        alertService.error("Failed to save changes:", data.error);
-        logError("Failed to save changes:", data.error);
-      }
+      if (!response.ok) throw new Error(data.error || "Failed to save changes");
+      
+      setLevels(data.updatedBonusPoints);
+      setChangeQueue({ OFFENSE: { change: 0 }, DEFENSE: { change: 0 }, INCOME: { change: 0 }, INTEL: { change: 0 }, PRICES: { change: 0 } });
+      justSavedRef.current = true;
+      forceUpdate();
+      alertService.success("Changes saved successfully");
     } catch (error) {
-      alertService.error("Error saving changes:", error);
-      logError("Error saving changes:", error);
+      alertService.error(error.message);
     } finally {
       setIsSaving(false);
     }
   };
 
+  const levelBonuses = [
+    { title: "Strength (Offense)", type: "OFFENSE" },
+    { title: "Constitution (Defense)", type: "DEFENSE" },
+    { title: "Wealth (Income)", type: "INCOME" },
+    { title: "Dexterity (Spy & Sentry)", type: "INTEL" },
+    { title: "Charisma (Reduced Prices)", type: "PRICES" },
+  ];
+
   return (
     <MainArea title="Levels">
+      <GameCard title="Proficiency Points">
+        <Text size="lg" ta="center">You have <Text span c="yellow" inherit>{proficiencyPoints}</Text> proficiency points available.</Text>
+        <Text size="sm" ta="center" c="dimmed">Maximum bonus is 75%</Text>
+      </GameCard>
       <Space h="md" />
-      <Text size="lg">
-        You currently have {proficiencyPoints} proficiency points available.
-      </Text>
-      <Text size="sm">Maximum % is 75</Text>
-      <Space h="md" />
-      <div className={styles.starLayout}>
-        <div className={`${styles.starRow} ${styles.row1}`}>
-          <LevelCard
-            title="Strength (Offense)"
-            type="OFFENSE"
-            currentLevel={getCurrentLevel("OFFENSE")}
-            onAdd={() => handleAddBonus("OFFENSE")}
-            onReduce={() => handleReduceBonus("OFFENSE")}
-            canAdd={
-              proficiencyPoints > 0 &&
-              getCurrentLevel("OFFENSE") < 75 &&
-              (!changeQueue["OFFENSE"] ||
-                changeQueue["OFFENSE"].change < proficiencyPoints)
-            }
-            canReduce={changeQueue["OFFENSE"]?.change > 0}
-            changeQueue={changeQueue}
+      <SimpleGrid cols={{base: 1, sm: 2, md: 3}} spacing="md">
+        {levelBonuses.map(bonus => (
+          <StatCard
+            key={bonus.type}
+            title={bonus.title}
+            currentLevel={getCurrentLevel(bonus.type)}
+            onAdd={() => handleBonusChange(bonus.type, 1)}
+            onReduce={() => handleBonusChange(bonus.type, -1)}
+            canAdd={proficiencyPoints > 0 && getCurrentLevel(bonus.type) < 75}
+            canReduce={changeQueue[bonus.type]?.change > 0}
           />
-        </div>
-        <div className={`${styles.starRow} ${styles.row2}`}>
-          <LevelCard
-            title="Constitution (Defense)"
-            type="DEFENSE"
-            currentLevel={getCurrentLevel("DEFENSE")}
-            onAdd={() => handleAddBonus("DEFENSE")}
-            onReduce={() => handleReduceBonus("DEFENSE")}
-            canAdd={
-              proficiencyPoints > 0 &&
-              getCurrentLevel("DEFENSE") < 75 &&
-              (!changeQueue["DEFENSE"] ||
-                changeQueue["DEFENSE"].change < proficiencyPoints)
-            }
-            canReduce={changeQueue["DEFENSE"]?.change > 0}
-            changeQueue={changeQueue}
-          />
-          <LevelCard
-            title="Wealth (Income)"
-            type="INCOME"
-            currentLevel={getCurrentLevel("INCOME")}
-            onAdd={() => handleAddBonus("INCOME")}
-            onReduce={() => handleReduceBonus("INCOME")}
-            canAdd={
-              proficiencyPoints > 0 &&
-              getCurrentLevel("INCOME") < 75 &&
-              (!changeQueue["INCOME"] ||
-                changeQueue["INCOME"].change < proficiencyPoints)
-            }
-            canReduce={changeQueue["INCOME"]?.change > 0}
-            changeQueue={changeQueue}
-          />
-        </div>
-        <div className={`${styles.starRow} ${styles.row3}`}>
-          <LevelCard
-            title="Dexterity (Spy & Sentry)"
-            type="INTEL"
-            currentLevel={getCurrentLevel("INTEL")}
-            onAdd={() => handleAddBonus("INTEL")}
-            onReduce={() => handleReduceBonus("INTEL")}
-            canAdd={
-              proficiencyPoints > 0 &&
-              getCurrentLevel("INTEL") < 75 &&
-              (!changeQueue["INTEL"] ||
-                changeQueue["INTEL"].change < proficiencyPoints)
-            }
-            canReduce={changeQueue["INTEL"]?.change > 0}
-            changeQueue={changeQueue}
-          />
-          <LevelCard
-            title="Charisma (Reduced Prices)"
-            type="PRICES"
-            currentLevel={getCurrentLevel("PRICES")}
-            onAdd={() => handleAddBonus("PRICES")}
-            onReduce={() => handleReduceBonus("PRICES")}
-            canAdd={
-              proficiencyPoints > 0 &&
-              getCurrentLevel("PRICES") < 75 &&
-              (!changeQueue["PRICES"] ||
-                changeQueue["PRICES"].change < proficiencyPoints)
-            }
-            canReduce={changeQueue["PRICES"]?.change > 0}
-            changeQueue={changeQueue}
-          />
-        </div>
-      </div>
-      {Object.values(changeQueue).some((change) => change.change > 0) && (
-        <Center>
-          <Button onClick={handleSubmitChanges} style={{ marginTop: "20px" }}>
-            Save Changes
-          </Button>
+        ))}
+      </SimpleGrid>
+      {Object.values(changeQueue).some(c => c.change > 0) && (
+        <Center mt="md">
+          <Button onClick={handleSubmitChanges} loading={isSaving} size="lg">Save Changes</Button>
         </Center>
       )}
     </MainArea>

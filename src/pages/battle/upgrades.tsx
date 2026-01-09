@@ -1,16 +1,17 @@
+import { useEffect, useState } from 'react';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
+import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
+import { Group, SimpleGrid, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
+
 import BattleUpgradesSection from '@/components/battle-upgrade';
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
+import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
-import { useEffect, useState } from 'react';
-import { SimpleGrid, Group, Text, Space, Tooltip } from '@mantine/core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuildingColumns, faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
-import MainArea from '@/components/MainArea';
-import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
-import StatCard from '@/components/StatCard';
-import ContentCard from '@/components/ContentCard';
-import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 
 const useItems = (user) => {
   const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
@@ -63,8 +64,9 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
   };
 };
 
-const Upgrades = (props) => {
+const Upgrades = () => {
   const { user } = useUser();
+  const items = useItems(user);
   
   // Calculate total offensive and defensive units (level 2+)
   const offensiveUnits = user?.units
@@ -77,54 +79,114 @@ const Upgrades = (props) => {
   
   return (
     <MainArea title="Battle Upgrades">
-      {/* Stats Section */}
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} className="mb-6">
-        <StatCard 
-          title="Gold On Hand"
-          value={toLocale(user?.gold) ?? 0}
-          icon={<BiCoinStack size={18} />}
-        />
-        <StatCard 
-          title="Banked Gold"
-          value={toLocale(user?.goldInBank) ?? 0}
-          icon={<BiSolidBank size={18} />}
-        />
-        <Tooltip label='Only Level 2+ Units'>
-          <div>
-            <StatCard 
-              title="Offensive Units"
-              value={toLocale(offensiveUnits)}
-              icon={<RpgAwesomeIcon icon="crossed-swords" size="lg" />}
-            />
-          </div>
-        </Tooltip>
-        <Tooltip label='Only Level 2+ Units'>
-          <div>
-            <StatCard 
-              title="Defensive Units"
-              value={toLocale(defensiveUnits)}
-              icon={<FontAwesomeIcon icon={faShield} style={{ width: '18px', height: '18px' }} />}
-            />
-          </div>
-        </Tooltip>
-      </SimpleGrid>
+      <Stack gap="md">
+        {/* Stats Section */}
+        <GameCard title="Upgrade Status" icon={faCoins}>
+          <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="sm">
+            {[
+              {
+                label: 'Gold On Hand',
+                value: toLocale(user?.gold) ?? 0,
+                icon: <BiCoinStack size={18} />,
+              },
+              {
+                label: 'Banked Gold',
+                value: toLocale(user?.goldInBank) ?? 0,
+                icon: <BiSolidBank size={18} />,
+              },
+            ].map((stat) => (
+              <Group
+                key={stat.label}
+                gap="sm"
+                wrap="nowrap"
+                style={{
+                  backgroundColor: '#0f141a',
+                  borderRadius: '6px',
+                  border: '1px solid #1f2b3b',
+                  boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                  padding: '12px',
+                  alignItems: 'center',
+                }}
+              >
+                <ThemeIcon c="white" variant="light">
+                  {stat.icon}
+                </ThemeIcon>
+                <div>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                    {stat.label}
+                  </Text>
+                  <Text size="sm" fw={700} c="gray.2">
+                    {stat.value}
+                  </Text>
+                </div>
+              </Group>
+            ))}
+            <Tooltip label="Only Level 2+ Units">
+              <Group
+                gap="sm"
+                wrap="nowrap"
+                style={{
+                  backgroundColor: '#0f141a',
+                  borderRadius: '6px',
+                  border: '1px solid #1f2b3b',
+                  boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                  padding: '12px',
+                  alignItems: 'center',
+                }}
+              >
+                <ThemeIcon c="white" variant="light">
+                  <RpgAwesomeIcon icon="crossed-swords" size="lg" />
+                </ThemeIcon>
+                <div>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                    Offensive Units
+                  </Text>
+                  <Text size="sm" fw={700} c="gray.2">
+                    {toLocale(offensiveUnits)}
+                  </Text>
+                </div>
+              </Group>
+            </Tooltip>
+            <Tooltip label="Only Level 2+ Units">
+              <Group
+                gap="sm"
+                wrap="nowrap"
+                style={{
+                  backgroundColor: '#0f141a',
+                  borderRadius: '6px',
+                  border: '1px solid #1f2b3b',
+                  boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                  padding: '12px',
+                  alignItems: 'center',
+                }}
+              >
+                <ThemeIcon c="white" variant="light">
+                  <FontAwesomeIcon icon={faShield} style={{ width: '18px', height: '18px' }} />
+                </ThemeIcon>
+                <div>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                    Defensive Units
+                  </Text>
+                  <Text size="sm" fw={700} c="gray.2">
+                    {toLocale(defensiveUnits)}
+                  </Text>
+                </div>
+              </Group>
+            </Tooltip>
+          </SimpleGrid>
+        </GameCard>
 
-      <ContentCard 
-        title="Battle Upgrade Information"
-        variant="default"
-        titlePosition="left"
-        className="mb-6"
-      >
-        <Text size='md' p="md">
-          Only Level 2 and higher units can use battle upgrades. Battle upgrades provide stat bonuses to your units in combat.
-        </Text>
-      </ContentCard>
+        <GameCard title="Battle Upgrade Information" goldAccent={false}>
+          <Text size="sm" c="gray.3" lh={1.7}>
+            Only Level 2 and higher units can use battle upgrades. Battle upgrades provide stat bonuses to your units in combat.
+          </Text>
+        </GameCard>
 
-      
-        <BattleUpgradesSection heading='Offense' type='OFFENSE' items={useItems(user).OFFENSE} />
-        <BattleUpgradesSection heading='Defense' type='DEFENSE' items={useItems(user).DEFENSE} />     
-        <BattleUpgradesSection heading='Spy' type='SPY' items={useItems(user).SPY} />
-        <BattleUpgradesSection heading='Sentry' type='SENTRY' items={useItems(user).SENTRY} />
+        <BattleUpgradesSection heading="Offense" type="OFFENSE" items={items.OFFENSE} />
+        <BattleUpgradesSection heading="Defense" type="DEFENSE" items={items.DEFENSE} />
+        <BattleUpgradesSection heading="Spy" type="SPY" items={items.SPY} />
+        <BattleUpgradesSection heading="Sentry" type="SENTRY" items={items.SENTRY} />
+      </Stack>
     </MainArea>
   );
 };

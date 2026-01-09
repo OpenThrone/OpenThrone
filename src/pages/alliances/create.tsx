@@ -1,10 +1,12 @@
-import { Alert, Button, Group, Loader, Paper, Text, Textarea, TextInput } from '@mantine/core';
-import { useForm } from '@mantine/form';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import { Alert, Button, Group, Loader, Text, Textarea, TextInput } from '@mantine/core';
+import { useForm } from '@mantine/form';
 import { alertService } from '@/services/Alert.service';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
+import MainArea from '@/components/MainArea';
+import { GameCard } from '@/components/game/GameCard';
 
 export default function CreateAlliance() {
   const { user } = useUser();
@@ -34,19 +36,29 @@ export default function CreateAlliance() {
   });
 
   if (!user) {
-    return <Loader />;
+    return (
+      <MainArea title="Create Alliance">
+        <Loader />
+      </MainArea>
+    );
   }
 
   if (user.level < 10) {
     return (
-      <Alert color="red">
-        You must be at least level 10 to create an alliance.
-      </Alert>
+      <MainArea title="Create Alliance">
+        <Alert color="red">
+          You must be at least level 10 to create an alliance.
+        </Alert>
+      </MainArea>
     );
   }
 
   if (user.gold < 100000000) {
-    return <Alert color="red">Creating an alliance costs 100 million gold.</Alert>;
+    return (
+      <MainArea title="Create Alliance">
+        <Alert color="red">Creating an alliance costs 100 million gold.</Alert>
+      </MainArea>
+    );
   }
 
   const handleSubmit = async (values: {
@@ -86,38 +98,40 @@ export default function CreateAlliance() {
   };
 
   return (
-    <Paper shadow="2" p="md">
-      <form onSubmit={form.onSubmit(handleSubmit)}>
-        <TextInput
-          label="Alliance Name"
-          placeholder="Enter your alliance name"
-          required
-          {...form.getInputProps('allianceName')}
-        />
-        <TextInput
-          label="Avatar URL (optional)"
-          placeholder="https://..."
-          {...form.getInputProps('avatarUrl')}
-        />
-        <TextInput
-          label="Motto (optional)"
-          placeholder="Short motto"
-          {...form.getInputProps('motto')}
-        />
-        <Textarea
-          label="Comments (optional)"
-          placeholder="Describe your alliance"
-          minRows={4}
-          {...form.getInputProps('comments')}
-        />
+    <MainArea title="Create Alliance">
+      <GameCard title="Alliance Charter">
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <TextInput
+            label="Alliance Name"
+            placeholder="Enter your alliance name"
+            required
+            {...form.getInputProps('allianceName')}
+          />
+          <TextInput
+            label="Avatar URL (optional)"
+            placeholder="https://..."
+            {...form.getInputProps('avatarUrl')}
+          />
+          <TextInput
+            label="Motto (optional)"
+            placeholder="Short motto"
+            {...form.getInputProps('motto')}
+          />
+          <Textarea
+            label="Comments (optional)"
+            placeholder="Describe your alliance"
+            minRows={4}
+            {...form.getInputProps('comments')}
+          />
 
-        <Text>Cost: 100 Million Gold</Text>
-        <Group mt="md">
-          <Button type="submit" loading={submitting}>
-            Create Alliance
-          </Button>
-        </Group>
-      </form>
-    </Paper>
+          <Text>Cost: 100 Million Gold</Text>
+          <Group mt="md">
+            <Button type="submit" loading={submitting} color="yellow">
+              Create Alliance
+            </Button>
+          </Group>
+        </form>
+      </GameCard>
+    </MainArea>
   );
 }

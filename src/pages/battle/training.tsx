@@ -1,18 +1,17 @@
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import toLocale  from '@/utils/numberFormatting';
-import { Group, SimpleGrid, Text, Button, Flex, Stack, Box, rem } from '@mantine/core';
+import { Group, SimpleGrid, Text, Button, Flex, Stack, Box, ThemeIcon, rem } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
-import { PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
-import StatCard from '@/components/StatCard';
-import ContentCard from '@/components/ContentCard';
+import type { PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
 import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 import { logDebug, logError } from '@/utils/logger'; // Added logError
+import { GameCard } from '@/components/game/GameCard';
 
 /**
  * Represents the data structure for a unit displayed in the training section.
@@ -50,6 +49,8 @@ const Training: React.FC = (props) => { // Removed unused props
   const { user, forceUpdate } = useUser();
   const [totalCost, setTotalCost] = useState(0);
   const [unitCosts, setUnitCosts] = useState<{ [key: string]: number }>({}); // Maps unitId to quantity input
+  const [isSummaryDocked, setIsSummaryDocked] = useState(false);
+  const summarySentinelRef = useRef<HTMLDivElement | null>(null);
 
   // State for each unit section's data
   const [workerUnits, setWorkerUnits] = useState<UnitData[] | null>(null);
@@ -297,131 +298,27 @@ const Training: React.FC = (props) => { // Removed unused props
   const handleTrainAll = () => handleFormSubmit('train');
   const handleUntrainAll = () => handleFormSubmit('untrain');
 
-  // Refs for sticky footer calculation
-  const parentRef = useRef<HTMLDivElement>(null);
-  const footerRef = useRef<HTMLDivElement>(null);
+  const hasOrder = totalCost > 0;
 
-  // Effect for sticky footer logic
   useEffect(() => {
-    let mounted = true;
-    let attempts = 0;
-    let retryTimer: number | null = null;
-    let cleanupFn: (() => void) | null = null;
+    if (!hasOrder) {
+      setIsSummaryDocked(false);
+      return;
+    }
 
-    const tryInit = () => {
-      if (!mounted) return;
-      const footerElement = footerRef.current;
-      const scrollContainer = parentRef.current;
+    const sentinel = summarySentinelRef.current;
+    if (!sentinel) return;
 
-      if (!footerElement || !scrollContainer) {
-        attempts += 1;
-        if (attempts <= 10) {
-          // retry after a short delay
-          retryTimer = window.setTimeout(tryInit, 100);
-          //console.log('[Training Footer] refs not ready, retrying...', attempts);
-        } else {
-          //console.log('[Training Footer] refs never became ready after retries');
-        }
-        return;
-      }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsSummaryDocked(!entry.isIntersecting);
+      },
+      { root: null, threshold: 0.1 },
+    );
 
-      //console.log('[Training Footer] initializing sticky footer');
-
-      let lastKnownScrollPosition = 0;
-      let ticking = false;
-      let lastWidth = '';
-
-      const handleScroll = () => {
-        const currentScrollTop = scrollContainer.scrollTop > 0 ? scrollContainer.scrollTop : window.scrollY;
-        lastKnownScrollPosition = currentScrollTop;
-
-        if (!ticking) {
-          window.requestAnimationFrame(() => {
-            const scrollHeight = scrollContainer.scrollTop > 0 ? scrollContainer.scrollHeight : document.documentElement.scrollHeight;
-            const clientHeight = scrollContainer.scrollTop > 0 ? scrollContainer.clientHeight : window.innerHeight;
-            const scrollableHeight = scrollHeight - clientHeight;
-            const footerHeight = footerElement.offsetHeight;
-
-            const isNearBottom = lastKnownScrollPosition >= scrollableHeight - (footerHeight + 10);
-
-            // Use console.log so messages are visible by default
-           //console.log('[Training Footer] scrollTop:', lastKnownScrollPosition, 'scrollableHeight:', scrollableHeight, 'footerHeight:', footerHeight, 'isNearBottom:', isNearBottom);
-
-            if (isNearBottom) {
-              if (footerElement.style.position !== 'relative') {
-                footerElement.style.position = 'relative';
-                footerElement.style.bottom = 'auto';
-                footerElement.style.left = 'auto';
-                footerElement.style.width = 'auto';
-              }
-            } else {
-              if (footerElement.style.position !== 'fixed') {
-                footerElement.style.position = 'fixed';
-                footerElement.style.bottom = '0';
-              }
-              const parentRect = scrollContainer.getBoundingClientRect();
-              const parentWidth = Math.max(0, Math.floor(parentRect.width));
-
-              if (parentWidth > 0) {
-                const newWidth = `${parentWidth}px`;
-                //console.log('[Training Footer] parentRect:', parentRect, 'newWidth:', newWidth);
-                if (lastWidth !== newWidth) {
-                  footerElement.style.left = `${parentRect.left}px`;
-                  footerElement.style.width = newWidth;
-                  lastWidth = newWidth;
-                }
-              } else {
-                if (lastWidth !== '100%') {
-                  footerElement.style.left = `0px`;
-                  footerElement.style.width = '100%';
-                  lastWidth = '100%';
-                }
-              }
-            }
-            ticking = false;
-          });
-          ticking = true;
-        }
-      };
-
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      handleScroll();
-
-      const retry1 = window.setTimeout(() => {
-        //console.log('[Training Footer] delayed retry 1');
-        handleScroll();
-      }, 50);
-      const retry2 = window.setTimeout(() => {
-        //console.log('[Training Footer] delayed retry 2');
-        handleScroll();
-      }, 250);
-
-      const resizeObserver = new ResizeObserver(() => {
-        lastWidth = '';
-        handleScroll();
-      });
-      resizeObserver.observe(scrollContainer);
-
-      cleanupFn = () => {
-        window.removeEventListener('scroll', handleScroll);
-        try {
-          resizeObserver.unobserve(scrollContainer);
-        } catch (e) {
-          // ignore
-        }
-        clearTimeout(retry1);
-        clearTimeout(retry2);
-      };
-    };
-
-    tryInit();
-
-    return () => {
-      mounted = false;
-      if (retryTimer) clearTimeout(retryTimer);
-      if (cleanupFn) cleanupFn();
-    };
-  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasOrder]);
 
   if (!user) {
     return <MainArea title="Training"><Text>Loading user data...</Text></MainArea>;
@@ -431,39 +328,68 @@ const Training: React.FC = (props) => { // Removed unused props
   const defenseTotal = user.unitTotals?.defense ?? 0;
   const population = (user.population ?? 0); // Use pre-calculated population if available
   const defenseRatio = population > 0 ? defenseTotal / population : 0;
-
   return (
-    <MainArea title="Training" ref={parentRef}>
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} mb="lg">
-        <StatCard
-          title="Untrained Citizens"
-          value={toLocale(citizenCount)}
-          icon={<FontAwesomeIcon icon={faPeopleGroup} style={{ width: rem(15), height: rem(15) }} />}
-        />
-        <StatCard
-          title="Gold On Hand"
-          value={toLocale(user.gold) ?? 0}
-          icon={<BiCoinStack style={{ width: rem(15), height: rem(15) }} />}
-        />
-        <StatCard
-          title="Banked Gold"
-          value={toLocale(user.goldInBank) ?? 0}
-          icon={<BiSolidBank style={{ width: rem(15), height: rem(15) }} />}
-        />
-        <StatCard
-          title="Defense Ratio"
-          value={`${toLocale(defenseRatio * 100, user.locale)} %`}
-          icon={<FontAwesomeIcon icon={faShield} style={{ width: rem(15), height: rem(15) }} />}
-        />
-      </SimpleGrid>
-      {/* Add padding to the bottom of the main content area to prevent overlap with the sticky footer */}
-      <Box style={{ paddingBottom: '120px' }}> {/* Padding for footer height */}
+    <MainArea title="Training">
+      <GameCard title="Training Status" icon={faPeopleGroup}>
+        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="sm">
+          {[
+            {
+              label: 'Untrained Citizens',
+              value: toLocale(citizenCount),
+              icon: <FontAwesomeIcon icon={faPeopleGroup} style={{ width: rem(15), height: rem(15) }} />,
+            },
+            {
+              label: 'Gold On Hand',
+              value: toLocale(user.gold) ?? 0,
+              icon: <BiCoinStack style={{ width: rem(15), height: rem(15) }} />,
+            },
+            {
+              label: 'Banked Gold',
+              value: toLocale(user.goldInBank) ?? 0,
+              icon: <BiSolidBank style={{ width: rem(15), height: rem(15) }} />,
+            },
+            {
+              label: 'Defense Ratio',
+              value: `${toLocale(defenseRatio * 100, user.locale)} %`,
+              icon: <FontAwesomeIcon icon={faShield} style={{ width: rem(15), height: rem(15) }} />,
+            },
+          ].map((stat) => (
+            <Group
+              key={stat.label}
+              gap="sm"
+              wrap="nowrap"
+              style={{
+                backgroundColor: '#0f141a',
+                borderRadius: '6px',
+                border: '1px solid #1f2b3b',
+                boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                padding: '12px',
+                alignItems: 'center',
+              }}
+            >
+              <ThemeIcon c="white" variant="light">
+                {stat.icon}
+              </ThemeIcon>
+              <div>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                  {stat.label}
+                </Text>
+                <Text size="sm" fw={700} c="gray.2">
+                  {stat.value}
+                </Text>
+              </div>
+            </Group>
+          ))}
+        </SimpleGrid>
+      </GameCard>
+      {/* Add padding to the bottom of the main content area to prevent overlap with the fixed footer */}
+      <Box style={{ paddingBottom: hasOrder ? '160px' : 0 }}>
         {unitTypesIndex
-          .filter((unitType) => unitType.unitData !== null) // Ensure unitData is loaded
+          .filter((unitType) => unitType.unitData !== null)
           .map((unitType) => (
               <NewUnitSection
                 heading={unitType.sectionTitle}
-                units={(unitType.unitData ?? []).filter((u): u is UnitData => u !== undefined).map(u => ({ ...u, type: u.usage, cost: u.cost.toString() }))} // Map to include 'type' and convert 'cost' to string for UnitProps
+                units={(unitType.unitData ?? []).filter((u): u is UnitData => u !== undefined).map(u => ({ ...u, type: u.usage, cost: u.cost.toString() }))}
                 updateTotalCost={updateTotalCost}
                 unitCosts={unitCosts}
                 setUnitCosts={setUnitCosts}
@@ -472,38 +398,63 @@ const Training: React.FC = (props) => { // Removed unused props
               />
           ))}
       </Box>
-      {/* Sticky Footer - always visible at bottom of screen within main area */}
-      {/* Use a ref and start with relative positioning so the sticky logic can switch to fixed when needed (matches Armory behavior) */}
-      <div ref={footerRef} className="bottom-0 z-10 w-full bg-dark-7" style={{ position: 'relative' }}>
-        <ContentCard
-          title="Order Summary"
-          variant="highlight"
-          className="border-t-2 border-yellow-600" // Example styling
-        >
-          <Flex justify='space-between' align="center" p="xs">
-            <Stack gap="xs">
-              <Text size='sm'>Total Cost: {toLocale(totalCost, user.locale)}</Text>
-              <Text size='sm' c="dimmed">Refund: {toLocale(Math.floor(totalCost * 0.75), user.locale)}</Text>
-            </Stack>
-            <Group gap="sm">
-              <Button
-                color='green'
-                onClick={handleTrainAll}
-                disabled={totalCost <= 0 || BigInt(Math.ceil(totalCost)) > (user.gold ?? 0)} // Use Math.ceil to ensure integer
-              >
-                Train
-              </Button>
-              <Button
-                color='red'
-                onClick={handleUntrainAll}
-                disabled={totalCost <= 0} // Basic check, more specific checks in handler
-              >
-                Untrain
-              </Button>
-            </Group>
-          </Flex>
-        </ContentCard>
-      </div>
+      <div ref={summarySentinelRef} />
+      {hasOrder && (
+        <Box className={`training-order-summary${isSummaryDocked ? '' : ' training-order-summary--inline'}`}>
+          <Box style={{ padding: '0 16px' }}>
+            <GameCard title="Order Summary" goldAccent>
+              <Flex justify="space-between" align="center" wrap="wrap" gap="md" p="xs">
+                <Group gap="xl" wrap="wrap">
+                  <Stack gap={2}>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
+                      Total Cost
+                    </Text>
+                    <Text size="lg" fw={800} c="gray.1">
+                      {toLocale(totalCost, user.locale)}
+                    </Text>
+                  </Stack>
+                  <Stack gap={2}>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
+                      Refund
+                    </Text>
+                    <Text size="sm" fw={700} c="dimmed">
+                      {toLocale(Math.floor(totalCost * 0.75), user.locale)}
+                    </Text>
+                  </Stack>
+                </Group>
+                <Group gap="sm">
+                  <Button
+                    color="yellow"
+                    onClick={handleTrainAll}
+                    disabled={totalCost <= 0 || BigInt(Math.ceil(totalCost)) > (user.gold ?? 0)}
+                    style={{
+                      background: 'linear-gradient(180deg, #e5c55a 0%, #b98f2f 100%)',
+                      color: '#000',
+                      border: '1px solid #e5c55a',
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                    }}
+                  >
+                    Train
+                  </Button>
+                  <Button
+                    color="gray"
+                    onClick={handleUntrainAll}
+                    disabled={totalCost <= 0}
+                    style={{
+                      backgroundColor: '#1f2b3b',
+                      borderColor: '#2f3e52',
+                      color: '#e5e7eb',
+                      boxShadow: '0 2px 0 #0f151c',
+                    }}
+                  >
+                    Untrain
+                  </Button>
+                </Group>
+              </Flex>
+            </GameCard>
+          </Box>
+        </Box>
+      )}
     </MainArea>
   );
 };

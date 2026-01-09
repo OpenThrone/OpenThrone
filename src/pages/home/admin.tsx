@@ -1,20 +1,15 @@
 import React, { useState, useCallback, useEffect } from "react";
-import {
-  Text,
-  Grid,
-  Divider,
-  Title,
-  Modal  // Add Modal import
-} from "@mantine/core";
+import { Modal, Grid } from "@mantine/core";
 import { PermissionType } from '@prisma/client';
 import PermissionCheck from "@/components/PermissionCheck";
 import GrantUserForm from "@/components/GrantUserForm";
-import MainArea from "@/components/MainArea";
 import UserSearchFilter from "@/components/UserSearchFilter";
 import UserList from "@/components/UserList";
-import UserAdminEditor from "@/components/UserAdminEditor";  // Import our new component
+import UserAdminEditor from "@/components/UserAdminEditor";
+import { GameCard } from "@/components/game/GameCard";
+import { faUsersCog, faUserPlus } from "@fortawesome/free-solid-svg-icons";
+import MainArea from "@/components/MainArea";
 
-// Update the UserSummary interface
 interface UserSummary {
   id: string;
   username: string;
@@ -24,14 +19,11 @@ interface UserSummary {
   permissions?: string[];
 }
 
-const Admin = (props) => {
+const Admin = () => {
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Add state for managing the edit modal
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [sortBy, setSortBy] = useState('id');
@@ -39,19 +31,15 @@ const Admin = (props) => {
 
   const handleSearch = useCallback(async (filters: Record<string, string> = {}) => {
     setIsLoading(true);
+    const params = new URLSearchParams({
+      limit: '10',
+      offset: ((page - 1) * 10).toString(),
+      sort: sortBy,
+      order: sortOrder,
+      ...filters
+    });
     try {
-      const queryParams = new URLSearchParams();
-      queryParams.append('limit', '10');
-      queryParams.append('offset', ((page - 1) * 10).toString());
-      queryParams.append('sort', sortBy);
-      queryParams.append('order', sortOrder);
-
-      if (filters.id) queryParams.append('id', filters.id);
-      if (filters.username) queryParams.append('username', filters.username);
-      if (filters.email) queryParams.append('email', filters.email);
-      if (filters.status) queryParams.append('status', filters.status);
-
-      const response = await fetch(`/api/admin/users?${queryParams.toString()}`);
+      const response = await fetch(`/api/admin/users?${params.toString()}`);
       const data = await response.json();
       setUsers(data.users || []);
       setTotalPages(Math.ceil((data.total || 0) / 10));
@@ -62,94 +50,53 @@ const Admin = (props) => {
     }
   }, [page, sortBy, sortOrder]);
 
-  useEffect(() => {
-    handleSearch({});
-  }, [sortBy, sortOrder, page]);
+  useEffect(() => { handleSearch({}); }, [handleSearch]);
 
   const handleSortChange = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
+    setSortBy(field);
+    setSortOrder(sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc');
     setPage(1);
   };
 
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-  };
-
-  // Handler for when the edit button is clicked in the list
   const handleEditUser = useCallback((userId: string) => {
-    console.log("Edit user requested:", userId);
     setSelectedUserId(userId);
     setEditModalOpen(true);
   }, []);
 
-  // Close the modal and clear selected user
   const handleCloseModal = useCallback(() => {
     setEditModalOpen(false);
     setSelectedUserId(null);
   }, []);
 
-  // Handle after a user is saved - refresh the user list
-  const handleUserSaved = useCallback(() => {
-    // Refetch users with the current filters
-    handleSearch({});
-  }, [handleSearch]);
-
   return (
-    <MainArea title="Admin Panel">
-      <PermissionCheck permission={PermissionType.ADMINISTRATOR}>
-        <Grid gutter="lg">
-          {/* Section 1: Grant Permissions */}
+    <PermissionCheck permission={PermissionType.ADMINISTRATOR}>
+      <MainArea title="Admin">
+        <Grid>
           <Grid.Col span={12}>
-             <Title order={3} mb="sm">Grant Permissions</Title>
-             <GrantUserForm />
+            <GameCard title="Grant Permissions" icon={faUserPlus}><GrantUserForm /></GameCard>
           </Grid.Col>
-
           <Grid.Col span={12}>
-            <Divider my="lg" />
-          </Grid.Col>
-
-          {/* Section 2: User Management */}
-          <Grid.Col span={12}>
-            <Title order={3} mb="sm">User Management</Title>
-            <UserSearchFilter onSearch={handleSearch} />
-            <UserList
-              users={users}
-              onEditUser={handleEditUser}
-              isLoading={isLoading}
-              page={page}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              onSortChange={handleSortChange}
-            />
+            <GameCard title="User Management" icon={faUsersCog}>
+              <UserSearchFilter onSearch={handleSearch} />
+              <UserList
+                users={users}
+                onEditUser={handleEditUser}
+                isLoading={isLoading}
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortChange={handleSortChange}
+              />
+            </GameCard>
           </Grid.Col>
         </Grid>
-        
-        {/* User Edit Modal */}
-        <Modal
-          opened={editModalOpen}
-          onClose={handleCloseModal}
-          size="xl"
-          title=""
-          padding="md"
-          fullScreen
-        >
-          {selectedUserId && (
-            <UserAdminEditor
-              userId={selectedUserId}
-              onClose={handleCloseModal}
-              onSaved={handleUserSaved}
-            />
-          )}
+        <Modal opened={editModalOpen} onClose={handleCloseModal} size="xl" title="Edit User">
+          {selectedUserId && <UserAdminEditor userId={selectedUserId} onClose={handleCloseModal} onSaved={handleSearch} />}
         </Modal>
-      </PermissionCheck>
-    </MainArea>
+      </MainArea>
+    </PermissionCheck>
   );
 };
 

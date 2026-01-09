@@ -1,394 +1,103 @@
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import {
-  Tabs,
-  SimpleGrid,
-  Text,
-  Space,
-  Flex,
-  rem,
-} from '@mantine/core';
-import {
-  BiCoinStack,
-  BiLineChart,
-  BiMoney,
-  BiSolidBank,
-  BiUserCircle,
-} from 'react-icons/bi';
-
-import MainArea from '@/components/MainArea';
+import { Tabs, SimpleGrid, Space } from '@mantine/core';
+import { BiCoinStack, BiLineChart, BiMoney, BiSolidBank, BiUserCircle } from 'react-icons/bi';
 import { useUser } from '@/context/users';
-import classes from './[tab].module.css'; // Keep your styling
-
-// Sub-components
 import BankDepositWithdraw from '@/components/BankDepositWithdraw';
 import BankHistoryFilters from '@/components/BankHistoryFilters';
 import BankHistoryTable from '@/components/BankHistoryTable';
 import { EconomyUpgrades } from '@/constants';
 import { useLocalStorage } from '@mantine/hooks';
 import { logError } from '@/utils/logger';
-import BankCard from '@/components/StatCard';
-import ContentCard from '@/components/ContentCard';
+import { GameCard } from '@/components/game/GameCard';
+import { StatGrid } from '@/components/game/StatGrid';
+import toLocale from '@/utils/numberFormatting';
 import { getTransactionType, getGoldTxSymbol } from '@/utils/utilities';
+import MainArea from '@/components/MainArea';
 
 const defaultFilters = {
-  deposits: true,
-  withdraws: true,
-  war_spoils: true,
-  transfers: true,
-  sale: true,
-  training: true,
-  recruitment: true,
-  economy: true,
-  fortification: true,
-  daily: true,
+  deposits: true, withdraws: true, war_spoils: true, transfers: true, sale: true,
+  training: true, recruitment: true, economy: true, fortification: true, daily: true,
 };
-export default function Bank(props) {
-  const tab = usePathname()?.split('/')[3];
-  const router = useRouter();
-  const [filters, setFilters] = useLocalStorage({
-    key: 'bankHistoryFilters',
-    defaultValue: defaultFilters,
-  });
-  const { user, forceUpdate } = useUser();
-  const currentPage = tab || 'deposit';
 
-  // State relevant to deposit & withdraw
-  // 1) Separate state for deposit/withdraw limited history:
-  const [depositWithdrawHistory, setDepositWithdrawHistory] = useState([]);
-  // 2) Separate state for the *filtered* history tab:
-  const [filteredBankHistory, setFilteredBankHistory] = useState([]);
-  const [despositsAvailable, setDepositsAvailable] = useState(0);
-  const [depositsMax, setDepositsMax] = useState(0);
-  const [nextDepositAvailable, setNextDepositAvailable] = useState({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
-  const [message, setMessage] = useState('');
-  const [colorScheme, setColorScheme] = useState('ELF');
-  const [citizenUnit, setCitizenUnit] = useState(0);
-  const searchParams = useSearchParams();
-  const page = Number(searchParams.get('page')) || 0; //todo add pagination
-  const limit = Number(searchParams.get('limit')) || 10;
+export default function Bank() {
+  const tab = usePathname()?.split('/')[3] || 'deposit';
+  const router = useRouter();
+  const [filters, setFilters] = useLocalStorage({ key: 'bankHistoryFilters', defaultValue: defaultFilters });
+  const { user, forceUpdate } = useUser();
+  const [history, setHistory] = useState([]);
+  const [page, setPage] = useState(0);
+  const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
 
-  function handleRowsPerPageChange(option: number): void {
-    router.push(`/structures/bank/history?page=0&limit=${option}`);
-  }
-
-  // Fetch user color scheme
-  useEffect(() => {
-    if (user && user.colorScheme) {
-      setColorScheme(user.colorScheme);
-    }
-  }, [user]);
-
-  // On mount or whenever "currentPage" or filters change, fetch data
   useEffect(() => {
     if (!user) return;
+    if (tab === 'history') {
+      const queryParams = new URLSearchParams({ ...Object.fromEntries(Object.entries(filters).map(([k, v]) => [k, String(v)])), page: String(page), limit: String(limit) });
+      fetch(`/api/bank/history?${queryParams.toString()}`)
+        .then(res => res.json())
+        .then(data => { setHistory(data.rows); setTotalPages(data.totalPages); })
+        .catch(err => logError('Error fetching bank history:', err));
+    }
+  }, [tab, filters, user, page, limit]);
 
-    const anyFilterActive = Object.values(filters).some((status) => status === true);
-
-    // Only fetch history for the deposit or history pages
-    if (currentPage === 'deposit')
+  const statItems = [
+    { label: "Gold On Hand", value: toLocale(user?.gold, user?.locale), icon: <BiCoinStack size={18} /> },
+    { label: "Banked Gold", value: toLocale(user?.goldInBank, user?.locale), icon: <BiSolidBank size={18} /> },
+    { label: "Daily Deposits", value: user?.maximumBankDeposits ?? 0, icon: <BiMoney size={18} /> },
     {
-      fetch('/api/bank/history?deposits=true&withdraws=true&limit=10&page=0')
-        .then((response) => response.json())
-        .then((data) => {
-          setDepositWithdrawHistory(data.rows);
-          setMessage('');
-        })
-        .catch((error) => {
-          logError('Error fetching bank history:', error);
-          setMessage('Failed to fetch data');
-        });
-    }
-    if (currentPage === 'history') {
-      if (anyFilterActive) {
-        const queryParams = new URLSearchParams();
-        Object.keys(filters).forEach((key) => {
-          if (filters[key]) {
-            queryParams.append(key, 'true');
-          }
-        });
-
-        queryParams.set('page', page.toString());
-        queryParams.set('limit', limit.toString());
-
-        fetch(`/api/bank/history?${queryParams.toString()}`)
-          .then((response) => response.json())
-          .then((data) => {
-            setFilteredBankHistory(data.rows);
-            setTotalPages(data.totalPages);
-            setMessage('');
-          })
-          .catch((error) => {
-            logError('Error fetching bank history:', error);
-            setMessage('Failed to fetch data');
-          });
-      } else {
-        setMessage('No filters selected');
-        setFilteredBankHistory([]);
-      }
-    }
-
-    // Always fetch deposit availability
-    fetch('/api/bank/getDeposits')
-      .then((response) => response.json())
-      .then((data) => {
-        setDepositsAvailable(data.deposits);
-        setNextDepositAvailable(data.nextDepositAvailable);
-        setDepositsMax(user?.maximumBankDeposits || 0);
-        setMessage('');
-      })
-      .catch((error) => {
-        logError('Error fetching deposits:', error);
-        setMessage('Failed to fetch deposits');
-      });
-  }, [currentPage, filters, user, page, limit]);
-
-  useEffect(() => {
-    if (user?.units) {
-      setCitizenUnit(user.units.find((u) => u.type === 'WORKER')?.quantity ?? 0);
-    }
-  }, [user]);
+      label: "Deposits Available",
+      value: user?.depositsAvailable < (user?.maximumBankDeposits ?? 0)
+        ? `${user?.depositsAvailable ?? 0} (Next in ${user?.nextDepositAvailable?.hours ?? 0}:${user?.nextDepositAvailable?.minutes ?? 0})`
+        : user?.depositsAvailable ?? 0,
+      icon: <BiMoney size={18} />,
+    },
+  ];
 
   return (
     <MainArea title="Bank">
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }}>
-        {/* Gold On Hand Card */}
-        <BankCard
-          title="Gold On Hand"
-          value={parseInt(user?.gold?.toString() ?? '0')}
-          icon={<BiCoinStack style={{ width: rem(15), height: rem(15) }} />}
-          variant="default"
-        />
-
-        {/* Banked Gold Card */}
-        <BankCard
-          title="Banked Gold"
-          value={parseInt(user?.goldInBank?.toString() ?? '0')}
-          icon={<BiSolidBank style={{ width: rem(15), height: rem(15) }} />}
-          variant="default"
-        />
-
-        {/* Daily Deposits Card */}
-        <BankCard
-          title="Daily Deposits"
-          value={depositsMax}
-          icon={<BiMoney style={{ width: rem(15), height: rem(15) }} />}
-          variant="default"
-        />
-
-        {/* Deposits Available Card */}
-        <BankCard
-          title="Deposits Available"
-          value={despositsAvailable}
-          icon={<BiMoney style={{ width: rem(15), height: rem(15) }} />}
-          variant={despositsAvailable > 0 ? "pulse" : "default"}
-          subtext={despositsAvailable < depositsMax ? 
-            `Next deposit available in ${nextDepositAvailable.hours}:${nextDepositAvailable.minutes}` : 
-            undefined}
-        />
-      </SimpleGrid>
-
+      <StatGrid title="Bank Overview" stats={statItems} />
       <Space h="md" />
-
-      {/* Tabs: deposit, history, economy */}
-      <Tabs
-        defaultValue={currentPage}
-        className="mb-2 font-medieval"
-      >
+      <Tabs value={tab} onChange={(value) => router.push(`/structures/bank/${value}`)} variant="pills" color="yellow">
         <Tabs.List grow justify="center">
-          <Tabs.Tab
-            value="deposit"
-            onClick={() => {
-              router.push('/structures/bank/deposit');
-            }}
-            color={
-              colorScheme === 'ELF'
-                ? 'green'
-                : colorScheme === 'GOBLIN'
-                  ? 'red'
-                  : colorScheme === 'UNDEAD'
-                    ? 'dark'
-                    : 'blue'
-            }
-          >
-            <span className="text-xl">Deposit</span>
-          </Tabs.Tab>
-          <Tabs.Tab
-            value="history"
-            onClick={() => {
-              router.push('/structures/bank/history');
-            }}
-            color={
-              colorScheme === 'ELF'
-                ? 'green'
-                : colorScheme === 'GOBLIN'
-                  ? 'red'
-                  : colorScheme === 'UNDEAD'
-                    ? 'dark'
-                    : 'blue'
-            }
-          >
-            <span className="text-xl">History</span>
-          </Tabs.Tab>
-          <Tabs.Tab
-            value="economy"
-            onClick={() => {
-              router.push('/structures/bank/economy');
-            }}
-            color={
-              colorScheme === 'ELF'
-                ? 'green'
-                : colorScheme === 'GOBLIN'
-                  ? 'red'
-                  : colorScheme === 'UNDEAD'
-                    ? 'dark'
-                    : 'blue'
-            }
-          >
-            <span className="text-xl">Economy</span>
-          </Tabs.Tab>
+          <Tabs.Tab value="deposit">Deposit</Tabs.Tab>
+          <Tabs.Tab value="history">History</Tabs.Tab>
+          <Tabs.Tab value="economy">Economy</Tabs.Tab>
         </Tabs.List>
       </Tabs>
-
       <Space h="md" />
 
-      {currentPage === 'deposit' && (
-        <BankDepositWithdraw
-          user={user}
-          forceUpdate={forceUpdate}
-          bankHistory={depositWithdrawHistory}
-          setDepositsAvailable={setDepositsAvailable}
-          setNextDepositAvailable={setNextDepositAvailable}
-          colorScheme={colorScheme}
-        />
-      )}
+      {tab === 'deposit' && <BankDepositWithdraw user={user} forceUpdate={forceUpdate} />}
 
-      {currentPage === 'history' && (
-        <ContentCard
-        title="Bank History"
-        icon={<BiSolidBank style={{ width: rem(15), height: rem(15) }} />}
-        >
-          {/* Filters */}
-          <BankHistoryFilters
-            colorScheme={colorScheme}
-            setFilters={setFilters}
-            filters={filters}
-          />
-
-          {/* Full Table */}
+      {tab === 'history' && (
+        <GameCard title="Bank History" icon={<BiSolidBank size={16} />}>
+          <BankHistoryFilters colorScheme={user?.colorScheme} filters={filters} setFilters={setFilters} />
           <BankHistoryTable
-            bankHistory={filteredBankHistory}
+            bankHistory={history}
             user={user}
-            message={message}
-            getTransactionType={getTransactionType}
-            getGoldTxSymbol={getGoldTxSymbol}
-            handleRowsPerPageChange={handleRowsPerPageChange}
-            limit={limit}
             page={page}
             totalPages={totalPages}
+            onPageChange={setPage}
+            getTransactionType={getTransactionType}
+            getGoldTxSymbol={getGoldTxSymbol}
           />
-        </ContentCard>
+        </GameCard>
       )}
 
-      {currentPage === 'economy' && (
-        <Flex gap="md" direction={{ base: 'column', sm: 'row' }}>
-          {/* Workers Card */}
-          <ContentCard 
-            title="Workers"
-            icon={<BiUserCircle style={{ width: rem(15), height: rem(15) }} />}
-            className="flex-1"
-          >
-            <div className="space-y-4">
-              <div>
-                <Flex justify="space-between" align="center" mb={8}>
-                  <Text fw={500}>Total Workers:</Text>
-                  <Text>{citizenUnit || 0}</Text>
-                </Flex>
-                <Text c="dimmed" size="sm">
-                  To increase your workforce, visit the training page.
-                </Text>
-              </div>
-              
-              <div>
-                <Flex justify="space-between" align="center" mb={8}>
-                  <Text fw={500}>Gold Per Worker:</Text>
-                  <Text>{user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn</Text>
-                </Flex>
-                <Text c="dimmed" size="sm">
-                  Upgrade your economy structure to increase gold per worker.
-                </Text>
-              </div>
-            </div>
-          </ContentCard>
-
-          {/* Operations Card */}
-          <ContentCard 
-            title="Operations"
-            icon={<BiLineChart style={{ width: rem(15), height: rem(15) }} />}
-            className="flex-1"
-          >
-            <div className="space-y-4">
-              <div>
-                <Flex justify="space-between" align="center" mb={8}>
-                  <Text fw={500}>Current Economy Upgrade:</Text>
-                  <Text>
-                    {EconomyUpgrades.find((eu) => eu.index === user?.economyLevel)?.name}
-                  </Text>
-                </Flex>
-                <Text c="dimmed" size="sm">
-                  This Upgrade increases bank deposits or gold per worker
-                </Text>
-              </div>
-              
-              <div>
-                <Flex justify="space-between" align="center" mb={8}>
-                  <Text fw={500}>Fortification Gold Per Turn:</Text>
-                  <Text>{user?.fortificationGoldPerTurn.toLocaleString()}</Text>
-                </Flex>
-                <Text c="dimmed" size="sm">
-                  As fortification upgrades, fort gold per turn increases
-                </Text>
-              </div>
-              
-              <div>
-                <Flex justify="space-between" align="center" mb={8}>
-                  <Text fw={500}>Worker Gold Per Turn:</Text>
-                  <Text>{user?.workerGoldPerTurn.toLocaleString()}</Text>
-                </Flex>
-                <Text c="dimmed" size="sm">
-                  Increase this by training more workers & upgrading economy
-                </Text>
-              </div>
-              
-              <div>
-                <Flex justify="space-between" align="center" mb={8}>
-                  <Text fw={500}>Total Gold Per Turn:</Text>
-                  <Text>{user?.goldPerTurn.toLocaleString()}</Text>
-                </Flex>
-                <Text c="dimmed" size="sm">
-                  Includes workers, fort gold, and additional wealth bonus
-                </Text>
-              </div>
-              
-              <div>
-                <Flex justify="space-between" align="center" mb={8}>
-                  <Text fw={500}>Daily Income:</Text>
-                  <Text>
-                    {(BigInt(user?.goldPerTurn?.toString() || '0') * BigInt(48)).toLocaleString()}
-                  </Text>
-                </Flex>
-                <Text c="dimmed" size="sm">
-                  Based on 48 turns per day
-                </Text>
-              </div>
-            </div>
-          </ContentCard>
-        </Flex>
+      {tab === 'economy' && (
+        <SimpleGrid cols={{base: 1, md: 2}} spacing="md">
+          <GameCard title="Workers" icon={<BiUserCircle size={16} />}>
+            <p>Total Workers: {user?.units.find(u => u.type === 'WORKER')?.quantity || 0}</p>
+            <p>Gold Per Worker: {user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn</p>
+          </GameCard>
+          <GameCard title="Operations" icon={<BiLineChart size={16} />}>
+            <p>Current Upgrade: {EconomyUpgrades.find(eu => eu.index === user?.economyLevel)?.name}</p>
+            <p>Fort Gold/Turn: {user?.fortificationGoldPerTurn.toLocaleString()}</p>
+            <p>Worker Gold/Turn: {user?.workerGoldPerTurn.toLocaleString()}</p>
+            <p>Total Gold/Turn: {user?.goldPerTurn.toLocaleString()}</p>
+            <p>Daily Income: {(BigInt(user?.goldPerTurn.toString() || '0') * BigInt(48)).toLocaleString()}</p>
+          </GameCard>
+        </SimpleGrid>
       )}
     </MainArea>
   );

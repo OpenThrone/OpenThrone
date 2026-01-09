@@ -6,16 +6,18 @@ import AssassinateResult from '@/components/AssassinateResult';
 import InfiltrationResult from '@/components/InfiltrationResult';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { InferGetServerSidePropsType } from "next";
+
 import { serializeDates } from '@/utils/utilities';
+import MainArea from '@/components/MainArea';
+import { parseInt } from 'node_modules/cypress/types/lodash';
 
 const ResultsPage = ({ battle, lastGenerated, viewerID }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   if (!battle) {
-    return <p>You do not have permission to view this battle log.</p>;
+    return <MainArea title="Battle Results"><p>You do not have permission to view this battle log.</p></MainArea>;
   }
 
   return (
-    <div className="mainArea pb-10">
-      <h2 className="page-title text-shadow text-shadow-xs">Battle Results</h2>
+    <MainArea title="Battle Results">
       {battle.type === 'attack' ? (
         <AttackResult battle={battle} viewerID={Number(viewerID)} />
       ) : battle.type === 'ASSASSINATE' ? (
@@ -25,7 +27,7 @@ const ResultsPage = ({ battle, lastGenerated, viewerID }: InferGetServerSideProp
       ) : (
               <IntelResult battle={battle} lastGenerated={lastGenerated} viewerID={Number(viewerID)} />
       )}
-    </div>
+    </MainArea>
   );
 };
 

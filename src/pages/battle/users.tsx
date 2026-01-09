@@ -1,32 +1,33 @@
-import { InferGetServerSidePropsType } from 'next';
+import type { InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 
+import { faCrosshairs, faFilter, faUsers } from '@fortawesome/free-solid-svg-icons';
 import {
+  Avatar,
+  Badge,
+  Box,
   Button,
-  Center,
   Checkbox,
   Collapse,
-  Divider,
   Group,
+  Indicator,
   MultiSelect,
   NumberInput,
   Pagination,
-  Paper,
   Pill,
-  SegmentedControl,
+  SimpleGrid,
   Stack,
   Table,
   Text,
   TextInput,
-  Avatar,
-  Badge,
-  Indicator,
+  useMantineTheme,
 } from '@mantine/core';
 import { usePagination } from '@mantine/hooks';
 
 import MainArea from '@/components/MainArea';
+import { GameCard } from '@/components/game/GameCard';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -37,6 +38,7 @@ import { getLevelFromXP } from '@/utils/utilities';
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const searchParams = useSearchParams();
   const { user } = useUser();
+  const theme = useMantineTheme();
   const colorScheme = user?.colorScheme;
   const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1);
   const [lastPage, setLastPage] = useState(1);
@@ -53,7 +55,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const pagination = usePagination({ total: lastPage, initialPage: 1 });
 
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [matchMode, setMatchMode] = useState<'AND' | 'OR'>('AND');
   const [nameQuery, setNameQuery] = useState('');
 
   const [includeFriends, setIncludeFriends] = useState(true);
@@ -81,6 +82,12 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const [iBeatIds, setIBeatIds] = useState<Set<number>>(new Set());
   const [theyBeatMeIds, setTheyBeatMeIds] = useState<Set<number>>(new Set());
   const [allianceOptions, setAllianceOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const brand = theme.colors.brand ?? theme.colors.blue;
+  const secondary = theme.colors.secondary ?? theme.colors.yellow;
+  const accent = secondary[4] ?? '#e5c55a';
+  const rowGlow = brand[6] ?? '#1d4ed8';
+  const withAlpha = (hex: string, alpha: string) =>
+    hex.startsWith('#') && hex.length === 7 ? `${hex}${alpha}` : hex;
 
   const getRankLabel = () => {
     switch (sortBy) {
@@ -239,12 +246,11 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
     if (predicates.length === 0) return allUsers as any[];
 
-    return (allUsers as any[]).filter((u) => (matchMode === 'AND' ? predicates.every((p) => p(u)) : predicates.some((p) => p(u))));
+    return (allUsers as any[]).filter((u) => predicates.every((p) => p(u)));
   }, [
     user,
     allUsers,
     nameQuery,
-    matchMode,
     includeFriends,
     includeEnemies,
     includeOthers,
@@ -351,7 +357,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   };
 
   const resetAdvancedFilters = () => {
-    setMatchMode('AND');
     setNameQuery('');
     setIncludeFriends(true);
     setIncludeEnemies(true);
@@ -379,203 +384,307 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
   return (
     <MainArea title="Attack Users">
-      <Center><p>You can attack players from levels {attackRangeMin} to {attackRangeMax}</p></Center>
-      <Group justify="space-between" className="mt-4 mb-2">
-        <Button variant="light" onClick={() => setAdvancedOpen((v) => !v)}>
-          {advancedOpen ? 'Hide Advanced Filters' : 'Show Advanced Filters'}
-        </Button>
-        <Text size="sm" c="dimmed">
-          Showing {filteredUsers.length} / {allUsers.length}
-        </Text>
-      </Group>
-      <Collapse in={advancedOpen}>
-        <Paper p="md" withBorder mb="md">
-          <Stack gap="sm">
-            <Group justify="space-between" align="flex-end">
-              <div>
-                <Text size="sm" c="dimmed">
-                  Match mode
-                </Text>
-                <SegmentedControl
-                  value={matchMode}
-                  onChange={(val) => setMatchMode(val as 'AND' | 'OR')}
-                  data={[
-                    { label: 'All (AND)', value: 'AND' },
-                    { label: 'Any (OR)', value: 'OR' },
-                  ]}
-                />
-              </div>
-              <Button variant="default" onClick={resetAdvancedFilters}>
-                Reset
-              </Button>
-            </Group>
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mb="lg">
+        <GameCard title="Targeting Window" icon={faCrosshairs} goldAccent={false}>
+          <Text size="sm" c="gray.3">
+            You can attack players from levels{' '}
+            <Text component="span" fw={700} c="gray.1">
+              {attackRangeMin}
+            </Text>{' '}
+            to{' '}
+            <Text component="span" fw={700} c="gray.1">
+              {attackRangeMax}
+            </Text>
+            .
+          </Text>
+          <Text size="xs" c="dimmed" mt="sm">
+            Showing {filteredUsers.length} / {allUsers.length} targets
+          </Text>
+        </GameCard>
 
+        <GameCard
+          title="Filters"
+          icon={faFilter}
+          action={(
+            <Button size="xs" variant="light" onClick={() => setAdvancedOpen((v) => !v)}>
+              {advancedOpen ? 'Hide Advanced' : 'Show Advanced'}
+            </Button>
+          )}
+          goldAccent={false}
+        >
+          <Stack gap="sm">
             <TextInput
               label="Name contains"
               value={nameQuery}
               onChange={(e) => setNameQuery(e.currentTarget.value)}
               placeholder="e.g. Tim"
             />
+            <Collapse in={advancedOpen}>
+              <Box
+                mt="sm"
+                p="sm"
+                style={{
+                  backgroundColor: '#0f141a',
+                  borderRadius: '6px',
+                  border: '1px solid #1f2b3b',
+                  boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                }}
+              >
+                <Stack gap="sm">
+                  <Group justify="space-between" align="flex-end">
+                    <Text size="sm" c="dimmed">
+                      Advanced filters
+                    </Text>
+                    <Button size="xs" variant="default" onClick={resetAdvancedFilters}>
+                      Reset
+                    </Button>
+                  </Group>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+                    Social
+                  </Text>
+                  <Group>
+                    <Checkbox checked={includeFriends} onChange={(e) => setIncludeFriends(e.currentTarget.checked)} label="Friends" />
+                    <Checkbox checked={includeEnemies} onChange={(e) => setIncludeEnemies(e.currentTarget.checked)} label="Enemies" />
+                    <Checkbox checked={includeOthers} onChange={(e) => setIncludeOthers(e.currentTarget.checked)} label="Others" />
+                  </Group>
 
-            <Divider label="Social" />
-            <Group>
-              <Checkbox checked={includeFriends} onChange={(e) => setIncludeFriends(e.currentTarget.checked)} label="Friends" />
-              <Checkbox checked={includeEnemies} onChange={(e) => setIncludeEnemies(e.currentTarget.checked)} label="Enemies" />
-              <Checkbox checked={includeOthers} onChange={(e) => setIncludeOthers(e.currentTarget.checked)} label="Others" />
-            </Group>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+                    Alliance
+                  </Text>
+                  <Group>
+                    <Checkbox
+                      checked={includeAllianceMembers}
+                      onChange={(e) => setIncludeAllianceMembers(e.currentTarget.checked)}
+                      label="In an alliance"
+                    />
+                    <Checkbox
+                      checked={includeNonAllianceMembers}
+                      onChange={(e) => setIncludeNonAllianceMembers(e.currentTarget.checked)}
+                      label="Not in an alliance"
+                    />
+                  </Group>
+                  <MultiSelect
+                    label="Specific alliances (optional)"
+                    placeholder="Pick alliances"
+                    data={allianceOptions}
+                    value={selectedAllianceIds}
+                    onChange={setSelectedAllianceIds}
+                    searchable
+                    clearable
+                  />
 
-            <Divider label="Alliance" />
-            <Group>
-              <Checkbox
-                checked={includeAllianceMembers}
-                onChange={(e) => setIncludeAllianceMembers(e.currentTarget.checked)}
-                label="In an alliance"
-              />
-              <Checkbox
-                checked={includeNonAllianceMembers}
-                onChange={(e) => setIncludeNonAllianceMembers(e.currentTarget.checked)}
-                label="Not in an alliance"
-              />
-            </Group>
-            <MultiSelect
-              label="Specific alliances (optional)"
-              placeholder="Pick alliances"
-              data={allianceOptions}
-              value={selectedAllianceIds}
-              onChange={setSelectedAllianceIds}
-              searchable
-              clearable
-            />
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+                    Stats
+                  </Text>
+                  <Group grow>
+                    <NumberInput
+                      label="Min gold"
+                      value={minGold}
+                      onChange={(v) => setMinGold(toNumberOrNull(v))}
+                      min={0}
+                      thousandSeparator=","
+                    />
+                    <NumberInput
+                      label="Max gold"
+                      value={maxGold}
+                      onChange={(v) => setMaxGold(toNumberOrNull(v))}
+                      min={0}
+                      thousandSeparator=","
+                    />
+                  </Group>
+                  <Group grow>
+                    <NumberInput label="Min level" value={minLevel} onChange={(v) => setMinLevel(toNumberOrNull(v))} min={1} />
+                    <NumberInput label="Max level" value={maxLevel} onChange={(v) => setMaxLevel(toNumberOrNull(v))} min={1} />
+                  </Group>
+                  <Checkbox checked={onlineOnly} onChange={(e) => setOnlineOnly(e.currentTarget.checked)} label="Online only" />
 
-            <Divider label="Stats" />
-            <Group grow>
-              <NumberInput
-                label="Min gold"
-                value={minGold}
-                onChange={(v) => setMinGold(toNumberOrNull(v))}
-                min={0}
-                thousandSeparator=","
-              />
-              <NumberInput
-                label="Max gold"
-                value={maxGold}
-                onChange={(v) => setMaxGold(toNumberOrNull(v))}
-                min={0}
-                thousandSeparator=","
-              />
-            </Group>
-            <Group grow>
-              <NumberInput label="Min level" value={minLevel} onChange={(v) => setMinLevel(toNumberOrNull(v))} min={1} />
-              <NumberInput label="Max level" value={maxLevel} onChange={(v) => setMaxLevel(toNumberOrNull(v))} min={1} />
-            </Group>
-            <Checkbox checked={onlineOnly} onChange={(e) => setOnlineOnly(e.currentTarget.checked)} label="Online only" />
-
-            <Divider label="Recent battles" />
-            <Group grow align="flex-end">
-              <NumberInput
-                label="Lookback (days)"
-                value={recentDays}
-                onChange={(v) => setRecentDays(typeof v === 'number' ? v : 7)}
-                min={1}
-                max={365}
-              />
-              <div />
-            </Group>
-            <Group>
-              <Checkbox
-                checked={attackedMeRecently}
-                onChange={(e) => setAttackedMeRecently(e.currentTarget.checked)}
-                label="Attacked you recently"
-              />
-              <Checkbox checked={iBeatRecently} onChange={(e) => setIBeatRecently(e.currentTarget.checked)} label="You beat recently" />
-              <Checkbox
-                checked={theyBeatMeRecently}
-                onChange={(e) => setTheyBeatMeRecently(e.currentTarget.checked)}
-                label="They beat you recently"
-              />
-            </Group>
+                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+                    Recent battles
+                  </Text>
+                  <Group grow align="flex-end">
+                    <NumberInput
+                      label="Lookback (days)"
+                      value={recentDays}
+                      onChange={(v) => setRecentDays(typeof v === 'number' ? v : 7)}
+                      min={1}
+                      max={365}
+                    />
+                    <div />
+                  </Group>
+                  <Group>
+                    <Checkbox
+                      checked={attackedMeRecently}
+                      onChange={(e) => setAttackedMeRecently(e.currentTarget.checked)}
+                      label="Attacked you recently"
+                    />
+                    <Checkbox checked={iBeatRecently} onChange={(e) => setIBeatRecently(e.currentTarget.checked)} label="You beat recently" />
+                    <Checkbox
+                      checked={theyBeatMeRecently}
+                      onChange={(e) => setTheyBeatMeRecently(e.currentTarget.checked)}
+                      label="They beat you recently"
+                    />
+                  </Group>
+                </Stack>
+              </Box>
+            </Collapse>
           </Stack>
-        </Paper>
-      </Collapse>
-      <div className="mt-4 flex justify-between mb-2">
-        <button
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          onClick={() => {
-            const newPage = Math.max(page - 1, 1);
-            setPage(newPage);
-          }}
-          disabled={page == 1}
-        >
-          Previous
-        </button>
-        <Pagination
-          total={lastPage}
-          siblings={1}
-          value={page}
-          defaultValue={page}
-          onChange={(xval) => { setPage(xval); pagination.setPage(xval); }}
-        />
+        </GameCard>
+      </SimpleGrid>
 
-        <button
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          onClick={() => {
-            const newPage = page + 1;
-            setPage(newPage);
-          }}
-          disabled={players.length < rowsPerPage}
-        >
-          Next
-        </button>
-      </div>
-      <div className="overflow-x-auto">
-        <Group  className="mb-2">
-          <Pill size='lg'>
-            <Text>
-              Sorted By: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
-            </Text>
-          </Pill>
-
-          <Pill size='lg'>
-            <Text>
-              Your {getRankLabel()}: {myRank}
-            </Text>
-          </Pill>
-          <Pill
-            onClick={() => setPage(myPage)}
-            disabled={myPage === page}
-            size='lg'
-            color={myPage === page ? 'gray' : 'brand'}
-            onMouseOver={(e) => e.currentTarget.style.cursor = myPage !== page ? 'pointer' : 'default'}
-          >
-            Go to My Rank
-          </Pill>
+      <GameCard
+        title="Attack Users"
+        icon={faUsers}
+        action={(
+          <Badge color="red" variant="filled" radius="sm" tt="uppercase">
+            PvP Zone
+          </Badge>
+        )}
+      >
+        <Group justify="space-between" mb="sm" wrap="wrap">
+          <Group>
+            <Button
+              variant="light"
+              onClick={() => {
+                const newPage = Math.max(page - 1, 1);
+                setPage(newPage);
+              }}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            <Pagination
+              total={lastPage}
+              siblings={1}
+              value={page}
+              defaultValue={page}
+              onChange={(xval) => { setPage(xval); pagination.setPage(xval); }}
+            />
+            <Button
+              variant="light"
+              onClick={() => {
+                const newPage = page + 1;
+                setPage(newPage);
+              }}
+              disabled={players.length < rowsPerPage}
+            >
+              Next
+            </Button>
+          </Group>
+          <Group>
+            <Pill size="lg">
+              <Text>
+                Sorted By: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
+              </Text>
+            </Pill>
+            <Pill size="lg">
+              <Text>
+                Your {getRankLabel()}: {myRank}
+              </Text>
+            </Pill>
+            <Pill
+              onClick={() => setPage(myPage)}
+              disabled={myPage === page}
+              size="lg"
+              color={myPage === page ? 'gray' : 'brand'}
+              onMouseOver={(e) => e.currentTarget.style.cursor = myPage !== page ? 'pointer' : 'default'}
+            >
+              Go to My Rank
+            </Pill>
+          </Group>
         </Group>
-        </div>
-      <div className="overflow-x-auto">
-        <Group>
-          <Text size="sm">Show per page: </Text>
+
+        <Group mb="sm" wrap="wrap">
+          <Text size="sm">Show per page:</Text>
           {[10, 20, 50, 100].map(option => (
             <Text
               key={option}
               size="sm"
               c={rowsPerPage === option ? 'dimmed' : 'white'}
-              className='cursor-pointer'
+              className="cursor-pointer"
               onClick={() => handleRowsPerPageChange(option)}
             >
               {option}
             </Text>
           ))}
         </Group>
+
         <Table.ScrollContainer minWidth={400}>
-          <Table verticalSpacing={"sm"} striped highlightOnHover className="bg-gray-900 text-white text-left">
+          <Table verticalSpacing="sm" highlightOnHover className="bg-gray-900 text-white text-left">
             <Table.Thead>
-              <Table.Tr>
-                <Table.Th className="px-1 py-1" style={{ width: '100px' }}>{getRankLabel()}</Table.Th>
-                <Table.Th className="px-4 py-2">Username</Table.Th>
-                <Table.Th className="px-4 py-2">Alliance</Table.Th>
-                <Table.Th className="px-4 py-2"><button onClick={() => handleSort('gold')}>Gold {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
-                <Table.Th className="px-4 py-2"><button onClick={() => handleSort('population')}> Population {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
-                <Table.Th className="px-4 py-2"><button onClick={() => handleSort('level')}> Level{sortBy === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}</button></Table.Th>
+              <Table.Tr style={{ background: '#0e1520' }}>
+                <Table.Th
+                  className="px-1 py-1"
+                  style={{
+                    width: '100px',
+                    color: '#687b94',
+                    borderBottom: '1px solid #2f3e52',
+                    textTransform: 'uppercase',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                  }}
+                >
+                  {getRankLabel()}
+                </Table.Th>
+                {[
+                  { label: 'Username' },
+                  { label: 'Alliance' },
+                ].map((head) => (
+                  <Table.Th
+                    key={head.label}
+                    className="px-4 py-2"
+                    style={{
+                      color: '#687b94',
+                      borderBottom: '1px solid #2f3e52',
+                      textTransform: 'uppercase',
+                      fontSize: '11px',
+                      letterSpacing: '1px',
+                    }}
+                  >
+                    {head.label}
+                  </Table.Th>
+                ))}
+                <Table.Th
+                  className="px-4 py-2"
+                  style={{
+                    color: '#687b94',
+                    borderBottom: '1px solid #2f3e52',
+                    textTransform: 'uppercase',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                  }}
+                >
+                  <button onClick={() => handleSort('gold')}>
+                    Gold {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                  </button>
+                </Table.Th>
+                <Table.Th
+                  className="px-4 py-2"
+                  style={{
+                    color: '#687b94',
+                    borderBottom: '1px solid #2f3e52',
+                    textTransform: 'uppercase',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                  }}
+                >
+                  <button onClick={() => handleSort('population')}>
+                    Population {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                  </button>
+                </Table.Th>
+                <Table.Th
+                  className="px-4 py-2"
+                  style={{
+                    color: '#687b94',
+                    borderBottom: '1px solid #2f3e52',
+                    textTransform: 'uppercase',
+                    fontSize: '11px',
+                    letterSpacing: '1px',
+                  }}
+                >
+                  <button onClick={() => handleSort('level')}>
+                    Level {sortBy === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                  </button>
+                </Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -586,16 +695,23 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                 return (
                   <Table.Tr
                     key={player.id}
-                    className={`${player.is_player
-                      ? 'bg-gray-500'
-                      : 'odd:bg-table-odd even:bg-table-even'
-                      }`}
+                    className={player.is_player ? 'bg-gray-500' : undefined}
+                    style={{
+                      background: player.is_player
+                        ? `linear-gradient(90deg, ${withAlpha(rowGlow, '40')} 0%, transparent 100%)`
+                        : undefined,
+                      transition: 'background 0.2s ease',
+                    }}
                   >
-                    <Table.Td className="px-2 py-2">{nplayer.overallrank}</Table.Td>
+                    <Table.Td className="px-2 py-2" style={{ borderColor: '#1f2b3b' }}>
+                      <Text fw={700} c="dimmed" size="sm">#{nplayer.overallrank}</Text>
+                    </Table.Td>
                     <Table.Td className="px-4 py-2">
                       <Group gap={'sm'} className="text-justify">
                         <Indicator color={player.is_online ? 'teal' : 'red'}>
-                          <Avatar src={player?.avatar} size={40} radius={40} />
+                          <Box style={{ border: '1px solid #444', padding: '1px', background: '#000' }}>
+                            <Avatar src={player?.avatar} size={34} radius={0} />
+                          </Box>
                         </Indicator>
                         <div>
                           <Text fz="med" fw={500} component="div">
@@ -618,44 +734,27 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                         </div>
                       </Group>
                     </Table.Td>
-                    <Table.Td className="px-4 py-2">{allianceName}</Table.Td>
-                    <Table.Td className="px-4 py-2">{toLocale(formattedGolds[index])}</Table.Td>
-                    <Table.Td className="px-4 py-2">{toLocale(nplayer.population)}</Table.Td>
-                    <Table.Td className="px-4 py-2">{player.level}</Table.Td>
+                    <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b', color: '#687b94' }}>
+                      {allianceName}
+                    </Table.Td>
+                    <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
+                      <Text style={{ color: accent }} fw={600} size="sm">
+                        {toLocale(formattedGolds[index])}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
+                      <Text c="white" fw={700} size="sm">{toLocale(nplayer.population)}</Text>
+                    </Table.Td>
+                    <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
+                      <Text c="white" fw={700} size="sm">{player.level}</Text>
+                    </Table.Td>
                   </Table.Tr>
                 );
               })}
             </Table.Tbody>
           </Table>
         </Table.ScrollContainer>
-      </div>
-      <div className="mt-4 flex justify-between">
-        <button
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          onClick={() => {
-            const newPage = Math.max(page - 1, 1);
-            setPage(newPage);
-          }}
-          disabled={page == 1}
-        >
-          Previous
-        </button>
-
-        <Pagination total={lastPage} siblings={1} value={page} defaultValue={page} onChange={setPage} />
-
-        <button
-          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          onClick={() => {
-            const newPage = page + 1;
-            setPage(newPage);
-          }}
-          disabled={players.length < rowsPerPage}
-        >
-          Next
-        </button>
-      </div>
-
-
+      </GameCard>
     </MainArea>
   );
 };

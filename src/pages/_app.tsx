@@ -7,18 +7,19 @@ import '@mantine/tiptap/styles.css';
 import { config } from "@fortawesome/fontawesome-svg-core";
 config.autoAddCss = false;
 
-import type { AppProps } from 'next/app';
-import { SessionProvider, useSession } from 'next-auth/react';
 import React, { Suspense, useEffect, useState } from 'react';
+import type { AppProps } from 'next/app';
+import { useRouter } from 'next/router';
+import { SessionProvider, useSession } from 'next-auth/react';
+import { Center, MantineProvider, Loader } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
 
 import Layout from '@/components/Layout'; // Import the Layout component
 import { LayoutProvider } from '@/context/LayoutContext';
 import { UserProvider, useUser } from '@/context/users';
-import { Center, MantineProvider, Loader } from '@mantine/core';
 import LoadingDots from '@/components/loading-dots';
 import { themes } from '@/styles/themes';
-import { PlayerRace } from '@/types/typings';
-import { useLocalStorage } from '@mantine/hooks';
+import type { PlayerRace } from '@/types/typings';
 import { SnackbarProvider } from '@/context/snackbar-context';
 import SnackbarBridge from '@/components/SnackbarBridge';
 
@@ -38,14 +39,18 @@ const MyApp = ({ Component, pageProps: { session, ...pageProps }, router }) => (
 const AppWithTheme = ({ Component, pageProps }: AppProps) => {
   const { status } = useSession();
   const { user } = useUser();
+  const router = useRouter();
   const [colorScheme, setColorScheme] = useLocalStorage<PlayerRace | string>({ key: 'colorScheme', defaultValue: 'ELF' });
+  const [previewScheme] = useLocalStorage<PlayerRace | ''>({ key: 'colorSchemePreview', defaultValue: '' });
   const [theme, setTheme] = useState(themes.ELF);
 
   useEffect(() => {
     const applyTheme = (cs: string) => setTheme(themes[cs] || themes.ELF);
     if (user?.colorScheme && user.colorScheme !== colorScheme) setColorScheme(user.colorScheme);
-    applyTheme(user?.colorScheme || (colorScheme as string));
-  }, [user?.colorScheme, colorScheme, setColorScheme]);
+    const isTestPage = router.pathname === '/test';
+    const activeScheme = (isTestPage && previewScheme) || user?.colorScheme || (colorScheme as string);
+    applyTheme(activeScheme);
+  }, [user?.colorScheme, colorScheme, setColorScheme, previewScheme, router.pathname]);
 
   return (
     <MantineProvider defaultColorScheme="dark" theme={theme}>

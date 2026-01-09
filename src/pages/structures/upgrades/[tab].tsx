@@ -1,7 +1,4 @@
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { useUser } from '@/context/users';
 import FortificationsTab from '@/components/fortification-upgrades';
 import HousingTab from '@/components/housing-upgrades';
@@ -10,19 +7,16 @@ import OffenseUpgrade from '@/components/offenseupgrade';
 import ArmoryUpgradesTab from '@/components/armory-upgrades';
 import ClandestineUpgrade from '@/components/clandestineupgrades';
 import { Tabs } from '@mantine/core';
-import router from 'next/router';
+import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
-import ContentCard from '@/components/ContentCard';
 
-const UpgradeTab = (props) => {
-  const tab = usePathname()?.split('/')[3];
+const UpgradeTab = () => {
+  const tab = usePathname()?.split('/')[3] || 'fortifications';
   const { user, forceUpdate } = useUser();
-  const currentPage = tab || 'fortifications';
-  const colorScheme = user?.colorScheme;
+  const router = useRouter();
 
-  // Get the title for the current tab
-  const getTabTitle = () => {
-    switch (currentPage) {
+  const getTabTitle = (currentTab: string) => {
+    switch (currentTab) {
       case 'fortifications': return 'Fortifications';
       case 'offense': return 'Siege Upgrades';
       case 'intel': return 'Clandestine Upgrades';
@@ -32,69 +26,27 @@ const UpgradeTab = (props) => {
       default: return 'Structure Upgrades';
     }
   };
+  
+  const tabs = [
+    { value: 'fortifications', label: 'Fortifications', component: <FortificationsTab userLevel={user?.level} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} /> },
+    { value: 'offense', label: 'Siege', component: <OffenseUpgrade userLevel={user?.offensiveLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} /> },
+    { value: 'houses', label: 'Housing', component: <HousingTab userLevel={user?.houseLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} /> },
+    { value: 'armory', label: 'Armory', component: <ArmoryUpgradesTab userLevel={user?.armoryLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} /> },
+    { value: 'economy', label: 'Economy', component: <EconomyTab userLevel={user?.economyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} /> },
+    { value: 'intel', label: 'Clandestine', component: <ClandestineUpgrade userLevel={user?.spyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} /> },
+  ];
 
   return (
-    <MainArea title="Structure Upgrades">
-      <Tabs variant="pills" defaultValue={currentPage} className="mb-2 font-medieval">
-        <Tabs.List grow justify="center">
-          <Tabs.Tab value="fortifications" onClick={() => {
-            router.push("/structures/upgrades/fortifications");
-          }}
-            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
-          >
-            <span className="text-xl">Fortifications</span>
-          </Tabs.Tab>
-          <Tabs.Tab value="offense" onClick={() => { router.push("/structures/upgrades/offense") }}
-            color={(colorScheme === "ELF") ?
-              'green' : (
-                colorScheme === 'GOBLIN' ? 'red' : (
-                  colorScheme === 'UNDEAD' ? 'dark'
-                    : 'blue'
-                ))}
-          >
-            <span className="text-xl">Siege Upgrades</span>
-          </Tabs.Tab>
-          <Tabs.Tab value="intel" onClick={() => { router.push("/structures/upgrades/intel") }}
-            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
-          >
-            <span className="text-xl">Clandestine Upgrades</span>
-          </Tabs.Tab>
-          <Tabs.Tab value="armory" onClick={() => { router.push("/structures/upgrades/armory") }}
-            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
-          >
-            <span className="text-xl">Armory Upgrades</span>
-          </Tabs.Tab>
-          <Tabs.Tab value="economy" onClick={() => { router.push("/structures/upgrades/economy") }}
-            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
-          >
-            <span className="text-xl">Economy Upgrades</span>
-          </Tabs.Tab>
-          <Tabs.Tab value="houses" onClick={() => { router.push("/structures/upgrades/houses") }}
-            color={(colorScheme === "ELF") ? 'green' : (colorScheme === 'GOBLIN' ? 'red' : (colorScheme === 'UNDEAD' ? 'dark' : 'blue'))}
-          >
-            <span className="text-xl">Housing Upgrades</span>
-          </Tabs.Tab>
+    <MainArea title={getTabTitle(tab)}>
+      <Tabs value={tab} onChange={(value) => router.push(`/structures/upgrades/${value}`)} variant="pills" color="yellow">
+        <Tabs.List grow>
+          {tabs.map(t => <Tabs.Tab key={t.value} value={t.value}>{t.label}</Tabs.Tab>)}
         </Tabs.List>
       </Tabs>
-      
-      <div className="container mx-auto px-4 my-6">
-        <ContentCard 
-          title={getTabTitle()}
-          variant="highlight" 
-          titlePosition="center"
-          titleSize="xl"
-          className="max-w-7xl mx-auto"
-        >
-          <div className="p-4">
-            {currentPage === 'fortifications' && <FortificationsTab userLevel={user?.level} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
-            {currentPage === 'offense' && <OffenseUpgrade userLevel={user?.offensiveLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
-            {currentPage === 'houses' && <HousingTab userLevel={user?.houseLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate} />}
-            {currentPage === 'armory' && <ArmoryUpgradesTab userLevel={user?.armoryLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/> }
-            {currentPage === 'economy' && <EconomyTab userLevel={user?.economyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
-            {currentPage === 'intel' && <ClandestineUpgrade userLevel={user?.spyLevel} fortLevel={user?.fortLevel} forceUpdate={forceUpdate}/>}
-          </div>
-        </ContentCard>
-      </div>
+
+      <GameCard title={getTabTitle(tab)} mt="md">
+        {tabs.find(t => t.value === tab)?.component}
+      </GameCard>
     </MainArea>
   );
 };

@@ -13,11 +13,12 @@ import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { TableCell } from '@tiptap/extension-table-cell';
-import { Title, Text, Table as MantineTable, Center, Space } from '@mantine/core';
+import { Button, Table as MantineTable, Text, Title } from '@mantine/core';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import MainArea from '@/components/MainArea';
+import { GameCard } from '@/components/game/GameCard';
 
 // Initial Markdown content
 const initialContent = '# Welcome to the Mantine rich text editor\n\nThis is a sample post. You can format your text, add headings, lists, and more.';
@@ -77,95 +78,98 @@ const Admin = (props) => {
 
   return (
     <MainArea title="Blog Administration">
-      <div>
-      <RichTextEditor editor={editor}>
-        <RichTextEditor.Toolbar sticky stickyOffset={60}>
-          <RichTextEditor.ControlsGroup>
-            <RichTextEditor.Bold />
-            <RichTextEditor.Italic />
-            <RichTextEditor.Underline />
-            <RichTextEditor.Strikethrough />
-            <RichTextEditor.ClearFormatting />
-            <RichTextEditor.Highlight />
-            <RichTextEditor.Code />
-          </RichTextEditor.ControlsGroup>
+      <GameCard title="Post Editor">
+        <RichTextEditor editor={editor}>
+          <RichTextEditor.Toolbar sticky stickyOffset={60}>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Bold />
+              <RichTextEditor.Italic />
+              <RichTextEditor.Underline />
+              <RichTextEditor.Strikethrough />
+              <RichTextEditor.ClearFormatting />
+              <RichTextEditor.Highlight />
+              <RichTextEditor.Code />
+            </RichTextEditor.ControlsGroup>
 
-          <RichTextEditor.ControlsGroup>
-            <RichTextEditor.H1 />
-            <RichTextEditor.H2 />
-            <RichTextEditor.H3 />
-            <RichTextEditor.H4 />
-          </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.H1 />
+              <RichTextEditor.H2 />
+              <RichTextEditor.H3 />
+              <RichTextEditor.H4 />
+            </RichTextEditor.ControlsGroup>
 
-          <RichTextEditor.ControlsGroup>
-            <RichTextEditor.Blockquote />
-            <RichTextEditor.Hr />
-            <RichTextEditor.BulletList />
-            <RichTextEditor.OrderedList />
-            <RichTextEditor.Subscript />
-            <RichTextEditor.Superscript />
-          </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Blockquote />
+              <RichTextEditor.Hr />
+              <RichTextEditor.BulletList />
+              <RichTextEditor.OrderedList />
+              <RichTextEditor.Subscript />
+              <RichTextEditor.Superscript />
+            </RichTextEditor.ControlsGroup>
 
-          <RichTextEditor.ControlsGroup>
-            <RichTextEditor.Link />
-            <RichTextEditor.Unlink />
-          </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Link />
+              <RichTextEditor.Unlink />
+            </RichTextEditor.ControlsGroup>
 
-          <RichTextEditor.ControlsGroup>
-            <RichTextEditor.AlignLeft />
-            <RichTextEditor.AlignCenter />
-            <RichTextEditor.AlignJustify />
-            <RichTextEditor.AlignRight />
-          </RichTextEditor.ControlsGroup>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.AlignLeft />
+              <RichTextEditor.AlignCenter />
+              <RichTextEditor.AlignJustify />
+              <RichTextEditor.AlignRight />
+            </RichTextEditor.ControlsGroup>
 
-          <RichTextEditor.ControlsGroup>
-            <RichTextEditor.Undo />
-            <RichTextEditor.Redo />
-          </RichTextEditor.ControlsGroup>
-        </RichTextEditor.Toolbar>
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Undo />
+              <RichTextEditor.Redo />
+            </RichTextEditor.ControlsGroup>
+          </RichTextEditor.Toolbar>
 
-        <RichTextEditor.Content />
-      </RichTextEditor>
+          <RichTextEditor.Content />
+        </RichTextEditor>
 
-      <button onClick={handleCreatePost}>Submit Post</button>
+        <Button mt="md" color="yellow" onClick={handleCreatePost}>
+          Submit Post
+        </Button>
+      </GameCard>
 
-      <h3>Live Preview</h3>
-      <div
-        dangerouslySetInnerHTML={{ __html: postHTML }}  // Render live HTML preview
-        style={{
-          border: '1px solid #ccc',
-          padding: '1em',
-          marginTop: '1em',
-          borderRadius: '4px',
-        }}
-      ></div>
+      <GameCard title="Live Preview" mt="md">
+        <div
+          dangerouslySetInnerHTML={{ __html: postHTML }}
+          style={{
+            border: '1px solid #2f3e52',
+            padding: '1em',
+            borderRadius: '6px',
+            backgroundColor: '#0f141a',
+          }}
+        ></div>
+      </GameCard>
 
-      <h3>Markdown Content</h3>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw]}
-        components={{
-          h1: ({ node, ...props }) => <Title order={1} {...props} />,
-          h3: ({ node, ...props }) => <Title order={3} {...props} />,
-          h4: ({ node, ...props }) => <Title order={4} {...props} />,
-          p: ({ node, ...props }) => (
-            <Text component="p" fw="normal" size="lg" mb="xl">{props.children}</Text>
-          ),
-          table: ({ node, ...props }) => (
-            <MantineTable striped highlightOnHover withRowBorders withColumnBorders {...props} />
-          ),
-          th: ({ node, ...props }) => (
-            <MantineTable.Th style={{ fontWeight: 'bold', textAlign: 'left', padding: '0.5em' }} {...props} />
-          ),
-          td: ({ node, ...props }) => (
-            <MantineTable.Td style={{ padding: '0.5em' }} {...props} />
-          ),
-        }}
-      >
-        {markdownContent}
-      </ReactMarkdown>
-
-      </div>
+      <GameCard title="Markdown Content" mt="md">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeRaw]}
+          components={{
+            h1: ({ node, ...props }) => <Title order={1} {...props} />,
+            h3: ({ node, ...props }) => <Title order={3} {...props} />,
+            h4: ({ node, ...props }) => <Title order={4} {...props} />,
+            p: ({ node, ...props }) => (
+              <Text component="p" fw="normal" size="lg" mb="xl">{props.children}</Text>
+            ),
+            table: ({ node, ...props }) => (
+              <MantineTable striped highlightOnHover withRowBorders withColumnBorders {...props} />
+            ),
+            th: ({ node, ...props }) => (
+              <MantineTable.Th style={{ fontWeight: 'bold', textAlign: 'left', padding: '0.5em' }} {...props} />
+            ),
+            td: ({ node, ...props }) => (
+              <MantineTable.Td style={{ padding: '0.5em' }} {...props} />
+            ),
+          }}
+        >
+          {markdownContent}
+        </ReactMarkdown>
+      </GameCard>
     </MainArea>
   );
 };

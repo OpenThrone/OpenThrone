@@ -1,13 +1,15 @@
 // src/pages/auto-recruit.tsx
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import Recruiter from '../components/recruiter';
-import { alertService } from '@/services/Alert.service';
-import { Button, Space, Container, Text, Title, Center, Flex, Stack } from '@mantine/core';
-import { useUser } from '@/context/users';
-import SessionModal from '@/components/SessionModal';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Button, Center, Flex, Space, Stack, Text } from '@mantine/core';
+
+import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
-import { logError } from '@/utils/logger';
+import SessionModal from '@/components/SessionModal';
+import { alertService } from '@/services/Alert.service';
 import type { UserApiResponse } from '@/types/typings'; // Import a potential type for the user state
+import { useUser } from '@/context/users';
+import { logError } from '@/utils/logger';
+import Recruiter from '../components/recruiter';
 
 /**
  * Page component for the Auto Recruiter feature.
@@ -366,18 +368,18 @@ export default function AutoRecruiter(props) {
   if (!isRecruiting) {
     return (
       <MainArea title="Auto Recruiter">
-        <Center style={{ height: '50vh' }}> {/* Added height for better centering */}
-          <Container>
-            <Stack align="center"> {/* Use Stack for vertical arrangement */}
+        <Center style={{ height: '50vh' }}>
+          <GameCard title="Session Controls" goldAccent={false}>
+            <Stack align="center">
               <Text>Click Start to begin the Auto-Recruit session.</Text>
-              <Button color="dark" onClick={startRecruiting} loading={isStartingSession}>
+              <Button color="yellow" onClick={startRecruiting} loading={isStartingSession}>
                 Start Recruiting
               </Button>
-              <Button color="dark" onClick={() => setSessionModalOpened(true)} disabled={isStartingSession}>
+              <Button variant="default" onClick={() => setSessionModalOpened(true)} disabled={isStartingSession}>
                 Manage Sessions
               </Button>
             </Stack>
-          </Container>
+          </GameCard>
           <SessionModal
             opened={sessionModalOpened}
             onClose={() => setSessionModalOpened(false)}
@@ -392,13 +394,15 @@ export default function AutoRecruiter(props) {
     return (
       <MainArea title='Auto Recruiter'>
         <Center style={{ height: '50vh' }}>
+          <GameCard title="Session Status" goldAccent={false}>
             <Stack align="center">
-                <Text>Loading next user...</Text> {/* Simplified initial loading message */}
-                <Space h="md" />
-                <Button loading={isStoppingSession} color="dark" onClick={() => stopRecruiting(true)}>
-                  Stop Recruiting Session
-                </Button>
+              <Text>Loading next user...</Text>
+              <Space h="md" />
+              <Button loading={isStoppingSession} color="red" onClick={() => stopRecruiting(true)}>
+                Stop Recruiting Session
+              </Button>
             </Stack>
+          </GameCard>
         </Center>
          <SessionModal
             opened={sessionModalOpened}
@@ -413,15 +417,17 @@ export default function AutoRecruiter(props) {
      return (
        <MainArea title="Auto Recruiter">
          <Center style={{ height: '50vh' }}>
-           <Stack align="center">
-             <Text>Recruiting session ended.</Text>
-             <Button color="dark" onClick={startRecruiting} loading={isStartingSession}>
-               Start New Session
-             </Button>
-              <Button color="dark" onClick={() => setSessionModalOpened(true)} disabled={isStartingSession}>
-                Manage Sessions
-              </Button>
-           </Stack>
+           <GameCard title="Session Complete" goldAccent={false}>
+             <Stack align="center">
+               <Text>Recruiting session ended.</Text>
+               <Button color="yellow" onClick={startRecruiting} loading={isStartingSession}>
+                 Start New Session
+               </Button>
+               <Button variant="default" onClick={() => setSessionModalOpened(true)} disabled={isStartingSession}>
+                 Manage Sessions
+               </Button>
+             </Stack>
+           </GameCard>
          </Center>
           <SessionModal
             opened={sessionModalOpened}
@@ -435,9 +441,12 @@ export default function AutoRecruiter(props) {
   // Active recruiting state: Display user and controls
   return (
     <MainArea title="Auto Recruiter">
-      <Text size="lg" ta="center" mb="md"> {/* Centered text */}
-        Total Daily Recruits left: {totalLeft}
-      </Text>
+      <GameCard title="Recruitment Status" goldAccent={false}>
+        <Text size="lg" ta="center">
+          Total Daily Recruits left: {totalLeft}
+        </Text>
+      </GameCard>
+      <Space h="md" />
       {/* Conditionally render Recruiter only if user exists, not paused, and not in countdown */}
       {user && !isPaused && !isCountdown && (
           <Recruiter
@@ -449,44 +458,43 @@ export default function AutoRecruiter(props) {
           />
       )}
       <Space h="md" />
-      <Flex justify={'center'} align={'center'} direction={'column'} gap="md"> {/* Added gap */}
-        {/* Conditional Loading Text */}
-        {!isPaused && isCountdown && countdown > 0 && (
-          <Text>
-            Loading next user in {countdown} seconds...
-          </Text>
-        )}
+      <GameCard title="Controls" goldAccent={false}>
+        <Flex justify={'center'} align={'center'} direction={'column'} gap="md">
+          {!isPaused && isCountdown && countdown > 0 && (
+            <Text>
+              Loading next user in {countdown} seconds...
+            </Text>
+          )}
 
-        {/* Conditional Action Buttons */}
-        {isPaused ? (
+          {isPaused ? (
+            <Button
+              color="yellow"
+              onClick={resumeRecruiting}
+              loading={isResumingSession}
+              disabled={isStoppingSession || isStartingSession || hasEnded}
+            >
+              Resume Recruiting
+            </Button>
+          ) : (
+            <Button
+              color="yellow"
+              onClick={() => stopRecruiting(false)}
+              loading={isStoppingSession}
+              disabled={isResumingSession || isStartingSession || isHandlingRecruitment || hasEnded}
+            >
+              Pause Recruiting
+            </Button>
+          )}
           <Button
-            color="dark"
-            onClick={resumeRecruiting}
-            loading={isResumingSession}
-            disabled={isStoppingSession || isStartingSession || hasEnded} // More robust disabling
-          >
-            Resume Recruiting
-          </Button>
-        ) : (
-          <Button
-            color="dark"
-            onClick={() => stopRecruiting(false)} // Button to pause, not end session
-            loading={isStoppingSession}
-            disabled={isResumingSession || isStartingSession || isHandlingRecruitment || hasEnded} // More robust disabling
-          >
-            Pause Recruiting
-          </Button>
-        )}
-         {/* Always show button to end session */}
-         <Button
-            color="red" // Use red for ending session
+            color="red"
             onClick={() => stopRecruiting(true)}
-            loading={isStoppingSession && hasEnded} // Show loading only when ending
+            loading={isStoppingSession && hasEnded}
             disabled={isStartingSession || isResumingSession}
           >
             End Session
           </Button>
-      </Flex>
+        </Flex>
+      </GameCard>
        <SessionModal
             opened={sessionModalOpened}
             onClose={() => setSessionModalOpened(false)}
