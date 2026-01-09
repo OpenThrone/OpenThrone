@@ -1,69 +1,73 @@
-import toLocale from '@/utils/numberFormatting';
-import { Table, Button, Text, Popover, Paper } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import Link from 'next/link';
 import React from 'react';
+import Link from 'next/link';
+import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon, Button, Popover, Table, Text, useMantineTheme } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
+import toLocale from '@/utils/numberFormatting';
 
 const StatsTable = ({ title, data, description = "description", displayButton = true }) => {
   const [opened, { close, open }] = useDisclosure(false);
+  const theme = useMantineTheme();
+  const secondary = theme.colors.secondary ?? theme.colors.yellow;
+  const accent = secondary[4] ?? '#e5c55a';
+  const headers = ['Rank', 'Player', 'Stat', ...(displayButton ? ['Action'] : [])];
+
   return (
-    <>
-      <center>
-        <Popover withArrow shadow="md" width={250} opened={opened} position="bottom">
+    <GameCard
+      title={title}
+      action={description ? (
+        <Popover withArrow shadow="md" width={260} opened={opened} position="bottom">
           <Popover.Target>
-            <h2 className="text-xl font-semibold mb-2 bg-link-gradient text-gradient-link text-shadow text-shadow-color-slate-800 text-shadow-md " onMouseEnter={open} onMouseLeave={close}>{title}</h2>
+            <ActionIcon
+              variant="subtle"
+              color="yellow"
+              onMouseEnter={open}
+              onMouseLeave={close}
+              aria-label={`${title} description`}
+            >
+              <FontAwesomeIcon icon={faCircleInfo} />
+            </ActionIcon>
           </Popover.Target>
           <Popover.Dropdown style={{ pointerEvents: 'none' }}>
-            <Text>{description}</Text>
+            <Text size="sm">{description}</Text>
           </Popover.Dropdown>
         </Popover>
-      </center>
-    
-    <Paper withBorder shadow='md'>
-      <Table className="min-w-full table-auto" color='dark' striped highlightOnHover> 
-        <Table.Thead className="border-b">
-          <Table.Tr className="bg-table-odd">
-            <Table.Th className="text-sm font-medium px-6 py-4 text-left">
-              Rank
-            </Table.Th>
-            <Table.Th className="text-sm font-medium px-6 py-4 text-left">
-              Player
-            </Table.Th>
-            <Table.Th className="text-sm font-medium px-6 py-4 text-left">
-              Stat
-              </Table.Th>
-              {displayButton &&
-                <th className="text-sm font-medium px-6 py-4 text-center content-center">
-                  <Text>Action</Text>
-                </th>
-              }
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {data.map((player, index) => (
-            <Table.Tr key={index} className="border-b odd:bg-table-even even:bg-table-odd">
-              <Table.Td className="px-6 py-4 whitespace-nowrap text-sm">
+      ) : null}
+    >
+      <StyledTable headers={headers}>
+        {data.map((player, index) => (
+          <Table.Tr key={player.id ?? index} style={{ background: '#0f141a' }}>
+            <Table.Td style={{ borderColor: '#1f2b3b' }}>
+              <Text size="sm" fw={700} c="dimmed">
                 {index + 1}
-              </Table.Td>
-              <Table.Td className="px-6 py-4 whitespace-nowrap text-sm">
+              </Text>
+            </Table.Td>
+            <Table.Td style={{ borderColor: '#1f2b3b' }}>
+              <Text size="sm" fw={700}>
                 {player.display_name}
-              </Table.Td>
-              <Table.Td className="px-6 py-4 whitespace-nowrap text-sm">
+              </Text>
+            </Table.Td>
+            <Table.Td style={{ borderColor: '#1f2b3b' }}>
+              <Text size="sm" fw={700} style={{ color: accent }}>
                 {toLocale(player.stat) || 0}
-              </Table.Td>
-              {displayButton &&
-                <Table.Td className="px-6 py-4 whitespace-nowrap text-sm text-center content-center">
-                  <Link href={'/userprofile/' + player.id}><Button color='dark' className=" text-white font-bold py-2 px-4 rounded">
+              </Text>
+            </Table.Td>
+            {displayButton && (
+              <Table.Td style={{ borderColor: '#1f2b3b' }}>
+                <Link href={`/userprofile/${player.id}`}>
+                  <Button color="yellow" size="xs" fullWidth>
                     View Profile
-                  </Button></Link>
-                </Table.Td>
-              }
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
-      </Paper>
-    </>
+                  </Button>
+                </Link>
+              </Table.Td>
+            )}
+          </Table.Tr>
+        ))}
+      </StyledTable>
+    </GameCard>
   );
 };
 

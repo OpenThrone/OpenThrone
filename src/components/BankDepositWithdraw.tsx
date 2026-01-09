@@ -1,319 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Space, NumberInput, Button, Group, Text } from '@mantine/core';
-import toLocale, { stringifyObj } from '@/utils/numberFormatting';
+import toLocale from '@/utils/numberFormatting';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
-import ContentCard from './ContentCard';
+import { GameCard } from './game/GameCard';
+import { StyledTable } from './game/StyledTable';
 import { getTransactionType, getGoldTxSymbol } from '@/utils/utilities';
 
-export default function BankDepositWithdraw({
-  user,
-  forceUpdate,
-  bankHistory,
-  setDepositsAvailable,
-  setNextDepositAvailable,
-  colorScheme,
-}) {
+export default function BankDepositWithdraw({ user, forceUpdate }) {
   const [depositAmount, setDepositAmount] = useState(BigInt(0));
   const [withdrawAmount, setWithdrawAmount] = useState(BigInt(0));
-  const [depositError, setDepositError] = useState('');
-  const [withdrawError, setWithdrawError] = useState('');
-  const [depositWithdrawRows, setDepositWithdrawRows] = useState([]);
+  const [history, setHistory] = useState([]);
 
   useEffect(() => {
     if (user) {
-      // Validate deposit/withdraw amounts whenever user or amounts change
-      if (depositAmount > BigInt(Math.floor(parseInt(user?.gold?.toString()) * 0.8))) {
-        setDepositError('Deposit amount exceeds the maximum allowed (80% of gold on hand).');
-      } else {
-        setDepositError('');
-      }
-
-      if (withdrawAmount > BigInt(user?.goldInBank?.toString())) {
-        setWithdrawError('Withdraw amount exceeds your banked gold.');
-      } else {
-        setWithdrawError('');
-      }
+      fetch('/api/bank/history?deposits=true&withdraws=true&limit=10&page=0')
+        .then(res => res.json())
+        .then(data => setHistory(data.rows))
+        .catch(err => logError('Error fetching bank history:', err));
     }
-  }, [user, depositAmount, withdrawAmount]);
+  }, [user]);
 
-  const handleDeposit = async () => {
-    if (depositError) return;
+  const handleTransaction = async (type: 'deposit' | 'withdraw', amount: bigint) => {
+    if (amount <= 0) return;
     try {
-      const response = await fetch('/api/bank/deposit', {
+      const response = await fetch(`/api/bank/${type}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(stringifyObj({ depositAmount })),
+        body: JSON.stringify({ amount: amount.toString() }),
       });
-
       const data = await response.json();
-      if (data.error) {
-        alertService.error(data.error);
-      } else {
-        alertService.success('Successfully deposited gold');
-        forceUpdate();
-        // Refresh deposit counters
-        fetch('/api/bank/getDeposits')
-          .then((resp) => resp.json())
-          .then((depositData) => {
-            setDepositsAvailable(depositData.deposits);
-            setNextDepositAvailable(depositData.nextDepositAvailable);
-          })
-          .catch((error) => logError('Error fetching bank deposits:', error));
-        setDepositAmount(BigInt(0));
-      }
+      if (data.error) throw new Error(data.error);
+      alertService.success(`Successfully ${type}ed gold`);
+      forceUpdate();
+      if (type === 'deposit') setDepositAmount(BigInt(0));
+      else setWithdrawAmount(BigInt(0));
     } catch (error) {
-      logError('Error depositing:', error);
-      alertService.error('Failed to deposit gold. Please try again.');
+      alertService.error((error as Error).message);
     }
   };
 
-  const handleWithdraw = async () => {
-    if (withdrawError) return;
-    try {
-      const response = await fetch('/api/bank/withdraw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(stringifyObj({ withdrawAmount })),
-      });
-      const data = await response.json();
-
-      if (data.error) {
-        alertService.error(data.error);
-      } else {
-        alertService.success('Successfully withdrew gold');
-        forceUpdate();
-        setWithdrawAmount(BigInt(0));
-      }
-    } catch (error) {
-      logError('Error withdrawing:', error);
-      alertService.error('Failed to withdraw gold. Please try again.');
-    }
-  };
-  
-  useEffect(() => {
-    if (bankHistory.length > 0) {
-      setDepositWithdrawRows(bankHistory
-        .filter((entry) => entry.from_user_id === entry.to_user_id)
-        .slice(0, 10));
-    }
-  },[bankHistory]);
+  const historyRows = history.map((entry, index) => (
+    <Table.Tr key={index}>
+      <Table.Td>{new Date(entry?.date_time).toLocaleString()}</Table.Td>
+      <Table.Td>{getTransactionType(entry)}</Table.Td>
+      <Table.Td>{getGoldTxSymbol(entry, user)}{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+    </Table.Tr>
+  ));
 
   return (
     <>
-      <Group align="stretch" grow>
-        <ContentCard 
-          title="Deposit Gold" 
-          fullHeight
-        >
-          {/* Deposit Form */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleDeposit();
-            }}
-            className="flex flex-col justify-between h-full"
-          >
-            <div>
-              <Text fw={500} mb={5}>Amount to Deposit</Text>
-              <Text size="sm" c="dimmed" mb={10}>
-                You can deposit up to 80% of your gold per transaction
-              </Text>
-              <NumberInput
-                value={depositAmount.toString()}
-                onChange={(value) => setDepositAmount(BigInt(value))}
-                max={Math.floor(parseInt(user?.gold?.toString()) * 0.8)}
-                placeholder="0"
-                min={0}
-                hideControls
-                allowNegative={false}
-                error={depositError}
-                rightSection={
-                  <Button
-                    size="compact-xs"
-                    c="dimmed"
-                    onClick={() => {
-                      setDepositAmount(
-                        BigInt(Math.floor(parseInt(user?.gold?.toString()) * 0.8))
-                      );
-                    }}
-                  >
-                    Max
-                  </Button>
-                }
-                rightSectionWidth={50}
-              />
-            </div>
-            <Button
-              type="submit"
-              className="mt-4 px-4 py-2 text-white"
-              color={
-                colorScheme === 'ELF'
-                  ? 'green'
-                  : colorScheme === 'GOBLIN'
-                    ? 'red'
-                    : colorScheme === 'UNDEAD'
-                      ? 'dark'
-                      : 'blue'
-              }
-            >
-              Deposit
-            </Button>
-          </form>
-        </ContentCard>
-
-        <ContentCard 
-          title="Withdraw Gold" 
-          fullHeight
-        >
-          {/* Withdraw Form */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleWithdraw();
-            }}
-            className="flex flex-col justify-between h-full"
-          >
-            <div>
-              <Text fw={500} mb={5}>Amount to Withdraw</Text>
-              <Text size="sm" c="dimmed" mb={10}>
-                There are no limits to the amount you can withdraw
-              </Text>
-              <NumberInput
-                value={withdrawAmount.toString()}
-                onChange={(value) => setWithdrawAmount(BigInt(value))}
-                placeholder="0"
-                min={0}
-                max={parseInt(user?.goldInBank?.toString())}
-                hideControls
-                allowNegative={false}
-                error={withdrawError}
-                rightSection={
-                  <>
-                    <Button
-                      type="button"
-                      size="compact-xs"
-                      c="dimmed"
-                      mr={5}
-                      onClick={() => {
-                        setWithdrawAmount(
-                          BigInt(
-                            Math.floor(parseInt(user?.goldInBank?.toString()) * 0.1)
-                          )
-                        );
-                      }}
-                    >
-                      10%
-                    </Button>
-                    <Button
-                      type="button"
-                      size="compact-xs"
-                      c="dimmed"
-                      mr={5}
-                      onClick={() => {
-                        setWithdrawAmount(
-                          BigInt(
-                            Math.floor(parseInt(user?.goldInBank?.toString()) * 0.25)
-                          )
-                        );
-                      }}
-                    >
-                      25%
-                    </Button>
-                    <Button
-                      type="button"
-                      size="compact-xs"
-                      c="dimmed"
-                      mr={5}
-                      onClick={() => {
-                        setWithdrawAmount(
-                          BigInt(
-                            Math.floor(parseInt(user?.goldInBank?.toString()) * 0.5)
-                          )
-                        );
-                      }}
-                    >
-                      50%
-                    </Button>
-                    <Button
-                      type="button"
-                      size="compact-xs"
-                      c="dimmed"
-                      onClick={() => {
-                        setWithdrawAmount(
-                          BigInt(Math.floor(parseInt(user?.goldInBank?.toString())))
-                        );
-                      }}
-                    >
-                      100%
-                    </Button>
-                  </>
-                }
-                rightSectionWidth={200}
-              />
-            </div>
-            <Button
-              type="submit"
-              className="mt-4 px-4 py-2 text-white"
-              color={
-                colorScheme === 'ELF'
-                  ? 'green'
-                  : colorScheme === 'GOBLIN'
-                    ? 'red'
-                    : colorScheme === 'UNDEAD'
-                      ? 'dark'
-                      : 'blue'
-              }
-            >
-              Withdraw
-            </Button>
-          </form>
-        </ContentCard>
+      <Group grow>
+        <GameCard title="Deposit">
+          <NumberInput label="Amount" value={depositAmount.toString()} onChange={(val) => setDepositAmount(BigInt(val))} min={0} />
+          <Button mt="md" onClick={() => handleTransaction('deposit', depositAmount)}>Deposit</Button>
+        </GameCard>
+        <GameCard title="Withdraw">
+          <NumberInput label="Amount" value={withdrawAmount.toString()} onChange={(val) => setWithdrawAmount(BigInt(val))} min={0} />
+          <Button mt="md" onClick={() => handleTransaction('withdraw', withdrawAmount)}>Withdraw</Button>
+        </GameCard>
       </Group>
-
       <Space h="md" />
-
-      {/* Last 10 Deposit/Withdraw Records */}
-      <ContentCard 
-        title="Recent Transactions" 
-      >
-        <Table className="min-w-full" striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Date</Table.Th>
-              <Table.Th>Transaction Type</Table.Th>
-              <Table.Th>Amount</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {depositWithdrawRows.length > 0 ? (
-              depositWithdrawRows.map((entry, index) => {
-                const transactionType = getTransactionType(entry);
-                return (
-                  <Table.Tr key={index}>
-                    <Table.Td>
-                      {new Date(entry?.date_time).toLocaleDateString()}{' '}
-                      {new Date(entry?.date_time).toLocaleTimeString()}
-                    </Table.Td>
-                    <Table.Td>{transactionType}</Table.Td>
-                    <Table.Td>
-                      {getGoldTxSymbol(entry, user) +
-                        toLocale(entry.gold_amount, user?.locale)}{' '}
-                      gold
-                    </Table.Td>
-                  </Table.Tr>
-                );
-              })
-            ) : (
-              <Table.Tr>
-                <Table.Td colSpan={3} align="center">
-                  <Text c="dimmed">No recent transactions</Text>
-                </Table.Td>
-              </Table.Tr>
-            )}
-          </Table.Tbody>
-        </Table>
-      </ContentCard>
+      <GameCard title="Recent Transactions">
+        <StyledTable headers={['Date', 'Type', 'Amount']}>
+          {historyRows}
+        </StyledTable>
+      </GameCard>
     </>
   );
 }

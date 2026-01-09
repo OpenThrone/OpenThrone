@@ -5,10 +5,11 @@ import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { NavLoggedIn } from '@/components/navLoggedIn';
-import { NavLoggedOut } from '@/components/navLoggedOut';
+import NavLoggedIn from '@/components/NavLoggedIn';
+import NavLoggedOut from '@/components/NavLoggedOut';
 import Sidebar from '@/components/Sidebar';
 import { AppConfig } from '@/utils/AppConfig';
+import { SidebarScroll } from '../components/game/SidebarScroll';
 
 interface IMainProps {
   meta: ReactNode;
@@ -59,7 +60,7 @@ const Main = (props: IMainProps) => {
               {authorized ? (
                 <>
                   <div className="w-full px-3 sm:w-3/12">
-                    <Sidebar />
+                    <SidebarScroll />
                   </div>
                   <div className="w-full bg-black px-3 sm:w-9/12">
                     {props.children}

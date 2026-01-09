@@ -1,5 +1,9 @@
 import { Table, Box } from '@mantine/core';
 
+interface NeumorphicTableProps {
+  tone?: 'light' | 'themed';
+}
+
 // Helper to generate the "soft" shadow style
 const neumorphicStyle = {
   backgroundColor: '#e0e5ec',
@@ -8,19 +12,28 @@ const neumorphicStyle = {
   border: '1px solid rgba(255,255,255,0.2)',
 };
 
-export function NeumorphicTable() {
+export function NeumorphicTable({ tone = 'light' }: NeumorphicTableProps) {
   const elements = [
     { position: 6, mass: 12.011, symbol: 'C', name: 'Carbon' },
     { position: 7, mass: 14.007, symbol: 'N', name: 'Nitrogen' },
     { position: 39, mass: 88.906, symbol: 'Y', name: 'Yttrium' },
   ];
 
+  const themedRowStyle = tone === 'themed'
+    ? {
+        backgroundColor: '#1f242b',
+        boxShadow: '8px 8px 14px rgba(0,0,0,0.45), -6px -6px 12px rgba(255,255,255,0.04)',
+        borderRadius: '12px',
+        border: '1px solid rgba(234,174,43,0.2)',
+      }
+    : neumorphicStyle;
+
   const rows = elements.map((element) => (
     <Table.Tr
       key={element.name}
       style={{
         // Individual rows are "popped out" cards
-        ...neumorphicStyle,
+        ...themedRowStyle,
         transition: 'transform 0.2s ease',
       }}
     // Use css module or emotion for hover state transform: scale(1.02)
@@ -32,24 +45,53 @@ export function NeumorphicTable() {
     </Table.Tr>
   ));
 
+  const wrapperStyle = tone === 'themed'
+    ? { backgroundColor: 'transparent', minHeight: 300 }
+    : { backgroundColor: '#e0e5ec', minHeight: 300 };
+
+  const headerStyle = tone === 'themed'
+    ? { borderBottom: 'none', color: '#f5d86a' }
+    : { borderBottom: 'none', color: '#8898aa' };
+
   return (
-    <Box p="xl" style={{ backgroundColor: '#e0e5ec', minHeight: 300 }}>
-      <Table
+    <Box p="xl" style={wrapperStyle}>
+      <Box
         style={{
-          borderCollapse: 'separate',
-          borderSpacing: '0 15px' // Critical for spacing out the "cards"
+          padding: '14px',
+          borderRadius: '12px',
+          border: tone === 'themed' ? '1px solid rgba(234,174,43,0.25)' : undefined,
+          background: tone === 'themed'
+            ? 'linear-gradient(180deg, rgba(18,20,24,0.96), rgba(10,12,16,0.96))'
+            : undefined,
+          boxShadow: tone === 'themed' ? '0 12px 26px rgba(0,0,0,0.4)' : undefined,
         }}
       >
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th style={{ borderBottom: 'none', color: '#8898aa', paddingLeft: 20 }}>NO.</Table.Th>
-            <Table.Th style={{ borderBottom: 'none', color: '#8898aa' }}>NAME</Table.Th>
-            <Table.Th style={{ borderBottom: 'none', color: '#8898aa' }}>SYMBOL</Table.Th>
-            <Table.Th style={{ borderBottom: 'none', color: '#8898aa' }}>MASS</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{rows}</Table.Tbody>
-      </Table>
+        <Table
+          style={{
+            borderCollapse: 'separate',
+            borderSpacing: '0 12px',
+            width: '100%',
+          }}
+        >
+          <Table.Thead>
+            <Table.Tr
+              style={tone === 'themed'
+                ? {
+                    backgroundColor: 'rgba(234,174,43,0.08)',
+                    borderRadius: '10px',
+                  }
+                : undefined
+              }
+            >
+              <Table.Th style={{ ...headerStyle, paddingLeft: 20 }}>NO.</Table.Th>
+              <Table.Th style={headerStyle}>NAME</Table.Th>
+              <Table.Th style={headerStyle}>SYMBOL</Table.Th>
+              <Table.Th style={headerStyle}>MASS</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      </Box>
     </Box>
   );
 }

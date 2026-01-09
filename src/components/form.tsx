@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
-import { signIn } from 'next-auth/react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+import { signIn } from 'next-auth/react';
 import {
   Paper,
   PasswordInput,
@@ -13,15 +15,16 @@ import {
   Center,
   Flex,
   Space,
-  ComboboxItem,
+  Box,
+  useMantineTheme,
 } from '@mantine/core';
 import toast from 'react-hot-toast';
-import LoadingDots from '@/components/loading-dots';
-import Link from 'next/link';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { useForm, Controller, FieldErrors, FieldErrorsImpl, Merge } from 'react-hook-form';
+import { useForm, Controller, FieldErrorsImpl, Merge } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+
+import LoadingDots from '@/components/loading-dots';
 import { logError } from '@/utils/logger';
 
 /**
@@ -71,6 +74,8 @@ interface FormProps {
   type: 'login' | 'register';
   /** Callback function to set an error message to be displayed outside the form. */
   setErrorMessage: (msg: string) => void;
+  /** Controls the outer container styling. */
+  layout?: 'paper' | 'bare';
 }
 
 /**
@@ -79,7 +84,7 @@ interface FormProps {
  * integrates with Cloudflare Turnstile for bot protection,
  * and manages API interactions for login/registration, including vacation mode handling.
  */
-const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
+const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) => {
   const [loading, setLoading] = useState(false);
   const [showVacationModal, setShowVacationModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -87,6 +92,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
   const router = useRouter();
   const [turnstileToken, setTurnstileToken] = useState('');
   const turnsTileRef = useRef<any>();
+  const theme = useMantineTheme();
 
   const captchaDisabled =
     process.env.NEXT_PUBLIC_USE_CAPTCHA === 'false' ||
@@ -237,219 +243,229 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage }) => {
   // Cast errors to the helper type for safe access
   const formErrors = errors as FormErrors;
 
-  return (
-    <Center>
-      <Paper withBorder shadow="md" p={30} radius="md" style={{ width: '100%', maxWidth: 400 }}>
-        {registrationSuccess ? (
-          <>
-            <Title order={2} ta="center" mb="md" c={'gray'}>
-              Registration Successful!
-            </Title>
-            <Text ta="center" size="sm" c={'gray'}>
-              Your account has been created. You can now{' '}
+  const titleColor = layout === 'bare' ? theme.colors.gray[1] : 'gray';
+  const bodyColor = layout === 'bare' ? theme.colors.gray[3] : 'gray';
+
+  const formBody = registrationSuccess ? (
+    <>
+      <Title order={2} ta="center" mb="md" c={titleColor}>
+        Registration Successful!
+      </Title>
+      <Text ta="center" size="sm" c={bodyColor}>
+        Your account has been created. You can now{' '}
+        <Link href="/account/login">
+          <Text component="span" color="blue" inherit>
+            sign in
+          </Text>
+        </Link>
+        .
+      </Text>
+    </>
+  ) : (
+    <>
+      <Title order={2} ta="center" mb="md" c={titleColor}>
+        {type === 'login' ? 'Sign In' : 'Sign Up'}
+      </Title>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Flex direction="column" gap="md">
+          {type === 'login' ? (
+            <>
+              <TextInput
+                id="email"
+                label="Email Address"
+                placeholder="username@email.com"
+                autoComplete="email"
+                required
+                size="md"
+                styles={inputStyles}
+                {...register('email')}
+                error={formErrors.email?.message}
+              />
+              <PasswordInput
+                id="password"
+                label="Password"
+                placeholder="Password"
+                required
+                size="md"
+                styles={inputStyles}
+                {...register('password')}
+                error={formErrors.password?.message}
+              />
+            </>
+          ) : (
+            <>
+              <TextInput
+                id="display_name"
+                label="User Name"
+                placeholder="DisplayName"
+                autoComplete="username"
+                required
+                size="md"
+                styles={inputStyles}
+                {...register('display_name')}
+                error={formErrors.display_name?.message}
+              />
+              <TextInput
+                id="email"
+                type="email"
+                label="Email Address"
+                placeholder="username@email.com"
+                autoComplete="email"
+                required
+                size="md"
+                styles={inputStyles}
+                {...register('email')}
+                error={formErrors.email?.message}
+              />
+              <PasswordInput
+                id="password"
+                label="Password"
+                placeholder="Password"
+                required
+                size="md"
+                styles={inputStyles}
+                {...register('password')}
+                error={formErrors.password?.message}
+              />
+              <PasswordInput
+                id="password_confirm"
+                label="Confirm Password"
+                placeholder="Confirm Password"
+                required
+                size="md"
+                styles={inputStyles}
+                {...register('password_confirm')}
+                error={formErrors.password_confirm?.message}
+              />
+              <Controller
+                name="race"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <Select
+                    id="race-select"
+                    label="Race"
+                    placeholder="Pick one"
+                    required
+                    data={[
+                      { value: 'HUMAN', label: 'HUMAN' },
+                      { value: 'UNDEAD', label: 'UNDEAD' },
+                      { value: 'GOBLIN', label: 'GOBLIN' },
+                      { value: 'ELF', label: 'ELF' },
+                    ]}
+                    size="md"
+                    styles={inputStyles}
+                    {...field}
+                    error={fieldState.error?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="class"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <Select
+                    id="class-select"
+                    label="Class"
+                    placeholder="Pick one"
+                    required
+                    data={[
+                      { value: 'FIGHTER', label: 'FIGHTER' },
+                      { value: 'CLERIC', label: 'CLERIC' },
+                      { value: 'ASSASSIN', label: 'ASSASSIN' },
+                      { value: 'THIEF', label: 'THIEF' },
+                    ]}
+                    size="md"
+                    styles={inputStyles}
+                    {...field}
+                    error={fieldState.error?.message}
+                  />
+                )}
+              />
+            </>
+          )}
+          <Space h="md" />
+          {captchaEnabled && (
+            <>
+              <label
+                htmlFor="captcha"
+                className="mantine-InputWrapper-label"
+                data-size="md"
+                style={{ color: 'darkgray', fontWeight: 'bolder', fontSize: '1.05rem' }}
+              >
+                Captcha
+              </label>
+              <Turnstile
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
+                onSuccess={handleTurnstileSuccess}
+                ref={turnsTileRef}
+                style={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
+              />
+            </>
+          )}
+          <Button
+            disabled={
+              loading ||
+              isSubmitting ||
+              (captchaEnabled && !turnstileToken)
+            }
+            type="submit"
+            fullWidth
+            size="md"
+            id="submit-button"
+          >
+            {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
+          </Button>
+          <Space h="md" />
+          {type === 'login' ? (
+            <Text ta="center" size="sm" c={bodyColor}>
+              Don&apos;t have an account?{' '}
+              <Link href="/account/register">
+                <Text component="span" color="blue" inherit>
+                  Sign up
+                </Text>
+              </Link>{' '}
+              for free.
+            </Text>
+          ) : (
+            <Text ta="center" size="sm" c={bodyColor}>
+              Already have an account?{' '}
               <Link href="/account/login">
                 <Text component="span" color="blue" inherit>
-                  sign in
+                  Sign in
                 </Text>
-              </Link>
-              .
+              </Link>{' '}
+              instead.
             </Text>
-          </>
-        ) : (
-          <>
-            <Title order={2} ta="center" mb="md" c={'gray'}>
-              {type === 'login' ? 'Sign In' : 'Sign Up'}
-            </Title>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <Flex direction="column" gap="md">
-                {type === 'login' ? (
-                  <>
-                    <TextInput
-                      id="email"
-                      label="Email Address"
-                      placeholder="username@email.com"
-                      autoComplete="email"
-                      required
-                      size="md"
-                      styles={inputStyles}
-                      {...register('email')}
-                      error={formErrors.email?.message}
-                    />
-                    <PasswordInput
-                      id="password"
-                      label="Password"
-                      placeholder="Password"
-                      required
-                      size="md"
-                      styles={inputStyles}
-                      {...register('password')}
-                      error={formErrors.password?.message}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <TextInput
-                      id="display_name"
-                      label="User Name"
-                      placeholder="DisplayName"
-                      autoComplete="username"
-                      required
-                      size="md"
-                      styles={inputStyles}
-                      {...register('display_name')}
-                      error={formErrors.display_name?.message}
-                    />
-                    <TextInput
-                      id="email"
-                      type="email"
-                      label="Email Address"
-                      placeholder="username@email.com"
-                      autoComplete="email"
-                      required
-                      size="md"
-                      styles={inputStyles}
-                      {...register('email')}
-                      error={formErrors.email?.message}
-                    />
-                    <PasswordInput
-                      id="password"
-                      label="Password"
-                      placeholder="Password"
-                      required
-                      size="md"
-                      styles={inputStyles}
-                      {...register('password')}
-                      error={formErrors.password?.message}
-                    />
-                    <PasswordInput
-                      id="password_confirm"
-                      label="Confirm Password"
-                      placeholder="Confirm Password"
-                      required
-                      size="md"
-                      styles={inputStyles}
-                      {...register('password_confirm')}
-                      error={formErrors.password_confirm?.message}
-                    />
-                    <Controller
-                      name="race"
-                      control={control}
-                      render={({ field, fieldState }) => (
-                        <Select
-                          id="race-select"
-                          label="Race"
-                          placeholder="Pick one"
-                          required
-                          data={[
-                            { value: 'HUMAN', label: 'HUMAN' },
-                            { value: 'UNDEAD', label: 'UNDEAD' },
-                            { value: 'GOBLIN', label: 'GOBLIN' },
-                            { value: 'ELF', label: 'ELF' },
-                          ]}
-                          size="md"
-                          styles={inputStyles}
-                          {...field}
-                          error={fieldState.error?.message}
-                        />
-                      )}
-                    />
-                    <Controller
-                      name="class"
-                      control={control}
-                      render={({ field, fieldState }) => (
-                        <Select
-                          id="class-select"
-                          label="Class"
-                          placeholder="Pick one"
-                          required
-                          data={[
-                            { value: 'FIGHTER', label: 'FIGHTER' },
-                            { value: 'CLERIC', label: 'CLERIC' },
-                            { value: 'ASSASSIN', label: 'ASSASSIN' },
-                            { value: 'THIEF', label: 'THIEF' },
-                          ]}
-                          size="md"
-                          styles={inputStyles}
-                          {...field}
-                          error={fieldState.error?.message}
-                        />
-                      )}
-                    />
-                  </>
-                )}
-                <Space h="md" />
-                {captchaEnabled && (
-                  <>
-                    <label
-                      htmlFor="captcha"
-                      className="mantine-InputWrapper-label"
-                      data-size="md"
-                      style={{ color: 'darkgray', fontWeight: 'bolder', fontSize: '1.05rem' }}
-                    >
-                      Captcha
-                    </label>
-                    <Turnstile
-                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
-                      onSuccess={handleTurnstileSuccess}
-                      ref={turnsTileRef}
-                      style={{ width: '100%', minWidth: 0, maxWidth: '100%' }}
-                    />
-                  </>
-                )}
-                {/* Disable button while loading, submitting, or if Turnstile is enabled and not yet successful */}
-                <Button
-                  disabled={
-                    loading ||
-                    isSubmitting ||
-                    (captchaEnabled && !turnstileToken)
-                  }
-                  type="submit"
-                  fullWidth
-                    size="md"
-                    id="submit-button"
-                >
-                  {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
-                </Button>
-                <Space h="md" />
-                {type === 'login' ? (
-                  <Text ta="center" size="sm" c={'gray'}>
-                    Don&apos;t have an account?{' '}
-                    <Link href="/account/register">
-                      <Text component="span" color="blue" inherit>
-                        Sign up
-                      </Text>
-                    </Link>{' '}
-                    for free.
-                  </Text>
-                ) : (
-                  <Text ta="center" size="sm" c={'gray'}>
-                    Already have an account?{' '}
-                    <Link href="/account/login">
-                      <Text component="span" color="blue" inherit>
-                        Sign in
-                      </Text>
-                    </Link>{' '}
-                    instead.
-                  </Text>
-                )}
-              </Flex>
-            </form>
-          </>
-        )}
+          )}
+        </Flex>
+      </form>
+    </>
+  );
 
-        <Modal
-          opened={showVacationModal}
-          onClose={() => setShowVacationModal(false)}
-          title="Vacation Mode Active"
-        >
-          <Text>
-            Your account is currently in vacation mode. Do you want to end vacation mode and log in?
-          </Text>
-          <Button onClick={handleVacationOverride} mt="md" fullWidth>
-            End Vacation Mode
-          </Button>
-        </Modal>
-      </Paper>
+  return (
+    <Center>
+      {layout === 'paper' ? (
+        <Paper withBorder shadow="md" p={30} radius="md" style={{ width: '100%', maxWidth: 400 }}>
+          {formBody}
+        </Paper>
+      ) : (
+        <Box style={{ width: '100%', maxWidth: 420 }}>
+          {formBody}
+        </Box>
+      )}
+
+      <Modal
+        opened={showVacationModal}
+        onClose={() => setShowVacationModal(false)}
+        title="Vacation Mode Active"
+      >
+        <Text>
+          Your account is currently in vacation mode. Do you want to end vacation mode and log in?
+        </Text>
+        <Button onClick={handleVacationOverride} mt="md" fullWidth>
+          End Vacation Mode
+        </Button>
+      </Modal>
     </Center>
   );
 };

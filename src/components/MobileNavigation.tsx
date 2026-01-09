@@ -263,7 +263,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       role="dialog"
       aria-modal="true"
       aria-hidden={!open}
-      className={`fixed inset-0 z-50 ${open ? 'block' : 'hidden'} ${className}`}
+      className={`fixed inset-0 z-[1200] ${open ? 'block' : 'hidden'} ${className}`}
     >
       {/* Overlay */}
       <div

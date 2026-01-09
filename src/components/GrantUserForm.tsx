@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { alertService } from "@/services/Alert.service";
 import { getLevelFromXP } from "@/utils/utilities";
-import { Group, Avatar, Text, Card, Autocomplete, Button, MultiSelect, Badge, Stack } from "@mantine/core";
+import { Group, Avatar, Text, Autocomplete, Button, MultiSelect, Badge, Stack, Loader } from "@mantine/core";
 import { useDebouncedCallback } from "@mantine/hooks";
 import { PermissionType } from "@prisma/client";
 
@@ -15,26 +15,16 @@ const GrantUserForm = () => {
   const fetchUsers = async (searchTerm) => {
     if (!searchTerm.trim()) return [];
     setLoading(true);
-
     try {
-      const response = await fetch('/api/general/searchUsers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: searchTerm }),
-      });
-
+      const response = await fetch(`/api/general/searchUsers?name=${searchTerm}`);
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
-
       return data.map(user => ({
         value: user.display_name,
         label: user.display_name,
         image: user.avatar,
-        class: user.class,
-        race: user.race,
-        experience: getLevelFromXP(user.experience),
         id: user.id,
-        permissions: user.permissions
+        permissions: user.permissions,
       }));
     } catch (error) {
       console.error("Failed to fetch users:", error);
@@ -45,31 +35,21 @@ const GrantUserForm = () => {
   };
 
   const handleSearch = useDebouncedCallback(async (query) => {
-    if (!query.trim()) return setUsersData([]);
-
-    try {
-      const users = await fetchUsers(query);
-      setUsersData(users);
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
+    if (!query.trim()) {
+      setUsersData([]);
+      return;
     }
+    const users = await fetchUsers(query);
+    setUsersData(users);
   }, 300);
 
-  useEffect(() => {
-    handleSearch(grantUser);
-  }, [grantUser, handleSearch]);
+  useEffect(() => { handleSearch(grantUser); }, [grantUser, handleSearch]);
 
   useEffect(() => {
     const selectedUser = usersData.find((user) => user.label === grantUser);
-    if (selectedUser) {
-      setGrantLevel(selectedUser.permissions.map((perm) => perm.type) || []); // Ensures array
-      setIsUserValid(true);
-    } else {
-      setGrantLevel([]);
-      setIsUserValid(false);
-    }
+    setIsUserValid(!!selectedUser);
+    setGrantLevel(selectedUser ? selectedUser.permissions.map((p) => p.type) : []);
   }, [grantUser, usersData]);
-
 
   const grantUserPermission = async () => {
     const response = await fetch('/api/admin/grantPermission', {
@@ -77,128 +57,50 @@ const GrantUserForm = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user: grantUser, permissions: grantLevel }),
     });
-
     const data = await response.json();
-
     if (response.ok) {
       alertService.success(`Successfully updated permissions for ${grantUser}`);
       setGrantUser("");
-      setGrantLevel([]);
     } else {
       alertService.error(data.error);
     }
   };
-
-  const handlePermissionToggle = (permType) => {
-    setGrantLevel((current) =>
-      current.includes(permType) ? current.filter((p) => p !== permType) : [...current, permType]
-    );
-  };
-
+  
   const renderAutocompleteOption = ({ option }: { option: any }) => (
     <Group>
-      <Avatar src={option.image} size={50} radius="xl" />
+      <Avatar src={option.image} size="lg" radius="xl" />
       <div>
-        <Text size="sm" fw="bold">{option.label}</Text>
-        <Text size="xs" opacity={0.5}>
-          Experience Level: {option.experience} | Race: {option.race} | Class: {option.class}
-        </Text>
-        <Group mt="xs">
-          Permissions:
-          {option.permissions.length > 0 ? (
-            option.permissions.map((perm) => (
-                <Badge
-                  key={perm.id}
-                  size="xs"
-                  color={perm.type === "ADMINISTRATOR" ? "red" : "blue"}
-                  variant="filled"
-                  onClick={() => handlePermissionToggle(perm.type)}
-                  style={{ cursor: "pointer", marginRight: 8 }}
-                >
-                {perm.type === "ADMINISTRATOR" ? "Administrator" : "Moderator"}
-              </Badge>
-            ))
-          ) : (
-            <Badge size="xs" color="gray" variant="filled">
-              User
-            </Badge>
-          )}
-        </Group>
+        <Text size="sm">{option.label}</Text>
+        <Text size="xs" opacity={0.5}>ID: {option.id}</Text>
       </div>
     </Group>
   );
 
   return (
-    <Card shadow="sm" padding="lg" style={{ backgroundColor: "#1A1B1E" }}>
-      <Stack>
-        <Card.Section>
-          <div style={{ padding: "16px" }}> {/* Add padding here */}
-            <Text size="xl" fw="bold">User Information</Text>
-            <Autocomplete
-              value={grantUser}
-              onChange={setGrantUser}
-              data={usersData}
-              placeholder="Type to search for a user..."
-              maxDropdownHeight={300}
-              renderOption={renderAutocompleteOption}
-              limit={5}
-            />
-          </div>
-        </Card.Section>
-
-        <Card.Section mt="md">
-          <div style={{ padding: "16px" }}> {/* Add padding here */}
-            <Text size="xl" fw="bold">Modify Permissions</Text>
-            <Group>
-              {isUserValid ? (
-                Array.isArray(grantLevel) && grantLevel.length > 0 ? (
-                  grantLevel.map((perm) => (
-                    <Badge
-                      key={perm}
-                      size="xs"
-                      color={perm === "ADMINISTRATOR" ? "red" : "blue"}
-                      variant="filled"
-                      mr="xs"
-                      onClick={() => handlePermissionToggle(perm)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      {perm === "ADMINISTRATOR" ? "Administrator" : "Moderator"}
-                    </Badge>
-                  ))
-                ) : (
-                  <Badge size="xs" color="gray" variant="filled">
-                    User
-                  </Badge>
-                )
-              ) : (
-                <Badge size="xs" color="gray" variant="filled">
-                  Not a valid user
-                </Badge>
-              )}
-            </Group>
-
-            <MultiSelect
-              data={Object.keys(PermissionType).map((permType) => ({ value: permType, label: permType }))}
-              value={grantLevel}
-              onChange={(value: string[]) => setGrantLevel(value || [])}
-              placeholder="Add or remove permissions"
-              mt="md"
-              disabled={!isUserValid}
-            />
-
-
-            <Button
-              className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-              onClick={grantUserPermission}
-              mt="sm"
-              disabled={!isUserValid} // Disable if user is not valid
-            >
-              Save
-            </Button>
-          </div>
-        </Card.Section>
-      </Stack>
-    </Card>
+    <Stack>
+      <Autocomplete
+        label="User Search"
+        value={grantUser}
+        onChange={setGrantUser}
+        data={usersData}
+        placeholder="Type to search..."
+        renderOption={renderAutocompleteOption}
+        limit={5}
+        rightSection={loading ? <Loader size="xs" /> : null}
+        rightSectionPointerEvents="none"
+      />
+      <MultiSelect
+        label="Permissions"
+        data={Object.keys(PermissionType)}
+        value={grantLevel}
+        onChange={setGrantLevel}
+        disabled={!isUserValid}
+        placeholder="Select permissions"
+      />
+      <Button onClick={grantUserPermission} disabled={!isUserValid}>
+        Save Permissions
+      </Button>
+    </Stack>
   );
 };
 

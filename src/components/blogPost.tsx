@@ -7,7 +7,6 @@ import {
   Badge,
   Group,
   ActionIcon,
-  Tooltip,
   Switch,
   Divider,
   Stack,
@@ -16,7 +15,8 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
-import ContentCard from "./ContentCard";
+import { faScroll } from "@fortawesome/free-solid-svg-icons";
+import { GameCard } from "./game/GameCard";
 
 /** @param {string|number|Date} ts */
 const formatDate = (ts: any) => {
@@ -72,15 +72,11 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
   return (
     <>
       <div key={post.id} className="mx-auto w-full px-4">
-        <ContentCard
+        <GameCard
           title={post.title}
-          titleSize="xl"
-          titlePosition="left"
-          className="w-full"
-          minWidth={360}
-          minHeight={220}
-          variant="news"
-          actions={
+          icon={faScroll}
+          goldAccent
+          action={(
             <div className="flex flex-col items-end gap-1">
               <Text size="xs" c="dimmed" className="opacity-70">
                 {formatDate(post.created_timestamp)} • {readTime}
@@ -131,7 +127,7 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
                 </ActionIcon>
               </Group>
             </div>
-          }
+          )}
         >
           <Stack gap="md">
             {post.image && (
@@ -196,7 +192,7 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
               </Group>
             ) : null}
           </Stack>
-        </ContentCard>
+        </GameCard>
       </div>
 
       <Space h="lg" />

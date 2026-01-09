@@ -1,62 +1,33 @@
 import React, { useState, useCallback } from 'react';
-import { TextInput, Paper, Group, ActionIcon, Tooltip, Box, Text, CloseButton } from '@mantine/core';
+import { TextInput, Box, Group, ActionIcon, Tooltip, Text, CloseButton } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperPlane, faPaperclip } from '@fortawesome/free-solid-svg-icons';
 import { Socket } from 'socket.io-client';
-import { User } from 'next-auth';
-import { ChatMessage } from '@/types/typings'; // Import from shared types file
-import { alertService } from '@/services/Alert.service';
-import { logInfo } from '@/utils/logger';
+import { ChatMessage } from '@/types/typings';
+import { useUser } from '@/context/users';
 
 interface MessageInputProps {
   selectedRoomId: number | null;
   socket: Socket | null;
   isConnected: boolean;
-  currentUserId: number | undefined;
-  user: any | null | undefined;
-  markRoomAsRead: (roomId: number) => void; // Function to mark room as read
   replyingToMessage: ChatMessage | null;
   setReplyingToMessage: (message: ChatMessage | null) => void;
-  setIsShareModalOpen: (isOpen: boolean) => void; // To open the share modal
-  canWrite: boolean; // Pass write permission
+  setIsShareModalOpen: (isOpen: boolean) => void;
+  canWrite: boolean;
 }
 
-const MessageInput: React.FC<MessageInputProps> = ({
-  selectedRoomId,
-  socket,
-  isConnected,
-  currentUserId,
-  user,
-  markRoomAsRead,
-  replyingToMessage,
-  setReplyingToMessage,
-  setIsShareModalOpen,
-  canWrite
-}) => {
+const MessageInput: React.FC<MessageInputProps> = ({ selectedRoomId, socket, isConnected, replyingToMessage, setReplyingToMessage, setIsShareModalOpen, canWrite }) => {
   const [newMessage, setNewMessage] = useState('');
+  const { user, markRoomAsRead } = useUser();
+  const currentUserId = user?.id;
 
   const handleSendMessage = useCallback((content: string) => {
-    if (!selectedRoomId || !content.trim() || !socket || !isConnected || !currentUserId) {
-      console.log("MessageInput: Cannot send message. Conditions not met.");
-      return;
-    }
-
-    const messageContent = content.trim();
-    logInfo(`MessageInput: Emitting sendMessage for room ${selectedRoomId}`);
-
-    // Emit the message via socket
-    socket.emit('sendMessage', {
-      roomId: selectedRoomId,
-      content: messageContent,
-      replyToMessageId: replyingToMessage?.id // Include reply ID
-    });
-
-    // Clear state after sending
+    if (!selectedRoomId || !content.trim() || !socket || !isConnected) return;
+    socket.emit('sendMessage', { roomId: selectedRoomId, content: content.trim(), replyToMessageId: replyingToMessage?.id });
     markRoomAsRead(selectedRoomId);
     setReplyingToMessage(null);
     setNewMessage('');
-
-  }, [selectedRoomId, socket, isConnected, currentUserId, markRoomAsRead, replyingToMessage, setReplyingToMessage]);
+  }, [selectedRoomId, socket, isConnected, replyingToMessage, setReplyingToMessage, markRoomAsRead]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,45 +35,39 @@ const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <Paper component="form" onSubmit={handleSubmit} className="border-t p-3 bg-gray-900 border-gray-700" shadow="sm">
+    <Box component="form" onSubmit={handleSubmit} p="md" style={(theme) => ({ borderTop: `1px solid ${theme.colors.dark[4]}` })}>
       {replyingToMessage && (
-        <Box p="xs" mb="xs" bg="dark.6" style={{ borderTopLeftRadius: 'var(--mantine-radius-sm)', borderTopRightRadius: 'var(--mantine-radius-sm)' }}>
+        <Box p="xs" mb="xs" bg="dark.6" style={{ borderRadius: 'var(--mantine-radius-sm)' }}>
           <Group justify="space-between">
             <div>
               <Text size="xs" c="dimmed">Replying to {replyingToMessage.sender.display_name}</Text>
               <Text size="sm" lineClamp={1}>{replyingToMessage.content}</Text>
             </div>
-            <CloseButton size="sm" onClick={() => setReplyingToMessage(null)} title="Cancel reply" />
+            <CloseButton size="sm" onClick={() => setReplyingToMessage(null)} />
           </Group>
         </Box>
       )}
-      <Group gap="xs" wrap="nowrap" mt={replyingToMessage ? 0 : 'xs'}>
+      <Group gap="xs" wrap="nowrap">
         <Tooltip label="Share Attack Log">
           <ActionIcon variant="subtle" onClick={() => setIsShareModalOpen(true)} size="lg" disabled={!canWrite}>
             <FontAwesomeIcon icon={faPaperclip} />
           </ActionIcon>
         </Tooltip>
         <TextInput
-          placeholder={replyingToMessage ? "Type your reply..." : "Type your message..."}
+          placeholder="Type your message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          className="flex-1"
-          disabled={!canWrite} // Use passed prop
+          style={{ flex: 1 }}
+          disabled={!canWrite}
           rightSection={
             <ActionIcon type="submit" variant="filled" color="blue" size="lg" disabled={!newMessage.trim() || !canWrite}>
               <FontAwesomeIcon icon={faPaperPlane} />
             </ActionIcon>
           }
-          rightSectionWidth={42}
-          styles={{ input: { paddingRight: 42 } }}
         />
       </Group>
-    </Paper>
+    </Box>
   );
 };
 
 export default MessageInput;
-
-// NOTE: You might need to adjust the import path for `ChatMessage`
-// if it's not exported from ChatMessageList.tsx or defined globally.
-// Consider moving the ChatMessage interface to a shared types file (e.g., src/types/typings.d.ts).

@@ -1,15 +1,14 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { NumberInput, Group, Text, Table, Select, Button, Box, Stack, Flex, Tooltip } from '@mantine/core';
+import { NumberInput, Group, Text, Select, Button, Box, Stack, Flex, Tooltip, useMantineTheme, SimpleGrid } from '@mantine/core';
 import toLocale from '@/utils/numberFormatting';
 import { alertService } from '@/services/Alert.service';
 import { useUser } from '@/context/users';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faQuestionCircle, faCoins, faShieldHalved, faUserSecret, faEye, faHammer, faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
-import ContentCard from './ContentCard';
-import RpgAwesomeIcon from './RpgAwesomeIcon';
-import { logError, logInfo } from '@/utils/logger';
+import { faMinus, faPlus, faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import { GameCard } from './game/GameCard';
+import { logError } from '@/utils/logger';
 import ImageWithFallback from './ImagWithFallback';
-import { PlayerUnit, UnitProps, UnitType } from '@/types/typings';
+import { UnitProps, UnitType } from '@/types/typings';
 
 /**
  * Formats a section heading string to title case.
@@ -23,31 +22,6 @@ const formatHeading = (secHeading: string): string => {
       word.length > 0 ? word[0].toUpperCase() + word.substring(1).toLowerCase() : ''
     )
     .join(' ');
-};
-
-/**
- * Gets the appropriate FontAwesome or RPG Awesome icon based on the section heading.
- * @param heading - The section heading string.
- * @returns A React element representing the icon.
- */
-const getSectionIcon = (heading: string) => {
-  const lowerHeading = heading.toLowerCase();
-  if (lowerHeading.includes('economy') || lowerHeading.includes('worker')) {
-    return <FontAwesomeIcon icon={faCoins} />;
-  }
-  if (lowerHeading.includes('offense')) {
-    return <RpgAwesomeIcon icon="crossed-swords" />;
-  }
-  if (lowerHeading.includes('defense')) {
-    return <FontAwesomeIcon icon={faShieldHalved} />;
-  }
-  if (lowerHeading.includes('spy')) {
-    return <FontAwesomeIcon icon={faUserSecret} />;
-  }
-  if (lowerHeading.includes('sentry')) {
-    return <FontAwesomeIcon icon={faEye} />;
-  }
-  return <FontAwesomeIcon icon={faQuestionCircle} />; // Default icon
 };
 
 /**
@@ -82,14 +56,15 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
   unitType,
 }) => {
   const { user, forceUpdate } = useUser();
+  const theme = useMantineTheme();
   const [currentUnits, setCurrentUnits] = useState(units);
   const [conversionAmount, setConversionAmount] = useState<number>(0);
   const [fromUnitId, setFromUnitId] = useState<string | null>(null);
   const [toUnitId, setToUnitId] = useState<string | null>(null);
   const [conversionCost, setConversionCost] = useState(0);
   const [toLower, setToLower] = useState(false);
-  const [collapsedItems, setCollapsedItems] = useState<{ [key: string]: boolean }>({});
   const [highestUnlockedLevel, setHighestUnlockedLevel] = useState(0);
+  const [collapsedItems, setCollapsedItems] = useState<Record<string, boolean>>({});
   const [trainUntrainError, setTrainUntrainError] = useState<string | null>(null); // State for train/untrain errors
   const [convertError, setConvertError] = useState<string | null>(null); // State for convert errors
   const [isProcessingTrain, setIsProcessingTrain] = useState(false); // Loading state for train
@@ -437,17 +412,6 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     }
   }, [user, fromUnitId, toUnitId, conversionAmount, conversionCost, toLower, getUnits, resetConversion, forceUpdate, isProcessingConvert, isProcessingTrain, isProcessingUntrain]);
 
-  /**
-   * Toggles the collapsed/expanded state of a specific unit row in the table.
-   * @param unitId - The ID of the unit row to toggle.
-   */
-  const toggleCollapse = (unitId: string) => {
-    setCollapsedItems((prevState) => ({
-      ...prevState,
-      [unitId]: !prevState[unitId],
-    }));
-  };
-
   // Filter units for conversion dropdowns
   const availableUnitsForConversion = useMemo(() =>
     getUnits.filter(unit => unit.enabled).map(unit => ({ value: unit.id, label: unit.name }))
@@ -493,198 +457,309 @@ const trainTooltip =
     BigInt(Math.ceil(sectionTotalCost)) > userGold ? `Not enough gold (Cost: ${toLocale(sectionTotalCost, user?.locale)})` :
     '';
 const untrainTooltip = sectionTotalCost <= 0 ? 'Enter quantities to untrain.' : '';
+const accent = theme.colors.secondary?.[4] ?? '#e5c55a';
+const slotBorder = '#1f2b3b';
+const slotBg = '#0f141a';
+const slotInset = 'inset 0 3px 6px rgba(0,0,0,0.6)';
+const citizenCount = user?.units?.find(unit => unit.type === 'CITIZEN')?.quantity ?? 0;
+
+const toggleCollapse = (unitId: string) => {
+  setCollapsedItems((prevState) => ({
+    ...prevState,
+    [unitId]: !prevState[unitId],
+  }));
+};
+
+const getMaxTrainable = (unit: UnitProps) => {
+  const unitCost = Number(String(unit.cost).replace(/,/g, '')) || 0;
+  if (!unit.enabled || unitCost <= 0) return 0;
+
+  const totalQueuedAll = Object.values(unitCosts).reduce((sum, qty) => sum + (Number(qty) || 0), 0);
+  const currentQty = unitCosts[unit.id] || 0;
+  const availableCitizens = Math.max(0, citizenCount - (totalQueuedAll - currentQty));
+
+  const currentUnitCostTotal = currentQty * unitCost;
+  const remainingGold = BigInt(userGold) - BigInt(Math.max(0, sectionTotalCost - currentUnitCostTotal));
+  const maxByGold = unitCost > 0 ? Number(remainingGold / BigInt(unitCost)) : 0;
+
+  const maxTrainable = Math.max(0, Math.min(availableCitizens, maxByGold));
+  return Number.isFinite(maxTrainable) ? maxTrainable : 0;
+};
 
 
-const footerContent = (
+const footerContent = sectionTotalCost > 0 || trainUntrainError ? (
   <>
-    {/* Inline Error Display for Train/Untrain */}
     {trainUntrainError && (
-        <Text color="red" size="sm" ta="center" mb="xs">
-            {trainUntrainError}
-        </Text>
+      <Text color="red" size="sm" ta="center" mb="xs">
+        {trainUntrainError}
+      </Text>
     )}
-    <Flex justify='space-between' align="center" p="xs">
+    <Flex justify="space-between" align="center" p="xs">
       <Stack gap="xs">
-        <Text size='sm'>Section Cost: {toLocale(sectionTotalCost, user?.locale)}</Text>
-        <Text size='sm' c="dimmed">Section Refund: {toLocale(Math.floor(sectionTotalCost * 0.75), user?.locale)}</Text>
+        <Text size="sm">Section Cost: {toLocale(sectionTotalCost, user?.locale)}</Text>
+        <Text size="sm" c="dimmed">Section Refund: {toLocale(Math.floor(sectionTotalCost * 0.75), user?.locale)}</Text>
       </Stack>
       <Group gap="sm">
         <Tooltip label={trainTooltip} disabled={!trainDisabled || isProcessingTrain} withArrow>
-          <div style={{ width: 'auto' }}> {/* Wrapper for disabled tooltip */}
+          <div style={{ width: 'auto' }}>
             <Button
-              color='green'
+              color="yellow"
               onClick={handleTrainSection}
               disabled={trainDisabled}
               loading={isProcessingTrain}
               size="xs"
+              style={{
+                background: `linear-gradient(180deg, ${accent} 0%, #b98f2f 100%)`,
+                color: '#000',
+                border: `1px solid ${accent}`,
+                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+              }}
             >
               Train Section
             </Button>
           </div>
         </Tooltip>
         <Tooltip label={untrainTooltip} disabled={!untrainDisabled || isProcessingUntrain} withArrow>
-           <div style={{ width: 'auto' }}> {/* Wrapper for disabled tooltip */}
-              <Button
-                color='red'
-                onClick={handleUntrainSection}
-                disabled={untrainDisabled}
-                loading={isProcessingUntrain}
-                size="xs"
-              >
-                Untrain Section
-              </Button>
-           </div>
+          <div style={{ width: 'auto' }}>
+            <Button
+              color="gray"
+              onClick={handleUntrainSection}
+              disabled={untrainDisabled}
+              loading={isProcessingUntrain}
+              size="xs"
+              style={{
+                backgroundColor: '#1f2b3b',
+                borderColor: '#2f3e52',
+                color: '#e5e7eb',
+                boxShadow: '0 2px 0 #0f151c',
+              }}
+            >
+              Untrain Section
+            </Button>
+          </div>
         </Tooltip>
       </Group>
     </Flex>
   </>
-);
+) : null;
 
 return (
-  <ContentCard
+  <GameCard
     title={formatHeading(heading)}
-    icon={getSectionIcon(heading)}
-    iconPosition="title-left"
+    goldAccent
     className="my-6"
-    footer={footerContent}
   >
-    <Table striped highlightOnHover verticalSpacing="sm">
-      <Table.Tbody>
-        {getUnits.map((unit) => {
-          const isCollapsed = collapsedItems[unit.id] ?? false;
-          // Determine if this is the *first* disabled unit to show its requirement
-          // This logic is simplified compared to the original, focusing on enabled/disabled state
-
-          if (unit.enabled) {
-            return (
-              <Table.Tr key={unit.id}>
-                {/* Unit Name, Bonus, Cost */}
-                <Table.Td style={{ width: '40%' }}>
-                  <Group gap={'sm'} align="flex-start" wrap="nowrap">
-                    <Box onClick={() => toggleCollapse(unit.id)} style={{ cursor: 'pointer', paddingTop: '4px' }} aria-expanded={!isCollapsed} role="button">
-                      {isCollapsed ? <FontAwesomeIcon icon={faPlus} size="sm" /> : <FontAwesomeIcon icon={faMinus} size="sm" />}
-                    </Box>
-                    {process.env.NEXT_PUBLIC_SHOW_AI_IMAGES ? (
-                      <ImageWithFallback
-                        fallbackSrc={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Characters/default-character.webp`} // Fallback image
-                        src={getCharacterImage(unit)}
-                        alt={unit.name}
-                        width={80}
-                        height={80}
-                        className="rounded-full"
-                        style={{ display: isCollapsed ? 'none' : 'block' }} // Hide image when collapsed
-                      />
-                    ) : ''}
-                    <div>
-                      <Text fz="md" fw={500} className='font-medieval'>
-                        {unit.name}
-                        {!isCollapsed && unit.bonus > 0 && <span className='text-xs font-medieval'> (+{toLocale(unit.bonus)} {heading === 'Economy' ? 'Gold/t' : heading})</span>}
-                      </Text>
-                      {!isCollapsed && (
-                        <>
-                          <Text fz="xs" c='dimmed'>Cost: {toLocale(unit.cost, user?.locale)} Gold</Text>
-                          <Text fz="xs" c='dimmed'>Sale: {toLocale(Math.floor(Number(String(unit.cost).replace(/,/g, '')) * 0.75), user?.locale)}</Text>
-                        </>
-                      )}
-                    </div>
-                  </Group>
-                </Table.Td>
-                {/* Owned Units */}
-                <Table.Td style={{ width: '30%' }}>
-                  <Text fz="sm" fw={500}>
-                    <span className='font-medieval'>Owned: </span>
-                    <span id={`${unit.id}_owned`}>{toLocale(unit.ownedUnits || 0, user?.locale)}</span>
+    <Stack gap="sm">
+      {getUnits.map((unit) => {
+        const isCollapsed = collapsedItems[unit.id] ?? false;
+        return (
+          <Box
+            key={unit.id}
+            style={{
+              backgroundColor: slotBg,
+              borderRadius: '6px',
+              border: `1px solid ${slotBorder}`,
+              boxShadow: slotInset,
+              padding: '12px',
+              opacity: unit.enabled ? 1 : 0.6,
+            }}
+          >
+            <Group justify="space-between" align="center" wrap="nowrap">
+              <Group gap="sm" align="center" wrap="nowrap">
+                <Box
+                  onClick={() => toggleCollapse(unit.id)}
+                  style={{ cursor: 'pointer', width: 18, textAlign: 'center' }}
+                  aria-expanded={!isCollapsed}
+                  role="button"
+                >
+                  {isCollapsed ? <FontAwesomeIcon icon={faPlus} size="sm" /> : <FontAwesomeIcon icon={faMinus} size="sm" />}
+                </Box>
+                <Box
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 4,
+                    border: '1px solid #333',
+                    background: '#0b1016',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {process.env.NEXT_PUBLIC_SHOW_AI_IMAGES ? (
+                    <ImageWithFallback
+                      fallbackSrc={`${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/images/Characters/default-character.webp`}
+                      src={getCharacterImage(unit)}
+                      alt={unit.name}
+                      width={48}
+                      height={48}
+                    />
+                  ) : (
+                    <FontAwesomeIcon icon={faQuestionCircle} />
+                  )}
+                </Box>
+                <Box>
+                  <Text
+                    fz="sm"
+                    fw={700}
+                    className="font-medieval"
+                    c={unit.enabled ? 'gray.2' : 'dimmed'}
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.5px' }}
+                  >
+                    {unit.name}
                   </Text>
-                </Table.Td>
-                {/* Input */}
-                <Table.Td style={{ width: '30%' }}>
-                  <NumberInput
-                    aria-label={`Quantity for ${unit.name}`} // Better accessibility
-                    name={unit.id}
-                    value={unitCosts[unit.id] || 0}
-                    onChange={(value) => handleInputChange(unit.id, value)}
-                    min={0}
-                    step={1}
-                    allowNegative={false}
-                    size='sm'
-                  />
-                </Table.Td>
-              </Table.Tr>
-            );
-          } else {
-            // Render locked units
-            return (
-              <Table.Tr key={unit.id}>
-                <Table.Td>
-                  <Group gap={'sm'} align="flex-start" wrap="nowrap">
-                    {/* No collapse toggle for locked, always show requirement */}
-                    <Box style={{ paddingTop: '4px', width: '1.25em' }}></Box> {/* Spacer */}
-                    <div>
-                      <Text fz="md" fw={500} className='font-medieval' c="dimmed">
-                        {unit.name}
-                        {unit.bonus > 0 && <span className='text-xs font-medieval'> (+{toLocale(unit.bonus)} {heading === 'Economy' ? 'Gold/t' : heading})</span>}
-                      </Text>
-                      <Text fz="xs" c='dimmed'>Requires: {unit.requirement}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td colSpan={2}></Table.Td>{/* Empty cells */}
-              </Table.Tr>
-            );
-          }
-        })}
-      </Table.Tbody>
-    </Table>
+                  {!isCollapsed && (
+                    <>
+                      <Group gap="xs" mt={2} wrap="wrap">
+                        <Text size="xs" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+                          Level {unit.level}
+                        </Text>
+                        {unit.bonus > 0 && (
+                          <Text size="xs" c="dimmed">
+                            (+{toLocale(unit.bonus)} {heading === 'Economy' ? 'Gold/t' : heading})
+                          </Text>
+                        )}
+                      </Group>
+                      {unit.enabled ? (
+                        <Group gap="xs" mt={4}>
+                          <Text size="xs" c="dimmed">
+                            Cost: <span style={{ color: accent }}>{toLocale(unit.cost, user?.locale)}</span>
+                          </Text>
+                          <Text size="xs" c="dimmed">|</Text>
+                          <Text size="xs" c="dimmed">
+                            Owned: <span id={`${unit.id}_owned`}>{toLocale(unit.ownedUnits || 0, user?.locale)}</span>
+                          </Text>
+                          <Text size="xs" c="dimmed">|</Text>
+                          <Text size="xs" c="dimmed">
+                            Sale: {toLocale(Math.floor(Number(String(unit.cost).replace(/,/g, '')) * 0.75), user?.locale)}
+                          </Text>
+                        </Group>
+                      ) : (
+                        <Text size="xs" c="dimmed" mt={4}>
+                          Requires: {unit.requirement}
+                        </Text>
+                      )}
+                    </>
+                  )}
+                </Box>
+              </Group>
+              <Group gap="xs" wrap="nowrap">
+                <NumberInput
+                  aria-label={`Quantity for ${unit.name}`}
+                  name={unit.id}
+                  value={unitCosts[unit.id] || 0}
+                  onChange={(value) => handleInputChange(unit.id, value)}
+                  min={0}
+                  step={1}
+                  allowNegative={false}
+                  size="sm"
+                  disabled={!unit.enabled}
+                  styles={{
+                    input: {
+                      backgroundColor: '#0b1016',
+                      border: '1px solid #2f3e52',
+                      color: accent,
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      width: '88px',
+                      textAlign: 'center',
+                      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+                    },
+                  }}
+                />
+                <Button
+                  size="xs"
+                  variant="default"
+                  disabled={!unit.enabled}
+                  onClick={() => handleInputChange(unit.id, getMaxTrainable(unit))}
+                  style={{
+                    backgroundColor: '#1f2b3b',
+                    borderColor: '#2f3e52',
+                    color: '#9ca3af',
+                    boxShadow: '0 2px 0 #0f151c',
+                  }}
+                >
+                  MAX
+                </Button>
+              </Group>
+            </Group>
+          </Box>
+        );
+      })}
+    </Stack>
 
     {/* Conversion Section - Only show if more than one unit type exists and at least one is owned */}
-    {getUnits.length > 1 && availableFromUnits.length > 0 && (
-      <Box mt="md" p="xs" style={{ borderTop: '1px solid var(--mantine-color-gray-8)' }}>
-        <Group gap="xs" grow align='flex-end' preventGrowOverflow={false}>
-          <Text size="sm" fw={500} style={{ flexBasis: 'auto', flexGrow: 0 }}>Convert:</Text>
-          <NumberInput size="xs"
+    {getUnits.length > 1 && availableFromUnits.length > 0 && availableToUnits.length > 0 && (
+      <Box mt="md" p="sm" style={{ borderTop: '1px solid #2f3e52' }}>
+        <Group justify="space-between" mb="xs">
+          <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+            Convert Units
+          </Text>
+          <Text size="xs" c="dimmed">
+            {toLower ? 'Refund' : 'Cost'}:{' '}
+            <span style={{ color: accent }}>
+              {toLocale(toLower ? Math.floor(conversionCost) : Math.ceil(conversionCost), user?.locale)}
+            </span>
+          </Text>
+        </Group>
+        <SimpleGrid cols={{ base: 1, sm: 4 }} spacing="sm">
+          <NumberInput
+            size="sm"
             value={conversionAmount}
             onChange={(value) => setConversionAmount(Number(value) || 0)}
             min={0}
             step={100}
             allowNegative={false}
-            style={{ flexBasis: '100px', flexGrow: 1 }}
+            label="Amount"
           />
-          <Select size="xs"
+          <Select
+            size="sm"
             data={availableFromUnits}
             value={fromUnitId}
             onChange={setFromUnitId}
+            label="Owned Unit"
             placeholder="Owned Unit"
-            searchable clearable
-            style={{ flexBasis: '150px', flexGrow: 2 }}
+            searchable
+            clearable
           />
-          <Select size="xs"
+          <Select
+            size="sm"
             data={availableToUnits}
             value={toUnitId}
             onChange={setToUnitId}
+            label="Target Unit"
             placeholder="Target Unit"
-            searchable clearable
+            searchable
+            clearable
             disabled={!fromUnitId}
-            style={{ flexBasis: '150px', flexGrow: 2 }}
           />
-          <Stack gap={0} style={{ flexBasis: '120px', flexGrow: 1, textAlign: 'right' }}>
-            <Text size='xs'>{toLower ? 'Refund:' : 'Cost:'}</Text>
-            <Text size='sm' fw={500}>{toLocale(toLower ? Math.floor(conversionCost) : Math.ceil(conversionCost), user?.locale)}</Text>
-          </Stack>
-          <Tooltip label={convertError || (!fromUnitId || !toUnitId ? 'Select units' : conversionAmount <= 0 ? 'Enter quantity' : !toLower && BigInt(Math.ceil(conversionCost)) > userGold ? 'Not enough gold' : '')} disabled={!(!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(Math.ceil(conversionCost)) > userGold)) || isProcessingConvert} withArrow>
-             <div style={{ width: 'auto' }}> {/* Wrapper for disabled tooltip */}
-                <Button
-                  onClick={handleConvert}
-                  disabled={!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(Math.ceil(conversionCost)) > userGold) || isProcessingTrain || isProcessingUntrain || isProcessingConvert}
-                  loading={isProcessingConvert}
-                  size="xs"
-                  variant='outline'
-                  style={{ flexBasis: 'auto', flexGrow: 0 }}
-                >
-                  Convert
-                </Button>
-             </div>
+          <Tooltip
+            label={convertError || (!fromUnitId || !toUnitId ? 'Select units' : conversionAmount <= 0 ? 'Enter quantity' : !toLower && BigInt(Math.ceil(conversionCost)) > userGold ? 'Not enough gold' : '')}
+            disabled={!(!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(Math.ceil(conversionCost)) > userGold)) || isProcessingConvert}
+            withArrow
+          >
+            <div style={{ alignSelf: 'end' }}>
+              <Button
+                onClick={handleConvert}
+                disabled={!fromUnitId || !toUnitId || conversionAmount <= 0 || (!toLower && BigInt(Math.ceil(conversionCost)) > userGold) || isProcessingTrain || isProcessingUntrain || isProcessingConvert}
+                loading={isProcessingConvert}
+                size="sm"
+                color="yellow"
+                style={{
+                  background: `linear-gradient(180deg, ${accent} 0%, #b98f2f 100%)`,
+                  color: '#000',
+                  border: `1px solid ${accent}`,
+                  boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+                  width: '100%',
+                }}
+              >
+                Convert
+              </Button>
+            </div>
           </Tooltip>
-        </Group>
+        </SimpleGrid>
         {/* Inline Error Display for Convert */}
         {convertError && (
             <Text color="red" size="xs" ta="center" mt="xs">
@@ -693,7 +768,10 @@ return (
         )}
       </Box>
     )}
-  </ContentCard>
+    <Box mt="md" pt="sm" style={{ borderTop: '1px solid #2f3e52' }}>
+      {footerContent}
+    </Box>
+  </GameCard>
 );
 }
 

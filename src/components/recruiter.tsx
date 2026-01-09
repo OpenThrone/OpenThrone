@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import Image from 'next/image';
+import { Box, Text } from '@mantine/core';
+import { GameCard } from '@/components/game/GameCard';
 import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
 
 const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
@@ -15,27 +17,31 @@ const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
   }, [showCaptcha, onSuccess]);
 
   return (
-    <div>
-      <div className="mb-5 text-center justify-center items-center content-center">
-        {user.display_name} is a level {getLevelFromXP(user.experience)} {user.race} {user.class}.
-        <center><Image src={getAssetPath('shields', '150x150', user.race)} width={'150'} height={'150'} alt="" /></center>
+    <GameCard title="Recruitment Target">
+      <Box className="mb-5 text-center justify-center items-center content-center">
+        <Text>
+          {user.display_name} is a level {getLevelFromXP(user.experience)} {user.race} {user.class}.
+        </Text>
+        <center>
+          <Image src={getAssetPath('shields', '150x150', user.race)} width={'150'} height={'150'} alt="" />
+        </center>
         {status && (
-          <div className="mt-2 text-lg font-semibold text-green-400">{status}</div>
+          <Text className="mt-2 text-lg font-semibold text-green-400">{status}</Text>
         )}
-      </div>
-      <div className="flex items-center justify-center">
+      </Box>
+      <Box className="flex items-center justify-center">
         <div className="container mx-auto text-center">
-            {showCaptcha && (
-                <div className="flex items-center justify-center">
-                <Turnstile
+          {showCaptcha && (
+            <div className="flex items-center justify-center">
+              <Turnstile
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
                 onSuccess={onSuccess}
-                  />
-                  </div>
-            )}
+              />
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+      </Box>
+    </GameCard>
   );
 };
 

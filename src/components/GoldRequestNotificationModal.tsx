@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Modal, Button, Group, Stack, Text, Badge, Card, Divider, Alert } from '@mantine/core';
 import { useUser } from '@/context/users';
 
@@ -35,11 +35,58 @@ export function GoldRequestNotificationModal({
   const [timeLeft, setTimeLeft] = useState<{ [key: number]: string }>({});
   const { forceUpdate } = useUser();
 
+  const formatExpiry = (expiresAt: string): string => {
+    const expiry = new Date(expiresAt);
+    const now = new Date();
+    const diff = expiry.getTime() - now.getTime();
+    
+    if (diff <= 0) return 'Expired';
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (days > 0) return `${days}d ${hours}h left`;
+    if (hours > 0) return `${hours}h ${minutes}m left`;
+    return `${minutes}m left`;
+  };
+
+  const buildTimeLeft = useCallback((incoming: GoldRequest[]) => {
+    const updatedTimeLeft: { [key: number]: string } = {};
+    incoming.forEach((request) => {
+      if (request.stats.expiresAt) {
+        updatedTimeLeft[request.id] = formatExpiry(request.stats.expiresAt);
+      }
+    });
+    return updatedTimeLeft;
+  }, []);
+
+  const updateTimeLeft = useCallback(() => {
+    setTimeLeft(buildTimeLeft(requests.incoming));
+  }, [buildTimeLeft, requests.incoming]);
+
+  const fetchRequests = useCallback(async () => {
+    try {
+      const [incomingRes, outgoingRes] = await Promise.all([
+        fetch('/api/social/gold-requests?incoming=true'),
+        fetch('/api/social/gold-requests?outgoing=true')
+      ]);
+
+      const incoming = incomingRes.ok ? await incomingRes.json() : [];
+      const outgoing = outgoingRes.ok ? await outgoingRes.json() : [];
+
+      setRequests({ incoming, outgoing });
+      setTimeLeft(buildTimeLeft(incoming));
+    } catch (err) {
+      setError('Failed to load requests');
+    }
+  }, [buildTimeLeft]);
+
   useEffect(() => {
     if (isOpen) {
       fetchRequests();
     }
-  }, [isOpen]);
+  }, [fetchRequests, isOpen]);
 
   useEffect(() => {
     if (isOpen && requests.incoming.length > 0) {
@@ -51,36 +98,7 @@ export function GoldRequestNotificationModal({
 
       return () => clearInterval(timer);
     }
-  }, [isOpen, requests.incoming]);
-
-  const updateTimeLeft = () => {
-    const updatedTimeLeft: { [key: number]: string } = {};
-    
-    requests.incoming.forEach(request => {
-      if (request.stats.expiresAt) {
-        updatedTimeLeft[request.id] = formatExpiry(request.stats.expiresAt);
-      }
-    });
-    
-    setTimeLeft(updatedTimeLeft);
-  };
-
-  const fetchRequests = async () => {
-    try {
-      const [incomingRes, outgoingRes] = await Promise.all([
-        fetch('/api/social/gold-requests?incoming=true'),
-        fetch('/api/social/gold-requests?outgoing=true')
-      ]);
-
-      const incoming = incomingRes.ok ? await incomingRes.json() : [];
-      const outgoing = outgoingRes.ok ? await outgoingRes.json() : [];
-
-      setRequests({ incoming, outgoing });
-      updateTimeLeft();
-    } catch (err) {
-      setError('Failed to load requests');
-    }
-  };
+  }, [isOpen, requests.incoming.length, updateTimeLeft]);
 
   const respondToRequest = async (requestId: number, action: 'accept' | 'decline', message?: string) => {
     setLoading(true);
@@ -106,22 +124,6 @@ export function GoldRequestNotificationModal({
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatExpiry = (expiresAt: string): string => {
-    const expiry = new Date(expiresAt);
-    const now = new Date();
-    const diff = expiry.getTime() - now.getTime();
-    
-    if (diff <= 0) return 'Expired';
-    
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
-    if (days > 0) return `${days}d ${hours}h left`;
-    if (hours > 0) return `${hours}h ${minutes}m left`;
-    return `${minutes}m left`;
   };
 
   const formatNumber = (num: bigint): string => {

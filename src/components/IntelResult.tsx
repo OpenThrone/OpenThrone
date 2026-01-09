@@ -1,10 +1,13 @@
-import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
-import { Box, Text, Group, Paper, Grid, RingProgress, Button, Space, Container } from '@mantine/core';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import SpyMissionsModal from './spyMissionsModal';
+import { faBinoculars, faChartPie, faWarehouse } from '@fortawesome/free-solid-svg-icons';
+import { Box, Button, Grid, Group, RingProgress, Space, Stack, Text, useMantineTheme } from '@mantine/core';
+import Image from 'next/image';
+
+import { GameCard } from './game/GameCard';
 import Modal from './modal';
+import SpyMissionsModal from './spyMissionsModal';
 import { PlayerItem, PlayerUnit } from '@/types/typings';
+import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
 
 const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
@@ -15,268 +18,155 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   const [unitSegments, setUnitSegments] = useState([]);
   const [itemsByCategory, setItemsByCategory] = useState([]);
   const [totalPopulation, setTotalPopulation] = useState(0);
-  const itemColors = {
-    HELM: 'grey',
-    ARMOR: 'yellow',
-    BOOTS: 'red',
-    BRACERS: 'blue',
-    SHIELD: 'green',
-    WEAPON: 'purple',
-  };
+  const theme = useMantineTheme();
+  
+  const itemColors = { HELM: 'grey', ARMOR: 'yellow', BOOTS: 'red', BRACERS: 'blue', SHIELD: 'green', WEAPON: 'purple' };
 
-  const toggleSpyModal = () => {
-    setIsSpyModalOpen(!isSpyModalOpen);
-  };
-
-  const toggleAttackModal = () => {
-    setIsAttackModalOpen(!isAttackModalOpen);
-  }
+  const toggleSpyModal = () => setIsSpyModalOpen(!isSpyModalOpen);
+  const toggleAttackModal = () => setIsAttackModalOpen(!isAttackModalOpen);
   
   useEffect(() => {
-    const fetchData = async () => {
-      const units = stats.spyResults.intelligenceGathered?.units;
-      const filteredUnits = Array.isArray(units) && units.length > 0 ? units.filter((unit) => unit.quantity > 0) : [];
-      const totalUnits = filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0);
-      const totalPop = Number(Object.values(stats.spyResults.defender.units).reduce((acc: number, unit: PlayerUnit) => acc + unit.quantity, 0)) || 0;
-      setTotalPopulation(totalPop);
-      const unknownUnits = totalPop - totalUnits;
-      const unitColors = {
-        CITIZEN: 'grey',
-        WORKER: 'yellow',
-        OFFENSE: 'red',
-        DEFENSE: 'blue',
-        SPY: 'green',
-        SENTRY: 'purple',
-        UNKNOWN: 'white',
-      };
+    const units = stats.spyResults.intelligenceGathered?.units;
+    const filteredUnits = Array.isArray(units) && units.length > 0 ? units.filter((unit) => unit.quantity > 0) : [];
+    const totalUnits = filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0);
+    const totalPop = Number(Object.values(stats.spyResults.defender.units).reduce((acc: number, unit: PlayerUnit) => acc + unit.quantity, 0)) || 0;
+    setTotalPopulation(totalPop);
+    const unknownUnits = totalPop - totalUnits;
+    const unitColors = { CITIZEN: 'grey', WORKER: 'yellow', OFFENSE: 'red', DEFENSE: 'blue', SPY: 'green', SENTRY: 'purple', UNKNOWN: 'white' };
 
-      const newUnitSegments = [
-        ...filteredUnits.map((unit) => ({
-          label: `${unit.type}`,
-          quantity: unit.quantity,
-          part: Math.min(Math.max(unit.quantity / totalPopulation, 0), 1) * 100,
-          color: unitColors[unit.type] || 'black',
-        })),
-        {
-          label: 'UNKNOWN',
-          quantity: unknownUnits,
-          part: (unknownUnits / totalPopulation) * 100,
-          color: unitColors.UNKNOWN,
-        }
-      ];
-      setUnitSegments(newUnitSegments);
-      if (stats.spyResults.intelligenceGathered?.items?.length === 0) {
-        // If there are no items found, we can return early
-        setItemsByCategory([]); // Clear itemsByCategory if no items found
-        return;
-      }
-      const itemCategories = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
-      const itemTypes = ['HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD', 'WEAPON'];
+    const newUnitSegments = [
+      ...filteredUnits.map((unit) => ({
+        label: `${unit.type}`,
+        quantity: unit.quantity,
+        part: Math.min(Math.max(unit.quantity / totalPopulation, 0), 1) * 100,
+        color: unitColors[unit.type] || 'black',
+      })),
+      { label: 'UNKNOWN', quantity: unknownUnits, part: (unknownUnits / totalPopulation) * 100, color: unitColors.UNKNOWN }
+    ];
+    setUnitSegments(newUnitSegments);
 
-      const newItemsByCategory = itemCategories.map((category) => {
-        const categoryUnits = filteredUnits.filter((unit) => unit.type === category).reduce((acc, unit) => acc + unit.quantity, 0);
-        const itemsObject = stats.spyResults.intelligenceGathered?.items; // Get the items object (or null/undefined)
+    if (stats.spyResults.intelligenceGathered?.items?.length === 0) {
+      setItemsByCategory([]);
+      return;
+    }
+    const itemCategories = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
+    const itemTypes = ['HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD', 'WEAPON'];
 
-        // Convert the object's values into an array. If itemsObject is null or undefined, default to an empty array.
-        const itemsArray: PlayerItem[] = itemsObject ? Object.values(itemsObject) : [];
+    const itemsArray: PlayerItem[] = stats.spyResults.intelligenceGathered?.items ? Object.values(stats.spyResults.intelligenceGathered.items) : [];
+    const newItemsByCategory = itemCategories.map((category) => {
+      const categoryUnits = filteredUnits.filter((unit) => unit.type === category).reduce((acc, unit) => acc + unit.quantity, 0);
+      const categoryItems = itemsArray.filter((item) => item.usage === category);
+      const combinedItems = itemTypes.map((type) => {
+        const totalQuantity = categoryItems.filter((item) => item.type === type).reduce((acc, item) => Number(acc) + Number(item.quantity), 0);
+        return { type, quantity: totalQuantity, percentage: categoryUnits > 0 ? Math.min((Number(totalQuantity) / Number(categoryUnits)) * 100, 100) : null };
+      }).filter((item) => item.quantity > 0);
 
-        // Now you can safely filter the array
-        const categoryItems = itemsArray.filter((item) => item.usage === category);
-        const combinedItems = itemTypes.map((type) => {
-          const totalQuantity = categoryItems
-            .filter((item) => item.type === type)
-            .reduce((acc, item) => Number(acc) + Number(item.quantity), 0);
-          return {
-            type,
-            quantity: totalQuantity,
-            percentage: categoryUnits > 0 ? Math.min((Number(totalQuantity) / Number(categoryUnits)) * 100, 100) : null, // Ensure valid percentage
-          };
-        }).filter((item) => item.quantity > 0); // Filter out items with zero quantity
+      return { name: category, total: categoryUnits, itemsBreakdown: combinedItems, color: category === 'OFFENSE' ? 'red' : category === 'DEFENSE' ? 'blue' : category === 'SPY' ? 'green' : 'purple' };
+    });
 
-        return {
-          name: category,
-          total: categoryUnits,
-          itemsBreakdown: combinedItems,
-          color: category === 'OFFENSE' ? 'red' : category === 'DEFENSE' ? 'blue' : category === 'SPY' ? 'green' : 'purple',
-        };
-      });
-
-      setItemsByCategory(newItemsByCategory);
-    };
-
-    fetchData();
-
+    setItemsByCategory(newItemsByCategory);
   }, [stats, defenderPlayer, totalPopulation]);
 
   return (
-    <Container size='xl' p={'md'} style={{ backgroundColor: 'black', color: 'white' }} >
-      <Grid grow className="gap-5">
-        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
-          <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.spyResults.attacker.experience)}</h4>
-          <center>
-            <Image
-              src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
-              className="ml-2"
-              alt="attacker avatar"
-              width={150}
-              height={150}
-            />
-          </center>
+    <GameCard title="Intelligence Report" icon={faBinoculars}>
+      <Grid grow gutter="lg">
+        <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
+          <Text size="xl" fw={700}>{attackerPlayer?.display_name}</Text>
+          <Text c="dimmed">Level: {getLevelFromXP(stats.spyResults.attacker.experience)}</Text>
+          <Image src={getAssetPath('shields', '150x150', attackerPlayer?.race)} alt="attacker avatar" width={150} height={150} style={{ margin: 'auto' }} />
         </Grid.Col>
-        <Grid.Col span={{ base: 6, md: 4 }} className="text-center">
-          <Space h='10' />
-          <div className="text-container inline-block align-middle">
-            <Text color="white" fw="bolder" size='xl' className="font-medieval">
-              Intelligence Report
-            </Text>
-            {isViewerAttacker && (
-              <Text className="text-lg text-white font-semibold">
-                You sent {stats.spyResults.spiesSent} {stats.spyResults.spiesSent > 1 ? 'spies' : 'spy'} to {defenderPlayer.display_name}
-              </Text>
-            )}
-            <Text size='lg' fw='bold' className={`text-2xl ${isAttackerWinner ? 'text-green-400' : 'text-red-400'}`}>
-              {isViewerAttacker ? 'You were' : attackerPlayer.display_name + ' was'} {isAttackerWinner ? 'successful' : 'unsuccessful.'}
-            </Text>
-            <Text size='md' fw='normal' className="text-2xl">
-              Battle ID: {battle.id}
-            </Text>
-            {(isViewerAttacker || viewerID === 1) && (
-              <>
-              <Text size="lg" fw='bold'>Another Mission?</Text>
-              <Space h='10' />
-              <Group justify='center'>
-                
-                  <Button onClick={toggleSpyModal}>
-                  Send More Spies
-                  </Button>
-                  <SpyMissionsModal
-                    isOpen={isSpyModalOpen}
-                    toggleModal={toggleSpyModal}
-                    defenderID={defenderPlayer?.id}
-                  />
-                  <Button onClick={toggleSpyModal} disabled={Boolean(process.env.NEXT_PUBLIC_ENABLE_INTEL)}>
-                  Infiltrate
-                </Button>
-                  <Button onClick={toggleSpyModal} disabled={Boolean(process.env.NEXT_PUBLIC_ENABLE_ASSASSINATIONS)}>
-                  Assassinate
-                  </Button>
-                  <Button onClick={toggleAttackModal} disabled={Boolean(process.env.NEXT_PUBLIC_ENABLE_INFILTRATIONS)}>
-                    Attack
-                  </Button>
-                  <Modal
-                    isOpen={isAttackModalOpen}
-                    toggleModal={toggleAttackModal}
-                    profileID={defenderPlayer.id}
-                  />
-                </Group> 
-              </>
-            )}
-          </div>
+        <Grid.Col span={{ base: 12, md: 2 }} style={{ textAlign: 'center', alignSelf: 'center' }}>
+          <Text size="lg" fw="bold" color={isAttackerWinner ? 'green' : 'red'}>{isAttackerWinner ? 'Success' : 'Failure'}</Text>
+          <Text size="xs" c="dimmed">Battle ID: {battle.id}</Text>
+          <Space h="md" />
+          {(isViewerAttacker || viewerID === 1) && (
+            <Stack align="center" gap="xs">
+              <Button size="xs" onClick={toggleSpyModal}>Send More Spies</Button>
+              <Button size="xs" onClick={toggleAttackModal}>Attack</Button>
+            </Stack>
+          )}
         </Grid.Col>
-        <Grid.Col span={{ base: 3, md: 4 }} className="text-center">
-          <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.spyResults.defender.experience)}</h4>
-          <center>
-            <Image
-              src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
-              className="ml-2"
-              alt="defender avatar"
-              width={150}
-              height={150}
-            />
-          </center>
+        <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
+          <Text size="xl" fw={700}>{defenderPlayer?.display_name}</Text>
+          <Text c="dimmed">Level: {getLevelFromXP(stats.spyResults.defender.experience)}</Text>
+          <Image src={getAssetPath('shields', '150x150', defenderPlayer?.race)} alt="defender avatar" width={150} height={150} style={{ margin: 'auto' }} />
         </Grid.Col>
       </Grid>
-      <div className="intel-report mt-10">
-        
-        <Grid grow gutter={'xs'}>
-          <Grid.Col span={{ base: 4, md: 6 }} className="text-center">
-            {isAttackerWinner && unitSegments.length > 0 && (
-              <Paper withBorder p="md" radius="md" mt="xl">
-                <Text fz="xl" fw={700} mb="md">
-                  TOTAL POPULATION
-                </Text>
-                <center>
+      
+      {isAttackerWinner && (
+        <Grid grow gutter="md" mt="xl">
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <GameCard title="Population Estimate" icon={faChartPie}>
+              <Group justify="center">
+                <RingProgress
+                  size={170}
+                  thickness={16}
+                  label={<Text size="xs" ta="center">Total Pop: {totalPopulation}</Text>}
+                  sections={unitSegments.map(s => ({ value: s.part, color: s.color, tooltip: `${s.quantity} ${s.label}` }))}
+                />
+              </Group>
+              <Grid mt="md">
+                {unitSegments.map((segment, index) => (
+                  <Grid.Col span={4} key={index}>
+                    <Box
+                      style={{
+                        backgroundColor: '#0f141a',
+                        borderRadius: '6px',
+                        border: '1px solid #1f2b3b',
+                        boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                        padding: '8px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <Text tt="uppercase" fz="xs" c="dimmed">{segment.label}</Text>
+                      <Text fw={700}>{segment.quantity}</Text>
+                    </Box>
+                  </Grid.Col>
+                ))}
+              </Grid>
+            </GameCard>
+          </Grid.Col>
+          {itemsByCategory.map((category, index) => category.itemsBreakdown.length > 0 && (
+            <Grid.Col span={{ base: 12, md: 6 }} key={index}>
+              <GameCard title={`${category.name} Armory`} icon={faWarehouse}>
+                <Group justify="center">
                   <RingProgress
                     size={170}
                     thickness={16}
-                    label={
-                      <Text size="xs" ta="center" px="xs" style={{ pointerEvents: 'none' }}>
-                        Hover sections to see tooltips <br />Total Pop: {totalPopulation}
-                      </Text>
-                    }
-                    sections={unitSegments.map(segment => ({
-                      value: Math.min(Math.max(segment.part, 0), 100), // Ensure value is between 0 and 100
-                      color: segment.color,
-                      tooltip: `${segment.quantity} ${segment.label}`,
+                    label={<Text size="xs" ta="center">Total {category.name} Units: {category.total}</Text>}
+                    sections={category.itemsBreakdown.map(item => ({
+                      value: item.percentage || 0, color: itemColors[item.type], tooltip: `${item.quantity} ${item.type}`
                     }))}
                   />
-                </center>
-                <Box mt="md" className="unit-segments-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {unitSegments.map((segment, index) => (
-                    <Box key={index} className="unit-segment p-2" bg={'gray'}>
-                      <Text tt="uppercase" fz="xs" c="dimmed" fw={700}>
-                        {segment.label}
-                      </Text>
-                      <Group justify="space-between" align="flex-end" gap={0}>
-                        <Text fw={700}>{Math.max(segment.quantity, 0)} Units found</Text>
-                      </Group>
-                    </Box>
-                  ))}
-                </Box>
-              </Paper>
-            )}
-          </Grid.Col>
-          {isAttackerWinner &&
-            itemsByCategory.length > 0 &&
-            itemsByCategory.map((category, index) => (
-              <Grid.Col span={{ base: 4, md: 6 }} className="text-center" key={index}>
-                <Paper withBorder p="md" radius="md" mt="xl">
-                  <Text fz="xl" fw={700} mb="md">
-                    {category.name} ARMORY
-                  </Text>
-                  <center>
-                    <RingProgress
-                      size={170}
-                      thickness={16}
-                      label={
-                        <Text size="xs" ta="center" px="xs" style={{ pointerEvents: 'none' }}>
-                          {category.name} <br />Units Found: {category.total}
-                        </Text>
-                      }
-                      sections={category.itemsBreakdown.map(item => ({
-                        value: (item.percentage / 100) * (100 / category.itemsBreakdown.length), // Scale the percentage relative to the number of items
-                        color: itemColors[item.type], // Use itemColors for each item type
-                        tooltip: `${item.quantity} ${item.type}`,
-                      }))}
-                    />
-
-                  </center>
-                  <Box mt="md" className="unit-segments-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {category.itemsBreakdown.map((item, idx) => (
-                      <Box key={idx} className="unit-segment p-2" mb="xs" bg='gray'>
-                        <Text tt="uppercase" fz="xs" c="dimmed" fw={700}>
-                          {item.type}
-                        </Text>
-                        <Group justify="space-between" align="flex-end" gap={0}>
-                          <Text fw={700}>
-                            {item.quantity} {item.percentage !== null && `(${item.percentage.toFixed(2)}%)`}
-                          </Text>
-                        </Group>
+                </Group>
+                <Grid mt="md">
+                  {category.itemsBreakdown.map((item, idx) => (
+                    <Grid.Col span={4} key={idx}>
+                      <Box
+                        style={{
+                          backgroundColor: '#0f141a',
+                          borderRadius: '6px',
+                          border: '1px solid #1f2b3b',
+                          boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                          padding: '8px',
+                          textAlign: 'center',
+                        }}
+                      >
+                        <Text tt="uppercase" fz="xs" c="dimmed">{item.type}</Text>
+                        <Text fw={700}>{item.quantity} ({item.percentage?.toFixed(1)}%)</Text>
                       </Box>
-                    ))}
-                  </Box>
-                </Paper>
-              </Grid.Col>
-            ))
-          }
+                    </Grid.Col>
+                  ))}
+                </Grid>
+              </GameCard>
+            </Grid.Col>
+          ))}
         </Grid>
-      </div>
-      <Text size='lg' fw='bold' className="text-2xl">
-        Report last generated: {new Date(lastGenerated).toLocaleString()}
-        </Text>
-    </Container>
+      )}
+      <SpyMissionsModal isOpen={isSpyModalOpen} toggleModal={toggleSpyModal} defenderID={defenderPlayer?.id} />
+      <Modal isOpen={isAttackModalOpen} toggleModal={toggleAttackModal} profileID={defenderPlayer.id} />
+      <Text size="xs" c="dimmed" ta="center" mt="md">Report generated: {new Date(lastGenerated).toLocaleString()}</Text>
+    </GameCard>
   );
 };
 

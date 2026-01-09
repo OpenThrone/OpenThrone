@@ -34,8 +34,6 @@ export default function HeroBanner({
   iconFill,
 }: HeroBannerProps) {
   const theme = useMantineTheme();
-  console.log('HeroBanner theme:', theme.colors.brand);
-
   /**
    * You can tune these indices to taste.
    * brand is your primaryColor for each race theme.

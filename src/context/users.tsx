@@ -161,7 +161,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         () => { } // Let processAndSetUserData handle final loading state
       );
     },
-    [socket, isConnected] // processAndSetUserData is stable if defined outside or memoized
+    [socket, isConnected, processAndSetUserData]
   );
 
 
@@ -275,7 +275,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       removeEventListener('goldTransferReceived', handleGoldTransferReceived);
       removeEventListener('alertNotification', handleAlertNotification);
     };
-  }, [socket, isConnected, addEventListener, removeEventListener, processAndSetUserData]); // Added processAndSetUserData dependency
+  }, [socket, isConnected, addEventListener, removeEventListener, processAndSetUserData, router]);
 
   useEffect(() => {
     if (status === 'authenticated' && userId && (isConnected || !WS_ENABLED)) { // Check WS_ENABLED flag

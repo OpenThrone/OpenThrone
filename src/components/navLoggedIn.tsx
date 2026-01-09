@@ -280,7 +280,14 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
 
   return (
     <>
-      <div className="flex justify-end p-2 lg:hidden">
+      <div
+        className={`flex justify-end p-2 lg:hidden ${layoutCont.raceClasses.menuPrimaryClass}`}
+        style={{
+          backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme as PlayerRace)}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <div className="relative">
           <button
             type="button"

@@ -32,7 +32,7 @@ export function StepPickerNumberInput({
     if (defaultStep != null && defaultStep !== currentStep) {
       setCurrentStep(defaultStep);
     }
-  }, [defaultStep]);
+  }, [defaultStep, currentStep]);
 
   return (
     <div className="flex flex-col space-y-2">

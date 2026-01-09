@@ -10,15 +10,16 @@ import {
   Stack,
   Text,
   Grid,
-  Badge,
-  Paper,
   ActionIcon,
-  Divider
+  Divider,
+  Title,
+  useMantineTheme,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { PermissionType } from '@prisma/client';
 import { faSync, faSave, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { GameCard } from './game/GameCard';
 
 // Define interfaces for the different sections of user data
 interface UserProfile {
@@ -80,6 +81,9 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({ userId, onClose, onSa
   const [userData, setUserData] = useState<UserData | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('profile');
   const [error, setError] = useState<string | null>(null);
+  const theme = useMantineTheme();
+  const coerceNumber = (value: number | string | null) =>
+    typeof value === 'number' ? value : Number(value || 0);
 
   // Fetch user data when userId changes
   useEffect(() => {
@@ -149,129 +153,67 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({ userId, onClose, onSa
     }
   };
 
-  // Profile tab update handlers
   const updateProfile = (field: keyof UserProfile, value: string) => {
     if (!userData) return;
-    setUserData({
-      ...userData,
-      profile: {
-        ...userData.profile,
-        [field]: value
-      }
-    });
+    setUserData({ ...userData, profile: { ...userData.profile, [field]: value }});
   };
 
-  // Stats tab update handlers
-  const updateStat = (field: keyof UserStats, value: number) => {
+  const updateStat = (field: keyof UserStats, value: number | string | null) => {
     if (!userData) return;
-    setUserData({
-      ...userData,
-      stats: {
-        ...userData.stats,
-        [field]: value
-      }
-    });
+    setUserData({ ...userData, stats: { ...userData.stats, [field]: coerceNumber(value) }});
   };
 
-  // Army tab handlers
-  const updateUnit = (unitId: string, field: 'quantity' | 'level', value: number) => {
+  const updateUnit = (unitId: string, field: 'quantity' | 'level', value: number | string | null) => {
     if (!userData) return;
-    const updatedUnits = userData.army.units.map(unit => 
-      unit.id === unitId ? { ...unit, [field]: value } : unit
-    );
-    setUserData({
-      ...userData,
-      army: {
-        ...userData.army,
-        units: updatedUnits
-      }
-    });
+    const updatedUnits = userData.army.units.map(unit => unit.id === unitId ? { ...unit, [field]: coerceNumber(value) } : unit);
+    setUserData({ ...userData, army: { ...userData.army, units: updatedUnits }});
   };
 
-  // Items tab handlers
-  const updateItem = (itemId: string, field: 'quantity' | 'level', value: number) => {
+  const updateItem = (itemId: string, field: 'quantity' | 'level', value: number | string | null) => {
     if (!userData) return;
-    const updatedItems = userData.items.items.map(item => 
-      item.id === itemId ? { ...item, [field]: value } : item
-    );
-    setUserData({
-      ...userData,
-      items: {
-        ...userData.items,
-        items: updatedItems
-      }
-    });
+    const updatedItems = userData.items.items.map(item => item.id === itemId ? { ...item, [field]: coerceNumber(value) } : item);
+    setUserData({ ...userData, items: { ...userData.items, items: updatedItems }});
   };
 
-  // Permissions tab handlers
   const togglePermission = (permission: PermissionType) => {
     if (!userData) return;
     const currentPermissions = userData.permissions.permissions;
-    let newPermissions: PermissionType[];
-    
-    if (currentPermissions.includes(permission)) {
-      newPermissions = currentPermissions.filter(p => p !== permission);
-    } else {
-      newPermissions = [...currentPermissions, permission];
-    }
-    
-    setUserData({
-      ...userData,
-      permissions: {
-        ...userData.permissions,
-        permissions: newPermissions
-      }
-    });
+    const newPermissions = currentPermissions.includes(permission)
+      ? currentPermissions.filter(p => p !== permission)
+      : [...currentPermissions, permission];
+    setUserData({ ...userData, permissions: { ...userData.permissions, permissions: newPermissions }});
   };
 
-  if (loading) {
-    return (
-      <Stack align="center" justify="center" h={400}>
-        <Loader size="xl" />
-        <Text size="sm">Loading user data...</Text>
-      </Stack>
-    );
-  }
-
-  if (error) {
-    return (
-      <Stack align="center" justify="center" h={400}>
-        <Text color="red" size="lg">{error}</Text>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
-      </Stack>
-    );
-  }
-
-  if (!userData) {
-    return (
-      <Text>No user data available</Text>
-    );
-  }
+  if (loading) return <Loader />;
+  if (error) return <Text color="red">{error}</Text>;
+  if (!userData) return <Text>No user data available.</Text>;
 
   return (
     <Stack>
-      <Group justify="space-between" mb="md">
-        <Text size="xl" fw={700}>Editing User: {userData.profile.username}</Text>
-        <Group>
-          <Button 
-            leftSection={<FontAwesomeIcon icon={faSync} size="sm" />} 
-            variant="outline" 
-            onClick={() => window.location.reload()}
-          >
-            Refresh
-          </Button>
-          <Button 
-            leftSection={<FontAwesomeIcon icon={faSave} size="sm" />} 
-            onClick={handleSave} 
-            loading={saving} 
-            color="blue"
-          >
-            Save Changes
-          </Button>
-        </Group>
+      <Group justify="space-between">
+        <Title order={3}>Editing: {userData.profile.username}</Title>
+        <Button onClick={handleSave} loading={saving}>Save Changes</Button>
       </Group>
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
+      <Tabs defaultValue="profile"
+        styles={{
+            tab: {
+              backgroundColor: theme.colors.dark[6],
+              color: theme.colors.gray[5],
+              '&:focus-visible': {
+                outline: `2px solid ${theme.colors.blue[5]}`,
+                outlineOffset: 2,
+              },
+              '&[data-active]': {
+                backgroundColor: theme.colors.blue[8],
+                color: theme.white,
+              },
+            },
+            panel: {
+                backgroundColor: theme.colors.dark[7],
+                padding: theme.spacing.md,
+            }
+          }}>
         <Tabs.List>
           <Tabs.Tab value="profile">Profile</Tabs.Tab>
           <Tabs.Tab value="stats">Stats & Resources</Tabs.Tab>
@@ -280,278 +222,71 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({ userId, onClose, onSa
           <Tabs.Tab value="permissions">Permissions</Tabs.Tab>
         </Tabs.List>
 
-        {/* Profile Tab */}
         <Tabs.Panel value="profile" pt="md">
           <Grid>
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <TextInput 
-                label="Username" 
-                value={userData.profile.username || ''} 
-                onChange={(e) => updateProfile('username', e.target.value)}
-                mb="md"
-              />
-              <TextInput 
-                label="Email" 
-                value={userData.profile.email || ''} 
-                onChange={(e) => updateProfile('email', e.target.value)}
-                mb="md"
-              />
-              <Select
-                label="Status"
-                value={userData.profile.status}
-                onChange={(value) => updateProfile('status', value || 'ACTIVE')}
-                data={[
-                  { value: 'ACTIVE', label: 'Active' },
-                  { value: 'VACATION', label: 'Vacation' },
-                  { value: 'SUSPENDED', label: 'Suspended' },
-                  { value: 'BANNED', label: 'Banned' },
-                  { value: 'CLOSED', label: 'Closed' }
-                ]}
-                mb="md"
-              />
+            <Grid.Col span={6}>
+              <GameCard title="User Details">
+                <TextInput label="Username" value={userData.profile.username} onChange={(e) => updateProfile('username', e.target.value)} />
+                <TextInput label="Email" value={userData.profile.email} onChange={(e) => updateProfile('email', e.target.value)} mt="sm" />
+                <Select label="Status" value={userData.profile.status} onChange={(value) => updateProfile('status', value || 'ACTIVE')} data={['ACTIVE', 'VACATION', 'SUSPENDED', 'BANNED', 'CLOSED']} mt="sm" />
+              </GameCard>
             </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <Paper withBorder p="md" radius="md">
-                <Text size="sm" fw={500} mb="xs">User Information</Text>
-                <Text size="sm"><b>User ID:</b> {userData.profile.id}</Text>
-                <Text size="sm"><b>Join Date:</b> {userData.profile.joinDate ? new Date(userData.profile.joinDate).toLocaleString() : 'N/A'}</Text>
-                <Text size="sm"><b>Last Active:</b> {userData.profile.lastActive ? new Date(userData.profile.lastActive).toLocaleString() : 'N/A'}</Text>
-                <Text size="sm"><b>Alliance:</b> {userData.profile.alliance || 'None'}</Text>
-              </Paper>
+            <Grid.Col span={6}>
+              <GameCard title="Info">
+                <Text>ID: {userData.profile.id}</Text>
+                <Text>Joined: {new Date(userData.profile.joinDate).toLocaleDateString()}</Text>
+                <Text>Last Active: {new Date(userData.profile.lastActive).toLocaleString()}</Text>
+                <Text>Alliance: {userData.profile.alliance || 'None'}</Text>
+              </GameCard>
             </Grid.Col>
           </Grid>
         </Tabs.Panel>
-
-        {/* Stats & Resources Tab */}
+        
         <Tabs.Panel value="stats" pt="md">
-          <Grid>
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <Paper withBorder p="md" radius="md" mb="md">
-                <Text size="lg" fw={500} mb="xs">Resources</Text>
-                <Grid>
-                  <Grid.Col span={6}>
-                    <NumberInput
-                      label="Gold"
-                      value={userData.stats.gold.toString()}
-                      onChange={(value) => updateStat('gold', Number(value) || 0)}
-                      min={0}
-                      mb="md"
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <NumberInput
-                      label="Gold In Bank"
-                      value={userData.stats.goldInBank.toString()}
-                      onChange={(value) => updateStat('goldInBank', Number(value) || 0)}
-                      min={0}
-                      mb="md"
-                    />
-                  </Grid.Col>
-                </Grid>
-              </Paper>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <Paper withBorder p="md" radius="md" mb="md">
-                <Text size="lg" fw={500} mb="xs">Progress</Text>
-                <Grid>           
-                  <Grid.Col span={6}>
-                    <NumberInput
-                      label="Experience"
-                      value={userData.stats.experience}
-                      onChange={(value) => updateStat('experience', Number(value) || 0)}
-                      min={0}
-                      mb="md"
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <NumberInput
-                      label="Level"
-                      value={userData.stats.level}
-                      onChange={(value) => updateStat('level', Number(value) || 1)}
-                      min={1}
-                      mb="md"
-                    />
-                  </Grid.Col>
-                </Grid>
-              </Paper>
-            </Grid.Col>
-          </Grid>
-        </Tabs.Panel>
-
-        {/* Army Tab */}
-        <Tabs.Panel value="army" pt="md">
-          <Paper withBorder p="md" radius="md">
-            <Text size="lg" fw={500} mb="md">Units</Text>
-            {userData.army.units.length === 0 ? (
-              <Text color="dimmed" ta="center" py="xl">No units found</Text>
-            ) : (
-              userData.army.units.map((unit) => (
-                <Grid key={unit.id} mb="sm">
-                  <Grid.Col span={4}>
-                    <Text>{unit.name}</Text>
-                  </Grid.Col>
-                  <Grid.Col span={4}>
-                    <Group>
-                      <Text size="sm">Quantity:</Text>
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateUnit(unit.id, 'quantity', Math.max(0, unit.quantity - 1))}
-                      >
-                        <FontAwesomeIcon icon={faMinus} size="xs" />
-                      </ActionIcon>
-                      <NumberInput
-                        value={unit.quantity}
-                        onChange={(value) => updateUnit(unit.id, 'quantity', Number(value) || 0)}
-                        min={0}
-                        size="xs"
-                        w={70}
-                        hideControls
-                      />
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateUnit(unit.id, 'quantity', unit.quantity + 1)}
-                      >
-                        <FontAwesomeIcon icon={faPlus} size="xs" />
-                      </ActionIcon>
-                    </Group>
-                  </Grid.Col>
-                  <Grid.Col span={4}>
-                    <Group>
-                      <Text size="sm">Level:</Text>
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateUnit(unit.id, 'level', Math.max(1, unit.level - 1))}
-                      >
-                        <FontAwesomeIcon icon={faMinus} size="xs" />
-                      </ActionIcon>
-                      <NumberInput
-                        value={unit.level}
-                        onChange={(value) => updateUnit(unit.id, 'level', Number(value) || 1)}
-                        min={1}
-                        size="xs"
-                        w={70}
-                        hideControls
-                      />
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateUnit(unit.id, 'level', unit.level + 1)}
-                      >
-                        <FontAwesomeIcon icon={faPlus} size="xs" />
-                      </ActionIcon>
-                    </Group>
-                  </Grid.Col>
-                  <Grid.Col span={12}>
-                    <Divider my="xs" />
-                  </Grid.Col>
-                </Grid>
-              ))
-            )}
-          </Paper>
-        </Tabs.Panel>
-
-        {/* Items Tab */}
-        <Tabs.Panel value="items" pt="md">
-          <Paper withBorder p="md" radius="md">
-            <Text size="lg" fw={500} mb="md">Items</Text>
-            {userData.items.items.length === 0 ? (
-              <Text color="dimmed" ta="center" py="xl">No items found</Text>
-            ) : (
-              userData.items.items.map((item) => (
-                <Grid key={item.id} mb="sm">
-                  <Grid.Col span={4}>
-                    <Text>{item.name}</Text>
-                  </Grid.Col>
-                  <Grid.Col span={4}>
-                    <Group>
-                      <Text size="sm">Quantity:</Text>
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateItem(item.id, 'quantity', Math.max(0, item.quantity - 1))}
-                      >
-                        <FontAwesomeIcon icon={faMinus} size="xs" />
-                      </ActionIcon>
-                      <NumberInput
-                        value={item.quantity}
-                        onChange={(value) => updateItem(item.id, 'quantity', Number(value) || 0)}
-                        min={0}
-                        size="xs"
-                        w={70}
-                        hideControls
-                      />
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateItem(item.id, 'quantity', item.quantity + 1)}
-                      >
-                        <FontAwesomeIcon icon={faPlus} size="xs" />
-                      </ActionIcon>
-                    </Group>
-                  </Grid.Col>
-                  {item.level !== undefined && (
-                    <Grid.Col span={4}>
-                      <Group>
-                        <Text size="sm">Level:</Text>
-                        <ActionIcon 
-                          size="sm" 
-                          variant="subtle" 
-                          onClick={() => updateItem(item.id, 'level', Math.max(1, (item.level || 1) - 1))}
-                        >
-                          <FontAwesomeIcon icon={faMinus} size="xs" />
-                        </ActionIcon>
-                        <NumberInput
-                          value={item.level || 1}
-                          onChange={(value) => updateItem(item.id, 'level', Number(value) || 1)}
-                          min={1}
-                          size="xs"
-                          w={70}
-                          hideControls
-                        />
-                        <ActionIcon 
-                          size="sm" 
-                          variant="subtle" 
-                          onClick={() => updateItem(item.id, 'level', (item.level || 1) + 1)}
-                        >
-                          <FontAwesomeIcon icon={faPlus} size="xs" />
-                        </ActionIcon>
-                      </Group>
-                    </Grid.Col>
-                  )}
-                  <Grid.Col span={12}>
-                    <Divider my="xs" />
-                  </Grid.Col>
-                </Grid>
-              ))
-            )}
-          </Paper>
-        </Tabs.Panel>
-
-        {/* Permissions Tab */}
-        <Tabs.Panel value="permissions" pt="md">
-          <Paper withBorder p="md" radius="md">
-            <Text size="lg" fw={500} mb="md">User Permissions</Text>
             <Grid>
-              {Object.values(PermissionType).map((permission) => (
-                <Grid.Col key={permission} span={6}>
-                  <Group>
-                    <Button
-                      variant={userData.permissions.permissions.includes(permission) ? "filled" : "outline"}
-                      size="sm"
-                      onClick={() => togglePermission(permission)}
-                      fullWidth
-                    >
-                      {userData.permissions.permissions.includes(permission) ? 'Remove' : 'Grant'} {permission}
-                    </Button>
-                  </Group>
-                </Grid.Col>
-              ))}
+                <Grid.Col span={6}><GameCard title="Resources"><NumberInput label="Gold" value={Number(userData.stats.gold)} onChange={(val) => updateStat('gold', val)} /><NumberInput label="Gold In Bank" value={Number(userData.stats.goldInBank)} onChange={(val) => updateStat('goldInBank', val)} mt="sm" /></GameCard></Grid.Col>
+                <Grid.Col span={6}><GameCard title="Progress"><NumberInput label="Experience" value={userData.stats.experience} onChange={(val) => updateStat('experience', val)} /><NumberInput label="Level" value={userData.stats.level} onChange={(val) => updateStat('level', val)} mt="sm" /></GameCard></Grid.Col>
             </Grid>
-          </Paper>
         </Tabs.Panel>
+        
+        <Tabs.Panel value="army" pt="md">
+            <GameCard title="Units">
+                {userData.army.units.map(unit => (
+                    <Group key={unit.id} justify="space-between" mb="xs">
+                        <Text>{unit.name} (Lvl {unit.level})</Text>
+                        <Group>
+                            <ActionIcon onClick={() => updateUnit(unit.id, 'quantity', unit.quantity-1)}><FontAwesomeIcon icon={faMinus}/></ActionIcon>
+                            <NumberInput value={unit.quantity} onChange={val => updateUnit(unit.id, 'quantity', val)} hideControls width={80} />
+                            <ActionIcon onClick={() => updateUnit(unit.id, 'quantity', unit.quantity+1)}><FontAwesomeIcon icon={faPlus}/></ActionIcon>
+                        </Group>
+                    </Group>
+                ))}
+            </GameCard>
+        </Tabs.Panel>
+        <Tabs.Panel value="items" pt="md">
+            <GameCard title="Items">
+                {userData.items.items.map(item => (
+                     <Group key={item.id} justify="space-between" mb="xs">
+                        <Text>{item.name} {item.level && `(Lvl ${item.level})`}</Text>
+                        <Group>
+                            <ActionIcon onClick={() => updateItem(item.id, 'quantity', item.quantity-1)}><FontAwesomeIcon icon={faMinus}/></ActionIcon>
+                            <NumberInput value={item.quantity} onChange={val => updateItem(item.id, 'quantity', val)} hideControls width={80} />
+                            <ActionIcon onClick={() => updateItem(item.id, 'quantity', item.quantity+1)}><FontAwesomeIcon icon={faPlus}/></ActionIcon>
+                        </Group>
+                    </Group>
+                ))}
+            </GameCard>
+        </Tabs.Panel>
+        <Tabs.Panel value="permissions" pt="md">
+            <GameCard title="Permissions">
+                <Group>
+                    {Object.values(PermissionType).map(p => (
+                        <Button key={p} onClick={() => togglePermission(p)} variant={userData.permissions.permissions.includes(p) ? 'filled' : 'outline'}>{p}</Button>
+                    ))}
+                </Group>
+            </GameCard>
+        </Tabs.Panel>
+
       </Tabs>
     </Stack>
   );

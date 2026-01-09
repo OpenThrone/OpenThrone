@@ -5,6 +5,8 @@ import { useMediaQuery } from '@mantine/hooks';
 
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
+import SidebarScroll from '@/components/game/SidebarScroll';
+import { SidebarDark as SidebarTablet } from '@/components/game/SidebarTablet';
 import Sidebar from '@/components/Sidebar';
 import MobileSidebarContent from '@/components/MobileSidebarContent'; // Import MobileSidebarContent
 import { useLayout } from '@/context/LayoutContext';
@@ -17,6 +19,7 @@ import NavSkeleton from './NavSkeleton';
 import MainAreaSkeleton from './MainAreaSkeleton';
 import getGitInfoApi from '@/pages/api/general/git-info'; // Renamed import to avoid conflict
 import SidebarSkeleton from './SidebarSkeleton';
+import router from 'next/router';
 
 interface IMainProps {
   children: ReactNode;
@@ -130,17 +133,17 @@ const Layout = (props: IMainProps) => {
               )}
             </header>
             <main className="h-full grow overflow-y-auto pb-8 px-3" style={{ backgroundImage: `url('${getAssetPath('wall-body')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
-              <div className="flex h-full flex-wrap" style={{ background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5))' }}>
+              <div className="flex h-full flex-wrap lg:flex-nowrap" style={{ background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5))' }}>
                 {structureReady ? (
                   <>
                     {/* Conditionally render Sidebar based on authentication status */}
                     {authorized && (
-                      <div className="hidden w-full lg:block lg:w-1/5" style={{ backgroundColor: 'var(--ot-surface-2)' }}>
-                        {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
+                      <div className="hidden w-full lg:block lg:w-[260px] xl:w-1/5" style={{ backgroundColor: 'var(--ot-surface-2)' }}>
+                        {layoutLoading ? <SidebarSkeleton /> : router.pathname === '/test' ? <><SidebarScroll /><SidebarTablet sidebarData={undefined} /></> : <Sidebar />}
                       </div>
                     )}
                     {/* Adjust main content width based on authentication status */}
-                    <div className={`w-full ${raceClasses.borderClass} ${authorized ? 'lg:w-4/5' : 'lg:w-full'}`} style={{ backgroundColor: 'var(--ot-surface)' }}>
+                    <div className={`w-full ${raceClasses.borderClass} ${authorized ? 'lg:flex-1' : 'lg:w-full'}`} style={{ backgroundColor: 'var(--ot-surface)' }}>
                       <NewsBulletin />
                       {layoutLoading ? <MainAreaSkeleton /> : props.children}
                     </div>

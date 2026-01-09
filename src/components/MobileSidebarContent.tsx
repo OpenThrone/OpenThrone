@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useUser } from '@/context/users'; // Provides UserModel instance
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faArrowRight, faCircleInfo, faRefresh, faCoins } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faArrowRight, faCircleInfo, faRefresh, faCoins, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { getTimeRemaining, getTimeToNextTurn, getOTTime } from '@/utils/timefunctions';
-import { Autocomplete, AutocompleteProps, Avatar, Group, Text, List, Progress, Popover, Skeleton, Stack, Title, Divider, Badge, Button } from '@mantine/core';
+import { Autocomplete, AutocompleteProps, Avatar, Group, Text, List, Popover, Skeleton, Stack, Title, Divider, Badge, Button } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { getAvatarSrc } from '@/utils/utilities';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 import type UserModel from '@/models/Users';
-import CollapsibleSection from './CollapsibleSection';
 import { GoldRequestNotificationModal } from './GoldRequestNotificationModal';
 import { useSidebarData } from '@/hooks/useSidebarData';
+import SidebarScroll from '@/components/game/SidebarScroll';
 
 interface MobileSidebarContentProps {
   isMobile: boolean;
@@ -33,7 +33,6 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
     searchValue,
     setSearchValue,
     usersData,
-    loadingSearch,
     handleItemSubmit,
     handleSubmit,
   } = useSidebarData(user as UserModel | null, userLoading);
@@ -51,6 +50,8 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
   );
 
   const messages = advisorMessages;
+  const inkColor = 'var(--scroll-ink)';
+  const accentColor = 'var(--scroll-accent)';
 
   const SidebarTimeInfo = React.memo(({ user, userLoading }: { user: UserModel | null, userLoading: boolean }) => {
     const [time, setTime] = useState('--:--');
@@ -98,11 +99,11 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
 
     return (
       <>
-        <Title order={labelOrder} className={"text-center"} style={medievalFontStyle}>Time Until Next Turn</Title>
-        <Title order={valueOrder} ta="center" fw="bold" style={medievalFontStyle}><span id="nextTurnTimestamp">{time}</span></Title>
+        <Title order={labelOrder} className={"text-center"} style={{ ...medievalFontStyle, color: inkColor }}>Time Until Next Turn</Title>
+        <Title order={valueOrder} ta="center" fw="bold" style={{ ...medievalFontStyle, color: inkColor }}><span id="nextTurnTimestamp">{time}</span></Title>
 
-        <Title order={labelOrder} className={"text-center"} style={medievalFontStyle}>OT Time:</Title>
-        <Title order={otValueOrder} ta="center" fw="bold" style={medievalFontStyle}><span id="otTime">{OTTime}</span></Title>
+        <Title order={labelOrder} className={"text-center"} style={{ ...medievalFontStyle, color: inkColor }}>OT Time:</Title>
+        <Title order={otValueOrder} ta="center" fw="bold" style={{ ...medievalFontStyle, color: inkColor }}><span id="otTime">{OTTime}</span></Title>
       </>
     );
   });
@@ -110,7 +111,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
   SidebarTimeInfo.displayName = 'SidebarTimeInfo';
 
   // Stat Row Component for consistent styling and layout
-  const statTextColor = isMobile ? 'var(--ot-text)' : 'black';
+  const statTextColor = inkColor;
   const StatRow: React.FC<{ label: string; value: string | React.ReactNode; icon?: React.ReactNode }> = ({ label, value, icon }) => (
     <Group justify="space-between" wrap="nowrap" gap={isMobile ? 'xs' : 'sm'}>
       <Group gap="xs" wrap="nowrap">
@@ -130,22 +131,31 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
     </Group>
   );
 
-  const baseTextClass = isMobile ? 'text-ot-text' : 'text-black';
-
   return (
-    <div
-      className={`card-fantasy font-semibold overflow-hidden ${isMobile ? 'mt-2 p-2' : 'mt-3 p-4'}`}
-      style={{ color: isMobile ? 'var(--ot-text)' : 'black' }}
-    >
-      <div className={`${isMobile ? 'p-2' : 'p-4'} mt-2 space-y-3`}>
-        <Title
-          order={isMobile ? 4 : 2}
-          className={`advisor-title text-center font-bold text-shadow text-shadow-xs ${baseTextClass}`}
-        >
-          <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handlePrevAdvisor} />
-          Advisor
-          <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }} onClick={handleNextAdvisor} />
-        </Title>
+    <SidebarScroll maxWidth="100%">
+      <div className={`${isMobile ? 'mt-1' : 'mt-2'} space-y-3`} style={{ color: inkColor }}>
+        <Group justify="center" gap="xs" wrap="nowrap">
+          <button
+            type="button"
+            onClick={handlePrevAdvisor}
+            aria-label="Previous advisor message"
+            style={{ color: inkColor }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 14 }} />
+          </button>
+          <Text size={isMobile ? 'lg' : 'xl'} fw={900} tt="uppercase" style={{ letterSpacing: '1px', color: inkColor }}>
+            Advisor
+          </Text>
+          <button
+            type="button"
+            onClick={handleNextAdvisor}
+            aria-label="Next advisor message"
+            style={{ color: inkColor }}
+          >
+            <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 14 }} />
+          </button>
+        </Group>
+
         <div
           role="status"
           aria-live="polite"
@@ -153,18 +163,27 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
           className="text-center"
           style={{ minHeight: isMobile ? '48px' : '90px', lineHeight: 1.35 }}
         >
-          <Text size={isMobile ? 'xs' : 'sm'} fw={'bold'} className={baseTextClass}>
+          <Text size={isMobile ? 'xs' : 'sm'} fw={700} fs="italic" style={{ color: inkColor }}>
             {messages[currentMessageIndex]}
           </Text>
         </div>
 
-        {/* Stats Section */}
-        <Title
-          order={isMobile ? 4 : 2}
-          className={`text-center font-bold mt-2 text-shadow text-shadow-xs ${baseTextClass}`}
-        >
-          Stats <FontAwesomeIcon icon={faRefresh} className="cursor-pointer" style={{ fontSize: 15, padding: '3px 0' }} onClick={forceUpdate} />
-        </Title>
+        <Divider my={isMobile ? 'xs' : 'sm'} color={inkColor} style={{ opacity: 0.35 }} />
+
+        <Group justify="center" gap="xs">
+          <Text size={isMobile ? 'md' : 'lg'} fw={800} tt="uppercase" style={{ letterSpacing: '1px', color: inkColor }}>
+            Stats
+          </Text>
+          <button
+            type="button"
+            onClick={forceUpdate}
+            aria-label="Refresh stats"
+            style={{ color: accentColor }}
+          >
+            <FontAwesomeIcon icon={faRefresh} style={{ fontSize: 13 }} />
+          </button>
+        </Group>
+
         {userLoading ? (
           <List size={isMobile ? 'sm' : 'sm'} className={isMobile ? 'text-xs ml-1' : 'text-base'} style={isMobile ? { marginLeft: '6px' } : {}}>
             <List.Item><Skeleton height={16} width="80%" radius="sm" /></List.Item>
@@ -179,77 +198,74 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
             <List.Item><Skeleton height={16} width="70%" radius="sm" mt={6} /></List.Item>
           </List>
         ) : (
-            
-            <>
-              <Stack gap="xs">
-                <StatRow
-                  label="Gold"
-                  value={
-                    <Group gap="xs">
-                      <span id="gold">{sidebar.gold}</span>
-                      {goldRequestCount > 0 && (
-                        <Badge
-                          color="yellow"
-                          size="xs"
-                          variant="filled"
-                          onClick={() => setIsNotificationModalOpen(true)}
-                          style={{ cursor: 'pointer' }}
-                          title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
-                        >
-                          {goldRequestCount}
-                        </Badge>
-                      )}
-                    </Group>
-                  }
-                  icon={
-                    <Group gap="xs">
-                      <RpgAwesomeIcon icon="gold-bar" fw />
-                      {goldRequestCount > 0 && (
-                        <FontAwesomeIcon
-                          icon={faCoins}
-                          style={{
-                            color: '#fbbf24',
-                            cursor: 'pointer',
-                            fontSize: '12px'
-                          }}
-                          onClick={() => setIsNotificationModalOpen(true)}
-                          title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
-                        />
-                      )}
-                    </Group>
-                  }
-                />
-                <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<RpgAwesomeIcon icon="player" fw />} />
-                <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<RpgAwesomeIcon icon="tower" fw />} />
-                <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
-                  <>
-                    <RpgAwesomeIcon icon="experience" fw />
-                    <Popover width={200} position="bottom" withArrow shadow="md" opened={nextLevelOpened}>
-                      <Popover.Target>
-                        <FontAwesomeIcon icon={faCircleInfo} onMouseEnter={open} onMouseLeave={close} />
-                      </Popover.Target>
-                      <Popover.Dropdown style={{ pointerEvents: 'none' }}>
-                        <Text size="sm">You are {sidebar.xpNextLevel} XP away from the next level</Text>
-                      </Popover.Dropdown>
-                    </Popover>
-                  </>
-                } />
-                <StatRow label="Turns" value={<span id="turns">{sidebar.turns}</span>} icon={<RpgAwesomeIcon icon="clockwork" fw />} />
-                <Divider my={isMobile ? 'xs' : 'md'} c="gray" variant="dashed" />
-                {!userLoading && <SidebarTimeInfo user={user} userLoading={userLoading} />}
-              </Stack>
-            </>
+          <Stack gap="xs">
+            <StatRow
+              label="Gold"
+              value={
+                <Group gap="xs">
+                  <span id="gold">{sidebar.gold}</span>
+                  {goldRequestCount > 0 && (
+                    <Badge
+                      color="yellow"
+                      size="xs"
+                      variant="filled"
+                      onClick={() => setIsNotificationModalOpen(true)}
+                      style={{ cursor: 'pointer' }}
+                      title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                    >
+                      {goldRequestCount}
+                    </Badge>
+                  )}
+                </Group>
+              }
+              icon={
+                <Group gap="xs">
+                  <span style={{ color: accentColor }}>
+                    <RpgAwesomeIcon icon="gold-bar" fw />
+                  </span>
+                  {goldRequestCount > 0 && (
+                    <FontAwesomeIcon
+                      icon={faCoins}
+                      style={{
+                        color: accentColor,
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                      onClick={() => setIsNotificationModalOpen(true)}
+                      title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                    />
+                  )}
+                </Group>
+              }
+            />
+            <StatRow label="Citizens" value={<span id="citizens">{sidebar.citizens}</span>} icon={<span style={{ color: accentColor }}><RpgAwesomeIcon icon="player" fw /></span>} />
+            <StatRow label="Level" value={<span id="level">{sidebar.level}</span>} icon={<span style={{ color: accentColor }}><RpgAwesomeIcon icon="tower" fw /></span>} />
+            <StatRow label="XP" value={<span id="experience">{sidebar.xp}</span>} icon={
+              <>
+                <span style={{ color: accentColor }}><RpgAwesomeIcon icon="experience" fw /></span>
+                <Popover width={200} position="bottom" withArrow shadow="md" opened={nextLevelOpened}>
+                  <Popover.Target>
+                    <FontAwesomeIcon icon={faCircleInfo} onMouseEnter={open} onMouseLeave={close} />
+                  </Popover.Target>
+                  <Popover.Dropdown style={{ pointerEvents: 'none' }}>
+                    <Text size="sm">You are {sidebar.xpNextLevel} XP away from the next level</Text>
+                  </Popover.Dropdown>
+                </Popover>
+              </>
+            } />
+            <StatRow label="Turns" value={<span id="turns">{sidebar.turns}</span>} icon={<span style={{ color: accentColor }}><RpgAwesomeIcon icon="clockwork" fw /></span>} />
+            <Divider my={isMobile ? 'xs' : 'md'} color={inkColor} style={{ opacity: 0.35 }} />
+            {!userLoading && <SidebarTimeInfo user={user} userLoading={userLoading} />}
+          </Stack>
         )}
 
-        {/* Search Section */}
-        <Title
-          order={isMobile ? 4 : 2}
-          className={`advisor-title text-center font-bold mt-2 text-shadow text-shadow-xs ${baseTextClass}`}
-        >
+        <Divider my={isMobile ? 'xs' : 'sm'} color={inkColor} style={{ opacity: 0.25 }} />
+
+        <Text size={isMobile ? 'md' : 'lg'} fw={800} ta="center" tt="uppercase" style={{ letterSpacing: '1px', color: inkColor }}>
           Search
-        </Title>
+        </Text>
         <form onSubmit={handleSubmit}>
-          <center>
+          <Group gap={0} style={{ borderBottom: `2px solid ${inkColor}`, paddingBottom: '2px' }}>
             <Autocomplete
               value={searchValue}
               onChange={setSearchValue}
@@ -258,18 +274,21 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
               data={usersData}
               maxDropdownHeight={300}
               placeholder="Type to search..."
-              style={{ width: '95%' }}
-              className='mb-2'
+              style={{ flex: 1 }}
               comboboxProps={{ width: '250px' }}
-              color='brand' // Consider theme variable if needed
-              variant='filled'
+              variant='unstyled'
+              styles={{
+                input: {
+                  color: inkColor,
+                  fontFamily: 'MedievalSharp, serif',
+                  fontSize: '14px',
+                },
+              }}
             />
-          </center>
-          <center>
-            <Button type="submit" color='gray' variant='filled' size="sm"> {/* Adjusted button appearance */}
-              Search
+            <Button type="submit" variant="subtle" color="dark" size="xs" px={6} aria-label="Search users">
+              <FontAwesomeIcon icon={faSearch} color={inkColor} />
             </Button>
-          </center>
+          </Group>
         </form>
       </div>
 
@@ -281,7 +300,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({ isMobile })
           refreshGoldRequestCount();
         }}
       />
-    </div>
+    </SidebarScroll>
   );
 };
 

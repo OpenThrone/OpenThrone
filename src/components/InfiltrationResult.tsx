@@ -1,203 +1,76 @@
-import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
-import { Box, Text, Group, Paper, Grid, RingProgress, Button, Space, Container } from '@mantine/core';
+import { useState } from 'react';
+import { faBuilding } from '@fortawesome/free-solid-svg-icons';
+import { Box, Button, Grid, Group, Space, Stack, Text, useMantineTheme } from '@mantine/core';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
-import SpyMissionsModal from './spyMissionsModal';
+
+import { GameCard } from './game/GameCard';
 import Modal from './modal';
+import SpyMissionsModal from './spyMissionsModal';
+import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
 
-type ItemBreakdown = { type: string; quantity: number; percentage: number | null };
-type ItemsByCategory = { name: string; total: number; itemsBreakdown: ItemBreakdown[]; color: string };
-type UnitSegment = { label: string; quantity: number; part: number; color: string };
-
-interface InfiltrationResultProps {
-  battle: any;
-  viewerID: number;
-  lastGenerated: string | number | Date;
-}
-
-const InfiltrationResult: React.FC<InfiltrationResultProps> = ({ battle, viewerID, lastGenerated }) => {
+const InfiltrationResult = ({ battle, lastGenerated, viewerID }) => {
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
   const [isAttackModalOpen, setIsAttackModalOpen] = useState(false);
   const { attackerPlayer, defenderPlayer, winner, stats } = battle || {};
   const isViewerAttacker = viewerID === attackerPlayer?.id;
   const isAttackerWinner = winner === attackerPlayer?.id;
-  const [unitSegments, setUnitSegments] = useState<UnitSegment[]>([]);
-  const [itemsByCategory, setItemsByCategory] = useState<ItemsByCategory[]>([]);
-  const itemColors = {
-    HELM: 'grey',
-    ARMOR: 'yellow',
-    BOOTS: 'red',
-    BRACERS: 'blue',
-    SHIELD: 'green',
-    WEAPON: 'purple',
-  };
+  const theme = useMantineTheme();
 
-  const toggleSpyModal = () => {
-    setIsSpyModalOpen(!isSpyModalOpen);
-  };
+  const toggleSpyModal = () => setIsSpyModalOpen(!isSpyModalOpen);
+  const toggleAttackModal = () => setIsAttackModalOpen(!isAttackModalOpen);
 
-  const toggleAttackModal = () => {
-    setIsAttackModalOpen(!isAttackModalOpen);
-  }
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      const spyResults = stats?.spyResults || {};
-      const intelligenceUnits = spyResults.intelligenceGathered?.units ?? [];
-      const filteredUnits = (intelligenceUnits as any[]).filter((unit) => unit.quantity > 0) || [];
-  const totalUnits = Number(filteredUnits.reduce((acc, unit) => Number(acc) + Number(unit.quantity), 0));
-  const defenderUnitsObj = spyResults.defender?.units ?? {};
-  const totalPopulation = Number(Object.values(defenderUnitsObj).reduce((acc: number, unit: any) => acc + (Number(unit.quantity) || 0), 0) || 0);
-  const unknownUnits = Math.max(0, totalPopulation - totalUnits);
-      const unitColors = {
-        CITIZEN: 'grey',
-        WORKER: 'yellow',
-        OFFENSE: 'red',
-        DEFENSE: 'blue',
-        SPY: 'green',
-        SENTRY: 'purple',
-        UNKNOWN: 'black',
-      };
-
-      const newUnitSegments: UnitSegment[] = [
-        ...filteredUnits.map((unit: any) => ({
-          label: `${unit.type}`,
-          quantity: Number(unit.quantity) || 0,
-          part: totalPopulation > 0 ? Math.min(Math.max((Number(unit.quantity) || 0) / totalPopulation, 0), 1) * 100 : 0,
-          color: unitColors[unit.type] || 'black',
-        })),
-        {
-          label: 'UNKNOWN',
-          quantity: unknownUnits,
-          part: totalPopulation > 0 ? (unknownUnits / totalPopulation) * 100 : 0,
-          color: unitColors.UNKNOWN,
-        }
-      ];
-      setUnitSegments(newUnitSegments);
-
-      const itemCategories = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
-      const itemTypes = ['HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD', 'WEAPON'];
-
-      const newItemsByCategory: ItemsByCategory[] = itemCategories.map((category) => {
-        const categoryUnits = filteredUnits.filter((unit: any) => unit.type === category).reduce((acc: number, unit: any) => acc + (Number(unit.quantity) || 0), 0);
-        const categoryItems = (spyResults.intelligenceGathered?.items ?? []).filter((item: any) => item.usage === category) || [];
-        const combinedItems = itemTypes.map((type) => {
-          const totalQuantity = (categoryItems as any[])
-            .filter((item) => item.type === type)
-            .reduce((acc, item) => Number(acc) + Number(item.quantity), 0);
-          return {
-            type,
-            quantity: totalQuantity,
-            percentage: categoryUnits > 0 ? Math.min((Number(totalQuantity) / Number(categoryUnits)) * 100, 100) : null,
-          };
-        }).filter((item) => item.quantity > 0);
-
-        return {
-          name: category,
-          total: categoryUnits,
-          itemsBreakdown: combinedItems,
-          color: category === 'OFFENSE' ? 'red' : category === 'DEFENSE' ? 'blue' : category === 'SPY' ? 'green' : 'purple',
-        };
-      });
-
-      setItemsByCategory(newItemsByCategory);
-    };
-
-    fetchData();
-
-  }, [stats, defenderPlayer]);
+  const summaryLines = [
+    `You sent ${stats.spyResults.spiesSent} ${stats.spyResults.spiesSent > 1 ? 'Infiltrators' : 'Infiltrator'} to attack ${defenderPlayer.display_name}'s Fort.`,
+    `You were ${isAttackerWinner ? 'successful' : 'unsuccessful'} in your mission${isAttackerWinner ? ` and managed to cause ${stats.spyResults.fortDmg} damage to the fort` : ''}.`
+  ];
 
   return (
-    <Container size='xl' p={'md'} style={{ backgroundColor: 'black', color: 'white' }} >
-      <Grid grow className="gap-5">
-  <Grid.Col {...({ span: 3, md: 4 } as any)} className="text-center">
-          <h2 className="text-center mt-2">{attackerPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.spyResults.attacker.experience)}</h4>
-          <center>
-            <Image
-              src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
-              className="ml-2"
-              alt="attacker avatar"
-              width={150}
-              height={150}
-            />
-          </center>
+    <GameCard title="Infiltration Report" icon={faBuilding}>
+      <Grid grow gutter="lg">
+        <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
+          <Text size="xl" fw={700}>{attackerPlayer?.display_name}</Text>
+          <Text c="dimmed">Level: {getLevelFromXP(stats.spyResults.attacker.experience)}</Text>
+          <Image src={getAssetPath('shields', '150x150', attackerPlayer?.race)} alt="attacker avatar" width={150} height={150} style={{ margin: 'auto' }} />
         </Grid.Col>
-  <Grid.Col {...({ span: 6, md: 4 } as any)} className="text-center">
-          <Space h='10' />
-          <div className="text-container inline-block align-middle">
-            <Text color="white" fw="bolder" size='xl' className="font-medieval">
-              Infiltration Report
-            </Text>
-            {isViewerAttacker && (
-              <Text className="text-lg text-white font-semibold">
-                You sent {stats.spyResults.spiesSent} {stats.spyResults.spiesSent > 1 ? 'spies' : 'spy'} to {defenderPlayer.display_name}
-              </Text>
-            )}
-            <Text size='lg' fw='bold' className={`text-2xl ${isAttackerWinner ? 'text-green-400' : 'text-red-400'}`}>
-              {isViewerAttacker ? 'You were' : attackerPlayer.display_name + ' was'} {isAttackerWinner ? 'successful' : 'unsuccessful.'}
-            </Text>
-            <Text size='md' fw='normal' className="text-2xl">
-              Battle ID: {battle.id}
-            </Text>
-            {(isViewerAttacker || viewerID === 1) && (
-              <>
-              <Text size="lg" fw='bold'>Another Mission?</Text>
-              <Space h='10' />
-              <Group justify='center'>
-                
-                  <Button onClick={toggleSpyModal}>
-                  Send More Spies
-                  </Button>
-                  <SpyMissionsModal
-                    isOpen={isSpyModalOpen}
-                    toggleModal={toggleSpyModal}
-                    defenderID={defenderPlayer?.id}
-                  />
-                <Button onClick={toggleSpyModal}>
-                  Infiltrate
-                </Button>
-                  <Button onClick={toggleSpyModal}>
-                  Assassinate
-                  </Button>
-                  <Button onClick={toggleAttackModal}>
-                    Attack
-                  </Button>
-                  <Modal
-                    isOpen={isAttackModalOpen}
-                    toggleModal={toggleAttackModal}
-                    profileID={defenderPlayer.id}
-                  />
-                </Group> 
-              </>
-            )}
-          </div>
+        <Grid.Col span={{ base: 12, md: 2 }} style={{ textAlign: 'center', alignSelf: 'center' }}>
+          <Text size="lg" fw="bold" color={isAttackerWinner ? 'green' : 'red'}>{isAttackerWinner ? 'Success' : 'Failure'}</Text>
+          <Space h="md" />
+          {isViewerAttacker && (
+            <Stack align="center" gap="xs">
+              <Button size="xs" onClick={toggleSpyModal}>Send More Spies</Button>
+              <Button size="xs" onClick={toggleAttackModal}>Attack</Button>
+            </Stack>
+          )}
         </Grid.Col>
-  <Grid.Col {...({ span: 3, md: 4 } as any)} className="text-center">
-          <h2 className="text-center mt-2">{defenderPlayer?.display_name}</h2>
-          <h4>Level: {getLevelFromXP(stats.spyResults.defender.experience)}</h4>
-          <center>
-            <Image
-              src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
-              className="ml-2"
-              alt="defender avatar"
-              width={150}
-              height={150}
-            />
-          </center>
+        <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
+          <Text size="xl" fw={700}>{defenderPlayer?.display_name}</Text>
+          <Text c="dimmed">Level: {getLevelFromXP(stats.spyResults.defender.experience)}</Text>
+          <Image src={getAssetPath('shields', '150x150', defenderPlayer?.race)} alt="defender avatar" width={150} height={150} style={{ margin: 'auto' }} />
         </Grid.Col>
       </Grid>
-      <div className="intel-report mt-10">
-        <Text>You sent {stats.spyResults.spiesSent} {stats.spyResults.spiesSent > 1 ? 'Infiltrators' : 'Infiltrator'} to attack {defenderPlayer.display_name} Fort</Text>
-        <Text>You were {isAttackerWinner ? 'successful' : 'unsuccessful'} in your mission {
-          isAttackerWinner ? `and managed to cause ${stats.spyResults.fortDmg} damage to the fort` : ''
-        }.</Text>
-       
-      </div>
-      <Text size='lg' fw='bold' className="text-2xl">
-        Report last generated: {new Date(lastGenerated).toLocaleString()}
-        </Text>
-    </Container>
+      
+      <GameCard title="Mission Log" goldAccent={false}>
+        <Box
+          style={{
+            backgroundColor: '#0f141a',
+            borderRadius: '6px',
+            border: '1px solid #1f2b3b',
+            boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+            padding: '12px',
+            textAlign: 'center',
+            color: theme.colors.gray[4],
+          }}
+        >
+          {summaryLines.map((line, index) => (
+            <Text key={index}>{line}</Text>
+          ))}
+        </Box>
+      </GameCard>
+
+      <SpyMissionsModal isOpen={isSpyModalOpen} toggleModal={toggleSpyModal} defenderID={defenderPlayer?.id} />
+      <Modal isOpen={isAttackModalOpen} toggleModal={toggleAttackModal} profileID={defenderPlayer.id} />
+      <Text size="xs" c="dimmed" ta="center" mt="md">Report generated: {new Date(lastGenerated).toLocaleString()}</Text>
+    </GameCard>
   );
 };
 

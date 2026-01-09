@@ -7,8 +7,10 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { IMetaProps } from '@/types/typings';
+import { useRouter } from 'next/router';
+import { useLocalStorage } from '@mantine/hooks';
 
+import { IMetaProps } from '@/types/typings';
 import { useUser } from './users';
 import { logDebug } from '@/utils/logger';
 
@@ -98,6 +100,8 @@ interface LayoutProviderProps {
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const [meta, setMetaState] = useState({ title: '', description: '' });
   const { user, loading: userLoading } = useUser(); // Access user and loading state from useUser
+  const router = useRouter();
+  const [previewScheme] = useLocalStorage<string>({ key: 'colorSchemePreview', defaultValue: '' });
 
   const [authorized, setAuthorized] = useState(false);
   const [derivedRaceClasses, setDerivedRaceClasses] = useState<RaceColors>(
@@ -113,13 +117,17 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
 
   const updateOptions = useCallback(() => {
     let race = user?.colorScheme || user?.race || 'ELF';
+    const isTestPage = router.pathname === '/test';
+    if (isTestPage && previewScheme && Object.prototype.hasOwnProperty.call(raceClasses, previewScheme)) {
+      race = previewScheme;
+    }
     // Ensure race is a valid key of raceClasses
     if (!Object.prototype.hasOwnProperty.call(raceClasses, race)) {
       race = 'ELF'; // Default to 'ELF' if race is not a valid key
     }
     logDebug('settings Derived Race Classes', race, raceClasses[race as keyof typeof raceClasses]);
     setDerivedRaceClasses(raceClasses[race as keyof typeof raceClasses]);
-  }, [user]);
+  }, [previewScheme, router.pathname, user]);
 
   useEffect(() => {
     if (user) {

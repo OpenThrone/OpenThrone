@@ -1,4 +1,3 @@
-import { useUser } from '@/context/users';
 import {
   faComment, faCommentSlash, faEllipsisV, faTrash, faUserPlus,
   faUserShield, faUserSlash
@@ -8,6 +7,7 @@ import {
   ScrollArea, Avatar, Text, Center, Title, ActionIcon, Group, Paper,
   Skeleton, Stack, Menu, Tooltip, Badge, Modal, Switch, Table, Button
 } from '@mantine/core';
+import { GameCard } from '@/components/game/GameCard';
 import NewMessageModal from '@/components/NewMessageModal';
 import AttackLogShareModal from '@/components/AttackLogShareModal';
 import MessageInput from './MessageInput';
@@ -18,6 +18,7 @@ import { alertService } from '@/services/Alert.service';
 import Link from 'next/link';
 import { logError, logInfo } from '@/utils/logger';
 import { ChatMessage, FrontendRoom } from '@/types/typings';
+import { useUser } from '@/context/users';
 
 interface ChatMessageListProps {
   selectedRoomId: number | null;
@@ -103,8 +104,13 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
       }
     });
 
+    const markedRef = messagesMarkedAsRead.current;
     return () => {
-      if (observerRef.current) { observerRef.current.disconnect(); observerRef.current = null; messagesMarkedAsRead.current.clear(); }
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+        markedRef.clear();
+      }
     };
   }, [chatMessages, selectedRoomId, currentUserId, emitMarkAsRead]);
 
@@ -239,11 +245,11 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <Paper p="md" className="w-full border-b border-gray-700" withBorder={false}>
-        <div className="flex justify-between items-center w-full">
-          <Group gap='xs' className="flex-grow-0">
+      <GameCard title={roomInfo?.name || 'Chat'} goldAccent={false} p="sm">
+        <Group justify="space-between">
+          <Group>
             {roomInfo?.isDirect ? (
-              <Avatar size="md" radius="xl" color="blue" src={roomInfo?.participants?.find(p => p.id !== currentUserId)?.avatar}>
+              <Avatar size="md" radius="xl" src={roomInfo?.participants?.find(p => p.id !== currentUserId)?.avatar}>
                 {(roomInfo?.participants?.find(p => p.id !== currentUserId)?.display_name?.charAt(0) || '?').toUpperCase()}
               </Avatar>
             ) : (
@@ -251,36 +257,18 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
             )}
             <div>
               <Text fw={600} size="lg">{roomInfo?.name || 'Chat'}</Text>
-              {roomInfo?.isDirect && (
-                <Text size="xs" c={roomInfo?.participants?.find(p => p.id !== currentUserId)?.is_online ? 'teal' : 'dimmed'}>
-                  {roomInfo?.participants?.find(p => p.id !== currentUserId)?.is_online ? 'Online' : 'Offline'}
-                </Text>
-              )}
-              {!roomInfo?.isDirect && (
-                <Text size="xs" c="dimmed">{roomInfo?.participants?.length || 0} members · {roomInfo?.isPrivate ? 'Private' : 'Public'}</Text>
-              )}
             </div>
           </Group>
-          <Group gap='xs' className="flex-grow-0">
-            {roomInfo?.isDirect && (
-              <Tooltip label="Create group chat"><ActionIcon variant="subtle" color="blue" onClick={() => { setIsCreatingGroupFromDM(true); setIsAddUserModalOpen(true); }}><FontAwesomeIcon icon={faUserPlus} /></ActionIcon></Tooltip>
-            )}
-            {!roomInfo?.isDirect && (roomInfo?.isAdmin || !roomInfo?.isPrivate) && (
-              <Tooltip label="Add members"><ActionIcon variant="subtle" color="blue" onClick={() => { setIsCreatingGroupFromDM(false); setIsAddUserModalOpen(true); }}><FontAwesomeIcon icon={faUserPlus} /></ActionIcon></Tooltip>
-            )}
-            <Menu shadow="md" width={200} position="bottom-end">
-              <Menu.Target><ActionIcon variant="subtle"><FontAwesomeIcon icon={faEllipsisV} /></ActionIcon></Menu.Target>
-              <Menu.Dropdown>
-                {roomInfo?.isAdmin && !roomInfo.isDirect && (<><Menu.Label>Admin Controls</Menu.Label><Menu.Item onClick={() => setIsManageMembersModalOpen(true)}>Manage members</Menu.Item><Menu.Item>Edit group info</Menu.Item><Menu.Divider /></>)}
-                <Menu.Item>Search messages</Menu.Item>
-                <Menu.Item>Mute notifications</Menu.Item>
-                {roomInfo?.isAdmin && !roomInfo.isDirect && (<Menu.Item color="red">Delete group</Menu.Item>)}
-                {roomInfo?.isDirect && (<Menu.Item color="red">Delete conversation</Menu.Item>)}
-              </Menu.Dropdown>
-            </Menu>
-          </Group>
-        </div>
-      </Paper>
+          <Menu shadow="md" width={200}>
+            <Menu.Target><ActionIcon variant="subtle"><FontAwesomeIcon icon={faEllipsisV} /></ActionIcon></Menu.Target>
+            <Menu.Dropdown>
+              {roomInfo?.isAdmin && !roomInfo.isDirect && (<><Menu.Label>Admin</Menu.Label><Menu.Item onClick={() => setIsManageMembersModalOpen(true)}>Manage members</Menu.Item></>)}
+              <Menu.Item>Search</Menu.Item>
+              {roomInfo?.isDirect ? (<Menu.Item color="red">Delete conversation</Menu.Item>) : (<Menu.Item color="red">Leave group</Menu.Item>)}
+            </Menu.Dropdown>
+          </Menu>
+        </Group>
+      </GameCard>
 
       <div className="flex-1 overflow-hidden">
         <ScrollArea viewportRef={scrollViewportRef} className="h-full px-4" type='auto'>
@@ -292,9 +280,6 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({ selectedRoomId, messa
         selectedRoomId={selectedRoomId}
         socket={socket}
         isConnected={isConnected}
-        currentUserId={currentUserId}
-        user={user as any} // Pass user object (cast to any during triage)
-        markRoomAsRead={markRoomAsRead}
         replyingToMessage={replyingToMessage}
         setReplyingToMessage={setReplyingToMessage}
         setIsShareModalOpen={setIsShareModalOpen}
