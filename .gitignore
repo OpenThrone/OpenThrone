@@ -14,6 +14,7 @@ storybook-static
 # cypress
 cypress/screenshots
 cypress/videos
+.cypress-cache
 
 # next.js
 /.next
