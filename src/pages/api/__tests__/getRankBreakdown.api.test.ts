@@ -25,4 +25,6 @@ describe('API utilities/getRankBreakdown', () => {
   });
 });
 
-export default (req: any, res: any) => {};
+const noopHandler = (req: any, res: any) => {};
+
+export default noopHandler;
