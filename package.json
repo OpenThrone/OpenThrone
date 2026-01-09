@@ -9,15 +9,20 @@
     "export": "next export",
     "build-prod": "run-s clean build export",
     "clean": "rimraf .next .swc out coverage",
-    "lint": "next lint",
-    "format": "next lint --fix && prettier '**/*.{json,yaml}' --write --ignore-path .gitignore",
+    "lint": "eslint .",
+    "format": "eslint . --fix && prettier '**/*.{json,yaml}' --write --ignore-path .gitignore",
     "check-types": "tsc --noEmit --pretty && tsc --project cypress --noEmit --pretty",
     "test": "jest",
     "commit": "cz",
     "prepare": "husky install",
     "postbuild": "next-sitemap",
     "bun-dev": "npx next",
-    "migrate-user-json": "bunx ts-node scripts/migrate-user-json.ts"
+    "migrate-user-json": "bunx ts-node scripts/migrate-user-json.ts",
+    "cypress:install": "CYPRESS_CACHE_FOLDER=.cypress-cache bunx cypress install",
+    "cypress:run": "CYPRESS_CACHE_FOLDER=.cypress-cache CYPRESS_APP_URL=https://alpha.openthrone.dev bunx cypress run --headless",
+    "cypress:open": "CYPRESS_CACHE_FOLDER=.cypress-cache bunx cypress open",
+    "cypress:open-xvfb": "CYPRESS_CACHE_FOLDER=.cypress-cache xvfb-run -s \"-screen 0 1920x1080x24\" bunx cypress open",
+    "cypress:run-xvfb": "CYPRESS_CACHE_FOLDER=.cypress-cache CYPRESS_APP_URL=https://alpha.openthrone.dev xvfb-run -s \"-screen 0 1920x1080x24\" bunx cypress run --headless"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.948.0",
@@ -130,8 +135,8 @@
     "@types/node": "^22.19.3",
     "@types/react": "^18.3.27",
     "@types/react-dom": "^18.3.7",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
     "autoprefixer": "^10.4.23",
     "commitizen": "^4.3.1",
     "cross-env": "^7.0.3",
@@ -172,6 +177,14 @@
     "ts-morph": "^27.0.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
+  },
+  "resolutions": {
+    "@typescript-eslint/parser": "8.50.1",
+    "@typescript-eslint/eslint-plugin": "8.50.1"
+  },
+  "overrides": {
+    "@typescript-eslint/parser": "8.50.1",
+    "@typescript-eslint/eslint-plugin": "8.50.1"
   },
   "release": {
     "branches": [
