@@ -34,17 +34,29 @@ export const StatGrid: React.FC<StatGridProps> = ({
         {stats.map((stat, index) => (
           <Box
             key={index}
+            className="rpg-inset"
             p="sm"
             style={{
-              backgroundColor: '#0f141a', // Slot Background
               borderRadius: '6px',
               border: '1px solid #1f2b3b', // Slot Border
-              boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)', // The "Pressed In" look
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: '70px',
+                background: `radial-gradient(circle at 30% 50%, ${accent}40 0%, transparent 70%)`,
+                pointerEvents: 'none',
+              }}
+            />
             <Group gap="sm">
               {stat.icon && (
                 <div
@@ -70,10 +82,12 @@ export const StatGrid: React.FC<StatGridProps> = ({
             <Text
               size="lg"
               fw={900}
+              className={stat.isPositive !== false ? 'text-rpg-gold' : ''}
               style={{
                 fontFamily: 'monospace', // Monospace for numbers (very RPG)
-                color: stat.isPositive ? accent : '#e5e7eb',
-                textShadow: '0 0 10px rgba(229, 197, 90, 0.1)',
+                zIndex: 1,
+                color: stat.isPositive === false ? '#ef4444' : undefined,
+                textShadow: stat.isPositive === false ? '0 0 5px rgba(239, 68, 68, 0.6)' : '0 0 10px rgba(229, 197, 90, 0.1)',
               }}
             >
               {stat.value}

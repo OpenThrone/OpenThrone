@@ -693,3 +693,101 @@ body{
     font-size: 13px;
   }
 }
+
+
+html,
+body,
+#__next {
+  height: 100%;
+}
+
+.mainArea-bg {
+  position: relative;
+  overflow: hidden;          /* ensures the pseudo-element doesn't bleed */
+  min-height: 100%;
+}
+
+/* background image layer */
+.mainArea-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background-image: url("/assets/header/openthrone-bg.png");
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+
+  /* optional: helps “texture” look on large screens */
+  transform: scale(1.02);
+  will-change: transform;
+
+  z-index: 0;
+}
+
+/* readability overlay layer */
+.mainArea-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  /* adjust these values to taste */
+  background: linear-gradient(
+    rgba(0,0,0,0.55),
+    rgba(0,0,0,0.75)
+  );
+
+  z-index: 1;
+}
+
+/* ensure your actual content sits above both layers */
+.mainArea-bg > * {
+  position: relative;
+  z-index: 2;
+}
+
+@layer utilities {
+  /* Dark Stone Background with Noise */
+  .bg-rpg-dark {
+    background-color: #0b1016;
+    background-image:
+      radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.4) 0%, transparent 70%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+
+  /* Raised Panel (Lighter Stone) */
+  .bg-rpg-panel {
+    background: linear-gradient(180deg, rgba(23, 31, 41, 0.95) 0%, rgba(13, 17, 23, 0.98) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 10px 25px -5px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(0, 0, 0, 0.8);
+  }
+
+  /* Inset Slot (Carved look for inputs/stats) */
+  .rpg-inset {
+    background-color: #05070a;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid #1f2937;
+  }
+
+  /* Gold Gradient Text */
+  .text-rpg-gold {
+    background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 1px rgba(184, 134, 11, 0.5));
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+  background: #0b1016;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border: 1px solid #111827;
+  border-radius: 2px;
+}

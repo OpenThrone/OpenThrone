@@ -63,7 +63,7 @@ const AppWithTheme = ({ Component, pageProps }: AppProps) => {
           </Layout>
         </LayoutProvider>
       )}
-    </MantineProvider>
+      </MantineProvider>
   );
 };
 

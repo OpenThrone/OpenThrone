@@ -6,7 +6,7 @@ import EconomyTab from '@/components/economy-upgrades';
 import OffenseUpgrade from '@/components/offenseupgrade';
 import ArmoryUpgradesTab from '@/components/armory-upgrades';
 import ClandestineUpgrade from '@/components/clandestineupgrades';
-import { Tabs } from '@mantine/core';
+import { Box, Tabs } from '@mantine/core';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 
@@ -38,11 +38,13 @@ const UpgradeTab = () => {
 
   return (
     <MainArea title={getTabTitle(tab)}>
-      <Tabs value={tab} onChange={(value) => router.push(`/structures/upgrades/${value}`)} variant="pills" color="yellow">
-        <Tabs.List grow>
-          {tabs.map(t => <Tabs.Tab key={t.value} value={t.value}>{t.label}</Tabs.Tab>)}
-        </Tabs.List>
-      </Tabs>
+      <Box className="rpg-inset" p="xs" style={{ borderRadius: '6px' }}>
+        <Tabs value={tab} onChange={(value) => router.push(`/structures/upgrades/${value}`)} variant="pills" color="yellow">
+          <Tabs.List grow justify="center">
+            {tabs.map(t => <Tabs.Tab key={t.value} value={t.value}>{t.label}</Tabs.Tab>)}
+          </Tabs.List>
+        </Tabs>
+      </Box>
 
       <GameCard title={getTabTitle(tab)} mt="md">
         {tabs.find(t => t.value === tab)?.component}

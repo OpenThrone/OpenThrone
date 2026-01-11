@@ -87,32 +87,25 @@ export default function HeroBanner({
         </defs>
 
         {/* main banner plate */}
-        <rect x="120" y="22" width="1060" height="146" rx="10" fill="url(#ot_cloth)" filter="url(#ot_ds)" />
-        {/* trim */}
-        <rect x="132" y="34" width="1036" height="122" rx="8" fill="none" stroke="url(#ot_gold)" strokeWidth="6" />
+      <rect x="120" y="22" width="1060" height="146" rx="10" fill="url(#ot_cloth)" filter="url(#ot_ds)" />
+      {/* trim */}
+      <rect x="132" y="34" width="1036" height="122" rx="8" fill="none" stroke="url(#ot_gold)" strokeWidth="6" />
 
-        {/* left hanging pennant */}
-        <g filter="url(#ot_ds)">
-          <rect x="40" y="10" width="86" height="22" rx="10" fill="#2a1a10" opacity="0.75" />
-          <path d="M55 22 H155 V150 L105 176 L55 150 Z" fill="url(#ot_cloth)" />
-          <path d="M63 32 H147 V145 L105 166 L63 145 Z" fill="none" stroke="url(#ot_gold)" strokeWidth="5" />
+      {/* left hanging strap + pennant */}
+      <g filter="url(#ot_ds)">
+        
+        {/* pennant (dropped down a bit so it doesn't feel glued to the strap) */}
+        <path d="M55 34 H155 V150 L105 176 L55 150 Z" fill="url(#ot_cloth)" />
+        <path d="M63 44 H147 V145 L105 166 L63 145 Z" fill="none" stroke="url(#ot_gold)" strokeWidth="5" />
 
-          {/* person icon (your corrected placement) */}
-          <g transform="translate(105,95)" fill={computedIconFill}>
-            <circle cx="0" cy="-18" r="12" />
-            <path
-              d={`
-                M-26 10
-                C-26 -2, -8 -6, 0 -6
-                C 8 -6, 26 -2, 26 10
-                L26 20
-                C26 24, -26 24, -26 20
-                Z
-              `}
-            />
-          </g>
+        {/* person icon */}
+        <g transform="translate(105,102)" fill={computedIconFill}>
+          <circle cx="0" cy="-18" r="12" />
+          <path d="M-26 10 C-26 -2, -8 -6, 0 -6 C 8 -6, 26 -2, 26 10 L26 20 C26 24, -26 24, -26 20 Z" />
         </g>
-      </svg>
+      </g>
+    </svg>
+
 
       {/* HTML text layer */}
       <Box

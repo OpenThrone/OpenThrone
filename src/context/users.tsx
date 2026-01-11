@@ -45,7 +45,6 @@ const UserContext = createContext<UserContextType>({
 export const useUser = () => useContext(UserContext);
 
 const isPublicPath = (path: string | null) => {
-  // ... (isPublicPath function remains the same) ...
   const publicPathsRegex = [
     /^\/account\/login$/,
     /^\/account\/register$/,
@@ -57,7 +56,8 @@ const isPublicPath = (path: string | null) => {
     /^\/userprofile\/[a-z0-9]+$/i,
     /^\/recruit\/[a-z0-9]+$/i,
     /^\/auto-recruit$/,
-    /^\/battle\/battleSimulator$/, // Added simulator
+    /^\/battle\/battleSimulator$/,
+    /^\/about$/,
   ];
   if (path === null) return false;
   return publicPathsRegex.some((regex) => regex.test(path));

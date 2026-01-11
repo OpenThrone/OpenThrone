@@ -9,6 +9,7 @@ const parentLinks = [
   { title: 'Login', url: '/account/login' },
   { title: 'Signup', url: '/account/register' },
   { title: 'News', url: '/community/news' },
+  { title: 'About', url: '/about' },
 ] as const;
 
 export const NavLoggedOut: React.FC = () => {

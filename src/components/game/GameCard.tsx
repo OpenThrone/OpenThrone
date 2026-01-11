@@ -5,6 +5,25 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {useUser} from "@/context/users";
 import { first } from 'rxjs';
 
+const CornerDecor: React.FC<{ rotation: number; color: string }> = ({ rotation, color }) => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 15 15"
+    aria-hidden
+    shapeRendering="crispEdges"
+    style={{
+      position: 'absolute',
+      transform: `rotate(${rotation}deg)`,
+      zIndex: 10,
+      pointerEvents: 'none',
+    }}
+  >
+    <path d="M0 0H15V2H2V15H0Z" fill={color} />
+    <rect x="2" y="2" width="2" height="2" fill={color} opacity={0.5} />
+  </svg>
+);
+
 interface GameCardProps extends PaperProps {
   title: string;
   icon?: IconDefinition | React.ReactNode;
@@ -20,6 +39,13 @@ export const GameCard: React.FC<GameCardProps> = ({
   action,
   goldAccent = true,
   style,
+  m,
+  mx,
+  my,
+  mt,
+  mb,
+  ml,
+  mr,
   ...others
 }) => {
   const theme = useMantineTheme();
@@ -41,69 +67,125 @@ export const GameCard: React.FC<GameCardProps> = ({
     Boolean(value && typeof value === 'object' && 'iconName' in value);
 
   return (
-    <Paper
-      radius="sm"
-      style={{
-        backgroundColor: '#131b29', // Deep Navy Base
-        border: '1px solid #2f3e52',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        ...style,
-      }}
-      {...others}
+    <Box
+      style={{ position: 'relative', height: '100%' }}
+      m={m}
+      mx={mx}
+      my={my}
+      mt={mt}
+      mb={mb}
+      ml={ml}
+      mr={mr}
     >
-      {/* HEADER: Beveled Gradient + Gold Border */}
-      <Box
-        py="sm"
-        px="lg"
+      <div style={{ position: 'absolute', top: 1, left: 1 }}>
+        <CornerDecor rotation={0} color={accent} />
+      </div>
+      <div style={{ position: 'absolute', top: 1, right: 15 }}>
+        <CornerDecor rotation={90} color={accent} />
+      </div>
+      <div style={{ position: 'absolute', bottom: 15, right: 15 }}>
+        <CornerDecor rotation={180} color={accent} />
+      </div>
+      <div style={{ position: 'absolute', bottom: 15, left: 1 }}>
+        <CornerDecor rotation={270} color={accent} />
+      </div>
+
+      <Paper
+        radius="xs"
+        className="bg-rpg-panel"
         style={{
-          background: 'linear-gradient(180deg, #253346 0%, #1a2533 100%)',
-          borderBottom: goldAccent ? `2px solid ${accent}` : '1px solid #2f3e52',
-          borderTop: '1px solid rgba(255,255,255,0.1)', // Highlight for 3D effect
+          border: `1px solid ${goldAccent ? 'rgba(255,255,255,0.08)' : '#2f3e52'}`,
+          boxShadow: '0 15px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+          flexDirection: 'column',
+          height: '100%',
+          position: 'relative',
+          overflow: 'hidden',
+          backgroundImage:
+            'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.65) 60%), linear-gradient(180deg, rgba(33,47,66,0.8), rgba(7,9,12,0.95))',
+          ...style,
         }}
+        {...others}
       >
-        <Group gap="xs">
-          {icon && (
-            isIconDefinition(icon) ? (
-              <FontAwesomeIcon
-                icon={icon}
-                style={{ color: goldAccent ? accent : brand[2], fontSize: '14px' }}
-              />
-            ) : (
-              <Box style={{ color: goldAccent ? accent : brand[2], fontSize: '14px' }}>
-                {icon}
-              </Box>
-            )
-          )}
-          <Text
+        <Box
+          py="sm"
+          px="lg"
+          style={{
+            position: 'relative',
+            background: 'linear-gradient(180deg, rgba(37, 51, 70, 0.85), rgba(15, 21, 29, 0.9))',
+            borderBottom: goldAccent ? `2px solid ${accent}` : '1px solid rgba(255,255,255,0.1)',
+            borderTop: '1px solid rgba(255,255,255,0.05)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
+          }}
+        >
+          <div
             style={{
-              fontFamily: 'MedievalSharp, serif', // Matches your theme
-              color: goldAccent ? accent : '#e5e7eb',
-              fontWeight: 700,
-              letterSpacing: '1px',
-              fontSize: rem(18),
-              textShadow: '0 2px 4px rgba(0,0,0,0.8)',
-              textTransform: 'uppercase',
+              position: 'absolute',
+              bottom: 0,
+              left: '8%',
+              right: '8%',
+              height: '1px',
+              background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+              opacity: 0.65,
             }}
-          >
-            {title}
-          </Text>
-        </Group>
+          />
 
-        {action && <Box>{action}</Box>}
-      </Box>
+          <Group gap="xs">
+            {icon && (
+              isIconDefinition(icon) ? (
+                <FontAwesomeIcon
+                  icon={icon}
+                  style={{ color: goldAccent ? accent : brand[2], fontSize: '14px' }}
+                />
+              ) : (
+                <Box style={{ color: goldAccent ? accent : brand[2], fontSize: '14px' }}>
+                  {icon}
+                </Box>
+              )
+            )}
+            <Text
+              style={{
+                fontFamily: 'MedievalSharp, serif',
+                color: goldAccent ? accent : '#e5e7eb',
+                fontWeight: 700,
+                letterSpacing: '1px',
+                fontSize: rem(18),
+                textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                textTransform: 'uppercase',
+              }}
+            >
+              {title}
+            </Text>
+          </Group>
 
-      {/* BODY */}
-      <Box p="md" style={{ flexGrow: 1, position: 'relative' }}>
-        {/* Optional: Subtle noise or vignette overlay could go here */}
-        {children}
-      </Box>
-    </Paper>
+          {action && <Box>{action}</Box>}
+        </Box>
+
+        <Box
+          p="md"
+          style={{
+            flexGrow: 1,
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'linear-gradient(180deg, rgba(13,17,23,0.85), rgba(3,6,8,0.95))',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(circle at top right, rgba(255,255,255,0.06), transparent 55%)',
+              pointerEvents: 'none',
+            }}
+          />
+          {children}
+        </Box>
+      </Paper>
+    </Box>
   );
 };

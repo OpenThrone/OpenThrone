@@ -9,7 +9,7 @@ import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { useLayout } from '@/context/LayoutContext';
 
-const Register = () => {
+const Register = (props) => {
   const { setMeta, meta } = useLayout();
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -29,7 +29,7 @@ const Register = () => {
           <div className="public-rise">
             <GameCard title="Forge a New Legacy" icon={faUserPlus} goldAccent={false}>
               <Text size="sm" c="gray.3" lh={1.7}>
-                Claim a race, pledge your class, and rise from a fledgling outpost to a legend whispered across the realm.
+                Claim a race, choose your class, and rise from a fledgling outpost to a legend whispered across the realm.
               </Text>
               <Box mt="md">
                 <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
@@ -37,10 +37,8 @@ const Register = () => {
                 </Text>
                 <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" mt="sm">
                   {[
-                    { label: 'Protected Turns', value: '48h' },
-                    { label: 'Guild Aid', value: 'Included' },
-                    { label: 'Daily Bonuses', value: 'Active' },
-                    { label: 'Guided Quests', value: 'Unlocked' },
+                    { label: 'Protected Turns', value: '0h' },
+                    { label: 'Gold', value: '25,000' },
                   ].map((item) => (
                     <Box
                       key={item.label}

@@ -44,7 +44,7 @@ const Login = () => {
           <div className="public-rise">
             <GameCard title="Return to the War Room" icon={faKey} goldAccent={false}>
               <Text size="sm" c="gray.3" lh={1.7}>
-                Your realm is waiting. Review intelligence briefings, command your troops, and keep your alliances strong.
+                Your kingdom is waiting. Review intelligence reports, command your troops, and keep your alliances strong.
               </Text>
               <Box mt="md">
                 <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>

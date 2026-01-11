@@ -132,8 +132,8 @@ const Layout = (props: IMainProps) => {
                 <NavLoggedOut />
               )}
             </header>
-            <main className="h-full grow overflow-y-auto pb-8 px-3" style={{ backgroundImage: `url('${getAssetPath('wall-body')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
-              <div className="flex h-full flex-wrap lg:flex-nowrap" style={{ background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5))' }}>
+            <main className="h-full grow overflow-y-auto pb-8 px-3">
+              <div className="flex h-full flex-wrap lg:flex-nowrap">
                 {structureReady ? (
                   <>
                     {/* Conditionally render Sidebar based on authentication status */}
@@ -143,7 +143,7 @@ const Layout = (props: IMainProps) => {
                       </div>
                     )}
                     {/* Adjust main content width based on authentication status */}
-                    <div className={`w-full ${raceClasses.borderClass} ${authorized ? 'lg:flex-1' : 'lg:w-full'}`} style={{ backgroundColor: 'var(--ot-surface)' }}>
+                    <div className={`w-full ${raceClasses.borderClass} ${authorized ? 'lg:flex-1' : 'lg:w-full'} mainArea-bg`}>
                       <NewsBulletin />
                       {layoutLoading ? <MainAreaSkeleton /> : props.children}
                     </div>

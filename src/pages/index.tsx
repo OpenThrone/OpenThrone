@@ -19,11 +19,18 @@ import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import { useLayout } from '@/context/LayoutContext';
+import '@/styles/global.css';
 
-const Index = () => {
+const Index = (props) => {
   const { setMeta, meta } = useLayout();
   const { status } = useSession();
   const [isRedirecting, setIsRedirecting] = useState(true);
+  const [worldStats, setWorldStats] = useState({
+    players: '1,200+',
+    battles: '4.8M',
+    alliances: '312',
+    epoch: 'Era VIII',
+  });
 
   useEffect(() => {
     if (setMeta && meta && meta.title !== 'OpenThrone') {
@@ -51,13 +58,33 @@ const Index = () => {
     }
   }, [status]);
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/stats');
+        if (res.ok) {
+          const data = await res.json();
+          setWorldStats({
+            players: data.players !== undefined ? Number(data.players).toLocaleString() : '1,200+',
+            battles: data.battles !== undefined ? new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 1 }).format(Number(data.battles)) : '4.8M',
+            alliances: data.alliances !== undefined ? Number(data.alliances).toLocaleString() : '312',
+            epoch: data.epoch || 'Era VIII',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch world stats', error);
+      }
+    };
+    fetchStats();
+  }, []);
+
   if (status === 'loading' || (status === 'authenticated' && isRedirecting)) {
     return (
       <MainArea title="Open Throne">
         <Center style={{ height: '50vh' }}> {/* Adjust height as needed */}
           <Loader />
         </Center>
-      </MainArea>
+        </MainArea>
     );
   }
   const highlights = [
@@ -80,7 +107,7 @@ const Index = () => {
 
   return (
     <MainArea title="Open Throne">
-      <div className="mx-auto w-full max-w-6xl px-4 py-8">
+      <div className="mx-auto w-full max-w-6xl px-4 py-8 app-bg">
         <Box
           className="public-rise"
           style={{
@@ -165,12 +192,12 @@ const Index = () => {
 
             <Box className="public-rise public-rise-delay-1">
               <StatGrid
-                title="Realm Pulse"
+                title="World Stats"
                 stats={[
-                  { label: 'Active Houses', value: '1,200+', icon: <FontAwesomeIcon icon={faCrown} /> },
-                  { label: 'Battles Fought', value: '4.8M', icon: <FontAwesomeIcon icon={faSkullCrossbones} /> },
-                  { label: 'Alliances', value: '312', icon: <FontAwesomeIcon icon={faUsers} /> },
-                  { label: 'Epoch', value: 'Era VIII', icon: <FontAwesomeIcon icon={faShieldHalved} /> },
+                  { label: 'Total Players', value: worldStats.players, icon: <FontAwesomeIcon icon={faCrown} /> },
+                  { label: 'Battles Fought', value: worldStats.battles, icon: <FontAwesomeIcon icon={faSkullCrossbones} /> },
+                  { label: 'Alliances', value: worldStats.alliances, icon: <FontAwesomeIcon icon={faUsers} /> },
+                  { label: 'Epoch', value: worldStats.epoch, icon: <FontAwesomeIcon icon={faShieldHalved} /> },
                 ]}
                 columns={2}
               />
@@ -228,6 +255,20 @@ const Index = () => {
             </Group>
           </GameCard>
         </SimpleGrid>
+
+        <Box mt={50} style={{ textAlign: 'center', opacity: 0.6 }}>
+          <Group justify="center" gap="xl">
+             <Link href="/about" style={{ color: '#adb5bd', textDecoration: 'none', fontSize: '0.9rem' }}>
+                About the Project
+             </Link>
+             <a href="https://github.com/OpenThrone/OpenThrone" target="_blank" rel="noreferrer" style={{ color: '#adb5bd', textDecoration: 'none', fontSize: '0.9rem' }}>
+                GitHub
+             </a>
+          </Group>
+          <Text size="xs" c="dimmed" mt="sm">
+            OpenThrone is a community-driven project.
+          </Text>
+        </Box>
       </div>
     </MainArea>
   );
