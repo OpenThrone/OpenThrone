@@ -6,6 +6,7 @@ describe('Auth', () => {
 
   beforeEach(() => {
     cy.stubLayoutRequests();
+    cy.viewport(1280, 720);
   });
 
   it('shows an error for invalid credentials', () => {
@@ -18,7 +19,7 @@ describe('Auth', () => {
     cy.get('input#password', { timeout: 5000 }).clear().type(randomPassword);
     cy.get('#submit-button').click();
 
-    cy.get('div.bg-red-500', { timeout: 8000 })
+    cy.get('[data-testid="login-error-alert"]', { timeout: 8000 })
       .should('be.visible')
       .and(($el) => {
         expect($el.text().trim()).to.not.equal('');
@@ -34,16 +35,16 @@ describe('Auth', () => {
     cy.get('#submit-button').click();
 
     cy.location('pathname', { timeout: 10000 }).should('eq', '/home/overview');
-    cy.contains('button', 'Sign Out').should('be.visible');
+    cy.get('[data-testid="desktop-sign-out-button"]', { timeout: 4000 }).should('be.visible');
     cy.screenshot('auth-signed-in');
   });
 
   it('signs out from the logged-in nav', () => {
     cy.loginAdmin();
 
-    cy.contains('button', 'Sign Out').click();
+    cy.get('[data-testid="desktop-sign-out-button"]', { timeout: 4000 }).click();
     cy.location('pathname', { timeout: 10000 }).should('eq', '/');
-    cy.contains('a', 'Login').should('be.visible');
+    cy.get('nav.md\\:block').contains('a', 'Login').should('be.visible');
     cy.screenshot('auth-signed-out');
   });
 });

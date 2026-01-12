@@ -39,6 +39,7 @@ export const GameCard: React.FC<GameCardProps> = ({
   action,
   goldAccent = true,
   style,
+  className,
   m,
   mx,
   my,
@@ -53,15 +54,24 @@ export const GameCard: React.FC<GameCardProps> = ({
   const [accent, setAccent] = React.useState<string>(theme.colors.secondary[5] ?? '#e5c55a');
   const { user } = useUser();
   const [colorScheme, setColorScheme] = React.useState('ELF');
+  const headerAccentByRace: Record<string, string> = {
+    ELF: 'rgb(34, 139, 34)',
+    GOBLIN: 'rgb(139, 69, 19)',
+    HUMAN: 'rgb(70, 130, 180)',
+    UNDEAD: 'rgb(64, 64, 64)',
+  };
   useEffect(() => {
-    if(!user) return;
-    setColorScheme(user?.colorScheme || 'ELF');
-    console.log('User color scheme:', user?.colorScheme);
+    if (!user) return;
+    const storedRace = typeof window !== 'undefined' ? window.localStorage.getItem('userRace') : null;
+    const nextScheme = storedRace || user?.colorScheme || 'ELF';
+    setColorScheme(nextScheme);
+    console.log('User color scheme:', nextScheme);
     console.log('Secondary 2:', theme.colors.secondary[2]);
     console.log('Secondary 5:', theme.colors.secondary[5]);
-    setAccent(user?.colorScheme === 'UNDEAD' ? theme.colors.secondary[2] : theme.colors.secondary[5] ?? '#e5c55a');
+    setAccent(nextScheme === 'UNDEAD' ? theme.colors.secondary[2] : theme.colors.secondary[5] ?? '#e5c55a');
     console.log('Accent color set to:', accent);
   }, [user, colorScheme, theme.colors.secondary, accent]);
+  const headerAccent = headerAccentByRace[colorScheme] ?? accent;
   
   const isIconDefinition = (value: GameCardProps['icon']): value is IconDefinition =>
     Boolean(value && typeof value === 'object' && 'iconName' in value);
@@ -92,7 +102,8 @@ export const GameCard: React.FC<GameCardProps> = ({
 
       <Paper
         radius="xs"
-        className="bg-rpg-panel"
+        className={['bg-rpg-panel', 'game-card', 'public-rise', className].filter(Boolean).join(' ')}
+        data-testid="game-card"
         style={{
           border: `1px solid ${goldAccent ? 'rgba(255,255,255,0.08)' : '#2f3e52'}`,
           boxShadow: '0 15px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)',
@@ -110,9 +121,10 @@ export const GameCard: React.FC<GameCardProps> = ({
         <Box
           py="sm"
           px="lg"
+          data-testid="game-card-header"
           style={{
             position: 'relative',
-            background: 'linear-gradient(180deg, rgba(37, 51, 70, 0.85), rgba(15, 21, 29, 0.9))',
+            background: `linear-gradient(180deg, rgba(37, 51, 70, 0.85), rgba(15, 21, 29, 0.9)), linear-gradient(90deg, ${headerAccent} 0%, transparent 70%)`,
             borderBottom: goldAccent ? `2px solid ${accent}` : '1px solid rgba(255,255,255,0.1)',
             borderTop: '1px solid rgba(255,255,255,0.05)',
             display: 'flex',
@@ -156,6 +168,7 @@ export const GameCard: React.FC<GameCardProps> = ({
                 textShadow: '0 2px 4px rgba(0,0,0,0.8)',
                 textTransform: 'uppercase',
               }}
+              data-testid="card-title"
             >
               {title}
             </Text>
@@ -166,6 +179,7 @@ export const GameCard: React.FC<GameCardProps> = ({
 
         <Box
           p="md"
+          data-testid="card-content"
           style={{
             flexGrow: 1,
             position: 'relative',

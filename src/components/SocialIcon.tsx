@@ -58,6 +58,7 @@ const SocialIcon = forwardRef<HTMLButtonElement, Props>(
             className={`social-icon-button ${className}`}
             aria-label={ariaLabel}
             role="button"
+            data-testid="icon-button"
           >
             <RpgAwesomeIcon icon="double-team" fw style={{ fontSize: size }} />
           </UnstyledButton>

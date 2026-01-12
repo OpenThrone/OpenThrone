@@ -3,6 +3,7 @@
 describe('News bulletin', () => {
   beforeEach(() => {
     cy.stubLayoutRequests();
+    cy.viewport(1280, 720);
   });
 
   it('renders and dismisses the bulletin when configured', function () {

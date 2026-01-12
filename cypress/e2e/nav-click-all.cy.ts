@@ -2,6 +2,7 @@
 
 describe('Nav - Visit all internal nav links', () => {
   before(() => {
+    cy.viewport(1280, 720);
     cy.loginAdmin();
   });
 

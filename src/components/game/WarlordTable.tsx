@@ -49,6 +49,7 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
   const rows = players.map((player) => (
     <Table.Tr
       key={player.name}
+      data-testid="table-row"
       style={{
         // Gradient creates volume for the row
         background: player.active
@@ -65,7 +66,7 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
         <Group gap="sm">
           {/* Hex/Tech Avatar Frame */}
           <Box style={{ border: '1px solid #444', padding: '1px', background: '#000' }}>
-            <Avatar src={player.avatar} size={30} radius={0} />
+            <Avatar src={player.avatar} size={30} radius={0} data-testid="race-icon" />
           </Box>
           <Box>
             <Text size="sm" fw={700} style={{ color: player.active ? activeText : 'white' }}>
@@ -98,6 +99,7 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
   return (
     <Paper
       radius="sm"
+      data-testid="warlord-table"
       style={{
         backgroundColor: '#131b29', // Deep navy background matching your screenshot
         border: '1px solid #2f3e52', // Border matches nav dividers
@@ -135,13 +137,24 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
         </Badge>
       </Box>
 
-      <ScrollArea>
+      <ScrollArea data-testid="table-container">
         <Table verticalSpacing="sm">
-          <Table.Thead>
+          <Table.Thead data-testid="table-header">
             <Table.Tr style={{ background: '#0e1520' }}>
               {['Rank', 'Username', 'Alliance', 'Gold', 'Level'].map((head) => (
                 <Table.Th
                   key={head}
+                  data-testid={
+                    head === 'Rank'
+                      ? 'header-rank'
+                      : head === 'Username'
+                        ? 'header-name'
+                        : head === 'Alliance'
+                          ? 'header-race'
+                          : head === 'Gold'
+                            ? 'header-networth'
+                            : undefined
+                  }
                   style={{
                     color: '#687b94',
                     borderBottom: '1px solid #2f3e52',

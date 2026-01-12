@@ -117,17 +117,20 @@ const ArmoryTab = () => {
     <MainArea title="Armory">
       <StatGrid title="Armory Status" stats={statItems} />
       <Space h="md" />
-      <Tabs value={tab} onChange={(value) => router.push(`/structures/armory/${value}`)} variant="pills" color="yellow">
-        <Tabs.List grow justify="center">
-          <Tabs.Tab value="offense">Offense</Tabs.Tab>
-          <Tabs.Tab value="defense">Defense</Tabs.Tab>
-          <Tabs.Tab value="spy">Spy</Tabs.Tab>
-          <Tabs.Tab value="sentry">Sentry</Tabs.Tab>
-        </Tabs.List>
-      </Tabs>
+      <Box className="rpg-inset" p="xs" style={{ borderRadius: '6px' }}>
+        <Tabs value={tab} onChange={(value) => router.push(`/structures/armory/${value}`)} variant="pills" color="yellow">
+          <Tabs.List grow justify="center">
+            <Tabs.Tab value="offense">Offense</Tabs.Tab>
+            <Tabs.Tab value="defense">Defense</Tabs.Tab>
+            <Tabs.Tab value="spy">Spy</Tabs.Tab>
+            <Tabs.Tab value="sentry">Sentry</Tabs.Tab>
+          </Tabs.List>
+        </Tabs>
+      </Box>
+      <Space h="md" />
       <Box style={{ paddingBottom: '100px' }}>
         {Object.entries(items[tab.toUpperCase()] || {}).map(([category, categoryItems]) => (
-          categoryItems.length > 0 && <NewItemSection key={category} heading={`${tab} ${category}`} items={categoryItems} itemCosts={itemCosts} setItemCosts={setItemCosts} units={user?.units.reduce((acc, unit) => unit.type === tab.toUpperCase() ? acc + unit.quantity : acc, 0)} />
+          categoryItems.length > 0 && <><NewItemSection key={category} heading={`${tab} ${category}`} items={categoryItems} itemCosts={itemCosts} setItemCosts={setItemCosts} units={user?.units.reduce((acc, unit) => unit.type === tab.toUpperCase() ? acc + unit.quantity : acc, 0)} /><Space h="md" /></>
         ))}
       </Box>
       <Box style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100 }}>

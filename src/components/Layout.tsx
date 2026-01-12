@@ -84,6 +84,17 @@ const Layout = (props: IMainProps) => {
     }
   }, [status]);
 
+  const handleSkipToContent = () => {
+    const mainContent = document.getElementById('main-content');
+    mainContent?.focus();
+  };
+  const handleSkipKeyDown = (event: React.KeyboardEvent<HTMLAnchorElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleSkipToContent();
+    }
+  };
+
   return (
     <>
       <div
@@ -97,6 +108,15 @@ const Layout = (props: IMainProps) => {
           '--ot-border': 'rgba(255,204,102,0.35)',
         }}
       >
+        <a
+          className="skip-link"
+          href="#main-content"
+          data-testid="skip-link"
+          onClick={handleSkipToContent}
+          onKeyDown={handleSkipKeyDown}
+        >
+          Skip to main content
+        </a>
         <div
           className={`w-full grow ${authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
             } px-1 text-yellow-400 antialiased`}
@@ -132,13 +152,18 @@ const Layout = (props: IMainProps) => {
                 <NavLoggedOut />
               )}
             </header>
-            <main className="h-full grow overflow-y-auto pb-8 px-3">
+            <main
+              className="h-full grow overflow-y-auto pb-8 px-3"
+              id="main-content"
+              role="main"
+              tabIndex={-1}
+            >
               <div className="flex h-full flex-wrap lg:flex-nowrap">
                 {structureReady ? (
                   <>
                     {/* Conditionally render Sidebar based on authentication status */}
                     {authorized && (
-                      <div className="hidden w-full lg:block lg:w-[260px] xl:w-1/5" style={{ backgroundColor: 'var(--ot-surface-2)' }}>
+                      <div className="hidden w-full lg:block lg:w-[260px] xl:w-1/5 lg:pr-4" style={{ backgroundColor: 'var(--ot-surface-2)' }}>
                         {layoutLoading ? <SidebarSkeleton /> : router.pathname === '/test' ? <><SidebarScroll /><SidebarTablet sidebarData={undefined} /></> : <Sidebar />}
                       </div>
                     )}

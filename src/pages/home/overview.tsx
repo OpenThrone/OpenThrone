@@ -55,7 +55,7 @@ const Overview = () => {
     return (
       <MainArea title="Overview">
         <Center style={{ height: '50vh' }}>
-          <Loader />
+          <Loader data-testid="loading-spinner" />
         </Center>
       </MainArea>
     );
@@ -143,6 +143,9 @@ const Overview = () => {
           ) : undefined}
         />
       </Center>
+      <Text size="sm" c="gray.3" ta="center" data-testid="content-text">
+        Your kingdom overview and daily command summary.
+      </Text>
       <Space h="md" />
       {isMobile && (
         <>
@@ -166,12 +169,13 @@ const Overview = () => {
         </>
       )}
       <GameCard title="Kingdom Stats" icon={faCrown}>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" data-testid="stat-grid">
           {kingdomStats.map((stat) => (
             <Group
               key={stat.label}
               gap="sm"
               wrap="nowrap"
+              data-testid="stat-slot"
               style={{
                 backgroundColor: '#0f141a',
                 borderRadius: '6px',
@@ -185,10 +189,10 @@ const Overview = () => {
                 <FontAwesomeIcon icon={stat.icon} />
               </ThemeIcon>
               <div>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }} data-testid="stat-label">
                   {stat.label}
                 </Text>
-                <Text size="sm" fw={700} c="gray.2">
+                <Text size="sm" fw={700} style={{ color: '#ffd700' }} data-testid="stat-value">
                   {stat.value}
                 </Text>
               </div>
@@ -200,7 +204,7 @@ const Overview = () => {
       <Space h="md" />
 
       <GameCard title="Military Stats" icon={faShieldAlt}>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" data-testid="stat-grid">
           {[
             {
               icon: <RpgAwesomeIcon icon="crossed-swords" fw />,
@@ -249,6 +253,7 @@ const Overview = () => {
               key={stat.label}
               gap="sm"
               wrap="nowrap"
+              data-testid="stat-slot"
               style={{
                 backgroundColor: '#0f141a',
                 borderRadius: '6px',
@@ -262,13 +267,18 @@ const Overview = () => {
                 {stat.icon}
               </ThemeIcon>
               <div>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }} data-testid="stat-label">
                   {stat.label}
                 </Text>
                 {stat.withPopover ? (
                   <Popover width={400} position="bottom" withArrow shadow="md" opened={undefined}>
                     <Popover.Target>
-                      <Text size="sm" fw={700} c="gray.2" style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}>
+                      <Text
+                        size="sm"
+                        fw={700}
+                        style={{ color: '#ffd700', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                        data-testid="stat-value"
+                      >
                         {stat.value}
                       </Text>
                     </Popover.Target>
@@ -363,7 +373,7 @@ const Overview = () => {
                     </Popover.Dropdown>
                   </Popover>
                 ) : (
-                  <Text size="sm" fw={700} c="gray.2">
+                  <Text size="sm" fw={700} style={{ color: '#ffd700' }} data-testid="stat-value">
                     {stat.value}
                   </Text>
                 )}

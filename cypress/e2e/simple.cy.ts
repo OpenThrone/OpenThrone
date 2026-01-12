@@ -1,6 +1,10 @@
 /// <reference types="cypress" />
 
 describe('Simple E2E', () => {
+  beforeEach(() => {
+    cy.viewport(1280, 720);
+  });
+
   it('loads the site and has a body', () => {
     const appUrl = Cypress.env('APP_URL') || 'http://localhost:3001';
     cy.visit(appUrl);
@@ -9,7 +13,7 @@ describe('Simple E2E', () => {
     });
     cy.get('body').should('exist');
   });
-  
+
   it('navigates to /account/login and signs in', () => {
     const appUrl = Cypress.env('APP_URL') || 'http://localhost:3001';
     const base = appUrl.replace(/\/+$/, '');

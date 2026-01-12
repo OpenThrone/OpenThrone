@@ -40,9 +40,10 @@ export const NavLoggedOut: React.FC = () => {
     <>
       <button
         type="button"
-        className="block md:hidden p-2 text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+        className="block md:hidden p-2 min-h-[48px] min-w-[48px] text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
         onClick={() => setMobileMenuOpen(true)}
         aria-label="Open menu"
+        data-testid="mobile-menu-button"
       >
         <svg
           className="h-6 w-6"
@@ -72,6 +73,7 @@ export const NavLoggedOut: React.FC = () => {
           style={{
             backgroundImage: `url('${getAssetPath('top-menu', null, 'ELF')}')`,
           }}
+          role="navigation"
         >
           <div className="mx-auto max-w-screen-2xl md:block">
             <ul className="flex flex-wrap items-center justify-evenly text-center text-xl">
@@ -83,6 +85,7 @@ export const NavLoggedOut: React.FC = () => {
                         ? 'bg-orange-gradient text-gradient-orange'
                         : 'text-elf-link-link'
                       }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-sm`}
+                    data-testid={`nav-${link.title.toLowerCase()}-link`}
                   >
                     {link.title}
                   </Link>

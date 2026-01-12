@@ -14,26 +14,28 @@ export const StyledTable = ({ headers, children }) => {
         overflow: 'hidden',
       }}
     >
-      <Table verticalSpacing="sm">
-        <Table.Thead>
-          <Table.Tr style={{ background: '#0e1520' }}>
-            {headers.map((head) => (
-              <Table.Th
-                key={head}
-                style={{
-                  color: '#687b94',
-                  borderBottom: '1px solid #2f3e52',
-                  textTransform: 'uppercase',
-                  fontSize: '11px',
-                }}
-              >
-                {head}
-              </Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{children}</Table.Tbody>
-      </Table>
+      <Box style={{ overflowX: 'auto' }} data-testid="table-wrapper">
+        <Table verticalSpacing="sm" data-testid="styled-table">
+          <Table.Thead>
+            <Table.Tr style={{ background: '#0e1520' }}>
+              {headers.map((head) => (
+                <Table.Th
+                  key={head}
+                  style={{
+                    color: '#687b94',
+                    borderBottom: '1px solid #2f3e52',
+                    textTransform: 'uppercase',
+                    fontSize: '11px',
+                  }}
+                >
+                  {head}
+                </Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{children}</Table.Tbody>
+        </Table>
+      </Box>
     </Paper>
   );
 };

@@ -18,34 +18,36 @@ export const UnitTrainingPanel = () => {
   const accentDark = secondary[6] ?? accent;
 
   return (
-    <GameCard title="Training Grounds" icon={faHammer}>
-      <Grid gutter="md">
-        {UNITS.map((unit) => (
-          <Grid.Col span={{ base: 12 }} key={unit.id}>
-            <TrainingSlot unit={unit} />
-          </Grid.Col>
-        ))}
-      </Grid>
+    <Box data-testid="unit-training-panel">
+      <GameCard title="Training Grounds" icon={faHammer}>
+        <Grid gutter="md" data-testid="unit-list">
+          {UNITS.map((unit) => (
+            <Grid.Col span={{ base: 12 }} key={unit.id} data-testid="unit-card">
+              <TrainingSlot unit={unit} />
+            </Grid.Col>
+          ))}
+        </Grid>
 
-      {/* Total Footer */}
-      <Box mt="lg" style={{ borderTop: '1px dashed #2f3e52', paddingTop: '16px' }}>
-        <Group justify="flex-end">
-          <Button
-            variant="filled"
-            color="yellow"
-            size="md"
-            style={{
-              background: `linear-gradient(180deg, ${accent} 0%, ${accentDark} 100%)`,
-              color: '#000',
-              border: `1px solid ${accent}`,
-              boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
-            }}
-          >
-            TRAIN ALL UNITS
-          </Button>
-        </Group>
-      </Box>
-    </GameCard>
+        {/* Total Footer */}
+        <Box mt="lg" style={{ borderTop: '1px dashed #2f3e52', paddingTop: '16px' }}>
+          <Group justify="flex-end">
+            <Button
+              variant="filled"
+              color="yellow"
+              size="md"
+              style={{
+                background: `linear-gradient(180deg, ${accent} 0%, ${accentDark} 100%)`,
+                color: '#000',
+                border: `1px solid ${accent}`,
+                boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+              }}
+            >
+              TRAIN ALL UNITS
+            </Button>
+          </Group>
+        </Box>
+      </GameCard>
+    </Box>
   );
 };
 
@@ -87,11 +89,16 @@ const TrainingSlot = ({ unit }: { unit: any }) => {
           <RpgAwesomeIcon icon={unit.icon} size="2x" color={brand[3] ?? '#6b7280'} />
         </Box>
         <Box>
-          <Text fw={700} c="gray.3" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <Text fw={700} c="gray.3" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }} data-testid="unit-name">
             {unit.name}
           </Text>
-          <Group gap={6}>
-            <Text size="xs" c="dimmed">Cost: <span style={{ color: accent }}>{unit.cost}</span></Text>
+          <Group gap={6} data-testid="unit-stats">
+            <Text size="xs" c="dimmed">
+              Cost:{' '}
+              <span style={{ color: accent }} data-testid="unit-cost">
+                {unit.cost}
+              </span>
+            </Text>
             <Text size="xs" c="dimmed">|</Text>
             <Text size="xs" c="dimmed">Owned: {unit.owned}</Text>
           </Group>
@@ -121,10 +128,15 @@ const TrainingSlot = ({ unit }: { unit: any }) => {
         <Button
           size="xs"
           variant="default"
+          data-testid="train-button"
+          aria-label={`Set max ${unit.name}`}
+          role="button"
           style={{
-            backgroundColor: '#1f2b3b',
+            backgroundImage: 'linear-gradient(180deg, #2b3747 0%, #1f2b3b 100%)',
             borderColor: '#2f3e52',
             color: '#9ca3af',
+            minWidth: '48px',
+            minHeight: '48px',
             boxShadow: '0 2px 0 #0f151c', // Physical button click feel
           }}
         >

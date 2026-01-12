@@ -11,7 +11,7 @@ import MainArea from '@/components/MainArea';
 import VacationModeModal from '@/components/VacationModeModal';
 import { useLayout } from '@/context/LayoutContext';
 
-const Login = () => {
+const Login = (props) => {
   const { setMeta, meta } = useLayout();
   const [showVacationModal, setShowVacationModal] = useState(false);
   const [vacationUserId, setVacationUserId] = useState<string | null>(null);
@@ -69,8 +69,15 @@ const Login = () => {
             <GameCard title="Commander Access" icon={faShieldHalved}>
               {errorMessage && (
                 <>
-                  <Alert variant="filled" color="red" title="Access Denied">
-                    {errorMessage}
+                  <Alert
+                    variant="filled"
+                    color="red"
+                    title="Access Denied"
+                    data-testid="error-message"
+                    role="alert"
+                    aria-describedby="login-error-text"
+                  >
+                    <span id="login-error-text">{errorMessage}</span>
                   </Alert>
                   <Space h="md" />
                 </>

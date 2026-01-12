@@ -381,9 +381,21 @@ const Training: React.FC = (props) => { // Removed unused props
             </Group>
           ))}
         </SimpleGrid>
+        <Text size="xs" c="dimmed" mt="sm" data-testid="training-progress">
+          Training progress: ready
+        </Text>
+        <Box
+          mt="xs"
+          data-testid="progress-bar"
+          style={{
+            height: '8px',
+            borderRadius: '999px',
+            backgroundImage: 'linear-gradient(90deg, #e5c55a 0%, #f59e0b 100%)',
+          }}
+        />
       </GameCard>
       {/* Add padding to the bottom of the main content area to prevent overlap with the fixed footer */}
-      <Box style={{ paddingBottom: hasOrder ? '160px' : 0 }}>
+      <Box style={{ paddingBottom: hasOrder ? '160px' : 0 }} data-testid="unit-training-panel">
         {unitTypesIndex
           .filter((unitType) => unitType.unitData !== null)
           .map((unitType) => (
@@ -433,6 +445,9 @@ const Training: React.FC = (props) => { // Removed unused props
                       border: '1px solid #e5c55a',
                       boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
                     }}
+                    data-testid="train-button"
+                    aria-label="Train all selected units"
+                    role="button"
                   >
                     Train
                   </Button>

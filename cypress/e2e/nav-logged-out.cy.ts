@@ -3,6 +3,7 @@
 describe('NavLoggedOut', () => {
   beforeEach(() => {
     cy.stubLayoutRequests();
+    cy.viewport(1280, 720);
   });
 
   it('renders logged-out navigation links', () => {

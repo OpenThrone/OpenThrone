@@ -1,7 +1,7 @@
 import type { InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { faCrosshairs, faFilter, faUsers } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -82,6 +82,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const [iBeatIds, setIBeatIds] = useState<Set<number>>(new Set());
   const [theyBeatMeIds, setTheyBeatMeIds] = useState<Set<number>>(new Set());
   const [allianceOptions, setAllianceOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [metaError, setMetaError] = useState<string | null>(null);
   const brand = theme.colors.brand ?? theme.colors.blue;
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
   const accent = secondary[4] ?? '#e5c55a';
@@ -128,24 +129,28 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     fetchSocial();
   }, [user]);
 
-  useEffect(() => {
+  const fetchMeta = useCallback(async () => {
     if (!user) return;
 
-    const fetchMeta = async () => {
-      try {
-        const res = await fetch(`/api/battle/users-filter-meta?days=${recentDays}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        setAttackedMeIds(new Set((data.attackedMeIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
-        setIBeatIds(new Set((data.iBeatIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
-        setTheyBeatMeIds(new Set((data.theyBeatMeIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
-      } catch (e) {
-        // non-fatal
+    try {
+      const res = await fetch(`/api/battle/users-filter-meta?days=${recentDays}`);
+      if (!res.ok) {
+        setMetaError('Unable to load battle metadata.');
+        return;
       }
-    };
-
-    fetchMeta();
+      const data = await res.json();
+      setMetaError(null);
+      setAttackedMeIds(new Set((data.attackedMeIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
+      setIBeatIds(new Set((data.iBeatIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
+      setTheyBeatMeIds(new Set((data.theyBeatMeIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
+    } catch (e) {
+      setMetaError('Unable to load battle metadata.');
+    }
   }, [user, recentDays]);
+
+  useEffect(() => {
+    fetchMeta();
+  }, [fetchMeta]);
 
   useEffect(() => {
     if (!user) return;
@@ -170,6 +175,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
   const filteredUsers = useMemo(() => {
     if (!user) return [];
+    if (searchParams.get('empty') === '1') return [];
 
     const normalizedQuery = nameQuery.trim().toLowerCase();
     const selectedSet = new Set(selectedAllianceIds.map((v) => Number(v)).filter((n) => Number.isFinite(n)));
@@ -249,6 +255,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     return (allUsers as any[]).filter((u) => predicates.every((p) => p(u)));
   }, [
     user,
+    searchParams,
     allUsers,
     nameQuery,
     includeFriends,
@@ -534,11 +541,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
       <GameCard
         title="Attack Users"
         icon={faUsers}
-        action={(
-          <Badge color="red" variant="filled" radius="sm" tt="uppercase">
-            PvP Zone
-          </Badge>
-        )}
+        
       >
         <Group justify="space-between" mb="sm" wrap="wrap">
           <Group>
@@ -608,12 +611,24 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           ))}
         </Group>
 
-        <Table.ScrollContainer minWidth={400}>
-          <Table verticalSpacing="sm" highlightOnHover className="bg-gray-900 text-white text-left">
-            <Table.Thead>
+        {metaError && (
+          <Group mb="sm">
+            <Text size="sm" c="red.4" data-testid="error-message">
+              {metaError}
+            </Text>
+            <Button size="xs" variant="light" onClick={fetchMeta} data-testid="retry-button">
+              Retry
+            </Button>
+          </Group>
+        )}
+
+        <Table.ScrollContainer minWidth={400} data-testid="table-container">
+          <Table verticalSpacing="sm" highlightOnHover className="bg-gray-900 text-white text-left" data-testid="warlord-table">
+            <Table.Thead data-testid="table-header">
               <Table.Tr style={{ background: '#0e1520' }}>
                 <Table.Th
                   className="px-1 py-1"
+                  data-testid="header-rank"
                   style={{
                     width: '100px',
                     color: '#687b94',
@@ -632,6 +647,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   <Table.Th
                     key={head.label}
                     className="px-4 py-2"
+                    data-testid={head.label === 'Username' ? 'header-name' : 'header-race'}
                     style={{
                       color: '#687b94',
                       borderBottom: '1px solid #2f3e52',
@@ -645,6 +661,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                 ))}
                 <Table.Th
                   className="px-4 py-2"
+                  data-testid="header-networth"
                   style={{
                     color: '#687b94',
                     borderBottom: '1px solid #2f3e52',
@@ -688,69 +705,78 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {players.map((nplayer, index) => {
-                const player = new UserModel(nplayer, true, false);
-                if (player.id === user?.id) player.is_player = true;
-                const allianceName = Array.isArray((nplayer as any).alliances) && (nplayer as any).alliances[0]?.name ? (nplayer as any).alliances[0]?.name : '-';
-                return (
-                  <Table.Tr
-                    key={player.id}
-                    className={player.is_player ? 'bg-gray-500' : undefined}
-                    style={{
-                      background: player.is_player
-                        ? `linear-gradient(90deg, ${withAlpha(rowGlow, '40')} 0%, transparent 100%)`
-                        : undefined,
-                      transition: 'background 0.2s ease',
-                    }}
-                  >
-                    <Table.Td className="px-2 py-2" style={{ borderColor: '#1f2b3b' }}>
-                      <Text fw={700} c="dimmed" size="sm">#{nplayer.overallrank}</Text>
-                    </Table.Td>
-                    <Table.Td className="px-4 py-2">
-                      <Group gap={'sm'} className="text-justify">
-                        <Indicator color={player.is_online ? 'teal' : 'red'}>
-                          <Box style={{ border: '1px solid #444', padding: '1px', background: '#000' }}>
-                            <Avatar src={player?.avatar} size={34} radius={0} />
-                          </Box>
-                        </Indicator>
-                        <div>
-                          <Text fz="med" fw={500} component="div">
-                            <Link
-                              href={`/userprofile/${player.id}`}
-                              className="text-blue-500 hover:text-blue-700 font-bold"
-                            >
-                              {player.displayName}
-                            </Link>
-                            {player.is_player && <Badge color={(colorScheme === "ELF") ?
-                              'green' : (
-                                colorScheme === 'GOBLIN' ? 'red' : (
-                                  colorScheme === 'UNDEAD' ? 'dark'
-                                    : 'blue'
-                                ))} ml={5}>You</Badge>}
-                          </Text>
-                          <Text fz="xs" c="dimmed">
-                            {player.race} {player.class}
-                          </Text>
-                        </div>
-                      </Group>
-                    </Table.Td>
-                    <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b', color: '#687b94' }}>
-                      {allianceName}
-                    </Table.Td>
-                    <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
-                      <Text style={{ color: accent }} fw={600} size="sm">
-                        {toLocale(formattedGolds[index])}
-                      </Text>
-                    </Table.Td>
-                    <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
-                      <Text c="white" fw={700} size="sm">{toLocale(nplayer.population)}</Text>
-                    </Table.Td>
-                    <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
-                      <Text c="white" fw={700} size="sm">{player.level}</Text>
-                    </Table.Td>
-                  </Table.Tr>
-                );
-              })}
+              {players.length === 0 ? (
+                <Table.Tr data-testid="table-row">
+                  <Table.Td colSpan={6} data-testid="empty-state" style={{ borderColor: '#1f2b3b', textAlign: 'center' }}>
+                    No players found
+                  </Table.Td>
+                </Table.Tr>
+              ) : (
+                players.map((nplayer, index) => {
+                  const player = new UserModel(nplayer, true, false);
+                  if (player.id === user?.id) player.is_player = true;
+                  const allianceName = Array.isArray((nplayer as any).alliances) && (nplayer as any).alliances[0]?.name ? (nplayer as any).alliances[0]?.name : '-';
+                  return (
+                    <Table.Tr
+                      key={player.id}
+                      data-testid="table-row"
+                      className={player.is_player ? 'bg-gray-500' : undefined}
+                      style={{
+                        background: player.is_player
+                          ? `linear-gradient(90deg, ${withAlpha(rowGlow, '40')} 0%, transparent 100%)`
+                          : undefined,
+                        transition: 'background 0.2s ease',
+                      }}
+                    >
+                      <Table.Td className="px-2 py-2" style={{ borderColor: '#1f2b3b' }}>
+                        <Text fw={700} c="dimmed" size="sm">#{nplayer.overallrank}</Text>
+                      </Table.Td>
+                      <Table.Td className="px-4 py-2">
+                        <Group gap={'sm'} className="text-justify">
+                          <Indicator color={player.is_online ? 'teal' : 'red'}>
+                            <Box style={{ border: '1px solid #444', padding: '1px', background: '#000' }}>
+                              <Avatar src={player?.avatar} size={34} radius={0} data-testid="race-icon" />
+                            </Box>
+                          </Indicator>
+                          <div>
+                            <Text fz="med" fw={500} component="div">
+                              <Link
+                                href={`/userprofile/${player.id}`}
+                                className="text-blue-500 hover:text-blue-700 font-bold"
+                              >
+                                {player.displayName}
+                              </Link>
+                              {player.is_player && <Badge color={(colorScheme === "ELF") ?
+                                'green' : (
+                                  colorScheme === 'GOBLIN' ? 'red' : (
+                                    colorScheme === 'UNDEAD' ? 'dark'
+                                      : 'blue'
+                                  ))} ml={5}>You</Badge>}
+                            </Text>
+                            <Text fz="xs" c="dimmed">
+                              {player.race} {player.class}
+                            </Text>
+                          </div>
+                        </Group>
+                      </Table.Td>
+                      <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b', color: '#687b94' }}>
+                        {allianceName}
+                      </Table.Td>
+                      <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
+                        <Text style={{ color: accent }} fw={600} size="sm">
+                          {toLocale(formattedGolds[index])}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
+                        <Text c="white" fw={700} size="sm">{toLocale(nplayer.population)}</Text>
+                      </Table.Td>
+                      <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
+                        <Text c="white" fw={700} size="sm">{player.level}</Text>
+                      </Table.Td>
+                    </Table.Tr>
+                  );
+                })
+              )}
             </Table.Tbody>
           </Table>
         </Table.ScrollContainer>

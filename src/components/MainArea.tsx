@@ -169,6 +169,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
           <Title
             order={2}
             className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs"
+            data-testid="page-title"
           >
             {title}
           </Title>
@@ -184,7 +185,18 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                 shadow="md"
               >
                 <Menu.Target>
-                  <div style={{ position: "relative", cursor: "pointer" }}>
+                  <button
+                    type="button"
+                    aria-label="Messages"
+                    data-testid="action-button"
+                    style={{
+                      position: "relative",
+                      cursor: "pointer",
+                      background: "transparent",
+                      border: "none",
+                      padding: 0,
+                    }}
+                  >
                     <FontAwesomeIcon
                       icon={faComments}
                       style={{
@@ -212,7 +224,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                         {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
                       </Badge>
                     )}
-                  </div>
+                  </button>
                 </Menu.Target>
 
                 <Menu.Dropdown>

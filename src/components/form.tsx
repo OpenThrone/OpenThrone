@@ -130,6 +130,28 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
       fontWeight: 'bolder',
       shadow: 'md',
     },
+    input: {
+      minHeight: 48,
+      height: 48,
+    },
+    innerInput: {
+      minHeight: 48,
+      height: 48,
+    },
+  };
+
+  const handleInvalid = (invalidErrors: FormErrors) => {
+    const message =
+      invalidErrors.email?.message ||
+      invalidErrors.password?.message ||
+      invalidErrors.display_name?.message ||
+      invalidErrors.password_confirm?.message ||
+      invalidErrors.race?.message ||
+      invalidErrors.class?.message;
+
+    if (message) {
+      setErrorMessage(message);
+    }
   };
 
   /**
@@ -242,6 +264,14 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
 
   // Cast errors to the helper type for safe access
   const formErrors = errors as FormErrors;
+  const errorHelpId = `${type}-form-error-help`;
+  const validationMessage =
+    formErrors.email?.message ||
+    formErrors.password?.message ||
+    formErrors.display_name?.message ||
+    formErrors.password_confirm?.message ||
+    formErrors.race?.message ||
+    formErrors.class?.message;
 
   const titleColor = layout === 'bare' ? theme.colors.gray[1] : 'gray';
   const bodyColor = layout === 'bare' ? theme.colors.gray[3] : 'gray';
@@ -266,8 +296,23 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
       <Title order={2} ta="center" mb="md" c={titleColor}>
         {type === 'login' ? 'Sign In' : 'Sign Up'}
       </Title>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit, handleInvalid)}>
         <Flex direction="column" gap="md">
+          {validationMessage ? (
+            <Text
+              role="alert"
+              aria-describedby={errorHelpId}
+              data-testid="error-message"
+              c="red.5"
+              size="sm"
+              ta="center"
+            >
+              {validationMessage}
+              <span id={errorHelpId} className="sr-only">
+                Review the highlighted fields for details.
+              </span>
+            </Text>
+          ) : null}
           {type === 'login' ? (
             <>
               <TextInput
@@ -280,6 +325,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
                 styles={inputStyles}
                 {...register('email')}
                 error={formErrors.email?.message}
+                data-testid="email-input"
+                inputProps={{ 'aria-label': 'Email address' }}
               />
               <PasswordInput
                 id="password"
@@ -290,7 +337,15 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
                 styles={inputStyles}
                 {...register('password')}
                 error={formErrors.password?.message}
+                data-testid="password-input"
+                inputProps={{
+                  'aria-label': 'Password',
+                  'aria-describedby': 'login-password-help',
+                }}
               />
+              <Text id="login-password-help" className="sr-only">
+                Enter your password to sign in.
+              </Text>
             </>
           ) : (
             <>
@@ -304,6 +359,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
                 styles={inputStyles}
                 {...register('display_name')}
                 error={formErrors.display_name?.message}
+                inputProps={{ 'aria-label': 'User name' }}
               />
               <TextInput
                 id="email"
@@ -316,6 +372,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
                 styles={inputStyles}
                 {...register('email')}
                 error={formErrors.email?.message}
+                inputProps={{ 'aria-label': 'Email address' }}
               />
               <PasswordInput
                 id="password"
@@ -326,7 +383,14 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
                 styles={inputStyles}
                 {...register('password')}
                 error={formErrors.password?.message}
+                inputProps={{
+                  'aria-label': 'Password',
+                  'aria-describedby': 'register-password-help',
+                }}
               />
+              <Text id="register-password-help" className="sr-only">
+                Use at least 8 characters for your password.
+              </Text>
               <PasswordInput
                 id="password_confirm"
                 label="Confirm Password"
@@ -336,7 +400,14 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
                 styles={inputStyles}
                 {...register('password_confirm')}
                 error={formErrors.password_confirm?.message}
+                inputProps={{
+                  'aria-label': 'Confirm password',
+                  'aria-describedby': 'register-password-confirm-help',
+                }}
               />
+              <Text id="register-password-confirm-help" className="sr-only">
+                Repeat your password to confirm it.
+              </Text>
               <Controller
                 name="race"
                 control={control}
@@ -412,6 +483,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
             fullWidth
             size="md"
             id="submit-button"
+            data-testid="submit-button"
+            styles={{ root: { minHeight: 48 } }}
           >
             {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
           </Button>

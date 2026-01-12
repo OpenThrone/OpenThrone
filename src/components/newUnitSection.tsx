@@ -549,12 +549,13 @@ return (
     goldAccent
     className="my-6"
   >
-    <Stack gap="sm">
+    <Stack gap="sm" data-testid="unit-list">
       {getUnits.map((unit) => {
         const isCollapsed = collapsedItems[unit.id] ?? false;
         return (
           <Box
             key={unit.id}
+            data-testid="unit-card"
             style={{
               backgroundColor: slotBg,
               borderRadius: '6px',
@@ -570,7 +571,8 @@ return (
                   onClick={() => toggleCollapse(unit.id)}
                   style={{ cursor: 'pointer', width: 18, textAlign: 'center' }}
                   aria-expanded={!isCollapsed}
-                  role="button"
+                  role="tab"
+                  data-testid="tab-button"
                 >
                   {isCollapsed ? <FontAwesomeIcon icon={faPlus} size="sm" /> : <FontAwesomeIcon icon={faMinus} size="sm" />}
                 </Box>
@@ -607,6 +609,7 @@ return (
                     c={unit.enabled ? 'gray.2' : 'dimmed'}
                     tt="uppercase"
                     style={{ letterSpacing: '0.5px' }}
+                    data-testid="unit-name"
                   >
                     {unit.name}
                   </Text>
@@ -623,9 +626,12 @@ return (
                         )}
                       </Group>
                       {unit.enabled ? (
-                        <Group gap="xs" mt={4}>
+                        <Group gap="xs" mt={4} data-testid="unit-stats">
                           <Text size="xs" c="dimmed">
-                            Cost: <span style={{ color: accent }}>{toLocale(unit.cost, user?.locale)}</span>
+                            Cost:{' '}
+                            <span style={{ color: accent }} data-testid="unit-cost">
+                              {toLocale(unit.cost, user?.locale)}
+                            </span>
                           </Text>
                           <Text size="xs" c="dimmed">|</Text>
                           <Text size="xs" c="dimmed">
@@ -674,10 +680,15 @@ return (
                   variant="default"
                   disabled={!unit.enabled}
                   onClick={() => handleInputChange(unit.id, getMaxTrainable(unit))}
+                  data-testid="train-button"
+                  aria-label={`Set max ${unit.name}`}
+                  role="button"
                   style={{
-                    backgroundColor: '#1f2b3b',
+                    backgroundImage: 'linear-gradient(180deg, #2b3747 0%, #1f2b3b 100%)',
                     borderColor: '#2f3e52',
                     color: '#9ca3af',
+                    minWidth: '48px',
+                    minHeight: '48px',
                     boxShadow: '0 2px 0 #0f151c',
                   }}
                 >
@@ -747,6 +758,7 @@ return (
                 loading={isProcessingConvert}
                 size="sm"
                 color="yellow"
+                data-testid="action-button"
                 style={{
                   background: `linear-gradient(180deg, ${accent} 0%, #b98f2f 100%)`,
                   color: '#000',

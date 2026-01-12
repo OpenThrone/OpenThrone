@@ -30,10 +30,11 @@ export const StatGrid: React.FC<StatGridProps> = ({
 
   return (
     <GameCard title={title}>
-      <SimpleGrid cols={{ base: 1, sm: columns }} spacing="sm">
+      <SimpleGrid cols={{ base: 1, sm: columns }} spacing="sm" data-testid="stat-grid">
         {stats.map((stat, index) => (
           <Box
             key={index}
+            data-testid="stat-slot"
             className="rpg-inset"
             p="sm"
             style={{
@@ -49,12 +50,14 @@ export const StatGrid: React.FC<StatGridProps> = ({
             <div
               style={{
                 position: 'absolute',
-                top: 0,
-                bottom: 0,
-                right: 0,
-                width: '70px',
-                background: `radial-gradient(circle at 30% 50%, ${accent}40 0%, transparent 70%)`,
+                inset: 0,
                 pointerEvents: 'none',
+                zIndex: 0,
+                background: `
+      radial-gradient(circle at 92% 50%, ${accent}45 0%, transparent 55%),
+      linear-gradient(to left, ${accent}10 0%, transparent 35%)
+    `,
+                opacity: 1,
               }}
             />
             <Group gap="sm">
@@ -73,7 +76,7 @@ export const StatGrid: React.FC<StatGridProps> = ({
                 </div>
               )}
               <div>
-                <Text size="xs" c="dimmed" fw={700} tt="uppercase" style={{ letterSpacing: '0.5px' }}>
+                <Text size="xs" c="dimmed" fw={700} tt="uppercase" style={{ letterSpacing: '0.5px' }} data-testid="stat-label">
                   {stat.label}
                 </Text>
               </div>
@@ -82,6 +85,7 @@ export const StatGrid: React.FC<StatGridProps> = ({
             <Text
               size="lg"
               fw={900}
+              data-testid="stat-value"
               className={stat.isPositive !== false ? 'text-rpg-gold' : ''}
               style={{
                 fontFamily: 'monospace', // Monospace for numbers (very RPG)

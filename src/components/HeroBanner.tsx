@@ -67,6 +67,7 @@ export default function HeroBanner({
         viewBox="0 0 1200 190"
         preserveAspectRatio="none"
         aria-hidden="true"
+        data-testid="decorative-element"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       >
         <defs>
@@ -121,6 +122,7 @@ export default function HeroBanner({
         }}
       >
         <Text
+          data-testid="large-heading"
           style={{
             fontFamily: 'Cinzel, serif',
             fontWeight: 700,

@@ -21,6 +21,7 @@ const parentLinks = [
   'Structures',
   // 'Alliances',
   'Community',
+  'About',
 ] as const;
 
 const parentHrefs: Record<string, string> = {
@@ -29,6 +30,7 @@ const parentHrefs: Record<string, string> = {
   Social: '/social/friends',
   Structures: '/structures/bank',
   Community: '/community/news',
+  About: '/about',
 };
 
 const subMenus: {
@@ -85,6 +87,7 @@ const subMenus: {
       target: '_blank',
     },
   ],
+  About: [],
 };
 
 interface NavLoggedInProps {
@@ -291,7 +294,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
         <div className="relative">
           <button
             type="button"
-            className={`p-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 ${
+            className={`p-2 min-h-[48px] min-w-[48px] rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 ${
               mobileMenuOpen
                 ? 'text-orange-300 bg-white/10'
                 : 'text-white hover:text-gray-200'
@@ -299,6 +302,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
             onClick={() => setMobileMenuOpen(true)}
             aria-label="Open menu"
             aria-expanded={mobileMenuOpen}
+            data-testid="mobile-menu-button"
           >
             <svg
               className={`h-6 w-6 transition-transform ${
@@ -350,6 +354,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
           className={`hidden h-10 ${layoutCont.raceClasses.menuPrimaryClass} lg:block`}
           style={{backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme as PlayerRace)}')`}}
           onMouseEnter={clearReset}
+          role="navigation"
         >
           <div className="mx-auto max-w-screen-2xl lg:block justify-center">
             <ul className="flex flex-wrap items-center justify-center text-center text-lg md:text-xl py-1">
@@ -366,6 +371,8 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                       onMouseOver={() => {
                         setActiveSubMenu(subMenus[link] || []);
                       }}
+                      data-testid={`nav-${link.toLowerCase()}-link`}
+                      aria-label={link}
                     >
                         {link}
                     </Link>
@@ -381,6 +388,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                       ? 'text-elf-link-current'
                       : 'text-elf-link-link'
                   } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-sm`}
+                  data-testid="desktop-sign-out-button"
                 >
                   Sign Out
                 </button>
@@ -393,6 +401,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
           style={{ backgroundImage: `url('${getAssetPath('bottom-menu', null, user?.colorScheme as PlayerRace)}')` }}
 
           onMouseEnter={clearReset}
+          role="navigation"
         >
           <div className="mx-auto max-w-screen-2xl lg:block justify-center">
             <ul className="flex flex-wrap items-center justify-center text-center text-xl py-1">
@@ -412,6 +421,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                     } bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-xs
                     `}
                       target={item.target ? item.target : '_self'}
+                      data-testid="nav-link"
                     >
                       {item.text}
                     </Link>

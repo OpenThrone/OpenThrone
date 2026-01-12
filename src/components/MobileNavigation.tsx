@@ -275,12 +275,11 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       />
 
       {/* Menu */}
-      <div
+      <nav
         ref={menuRef}
         className={`${styles.panel} ${
           open ? styles.panelOpen : styles.panelClosed
         }`}
-        role="navigation"
         aria-label="Mobile navigation"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -360,7 +359,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
             </button>
           </div>
         </div>
-      </div>
+      </nav>
     </div>
   );
 };

@@ -8,7 +8,6 @@ import { StyledTable } from './game/StyledTable';
 
 const FortificationsTab: React.FC<BattleUpgradeProps> = ({ userLevel, fortLevel }) => {
   const { forceUpdate, user } = useUser();
-  const colorScheme = user?.colorScheme;
 
   const rows = Object.values(Fortifications)
     .filter((item) => item.level <= fortLevel + 2)

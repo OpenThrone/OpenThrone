@@ -1,6 +1,6 @@
 import { faPlus, faMinus, faSort, faSortUp, faSortDown, faEye, faRedo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Stack, Chip, Paper, Table, rem } from "@mantine/core";
+import { Stack, Chip, Paper, Table, rem, Box } from "@mantine/core";
 import router from "next/router";
 import { useState, useMemo } from "react";
 import LossesList from "./LossesList";
@@ -97,10 +97,21 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
     };
 
     return (
-      <Table.Th style={thStyle} onClick={() => column && handleSort(column)}>
+      <Table.Th
+        style={thStyle}
+        data-testid={column ? 'sort-header' : undefined}
+        onClick={() => column && handleSort(column)}
+      >
         <div className="flex items-center justify-center">
           {label}
-          {column && <FontAwesomeIcon icon={getSortIcon(column)} size="sm" className="ml-1 opacity-70" />}
+          {column && (
+            <FontAwesomeIcon
+              icon={getSortIcon(column)}
+              size="sm"
+              className="ml-1 opacity-70"
+              data-testid="sort-indicator"
+            />
+          )}
         </div>
       </Table.Th>
     );
@@ -116,32 +127,33 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
         overflow: 'hidden',
       }}
     >
-      <Table verticalSpacing="sm">
-        <Table.Thead style={{ background: '#0e1520' }}>
-          <Table.Tr>
+      <Box style={{ overflowX: 'auto' }} data-testid="table-wrapper">
+        <Table verticalSpacing="sm" data-testid="styled-table">
+          <Table.Thead style={{ background: '#0e1520' }}>
+            <Table.Tr data-testid="table-row">
             <SortableHeader column={null} label="" />
             <SortableHeader column="outcome" label="Outcome" />
             <SortableHeader column="player" label="Player" />
             <SortableHeader column="pillage" label="Pillage & Exp" />
             <SortableHeader column="casualties" label="Casualties" />
             <SortableHeader column={null} label="Action" />
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {isEmpty ? (
-            <Table.Tr>
-              <Table.Td colSpan={6} className="text-center" style={{ borderColor: '#1f2b3b' }}>
-                No battles recorded
-              </Table.Td>
             </Table.Tr>
-          ) : (
-            sortedLogs.map((log) => {
-              const isCollapsed = collapsedLogs[log.id] ?? true;
-              const profileId = type === 'defense' ? log.attacker_id : log.defender_id;
-              const modalLabel = type === 'defense' ? 'Attack Back' : 'Attack Again';
+          </Table.Thead>
+          <Table.Tbody>
+            {isEmpty ? (
+              <Table.Tr data-testid="table-row">
+                <Table.Td colSpan={6} className="text-center" style={{ borderColor: '#1f2b3b' }}>
+                  No battles recorded
+                </Table.Td>
+              </Table.Tr>
+            ) : (
+              sortedLogs.map((log) => {
+                const isCollapsed = collapsedLogs[log.id] ?? true;
+                const profileId = type === 'defense' ? log.attacker_id : log.defender_id;
+                const modalLabel = type === 'defense' ? 'Attack Back' : 'Attack Again';
 
-              return (
-                <Table.Tr key={log.id}>
+                return (
+                  <Table.Tr key={log.id} data-testid="table-row">
                   <Table.Td style={{ borderColor: '#1f2b3b', width: '20px' }}>
                     <button onClick={() => toggleCollapse(log.id.toString())} aria-expanded={!isCollapsed} className="focus:outline-none">
                       <FontAwesomeIcon icon={isCollapsed ? faPlus : faMinus} size="sm" />
@@ -198,12 +210,13 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
                     >
                     </Modal>
                   </Table.Td>
-                </Table.Tr>
-              );
-            })
-          )}
-        </Table.Tbody>
-      </Table>
+                  </Table.Tr>
+                );
+              })
+            )}
+          </Table.Tbody>
+        </Table>
+      </Box>
     </Paper>
   );
 };
