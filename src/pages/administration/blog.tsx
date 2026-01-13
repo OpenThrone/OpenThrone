@@ -19,13 +19,15 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
 
-// Initial Markdown content
-const initialContent = '# Welcome to the Mantine rich text editor\n\nThis is a sample post. You can format your text, add headings, lists, and more.';
-
-const Admin = (props) => {
+const Admin = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('admin');
   const [postHTML, setPostHTML] = useState(''); // Add this line to define postHTML state
-  const [markdownContent, setMarkdownContent] = useState(initialContent);
+  const [markdownContent, setMarkdownContent] = useState(t('blog.initialContent'));
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -43,7 +45,7 @@ const Admin = (props) => {
       TableHeader,
       TableCell,
     ],
-    content: initialContent, // Set initial content as Markdown
+    content: t('blog.initialContent'), // Set initial content as Markdown
     onUpdate: ({ editor }) => {
       // Ensure editor is defined before accessing storage
       if (editor) {
@@ -77,10 +79,10 @@ const Admin = (props) => {
   };
 
   return (
-    <MainArea title="Blog Administration">
-      <GameCard title="Post Editor">
+    <MainArea title={t('blog.title')}>
+      <GameCard title={t('blog.postEditor')}>
         <RichTextEditor editor={editor}>
-          <RichTextEditor.Toolbar sticky stickyOffset={60}>
+          <RichTextEditor.Toolbar stickyOffset={60}>
             <RichTextEditor.ControlsGroup>
               <RichTextEditor.Bold />
               <RichTextEditor.Italic />
@@ -129,11 +131,11 @@ const Admin = (props) => {
         </RichTextEditor>
 
         <Button mt="md" color="yellow" onClick={handleCreatePost}>
-          Submit Post
+          {t('blog.submitPost')}
         </Button>
       </GameCard>
 
-      <GameCard title="Live Preview" mt="md">
+      <GameCard title={t('blog.livePreview')} mt="md">
         <div
           dangerouslySetInnerHTML={{ __html: postHTML }}
           style={{
@@ -145,7 +147,7 @@ const Admin = (props) => {
         ></div>
       </GameCard>
 
-      <GameCard title="Markdown Content" mt="md">
+      <GameCard title={t('blog.markdownContent')} mt="md">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeRaw]}
@@ -172,6 +174,14 @@ const Admin = (props) => {
       </GameCard>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['admin'])),
+    },
+  };
 };
 
 export default Admin;

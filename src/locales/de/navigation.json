@@ -1,0 +1,62 @@
+{
+  "main": {
+    "home": "Startseite",
+    "battle": "Kampf",
+    "social": "Sozial",
+    "structures": "Strukturen",
+    "community": "Community",
+    "about": "Über"
+  },
+  "home": {
+    "overview": "Übersicht",
+    "levels": "Stufen",
+    "profile": "Profil",
+    "settings": "Einstellungen",
+    "administration": "Verwaltung"
+  },
+  "battle": {
+    "attack": "Angreifen",
+    "training": "Training",
+    "upgrades": "Verbesserungen",
+    "warHistory": "Kriegsgeschichte",
+    "battleSimulator": "Kampfsimulator"
+  },
+  "social": {
+    "friends": "Freunde",
+    "enemies": "Feinde",
+    "requests": "Anfragen"
+  },
+  "structures": {
+    "bank": "Bank",
+    "armory": "Waffenkammer",
+    "upgrades": "Verbesserungen",
+    "housing": "Wohnen",
+    "repair": "Reparatur"
+  },
+  "community": {
+    "news": "Neuigkeiten",
+    "discord": "Discord",
+    "autoRecruit": "Auto-Rekrutierung",
+    "stats": "Statistiken",
+    "reportIssues": "Probleme melden"
+  },
+  "loggedOut": {
+    "home": "Startseite",
+    "login": "Anmelden",
+    "signup": "Registrieren",
+    "news": "Neuigkeiten",
+    "about": "Über"
+  },
+  "actions": {
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen"
+  },
+  "ariaLabels": {
+    "mobileMenuButton": "Navigationsmenü öffnen",
+    "desktopMenu": "Hauptnavigationsmenü",
+    "subMenu": "Untermenü für {{section}}",
+    "signOut": "Von Ihrem Konto abmelden"
+  }
+}

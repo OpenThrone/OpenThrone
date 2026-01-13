@@ -1,4 +1,6 @@
 import { getSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useState } from 'react';
 import AttackLogTable from '@/components/AttackLog';
 import prisma from '@/lib/prisma';
@@ -8,9 +10,12 @@ import { GameCard } from '@/components/game/GameCard';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
 
+import { getSafeLocale } from '@/utils/i18n';
+
 const ROWS_PER_PAGE = 5;
 
 const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('battle');
   const [attackPage, setAttackPage] = useState(1);
   const [defensePage, setDefensePage] = useState(1);
   const theme = useMantineTheme();
@@ -29,8 +34,8 @@ const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typ
   );
 
   return (
-    <MainArea title="War History">
-      <GameCard title="Attack Log" icon={faScroll} style={{ marginBottom: theme.spacing.md }}>
+    <MainArea title={t('warHistory.title')}>
+      <GameCard title={t('warHistory.attackLog')} icon={faScroll} style={{ marginBottom: theme.spacing.md }}>
         <AttackLogTable logs={currentAttackLogs} type="attack" />
         <Group justify="center" pt="md">
           <Pagination
@@ -43,7 +48,7 @@ const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typ
         </Group>
       </GameCard>
 
-      <GameCard title="Defense Log" icon={faScroll}>
+      <GameCard title={t('warHistory.defenseLog')} icon={faScroll}>
         <AttackLogTable logs={currentDefenseLogs} type="defense" />
         <Group justify="center" pt="md">
           <Pagination
@@ -102,6 +107,7 @@ export const getServerSideProps = async (context: any) => {
         ...log,
         timestamp: log.timestamp.toISOString(),
       })),
+      ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
     },
   };
 };

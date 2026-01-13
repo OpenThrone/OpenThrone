@@ -7,11 +7,16 @@ import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
 import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
 
-export default function CreateAlliance() {
+export default function CreateAlliance(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { user } = useUser();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation('alliances');
 
   const form = useForm({
     initialValues: {
@@ -23,21 +28,21 @@ export default function CreateAlliance() {
 
     validate: {
       allianceName: (value) =>
-        value.trim().length >= 3 ? null : 'Alliance name must be at least 3 characters long',
+        value.trim().length >= 3 ? null : t('create.nameTooShort'),
       motto: (value) =>
         value.trim().length === 0 || value.trim().length <= 255
           ? null
-          : 'Motto must be 255 characters or less',
+          : t('create.mottoTooLong'),
       comments: (value) =>
         value.trim().length === 0 || value.trim().length <= 1000
           ? null
-          : 'Comments must be 1000 characters or less',
+          : t('create.commentsTooLong'),
     },
   });
 
   if (!user) {
     return (
-      <MainArea title="Create Alliance">
+      <MainArea title={t('create.title')}>
         <Loader />
       </MainArea>
     );
@@ -45,9 +50,9 @@ export default function CreateAlliance() {
 
   if (user.level < 10) {
     return (
-      <MainArea title="Create Alliance">
+      <MainArea title={t('create.title')}>
         <Alert color="red">
-          You must be at least level 10 to create an alliance.
+          {t('create.levelRequired', { level: 10 })}
         </Alert>
       </MainArea>
     );
@@ -55,8 +60,8 @@ export default function CreateAlliance() {
 
   if (user.gold < 100000000) {
     return (
-      <MainArea title="Create Alliance">
-        <Alert color="red">Creating an alliance costs 100 million gold.</Alert>
+      <MainArea title={t('create.title')}>
+        <Alert color="red">{t('create.goldRequired', { cost: '100 million' })}</Alert>
       </MainArea>
     );
   }
@@ -82,52 +87,52 @@ export default function CreateAlliance() {
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const message = (data as any)?.error || 'Failed to create alliance';
+        const message = (data as any)?.error || t('create.error');
         alertService.error(message);
         return;
       }
 
-      alertService.success('Alliance created');
+      alertService.success(t('create.success'));
       router.push('/alliances');
     } catch (error) {
       logError('Failed to create alliance:', error);
-      alertService.error('Failed to create alliance');
+      alertService.error(t('create.error'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <MainArea title="Create Alliance">
-      <GameCard title="Alliance Charter">
+    <MainArea title={t('create.title')}>
+      <GameCard title={t('create.charter')}>
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <TextInput
-            label="Alliance Name"
-            placeholder="Enter your alliance name"
+            label={t('create.name')}
+            placeholder={t('create.namePlaceholder')}
             required
             {...form.getInputProps('allianceName')}
           />
           <TextInput
-            label="Avatar URL (optional)"
-            placeholder="https://..."
+            label={t('create.avatar')}
+            placeholder={t('create.avatarPlaceholder')}
             {...form.getInputProps('avatarUrl')}
           />
           <TextInput
-            label="Motto (optional)"
-            placeholder="Short motto"
+            label={t('create.motto')}
+            placeholder={t('create.mottoPlaceholder')}
             {...form.getInputProps('motto')}
           />
           <Textarea
-            label="Comments (optional)"
-            placeholder="Describe your alliance"
+            label={t('create.comments')}
+            placeholder={t('create.commentsPlaceholder')}
             minRows={4}
             {...form.getInputProps('comments')}
           />
 
-          <Text>Cost: 100 Million Gold</Text>
+          <Text>{t('create.cost')}</Text>
           <Group mt="md">
             <Button type="submit" loading={submitting} color="yellow">
-              Create Alliance
+              {t('create.create')}
             </Button>
           </Group>
         </form>
@@ -135,3 +140,11 @@ export default function CreateAlliance() {
     </MainArea>
   );
 }
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['alliances'])),
+    },
+  };
+};

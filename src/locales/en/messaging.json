@@ -1,0 +1,16 @@
+{
+  "title": "Messaging",
+  "newMessage": "New Message",
+  "compose": "Compose",
+  "themedChat": "Themed chat",
+  "startConversation": "Start a new conversation or manage your chats.",
+  "toggleThemed": "Toggle themed layout any time.",
+  "chatRooms": "Chat Rooms",
+  "selectRoom": "Select a room",
+  "user": "User {{id}}",
+  "errorFetchingRooms": "Failed to fetch rooms",
+  "errorFetchingMessages": "Failed to fetch messages",
+  "errorRefetchingRooms": "Error refetching rooms after modal",
+  "unknown": "Unknown",
+  "reader": "Reader"
+}

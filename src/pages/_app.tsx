@@ -13,6 +13,7 @@ import { useRouter } from 'next/router';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { Center, MantineProvider, Loader } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
+import { appWithTranslation } from 'next-i18next';
 
 import Layout from '@/components/Layout'; // Import the Layout component
 import { LayoutProvider } from '@/context/LayoutContext';
@@ -67,4 +68,4 @@ const AppWithTheme = ({ Component, pageProps }: AppProps) => {
   );
 };
 
-export default MyApp;
+export default appWithTranslation(MyApp);

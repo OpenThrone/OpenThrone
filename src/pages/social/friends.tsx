@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
+import { getSafeLocale } from '@/utils/i18n';
+
 import Link from 'next/link';
 import { Table, Loader, Group, Avatar, Badge, Text, Indicator } from '@mantine/core';
 import UserModel from '@/models/Users';
 import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
+import { InferGetServerSidePropsType } from "next";
 
-const Friends = (props) => {
+const Friends = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('social');
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,8 +28,8 @@ const Friends = (props) => {
 
   if (loading) {
     return (
-      <MainArea title="Friends">
-        <GameCard title="Friends">
+      <MainArea title={t('friends.title')}>
+        <GameCard title={t('friends.title')}>
           <Loader />
         </GameCard>
       </MainArea>
@@ -49,7 +56,7 @@ const Friends = (props) => {
                 >
                   {player.displayName}
                 </Link>
-                {player.is_player && <Badge color='blue' ml={5}>You</Badge>}
+                {player.is_player && <Badge color='blue' ml={5}>{t('friends.you')}</Badge>}
               </Text>
               <Text fz='xs' c='dimmed'>
                 {player.race} {player.class}
@@ -59,18 +66,26 @@ const Friends = (props) => {
         </Table.Td>
         <Table.Td style={{ borderColor: '#1f2b3b' }}>{friend.acceptanceDate}</Table.Td>
       </Table.Tr>
-    )
+    );
   });
 
   return (
-    <MainArea title="Friends">
-      <GameCard title="Friends List">
-        <StyledTable headers={['Username', 'Since']}>
+    <MainArea title={t('friends.title')}>
+      <GameCard title={t('friends.friendsList')}>
+        <StyledTable headers={[t('friends.username'), t('friends.since')]}>
           {rows}
         </StyledTable>
       </GameCard>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['social'])),
+    },
+  };
 };
 
 export default Friends;

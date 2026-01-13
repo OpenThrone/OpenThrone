@@ -1,0 +1,58 @@
+{
+  "title": "Open Throne",
+  "metaDescription": "Descripción Meta",
+  "worldStats": {
+    "title": "Estadísticas del Mundo",
+    "totalPlayers": "Total de Jugadores",
+    "battlesFought": "Batallas Luchadas",
+    "alliances": "Alianzas",
+    "epoch": "Época"
+  },
+  "highlights": {
+    "strategicCombat": {
+      "title": "Combate Estratégico",
+      "description": "Construye y entrena unidades especializadas, luego saquea a rivales para subir en los rankings."
+    },
+    "espionageOperations": {
+      "title": "Operaciones de Espionaje",
+      "description": "Despliega espías, sabotea defensas y ataca antes de que tus enemigos puedan reaccionar."
+    },
+    "empireBuilding": {
+      "title": "Construcción de Imperio",
+      "description": "Construye fortificaciones, armerías y minas para fortalecer tu reino."
+    }
+  },
+  "hero": {
+    "signUpNowAnd": "Regístrate Ahora Y",
+    "joinTheFight": "¡Únete a la Lucha!",
+    "tagline": "Elige una raza, forja tu clase y comanda un imperio en ascenso en un mundo de estrategia persistente.",
+    "features": {
+      "chooseRace": "Elige entre cuatro razas únicas: No-muertos, Humanos, Duendes, Elfos.",
+      "trainCitizens": "Entrena ciudadanos como trabajadores, soldados ofensivos o defensivos y espías.",
+      "equipArmy": "Equipa a tu ejército con armas y armaduras.",
+      "playWithFriends": "Juega con amigos, crea tu propia alianza y domina el reino.",
+      "createProfile": "Crea un perfil de personaje con un avatar personalizado.",
+      "stayInTouch": "Mantente en contacto con el equipo a través de Discord."
+    },
+    "beginYourReign": "Comienza Tu Reinado",
+    "signIn": "Iniciar Sesión",
+    "freeToPlay": "Gratis para jugar, sin reinicios, sin muros de pago."
+  },
+  "warCouncilBriefing": {
+    "title": "Informe del Consejo de Guerra",
+    "description": "Mantente al día sobre actualizaciones del reino, parches de balance y campañas estacionales. La sala de guerra nunca duerme.",
+    "readTheNews": "Leer las Noticias",
+    "joinDiscord": "Unirse al Discord"
+  },
+  "newcomerProtocol": {
+    "title": "Protocolo para Novatos",
+    "description": "Comienza con turnos protegidos, gana recompensas diarias y aprende el meta a tu propio ritmo. Construimos este reino para gobernantes a largo plazo.",
+    "createCommander": "Crear un Comandante",
+    "returnToBattle": "Volver a la Batalla"
+  },
+  "footer": {
+    "aboutProject": "Acerca del Proyecto",
+    "github": "GitHub",
+    "communityDriven": "OpenThrone es un proyecto impulsado por la comunidad."
+  }
+}

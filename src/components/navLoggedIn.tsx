@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'next-i18next';
 
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
@@ -98,6 +99,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
   const pathName = usePathname();
   const searchParms = useSearchParams();
   const router = useRouter();
+  const { t } = useTranslation('common');
   const [activeSubMenu, setActiveSubMenu] = useState<
     { text: string; href: string; parent: string, target?: string }[]
   >([]);
@@ -300,7 +302,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                 : 'text-white hover:text-gray-200'
             }`}
             onClick={() => setMobileMenuOpen(true)}
-            aria-label="Open menu"
+            aria-label={t('ariaLabels.openMenu')}
             aria-expanded={mobileMenuOpen}
             data-testid="mobile-menu-button"
           >
@@ -328,7 +330,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
               variant="filled"
               size="xs"
               className="absolute -top-1 -right-1"
-              aria-label={`You have ${notificationSum} unread notifications`}
+              aria-label={t('ariaLabels.unreadNotifications', { count: notificationSum })}
             >
               {badgeLabel}
             </Badge>

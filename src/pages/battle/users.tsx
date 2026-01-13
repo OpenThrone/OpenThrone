@@ -2,6 +2,10 @@ import type { InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
+import { getSafeLocale } from '@/utils/i18n';
 
 import { faCrosshairs, faFilter, faUsers } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -36,6 +40,7 @@ import { logError, logInfo } from '@/utils/logger';
 import { getLevelFromXP } from '@/utils/utilities';
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('battle');
   const searchParams = useSearchParams();
   const { user } = useUser();
   const theme = useMantineTheme();
@@ -93,13 +98,13 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const getRankLabel = () => {
     switch (sortBy) {
       case 'gold':
-        return 'Gold Rank';
+        return t('users.goldRank');
       case 'level':
-        return 'Lvl Rank';
+        return t('users.lvlRank');
       case 'population':
-        return 'Pop Rank';
+        return t('users.popRank');
       default:
-        return 'Rank';
+        return t('users.rank');
     }
   };
 
@@ -135,7 +140,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     try {
       const res = await fetch(`/api/battle/users-filter-meta?days=${recentDays}`);
       if (!res.ok) {
-        setMetaError('Unable to load battle metadata.');
+        setMetaError(t('users.unableToLoadMetadata'));
         return;
       }
       const data = await res.json();
@@ -144,7 +149,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
       setIBeatIds(new Set((data.iBeatIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
       setTheyBeatMeIds(new Set((data.theyBeatMeIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
     } catch (e) {
-      setMetaError('Unable to load battle metadata.');
+      setMetaError(t('users.unableToLoadMetadata'));
     }
   }, [user, recentDays]);
 
@@ -390,41 +395,41 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   };
 
   return (
-    <MainArea title="Attack Users">
+    <MainArea title={t('users.title')}>
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mb="lg">
-        <GameCard title="Targeting Window" icon={faCrosshairs} goldAccent={false}>
+        <GameCard title={t('users.targetingWindow')} icon={faCrosshairs} goldAccent={false}>
           <Text size="sm" c="gray.3">
-            You can attack players from levels{' '}
+            {t('users.attackRange')}{' '}
             <Text component="span" fw={700} c="gray.1">
               {attackRangeMin}
             </Text>{' '}
-            to{' '}
+            {t('users.to')}{' '}
             <Text component="span" fw={700} c="gray.1">
               {attackRangeMax}
             </Text>
             .
           </Text>
           <Text size="xs" c="dimmed" mt="sm">
-            Showing {filteredUsers.length} / {allUsers.length} targets
+            {t('users.showingTargets', { filtered: filteredUsers.length, total: allUsers.length })}
           </Text>
         </GameCard>
 
         <GameCard
-          title="Filters"
+          title={t('users.filters')}
           icon={faFilter}
           action={(
             <Button size="xs" variant="light" onClick={() => setAdvancedOpen((v) => !v)}>
-              {advancedOpen ? 'Hide Advanced' : 'Show Advanced'}
+              {advancedOpen ? t('users.hideAdvanced') : t('users.showAdvanced')}
             </Button>
           )}
           goldAccent={false}
         >
           <Stack gap="sm">
             <TextInput
-              label="Name contains"
+              label={t('users.nameContains')}
               value={nameQuery}
               onChange={(e) => setNameQuery(e.currentTarget.value)}
-              placeholder="e.g. Tim"
+              placeholder={t('users.placeholderName')}
             />
             <Collapse in={advancedOpen}>
               <Box
@@ -440,39 +445,39 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                 <Stack gap="sm">
                   <Group justify="space-between" align="flex-end">
                     <Text size="sm" c="dimmed">
-                      Advanced filters
+                      {t('users.advancedFilters')}
                     </Text>
                     <Button size="xs" variant="default" onClick={resetAdvancedFilters}>
-                      Reset
+                      {t('users.reset')}
                     </Button>
                   </Group>
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
-                    Social
+                    {t('users.social')}
                   </Text>
                   <Group>
-                    <Checkbox checked={includeFriends} onChange={(e) => setIncludeFriends(e.currentTarget.checked)} label="Friends" />
-                    <Checkbox checked={includeEnemies} onChange={(e) => setIncludeEnemies(e.currentTarget.checked)} label="Enemies" />
-                    <Checkbox checked={includeOthers} onChange={(e) => setIncludeOthers(e.currentTarget.checked)} label="Others" />
+                    <Checkbox checked={includeFriends} onChange={(e) => setIncludeFriends(e.currentTarget.checked)} label={t('users.friends')} />
+                    <Checkbox checked={includeEnemies} onChange={(e) => setIncludeEnemies(e.currentTarget.checked)} label={t('users.enemies')} />
+                    <Checkbox checked={includeOthers} onChange={(e) => setIncludeOthers(e.currentTarget.checked)} label={t('users.others')} />
                   </Group>
 
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
-                    Alliance
+                    {t('users.alliance')}
                   </Text>
                   <Group>
                     <Checkbox
                       checked={includeAllianceMembers}
                       onChange={(e) => setIncludeAllianceMembers(e.currentTarget.checked)}
-                      label="In an alliance"
+                      label={t('users.inAnAlliance')}
                     />
                     <Checkbox
                       checked={includeNonAllianceMembers}
                       onChange={(e) => setIncludeNonAllianceMembers(e.currentTarget.checked)}
-                      label="Not in an alliance"
+                      label={t('users.notInAnAlliance')}
                     />
                   </Group>
                   <MultiSelect
-                    label="Specific alliances (optional)"
-                    placeholder="Pick alliances"
+                    label={t('users.specificAlliances')}
+                    placeholder={t('users.pickAlliances')}
                     data={allianceOptions}
                     value={selectedAllianceIds}
                     onChange={setSelectedAllianceIds}
@@ -481,18 +486,18 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   />
 
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
-                    Stats
+                    {t('users.stats')}
                   </Text>
                   <Group grow>
                     <NumberInput
-                      label="Min gold"
+                      label={t('users.minGold')}
                       value={minGold}
                       onChange={(v) => setMinGold(toNumberOrNull(v))}
                       min={0}
                       thousandSeparator=","
                     />
                     <NumberInput
-                      label="Max gold"
+                      label={t('users.maxGold')}
                       value={maxGold}
                       onChange={(v) => setMaxGold(toNumberOrNull(v))}
                       min={0}
@@ -500,17 +505,17 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                     />
                   </Group>
                   <Group grow>
-                    <NumberInput label="Min level" value={minLevel} onChange={(v) => setMinLevel(toNumberOrNull(v))} min={1} />
-                    <NumberInput label="Max level" value={maxLevel} onChange={(v) => setMaxLevel(toNumberOrNull(v))} min={1} />
+                    <NumberInput label={t('users.minLevel')} value={minLevel} onChange={(v) => setMinLevel(toNumberOrNull(v))} min={1} />
+                    <NumberInput label={t('users.maxLevel')} value={maxLevel} onChange={(v) => setMaxLevel(toNumberOrNull(v))} min={1} />
                   </Group>
-                  <Checkbox checked={onlineOnly} onChange={(e) => setOnlineOnly(e.currentTarget.checked)} label="Online only" />
+                  <Checkbox checked={onlineOnly} onChange={(e) => setOnlineOnly(e.currentTarget.checked)} label={t('users.onlineOnly')} />
 
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
-                    Recent battles
+                    {t('users.recentBattles')}
                   </Text>
                   <Group grow align="flex-end">
                     <NumberInput
-                      label="Lookback (days)"
+                      label={t('users.lookbackDays')}
                       value={recentDays}
                       onChange={(v) => setRecentDays(typeof v === 'number' ? v : 7)}
                       min={1}
@@ -522,13 +527,13 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                     <Checkbox
                       checked={attackedMeRecently}
                       onChange={(e) => setAttackedMeRecently(e.currentTarget.checked)}
-                      label="Attacked you recently"
+                      label={t('users.attackedYouRecently')}
                     />
-                    <Checkbox checked={iBeatRecently} onChange={(e) => setIBeatRecently(e.currentTarget.checked)} label="You beat recently" />
+                    <Checkbox checked={iBeatRecently} onChange={(e) => setIBeatRecently(e.currentTarget.checked)} label={t('users.youBeatRecently')} />
                     <Checkbox
                       checked={theyBeatMeRecently}
                       onChange={(e) => setTheyBeatMeRecently(e.currentTarget.checked)}
-                      label="They beat you recently"
+                      label={t('users.theyBeatYouRecently')}
                     />
                   </Group>
                 </Stack>
@@ -539,7 +544,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
       </SimpleGrid>
 
       <GameCard
-        title="Attack Users"
+        title={t('users.title')}
         icon={faUsers}
         
       >
@@ -553,7 +558,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               }}
               disabled={page === 1}
             >
-              Previous
+              {t('users.previous')}
             </Button>
             <Pagination
               total={lastPage}
@@ -570,18 +575,18 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               }}
               disabled={players.length < rowsPerPage}
             >
-              Next
+              {t('users.next')}
             </Button>
           </Group>
           <Group>
             <Pill size="lg">
               <Text>
-                Sorted By: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
+                {t('users.sortedBy')}: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
               </Text>
             </Pill>
             <Pill size="lg">
               <Text>
-                Your {getRankLabel()}: {myRank}
+                {t('users.your')} {getRankLabel()}: {myRank}
               </Text>
             </Pill>
             <Pill
@@ -591,13 +596,13 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               color={myPage === page ? 'gray' : 'brand'}
               onMouseOver={(e) => e.currentTarget.style.cursor = myPage !== page ? 'pointer' : 'default'}
             >
-              Go to My Rank
+              {t('users.goToMyRank')}
             </Pill>
           </Group>
         </Group>
 
         <Group mb="sm" wrap="wrap">
-          <Text size="sm">Show per page:</Text>
+          <Text size="sm">{t('users.showPerPage')}:</Text>
           {[10, 20, 50, 100].map(option => (
             <Text
               key={option}
@@ -617,7 +622,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               {metaError}
             </Text>
             <Button size="xs" variant="light" onClick={fetchMeta} data-testid="retry-button">
-              Retry
+              {t('users.retry')}
             </Button>
           </Group>
         )}
@@ -641,8 +646,8 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   {getRankLabel()}
                 </Table.Th>
                 {[
-                  { label: 'Username' },
-                  { label: 'Alliance' },
+                  { label: t('users.username') },
+                  { label: t('users.alliance') },
                 ].map((head) => (
                   <Table.Th
                     key={head.label}
@@ -671,7 +676,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   }}
                 >
                   <button onClick={() => handleSort('gold')}>
-                    Gold {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                    {t('users.gold')} {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </Table.Th>
                 <Table.Th
@@ -685,7 +690,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   }}
                 >
                   <button onClick={() => handleSort('population')}>
-                    Population {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                    {t('users.population')} {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </Table.Th>
                 <Table.Th
@@ -699,7 +704,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   }}
                 >
                   <button onClick={() => handleSort('level')}>
-                    Level {sortBy === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                    {t('users.level')} {sortBy === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </Table.Th>
               </Table.Tr>
@@ -708,7 +713,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               {players.length === 0 ? (
                 <Table.Tr data-testid="table-row">
                   <Table.Td colSpan={6} data-testid="empty-state" style={{ borderColor: '#1f2b3b', textAlign: 'center' }}>
-                    No players found
+                    {t('users.noPlayersFound')}
                   </Table.Td>
                 </Table.Tr>
               ) : (
@@ -786,7 +791,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 };
 
 
-export const getServerSideProps = async () => {
+export const getServerSideProps = async (context: any) => {
   try {
     let allUsers = await prisma.users.findMany({
       where: {
@@ -858,7 +863,12 @@ export const getServerSideProps = async () => {
     });
     logInfo(`Sanitized ${sanitizedUsers.length} users.`);
     sanitizedUsers.sort((a, b) => a.rank - b.rank);
-    return { props: { allUsers: sanitizedUsers } };
+    return {
+      props: {
+        allUsers: sanitizedUsers,
+        ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
+      },
+    };
   } catch (error) {
     logError('Error fetching user data:', error);
     return { props: { allUsers: [] } };

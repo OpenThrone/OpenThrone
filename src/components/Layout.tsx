@@ -1,4 +1,5 @@
 import { useSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
@@ -26,6 +27,7 @@ interface IMainProps {
 }
 
 const Layout = (props: IMainProps) => {
+  const { t } = useTranslation('common');
   const { status } = useSession();
   const { raceClasses, authorized, userLoading: layoutLoading } = useLayout();
   const isMobileSidebar = useMediaQuery('(max-width: 767px)', false, {
@@ -44,7 +46,7 @@ const Layout = (props: IMainProps) => {
       fetch('/api/general/git-info')
         .then(response => {
           if (!response.ok) {
-            throw new Error('Failed to fetch git info');
+            throw new Error(t('errors.failedToFetchGitInfo'));
           }
           return response.json();
         })
@@ -52,13 +54,13 @@ const Layout = (props: IMainProps) => {
           setGitInfo(data);
         })
         .catch(error => {
-          logError('Failed to fetch git info:', error);
+          logError(`${t('errors.failedToFetchGitInfo')}:`, error);
         });
     } else {
       fetch('/api/general/getOnlinePlayers')
         .then(response => {
           if (!response.ok) {
-            throw new Error('Failed to fetch online player info');
+            throw new Error(t('errors.failedToFetchOnlinePlayerInfo'));
           }
           return response.json();
         })
@@ -71,7 +73,7 @@ const Layout = (props: IMainProps) => {
           });
         })
         .catch(error => {
-          logError('Failed to fetch online player info:', error);
+          logError(`${t('errors.failedToFetchOnlinePlayerInfo')}:`, error);
         });
     }
   }, [isDevelopment]);
@@ -108,15 +110,6 @@ const Layout = (props: IMainProps) => {
           '--ot-border': 'rgba(255,204,102,0.35)',
         }}
       >
-        <a
-          className="skip-link"
-          href="#main-content"
-          data-testid="skip-link"
-          onClick={handleSkipToContent}
-          onKeyDown={handleSkipKeyDown}
-        >
-          Skip to main content
-        </a>
         <div
           className={`w-full grow ${authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
             } px-1 text-yellow-400 antialiased`}
@@ -134,7 +127,7 @@ const Layout = (props: IMainProps) => {
                   <center>
                     <Image
                       src={`${getAssetPath('OpenThrone')}`}
-                      alt="OpenThrone"
+                      alt={t('app.title')}
                       priority
                       style={{ height: '100px', width: '200px', filter: 'drop-shadow(0px 3px 0px #000000)' }}
                       width={'200'}
@@ -184,19 +177,19 @@ const Layout = (props: IMainProps) => {
           </div>
         </div> {/* Closing div for the w-full grow div */}
         <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-ot-text">
-          © Copyright {new Date().getFullYear()} {AppConfig.title}.
+          {t('app.copyright', { year: new Date().getFullYear(), title: AppConfig.title })}
           <br />
           <div className="text-xs">
             {isDevelopment ? (
               <>
-                <p><strong>Latest Commit:</strong> {gitInfo.latestCommit}</p>
-                <p><strong>Latest Commit Message:</strong> {gitInfo.latestCommitMessage}</p>
+                <p><strong>{t('footer.latestCommit')}</strong> {gitInfo.latestCommit}</p>
+                <p><strong>{t('footer.latestCommitMessage')}</strong> {gitInfo.latestCommitMessage}</p>
               </>
             ) : (
               <>
-                <p><strong>Online Players:</strong> {onlinePlayerInfo.onlinePlayers} / {onlinePlayerInfo.totalPlayers}</p>
-                <p><strong>New Players in last 24hrs:</strong> {onlinePlayerInfo.newPlayers}</p>
-                <p><strong>Newest Player:</strong> {onlinePlayerInfo.newestPlayer}</p>
+                <p><strong>{t('footer.onlinePlayers')}</strong> {onlinePlayerInfo.onlinePlayers} / {onlinePlayerInfo.totalPlayers}</p>
+                <p><strong>{t('footer.newPlayersLast24hrs')}</strong> {onlinePlayerInfo.newPlayers}</p>
+                <p><strong>{t('footer.newestPlayer')}</strong> {onlinePlayerInfo.newestPlayer}</p>
               </>
             )}
 

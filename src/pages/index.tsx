@@ -19,11 +19,13 @@ import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import { useLayout } from '@/context/LayoutContext';
-import '@/styles/global.css';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 const Index = (props) => {
   const { setMeta, meta } = useLayout();
   const { status } = useSession();
+  const { t } = useTranslation('landing');
   const [isRedirecting, setIsRedirecting] = useState(true);
   const [worldStats, setWorldStats] = useState({
     players: '1,200+',
@@ -35,11 +37,11 @@ const Index = (props) => {
   useEffect(() => {
     if (setMeta && meta && meta.title !== 'OpenThrone') {
       setMeta({
-        title: 'OpenThrone',
-        description: 'Meta Description',
+        title: t('title'),
+        description: t('metaDescription'),
       });
     }
-  }, [meta, setMeta]);
+  }, [meta, setMeta, t]);
 
   useEffect(() => {
     // Don't redirect until session status is determined
@@ -49,7 +51,7 @@ const Index = (props) => {
     }
 
     if (status === 'authenticated') {
-      // User is logged in, redirect to the dashboard
+      // User is logged in, redirect to dashboard
       console.log("User authenticated, redirecting to /home/overview");
       router.replace('/home/overview');
       setIsRedirecting(true);
@@ -66,7 +68,7 @@ const Index = (props) => {
           const data = await res.json();
           setWorldStats({
             players: data.players !== undefined ? Number(data.players).toLocaleString() : '1,200+',
-            battles: data.battles !== undefined ? new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits: 1 }).format(Number(data.battles)) : '4.8M',
+            battles: data.battles !== undefined ? new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits:1 }).format(Number(data.battles)) : '4.8M',
             alliances: data.alliances !== undefined ? Number(data.alliances).toLocaleString() : '312',
             epoch: data.epoch || 'Era VIII',
           });
@@ -80,33 +82,16 @@ const Index = (props) => {
 
   if (status === 'loading' || (status === 'authenticated' && isRedirecting)) {
     return (
-      <MainArea title="Open Throne">
+      <MainArea title={t('title')}>
         <Center style={{ height: '50vh' }}> {/* Adjust height as needed */}
           <Loader />
         </Center>
         </MainArea>
     );
   }
-  const highlights = [
-    {
-      title: 'Strategic Combat',
-      description: 'Build and train specialized units, then plunder rivals to climb the rankings.',
-      icon: faCrown,
-    },
-    {
-      title: 'Espionage Operations',
-      description: 'Deploy spies, sabotage defenses, and strike before your enemies can react.',
-      icon: faDragon,
-    },
-    {
-      title: 'Empire Building',
-      description: 'Construct fortifications, armories, and mines to strengthen your kingdom.',
-      icon: faShieldHalved,
-    },
-  ];
 
   return (
-    <MainArea title="Open Throne">
+    <MainArea title={t('title')}>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 app-bg">
         <Box
           className="public-rise"
@@ -134,7 +119,7 @@ const Index = (props) => {
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
             <Box>
               <Text size="xs" fw={700} tt="uppercase" c="gray.4" style={{ letterSpacing: '0.4em' }}>
-                Sign Up Now And
+                {t('hero.signUpNowAnd')}
               </Text>
               <Text
                 mt="sm"
@@ -146,19 +131,19 @@ const Index = (props) => {
                   textShadow: '0 6px 18px rgba(0,0,0,0.6)',
                 }}
               >
-                Join the Fight!
+                {t('hero.joinTheFight')}
               </Text>
               <Text mt="md" size="lg" c="gray.3">
-                Choose a race, forge your class, and command a rising empire in a persistent strategy world.
+                {t('hero.tagline')}
               </Text>
               <Box mt="md">
                 <Text size="sm" c="gray.4" component="ul" style={{ paddingLeft: '1.2rem', lineHeight: 1.7 }}>
-                  <li>Choose between four unique races: Undead, Humans, Goblins, Elves.</li>
-                  <li>Train citizens as workers, offensive or defensive soldiers, and spies.</li>
-                  <li>Equip your army with weapons and armor.</li>
-                  <li>Play with friends, create your own alliance, and dominate the realm.</li>
-                  <li>Create a character profile with a custom avatar.</li>
-                  <li>Stay in contact with the team via Discord.</li>
+                  <li>{t('hero.features.chooseRace')}</li>
+                  <li>{t('hero.features.trainCitizens')}</li>
+                  <li>{t('hero.features.equipArmy')}</li>
+                  <li>{t('hero.features.playWithFriends')}</li>
+                  <li>{t('hero.features.createProfile')}</li>
+                  <li>{t('hero.features.stayInTouch')}</li>
                 </Text>
               </Box>
               <Group mt="xl" gap="md">
@@ -168,7 +153,7 @@ const Index = (props) => {
                   size="md"
                   color="yellow"
                 >
-                  Begin Your Reign
+                  {t('hero.beginYourReign')}
                 </Button>
                 <Button
                   component={Link}
@@ -177,7 +162,7 @@ const Index = (props) => {
                   variant="outline"
                   color="gray"
                 >
-                  Sign In
+                  {t('hero.signIn')}
                 </Button>
               </Group>
               <Group mt="md" gap="xs">
@@ -185,19 +170,19 @@ const Index = (props) => {
                   <FontAwesomeIcon icon={faBolt} />
                 </ThemeIcon>
                 <Text size="sm" c="dimmed">
-                  Free to play, no resets, no paywalls.
+                  {t('hero.freeToPlay')}
                 </Text>
               </Group>
             </Box>
 
             <Box className="public-rise public-rise-delay-1">
               <StatGrid
-                title="World Stats"
+                title={t('worldStats.title')}
                 stats={[
-                  { label: 'Total Players', value: worldStats.players, icon: <FontAwesomeIcon icon={faCrown} /> },
-                  { label: 'Battles Fought', value: worldStats.battles, icon: <FontAwesomeIcon icon={faSkullCrossbones} /> },
-                  { label: 'Alliances', value: worldStats.alliances, icon: <FontAwesomeIcon icon={faUsers} /> },
-                  { label: 'Epoch', value: worldStats.epoch, icon: <FontAwesomeIcon icon={faShieldHalved} /> },
+                  { label: t('worldStats.totalPlayers'), value: worldStats.players, icon: <FontAwesomeIcon icon={faCrown} /> },
+                  { label: t('worldStats.battlesFought'), value: worldStats.battles, icon: <FontAwesomeIcon icon={faSkullCrossbones} /> },
+                  { label: t('worldStats.alliances'), value: worldStats.alliances, icon: <FontAwesomeIcon icon={faUsers} /> },
+                  { label: t('worldStats.epoch'), value: worldStats.epoch, icon: <FontAwesomeIcon icon={faShieldHalved} /> },
                 ]}
                 columns={2}
               />
@@ -206,7 +191,11 @@ const Index = (props) => {
         </Box>
 
         <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg" mt="xl">
-          {highlights.map((item, index) => (
+          {[
+            { title: t('highlights.strategicCombat.title'), description: t('highlights.strategicCombat.description'), icon: faCrown },
+            { title: t('highlights.espionageOperations.title'), description: t('highlights.espionageOperations.description'), icon: faDragon },
+            { title: t('highlights.empireBuilding.title'), description: t('highlights.empireBuilding.description'), icon: faShieldHalved },
+          ].map((item, index) => (
             <div
               key={item.title}
               className={`public-rise ${index === 0 ? 'public-rise-delay-1' : index === 1 ? 'public-rise-delay-2' : 'public-rise-delay-3'}`}
@@ -221,13 +210,13 @@ const Index = (props) => {
         </SimpleGrid>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mt="xl">
-          <GameCard title="War Council Briefing" icon={faScroll}>
+          <GameCard title={t('warCouncilBriefing.title')} icon={faScroll}>
             <Text size="sm" c="gray.3" lh={1.7}>
-              Stay current on realm updates, balance patches, and seasonal campaigns. The war room never sleeps.
+              {t('warCouncilBriefing.description')}
             </Text>
             <Group mt="md">
               <Button component={Link} href="/community/news" size="sm" variant="light" color="yellow">
-                Read the News
+                {t('warCouncilBriefing.readTheNews')}
               </Button>
               <Button
                 component="a"
@@ -236,21 +225,21 @@ const Index = (props) => {
                 variant="subtle"
                 color="gray"
               >
-                Join the Discord
+                {t('warCouncilBriefing.joinDiscord')}
               </Button>
             </Group>
           </GameCard>
 
-          <GameCard title="Newcomer Protocol" icon={faShieldHalved}>
+          <GameCard title={t('newcomerProtocol.title')} icon={faShieldHalved}>
             <Text size="sm" c="gray.3" lh={1.7}>
-              Start with protected turns, earn daily rewards, and learn the meta at your pace. We built this realm for long-term rulers.
+              {t('newcomerProtocol.description')}
             </Text>
             <Group mt="md">
               <Button component={Link} href="/account/register" size="sm" color="yellow">
-                Create a Commander
+                {t('newcomerProtocol.createCommander')}
               </Button>
               <Button component={Link} href="/account/login" size="sm" variant="outline" color="gray">
-                Return to Battle
+                {t('newcomerProtocol.returnToBattle')}
               </Button>
             </Group>
           </GameCard>
@@ -259,19 +248,28 @@ const Index = (props) => {
         <Box mt={50} style={{ textAlign: 'center', opacity: 0.6 }}>
           <Group justify="center" gap="xl">
              <Link href="/about" style={{ color: '#adb5bd', textDecoration: 'none', fontSize: '0.9rem' }}>
-                About the Project
+                {t('footer.aboutProject')}
              </Link>
              <a href="https://github.com/OpenThrone/OpenThrone" target="_blank" rel="noreferrer" style={{ color: '#adb5bd', textDecoration: 'none', fontSize: '0.9rem' }}>
-                GitHub
+                {t('footer.github')}
              </a>
           </Group>
           <Text size="xs" c="dimmed" mt="sm">
-            OpenThrone is a community-driven project.
+            {t('footer.communityDriven')}
           </Text>
         </Box>
       </div>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  const locale = context.locale ?? context.defaultLocale ?? 'en';
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['landing'])),
+    },
+  };
 };
 
 export default Index;

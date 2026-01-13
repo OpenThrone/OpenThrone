@@ -1,0 +1,16 @@
+{
+  "title": "Mensajería",
+  "newMessage": "Nuevo Mensaje",
+  "compose": "Redactar",
+  "themedChat": "Chat temático",
+  "startConversation": "Inicia una nueva conversación o gestiona tus chats.",
+  "toggleThemed": "Activa/desactiva el diseño temático en cualquier momento.",
+  "chatRooms": "Salas de Chat",
+  "selectRoom": "Selecciona una sala",
+  "user": "Usuario {{id}}",
+  "errorFetchingRooms": "Error al obtener salas",
+  "errorFetchingMessages": "Error al obtener mensajes",
+  "errorRefetchingRooms": "Error al volver a obtener salas después del modal",
+  "unknown": "Desconocido",
+  "reader": "Lector"
+}

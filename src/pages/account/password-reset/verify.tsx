@@ -3,10 +3,17 @@ import { useState } from 'react';
 import { showNotification } from '@mantine/notifications';
 import { alertService } from '@/services/Alert.service';
 import { Space, TextInput, Button, Container, Title, Paper } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import classes from './floatinginput.module.css';
 import MainArea from '@/components/MainArea';
+import { logError } from '@/utils/logger';
 
-const Index = (props) => {
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
+
+const Index = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('account');
   const [verify, setVerify] = useState('');
   const [verified, setVerified] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -34,15 +41,15 @@ const Index = (props) => {
 
       // Handle successful verification
       showNotification({
-        title: 'Success',
-        message: 'Verification successful!',
+        title: t('status.success'),
+        message: t('passwordReset.verificationSuccessful'),
         color: 'green',
       });
       setVerified(true); // Update the verified status to show the new password form
     } catch (error) {
       logError('Error:', error);
       showNotification({
-        title: 'Error',
+        title: t('status.error'),
         message: error.message,
         color: 'red',
       });
@@ -66,14 +73,14 @@ const Index = (props) => {
       }
 
       // Handle successful password reset
-      alertService.success('Password updated! Login with it now');
+      alertService.success(t('passwordReset.passwordUpdated'));
       setTimeout(() => {
         router.push('/account/login');
       }, 2000);
     } catch (error) {
       logError('Error:', error);
       showNotification({
-        title: 'Error',
+        title: t('status.error'),
         message: error.message,
         color: 'red',
       });
@@ -83,13 +90,13 @@ const Index = (props) => {
   if (!verified) {
     // Verification form
     return (
-      <MainArea title="Password Reset">
+      <MainArea title={t('passwordReset.title')}>
         <Container size='lg' className="py-2 md:col-span-9">
           <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565' }}>
             <form onSubmit={handleVerifySubmit}>
               <TextInput
-                label="Email Address"
-                placeholder="Enter your email address"
+                label={t('passwordReset.email')}
+                placeholder={t('passwordReset.email')}
                 required
                 value={email}
                 id="email"
@@ -106,8 +113,8 @@ const Index = (props) => {
               />
               <Space h="md" />
               <TextInput
-                label="Verification code"
-                placeholder="Enter your verification code"
+                label={t('passwordReset.verificationCode')}
+                placeholder={t('passwordReset.enterVerificationCode')}
                 required
                 value={verify}
                 onChange={(event) => setVerify(event.currentTarget.value)}
@@ -129,7 +136,7 @@ const Index = (props) => {
                   color="blue"
                   className="inline-flex justify-center py-2 px-4 shadow-sm text-sm font-medium rounded-md text-white"
                 >
-                  Verify
+                  {t('passwordReset.verify')}
                 </Button>
               </div>
             </form>
@@ -139,13 +146,13 @@ const Index = (props) => {
     );
   } else {
     return (
-      <MainArea title="Set New Password">
+      <MainArea title={t('passwordReset.setNewPasswordTitle')}>
         <Container size="xs" className="py-2 md:col-span-9">
           <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565' }}>
             <form onSubmit={handlePasswordReset}>
               <TextInput
-                label="New Password"
-                placeholder="Enter your new password"
+                label={t('passwordReset.newPassword')}
+                placeholder={t('passwordReset.enterNewPassword')}
                 type="password"
                 required
                 value={newPassword}
@@ -159,7 +166,7 @@ const Index = (props) => {
                   color="blue"
                   className="inline-flex justify-center py-2 px-4 shadow-sm text-sm font-medium rounded-md text-white"
                 >
-                  Set New Password
+                  {t('passwordReset.setNewPassword')}
                 </Button>
               </div>
             </form>
@@ -168,6 +175,14 @@ const Index = (props) => {
       </MainArea>
     );
   }
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['account'])),
+    },
+  };
 };
 
 export default Index;

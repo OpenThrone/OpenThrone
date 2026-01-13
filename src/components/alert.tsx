@@ -1,22 +1,23 @@
-/* eslint-disable jsx-a11y/control-has-associated-label */
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
 import type { AlertType } from '../services/alert.service';
 import { alertService } from '../services/alert.service';
 import { Text, CloseButton, Flex, Loader } from '@mantine/core';
 import { logError } from '@/utils/logger';
 import ContentCard from './ContentCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faCheckCircle, 
-  faExclamationCircle, 
-  faInfoCircle, 
-  faExclamationTriangle, 
-  faTimes 
+import {
+  faCheckCircle,
+  faExclamationCircle,
+  faInfoCircle,
+  faExclamationTriangle,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons';
 
 const AlertComponent: React.FC = () => {
+  const { t } = useTranslation('common');
   const router = useRouter();
   const { data: session } = useSession();
   const [alert, setAlert] = useState<AlertType | null>(null);
@@ -121,7 +122,7 @@ const AlertComponent: React.FC = () => {
   // Custom close button that respects the alert type color
   const closeButton = (
     <CloseButton
-      aria-label="Close alert"
+      aria-label={t('ariaLabels.closeAlert')}
       onClick={handleClose}
       className={`${styles.textColor} hover:bg-gray-800/50`}
       icon={<FontAwesomeIcon icon={faTimes} />}

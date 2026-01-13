@@ -1,0 +1,31 @@
+{
+  "socketTest": {
+    "title": "Socket Test",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "sendPing": "Send Ping",
+    "sendAttackNotification": "Send Attack Notification",
+    "enterDefenderId": "Enter defender ID",
+    "sendFriendRequest": "Send Friend Request",
+    "enterUserId": "Enter user ID to send friend request:",
+    "declareEnemy": "Declare Enemy",
+    "enterUserIdEnemy": "Enter user ID to declare as enemy:",
+    "sendMessage": "Send Message",
+    "enterUserIdMessage": "Enter user ID to send message:",
+    "triggerAlert": "Trigger Alert",
+    "testAlert": "This is a test alert!",
+    "messageLog": "Message Log:",
+    "pongReceived": "Pong received",
+    "attackNotification": "Attack notification: {{message}}",
+    "friendRequestNotification": "Friend request notification: {{message}}",
+    "enemyDeclarationNotification": "Enemy declaration notification: {{message}}",
+    "messageNotification": "Message notification: {{message}}",
+    "duplicateAttack": "Duplicate attack notification:",
+    "duplicateFriendRequest": "Duplicate friend request notification:",
+    "duplicateEnemyDeclaration": "Duplicate enemy declaration notification:",
+    "duplicateMessage": "Duplicate message notification:",
+    "friendRequestSent": "{{email}} has sent you a friend request!",
+    "enemyDeclared": "{{email}} has declared you as an enemy!",
+    "newMessage": "You have a new message from {{email}}!"
+  }
+}

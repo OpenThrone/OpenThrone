@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
@@ -12,6 +14,9 @@ import type { PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming U
 import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 import { logDebug, logError } from '@/utils/logger'; // Added logError
 import { GameCard } from '@/components/game/GameCard';
+
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
 
 /**
  * Represents the data structure for a unit displayed in the training section.
@@ -45,7 +50,8 @@ interface UnitTypeIndex {
  * and allows users to manage unit quantities. Includes a sticky footer
  * for order summary and actions.
  */
-const Training: React.FC = (props) => { // Removed unused props
+const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => { // Removed unused props
+  const { t } = useTranslation('battle');
   const { user, forceUpdate } = useUser();
   const [totalCost, setTotalCost] = useState(0);
   const [unitCosts, setUnitCosts] = useState<{ [key: string]: number }>({}); // Maps unitId to quantity input
@@ -61,12 +67,12 @@ const Training: React.FC = (props) => { // Removed unused props
 
   // Memoized index for managing unit sections and their state
   const unitTypesIndex: UnitTypeIndex[] = useMemo(() => [
-    { type: 'WORKER' as UnitType, sectionTitle: 'Economy', unitData: workerUnits, updateFn: setWorkerUnits },
-    { type: 'OFFENSE' as UnitType, sectionTitle: 'Offense', unitData: offenseUnits, updateFn: setOffenseUnits },
-    { type: 'DEFENSE' as UnitType, sectionTitle: 'Defense', unitData: defenseUnits, updateFn: setDefenseUnits },
-    { type: 'SPY' as UnitType, sectionTitle: 'Spy', unitData: spyUnits, updateFn: setSpyUnits },
-    { type: 'SENTRY' as UnitType, sectionTitle: 'Sentry', unitData: sentryUnits, updateFn: setSentryUnits },
-  ], [workerUnits, offenseUnits, defenseUnits, spyUnits, sentryUnits]);
+    { type: 'WORKER' as UnitType, sectionTitle: t('training.economy'), unitData: workerUnits, updateFn: setWorkerUnits },
+    { type: 'OFFENSE' as UnitType, sectionTitle: t('training.offense'), unitData: offenseUnits, updateFn: setOffenseUnits },
+    { type: 'DEFENSE' as UnitType, sectionTitle: t('training.defense'), unitData: defenseUnits, updateFn: setDefenseUnits },
+    { type: 'SPY' as UnitType, sectionTitle: t('training.spy'), unitData: spyUnits, updateFn: setSpyUnits },
+    { type: 'SENTRY' as UnitType, sectionTitle: t('training.sentry'), unitData: sentryUnits, updateFn: setSentryUnits },
+  ], [workerUnits, offenseUnits, defenseUnits, spyUnits, sentryUnits, t]);
 
   /**
    * Creates an object with section types as keys and 0 as values, used for initializing section costs.
@@ -196,7 +202,7 @@ const Training: React.FC = (props) => { // Removed unused props
    */
   const callTrainingApi = useCallback(async (endpoint: 'train' | 'untrain', user: User, units: { type: UnitType; quantity: number; level: number }[]) => {
     if (units.length === 0) {
-      alertService.warn(`No units selected to ${endpoint}.`);
+      alertService.warn(t('training.noUnitsSelected', { action: endpoint }));
       return null;
     }
     try {
@@ -209,7 +215,7 @@ const Training: React.FC = (props) => { // Removed unused props
       if (!response.ok) {
         throw new Error(data?.error || `Calling training API endpoint ${endpoint} failed with status ${response.status}.`);
       }
-      alertService.success(data.message || `${endpoint.charAt(0).toUpperCase() + endpoint.slice(1)} successful!`);
+      alertService.success(data.message || t('training.trainingSuccessful', { action: endpoint.charAt(0).toUpperCase() + endpoint.slice(1) }));
       return data;
     } catch (error: any) {
       logError(`Error calling ${endpoint} API:`, error); // Use logError
@@ -257,7 +263,7 @@ const Training: React.FC = (props) => { // Removed unused props
    */
   const handleFormSubmit = useCallback(async (submitType: 'train' | 'untrain') => {
     if (!user) {
-      alertService.error('User not found. Please try again.');
+      alertService.error(t('training.userNotFound'));
       return;
     }
     const unitsToModify = getUnitQuantities();
@@ -272,13 +278,13 @@ const Training: React.FC = (props) => { // Removed unused props
         const requiredGold = BigInt(totalCost); // totalCost should be up-to-date number
         const userGold = BigInt(user.gold ?? 0);
         if (requiredGold > userGold) {
-            alertService.error(`Insufficient gold. You need ${toLocale(requiredGold, user.locale)} but only have ${toLocale(userGold, user.locale)}.`);
+            alertService.error(t('training.insufficientGold', { needed: toLocale(requiredGold, user.locale), have: toLocale(userGold, user.locale) }));
             return;
         }
         const citizensRequired = unitsToModify.reduce((sum, unit) => sum + unit.quantity, 0);
         const availableCitizens = user.units?.find(u => u.type === 'CITIZEN')?.quantity ?? 0;
         if (citizensRequired > availableCitizens) {
-             alertService.error(`Insufficient citizens. Need ${toLocale(citizensRequired, user.locale)}, have ${toLocale(availableCitizens, user.locale)}.`);
+             alertService.error(t('training.insufficientCitizens', { needed: toLocale(citizensRequired, user.locale), have: toLocale(availableCitizens, user.locale) }));
              return;
         }
     }
@@ -291,9 +297,9 @@ const Training: React.FC = (props) => { // Removed unused props
         updateLocalUnits(data); // Update UI on success
       }
     } catch (error: any) {
-      alertService.error(error.message || `Failed to ${submitType} units. Please try again.`);
+      alertService.error(error.message || t('training.failedToTrain', { action: submitType }));
     }
-  }, [user, getUnitQuantities, totalCost, updateLocalUnits, callTrainingApi]); // Added callTrainingApi dependency
+  }, [user, getUnitQuantities, totalCost, updateLocalUnits, callTrainingApi, t]); // Added callTrainingApi dependency
 
   const handleTrainAll = () => handleFormSubmit('train');
   const handleUntrainAll = () => handleFormSubmit('untrain');
@@ -321,7 +327,7 @@ const Training: React.FC = (props) => { // Removed unused props
   }, [hasOrder]);
 
   if (!user) {
-    return <MainArea title="Training"><Text>Loading user data...</Text></MainArea>;
+    return <MainArea title={t('training.title')}><Text>{t('training.loadingUserData')}</Text></MainArea>;
   }
 
   const citizenCount = user.units?.find(unit => unit.type === 'CITIZEN')?.quantity ?? 0;
@@ -329,27 +335,27 @@ const Training: React.FC = (props) => { // Removed unused props
   const population = (user.population ?? 0); // Use pre-calculated population if available
   const defenseRatio = population > 0 ? defenseTotal / population : 0;
   return (
-    <MainArea title="Training">
-      <GameCard title="Training Status" icon={faPeopleGroup}>
+    <MainArea title={t('training.title')}>
+      <GameCard title={t('training.trainingStatus')} icon={faPeopleGroup}>
         <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="sm">
           {[
             {
-              label: 'Untrained Citizens',
+              label: t('training.untrainedCitizens'),
               value: toLocale(citizenCount),
               icon: <FontAwesomeIcon icon={faPeopleGroup} style={{ width: rem(15), height: rem(15) }} />,
             },
             {
-              label: 'Gold On Hand',
+              label: t('training.goldOnHand'),
               value: toLocale(user.gold) ?? 0,
               icon: <BiCoinStack style={{ width: rem(15), height: rem(15) }} />,
             },
             {
-              label: 'Banked Gold',
+              label: t('training.bankedGold'),
               value: toLocale(user.goldInBank) ?? 0,
               icon: <BiSolidBank style={{ width: rem(15), height: rem(15) }} />,
             },
             {
-              label: 'Defense Ratio',
+              label: t('training.defenseRatio'),
               value: `${toLocale(defenseRatio * 100, user.locale)} %`,
               icon: <FontAwesomeIcon icon={faShield} style={{ width: rem(15), height: rem(15) }} />,
             },
@@ -382,7 +388,7 @@ const Training: React.FC = (props) => { // Removed unused props
           ))}
         </SimpleGrid>
         <Text size="xs" c="dimmed" mt="sm" data-testid="training-progress">
-          Training progress: ready
+          {t('training.trainingProgress')}
         </Text>
         <Box
           mt="xs"
@@ -414,12 +420,12 @@ const Training: React.FC = (props) => { // Removed unused props
       {hasOrder && (
         <Box className={`training-order-summary${isSummaryDocked ? '' : ' training-order-summary--inline'}`}>
           <Box style={{ padding: '0 16px' }}>
-            <GameCard title="Order Summary" goldAccent>
+            <GameCard title={t('training.orderSummary')} goldAccent>
               <Flex justify="space-between" align="center" wrap="wrap" gap="md" p="xs">
                 <Group gap="xl" wrap="wrap">
                   <Stack gap={2}>
                     <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
-                      Total Cost
+                      {t('training.totalCost')}
                     </Text>
                     <Text size="lg" fw={800} c="gray.1">
                       {toLocale(totalCost, user.locale)}
@@ -427,7 +433,7 @@ const Training: React.FC = (props) => { // Removed unused props
                   </Stack>
                   <Stack gap={2}>
                     <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
-                      Refund
+                      {t('training.refund')}
                     </Text>
                     <Text size="sm" fw={700} c="dimmed">
                       {toLocale(Math.floor(totalCost * 0.75), user.locale)}
@@ -446,10 +452,10 @@ const Training: React.FC = (props) => { // Removed unused props
                       boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
                     }}
                     data-testid="train-button"
-                    aria-label="Train all selected units"
+                    aria-label={t('training.trainAll')}
                     role="button"
                   >
-                    Train
+                    {t('training.train')}
                   </Button>
                   <Button
                     color="gray"
@@ -462,7 +468,7 @@ const Training: React.FC = (props) => { // Removed unused props
                       boxShadow: '0 2px 0 #0f151c',
                     }}
                   >
-                    Untrain
+                    {t('training.untrain')}
                   </Button>
                 </Group>
               </Flex>
@@ -472,6 +478,14 @@ const Training: React.FC = (props) => { // Removed unused props
       )}
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
+    },
+  };
 };
 
 export default Training;

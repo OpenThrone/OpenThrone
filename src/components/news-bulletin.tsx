@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'next-i18next';
 import { Text } from '@mantine/core';
 import ContentCard from './ContentCard';
 
 const STORAGE_KEY = 'news-bulletin-dismissed-v1';
 
 const NewsBulletin: React.FC = () => {
+  const { t } = useTranslation('common');
   const envMessage = process.env.NEXT_PUBLIC_ADMIN_MAINTENANCE_MESSAGE ?? '';
   const [visible, setVisible] = useState(Boolean(envMessage));
   const [dismissed, setDismissed] = useState(false);
@@ -39,7 +41,7 @@ const NewsBulletin: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4" role="region" aria-live="polite" aria-label="Site announcement">
+    <div className="container mx-auto px-4" role="region" aria-live="polite" aria-label={t('ariaLabels.siteAnnouncement')}>
       <div className="my-3">
         <ContentCard
           title="Important Announcement"
@@ -62,7 +64,7 @@ const NewsBulletin: React.FC = () => {
             <div className="ml-3">
               <button
                 onClick={onClose}
-                aria-label="Dismiss announcement"
+                aria-label={t('ariaLabels.dismissAnnouncement')}
                 className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 rounded"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>

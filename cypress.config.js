@@ -16,7 +16,7 @@ module.exports = defineConfig({
   env: {
     APP_URL: defaultAppUrl,
   },
-  video: true,
+  video: false,
   e2e: {
     baseUrl: defaultAppUrl,
     specPattern: 'cypress/e2e/**/*.{cy,spec}.{js,jsx,ts,tsx}',
@@ -25,6 +25,12 @@ module.exports = defineConfig({
         if (browser.family === 'chromium' || browser.name === 'electron') {
           launchOptions.args.push('--no-sandbox');
           launchOptions.args.push('--disable-dev-shm-usage');
+          launchOptions.args.push('--disable-gpu');
+          launchOptions.args.push('--disable-software-rasterizer');
+          launchOptions.args.push('--disable-extensions');
+          launchOptions.args.push('--disable-background-timer-throttling');
+          launchOptions.args.push('--disable-backgrounding-occluded-windows');
+          launchOptions.args.push('--disable-renderer-backgrounding');
         }
 
         return launchOptions;

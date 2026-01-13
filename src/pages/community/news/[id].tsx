@@ -8,12 +8,16 @@ import { getSession } from 'next-auth/react';
 import BlogPost from '@/components/blogPost';
 import MainArea from '@/components/MainArea';
 import { BlogService } from '@/services/Blog.service';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { getSafeLocale } from '@/utils/i18n';
 
 type NewsPost = InferGetServerSidePropsType<typeof getServerSideProps>['post'] & {
   isRead?: boolean;
 };
 
 const News = ({ post: serverPost, loggedIn }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('community');
   const [post, setPost] = useState<NewsPost>(() => ({
     ...serverPost,
     isRead: Boolean(serverPost?.postReadStatus?.length),
@@ -36,15 +40,15 @@ const News = ({ post: serverPost, loggedIn }: InferGetServerSidePropsType<typeof
   };
 
   return (
-    <MainArea title="News">
+    <MainArea title={t('news.title')}>
       <div className="mx-auto w-full max-w-6xl px-4 pt-6">
         <Group>
           <Button component={Link} href="/community/news" variant="outline" color="gray" size="xs">
-            Back to News
+            {t('news.backToNews')}
           </Button>
         </Group>
+        <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} />
       </div>
-      <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} />
     </MainArea>
   );
 };
@@ -59,7 +63,7 @@ export const getServerSideProps = async (context) => {
   try {
     const result = await BlogService.getPost(postId, userId);
     if (!result.post) return { notFound: true };
-    return { props: { post: result.post, loggedIn: Boolean(session) } };
+    return { props: { post: result.post, loggedIn: Boolean(session), ...(await serverSideTranslations(getSafeLocale(context), ['community'])) } };
   } catch (error) {
     console.error('Error fetching post:', error);
     return { notFound: true };

@@ -1,4 +1,6 @@
 import { TextInput, Button, Container, Title, Paper } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import router from 'next/router';
 import { useState } from 'react';
 import { showNotification } from '@mantine/notifications';
@@ -6,7 +8,11 @@ import classes from './floatinginput.module.css';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
 
-const Index = (props) => {
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
+
+const Index = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('account');
   const [email, setEmail] = useState('');
   const [focused, setFocused] = useState(false);
   const floating = email.trim().length !== 0 || focused || undefined;
@@ -28,8 +34,8 @@ const Index = (props) => {
       }
       // Handle success
       showNotification({
-        title: 'Success',
-        message: 'Account created! Redirecting to login...',
+        title: t('status.success'),
+        message: t('register.registerSuccess'),
         color: 'green',
       });
       setTimeout(() => {
@@ -38,7 +44,7 @@ const Index = (props) => {
     } catch (error) {
       logError('Error:', error);
       showNotification({
-        title: 'Error',
+        title: t('status.error'),
         message: error.message,
         color: 'red',
       });
@@ -46,15 +52,15 @@ const Index = (props) => {
   };
 
   return (
-    <MainArea title="Password Reset">
+    <MainArea title={t('passwordReset.title')}>
       <Container size="sm" className="py-2 md:col-span-9">
         <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565'}}>
           <form onSubmit={handleSubmit}>
-            <Title order={3}>Enter your Email</Title>
-            <p className="text-gray-800">We will send you a link to reset your password</p>
+            <Title order={3}>{t('passwordReset.enterYourEmail')}</Title>
+            <p className="text-gray-800">{t('passwordReset.sendLinkText')}</p>
             <TextInput
-              label="Email Address"
-              placeholder="Enter your email address"
+              label={t('passwordReset.email')}
+              placeholder={t('passwordReset.email')}
               required
               value={email}
               onChange={(event) => setEmail(event.currentTarget.value)}
@@ -74,7 +80,7 @@ const Index = (props) => {
                 color="blue"
                 className="inline-flex justify-center py-2 px-4 shadow-sm text-sm font-medium rounded-md text-white"
               >
-                Submit
+                {t('buttons.submit')}
               </Button>
             </div>
           </form>
@@ -82,6 +88,14 @@ const Index = (props) => {
       </Container>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['account'])),
+    },
+  };
 };
 
 export default Index;

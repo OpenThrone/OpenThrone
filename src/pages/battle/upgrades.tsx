@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
 import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 import { Group, SimpleGrid, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
+
+import { getSafeLocale } from '@/utils/i18n';
 
 import BattleUpgradesSection from '@/components/battle-upgrade';
 import { GameCard } from '@/components/game/GameCard';
@@ -12,6 +16,7 @@ import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
+import { InferGetServerSidePropsType } from "next";
 
 const useItems = (user) => {
   const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
@@ -64,7 +69,8 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
   };
 };
 
-const Upgrades = () => {
+const Upgrades = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('battle');
   const { user } = useUser();
   const items = useItems(user);
   
@@ -78,19 +84,19 @@ const Upgrades = () => {
     .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
   
   return (
-    <MainArea title="Battle Upgrades">
+    <MainArea title={t('upgrades.title')}>
       <Stack gap="md">
         {/* Stats Section */}
-        <GameCard title="Upgrade Status" icon={faCoins}>
+        <GameCard title={t('upgrades.upgradeStatus')} icon={faCoins}>
           <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="sm">
             {[
               {
-                label: 'Gold On Hand',
+                label: t('upgrades.goldOnHand'),
                 value: toLocale(user?.gold) ?? 0,
                 icon: <BiCoinStack size={18} />,
               },
               {
-                label: 'Banked Gold',
+                label: t('upgrades.bankedGold'),
                 value: toLocale(user?.goldInBank) ?? 0,
                 icon: <BiSolidBank size={18} />,
               },
@@ -121,7 +127,7 @@ const Upgrades = () => {
                 </div>
               </Group>
             ))}
-            <Tooltip label="Only Level 2+ Units">
+            <Tooltip label={t('upgrades.onlyLevel2Units')}>
               <Group
                 gap="sm"
                 wrap="nowrap"
@@ -139,7 +145,7 @@ const Upgrades = () => {
                 </ThemeIcon>
                 <div>
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
-                    Offensive Units
+                    {t('upgrades.offensiveUnits')}
                   </Text>
                   <Text size="sm" fw={700} c="gray.2">
                     {toLocale(offensiveUnits)}
@@ -147,7 +153,7 @@ const Upgrades = () => {
                 </div>
               </Group>
             </Tooltip>
-            <Tooltip label="Only Level 2+ Units">
+            <Tooltip label={t('upgrades.onlyLevel2Units')}>
               <Group
                 gap="sm"
                 wrap="nowrap"
@@ -165,7 +171,7 @@ const Upgrades = () => {
                 </ThemeIcon>
                 <div>
                   <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
-                    Defensive Units
+                    {t('upgrades.defensiveUnits')}
                   </Text>
                   <Text size="sm" fw={700} c="gray.2">
                     {toLocale(defensiveUnits)}
@@ -176,19 +182,27 @@ const Upgrades = () => {
           </SimpleGrid>
         </GameCard>
 
-        <GameCard title="Battle Upgrade Information" goldAccent={false}>
+        <GameCard title={t('upgrades.battleUpgradeInformation')} goldAccent={false}>
           <Text size="sm" c="gray.3" lh={1.7}>
-            Only Level 2 and higher units can use battle upgrades. Battle upgrades provide stat bonuses to your units in combat.
+            {t('upgrades.battleUpgradeInfo')}
           </Text>
         </GameCard>
 
-        <BattleUpgradesSection heading="Offense" type="OFFENSE" items={items.OFFENSE} />
-        <BattleUpgradesSection heading="Defense" type="DEFENSE" items={items.DEFENSE} />
-        <BattleUpgradesSection heading="Spy" type="SPY" items={items.SPY} />
-        <BattleUpgradesSection heading="Sentry" type="SENTRY" items={items.SENTRY} />
+        <BattleUpgradesSection heading={t('upgrades.offense')} type="OFFENSE" items={items.OFFENSE} />
+        <BattleUpgradesSection heading={t('upgrades.defense')} type="DEFENSE" items={items.DEFENSE} />
+        <BattleUpgradesSection heading={t('upgrades.spy')} type="SPY" items={items.SPY} />
+        <BattleUpgradesSection heading={t('upgrades.sentry')} type="SENTRY" items={items.SENTRY} />
       </Stack>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
+    },
+  };
 };
 
 export default Upgrades;

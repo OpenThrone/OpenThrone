@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import NewItemSection from '@/components/newItemSection';
 import { ArmoryUpgrades, ItemTypes } from '@/constants';
 import { useUser } from '@/context/users';
@@ -12,8 +14,11 @@ import { faPeopleGroup, faCoins, faUniversity, faGavel } from '@fortawesome/free
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
 
 const useItems = (user: UserModel | null, armoryLevel: number) => {
+  const { t } = useTranslation('structures');
   const [items, setItems] = useState<{ [key: string]: { [key: string]: any[] } }>({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
   useEffect(() => {
     if (!user || !user.availableItemTypes) {
@@ -51,7 +56,8 @@ const itemMapFunction = (item: any, itemType: string, user: UserModel, armoryLev
   };
 };
 
-const ArmoryTab = () => {
+const ArmoryTab = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('structures');
   const router = useRouter();
   const tab = usePathname()?.split('/armory/')[1] || 'offense';
   const { user, forceUpdate } = useUser();
@@ -107,10 +113,10 @@ const ArmoryTab = () => {
   };
   
   const statItems = [
-    { label: "Citizens", value: toLocale(user?.citizens, user?.locale), icon: faPeopleGroup },
-    { label: "Gold In Hand", value: toLocale(user?.gold, user?.locale), icon: faCoins },
-    { label: "Banked Gold", value: toLocale(user?.goldInBank, user?.locale), icon: faUniversity },
-    { label: "Armory Level", value: user?.armoryLevel, icon: faGavel },
+    { label: t('armory.citizens'), value: toLocale(user?.citizens, user?.locale), icon: faPeopleGroup },
+    { label: t('armory.goldInHand'), value: toLocale(user?.gold, user?.locale), icon: faCoins },
+    { label: t('armory.bankedGold'), value: toLocale(user?.goldInBank, user?.locale), icon: faUniversity },
+    { label: t('armory.armoryLevel'), value: user?.armoryLevel, icon: faGavel },
   ];
 
   return (
@@ -146,6 +152,14 @@ const ArmoryTab = () => {
       </Box>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['structures'])),
+    },
+  };
 };
 
 export default ArmoryTab;

@@ -1,0 +1,58 @@
+{
+  "title": "Open Throne",
+  "metaDescription": "Meta-Beschreibung",
+  "worldStats": {
+    "title": "Weltstatistiken",
+    "totalPlayers": "Gesamtspieler",
+    "battlesFought": "Kämpfe geführt",
+    "alliances": "Allianzen",
+    "epoch": "Epoche"
+  },
+  "highlights": {
+    "strategicCombat": {
+      "title": "Strategischer Kampf",
+      "description": "Bauen und trainieren Sie spezialisierte Einheiten, dann plündern Sie Rivalen, um in den Rankings aufzusteigen."
+    },
+    "espionageOperations": {
+      "title": "Spionageoperationen",
+      "description": "Entfalten Sie Spione, sabotieren Sie Verteidigungen und greifen Sie an, bevor Ihre Gegner reagieren können."
+    },
+    "empireBuilding": {
+      "title": "Imperiumsbau",
+      "description": "Konstruieren Sie Befestigungen, Waffenkammern und Minen, um Ihr Königreich zu stärken."
+    }
+  },
+  "hero": {
+    "signUpNowAnd": "Registrieren Sie jetzt Und",
+    "joinTheFight": "Der Schlacht beitreten!",
+    "tagline": "Wählen Sie eine Rasse, schmieden Sie Ihre Klasse und befehlen Sie ein aufsteigendes Imperium in einer beständigen Strategiewelt.",
+    "features": {
+      "chooseRace": "Wählen Sie zwischen vier einzigartigen Rassen: Untote, Menschen, Goblins, Elfen.",
+      "trainCitizens": "Trainieren Sie Bürger als Arbeiter, offensive oder defensive Soldaten und Spione.",
+      "equipArmy": "Rüsten Sie Ihre Armee mit Waffen und Rüstungen aus.",
+      "playWithFriends": "Spielen Sie mit Freunden, erstellen Sie Ihre eigene Allianz und beherrschen Sie das Reich.",
+      "createProfile": "Erstellen Sie ein Charakterprofil mit einem benutzerdefinierten Avatar.",
+      "stayInTouch": "Bleiben Sie über Discord mit dem Team in Kontakt."
+    },
+    "beginYourReign": "Beginnen Sie Ihre Herrschaft",
+    "signIn": "Anmelden",
+    "freeToPlay": "Kostenlos spielbar, keine Resets, keine Paywalls."
+  },
+  "warCouncilBriefing": {
+    "title": "Kriegsrats-Briefing",
+    "description": "Bleiben Sie auf dem Laufenden über Reichsaktualisierungen, Balance-Patches und saisonale Kampagnen. Der Kriegsraum schläft nie.",
+    "readTheNews": "Die Neuigkeiten lesen",
+    "joinDiscord": "Dem Discord beitreten"
+  },
+  "newcomerProtocol": {
+    "title": "Neulingsprotokoll",
+    "description": "Beginnen Sie mit geschützten Zügen, verdienen Sie tägliche Belohnungen und lernen Sie das Meta in Ihrem eigenen Tempo. Wir haben dieses Reich für langfristige Herrscher gebaut.",
+    "createCommander": "Einen Kommandanten erstellen",
+    "returnToBattle": "Zurück zum Kampf"
+  },
+  "footer": {
+    "aboutProject": "Über das Projekt",
+    "github": "GitHub",
+    "communityDriven": "OpenThrone ist ein Community-getriebenes Projekt."
+  }
+}

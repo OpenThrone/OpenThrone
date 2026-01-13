@@ -29,6 +29,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'next-i18next';
 
 import { SegmentedControl } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -146,6 +147,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   quickActions,
   className = '',
 }) => {
+  const { t } = useTranslation('common');
   const menuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [activeSection, setActiveSection] = useState<'menu' | 'sidebar'>('menu');
@@ -241,13 +243,13 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     icon: React.ReactNode,
     badgeCount: number | undefined,
     onClick: () => void,
-    label: string,
+    labelKey: string,
   ) => (
     <button
       type="button"
       className={styles.quickActionButton}
       onClick={onClick}
-      aria-label={label}
+      aria-label={t(labelKey)}
     >
       {icon}
       {badgeCount && badgeCount > 0 && (
@@ -271,7 +273,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
           open ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={onClose}
-        aria-label="Close navigation menu"
+        aria-label={t('ariaLabels.closeNavigationMenu')}
       />
 
       {/* Menu */}
@@ -280,7 +282,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
         className={`${styles.panel} ${
           open ? styles.panelOpen : styles.panelClosed
         }`}
-        aria-label="Mobile navigation"
+        aria-label={t('ariaLabels.mobileNavigation')}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -329,22 +331,22 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
             {quickActions && (
               <div className={styles.quickActions}>
                 {renderQuickAction(
-                  <FontAwesomeIcon icon={faComments} size="lg" />, 
+                  <FontAwesomeIcon icon={faComments} size="lg" />,
                   quickActions.unreadMessagesCount,
                   quickActions.onMessagesClick,
-                  'Quick access messages',
+                  'ariaLabels.quickAccessMessages',
                 )}
                 {renderQuickAction(
-                  <RpgAwesomeIcon icon="player" fw style={{ fontSize: 18 }} />, 
+                  <RpgAwesomeIcon icon="player" fw style={{ fontSize: 18 }} />,
                   quickActions.socialNotificationCount,
                   quickActions.onSocialClick,
-                  'Quick access social',
+                  'ariaLabels.quickAccessSocial',
                 )}
                 {renderQuickAction(
-                  <FontAwesomeIcon icon={faGear} size="lg" />, 
+                  <FontAwesomeIcon icon={faGear} size="lg" />,
                   undefined,
                   quickActions.onSettingsClick,
-                  'Quick access settings',
+                  'ariaLabels.quickAccessSettings',
                 )}
               </div>
             )}
@@ -353,7 +355,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
               type="button"
               onClick={onClose}
               className={styles.closeButton}
-              aria-label="Close navigation panel"
+              aria-label={t('ariaLabels.closeNavigationPanel')}
             >
               &times;
             </button>

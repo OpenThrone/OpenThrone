@@ -1,5 +1,7 @@
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { Tabs, SimpleGrid, Space } from '@mantine/core';
 import { BiCoinStack, BiLineChart, BiMoney, BiSolidBank, BiUserCircle } from 'react-icons/bi';
 import { useUser } from '@/context/users';
@@ -14,13 +16,16 @@ import { StatGrid } from '@/components/game/StatGrid';
 import toLocale from '@/utils/numberFormatting';
 import { getTransactionType, getGoldTxSymbol } from '@/utils/utilities';
 import MainArea from '@/components/MainArea';
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
 
 const defaultFilters = {
   deposits: true, withdraws: true, war_spoils: true, transfers: true, sale: true,
   training: true, recruitment: true, economy: true, fortification: true, daily: true,
 };
 
-export default function Bank() {
+export default function Bank(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const { t } = useTranslation('structures');
   const tab = usePathname()?.split('/')[3] || 'deposit';
   const router = useRouter();
   const [filters, setFilters] = useLocalStorage({ key: 'bankHistoryFilters', defaultValue: defaultFilters });
@@ -42,27 +47,27 @@ export default function Bank() {
   }, [tab, filters, user, page, limit]);
 
   const statItems = [
-    { label: "Gold On Hand", value: toLocale(user?.gold, user?.locale), icon: <BiCoinStack size={18} /> },
-    { label: "Banked Gold", value: toLocale(user?.goldInBank, user?.locale), icon: <BiSolidBank size={18} /> },
-    { label: "Daily Deposits", value: user?.maximumBankDeposits ?? 0, icon: <BiMoney size={18} /> },
+    { label: t('bank.goldOnHand'), value: toLocale(user?.gold, user?.locale), icon: <BiCoinStack size={18} /> },
+    { label: t('bank.bankedGold'), value: toLocale(user?.goldInBank, user?.locale), icon: <BiSolidBank size={18} /> },
+    { label: t('bank.dailyDeposits'), value: user?.maximumBankDeposits ?? 0, icon: <BiMoney size={18} /> },
     {
-      label: "Deposits Available",
+      label: t('bank.depositsAvailable'),
       value: user?.depositsAvailable < (user?.maximumBankDeposits ?? 0)
-        ? `${user?.depositsAvailable ?? 0} (Next in ${user?.nextDepositAvailable?.hours ?? 0}:${user?.nextDepositAvailable?.minutes ?? 0})`
+        ? `${user?.depositsAvailable ?? 0} ${t('bank.nextDepositIn', { hours: user?.nextDepositAvailable?.hours ?? 0, minutes: user?.nextDepositAvailable?.minutes ?? 0 })}`
         : user?.depositsAvailable ?? 0,
       icon: <BiMoney size={18} />,
     },
   ];
 
   return (
-    <MainArea title="Bank">
-      <StatGrid title="Bank Overview" stats={statItems} />
+    <MainArea title={t('bank.title')}>
+      <StatGrid title={t('bank.overview')} stats={statItems} />
       <Space h="md" />
       <Tabs value={tab} onChange={(value) => router.push(`/structures/bank/${value}`)} variant="pills" color="yellow">
         <Tabs.List grow justify="center">
-          <Tabs.Tab value="deposit">Deposit</Tabs.Tab>
-          <Tabs.Tab value="history">History</Tabs.Tab>
-          <Tabs.Tab value="economy">Economy</Tabs.Tab>
+          <Tabs.Tab value="deposit">{t('bank.deposit')}</Tabs.Tab>
+          <Tabs.Tab value="history">{t('bank.history')}</Tabs.Tab>
+          <Tabs.Tab value="economy">{t('bank.economy')}</Tabs.Tab>
         </Tabs.List>
       </Tabs>
       <Space h="md" />
@@ -70,7 +75,7 @@ export default function Bank() {
       {tab === 'deposit' && <BankDepositWithdraw user={user} forceUpdate={forceUpdate} />}
 
       {tab === 'history' && (
-        <GameCard title="Bank History" icon={<BiSolidBank size={16} />}>
+        <GameCard title={t('bank.transactionHistory')} icon={<BiSolidBank size={16} />}>
           <BankHistoryFilters colorScheme={user?.colorScheme} filters={filters} setFilters={setFilters} />
           <BankHistoryTable
             bankHistory={history}
@@ -86,19 +91,30 @@ export default function Bank() {
 
       {tab === 'economy' && (
         <SimpleGrid cols={{base: 1, md: 2}} spacing="md">
-          <GameCard title="Workers" icon={<BiUserCircle size={16} />}>
-            <p>Total Workers: {user?.units.find(u => u.type === 'WORKER')?.quantity || 0}</p>
-            <p>Gold Per Worker: {user?.goldPerWorkerPerTurn.toLocaleString()} gold/turn</p>
+          <GameCard title={t('bank.workers')} icon={<BiUserCircle size={16} />}>
+            <p>{t('bank.totalWorkers')} {user?.units.find(u => u.type === 'WORKER')?.quantity || 0}</p>
+            <p>{t('bank.goldPerWorker')} {user?.goldPerWorkerPerTurn.toLocaleString()} {t('common.currency.gold')}/{t('common.units.turn')}</p>
+            <p>{t('bank.workerGoldPerTurn')} {user?.workerGoldPerTurn.toLocaleString()} {t('common.currency.gold')}/{t('common.units.turn')}</p>
+            <p>{t('bank.totalGoldPerTurn')} {user?.goldPerTurn.toLocaleString()} {t('common.currency.gold')}/{t('common.units.turn')}</p>
+            <p>{t('bank.dailyIncome')} {(BigInt(user?.goldPerTurn.toString() || '0') * BigInt(48)).toLocaleString()}</p>
           </GameCard>
-          <GameCard title="Operations" icon={<BiLineChart size={16} />}>
-            <p>Current Upgrade: {EconomyUpgrades.find(eu => eu.index === user?.economyLevel)?.name}</p>
-            <p>Fort Gold/Turn: {user?.fortificationGoldPerTurn.toLocaleString()}</p>
-            <p>Worker Gold/Turn: {user?.workerGoldPerTurn.toLocaleString()}</p>
-            <p>Total Gold/Turn: {user?.goldPerTurn.toLocaleString()}</p>
-            <p>Daily Income: {(BigInt(user?.goldPerTurn.toString() || '0') * BigInt(48)).toLocaleString()}</p>
+          <GameCard title={t('bank.operations')} icon={<BiLineChart size={16} />}>
+            <p>{t('bank.currentUpgrade')} {EconomyUpgrades.find(eu => eu.index === user?.economyLevel)?.name}</p>
+            <p>{t('bank.fortGoldPerTurn')} {user?.fortificationGoldPerTurn.toLocaleString()}</p>
+            <p>{t('bank.workerGoldPerTurn')} {user?.workerGoldPerTurn.toLocaleString()}</p>
+            <p>{t('bank.totalGoldPerTurn')} {user?.goldPerTurn.toLocaleString()}</p>
+            <p>{t('bank.dailyIncome')} {(BigInt(user?.goldPerTurn.toString() || '0') * BigInt(48)).toLocaleString()}</p>
           </GameCard>
         </SimpleGrid>
       )}
     </MainArea>
   );
 }
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['structures'])),
+    },
+  };
+};

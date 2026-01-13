@@ -1,11 +1,17 @@
 import React from 'react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
 import { Box, Text, Title, Container, SimpleGrid, ThemeIcon, Group, Button, List, Accordion } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faCode, faScroll, faQuestionCircle, faInfoCircle, faExclamationTriangle, faDragon } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
 import Link from 'next/link';
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
 
-const About = (props) => {
+const About = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('common');
   const containerStyle = {
     background: 'linear-gradient(135deg, rgba(34,48,66,0.95) 0%, rgba(15,20,26,0.9) 55%, rgba(8,12,18,0.95) 100%)',
     border: '1px solid #2f3e52',
@@ -17,12 +23,12 @@ const About = (props) => {
   };
 
   return (
-    <MainArea title="About OpenThrone">
+    <MainArea title={t('about.title')}>
       <div className="mx-auto w-full max-w-5xl px-4 py-8 app-bg">
         
         {/* Header Section */}
         <Box className="public-rise" style={containerStyle}>
-           <Box
+          <Box
             style={{
               position: 'absolute',
               top: '-120px',
@@ -34,10 +40,10 @@ const About = (props) => {
             }}
           />
           <Title order={1} style={{ fontFamily: 'MedievalSharp, serif', color: '#f4e7b3', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-            About The Project
+            {t('about.aboutOpenThrone')}
           </Title>
           <Text mt="md" size="lg" c="gray.3">
-            OpenThrone is a community-driven effort to recreate and enhance the spirit of Darkthrone.
+            {t('about.description')}
           </Text>
         </Box>
 
@@ -49,16 +55,19 @@ const About = (props) => {
               <ThemeIcon size="lg" variant="light" color="yellow">
                 <FontAwesomeIcon icon={faScroll} />
               </ThemeIcon>
-              <Title order={3} c="gray.1">The Origin</Title>
+              <Title order={3} c="gray.1">{t('about.originStory')}</Title>
             </Group>
             <Text c="gray.4" lh={1.6}>
-              OpenThrone is a community project hoping to recreate the TextBased MMORPG called <strong>DarkThrone</strong> which has gone dark after almost 20 years of service.
+              {t('about.originStory')}
             </Text>
             <Text c="gray.4" mt="sm" lh={1.6}>
-              While we are not affiliated with the original DarkThrone project, our community hopes to deliver a game that picks up where it left off, bringing forth many enhancements we were patiently waiting for.
+              {t('about.modernStack')}
             </Text>
             <Text c="gray.4" mt="sm" size="sm" fs="italic">
-              OpenThrone started as a fork of the "Dark Curse" project by Moppler. We have since ported it to a modern tech stack (NextJS/React) to ensure longevity and easier contribution.
+              {t('about.notAffiliated')}
+            </Text>
+            <Text c="gray.4" mt="sm" lh={1.6}>
+              {t('about.serverStatus')}
             </Text>
           </Box>
 
@@ -68,11 +77,11 @@ const About = (props) => {
               <ThemeIcon size="lg" variant="light" color="orange">
                 <FontAwesomeIcon icon={faExclamationTriangle} />
               </ThemeIcon>
-              <Title order={3} c="gray.1">Project Status</Title>
+              <Title order={3} c="gray.1">{t('about.projectStatus')}</Title>
             </Group>
-            <Text fw={700} c="yellow.4" tt="uppercase" mb="xs">Pre-Alpha / Live Development</Text>
+            <Text fw={700} c="yellow.4" tt="uppercase" mb="xs">{t('about.preAlpha')}{t('about.liveDevelopment')}</Text>
             <Text c="gray.4" lh={1.6}>
-              The game is currently in active development. The server you are playing on is a <strong>Live Development Server</strong>.
+              {t('about.serverStatus')}
             </Text>
             <List mt="md" spacing="sm" size="sm" center icon={
               <ThemeIcon color="yellow" size={24} radius="xl">
@@ -80,101 +89,102 @@ const About = (props) => {
               </ThemeIcon>
             }>
               <List.Item>
-                <Text c="gray.4">The game may be reset often, sometimes without notice.</Text>
+                <Text c="gray.4">{t('about.mayReset')}</Text>
               </List.Item>
               <List.Item>
-                <Text c="gray.4">Features are being added and balanced daily.</Text>
+                <Text c="gray.4">{t('about.featuresAdded')}</Text>
               </List.Item>
               <List.Item>
-                <Text c="gray.4">We are focused on getting basic mechanics functioning perfectly.</Text>
+                <Text c="gray.4">{t('about.basicMechanics')}</Text>
               </List.Item>
             </List>
           </Box>
 
-        </SimpleGrid>
-
-        {/* FAQ & Community */}
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mt="xl">
+          {/* FAQ & Community */}
             
-             <Box className="public-rise public-rise-delay-3" style={containerStyle}>
-                <Group mb="md">
-                  <ThemeIcon size="lg" variant="light" color="blue">
-                    <FontAwesomeIcon icon={faQuestionCircle} />
-                  </ThemeIcon>
-                  <Title order={3} c="gray.1">FAQ</Title>
-                </Group>
-                
-                <Accordion variant="separated" radius="md" styles={{
-                    item: { backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid #2f3e52' },
-                    label: { color: '#e0e0e0' },
-                    content: { color: '#adb5bd' }
-                }}>
-                  <Accordion.Item value="active">
-                    <Accordion.Control>Is the game still being developed?</Accordion.Control>
-                    <Accordion.Panel>Yes, a small group of volunteers have been working to get a working version of the game up and running. Please join the discord or submit PRs/Issues for discussion and enhancement.</Accordion.Panel>
-                  </Accordion.Item>
+            <Box className="public-rise public-rise-delay-3" style={containerStyle}>
+              <Group mb="md">
+                <ThemeIcon size="lg" variant="light" color="blue">
+                  <FontAwesomeIcon icon={faQuestionCircle} />
+                </ThemeIcon>
+                <Title order={3} c="gray.1">{t('about.faq')}</Title>
+              </Group>
+              <Accordion variant="separated" radius="md" styles={{
+                item: { backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid #2f3e52' },
+                label: { color: '#e0e0e0' },
+                content: { color: '#adb5bd' }
+              }}>
+                <Accordion.Item value="active">
+                  <Accordion.Control>{t('about.faqIsGameStillBeingDeveloped')}</Accordion.Control>
+                  <Accordion.Panel>{t('about.faqActive')}</Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value="help">
+                  <Accordion.Control>{t('about.canSuggestIdeas')}</Accordion.Control>
+                  <Accordion.Panel>{t('about.faqHelp')}</Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item value="ideas">
+                  <Accordion.Control>{t('about.canSuggestIdeas')}</Accordion.Control>
+                  <Accordion.Panel>{t('about.faqIdeas')}</Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Box>
 
-                  <Accordion.Item value="help">
-                    <Accordion.Control>What can I do to help?</Accordion.Control>
-                    <Accordion.Panel>If you have experience with art, NextJS, or Figma, please reach out to the team via Discord.</Accordion.Panel>
-                  </Accordion.Item>
+            <Box className="public-rise public-rise-delay-3" style={containerStyle}>
+              <Group mb="md">
+                <ThemeIcon size="lg" variant="light" color="grape">
+                  <FontAwesomeIcon icon={faUsers} />
+                </ThemeIcon>
+                <Title order={3} c="gray.1">{t('about.community')}</Title>
+              </Group>
+              <Text c="gray.4" lh={1.6}>
+                {t('about.contributions')}
+              </Text>
+              
+              <Group mt="xl" grow>
+                <Button
+                  component="a"
+                  href="https://discord.gg/j9NYxmBCjA"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="md"
+                  color="indigo"
+                  leftSection={<FontAwesomeIcon icon={faUsers} />}
+                >
+                  {t('about.joinDiscord')}
+                </Button>
+                <Button
+                  component="a"
+                  href="https://github.com/OpenThrone/OpenThrone"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="md"
+                  variant="outline"
+                  color="gray"
+                  leftSection={<FontAwesomeIcon icon={faCode} />}
+                >
+                  {t('about.viewGitHub')}
+                </Button>
+              </Group>
+            </Box>
+          </SimpleGrid>
 
-                  <Accordion.Item value="ideas">
-                    <Accordion.Control>Can I suggest ideas?</Accordion.Control>
-                    <Accordion.Panel>Currently we are hyper-focused on getting the basic mechanics functioning. If you have ideas, please share them on our GitHub issues page so that we can centralize the discussion and come up with the best possible implementation. Unfortunately not all ideas will be implemented, but we encourage the ideas and appreciate any PR contributions.</Accordion.Panel>
-                  </Accordion.Item>
-                </Accordion>
-             </Box>
 
-             <Box className="public-rise public-rise-delay-3" style={containerStyle}>
-                <Group mb="md">
-                  <ThemeIcon size="lg" variant="light" color="grape">
-                    <FontAwesomeIcon icon={faUsers} />
-                  </ThemeIcon>
-                  <Title order={3} c="gray.1">Community</Title>
-                </Group>
-                <Text c="gray.4" lh={1.6}>
-                    Contributions are the backbone of OpenThrone. Whether you are a developer, artist, or player, your feedback matters.
-                </Text>
-
-                <Group mt="xl" grow>
-                    <Button 
-                        component="a" 
-                        href="https://discord.gg/j9NYxmBCjA" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        size="md" 
-                        color="indigo"
-                        leftSection={<FontAwesomeIcon icon={faUsers} />}
-                    >
-                        Join our Discord
-                    </Button>
-                     <Button 
-                        component="a" 
-                        href="https://github.com/OpenThrone/OpenThrone" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        size="md" 
-                        variant="outline"
-                        color="gray"
-                        leftSection={<FontAwesomeIcon icon={faCode} />}
-                    >
-                        View on GitHub
-                    </Button>
-                </Group>
-             </Box>
-
-        </SimpleGrid>
-
-        <Box mt="xl" style={{ textAlign: 'center' }}>
-             <Text c="dimmed" size="xs">
-                OpenThrone is licensed under the MIT License. Copyright © 2023.
-             </Text>
-        </Box>
-
+          <Box mt="xl" style={{ textAlign: 'center' }}>
+            <Text c="dimmed" size="xs">
+              {t('about.licensed')}
+            </Text>
+          </Box>
       </div>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['common'])),
+    },
+  };
 };
 
 export default About;

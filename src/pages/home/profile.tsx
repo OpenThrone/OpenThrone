@@ -1,4 +1,9 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
+import { getSafeLocale } from '@/utils/i18n';
+
 import { RichTextEditor } from "@mantine/tiptap";
 import { useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
@@ -28,8 +33,10 @@ import Link from "next/link";
 import MainArea from "@/components/MainArea";
 import { logDebug } from "@/utils/logger";
 import { GameCard } from "@/components/game/GameCard";
+import { InferGetServerSidePropsType } from "next";
 
-const Profile = (props) => {
+const Profile = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('home');
   const [file, setFile] = useState<File | null>(null);
   const { user, forceUpdate } = useUser();
   const [initialContent, setInitialContent] = useState("This feature is not implemented yet");
@@ -48,7 +55,7 @@ const Profile = (props) => {
       Subscript,
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Markdown,  // Include the Markdown extension
+      Markdown,  // Include Markdown extension
       Table.configure({
         resizable: true,
       }),
@@ -128,7 +135,7 @@ const Profile = (props) => {
         if (!response.ok) {
           const msg = (err) => { // TODO: Need to identify different errors that aren't understood well
             if (err.includes("options.maxTotalFileSize")) {
-              return "File size must be less than 1.5mb.";
+              return t('profile.fileSizeLimit');
             }
             return err;
           }
@@ -138,43 +145,43 @@ const Profile = (props) => {
         setInitialContent(user.bio);
         setMarkdownContent(user.bio);
 
-        alertService.success("File uploaded successfully.");
+        alertService.success(t('profile.fileUploadedSuccessfully'));
         forceUpdate();
       } catch (error) {
-        alertService.error("Error uploading file. " + error.message);
+        alertService.error(t('profile.errorUploadingFile') + " " + error.message);
       }
     }
   };
 
   return (
     <MainArea
-      title="My Profile">
+      title={t('profile.title')}>
       <Grid gutter="lg">
         <Grid.Col span={6}>
-          <GameCard title="Current Avatar">
+          <GameCard title={t('profile.currentAvatar')}>
             <Group align="center" mt="md">
               <Avatar src={user?.avatar} size={150} radius="md" />
             </Group>
           </GameCard>
         </Grid.Col>
         <Grid.Col span={6}>
-          <GameCard title="New Avatar">
-            <Text size="sm" c="dimmed">Limits: 450x450 and 1.5mb</Text>
+          <GameCard title={t('profile.newAvatar')}>
+            <Text size="sm" c="dimmed">{t('profile.limits')}</Text>
             <Group align="center" mt="md">
               <Avatar src={file ? URL.createObjectURL(file) : ""} size={150} radius="md" />
               <FileButton accept="image/jpeg, image/jpg, image/gif, image/png, image/webp" onChange={setFile}>
-                {(props) => <Button {...props} color="yellow">Upload image</Button>}
+                {(props) => <Button {...props} color="yellow">{t('profile.uploadImage')}</Button>}
               </FileButton>
             </Group>
           </GameCard>
         </Grid.Col>
       </Grid>
       <Space h="md" />
-      <GameCard title="Profile Biography">
+      <GameCard title={t('profile.profileBiography')}>
         <Space h="md" />
         {contentChanged && (
           <Text size="sm" c="red">
-            * Unsaved changes
+            {t('profile.unsavedChanges')}
           </Text>
         )}
         <RichTextEditor editor={editor}>
@@ -227,7 +234,7 @@ const Profile = (props) => {
         </RichTextEditor>
         <Space h="md" />
         <Text size="sm" color="dimmed">
-          Character Count: {charCount}/{maxChars}
+          {t('profile.characterCount', { count: charCount, max: maxChars })}
         </Text>
         <Space h="md" />
         <Group align="right" mt="md">
@@ -235,17 +242,25 @@ const Profile = (props) => {
             className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
             onClick={saveProfile}
           >
-            Save Profile
+            {t('profile.saveProfile')}
           </Button>
           <Link href={'/userprofile/' + user?.id}>
             <Button className="rounded bg-green-700 px-4 py-2 font-bold text-white hover:bg-blue-700">
-            View Profile
+            {t('profile.viewProfile')}
             </Button>
           </Link>
         </Group>
       </GameCard>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['home'])),
+    },
+  };
 };
 
 export default Profile;

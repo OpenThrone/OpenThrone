@@ -10,6 +10,7 @@ import { PlayerRace } from '@/types/typings';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
 import { GameCard } from '@/components/game/GameCard';
+import { useTranslation } from 'next-i18next';
 
 interface RecruitProps {
   id: string;
@@ -29,6 +30,7 @@ export default function Recruit(props) {
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const [userInfo, setUserInfo] = useState<RecruitProps | null>(null);
   const { user, forceUpdate } = useUser();
+  const { t } = useTranslation('common');
 
   const autoRecruit = useCallback(async () => {
     // Fetch the next recruitment link immediately
@@ -115,7 +117,7 @@ export default function Recruit(props) {
       const recData = await response.json();
 
       if (recData.success) {
-        alertService.success("You've been recruited into a player's army.", true);
+        alertService.success(t('recruit.youAreBeingRecruited'), true);
         // Reload user data like the sidebar refresh button
         forceUpdate();
         if (autoRecruitParams === '1') {
@@ -136,17 +138,17 @@ export default function Recruit(props) {
   };
 
   return (
-    <MainArea title='Recruiter'>
+    <MainArea title={t('recruit.title')}>
       {userInfo && (
         <div className="mb-5 text-center items-center">
           <p>
-            <Text size='xl'>You are being recruited into the army of <span className="text-white">{userInfo.display_name}</span></Text>
-            <span className="text-white">{userInfo.display_name}</span> is a level {userInfo.level} {userInfo.race}{' '}
-            {userInfo.class}.
+            <Text size='xl'>{t('recruit.youAreBeingRecruited')} <span className="text-white">{userInfo.display_name}</span></Text>
+            <span className="text-white">{userInfo.display_name}</span> {t('recruit.level', { level: userInfo.level })} <span className="text-white">{userInfo.race}</span>{' '}
+            {t('recruit.race', { race: userInfo.race, class: userInfo.class })}.
             <center>
               <Image src={getAssetPath('shields', '150x150', userInfo.race as PlayerRace)} width={'150'} height={'150'} alt="" />
             </center>
-            <Text size="md">Please wait for Cloudflare&lsquo;s captcha below.</Text>
+            <Text size="md">{t('recruit.pleaseWaitCaptcha')}</Text>
 
           </p>
         </div>
@@ -175,25 +177,23 @@ export default function Recruit(props) {
             <>
               <Space h="md" />
             <Text size="md">
-              Don&lsquo;t have an account? Sign up now to join the fun!
+              {t('recruit.dontHaveAccount')}
             </Text>
               <Button onClick={() => router.push(`/account/register`)}>
-              SignUp
+              {t('buttons.register')}
               </Button> 
             </>
           )}
           <Space h="md" />
           <Divider />
           <Space h="md" />
-          <GameCard title="Anti Spam Policy">
+          <GameCard title={t('recruit.antiSpamPolicyTitle')}>
             <Text size="sm">
-              Recruiting is intended to be used with your friends and family. Spam of any kind is not permitted and will result in suspension or ban of your account. Further violations may result in a ban of your IP address. Please be respectful of others and only recruit with permission.
+              {t('recruit.antiSpamPolicy')}
             </Text>
             <Space h="md" />
             <Text size="sm">
-              We use Cloudflare&lsquo;s Turnstile to prevent spam and abuse. By
-              completing this captcha, you are helping us keep the game fair and
-              fun for everyone.
+              {t('recruit.captchaPolicy')}
             </Text>
           </GameCard>
         </div>

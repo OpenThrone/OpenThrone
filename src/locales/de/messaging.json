@@ -1,0 +1,16 @@
+{
+  "title": "Nachrichtendienst",
+  "newMessage": "Neue Nachricht",
+  "compose": "Verfassen",
+  "themedChat": "Thematischer Chat",
+  "startConversation": "Beginnen Sie ein neues Gespräch oder verwalten Sie Ihre Chats.",
+  "toggleThemed": "Aktivieren/deaktivieren Sie das thematische Layout jederzeit.",
+  "chatRooms": "Chaträume",
+  "selectRoom": "Wählen Sie einen Raum",
+  "user": "Benutzer {{id}}",
+  "errorFetchingRooms": "Fehler beim Abrufen von Räumen",
+  "errorFetchingMessages": "Fehler beim Abrufen von Nachrichten",
+  "errorRefetchingRooms": "Fehler beim erneuten Abrufen von Räumen nach dem Modal",
+  "unknown": "Unbekannt",
+  "reader": "Leser"
+}

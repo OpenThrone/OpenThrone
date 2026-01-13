@@ -1,0 +1,31 @@
+{
+  "socketTest": {
+    "title": "Socket-Test",
+    "connected": "Verbunden",
+    "disconnected": "Getrennt",
+    "sendPing": "Ping senden",
+    "sendAttackNotification": "Angriffsbenachrichtigung senden",
+    "enterDefenderId": "Verteidiger-ID eingeben",
+    "sendFriendRequest": "Freundschaftsanfrage senden",
+    "enterUserId": "Benutzer-ID eingeben, um Freundschaftsanfrage zu senden:",
+    "declareEnemy": "Feind erklären",
+    "enterUserIdEnemy": "Benutzer-ID eingeben, um als Feind zu erklären:",
+    "sendMessage": "Nachricht senden",
+    "enterUserIdMessage": "Benutzer-ID eingeben, um Nachricht zu senden:",
+    "triggerAlert": "Alarm auslösen",
+    "testAlert": "Dies ist ein Testalarm!",
+    "messageLog": "Nachrichtenprotokoll:",
+    "pongReceived": "Pong empfangen",
+    "attackNotification": "Angriffsbenachrichtigung: {{message}}",
+    "friendRequestNotification": "Freundschaftsanfragebenachrichtigung: {{message}}",
+    "enemyDeclarationNotification": "Feinderklärungbenachrichtigung: {{message}}",
+    "messageNotification": "Nachrichtenbenachrichtigung: {{message}}",
+    "duplicateAttack": "Duplikate Angriffsbenachrichtigung:",
+    "duplicateFriendRequest": "Duplikate Freundschaftsanfragebenachrichtigung:",
+    "duplicateEnemyDeclaration": "Duplikate Feinderklärungbenachrichtigung:",
+    "duplicateMessage": "Duplikate Nachrichtenbenachrichtigung:",
+    "friendRequestSent": "{{email}} hat Ihnen eine Freundschaftsanfrage gesendet!",
+    "enemyDeclared": "{{email}} hat Sie als Feind erklärt!",
+    "newMessage": "Sie haben eine neue Nachricht von {{email}}!"
+  }
+}

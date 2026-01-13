@@ -4,41 +4,44 @@ import { getTop10AttacksByTotalCasualties, getTop10TotalAttackerCasualties, getT
 import { Title, Container, Grid, Text } from '@mantine/core';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useTranslation } from 'next-i18next';
 
 const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInBank, attackByCas, attackerCas, defenderCas, lastGenerated }: InferGetStaticPropsType<typeof getStaticProps>) => {
+  const { t } = useTranslation('community');
   return (
     <MainArea
-      title="Community Stats">
+      title={t('stats.title')}>
       <Grid>
         <Grid.Col span={{ base:12, md:6}}>
           <StatsTable title="Top 10 Population" data={population} description="The top 10 population is a list of the ten user accounts with the highest total population over a span." />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <StatsTable title="Most Active Recruiters (1d)" data={recruits} />
+          <StatsTable title={t('stats.mostActiveRecruiters')} data={recruits} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Successful Attackers (7d)" data={attacks} />
+          <StatsTable title={t('stats.top10SuccessfulAttackers')} data={attacks} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
           <StatsTable title="Top 10 Gold on Hand" data={goldOnHand} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Wealthiest Players" data={totalWealth} />
+          <StatsTable title={t('stats.top10WealthiestPlayers')} data={totalWealth} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Gold in Bank" data={goldInBank} />
+          <StatsTable title={t('stats.top10GoldInBank')} data={goldInBank} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Total Attacker Casualties (7d)" data={attackerCas} />
+          <StatsTable title={t('stats.top10TotalAttackerCasualties')} data={attackerCas} />
         </Grid.Col>
         <Grid.Col span={{ base:12, md:6}}>
-          <StatsTable title="Top 10 Total Defender Casualties (7d)" data={defenderCas} />
+          <StatsTable title={t('stats.top10TotalDefenderCasualties')} data={defenderCas} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <StatsTable title="Top 10 Attacks by Total Casualties (7d)" data={attackByCas} displayButton={false} />
+          <StatsTable title={t('stats.top10AttacksByTotalCasualties')} data={attackByCas} displayButton={false} />
         </Grid.Col>
       </Grid>
-      <Text className='text-center' mt="lg">Last generated: {new Date(lastGenerated).toLocaleString()}</Text>
+      <Text className='text-center' mt="lg">{t('stats.lastGenerated')} {new Date(lastGenerated).toLocaleString()}</Text>
     </MainArea>
   );
 };
@@ -76,6 +79,7 @@ export const getStaticProps = async (context: any) => {
         attackerCas: await getTop10TotalAttackerCasualties(24 * 60 * 60 * 1000 * 7),
         defenderCas: await getTop10TotalDefenderCasualties(24 * 60 * 60 * 1000 * 7),
         lastGenerated: new Date().toISOString(),
+        ...(await serverSideTranslations(context.locale, ['community'])),
       },
       revalidate: 60 * 60 * 24 + (60 * 10), // 24 hours + 10 minutes, a cron should revalidate it instead
     };
@@ -93,6 +97,7 @@ export const getStaticProps = async (context: any) => {
         attackerCas: [],
         defenderCas: [],
         lastGenerated: new Date().toISOString(),
+        ...(await serverSideTranslations(context.locale, ['community'])),
       },
       revalidate: 60 * 5,
     };

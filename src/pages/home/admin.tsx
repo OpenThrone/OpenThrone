@@ -1,4 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
 import { Modal, Grid } from "@mantine/core";
 import { PermissionType } from '@prisma/client';
 import PermissionCheck from "@/components/PermissionCheck";
@@ -10,6 +13,9 @@ import { GameCard } from "@/components/game/GameCard";
 import { faUsersCog, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import MainArea from "@/components/MainArea";
 
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
+
 interface UserSummary {
   id: string;
   username: string;
@@ -19,7 +25,8 @@ interface UserSummary {
   permissions?: string[];
 }
 
-const Admin = () => {
+const Admin = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('home');
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -70,13 +77,13 @@ const Admin = () => {
 
   return (
     <PermissionCheck permission={PermissionType.ADMINISTRATOR}>
-      <MainArea title="Admin">
+      <MainArea title={t('admin.title')}>
         <Grid>
           <Grid.Col span={12}>
-            <GameCard title="Grant Permissions" icon={faUserPlus}><GrantUserForm /></GameCard>
+            <GameCard title={t('admin.grantPermissions')} icon={faUserPlus}><GrantUserForm /></GameCard>
           </Grid.Col>
           <Grid.Col span={12}>
-            <GameCard title="User Management" icon={faUsersCog}>
+            <GameCard title={t('admin.userManagement')} icon={faUsersCog}>
               <UserSearchFilter onSearch={handleSearch} />
               <UserList
                 users={users}
@@ -92,12 +99,20 @@ const Admin = () => {
             </GameCard>
           </Grid.Col>
         </Grid>
-        <Modal opened={editModalOpen} onClose={handleCloseModal} size="xl" title="Edit User">
+        <Modal opened={editModalOpen} onClose={handleCloseModal} size="xl" title={t('admin.editUser')}>
           {selectedUserId && <UserAdminEditor userId={selectedUserId} onClose={handleCloseModal} onSaved={handleSearch} />}
         </Modal>
       </MainArea>
     </PermissionCheck>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['home'])),
+    },
+  };
 };
 
 export default Admin;

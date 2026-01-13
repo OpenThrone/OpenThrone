@@ -1,4 +1,7 @@
 import { useEffect, useState, useRef } from "react";
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
 import { DefaultLevelBonus } from "@/constants";
 import { useUser } from "@/context/users";
 import { Text, Space, Button, Center, SimpleGrid, Group, Box } from "@mantine/core";
@@ -7,6 +10,9 @@ import { GameCard } from "@/components/game/GameCard";
 import { faPlus, faMinus, faStar } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MainArea from "@/components/MainArea";
+
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
 
 const StatCard = ({ title, currentLevel, onAdd, onReduce, canAdd, canReduce }) => (
   <GameCard title={title} icon={faStar}>
@@ -39,7 +45,8 @@ const StatCard = ({ title, currentLevel, onAdd, onReduce, canAdd, canReduce }) =
   </GameCard>
 );
 
-const Levels = () => {
+const Levels = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('home');
   const { user, forceUpdate } = useUser();
   const justSavedRef = useRef(false);
   const [levels, setLevels] = useState(user?.bonus_points ?? DefaultLevelBonus);
@@ -87,7 +94,7 @@ const Levels = () => {
       setChangeQueue({ OFFENSE: { change: 0 }, DEFENSE: { change: 0 }, INCOME: { change: 0 }, INTEL: { change: 0 }, PRICES: { change: 0 } });
       justSavedRef.current = true;
       forceUpdate();
-      alertService.success("Changes saved successfully");
+      alertService.success(t('levels.changesSavedSuccessfully'));
     } catch (error) {
       alertService.error(error.message);
     } finally {
@@ -96,18 +103,18 @@ const Levels = () => {
   };
 
   const levelBonuses = [
-    { title: "Strength (Offense)", type: "OFFENSE" },
-    { title: "Constitution (Defense)", type: "DEFENSE" },
-    { title: "Wealth (Income)", type: "INCOME" },
-    { title: "Dexterity (Spy & Sentry)", type: "INTEL" },
-    { title: "Charisma (Reduced Prices)", type: "PRICES" },
+    { title: t('levels.strength'), type: "OFFENSE" },
+    { title: t('levels.constitution'), type: "DEFENSE" },
+    { title: t('levels.wealth'), type: "INCOME" },
+    { title: t('levels.dexterity'), type: "INTEL" },
+    { title: t('levels.charisma'), type: "PRICES" },
   ];
 
   return (
-    <MainArea title="Levels">
-      <GameCard title="Proficiency Points">
-        <Text size="lg" ta="center">You have <Text span c="yellow" inherit>{proficiencyPoints}</Text> proficiency points available.</Text>
-        <Text size="sm" ta="center" c="dimmed">Maximum bonus is 75%</Text>
+    <MainArea title={t('levels.title')}>
+      <GameCard title={t('levels.proficiencyPoints')}>
+        <Text size="lg" ta="center">{t('levels.proficiencyPointsAvailable', { count: proficiencyPoints })}</Text>
+        <Text size="sm" ta="center" c="dimmed">{t('levels.maximumBonus')}</Text>
       </GameCard>
       <Space h="md" />
       <SimpleGrid cols={{base: 1, sm: 2, md: 3}} spacing="md">
@@ -125,11 +132,19 @@ const Levels = () => {
       </SimpleGrid>
       {Object.values(changeQueue).some(c => c.change > 0) && (
         <Center mt="md">
-          <Button onClick={handleSubmitChanges} loading={isSaving} size="lg">Save Changes</Button>
+          <Button onClick={handleSubmitChanges} loading={isSaving} size="lg">{t('levels.saveChanges')}</Button>
         </Center>
       )}
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['home'])),
+    },
+  };
 };
 
 export default Levels;

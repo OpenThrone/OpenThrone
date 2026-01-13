@@ -2,6 +2,7 @@ import { getAssetPath } from '@/utils/utilities';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'next-i18next';
 import MobileNavigation from './MobileNavigation';
 
 const parentLinks = [
@@ -14,6 +15,7 @@ const parentLinks = [
 
 export const NavLoggedOut: React.FC = () => {
   const pathName = usePathname();
+  const { t } = useTranslation('common');
   const [activeParentLink, setActiveParentLink] = useState<string>('');
 
   const [, setDefaultParentLink] = useState<string>('/');
@@ -42,7 +44,7 @@ export const NavLoggedOut: React.FC = () => {
         type="button"
         className="block md:hidden p-2 min-h-[48px] min-w-[48px] text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
         onClick={() => setMobileMenuOpen(true)}
-        aria-label="Open menu"
+        aria-label={t('ariaLabels.openMenu')}
         data-testid="mobile-menu-button"
       >
         <svg

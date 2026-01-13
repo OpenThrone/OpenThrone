@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
 import { Table, Loader } from '@mantine/core';
+import { getSafeLocale } from '@/utils/i18n';
+
 import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
+import { InferGetServerSidePropsType } from "next";
 
-const Enemies = (props) => {
+const Enemies = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('social');
   const [enemies, setEnemies] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,8 +26,8 @@ const Enemies = (props) => {
 
   if (loading) {
     return (
-      <MainArea title="Enemies">
-        <GameCard title="Enemies">
+      <MainArea title={t('enemies.title')}>
+        <GameCard title={t('enemies.title')}>
           <Loader />
         </GameCard>
       </MainArea>
@@ -35,14 +42,22 @@ const Enemies = (props) => {
   ));
 
   return (
-    <MainArea title="Enemies">
-      <GameCard title="Enemies List">
-        <StyledTable headers={['Player ID', 'Status']}>
+    <MainArea title={t('enemies.title')}>
+      <GameCard title={t('enemies.enemiesList')}>
+        <StyledTable headers={[t('enemies.playerId'), t('enemies.status')]}>
           {rows}
         </StyledTable>
       </GameCard>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['social'])),
+    },
+  };
 };
 
 export default Enemies;

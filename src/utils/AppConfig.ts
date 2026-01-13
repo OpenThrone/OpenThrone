@@ -5,4 +5,6 @@ export const AppConfig = {
   title: 'Open Throne',
   description: 'A Massive Online Adventure Reborn',
   locale: 'en',
+  locales: ['en', 'es', 'de'] as const,
+  defaultLocale: 'en' as const,
 };

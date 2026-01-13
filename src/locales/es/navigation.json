@@ -1,0 +1,62 @@
+{
+  "main": {
+    "home": "Inicio",
+    "battle": "Batalla",
+    "social": "Social",
+    "structures": "Estructuras",
+    "community": "Comunidad",
+    "about": "Acerca de"
+  },
+  "home": {
+    "overview": "Resumen",
+    "levels": "Niveles",
+    "profile": "Perfil",
+    "settings": "Configuración",
+    "administration": "Administración"
+  },
+  "battle": {
+    "attack": "Atacar",
+    "training": "Entrenamiento",
+    "upgrades": "Mejoras",
+    "warHistory": "Historial de guerra",
+    "battleSimulator": "Simulador de batalla"
+  },
+  "social": {
+    "friends": "Amigos",
+    "enemies": "Enemigos",
+    "requests": "Solicitudes"
+  },
+  "structures": {
+    "bank": "Banco",
+    "armory": "Armería",
+    "upgrades": "Mejoras",
+    "housing": "Vivienda",
+    "repair": "Reparación"
+  },
+  "community": {
+    "news": "Noticias",
+    "discord": "Discord",
+    "autoRecruit": "Auto-reclutamiento",
+    "stats": "Estadísticas",
+    "reportIssues": "Reportar problemas"
+  },
+  "loggedOut": {
+    "home": "Inicio",
+    "login": "Iniciar sesión",
+    "signup": "Registrarse",
+    "news": "Noticias",
+    "about": "Acerca de"
+  },
+  "actions": {
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
+  },
+  "ariaLabels": {
+    "mobileMenuButton": "Abrir menú de navegación",
+    "desktopMenu": "Menú de navegación principal",
+    "subMenu": "Submenú para {{section}}",
+    "signOut": "Cerrar sesión de tu cuenta"
+  }
+}

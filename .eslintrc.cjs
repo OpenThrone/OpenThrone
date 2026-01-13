@@ -1,0 +1,72 @@
+/** @type {import("eslint").Linter.Config} */
+module.exports = {
+  extends: [
+    'airbnb-base',
+    'next/core-web-vitals',
+    'plugin:prettier/recommended',
+    'plugin:@next/next/recommended',
+  ],
+  rules: {
+    'prettier/prettier': ['error', { singleQuote: true, endOfLine: 'auto' }],
+    '@next/next/no-document-import-in-page': 'off',
+  },
+  overrides: [
+    {
+      files: ['**/*.ts', '**/*.tsx'],
+      plugins: [
+        '@typescript-eslint',
+        'unused-imports',
+        'tailwindcss',
+        'simple-import-sort',
+      ],
+      extends: [
+        'plugin:tailwindcss/recommended',
+        'airbnb',
+        'airbnb-typescript',
+        'airbnb/hooks',
+        'next/core-web-vitals',
+        'plugin:prettier/recommended',
+        'plugin:@typescript-eslint/recommended',
+        'plugin:@typescript-eslint/recommended-requiring-type-checking',
+      ],
+      parserOptions: { project: './tsconfig.json' },
+      rules: {
+        'prettier/prettier': ['error', { singleQuote: true, endOfLine: 'auto' }],
+        'react/function-component-definition': 'off',
+        'react/destructuring-assignment': 'off',
+        'react/require-default-props': 'off',
+        'react/jsx-props-no-spreading': 'off',
+        'react-hooks/exhaustive-deps': 'off',
+        '@next/next/no-img-element': 'off',
+        '@typescript-eslint/comma-dangle': 'off',
+        '@typescript-eslint/consistent-type-imports': 'error',
+        '@next/next/no-document-import-in-page': 'off',
+        'no-restricted-syntax': ['error', 'ForInStatement', 'LabeledStatement', 'WithStatement'],
+        'import/prefer-default-export': 'off',
+        'simple-import-sort/imports': 'error',
+        'simple-import-sort/exports': 'error',
+
+        // ✅ unused imports/vars
+        '@typescript-eslint/no-unused-vars': 'off',
+        'unused-imports/no-unused-imports': 'error',
+        'unused-imports/no-unused-vars': [
+          'error',
+          { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+        ],
+
+        '@typescript-eslint/no-non-null-assertion': 'warn',
+        '@typescript-eslint/no-unnecessary-condition': 'warn',
+        '@typescript-eslint/strict-boolean-expressions': [
+          'error',
+          {
+            allowNullableObject: true,
+            allowNullableBoolean: true,
+            allowNullableString: true,
+            allowNullableNumber: true,
+            allowAny: false,
+          },
+        ],
+      },
+    },
+  ],
+};

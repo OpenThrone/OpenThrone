@@ -1,0 +1,62 @@
+{
+  "main": {
+    "home": "Home",
+    "battle": "Battle",
+    "social": "Social",
+    "structures": "Structures",
+    "community": "Community",
+    "about": "About"
+  },
+  "home": {
+    "overview": "Overview",
+    "levels": "Levels",
+    "profile": "Profile",
+    "settings": "Settings",
+    "administration": "Administration"
+  },
+  "battle": {
+    "attack": "Attack",
+    "training": "Training",
+    "upgrades": "Upgrades",
+    "warHistory": "War History",
+    "battleSimulator": "Battle Simulator"
+  },
+  "social": {
+    "friends": "Friends",
+    "enemies": "Enemies",
+    "requests": "Requests"
+  },
+  "structures": {
+    "bank": "Bank",
+    "armory": "Armory",
+    "upgrades": "Upgrades",
+    "housing": "Housing",
+    "repair": "Repair"
+  },
+  "community": {
+    "news": "News",
+    "discord": "Discord",
+    "autoRecruit": "Auto Recruit",
+    "stats": "Stats",
+    "reportIssues": "Report Issues"
+  },
+  "loggedOut": {
+    "home": "Home",
+    "login": "Login",
+    "signup": "Signup",
+    "news": "News",
+    "about": "About"
+  },
+  "actions": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "ariaLabels": {
+    "mobileMenuButton": "Open navigation menu",
+    "desktopMenu": "Main navigation menu",
+    "subMenu": "Sub-menu for {{section}}",
+    "signOut": "Sign out of your account"
+  }
+}

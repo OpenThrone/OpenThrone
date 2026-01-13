@@ -4,8 +4,13 @@ import toLocale from '@/utils/numberFormatting';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
 import { GameCard } from '@/components/game/GameCard';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
 
 export const UserCardImage = ({ name, members, description, gold, joinText, imgsrc, bannerimgsrc }) => {
+  const { t } = useTranslation('alliances');
   return (
     <GameCard title={name}>
       <Stack gap="md">
@@ -40,24 +45,25 @@ export const UserCardImage = ({ name, members, description, gold, joinText, imgs
           }}
         >
           <div>
-            <Text size="xs" c="dimmed" tt="uppercase">Gold</Text>
+            <Text size="xs" c="dimmed" tt="uppercase">{t('browse.gold')}</Text>
             <Text fw={700}>{toLocale(gold)}</Text>
           </div>
           <div>
-            <Text size="xs" c="dimmed" tt="uppercase">Members</Text>
+            <Text size="xs" c="dimmed" tt="uppercase">{t('browse.members')}</Text>
             <Text fw={700}>{toLocale(members)}</Text>
           </div>
         </Group>
         <Button fullWidth radius="sm" size="sm" color="yellow">
-          {joinText || 'Join'}
+          {joinText || t('browse.join')}
         </Button>
       </Stack>
     </GameCard>
   );
 };
 
-const Browse = (props) => {
+const Browse = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [alliances, setAlliances] = useState([]);
+  const { t } = useTranslation('alliances');
 
   useEffect(() => {
     const fetchAlliances = async () => {
@@ -69,7 +75,7 @@ const Browse = (props) => {
         const data = await response.json();
         setAlliances(data);
       } catch (error) {
-        logError('Failed to fetch alliances:', error);
+        logError(t('browse.errorFetching'), error);
       }
     };
 
@@ -77,7 +83,7 @@ const Browse = (props) => {
   }, []);
 
   return (
-    <MainArea title="Alliances">
+    <MainArea title={t('browse.title')}>
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 3 }}>
         {alliances.map((alliance) => (
           <UserCardImage
@@ -86,7 +92,7 @@ const Browse = (props) => {
             description={alliance.motto}
             members={alliance._count.members}
             gold={0}
-            joinText="Join"
+            joinText={t('browse.join')}
             imgsrc={alliance.avatar || '/path/to/default/avatar.png'}
             bannerimgsrc={alliance.bannerimg || '/path/to/default/banner.png'}
           />
@@ -94,6 +100,14 @@ const Browse = (props) => {
       </SimpleGrid>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['alliances'])),
+    },
+  };
 };
 
 export default Browse;

@@ -1,4 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
 import { useLayout } from "@/context/LayoutContext";
 import { useUser } from "@/context/users";
 import { alertService } from "@/services/Alert.service";
@@ -26,6 +29,7 @@ import MainArea from "@/components/MainArea";
 import { GameCard } from "@/components/game/GameCard";
 
 const Settings = (props) => {
+  const { t } = useTranslation('home');
   const locales: Locales[] = ["en-US", "es-ES"];
   const colorSchemes: PlayerRace[] = ["UNDEAD", "HUMAN", "GOBLIN", "ELF"];
   const [currentPassword, setCurrentPassword] = useState("");
@@ -92,7 +96,7 @@ const Settings = (props) => {
     });
     const data = await response.json();
     if(response.ok) {
-      alertService.success("Password updated successfully.");
+      alertService.success(t('settings.passwordUpdatedSuccessfully'));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -111,11 +115,9 @@ const Settings = (props) => {
     });
 
     const data = await response.json();
-    // Handle the response
+    // Handle response
     if (response.ok) {
-      alertService.success(
-        "Email request sent successfully. Follow the instructions in the email to complete the process."
-      );
+      alertService.success(t('settings.emailRequestSent'));
       //forceUpdate();
       updateOptions();
     } else {
@@ -136,11 +138,9 @@ const Settings = (props) => {
       }),
     });
     const data = await response.json();
-    // Handle the response
+    // Handle response
     if (response.ok) {
-      alertService.success(
-        "Locale updated successfully, please refresh the page to see the changes."
-      );
+      alertService.success(t('settings.localeUpdatedSuccessfully'));
       forceUpdate();
       updateOptions();
     } else {
@@ -157,9 +157,9 @@ const Settings = (props) => {
       body: JSON.stringify({}),
     });
     const data = await response.json();
-    // Handle the response
+    // Handle response
     if (response.ok) {
-      alertService.success("Vacation mode started successfully.");
+      alertService.success(t('settings.vacationStartedSuccessfully'));
       forceUpdate();
     } else {
       alertService.error(data.error);
@@ -179,7 +179,7 @@ const Settings = (props) => {
     });
     const data = await response.json();
     if (response.ok) {
-      alertService.success("Account reset successfully.");
+      alertService.success(t('settings.accountResetSuccessfully'));
       forceUpdate();
     } else {
       alertService.error(data.error);
@@ -199,7 +199,7 @@ const Settings = (props) => {
     });
     const data = await response.json();
     if (response.ok) {
-      alertService.success("Account disabled successfully.");
+      alertService.success(t('settings.accountDisabledSuccessfully'));
       forceUpdate();
     } else {
       alertService.error(data.error);
@@ -221,7 +221,7 @@ const Settings = (props) => {
     });
     const data = await response.json();
     if (response.ok) {
-      alertService.success("Account data removed successfully.");
+      alertService.success(t('settings.accountDataRemovedSuccessfully'));
       forceUpdate();
     } else {
       alertService.error(data.error);
@@ -237,7 +237,7 @@ const Settings = (props) => {
     
     if (!user) {
       logError('handleToggle2FA - user object is null');
-      alertService.error('User not loaded. Please refresh the page.');
+      alertService.error(t('settings.userNotLoaded'));
       return;
     }
     
@@ -247,10 +247,10 @@ const Settings = (props) => {
         method: 'POST',
       });
       if (response.ok) {
-        alertService.success('2FA disabled');
+        alertService.success(t('settings.failedToDisable2FA'));
         forceUpdate();
       } else {
-        alertService.error('Failed to disable 2FA');
+        alertService.error(t('settings.failedToDisable2FA'));
       }
     } else {
       // Enable 2FA
@@ -262,7 +262,7 @@ const Settings = (props) => {
         setQrCode(data.qrCode);
         setShowQR(true);
       } else {
-        alertService.error('Failed to generate 2FA secret');
+        alertService.error(t('settings.failedToGenerate2FASecret'));
       }
     }
   };
@@ -276,44 +276,44 @@ const Settings = (props) => {
       body: JSON.stringify({ token: totpToken }),
     });
     if (response.ok) {
-      alertService.success('2FA enabled');
+      alertService.success(t('settings.2FAEnabled'));
       setShowQR(false);
       setTotpToken('');
       forceUpdate();
     } else {
-      alertService.error('Invalid token');
+      alertService.error(t('settings.invalidToken'));
     }
   };
 
   // Show loading state while user is loading
   if (!user) {
     return (
-      <MainArea title="Settings">
-        <GameCard title="Settings">
-          <div>Loading settings...</div>
+      <MainArea title={t('settings.title')}>
+        <GameCard title={t('settings.title')}>
+          <div>{t('settings.loadingSettings')}</div>
         </GameCard>
       </MainArea>
     );
   }
 
   return (
-    <MainArea title="Settings">
+    <MainArea title={t('settings.title')}>
       <Grid gutter="lg">
         <Grid.Col span={6}>
-          <GameCard title="Change Password">
-            <Text>Enter Current Password</Text>
+          <GameCard title={t('settings.changePassword')}>
+            <Text>{t('settings.enterCurrentPassword')}</Text>
             <PasswordInput
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               className={raceClasses.bgClass}
             />
-            <Text>New Password</Text>
+            <Text>{t('settings.newPassword')}</Text>
             <PasswordInput
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className={raceClasses.bgClass}
             />
-            <Text>Verify Password</Text>
+            <Text>{t('settings.verifyPassword')}</Text>
             <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -321,7 +321,7 @@ const Settings = (props) => {
             />
             {!passwordsMatch && (
               <Text color="red" size="xs">
-                Passwords don&apos;t match.
+                {t('settings.passwordsDontMatch')}
               </Text>
             )}
               <Space h="md" />
@@ -329,14 +329,14 @@ const Settings = (props) => {
                 className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
                 onClick={updatePassword}
               >
-                Save
+                {t('settings.save')}
               </Button>
           </GameCard>
         </Grid.Col>
 
         <Grid.Col span={6}>
-          <GameCard title="Game Options">
-              <Text>Locale Formatting</Text>
+          <GameCard title={t('settings.gameOptions')}>
+              <Text>{t('settings.localeFormatting')}</Text>
               <Select
                 value={locale}
                 onChange={setLocale}
@@ -346,7 +346,7 @@ const Settings = (props) => {
                 }))}
                 className={raceClasses.bgClass}
               />
-              <Text>Color Scheme</Text>
+              <Text>{t('settings.colorScheme')}</Text>
               <Select
                 value={colorScheme}
                 onChange={setColorScheme}
@@ -356,59 +356,59 @@ const Settings = (props) => {
                 }))}
                 className={raceClasses.bgClass}
             />
-              <Space h="md" />
-              <Button
-                className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-                onClick={updateLocale}
-              >
-                Save
-              </Button>
+            <Space h="md" />
+            <Button
+              className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+              onClick={updateLocale}
+            >
+              {t('settings.save')}
+            </Button>
           </GameCard>
         </Grid.Col>
 
         <Grid.Col span={6}>
-          <GameCard title="Change Email">
-            <Text>Current Email</Text>
+          <GameCard title={t('settings.changeEmail')}>
+            <Text>{t('settings.currentEmail')}</Text>
             <Text c="dimmed" size="md">{userEmail}</Text>
-            <Text>New Email</Text>
+            <Text>{t('settings.newEmail')}</Text>
             <TextInput
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               className={raceClasses.bgClass}
             />
-            <Text size="sm" c="dimmed">An email confirmation will be sent out to confirm this change.</Text>
+            <Text size="sm" c="dimmed">{t('settings.emailConfirmation')}</Text>
             <Space h="md" />
             <Button
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
               onClick={updateEmail}
             >
-              Save
+              {t('settings.save')}
             </Button>
           </GameCard>
         </Grid.Col>
         <Grid.Col span={6}>
-          <GameCard title="Vacation Mode">
-            <Text c="dimmed">Vacation mode allows you to temporarily disable your account.</Text>
-            <Text c="dimmed">While in vacation mode, your account will be protected from attacks.</Text>
-            <Text c="dimmed">You will not be able to perform any actions while in vacation mode.</Text>
-            <Text c="dimmed">Vacations are limited to once every quarter and last for 2 weeks.</Text>
-            <Text c="dimmed">You can end your vacation early by logging in.</Text>
+          <GameCard title={t('settings.vacationMode')}>
+            <Text c="dimmed">{t('settings.vacationDescription')}</Text>
+            <Text c="dimmed">{t('settings.vacationProtected')}</Text>
+            <Text c="dimmed">{t('settings.vacationNoActions')}</Text>
+            <Text c="dimmed">{t('settings.vacationLimited')}</Text>
+            <Text c="dimmed">{t('settings.vacationEndEarly')}</Text>
             <Button
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
               onClick={() => setIsVacationModalOpen(true)}
             >
-              Start Vacation
+              {t('settings.startVacation')}
             </Button>
           </GameCard>
         </Grid.Col>
         <Grid.Col span={6}>
-          <GameCard title="Two-Factor Authentication">
+          <GameCard title={t('settings.twoFactorAuthentication')}>
             <Space h="md" />
             <Button
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
               onClick={handleToggle2FA}
             >
-              {user?.twoFactorSecret ? 'Disable 2FA' : 'Enable 2FA'}
+              {user?.twoFactorSecret ? t('settings.disable2FA') : t('settings.enable2FA')}
             </Button>
             {showQR && (
               <div>
@@ -416,12 +416,12 @@ const Settings = (props) => {
                 <Image src={qrCode} alt="QR Code" width={200} height={200} unoptimized />
                 <Space h="md" />
                 <TextInput
-                  placeholder="Enter 6-digit code"
+                  placeholder={t('settings.enter6DigitCode')}
                   value={totpToken}
                   onChange={(e) => setTotpToken(e.target.value)}
                 />
                 <Button onClick={handleVerify2FA}>
-                  Verify
+                  {t('settings.verify')}
                 </Button>
               </div>
             )}
@@ -429,7 +429,7 @@ const Settings = (props) => {
         </Grid.Col>
         <Grid.Col span={6}>
           <GameCard
-            title="Account Actions"
+            title={t('settings.accountActions')}
             action={(
               <FontAwesomeIcon
                 icon={opened ? faMinus : faPlus}
@@ -441,31 +441,31 @@ const Settings = (props) => {
             <Collapse in={opened}>
 
               <Group mt="md" gap="md" wrap="wrap">
-                <Tooltip label="Resets your account to default stats for the current era." withArrow>
+                <Tooltip label={t('settings.resetAccountTooltip')} withArrow>
                   <Button
                     color="red"
                     className="rounded px-4 py-2 font-bold"
                     onClick={() => setIsResetModalOpen(true)}
                   >
-                    Reset Account
+                    {t('settings.resetAccount')}
                   </Button>
                 </Tooltip>
-                <Tooltip label="Closes your account. Reactivation requires support." withArrow>
+                <Tooltip label={t('settings.disableAccountTooltip')} withArrow>
                   <Button
                     color="orange"
                     className="rounded px-4 py-2 font-bold"
                     onClick={() => setIsDisableModalOpen(true)}
                   >
-                    Disable Account
+                    {t('settings.disableAccount')}
                   </Button>
                 </Tooltip>
-                <Tooltip label="Removes your email, display name, avatar, bio, and 2FA." withArrow>
+                <Tooltip label={t('settings.forgetMeTooltip')} withArrow>
                   <Button
                     color="red"
                     className="rounded px-4 py-2 font-bold"
                     onClick={() => setIsForgetModalOpen(true)}
                   >
-                    Forget Me
+                    {t('settings.forgetMe')}
                   </Button>
                 </Tooltip>
               </Group>
@@ -477,16 +477,16 @@ const Settings = (props) => {
       <Modal
         opened={isVacationModalOpen}
         onClose={() => setIsVacationModalOpen(false)}
-        title="Confirm Vacation Mode"
+        title={t('settings.confirmVacationMode')}
       >
         <div>
-          <Text>Are you sure you want to start vacation mode?</Text>
+          <Text>{t('settings.areYouSureStartVacation')}</Text>
           <Group mt="md">
             <Button variant="outline" color="gray" onClick={() => setIsVacationModalOpen(false)}>
-              Cancel
+              {t('settings.cancel')}
             </Button>
             <Button color="blue" onClick={handleVacationMode}>
-              Confirm Vacation
+              {t('settings.confirmVacation')}
             </Button>
           </Group>
         </div>
@@ -495,23 +495,23 @@ const Settings = (props) => {
       <Modal
         opened={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
-        title="Confirm Account Reset"
+        title={t('settings.confirmAccountReset')}
       >
         <div>
-          <Text>Are you sure you want to reset your account? This action cannot be undone.</Text>
+          <Text>{t('settings.areYouSureResetAccount')}</Text>
           <TextInput
             type="password"
             value={resetPassword}
             onChange={(e) => setResetPassword(e.target.value)}
-            placeholder="Enter your password to confirm"
+            placeholder={t('settings.enterPasswordConfirm')}
             className="w-full rounded-md border p-2 mt-4"
           />
           <Group align="right" mt="md">
             <Button variant="outline" color="gray" onClick={() => setIsResetModalOpen(false)}>
-              Cancel
+              {t('settings.cancel')}
             </Button>
             <Button color="red" onClick={handleResetAccount}>
-              Confirm Reset
+              {t('settings.confirmReset')}
             </Button>
           </Group>
         </div>
@@ -520,23 +520,23 @@ const Settings = (props) => {
       <Modal
         opened={isDisableModalOpen}
         onClose={() => setIsDisableModalOpen(false)}
-        title="Confirm Account Disable"
+        title={t('settings.confirmAccountDisable')}
       >
         <div>
-          <Text>Your account will be closed and can only be reactivated by support.</Text>
+          <Text>{t('settings.accountWillBeClosed')}</Text>
           <TextInput
             type="password"
             value={disablePassword}
             onChange={(e) => setDisablePassword(e.target.value)}
-            placeholder="Enter your password to confirm"
+            placeholder={t('settings.enterPasswordConfirm')}
             className="w-full rounded-md border p-2 mt-4"
           />
           <Group align="right" mt="md">
             <Button variant="outline" color="gray" onClick={() => setIsDisableModalOpen(false)}>
-              Cancel
+              {t('settings.cancel')}
             </Button>
             <Button color="orange" onClick={handleDisableAccount}>
-              Confirm Disable
+              {t('settings.confirmDisable')}
             </Button>
           </Group>
         </div>
@@ -545,32 +545,32 @@ const Settings = (props) => {
       <Modal
         opened={isForgetModalOpen}
         onClose={() => setIsForgetModalOpen(false)}
-        title="Confirm Account Deletion"
+        title={t('settings.confirmAccountDeletion')}
       >
         <div>
           <Text>
-            This will remove your email, display name, avatar, bio, and 2FA. This action cannot be undone.
+            {t('settings.removeDataWarning')}
           </Text>
           <TextInput
             type="password"
             value={forgetPassword}
             onChange={(e) => setForgetPassword(e.target.value)}
-            placeholder="Enter your password to confirm"
+            placeholder={t('settings.enterPasswordConfirm')}
             className="w-full rounded-md border p-2 mt-4"
           />
           <Textarea
             value={forgetReason}
             onChange={(e) => setForgetReason(e.target.value)}
-            placeholder="Optional reason"
+            placeholder={t('settings.optionalReason')}
             className="w-full rounded-md border p-2 mt-4"
             minRows={3}
           />
           <Group align="right" mt="md">
             <Button variant="outline" color="gray" onClick={() => setIsForgetModalOpen(false)}>
-              Cancel
+              {t('settings.cancel')}
             </Button>
             <Button color="red" onClick={handleForgetAccount}>
-              Confirm Delete
+              {t('settings.confirmDelete')}
             </Button>
           </Group>
         </div>

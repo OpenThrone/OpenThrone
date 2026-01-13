@@ -3,10 +3,17 @@ import { useUser } from "@/context/users";
 import { alertService } from "@/services/Alert.service";
 import { Button, Grid, Space, Text, TextInput, Modal } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import router from "next/router";
 import { useState, useEffect } from "react";
+import { logError } from '@/utils/logger';
 
-const EmailVerify = (props) => {
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
+
+const EmailVerify = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('account');
   const searchParams = useSearchParams();
   const [input, setInput] = useState('');
   const [email, setEmail] = useState('');
@@ -48,7 +55,7 @@ const EmailVerify = (props) => {
       // Open confirmation modal
       setOpened(true);
     } else {
-      alertService.error("Verification failed: " + data.error);
+      alertService.error(t('emailVerify.verificationFailedError') + " " + data.error);
     }
   };
 
@@ -69,44 +76,44 @@ const EmailVerify = (props) => {
     });
 
     if (updateResponse.ok) {
-      alertService.success("Email updated successfully", true);
-      return router.push('/home/settings'); 
+      alertService.success(t('emailVerify.emailUpdatedSuccessfully'), true);
+      return router.push('/home/settings');
     } else {
       const data = await updateResponse.json();
-      return alertService.error("Failed to update email: " + data.error);
+      return alertService.error(t('emailVerify.failedToUpdateEmail') + ": " + data.error);
     }
   };
 
   return (
     <MainArea
-      title="Email Verify - Enter Verification Code">
+      title={t('emailVerify.pageTitle')}>
       <form onSubmit={handleSubmit}>
         <Grid gutter="lg">
           <Grid.Col span={6}>
-            <Text>Verification Code</Text>
+            <Text>{t('emailVerify.verificationCode')}</Text>
             <TextInput
               id="code"
-              placeholder="Enter Verification Code"
+              placeholder={t('emailVerify.enterVerificationCode')}
               required
               name="code"
               value={input}
               onChange={onChange}
             />
             <Space h='xs' />
-            <Text>New Email</Text>
+            <Text>{t('emailVerify.newEmail')}</Text>
             <TextInput
               id="email"
-              placeholder="Enter New Email"
+              placeholder={t('emailVerify.enterNewEmail')}
               required
               name="email"
               value={email}
               onChange={onChange}
             />
             <Space h='xs' />
-            <Text>Current Password</Text>
+            <Text>{t('emailVerify.currentPassword')}</Text>
             <TextInput
               id="password"
-              placeholder="Enter Current Password"
+              placeholder={t('emailVerify.enterCurrentPassword')}
               required
               name="password"
               type="password"
@@ -119,7 +126,7 @@ const EmailVerify = (props) => {
               size="lg"
               fullWidth
             >
-              Verify and Change Email
+              {t('emailVerify.verifyAndChangeEmail')}
             </Button>
           </Grid.Col>
         </Grid>
@@ -128,20 +135,28 @@ const EmailVerify = (props) => {
       <Modal
         opened={opened}
         onClose={() => setOpened(false)}
-        title="Confirm Email Change"
+        title={t('emailVerify.confirmEmailChange')}
       >
-        <Text>You&apos;re changing your email from {user?.email} to {email}. Are you sure?</Text>
+        <Text>{t('emailVerify.changingEmailConfirm', { oldEmail: user?.email, newEmail: email })}</Text>
         <Space h="md" />
         <Button onClick={handleEmailUpdate} fullWidth>
-          Confirm
+          {t('emailVerify.confirm')}
         </Button>
         <Space h="md" />
         <Button onClick={() => setOpened(false)} fullWidth color="red">
-          Cancel
+          {t('emailVerify.cancel')}
         </Button>
       </Modal>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['account'])),
+    },
+  };
 };
 
 export default EmailVerify;

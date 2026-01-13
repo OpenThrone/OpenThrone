@@ -16,8 +16,12 @@ import useSocket from '@/hooks/useSocket';
 import { logError, logInfo } from '@/utils/logger';
 import ChatRoomList from '@/components/ChatRoomList';
 import ChatMessageList from '@/components/ChatMessageList';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { getSafeLocale } from '@/utils/i18n';
+import { InferGetServerSidePropsType } from "next";
 
-// Define a type for the message structure used in the frontend state
+// Define a type for message structure used in frontend state
 interface FrontendMessage {
   id: number;
   roomId: number;
@@ -82,12 +86,13 @@ interface FrontendRoom {
 }
 
 
-const MessageList = (props) => {
+const MessageList = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [rooms, setRooms] = useState<FrontendRoom[]>([]);
   const router = useRouter();
   const { data: session } = useSession();
   const { roomId: roomIdParam } = router.query;
   const { markRoomAsRead } = useUser();
+  const { t } = useTranslation('messaging');
 
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   const [messages, setMessages] = useState<FrontendMessage[]>([]);
@@ -96,7 +101,7 @@ const MessageList = (props) => {
   const fetchRooms = useCallback(async () => {
     try {
       const response = await fetch('/api/messages');
-      if (!response.ok) throw new Error('Failed to fetch rooms');
+      if (!response.ok) throw new Error(t('errorFetchingRooms'));
       const data: FrontendRoom[] = await response.json();
       setRooms(data);
 
@@ -109,11 +114,11 @@ const MessageList = (props) => {
           // Select room from URL parameter if valid
           roomToSelect = paramRoomId;
         } else if (data.length > 0) {
-          // Otherwise, select the first room in the list
+          // Otherwise, select the first room in list
           roomToSelect = data[0].id;
         }
 
-        // If we found a room to auto-select, update the state
+        // If we found a room to auto-select, update state
         if (roomToSelect !== null) {
            logInfo(`Auto-selecting room ${roomToSelect}`);
            setSelectedRoomId(roomToSelect);
@@ -122,9 +127,9 @@ const MessageList = (props) => {
       }
 
     } catch (error) {
-      logError('Failed to fetch rooms:', error);
+      logError(t('errorFetchingRooms'), error);
     }
-  }, [roomIdParam, markRoomAsRead, selectedRoomId]);
+  }, [roomIdParam, markRoomAsRead, selectedRoomId, t]);
 
   useEffect(() => {
     fetchRooms();
@@ -136,7 +141,7 @@ const MessageList = (props) => {
         setLoadingMessages(true);
         try {
           const response = await fetch(`/api/messages/${selectedRoomId}`);
-          if (!response.ok) throw new Error('Failed to fetch messages');
+          if (!response.ok) throw new Error(t('errorFetchingMessages'));
           const data: FrontendMessage[] = await response.json();
           setMessages(data);
 
@@ -144,7 +149,7 @@ const MessageList = (props) => {
             router.push(`/messaging?roomId=${selectedRoomId}`, undefined, { shallow: true });
           }
         } catch (error) {
-          logError('Failed to fetch messages:', error);
+          logError(t('errorFetchingMessages'), error);
           setMessages([]);
         } finally {
           setLoadingMessages(false);
@@ -154,7 +159,7 @@ const MessageList = (props) => {
       }
     };
     fetchMessages();
-  }, [selectedRoomId, router]);
+  }, [selectedRoomId, router, t]);
 
   const handleRoomSelect = useCallback((roomId: number) => {
     setSelectedRoomId(roomId);
@@ -200,6 +205,7 @@ const MessageListComponent = ({
   loadingMessages: boolean;
 }) => {
   const router = useRouter();
+  const { t } = useTranslation('messaging');
   const selectedRoom = useMemo(() => rooms.find(room => room.id === selectedRoomId) || null, [rooms, selectedRoomId]);
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
   const [useThemedChat, setUseThemedChat] = useLocalStorage({
@@ -219,10 +225,10 @@ const MessageListComponent = ({
     const image = String(Array.isArray(rawAvatar) ? rawAvatar[0] : rawAvatar || '').trim();
     return {
       id: composeToUserId,
-      label: label || `User ${composeToUserId}`,
+      label: label || t('user', { id: composeToUserId }),
       image: image || null,
     };
-  }, [composeToUserId, router.query.composeToAvatar, router.query.composeToName]);
+  }, [composeToUserId, router.query.composeToAvatar, router.query.composeToName, t]);
 
   useEffect(() => {
     if (!composeToUserId) return;
@@ -237,30 +243,30 @@ const MessageListComponent = ({
     fetch('/api/messages')
       .then(res => res.json())
       .then(data => setRooms(data))
-      .catch(err => logError("Error refetching rooms after modal", err));
+      .catch(err => logError(t('errorRefetchingRooms'), err));
   };
 
   return (
-    <MainArea title="Messaging">
+    <MainArea title={t('title')}>
       <div className="p-4">
         <GameCard
-          title="New Message"
+          title={t('newMessage')}
           action={(
             <Switch
               checked={useThemedChat}
               onChange={(event) => setUseThemedChat(event.currentTarget.checked)}
-              label="Themed chat"
+              label={t('themedChat')}
               size="sm"
             />
           )}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-sm text-gray-300">Start a new conversation or manage your chats.</div>
-              <div className="text-xs text-gray-400">Toggle the themed layout any time.</div>
+              <div className="text-sm text-gray-300">{t('startConversation')}</div>
+              <div className="text-xs text-gray-400">{t('toggleThemed')}</div>
             </div>
             <Button color="yellow" onClick={() => setIsNewMessageModalOpen(true)}>
-              Compose
+              {t('compose')}
             </Button>
           </div>
         </GameCard>
@@ -285,14 +291,14 @@ const MessageListComponent = ({
         </div>
       ) : (
         <div className="flex h-[calc(100vh-250px)]">
-          <GameCard title="Chat Rooms" className="w-1/4">
+          <GameCard title={t('chatRooms')} className="w-1/4">
             <ChatRoomList
               rooms={rooms}
               onRoomSelect={setSelectedRoomId}
               selectedRoomId={selectedRoomId}
             />
           </GameCard>
-          <GameCard title={selectedRoom?.name || "Select a room"} className="w-3/4">
+          <GameCard title={selectedRoom?.name || t('selectRoom')} className="w-3/4">
             <ChatMessageList
               selectedRoomId={selectedRoomId}
               messages={messages}
@@ -328,6 +334,7 @@ const RealtimeMessageHandler = ({
   fetchRooms: () => Promise<void>; // Type fetchRooms prop
 }) => {
   const { addEventListener, removeEventListener, socket, isConnected } = useSocket(userId);
+  const { t } = useTranslation('messaging');
   const currentRoomRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -373,7 +380,7 @@ const RealtimeMessageHandler = ({
               ...room,
               lastMessage: messageData.content.substring(0, 50) + (messageData.content.length > 50 ? '...' : ''),
               lastMessageTime: messageData.sentAt,
-              lastMessageSender: messageData.sender?.display_name || 'Unknown',
+              lastMessageSender: messageData.sender?.display_name || t('unknown'),
               updatedAt: messageData.sentAt,
               unreadCount: (messageData.senderId !== userId && messageData.roomId !== selectedRoomId) ? (room.unreadCount || 0) + 1 : room.unreadCount,
             };
@@ -407,7 +414,7 @@ const RealtimeMessageHandler = ({
               ...room,
               lastMessage: content,
               lastMessageTime: timestamp,
-              lastMessageSender: String(notificationData?.senderName || room.lastMessageSender || 'Unknown'),
+              lastMessageSender: String(notificationData?.senderName || room.lastMessageSender || t('unknown')),
               updatedAt: timestamp,
               unreadCount,
             };
@@ -462,7 +469,7 @@ const RealtimeMessageHandler = ({
               const readerExists = msg.readBy?.some(r => r.userId === readUpdate.userId);
               if (!readerExists) {
                  const updatedReadBy = [...(msg.readBy || [])];
-                 updatedReadBy.push({ userId: readUpdate.userId, readAt: readUpdate.readAt, userDisplayName: 'Reader' /* Placeholder */ });
+                 updatedReadBy.push({ userId: readUpdate.userId, readAt: readUpdate.readAt, userDisplayName: t('reader') /* Placeholder */ });
                  return { ...msg, readBy: updatedReadBy };
               }
             }
@@ -472,8 +479,8 @@ const RealtimeMessageHandler = ({
       }
        setRooms(prevRooms => prevRooms.map(room => {
            if (room.id === data.roomId) {
-               const currentUserRead = data.updates.some(u => u.userId === userId);
-               return { ...room, unreadCount: currentUserRead ? 0 : room.unreadCount };
+                const currentUserRead = data.updates.some(u => u.userId === userId);
+                return { ...room, unreadCount: currentUserRead ? 0 : room.unreadCount };
            }
            return room;
        }));
@@ -515,9 +522,18 @@ const RealtimeMessageHandler = ({
     fetchRooms,
     setMessages,
     setRooms,
+    t,
   ]);
 
   return null;
+};
+
+export const getServerSideProps = async (context: any) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(getSafeLocale(context), ['messaging'])),
+    },
+  };
 };
 
 export default MessageList;

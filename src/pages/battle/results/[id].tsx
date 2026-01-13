@@ -1,4 +1,6 @@
 import { getServerSession } from 'next-auth';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import prisma from '@/lib/prisma';
 import AttackResult from '@/components/attackResult';
 import IntelResult from '@/components/IntelResult';
@@ -9,15 +11,17 @@ import { InferGetServerSidePropsType } from "next";
 
 import { serializeDates } from '@/utils/utilities';
 import MainArea from '@/components/MainArea';
-import { parseInt } from 'node_modules/cypress/types/lodash';
+
+import { getSafeLocale } from '@/utils/i18n';
 
 const ResultsPage = ({ battle, lastGenerated, viewerID }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('battle');
   if (!battle) {
-    return <MainArea title="Battle Results"><p>You do not have permission to view this battle log.</p></MainArea>;
+    return <MainArea title={t('results.title')}><p>{t('results.noPermission')}</p></MainArea>;
   }
 
   return (
-    <MainArea title="Battle Results">
+    <MainArea title={t('results.title')}>
       {battle.type === 'attack' ? (
         <AttackResult battle={battle} viewerID={Number(viewerID)} />
       ) : battle.type === 'ASSASSINATE' ? (
@@ -45,7 +49,7 @@ export const getServerSideProps = async (context) => {
   }
 
   const { params } = context;
-  const battleId = parseInt(params.id, 10);
+  const battleId = Number(params.id);
 
   // Fetch the battle details first
   const battle = await prisma.attack_log.findFirst({
@@ -121,6 +125,9 @@ export const getServerSideProps = async (context) => {
     return {
       props: {
         battle: null,
+        lastGenerated: null,
+        viewerID: null,
+        ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
       },
     };
   }
@@ -130,6 +137,7 @@ export const getServerSideProps = async (context) => {
       battle: serializeDates(battle),
       lastGenerated: new Date().toISOString(),
       viewerID: session.user.id,
+      ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
     },
   };
 };

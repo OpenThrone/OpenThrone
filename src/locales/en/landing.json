@@ -1,0 +1,58 @@
+{
+  "title": "Open Throne",
+  "metaDescription": "Meta Description",
+  "worldStats": {
+    "title": "World Stats",
+    "totalPlayers": "Total Players",
+    "battlesFought": "Battles Fought",
+    "alliances": "Alliances",
+    "epoch": "Epoch"
+  },
+  "highlights": {
+    "strategicCombat": {
+      "title": "Strategic Combat",
+      "description": "Build and train specialized units, then plunder rivals to climb rankings."
+    },
+    "espionageOperations": {
+      "title": "Espionage Operations",
+      "description": "Deploy spies, sabotage defenses, and strike before your enemies can react."
+    },
+    "empireBuilding": {
+      "title": "Empire Building",
+      "description": "Construct fortifications, armories, and mines to strengthen your kingdom."
+    }
+  },
+  "hero": {
+    "signUpNowAnd": "Sign Up Now And",
+    "joinTheFight": "Join the Fight!",
+    "tagline": "Choose a race, forge your class, and command a rising empire in a persistent strategy world.",
+    "features": {
+      "chooseRace": "Choose between four unique races: Undead, Humans, Goblins, Elves.",
+      "trainCitizens": "Train citizens as workers, offensive or defensive soldiers, and spies.",
+      "equipArmy": "Equip your army with weapons and armor.",
+      "playWithFriends": "Play with friends, create your own alliance, and dominate realm.",
+      "createProfile": "Create a character profile with a custom avatar.",
+      "stayInTouch": "Stay in contact with the team via Discord."
+    },
+    "beginYourReign": "Begin Your Reign",
+    "signIn": "Sign In",
+    "freeToPlay": "Free to play, no resets, no paywalls."
+  },
+  "warCouncilBriefing": {
+    "title": "War Council Briefing",
+    "description": "Stay current on realm updates, balance patches, and seasonal campaigns. The war room never sleeps.",
+    "readTheNews": "Read the News",
+    "joinDiscord": "Join the Discord"
+  },
+  "newcomerProtocol": {
+    "title": "Newcomer Protocol",
+    "description": "Start with protected turns, earn daily rewards, and learn meta at your pace. We built this realm for long-term rulers.",
+    "createCommander": "Create a Commander",
+    "returnToBattle": "Return to Battle"
+  },
+  "footer": {
+    "aboutProject": "About the Project",
+    "github": "GitHub",
+    "communityDriven": "OpenThrone is a community-driven project."
+  }
+}

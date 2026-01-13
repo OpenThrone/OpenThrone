@@ -1,0 +1,114 @@
+{
+  "authentication": {
+    "unauthorized": "No estás autorizado para realizar esta acción.",
+    "forbidden": "No tienes permiso para acceder a este recurso.",
+    "invalidCredentials": "Correo electrónico o contraseña inválidos.",
+    "sessionExpired": "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.",
+    "accountDisabled": "Tu cuenta ha sido deshabilitada. Por favor, contacta a soporte.",
+    "accountLocked": "Tu cuenta ha sido bloqueada debido a demasiados intentos fallidos.",
+    "emailNotVerified": "Por favor, verifica tu dirección de correo electrónico antes de continuar.",
+    "twoFactorRequired": "Se requiere autenticación de dos factores.",
+    "invalidTwoFactorCode": "Código de autenticación de dos factores inválido."
+  },
+  "validation": {
+    "requiredField": "Este campo es obligatorio.",
+    "invalidEmail": "Por favor, introduce una dirección de correo electrónico válida.",
+    "invalidPassword": "La contraseña debe tener al menos 8 caracteres.",
+    "passwordMismatch": "Las contraseñas no coinciden.",
+    "passwordTooShort": "La contraseña debe tener al menos 8 caracteres.",
+    "passwordTooLong": "La contraseña no debe tener más de 128 caracteres.",
+    "displayNameTooShort": "El nombre para mostrar debe tener al menos 3 caracteres.",
+    "displayNameTooLong": "El nombre para mostrar no debe tener más de 32 caracteres.",
+    "displayNameTaken": "Este nombre para mostrar ya está en uso.",
+    "bioTooLong": "La biografía no debe tener más de 500 caracteres.",
+    "invalidUrl": "Por favor, introduce una URL válida.",
+    "invalidNumber": "Por favor, introduce un número válido.",
+    "invalidDate": "Por favor, introduce una fecha válida.",
+    "valueTooLow": "El valor debe ser al menos {{min}}.",
+    "valueTooHigh": "El valor no debe ser más de {{max}}."
+  },
+  "network": {
+    "networkError": "Error de red. Por favor, verifica tu conexión.",
+    "timeoutError": "La solicitud ha expirado. Por favor, inténtalo de nuevo.",
+    "serverError": "Error del servidor. Por favor, inténtalo más tarde.",
+    "serviceUnavailable": "El servicio está temporalmente no disponible. Por favor, inténtalo más tarde.",
+    "rateLimitExceeded": "Demasiadas solicitudes. Por favor, espera antes de intentar de nuevo.",
+    "maintenance": "El servidor está actualmente en mantenimiento. Por favor, inténtalo más tarde."
+  },
+  "api": {
+    "requestFailed": "Solicitud fallida. Por favor, inténtalo de nuevo.",
+    "invalidResponse": "Respuesta inválida del servidor.",
+    "missingData": "Faltan datos requeridos.",
+    "invalidData": "Datos proporcionados inválidos.",
+    "resourceNotFound": "El recurso solicitado no se encontró.",
+    "resourceAlreadyExists": "Este recurso ya existe.",
+    "operationFailed": "Operación fallida. Por favor, inténtalo de nuevo."
+  },
+  "game": {
+    "insufficientGold": "No tienes suficiente oro.",
+    "insufficientTurns": "No tienes suficientes turnos.",
+    "insufficientCitizens": "No tienes suficientes ciudadanos.",
+    "insufficientUnits": "No tienes suficientes unidades.",
+    "insufficientItems": "No tienes suficientes objetos.",
+    "cannotAttackSelf": "No puedes atacarte a ti mismo.",
+    "cannotAttackProtected": "Este jugador está bajo protección.",
+    "cannotAttackTooStrong": "Este jugador es demasiado fuerte para que lo ataques.",
+    "cannotAttackTooWeak": "Este jugador es demasiado débil para que lo ataques.",
+    "cannotAttackSameAlliance": "No puedes atacar a miembros de tu alianza.",
+    "fortDestroyed": "¡Tu fortaleza ha sido destruida!",
+    "fortDamaged": "¡Tu fortaleza ha sido dañada!",
+    "unitLost": "¡Perdiste tus unidades!",
+    "itemLost": "¡Perdiste tus objetos!",
+    "goldStolen": "¡Tu oro fue robado!",
+    "spyDetected": "¡Tu espía fue detectado!",
+    "spyFailed": "¡Operación de espionaje fallida!",
+    "infiltrationFailed": "¡Infiltración fallida!",
+    "assassinationFailed": "¡Asesinato fallido!"
+  },
+  "social": {
+    "friendRequestFailed": "Error al enviar solicitud de amistad.",
+    "friendRequestAlreadySent": "Ya has enviado una solicitud de amistad a este jugador.",
+    "alreadyFriends": "Ya eres amigo de este jugador.",
+    "cannotAddSelf": "No puedes añadirte a ti mismo como amigo.",
+    "goldTransferFailed": "Error al transferir oro.",
+    "insufficientGold": "No tienes suficiente oro para transferir.",
+    "goldRequestFailed": "Error al enviar solicitud de oro.",
+    "goldRequestAlreadySent": "Ya has enviado una solicitud de oro a este jugador.",
+    "cannotRequestSelf": "No puedes solicitar oro a ti mismo."
+  },
+  "structures": {
+    "upgradeFailed": "Error al mejorar estructura.",
+    "alreadyMaxLevel": "Esta estructura ya está en el nivel máximo.",
+    "insufficientLevel": "Necesitas ser al menos nivel {{level}} para mejorar esta estructura.",
+    "repairFailed": "Error al reparar fortaleza.",
+    "fortAtMaxHealth": "Tu fortaleza ya está en salud máxima.",
+    "buildFailed": "Error al construir estructura.",
+    "insufficientSpace": "No tienes suficiente espacio para construir esta estructura."
+  },
+  "alliance": {
+    "notInAlliance": "No estás en una alianza.",
+    "alreadyInAlliance": "Ya estás en una alianza.",
+    "allianceNotFound": "Alianza no encontrada.",
+    "allianceFull": "Esta alianza está llena.",
+    "notAllianceLeader": "No eres el líder de esta alianza.",
+    "cannotLeaveAlliance": "No puedes abandonar la alianza en este momento.",
+    "inviteFailed": "Error al enviar invitación de alianza.",
+    "kickFailed": "Error al expulsar miembro de la alianza."
+  },
+  "messaging": {
+    "messageFailed": "Error al enviar mensaje.",
+    "messageTooLong": "El mensaje es demasiado largo. Máximo 1000 caracteres.",
+    "cannotMessageSelf": "No puedes enviarte mensajes a ti mismo.",
+    "chatRoomNotFound": "Sala de chat no encontrada.",
+    "notInChatRoom": "No estás en esta sala de chat.",
+    "cannotSendToChatRoom": "No puedes enviar mensajes a esta sala de chat."
+  },
+  "recruitment": {
+    "sessionAlreadyActive": "Ya tienes una sesión de reclutamiento activa.",
+    "noActiveSession": "No tienes una sesión de reclutamiento activa.",
+    "sessionExpired": "Tu sesión de reclutamiento ha expirado.",
+    "invalidRecruitLink": "Enlace de reclutamiento inválido.",
+    "alreadyRecruited": "Ya has sido reclutado.",
+    "recruitLimitReached": "Has alcanzado tu límite de reclutamiento."
+  }
+}

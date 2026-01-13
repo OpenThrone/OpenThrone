@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
+import { getSafeLocale } from '@/utils/i18n';
 
 import { Center, Group, Loader, SimpleGrid, Space, Table, Text, ThemeIcon, Popover } from '@mantine/core';
 import { faCoins, faCrown, faEye, faLevelUpAlt, faMedal, faMoneyBills, faPiggyBank, faShieldAlt, faShieldVirus, faStar, faSyncAlt, faTrophy, faUserSecret, faUserShield, faUsers } from '@fortawesome/free-solid-svg-icons';
@@ -14,8 +18,11 @@ import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
+import { InferGetServerSidePropsType } from "next";
 
-const Overview = () => {
+const Overview = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('home');
+  console.log('Translation: ', t);
   const [getNews, setNews] = useState([]);
 
   useEffect(() => {
@@ -53,7 +60,7 @@ const Overview = () => {
 
   if (!user) {
     return (
-      <MainArea title="Overview">
+      <MainArea title={t('overview.title')}>
         <Center style={{ height: '50vh' }}>
           <Loader data-testid="loading-spinner" />
         </Center>
@@ -68,54 +75,54 @@ const Overview = () => {
   const kingdomStats = [
     {
       icon: faUsers,
-      label: 'Population',
+      label: t('overview.population'),
       value: toLocale(user.population, user.locale),
     },
     {
       icon: faShieldAlt,
-      label: 'Fort Health',
+      label: t('overview.fortHealth'),
       value: user.fortHealth
         ? `${user.fortHealth.current}/${user.fortHealth.max} (${user.fortHealth.percentage}%)`
         : 'N/A',
     },
     {
       icon: faUserShield,
-      label: 'Army Size',
+      label: t('overview.armySize'),
       value: toLocale(user.armySize, user.locale),
     },
     {
       icon: faCoins,
-      label: 'Gold',
+      label: t('overview.gold'),
       value: toLocale(user.gold, user.locale),
     },
     {
       icon: faLevelUpAlt,
-      label: 'Level',
+      label: t('overview.level'),
       value: toLocale(user.level, user.locale),
     },
     {
       icon: faSyncAlt,
-      label: 'Gold Per Turn',
+      label: t('overview.goldPerTurn'),
       value: toLocale(user.goldPerTurn, user.locale),
     },
     {
       icon: faStar,
-      label: 'XP to Next Level',
+      label: t('overview.xpToNextLevel'),
       value: toLocale(user.xpToNextLevel, user.locale),
     },
     {
       icon: faPiggyBank,
-      label: 'Gold in Bank',
+      label: t('overview.goldInBank'),
       value: toLocale(user.goldInBank, user.locale),
     },
     {
       icon: faMoneyBills,
-      label: 'Net Worth',
+      label: t('overview.netWorth'),
       value: toLocale(user.netWorth, user.locale),
     },
   ];
   return (
-    <MainArea title="Overview">
+    <MainArea title={t('overview.title')}>
       <Center display={isMobile ? 'none' : 'block'}>
         <HeroBanner
           maxWidth={isMobile ? '100%' : '80%'}
@@ -132,7 +139,7 @@ const Overview = () => {
           }
           subtitle={recruitLink ? (
             <>
-              Share this link to gain up to 25 citizens per day:{' '}
+              {t('overview.shareRecruitLink')}{' '}
               <a
                 href={recruitLink}
                 style={{ color: '#7dd3fc', textDecoration: 'none' }}
@@ -144,12 +151,12 @@ const Overview = () => {
         />
       </Center>
       <Text size="sm" c="gray.3" ta="center" data-testid="content-text">
-        Your kingdom overview and daily command summary.
+        {t('overview.kingdomOverview')}
       </Text>
       <Space h="md" />
       {isMobile && (
         <>
-          <GameCard title="Commander Briefing" icon={faCrown} goldAccent={false}>
+          <GameCard title={t('overview.commanderBriefing')} icon={faCrown} goldAccent={false}>
             <Text size="md" c="gray.2" fw={700}>
               {user.displayName}
             </Text>
@@ -158,7 +165,7 @@ const Overview = () => {
             </Text>
             {recruitLink ? (
               <Text size="sm" c="gray.4" mt="sm">
-                Share this link to gain up to 25 citizens per day:{' '}
+                {t('overview.shareRecruitLink')}{' '}
                 <a href={recruitLink} style={{ color: '#7dd3fc', textDecoration: 'none' }}>
                   {user.recruitingLink}
                 </a>
@@ -168,7 +175,7 @@ const Overview = () => {
           <Space h="md" />
         </>
       )}
-      <GameCard title="Kingdom Stats" icon={faCrown}>
+      <GameCard title={t('overview.kingdomStats')} icon={faCrown}>
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" data-testid="stat-grid">
           {kingdomStats.map((stat) => (
             <Group
@@ -203,49 +210,49 @@ const Overview = () => {
 
       <Space h="md" />
 
-      <GameCard title="Military Stats" icon={faShieldAlt}>
+      <GameCard title={t('overview.militaryStats')} icon={faShieldAlt}>
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" data-testid="stat-grid">
           {[
             {
               icon: <RpgAwesomeIcon icon="crossed-swords" fw />,
-              label: 'Offense',
+              label: t('overview.offense'),
               value: toLocale(user.getArmyStat('OFFENSE')),
-              detail: 'View breakdown',
+              detail: t('overview.viewBreakdown'),
               withPopover: true,
             },
             {
               icon: <FontAwesomeIcon icon={faTrophy} />,
-              label: 'Attacks Won',
+              label: t('overview.attacksWon'),
               value: `${toLocale(user.statistics('OFFENSE', 'WON'))} / ${toLocale(user.statistics('OFFENSE', 'WON') + user.statistics('OFFENSE', 'LOST'))}`,
             },
             {
               icon: <FontAwesomeIcon icon={faShieldAlt} />,
-              label: 'Defense',
+              label: t('overview.defense'),
               value: toLocale(user.defense),
             },
             {
               icon: <FontAwesomeIcon icon={faMedal} />,
-              label: 'Defends Won',
+              label: t('overview.defendsWon'),
               value: toLocale(user.statistics('DEFENSE', 'WON')),
             },
             {
               icon: <FontAwesomeIcon icon={faUserSecret} />,
-              label: 'Spy Offense',
+              label: t('overview.spyOffense'),
               value: toLocale(user.spy),
             },
             {
               icon: <FontAwesomeIcon icon={faCrown} />,
-              label: 'Spy Victories',
+              label: t('overview.spyVictories'),
               value: `${toLocale(user.statistics('SPY', 'WON'))} / ${toLocale(user.statistics('SPY', 'WON') + user.statistics('SPY', 'LOST'))}`,
             },
             {
               icon: <FontAwesomeIcon icon={faEye} />,
-              label: 'Spy Defense',
+              label: t('overview.spyDefense'),
               value: toLocale(user.sentry),
             },
             {
               icon: <FontAwesomeIcon icon={faShieldVirus} />,
-              label: 'Sentry Victories',
+              label: t('overview.sentryVictories'),
               value: toLocale(user.statistics('SENTRY', 'WON')),
             },
           ].map((stat) => (
@@ -285,7 +292,7 @@ const Overview = () => {
                     <Popover.Dropdown>
                       {user.getArmyStatBreakdown ? (() => {
                         const breakdown = user.getArmyStatBreakdown('OFFENSE');
-                        if (!breakdown) return <Text>No breakdown available</Text>;
+                        if (!breakdown) return <Text>{t('overview.noBreakdownAvailable')}</Text>;
                         const { units = [], items = [], battleUpgrades = [], bonuses = [], finalTotal } = breakdown;
                         const unitsTotal = units.reduce((sum, u) => sum + (u.subtotal || 0), 0);
                         const upgradesTotal = battleUpgrades.reduce((sum, u) => sum + (u.subtotal || 0), 0);
@@ -299,10 +306,10 @@ const Overview = () => {
                         const itemsTotal = items.reduce((sum, i) => sum + (i.subtotal || 0), 0);
                         return (
                           <div style={{ maxHeight: 350, overflowY: 'auto' }}>
-                            <strong>Offense Breakdown</strong>
+                            <strong>{t('overview.offenseBreakdown')}</strong>
                             {units.length > 0 && <>
-                              <Text mt="xs" mb={2} fw={700}>Units</Text>
-                              <StyledTable headers={['Name', 'Quantity', 'Bonus/ea', 'Subtotal']}>
+                              <Text mt="xs" mb={2} fw={700}>{t('overview.units')}</Text>
+                              <StyledTable headers={[t('overview.name'), t('overview.quantity'), t('overview.bonusPerItem'), t('overview.subtotal')]}>
                                   {units.map((u, i) => (
                                     <Table.Tr key={`unit-${i}`}>
                                       <Table.Td>{u.name}</Table.Td>
@@ -314,11 +321,11 @@ const Overview = () => {
                                 </StyledTable>
                             </>}
                             {Object.keys(itemsByType).length > 0 && <>
-                              <Text mt="xs" mb={2} fw={700}>Items</Text>
+                              <Text mt="xs" mb={2} fw={700}>{t('overview.items')}</Text>
                               {Object.entries(itemsByType).map(([type, itemsArr]) => (
                                 <div key={type} style={{ marginBottom: 8 }}>
                                   <Text size="sm" fw={600} mb={2}>{type}</Text>
-                                  <StyledTable headers={['Name', 'Quantity', 'Bonus/ea', 'Subtotal']}>
+                                  <StyledTable headers={[t('overview.name'), t('overview.quantity'), t('overview.bonusPerItem'), t('overview.subtotal')]}>
                                     {(itemsArr as any[]).map((it, i) => (
                                       <Table.Tr key={`item-${type}-${i}`}>
                                         <Table.Td>{it.name}</Table.Td>
@@ -332,8 +339,8 @@ const Overview = () => {
                               ))}
                             </>}
                             {battleUpgrades.length > 0 && <>
-                              <Text mt="xs" mb={2} fw={700}>Upgrades</Text>
-                              <StyledTable headers={['Name', 'Bonus', 'Subtotal']}>
+                              <Text mt="xs" mb={2} fw={700}>{t('overview.upgrades')}</Text>
+                              <StyledTable headers={[t('overview.name'), t('overview.bonus'), t('overview.subtotal')]}>
                                   {battleUpgrades.map((up, i) => (
                                     <Table.Tr key={`upgrade-${i}`}>
                                       <Table.Td>{up.name}</Table.Td>
@@ -344,8 +351,8 @@ const Overview = () => {
                                 </StyledTable>
                             </>}
                             {bonuses.length > 0 && <>
-                              <Text mt="xs" mb={2} fw={700}>Bonuses</Text>
-                              <StyledTable headers={['Name', 'Percent', 'Applied To', 'Bonus Amount']}>
+                              <Text mt="xs" mb={2} fw={700}>{t('overview.bonuses')}</Text>
+                              <StyledTable headers={[t('overview.name'), t('overview.percent'), t('overview.appliedTo'), t('overview.bonusAmount')]}>
                                   {bonuses.map((b, i) => (
                                     <Table.Tr key={`bonus-${i}`}>
                                       <Table.Td>{b.name}</Table.Td>
@@ -357,18 +364,18 @@ const Overview = () => {
                                 </StyledTable>
                             </>}
                             <div style={{ fontSize: 13, marginTop: 8 }}>
-                              <strong>Equation:</strong><br />
-                              ({toLocale(unitsTotal)} units
-                              {itemsTotal ? ` + ${toLocale(itemsTotal)} items` : ''}
-                              {upgradesTotal ? ` + ${toLocale(upgradesTotal)} upgrades` : ''}
+                              <strong>{t('overview.equation')}:</strong><br />
+                              ({toLocale(unitsTotal)} {t('overview.units')}
+                              {itemsTotal ? ` + ${toLocale(itemsTotal)} ${t('overview.items')}` : ''}
+                              {upgradesTotal ? ` + ${toLocale(upgradesTotal)} ${t('overview.upgrades')}` : ''}
                               )
-                              {bonusesTotal ? ` + ${toLocale(bonusesTotal)} bonuses` : ''}
+                              {bonusesTotal ? ` + ${toLocale(bonusesTotal)} ${t('overview.bonuses')}` : ''}
                               = <strong>{toLocale(finalTotal)}</strong>
                             </div>
                           </div>
                         );
                       })() : (
-                        <Text>No breakdown available</Text>
+                        <Text>{t('overview.noBreakdownAvailable')}</Text>
                       )}
                     </Popover.Dropdown>
                   </Popover>
@@ -394,6 +401,15 @@ const Overview = () => {
       <StyledNews news={newsItems} />
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  const locale = getSafeLocale(context);
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['home'])),
+    },
+  };
 };
 
 export default Overview;

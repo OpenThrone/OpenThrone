@@ -1,0 +1,10 @@
+{
+  "blog": {
+    "title": "Blog-Verwaltung",
+    "postEditor": "Beitragseditor",
+    "livePreview": "Live-Vorschau",
+    "markdownContent": "Markdown-Inhalt",
+    "submitPost": "Beitrag einreichen",
+    "initialContent": "# Willkommen zum Mantine Rich-Text-Editor\n\nDies ist ein Beispielbeitrag. Sie können Ihren Text formatieren, Überschriften hinzufügen und mehr."
+  }
+}
