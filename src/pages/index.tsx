@@ -20,7 +20,6 @@ import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import { useLayout } from '@/context/LayoutContext';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 const Index = (props) => {
   const { setMeta, meta } = useLayout();
@@ -261,15 +260,6 @@ const Index = (props) => {
       </div>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  const locale = context.locale ?? context.defaultLocale ?? 'en';
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ['landing'])),
-    },
-  };
 };
 
 export default Index;

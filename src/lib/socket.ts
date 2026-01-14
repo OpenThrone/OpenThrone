@@ -1474,7 +1474,7 @@ const handleDepositGold = async (
   try {
     const depositAmount = parseBigInt(data.depositAmount);
     if (depositAmount === null || depositAmount <= 0) {
-      socket.emit("depositGoldError", { error: "Invalid deposit amount" });
+      socket.emit("depositGoldError", { error: "Invalid deposit amount: " + data.depositAmount });
       return;
     }
 

@@ -1,6 +1,6 @@
 {
   "landing": {
-    "title": "Open Throne",
+    "title": "OpenThrone",
     "subtitle": "Una Gran Aventura en Línea Renacida",
     "joinTheFight": "¡Únete a la Lucha!",
     "description": "Elige una raza, forja tu clase y comanda un imperio en ascenso en un mundo de estrategia persistente.",
@@ -16,11 +16,11 @@
       "beginReign": "Comienza Tu Reinado",
       "signIn": "Iniciar sesión"
     },
-    "freeToPlay": "Gratis para jugar, sin reinicios, sin muros de pago."
+    "freeToPlay": "Gratis para jugar, sin muros de pago."
   },
   "overview": {
     "title": "Resumen",
-    "welcome": "Bienvenido a Open Throne",
+    "welcome": "Bienvenido a OpenThrone",
     "yourGold": "Tu oro: {{gold}}",
     "yourCitizens": "Tus ciudadanos: {{count}}",
     "yourLevel": "Tu nivel: {{level}}",
@@ -114,8 +114,8 @@
     "languageSettings": "Configuración de Idioma",
     "changePassword": "Cambiar Contraseña",
     "changeEmail": "Cambiar Correo Electrónico",
-    "enable2FA": "Activar Autenticación de Dos Factores",
-    "disable2FA": "Desactivar Autenticación de Dos Factores",
+    "enable2FA": "Activar 2FA",
+    "disable2FA": "Desactivar 2FA",
     "deleteAccount": "Eliminar Cuenta",
     "settingsSaved": "Configuración guardada exitosamente",
     "settingsSaveFailed": "Error al guardar la configuración",
@@ -139,8 +139,6 @@
     "vacationEndEarly": "Puedes terminar tus vacaciones antes iniciando sesión.",
     "startVacation": "Iniciar Vacaciones",
     "twoFactorAuthentication": "Autenticación de Dos Factores",
-    "enable2FA": "Activar 2FA",
-    "disable2FA": "Desactivar 2FA",
     "enter6DigitCode": "Introduce el código de 6 dígitos",
     "verify": "Verificar",
     "accountActions": "Acciones de Cuenta",

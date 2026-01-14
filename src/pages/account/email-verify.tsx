@@ -4,15 +4,11 @@ import { alertService } from "@/services/Alert.service";
 import { Button, Grid, Space, Text, TextInput, Modal } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import router from "next/router";
 import { useState, useEffect } from "react";
 import { logError } from '@/utils/logger';
 
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
-
-const EmailVerify = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const EmailVerify = (props) => {
   const { t } = useTranslation('account');
   const searchParams = useSearchParams();
   const [input, setInput] = useState('');
@@ -62,7 +58,7 @@ const EmailVerify = (props: InferGetServerSidePropsType<typeof getServerSideProp
   const handleEmailUpdate = async () => {
     if(!user) return;
     setOpened(false); // Close the modal after confirming
-    // Send the request to update the email
+    // Send request to update the email
     const updateResponse = await fetch('/api/account/update-email', {
       method: 'POST',
       headers: {
@@ -149,14 +145,6 @@ const EmailVerify = (props: InferGetServerSidePropsType<typeof getServerSideProp
       </Modal>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['account'])),
-    },
-  };
 };
 
 export default EmailVerify;

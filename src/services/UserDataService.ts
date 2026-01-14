@@ -1,18 +1,20 @@
-import prisma from '@/lib/prisma';
+import { AccountStatus } from '@prisma/client';
 import { z } from 'zod';
-import { getUpdatedStatus } from '@/services/User.service';
+
+import prisma from '@/lib/prisma';
+import { getDepositHistory } from '@/services/Bank.service';
 import { ensureActiveEra } from '@/services/Era.service';
-import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
-import { UserStatsService } from './UserStatsService';
-import { UserUnitsService } from './UserUnitsService';
+import { getUpdatedStatus } from '@/services/User.service';
 import { safeToISOString } from '@/utils/dateHelpers';
-import { stringifyObj } from '@/utils/numberFormatting';
 import type {
   PlayerRace,
   PlayerClass,
   Locales,
 } from '@/types/typings';
-import { AccountStatus } from '@prisma/client';
+import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
+import { UserEconomyService } from './UserEconomyService';
+import { UserStatsService } from './UserStatsService';
+import { UserUnitsService } from './UserUnitsService';
 
 export interface FullUserData {
   id: number;
@@ -54,6 +56,8 @@ export interface FullUserData {
   totalAttacks: number;
   totalDefends: number;
   currentStatus: AccountStatus | string;
+  depositsAvailable: number;
+  nextDepositAvailable: { hours: number; minutes: number; seconds: number } | 0;
   armySize: number;
   population: number;
   totalOffensePower: any;
@@ -166,7 +170,20 @@ export class UserDataService {
       throw new Error(`Account is in ${currentStatus.toLowerCase()} status`);
     }
 
-    const attackStats = await this.getAttackStats(user.id, user.last_active);
+    const [attackStats, depositHistory] = await Promise.all([
+      this.getAttackStats(user.id, user.last_active),
+      getDepositHistory(user.id),
+    ]);
+
+    const economyService = new UserEconomyService({
+      economyLevel: user.economy_level,
+    });
+    const maximumBankDeposits = economyService.getMaximumBankDeposits();
+    const depositsAvailable = maximumBankDeposits - depositHistory.length;
+    const nextDepositAvailable =
+      depositHistory.length > 0
+        ? this.getDepositCountdown(depositHistory[0].date_time.toString())
+        : 0;
 
     // 3. Rich Data Composition using other services
     const statsService = new UserStatsService({
@@ -235,6 +252,8 @@ export class UserDataService {
       totalAttacks: attackStats.totalAttacks,
       totalDefends: attackStats.totalDefends,
       currentStatus: currentStatus,
+      depositsAvailable,
+      nextDepositAvailable,
       armySize: unitsService.getArmySize(),
       population: unitsService.getPopulation(),
       totalOffensePower: calculatedStats.offense.totalStats,
@@ -312,6 +331,22 @@ export class UserDataService {
       totalAttacks,
       totalDefends,
     };
+  }
+
+  private static getDepositCountdown(timestamp: string) {
+    const targetDate = new Date(timestamp);
+    targetDate.setHours(targetDate.getHours() + 24);
+    const currentDate = new Date();
+    const timeDiff = targetDate.getTime() - currentDate.getTime();
+
+    if (timeDiff > 0) {
+      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+      return { hours, minutes, seconds };
+    }
+
+    return { hours: 0, minutes: 0, seconds: 0 };
   }
 
   /**

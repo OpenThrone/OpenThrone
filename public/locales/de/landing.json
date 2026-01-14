@@ -1,5 +1,5 @@
 {
-  "title": "Open Throne",
+  "title": "OpenThrone",
   "metaDescription": "Meta-Beschreibung",
   "worldStats": {
     "title": "Weltstatistiken",
@@ -36,7 +36,7 @@
     },
     "beginYourReign": "Beginnen Sie Ihre Herrschaft",
     "signIn": "Anmelden",
-    "freeToPlay": "Kostenlos spielbar, keine Resets, keine Paywalls."
+    "freeToPlay": "Kostenlos spielbar, keine Paywalls."
   },
   "warCouncilBriefing": {
     "title": "Kriegsrats-Briefing",

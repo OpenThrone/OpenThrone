@@ -1,11 +1,7 @@
-import type { InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 import { faCrosshairs, faFilter, faUsers } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -38,6 +34,7 @@ import UserModel from '@/models/Users';
 import toLocale from '@/utils/numberFormatting';
 import { logError, logInfo } from '@/utils/logger';
 import { getLevelFromXP } from '@/utils/utilities';
+import { InferGetServerSidePropsType } from "next";
 
 const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { t } = useTranslation('battle');
@@ -291,7 +288,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     let sortedPlayers = [...filteredUsers];
     setLastPage(Math.ceil(filteredUsers.length / rowsPerPage));
 
-    // Fallback for users where the rank hasn't been calculated yet (and is therefore 0 or null)
+    // Fallback for users where rank hasn't been calculated yet (and is therefore 0 or null)
     sortedPlayers.forEach((u) => u.rank = u.rank || Infinity);
 
     // Sorting logic
@@ -303,7 +300,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
       sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.experience) - Number(a.experience) : Number(a.experience) - Number(b.experience));
     }
 
-    // Recalculate the page of the logged-in player
+    // Recalculate page of logged-in player
     const loggedInPlayerIndex = sortedPlayers.findIndex((player) => player.id === user?.id);
     const playerPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
 
@@ -344,7 +341,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
         if (!pageParam && !sortByParam && !sortDirParam) {
           const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
-          
+
           if (loggedInPlayerIndex !== -1) {
             const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
             setPage(newPage);
@@ -356,7 +353,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           setSortDir(sortDirParam || 'asc');
         }
 
-        // Mark the initial setting as complete
+        // Mark initial setting as complete
         setHasSetPageInitially(true);
       }
     }
@@ -364,7 +361,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
-    
+
     setPage(1);
   };
 
@@ -790,7 +787,6 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   );
 };
 
-
 export const getServerSideProps = async (context: any) => {
   try {
     let allUsers = await prisma.users.findMany({
@@ -818,7 +814,7 @@ export const getServerSideProps = async (context: any) => {
         experience: true,
         statusHistories: {
           orderBy: { created_at: 'desc' },
-          take: 1, // Take only the most recent status
+          take: 1, // Take only most recent status
         },
       },
     });
@@ -840,7 +836,7 @@ export const getServerSideProps = async (context: any) => {
         isOnline = ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
       }
 
-      // remove the units so there's no leakage of data
+      // remove units so there's no leakage of data
       return {
         id: user.id,
         display_name: user.display_name,
@@ -858,7 +854,7 @@ export const getServerSideProps = async (context: any) => {
           name: m.alliance.name,
         })),
         allianceIds: (user.alliance_memberships || []).map((m) => m.alliance.id),
-        
+
       };
     });
     logInfo(`Sanitized ${sanitizedUsers.length} users.`);
@@ -866,7 +862,6 @@ export const getServerSideProps = async (context: any) => {
     return {
       props: {
         allUsers: sanitizedUsers,
-        ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
       },
     };
   } catch (error) {

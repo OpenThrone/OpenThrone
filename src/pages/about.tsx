@@ -1,19 +1,19 @@
 import React from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import { Box, Text, Title, Container, SimpleGrid, ThemeIcon, Group, Button, List, Accordion } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faCode, faScroll, faQuestionCircle, faInfoCircle, faExclamationTriangle, faDragon } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
 import Link from 'next/link';
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
 
-const About = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const About = (props) => {
   const { t } = useTranslation('common');
   const containerStyle = {
-    background: 'linear-gradient(135deg, rgba(34,48,66,0.95) 0%, rgba(15,20,26,0.9) 55%, rgba(8,12,18,0.95) 100%)',
+    background: `
+  linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0)) ,
+  linear-gradient(135deg, rgba(34,48,66,0.95) 0%, rgba(15,20,26,0.9) 55%, rgba(8,12,18,0.95) 100%)
+`,
     border: '1px solid #2f3e52',
     borderRadius: '12px',
     padding: '32px',
@@ -55,7 +55,7 @@ const About = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
               <ThemeIcon size="lg" variant="light" color="yellow">
                 <FontAwesomeIcon icon={faScroll} />
               </ThemeIcon>
-              <Title order={3} c="gray.1">{t('about.originStory')}</Title>
+              <Title order={3} c="gray.1">{t('about.originStoryTitle')}</Title>
             </Group>
             <Text c="gray.4" lh={1.6}>
               {t('about.originStory')}
@@ -177,14 +177,6 @@ const About = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
       </div>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['common'])),
-    },
-  };
 };
 
 export default About;

@@ -5,8 +5,8 @@
   },
   "about": {
     "title": "About The Project",
-    "description": "Learn about Open Throne and its development.",
-    "aboutOpenThrone": "About Open Throne",
+    "description": "Learn about OpenThrone and its development.",
+    "aboutOpenThrone": "About OpenThrone",
     "projectStatus": "Project Status",
     "preAlpha": "Pre-Alpha ",
     "liveDevelopment": "Live Development Server",
@@ -19,6 +19,7 @@
     "github": "GitHub Repository",
     "openSource": "Open Source",
     "communityDriven": "Community Driven",
+    "originStoryTitle": "Origin Story",
     "originStory": "OpenThrone Project is a community-first project hoping to recreate and enhance spirit of DarkThrone which has gone dark after almost 20 years of service.",
     "modernStack": "OpenThrone started as a fork of \"Dark Curse\" project by Moppler. We have since ported it to a modern tech stack (NextJS/React) to ensure longevity and easier contribution.",
     "notAffiliated": "OpenThrone is not affiliated with nor endorsed by the original DarkThrone project or its creators.",
@@ -27,6 +28,9 @@
     "featuresAdded": "Features are being added and balanced daily.",
     "basicMechanics": "We are focused on getting basic mechanics functioning perfectly.",
     "faqIsGameStillBeingDeveloped": "Is game still being developed?",
+    "faqActive": "Yes, a small group of volunteers have been working to get a working version of the game up and running. Please join the Discord or submit PRs/Issues for discussion and enhancement.",
+    "faqHelp": "If you have experience with art, NextJS, or Figma, please reach out to the team via Discord.",
+    "faqIdeas": "Currently we are hyper-focused on getting the basic mechanics functioning. If you have ideas, please share them on our GitHub issues page so that we can centralize the discussion and come up with the best possible implementation. Unfortunately not all ideas will be implemented, but we encourage ideas and appreciate any PR contributions.",
     "canSuggestIdeas": "Can I suggest ideas?",
     "shareIdeasGitHub": "Currently we are hyper-focused on getting basic mechanics functioning. If you have ideas, please share them on our GitHub issues page so that we can centralize discussion and come up with the best possible implementation. Unfortunately not all ideas will be implemented, but we encourage ideas and appreciate any PR contributions.",
     "joinDiscord": "Join our Discord",
@@ -142,7 +146,8 @@
     "sentry_one": "{{count}} Sentry",
     "sentry_other": "{{count}} Sentries",
     "turn_one": "{{count}} Turn",
-    "turn_other": "{{count}} Turns"
+    "turn_other": "{{count}} Turns",
+    "turnLabel": "Turn"
   },
   "time": {
     "seconds_ago": "{{count}} seconds ago",
@@ -215,5 +220,34 @@
     "languageSwitcher": "Language switcher",
     "languageMenu": "Language menu",
     "changeLanguageTo": "Change language to {{language}}"
+  },
+  "autoRecruit": {
+    "title": "Auto Recruiter",
+    "sessionControls": "Session Controls",
+    "clickStart": "Click Start to begin the Auto-Recruit session.",
+    "startSession": "Start Recruiting",
+    "manageSessions": "Manage Sessions",
+    "sessionStatus": "Session Status",
+    "loadingNextUser": "Loading next user...",
+    "loadingNextUserCountdown": "Loading next user in {{count}}s...",
+    "sessionComplete": "Session Complete",
+    "sessionEnded": "Session ended",
+    "startNewSession": "Start New Session",
+    "recruitmentStatus": "Recruitment Status",
+    "totalDailyRecruitsLeft": "You have {{count}} recruits left today.",
+    "resumeRecruiting": "Resume Recruiting",
+    "pauseRecruiting": "Pause Recruiting",
+    "endSession": "End Session",
+    "recruitedSuccessfully": "{{name}} recruited successfully",
+    "recruiting": "Recruiting",
+    "noMoreRecruits": "No more recruits available.",
+    "noRecruitableUsers": "No recruitable users found.",
+    "errorFetchingNewUser": "Error fetching new user.",
+    "failedToCleanlyEndServerSession": "Failed to cleanly end server session.",
+    "errorHandlingRecruitment": "Error handling recruitment.",
+    "networkErrorDuringRecruitment": "Network error during recruitment. Please try again.",
+    "errorVerifyingSession": "Error verifying session.",
+    "errorStartingSession": "Error starting recruitment session.",
+    "sessionInvalid": "Invalid session. Please start a new session."
   }
 }

@@ -1,11 +1,10 @@
 import StatsTable from '@/components/statsTable';
-import { InferGetStaticPropsType } from "next";
 import { getTop10AttacksByTotalCasualties, getTop10TotalAttackerCasualties, getTop10TotalDefenderCasualties, getTopGoldInBank, getTopGoldOnHand, getTopPopulations, getTopRecruitsWithDisplayNames, getTopSuccessfulAttacks, getTopWealth } from '@/services/AttackDataService';
 import { Title, Container, Grid, Text } from '@mantine/core';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
+import { InferGetStaticPropsType } from "next";
 
 const Stats = ({ attacks, recruits, population, totalWealth, goldOnHand, goldInBank, attackByCas, attackerCas, defenderCas, lastGenerated }: InferGetStaticPropsType<typeof getStaticProps>) => {
   const { t } = useTranslation('community');
@@ -79,7 +78,6 @@ export const getStaticProps = async (context: any) => {
         attackerCas: await getTop10TotalAttackerCasualties(24 * 60 * 60 * 1000 * 7),
         defenderCas: await getTop10TotalDefenderCasualties(24 * 60 * 60 * 1000 * 7),
         lastGenerated: new Date().toISOString(),
-        ...(await serverSideTranslations(context.locale, ['community'])),
       },
       revalidate: 60 * 60 * 24 + (60 * 10), // 24 hours + 10 minutes, a cron should revalidate it instead
     };
@@ -97,7 +95,6 @@ export const getStaticProps = async (context: any) => {
         attackerCas: [],
         defenderCas: [],
         lastGenerated: new Date().toISOString(),
-        ...(await serverSideTranslations(context.locale, ['community'])),
       },
       revalidate: 60 * 5,
     };

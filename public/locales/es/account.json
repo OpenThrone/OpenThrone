@@ -29,6 +29,7 @@
   "register": {
     "title": "Crear Cuenta",
     "description": "Crea una nueva cuenta para comenzar tu viaje.",
+    "latestNews": "Últimas Noticias",
     "displayName": "Nombre para Mostrar",
     "email": "Dirección de Correo Electrónico",
     "password": "Contraseña",

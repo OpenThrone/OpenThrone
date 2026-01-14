@@ -12,6 +12,7 @@ describe('UserDataService', () => {
     mockPrisma.accountStatusHistory = { findFirst: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue({ status: 'ACTIVE' }) };
     mockPrisma.attack_log.findMany = vi.fn().mockResolvedValue([]);
     mockPrisma.attack_log.count = vi.fn().mockResolvedValue(0);
+    mockPrisma.bank_history.findMany = vi.fn().mockResolvedValue([]);
   });
 
   it('returns null when user not found', async () => {

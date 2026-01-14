@@ -46,7 +46,6 @@
     "youBeatRecently": "Venciste recientemente",
     "theyBeatYouRecently": "Te vencieron recientemente",
     "username": "Nombre de usuario",
-    "alliance": "Alianza",
     "gold": "Oro",
     "population": "Población",
     "level": "Nivel",
@@ -91,13 +90,16 @@
   "battleSimulator": {
     "title": "Simulador de Batalla",
     "description": "Simula batallas para probar tus estrategias.",
-    "simulate": "Simular",
-    "results": "Resultados",
+    "copyLink": "Copiar Enlace Compartible",
+    "linkCopied": "¡Enlace copiado!",
     "attacker": "Atacante",
     "defender": "Defensor",
-    "winner": "Ganador",
-    "casualties": "Bajas",
-    "goldStolen": "Oro Robado"
+    "controls": "Controles",
+    "turns": "Turnos",
+    "runSimulation": "Ejecutar Simulación",
+    "reset": "Restablecer",
+    "loading": "Cargando...",
+    "error": "Ocurrió un error"
   },
   "results": {
     "title": "Resultados de Batalla",
@@ -181,19 +183,5 @@
     "defensiveUnits": "Unidades Defensivas",
     "onlyLevel2Units": "Solo Unidades de Nivel 2+",
     "battleUpgradeInformation": "Información de Mejora de Batalla"
-  },
-  "battleSimulator": {
-    "title": "Simulador de Batalla",
-    "description": "Simula batallas para probar tus estrategias.",
-    "copyLink": "Copiar Enlace Compartible",
-    "linkCopied": "¡Enlace copiado!",
-    "attacker": "Atacante",
-    "defender": "Defensor",
-    "controls": "Controles",
-    "turns": "Turnos",
-    "runSimulation": "Ejecutar Simulación",
-    "reset": "Restablecer",
-    "loading": "Cargando...",
-    "error": "Ocurrió un error"
   }
 }

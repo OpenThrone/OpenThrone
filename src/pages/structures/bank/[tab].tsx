@@ -1,7 +1,6 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { Tabs, SimpleGrid, Space } from '@mantine/core';
 import { BiCoinStack, BiLineChart, BiMoney, BiSolidBank, BiUserCircle } from 'react-icons/bi';
 import { useUser } from '@/context/users';
@@ -16,15 +15,13 @@ import { StatGrid } from '@/components/game/StatGrid';
 import toLocale from '@/utils/numberFormatting';
 import { getTransactionType, getGoldTxSymbol } from '@/utils/utilities';
 import MainArea from '@/components/MainArea';
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
 
 const defaultFilters = {
   deposits: true, withdraws: true, war_spoils: true, transfers: true, sale: true,
   training: true, recruitment: true, economy: true, fortification: true, daily: true,
 };
 
-export default function Bank(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function Bank(props) {
   const { t } = useTranslation('structures');
   const tab = usePathname()?.split('/')[3] || 'deposit';
   const router = useRouter();
@@ -92,10 +89,10 @@ export default function Bank(props: InferGetServerSidePropsType<typeof getServer
       {tab === 'economy' && (
         <SimpleGrid cols={{base: 1, md: 2}} spacing="md">
           <GameCard title={t('bank.workers')} icon={<BiUserCircle size={16} />}>
-            <p>{t('bank.totalWorkers')} {user?.units.find(u => u.type === 'WORKER')?.quantity || 0}</p>
-            <p>{t('bank.goldPerWorker')} {user?.goldPerWorkerPerTurn.toLocaleString()} {t('common.currency.gold')}/{t('common.units.turn')}</p>
-            <p>{t('bank.workerGoldPerTurn')} {user?.workerGoldPerTurn.toLocaleString()} {t('common.currency.gold')}/{t('common.units.turn')}</p>
-            <p>{t('bank.totalGoldPerTurn')} {user?.goldPerTurn.toLocaleString()} {t('common.currency.gold')}/{t('common.units.turn')}</p>
+            <p>{t('bank.workersTotal')} {user?.units.find(u => u.type === 'WORKER')?.quantity || 0}</p>
+            <p>{t('bank.goldPerWorkerLabel')} {user?.goldPerWorkerPerTurn.toLocaleString()} Gold/Turn</p>
+            <p>{t('bank.workerGoldPerTurn')} {user?.workerGoldPerTurn.toLocaleString()} Gold/Turn</p>
+            <p>{t('bank.totalGoldPerTurn')} {user?.goldPerTurn.toLocaleString()} Gold/Turn</p>
             <p>{t('bank.dailyIncome')} {(BigInt(user?.goldPerTurn.toString() || '0') * BigInt(48)).toLocaleString()}</p>
           </GameCard>
           <GameCard title={t('bank.operations')} icon={<BiLineChart size={16} />}>
@@ -110,11 +107,3 @@ export default function Bank(props: InferGetServerSidePropsType<typeof getServer
     </MainArea>
   );
 }
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['structures'])),
-    },
-  };
-};

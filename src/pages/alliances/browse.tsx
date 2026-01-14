@@ -5,9 +5,6 @@ import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
 import { GameCard } from '@/components/game/GameCard';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
 
 export const UserCardImage = ({ name, members, description, gold, joinText, imgsrc, bannerimgsrc }) => {
   const { t } = useTranslation('alliances');
@@ -61,7 +58,7 @@ export const UserCardImage = ({ name, members, description, gold, joinText, imgs
   );
 };
 
-const Browse = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Browse = (props) => {
   const [alliances, setAlliances] = useState([]);
   const { t } = useTranslation('alliances');
 
@@ -100,14 +97,6 @@ const Browse = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =
       </SimpleGrid>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['alliances'])),
-    },
-  };
 };
 
 export default Browse;

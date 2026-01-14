@@ -2,7 +2,7 @@
 
 export const AppConfig = {
   site_name: 'Starter',
-  title: 'Open Throne',
+  title: 'OpenThrone',
   description: 'A Massive Online Adventure Reborn',
   locale: 'en',
   locales: ['en', 'es', 'de'] as const,

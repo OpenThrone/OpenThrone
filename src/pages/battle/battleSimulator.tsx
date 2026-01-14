@@ -1,25 +1,22 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { NextPage, InferGetServerSidePropsType } from 'next';
+import { NextPage } from 'next';
 import { Button, NumberInput, Loader, Alert, Group } from '@mantine/core';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import ArmyInputForm from '@/components/ArmyInputForm';
 import BattleResults from '@/components/BattleTestResults';
 import MockUserGenerator from '@/utils/MockUserGenerator';
 import { PlayerRace, ShareableArmyData, User } from '@/types/typings';
-import { stringifyObj } from '@/utils/numberFormatting';
+import stringifyObj from '@/utils/numberFormatting';
 import { useClipboard, useLocalStorage } from '@mantine/hooks';
 import router from 'next/router';
 import { encodeBattleData, decodeBattleData } from '@/utils/battleEncoding';
-import { logError } from '@/utils/logger';
+import logError from '@/utils/logger';
 import { GameCard } from '@/components/game/GameCard';
 import { faCopy, faPlay, faRedo, faSync } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import MainArea from '@/components/MainArea';
 import { useTranslation } from 'next-i18next';
 
-import { getSafeLocale } from '@/utils/i18n';
-
-const BattleSimulator: NextPage = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const BattleSimulator: NextPage = () => {
   const { t } = useTranslation('battle');
   const defenderGenerator = useMemo(() => new MockUserGenerator().setBasicInfo({ display_name: 'Defender' }), []);
   const attackerGenerator = useMemo(() => new MockUserGenerator().setBasicInfo({ display_name: 'Attacker' }), []);
@@ -55,7 +52,7 @@ const BattleSimulator: NextPage = (props: InferGetServerSidePropsType<typeof get
     } finally {
       setLoading(false);
     }
-  }, [attacker, defender, setAttacker, setDefender, turns, t]);
+  }, [attacker, defender, t]);
 
   const handleReset = useCallback(() => setResults(null), []);
 
@@ -133,14 +130,6 @@ const BattleSimulator: NextPage = (props: InferGetServerSidePropsType<typeof get
       ) : null}
     </MainArea>
   );
-}
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
-    },
-  };
 };
 
 export default BattleSimulator;

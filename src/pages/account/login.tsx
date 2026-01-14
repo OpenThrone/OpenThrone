@@ -2,9 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 import { Alert, Box, Button, Group, SimpleGrid, Space, Text } from '@mantine/core';
 import { faKey, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
@@ -14,9 +11,8 @@ import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import VacationModeModal from '@/components/VacationModeModal';
 import { useLayout } from '@/context/LayoutContext';
-import { InferGetServerSidePropsType } from "next";
 
-const Login = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Login = (props) => {
   const { t } = useTranslation('account');
   const { setMeta, meta } = useLayout();
   const [showVacationModal, setShowVacationModal] = useState(false);
@@ -114,14 +110,6 @@ const Login = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
       />
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['account'])),
-    },
-  };
 };
 
 export default Login;

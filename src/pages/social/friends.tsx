@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 import Link from 'next/link';
 import { Table, Loader, Group, Avatar, Badge, Text, Indicator } from '@mantine/core';
-import UserModel from '@/models/Users';
 import MainArea from '@/components/MainArea';
+import UserModel from '@/models/Users';
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
-import { InferGetServerSidePropsType } from "next";
 
-const Friends = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Friends = (props) => {
   const { t } = useTranslation('social');
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +45,7 @@ const Friends = (props: InferGetServerSidePropsType<typeof getServerSideProps>) 
               <Avatar src={player?.avatar} size={40} radius={40} />
             </Indicator>
             <div>
-              <Text fz='med' fw={500}>
+              <Text fz='md' fw={500}>
                 <Link
                   href={`/userprofile/${player.id}`}
                   className='text-blue-500 hover:text-blue-700 font-bold'
@@ -78,14 +74,6 @@ const Friends = (props: InferGetServerSidePropsType<typeof getServerSideProps>) 
       </GameCard>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['social'])),
-    },
-  };
 };
 
 export default Friends;

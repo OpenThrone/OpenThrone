@@ -1,6 +1,6 @@
 {
   "landing": {
-    "title": "Open Throne",
+    "title": "OpenThrone",
     "subtitle": "Ein Massives Online-Abenteuer Wiedergeboren",
     "joinTheFight": "Der Schlacht beitreten!",
     "description": "Wähle eine Rasse, schmiede deine Klasse und befehle ein aufsteigendes Imperium in einer beständigen Strategiewelt.",
@@ -16,11 +16,11 @@
       "beginReign": "Beginne Deine Herrschaft",
       "signIn": "Anmelden"
     },
-    "freeToPlay": "Kostenlos spielbar, keine Resets, keine Paywalls."
+    "freeToPlay": "Kostenlos spielbar, keine Paywalls."
   },
   "overview": {
     "title": "Übersicht",
-    "welcome": "Willkommen bei Open Throne",
+    "welcome": "Willkommen bei OpenThrone",
     "yourGold": "Dein Gold: {{gold}}",
     "yourCitizens": "Deine Bürger: {{count}}",
     "yourLevel": "Deine Stufe: {{level}}",
@@ -114,8 +114,8 @@
     "languageSettings": "Spracheinstellungen",
     "changePassword": "Passwort ändern",
     "changeEmail": "E-Mail ändern",
-    "enable2FA": "Zwei-Faktor-Authentifizierung aktivieren",
-    "disable2FA": "Zwei-Faktor-Authentifizierung deaktivieren",
+    "enable2FA": "2FA aktivieren",
+    "disable2FA": "2FA deaktivieren",
     "deleteAccount": "Konto löschen",
     "settingsSaved": "Einstellungen erfolgreich gespeichert",
     "settingsSaveFailed": "Speichern der Einstellungen fehlgeschlagen",
@@ -139,8 +139,6 @@
     "vacationEndEarly": "Sie können Ihren Urlaub vorzeitig beenden, indem Sie sich anmelden.",
     "startVacation": "Urlaub beginnen",
     "twoFactorAuthentication": "Zwei-Faktor-Authentifizierung",
-    "enable2FA": "2FA aktivieren",
-    "disable2FA": "2FA deaktivieren",
     "enter6DigitCode": "6-stelligen Code eingeben",
     "verify": "Bestätigen",
     "accountActions": "Kontoaktionen",

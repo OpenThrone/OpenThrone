@@ -9,6 +9,7 @@ config.autoAddCss = false;
 
 import React, { Suspense, useEffect, useState } from 'react';
 import type { AppProps } from 'next/app';
+import App from 'next/app';
 import { useRouter } from 'next/router';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { Center, MantineProvider, Loader } from '@mantine/core';
@@ -23,6 +24,10 @@ import { themes } from '@/styles/themes';
 import type { PlayerRace } from '@/types/typings';
 import { SnackbarProvider } from '@/context/snackbar-context';
 import SnackbarBridge from '@/components/SnackbarBridge';
+import { logError } from '@/utils/logger';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const nextI18NextConfig = require('../../next-i18next.config');
 
 const MyApp = ({ Component, pageProps: { session, ...pageProps }, router }) => (
   <Suspense fallback={<LoadingDots />}>
@@ -68,4 +73,11 @@ const AppWithTheme = ({ Component, pageProps }: AppProps) => {
   );
 };
 
-export default appWithTranslation(MyApp);
+// Client-side translation loading: namespaces are loaded on-demand via i18next-http-backend
+// SEO-critical namespaces should be loaded via serverSideTranslations in individual pages
+MyApp.getInitialProps = async (appContext: any) => {
+  const appProps = await App.getInitialProps(appContext as any);
+  return appProps;
+};
+
+export default appWithTranslation(MyApp, nextI18NextConfig);

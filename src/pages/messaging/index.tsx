@@ -17,9 +17,6 @@ import { logError, logInfo } from '@/utils/logger';
 import ChatRoomList from '@/components/ChatRoomList';
 import ChatMessageList from '@/components/ChatMessageList';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
 
 // Define a type for message structure used in frontend state
 interface FrontendMessage {
@@ -86,7 +83,7 @@ interface FrontendRoom {
 }
 
 
-const MessageList = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const MessageList = (props) => {
   const [rooms, setRooms] = useState<FrontendRoom[]>([]);
   const router = useRouter();
   const { data: session } = useSession();
@@ -526,14 +523,6 @@ const RealtimeMessageHandler = ({
   ]);
 
   return null;
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['messaging'])),
-    },
-  };
 };
 
 export default MessageList;

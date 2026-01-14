@@ -27,9 +27,8 @@ import { useLayout } from "@/context/LayoutContext";
 import RpgAwesomeIcon from "./RpgAwesomeIcon";
 import { useUser } from "@/context/users";
 import { formatLastMessageTime } from "@/utils/timefunctions"; // Import time formatter
-import SocialIcon from "./SocialIcon";
 import useSocket from "@/hooks/useSocket";
-
+import HeaderIconButton from "./HeaderIconButton";
 interface MainAreaProps {
   title: string;
   children: React.ReactNode;
@@ -149,7 +148,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
       className="mainArea pb-10 w-full flex flex-col flex-grow overflow-y-auto"
       ref={ref || null}
     >
-      <header
+      <header className="main-header-titleBar"
         style={{
           height: "56px",
           borderBottom:
@@ -158,17 +157,19 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
         }}
       >
         <Container
-          size="lg"
+          fluid
           style={{
             height: "56px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            paddingLeft: "16px",
+            paddingRight: "16px",
           }}
         >
           <Title
             order={2}
-            className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs"
+            className="main-header-title text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs"
             data-testid="page-title"
           >
             {title}
@@ -185,46 +186,15 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                 shadow="md"
               >
                 <Menu.Target>
-                  <button
-                    type="button"
-                    aria-label="Messages"
-                    data-testid="action-button"
-                    style={{
-                      position: "relative",
-                      cursor: "pointer",
-                      background: "transparent",
-                      border: "none",
-                      padding: 0,
-                    }}
-                  >
-                    <FontAwesomeIcon
-                      icon={faComments}
-                      style={{
-                        color: "orange",
-                      }}
-                      fixedWidth
-                      size="sm"
-                    />
-                    {unreadMessagesCount > 0 && (
-                      <Badge
-                        color="red"
-                        variant="filled"
-                        size="xs" // Smaller badge
-                        circle // Make it circular
-                        style={{
-                          position: "absolute",
-                          top: -5, // Adjust position
-                          right: -8, // Adjust position
-                          minWidth: 16, // Ensure minimum size
-                          height: 16,
-                          padding: "0 4px", // Adjust padding
-                          lineHeight: "16px", // Center text vertically
-                        }}
-                      >
-                        {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
-                      </Badge>
-                    )}
-                  </button>
+                      <div style={{ display: "inline-block" }}>
+                        <HeaderIconButton
+                          label="Messages"
+                          count={unreadMessagesCount}
+                          data-testid="action-button"
+                        >
+                          <FontAwesomeIcon icon={faComments} fixedWidth />
+                        </HeaderIconButton>
+                      </div>
                 </Menu.Target>
 
                 <Menu.Dropdown>
@@ -291,7 +261,11 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                 withinPortal
               >
                 <Menu.Target>
-                  <SocialIcon count={socialNotificationCount} />
+                    <div style={{ display: "inline-block" }}>
+                      <HeaderIconButton label="Social" count={socialNotificationCount}>
+                        <RpgAwesomeIcon icon="double-team" fw />
+                      </HeaderIconButton>
+                    </div>
                 </Menu.Target>
 
                 <Menu.Dropdown>
@@ -360,12 +334,11 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                 withinPortal
               >
                 <Menu.Target>
-                  <RpgAwesomeIcon
-                    icon="player"
-                    color="orange"
-                    fw
-                    style={{ cursor: "pointer" }}
-                  />
+                    <div style={{ display: "inline-block" }}>
+                      <HeaderIconButton label="Settings">
+                        <RpgAwesomeIcon icon="player" fw />
+                      </HeaderIconButton>
+                    </div>
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Label>Settings</Menu.Label>

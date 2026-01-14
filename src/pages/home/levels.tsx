@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import { DefaultLevelBonus } from "@/constants";
 import { useUser } from "@/context/users";
@@ -10,9 +9,6 @@ import { GameCard } from "@/components/game/GameCard";
 import { faPlus, faMinus, faStar } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import MainArea from "@/components/MainArea";
-
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
 
 const StatCard = ({ title, currentLevel, onAdd, onReduce, canAdd, canReduce }) => (
   <GameCard title={title} icon={faStar}>
@@ -45,7 +41,7 @@ const StatCard = ({ title, currentLevel, onAdd, onReduce, canAdd, canReduce }) =
   </GameCard>
 );
 
-const Levels = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Levels = (props) => {
   const { t } = useTranslation('home');
   const { user, forceUpdate } = useUser();
   const justSavedRef = useRef(false);
@@ -89,7 +85,7 @@ const Levels = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to save changes");
-      
+
       setLevels(data.updatedBonusPoints);
       setChangeQueue({ OFFENSE: { change: 0 }, DEFENSE: { change: 0 }, INCOME: { change: 0 }, INTEL: { change: 0 }, PRICES: { change: 0 } });
       justSavedRef.current = true;
@@ -117,7 +113,7 @@ const Levels = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =
         <Text size="sm" ta="center" c="dimmed">{t('levels.maximumBonus')}</Text>
       </GameCard>
       <Space h="md" />
-      <SimpleGrid cols={{base: 1, sm: 2, md: 3}} spacing="md">
+      <SimpleGrid cols={{base:1, sm: 2, md: 3}} spacing="md">
         {levelBonuses.map(bonus => (
           <StatCard
             key={bonus.type}
@@ -137,14 +133,6 @@ const Levels = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =
       )}
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['home'])),
-    },
-  };
 };
 
 export default Levels;

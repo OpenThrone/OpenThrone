@@ -1,12 +1,13 @@
-import prisma from '@/lib/prisma';
+import { AccountStatus } from '@prisma/client';
 import { z } from 'zod';
-import { logError } from '@/utils/logger';
-import { stringifyObj } from '@/utils/numberFormatting';
+import prisma from '@/lib/prisma';
+import { getDepositHistory } from '@/services/Bank.service';
 import { getUpdatedStatus } from '@/services/User.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
+import { UserEconomyService } from '@/services/UserEconomyService';
 import type { UserApiResponse, PlayerRace, PlayerClass, Locales } from '@/types/typings';
-import { AccountStatus } from '@prisma/client';
+import { logError } from '@/utils/logger';
 
 // Type definitions for general operations
 export interface SearchUsersResult {
@@ -212,6 +213,28 @@ export class GeneralService {
         prisma.attack_log.count({ where: { defender_id: user.id } }),
       ]);
 
+      const depositHistory = await getDepositHistory(userId);
+      const economyService = new UserEconomyService({ economyLevel: user.economy_level });
+      const maximumBankDeposits = economyService.getMaximumBankDeposits();
+      const depositsAvailable = maximumBankDeposits - depositHistory.length;
+      const getCountdown = (timestamp: string) => {
+        const targetDate = new Date(timestamp);
+        targetDate.setHours(targetDate.getHours() + 24);
+        const currentDate = new Date();
+        const timeDiff = targetDate.getTime() - currentDate.getTime();
+
+        if (timeDiff > 0) {
+          const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+          const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+          return { hours, minutes, seconds };
+        }
+
+        return { hours: 0, minutes: 0, seconds: 0 };
+      };
+      const nextDepositAvailable =
+        depositHistory.length > 0 ? getCountdown(depositHistory[0].date_time.toString()) : 0;
+
       // Construct the DTO
       const responseDto: UserApiResponse = {
         id: user.id,
@@ -246,6 +269,8 @@ export class GeneralService {
         totalDefends: totalDefends,
         currentStatus: currentStatus as AccountStatus | string,
         goldPerTurn: user.goldPerTurn,
+        depositsAvailable,
+        nextDepositAvailable,
       };
 
       return responseDto;

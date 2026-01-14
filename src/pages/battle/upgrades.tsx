@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
@@ -16,7 +15,6 @@ import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
-import { InferGetServerSidePropsType } from "next";
 
 const useItems = (user) => {
   const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
@@ -69,11 +67,11 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
   };
 };
 
-const Upgrades = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Upgrades = (props) => {
   const { t } = useTranslation('battle');
   const { user } = useUser();
   const items = useItems(user);
-  
+
   // Calculate total offensive and defensive units (level 2+)
   const offensiveUnits = user?.units
     .filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)
@@ -195,14 +193,6 @@ const Upgrades = (props: InferGetServerSidePropsType<typeof getServerSideProps>)
       </Stack>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
-    },
-  };
 };
 
 export default Upgrades;

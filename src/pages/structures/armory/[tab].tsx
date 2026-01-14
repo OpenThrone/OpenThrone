@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import NewItemSection from '@/components/newItemSection';
 import { ArmoryUpgrades, ItemTypes } from '@/constants';
 import { useUser } from '@/context/users';
@@ -14,8 +13,6 @@ import { faPeopleGroup, faCoins, faUniversity, faGavel } from '@fortawesome/free
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
 
 const useItems = (user: UserModel | null, armoryLevel: number) => {
   const { t } = useTranslation('structures');
@@ -56,7 +53,7 @@ const itemMapFunction = (item: any, itemType: string, user: UserModel, armoryLev
   };
 };
 
-const ArmoryTab = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const ArmoryTab = (props) => {
   const { t } = useTranslation('structures');
   const router = useRouter();
   const tab = usePathname()?.split('/armory/')[1] || 'offense';
@@ -152,14 +149,6 @@ const ArmoryTab = (props: InferGetServerSidePropsType<typeof getServerSideProps>
       </Box>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['structures'])),
-    },
-  };
 };
 
 export default ArmoryTab;

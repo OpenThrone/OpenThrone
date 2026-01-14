@@ -1,8 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 import { Box, Button, Group, Modal, SimpleGrid, Space, Text, Textarea, TextInput } from '@mantine/core';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
@@ -13,7 +10,7 @@ import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { BlogService } from '@/services/Blog.service';
 import { logError } from '@/utils/logger';
-import { InferGetServerSidePropsType } from 'next';
+import { InferGetServerSidePropsType } from "next";
 
 const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { t } = useTranslation('community');
@@ -179,14 +176,14 @@ export const getServerSideProps = async (context) => {
     if (session) {
       const userId = typeof session.user.id === 'string' ? parseInt(session.user.id) : session.user.id;
       const result = await BlogService.getPosts(userId);
-      return { props: { posts: result.posts, loggedIn: true, userId, ...(await serverSideTranslations(getSafeLocale(context), ['community'])) } };
+      return { props: { posts: result.posts, loggedIn: true, userId } };
     }
 
     const result = await BlogService.getPosts();
-    return { props: { posts: result.posts, loggedIn: false, userId: 0, ...(await serverSideTranslations(getSafeLocale(context), ['community'])) } };
+    return { props: { posts: result.posts, loggedIn: false, userId: 0 } };
   } catch (error) {
     logError('Error fetching posts for server-side props', error);
-    return { props: { posts: [], loggedIn: false, userId: 0, ...(await serverSideTranslations(getSafeLocale(context), ['community'])) } };
+    return { props: { posts: [], loggedIn: false, userId: 0 } };
   }
 };
 

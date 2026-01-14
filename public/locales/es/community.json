@@ -64,12 +64,6 @@
     "title": "Estadísticas del Mundo",
     "description": "Ver estadísticas sobre el reino.",
     "totalPlayers": "Total de Jugadores",
-    "onlinePlayers": "Jugadores en Línea"
-  },
-  "stats": {
-    "title": "Estadísticas del Mundo",
-    "description": "Ver estadísticas sobre el reino.",
-    "totalPlayers": "Total de Jugadores",
     "onlinePlayers": "Jugadores en Línea",
     "mostActiveRecruiters": "Reclutadores Más Activos",
     "top10SuccessfulAttackers": "Top 10 Atacantes Exitosos",
@@ -79,5 +73,34 @@
     "top10TotalDefenderCasualties": "Top 10 Bajas Totales del Defensor",
     "top10AttacksByTotalCasualties": "Top 10 Ataques por Bajas Totales",
     "lastGenerated": "Última Generación"
+  },
+  "autoRecruit": {
+    "title": "Reclutador automático",
+    "sessionControls": "Controles de sesión",
+    "clickStart": "Haz clic en Iniciar para comenzar la sesión de Auto-Reclutamiento.",
+    "startSession": "Comenzar reclutamiento",
+    "manageSessions": "Administrar sesiones",
+    "sessionStatus": "Estado de la sesión",
+    "loadingNextUser": "Cargando siguiente usuario...",
+    "loadingNextUserCountdown": "Cargando siguiente usuario en {{count}}s...",
+    "sessionComplete": "Sesión completada",
+    "sessionEnded": "Sesión finalizada",
+    "startNewSession": "Iniciar nueva sesión",
+    "recruitmentStatus": "Estado de reclutamiento",
+    "totalDailyRecruitsLeft": "Te quedan {{count}} reclutamientos hoy.",
+    "resumeRecruiting": "Reanudar reclutamiento",
+    "pauseRecruiting": "Pausar reclutamiento",
+    "endSession": "Finalizar sesión",
+    "recruitedSuccessfully": "{{name}} reclutado exitosamente",
+    "recruiting": "Reclutando",
+    "noMoreRecruits": "No hay más reclutas disponibles.",
+    "noRecruitableUsers": "No se encontraron usuarios reclutables.",
+    "errorFetchingNewUser": "Error al obtener nuevo usuario.",
+    "failedToCleanlyEndServerSession": "No se pudo finalizar la sesión del servidor correctamente.",
+    "errorHandlingRecruitment": "Error al manejar el reclutamiento.",
+    "networkErrorDuringRecruitment": "Error de red durante el reclutamiento. Por favor intenta de nuevo.",
+    "errorVerifyingSession": "Error al verificar la sesión.",
+    "errorStartingSession": "Error al iniciar la sesión de reclutamiento.",
+    "sessionInvalid": "Sesión inválida. Por favor inicia una nueva sesión."
   }
 }

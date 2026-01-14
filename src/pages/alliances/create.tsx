@@ -8,11 +8,8 @@ import { logError } from '@/utils/logger';
 import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
 
-export default function CreateAlliance(props: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function CreateAlliance(props) {
   const { user } = useUser();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -140,11 +137,3 @@ export default function CreateAlliance(props: InferGetServerSidePropsType<typeof
     </MainArea>
   );
 }
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['alliances'])),
-    },
-  };
-};

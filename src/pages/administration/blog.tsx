@@ -20,11 +20,8 @@ import rehypeRaw from 'rehype-raw';
 import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
 
-const Admin = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Admin = (props) => {
   const { t } = useTranslation('admin');
   const [postHTML, setPostHTML] = useState(''); // Add this line to define postHTML state
   const [markdownContent, setMarkdownContent] = useState(t('blog.initialContent'));
@@ -37,7 +34,7 @@ const Admin = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
       Subscript,
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Markdown,  // Include the Markdown extension
+      Markdown,  // Include Markdown extension
       Table.configure({
         resizable: true,
       }),
@@ -71,7 +68,7 @@ const Admin = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
 
   const handleCreatePost = () => {
     if (editor) {
-      // Get the Markdown content when submitting
+      // Get Markdown content when submitting
       const content = editor.storage.markdown.getMarkdown();
       console.log('Submitted Markdown Content:', content);
       // You can send this Markdown content to your API or save it in your database
@@ -174,14 +171,6 @@ const Admin = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
       </GameCard>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['admin'])),
-    },
-  };
 };
 
 export default Admin;

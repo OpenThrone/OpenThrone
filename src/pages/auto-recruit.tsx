@@ -1,7 +1,6 @@
 // src/pages/auto-recruit.tsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import { Button, Center, Flex, Space, Stack, Text } from '@mantine/core';
 
@@ -291,19 +290,21 @@ export default function AutoRecruiter(props) {
       const data = await response.json();
       alertService.clear();
       setSessionId(data.sessionId);
+      sessionIdRef.current = data.sessionId;
       setIsRecruiting(true);
       setIsPaused(false);
       setConsecutiveSuccesses(0);
       setHasEnded(false);
       setLastSuccess(false);
       setTotalLeft(viewer?.recruitsLeft ?? 0);
+      fetchRandomUser();
     } catch (error) {
       logError('Error starting recruitment session:', error);
       alertService.error(t('autoRecruit.errorStartingSession'), false);
     } finally {
       setIsStartingSession(false);
     }
-  }, [isStartingSession, viewer, t]);
+  }, [isStartingSession, viewer, t, fetchRandomUser]);
 
   // Initial state: Not recruiting
   if (!isRecruiting) {
@@ -322,6 +323,10 @@ export default function AutoRecruiter(props) {
             </Stack>
           </GameCard>
         </Center>
+        <SessionModal
+          opened={sessionModalOpened}
+          onClose={() => setSessionModalOpened(false)}
+        />
       </MainArea>
     );
   }
@@ -337,6 +342,10 @@ export default function AutoRecruiter(props) {
             </Stack>
           </GameCard>
         </Center>
+        <SessionModal
+          opened={sessionModalOpened}
+          onClose={() => setSessionModalOpened(false)}
+        />
       </MainArea>
     );
   }
@@ -355,6 +364,10 @@ export default function AutoRecruiter(props) {
             </Stack>
           </GameCard>
         </Center>
+        <SessionModal
+          opened={sessionModalOpened}
+          onClose={() => setSessionModalOpened(false)}
+        />
       </MainArea>
     );
   }

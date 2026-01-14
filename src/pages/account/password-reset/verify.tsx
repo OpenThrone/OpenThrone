@@ -4,15 +4,11 @@ import { showNotification } from '@mantine/notifications';
 import { alertService } from '@/services/Alert.service';
 import { Space, TextInput, Button, Container, Title, Paper } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import classes from './floatinginput.module.css';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
 
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
-
-const Index = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Index = (props) => {
   const { t } = useTranslation('account');
   const [verify, setVerify] = useState('');
   const [verified, setVerified] = useState(false);
@@ -24,7 +20,7 @@ const Index = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
   const verifyFloating = verify.trim().length !== 0 || verifyFocused || undefined;
 
   const handleVerifySubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submit action
+    e.preventDefault(); // Prevent's default form submit action
     try {
       const response = await fetch('/api/account/verify', {
         method: 'POST',
@@ -45,7 +41,7 @@ const Index = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
         message: t('passwordReset.verificationSuccessful'),
         color: 'green',
       });
-      setVerified(true); // Update the verified status to show the new password form
+      setVerified(true); // Update's verified status to show the new password form
     } catch (error) {
       logError('Error:', error);
       showNotification({
@@ -57,7 +53,7 @@ const Index = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
   };
 
   const handlePasswordReset = async (e) => {
-    e.preventDefault(); // Prevent the default form submit action for password reset
+    e.preventDefault(); // Prevent's default form submit action for password reset
     try {
       const response = await fetch('/api/account/passChange', {
         method: 'POST',
@@ -175,14 +171,6 @@ const Index = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
       </MainArea>
     );
   }
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['account'])),
-    },
-  };
 };
 
 export default Index;

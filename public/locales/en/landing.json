@@ -1,5 +1,5 @@
 {
-  "title": "Open Throne",
+  "title": "OpenThrone",
   "metaDescription": "Meta Description",
   "worldStats": {
     "title": "World Stats",
@@ -36,7 +36,7 @@
     },
     "beginYourReign": "Begin Your Reign",
     "signIn": "Sign In",
-    "freeToPlay": "Free to play, no resets, no paywalls."
+    "freeToPlay": "Free to play, no paywalls."
   },
   "warCouncilBriefing": {
     "title": "War Council Briefing",

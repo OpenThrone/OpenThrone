@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 import { RichTextEditor } from "@mantine/tiptap";
 import { useEditor } from "@tiptap/react";
@@ -33,9 +30,8 @@ import Link from "next/link";
 import MainArea from "@/components/MainArea";
 import { logDebug } from "@/utils/logger";
 import { GameCard } from "@/components/game/GameCard";
-import { InferGetServerSidePropsType } from "next";
 
-const Profile = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Profile = (props) => {
   const { t } = useTranslation('home');
   const [file, setFile] = useState<File | null>(null);
   const { user, forceUpdate } = useUser();
@@ -253,14 +249,6 @@ const Profile = (props: InferGetServerSidePropsType<typeof getServerSideProps>) 
       </GameCard>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['home'])),
-    },
-  };
 };
 
 export default Profile;

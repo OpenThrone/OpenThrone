@@ -1,6 +1,6 @@
 {
   "landing": {
-    "title": "Open Throne",
+    "title": "OpenThrone",
     "subtitle": "A Massive Online Adventure Reborn",
     "joinTheFight": "Join the Fight!",
     "description": "Choose a race, forge your class, and command a rising empire in a persistent strategy world.",
@@ -16,11 +16,11 @@
       "beginReign": "Begin Your Reign",
       "signIn": "Sign In"
     },
-    "freeToPlay": "Free to play, no resets, no paywalls."
+    "freeToPlay": "Free to play, no paywalls."
   },
   "overview": {
     "title": "Overview",
-    "welcome": "Welcome to Open Throne",
+    "welcome": "Welcome to OpenThrone",
     "yourGold": "Your gold: {{gold}}",
     "yourCitizens": "Your citizens: {{count}}",
     "yourLevel": "Your level: {{level}}",

@@ -80,4 +80,34 @@
     "top10AttacksByTotalCasualties": "Top 10 Attacks by Total Casualties",
     "lastGenerated": "Last Generated"
   }
+  ,
+  "autoRecruit": {
+    "title": "Auto Recruiter",
+    "sessionControls": "Session Controls",
+    "clickStart": "Click Start to begin the Auto-Recruit session.",
+    "startSession": "Start Recruiting",
+    "manageSessions": "Manage Sessions",
+    "sessionStatus": "Session Status",
+    "loadingNextUser": "Loading next user...",
+    "loadingNextUserCountdown": "Loading next user in {{count}}s...",
+    "sessionComplete": "Session Complete",
+    "sessionEnded": "Session ended",
+    "startNewSession": "Start New Session",
+    "recruitmentStatus": "Recruitment Status",
+    "totalDailyRecruitsLeft": "You have {{count}} recruits left today.",
+    "resumeRecruiting": "Resume Recruiting",
+    "pauseRecruiting": "Pause Recruiting",
+    "endSession": "End Session",
+    "recruitedSuccessfully": "{{name}} recruited successfully",
+    "recruiting": "Recruiting",
+    "noMoreRecruits": "No more recruits available.",
+    "noRecruitableUsers": "No recruitable users found.",
+    "errorFetchingNewUser": "Error fetching new user.",
+    "failedToCleanlyEndServerSession": "Failed to cleanly end server session.",
+    "errorHandlingRecruitment": "Error handling recruitment.",
+    "networkErrorDuringRecruitment": "Network error during recruitment. Please try again.",
+    "errorVerifyingSession": "Error verifying session.",
+    "errorStartingSession": "Error starting recruitment session.",
+    "sessionInvalid": "Invalid session. Please start a new session."
+  }
 }

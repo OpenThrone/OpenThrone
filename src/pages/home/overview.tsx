@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 import { Center, Group, Loader, SimpleGrid, Space, Table, Text, ThemeIcon, Popover } from '@mantine/core';
 import { faCoins, faCrown, faEye, faLevelUpAlt, faMedal, faMoneyBills, faPiggyBank, faShieldAlt, faShieldVirus, faStar, faSyncAlt, faTrophy, faUserSecret, faUserShield, faUsers } from '@fortawesome/free-solid-svg-icons';
@@ -18,9 +15,8 @@ import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
-import { InferGetServerSidePropsType } from "next";
 
-const Overview = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Overview = (props) => {
   const { t } = useTranslation('home');
   console.log('Translation: ', t);
   const [getNews, setNews] = useState([]);
@@ -401,15 +397,6 @@ const Overview = (props: InferGetServerSidePropsType<typeof getServerSideProps>)
       <StyledNews news={newsItems} />
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  const locale = getSafeLocale(context);
-  return {
-    props: {
-      ...(await serverSideTranslations(locale, ['home'])),
-    },
-  };
 };
 
 export default Overview;

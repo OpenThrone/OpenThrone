@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+
 import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
@@ -15,11 +15,8 @@ import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 import { logDebug, logError } from '@/utils/logger'; // Added logError
 import { GameCard } from '@/components/game/GameCard';
 
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
-
 /**
- * Represents the data structure for a unit displayed in the training section.
+ * Represents data structure for a unit displayed in training section.
  */
 interface UnitData {
   id: string; // Unique identifier (e.g., "OFFENSE_1")
@@ -28,14 +25,14 @@ interface UnitData {
   ownedUnits: number;
   requirement: string; // Fortification name required
   cost: number; // Adjusted cost including price bonus
-  enabled: boolean; // Whether the user meets the requirements
+  enabled: boolean; // Whether user meets requirements
   level: number;
   usage: UnitType; // Should be UnitType, but usage might be legacy? Verify type.
   fortLevel: number; // Fort level required
 }
 
 /**
- * Defines the structure for managing different unit type sections.
+ * Defines structure for managing different unit type sections.
  */
 interface UnitTypeIndex {
   type: UnitType;
@@ -50,7 +47,7 @@ interface UnitTypeIndex {
  * and allows users to manage unit quantities. Includes a sticky footer
  * for order summary and actions.
  */
-const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => { // Removed unused props
+const Training: React.FC = (props) => { // Removed unused props
   const { t } = useTranslation('battle');
   const { user, forceUpdate } = useUser();
   const [totalCost, setTotalCost] = useState(0);
@@ -86,9 +83,9 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
   const [sectionCosts, setSectionCosts] = useState(() => getBlankSectionCosts());
 
   /**
-   * Callback function passed to NewUnitSection to update the cost contribution of that section.
-   * Recalculates the total cost across all sections.
-   * @param section - The UnitType of the section updating its cost.
+   * Callback function passed to NewUnitSection to update cost contribution of that section.
+   * Recalculates total cost across all sections.
+   * @param section - The UnitType of section updating its cost.
    * @param cost - The new total cost for that section.
    */
   const updateTotalCost = useCallback((section: UnitType, cost: number) => {
@@ -96,7 +93,7 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
     const validatedCost = Number.isFinite(cost) ? cost : 0; // Ensure cost is a valid number
     setSectionCosts((prevCosts) => {
       const updatedCosts = { ...prevCosts, [section]: validatedCost };
-      // Recalculate total cost from the updated section costs
+      // Recalculate total cost from updated section costs
       const newTotalCost = Object.values(updatedCosts).reduce(
         (acc, curr) => acc + (Number.isFinite(curr) ? curr : 0), // Sum only valid numbers
         0
@@ -107,7 +104,7 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
   }, []); // No dependencies needed as it only uses setters
 
   /**
-   * Resets the quantities entered in all unit sections and the total cost.
+   * Resets quantities entered in all unit sections and total cost.
    */
   const resetUnitCosts = useCallback(() => {
     setUnitCosts({}); // Clear individual unit quantities
@@ -116,10 +113,10 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
   }, [getBlankSectionCosts]);
 
   /**
-   * Maps raw unit data (from constants or user) to the UnitData structure needed by sections.
+   * Maps raw unit data (from constants or user) to UnitData structure needed by sections.
    * Calculates adjusted cost based on user's price bonus.
    * @param unit - The raw unit data.
-   * @param idPrefix - The UnitType prefix for the unit ID.
+   * @param idPrefix - The UnitType prefix for unit ID.
    * @returns A UnitData object or undefined if user is not available.
    */
   const unitMapFunction = useCallback((unit: any, idPrefix: string): UnitData | undefined => {
@@ -160,7 +157,7 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
         .map((unit: any) => unitMapFunction(unit, unitTypeInfo.type))
         .filter((unit): unit is UnitData => unit !== undefined); // Ensure map function didn't return undefined
 
-      // Only update state if the data has actually changed to prevent infinite loops
+      // Only update state if data has actually changed to prevent infinite loops
       if (JSON.stringify(newUnitData) !== JSON.stringify(unitTypeInfo.unitData)) {
         unitTypeInfo.updateFn(newUnitData);
         stateChanged = true;
@@ -173,32 +170,32 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
   }, [user, unitMapFunction, unitTypesIndex]); // Rerun when user, map function, or index changes
 
   /**
-   * Gathers the quantities entered for each unit across all sections.
+   * Gathers quantities entered for each unit across all sections.
    * @returns An array of objects containing unit type, quantity, and level for units with quantity > 0.
    */
   const getUnitQuantities = useCallback(() => {
     return unitTypesIndex.reduce<UnitData[]>((curVal, unitType) =>
       unitType.unitData ? [...curVal, ...unitType.unitData] : curVal, // Flatten unit data from all sections
       [])
-      .filter((unit): unit is UnitData => unit !== null && unit.enabled) // Filter out null/disabled units
+      .filter((unit): unit is UnitData => unit !== null) // Filter out null/disabled units
       .map((unit) => {
         // const unitComponents = unit.id.split('_'); // ID format like "OFFENSE_1"
         return {
-          type: unit.usage, // Use the 'usage' field which should be UnitType
+          type: unit.usage, // Use 'usage' field which should be UnitType
           quantity: unitCosts[unit.id] || 0, // Get quantity from state
-          level: unit.level, // Use the level directly
+          level: unit.level, // Use level directly
         };
       })
       .filter(unit => unit.quantity > 0); // Only include units with quantity > 0
   }, [unitTypesIndex, unitCosts]);
 
   /**
-   * Calls the backend API to train or untrain units.
+   * Calls backend API to train or untrain units.
    * @param endpoint - The API endpoint ('train' or 'untrain').
    * @param user - The current user object.
    * @param units - An array of units to modify with their quantities and levels.
    * @returns The API response data on success, or null on failure/no units.
-   * @throws Error if the API call fails or returns an error status.
+   * @throws Error if API call fails or returns an error status.
    */
   const callTrainingApi = useCallback(async (endpoint: 'train' | 'untrain', user: User, units: { type: UnitType; quantity: number; level: number }[]) => {
     if (units.length === 0) {
@@ -224,15 +221,15 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
   }, []);
 
   /**
-   * Updates the local state of unit sections based on the API response after training/untraining.
-   * @param data - The data object returned from the API, expected to contain a `data` array of updated units.
+   * Updates local state of unit sections based on API response after training/untraining.
+   * @param data - The data object returned from API, expected to contain a `data` array of updated units.
    */
   const updateLocalUnits = useCallback((data: any) => {
     if (!data?.data || !Array.isArray(data.data)) {
-        console.warn("API response missing expected data structure for unit update.");
-        forceUpdate(); // Force update anyway, maybe backend succeeded
-        return;
-    };
+      console.warn("API response missing expected data structure for unit update.");
+      forceUpdate(); // Force update anyway, maybe backend succeeded
+      return;
+    }
 
     const updatedUnitMap = new Map<string, number>();
     // Assuming data.data is an array of { type: UnitType; level: number; quantity: number }
@@ -240,7 +237,7 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
       updatedUnitMap.set(`${u.type}_${u.level}`, u.quantity);
     });
 
-    // Update the state for each section
+    // Update state for each section
     unitTypesIndex.forEach((unitTypeInfo) => {
       unitTypeInfo.updateFn((prevUnits) => {
         if (!prevUnits) return null;
@@ -257,8 +254,8 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
   }, [unitTypesIndex, resetUnitCosts, forceUpdate]);
 
   /**
-   * Handles the form submission for either training or untraining all selected units.
-   * Validates input, checks gold/citizens, calls the API, and updates local state.
+   * Handles form submission for either training or untraining all selected units.
+   * Validates input, checks gold/citizens, calls API, and updates local state.
    * @param submitType - Whether to 'train' or 'untrain'.
    */
   const handleFormSubmit = useCallback(async (submitType: 'train' | 'untrain') => {
@@ -269,7 +266,7 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
     const unitsToModify = getUnitQuantities();
 
     if (unitsToModify.length === 0) {
-      alertService.warn(`Please enter the quantity of units you wish to ${submitType}.`);
+      alertService.warn(`Please enter quantity of units you wish to ${submitType}.`);
       return;
     }
 
@@ -334,6 +331,7 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
   const defenseTotal = user.unitTotals?.defense ?? 0;
   const population = (user.population ?? 0); // Use pre-calculated population if available
   const defenseRatio = population > 0 ? defenseTotal / population : 0;
+
   return (
     <MainArea title={t('training.title')}>
       <GameCard title={t('training.trainingStatus')} icon={faPeopleGroup}>
@@ -387,20 +385,8 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
             </Group>
           ))}
         </SimpleGrid>
-        <Text size="xs" c="dimmed" mt="sm" data-testid="training-progress">
-          {t('training.trainingProgress')}
-        </Text>
-        <Box
-          mt="xs"
-          data-testid="progress-bar"
-          style={{
-            height: '8px',
-            borderRadius: '999px',
-            backgroundImage: 'linear-gradient(90deg, #e5c55a 0%, #f59e0b 100%)',
-          }}
-        />
       </GameCard>
-      {/* Add padding to the bottom of the main content area to prevent overlap with the fixed footer */}
+      {/* Add padding to bottom of main content area to prevent overlap with fixed footer */}
       <Box style={{ paddingBottom: hasOrder ? '160px' : 0 }} data-testid="unit-training-panel">
         {unitTypesIndex
           .filter((unitType) => unitType.unitData !== null)
@@ -452,7 +438,7 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
                       boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
                     }}
                     data-testid="train-button"
-                    aria-label={t('training.trainAll')}
+                    aria-label={t('training.train')}
                     role="button"
                   >
                     {t('training.train')}
@@ -478,14 +464,6 @@ const Training: React.FC = (props: InferGetServerSidePropsType<typeof getServerS
       )}
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
-    },
-  };
 };
 
 export default Training;

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import { useLayout } from "@/context/LayoutContext";
 import { useUser } from "@/context/users";
@@ -62,7 +61,7 @@ const Settings = (props) => {
   const [showQR, setShowQR] = useState(false);
   const [qrCode, setQrCode] = useState('');
   const [totpToken, setTotpToken] = useState('');
-
+ 
   const checkPasswordsMatch = useCallback(() => {
     setPasswordsMatch(debouncedNewPassword === debouncedConfirmPassword);
   }, [debouncedNewPassword, debouncedConfirmPassword]);
@@ -328,12 +327,12 @@ const Settings = (props) => {
               <Button
                 className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
                 onClick={updatePassword}
-              >
+                >
                 {t('settings.save')}
               </Button>
           </GameCard>
-        </Grid.Col>
-
+        </Grid.Col> 
+        
         <Grid.Col span={6}>
           <GameCard title={t('settings.gameOptions')}>
               <Text>{t('settings.localeFormatting')}</Text>
@@ -364,8 +363,8 @@ const Settings = (props) => {
               {t('settings.save')}
             </Button>
           </GameCard>
-        </Grid.Col>
-
+        </Grid.Col> 
+        
         <Grid.Col span={6}>
           <GameCard title={t('settings.changeEmail')}>
             <Text>{t('settings.currentEmail')}</Text>
@@ -438,8 +437,7 @@ const Settings = (props) => {
               />
             )}
           >
-            <Collapse in={opened}>
-
+            <Collapse in={opened}> 
               <Group mt="md" gap="md" wrap="wrap">
                 <Tooltip label={t('settings.resetAccountTooltip')} withArrow>
                   <Button
@@ -472,8 +470,8 @@ const Settings = (props) => {
             </Collapse>
           </GameCard>
         </Grid.Col>
-      </Grid>
-
+      </Grid> 
+      
       <Modal
         opened={isVacationModalOpen}
         onClose={() => setIsVacationModalOpen(false)}
@@ -490,8 +488,8 @@ const Settings = (props) => {
             </Button>
           </Group>
         </div>
-      </Modal>
-
+      </Modal> 
+      
       <Modal
         opened={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
@@ -515,8 +513,8 @@ const Settings = (props) => {
             </Button>
           </Group>
         </div>
-      </Modal>
-
+      </Modal> 
+      
       <Modal
         opened={isDisableModalOpen}
         onClose={() => setIsDisableModalOpen(false)}
@@ -540,8 +538,8 @@ const Settings = (props) => {
             </Button>
           </Group>
         </div>
-      </Modal>
-
+      </Modal> 
+      
       <Modal
         opened={isForgetModalOpen}
         onClose={() => setIsForgetModalOpen(false)}
@@ -574,10 +572,9 @@ const Settings = (props) => {
             </Button>
           </Group>
         </div>
-      </Modal>
+      </Modal> 
     </MainArea>
   );
-
 };
 
 export default Settings;

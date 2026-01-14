@@ -29,6 +29,7 @@
   "register": {
     "title": "Konto erstellen",
     "description": "Erstellen Sie ein neues Konto, um Ihre Reise zu beginnen.",
+    "latestNews": "Neueste Nachrichten",
     "displayName": "Anzeigename",
     "email": "E-Mail-Adresse",
     "password": "Passwort",

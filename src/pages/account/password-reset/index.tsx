@@ -1,6 +1,5 @@
 import { TextInput, Button, Container, Title, Paper } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import router from 'next/router';
 import { useState } from 'react';
 import { showNotification } from '@mantine/notifications';
@@ -8,17 +7,14 @@ import classes from './floatinginput.module.css';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
 
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
-
-const Index = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Index = (props) => {
   const { t } = useTranslation('account');
   const [email, setEmail] = useState('');
   const [focused, setFocused] = useState(false);
   const floating = email.trim().length !== 0 || focused || undefined;
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submit action
+    e.preventDefault(); // Prevent's default form submit action
     try {
       const response = await fetch('/api/account/reset', {
         method: 'POST',
@@ -88,14 +84,6 @@ const Index = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
       </Container>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['account'])),
-    },
-  };
 };
 
 export default Index;

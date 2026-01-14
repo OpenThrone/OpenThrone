@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 import { Button, Table, Loader, Group } from '@mantine/core';
 import { useUser } from '@/context/users';
@@ -10,13 +7,13 @@ import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
 import { logError } from '@/utils/logger';
-import { InferGetServerSidePropsType } from "next";
+import { getSafeLocale } from '@/utils/i18n';
 
-const Requests = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Requests = (props) => {
   const { t } = useTranslation('social');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useUser();
+  const user = useUser();
 
   useEffect(() => {
     fetch('/api/social/listAll?type=REQUESTS')
@@ -24,10 +21,10 @@ const Requests = (props: InferGetServerSidePropsType<typeof getServerSideProps>)
       .then(data => {
         setRequests(data);
         setLoading(false);
-      }).catch(error => {
+      })
+      .catch(error => {
         logError(t('requests.errorFetchingRequests'), error);
         setLoading(true);
-        
       });
   }, []);
 
@@ -66,7 +63,6 @@ const Requests = (props: InferGetServerSidePropsType<typeof getServerSideProps>)
   const incomingRequests = processedRequests.filter(request => request.type === 'incoming');
 
   const renderRows = (requestsList) => {
-    console.log(requestsList);
     if (requestsList.length === 0) {
       return (
         <Table.Tr style={{ background: '#0f141a' }}>
@@ -74,25 +70,7 @@ const Requests = (props: InferGetServerSidePropsType<typeof getServerSideProps>)
         </Table.Tr>
       );
     }
-
-    return requestsList.map(request => (
-      <Table.Tr key={request.id} style={{ background: '#0f141a' }}>
-        <Table.Td style={{ borderColor: '#1f2b3b' }}>
-          {request.friend && request.friend.display_name ? request.friend.display_name : t('requests.unknownPlayer')} {/* Safe access */}
-        </Table.Td>
-        <Table.Td style={{ borderColor: '#1f2b3b' }}>{new Date(request.requestDate).toLocaleString()}</Table.Td>
-        <Table.Td style={{ borderColor: '#1f2b3b' }}>{request.status}</Table.Td>
-        <Table.Td style={{ borderColor: '#1f2b3b' }}>
-          {request.type === 'outgoing' ? t('requests.pendingAcceptance') : (
-            <Group>
-              <Button size="xs" color="yellow" onClick={() => handleResponse(request.id, 'accept')}>{t('requests.accept')}</Button>
-              <Button size="xs" color="red" onClick={() => handleResponse(request.id, 'decline')}>{t('requests.decline')}</Button>
-            </Group>
-          )}
-        </Table.Td>
-      </Table.Tr>
-    ));
-  };
+  }
 
   return (
     <MainArea title={t('requests.title')}>
@@ -109,14 +87,6 @@ const Requests = (props: InferGetServerSidePropsType<typeof getServerSideProps>)
       </GameCard>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['social'])),
-    },
-  };
 };
 
 export default Requests;

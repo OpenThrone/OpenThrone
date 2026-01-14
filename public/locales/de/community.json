@@ -64,12 +64,6 @@
     "title": "Weltstatistiken",
     "description": "Statistiken über das Reich anzeigen.",
     "totalPlayers": "Gesamtspieler",
-    "onlinePlayers": "Online-Spieler"
-  },
-  "stats": {
-    "title": "Weltstatistiken",
-    "description": "Statistiken über das Reich anzeigen.",
-    "totalPlayers": "Gesamtspieler",
     "onlinePlayers": "Spieler online",
     "mostActiveRecruiters": "Meistaktive Rekruterer",
     "top10SuccessfulAttackers": "Top 10 Erfolgreiche Angreifer",
@@ -79,5 +73,34 @@
     "top10TotalDefenderCasualties": "Top 10 Gesamte Verteidigerverluste",
     "top10AttacksByTotalCasualties": "Top 10 Angriffe mit den meisten Verlusten",
     "lastGenerated": "Zuletzt Generiert"
+  },
+  "autoRecruit": {
+    "title": "Auto Recruiter",
+    "sessionControls": "Sitzungskontrollen",
+    "clickStart": "Klicken Sie auf Start, um die Auto-Rekrut-Sitzung zu beginnen.",
+    "startSession": "Rekrutierung starten",
+    "manageSessions": "Sitzungen verwalten",
+    "sessionStatus": "Sitzungsstatus",
+    "loadingNextUser": "Nächsten Benutzer laden...",
+    "loadingNextUserCountdown": "Nächsten Benutzer in {{count}}s laden...",
+    "sessionComplete": "Sitzung abgeschlossen",
+    "sessionEnded": "Sitzung beendet",
+    "startNewSession": "Neue Sitzung starten",
+    "recruitmentStatus": "Rekrutierungsstatus",
+    "totalDailyRecruitsLeft": "Sie haben heute noch {{count}} Rekrutierungen übrig.",
+    "resumeRecruiting": "Rekrutierung fortsetzen",
+    "pauseRecruiting": "Rekrutierung pausieren",
+    "endSession": "Sitzung beenden",
+    "recruitedSuccessfully": "{{name}} erfolgreich rekrutiert",
+    "recruiting": "Rekrutieren",
+    "noMoreRecruits": "Keine Rekruten mehr verfügbar.",
+    "noRecruitableUsers": "Keine rekrutierbaren Benutzer gefunden.",
+    "errorFetchingNewUser": "Fehler beim Laden eines neuen Benutzers.",
+    "failedToCleanlyEndServerSession": "Server-Sitzung konnte nicht sauber beendet werden.",
+    "errorHandlingRecruitment": "Fehler bei der Verarbeitung der Rekrutierung.",
+    "networkErrorDuringRecruitment": "Netzwerkfehler während der Rekrutierung. Bitte versuche es erneut.",
+    "errorVerifyingSession": "Fehler beim Überprüfen der Sitzung.",
+    "errorStartingSession": "Fehler beim Starten der Rekrutierungssitzung.",
+    "sessionInvalid": "Ungültige Sitzung. Bitte starte eine neue Sitzung."
   }
 }

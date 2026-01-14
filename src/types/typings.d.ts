@@ -382,6 +382,8 @@ export interface UserApiResponse {
   totalDefends: number;
   currentStatus: AccountStatus | string; // Use AccountStatus enum
   goldPerTurn: number;
+  depositsAvailable: number;
+  nextDepositAvailable: { hours: number; minutes: number; seconds: number } | 0;
 }
 
 // Define the Prisma User type alias again for internal use if needed

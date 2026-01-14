@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 import { Alert, Box, Button, Group, SimpleGrid, Space, Text } from '@mantine/core';
 import { faShieldHalved, faUserPlus } from '@fortawesome/free-solid-svg-icons';
@@ -12,9 +9,8 @@ import Form from '@/components/form';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { useLayout } from '@/context/LayoutContext';
-import { InferGetServerSidePropsType } from "next";
 
-const Register = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Register = (props) => {
   const { t } = useTranslation('account');
   const { setMeta, meta } = useLayout();
   const [errorMessage, setErrorMessage] = useState('');
@@ -102,14 +98,6 @@ const Register = (props: InferGetServerSidePropsType<typeof getServerSideProps>)
       </div>
     </MainArea>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['account'])),
-    },
-  };
 };
 
 export default Register;

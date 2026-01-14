@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import { Modal, Grid } from "@mantine/core";
 import { PermissionType } from '@prisma/client';
@@ -13,9 +12,6 @@ import { GameCard } from "@/components/game/GameCard";
 import { faUsersCog, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import MainArea from "@/components/MainArea";
 
-import { getSafeLocale } from '@/utils/i18n';
-import { InferGetServerSidePropsType } from "next";
-
 interface UserSummary {
   id: string;
   username: string;
@@ -25,7 +21,7 @@ interface UserSummary {
   permissions?: string[];
 }
 
-const Admin = (props: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Admin = (props) => {
   const { t } = useTranslation('home');
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -105,14 +101,6 @@ const Admin = (props: InferGetServerSidePropsType<typeof getServerSideProps>) =>
       </MainArea>
     </PermissionCheck>
   );
-};
-
-export const getServerSideProps = async (context: any) => {
-  return {
-    props: {
-      ...(await serverSideTranslations(getSafeLocale(context), ['home'])),
-    },
-  };
 };
 
 export default Admin;

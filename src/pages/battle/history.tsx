@@ -1,6 +1,5 @@
 import { getSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useState } from 'react';
 import AttackLogTable from '@/components/AttackLog';
 import prisma from '@/lib/prisma';
@@ -9,8 +8,6 @@ import { InferGetServerSidePropsType } from "next";
 import { GameCard } from '@/components/game/GameCard';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 const ROWS_PER_PAGE = 5;
 
@@ -107,7 +104,6 @@ export const getServerSideProps = async (context: any) => {
         ...log,
         timestamp: log.timestamp.toISOString(),
       })),
-      ...(await serverSideTranslations(getSafeLocale(context), ['battle'])),
     },
   };
 };

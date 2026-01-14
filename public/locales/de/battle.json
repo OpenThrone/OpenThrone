@@ -46,7 +46,6 @@
     "youBeatRecently": "Haben Sie kürzlich besiegt",
     "theyBeatYouRecently": "Haben Sie kürzlich besiegt",
     "username": "Benutzername",
-    "alliance": "Allianz",
     "gold": "Gold",
     "population": "Bevölkerung",
     "level": "Stufe",
@@ -91,13 +90,16 @@
   "battleSimulator": {
     "title": "Kampfsimulator",
     "description": "Simulieren Sie Kämpfe, um Ihre Strategien zu testen.",
-    "simulate": "Simulieren",
-    "results": "Ergebnisse",
+    "copyLink": "Freigabaren Link kopieren",
+    "linkCopied": "Link kopiert!",
     "attacker": "Angreifer",
     "defender": "Verteidiger",
-    "winner": "Gewinner",
-    "casualties": "Verluste",
-    "goldStolen": "Gestohlenes Gold"
+    "controls": "Steuerelemente",
+    "turns": "Züge",
+    "runSimulation": "Simulation ausführen",
+    "reset": "Zurücksetzen",
+    "loading": "Wird geladen...",
+    "error": "Ein Fehler ist aufgetreten"
   },
   "results": {
     "title": "Kampfergebnisse",
@@ -181,19 +183,5 @@
     "defensiveUnits": "Defensive Einheiten",
     "onlyLevel2Units": "Nur Stufe 2+ Einheiten",
     "battleUpgradeInformation": "Informationen zur Kampfverbesserung"
-  },
-  "battleSimulator": {
-    "title": "Kampfsimulator",
-    "description": "Simulieren Sie Kämpfe, um Ihre Strategien zu testen.",
-    "copyLink": "Freigabaren Link kopieren",
-    "linkCopied": "Link kopiert!",
-    "attacker": "Angreifer",
-    "defender": "Verteidiger",
-    "controls": "Steuerelemente",
-    "turns": "Züge",
-    "runSimulation": "Simulation ausführen",
-    "reset": "Zurücksetzen",
-    "loading": "Wird geladen...",
-    "error": "Ein Fehler ist aufgetreten"
   }
 }

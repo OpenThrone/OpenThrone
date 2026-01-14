@@ -138,6 +138,10 @@ class UserModel {
   public bonus_points: BonusPointsItem[];
   /** User's economy development level. */
   public economyLevel: number;
+  /** Remaining deposits available in the last 24 hours. */
+  public depositsAvailable: number;
+  /** Countdown until the next deposit is available, or 0 when not applicable. */
+  public nextDepositAvailable: { hours: number; minutes: number; seconds: number } | 0;
   /** List of structure upgrades and their levels owned by the user. */
   public structure_upgrades: UserStructureUpgrade[];
   /** List of battle upgrades purchased by the user. */
@@ -255,6 +259,8 @@ class UserModel {
       this.is_online = false;
       this.overallrank = 0;
       this.economyLevel = 0;
+      this.depositsAvailable = 0;
+      this.nextDepositAvailable = 0;
       this.bonus_points = [];
       this.structure_upgrades = [];
       this.battle_upgrades = [];
@@ -335,6 +341,8 @@ class UserModel {
     this.is_online = false;
     this.overallrank = safeUserData.rank ?? 0;
     this.economyLevel = safeUserData.economy_level ?? 0;
+    this.depositsAvailable = (safeUserData as any).depositsAvailable ?? 0;
+    this.nextDepositAvailable = (safeUserData as any).nextDepositAvailable ?? 0;
     const rawStructureUpgrades = Array.isArray(structure_upgrades)
       ? structure_upgrades
       : Array.isArray((safeUserData as any).UserStructureUpgrade)
