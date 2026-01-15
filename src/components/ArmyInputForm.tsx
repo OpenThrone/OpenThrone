@@ -30,8 +30,6 @@ interface ArmyInputFormProps {
 // Dummy functions for now
 const userToFormData = (user: User) => user;
 const formDataToUser = (formData: any) => formData;
-const getItemUsage = () => {};
-const parseItemsData = () => {};
 
 const ArmyInputForm = forwardRef<
   { getFormData: () => User },
@@ -207,17 +205,17 @@ const ArmyInputForm = forwardRef<
 
 // Dummy tab components for now
 const BasicInfoTab = ({
-  armyData,
-  handleChange,
+  armyData: _armyData,
+  handleChange: _handleChange,
 }: {
   armyData: any;
   handleChange: (field: string, value: any) => void;
 }) => <div>Basic Info Tab - Placeholder</div>;
 
 const UnitsTab = ({
-  armyData,
-  handleUnitChange,
-  isAttacker,
+  armyData: _armyData,
+  handleUnitChange: _handleUnitChange,
+  isAttacker: _isAttacker,
 }: {
   armyData: any;
   handleUnitChange: (unitType: string, level: number, value: number) => void;
@@ -225,8 +223,8 @@ const UnitsTab = ({
 }) => <div>Units Tab - Placeholder</div>;
 
 const ItemsTab = ({
-  armyData,
-  handleItemsChange,
+  armyData: _armyData,
+  handleItemsChange: _handleItemsChange,
 }: {
   armyData: any;
   handleItemsChange: (
@@ -235,8 +233,8 @@ const ItemsTab = ({
 }) => <div>Items Tab - Placeholder</div>;
 
 const UpgradesTab = ({
-  armyData,
-  handleChange,
+  armyData: _armyData,
+  handleChange: _handleChange,
 }: {
   armyData: any;
   handleChange: (field: string, value: any) => void;

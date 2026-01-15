@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 const GetRelationshipSchema = z.object({
   userId: z.coerce.number().int(),
@@ -38,7 +39,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
 
     return res.status(200).json(result);
   } catch (error) {
-    console.error('Error fetching relationship:', error);
+    logError('Error fetching relationship:', error);
     return res.status(400).json({ error: error.message });
   }
 };

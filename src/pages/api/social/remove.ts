@@ -6,6 +6,7 @@ import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 const RemoveSocialSchema = z.object({
   friendId: z.number().int(),
@@ -60,7 +61,7 @@ const removeSocialRelation = async (
 
     res.status(200).json(result);
   } catch (error: any) {
-    console.error('Error removing relationship:', error);
+    logError('Error removing relationship:', error);
     res.status(400).json({ error: error.message });
   }
 };

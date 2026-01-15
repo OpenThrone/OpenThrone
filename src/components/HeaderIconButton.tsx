@@ -20,6 +20,7 @@ const HeaderIconButton = forwardRef<HTMLButtonElement, HeaderIconButtonProps>(
         variant="subtle"
         aria-label={label}
         data-testid={testId}
+        ref={ref}
         className="toolbar-icon" // reuse your existing styling if you want
       >
         {children}

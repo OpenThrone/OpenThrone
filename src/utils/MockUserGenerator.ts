@@ -12,12 +12,19 @@ import type {
 
 export default class MockUserGenerator {
   private prismaUser: PrismaUser;
+
   private units: PlayerUnit[];
+
   private items: PlayerItem[];
+
   private battleUpgrades: PlayerBattleUpgrade[];
+
   private structureUpgrades: any[];
+
   private bonusPoints: any[];
+
   private stats: any[];
+
   private permissions: any[];
 
   constructor() {

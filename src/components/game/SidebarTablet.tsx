@@ -16,7 +16,9 @@ interface SidebarDarkProps {
   sidebarData: any; // Pass your sidebar data here
 }
 
-export const SidebarDark: React.FC<SidebarDarkProps> = ({ sidebarData }) => {
+export const SidebarDark: React.FC<SidebarDarkProps> = ({
+  sidebarData: _sidebarData,
+}) => {
   return (
     <Paper
       radius="md"

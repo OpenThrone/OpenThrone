@@ -36,7 +36,7 @@ const defaultFilters = {
   daily: true,
 };
 
-export default function Bank(props) {
+export default function Bank() {
   const { t } = useTranslation('structures');
   const router = useRouter();
   const tabParam = Array.isArray(router.query.tab)
@@ -50,7 +50,7 @@ export default function Bank(props) {
   const { user, forceUpdate } = useUser();
   const [history, setHistory] = useState([]);
   const [page, setPage] = useState(0);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {

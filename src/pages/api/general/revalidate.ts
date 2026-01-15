@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   try {
     await res.revalidate('/community/stats');
     return res.json({ revalidated: true });
-  } catch (err) {
+  } catch {
     return res.status(500).send('Error revalidating');
   }
 }

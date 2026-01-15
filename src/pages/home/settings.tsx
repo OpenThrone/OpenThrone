@@ -27,7 +27,7 @@ import { alertService } from '@/services/Alert.service';
 import type { Locales, PlayerRace } from '@/types/typings';
 import { logError, logInfo } from '@/utils/logger';
 
-const Settings = (props) => {
+const Settings = () => {
   const { t } = useTranslation('home');
   const locales: Locales[] = ['en-US', 'es-ES'];
   const colorSchemes: PlayerRace[] = ['UNDEAD', 'HUMAN', 'GOBLIN', 'ELF'];
@@ -57,7 +57,6 @@ const Settings = (props) => {
   const [debouncedNewPassword] = useDebouncedValue(newPassword, 300);
   const [debouncedConfirmPassword] = useDebouncedValue(confirmPassword, 300);
   const [newEmail, setNewEmail] = useState('');
-  const [debouncedEmail] = useDebouncedValue(newEmail, 300);
   const [showQR, setShowQR] = useState(false);
   const [qrCode, setQrCode] = useState('');
   const [totpToken, setTotpToken] = useState('');

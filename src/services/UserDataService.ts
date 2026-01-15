@@ -7,6 +7,7 @@ import { ensureActiveEra } from '@/services/Era.service';
 import { getUpdatedStatus } from '@/services/User.service';
 import type { Locales, PlayerClass, PlayerRace } from '@/types/typings';
 import { safeToISOString } from '@/utils/dateHelpers';
+import { logDebug } from '@/utils/logger';
 
 import {
   buildDefaultUserUpdate,
@@ -96,7 +97,7 @@ export class UserDataService {
       },
     });
 
-    console.log(
+    logDebug(
       `[DEBUG] UserDataService: Units from DB for user ${userId}:`,
       JSON.stringify(user?.UserUnit),
     );
@@ -211,7 +212,6 @@ export class UserDataService {
     });
 
     const calculatedStats = statsService.updateStats();
-    const unitTotals = unitsService.getUnitTotals();
 
     // 4. Unified DTO Construction
     const userDto: FullUserData = {

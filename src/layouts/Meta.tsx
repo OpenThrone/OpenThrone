@@ -1,7 +1,7 @@
 import { NextSeo } from 'next-seo';
 
+import type { IMetaProps } from '@/types/typings';
 import { AppConfig } from '@/utils/AppConfig';
-import { IMetaProps } from '@/types/typings';
 
 const Meta = (props: IMetaProps) => {
   return (

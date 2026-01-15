@@ -1,9 +1,19 @@
 // components/levelCard.ts
+import { Button, Card, Center, Space, Text, Tooltip } from '@mantine/core';
 import React, { useEffect } from 'react';
-import { Text, Card, Button, Center, Space, Tooltip } from '@mantine/core';
-import styles from '../pages/home/levels.module.css'
 
-const LevelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canReduce, changeQueue }) => {
+import styles from '../pages/home/levels.module.css';
+
+const LevelCard = ({
+  title,
+  type,
+  currentLevel,
+  onAdd,
+  onReduce,
+  canAdd: _canAdd,
+  canReduce: _canReduce,
+  changeQueue,
+}) => {
   const tooltipText = {
     OFFENSE: 'Strength: Increases your Offense by x%',
     DEFENSE: 'Constitution: Increases your Defense by x%',
@@ -24,16 +34,23 @@ const LevelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canRedu
     setInit(false);
     onAdd();
   };
-  
+
   return (
     <Card className={styles.starPoint}>
       <Tooltip label={tooltipText} withArrow>
-        <Text size="lg" fw={700} ta="center" style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}>
+        <Text
+          size="lg"
+          fw={700}
+          ta="center"
+          style={{ borderBottom: '2px solid #FFD700', paddingBottom: '0.5rem' }}
+        >
           {title}
         </Text>
       </Tooltip>
       <Space h="md" />
-      <Text ta="center" c='yellow'>Current Bonus: {currentLevel - (changeQueue[type]?.change ?? 0)}%</Text>
+      <Text ta="center" c="yellow">
+        Current Bonus: {currentLevel - (changeQueue[type]?.change ?? 0)}%
+      </Text>
       <Text ta="center">New Pending: {currentLevel}%</Text>
       <Space h="md" />
       <Center>
@@ -43,11 +60,19 @@ const LevelCard = ({ title, type, currentLevel, onAdd, onReduce, canAdd, canRedu
           </Button>
         ) : (
           <>
-              <Button onClick={onReduce} style={{ cursor: 'pointer', marginRight: '5px' }} size='xs'>
+            <Button
+              onClick={onReduce}
+              style={{ cursor: 'pointer', marginRight: '5px' }}
+              size="xs"
+            >
               -
             </Button>
-              <Text size='md'>{changeQueue[type]?.change}</Text>
-            <Button onClick={onAdd} style={{ cursor: 'pointer', marginLeft: '5px' }} size='xs'>
+            <Text size="md">{changeQueue[type]?.change}</Text>
+            <Button
+              onClick={onAdd}
+              style={{ cursor: 'pointer', marginLeft: '5px' }}
+              size="xs"
+            >
               +
             </Button>
           </>

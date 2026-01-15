@@ -1,3 +1,4 @@
+/* eslint-disable unused-imports/no-unused-vars */
 declare const vi: any;
 declare const describe: any;
 declare const it: any;

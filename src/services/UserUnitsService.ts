@@ -20,9 +20,13 @@ const UserDataSchema = z.object({
 
 export class UserUnitsService {
   private units: UserUnit[];
+
   private items: UserItem[];
+
   private fortLevel: number;
+
   private structure_upgrades: UserStructureUpgrade[];
+
   private mercenaries: UserUnit[];
 
   constructor(

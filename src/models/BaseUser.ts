@@ -31,23 +31,35 @@ export const safeBigInt = (value: unknown): bigint => {
 
 export class BaseUser {
   public id: number;
+
   public displayName: string;
+
   public race: string;
+
   public class: string;
 
   public experience: number;
+
   public fortLevel: number;
+
   public fortHitpoints: number;
+
   public gold: bigint;
 
   public units: UserUnit[];
+
   public mercenaries: UserUnit[];
+
   public items: UserItem[];
+
   public structure_upgrades: UserStructureUpgrade[];
+
   public battle_upgrades: UserBattleUpgrade[];
+
   public bonus_points: UserBonusPoints[];
 
   public attackTurns: number;
+
   public stamina: number;
 
   constructor(userData?: PrismaUser | null, relations: BaseUserRelations = {}) {

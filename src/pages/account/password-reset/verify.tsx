@@ -10,7 +10,7 @@ import { logError } from '@/utils/logger';
 
 import classes from './floatinginput.module.css';
 
-const Index = (props) => {
+const Index = () => {
   const { t } = useTranslation('account');
   const [verify, setVerify] = useState('');
   const [verified, setVerified] = useState(false);

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { BattleService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const FullScaleBattleTestSchema = z.object({
   aId: z.coerce.number().int().optional(),
@@ -37,7 +38,7 @@ const handler = async (req, res) => {
       const result = await BattleService.fullScaleBattleTest(attackerId);
       return res.status(200).json(result);
     } catch (error) {
-      console.error('Full scale battle test error:', error);
+      logError('Full scale battle test error:', error);
       return res
         .status(500)
         .json({ status: 'failed', message: 'Internal server error' });

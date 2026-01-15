@@ -7,6 +7,7 @@ declare module '@/models/Users' {
   // compile while we progressively convert callers to the new API.
   export default class UserModel {
     [key: string]: any;
+
     constructor(
       userData?: any | Prisma.users | null,
       units?: any,

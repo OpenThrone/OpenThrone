@@ -3,6 +3,7 @@ import type { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
@@ -19,7 +20,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
 
     return res.status(200).json(result);
   } catch (error: any) {
-    console.error('Error fetching friend request count:', error);
+    logError('Error fetching friend request count:', error);
     return res.status(500).json({ error: error.message });
   }
 };

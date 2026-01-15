@@ -56,7 +56,6 @@ const Sidebar: React.FC = () => {
     searchValue,
     setSearchValue,
     usersData,
-    loadingSearch,
     handleItemSubmit,
     handleSubmit,
   } = useSidebarData(user, userLoading);
@@ -195,7 +194,7 @@ const Sidebar: React.FC = () => {
               <Text
                 size={isMobile ? 'xl' : 'sm'}
                 fw="bold"
-                className="text-ot-text text-center"
+                className="text-center text-[var(--ot-text)]"
                 style={{ minHeight: '105px', lineHeight: 1.5 }}
               >
                 {messages[currentMessageIndex]}
@@ -397,7 +396,7 @@ const Sidebar: React.FC = () => {
             <Text
               size={isMobile ? 'xl' : 'sm'}
               fw="bold"
-              className="text-ot-text text-center"
+              className="text-center text-[var(--ot-text)]"
               style={{ minHeight: '105px', lineHeight: 1.5 }}
             >
               {messages[currentMessageIndex]}

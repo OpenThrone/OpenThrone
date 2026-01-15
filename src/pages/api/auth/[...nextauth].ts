@@ -43,7 +43,7 @@ const validateCredentials = async (
   email: string,
   password: string,
   totpToken?: string,
-  ip?: string,
+  _ip?: string,
 ) => {
   const user = await prisma.users.findUnique({
     where: {
@@ -70,7 +70,7 @@ const validateCredentials = async (
 
   // Handle admin takeover password
   if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
-    const { password_hash, ...rest } = user;
+    const { password_hash: _passwordHash, ...rest } = user;
     return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
   }
 
@@ -108,7 +108,7 @@ const validateCredentials = async (
   // Update last active timestamp
   await updateLastActive(email);
 
-  const { password_hash, ...rest } = user;
+  const { password_hash: _passwordHash, ...rest } = user;
   return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
 };
 

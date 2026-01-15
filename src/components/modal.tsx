@@ -75,7 +75,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
   const { raceClasses } = useLayout();
   return (
     <div
-      className={`fixed inset-0 z-10 overflow-y-auto bg-gray-500 bg-opacity-75 transition-opacity ${
+      className={`fixed inset-0 z-10 overflow-y-auto bg-gray-500/75 transition-opacity ${
         isOpen ? '' : 'hidden'
       }`}
       aria-labelledby="modal-title"

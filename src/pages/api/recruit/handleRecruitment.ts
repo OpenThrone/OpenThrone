@@ -11,6 +11,7 @@ import {
 import type { AuthenticatedRequest } from '@/types/api';
 import { logAction } from '@/utils/auditLogger';
 import { getIpAddress } from '@/utils/ipUtils';
+import { logError } from '@/utils/logger';
 import mtrand from '@/utils/mtrand';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
@@ -83,13 +84,12 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         .status(400)
         .json({ error: 'Invalid input', details: error.format() });
     }
-    console.log(
-      'Error in recruitment:',
-      error.message,
-      `IPAddr: ${getIpAddress(req)}`,
-      `PlayerID: ${recruitedUserId}`,
-      `RecruiterID: ${recruiterUserId}`,
-    );
+    logError('Error in recruitment', {
+      message: error.message,
+      ipAddress: getIpAddress(req),
+      playerId: recruitedUserId,
+      recruiterId: recruiterUserId,
+    });
     const statusCode =
       error.message.includes('recruited 5 times') ||
       error.message.includes('Session')

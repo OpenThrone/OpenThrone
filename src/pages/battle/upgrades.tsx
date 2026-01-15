@@ -76,7 +76,7 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
   };
 };
 
-const Upgrades = (props) => {
+const Upgrades = () => {
   const { t } = useTranslation('battle');
   const { user } = useUser();
   const items = useItems(user);

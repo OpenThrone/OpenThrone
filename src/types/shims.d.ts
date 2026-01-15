@@ -1,3 +1,4 @@
+/* eslint-disable unused-imports/no-unused-vars */
 // Temporary shims to reduce type noise during migration.
 // These are permissive and should be tightened/removed after the migration completes.
 

@@ -19,11 +19,10 @@ import MainArea from '@/components/MainArea';
 import VacationModeModal from '@/components/VacationModeModal';
 import { useLayout } from '@/context/LayoutContext';
 
-const Login = (props) => {
+const Login = () => {
   const { t } = useTranslation('account');
   const { setMeta, meta } = useLayout();
   const [showVacationModal, setShowVacationModal] = useState(false);
-  const [vacationUserId, setVacationUserId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {

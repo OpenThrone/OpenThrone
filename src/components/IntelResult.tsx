@@ -12,7 +12,6 @@ import {
   Space,
   Stack,
   Text,
-  useMantineTheme,
 } from '@mantine/core';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -33,7 +32,6 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   const [unitSegments, setUnitSegments] = useState([]);
   const [itemsByCategory, setItemsByCategory] = useState([]);
   const [totalPopulation, setTotalPopulation] = useState(0);
-  const theme = useMantineTheme();
 
   const itemColors = {
     HELM: 'grey',

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
 
-import { logInfo } from '@/utils/logger';
+import { logError, logInfo } from '@/utils/logger';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
 
@@ -32,7 +32,7 @@ function dispatchEvent(event: string, data: any) {
     try {
       listener(data);
     } catch (error) {
-      console.error(`Error in listener for event ${event}:`, error);
+      logError(`Error in listener for event ${event}:`, error);
     }
   });
 }
@@ -58,7 +58,7 @@ function reconcileSocketConnection() {
 
   if (!desiredUserId) return;
   if (uniqueUserIds.length > 1) {
-    console.error(
+    logError(
       'Multiple different userIds requested for socket connection:',
       uniqueUserIds,
     );

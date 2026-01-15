@@ -22,12 +22,19 @@ export type SpyMissionUser = {
 
 export class AssassinationResult {
   spiesSent: number;
+
   spiesLost: number;
+
   unitsKilled: number;
+
   targetUnit: string;
+
   success: boolean;
+
   experienceGained: number;
+
   goldStolen: number;
+
   units: PlayerUnit[];
 
   constructor(
@@ -54,10 +61,15 @@ export class AssassinationResult {
 
 export class IntelResult {
   attacker: SpyMissionUser;
+
   defender: SpyMissionUser;
+
   spiesSent: number;
+
   spiesLost: number;
+
   success: boolean;
+
   intelligenceGathered: {
     offense: number | 0;
     defense: number | 0;
@@ -86,10 +98,15 @@ export class IntelResult {
 
 export class InfiltrationResult {
   attacker: SpyMissionUser;
+
   defender: SpyMissionUser;
+
   spiesSent: number;
+
   spiesLost: number;
+
   success: boolean;
+
   fortDmg: number;
 
   constructor(

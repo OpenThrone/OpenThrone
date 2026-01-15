@@ -8,7 +8,7 @@ import {
 installMockPrisma(vi);
 
 // stats.ts is default export
-const handler = require('../stats.ts').default;
+const handler = require('../stats').default;
 
 describe('API stats', () => {
   beforeEach(() => {

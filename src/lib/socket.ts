@@ -1376,7 +1376,7 @@ const handleGetAttackLogs = async (
   }
 };
 
-const handleGetRecentAttacks = async (socket: Socket, userId: number) => {
+const handleGetRecentAttacks = async (socket: Socket, _userId: number) => {
   try {
     const result = await BattleService.getRecentAttacks({ timeWindow: 7 });
     socket.emit('getRecentAttacksSuccess', serializeData(result));
@@ -2051,7 +2051,7 @@ const handleListAllSocial = async (socket: Socket, userId: number) => {
 const handleStartRecruitSession = async (
   socket: Socket,
   userId: number,
-  data: { ipAddress?: string },
+  _data: { ipAddress?: string },
 ) => {
   try {
     const result = await createSession(userId);
@@ -2207,7 +2207,7 @@ const handleGetRecruitHistory = async (socket: Socket, userId: number) => {
   }
 };
 
-const handleAutoRecruit = async (socket: Socket, userId: number) => {
+const handleAutoRecruit = async (socket: Socket, _userId: number) => {
   try {
     const randomUser = await getRandomAutoRecruitUser();
 
@@ -2714,7 +2714,7 @@ const handleCheckDisplayName = async (
   }
 };
 
-const handleGetOnlinePlayers = async (socket: Socket, userId: number) => {
+const handleGetOnlinePlayers = async (socket: Socket, _userId: number) => {
   try {
     // This function doesn't exist in GeneralService, so I'll implement it directly
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
@@ -2762,7 +2762,7 @@ const handleGetOnlinePlayers = async (socket: Socket, userId: number) => {
   }
 };
 
-const handleCompareTop = async (socket: Socket, userId: number) => {
+const handleCompareTop = async (socket: Socket, _userId: number) => {
   try {
     // This function doesn't exist in GeneralService, so I'll implement it directly
     const topPlayers = await prisma.users.findMany({
@@ -2788,7 +2788,7 @@ const handleCompareTop = async (socket: Socket, userId: number) => {
   }
 };
 
-const handleResetGame = async (socket: Socket, userId: number) => {
+const handleResetGame = async (socket: Socket, _userId: number) => {
   try {
     // This function doesn't exist in GeneralService, so I'll implement it directly
     // Reset game functionality - this is a complex operation that would need careful implementation
@@ -2984,7 +2984,7 @@ const handleGrantPermission = async (
   }
 };
 
-const handleStartEra = async (socket: Socket, userId: number) => {
+const handleStartEra = async (socket: Socket, _userId: number) => {
   try {
     const result = await startNewEra();
     socket.emit('startEraSuccess', serializeData(result));
@@ -2996,7 +2996,7 @@ const handleStartEra = async (socket: Socket, userId: number) => {
   }
 };
 
-const handleGetConstants = async (socket: Socket, userId: number) => {
+const handleGetConstants = async (socket: Socket, _userId: number) => {
   try {
     // Import constants from their respective files
     const { UnitTypes } = await import('@/constants/Units');
@@ -3026,7 +3026,7 @@ const handleGetConstants = async (socket: Socket, userId: number) => {
   }
 };
 
-const handleGetRankBreakdown = async (socket: Socket, userId: number) => {
+const handleGetRankBreakdown = async (socket: Socket, _userId: number) => {
   try {
     const { calculateOverallRank } = await import('@/utils/utilities');
 
@@ -3043,16 +3043,6 @@ const handleGetRankBreakdown = async (socket: Socket, userId: number) => {
     });
 
     const userRanks = allUsers.map((user) => {
-      const userModel = new UserModel(
-        user,
-        user.UserUnit,
-        user.UserItem,
-        user.UserStructureUpgrade,
-        user.UserBattleUpgrade,
-        user.UserBonusPoints,
-        user.permissions.map((p) => ({ type: p })),
-        user.stats,
-      );
       const rankScore = calculateOverallRank(user);
 
       return {
@@ -3082,7 +3072,7 @@ const handleGetRankBreakdown = async (socket: Socket, userId: number) => {
 const handleDailyCron = async (
   socket: Socket,
   userId: number,
-  data: { authToken: string },
+  _data: { authToken: string },
 ) => {
   try {
     // Verify admin authorization
@@ -3111,7 +3101,7 @@ const handleDailyCron = async (
 const handleTurnsCron = async (
   socket: Socket,
   userId: number,
-  data: { authToken: string },
+  _data: { authToken: string },
 ) => {
   try {
     // Verify admin authorization
@@ -3140,7 +3130,7 @@ const handleTurnsCron = async (
 const handleAccountStatusCron = async (
   socket: Socket,
   userId: number,
-  data: { authToken: string },
+  _data: { authToken: string },
 ) => {
   try {
     // Verify admin authorization

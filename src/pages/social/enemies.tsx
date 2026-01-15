@@ -6,7 +6,7 @@ import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
 
-const Enemies = (props) => {
+const Enemies = () => {
   const { t } = useTranslation('social');
   const [enemies, setEnemies] = useState([]);
   const [loading, setLoading] = useState(true);

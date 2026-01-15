@@ -88,7 +88,7 @@ const Stats = ({
   );
 };
 
-export const getStaticProps = async (context: any) => {
+export const getStaticProps = async (_context: any) => {
   try {
     const totalWealth = (await getTopWealth()).map((entry) => ({
       ...entry,

@@ -143,7 +143,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   });
 
   // Combine both scores into the desired format
-  const combinedUsers = users.map((user, index) => {
+  const combinedUsers = users.map((user) => {
     const oldUserScore = usersWithOldScores.find((u) => u.id === user.id);
     const newUserScore = usersWithNewScores.find((u) => u.id === user.id);
 

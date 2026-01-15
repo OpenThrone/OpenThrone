@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Define log levels (higher number means more verbose)
 const LogLevel = {
   ERROR: 0,
@@ -48,7 +49,7 @@ const formatMessage = (
         if (typeof param === 'object' && param !== null) {
           try {
             return JSON.stringify(param);
-          } catch (e) {
+          } catch {
             return '[Unserializable Object]';
           }
         }

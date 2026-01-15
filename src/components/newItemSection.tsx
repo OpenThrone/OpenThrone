@@ -10,7 +10,7 @@ import { GameCard } from './game/GameCard';
 import { StyledTable } from './game/StyledTable';
 
 const NewItemSection: React.FC<any> = React.memo(
-  ({ heading, items, itemCosts, setItemCosts, units }) => {
+  ({ heading, items, itemCosts, setItemCosts, units: _units }) => {
     const { user, forceUpdate } = useUser();
     const [currentItems, setCurrentItems] = useState<UnitProps[]>(items);
 

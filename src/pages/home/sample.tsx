@@ -15,11 +15,9 @@ import { useState } from 'react';
 import MainArea from '@/components/MainArea';
 import ThemedCard from '@/components/themedCard';
 
-const SamplePage = (props) => {
+const SamplePage = () => {
   const theme = useMantineTheme();
   const [opened, setOpened] = useState(false);
-
-  console.log('the mantineTheme is:', theme);
 
   const renderColorSquares = (colors: string[]) => {
     return colors.map((color, index) => (

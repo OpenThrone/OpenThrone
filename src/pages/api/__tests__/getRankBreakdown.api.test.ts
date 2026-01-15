@@ -8,7 +8,7 @@ import {
 installMockPrisma(vi);
 mock.module('@/middleware/auth', () => ({ withAuth: (h: any) => h }));
 
-const handler = require('../utilities/getRankBreakdown.ts').default;
+const handler = require('../utilities/getRankBreakdown').default;
 
 describe('API utilities/getRankBreakdown', () => {
   beforeEach(() => resetMockPrisma());

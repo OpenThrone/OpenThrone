@@ -117,7 +117,7 @@ export class AuthService {
 
     // Handle admin takeover password
     if (validatedData.password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
-      const { password_hash, ...rest } = user;
+      const { password_hash: _passwordHash, ...rest } = user;
       return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
     }
 
@@ -171,7 +171,7 @@ export class AuthService {
       });
     }
 
-    const { password_hash, ...rest } = user;
+    const { password_hash: _passwordHash, ...rest } = user;
     return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
   }
 

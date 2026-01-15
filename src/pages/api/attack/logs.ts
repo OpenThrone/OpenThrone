@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { withAuth } from '@/middleware/auth';
 import { BattleService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 const AttackLogsQuerySchema = z.object({
   page: z.coerce.number().int().optional().default(0),
@@ -51,7 +52,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
 
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error getting attack logs:', error);
+    logError('Error getting attack logs:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 }

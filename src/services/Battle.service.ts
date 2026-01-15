@@ -6,7 +6,7 @@ import { BattleUser } from '@/models/BattleUser';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
 import { simulateBattle } from '@/utils/attackFunctions';
-import { logDebug, logError } from '@/utils/logger';
+import { logDebug, logError, logWarn } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 
 import { AttackService } from './AttackService';
@@ -716,7 +716,7 @@ export class BattleService {
     data: AttackLogACLData,
   ): Promise<AttackLogACLResult> {
     const validatedData = AttackLogACLSchema.parse(data);
-    const { userId, roomId, participantIds } = validatedData;
+    const { userId, roomId, participantIds: _participantIds } = validatedData;
 
     try {
       // Verify the attack log exists and the current user has access to it
@@ -822,7 +822,7 @@ export class BattleService {
               e instanceof prisma.PrismaClientKnownRequestError &&
               e.code === 'P2002'
             ) {
-              console.log(
+              logWarn(
                 `Skipping duplicate ACL entry for user ${entry.shared_with_user_id}`,
               );
               skippedAcls.push(entry.shared_with_user_id);

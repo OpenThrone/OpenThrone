@@ -6,6 +6,7 @@ import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/jsonHelpers';
+import { logError } from '@/utils/logger';
 
 const ResponseSchema = z.object({
   action: z.enum(['accept', 'decline']),
@@ -52,7 +53,7 @@ const respondHandler = async (
 
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
-    console.error('Error responding to gold request:', error);
+    logError('Error responding to gold request:', error);
     return res.status(400).json({ error: error.message });
   }
 };

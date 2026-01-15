@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { CronJobService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const accountStatusCron = async (req: NextApiRequest, res: NextApiResponse) => {
   // if (process.env.DO_TURN_UPDATES === 'true' && req.headers['authorization'] === process.env.TASK_SECRET) {
@@ -16,7 +17,7 @@ const accountStatusCron = async (req: NextApiRequest, res: NextApiResponse) => {
     }
     return res.status(500).json({ message: 'Account status cron job failed.' });
   } catch (error) {
-    console.error('Error executing account status cron job:', error);
+    logError('Error executing account status cron job:', error);
     return res.status(500).json({
       message: 'Internal server error during account status cron job.',
     });

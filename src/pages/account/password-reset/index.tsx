@@ -9,7 +9,7 @@ import { logError } from '@/utils/logger';
 
 import classes from './floatinginput.module.css';
 
-const Index = (props) => {
+const Index = () => {
   const { t } = useTranslation('account');
   const [email, setEmail] = useState('');
   const [focused, setFocused] = useState(false);

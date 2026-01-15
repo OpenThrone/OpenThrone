@@ -48,7 +48,6 @@ const depositHandler = async (
     where: { id: Number(session.user.id) },
   });
 
-  console.log('User:', user);
   const uModel = new UserModel(user);
 
   if (uModel.maximumBankDeposits - history.length <= 0) {

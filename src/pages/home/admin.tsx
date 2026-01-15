@@ -21,7 +21,7 @@ interface UserSummary {
   permissions?: string[];
 }
 
-const Admin = (props) => {
+const Admin = () => {
   const { t } = useTranslation('home');
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +47,7 @@ const Admin = (props) => {
         const data = await response.json();
         setUsers(data.users || []);
         setTotalPages(Math.ceil((data.total || 0) / 10));
-      } catch (error) {
+      } catch {
         setUsers([]);
       } finally {
         setIsLoading(false);

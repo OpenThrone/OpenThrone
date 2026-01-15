@@ -10,9 +10,11 @@ import { BaseUser, type BaseUserRelations } from './BaseUser';
 
 export class SpyUser extends BaseUser {
   private statsService: UserStatsService;
+
   private unitsService: UserUnitsService;
 
   public spy: number;
+
   public sentry: number;
 
   constructor(userData?: PrismaUser | null, relations: BaseUserRelations = {}) {
@@ -97,9 +99,13 @@ export class SpyUser extends BaseUser {
 
 export class SpyUserModel {
   units: PlayerUnit[] | null;
+
   items: Item[] | null;
+
   fort_level: number | null;
+
   fort_hitpoints: number | null;
+
   goldInBank: bigint | null;
 
   constructor(

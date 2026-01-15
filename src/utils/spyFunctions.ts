@@ -51,8 +51,7 @@ export function simulateIntel(
       defender: defender.fortLevel,
     };
   }
-  const { fortHitpoints } = defender;
-  console.debug('simulateIntel debug', {
+  logDebug('simulateIntel debug', {
     attackerSpy: attacker.spy,
     defenderSentry: defender.sentry,
   });
@@ -233,7 +232,7 @@ export const simulateAssassination = (
   // Step 3: Proceed to attack target units
   limiter = spiesRemaining / (attacker.unitTotals.assassins || 1);
 
-  const { spyStrength: attackerKS2, sentryStrength: attackerDS2 } =
+  const { spyStrength: attackerKS2, sentryStrength: _attackerDS2 } =
     calculateClandestineStrength(attacker, 'SPY', limiter);
 
   let targetDefenseStats;
@@ -616,13 +615,13 @@ function calculateAverageStrength(Units, targetType) {
 }
 
 export function computeSpyCasualties({
-  attackerKS,
-  defenderDS,
-  defenderKS,
-  attackerDS,
-  attackerPop,
-  defenderPop,
-  multiplier = 1,
+  attackerKS: _attackerKS,
+  defenderDS: _defenderDS,
+  defenderKS: _defenderKS,
+  attackerDS: _attackerDS,
+  attackerPop: _attackerPop,
+  defenderPop: _defenderPop,
+  multiplier: _multiplier = 1,
   attackerUnits,
   defenderUnits,
   spiesSent = 1,
@@ -638,15 +637,10 @@ export function computeSpyCasualties({
   defenderUnits: PlayerUnit[];
   spiesSent?: number;
 }): { attackerCasualties: number; defenderCasualties: number } {
-  // Calculate ratios
-  const offenseToDefenseRatio = attackerKS / (defenderDS || 1);
-  const defenseToOffenseRatio = defenderKS / (attackerDS || 1);
-
-  const attackerDiff = (attackerKS - defenderDS) / attackerPop;
-  const defenderDiff = (defenderKS - attackerDS) / defenderPop;
-
-  const { averageKilling: attackerAvgKS, averageDefense: attackerAvgDS } =
-    calculateAverageStrength(attackerUnits, 'SPY');
+  const { averageKilling: attackerAvgKS } = calculateAverageStrength(
+    attackerUnits,
+    'SPY',
+  );
 
   const { averageDefense: defenderAvgDS } = calculateAverageStrength(
     defenderUnits,

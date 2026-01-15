@@ -1,7 +1,6 @@
 import { Badge, Button, Table } from '@mantine/core';
 
 import { EconomyUpgrades, Fortifications } from '@/constants';
-import { useUser } from '@/context/users';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import toLocale from '@/utils/numberFormatting';
@@ -13,8 +12,6 @@ const EconomyTab: React.FC<BattleUpgradeProps> = ({
   forceUpdate,
   fortLevel,
 }) => {
-  const { user } = useUser();
-
   const rows = Object.values(EconomyUpgrades)
     .filter((item) => item.index <= userLevel + 2)
     .map((item, index) => (

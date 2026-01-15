@@ -673,13 +673,11 @@ export class MessagingService {
       }
 
       const updateData: any = {};
-      let action = '';
 
       switch (validatedData.action) {
         case 'promote':
           if (targetParticipant?.role === ChatRole.MEMBER) {
             updateData.role = ChatRole.ADMIN;
-            action = 'promoted';
           } else {
             throw new Error('User is already an admin or action is invalid.');
           }
@@ -687,7 +685,6 @@ export class MessagingService {
         case 'demote':
           if (targetParticipant?.role === ChatRole.ADMIN) {
             updateData.role = ChatRole.MEMBER;
-            action = 'demoted';
           } else {
             throw new Error('User is already a member or action is invalid.');
           }
@@ -697,7 +694,6 @@ export class MessagingService {
             throw new Error('Invalid value for canWrite permission.');
           }
           updateData.canWrite = validatedData.canWrite;
-          action = 'permissions updated';
           break;
         default:
           throw new Error('Invalid action specified.');

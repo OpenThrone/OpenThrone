@@ -9,6 +9,7 @@ import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/jsonHelpers';
+import { logError } from '@/utils/logger';
 
 const TransferSchema = z.object({
   amount: z.string().transform((val) => BigInt(val)),
@@ -74,7 +75,7 @@ const transferHandler = async (
 
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
-    console.error('Error transferring gold:', error);
+    logError('Error transferring gold:', error);
     return res.status(400).json({ error: error.message });
   }
 };

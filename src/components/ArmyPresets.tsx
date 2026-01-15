@@ -15,7 +15,7 @@ import type {
 import { userModelToUser } from '@/utils/utilities';
 
 // Conversion function: Form Fields -> User
-const formFieldsToUser = (formData: any): Partial<User> => {
+const _formFieldsToUser = (formData: any): Partial<User> => {
   if (!formData) return {};
 
   const user: Partial<User> = {
@@ -30,6 +30,14 @@ const formFieldsToUser = (formData: any): Partial<User> => {
     structure_upgrades: [],
     items: [] as PlayerItem[],
   };
+  const units = user.units ?? [];
+  const battleUpgrades = user.battle_upgrades ?? [];
+  const structureUpgrades = user.structure_upgrades ?? [];
+  const items = user.items ?? [];
+  user.units = units;
+  user.battle_upgrades = battleUpgrades;
+  user.structure_upgrades = structureUpgrades;
+  user.items = items;
 
   // Process units from form fields
   const unitTypes = [
@@ -44,7 +52,7 @@ const formFieldsToUser = (formData: any): Partial<User> => {
     for (let level = 1; level <= 3; level++) {
       const fieldName = `${type}${level}`;
       if (formData[fieldName] && formData[fieldName] > 0) {
-        user.units!.push({
+        units.push({
           type: type.toUpperCase() as UnitType,
           level,
           quantity: formData[fieldName],
@@ -59,7 +67,7 @@ const formFieldsToUser = (formData: any): Partial<User> => {
       formData[`offenseUpgrade${level}`] &&
       formData[`offenseUpgrade${level}`] > 0
     ) {
-      user.battle_upgrades!.push({
+      battleUpgrades.push({
         type: 'OFFENSE',
         level,
         quantity: formData[`offenseUpgrade${level}`],
@@ -69,7 +77,7 @@ const formFieldsToUser = (formData: any): Partial<User> => {
       formData[`defenseUpgrade${level}`] &&
       formData[`defenseUpgrade${level}`] > 0
     ) {
-      user.battle_upgrades!.push({
+      battleUpgrades.push({
         type: 'DEFENSE',
         level,
         quantity: formData[`defenseUpgrade${level}`],
@@ -79,7 +87,7 @@ const formFieldsToUser = (formData: any): Partial<User> => {
       formData[`sentryUpgrade${level}`] &&
       formData[`sentryUpgrade${level}`] > 0
     ) {
-      user.battle_upgrades!.push({
+      battleUpgrades.push({
         type: 'SENTRY',
         level,
         quantity: formData[`sentryUpgrade${level}`],
@@ -89,7 +97,7 @@ const formFieldsToUser = (formData: any): Partial<User> => {
 
   // Process structure upgrades from form fields
   if (formData.sentryUpgrade && formData.sentryUpgrade > 0) {
-    user.structure_upgrades!.push({
+    structureUpgrades.push({
       type: 'SENTRY',
       level: formData.sentryUpgrade,
     });
@@ -132,9 +140,6 @@ const userToFormFields = (user: User | Partial<User>): any => {
       const existingQuantity = itemsMap[item.type][item.level] || 0;
       itemsMap[item.type][item.level] = existingQuantity + item.quantity;
     });
-
-    console.log('Original items:', user.items);
-    console.log('Transformed items map:', itemsMap);
   }
 
   // Set the items in formData - THIS IS THE KEY LINE
@@ -656,9 +661,6 @@ const ArmyPresets: React.FC<ArmyPresetsProps> = ({ onSelect }) => {
   // Debug function to check what's being passed to onSelect
   const handlePresetSelect = (presetData: any) => {
     const formFields = userToFormFields(presetData);
-    console.log('Selected preset data:', presetData);
-    console.log('Converted form fields:', formFields);
-    console.log('Items in form fields:', formFields.items);
     onSelect(formFields);
   };
 

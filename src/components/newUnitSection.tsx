@@ -77,13 +77,11 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
 }) => {
   const { user, forceUpdate } = useUser();
   const theme = useMantineTheme();
-  const [currentUnits, setCurrentUnits] = useState(units);
   const [conversionAmount, setConversionAmount] = useState<number>(0);
   const [fromUnitId, setFromUnitId] = useState<string | null>(null);
   const [toUnitId, setToUnitId] = useState<string | null>(null);
   const [conversionCost, setConversionCost] = useState(0);
   const [toLower, setToLower] = useState(false);
-  const [highestUnlockedLevel, setHighestUnlockedLevel] = useState(0);
   const [collapsedItems, setCollapsedItems] = useState<Record<string, boolean>>(
     {},
   );
@@ -94,10 +92,6 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
   const [isProcessingTrain, setIsProcessingTrain] = useState(false); // Loading state for train
   const [isProcessingUntrain, setIsProcessingUntrain] = useState(false); // Loading state for untrain
   const [isProcessingConvert, setIsProcessingConvert] = useState(false); // Loading state for convert
-
-  useEffect(() => {
-    setCurrentUnits(units);
-  }, [units]);
 
   // Effect to calculate conversion cost
   useEffect(() => {

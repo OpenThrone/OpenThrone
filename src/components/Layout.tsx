@@ -95,17 +95,6 @@ const Layout = (props: IMainProps) => {
     }
   }, [status]);
 
-  const handleSkipToContent = () => {
-    const mainContent = document.getElementById('main-content');
-    mainContent?.focus();
-  };
-  const handleSkipKeyDown = (event: React.KeyboardEvent<HTMLAnchorElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleSkipToContent();
-    }
-  };
-
   return (
     <div
       className="flex min-h-screen flex-col"
@@ -138,7 +127,7 @@ const Layout = (props: IMainProps) => {
                 authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
               } pb-10 pt-2`}
             >
-              <h1 className="title text-title text-center text-4xl font-medium sm:text-5xl md:text-6xl">
+              <h1 className="title text-center text-4xl font-medium sm:text-5xl md:text-6xl">
                 <center>
                   <Image
                     src={`${getAssetPath('OpenThrone')}`}
@@ -223,7 +212,7 @@ const Layout = (props: IMainProps) => {
         </div>
       </div>{' '}
       {/* Closing div for the w-full grow div */}
-      <footer className="text-ot-text shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm">
+      <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-[var(--ot-text)]">
         {t('app.copyright', {
           year: new Date().getFullYear(),
           title: AppConfig.title,

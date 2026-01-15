@@ -140,20 +140,6 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
     });
   }
 
-  const handleParentClick = (event: React.MouseEvent, link: string) => {
-    event.preventDefault();
-    if (link === activeParentLink) {
-      setActiveParentLink('');
-      setActiveSubMenu([]);
-    } else {
-      setActiveParentLink(link);
-      setActiveSubMenu(subMenus[link as keyof typeof subMenus] || []);
-    }
-
-    // Close mobile menu
-    // setMobileMenuOpen(false);
-  };
-
   useEffect(() => {
     let currentPath = pathName?.split('/')[1]; // Extract the base path
     let secondPath = pathName?.split('/')[2];
@@ -219,7 +205,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       if (!response.ok) return;
       const data = await response.json();
       setSocialNotificationCount(Number(data.count) || 0);
-    } catch (error) {
+    } catch {
       // keep existing count on failure
     }
   }, []);

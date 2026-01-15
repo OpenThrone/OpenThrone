@@ -13,7 +13,6 @@ export function encodeBattleData(
   try {
     const payload = { attacker, defender, turns };
     const json = JSON.stringify(payload);
-    console.log('json', json);
     return LZString.compressToEncodedURIComponent(json);
   } catch (err) {
     logError('Encoding failed:', err);

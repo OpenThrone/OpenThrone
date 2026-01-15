@@ -35,8 +35,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   canWrite,
 }) => {
   const [newMessage, setNewMessage] = useState('');
-  const { user, markRoomAsRead } = useUser();
-  const currentUserId = user?.id;
+  const { markRoomAsRead } = useUser();
 
   const handleSendMessage = useCallback(
     (content: string) => {

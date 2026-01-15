@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { withAuth } from '@/middleware/auth';
 import { ArmoryService } from '@/services';
 import { getRequestIp, logAction } from '@/utils/auditLogger';
+import { logError } from '@/utils/logger';
 
 const DismissMercenarySchema = z.object({
   unitType: z.enum(['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY']),
@@ -46,7 +47,7 @@ const handler = async (req, res) => {
           .status(400)
           .json({ error: 'Invalid input', details: error.format() });
       }
-      console.error(error);
+      logError(error);
       return res
         .status(500)
         .json({ status: 'failed', message: 'Internal server error' });

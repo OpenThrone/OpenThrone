@@ -12,11 +12,15 @@ export class BattleUser extends BaseUser {
   private statsService: UserStatsService;
 
   public offense: number;
+
   public defense: number;
+
   public spy: number;
+
   public sentry: number;
 
   private readonly allUnits: UserUnit[];
+
   private readonly allMercenaries: UserUnit[];
 
   constructor(userData?: PrismaUser | null, relations: BaseUserRelations = {}) {

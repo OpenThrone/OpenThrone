@@ -29,7 +29,7 @@ export const safeStringify = (obj: any): string => {
   try {
     const preprocessed = stringifyObj(obj);
     return JSON.stringify(preprocessed, bigIntReplacer);
-  } catch (e) {
+  } catch {
     // If something unexpected happens, fall back to direct JSON.stringify with replacer.
     return JSON.stringify(obj, bigIntReplacer);
   }
@@ -94,7 +94,7 @@ export const parseBigInt = (v: any): bigint | null => {
       : cleaned;
     try {
       return BigInt(withoutSuffix);
-    } catch (e) {
+    } catch {
       return null;
     }
   }

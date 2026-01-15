@@ -147,7 +147,6 @@ const historyHandler = async (
         string_contains: '_upgrade',
       },
     });
-    console.log(transactionConditions);
   }
 
   if (training === 'true') {

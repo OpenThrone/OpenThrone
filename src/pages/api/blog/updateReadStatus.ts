@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { BlogService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const UpdateReadStatusSchema = z.object({
   postId: z.number().int(),
@@ -42,7 +43,7 @@ const updateReadStatus = async (req: NextApiRequest, res: NextApiResponse) => {
       res.status(400).json({ error: result.message });
     }
   } catch (error) {
-    console.log(error);
+    logError(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

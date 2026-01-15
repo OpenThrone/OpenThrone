@@ -46,7 +46,6 @@ export function GoldTransferModal({
     handleSubmit,
     formState: { errors },
     watch,
-    setValue,
   } = useForm({
     resolver: zodResolver(GoldTransferSchema),
     defaultValues: {

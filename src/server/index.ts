@@ -1,7 +1,9 @@
-import next from 'next';
 import { createServer } from 'http';
-import { initializeSocket } from '@/lib/socket';
 import { isIP } from 'net';
+import next from 'next';
+
+import { initializeSocket } from '@/lib/socket';
+import { logInfo } from '@/utils/logger';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = process.env.HOSTNAME || 'localhost';
@@ -31,9 +33,9 @@ const handle = app.getRequestHandler();
   // Conditionally log the hostname with or without the port
   httpServer.listen(port, () => {
     if (hostname === 'localhost' || isIP(hostname)) {
-      console.log(`> Server ready on http://${hostname}:${port}`);
+      logInfo(`> Server ready on http://${hostname}:${port}`);
     } else {
-      console.log(`> Server ready on https://${hostname}`);
+      logInfo(`> Server ready on https://${hostname}`);
     }
   });
 })();

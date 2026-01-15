@@ -149,7 +149,7 @@ const Users = ({
             ),
           );
         }
-      } catch (e) {
+      } catch {
         // non-fatal: advanced filters will just treat everyone as "other"
       }
     };
@@ -191,7 +191,7 @@ const Users = ({
             .filter((id: any) => Number.isFinite(id)),
         ),
       );
-    } catch (e) {
+    } catch {
       setMetaError(t('users.unableToLoadMetadata'));
     }
   }, [user, recentDays]);
@@ -213,7 +213,7 @@ const Users = ({
             .map((a: any) => ({ value: String(a.id), label: a.name }))
             .filter((o: any) => o.value && o.label),
         );
-      } catch (e) {
+      } catch {
         // non-fatal
       }
     };
@@ -1037,7 +1037,7 @@ const Users = ({
   );
 };
 
-export const getServerSideProps = async (context: any) => {
+export const getServerSideProps = async (_context: any) => {
   try {
     const allUsers = await prisma.users.findMany({
       where: {

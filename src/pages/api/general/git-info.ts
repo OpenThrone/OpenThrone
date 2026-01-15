@@ -24,7 +24,7 @@ export default function handler(req, res) {
 
     // Send the git information as a response
     res.status(200).json({ latestCommit, latestCommitMessage, pendingChanges });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Failed to retrieve git information' });
   }
 }

@@ -7,7 +7,7 @@ import { AttackSchema, IdQuerySchema } from '@/lib/validation';
 import { withAuth } from '@/middleware/auth';
 import { BattleService } from '@/services';
 import { getRequestIp, logAction } from '@/utils/auditLogger';
-import { logDebug } from '@/utils/logger';
+import { logDebug, logError } from '@/utils/logger';
 
 const handler = async (req, res: NextApiResponse) => {
   const { session } = req;
@@ -56,7 +56,7 @@ const handler = async (req, res: NextApiResponse) => {
           .status(400)
           .json({ error: 'Invalid input', details: error.format() });
       }
-      console.error('Attack API error:', error);
+      logError('Attack API error:', error);
       return res.status(500).json({
         status: 'failed',
         message: 'Internal server error',

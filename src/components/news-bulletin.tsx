@@ -20,7 +20,7 @@ const NewsBulletin: React.FC = () => {
         setVisible(false);
         setDismissed(true);
       }
-    } catch (e) {
+    } catch {
       // ignore storage errors
     }
   }, []);
@@ -35,7 +35,7 @@ const NewsBulletin: React.FC = () => {
     try {
       if (typeof window !== 'undefined')
         localStorage.setItem(STORAGE_KEY, 'true');
-    } catch (e) {
+    } catch {
       // ignore
     }
     setVisible(false);

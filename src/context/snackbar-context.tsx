@@ -347,7 +347,15 @@ const SnackbarContainer = ({
       <AnimatePresence>
         {snacks.map(
           (
-            { id, message, description, type, icon, dismissable, action },
+            {
+              id,
+              message,
+              description,
+              type,
+              icon: _icon,
+              dismissable,
+              action,
+            },
             index,
           ) => {
             const styles = getSnackStyles(type);

@@ -9,7 +9,7 @@ import SessionModal from '@/components/SessionModal';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { UserApiResponse } from '@/types/typings';
-import { logError } from '@/utils/logger';
+import { logError, logInfo } from '@/utils/logger';
 
 import Recruiter from '../components/recruiter';
 
@@ -18,7 +18,7 @@ import Recruiter from '../components/recruiter';
  * Allows users to start, pause, resume, and stop automated recruitment sessions.
  * Fetches random users, handles recruitment attempts, and manages session state.
  */
-export default function AutoRecruiter(props) {
+export default function AutoRecruiter() {
   const { t } = useTranslation('community');
   const [consecutiveSuccesses, setConsecutiveSuccesses] = useState(0);
   const [user, setUser] = useState<Partial<UserApiResponse> | null>(null);
@@ -26,7 +26,6 @@ export default function AutoRecruiter(props) {
   const [isRecruiting, setIsRecruiting] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [lastSuccess, setLastSuccess] = useState(false);
   const [totalLeft, setTotalLeft] = useState(0);
   const { forceUpdate, user: viewer } = useUser();
   const [sessionId, setSessionId] = useState<number | null>(null);
@@ -41,8 +40,6 @@ export default function AutoRecruiter(props) {
   const [isResumingSession, setIsResumingSession] = useState(false);
   const [isCountdown, setIsCountdown] = useState(false);
   const [recruitStatus, setRecruitStatus] = useState('');
-  const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
-  const [enemyIds, setEnemyIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -116,7 +113,7 @@ export default function AutoRecruiter(props) {
       if (!sessionIdRef.current)
         logError('No session ID for fetchRandomUser', sessionIdRef.current);
       if (isPausedRef.current)
-        console.log('Recruiting is paused. Aborting fetchRandomUser.');
+        logInfo('Recruiting is paused. Aborting fetchRandomUser.');
       return;
     }
     setIsFetchingUser(true);

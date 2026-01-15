@@ -68,14 +68,14 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         .json({ status: 'User already has that permission' });
     }
 
-    const permissionGrant = await prisma.PermissionGrant.create({
+    await prisma.PermissionGrant.create({
       data: {
         user_id: currentUser.id,
         type: permission,
       },
     });
 
-    const newUser = await prisma.users.findUnique({
+    await prisma.users.findUnique({
       where: { id: currentUser.id },
     });
     return res.status(200).json({ status: 'Successfully granted permission' });

@@ -7,12 +7,9 @@ import {
   Table,
   Text,
 } from '@mantine/core';
-import type { AccountStatus } from '@prisma/client'; // Import AccountStatus
-import type { JsonValue } from '@prisma/client/runtime/library'; // Import JsonValue
 import type { InferGetServerSidePropsType } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { MDXRemoteSerializeResult } from 'next-mdx-remote';
 import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -35,71 +32,12 @@ import { logDebug, logError } from '@/utils/logger';
 import toLocale from '@/utils/numberFormatting';
 import { serializeDates } from '@/utils/utilities';
 
-interface UserProfileServerData {
-  id: number;
-  email: string;
-  display_name: string;
-  race: string;
-  class: string;
-  units: JsonValue | null;
-  experience: number;
-  gold: string;
-  gold_in_bank: string;
-  fort_level: number;
-  fort_hitpoints: number;
-  attack_turns: number;
-  last_active: string | null;
-  rank: number;
-  items: JsonValue | null;
-  house_level: number;
-  battle_upgrades: JsonValue | null;
-  structure_upgrades: JsonValue | null;
-  bonus_points: JsonValue | null;
-  bio: string;
-  colorScheme: string | null;
-  recruit_link: string;
-  locale: string;
-  economy_level: number;
-  avatar: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  stats: JsonValue | null;
-  killing_str: number | null;
-  defense_str: number | null;
-  spying_str: number | null;
-  sentry_str: number | null;
-  offense: number | null;
-  defense: number | null;
-  spy: number | null;
-  sentry: number | null;
-  bionew: MDXRemoteSerializeResult<
-    Record<string, unknown>,
-    Record<string, unknown>
-  >;
-  status: AccountStatus | string;
-  currentEra?: any;
-  latestUserEra?: any;
-  twoFactorSecret?: string;
-  mercenaries?: JsonValue;
-
-  // Additional optional properties that may be present from various DB queries or mocks
-  userEras?: any;
-  currentEraId?: number | null;
-  achievements?: JsonValue | null;
-}
-
-interface IndexProps {
-  users: UserProfileServerData; // Use the new interface
-}
-
-// The component receives props matching IndexProps (which uses UserProfileServerData)
 const Index = ({
   users,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [hideSidebar, setHideSidebar] = useState(true);
   const { user, forceUpdate } = useUser();
   const [isPlayer, setIsPlayer] = useState(false);
-  const [isAPlayer, setIsAPlayer] = useState(false);
 
   const [profile, setUser] = useState<UserModel>(
     () => new UserModel(users, true, false),
@@ -110,7 +48,6 @@ const Index = ({
   const [lastActive, setLastActive] = useState('Never logged in');
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [composeModalOpen, setComposeModalOpen] = useState(false);
   const [userStatus, setUserStatus] = useState('OFFLINE');
   const [socialEnabled, setSocialEnabled] = useState(false);
   // State to control the Spy Missions Modal
@@ -130,14 +67,12 @@ const Index = ({
 
   // Confirmation modal states
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState(null);
 
   // Feature flags
   const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
 
   useEffect(() => {
     if (user) {
-      setIsAPlayer(true);
       setHideSidebar(false);
     }
   }, [user]);
@@ -150,7 +85,7 @@ const Index = ({
     fetch(`/api/social/listAll?type=FRIEND&limit=5&playerId=${profile.id}`)
       .then((response) => response.json())
       .then((data) => {
-        console.log('Friends data:', data);
+        logDebug('Friends data:', data);
         setFriends(data);
         setLoading(false);
       });
@@ -168,7 +103,7 @@ const Index = ({
         setFriendRelationship(data.relationship);
       }
     } catch (error) {
-      console.error('Error fetching friend relationship:', error);
+      logError('Error fetching friend relationship:', error);
     } finally {
       setIsFriendLoading(false);
     }
@@ -195,7 +130,7 @@ const Index = ({
         }
       }
     } catch (error) {
-      console.error('Error fetching enemy relationship:', error);
+      logError('Error fetching enemy relationship:', error);
     } finally {
       setIsEnemyLoading(false);
     }
@@ -349,7 +284,7 @@ const Index = ({
         const error = await res.json();
         alertService.error(error.error || 'Failed to add friend');
       }
-    } catch (error) {
+    } catch {
       alertService.error('Failed to add friend');
     } finally {
       setIsFriendLoading(false);
@@ -378,7 +313,7 @@ const Index = ({
         const error = await res.json();
         alertService.error(error.error || 'Failed to cancel friend request');
       }
-    } catch (error) {
+    } catch {
       alertService.error('Failed to cancel friend request');
     } finally {
       setIsFriendLoading(false);
@@ -388,7 +323,6 @@ const Index = ({
   const handleRemoveFriend = async () => {
     if (isFriendLoading) return;
 
-    setPendingAction('remove');
     setShowConfirmationModal(true);
   };
 
@@ -414,7 +348,7 @@ const Index = ({
         const error = await res.json();
         alertService.error(error.error || 'Failed to remove friend');
       }
-    } catch (error) {
+    } catch {
       alertService.error('Failed to remove friend');
     } finally {
       setIsFriendLoading(false);
@@ -664,7 +598,7 @@ const Index = ({
                                       'Failed to accept friend request',
                                   );
                                 }
-                              } catch (error) {
+                              } catch {
                                 alertService.error(
                                   'Failed to accept friend request',
                                 );
@@ -734,7 +668,7 @@ const Index = ({
                                       'Failed to decline friend request',
                                   );
                                 }
-                              } catch (error) {
+                              } catch {
                                 alertService.error(
                                   'Failed to decline friend request',
                                 );
@@ -875,7 +809,7 @@ const Index = ({
                               `Failed to ${enemyRelationship ? 'remove enemy' : 'declare enemy'}`,
                           );
                         }
-                      } catch (error) {
+                      } catch {
                         alertService.error(
                           `Failed to ${enemyRelationship ? 'remove enemy' : 'declare enemy'}`,
                         );
@@ -1064,7 +998,11 @@ export const getServerSideProps = async ({ query }) => {
 
   const { getUpdatedStatus } = await import('@/services/User.service');
 
-  const { password_hash, email, ...userWithoutPassword } = user;
+  const {
+    password_hash: _passwordHash,
+    email: _email,
+    ...userWithoutPassword
+  } = user;
 
   // Safely serialize dates coming from the database. Some callers (or mocks) may supply
   // non-Date values, so validate before calling toISOString().

@@ -13,7 +13,7 @@ export const toLocale = (num: number | string | bigint, locale?: Locales) => {
       if (parsedBigInt <= BigInt(Number.MAX_SAFE_INTEGER)) {
         return Number(parsedBigInt).toLocaleString(locale || undefined);
       }
-    } catch (e) {
+    } catch {
       // Not a valid BigInt, attempt Number parsing
     }
 
@@ -29,7 +29,7 @@ export const toLocale = (num: number | string | bigint, locale?: Locales) => {
   return '0';
 };
 
-const fromLocale = (str: string, locale?: Locales) => {
+const _fromLocale = (str: string, locale?: Locales) => {
   const localeSeparators = {
     'en-US': { decimal: '.', thousands: ',' },
     'es-ES': { decimal: ',', thousands: '.' },
@@ -47,7 +47,7 @@ const fromLocale = (str: string, locale?: Locales) => {
   // Attempt to convert to BigInt or Number
   try {
     return BigInt(cleanedStr);
-  } catch (e) {
+  } catch {
     return parseFloat(cleanedStr);
   }
 };

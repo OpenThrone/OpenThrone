@@ -178,7 +178,7 @@ module.exports = {
     },
   },
   plugins: [
-    plugin(function ({ addUtilities, theme }) {
+    plugin(function textShadowPlugin({ addUtilities, theme }) {
       const textShadows = theme('textShadow', {});
       const textShadowColors = theme('colors', {});
 

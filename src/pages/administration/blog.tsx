@@ -1,3 +1,4 @@
+/* eslint-disable react/no-danger */
 import { Button, Table as MantineTable, Text, Title } from '@mantine/core';
 import { RichTextEditor } from '@mantine/tiptap';
 import { Highlight } from '@tiptap/extension-highlight';
@@ -21,8 +22,9 @@ import { Markdown } from 'tiptap-markdown';
 
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
+import { logDebug } from '@/utils/logger';
 
-const Admin = (props) => {
+const Admin = () => {
   const { t } = useTranslation('admin');
   const [postHTML, setPostHTML] = useState(''); // Add this line to define postHTML state
   const [markdownContent, setMarkdownContent] = useState(
@@ -64,10 +66,10 @@ const Admin = (props) => {
 
   useEffect(() => {
     if (postHTML) {
-      console.log('Post HTML:', postHTML);
+      logDebug('Post HTML:', postHTML);
     }
     if (markdownContent) {
-      console.log('Markdown Content:', markdownContent);
+      logDebug('Markdown Content:', markdownContent);
     }
   });
 
@@ -75,7 +77,7 @@ const Admin = (props) => {
     if (editor) {
       // Get Markdown content when submitting
       const content = editor.storage.markdown.getMarkdown();
-      console.log('Submitted Markdown Content:', content);
+      logDebug('Submitted Markdown Content:', content);
       // You can send this Markdown content to your API or save it in your database
     }
   };
@@ -138,6 +140,7 @@ const Admin = (props) => {
       </GameCard>
 
       <GameCard title={t('blog.livePreview')} mt="md">
+        {/* eslint-disable-next-line react/no-danger */}
         <div
           dangerouslySetInnerHTML={{ __html: postHTML }}
           style={{
@@ -154,15 +157,15 @@ const Admin = (props) => {
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeRaw]}
           components={{
-            h1: ({ node, ...props }) => <Title order={1} {...props} />,
-            h3: ({ node, ...props }) => <Title order={3} {...props} />,
-            h4: ({ node, ...props }) => <Title order={4} {...props} />,
-            p: ({ node, ...props }) => (
+            h1: ({ node: _node, ...props }) => <Title order={1} {...props} />,
+            h3: ({ node: _node, ...props }) => <Title order={3} {...props} />,
+            h4: ({ node: _node, ...props }) => <Title order={4} {...props} />,
+            p: ({ node: _node, ...props }) => (
               <Text component="p" fw="normal" size="lg" mb="xl">
                 {props.children}
               </Text>
             ),
-            table: ({ node, ...props }) => (
+            table: ({ node: _node, ...props }) => (
               <MantineTable
                 striped
                 highlightOnHover
@@ -171,7 +174,7 @@ const Admin = (props) => {
                 {...props}
               />
             ),
-            th: ({ node, ...props }) => (
+            th: ({ node: _node, ...props }) => (
               <MantineTable.Th
                 style={{
                   fontWeight: 'bold',
@@ -181,7 +184,7 @@ const Admin = (props) => {
                 {...props}
               />
             ),
-            td: ({ node, ...props }) => (
+            td: ({ node: _node, ...props }) => (
               <MantineTable.Td style={{ padding: '0.5em' }} {...props} />
             ),
           }}

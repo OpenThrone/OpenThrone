@@ -131,11 +131,11 @@ const ForgetAccountSchema = z.object({
   reason: z.string().optional(),
 });
 
-const VacationStartSchema = z.object({
+const _VacationStartSchema = z.object({
   userId: z.number().int(),
 });
 
-const BonusPointsSchema = z.object({
+const _BonusPointsSchema = z.object({
   changeQueue: z.record(
     z.number().int({ message: 'Change must be an integer.' }),
   ),

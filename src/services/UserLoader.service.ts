@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 
 const UserIdSchema = z.number().int().positive();
-const UserSchema = z.object({
+const _UserSchema = z.object({
   id: z.number().int().positive(),
 });
 

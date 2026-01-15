@@ -90,7 +90,7 @@ export function GoldRequestNotificationModal({
 
       setRequests({ incoming, outgoing });
       setTimeLeft(buildTimeLeft(incoming));
-    } catch (err) {
+    } catch {
       setError('Failed to load requests');
     }
   }, [buildTimeLeft]);
@@ -139,7 +139,7 @@ export function GoldRequestNotificationModal({
       forceUpdate();
       await fetchRequests();
       onRequestComplete();
-    } catch (err) {
+    } catch {
       setError(err instanceof Error ? err.message : 'Response failed');
     } finally {
       setLoading(false);

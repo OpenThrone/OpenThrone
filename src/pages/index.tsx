@@ -28,8 +28,9 @@ import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
 import { useLayout } from '@/context/LayoutContext';
+import { logError, logInfo } from '@/utils/logger';
 
-const Index = (props) => {
+const Index = () => {
   const { setMeta, meta } = useLayout();
   const { status } = useSession();
   const { t } = useTranslation('landing');
@@ -59,7 +60,7 @@ const Index = (props) => {
 
     if (status === 'authenticated') {
       // User is logged in, redirect to dashboard
-      console.log('User authenticated, redirecting to /home/overview');
+      logInfo('User authenticated, redirecting to /home/overview');
       router.replace('/home/overview');
       setIsRedirecting(true);
     } else {
@@ -93,7 +94,7 @@ const Index = (props) => {
           });
         }
       } catch (error) {
-        console.error('Failed to fetch world stats', error);
+        logError('Failed to fetch world stats', error);
       }
     };
     fetchStats();
@@ -113,7 +114,7 @@ const Index = (props) => {
 
   return (
     <MainArea title={t('title')}>
-      <div className="app-bg mx-auto w-full max-w-6xl px-4 py-8">
+      <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <Box
           className="public-rise"
           style={{

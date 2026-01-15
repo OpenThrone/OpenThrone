@@ -1,4 +1,4 @@
-import { Table, Paper, Text, Box } from '@mantine/core';
+import { Box, Paper, Table } from '@mantine/core';
 
 interface PaperTableProps {
   tone?: 'light' | 'themed';
@@ -17,11 +17,13 @@ export function PaperTable({ tone = 'light' }: PaperTableProps) {
   const rows = elements.map((element, index) => (
     <Table.Tr
       key={element.name}
-      style={tone === 'themed'
-        ? {
-            backgroundColor: index % 2 === 0 ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)',
-          }
-        : undefined
+      style={
+        tone === 'themed'
+          ? {
+              backgroundColor:
+                index % 2 === 0 ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.02)',
+            }
+          : undefined
       }
     >
       <Table.Td style={{ color: cellTextColor }}>{element.position}</Table.Td>
@@ -49,21 +51,54 @@ export function PaperTable({ tone = 'light' }: PaperTableProps) {
           // CSS Noise generation
           backgroundImage: paperBg,
           border: `1px solid ${borderColor}`,
-          boxShadow: tone === 'themed' ? '0 12px 28px rgba(0,0,0,0.35)' : undefined,
+          boxShadow:
+            tone === 'themed' ? '0 12px 28px rgba(0,0,0,0.35)' : undefined,
         }}
       >
-        <Table striped highlightOnHover withRowBorders={true}>
+        <Table striped highlightOnHover withRowBorders>
           <Table.Thead
             style={{
               borderBottom: `2px solid ${borderColor}`,
-              backgroundColor: 'transparent'
+              backgroundColor: 'transparent',
             }}
           >
             <Table.Tr>
-              <Table.Th style={{ letterSpacing: '1px', textTransform: 'uppercase', color: headerColor }}>Position</Table.Th>
-              <Table.Th style={{ letterSpacing: '1px', textTransform: 'uppercase', color: headerColor }}>Element</Table.Th>
-              <Table.Th style={{ letterSpacing: '1px', textTransform: 'uppercase', color: headerColor }}>Symbol</Table.Th>
-              <Table.Th style={{ letterSpacing: '1px', textTransform: 'uppercase', color: headerColor }}>Mass</Table.Th>
+              <Table.Th
+                style={{
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  color: headerColor,
+                }}
+              >
+                Position
+              </Table.Th>
+              <Table.Th
+                style={{
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  color: headerColor,
+                }}
+              >
+                Element
+              </Table.Th>
+              <Table.Th
+                style={{
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  color: headerColor,
+                }}
+              >
+                Symbol
+              </Table.Th>
+              <Table.Th
+                style={{
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  color: headerColor,
+                }}
+              >
+                Mass
+              </Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>{rows}</Table.Tbody>

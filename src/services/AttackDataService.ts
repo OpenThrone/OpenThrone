@@ -301,7 +301,7 @@ export const getTop10AttacksByTotalCasualties = async (timeFrame: number) => {
       ...attack,
       rank: index + 1,
     }));
-  } catch (error) {
+  } catch {
     return [];
   }
 };
@@ -358,7 +358,7 @@ export const getTop10TotalAttackerCasualties = async (timeFrame: number) => {
       rank: index + 1,
       ...attacker,
     }));
-  } catch (error) {
+  } catch {
     return [];
   }
 };
@@ -415,7 +415,7 @@ export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
       rank: index + 1,
       ...defender,
     }));
-  } catch (error) {
+  } catch {
     return [];
   }
 };
@@ -551,7 +551,7 @@ export async function getTopRecruitsWithDisplayNames() {
         }
         return a.display_name.localeCompare(b.display_name); // Then by display_name ascending
       });
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -648,7 +648,7 @@ export async function getTopSuccessfulAttacks() {
       ); // Type guard to filter out nulls
 
     return detailedAttackCounts;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -695,7 +695,7 @@ export async function getTopPopulations() {
       .slice(0, 10);
 
     return topPopulations;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -735,7 +735,7 @@ export async function getTopGoldOnHand() {
     }));
 
     return mappedUsers;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -775,7 +775,7 @@ export async function getTopGoldInBank() {
     }));
 
     return mappedUsers;
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -873,7 +873,7 @@ export async function getTopWealth() {
     const top10UsersWithWealth = usersWithWealth.slice(0, 10);
 
     return top10UsersWithWealth;
-  } catch (error) {
+  } catch {
     return [];
   }
 }

@@ -61,7 +61,7 @@ const StatCard = ({
   </GameCard>
 );
 
-const Levels = (props) => {
+const Levels = () => {
   const { t } = useTranslation('home');
   const { user, forceUpdate } = useUser();
   const justSavedRef = useRef(false);

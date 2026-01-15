@@ -19,7 +19,6 @@ import { alertService } from '@/services/Alert.service';
 import toLocale from '@/utils/numberFormatting';
 
 const useItems = (user: UserModel | null, armoryLevel: number) => {
-  const { t } = useTranslation('structures');
   const [items, setItems] = useState<{
     [key: string]: { [key: string]: any[] };
   }>({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
@@ -95,7 +94,7 @@ const itemMapFunction = (
   };
 };
 
-const ArmoryTab = (props) => {
+const ArmoryTab = () => {
   const { t } = useTranslation('structures');
   const router = useRouter();
   const tabParam = Array.isArray(router.query.tab)

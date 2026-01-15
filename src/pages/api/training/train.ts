@@ -35,7 +35,7 @@ type ApiErrorResponse = { error: string; details?: any };
 type ApiSuccessResponse = { message: string; data: any }; // Consider defining a more specific Unit type
 
 // Define UnitProps interface (similar to EquipmentProps)
-interface UnitProps {
+interface _UnitProps {
   type: string;
   level: number;
   quantity: number | string; // Keep string for DB compatibility if needed

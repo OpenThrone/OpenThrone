@@ -1,10 +1,7 @@
-import { Box, Paper, Table, useMantineTheme } from '@mantine/core';
+import { Box, Paper, Table } from '@mantine/core';
 import React from 'react';
 
 export const StyledTable = ({ headers, children }) => {
-  const theme = useMantineTheme();
-  const accent = theme.colors.secondary?.[4] ?? '#e5c55a';
-
   return (
     <Paper
       radius="sm"

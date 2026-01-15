@@ -1,10 +1,11 @@
 // src/components/ComposeModal.tsx
-import React, { useState } from 'react';
+import React from 'react';
+
+import type { ComposeFormProps } from '@/types/typings';
+
 import ComposeForm from './compose-form';
-import { ComposeFormProps } from '@/types/typings';
 
 export default function ComposeModal({ onClose }: ComposeFormProps) {
-  
   return (
     <>
       <div className="compose-modal-backdrop" onClick={onClose} />

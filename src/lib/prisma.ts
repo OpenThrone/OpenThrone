@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 // Recursive function to convert BigInt to string in query results.
 // Preserve Date objects and non-plain objects to avoid turning them into {}.
-const convertBigIntToString = (obj: any): any => {
+const _convertBigIntToString = (obj: any): any => {
   // Primitive or null/undefined -> return as-is
   if (obj === null || typeof obj === 'undefined') return obj;
 
@@ -13,13 +13,13 @@ const convertBigIntToString = (obj: any): any => {
   if (obj instanceof Date) return obj;
 
   // Arrays -> map each element
-  if (Array.isArray(obj)) return obj.map(convertBigIntToString);
+  if (Array.isArray(obj)) return obj.map(_convertBigIntToString);
 
   // Plain objects -> recurse over own properties
   if (typeof obj === 'object') {
     const result: any = {};
     for (const key of Object.keys(obj)) {
-      result[key] = convertBigIntToString(obj[key]);
+      result[key] = _convertBigIntToString(obj[key]);
     }
     return result;
   }

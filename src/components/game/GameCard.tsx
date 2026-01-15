@@ -74,15 +74,11 @@ export const GameCard: React.FC<GameCardProps> = ({
         : null;
     const nextScheme = storedRace || user?.colorScheme || 'ELF';
     setColorScheme(nextScheme);
-    console.log('User color scheme:', nextScheme);
-    console.log('Secondary 2:', theme.colors.secondary[2]);
-    console.log('Secondary 5:', theme.colors.secondary[5]);
     setAccent(
       nextScheme === 'UNDEAD'
         ? theme.colors.secondary[2]
         : (theme.colors.secondary[5] ?? '#e5c55a'),
     );
-    console.log('Accent color set to:', accent);
   }, [user, colorScheme, theme.colors.secondary, accent]);
   const headerAccent = headerAccentByRace[colorScheme] ?? accent;
 

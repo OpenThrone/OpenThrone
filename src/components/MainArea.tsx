@@ -37,15 +37,13 @@ interface MainAreaProps {
 }
 
 const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
-  { title, children, paperWidth },
+  { title, children, paperWidth: _paperWidth },
   ref,
 ) {
   const { authorized } = useLayout();
-  const [userMenuOpened, setUserMenuOpened] = useState(false);
   // Consume unread messages state and functions from context
   const { unreadMessages, unreadMessagesCount, markRoomAsRead, user } =
     useUser();
-  const [messageMenuOpened, setMessageMenuOpened] = useState(false);
   const [socialNotificationCount, setSocialNotificationCount] =
     useState<number>(0);
 
@@ -62,7 +60,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
       if (!res.ok) return;
       const data = await res.json();
       setSocialNotificationCount(Number(data.count) || 0);
-    } catch (err) {
+    } catch {
       // log error if needed
     }
   }, []);

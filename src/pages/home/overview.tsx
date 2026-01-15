@@ -41,9 +41,8 @@ import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
 
-const Overview = (props) => {
+const Overview = () => {
   const { t } = useTranslation('home');
-  console.log('Translation: ', t);
   const [getNews, setNews] = useState([]);
 
   useEffect(() => {

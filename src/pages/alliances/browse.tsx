@@ -83,7 +83,7 @@ export const UserCardImage = ({
   );
 };
 
-const Browse = (props) => {
+const Browse = () => {
   const [alliances, setAlliances] = useState([]);
   const { t } = useTranslation('alliances');
 

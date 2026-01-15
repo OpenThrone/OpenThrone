@@ -17,10 +17,9 @@ interface ChatMessageGroupProps {
 const ChatMessageGroupComponent: React.FC<ChatMessageGroupProps> = ({
   group,
   isCurrentUser,
-  currentUserId,
+  currentUserId: _currentUserId,
   ...props
 }) => {
-  const lastMessage = group[group.length - 1];
   const { user } = useUser();
 
   return (

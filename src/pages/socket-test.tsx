@@ -5,14 +5,18 @@ import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import useSocket from '@/hooks/useSocket';
 import { alertService } from '@/services/Alert.service';
+import { logInfo } from '@/utils/logger';
 
-const SocketTestPage = (props) => {
+const SocketTestPage = () => {
   const { user } = useUser();
   const { socket, isConnected, addEventListener, removeEventListener } =
     useSocket(user?.id);
   const { t } = useTranslation('test');
   const [messages, setMessages] = useState([]);
   const [receivedHashes, setReceivedHashes] = useState(new Set());
+  const [friendRequestTargetId, setFriendRequestTargetId] = useState('');
+  const [enemyTargetId, setEnemyTargetId] = useState('');
+  const [messageTargetId, setMessageTargetId] = useState('');
 
   // Handle ping-pong logic
   const handlePing = () => {
@@ -34,7 +38,7 @@ const SocketTestPage = (props) => {
 
     const onAttackNotification = (data) => {
       if (receivedHashes.has(data.hash)) {
-        console.log(t('socketTest.duplicateAttack'), data);
+        logInfo(t('socketTest.duplicateAttack'), data);
         return;
       }
       setReceivedHashes((prevHashes) => {
@@ -50,7 +54,7 @@ const SocketTestPage = (props) => {
 
     const onFriendRequestNotification = (data) => {
       if (receivedHashes.has(data.hash)) {
-        console.log(t('socketTest.duplicateFriendRequest'), data);
+        logInfo(t('socketTest.duplicateFriendRequest'), data);
         return;
       }
       setReceivedHashes((prevHashes) => {
@@ -66,7 +70,7 @@ const SocketTestPage = (props) => {
 
     const onEnemyDeclarationNotification = (data) => {
       if (receivedHashes.has(data.hash)) {
-        console.log(t('socketTest.duplicateEnemyDeclaration'), data);
+        logInfo(t('socketTest.duplicateEnemyDeclaration'), data);
         return;
       }
       setReceivedHashes((prevHashes) => {
@@ -82,7 +86,7 @@ const SocketTestPage = (props) => {
 
     const onMessageNotification = (data) => {
       if (receivedHashes.has(data.hash)) {
-        console.log(t('socketTest.duplicateMessage'), data);
+        logInfo(t('socketTest.duplicateMessage'), data);
         return;
       }
       setReceivedHashes((prevHashes) => {
@@ -129,7 +133,7 @@ const SocketTestPage = (props) => {
 
       {/* Ping Pong Test */}
       <button
-        className="focus:shadow-outline rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none"
+        className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         onClick={handlePing}
       >
         {t('socketTest.sendPing')}
@@ -141,10 +145,10 @@ const SocketTestPage = (props) => {
           type="number"
           id="defenderId"
           placeholder={t('socketTest.enterDefenderId')}
-          className="focus:shadow-outline appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none"
+          className="appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         />
         <button
-          className="focus:shadow-outline rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none"
+          className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           onClick={() => {
             const defenderId = (
               document.getElementById('defenderId') as HTMLInputElement
@@ -162,56 +166,82 @@ const SocketTestPage = (props) => {
       </div>
 
       {/* Add Friend Notification Test */}
-      <button
-        className="focus:shadow-outline rounded bg-green-500 px-4 py-2 font-bold text-white hover:bg-green-700 focus:outline-none"
-        onClick={() => {
-          const userId = prompt(t('socketTest.enterUserId'));
-          if (socket && userId && user) {
-            socket.emit('notifyFriendRequest', {
-              userId: parseInt(userId),
-              message: t('socketTest.friendRequestSent', { email: user.email }),
-            });
-          }
-        }}
-      >
-        {t('socketTest.sendFriendRequest')}
-      </button>
+      <div className="flex items-center space-x-2">
+        <input
+          type="number"
+          value={friendRequestTargetId}
+          onChange={(event) => setFriendRequestTargetId(event.target.value)}
+          placeholder={t('socketTest.enterUserId')}
+          className="appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        />
+        <button
+          className="rounded bg-green-500 px-4 py-2 font-bold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          onClick={() => {
+            if (socket && friendRequestTargetId && user) {
+              socket.emit('notifyFriendRequest', {
+                userId: parseInt(friendRequestTargetId, 10),
+                message: t('socketTest.friendRequestSent', {
+                  email: user.email,
+                }),
+              });
+            }
+          }}
+        >
+          {t('socketTest.sendFriendRequest')}
+        </button>
+      </div>
 
       {/* Add Enemy Notification Test */}
-      <button
-        className="focus:shadow-outline rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700 focus:outline-none"
-        onClick={() => {
-          const userId = prompt(t('socketTest.enterUserIdEnemy'));
-          if (socket && userId && user) {
-            socket.emit('notifyEnemyDeclaration', {
-              userId: parseInt(userId),
-              message: t('socketTest.enemyDeclared', { email: user.email }),
-            });
-          }
-        }}
-      >
-        {t('socketTest.declareEnemy')}
-      </button>
+      <div className="flex items-center space-x-2">
+        <input
+          type="number"
+          value={enemyTargetId}
+          onChange={(event) => setEnemyTargetId(event.target.value)}
+          placeholder={t('socketTest.enterUserIdEnemy')}
+          className="appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        />
+        <button
+          className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          onClick={() => {
+            if (socket && enemyTargetId && user) {
+              socket.emit('notifyEnemyDeclaration', {
+                userId: parseInt(enemyTargetId, 10),
+                message: t('socketTest.enemyDeclared', { email: user.email }),
+              });
+            }
+          }}
+        >
+          {t('socketTest.declareEnemy')}
+        </button>
+      </div>
 
       {/* Message Notification Test */}
-      <button
-        className="focus:shadow-outline rounded bg-purple-500 px-4 py-2 font-bold text-white hover:bg-purple-700 focus:outline-none"
-        onClick={() => {
-          const userId = prompt(t('socketTest.enterUserIdMessage'));
-          if (socket && userId && user) {
-            socket.emit('notifyMessage', {
-              userId: parseInt(userId),
-              message: t('socketTest.newMessage', { email: user.email }),
-            });
-          }
-        }}
-      >
-        {t('socketTest.sendMessage')}
-      </button>
+      <div className="flex items-center space-x-2">
+        <input
+          type="number"
+          value={messageTargetId}
+          onChange={(event) => setMessageTargetId(event.target.value)}
+          placeholder={t('socketTest.enterUserIdMessage')}
+          className="appearance-none rounded border px-3 py-2 leading-tight text-gray-700 shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        />
+        <button
+          className="rounded bg-purple-500 px-4 py-2 font-bold text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          onClick={() => {
+            if (socket && messageTargetId && user) {
+              socket.emit('notifyMessage', {
+                userId: parseInt(messageTargetId, 10),
+                message: t('socketTest.newMessage', { email: user.email }),
+              });
+            }
+          }}
+        >
+          {t('socketTest.sendMessage')}
+        </button>
+      </div>
 
       {/* Trigger Alert Test */}
       <button
-        className="focus:shadow-outline rounded bg-orange-500 px-4 py-2 font-bold text-white hover:bg-orange-700 focus:outline-none"
+        className="rounded bg-orange-500 px-4 py-2 font-bold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         onClick={() => {
           alertService.success(t('socketTest.testAlert'));
         }}

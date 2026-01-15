@@ -16,11 +16,17 @@ const UserDataSchema = z.object({
 
 export class UserEconomyService {
   private gold: bigint;
+
   private goldInBank: bigint;
+
   private units: PlayerUnit[];
+
   private economyLevel: number;
+
   private houseLevel: number;
+
   private incomeBonus: number;
+
   private fortLevel: number;
 
   constructor(

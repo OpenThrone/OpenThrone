@@ -178,16 +178,38 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
         <div className="text-undead-link-current text-undead-link-link hover:text-undead-link-hover" />
 
         {/* Background Classes */}
-        <div className="bg-elf-bodyBg bg-elf-footer bg-elf-header-bgcolor bg-elf-menu-primary bg-elf-menu-secondary bg-elf-sidebar-bgcolor" />
-        <div className="bg-goblin-bodyBg bg-goblin-footer bg-goblin-header-bgcolor bg-goblin-menu-primary bg-goblin-menu-secondary bg-goblin-sidebar-bgcolor" />
-        <div className="bg-human-bodyBg bg-human-footer bg-human-header-bgcolor bg-human-menu-primary bg-human-menu-secondary bg-human-sidebar-bgcolor" />
-        <div className="bg-undead-bodyBg bg-undead-footer bg-undead-header-bgcolor bg-undead-menu-primary bg-undead-menu-secondary bg-undead-sidebar-bgcolor" />
+        <div className="bg-elf-bodyBg" />
+        <div className="bg-elf-footer" />
+        <div className="bg-elf-header-bgcolor" />
+        <div className="bg-elf-menu-primary" />
+        <div className="bg-elf-menu-secondary" />
+        <div className="bg-elf-sidebar-bgcolor" />
+        <div className="bg-goblin-bodyBg" />
+        <div className="bg-goblin-footer" />
+        <div className="bg-goblin-header-bgcolor" />
+        <div className="bg-goblin-menu-primary" />
+        <div className="bg-goblin-menu-secondary" />
+        <div className="bg-goblin-sidebar-bgcolor" />
+        <div className="bg-human-bodyBg" />
+        <div className="bg-human-footer" />
+        <div className="bg-human-header-bgcolor" />
+        <div className="bg-human-menu-primary" />
+        <div className="bg-human-menu-secondary" />
+        <div className="bg-human-sidebar-bgcolor" />
+        <div className="bg-undead-bodyBg" />
+        <div className="bg-undead-footer" />
+        <div className="bg-undead-header-bgcolor" />
+        <div className="bg-undead-menu-primary" />
+        <div className="bg-undead-menu-secondary" />
+        <div className="bg-undead-sidebar-bgcolor" />
 
         {/* Border Classes */}
+        {/* eslint-disable tailwindcss/no-custom-classname */}
         <div className="border-elf" />
         <div className="border-goblin" />
         <div className="border-human" />
         <div className="border-undead" />
+        {/* eslint-enable tailwindcss/no-custom-classname */}
       </div>
       {children}
     </LayoutContext.Provider>

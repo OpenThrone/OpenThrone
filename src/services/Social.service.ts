@@ -638,7 +638,7 @@ export class SocialService {
     const validatedData = GoldRequestResponseSchema.parse(data);
 
     try {
-      const result = await respondToGoldRequest({
+      await respondToGoldRequest({
         requestId: validatedData.requestId,
         action: validatedData.action,
         message: validatedData.message,

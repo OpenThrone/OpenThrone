@@ -1,6 +1,7 @@
 import { IdQuerySchema } from '@/lib/validation';
 import { withAuth } from '@/middleware/auth';
 import { BattleService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const handler = async (req, res) => {
   const { session } = req;
@@ -18,7 +19,7 @@ const handler = async (req, res) => {
       const result = await BattleService.retestBattle(attackLogId);
       return res.status(200).json(result);
     } catch (error) {
-      console.error('Retest battle error:', error);
+      logError('Retest battle error:', error);
       return res
         .status(500)
         .json({ status: 'failed', message: 'Internal server error' });

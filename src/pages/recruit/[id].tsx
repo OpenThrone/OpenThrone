@@ -21,7 +21,7 @@ interface RecruitProps {
   race: string;
 }
 
-export default function Recruit(props) {
+export default function Recruit() {
   const router = useRouter();
   const [error, setError] = useState(null);
   const autoRecruitParams = Array.isArray(router.query.auto_recruit)

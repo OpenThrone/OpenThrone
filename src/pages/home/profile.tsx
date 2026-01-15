@@ -31,7 +31,7 @@ import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import { logDebug } from '@/utils/logger';
 
-const Profile = (props) => {
+const Profile = () => {
   const { t } = useTranslation('home');
   const [file, setFile] = useState<File | null>(null);
   const { user, forceUpdate } = useUser();
@@ -109,7 +109,6 @@ const Profile = (props) => {
   }, [loading, user, editor]);
 
   const saveProfile = async () => {
-    console.log(editor.storage.markdown.getMarkdown());
     if (loading) return;
 
     if (file || contentChanged) {

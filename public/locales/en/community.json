@@ -79,8 +79,7 @@
     "top10TotalDefenderCasualties": "Top 10 Total Defender Casualties",
     "top10AttacksByTotalCasualties": "Top 10 Attacks by Total Casualties",
     "lastGenerated": "Last Generated"
-  }
-  ,
+  },
   "autoRecruit": {
     "title": "Auto Recruiter",
     "sessionControls": "Session Controls",

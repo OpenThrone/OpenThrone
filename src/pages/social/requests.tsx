@@ -8,7 +8,7 @@ import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
 
-const Requests = (props) => {
+const Requests = () => {
   const { t } = useTranslation('social');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,24 +26,6 @@ const Requests = (props) => {
         setLoading(true);
       });
   }, []);
-
-  const handleResponse = (id, action) => {
-    fetch('/api/social/respond', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, requestId: id }),
-    })
-      .then((response) => response.json())
-      .then(() => {
-        // Update local state to reflect the change
-        setRequests((currentRequests) =>
-          currentRequests.filter((request) => request.id !== id),
-        );
-      })
-      .catch((error) => {
-        logError(t('requests.errorRespondingToRequest'), error);
-      });
-  };
 
   if (loading) {
     return (

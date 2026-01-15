@@ -16,7 +16,7 @@ import UserModel from '@/models/Users'; // Import UserModel
 import { alertService } from '@/services/Alert.service';
 import type { UserApiResponse } from '@/types/typings';
 import { stringifyObj } from '@/utils/jsonHelpers';
-import { logError, logInfo, logWarn } from '@/utils/logger';
+import { logDebug, logError, logInfo, logWarn } from '@/utils/logger';
 import { fetchWithFallback } from '@/utils/socketFunctions';
 
 // Define UnreadMessages interface locally or import if moved to typings.d.ts
@@ -36,8 +36,8 @@ interface UserContextType {
   loading: boolean;
   unreadMessages: UnreadMessages[];
   unreadMessagesCount: number;
-  markMessagesAsRead: (messageId: number) => void;
-  markRoomAsRead: (roomId: number) => void;
+  markMessagesAsRead: (_messageId: number) => void;
+  markRoomAsRead: (_roomId: number) => void;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -46,8 +46,8 @@ const UserContext = createContext<UserContextType>({
   loading: true,
   unreadMessages: [],
   unreadMessagesCount: 0,
-  markMessagesAsRead: (messageId: number) => {},
-  markRoomAsRead: (roomId: number) => {},
+  markMessagesAsRead: (_messageId: number) => {},
+  markRoomAsRead: (_roomId: number) => {},
 });
 
 export const useUser = () => useContext(UserContext);
@@ -88,8 +88,6 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     useSocket(userId);
   const [loading, setLoading] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState<UnreadMessages[]>([]);
-  const [showVacationModal, setShowVacationModal] = useState(false);
-  const [vacationUserId, setVacationUserId] = useState<number | null>(null);
   const WS_ENABLED = process.env.NEXT_PUBLIC_WS_ENABLED === 'true';
 
   const processAndSetUserData = useCallback(
@@ -126,7 +124,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
           true, // checkStats
         );
         (uModel as any).currentEra = (userData as any).currentEra;
-        console.log(stringifyObj(uModel));
+        logDebug(stringifyObj(uModel));
         setUser(uModel);
 
         if ('currentStatus' in userData) {

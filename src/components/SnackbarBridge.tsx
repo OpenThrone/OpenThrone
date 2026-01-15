@@ -4,6 +4,7 @@ import type { SnackType } from '@/context/snackbar-context';
 import { useSnackbar } from '@/context/snackbar-context';
 import type { AlertType } from '@/services/Alert.service';
 import { alertService } from '@/services/Alert.service';
+import { logWarn } from '@/utils/logger';
 
 // Map alert types to snackbar types
 const mapAlertTypeToSnackType = (type: AlertType['type']): SnackType => {
@@ -43,7 +44,7 @@ const SnackbarBridge: React.FC = () => {
               ? {
                   label: 'Action',
                   onClick: () => {
-                    console.warn(
+                    logWarn(
                       'SnackbarBridge action clicked, original button logic might need adjustment.',
                     );
                   },
@@ -53,10 +54,7 @@ const SnackbarBridge: React.FC = () => {
         const messageString =
           typeof alert.message === 'string' ? alert.message : 'Notification';
         if (typeof alert.message !== 'string') {
-          console.warn(
-            'SnackbarBridge received non-string message:',
-            alert.message,
-          );
+          logWarn('SnackbarBridge received non-string message:', alert.message);
         }
         if (alert.type === 'loading') {
           if (loadingSnackIdRef.current) {

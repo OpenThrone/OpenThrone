@@ -17,6 +17,7 @@ import type {
   CalculatedStrength,
   DetailedCalculatedStrength,
 } from '@/utils/attackFunctions';
+import { logDebug } from '@/utils/logger';
 import { getLevelFromXP } from '@/utils/utilities';
 
 import {
@@ -31,7 +32,7 @@ import {
   UnitTypes,
 } from '../constants';
 
-interface ArmyStatBreakdown {
+interface _ArmyStatBreakdown {
   total: number;
   units: Array<{
     name: string;
@@ -75,14 +76,23 @@ const UserDataSchema = z.object({
 
 export class UserStatsService {
   private experience: number;
+
   private units: UserUnit[];
+
   private items: UserItem[];
+
   private bonus_points: UserBonusPoints[];
+
   private structure_upgrades: UserStructureUpgrade[];
+
   private battle_upgrades: UserBattleUpgrade[];
+
   private fortLevel: number;
+
   private fortHitpoints: number;
+
   private race: string;
+
   private class: string;
 
   constructor(
@@ -274,7 +284,7 @@ export class UserStatsService {
     };
 
     if (process.env.DEBUG_USER_STATS) {
-      console.log(
+      logDebug(
         `[UserStats] calculateArmyStat type=${type} BASE=${JSON.stringify(baseStats)} ITEMS=${JSON.stringify(itemStats)} UPGRADES=${JSON.stringify(upgradeStats)} COMBINED=${JSON.stringify(combinedStats)}`,
       );
     }
@@ -362,7 +372,7 @@ export class UserStatsService {
         stats.RangedDefPower += rd;
 
         if (process.env.DEBUG_USER_STATS) {
-          console.log(
+          logDebug(
             `[UserStats] unit ${unit.type}@${unit.level} x${q} => MA:${ma} MD:${md} RA:${ra} RD:${rd}`,
           );
         }
@@ -394,7 +404,7 @@ export class UserStatsService {
             stats.MeleeDefPower += md;
             stats.RangedDefPower += rd;
             if (process.env.DEBUG_USER_STATS) {
-              console.log(
+              logDebug(
                 `[UserStats] collateral ${unit.type}@${unit.level} x${q} (eff=${effectiveness}) => MD:${md} RD:${rd}`,
               );
             }
@@ -448,7 +458,7 @@ export class UserStatsService {
           stats.RangedDefPower += rd;
 
           if (process.env.DEBUG_USER_STATS) {
-            console.log(
+            logDebug(
               `[UserStats] item ${item.type} (id=${item.id}, lvl=${item.level}) applied => MA:${ma} MD:${md} RA:${ra} RD:${rd}`,
             );
           }
@@ -475,20 +485,18 @@ export class UserStatsService {
       RangedAtkPower: 0,
       RangedDefPower: 0,
     };
-    const upgradeCoverage: Map<string, number> = new Map(); // Track how many units each upgrade has covered
-
     const applicableUpgrades = this.battle_upgrades
       .filter((up) => up.type === type)
       .sort((a, b) => b.level - a.level);
 
     if (process.env.DEBUG_USER_STATS) {
-      console.log(
+      logDebug(
         `[UserStats] calculateBattleUpgradeStats type=${type} sortedUnits=${sortedUnits.length} applicableUpgrades=${applicableUpgrades.length}`,
       );
-      console.log(
+      logDebug(
         `[UserStats] battle_upgrades sample: ${JSON.stringify(applicableUpgrades.slice(0, 5))}`,
       );
-      console.log(
+      logDebug(
         `[UserStats] sortedUnits sample: ${JSON.stringify(sortedUnits.slice(0, 5))}`,
       );
     }
@@ -498,7 +506,7 @@ export class UserStatsService {
     const siegeLevel =
       this.structure_upgrades.find((s) => s.type === 'OFFENSE')?.level ?? 0;
     if (process.env.DEBUG_USER_STATS) {
-      console.log(`[UserStats] siegeLevel=${siegeLevel}`);
+      logDebug(`[UserStats] siegeLevel=${siegeLevel}`);
     }
 
     // Temporary safety gate: battle-upgrade math is complex and under active
@@ -506,7 +514,7 @@ export class UserStatsService {
     // keep the test-suite stable.
     if (process.env.ENABLE_BATTLE_UPGRADES === '0') {
       if (process.env.DEBUG_USER_STATS) {
-        console.log(
+        logDebug(
           '[UserStats] battle upgrades are disabled via ENABLE_BATTLE_UPGRADES env flag; skipping computation',
         );
       }
@@ -527,7 +535,7 @@ export class UserStatsService {
         siegeLevel < upgradeInfo.SiegeUpgradeLevel
       ) {
         if (process.env.DEBUG_USER_STATS) {
-          console.log(
+          logDebug(
             `[UserStats] skipping upgrade ${upgrade.type}@${upgrade.level} (requires siege ${upgradeInfo.SiegeUpgradeLevel}, player siege ${siegeLevel})`,
           );
         }
@@ -545,7 +553,7 @@ export class UserStatsService {
 
       if (totalMatchingUnits <= 0 || totalUpgradeUnitCapacity <= 0) {
         if (process.env.DEBUG_USER_STATS) {
-          console.log(
+          logDebug(
             `[UserStats] upgrade ${upgrade.type}@${upgrade.level} has no matching units or zero capacity`,
           );
         }
@@ -577,7 +585,7 @@ export class UserStatsService {
       stats.RangedDefPower += appliedRangedDef;
 
       if (process.env.DEBUG_USER_STATS) {
-        console.log(
+        logDebug(
           `[UserStats] upgrade ${upgrade.type}@${upgrade.level} qty=${upgrade.quantity} capacity=${totalUpgradeUnitCapacity} matchingUnits=${totalMatchingUnits} covered=${unitsCovered} => +MA:${appliedMeleeAtk} MD:${appliedMeleeDef} RA:${appliedRangedAtk} RD:${appliedRangedDef}`,
         );
       }

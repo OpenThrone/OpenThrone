@@ -3,7 +3,7 @@ import { useTranslation } from 'next-i18next';
 
 import MainArea from '@/components/MainArea';
 
-const Result = (props) => {
+const Result = () => {
   const { t } = useTranslation('account');
   return (
     <MainArea title={t('passwordReset.title')}>

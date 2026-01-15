@@ -1,6 +1,7 @@
-import React, { forwardRef } from "react";
-import { Indicator, Tooltip, UnstyledButton } from "@mantine/core";
-import RpgAwesomeIcon from "./RpgAwesomeIcon";
+import { Indicator, Tooltip, UnstyledButton } from '@mantine/core';
+import React, { forwardRef } from 'react';
+
+import RpgAwesomeIcon from './RpgAwesomeIcon';
 
 interface Props {
   count?: number;
@@ -22,15 +23,15 @@ const SocialIcon = forwardRef<HTMLButtonElement, Props>(
       count = 0,
       onClick,
       size = 20,
-      className = "",
-      ariaLabel = "Friend requests",
+      className = '',
+      ariaLabel = 'Friend requests',
     },
     ref,
   ) => {
     const show = (count ?? 0) > 0;
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
+      if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         onClick?.();
       }
@@ -41,7 +42,7 @@ const SocialIcon = forwardRef<HTMLButtonElement, Props>(
         <Indicator
           color="red"
           label={
-            show ? (count && count > 99 ? "99+" : String(count)) : undefined
+            show ? (count && count > 99 ? '99+' : String(count)) : undefined
           }
           size={show ? 18 : 8}
           position="top-end"
@@ -68,6 +69,6 @@ const SocialIcon = forwardRef<HTMLButtonElement, Props>(
   },
 );
 
-SocialIcon.displayName = "SocialIcon";
+SocialIcon.displayName = 'SocialIcon';
 
 export default SocialIcon;

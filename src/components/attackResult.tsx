@@ -29,7 +29,7 @@ const AttackResults = ({ battle, viewerID }) => {
         (acc: number, curr: any) => acc + curr,
         0,
       ) as number;
-    } catch (e) {
+    } catch {
       return 0;
     }
   };

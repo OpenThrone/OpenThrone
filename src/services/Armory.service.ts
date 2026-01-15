@@ -681,7 +681,7 @@ export class ArmoryService {
         user.gold = BigInt(user.gold) + BigInt(cost);
       }
 
-      const conversion = await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx) => {
         // Pass the modified userItems array
         const {
           killingStrength,

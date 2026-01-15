@@ -11,7 +11,7 @@ mock.module('@/middleware/auth', () => ({ withAuth: (h: any) => h }));
 // Mock isAdmin to avoid dependency on prisma.permissionGrant in auth
 mock.module('@/utils/authorization', () => ({ isAdmin: async () => true }));
 
-const adminHandler = require('../admin/users/[userId].ts').default;
+const adminHandler = require('../admin/users/[userId]').default;
 
 describe('API admin/users', () => {
   beforeEach(() => resetMockPrisma());

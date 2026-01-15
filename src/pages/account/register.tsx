@@ -17,7 +17,7 @@ import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { useLayout } from '@/context/LayoutContext';
 
-const Register = (props) => {
+const Register = () => {
   const { t } = useTranslation('account');
   const { setMeta, meta } = useLayout();
   const [errorMessage, setErrorMessage] = useState('');

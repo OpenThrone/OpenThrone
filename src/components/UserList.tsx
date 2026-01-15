@@ -39,9 +39,9 @@ const UserList: React.FC<UserListProps> = ({
   page,
   totalPages,
   onPageChange,
-  sortBy,
-  sortOrder,
-  onSortChange,
+  sortBy: _sortBy,
+  sortOrder: _sortOrder,
+  onSortChange: _onSortChange,
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {

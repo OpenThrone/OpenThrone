@@ -95,7 +95,7 @@ export default function AnimatedButtons({
                   pointer-events-none
                   absolute left-1/2 top-0
                   -translate-x-1/2 -translate-y-full
-                  rounded bg-gray-900 bg-opacity-90
+                  rounded bg-gray-900/90
                   px-2 py-1
                   text-sm
                   ${

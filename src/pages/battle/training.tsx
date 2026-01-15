@@ -28,7 +28,7 @@ import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
-import { logDebug, logError } from '@/utils/logger'; // Added logError
+import { logDebug, logError, logWarn } from '@/utils/logger'; // Added logError
 import toLocale from '@/utils/numberFormatting';
 
 /**
@@ -63,8 +63,7 @@ interface UnitTypeIndex {
  * and allows users to manage unit quantities. Includes a sticky footer
  * for order summary and actions.
  */
-const Training: React.FC = (props) => {
-  // Removed unused props
+const Training: React.FC = () => {
   const { t } = useTranslation('battle');
   const { user, forceUpdate } = useUser();
   const [totalCost, setTotalCost] = useState(0);
@@ -125,9 +124,7 @@ const Training: React.FC = (props) => {
     );
   }, [unitTypesIndex]);
 
-  const [sectionCosts, setSectionCosts] = useState(() =>
-    getBlankSectionCosts(),
-  );
+  const [, setSectionCosts] = useState(() => getBlankSectionCosts());
 
   /**
    * Callback function passed to NewUnitSection to update cost contribution of that section.
@@ -205,7 +202,6 @@ const Training: React.FC = (props) => {
   useEffect(() => {
     if (!user?.availableUnitTypes) return; // Ensure user and available types exist
 
-    let stateChanged = false;
     unitTypesIndex.forEach((unitTypeInfo) => {
       const newUnitData = user.availableUnitTypes
         .filter((unit: any) => unit.type === unitTypeInfo.type)
@@ -217,7 +213,6 @@ const Training: React.FC = (props) => {
         JSON.stringify(newUnitData) !== JSON.stringify(unitTypeInfo.unitData)
       ) {
         unitTypeInfo.updateFn(newUnitData);
-        stateChanged = true;
       }
     });
     // Optionally log if state changed, useful for debugging
@@ -304,7 +299,7 @@ const Training: React.FC = (props) => {
   const updateLocalUnits = useCallback(
     (data: any) => {
       if (!data?.data || !Array.isArray(data.data)) {
-        console.warn(
+        logWarn(
           'API response missing expected data structure for unit update.',
         );
         forceUpdate(); // Force update anyway, maybe backend succeeded

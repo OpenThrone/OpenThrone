@@ -13,7 +13,7 @@ import type {
 } from '@/types/combat';
 import type { BattleUnits, ItemType } from '@/types/typings';
 
-import { logDebug, logInfo } from './logger';
+import { logDebug, logInfo, logWarn } from './logger';
 import mtRand from './mtrand';
 
 export type BattleUserLike = {
@@ -191,7 +191,6 @@ interface BattleState {
   totalDefenderCasualties: number;
 }
 const OFFENSE = 'OFFENSE';
-const DEFENSE = 'DEFENSE';
 
 const BATTLE_CONSTANTS = {
   MAX_TURNS: 15,
@@ -268,7 +267,7 @@ function initializeBattleState(
   defender: BattleUserLike,
   initialFortHP: number,
   isDefenderProtected: boolean,
-  debug: boolean,
+  _debug: boolean,
 ) {
   const battleResult = new BattleResult(attacker as any, defender as any);
   const attackerStrength = calculateStrength(attacker, 'OFFENSE');
@@ -767,7 +766,7 @@ function calculateDefenderStrength(state, turn, debug) {
  * @param {boolean} debug - Whether to enable debug logging.
  * @returns {boolean} True if the battle should end early, false otherwise.
  */
-function shouldBattleEndEarly(state, debug) {
+function shouldBattleEndEarly(state, _debug) {
   if (state.attackerOffenseRemaining <= 0) {
     logDebug('Battle ended early - attacker has no more offense units.');
     return true;
@@ -945,7 +944,7 @@ export function calculateStrength(
   );
   const cacheKey = `${user.id ?? '0'}-${unitType}-${includeCitz}-${includeOffense}-${unitString}-${itemString}`;
   if (!user || !user.units || !user.items) {
-    console.warn(`User or user units/items not found for type: ${unitType}`);
+    logWarn(`User or user units/items not found for type: ${unitType}`);
     const zeroStrength: CalculatedStrength = {
       MeleeAtkPower: 0,
       MeleeDefPower: 0,
@@ -1008,7 +1007,7 @@ export function calculateStrength(
         (info) => info.type === unit.type && info.level === unit.level,
       );
       if (!unitInfo) {
-        console.warn(`Unit info not found for type: ${unit.type}`);
+        logWarn(`Unit info not found for type: ${unit.type}`);
         return;
       }
 
@@ -1246,7 +1245,7 @@ export function calculateLoot(
     isNaN(calculatedLoot) ||
     calculatedLoot < 0
   ) {
-    console.warn(`Calculated loot is invalid: ${calculatedLoot}. Returning 0.`);
+    logWarn(`Calculated loot is invalid: ${calculatedLoot}. Returning 0.`);
     return BigInt(0);
   }
   logDebug(
@@ -1269,8 +1268,8 @@ export function newComputeCasualties(
   initialFortHP: number,
   piercingRatio: number,
   fortHitpoints?: number,
-  includeCitz: boolean = false,
-  includeOffense: boolean = false,
+  _includeCitz: boolean = false,
+  _includeOffense: boolean = false,
   isDefenderProtected: boolean = false,
   options?: {
     defenderFortLevel?: number;
@@ -1409,10 +1408,10 @@ export async function distributeCasualties(params: {
     attackerDamageDealt,
     defenderDamageDealt,
     fortHP,
-    initialFortHP,
-    turn,
-    includeCitz = false,
-    includeOffense = false,
+    initialFortHP: _initialFortHP,
+    turn: _turn,
+    includeCitz: _includeCitz = false,
+    includeOffense: _includeOffense = false,
     debug,
   } = params;
 
@@ -1424,7 +1423,7 @@ export async function distributeCasualties(params: {
     unitPool: BattleUnits[],
     damage: number,
     isDefender: boolean,
-    isCollateral: boolean = false,
+    _isCollateral: boolean = false,
     debug?: boolean,
   ): { casualties: number; remainingDamage: number } => {
     let remainingDamage = damage;
@@ -1586,112 +1585,6 @@ export async function distributeCasualties(params: {
   };
 }
 
-// Helper function to distribute casualties across units, weighting lower levels more heavily
-function distributeUnitCasualties(
-  units: BattleUnits[],
-  totalCasualties: number,
-  baseCasualtyRate: number,
-): BattleUnits[] {
-  const lostUnits: BattleUnits[] = [];
-  let remainingCasualties = totalCasualties;
-
-  const workingUnits = units
-    .map((unit) => ({ ...unit }))
-    .filter((unit) => unit.quantity > 0)
-    .sort((a, b) => a.level - b.level); // Sort by level ascending (lower levels first)
-
-  const totalAvailable = workingUnits.reduce(
-    (sum, unit) => sum + unit.quantity,
-    0,
-  );
-  remainingCasualties = Math.min(remainingCasualties, totalAvailable);
-
-  if (remainingCasualties <= 0 || workingUnits.length === 0) {
-    return [];
-  }
-
-  // First pass: Apply weighted casualties
-  for (const unit of workingUnits) {
-    if (remainingCasualties <= 0) break;
-
-    // Higher casualty rate for lower-level units
-    const levelWeight = 1 + (3 - unit.level) * 0.2; // Example: Level 1 gets 1.4x, Level 3 gets 0.6x
-    const weightedCasualtyRate = Math.max(0.1, baseCasualtyRate * levelWeight); // Ensure minimum rate
-
-    let casualtiesForUnit = Math.floor(unit.quantity * weightedCasualtyRate);
-    casualtiesForUnit = Math.min(casualtiesForUnit, remainingCasualties);
-    casualtiesForUnit = Math.min(casualtiesForUnit, unit.quantity);
-
-    if (casualtiesForUnit > 0) {
-      lostUnits.push({
-        id: 0, // Placeholder ID
-        userId: 0, // Placeholder User ID (not directly available here)
-        type: unit.type,
-        level: unit.level,
-        quantity: casualtiesForUnit,
-        isMercenary: false, // Default to false
-      });
-      unit.quantity -= casualtiesForUnit;
-      remainingCasualties -= casualtiesForUnit;
-    }
-  }
-
-  // Second pass: Distribute any remaining casualties proportionally
-  if (remainingCasualties > 0) {
-    const currentTotalUnits = workingUnits.reduce(
-      (sum, unit) => sum + unit.quantity,
-      0,
-    );
-    if (currentTotalUnits > 0) {
-      for (const unit of workingUnits) {
-        if (remainingCasualties <= 0 || unit.quantity <= 0) continue;
-
-        const proportion = unit.quantity / currentTotalUnits;
-        let casualties = Math.floor(remainingCasualties * proportion);
-        casualties = Math.min(casualties, remainingCasualties);
-        casualties = Math.min(casualties, unit.quantity);
-
-        if (casualties > 0) {
-          const existingLoss = lostUnits.find(
-            (loss) => loss.type === unit.type && loss.level === unit.level,
-          );
-          if (existingLoss) {
-            existingLoss.quantity += casualties;
-          } else {
-            lostUnits.push({
-              id: 0, // Placeholder ID
-              userId: 0, // Placeholder User ID (not directly available here)
-              type: unit.type,
-              level: unit.level,
-              quantity: casualties,
-              isMercenary: false, // Default to false
-            });
-          }
-          unit.quantity -= casualties;
-          remainingCasualties -= casualties;
-        }
-      }
-    }
-  }
-
-  // Ensure no unit quantity goes below zero in the original array (though distributeCasualties returns new objects)
-  // This part is more for conceptual clarity if we were modifying the original array directly.
-  // Since we are returning new objects, this is less critical here.
-  lostUnits.forEach((loss) => {
-    const originalUnit = units.find(
-      (u) => u.type === loss.type && u.level === loss.level,
-    );
-    if (originalUnit) {
-      originalUnit.quantity = Math.max(
-        0,
-        originalUnit.quantity - loss.quantity,
-      );
-    }
-  });
-
-  return lostUnits;
-}
-
 export function filterUnitsByType(
   units: BattleUnits[],
   type: string,
@@ -1830,7 +1723,7 @@ export function finalizeBattleResult(state: BattleState): void {
     if (unit.level === undefined) {
       const originalUnit = defender.units.find((u) => u.type === unit.type);
       unit.level = originalUnit?.level ?? 1; // Default to 1 if original not found
-      console.warn(
+      logWarn(
         `Unit type ${unit.type} in defender losses had no level. Defaulting to ${unit.level}.`,
       );
     }
@@ -1840,7 +1733,7 @@ export function finalizeBattleResult(state: BattleState): void {
     if (unit.level === undefined) {
       const originalUnit = attacker.units.find((u) => u.type === unit.type);
       unit.level = originalUnit?.level ?? 1; // Default to 1 if original not found
-      console.warn(
+      logWarn(
         `Unit type ${unit.type} in attacker losses had no level. Defaulting to ${unit.level}.`,
       );
     }
@@ -1957,76 +1850,12 @@ export function finalizeBattleResult(state: BattleState): void {
   });
 }
 
-function logUnitCasualties(
-  turn: number,
-  attackerLosses: BattleUnits[],
-  defenderLosses: BattleUnits[],
-  debug: boolean,
-) {
-  if (!debug) return;
-
-  logDebug(`\n=== Turn ${turn} Casualties ===`);
-
-  // Log attacker losses
-  if (attackerLosses.length > 0) {
-    logDebug('Attacker lost:');
-    attackerLosses.forEach((loss) => {
-      logDebug(`- ${loss.quantity} ${loss.type} units`);
-    });
-  } else {
-    logDebug('Attacker: No casualties');
-  }
-
-  // Log defender losses
-  if (defenderLosses.length > 0) {
-    logDebug('Defender lost:');
-    defenderLosses.forEach((loss) => {
-      logDebug(`- ${loss.quantity} ${loss.type} units`);
-    });
-  } else {
-    logDebug('Defender: No casualties');
-  }
-}
-function distributeDamage(
-  totalCasualties: number,
-  defender: BattleUserLike,
-  fortHP: number,
-): { collateralDamage: number; fightingDamage: number } {
-  let collateralDamage = 0;
-  let fightingDamage = 0;
-
-  const COLLATERAL_DEFENSE_SHARE = 0.3;
-
-  const totals = getUnitTotals(defender);
-  const defenseCount = totals.defense;
-  const citizenCount = totals.citizens + totals.workers;
-  const totalPool = defenseCount + citizenCount;
-
-  if (totalPool <= 0) {
-    return { collateralDamage: 0, fightingDamage: 0 };
-  }
-
-  if (fortHP > 0) {
-    // While fort stands, only 30% of citizens count as militia in the defense pool
-    const effectiveCitizenShare = citizenCount * COLLATERAL_DEFENSE_SHARE;
-    const totalDefensePool = defenseCount + effectiveCitizenShare;
-    fightingDamage = totalCasualties * (defenseCount / totalDefensePool);
-    collateralDamage = totalCasualties - fightingDamage;
-  } else {
-    // Fort is breached: distribute casualties strictly proportional to real counts
-    fightingDamage = totalCasualties * (defenseCount / totalPool);
-    collateralDamage = totalCasualties - fightingDamage;
-  }
-
-  return { collateralDamage, fightingDamage };
-}
-
 /**
  * Calculates the current stamina state for a user.
  * @param user - The user model.
  * @returns StaminaState
  */
-export function calculateStamina(user: BattleUserLike): StaminaState {
+export function calculateStamina(_user: BattleUserLike): StaminaState {
   const maxStamina = 100; // Base max stamina
   const currentStamina = maxStamina; // Default to max, as user model doesn't have stamina field
   const regenerationRate = 1; // Per turn or unit

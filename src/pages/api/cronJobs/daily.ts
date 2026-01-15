@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { CronJobService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
   const { TASK_SECRET } = process.env;
@@ -20,7 +21,7 @@ const dailyCron = async (req: NextApiRequest, res: NextApiResponse) => {
       }
       return res.status(500).json({ message: 'Daily cron job failed.' });
     } catch (error) {
-      console.error('Error executing daily cron job:', error);
+      logError('Error executing daily cron job:', error);
       return res
         .status(500)
         .json({ message: 'Internal server error during daily cron job.' });

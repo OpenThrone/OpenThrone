@@ -36,8 +36,6 @@ interface BonusPointsItem {
   level: number;
 }
 
-const MAX_BONUS_LEVEL = 75;
-
 const handler = async (
   req: AuthenticatedRequest,
   res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>,

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import prisma from '@/lib/prisma';
+import { logError } from '@/utils/logger';
 
 export default async function handler(
   req: NextApiRequest,
@@ -35,7 +36,7 @@ export default async function handler(
     };
     return res.status(200).json(stats);
   } catch (error) {
-    console.error('Failed to fetch stats', error);
+    logError('Failed to fetch stats', error);
     return res.status(500).json({ error: 'Failed to fetch stats' });
   }
 }

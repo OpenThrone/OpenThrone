@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { withAuth } from '@/middleware/auth';
 import { BlogService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const getRecentPostsAPI = async (req: NextApiRequest, res: NextApiResponse) => {
   // Get the session on the server-side
@@ -20,7 +21,7 @@ const getRecentPostsAPI = async (req: NextApiRequest, res: NextApiResponse) => {
     // result.posts are DTOs (serializable) from the service
     res.status(200).json(result.posts);
   } catch (error) {
-    console.log(error);
+    logError(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

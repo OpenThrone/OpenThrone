@@ -212,7 +212,7 @@ export class AdminService {
       }
 
       // Grant the permission
-      const permissionGrant = await prisma.permissionGrant.create({
+      await prisma.permissionGrant.create({
         data: {
           user_id: targetUser.id,
           type: validatedData.permission,
@@ -324,7 +324,7 @@ export class AdminService {
       });
 
       // Create new status entry
-      const statusRecord = await prisma.accountStatusHistory.create({
+      await prisma.accountStatusHistory.create({
         data: {
           user_id: validatedData.userId,
           status: validatedData.action,

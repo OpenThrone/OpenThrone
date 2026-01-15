@@ -159,14 +159,14 @@ export const formatPlural = (
   count: number,
   singular: string,
   plural: string,
-  locale: string = 'en',
+  _locale: string = 'en',
 ): string => {
   return count === 1 ? singular : plural;
 };
 
 export const formatDuration = (
   seconds: number,
-  locale: string = 'en',
+  _locale: string = 'en',
 ): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);

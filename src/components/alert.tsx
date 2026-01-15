@@ -1,20 +1,22 @@
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useTranslation } from 'next-i18next';
-import type { AlertType } from '../services/alert.service';
-import { alertService } from '../services/alert.service';
-import { Text, CloseButton, Flex, Loader } from '@mantine/core';
-import { logError } from '@/utils/logger';
-import ContentCard from './ContentCard';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCheckCircle,
   faExclamationCircle,
-  faInfoCircle,
   faExclamationTriangle,
-  faTimes
+  faInfoCircle,
+  faTimes,
 } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { CloseButton, Flex, Loader, Text } from '@mantine/core';
+import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import { useEffect, useState } from 'react';
+
+import { logError } from '@/utils/logger';
+
+import type { AlertType } from '../services/alert.service';
+import { alertService } from '../services/alert.service';
+import ContentCard from './ContentCard';
 
 const AlertComponent: React.FC = () => {
   const { t } = useTranslation('common');
@@ -72,7 +74,7 @@ const AlertComponent: React.FC = () => {
           borderColor: 'border-green-500',
           bgColor: 'bg-green-700/20',
           textColor: 'text-green-300',
-          iconColor: 'text-green-400'
+          iconColor: 'text-green-400',
         };
       case 'error':
         return {
@@ -80,7 +82,7 @@ const AlertComponent: React.FC = () => {
           borderColor: 'border-red-500',
           bgColor: 'bg-red-700/20',
           textColor: 'text-red-300',
-          iconColor: 'text-red-400'
+          iconColor: 'text-red-400',
         };
       case 'info':
         return {
@@ -88,7 +90,7 @@ const AlertComponent: React.FC = () => {
           borderColor: 'border-blue-500',
           bgColor: 'bg-blue-700/20',
           textColor: 'text-blue-300',
-          iconColor: 'text-blue-400'
+          iconColor: 'text-blue-400',
         };
       case 'warn':
         return {
@@ -96,7 +98,7 @@ const AlertComponent: React.FC = () => {
           borderColor: 'border-yellow-500',
           bgColor: 'bg-yellow-700/20',
           textColor: 'text-yellow-300',
-          iconColor: 'text-yellow-400'
+          iconColor: 'text-yellow-400',
         };
       case 'loading':
         return {
@@ -104,7 +106,7 @@ const AlertComponent: React.FC = () => {
           borderColor: 'border-cyan-500',
           bgColor: 'bg-cyan-700/20',
           textColor: 'text-cyan-300',
-          iconColor: 'text-cyan-400'
+          iconColor: 'text-cyan-400',
         };
       default:
         return {
@@ -112,13 +114,13 @@ const AlertComponent: React.FC = () => {
           borderColor: 'border-gray-500',
           bgColor: 'bg-gray-700/20',
           textColor: 'text-gray-300',
-          iconColor: 'text-gray-400'
+          iconColor: 'text-gray-400',
         };
     }
   };
 
   const styles = getAlertStyles();
-  
+
   // Custom close button that respects the alert type color
   const closeButton = (
     <CloseButton
@@ -133,9 +135,9 @@ const AlertComponent: React.FC = () => {
     <div className="container mx-auto px-4">
       <div className="my-3">
         <ContentCard
-          className={`${styles.borderColor} transition-all ease-in-out duration-300 shadow-lg hover:shadow-xl`}
+          className={`${styles.borderColor} shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl`}
           shadow="lg"
-          withBorder={true}
+          withBorder
           radius="md"
           bodyPadding={0} // We'll handle padding in the content
           title={alert.type.toUpperCase()}
@@ -144,28 +146,26 @@ const AlertComponent: React.FC = () => {
           icon={styles.icon}
           iconPosition="title-left"
           actions={closeButton}
-          style={{ 
+          style={{
             borderWidth: '2px',
             background: 'transparent',
             backdropFilter: 'blur(8px)',
-            overflow: 'visible' // Allows for shadow effects
+            overflow: 'visible', // Allows for shadow effects
           }}
         >
           <div className={`p-4 ${styles.bgColor}`}>
             <Flex direction="column" gap="sm">
-              <Text className={`${styles.textColor} font-medium`}>{alert.message}</Text>
-              
+              <Text className={`${styles.textColor} font-medium`}>
+                {alert.message}
+              </Text>
+
               {timeLeft !== null && (
                 <Text size="xs" className="text-gray-400">
                   Alert clearing in: {timeLeft} seconds
                 </Text>
               )}
-              
-              {alert.showButton && (
-                <div className="mt-2">
-                  {alert.button}
-                </div>
-              )}
+
+              {alert.showButton && <div className="mt-2">{alert.button}</div>}
             </Flex>
           </div>
         </ContentCard>

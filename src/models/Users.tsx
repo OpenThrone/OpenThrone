@@ -25,6 +25,7 @@ import type {
   UnitType,
 } from '@/types/typings';
 import type { DetailedCalculatedStrength } from '@/utils/attackFunctions';
+import { logWarn } from '@/utils/logger';
 import { getAssetPath } from '@/utils/utilities';
 
 /**
@@ -51,7 +52,7 @@ const safeBigInt = (value: any): bigint => {
   try {
     return BigInt(cleanValue);
   } catch (error) {
-    console.warn(`Failed to convert "${value}" to BigInt, using 0`, error);
+    logWarn(`Failed to convert "${value}" to BigInt, using 0`, error);
     return BigInt(0);
   }
 };
@@ -93,81 +94,118 @@ class UserModel {
 
   /** User's current fortification level. */
   public fortLevel: number;
+
   /** User's current fortification hitpoints. */
   public fortHitpoints: number;
+
   /** User's current house level. */
   public houseLevel: number;
+
   /** User's remaining attack turns. */
   public attackTurns: number;
+
   /** User's current stamina. */
   public stamina: number;
+
   /** User's maximum stamina. */
   public maxStamina: number;
+
   /** Array of units owned by the user. */
   public units: BattleUnits[]; // Changed to BattleUnits[]
+
   /** Mercenary units hired by the user. */
   public mercenaries: BattleUnits[]; // Changed to BattleUnits[]
 
   /** Array of items owned by the user. */
   public items: UserItem[];
+
   /** Timestamp of the user's last activity. */
   public last_active: Date | null;
+
   /** User profile biography or description. */
   public bio: string;
+
   /** User's selected color scheme (can be race name or custom string). */
   public colorScheme: PlayerRace | string | null;
+
   /** Whether the account represents a real player (not NPC/system). */
   public is_player: boolean;
+
   /** Whether the user is currently considered online (based on last_active). */
   public is_online: boolean;
+
   /** User's overall rank (may be based on different criteria). */
   public overallrank: number;
+
   /** Total number of attacks the user has performed. */
   public attacks_made: number;
+
   /** Total number of times the user defended against attacks. */
   public attacks_defended: number;
+
   /** Total number of attacks won by the user. */
   public attacks_won: number;
+
   /** Total number of defenses won by the user. */
   public defends_won: number;
+
   /** Bonus points or temporary buffs applied to the user. */
   public bonus_points: BonusPointsItem[];
+
   /** User's economy development level. */
   public economyLevel: number;
+
   /** Remaining deposits available in the last 24 hours. */
   public depositsAvailable: number;
+
   /** Countdown until the next deposit is available, or 0 when not applicable. */
   public nextDepositAvailable:
     | { hours: number; minutes: number; seconds: number }
     | 0;
+
   /** List of structure upgrades and their levels owned by the user. */
   public structure_upgrades: UserStructureUpgrade[];
+
   /** List of battle upgrades purchased by the user. */
   public battle_upgrades: UserBattleUpgrade[];
+
   /** Array of player stats (e.g., proficiency, passive modifiers). */
   public stats: PlayerStat[];
+
   /** Whether the user has been attacked recently. */
   public beenAttacked: boolean;
+
   /** Whether a spy was detected on the user's side. */
   public detectedSpy: boolean;
+
   /** User's preferred locale/language (e.g., 'en-US'). */
   public locale: Locales;
+
   /** Avatar identifier or asset path; defaults to a shield for new users. */
   public avatar: string | null;
+
   /** User permissions and roles. */
   public permissions: { type: PermissionType }[];
+
   /** Current account status (e.g., 'ACTIVE', 'SUSPENDED') or AccountStatus enum. */
   public currentStatus: AccountStatus | string;
+
   /** Calculated offensive power. */
   public offense: number;
+
   /** Calculated defensive power. */
   public defense: number;
+
   /** Calculated total spy strength. */
   public spy: number;
+
   /** Calculated total sentry strength. */
   public sentry: number;
+
   public achievements: Record<string, any> = {};
+
   public twoFactorSecret: string | null = null;
+
   public currentEra?: {
     id: number;
     name: string;
@@ -177,6 +215,7 @@ class UserModel {
 
   // Domain services (single responsibility)
   private statsService: UserStatsService;
+
   /**
    * Service handling user's units and related calculations.
    *
@@ -185,6 +224,7 @@ class UserModel {
    * @memberof UserModel
    */
   private unitsService: UserUnitsService;
+
   /** User's economy-related data and methods. */
   private economyService: UserEconomyService;
 
@@ -511,7 +551,7 @@ class UserModel {
   }
 
   // Return type intentionally 'any' to avoid exporting internal service types from this facade
-  getArmyStatBreakdown(type: UnitType): any {
+  getArmyStatBreakdown(_type: UnitType): any {
     return {}; // This method is deprecated
   }
 

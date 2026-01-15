@@ -253,7 +253,6 @@ export const transferGoldToFriend = async (params: {
     }
 
     // Calculate tax if enabled
-    const config = getFriendTransferConfig();
     const taxAmount = calculateTransferFee(validatedParams.amount);
     const totalAmount = validatedParams.amount + taxAmount;
 
@@ -651,9 +650,6 @@ export const cancelFriendTransfer = async (
         },
       } as any,
     });
-    // Cast update payload to any to avoid strict Prisma input typing during migration
-    const updatedRequestCasted = updatedRequest as any;
-
     return {
       id: updatedRequest.id,
       from_user_id: updatedRequest.from_user_id,

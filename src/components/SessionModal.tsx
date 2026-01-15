@@ -66,7 +66,7 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
       } else {
         alertService.error(data.error);
       }
-    } catch (error) {
+    } catch {
       alertService.error('Failed to fetch sessions');
     } finally {
       setLoading(false);

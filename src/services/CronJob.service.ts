@@ -8,7 +8,7 @@ import { logError } from '@/utils/logger';
 import { calculateOverallRank } from '@/utils/utilities';
 
 // Zod schemas for validation
-const RankSchema = z.number().int().positive();
+const _RankSchema = z.number().int().positive();
 
 // Type definitions for cron job operations
 export interface CronJobResult {

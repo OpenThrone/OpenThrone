@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { CronJobService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const turnCron = async (req: NextApiRequest, res: NextApiResponse) => {
   if (
@@ -19,7 +20,7 @@ const turnCron = async (req: NextApiRequest, res: NextApiResponse) => {
       }
       return res.status(500).json({ message: 'Turn cron job failed.' });
     } catch (error) {
-      console.error('Error executing turn cron job:', error);
+      logError('Error executing turn cron job:', error);
       return res
         .status(500)
         .json({ message: 'Internal server error during turn cron job.' });

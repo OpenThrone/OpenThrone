@@ -7,7 +7,7 @@ import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 
-const EmailVerify = (props) => {
+const EmailVerify = () => {
   const { t } = useTranslation('account');
   const router = useRouter();
   const [input, setInput] = useState('');

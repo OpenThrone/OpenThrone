@@ -25,7 +25,7 @@ import toLocale from '@/utils/numberFormatting';
  * Displays current housing level, benefits, next upgrade details, cost, and requirements.
  * Allows users to purchase the next housing upgrade.
  */
-const Housing: React.FC = (props) => {
+const Housing: React.FC = () => {
   // Removed unused props
   const { user, forceUpdate } = useUser();
   const [mounted, setMounted] = useState(false);

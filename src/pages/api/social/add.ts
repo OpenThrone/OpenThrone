@@ -7,6 +7,7 @@ import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 const AddSocialSchema = z.object({
   friendId: z.number().int(),
@@ -77,7 +78,7 @@ const addSocialRelation = async (
 
     res.status(200).json(result);
   } catch (error: any) {
-    console.error('Error adding relationship:', error);
+    logError('Error adding relationship:', error);
     res.status(400).json({ error: error.message });
   }
 };

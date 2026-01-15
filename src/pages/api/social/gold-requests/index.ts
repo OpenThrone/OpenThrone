@@ -6,6 +6,7 @@ import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/jsonHelpers';
+import { logError } from '@/utils/logger';
 
 const RequestSchema = z.object({
   friendId: z.number().int(),
@@ -46,7 +47,7 @@ const requestHandler = async (
 
     return res.status(201).json(stringifyObj(result));
   } catch (error: any) {
-    console.error('Error creating gold request:', error);
+    logError('Error creating gold request:', error);
     return res.status(400).json({ error: error.message });
   }
 };

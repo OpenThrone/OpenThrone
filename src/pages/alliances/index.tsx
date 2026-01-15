@@ -1,6 +1,6 @@
 import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
+export const getServerSideProps: GetServerSideProps = async (_context) => {
   return {
     redirect: {
       destination: '/alliances/browse',
@@ -10,7 +10,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 };
 
 export default function AlliancesIndex(
-  props: InferGetServerSidePropsType<typeof getServerSideProps>,
+  _props: InferGetServerSidePropsType<typeof getServerSideProps>,
 ) {
   return null;
 }

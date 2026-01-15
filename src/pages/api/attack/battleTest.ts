@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { BattleService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const BattleTestSchema = z.object({
   aId: z.coerce.number().int().optional(),
@@ -48,7 +49,7 @@ const handler = async (req, res) => {
 
       return res.status(200).json(result);
     } catch (error) {
-      console.error('Battle test error:', error);
+      logError('Battle test error:', error);
       return res
         .status(500)
         .json({ status: 'failed', message: 'Internal server error' });

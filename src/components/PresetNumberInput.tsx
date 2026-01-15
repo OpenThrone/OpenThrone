@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from "react";
-import {
-  NumberInput,
-  Group,
-  Button,
-  useMantineTheme,
-  NumberInputProps,
-} from "@mantine/core";
+import type { NumberInputProps } from '@mantine/core';
+import { Button, Group, NumberInput, useMantineTheme } from '@mantine/core';
+import React, { useEffect, useState } from 'react';
 
-export interface StepPickerNumberInputProps
-  extends Omit<NumberInputProps, "step"> {
+export interface StepPickerNumberInputProps extends Omit<
+  NumberInputProps,
+  'step'
+> {
   /** available step‑presets, e.g. [1,10,100] */
   steps?: number[];
   /** initial step value (falls back to steps[0] or 1) */
@@ -48,10 +45,10 @@ export function StepPickerNumberInput({
           <Button
             key={step}
             size="xs"
-            variant={step === currentStep ? "filled" : "light"}
+            variant={step === currentStep ? 'filled' : 'light'}
             color={theme.primaryColor}
             onClick={() => setCurrentStep(step)}
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             ×{step}
           </Button>

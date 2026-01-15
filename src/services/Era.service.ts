@@ -15,7 +15,7 @@ import { getUsersWithRelations } from './UserLoader.service';
 const EraIdSchema = z.number().int().positive();
 const UserIdSchema = z.number().int().positive();
 const EraNameSchema = z.string().min(1);
-const EraDataSchema = z.object({
+const _EraDataSchema = z.object({
   name: EraNameSchema,
   startDate: z.date(),
   endDate: z.date().optional().nullable(),

@@ -23,7 +23,7 @@ const UpgradeSlot = ({
   heading,
   itemsToEquip,
   handleInputChange,
-  user,
+  user: _user,
 }: {
   item: UnitProps;
   heading: string;

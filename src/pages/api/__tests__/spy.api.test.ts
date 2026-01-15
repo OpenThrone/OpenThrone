@@ -10,7 +10,7 @@ installMockPrisma(vi);
 // Bypass authentication by mocking the withAuth middleware to return the handler directly
 mock.module('@/middleware/auth', () => ({ withAuth: (h: any) => h }));
 
-const spyHandler = require('../spy/[id].ts').default;
+const spyHandler = require('../spy/[id]').default;
 
 describe('API spy/[id]', () => {
   beforeEach(() => resetMockPrisma());

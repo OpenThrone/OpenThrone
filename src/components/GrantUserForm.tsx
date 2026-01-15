@@ -13,6 +13,7 @@ import { PermissionType } from '@prisma/client';
 import { useEffect, useState } from 'react';
 
 import { alertService } from '@/services/Alert.service';
+import { logError } from '@/utils/logger';
 
 const GrantUserForm = () => {
   const [grantUser, setGrantUser] = useState<string>('');
@@ -38,7 +39,7 @@ const GrantUserForm = () => {
         permissions: user.permissions,
       }));
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      logError('Failed to fetch users:', error);
       return [];
     } finally {
       setLoading(false);

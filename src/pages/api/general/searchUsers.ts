@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { GeneralService } from '@/services';
+import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 
 const SearchUsersSchema = z.object({ name: z.string().min(1) });
@@ -37,7 +38,7 @@ const getSearchResults = async (req: NextApiRequest, res: NextApiResponse) => {
 
     res.status(200).json(stringifyObj(users));
   } catch (error) {
-    console.log(error);
+    logError(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

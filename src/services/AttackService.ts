@@ -125,7 +125,6 @@ export const AttackService = {
         false,
       );
       const attackerOffenseKS = attackerStrengthObj.totalStats.MeleeAtkPower;
-      const attackerOffenseDS = attackerStrengthObj.totalStats.MeleeDefPower;
 
       if (attackerOffenseKS <= 0) {
         return {
@@ -350,28 +349,11 @@ export const AttackService = {
             tx,
           );
 
-          // Recalculate final stats for both players after casualties
-          const finalAttackerStrength = this.calculateStrength(
-            AttackPlayer,
-            'OFFENSE',
-            false,
-          );
-          const finalAttackerKS = finalAttackerStrength.MeleeAtkPower;
-          const finalAttackerDS = finalAttackerStrength.MeleeDefPower;
-
           // Use the new public method to get detailed stats with totalStats property
           const newAttOffense = AttackPlayer.getDetailedArmyStat('OFFENSE');
           const newAttDefense = AttackPlayer.getDetailedArmyStat('DEFENSE');
           const newAttSpying = AttackPlayer.getDetailedArmyStat('SPY');
           const newAttSentry = AttackPlayer.getDetailedArmyStat('SENTRY');
-
-          const finalDefenderStrength = this.calculateStrength(
-            DefensePlayer,
-            'DEFENSE',
-            false,
-          );
-          const finalDefenderKS = finalDefenderStrength.MeleeAtkPower;
-          const finalDefenderDS = finalDefenderStrength.MeleeDefPower;
 
           // Use the new public method to get detailed stats with totalStats property
           const newDefOffense = DefensePlayer.getDetailedArmyStat('OFFENSE');

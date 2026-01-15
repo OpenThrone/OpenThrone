@@ -19,6 +19,8 @@ import { notifications } from '@mantine/notifications';
 import { PermissionType } from '@prisma/client';
 import React, { useEffect, useState } from 'react';
 
+import { logError } from '@/utils/logger';
+
 import { GameCard } from './game/GameCard';
 
 // Define interfaces for the different sections of user data
@@ -77,13 +79,12 @@ interface UserAdminEditorProps {
 
 const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   userId,
-  onClose,
+  onClose: _onClose,
   onSaved,
 }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [activeTab, setActiveTab] = useState<string | null>('profile');
   const [error, setError] = useState<string | null>(null);
   const theme = useMantineTheme();
   const coerceNumber = (value: number | string | null) =>
@@ -105,7 +106,7 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
         const data = await response.json();
         setUserData(data);
       } catch (err) {
-        console.error('Error fetching user data:', err);
+        logError('Error fetching user data:', err);
         setError('Failed to load user data. Please try again.');
       } finally {
         setLoading(false);
@@ -144,7 +145,7 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
 
       onSaved(); // Refresh the user list
     } catch (err) {
-      console.error('Error updating user:', err);
+      logError('Error updating user:', err);
       setError('Failed to update user data. Please try again.');
 
       notifications.show({

@@ -1,6 +1,6 @@
+import { Button, Menu } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
-import { Menu, Button } from '@mantine/core';
 
 export const LanguageSwitcher = () => {
   const router = useRouter();
@@ -45,7 +45,9 @@ export const LanguageSwitcher = () => {
             key={language.code}
             onClick={() => changeLanguage(language.code)}
             leftSection={language.flag}
-            aria-label={t('ariaLabels.changeLanguageTo', { language: language.name })}
+            aria-label={t('ariaLabels.changeLanguageTo', {
+              language: language.name,
+            })}
           >
             {language.name}
           </Menu.Item>

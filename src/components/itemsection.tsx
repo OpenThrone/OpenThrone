@@ -168,7 +168,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
       } else {
         alertService.error(data.error);
       }
-    } catch (error) {
+    } catch {
       alertService.error('Failed to equip items. Please try again.');
     }
   };
@@ -236,7 +236,7 @@ const ItemSection: React.FC<UnitSectionProps> = ({
       } else {
         alertService.error(data.error);
       }
-    } catch (error) {
+    } catch {
       alertService.error('Failed to unequip items. Please try again.');
     }
   };

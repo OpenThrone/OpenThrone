@@ -7,6 +7,7 @@ import { useState } from 'react';
 import BlogPost from '@/components/blogPost';
 import MainArea from '@/components/MainArea';
 import { BlogService } from '@/services/Blog.service';
+import { logError } from '@/utils/logger';
 
 type NewsPost = {
   id: number;
@@ -43,7 +44,7 @@ const News = ({
         body: JSON.stringify({ postId: post.id, isRead: newReadStatus }),
       });
       if (!response.ok) throw new Error('Network response was not ok');
-    } catch (err) {
+    } catch {
       // revert on error
       setPost((prev) => ({ ...prev, isRead: !newReadStatus }));
     }
@@ -87,7 +88,7 @@ export const getServerSideProps = async (context) => {
     if (!result.post) return { notFound: true };
     return { props: { post: result.post, loggedIn: Boolean(session) } };
   } catch (error) {
-    console.error('Error fetching post:', error);
+    logError('Error fetching post:', error);
     return { notFound: true };
   }
 };

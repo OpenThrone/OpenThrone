@@ -1,15 +1,15 @@
+/* eslint-disable import/extensions, import/order */
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import { useTranslation } from 'next-i18next';
-import { useSearchParams } from 'next/navigation';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 
 import NavLoggedIn from '@/components/NavLoggedIn';
 import NavLoggedOut from '@/components/NavLoggedOut';
-import Sidebar from '@/components/Sidebar';
 import { AppConfig } from '@/utils/AppConfig';
+
 import { SidebarScroll } from '../components/game/SidebarScroll';
 
 interface IMainProps {
@@ -21,24 +21,26 @@ const Main = (props: IMainProps) => {
   const { t } = useTranslation('common');
   const [authorized, setAuthorized] = useState<boolean>(false);
   const { data: session, status } = useSession();
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const authCheck = useCallback((url: string | null) => {
-    // redirect to login page if accessing a private page and not logged in
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const authCheck = useCallback(
+    (_url: string | null) => {
+      // redirect to login page if accessing a private page and not logged in
 
-    if (status === 'loading') {
-      return <div>{t('status.loading')}</div>;
-    }
-    if (!session) {
-      setAuthorized(false);
-    } else {
-      setAuthorized(true);
-    }
-    return true;
-  }, [status, session]);
+      if (status === 'loading') {
+        return <div>{t('status.loading')}</div>;
+      }
+      if (!session) {
+        setAuthorized(false);
+      } else {
+        setAuthorized(true);
+      }
+      return true;
+    },
+    [status, session],
+  );
   useEffect(() => {
-      authCheck(pathname);
-    
+    authCheck(pathname);
   }, [session, pathname, searchParams, authCheck]);
 
   return (
@@ -49,7 +51,7 @@ const Main = (props: IMainProps) => {
         <div className="mx-auto max-w-screen-xl">
           <header className="mx-auto max-w-screen-xl border-b border-gray-300">
             <div className="bg-elf-header-bgcolor pb-10 pt-2">
-              <h1 className="title text-center text-6xl font-medium text-title">
+              <h1 className="title text-center text-6xl font-medium">
                 {AppConfig.title}
               </h1>
               <h2 className="text-center text-xl">{AppConfig.description}</h2>

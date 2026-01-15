@@ -1,5 +1,6 @@
-import React, { ReactNode } from 'react';
 import { Paper, Text, ThemeIcon } from '@mantine/core';
+import type { ReactNode } from 'react';
+import React from 'react';
 
 interface StatCardProps {
   title: string;
@@ -48,21 +49,23 @@ const StatCard: React.FC<StatCardProps> = ({
     }
   };
 
-  const iconNode = ( // Create the icon node once
-    <ThemeIcon
-      c="white"
-      variant="outline"
-      className="hover:rotate-12 transition-transform duration-300"
-    >
-      {icon}
-    </ThemeIcon>
-  );
+  const iconNode = // Create the icon node once
+    (
+      <ThemeIcon
+        c="white"
+        variant="outline"
+        className="transition-transform duration-300 hover:rotate-12"
+      >
+        {icon}
+      </ThemeIcon>
+    );
 
   return (
     <Paper withBorder radius="md" p={0} className={getCardClasses()}>
       {/* Header */}
-      <div className="bg-[#10100f] relative flex items-center justify-between px-4 py-2 border-b border-[#554813]">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-100/5 to-transparent pointer-events-none" />
+      <div className="relative flex items-center justify-between border-b border-[#554813] bg-[#10100f] px-4 py-2">
+        {/* eslint-disable-next-line tailwindcss/no-custom-classname */}
+        <div className="bg-gradient-to-r pointer-events-none absolute inset-0 from-transparent via-yellow-100/5 to-transparent" />
         {iconPosition === 'left' && iconNode}
         <Text
           size="lg"
@@ -76,7 +79,7 @@ const StatCard: React.FC<StatCardProps> = ({
       </div>
 
       {/* Body */}
-      <div className="flex flex-col items-center justify-center px-4 py-4 text-[#fbd753]">
+      <div className="flex flex-col items-center justify-center p-4 text-[#fbd753]">
         <Text size="xl" fw="bold">
           {typeof value === 'number' ? value.toLocaleString() : value}
         </Text>

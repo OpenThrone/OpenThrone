@@ -81,7 +81,7 @@ interface FrontendRoom {
   }[];
 }
 
-const MessageList = (props) => {
+const MessageList = () => {
   const [rooms, setRooms] = useState<FrontendRoom[]>([]);
   const router = useRouter();
   const { data: session } = useSession();

@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { withAuth } from '@/middleware/auth';
 import { AccountService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
-import { logError } from '@/utils/logger';
+import { logError, logInfo } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 
 // Function to save the uploaded file to the local file system
@@ -129,7 +129,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         let dimensions;
         try {
           dimensions = imageSize(file.filepath);
-        } catch (e) {
+        } catch {
           return res
             .status(400)
             .json({ error: 'Uploaded file is not a valid image.' });
@@ -156,7 +156,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
                 ? parseInt(req.session.user.id, 10)
                 : Number(req.session?.user?.id ?? 0);
             const filePath = await saveToLocal(file, userId);
-            console.log('File uploaded to:', filePath);
+            logInfo('File uploaded to:', filePath);
             updateData.avatar = filePath;
           }
         } catch (uploadError) {

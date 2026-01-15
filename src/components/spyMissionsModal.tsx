@@ -18,7 +18,6 @@ import type { FC } from 'react';
 import React, { useEffect, useState } from 'react';
 
 import { SpyUpgrades } from '@/constants';
-import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 
@@ -38,8 +37,6 @@ interface ModalProps {
  * A reusable modal component with a standard header and structure for spy missions.
  */
 const CustomModal: FC<ModalProps> = ({ isOpen, children, toggleModal }) => {
-  const layoutCont = useLayout(); // Note: layoutCont is declared but not used. Consider removing if unnecessary.
-
   return (
     <Modal.Root opened={isOpen} onClose={toggleModal}>
       <Modal.Overlay />

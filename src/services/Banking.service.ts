@@ -14,7 +14,7 @@ import {
 } from './Bank.service';
 
 // Define the type for the transaction client
-type TransactionClient = Omit<
+type _TransactionClient = Omit<
   PrismaClient,
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >;

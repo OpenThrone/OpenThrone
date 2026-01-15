@@ -1,5 +1,6 @@
 class BattleSimulationResult {
   Result: string; // Either 'Win' or 'Lost'
+
   Experience: {
     Attacker: number;
     Defender: number;

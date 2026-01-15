@@ -230,7 +230,7 @@ const Form: React.FC<FormProps> = ({
               errorObj.message || 'Invalid credentials or server error.',
             );
           }
-        } catch (parseError) {
+        } catch {
           setErrorMessage(error || 'Invalid credentials or server error.');
         }
       }
@@ -258,7 +258,7 @@ const Form: React.FC<FormProps> = ({
         await handleLogin(loginData.email, loginData.password);
       } else {
         const registerData = data as RegisterFormData;
-        const { password_confirm, ...apiData } = registerData;
+        const { password_confirm: _passwordConfirm, ...apiData } = registerData;
         const res = await fetch('/api/auth/register/route', {
           method: 'POST',
           headers: {
@@ -484,13 +484,8 @@ const Form: React.FC<FormProps> = ({
             <>
               <label
                 htmlFor="captcha"
-                className="mantine-InputWrapper-label"
+                className="text-[1.05rem] font-bold text-gray-400"
                 data-size="md"
-                style={{
-                  color: 'darkgray',
-                  fontWeight: 'bolder',
-                  fontSize: '1.05rem',
-                }}
               >
                 Captcha
               </label>

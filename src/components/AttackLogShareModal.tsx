@@ -13,7 +13,7 @@ import React, { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
 import type { Log } from '@/types/typings';
-import { logError } from '@/utils/logger';
+import { logDebug, logError } from '@/utils/logger';
 import { formatDate } from '@/utils/utilities';
 
 interface AttackLogShareModalProps {
@@ -42,7 +42,7 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
       setError(null);
 
       // Debug user
-      console.log('Current user:', user);
+      logDebug('Current user:', user);
 
       // Fetch user's attack logs
       fetch(`/api/attack/logs?limit=${ROWS_PER_PAGE}&page=${activePage - 1}`)
@@ -53,7 +53,7 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
           return res.json();
         })
         .then((data) => {
-          console.log('API response:', data); // Log the entire response
+          logDebug('API response:', data);
           if (data.data && Array.isArray(data.data)) {
             setAttackLogs(data.data);
             setTotalPages(Math.ceil(data.total / ROWS_PER_PAGE));
@@ -86,7 +86,7 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
 
   // Debug attackLogs
   useEffect(() => {
-    console.log('Attack logs state:', attackLogs);
+    logDebug('Attack logs state:', attackLogs);
   }, [attackLogs]);
 
   const rows = attackLogs.map((log) => {

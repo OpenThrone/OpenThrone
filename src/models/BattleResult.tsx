@@ -79,6 +79,7 @@ class BattleResult {
       units: BattleUnits[];
     };
   };
+
   defenderStats: {
     defenseRemaining: number;
     meleeAtkPower: number;
@@ -86,6 +87,7 @@ class BattleResult {
     rangedAtkPower: number;
     rangedDefPower: number;
   };
+
   attackerStats: {
     offenseRemaining: number;
     meleeAtkPower: number;

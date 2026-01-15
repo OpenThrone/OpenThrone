@@ -63,7 +63,7 @@ export default async function handler(
 }
 
 // Helper function to create a user object from form data
-function createUserFromFormData(formData: any) {
+function _createUserFromFormData(formData: any) {
   const user = {
     id: formData.id || Math.floor(Math.random() * 10000),
     display_name: formData.display_name || 'Simulator User',

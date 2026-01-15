@@ -57,7 +57,10 @@ const namespaceMatchers: Array<{
     matches: (path) => path.startsWith('/community'),
     namespaces: ['community'],
   },
-  { matches: (path) => path.startsWith('/auto-recruit'), namespaces: ['community'] },
+  {
+    matches: (path) => path.startsWith('/auto-recruit'),
+    namespaces: ['community'],
+  },
   { matches: (path) => path.startsWith('/social'), namespaces: ['social'] },
   {
     matches: (path) => path.startsWith('/structures'),
@@ -67,7 +70,10 @@ const namespaceMatchers: Array<{
     matches: (path) => path.startsWith('/alliances'),
     namespaces: ['alliances'],
   },
-  { matches: (path) => path.startsWith('/messaging'), namespaces: ['messaging'] },
+  {
+    matches: (path) => path.startsWith('/messaging'),
+    namespaces: ['messaging'],
+  },
   {
     matches: (path) => path.startsWith('/administration'),
     namespaces: ['admin'],

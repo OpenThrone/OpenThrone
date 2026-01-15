@@ -16,7 +16,7 @@ import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
 import UserModel from '@/models/Users';
 
-const Friends = (props) => {
+const Friends = () => {
   const { t } = useTranslation('social');
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);

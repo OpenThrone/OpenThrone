@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { startNewEra } from '@/services/Era.service';
+import { logError } from '@/utils/logger';
 
 export default async function handler(
   req: NextApiRequest,
@@ -35,7 +36,7 @@ export default async function handler(
     const newEra = await startNewEra();
     return res.status(200).json({ success: true, newEraId: newEra.id });
   } catch (error) {
-    console.error('Error starting new era:', error);
+    logError('Error starting new era:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

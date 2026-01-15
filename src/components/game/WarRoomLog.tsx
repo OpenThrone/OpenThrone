@@ -37,8 +37,6 @@ export const WarRoomLog = () => {
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
   const accent = secondary[4] ?? '#e5c55a';
   const gridLine = brand[7] ?? '#3b82f6';
-  console.log('WarRoomLog theme colors:', theme.colors);
-  console.log('Accent color:', accent);
   const withAlpha = (hex: string, alpha: string) =>
     hex.startsWith('#') && hex.length === 7 ? `${hex}${alpha}` : hex;
 

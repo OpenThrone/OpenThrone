@@ -100,7 +100,6 @@ export const getAverageLevelAndHP = (
       unit.quantity > 0 &&
       (Number.isInteger(level) ? unit.level === level : true),
   );
-  console.log('filteredUnits', filteredUnits);
   let totalLevel = 0;
   let totalHP = 0;
   let totalQuantity = 0;
