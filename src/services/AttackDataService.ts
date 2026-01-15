@@ -1,14 +1,19 @@
+import type { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
+import type { Omit } from '@prisma/client/runtime/library';
+import { z } from 'zod';
+
 import { BattleUpgrades, ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
+import type { PlayerStat, PlayerUnit } from '@/types/typings'; // Import custom types
 import { getOTStartDate } from '@/utils/timefunctions';
-import { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
-import type { PlayerStat, PlayerUnit, PlayerItem, PlayerBattleUpgrade } from '@/types/typings'; // Import custom types
-import { Omit } from '@prisma/client/runtime/library';
-import { z } from 'zod';
+
 import { getActiveEra } from './Era.service';
 
 // Define the type for the transaction client
-type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+type TransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 
 // Zod schemas for validation
 const UserIdSchema = z.number().int().positive();
@@ -32,9 +37,12 @@ const DaysSchema = z.number().int().min(1).default(7);
  * @param userId - The ID of the user to retrieve.
  * @returns The user object or null if not found.
  */
-export const getUserById = async (userId: number, txClient?: TransactionClient) => {
+export const getUserById = async (
+  userId: number,
+  txClient?: TransactionClient,
+) => {
   const validatedUserId = UserIdSchema.parse(userId);
-  const db = (txClient ?? prisma) as any;
+  const db = txClient ?? prisma;
   return await db.users.findUnique({
     where: { id: validatedUserId },
     include: {
@@ -63,7 +71,7 @@ export const getAllUsers = async () => {
       permissions: true,
     },
   });
-}
+};
 
 /**
  * Retrieves the IDs of all users.
@@ -81,24 +89,28 @@ export const getAllUserIds = async () => {
  * @param units - The new units array.
  * @param txClient - The Prisma transaction client.
  */
-export const updateUserUnits = async (userId: number, units: PlayerUnit[], txClient: TransactionClient) => {
+export const updateUserUnits = async (
+  userId: number,
+  units: PlayerUnit[],
+  txClient: TransactionClient,
+) => {
   const validatedUserId = UserIdSchema.parse(userId);
   const validatedUnits = PlayerUnitArraySchema.parse(units);
   // Delete existing units for the user
   await txClient.userUnit.deleteMany({
-    where: { userId: validatedUserId }
+    where: { userId: validatedUserId },
   });
 
   // Insert new units
   if (validatedUnits && validatedUnits.length > 0) {
     await txClient.userUnit.createMany({
-      data: validatedUnits.map(unit => ({
+      data: validatedUnits.map((unit) => ({
         userId: validatedUserId,
         type: unit.type as any,
         level: unit.level,
         quantity: unit.quantity,
-        isMercenary: false // Regular units, not mercenaries
-      }))
+        isMercenary: false, // Regular units, not mercenaries
+      })),
     });
   }
 };
@@ -109,14 +121,18 @@ export const updateUserUnits = async (userId: number, units: PlayerUnit[], txCli
  * @param hitpoints - The new hitpoint value.
  * @param txClient - The Prisma transaction client.
  */
-export const updateFortHitpoints = async (userId: number, hitpoints: number, txClient: TransactionClient) => {
+export const updateFortHitpoints = async (
+  userId: number,
+  hitpoints: number,
+  txClient: TransactionClient,
+) => {
   const validatedUserId = UserIdSchema.parse(userId);
   const validatedHitpoints = HitpointsSchema.parse(hitpoints);
   await txClient.users.update({
     where: { id: validatedUserId },
     data: { fort_hitpoints: validatedHitpoints },
   });
-}
+};
 
 /**
  * Creates a new attack log entry within a transaction.
@@ -124,8 +140,11 @@ export const updateFortHitpoints = async (userId: number, hitpoints: number, txC
  * @param txClient - The Prisma transaction client.
  * @returns The created attack log entry.
  */
-export const createAttackLog = async (logData: Prisma.attack_logCreateInput, txClient: TransactionClient) => {
-  return await txClient.attack_log.create({
+export const createAttackLog = async (
+  logData: Prisma.attack_logCreateInput,
+  txClient: TransactionClient,
+) => {
+  return txClient.attack_log.create({
     data: logData,
   });
 };
@@ -142,7 +161,11 @@ export const createAttackLog = async (logData: Prisma.attack_logCreateInput, txC
  * @param newStat - An object containing the 'type' and 'subtype' of the stat to increment.
  * @param txClient - The Prisma transaction client.
  */
-export const incrementUserStats = async (userId: number, newStat: { type: string, subtype: string }, txClient: TransactionClient) => {
+export const incrementUserStats = async (
+  userId: number,
+  newStat: { type: string; subtype: string },
+  txClient: TransactionClient,
+) => {
   const validatedUserId = UserIdSchema.parse(userId);
   const validatedNewStat = StatUpdateSchema.parse(newStat);
   const user = await txClient.users.findUnique({
@@ -152,43 +175,47 @@ export const incrementUserStats = async (userId: number, newStat: { type: string
     },
   });
 
-    if (!user) {
-      throw ({ message: "User not found" } as any);
-    }
-
-// Safely handle the stats array from Prisma JSON
-let userStats: PlayerStat[] = [];
-if (Array.isArray(user.stats)) {
-  // Assume the array elements *should* conform to PlayerStat,
-  // but treat as 'any' temporarily for manipulation.
-  // More robust validation could be added here if needed.
-  userStats = user.stats as any[];
-}
-
-const existingStatIndex = userStats.findIndex(stat => stat.type === validatedNewStat.type && stat.subtype === validatedNewStat.subtype);
-
-if (existingStatIndex >= 0) {
-  // Ensure the stat property exists and is a number before incrementing
-  let currentStatValue = userStats[existingStatIndex].stat;
-  if (typeof currentStatValue !== 'number') {
-      currentStatValue = 0;
+  if (!user) {
+    throw { message: 'User not found' } as any;
   }
-  userStats[existingStatIndex].stat = currentStatValue + 1;
-} else {
-  userStats.push({
-    type: newStat.type as PlayerStat['type'], // Cast to specific type
-    subtype: newStat.subtype,
-    stat: 1,
-  });
-}
 
-// Update the user's stats
-await txClient.users.update({
-  where: { id: userId },
-  // Prisma expects JsonValue for JSON fields
-  data: { stats: userStats as unknown as Prisma.InputJsonValue },
-});
-}
+  // Safely handle the stats array from Prisma JSON
+  let userStats: PlayerStat[] = [];
+  if (Array.isArray(user.stats)) {
+    // Assume the array elements *should* conform to PlayerStat,
+    // but treat as 'any' temporarily for manipulation.
+    // More robust validation could be added here if needed.
+    userStats = user.stats as any[];
+  }
+
+  const existingStatIndex = userStats.findIndex(
+    (stat) =>
+      stat.type === validatedNewStat.type &&
+      stat.subtype === validatedNewStat.subtype,
+  );
+
+  if (existingStatIndex >= 0) {
+    // Ensure the stat property exists and is a number before incrementing
+    let currentStatValue = userStats[existingStatIndex].stat;
+    if (typeof currentStatValue !== 'number') {
+      currentStatValue = 0;
+    }
+    userStats[existingStatIndex].stat = currentStatValue + 1;
+  } else {
+    userStats.push({
+      type: newStat.type as PlayerStat['type'], // Cast to specific type
+      subtype: newStat.subtype,
+      stat: 1,
+    });
+  }
+
+  // Update the user's stats
+  await txClient.users.update({
+    where: { id: userId },
+    // Prisma expects JsonValue for JSON fields
+    data: { stats: userStats as unknown as Prisma.InputJsonValue },
+  });
+};
 
 /**
  * Updates a user's data within a transaction.
@@ -196,7 +223,11 @@ await txClient.users.update({
  * @param data - An object containing the fields to update.
  * @param txClient - The Prisma transaction client.
  */
-export const updateUser = async (userId: number, data: Prisma.usersUpdateInput, txClient: TransactionClient) => {
+export const updateUser = async (
+  userId: number,
+  data: Prisma.usersUpdateInput,
+  txClient: TransactionClient,
+) => {
   await txClient.users.update({
     where: { id: userId },
     data,
@@ -208,7 +239,10 @@ export const updateUser = async (userId: number, data: Prisma.usersUpdateInput, 
  * @param historyData - The data for the bank history entry.
  * @param txClient - The Prisma transaction client.
  */
-export const createBankHistory = async (historyData: Prisma.bank_historyCreateInput, txClient: TransactionClient) => {
+export const createBankHistory = async (
+  historyData: Prisma.bank_historyCreateInput,
+  txClient: TransactionClient,
+) => {
   await txClient.bank_history.create({
     data: historyData,
   });
@@ -230,42 +264,47 @@ export const getTop10AttacksByTotalCasualties = async (timeFrame: number) => {
     const relations = await prisma.attack_log.findMany({
       where: {
         timestamp: {
-          gt: new Date(Date.now() - validatedTimeFrame)
+          gt: new Date(Date.now() - validatedTimeFrame),
         },
         attackerPlayer: {
-          currentEraId: activeEra.id
+          currentEraId: activeEra.id,
         },
         defenderPlayer: {
-          currentEraId: activeEra.id
-        }
+          currentEraId: activeEra.id,
+        },
       },
       include: {
         attackerPlayer: {
-          select: { display_name: true }
+          select: { display_name: true },
         },
         defenderPlayer: {
-          select: { display_name: true }
-        }
-      }
+          select: { display_name: true },
+        },
+      },
     });
 
-    const sortedAttacks = relations.map(attack => {
-      // Safely access nested stats properties
-      const attackerLosses = (attack.stats as any)?.attacker_losses?.total ?? 0;
-      const defenderLosses = (attack.stats as any)?.defender_losses?.total ?? 0;
-      return {
-        rank: 0,
-        display_name: `${attack.attackerPlayer?.display_name ?? 'Unknown'} vs ${attack.defenderPlayer?.display_name ?? 'Unknown'}`,
-        stat: attackerLosses + defenderLosses
-      };
-    }).sort((a, b) => b.stat - a.stat).slice(0, 10);
+    const sortedAttacks = relations
+      .map((attack) => {
+        // Safely access nested stats properties
+        const attackerLosses = attack.stats?.attacker_losses?.total ?? 0;
+        const defenderLosses = attack.stats?.defender_losses?.total ?? 0;
+        return {
+          rank: 0,
+          display_name: `${attack.attackerPlayer?.display_name ?? 'Unknown'} vs ${attack.defenderPlayer?.display_name ?? 'Unknown'}`,
+          stat: attackerLosses + defenderLosses,
+        };
+      })
+      .sort((a, b) => b.stat - a.stat)
+      .slice(0, 10);
 
-    return sortedAttacks.map((attack, index) => ({ ...attack, rank: index + 1 }));
+    return sortedAttacks.map((attack, index) => ({
+      ...attack,
+      rank: index + 1,
+    }));
   } catch (error) {
     return [];
   }
 };
-
 
 /**
  * Retrieves the top 10 attackers ranked by their total casualties inflicted within a given timeframe.
@@ -283,32 +322,42 @@ export const getTop10TotalAttackerCasualties = async (timeFrame: number) => {
     const relations = await prisma.attack_log.findMany({
       where: {
         timestamp: {
-          gt: new Date(Date.now() - validatedTimeFrame)
+          gt: new Date(Date.now() - validatedTimeFrame),
         },
         attackerPlayer: {
-          currentEraId: activeEra.id
-        }
+          currentEraId: activeEra.id,
+        },
       },
       include: {
         attackerPlayer: {
-          select: { display_name: true }
-        }
-      }
+          select: { display_name: true },
+        },
+      },
     });
 
-    const attackerCasualties: { [key: number]: { display_name: string, stat: number } } = {};
+    const attackerCasualties: {
+      [key: number]: { display_name: string; stat: number };
+    } = {};
 
-    relations.forEach(attack => {
-      const losses = (attack.stats as any)?.attacker_losses?.total ?? 0;
+    relations.forEach((attack) => {
+      const losses = attack.stats?.attacker_losses?.total ?? 0;
       if (!attackerCasualties[attack.attacker_id]) {
-        attackerCasualties[attack.attacker_id] = { display_name: attack.attackerPlayer?.display_name ?? 'Unknown', stat: 0 };
+        attackerCasualties[attack.attacker_id] = {
+          display_name: attack.attackerPlayer?.display_name ?? 'Unknown',
+          stat: 0,
+        };
       }
       attackerCasualties[attack.attacker_id].stat += losses;
     });
 
-    const sortedCasualties = Object.values(attackerCasualties).sort((a, b) => b.stat - a.stat).slice(0, 10);
+    const sortedCasualties = Object.values(attackerCasualties)
+      .sort((a, b) => b.stat - a.stat)
+      .slice(0, 10);
 
-    return sortedCasualties.map((attacker, index) => ({ rank: index + 1, ...attacker }));
+    return sortedCasualties.map((attacker, index) => ({
+      rank: index + 1,
+      ...attacker,
+    }));
   } catch (error) {
     return [];
   }
@@ -330,32 +379,42 @@ export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
     const relations = await prisma.attack_log.findMany({
       where: {
         timestamp: {
-          gt: new Date(Date.now() - validatedTimeFrame)
+          gt: new Date(Date.now() - validatedTimeFrame),
         },
         defenderPlayer: {
-          currentEraId: activeEra.id
-        }
+          currentEraId: activeEra.id,
+        },
       },
       include: {
         defenderPlayer: {
-          select: { display_name: true }
-        }
-      }
+          select: { display_name: true },
+        },
+      },
     });
 
-    const defenderCasualties: { [key: number]: { display_name: string, stat: number } } = {};
+    const defenderCasualties: {
+      [key: number]: { display_name: string; stat: number };
+    } = {};
 
-    relations.forEach(attack => {
-      const losses = (attack.stats as any)?.defender_losses?.total ?? 0;
+    relations.forEach((attack) => {
+      const losses = attack.stats?.defender_losses?.total ?? 0;
       if (!defenderCasualties[attack.defender_id]) {
-        defenderCasualties[attack.defender_id] = { display_name: attack.defenderPlayer?.display_name ?? 'Unknown', stat: 0 };
+        defenderCasualties[attack.defender_id] = {
+          display_name: attack.defenderPlayer?.display_name ?? 'Unknown',
+          stat: 0,
+        };
       }
       defenderCasualties[attack.defender_id].stat += losses;
     });
 
-    const sortedCasualties = Object.values(defenderCasualties).sort((a, b) => b.stat - a.stat).slice(0, 10);
+    const sortedCasualties = Object.values(defenderCasualties)
+      .sort((a, b) => b.stat - a.stat)
+      .slice(0, 10);
 
-    return sortedCasualties.map((defender, index) => ({ rank: index + 1, ...defender }));
+    return sortedCasualties.map((defender, index) => ({
+      rank: index + 1,
+      ...defender,
+    }));
   } catch (error) {
     return [];
   }
@@ -369,8 +428,12 @@ export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
  */
 export async function getRecruitmentCounts(days: number = 7) {
   const validatedDays = DaysSchema.parse(days);
-  const startDate = new Date(Number(getOTStartDate()) - validatedDays * 24 * 60 * 60 * 1000); // The start of the specified days ago
-  const endDate = new Date(Number(getOTStartDate()) - (validatedDays - 1) * 24 * 60 * 60 * 1000); // The start of the next day
+  const startDate = new Date(
+    Number(getOTStartDate()) - validatedDays * 24 * 60 * 60 * 1000,
+  ); // The start of the specified days ago
+  const endDate = new Date(
+    Number(getOTStartDate()) - (validatedDays - 1) * 24 * 60 * 60 * 1000,
+  ); // The start of the next day
 
   const recruitmentCounts = await prisma.recruit_history.groupBy({
     by: ['to_user'],
@@ -383,7 +446,7 @@ export async function getRecruitmentCounts(days: number = 7) {
         lt: endDate,
       },
       from_user: { not: 0 },
-      to_user: { not: 0 }
+      to_user: { not: 0 },
     },
     orderBy: {
       _count: {
@@ -393,32 +456,34 @@ export async function getRecruitmentCounts(days: number = 7) {
     take: 10,
   });
 
-  const recruitmentCountsWithFilteredRecords = await Promise.all(recruitmentCounts.map(async (recruit) => {
-    const validRecruitmentRecords = await prisma.recruit_history.findMany({
-      where: {
-        from_user: { not: recruit.to_user }, // Filter out self-recruitment
-        to_user: recruit.to_user,
-        timestamp: {
-          gte: startDate,
-          lt: endDate
+  const recruitmentCountsWithFilteredRecords = await Promise.all(
+    recruitmentCounts.map(async (recruit) => {
+      const validRecruitmentRecords = await prisma.recruit_history.findMany({
+        where: {
+          from_user: { not: recruit.to_user }, // Filter out self-recruitment
+          to_user: recruit.to_user,
+          timestamp: {
+            gte: startDate,
+            lt: endDate,
+          },
         },
-      },
-      select: {
-        from_user: true,
-        timestamp: true,
-        to_user: true,
-      },
-    });
+        select: {
+          from_user: true,
+          timestamp: true,
+          to_user: true,
+        },
+      });
 
-    // Return structure compatible with expected format, including the filtered records
-    return {
-      ...recruit,
-      recruitmentRecords: validRecruitmentRecords,
-      _count: {
-        to_user: validRecruitmentRecords.length // Update count based on valid records
-      }
-    };
-  }));
+      // Return structure compatible with expected format, including the filtered records
+      return {
+        ...recruit,
+        recruitmentRecords: validRecruitmentRecords,
+        _count: {
+          to_user: validRecruitmentRecords.length, // Update count based on valid records
+        },
+      };
+    }),
+  );
 
   return recruitmentCountsWithFilteredRecords;
 }
@@ -438,41 +503,48 @@ export async function getTopRecruitsWithDisplayNames() {
     const recruitmentCounts = await getRecruitmentCounts(1); // Get counts for the last day
 
     // Filter out entries with no valid recruitments
-    const filteredRecruitmentCounts = recruitmentCounts.filter(recruit =>
-      recruit.recruitmentRecords.length > 0
+    const filteredRecruitmentCounts = recruitmentCounts.filter(
+      (recruit) => recruit.recruitmentRecords.length > 0,
     );
 
     // Map recruitmentCounts to include user data
-    const recruitsWithUser = await Promise.all(filteredRecruitmentCounts.map(async (recruit) => {
-      const user = await prisma.users.findFirst({
-        where: {
-          AND: [
-            { id: recruit.to_user },
-            { id: { not: 0 } }, // Ensure user ID is not 0
-            { currentEraId: activeEra.id }
-          ]
-        },
-        select: {
-          display_name: true,
-          id: true
+    const recruitsWithUser = await Promise.all(
+      filteredRecruitmentCounts.map(async (recruit) => {
+        const user = await prisma.users.findFirst({
+          where: {
+            AND: [
+              { id: recruit.to_user },
+              { id: { not: 0 } }, // Ensure user ID is not 0
+              { currentEraId: activeEra.id },
+            ],
+          },
+          select: {
+            display_name: true,
+            id: true,
+          },
+        });
+
+        // Return null if user is not found or ID is 0, otherwise return the desired structure
+        if (!user || user.id === 0) {
+          return null;
         }
-      });
 
-      // Return null if user is not found or ID is 0, otherwise return the desired structure
-      if (!user || user.id === 0) {
-        return null;
-      }
-
-      return {
-        id: user.id,
-        display_name: user.display_name,
-        stat: recruit._count.to_user, // Use the count of valid records
-      };
-    }));
+        return {
+          id: user.id,
+          display_name: user.display_name,
+          stat: recruit._count.to_user, // Use the count of valid records
+        };
+      }),
+    );
 
     // Filter out null entries and sort
     return recruitsWithUser
-      .filter((recruit): recruit is { id: number; display_name: string; stat: number } => recruit !== null)
+      .filter(
+        (
+          recruit,
+        ): recruit is { id: number; display_name: string; stat: number } =>
+          recruit !== null,
+      )
       .sort((a, b) => {
         if (b.stat !== a.stat) {
           return b.stat - a.stat; // Sort by stat descending
@@ -506,23 +578,31 @@ export async function getTopSuccessfulAttacks() {
         },
         type: 'attack',
         attackerPlayer: {
-          currentEraId: activeEra.id
-        }
+          currentEraId: activeEra.id,
+        },
       },
     });
 
     // Filter attacks where attacker is the winner
-    const successfulAttacks = attacks.filter(attack => attack.winner === attack.attacker_id);
+    const successfulAttacks = attacks.filter(
+      (attack) => attack.winner === attack.attacker_id,
+    );
 
     // Aggregate successful attacks by attacker_id
-    const attackCounts = successfulAttacks.reduce((acc: { [key: number]: number }, { attacker_id }) => {
-      acc[attacker_id] = (acc[attacker_id] || 0) + 1;
-      return acc;
-    }, {});
+    const attackCounts = successfulAttacks.reduce(
+      (acc: { [key: number]: number }, { attacker_id }) => {
+        acc[attacker_id] = (acc[attacker_id] || 0) + 1;
+        return acc;
+      },
+      {},
+    );
 
     // Convert to array, sort by count, and take the top 10
     const sortedAttackers = Object.entries(attackCounts)
-      .map(([attacker_id, stat]) => ({ attacker_id: parseInt(attacker_id, 10), stat }))
+      .map(([attacker_id, stat]) => ({
+        attacker_id: parseInt(attacker_id, 10),
+        stat,
+      }))
       .sort((a, b) => Number(b.stat) - Number(a.stat))
       .slice(0, 10);
 
@@ -540,13 +620,15 @@ export async function getTopSuccessfulAttacks() {
         });
         // Return null if user not found, otherwise return details
         return user ? { attacker_id, display_name: user.display_name } : null;
-      })
+      }),
     );
 
     // Merge attacker details with attack counts, filtering out nulls
     const detailedAttackCounts = sortedAttackers
-      .map(attacker => {
-        const detail = attackerDetails.find(d => d && d.attacker_id === attacker.attacker_id);
+      .map((attacker) => {
+        const detail = attackerDetails.find(
+          (d) => d && d.attacker_id === attacker.attacker_id,
+        );
         if (!detail) return null; // Skip if user details couldn't be found
         return {
           ...attacker,
@@ -554,7 +636,16 @@ export async function getTopSuccessfulAttacks() {
           display_name: detail.display_name,
         };
       })
-      .filter((attacker): attacker is { attacker_id: number; stat: number; id: number; display_name: string } => attacker !== null); // Type guard to filter out nulls
+      .filter(
+        (
+          attacker,
+        ): attacker is {
+          attacker_id: number;
+          stat: number;
+          id: number;
+          display_name: string;
+        } => attacker !== null,
+      ); // Type guard to filter out nulls
 
     return detailedAttackCounts;
   } catch (error) {
@@ -582,14 +673,16 @@ export async function getTopPopulations() {
       },
       where: {
         id: { not: 0 }, // Exclude user ID 0
-        currentEraId: activeEra.id
-      }
+        currentEraId: activeEra.id,
+      },
     });
 
     // Calculate total units for each user
-    const usersTotalUnits = usersWithUnits.map(user => {
+    const usersTotalUnits = usersWithUnits.map((user) => {
       // Calculate total from UserUnit relation
-      const totalUnits = user.UserUnit?.reduce((acc, unit) => acc + (unit.quantity ?? 0), 0) || 0;
+      const totalUnits =
+        user.UserUnit?.reduce((acc, unit) => acc + (unit.quantity ?? 0), 0) ||
+        0;
       return {
         id: user.id,
         display_name: user.display_name,
@@ -597,7 +690,9 @@ export async function getTopPopulations() {
       };
     });
     // Sort by total units in descending order and take the top 10
-    const topPopulations = usersTotalUnits.sort((a, b) => b.stat - a.stat).slice(0, 10);
+    const topPopulations = usersTotalUnits
+      .sort((a, b) => b.stat - a.stat)
+      .slice(0, 10);
 
     return topPopulations;
   } catch (error) {
@@ -627,7 +722,7 @@ export async function getTopGoldOnHand() {
       },
       where: {
         id: { not: 0 }, // Exclude user ID 0
-        currentEraId: activeEra.id
+        currentEraId: activeEra.id,
       },
       take: 10,
     });
@@ -667,7 +762,7 @@ export async function getTopGoldInBank() {
       },
       where: {
         id: { not: 0 }, // Exclude user ID 0
-        currentEraId: activeEra.id
+        currentEraId: activeEra.id,
       },
       take: 10,
     });
@@ -709,18 +804,24 @@ export async function getTopWealth() {
       },
       where: {
         id: { not: 0 }, // Exclude user ID 0
-        currentEraId: activeEra.id
+        currentEraId: activeEra.id,
       },
     });
 
     // Helper function to calculate the total value of items based on their cost
     const calculateItemsValue = (items: any[]): bigint => {
       return items.reduce((total, item) => {
-        const itemTypeInfo = ItemTypes.find((itm) => itm.level === item.level && item.usage === itm.usage && item.type === itm.type);
+        const itemTypeInfo = ItemTypes.find(
+          (itm) =>
+            itm.level === item.level &&
+            item.usage === itm.usage &&
+            item.type === itm.type,
+        );
         if (!itemTypeInfo) return total; // If item type info not found, add 0
         // Ensure quantity and cost are numbers before calculation
         const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
-        const cost = typeof itemTypeInfo.cost === 'number' ? itemTypeInfo.cost : 0;
+        const cost =
+          typeof itemTypeInfo.cost === 'number' ? itemTypeInfo.cost : 0;
         return total + BigInt(quantity * cost);
       }, BigInt(0));
     };
@@ -728,11 +829,17 @@ export async function getTopWealth() {
     // Helper function to calculate the total value of battle upgrades based on their cost
     const calculateBattleUpgradeValue = (upgrades: any[]): bigint => {
       return upgrades.reduce((total, upgrade) => {
-        const battleUpgradeInfo = BattleUpgrades.find((upg) => upg.level === upgrade.level && upgrade.type === upg.type);
+        const battleUpgradeInfo = BattleUpgrades.find(
+          (upg) => upg.level === upgrade.level && upgrade.type === upg.type,
+        );
         if (!battleUpgradeInfo) return total; // If upgrade info not found, add 0
         // Ensure quantity and cost are numbers
-        const quantity = typeof upgrade.quantity === 'number' ? upgrade.quantity : 0;
-        const cost = typeof battleUpgradeInfo.cost === 'number' ? battleUpgradeInfo.cost : 0;
+        const quantity =
+          typeof upgrade.quantity === 'number' ? upgrade.quantity : 0;
+        const cost =
+          typeof battleUpgradeInfo.cost === 'number'
+            ? battleUpgradeInfo.cost
+            : 0;
         return total + BigInt(quantity * cost);
       }, BigInt(0));
     };
@@ -740,9 +847,15 @@ export async function getTopWealth() {
     // Calculate wealth for each user
     const usersWithWealth = users.map((user) => {
       const itemsValue = calculateItemsValue(user.UserItem || []);
-      const battleUpgradesValue = calculateBattleUpgradeValue(user.UserBattleUpgrade || []);
+      const battleUpgradesValue = calculateBattleUpgradeValue(
+        user.UserBattleUpgrade || [],
+      );
 
-      const wealth = BigInt(user.gold ?? 0) + BigInt(user.gold_in_bank ?? 0) + itemsValue + battleUpgradesValue;
+      const wealth =
+        BigInt(user.gold ?? 0) +
+        BigInt(user.gold_in_bank ?? 0) +
+        itemsValue +
+        battleUpgradesValue;
 
       return {
         id: user.id,
@@ -752,7 +865,9 @@ export async function getTopWealth() {
     });
 
     // Sort users by wealth in descending order
-    usersWithWealth.sort((a, b) => (b.stat > a.stat ? 1 : (b.stat < a.stat ? -1 : 0)));
+    usersWithWealth.sort((a, b) =>
+      b.stat > a.stat ? 1 : b.stat < a.stat ? -1 : 0,
+    );
 
     // Get only the top 10 users
     const top10UsersWithWealth = usersWithWealth.slice(0, 10);

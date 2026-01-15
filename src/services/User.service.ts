@@ -1,11 +1,11 @@
-import md5 from "md5";
-import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
+import md5 from 'md5';
 import { z } from 'zod';
-import { idleThresholdDate } from "@/utils/utilities";
-import {
-  ensureActiveEra,
-} from "./Era.service";
+
+import prisma from '@/lib/prisma';
+import { idleThresholdDate } from '@/utils/utilities';
+
+import { ensureActiveEra } from './Era.service';
 import {
   buildDefaultUserUpdate,
   ERA_DEFAULT_BATTLE_UPGRADES,
@@ -25,16 +25,33 @@ const CreateUserSchema = z.object({
   locale: z.string().optional(),
 });
 
-const UpdateLastActiveSchema = z.object({
-  email: z.string().email().optional(),
-  userId: z.number().int().positive().optional(),
-  displayName: z.string().optional(),
-}).refine(data => data.email || data.userId || data.displayName, {
-  message: "At least one identifier (email, userId, or displayName) must be provided",
-});
+const UpdateLastActiveSchema = z
+  .object({
+    email: z.string().email().optional(),
+    userId: z.number().int().positive().optional(),
+    displayName: z.string().optional(),
+  })
+  .refine((data) => data.email || data.userId || data.displayName, {
+    message:
+      'At least one identifier (email, userId, or displayName) must be provided',
+  });
 
-export const createUser = async (email: string, password_hash: string, display_name: string, race: string, class_name: string, locale: string = 'en-US') => {
-  const validatedData = CreateUserSchema.parse({ email, password_hash, display_name, race, class_name, locale });
+export const createUser = async (
+  email: string,
+  password_hash: string,
+  display_name: string,
+  race: string,
+  class_name: string,
+  locale: string = 'en-US',
+) => {
+  const validatedData = CreateUserSchema.parse({
+    email,
+    password_hash,
+    display_name,
+    race,
+    class_name,
+    locale,
+  });
   return await prisma.$transaction(async (tx) => {
     const activeEra = await ensureActiveEra(tx);
 
@@ -58,48 +75,55 @@ export const createUser = async (email: string, password_hash: string, display_n
     });
 
     await tx.userUnit.createMany({
-      data: ERA_DEFAULT_UNITS.map(unit => ({ ...unit, userId: user.id })),
+      data: ERA_DEFAULT_UNITS.map((unit) => ({ ...unit, userId: user.id })),
     });
 
     await tx.userItem.createMany({
-      data: ERA_DEFAULT_ITEMS.map(item => ({ ...item, userId: user.id })),
+      data: ERA_DEFAULT_ITEMS.map((item) => ({ ...item, userId: user.id })),
     });
 
     await tx.userStructureUpgrade.createMany({
-      data: ERA_DEFAULT_STRUCTURE_UPGRADES.map(upgrade => ({ ...upgrade, userId: user.id })),
+      data: ERA_DEFAULT_STRUCTURE_UPGRADES.map((upgrade) => ({
+        ...upgrade,
+        userId: user.id,
+      })),
     });
 
     await tx.userBattleUpgrade.createMany({
-      data: ERA_DEFAULT_BATTLE_UPGRADES.map(upgrade => ({ ...upgrade, userId: user.id })),
+      data: ERA_DEFAULT_BATTLE_UPGRADES.map((upgrade) => ({
+        ...upgrade,
+        userId: user.id,
+      })),
     });
 
     await tx.userBonusPoints.createMany({
-      data: ERA_DEFAULT_BONUS_POINTS.map(bonus => ({ ...bonus, userId: user.id })),
+      data: ERA_DEFAULT_BONUS_POINTS.map((bonus) => ({
+        ...bonus,
+        userId: user.id,
+      })),
     });
 
     return user;
   });
-}
+};
 
 export const userExists = async (email: string) => {
   return await prisma.users.count({
     where: {
       OR: [
         {
-          email: email.toLowerCase()
-          
+          email: email.toLowerCase(),
         },
         {
           display_name: {
             equals: email,
-            mode: 'insensitive'
-          }
-          
-        }
-      ]      
+            mode: 'insensitive',
+          },
+        },
+      ],
     },
   });
-}
+};
 
 export const updateUserAndBankHistory = async (
   prismaInstance: Prisma.TransactionClient,
@@ -115,7 +139,7 @@ export const updateUserAndBankHistory = async (
   bankData: any,
   updateType: 'units' | 'items' | 'battle_upgrades',
   newStamina?: number,
-  newMaxStamina?: number
+  newMaxStamina?: number,
 ) => {
   const updateData: any = {
     gold: userGold,
@@ -143,7 +167,7 @@ export const updateUserAndBankHistory = async (
   if (updateType === 'units') {
     // Always delete existing UserUnit records for this user to ensure empty arrays clear DB state
     await prismaInstance.userUnit.deleteMany({
-      where: { userId: userId }
+      where: { userId },
     });
 
     // Create new UserUnit records from updatedData if any
@@ -152,12 +176,12 @@ export const updateUserAndBankHistory = async (
         if (unit.type && unit.level && unit.quantity !== undefined) {
           await prismaInstance.userUnit.create({
             data: {
-              userId: userId,
+              userId,
               type: unit.type,
               level: unit.level,
               quantity: unit.quantity,
-              isMercenary: unit.isMercenary || false
-            }
+              isMercenary: unit.isMercenary || false,
+            },
           });
         }
       }
@@ -168,21 +192,26 @@ export const updateUserAndBankHistory = async (
   if (updateType === 'items') {
     // Always delete existing UserItem records for this user to correctly handle empty updatedData arrays
     await prismaInstance.userItem.deleteMany({
-      where: { userId: userId }
+      where: { userId },
     });
 
     // Create new UserItem records from updatedData if any
     if (updatedData && updatedData.length > 0) {
       for (const item of updatedData) {
-        if (item.type && item.level && item.usage && item.quantity !== undefined) {
+        if (
+          item.type &&
+          item.level &&
+          item.usage &&
+          item.quantity !== undefined
+        ) {
           await prismaInstance.userItem.create({
             data: {
-              userId: userId,
+              userId,
               type: item.type,
               level: item.level,
               usage: item.usage,
-              quantity: item.quantity
-            }
+              quantity: item.quantity,
+            },
           });
         }
       }
@@ -193,7 +222,7 @@ export const updateUserAndBankHistory = async (
   if (updateType === 'battle_upgrades') {
     // Always delete existing UserBattleUpgrade records for this user to ensure empty arrays clear DB state
     await prismaInstance.userBattleUpgrade.deleteMany({
-      where: { userId: userId }
+      where: { userId },
     });
 
     // Create new UserBattleUpgrade records from updatedData if any
@@ -202,11 +231,11 @@ export const updateUserAndBankHistory = async (
         if (upgrade.type && upgrade.level && upgrade.quantity !== undefined) {
           await prismaInstance.userBattleUpgrade.create({
             data: {
-              userId: userId,
+              userId,
               type: upgrade.type,
               level: upgrade.level,
-              quantity: upgrade.quantity
-            }
+              quantity: upgrade.quantity,
+            },
           });
         }
       }
@@ -223,7 +252,7 @@ export const getUpdatedStatus = async (userId: number) => {
   const now = new Date();
 
   // Fetch the latest status history record for the user
-  let statusHistory = await prisma.accountStatusHistory.findFirst({
+  const statusHistory = await prisma.accountStatusHistory.findFirst({
     where: {
       user_id: userId,
       start_date: {
@@ -284,7 +313,11 @@ export const getUpdatedStatus = async (userId: number) => {
     return 'INACTIVE';
   }
 
-  if (statusHistory.status === 'IDLE' && user?.last_active && user.last_active >= idleThresholdDate(60)) {
+  if (
+    statusHistory.status === 'IDLE' &&
+    user?.last_active &&
+    user.last_active >= idleThresholdDate(60)
+  ) {
     await prisma.accountStatusHistory.create({
       data: {
         user_id: userId,
@@ -297,7 +330,10 @@ export const getUpdatedStatus = async (userId: number) => {
   }
 
   // Check if user should transition to IDLE
-  if (statusHistory.status !== 'IDLE' && (!user?.last_active || user.last_active < idleThresholdDate(60))) {
+  if (
+    statusHistory.status !== 'IDLE' &&
+    (!user?.last_active || user.last_active < idleThresholdDate(60))
+  ) {
     await prisma.accountStatusHistory.create({
       data: {
         user_id: userId,
@@ -313,11 +349,27 @@ export const getUpdatedStatus = async (userId: number) => {
   return statusHistory.status;
 };
 
-export const updateLastActive = async ({ email, userId, displayName }: { email?: string; userId?: number; displayName?: string }) => {
-  const validatedData = UpdateLastActiveSchema.parse({ email, userId, displayName });
+export const updateLastActive = async ({
+  email,
+  userId,
+  displayName,
+}: {
+  email?: string;
+  userId?: number;
+  displayName?: string;
+}) => {
+  const validatedData = UpdateLastActiveSchema.parse({
+    email,
+    userId,
+    displayName,
+  });
 
   return prisma.users.update({
-    where: validatedData.email ? { email: validatedData.email } : validatedData.userId ? { id: validatedData.userId } : { display_name: validatedData.displayName },
+    where: validatedData.email
+      ? { email: validatedData.email }
+      : validatedData.userId
+        ? { id: validatedData.userId }
+        : { display_name: validatedData.displayName },
     data: { last_active: new Date() },
   });
 };

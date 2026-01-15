@@ -1,10 +1,10 @@
-import type { UserStructureUpgrade, UserUnit, users as PrismaUser } from '@prisma/client';
+import type { users as PrismaUser, UserUnit } from '@prisma/client';
 
-import { SpyUpgrades } from '@/constants';
+import type { SpyUpgrades } from '@/constants';
 import { UserStatsService } from '@/services/UserStatsService';
 import { UserUnitsService } from '@/services/UserUnitsService';
-import { getLevelFromXP } from '@/utils/utilities';
 import type { Item, PlayerUnit, UnitTotalsType } from '@/types/typings';
+import { getLevelFromXP } from '@/utils/utilities';
 
 import { BaseUser, type BaseUserRelations } from './BaseUser';
 
@@ -125,14 +125,17 @@ export class SpyUserModel {
           quantity: Math.ceil(((item as any).quantity * intelPercentage) / 100),
         })) as Item[])
       : [];
-    this.fort_level = defender.fortLevel !== null && defender.fortLevel !== undefined
-      ? Math.ceil((defender.fortLevel * intelPercentage) / 100)
-      : null;
-    this.fort_hitpoints = defender.fortHitpoints !== null && defender.fortHitpoints !== undefined
-      ? Math.ceil((defender.fortHitpoints * intelPercentage) / 100)
-      : null;
-    this.goldInBank = defender.goldInBank !== null && defender.goldInBank !== undefined
-      ? defender.goldInBank // * BigInt(intelPercentage)) / BigInt(100)
-      : BigInt(0);
+    this.fort_level =
+      defender.fortLevel !== null && defender.fortLevel !== undefined
+        ? Math.ceil((defender.fortLevel * intelPercentage) / 100)
+        : null;
+    this.fort_hitpoints =
+      defender.fortHitpoints !== null && defender.fortHitpoints !== undefined
+        ? Math.ceil((defender.fortHitpoints * intelPercentage) / 100)
+        : null;
+    this.goldInBank =
+      defender.goldInBank !== null && defender.goldInBank !== undefined
+        ? defender.goldInBank // * BigInt(intelPercentage)) / BigInt(100)
+        : BigInt(0);
   }
 }

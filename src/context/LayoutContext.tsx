@@ -1,3 +1,5 @@
+import { useLocalStorage } from '@mantine/hooks';
+import { useRouter } from 'next/router';
 import type { ReactNode } from 'react';
 import React, {
   createContext,
@@ -7,12 +9,10 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { useRouter } from 'next/router';
-import { useLocalStorage } from '@mantine/hooks';
 
-import { IMetaProps } from '@/types/typings';
-import { useUser } from './users';
 import { logDebug } from '@/utils/logger';
+
+import { useUser } from './users';
 
 // Define interfaces for typing
 interface RaceColors {
@@ -57,7 +57,7 @@ function generateRaceColors(race: string): RaceColors {
     footerClass: `bg-${race}-footer`,
     borderClass: `${race}-double-border border-${race}`,
     borderBottomClass: `${race}-double-border-down`,
-    race: race.toUpperCase()
+    race: race.toUpperCase(),
   };
   return colors;
 }
@@ -86,7 +86,7 @@ const defaultLayoutContextProps: LayoutContextProps = {
 
 // Create Context with default value
 const LayoutContext = createContext<LayoutContextProps>(
-  defaultLayoutContextProps
+  defaultLayoutContextProps,
 );
 
 // Hook to use context
@@ -101,31 +101,45 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const [meta, setMetaState] = useState({ title: '', description: '' });
   const { user, loading: userLoading } = useUser(); // Access user and loading state from useUser
   const router = useRouter();
-  const [previewScheme] = useLocalStorage<string>({ key: 'colorSchemePreview', defaultValue: '' });
+  const [previewScheme] = useLocalStorage<string>({
+    key: 'colorSchemePreview',
+    defaultValue: '',
+  });
 
   const [authorized, setAuthorized] = useState(false);
   const [derivedRaceClasses, setDerivedRaceClasses] = useState<RaceColors>(
-    raceClasses.ELF
+    raceClasses.ELF,
   );
 
-  const setMeta = useCallback((newMeta: { title?: string; description?: string }) => {
-    setMetaState((prevMeta) => ({
-      ...prevMeta,
-      ...newMeta,
-    }));
-  }, [setMetaState]);
+  const setMeta = useCallback(
+    (newMeta: { title?: string; description?: string }) => {
+      setMetaState((prevMeta) => ({
+        ...prevMeta,
+        ...newMeta,
+      }));
+    },
+    [setMetaState],
+  );
 
   const updateOptions = useCallback(() => {
     let race = user?.colorScheme || user?.race || 'ELF';
     const isTestPage = router.pathname === '/test';
-    if (isTestPage && previewScheme && Object.prototype.hasOwnProperty.call(raceClasses, previewScheme)) {
+    if (
+      isTestPage &&
+      previewScheme &&
+      Object.prototype.hasOwnProperty.call(raceClasses, previewScheme)
+    ) {
       race = previewScheme;
     }
     // Ensure race is a valid key of raceClasses
     if (!Object.prototype.hasOwnProperty.call(raceClasses, race)) {
       race = 'ELF'; // Default to 'ELF' if race is not a valid key
     }
-    logDebug('settings Derived Race Classes', race, raceClasses[race as keyof typeof raceClasses]);
+    logDebug(
+      'settings Derived Race Classes',
+      race,
+      raceClasses[race as keyof typeof raceClasses],
+    );
     setDerivedRaceClasses(raceClasses[race as keyof typeof raceClasses]);
   }, [previewScheme, router.pathname, user]);
 
@@ -149,9 +163,9 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
       updateOptions,
       meta,
       authorized,
-      userLoading // Pass the loading prop to the context
+      userLoading, // Pass the loading prop to the context
     }),
-    [meta, setMeta, derivedRaceClasses, updateOptions, authorized, userLoading]
+    [meta, setMeta, derivedRaceClasses, updateOptions, authorized, userLoading],
   );
 
   return (

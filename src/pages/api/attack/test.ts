@@ -1,9 +1,10 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { BattleService } from '@/services';
-import UserModel from '@/models/Users';
-import { stringifyObj } from '@/utils/numberFormatting';
-import { logError } from '@/utils/logger';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
+
+import UserModel from '@/models/Users';
+import { BattleService } from '@/services';
+import { logError } from '@/utils/logger';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 const TestAttackSchema = z.object({
   attacker: z.string(),
@@ -11,14 +12,20 @@ const TestAttackSchema = z.object({
   turns: z.number().int().optional(),
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
   const validatedBody = TestAttackSchema.safeParse(req.body);
   if (!validatedBody.success) {
-    return res.status(400).json({ message: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+    return res.status(400).json({
+      message: 'Invalid request body',
+      details: validatedBody.error.flatten().fieldErrors,
+    });
   }
 
   try {
@@ -28,7 +35,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const defenderUser = new UserModel(JSON.parse(defender));
 
     // Use BattleService for simulation
-    const result = await BattleService.simulateBattleWithData(attacker, defender, turns || 10);
+    const result = await BattleService.simulateBattleWithData(
+      attacker,
+      defender,
+      turns || 10,
+    );
 
     return res.status(200).json({
       results: stringifyObj(result),
@@ -41,17 +52,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         unitTotals: defenderUser.unitTotals,
         attackPower: defenderUser.offense,
         defensePower: defenderUser.defense,
-      }
+      },
     });
   } catch (error) {
     logError('Battle simulation error:', error);
-    return res.status(500).json({ message: 'Error simulating battle', error: String(error) });
+    return res
+      .status(500)
+      .json({ message: 'Error simulating battle', error: String(error) });
   }
 }
 
 // Helper function to create a user object from form data
 function createUserFromFormData(formData: any) {
-
   const user = {
     id: formData.id || Math.floor(Math.random() * 10000),
     display_name: formData.display_name || 'Simulator User',
@@ -70,7 +82,7 @@ function createUserFromFormData(formData: any) {
   };
 
   // Add units from the form data
-  ['OFFENSE', 'DEFENSE', 'CITIZEN', 'WORKER'].forEach(unitType => {
+  ['OFFENSE', 'DEFENSE', 'CITIZEN', 'WORKER'].forEach((unitType) => {
     for (let level = 1; level <= 5; level++) {
       const quantity = formData[`${unitType.toLowerCase()}${level}`] || 0;
       if (quantity > 0) {
@@ -80,7 +92,9 @@ function createUserFromFormData(formData: any) {
   });
 
   // Process item entries
-  const itemEntries = Object.entries(formData).filter(([key]) => key.startsWith('item_'));
+  const itemEntries = Object.entries(formData).filter(([key]) =>
+    key.startsWith('item_'),
+  );
   itemEntries.forEach(([key, value]) => {
     if (typeof value === 'number' && value > 0) {
       const parts = key.split('_');

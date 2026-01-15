@@ -1,25 +1,29 @@
-import { NextApiResponse } from 'next';
-import { withAuth } from '@/middleware/auth';
-import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
+import md5 from 'md5';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
-import { SocialService } from '@/services/Social.service';
-import { stringifyObj } from '@/utils/jsonHelpers';
-import type { AuthenticatedRequest } from '@/types/api';
+
 import prisma from '@/lib/prisma';
 import { getSocketIO } from '@/lib/socket';
-import md5 from 'md5';
+import { withAuth } from '@/middleware/auth';
+import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
+import { SocialService } from '@/services/Social.service';
+import type { AuthenticatedRequest } from '@/types/api';
+import { stringifyObj } from '@/utils/jsonHelpers';
 
 const TransferSchema = z.object({
-  amount: z.string().transform(val => BigInt(val)),
+  amount: z.string().transform((val) => BigInt(val)),
   notes: z.string().optional(),
 });
 
-const transferHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
+const transferHandler = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -33,29 +37,37 @@ const transferHandler = async (req: AuthenticatedRequest, res: NextApiResponse) 
 
   const parseResult = TransferSchema.safeParse(req.body);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
 
   const { amount, notes } = parseResult.data;
   const fromUserId = session.user.id;
 
   try {
-    const result = await SocialService.transferGoldToFriend(fromUserId, friendIdNum, amount, notes);
+    const result = await SocialService.transferGoldToFriend(
+      fromUserId,
+      friendIdNum,
+      amount,
+      notes,
+    );
 
-    if ((result as any)?.success) {
+    if (result?.success) {
       const sender = await prisma.users.findUnique({
         where: { id: fromUserId },
         select: { display_name: true },
       });
       const senderName = sender?.display_name || 'someone';
       const message = `You received ${amount.toString()} gold from ${senderName}`;
-      const hash = md5(message + friendIdNum + (result as any)?.transferId);
+      const hash = md5(message + friendIdNum + result?.transferId);
       const io = getSocketIO();
       io?.to(`user-${friendIdNum}`).emit('goldTransferReceived', {
         message,
         hash,
         fromUserId,
-        transferId: (result as any)?.transferId,
+        transferId: result?.transferId,
         amount: amount.toString(),
       });
     }

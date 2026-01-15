@@ -1,11 +1,13 @@
-import { describe, it, test, expect, beforeEach, vi } from 'bun:test';
-import { simulateBattle, calculateLoot } from './attackFunctions';
-import UserModel from '../models/Users';
-import MockUserGenerator from './MockUserGenerator';
-import { Fortifications } from '@/constants';
+import { beforeEach, describe, expect, it, vi } from 'bun:test';
 import { installMockMtRand, mtRandImpl } from 'test/utils/mockMtRand';
-import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/mockPrisma';
+import { installMockPrisma, resetMockPrisma } from 'test/utils/mockPrisma';
 import { normUnits } from 'test/utils/testFixtures';
+
+import { Fortifications } from '@/constants';
+
+import UserModel from '../models/Users';
+import { calculateLoot, simulateBattle } from './attackFunctions';
+import MockUserGenerator from './MockUserGenerator';
 
 // Install deterministic mtRand and Prisma mocks BEFORE requiring modules that import them
 installMockMtRand(vi);
@@ -29,9 +31,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits(normUnits([
-        { type: 'OFFENSE', quantity: 100, level: 1 }
-      ]));
+      attackerUser.addUnits(
+        normUnits([{ type: 'OFFENSE', quantity: 100, level: 1 }]),
+      );
       const attacker = new UserModel(attackerUser.getUser());
 
       // Create defender with extremely large gold amount (near max safe BigInt)
@@ -44,20 +46,22 @@ describe('Gold Pillage Fix - Edge Cases', () => {
       });
       const maxSafeGold = BigInt('9223372036854775807'); // Max safe BigInt
       defenderUser.adjustGold(maxSafeGold);
-      defenderUser.addUnits(normUnits([
-        { type: 'DEFENSE', quantity: 10, level: 1 }
-      ]));
+      defenderUser.addUnits(
+        normUnits([{ type: 'DEFENSE', quantity: 10, level: 1 }]),
+      );
       const defender = new UserModel(defenderUser.getUser());
 
       // Test loot calculation directly
       const loot = calculateLoot(attacker, defender, 1);
-      
+
       // Verify loot is positive and doesn't exceed defender's gold
       expect(loot).toBeGreaterThan(BigInt(0));
       expect(loot).toBeLessThanOrEqual(defender.gold);
       expect(typeof loot).toBe('bigint');
-      
-      console.log(`Large gold test - Defender gold: ${defender.gold}, Loot: ${loot}`);
+
+      console.log(
+        `Large gold test - Defender gold: ${defender.gold}, Loot: ${loot}`,
+      );
     });
 
     it('should handle maximum BigInt values safely', () => {
@@ -82,7 +86,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
       const defender = new UserModel(defenderUser.getUser());
 
       const loot = calculateLoot(attacker, defender, 5);
-      
+
       expect(loot).toBeGreaterThan(BigInt(0));
       expect(loot).toBeLessThanOrEqual(defender.gold);
       expect(typeof loot).toBe('bigint');
@@ -96,9 +100,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits(normUnits([
-        { type: 'OFFENSE', quantity: 50, level: 1 }
-      ]));
+      attackerUser.addUnits(
+        normUnits([{ type: 'OFFENSE', quantity: 50, level: 1 }]),
+      );
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -109,9 +113,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         class: 'FIGHTER',
       });
       defenderUser.adjustGold(BigInt('1000000000000000000')); // 1 quintillion
-      defenderUser.addUnits(normUnits([
-        { type: 'DEFENSE', quantity: 20, level: 1 }
-      ]));
+      defenderUser.addUnits(
+        normUnits([{ type: 'DEFENSE', quantity: 20, level: 1 }]),
+      );
       const defender = new UserModel(defenderUser.getUser());
 
       // Simulate multi-turn battle
@@ -120,7 +124,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         defender,
         Fortifications[defender.fortLevel].hitpoints,
         10, // 10 turns
-        false
+        false,
       );
 
       // Verify total pillaged gold is positive and reasonable
@@ -129,11 +133,15 @@ describe('Gold Pillage Fix - Edge Cases', () => {
       // because gold is calculated per turn based on defender's gold at that time
       expect(battleResult.pillagedGold).toBeGreaterThan(BigInt(0));
       expect(typeof battleResult.pillagedGold).toBe('bigint');
-      
+
       // Verify that loot accumulates properly across turns
-      expect(battleResult.pillagedGold).toBeGreaterThan(BigInt(100000000000000)); // Should be substantial
-      
-      console.log(`Multi-turn large gold test - Total pillaged: ${battleResult.pillagedGold}`);
+      expect(battleResult.pillagedGold).toBeGreaterThan(
+        BigInt(100000000000000),
+      ); // Should be substantial
+
+      console.log(
+        `Multi-turn large gold test - Total pillaged: ${battleResult.pillagedGold}`,
+      );
     });
   });
 
@@ -161,9 +169,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
 
       // Verify the defender actually has 0 gold
       expect(defender.gold).toBe(BigInt(0));
-      
+
       const loot = calculateLoot(attacker, defender, 1);
-      
+
       // Should return 0 when defender has no gold
       expect(loot).toBe(BigInt(0));
       expect(typeof loot).toBe('bigint');
@@ -190,7 +198,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
       const defender = new UserModel(defenderUser.getUser());
 
       const loot = calculateLoot(attacker, defender, 1);
-      
+
       // Should return 0 or 1, but never negative
       expect(loot).toBeGreaterThanOrEqual(BigInt(0));
       expect(loot).toBeLessThanOrEqual(defender.gold);
@@ -205,9 +213,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits(normUnits([
-        { type: 'OFFENSE', quantity: 10, level: 1 }
-      ]));
+      attackerUser.addUnits(
+        normUnits([{ type: 'OFFENSE', quantity: 10, level: 1 }]),
+      );
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -218,9 +226,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         class: 'FIGHTER',
       });
       defenderUser.adjustGold(BigInt(100)); // Small amount
-      defenderUser.addUnits(normUnits([
-        { type: 'DEFENSE', quantity: 5, level: 1 }
-      ]));
+      defenderUser.addUnits(
+        normUnits([{ type: 'DEFENSE', quantity: 5, level: 1 }]),
+      );
       const defender = new UserModel(defenderUser.getUser());
 
       const battleResult = await simulateBattle(
@@ -228,7 +236,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         defender,
         Fortifications[defender.fortLevel].hitpoints,
         3,
-        false
+        false,
       );
 
       expect(battleResult.pillagedGold).toBeGreaterThanOrEqual(BigInt(0));
@@ -246,9 +254,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits(normUnits([
-        { type: 'OFFENSE', quantity: 30, level: 1 }
-      ]));
+      attackerUser.addUnits(
+        normUnits([{ type: 'OFFENSE', quantity: 30, level: 1 }]),
+      );
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -259,9 +267,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         class: 'FIGHTER',
       });
       defenderUser.adjustGold(BigInt(50000));
-      defenderUser.addUnits(normUnits([
-        { type: 'DEFENSE', quantity: 15, level: 1 }
-      ]));
+      defenderUser.addUnits(
+        normUnits([{ type: 'DEFENSE', quantity: 15, level: 1 }]),
+      );
       const defender = new UserModel(defenderUser.getUser());
 
       // Test with different turn counts to verify accumulation
@@ -274,11 +282,11 @@ describe('Gold Pillage Fix - Edge Cases', () => {
           defender,
           Fortifications[defender.fortLevel].hitpoints,
           turnCount,
-          false
+          false,
         );
         results.push({
           turns: turnCount,
-          pillagedGold: battleResult.pillagedGold
+          pillagedGold: battleResult.pillagedGold,
         });
       }
 
@@ -290,7 +298,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         // because gold is calculated per turn based on defender's gold at that time
         expect(result.pillagedGold).toBeGreaterThan(BigInt(0));
         expect(typeof result.pillagedGold).toBe('bigint');
-        
+
         // Gold should generally increase with more turns, but allow for some randomness
         if (result.turns > 1) {
           console.log(`Turns: ${result.turns}, Gold: ${result.pillagedGold}`);
@@ -307,9 +315,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-      attackerUser.addUnits(normUnits([
-        { type: 'OFFENSE', quantity: 100, level: 1 }
-      ]));
+      attackerUser.addUnits(
+        normUnits([{ type: 'OFFENSE', quantity: 100, level: 1 }]),
+      );
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -320,9 +328,9 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         class: 'FIGHTER',
       });
       defenderUser.adjustGold(BigInt(100000));
-      defenderUser.addUnits(normUnits([
-        { type: 'DEFENSE', quantity: 50, level: 1 }
-      ]));
+      defenderUser.addUnits(
+        normUnits([{ type: 'DEFENSE', quantity: 50, level: 1 }]),
+      );
       const defender = new UserModel(defenderUser.getUser());
 
       // Test with maximum turns
@@ -331,15 +339,17 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         defender,
         Fortifications[defender.fortLevel].hitpoints,
         10, // MAX_TURNS
-        false
+        false,
       );
 
       expect(battleResult.pillagedGold).toBeGreaterThan(BigInt(0));
       // Note: In multi-turn battles, total pillaged gold can exceed defender's initial gold
       // because gold is calculated per turn based on defender's gold at that time
       expect(typeof battleResult.pillagedGold).toBe('bigint');
-      
-      console.log(`Max turns test - Total pillaged: ${battleResult.pillagedGold}`);
+
+      console.log(
+        `Max turns test - Total pillaged: ${battleResult.pillagedGold}`,
+      );
     });
   });
 
@@ -352,7 +362,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-  (attackerUser as any).setLevel(20); // High level
+      (attackerUser as any).setLevel(20); // High level
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -362,12 +372,12 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-  (defenderUser as any).setLevel(1); // Low level
+      (defenderUser as any).setLevel(1); // Low level
       defenderUser.adjustGold(BigInt(10000));
       const defender = new UserModel(defenderUser.getUser());
 
       const loot = calculateLoot(attacker, defender, 1);
-      
+
       expect(loot).toBeGreaterThan(BigInt(0));
       expect(loot).toBeLessThanOrEqual(defender.gold);
       expect(typeof loot).toBe('bigint');
@@ -382,7 +392,7 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-  (attackerUser as any).setLevel(level);
+      (attackerUser as any).setLevel(level);
       const attacker = new UserModel(attackerUser.getUser());
 
       const defenderUser = new MockUserGenerator();
@@ -392,12 +402,12 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         race: 'HUMAN',
         class: 'FIGHTER',
       });
-  (defenderUser as any).setLevel(level);
+      (defenderUser as any).setLevel(level);
       defenderUser.adjustGold(BigInt(5000));
       const defender = new UserModel(defenderUser.getUser());
 
       const loot = calculateLoot(attacker, defender, 1);
-      
+
       expect(loot).toBeGreaterThan(BigInt(0));
       expect(loot).toBeLessThanOrEqual(defender.gold);
       expect(typeof loot).toBe('bigint');

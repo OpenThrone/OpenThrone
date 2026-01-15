@@ -1,5 +1,6 @@
-import prisma from '@/lib/prisma';
 import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
 
 const UserSchema = z.object({
   id: z.number().int().positive(),
@@ -11,7 +12,10 @@ const UserSchema = z.object({
  * @param defender - The defender user object.
  * @returns True if the attack is allowed, false otherwise.
  */
-export const canAttack = async (attacker: { id: number }, defender: { id: number }) => {
+export const canAttack = async (
+  attacker: { id: number },
+  defender: { id: number },
+) => {
   const validatedAttacker = UserSchema.parse(attacker);
   const validatedDefender = UserSchema.parse(defender);
 
@@ -21,8 +25,12 @@ export const canAttack = async (attacker: { id: number }, defender: { id: number
         { attacker_id: validatedAttacker.id },
         { defender_id: validatedDefender.id },
         { type: 'attack' },
-        { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } }, // Last 24 hours
-      ]
+        {
+          timestamp: {
+            gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24),
+          },
+        }, // Last 24 hours
+      ],
     },
   });
   return history < 5; // Allow if less than 5 attacks
@@ -35,7 +43,10 @@ export const canAttack = async (attacker: { id: number }, defender: { id: number
  * @param defender - The defender user object.
  * @returns True if the assassination is allowed, false otherwise.
  */
-export const canAssassinate = async (attacker: { id: number }, defender: { id: number }) => {
+export const canAssassinate = async (
+  attacker: { id: number },
+  defender: { id: number },
+) => {
   const validatedAttacker = UserSchema.parse(attacker);
   const validatedDefender = UserSchema.parse(defender);
 
@@ -45,8 +56,12 @@ export const canAssassinate = async (attacker: { id: number }, defender: { id: n
         { attacker_id: validatedAttacker.id },
         { defender_id: validatedDefender.id },
         { type: 'INTEL' }, // Assuming assassination limit is tied to INTEL missions
-        { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } },
-      ]
+        {
+          timestamp: {
+            gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24),
+          },
+        },
+      ],
     },
   });
   return history < 5;
@@ -58,7 +73,10 @@ export const canAssassinate = async (attacker: { id: number }, defender: { id: n
  * @param defender - The defender user object.
  * @returns True if the infiltration is allowed, false otherwise.
  */
-export const canInfiltrate = async (attacker: { id: number }, defender: { id: number }) => {
+export const canInfiltrate = async (
+  attacker: { id: number },
+  defender: { id: number },
+) => {
   const validatedAttacker = UserSchema.parse(attacker);
   const validatedDefender = UserSchema.parse(defender);
 
@@ -68,8 +86,12 @@ export const canInfiltrate = async (attacker: { id: number }, defender: { id: nu
         { attacker_id: validatedAttacker.id },
         { defender_id: validatedDefender.id },
         { type: 'INFILTRATE' },
-        { timestamp: { gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24) } },
-      ]
+        {
+          timestamp: {
+            gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24),
+          },
+        },
+      ],
     },
   });
   return history < 5;

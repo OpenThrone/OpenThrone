@@ -1,25 +1,36 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { AccountService } from '@/services';
 import AWS from 'aws-sdk';
 import formidable from 'formidable';
-import path from 'path';
 import fs from 'fs';
-import mime from 'mime-types';
-import { stringifyObj } from '@/utils/numberFormatting';
 import imageSize from 'image-size';
-import { withAuth } from '@/middleware/auth';
-import { logError } from "@/utils/logger";
-import { AuthenticatedRequest } from "@/types/api";
+import mime from 'mime-types';
+import type { NextApiResponse } from 'next';
+import path from 'path';
 import { z } from 'zod';
 
+import { withAuth } from '@/middleware/auth';
+import { AccountService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
+import { stringifyObj } from '@/utils/numberFormatting';
+
 // Function to save the uploaded file to the local file system
-const saveToLocal = async (file: formidable.File, userId: number): Promise<string> => {
-  const uploadDir = path.join(process.cwd(), 'public', `users/${userId}/avatar`);
+const saveToLocal = async (
+  file: formidable.File,
+  userId: number,
+): Promise<string> => {
+  const uploadDir = path.join(
+    process.cwd(),
+    'public',
+    `users/${userId}/avatar`,
+  );
 
   // Ensure the directory exists
   fs.mkdirSync(uploadDir, { recursive: true });
 
-  const filePath = path.join(uploadDir, file.originalFilename || 'unknown_filename');
+  const filePath = path.join(
+    uploadDir,
+    file.originalFilename || 'unknown_filename',
+  );
 
   // Move the file to the upload directory
   await fs.promises.rename(file.filepath, filePath);
@@ -28,7 +39,10 @@ const saveToLocal = async (file: formidable.File, userId: number): Promise<strin
 };
 
 // AWS S3 upload function
-const uploadToS3 = (file: formidable.File, uId: number): Promise<AWS.S3.ManagedUpload.SendData> => {
+const uploadToS3 = (
+  file: formidable.File,
+  uId: number,
+): Promise<AWS.S3.ManagedUpload.SendData> => {
   // Configure AWS S3
   const s3 = new AWS.S3({
     endpoint: process.env.AWS_S3_ENDPOINT,
@@ -38,10 +52,11 @@ const uploadToS3 = (file: formidable.File, uId: number): Promise<AWS.S3.ManagedU
   });
 
   const fileStream = fs.createReadStream(file.filepath);
-  const contentType = mime.lookup(file.originalFilename) || 'application/octet-stream'; // Fallback to application/octet-stream if the MIME type is unknown
+  const contentType =
+    mime.lookup(file.originalFilename) || 'application/octet-stream'; // Fallback to application/octet-stream if the MIME type is unknown
 
   const params = {
-    Bucket: process.env.AWS_BUCKET_NAME!,
+    Bucket: process.env.AWS_BUCKET_NAME,
     Key: `users/${uId}/avatar/${file.originalFilename}`,
     Body: fileStream,
     ACL: 'public-read',
@@ -64,7 +79,10 @@ const ProfileSchema = z.object({
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
-    const form = formidable({ multiples: false, maxFileSize: 1.5 * 1024 * 1024 })
+    const form = formidable({
+      multiples: false,
+      maxFileSize: 1.5 * 1024 * 1024,
+    });
     form.uploadDir = path.join(process.cwd(), 'temp');
     form.keepExtensions = true; // Keep file extension
 
@@ -76,14 +94,17 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
 
       const validatedFields = ProfileSchema.safeParse(fields);
       if (!validatedFields.success) {
-        return res.status(400).json({ error: 'Invalid fields', details: validatedFields.error.flatten().fieldErrors });
+        return res.status(400).json({
+          error: 'Invalid fields',
+          details: validatedFields.error.flatten().fieldErrors,
+        });
       }
 
       // Ensure bio is a string
-      const bio = validatedFields.data.bio;
+      const { bio } = validatedFields.data;
       const file = Array.isArray(files.avatar) ? files.avatar[0] : files.avatar;
 
-      let updateData: any = {};
+      const updateData: any = {};
 
       if (bio) {
         updateData.bio = bio;
@@ -91,10 +112,17 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
 
       if (file) {
         // Check MIME type
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        const allowedTypes = [
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+        ];
         const mimeType = mime.lookup(file.originalFilename || '') || '';
         if (!allowedTypes.includes(mimeType)) {
-          return res.status(400).json({ error: 'Only image files (jpg, png, gif, webp) are allowed.' });
+          return res.status(400).json({
+            error: 'Only image files (jpg, png, gif, webp) are allowed.',
+          });
         }
 
         // Check image dimensions
@@ -102,25 +130,31 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         try {
           dimensions = imageSize(file.filepath);
         } catch (e) {
-          return res.status(400).json({ error: 'Uploaded file is not a valid image.' });
+          return res
+            .status(400)
+            .json({ error: 'Uploaded file is not a valid image.' });
         }
         if (dimensions.width > 450 || dimensions.height > 450) {
-          return res.status(400).json({ error: 'Image dimensions must not exceed 450x450px.' });
+          return res
+            .status(400)
+            .json({ error: 'Image dimensions must not exceed 450x450px.' });
         }
 
         try {
           if (process.env.NEXT_PUBLIC_USE_AWS === 'true') {
             // Upload the file to S3
-            const userId = typeof req.session?.user?.id === 'string'
-              ? parseInt(req.session.user.id, 10)
-              : Number(req.session?.user?.id ?? 0);
+            const userId =
+              typeof req.session?.user?.id === 'string'
+                ? parseInt(req.session.user.id, 10)
+                : Number(req.session?.user?.id ?? 0);
             const result = await uploadToS3(file, userId);
-            updateData.avatar = process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + "/" + result.Key;
+            updateData.avatar = `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/${result.Key}`;
           } else {
             // Save the file to the local file system
-            const userId = typeof req.session?.user?.id === 'string'
-              ? parseInt(req.session.user.id, 10)
-              : Number(req.session?.user?.id ?? 0);
+            const userId =
+              typeof req.session?.user?.id === 'string'
+                ? parseInt(req.session.user.id, 10)
+                : Number(req.session?.user?.id ?? 0);
             const filePath = await saveToLocal(file, userId);
             console.log('File uploaded to:', filePath);
             updateData.avatar = filePath;
@@ -136,16 +170,19 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       }
 
       try {
-        const userId = typeof req.session?.user?.id === 'string'
-          ? parseInt(req.session.user.id, 10)
-          : Number(req.session?.user?.id ?? 0);
+        const userId =
+          typeof req.session?.user?.id === 'string'
+            ? parseInt(req.session.user.id, 10)
+            : Number(req.session?.user?.id ?? 0);
 
         const result = await AccountService.updateProfile(userId, {
           bio: bio || undefined,
           avatarFile: updateData.avatar, // Pass the avatar path
         });
 
-        return res.status(200).json({ status: 'success', data: stringifyObj(result) });
+        return res
+          .status(200)
+          .json({ status: 'success', data: stringifyObj(result) });
       } catch (updateError) {
         logError('Error updating user:', updateError);
         return res.status(500).json({ error: 'Error updating user profile' });
@@ -155,6 +192,6 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     res.setHeader('Allow', ['POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
-}
+};
 
 export default withAuth(handler);

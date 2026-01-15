@@ -1,5 +1,7 @@
 import 'next';
 
+import type { Session } from 'next-auth';
+
 declare module 'next' {
   interface NextApiRequest {
     // Optional session type — keep permissive during migration
@@ -14,8 +16,6 @@ declare global {
 }
 
 export {};
-import 'next';
-import type { Session } from 'next-auth';
 
 declare module 'next' {
   interface NextApiRequest {

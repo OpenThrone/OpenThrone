@@ -1,26 +1,35 @@
+import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
 import { BattleService } from '@/services';
-import { result } from 'node_modules/cypress/types/lodash';
-import { z } from 'zod';
 
 const FullScaleBattleTestSchema = z.object({
   aId: z.coerce.number().int().optional(),
 });
 
 const handler = async (req, res) => {
-  const session = req.session;
+  const { session } = req;
   if (session) {
     const validatedQuery = FullScaleBattleTestSchema.safeParse(req.query);
     if (!validatedQuery.success) {
-      return res.status(400).json({ status: 'failed', msg: 'Invalid query parameters', details: validatedQuery.error.flatten().fieldErrors });
+      return res.status(400).json({
+        status: 'failed',
+        msg: 'Invalid query parameters',
+        details: validatedQuery.error.flatten().fieldErrors,
+      });
     }
 
     if (session.user.id !== 1 && session.user.id !== 2) {
-      return res.status(401).json({ status: 'failed', msg: 'Unauthorized', session });
+      return res
+        .status(401)
+        .json({ status: 'failed', msg: 'Unauthorized', session });
     }
 
     let attackerId;
-    if ((session.user.id === 1 || session.user.id === 2) && validatedQuery.data.aId !== undefined) {
+    if (
+      (session.user.id === 1 || session.user.id === 2) &&
+      validatedQuery.data.aId !== undefined
+    ) {
       attackerId = validatedQuery.data.aId;
     }
 
@@ -29,9 +38,11 @@ const handler = async (req, res) => {
       return res.status(200).json(result);
     } catch (error) {
       console.error('Full scale battle test error:', error);
-      return res.status(500).json({ status: 'failed', message: 'Internal server error' });
+      return res
+        .status(500)
+        .json({ status: 'failed', message: 'Internal server error' });
     }
   }
   return res.status(401).json({ status: 'failed', message: 'Unauthorized' });
-}
- export default withAuth(handler);
+};
+export default withAuth(handler);

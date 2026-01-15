@@ -1,9 +1,10 @@
-import { NextApiResponse } from 'next';
-import { withAuth } from '@/middleware/auth';
-import { logError } from '@/utils/logger';
-import type { AuthenticatedRequest } from '@/types/api';
-import { BattleService } from '@/services';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
+
+import { withAuth } from '@/middleware/auth';
+import { BattleService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 const IdQuerySchema = z.object({
   id: z.string().pipe(z.coerce.number()),
@@ -24,20 +25,26 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
     const queryParse = IdQuerySchema.safeParse(req.query);
     if (!queryParse.success) {
-      return res.status(400).json({ message: 'Invalid log ID', details: queryParse.error.flatten().fieldErrors });
+      return res.status(400).json({
+        message: 'Invalid log ID',
+        details: queryParse.error.flatten().fieldErrors,
+      });
     }
     const { id: attackLogId } = queryParse.data;
 
     const bodyParse = AttackLogACLSchema.safeParse(req.body);
     if (!bodyParse.success) {
-      return res.status(400).json({ message: 'Invalid request body', details: bodyParse.error.flatten().fieldErrors });
+      return res.status(400).json({
+        message: 'Invalid request body',
+        details: bodyParse.error.flatten().fieldErrors,
+      });
     }
     const { userId, roomId, participantIds } = bodyParse.data;
 
     const result = await BattleService.manageAttackLogACL(attackLogId, {
       userId,
       roomId,
-      participantIds
+      participantIds,
     });
 
     return res.status(200).json(result);

@@ -1,8 +1,9 @@
-import { withAuth } from '@/middleware/auth';
-import { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api';
-import { BattleService } from '@/services';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
+
+import { withAuth } from '@/middleware/auth';
+import { BattleService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
 
 const AttackLogsQuerySchema = z.object({
   page: z.coerce.number().int().optional().default(0),
@@ -19,27 +20,23 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session?.user?.id) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
   const validatedQuery = AttackLogsQuerySchema.safeParse(req.query);
   if (!validatedQuery.success) {
-    return res.status(400).json({ message: 'Invalid query parameters', details: validatedQuery.error.flatten().fieldErrors });
+    return res.status(400).json({
+      message: 'Invalid query parameters',
+      details: validatedQuery.error.flatten().fieldErrors,
+    });
   }
 
   const userId = session.user.id;
 
-  const {
-    page,
-    limit,
-    player,
-    minPillage,
-    maxPillage,
-    sortBy,
-    sortOrder
-  } = validatedQuery.data;
+  const { page, limit, player, minPillage, maxPillage, sortBy, sortOrder } =
+    validatedQuery.data;
 
   try {
     const result = await BattleService.getAttackLogs(userId, {
@@ -49,7 +46,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       minPillage,
       maxPillage,
       sortBy,
-      sortOrder
+      sortOrder,
     });
 
     res.status(200).json(result);
@@ -59,4 +56,4 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   }
 }
 
-export default withAuth(handler)
+export default withAuth(handler);

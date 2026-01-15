@@ -1,22 +1,26 @@
-import { NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
 import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
-import { z } from 'zod';
 import { SocialService } from '@/services/Social.service';
-import { stringifyObj } from '@/utils/jsonHelpers';
 import type { AuthenticatedRequest } from '@/types/api';
+import { stringifyObj } from '@/utils/jsonHelpers';
 
 const ResponseSchema = z.object({
   action: z.enum(['accept', 'decline']),
   message: z.string().optional(),
 });
 
-const respondHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
+const respondHandler = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) => {
   if (req.method !== 'PUT') {
     return res.status(405).end();
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -30,14 +34,21 @@ const respondHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
 
   const parseResult = ResponseSchema.safeParse(req.body);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
 
   const { action, message } = parseResult.data;
   const userId = session.user.id;
 
   try {
-    const result = await SocialService.respondToGoldRequest(userId, { requestId: requestIdNum, action, message });
+    const result = await SocialService.respondToGoldRequest(userId, {
+      requestId: requestIdNum,
+      action,
+      message,
+    });
 
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {

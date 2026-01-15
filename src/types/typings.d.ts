@@ -1,40 +1,40 @@
-import {
-  PrismaClient,
-  PermissionType,
+import type {
   AccountStatus,
+  PermissionType,
+  PrismaClient,
   User as PrismaUser,
-} from "@prisma/client"; // Import PrismaUser alias
+} from '@prisma/client'; // Import PrismaUser alias
 
 declare global {
   var prisma: PrismaClient | undefined;
 }
-export type PlayerRace = "UNDEAD" | "HUMAN" | "GOBLIN" | "ELF" | "ALL";
-export type PlayerClass = "FIGHTER" | "CLERIC" | "ASSASSIN" | "THIEF";
+export type PlayerRace = 'UNDEAD' | 'HUMAN' | 'GOBLIN' | 'ELF' | 'ALL';
+export type PlayerClass = 'FIGHTER' | 'CLERIC' | 'ASSASSIN' | 'THIEF';
 export type UnitType =
-  | "CITIZEN"
-  | "WORKER"
-  | "OFFENSE"
-  | "DEFENSE"
-  | "SPY"
-  | "SENTRY";
+  | 'CITIZEN'
+  | 'WORKER'
+  | 'OFFENSE'
+  | 'DEFENSE'
+  | 'SPY'
+  | 'SENTRY';
 export type ItemType =
-  | "WEAPON"
-  | "HELM"
-  | "ARMOR"
-  | "BOOTS"
-  | "BRACERS"
-  | "SHIELD";
-export type ItemUsage = "OFFENSE" | "DEFENSE";
-export type BattleUpgradeType = "OFFENSE" | "DEFENSE" | "SPY" | "SENTRY";
+  | 'WEAPON'
+  | 'HELM'
+  | 'ARMOR'
+  | 'BOOTS'
+  | 'BRACERS'
+  | 'SHIELD';
+export type ItemUsage = 'OFFENSE' | 'DEFENSE';
+export type BattleUpgradeType = 'OFFENSE' | 'DEFENSE' | 'SPY' | 'SENTRY';
 export type BonusType =
-  | "OFFENSE"
-  | "DEFENSE"
-  | "RECRUITING"
-  | "CASUALTY"
-  | "INTEL"
-  | "INCOME"
-  | "PRICES";
-export type Locales = "en-US" | "es-ES";
+  | 'OFFENSE'
+  | 'DEFENSE'
+  | 'RECRUITING'
+  | 'CASUALTY'
+  | 'INTEL'
+  | 'INCOME'
+  | 'PRICES';
+export type Locales = 'en-US' | 'es-ES';
 
 // Specific type for units stored in User.units JSON
 export type PlayerUnit = {
@@ -69,7 +69,7 @@ export type PlayerBattleUpgrade = {
 export type StructureUpgrade = {
   id: number;
   userId: number;
-  type: "OFFENSE" | "SPY" | "SENTRY" | "ARMORY";
+  type: 'OFFENSE' | 'SPY' | 'SENTRY' | 'ARMORY';
   level: number;
 };
 
@@ -80,8 +80,8 @@ export type BonusPointsItem = {
 };
 
 export interface PlayerStat {
-  type: "OFFENSE" | "DEFENSE" | "SPY" | "SENTRY";
-  subtype: "WON" | "LOST" | string; // Allow for other subtypes if needed
+  type: 'OFFENSE' | 'DEFENSE' | 'SPY' | 'SENTRY';
+  subtype: 'WON' | 'LOST' | string; // Allow for other subtypes if needed
   stat: any;
 }
 
@@ -101,7 +101,7 @@ export type Loss = {
 };
 
 export interface PageAlert {
-  type: "SUCCESS" | "DANGER" | "INFO";
+  type: 'SUCCESS' | 'DANGER' | 'INFO';
   message: string;
 }
 export interface BattleUpgradeProps {
@@ -242,7 +242,7 @@ export type PlayerBonus = {
   bonusType: BonusType;
   bonusAmount: number;
 };
-export type BankAccountType = "HAND" | "BANK";
+export type BankAccountType = 'HAND' | 'BANK';
 export type UnitTotalsType = {
   citizens: number;
   workers: number;
@@ -261,15 +261,15 @@ export type UnitTotalsType = {
  * RECRUITMENT - Gold from recruiting units
  */
 export type BankTransferHistoryType =
-  | "ECONOMY"
-  | "PLAYER_TRANSFER"
-  | "WAR_SPOILS"
-  | "SALE"
-  | "RECRUITMENT"
-  | "FORT_REPAIR"
-  | "DAILY_RECRUIT"
-  | "FRIEND_TRANSFER"
-  | "FRIEND_REQUEST";
+  | 'ECONOMY'
+  | 'PLAYER_TRANSFER'
+  | 'WAR_SPOILS'
+  | 'SALE'
+  | 'RECRUITMENT'
+  | 'FORT_REPAIR'
+  | 'DAILY_RECRUIT'
+  | 'FRIEND_TRANSFER'
+  | 'FRIEND_REQUEST';
 
 export type UnitProps = {
   requirement?: string;
@@ -442,7 +442,7 @@ export interface FrontendRoom {
   isAdmin: boolean;
   participants: {
     id: number;
-    role: "ADMIN" | "MEMBER";
+    role: 'ADMIN' | 'MEMBER';
     canWrite: boolean;
     display_name: string;
     avatar: string | null;

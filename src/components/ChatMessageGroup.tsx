@@ -1,10 +1,8 @@
+import { Avatar, Box, Group, Stack, Text } from '@mantine/core';
 import React from 'react';
-import { Group, Indicator, Avatar, Box, Stack, Text, Tooltip, Badge, Popover, SimpleGrid, ActionIcon } from '@mantine/core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faCheckDouble, faComment, faSmile } from '@fortawesome/free-solid-svg-icons';
-import { formatLastMessageTime } from '@/utils/timefunctions';
-import { ChatMessage } from '@/types/typings';
+
 import { useUser } from '@/context/users';
+import type { ChatMessage } from '@/types/typings';
 
 interface ChatMessageGroupProps {
   group: ChatMessage[];
@@ -16,12 +14,21 @@ interface ChatMessageGroupProps {
   messageElementRefs: React.MutableRefObject<Map<number, HTMLElement>>;
 }
 
-const ChatMessageGroupComponent: React.FC<ChatMessageGroupProps> = ({ group, isCurrentUser, currentUserId, ...props }) => {
+const ChatMessageGroupComponent: React.FC<ChatMessageGroupProps> = ({
+  group,
+  isCurrentUser,
+  currentUserId,
+  ...props
+}) => {
   const lastMessage = group[group.length - 1];
   const { user } = useUser();
 
   return (
-    <Group justify={isCurrentUser ? "flex-end" : "flex-start"} gap="xs" wrap="nowrap">
+    <Group
+      justify={isCurrentUser ? 'flex-end' : 'flex-start'}
+      gap="xs"
+      wrap="nowrap"
+    >
       {!isCurrentUser && (
         <Avatar src={group[0].sender?.avatar} size="md" radius="xl">
           {(group[0].sender?.display_name || '?').charAt(0).toUpperCase()}
@@ -30,12 +37,18 @@ const ChatMessageGroupComponent: React.FC<ChatMessageGroupProps> = ({ group, isC
       <Box
         p="md"
         style={(theme) => ({
-          backgroundColor: isCurrentUser ? theme.colors.blue[8] : theme.colors.dark[5],
+          backgroundColor: isCurrentUser
+            ? theme.colors.blue[8]
+            : theme.colors.dark[5],
           borderRadius: theme.radius.lg,
           maxWidth: '70%',
         })}
       >
-        {!isCurrentUser && <Text size="sm" fw={600} c="blue.3">{group[0]?.sender?.display_name}</Text>}
+        {!isCurrentUser && (
+          <Text size="sm" fw={600} c="blue.3">
+            {group[0]?.sender?.display_name}
+          </Text>
+        )}
         <Stack gap="xs">
           {group.map((message) => (
             <div key={message.id}>

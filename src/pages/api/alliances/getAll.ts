@@ -1,8 +1,8 @@
 // /api/alliances/getAll
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
-import { z } from 'zod';
 
 const getAll = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {

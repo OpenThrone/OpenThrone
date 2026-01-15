@@ -15,7 +15,10 @@ export const globalLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: (req, res) => {
-    res.status(429).json({ error: 'Too many requests from this IP address. Please try again later. Global' });
+    res.status(429).json({
+      error:
+        'Too many requests from this IP address. Please try again later. Global',
+    });
   },
   statusCode: 429,
   skip: (req) => {
@@ -33,7 +36,10 @@ export const registerLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: (req, res) => {
-    res.status(429).json({ error: 'Too many registration attempts from this IP. Please wait before trying again.' });
+    res.status(429).json({
+      error:
+        'Too many registration attempts from this IP. Please wait before trying again.',
+    });
   },
   statusCode: 429,
   skip: (req) => {
@@ -49,7 +55,10 @@ export const highRiskLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: (req, res) => {
-    res.status(429).json({ error: 'Too many requests to this sensitive endpoint. Please slow down. HighRisk' });
+    res.status(429).json({
+      error:
+        'Too many requests to this sensitive endpoint. Please slow down. HighRisk',
+    });
   },
   statusCode: 429,
   skip: (req) => {

@@ -1,6 +1,7 @@
 // src/services/sessions.service.ts
-import prisma from '@/lib/prisma';
 import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
 
 const SessionSchema = z.object({
   uID: z.number().int().positive(),
@@ -16,21 +17,21 @@ export const endSession = async (uID, sessionId) => {
   await prisma.autoRecruitSession.deleteMany({
     where: { id: validatedData.sessionId, userId: validatedData.uID },
   });
-}
+};
 
 export const getSession = async (uID, sessionId) => {
   const validatedData = SessionSchema.parse({ uID, sessionId });
   return await prisma.autoRecruitSession.findUnique({
     where: { id: validatedData.sessionId, userId: validatedData.uID },
   });
-}
+};
 
 export const countSessions = async (uID) => {
   const validatedData = UserSchema.parse({ uID });
   return await prisma.autoRecruitSession.count({
     where: { userId: validatedData.uID },
   });
-}
+};
 
 export const validateSession = async (uID, sessionId) => {
   const validatedData = SessionSchema.parse({ uID, sessionId });
@@ -39,7 +40,7 @@ export const validateSession = async (uID, sessionId) => {
   });
 
   return activeSessions > 0;
-}
+};
 
 export const createSession = async (uID) => {
   const validatedData = UserSchema.parse({ uID });
@@ -48,7 +49,7 @@ export const createSession = async (uID) => {
       userId: validatedData.uID,
     },
   });
-}
+};
 
 export const expireOldSessions = async (uID) => {
   const validatedData = UserSchema.parse({ uID });
@@ -59,7 +60,7 @@ export const expireOldSessions = async (uID) => {
       lastActivityAt: { lt: expirationTime },
     },
   });
-}
+};
 
 export const updateSessionActivity = async (uID, sessionId) => {
   const validatedData = SessionSchema.parse({ uID, sessionId });
@@ -67,7 +68,7 @@ export const updateSessionActivity = async (uID, sessionId) => {
     where: { id: validatedData.sessionId, userId: validatedData.uID },
     data: { lastActivityAt: new Date() },
   });
-}
+};
 
 export const listSessions = async (uID) => {
   const validatedData = UserSchema.parse({ uID });
@@ -80,4 +81,4 @@ export const listSessions = async (uID) => {
     },
     orderBy: { createdAt: 'desc' },
   });
-}
+};

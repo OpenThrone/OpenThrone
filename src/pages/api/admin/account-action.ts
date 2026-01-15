@@ -1,16 +1,17 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '@/lib/prisma';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
-import { isAdmin } from '@/utils/authorization';
-import { withAuth } from '@/middleware/auth';
-import { logError } from '@/utils/logger';
 import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
+import { withAuth } from '@/middleware/auth';
+import { isAdmin } from '@/utils/authorization';
+import { logError } from '@/utils/logger';
 
 const AccountActionSchema = z.object({
   userId: z.number().int(),
   action: z.enum(['SUSPENDED', 'BANNED', 'CLOSED', 'ACTIVE']),
   duration: z.number().int().optional(),
-  reason: z.string().optional()
+  reason: z.string().optional(),
 });
 
 export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -25,7 +26,10 @@ export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const parseResult = AccountActionSchema.safeParse(req.body);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
   const { userId, action, duration, reason } = parseResult.data;
 
@@ -66,6 +70,6 @@ export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     logError(`Error performing ${action} on user:`, error);
     res.status(500).json({ error: `Failed to perform action ${action}` });
   }
-}
+};
 
 export default withAuth(handler);

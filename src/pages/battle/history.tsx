@@ -1,17 +1,21 @@
+import { faScroll } from '@fortawesome/free-solid-svg-icons';
+import { Group, Pagination, useMantineTheme } from '@mantine/core';
+import type { InferGetServerSidePropsType } from 'next';
 import { getSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
+
 import AttackLogTable from '@/components/AttackLog';
-import prisma from '@/lib/prisma';
-import { Group, Pagination, useMantineTheme } from '@mantine/core';
-import { InferGetServerSidePropsType } from "next";
 import { GameCard } from '@/components/game/GameCard';
-import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import MainArea from '@/components/MainArea';
+import prisma from '@/lib/prisma';
 
 const ROWS_PER_PAGE = 5;
 
-const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const WarHistory = ({
+  attackLogs,
+  defenseLogs,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { t } = useTranslation('battle');
   const [attackPage, setAttackPage] = useState(1);
   const [defensePage, setDefensePage] = useState(1);
@@ -22,17 +26,21 @@ const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typ
 
   const currentAttackLogs = attackLogs.slice(
     (attackPage - 1) * ROWS_PER_PAGE,
-    attackPage * ROWS_PER_PAGE
+    attackPage * ROWS_PER_PAGE,
   );
 
   const currentDefenseLogs = defenseLogs.slice(
     (defensePage - 1) * ROWS_PER_PAGE,
-    defensePage * ROWS_PER_PAGE
+    defensePage * ROWS_PER_PAGE,
   );
 
   return (
     <MainArea title={t('warHistory.title')}>
-      <GameCard title={t('warHistory.attackLog')} icon={faScroll} style={{ marginBottom: theme.spacing.md }}>
+      <GameCard
+        title={t('warHistory.attackLog')}
+        icon={faScroll}
+        style={{ marginBottom: theme.spacing.md }}
+      >
         <AttackLogTable logs={currentAttackLogs} type="attack" />
         <Group justify="center" pt="md">
           <Pagination
@@ -76,8 +84,12 @@ export const getServerSideProps = async (context: any) => {
   const attackLogs = await prisma.attack_log.findMany({
     where: { attacker_id: userId, type: 'attack' },
     include: {
-      attackerPlayer: { select: { id: true, display_name: true, avatar: true } },
-      defenderPlayer: { select: { id: true, display_name: true, avatar: true } },
+      attackerPlayer: {
+        select: { id: true, display_name: true, avatar: true },
+      },
+      defenderPlayer: {
+        select: { id: true, display_name: true, avatar: true },
+      },
     },
     orderBy: { timestamp: 'desc' },
   });
@@ -96,11 +108,11 @@ export const getServerSideProps = async (context: any) => {
 
   return {
     props: {
-      attackLogs: attackLogs.map(log => ({
+      attackLogs: attackLogs.map((log) => ({
         ...log,
         timestamp: log.timestamp.toISOString(),
       })),
-      defenseLogs: defenseLogs.map(log => ({
+      defenseLogs: defenseLogs.map((log) => ({
         ...log,
         timestamp: log.timestamp.toISOString(),
       })),

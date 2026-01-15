@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
+
 import { AuthService } from '@/services';
 
 const VerifySchema = z.object({

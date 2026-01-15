@@ -1,16 +1,22 @@
-import prisma from '@/lib/prisma';
+import type { BonusPointsType } from '@prisma/client';
 import argon2 from 'argon2';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { z } from 'zod';
+
 import { Fortifications } from '@/constants';
 import { DefaultLevelBonus } from '@/constants/Bonuses';
-import { getAntiAbuseExpiry, getAntiAbuseHash } from '@/utils/antiAbuse';
-import { generateRandomString } from '@/utils/utilities';
-import { logError } from '@/utils/logger';
+import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import type { BonusPointsType } from '@prisma/client';
-import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
+import { getAntiAbuseExpiry, getAntiAbuseHash } from '@/utils/antiAbuse';
+import { logError } from '@/utils/logger';
+import { generateRandomString } from '@/utils/utilities';
+
+import {
+  buildDefaultUserUpdate,
+  resetUserRelations,
+  resolveColorScheme,
+} from './UserDefaults.service';
 
 // SMTP Configuration
 const smtpConfig: SMTPTransport.Options = {
@@ -22,7 +28,7 @@ const smtpConfig: SMTPTransport.Options = {
     pass: process.env.SMTP_PASSWORD,
   },
   tls: { rejectUnauthorized: false },
-  debug: true
+  debug: true,
 };
 
 // Type definitions
@@ -75,14 +81,18 @@ export interface LastActiveData {
 }
 
 // Zod schemas for validation
-const PasswordChangeSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required."),
-  newPassword: z.string().min(8, "New password must be at least 8 characters long."),
-  confirmPassword: z.string(),
-}).refine(data => data.newPassword === data.confirmPassword, {
-  message: "New passwords do not match.",
-  path: ["confirmPassword"],
-});
+const PasswordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required.'),
+    newPassword: z
+      .string()
+      .min(8, 'New password must be at least 8 characters long.'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'New passwords do not match.',
+    path: ['confirmPassword'],
+  });
 
 const GameOptionsSchema = z.object({
   locale: z.enum(['en-US', 'es-ES']),
@@ -96,11 +106,16 @@ const EmailChangeSchema = z.object({
 const PasswordResetSchema = z.object({
   email: z.string().email({ message: 'Invalid email format.' }),
   verificationCode: z.string().min(1),
-  newPassword: z.string().min(8, { message: 'Password must be at least 8 characters.' })
+  newPassword: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters.' }),
 });
 
 const RepairSchema = z.object({
-  repairPoints: z.number().int().positive({ message: 'Repair points must be a positive integer.' })
+  repairPoints: z
+    .number()
+    .int()
+    .positive({ message: 'Repair points must be a positive integer.' }),
 });
 
 const AccountResetSchema = z.object({
@@ -121,16 +136,21 @@ const VacationStartSchema = z.object({
 });
 
 const BonusPointsSchema = z.object({
-  changeQueue: z.record(z.number().int({ message: "Change must be an integer." })),
+  changeQueue: z.record(
+    z.number().int({ message: 'Change must be an integer.' }),
+  ),
 });
 
-const LastActiveSchema = z.object({
-  email: z.string().email().optional(),
-  userId: z.number().int().optional(),
-  displayName: z.string().optional(),
-}).refine(data => data.email || data.userId || data.displayName, {
-  message: "At least one identifier (email, userId, or displayName) must be provided",
-});
+const LastActiveSchema = z
+  .object({
+    email: z.string().email().optional(),
+    userId: z.number().int().optional(),
+    displayName: z.string().optional(),
+  })
+  .refine((data) => data.email || data.userId || data.displayName, {
+    message:
+      'At least one identifier (email, userId, or displayName) must be provided',
+  });
 
 export class AccountService {
   /**
@@ -151,7 +171,10 @@ export class AccountService {
       }
 
       // Verify current password
-      const passwordMatches = await argon2.verify(user.password_hash, validatedData.currentPassword);
+      const passwordMatches = await argon2.verify(
+        user.password_hash,
+        validatedData.currentPassword,
+      );
       if (!passwordMatches) {
         throw new Error('Incorrect current password.');
       }
@@ -187,7 +210,11 @@ export class AccountService {
 
       return { message: 'Game options updated successfully.' };
     } catch (error: any) {
-      logError(error, { userId, data: validatedData }, 'Error updating game options');
+      logError(
+        error,
+        { userId, data: validatedData },
+        'Error updating game options',
+      );
       throw error;
     }
   }
@@ -244,16 +271,16 @@ export class AccountService {
     const validatedData = EmailChangeSchema.parse(data);
 
     try {
-      const user = await prisma.users.findUnique({ 
-        where: { email: validatedData.email } 
+      const user = await prisma.users.findUnique({
+        where: { email: validatedData.email },
       });
-      
+
       if (!user) {
         throw new Error('User not found');
       }
 
       const resetToken = generateRandomString(6);
-      
+
       // Invalidate existing email change requests
       await prisma.passwordReset.updateMany({
         where: {
@@ -292,19 +319,23 @@ export class AccountService {
       `,
         });
 
-        return { 
-          status: true, 
-          message: 'Email change request sent', 
-          id: resetReq.id, 
+        return {
+          status: true,
+          message: 'Email change request sent',
+          id: resetReq.id,
           userId: user.id,
-          info 
+          info,
         };
       } catch (emailError) {
         logError('Failed to send email change email', emailError);
         throw new Error('Failed to send email change email');
       }
     } catch (error: any) {
-      logError(error, { email: validatedData.email }, 'Error requesting email change');
+      logError(
+        error,
+        { email: validatedData.email },
+        'Error requesting email change',
+      );
       throw error;
     }
   }
@@ -316,10 +347,10 @@ export class AccountService {
     const validatedData = PasswordResetSchema.parse(data);
 
     try {
-      const user = await prisma.users.findUnique({ 
-        where: { email: validatedData.email } 
+      const user = await prisma.users.findUnique({
+        where: { email: validatedData.email },
       });
-      
+
       if (!user) {
         throw new Error('User not found');
       }
@@ -332,7 +363,7 @@ export class AccountService {
           createdAt: {
             gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3), // 3 hours
           },
-          type: 'PASSWORD'
+          type: 'PASSWORD',
         },
       });
 
@@ -349,7 +380,11 @@ export class AccountService {
 
       return { status: true, passwordChanged: true };
     } catch (error: any) {
-      logError(error, { email: validatedData.email }, 'Error resetting password');
+      logError(
+        error,
+        { email: validatedData.email },
+        'Error resetting password',
+      );
       throw error;
     }
   }
@@ -454,9 +489,13 @@ export class AccountService {
         }
 
         // Get fortification details
-        const fortification = Fortifications.find((f) => f.level === user.fort_level);
+        const fortification = Fortifications.find(
+          (f) => f.level === user.fort_level,
+        );
         if (!fortification) {
-          throw new Error(`Invalid fortification level found for user: ${user.fort_level}`);
+          throw new Error(
+            `Invalid fortification level found for user: ${user.fort_level}`,
+          );
         }
 
         // Check if already at full health
@@ -465,9 +504,13 @@ export class AccountService {
         }
 
         // Calculate cost
-        const totalCost = BigInt(validatedData.repairPoints) * BigInt(fortification.costPerRepairPoint);
+        const totalCost =
+          BigInt(validatedData.repairPoints) *
+          BigInt(fortification.costPerRepairPoint);
         if (user.gold < totalCost) {
-          throw new Error(`Not enough gold. Required: ${totalCost}, Available: ${user.gold}`);
+          throw new Error(
+            `Not enough gold. Required: ${totalCost}, Available: ${user.gold}`,
+          );
         }
 
         // Calculate new hitpoints
@@ -479,13 +522,18 @@ export class AccountService {
         const actualRepairAmount = newFortHitpoints - currentHp;
 
         if (actualRepairAmount <= 0) {
-          throw new Error('Calculated repair amount is zero or negative, cannot proceed.');
+          throw new Error(
+            'Calculated repair amount is zero or negative, cannot proceed.',
+          );
         }
 
         // Recalculate cost based on actual repair amount
-        const finalCost = BigInt(actualRepairAmount) * BigInt(fortification.costPerRepairPoint);
+        const finalCost =
+          BigInt(actualRepairAmount) * BigInt(fortification.costPerRepairPoint);
         if (user.gold < finalCost) {
-          throw new Error(`Not enough gold for actual repair. Required: ${finalCost}, Available: ${user.gold}`);
+          throw new Error(
+            `Not enough gold for actual repair. Required: ${finalCost}, Available: ${user.gold}`,
+          );
         }
 
         // Create bank history entry
@@ -501,7 +549,7 @@ export class AccountService {
             stats: {
               currentFortHP: currentHp,
               requestedRepairPoints: validatedData.repairPoints,
-              actualRepairAmount: actualRepairAmount,
+              actualRepairAmount,
               newFortHP: newFortHitpoints,
               cost: finalCost.toString(),
             },
@@ -524,12 +572,16 @@ export class AccountService {
         };
       });
 
-      return { 
-        message: 'Fortification repaired successfully', 
-        data: result 
+      return {
+        message: 'Fortification repaired successfully',
+        data: result,
       };
     } catch (error: any) {
-      logError(error, { userId, repairPoints: validatedData.repairPoints }, 'Error repairing fortification');
+      logError(
+        error,
+        { userId, repairPoints: validatedData.repairPoints },
+        'Error repairing fortification',
+      );
       throw error;
     }
   }
@@ -553,7 +605,10 @@ export class AccountService {
         }
 
         // Verify password
-        const passwordMatches = await argon2.verify(user.password_hash, validatedData.password);
+        const passwordMatches = await argon2.verify(
+          user.password_hash,
+          validatedData.password,
+        );
         if (!passwordMatches) {
           throw new Error('Invalid password.');
         }
@@ -570,7 +625,9 @@ export class AccountService {
         });
 
         await resetUserRelations(tx, userId);
-        await tx.accountResetHistory.create({ data: { userId, resetDate: new Date() } });
+        await tx.accountResetHistory.create({
+          data: { userId, resetDate: new Date() },
+        });
       });
 
       return { message: 'Account reset successfully.' };
@@ -596,7 +653,10 @@ export class AccountService {
         throw new Error('User not found or password hash missing.');
       }
 
-      const passwordMatches = await argon2.verify(user.password_hash, validatedData.password);
+      const passwordMatches = await argon2.verify(
+        user.password_hash,
+        validatedData.password,
+      );
       if (!passwordMatches) {
         throw new Error('Invalid password.');
       }
@@ -620,7 +680,10 @@ export class AccountService {
   /**
    * Pseudonymizes account data and stores an anti-abuse hash.
    */
-  static async forgetAccount(userId: number, data: { password: string; reason?: string }) {
+  static async forgetAccount(
+    userId: number,
+    data: { password: string; reason?: string },
+  ) {
     const validatedData = ForgetAccountSchema.parse(data);
 
     try {
@@ -643,7 +706,10 @@ export class AccountService {
           throw new Error('User not found or password hash missing.');
         }
 
-        const passwordMatches = await argon2.verify(user.password_hash, validatedData.password);
+        const passwordMatches = await argon2.verify(
+          user.password_hash,
+          validatedData.password,
+        );
         if (!passwordMatches) {
           throw new Error('Invalid password.');
         }
@@ -706,13 +772,18 @@ export class AccountService {
 
     try {
       const updatedUser = await prisma.users.update({
-        where: validatedData.email ? { email: validatedData.email } : 
-               validatedData.userId ? { id: validatedData.userId } : 
-               { display_name: validatedData.displayName },
+        where: validatedData.email
+          ? { email: validatedData.email }
+          : validatedData.userId
+            ? { id: validatedData.userId }
+            : { display_name: validatedData.displayName },
         data: { last_active: new Date() },
       });
 
-      return { message: 'Last active timestamp updated', userId: updatedUser.id };
+      return {
+        message: 'Last active timestamp updated',
+        userId: updatedUser.id,
+      };
     } catch (error: any) {
       logError(error, { data: validatedData }, 'Error updating last active');
       throw error;
@@ -724,7 +795,9 @@ export class AccountService {
    */
   static async updateBonusPoints(userId: number, data: BonusPointsData) {
     // Create BonusType enum from DefaultLevelBonus
-    const BonusTypeEnum = z.enum(DefaultLevelBonus.map(b => b.type) as [string, ...string[]]);
+    const BonusTypeEnum = z.enum(
+      DefaultLevelBonus.map((b) => b.type) as [string, ...string[]],
+    );
 
     try {
       const updatedBonusPointsResult = await prisma.$transaction(async (tx) => {
@@ -743,28 +816,39 @@ export class AccountService {
         }
 
         // Instantiate UserModel for available proficiency points calculation
-        const userModel = new UserModel(userRecord as any);
+        const userModel = new UserModel(userRecord);
 
         // Validate total change against available points
-        const totalChange = Object.values(data.changeQueue).reduce((acc, item) => acc + item.change, 0);
+        const totalChange = Object.values(data.changeQueue).reduce(
+          (acc, item) => acc + item.change,
+          0,
+        );
 
         if (totalChange < 0) {
-          throw new Error('Cannot decrease bonus points below zero through this endpoint.');
+          throw new Error(
+            'Cannot decrease bonus points below zero through this endpoint.',
+          );
         }
 
         if (totalChange > userModel.availableProficiencyPoints) {
-          throw new Error(`Not enough proficiency points available. Required: ${totalChange}, Available: ${userModel.availableProficiencyPoints}`);
+          throw new Error(
+            `Not enough proficiency points available. Required: ${totalChange}, Available: ${userModel.availableProficiencyPoints}`,
+          );
         }
 
         // Process bonus points update
         const currentBonusPointsMap = new Map<string, number>();
         if (Array.isArray(userRecord.UserBonusPoints)) {
-          userRecord.UserBonusPoints.forEach(bp => {
+          userRecord.UserBonusPoints.forEach((bp) => {
             const parseType = BonusTypeEnum.safeParse(bp.type);
             if (parseType.success && typeof bp.level === 'number') {
               currentBonusPointsMap.set(parseType.data, bp.level);
             } else {
-              logError(null, { userId, bonusPoint: bp }, 'Invalid bonus point item found in user data');
+              logError(
+                null,
+                { userId, bonusPoint: bp },
+                'Invalid bonus point item found in user data',
+              );
             }
           });
         }
@@ -773,7 +857,7 @@ export class AccountService {
         let pointsSpent = 0;
 
         for (const defaultBonus of DefaultLevelBonus) {
-          const type = defaultBonus.type;
+          const { type } = defaultBonus;
           const currentLevel = currentBonusPointsMap.get(type) ?? 0;
           const change = data.changeQueue[type]?.change ?? 0;
           const newLevel = currentLevel + change;
@@ -783,7 +867,9 @@ export class AccountService {
           }
 
           if (change > 0 && newLevel > 75) {
-            throw new Error(`Cannot increase level above 75 for ${type}. Requested: ${newLevel}`);
+            throw new Error(
+              `Cannot increase level above 75 for ${type}. Requested: ${newLevel}`,
+            );
           }
 
           if (change > 0) {
@@ -799,13 +885,19 @@ export class AccountService {
 
         // Update bonus points in database
         await Promise.all(
-          updatedBonusPoints.map(bp =>
+          updatedBonusPoints.map((bp) =>
             tx.userBonusPoints.upsert({
-              where: { userId_type: { userId, type: bp.type as BonusPointsType } },
+              where: {
+                userId_type: { userId, type: bp.type as BonusPointsType },
+              },
               update: { level: bp.level },
-              create: { userId, type: bp.type as BonusPointsType, level: bp.level },
-            })
-          )
+              create: {
+                userId,
+                type: bp.type as BonusPointsType,
+                level: bp.level,
+              },
+            }),
+          ),
         );
 
         return updatedBonusPoints;
@@ -813,10 +905,14 @@ export class AccountService {
 
       return {
         message: 'Bonus points updated successfully.',
-        data: { updatedBonusPoints: updatedBonusPointsResult }
+        data: { updatedBonusPoints: updatedBonusPointsResult },
       };
     } catch (error: any) {
-      logError(error, { userId, changeQueue: data.changeQueue }, 'Error updating bonus points');
+      logError(
+        error,
+        { userId, changeQueue: data.changeQueue },
+        'Error updating bonus points',
+      );
       throw error;
     }
   }

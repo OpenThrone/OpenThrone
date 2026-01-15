@@ -1,9 +1,8 @@
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'next-i18next';
-
-import { faCrosshairs, faFilter, faUsers } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCrosshairs,
+  faFilter,
+  faUsers,
+} from '@fortawesome/free-solid-svg-icons';
 import {
   Avatar,
   Badge,
@@ -25,27 +24,39 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { usePagination } from '@mantine/hooks';
+import type { InferGetServerSidePropsType } from 'next';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import toLocale from '@/utils/numberFormatting';
 import { logError, logInfo } from '@/utils/logger';
+import toLocale from '@/utils/numberFormatting';
 import { getLevelFromXP } from '@/utils/utilities';
-import { InferGetServerSidePropsType } from "next";
 
-const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Users = ({
+  allUsers,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { t } = useTranslation('battle');
-  const searchParams = useSearchParams();
+  const router = useRouter();
+  const getQueryParam = (value: string | string[] | undefined) =>
+    Array.isArray(value) ? value[0] : value;
+  const pageQuery = getQueryParam(router.query.page);
+  const sortByQuery = getQueryParam(router.query.sortBy);
+  const sortDirQuery = getQueryParam(router.query.sortDir);
+  const emptyQuery = getQueryParam(router.query.empty);
   const { user } = useUser();
   const theme = useMantineTheme();
   const colorScheme = user?.colorScheme;
-  const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1);
+  const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
-  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'level');
-  const [sortDir, setSortDir] = useState(searchParams.get('sortDir') || 'desc');
+  const [sortBy, setSortBy] = useState('level');
+  const [sortDir, setSortDir] = useState('desc');
   const [players, setPlayers] = useState([]);
   const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -64,7 +75,8 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const [includeOthers, setIncludeOthers] = useState(true);
 
   const [includeAllianceMembers, setIncludeAllianceMembers] = useState(true);
-  const [includeNonAllianceMembers, setIncludeNonAllianceMembers] = useState(true);
+  const [includeNonAllianceMembers, setIncludeNonAllianceMembers] =
+    useState(true);
   const [selectedAllianceIds, setSelectedAllianceIds] = useState<string[]>([]);
 
   const [minGold, setMinGold] = useState<number | null>(null);
@@ -83,7 +95,9 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   const [attackedMeIds, setAttackedMeIds] = useState<Set<number>>(new Set());
   const [iBeatIds, setIBeatIds] = useState<Set<number>>(new Set());
   const [theyBeatMeIds, setTheyBeatMeIds] = useState<Set<number>>(new Set());
-  const [allianceOptions, setAllianceOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [allianceOptions, setAllianceOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
   const [metaError, setMetaError] = useState<string | null>(null);
   const brand = theme.colors.brand ?? theme.colors.blue;
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
@@ -117,11 +131,23 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
         if (friendsRes.ok) {
           const friends = await friendsRes.json();
-          setFriendIds(new Set((friends || []).map((r: any) => Number(r.friend?.id)).filter((id: any) => Number.isFinite(id))));
+          setFriendIds(
+            new Set(
+              (friends || [])
+                .map((r: any) => Number(r.friend?.id))
+                .filter((id: any) => Number.isFinite(id)),
+            ),
+          );
         }
         if (enemiesRes.ok) {
           const enemies = await enemiesRes.json();
-          setEnemyIds(new Set((enemies || []).map((r: any) => Number(r.friend?.id)).filter((id: any) => Number.isFinite(id))));
+          setEnemyIds(
+            new Set(
+              (enemies || [])
+                .map((r: any) => Number(r.friend?.id))
+                .filter((id: any) => Number.isFinite(id)),
+            ),
+          );
         }
       } catch (e) {
         // non-fatal: advanced filters will just treat everyone as "other"
@@ -135,16 +161,36 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     if (!user) return;
 
     try {
-      const res = await fetch(`/api/battle/users-filter-meta?days=${recentDays}`);
+      const res = await fetch(
+        `/api/battle/users-filter-meta?days=${recentDays}`,
+      );
       if (!res.ok) {
         setMetaError(t('users.unableToLoadMetadata'));
         return;
       }
       const data = await res.json();
       setMetaError(null);
-      setAttackedMeIds(new Set((data.attackedMeIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
-      setIBeatIds(new Set((data.iBeatIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
-      setTheyBeatMeIds(new Set((data.theyBeatMeIds || []).map((id: any) => Number(id)).filter((id: any) => Number.isFinite(id))));
+      setAttackedMeIds(
+        new Set(
+          (data.attackedMeIds || [])
+            .map((id: any) => Number(id))
+            .filter((id: any) => Number.isFinite(id)),
+        ),
+      );
+      setIBeatIds(
+        new Set(
+          (data.iBeatIds || [])
+            .map((id: any) => Number(id))
+            .filter((id: any) => Number.isFinite(id)),
+        ),
+      );
+      setTheyBeatMeIds(
+        new Set(
+          (data.theyBeatMeIds || [])
+            .map((id: any) => Number(id))
+            .filter((id: any) => Number.isFinite(id)),
+        ),
+      );
     } catch (e) {
       setMetaError(t('users.unableToLoadMetadata'));
     }
@@ -177,18 +223,32 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
   const filteredUsers = useMemo(() => {
     if (!user) return [];
-    if (searchParams.get('empty') === '1') return [];
+    if (emptyQuery === '1') return [];
 
     const normalizedQuery = nameQuery.trim().toLowerCase();
-    const selectedSet = new Set(selectedAllianceIds.map((v) => Number(v)).filter((n) => Number.isFinite(n)));
+    const selectedSet = new Set(
+      selectedAllianceIds
+        .map((v) => Number(v))
+        .filter((n) => Number.isFinite(n)),
+    );
 
-    const relationshipIsConstrained = !(includeFriends && includeEnemies && includeOthers);
-    const alliancePresenceIsConstrained = !(includeAllianceMembers && includeNonAllianceMembers);
+    const relationshipIsConstrained = !(
+      includeFriends &&
+      includeEnemies &&
+      includeOthers
+    );
+    const alliancePresenceIsConstrained = !(
+      includeAllianceMembers && includeNonAllianceMembers
+    );
 
     const predicates: Array<(u: any) => boolean> = [];
 
     if (normalizedQuery) {
-      predicates.push((u) => String(u.display_name || '').toLowerCase().includes(normalizedQuery));
+      predicates.push((u) =>
+        String(u.display_name || '')
+          .toLowerCase()
+          .includes(normalizedQuery),
+      );
     }
 
     if (relationshipIsConstrained) {
@@ -204,7 +264,9 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
     if (alliancePresenceIsConstrained) {
       predicates.push((u) => {
-        const allianceIds: number[] = Array.isArray(u.allianceIds) ? u.allianceIds : [];
+        const allianceIds: number[] = Array.isArray(u.allianceIds)
+          ? u.allianceIds
+          : [];
         const hasAlliance = allianceIds.length > 0;
         return hasAlliance ? includeAllianceMembers : includeNonAllianceMembers;
       });
@@ -212,7 +274,9 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
     if (selectedSet.size > 0) {
       predicates.push((u) => {
-        const allianceIds: number[] = Array.isArray(u.allianceIds) ? u.allianceIds : [];
+        const allianceIds: number[] = Array.isArray(u.allianceIds)
+          ? u.allianceIds
+          : [];
         return allianceIds.some((id) => selectedSet.has(id));
       });
     }
@@ -257,7 +321,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
     return (allUsers as any[]).filter((u) => predicates.every((p) => p(u)));
   }, [
     user,
-    searchParams,
+    emptyQuery,
     allUsers,
     nameQuery,
     includeFriends,
@@ -282,41 +346,59 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   ]);
 
   useEffect(() => {
-    if(!user) return;
+    if (!user) return;
     const start = (page - 1) * rowsPerPage;
     const end = start + rowsPerPage;
-    let sortedPlayers = [...filteredUsers];
+    const sortedPlayers = [...filteredUsers];
     setLastPage(Math.ceil(filteredUsers.length / rowsPerPage));
 
     // Fallback for users where rank hasn't been calculated yet (and is therefore 0 or null)
-    sortedPlayers.forEach((u) => u.rank = u.rank || Infinity);
+    sortedPlayers.forEach((u) => (u.rank = u.rank || Infinity));
 
     // Sorting logic
     if (sortBy === 'gold') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.gold) - Number(a.gold) : Number(a.gold) - Number(b.gold));
+      sortedPlayers.sort((a, b) =>
+        sortDir === 'desc'
+          ? Number(b.gold) - Number(a.gold)
+          : Number(a.gold) - Number(b.gold),
+      );
     } else if (sortBy === 'population') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.population) - Number(a.population) : Number(a.population) - Number(b.population));
+      sortedPlayers.sort((a, b) =>
+        sortDir === 'desc'
+          ? Number(b.population) - Number(a.population)
+          : Number(a.population) - Number(b.population),
+      );
     } else if (sortBy === 'level') {
-      sortedPlayers.sort((a, b) => sortDir === 'desc' ? Number(b.experience) - Number(a.experience) : Number(a.experience) - Number(b.experience));
+      sortedPlayers.sort((a, b) =>
+        sortDir === 'desc'
+          ? Number(b.experience) - Number(a.experience)
+          : Number(a.experience) - Number(b.experience),
+      );
     }
 
     // Recalculate page of logged-in player
-    const loggedInPlayerIndex = sortedPlayers.findIndex((player) => player.id === user?.id);
+    const loggedInPlayerIndex = sortedPlayers.findIndex(
+      (player) => player.id === user?.id,
+    );
     const playerPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
 
     const paginatedPlayers = sortedPlayers.slice(start, end);
-    paginatedPlayers.forEach((player: any, index) => player.overallrank = (sortDir === 'asc' ? filteredUsers.length - start - index : start + index + 1));
+    paginatedPlayers.forEach(
+      (player: any, index) =>
+        (player.overallrank =
+          sortDir === 'asc'
+            ? filteredUsers.length - start - index
+            : start + index + 1),
+    );
 
     setPlayers(paginatedPlayers);
 
     setMyPage(playerPage);
     setMyRank(loggedInPlayerIndex + 1);
-
   }, [page, sortBy, sortDir, filteredUsers, rowsPerPage, user]);
 
-
   useEffect(() => {
-    const golds = players.map(player => toLocale(player.gold, user?.locale));
+    const golds = players.map((player) => toLocale(player.gold, user?.locale));
     setFormattedGolds(golds);
   }, [players, user?.locale]);
 
@@ -326,28 +408,31 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   }, [user?.attackRange]);
 
   const handleSort = (newSortBy) => {
-    const newSortDir = sortBy === newSortBy && sortDir === 'desc' ? 'asc' : 'desc';
+    const newSortDir =
+      sortBy === newSortBy && sortDir === 'desc' ? 'asc' : 'desc';
     setSortBy(newSortBy);
     setSortDir(newSortDir);
     setPage(1);
   };
 
   useEffect(() => {
-    if(user){
+    if (user && router.isReady) {
       if (!hasSetPageInitially) {
-        const pageParam = searchParams.get('page');
-        const sortByParam = searchParams.get('sortBy');
-        const sortDirParam = searchParams.get('sortDir');
+        const pageParam = pageQuery;
+        const sortByParam = sortByQuery;
+        const sortDirParam = sortDirQuery;
 
         if (!pageParam && !sortByParam && !sortDirParam) {
-          const loggedInPlayerIndex = allUsers.findIndex((player) => player.id === user?.id);
+          const loggedInPlayerIndex = allUsers.findIndex(
+            (player) => player.id === user?.id,
+          );
 
           if (loggedInPlayerIndex !== -1) {
             const newPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
             setPage(newPage);
           }
         } else {
-          const initialPage = parseInt(pageParam) || 1;
+          const initialPage = parseInt(pageParam || '') || 1;
           setPage(initialPage);
           setSortBy(sortByParam || 'level');
           setSortDir(sortDirParam || 'asc');
@@ -357,7 +442,16 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
         setHasSetPageInitially(true);
       }
     }
-  }, [user, allUsers, searchParams, rowsPerPage, hasSetPageInitially]);
+  }, [
+    user,
+    allUsers,
+    pageQuery,
+    sortByQuery,
+    sortDirQuery,
+    rowsPerPage,
+    hasSetPageInitially,
+    router.isReady,
+  ]);
 
   const handleRowsPerPageChange = (newRowsPerPage) => {
     setRowsPerPage(newRowsPerPage);
@@ -394,7 +488,11 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
   return (
     <MainArea title={t('users.title')}>
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mb="lg">
-        <GameCard title={t('users.targetingWindow')} icon={faCrosshairs} goldAccent={false}>
+        <GameCard
+          title={t('users.targetingWindow')}
+          icon={faCrosshairs}
+          goldAccent={false}
+        >
           <Text size="sm" c="gray.3">
             {t('users.attackRange')}{' '}
             <Text component="span" fw={700} c="gray.1">
@@ -407,18 +505,25 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
             .
           </Text>
           <Text size="xs" c="dimmed" mt="sm">
-            {t('users.showingTargets', { filtered: filteredUsers.length, total: allUsers.length })}
+            {t('users.showingTargets', {
+              filtered: filteredUsers.length,
+              total: allUsers.length,
+            })}
           </Text>
         </GameCard>
 
         <GameCard
           title={t('users.filters')}
           icon={faFilter}
-          action={(
-            <Button size="xs" variant="light" onClick={() => setAdvancedOpen((v) => !v)}>
+          action={
+            <Button
+              size="xs"
+              variant="light"
+              onClick={() => setAdvancedOpen((v) => !v)}
+            >
               {advancedOpen ? t('users.hideAdvanced') : t('users.showAdvanced')}
             </Button>
-          )}
+          }
           goldAccent={false}
         >
           <Stack gap="sm">
@@ -444,31 +549,69 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                     <Text size="sm" c="dimmed">
                       {t('users.advancedFilters')}
                     </Text>
-                    <Button size="xs" variant="default" onClick={resetAdvancedFilters}>
+                    <Button
+                      size="xs"
+                      variant="default"
+                      onClick={resetAdvancedFilters}
+                    >
                       {t('users.reset')}
                     </Button>
                   </Group>
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    c="dimmed"
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.3em' }}
+                  >
                     {t('users.social')}
                   </Text>
                   <Group>
-                    <Checkbox checked={includeFriends} onChange={(e) => setIncludeFriends(e.currentTarget.checked)} label={t('users.friends')} />
-                    <Checkbox checked={includeEnemies} onChange={(e) => setIncludeEnemies(e.currentTarget.checked)} label={t('users.enemies')} />
-                    <Checkbox checked={includeOthers} onChange={(e) => setIncludeOthers(e.currentTarget.checked)} label={t('users.others')} />
+                    <Checkbox
+                      checked={includeFriends}
+                      onChange={(e) =>
+                        setIncludeFriends(e.currentTarget.checked)
+                      }
+                      label={t('users.friends')}
+                    />
+                    <Checkbox
+                      checked={includeEnemies}
+                      onChange={(e) =>
+                        setIncludeEnemies(e.currentTarget.checked)
+                      }
+                      label={t('users.enemies')}
+                    />
+                    <Checkbox
+                      checked={includeOthers}
+                      onChange={(e) =>
+                        setIncludeOthers(e.currentTarget.checked)
+                      }
+                      label={t('users.others')}
+                    />
                   </Group>
 
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    c="dimmed"
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.3em' }}
+                  >
                     {t('users.alliance')}
                   </Text>
                   <Group>
                     <Checkbox
                       checked={includeAllianceMembers}
-                      onChange={(e) => setIncludeAllianceMembers(e.currentTarget.checked)}
+                      onChange={(e) =>
+                        setIncludeAllianceMembers(e.currentTarget.checked)
+                      }
                       label={t('users.inAnAlliance')}
                     />
                     <Checkbox
                       checked={includeNonAllianceMembers}
-                      onChange={(e) => setIncludeNonAllianceMembers(e.currentTarget.checked)}
+                      onChange={(e) =>
+                        setIncludeNonAllianceMembers(e.currentTarget.checked)
+                      }
                       label={t('users.notInAnAlliance')}
                     />
                   </Group>
@@ -482,7 +625,13 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                     clearable
                   />
 
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    c="dimmed"
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.3em' }}
+                  >
                     {t('users.stats')}
                   </Text>
                   <Group grow>
@@ -502,19 +651,41 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                     />
                   </Group>
                   <Group grow>
-                    <NumberInput label={t('users.minLevel')} value={minLevel} onChange={(v) => setMinLevel(toNumberOrNull(v))} min={1} />
-                    <NumberInput label={t('users.maxLevel')} value={maxLevel} onChange={(v) => setMaxLevel(toNumberOrNull(v))} min={1} />
+                    <NumberInput
+                      label={t('users.minLevel')}
+                      value={minLevel}
+                      onChange={(v) => setMinLevel(toNumberOrNull(v))}
+                      min={1}
+                    />
+                    <NumberInput
+                      label={t('users.maxLevel')}
+                      value={maxLevel}
+                      onChange={(v) => setMaxLevel(toNumberOrNull(v))}
+                      min={1}
+                    />
                   </Group>
-                  <Checkbox checked={onlineOnly} onChange={(e) => setOnlineOnly(e.currentTarget.checked)} label={t('users.onlineOnly')} />
+                  <Checkbox
+                    checked={onlineOnly}
+                    onChange={(e) => setOnlineOnly(e.currentTarget.checked)}
+                    label={t('users.onlineOnly')}
+                  />
 
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.3em' }}>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    c="dimmed"
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.3em' }}
+                  >
                     {t('users.recentBattles')}
                   </Text>
                   <Group grow align="flex-end">
                     <NumberInput
                       label={t('users.lookbackDays')}
                       value={recentDays}
-                      onChange={(v) => setRecentDays(typeof v === 'number' ? v : 7)}
+                      onChange={(v) =>
+                        setRecentDays(typeof v === 'number' ? v : 7)
+                      }
                       min={1}
                       max={365}
                     />
@@ -523,13 +694,23 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   <Group>
                     <Checkbox
                       checked={attackedMeRecently}
-                      onChange={(e) => setAttackedMeRecently(e.currentTarget.checked)}
+                      onChange={(e) =>
+                        setAttackedMeRecently(e.currentTarget.checked)
+                      }
                       label={t('users.attackedYouRecently')}
                     />
-                    <Checkbox checked={iBeatRecently} onChange={(e) => setIBeatRecently(e.currentTarget.checked)} label={t('users.youBeatRecently')} />
+                    <Checkbox
+                      checked={iBeatRecently}
+                      onChange={(e) =>
+                        setIBeatRecently(e.currentTarget.checked)
+                      }
+                      label={t('users.youBeatRecently')}
+                    />
                     <Checkbox
                       checked={theyBeatMeRecently}
-                      onChange={(e) => setTheyBeatMeRecently(e.currentTarget.checked)}
+                      onChange={(e) =>
+                        setTheyBeatMeRecently(e.currentTarget.checked)
+                      }
                       label={t('users.theyBeatYouRecently')}
                     />
                   </Group>
@@ -540,11 +721,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
         </GameCard>
       </SimpleGrid>
 
-      <GameCard
-        title={t('users.title')}
-        icon={faUsers}
-        
-      >
+      <GameCard title={t('users.title')} icon={faUsers}>
         <Group justify="space-between" mb="sm" wrap="wrap">
           <Group>
             <Button
@@ -562,7 +739,10 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               siblings={1}
               value={page}
               defaultValue={page}
-              onChange={(xval) => { setPage(xval); pagination.setPage(xval); }}
+              onChange={(xval) => {
+                setPage(xval);
+                pagination.setPage(xval);
+              }}
             />
             <Button
               variant="light"
@@ -578,7 +758,8 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
           <Group>
             <Pill size="lg">
               <Text>
-                {t('users.sortedBy')}: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
+                {t('users.sortedBy')}:{' '}
+                {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
               </Text>
             </Pill>
             <Pill size="lg">
@@ -591,7 +772,10 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
               disabled={myPage === page}
               size="lg"
               color={myPage === page ? 'gray' : 'brand'}
-              onMouseOver={(e) => e.currentTarget.style.cursor = myPage !== page ? 'pointer' : 'default'}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.cursor =
+                  myPage !== page ? 'pointer' : 'default')
+              }
             >
               {t('users.goToMyRank')}
             </Pill>
@@ -600,7 +784,7 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
         <Group mb="sm" wrap="wrap">
           <Text size="sm">{t('users.showPerPage')}:</Text>
-          {[10, 20, 50, 100].map(option => (
+          {[10, 20, 50, 100].map((option) => (
             <Text
               key={option}
               size="sm"
@@ -618,18 +802,28 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
             <Text size="sm" c="red.4" data-testid="error-message">
               {metaError}
             </Text>
-            <Button size="xs" variant="light" onClick={fetchMeta} data-testid="retry-button">
+            <Button
+              size="xs"
+              variant="light"
+              onClick={fetchMeta}
+              data-testid="retry-button"
+            >
               {t('users.retry')}
             </Button>
           </Group>
         )}
 
         <Table.ScrollContainer minWidth={400} data-testid="table-container">
-          <Table verticalSpacing="sm" highlightOnHover className="bg-gray-900 text-white text-left" data-testid="warlord-table">
+          <Table
+            verticalSpacing="sm"
+            highlightOnHover
+            className="bg-gray-900 text-left text-white"
+            data-testid="warlord-table"
+          >
             <Table.Thead data-testid="table-header">
               <Table.Tr style={{ background: '#0e1520' }}>
                 <Table.Th
-                  className="px-1 py-1"
+                  className="p-1"
                   data-testid="header-rank"
                   style={{
                     width: '100px',
@@ -649,7 +843,9 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   <Table.Th
                     key={head.label}
                     className="px-4 py-2"
-                    data-testid={head.label === 'Username' ? 'header-name' : 'header-race'}
+                    data-testid={
+                      head.label === 'Username' ? 'header-name' : 'header-race'
+                    }
                     style={{
                       color: '#687b94',
                       borderBottom: '1px solid #2f3e52',
@@ -673,7 +869,8 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   }}
                 >
                   <button onClick={() => handleSort('gold')}>
-                    {t('users.gold')} {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                    {t('users.gold')}{' '}
+                    {sortBy === 'gold' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </Table.Th>
                 <Table.Th
@@ -687,7 +884,9 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   }}
                 >
                   <button onClick={() => handleSort('population')}>
-                    {t('users.population')} {sortBy === 'population' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                    {t('users.population')}{' '}
+                    {sortBy === 'population' &&
+                      (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </Table.Th>
                 <Table.Th
@@ -701,7 +900,8 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                   }}
                 >
                   <button onClick={() => handleSort('level')}>
-                    {t('users.level')} {sortBy === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
+                    {t('users.level')}{' '}
+                    {sortBy === 'level' && (sortDir === 'asc' ? ' ↑' : ' ↓')}
                   </button>
                 </Table.Th>
               </Table.Tr>
@@ -709,7 +909,11 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
             <Table.Tbody>
               {players.length === 0 ? (
                 <Table.Tr data-testid="table-row">
-                  <Table.Td colSpan={6} data-testid="empty-state" style={{ borderColor: '#1f2b3b', textAlign: 'center' }}>
+                  <Table.Td
+                    colSpan={6}
+                    data-testid="empty-state"
+                    style={{ borderColor: '#1f2b3b', textAlign: 'center' }}
+                  >
                     {t('users.noPlayersFound')}
                   </Table.Td>
                 </Table.Tr>
@@ -717,7 +921,11 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                 players.map((nplayer, index) => {
                   const player = new UserModel(nplayer, true, false);
                   if (player.id === user?.id) player.is_player = true;
-                  const allianceName = Array.isArray((nplayer as any).alliances) && (nplayer as any).alliances[0]?.name ? (nplayer as any).alliances[0]?.name : '-';
+                  const allianceName =
+                    Array.isArray(nplayer.alliances) &&
+                    nplayer.alliances[0]?.name
+                      ? nplayer.alliances[0]?.name
+                      : '-';
                   return (
                     <Table.Tr
                       key={player.id}
@@ -730,30 +938,56 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                         transition: 'background 0.2s ease',
                       }}
                     >
-                      <Table.Td className="px-2 py-2" style={{ borderColor: '#1f2b3b' }}>
-                        <Text fw={700} c="dimmed" size="sm">#{nplayer.overallrank}</Text>
+                      <Table.Td
+                        className="p-2"
+                        style={{ borderColor: '#1f2b3b' }}
+                      >
+                        <Text fw={700} c="dimmed" size="sm">
+                          #{nplayer.overallrank}
+                        </Text>
                       </Table.Td>
                       <Table.Td className="px-4 py-2">
-                        <Group gap={'sm'} className="text-justify">
+                        <Group gap="sm" className="text-justify">
                           <Indicator color={player.is_online ? 'teal' : 'red'}>
-                            <Box style={{ border: '1px solid #444', padding: '1px', background: '#000' }}>
-                              <Avatar src={player?.avatar} size={34} radius={0} data-testid="race-icon" />
+                            <Box
+                              style={{
+                                border: '1px solid #444',
+                                padding: '1px',
+                                background: '#000',
+                              }}
+                            >
+                              <Avatar
+                                src={player?.avatar}
+                                size={34}
+                                radius={0}
+                                data-testid="race-icon"
+                              />
                             </Box>
                           </Indicator>
                           <div>
                             <Text fz="med" fw={500} component="div">
                               <Link
                                 href={`/userprofile/${player.id}`}
-                                className="text-blue-500 hover:text-blue-700 font-bold"
+                                className="font-bold text-blue-500 hover:text-blue-700"
                               >
                                 {player.displayName}
                               </Link>
-                              {player.is_player && <Badge color={(colorScheme === "ELF") ?
-                                'green' : (
-                                  colorScheme === 'GOBLIN' ? 'red' : (
-                                    colorScheme === 'UNDEAD' ? 'dark'
-                                      : 'blue'
-                                  ))} ml={5}>You</Badge>}
+                              {player.is_player && (
+                                <Badge
+                                  color={
+                                    colorScheme === 'ELF'
+                                      ? 'green'
+                                      : colorScheme === 'GOBLIN'
+                                        ? 'red'
+                                        : colorScheme === 'UNDEAD'
+                                          ? 'dark'
+                                          : 'blue'
+                                  }
+                                  ml={5}
+                                >
+                                  You
+                                </Badge>
+                              )}
                             </Text>
                             <Text fz="xs" c="dimmed">
                               {player.race} {player.class}
@@ -761,19 +995,35 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
                           </div>
                         </Group>
                       </Table.Td>
-                      <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b', color: '#687b94' }}>
+                      <Table.Td
+                        className="px-4 py-2"
+                        style={{ borderColor: '#1f2b3b', color: '#687b94' }}
+                      >
                         {allianceName}
                       </Table.Td>
-                      <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
+                      <Table.Td
+                        className="px-4 py-2"
+                        style={{ borderColor: '#1f2b3b' }}
+                      >
                         <Text style={{ color: accent }} fw={600} size="sm">
                           {toLocale(formattedGolds[index])}
                         </Text>
                       </Table.Td>
-                      <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
-                        <Text c="white" fw={700} size="sm">{toLocale(nplayer.population)}</Text>
+                      <Table.Td
+                        className="px-4 py-2"
+                        style={{ borderColor: '#1f2b3b' }}
+                      >
+                        <Text c="white" fw={700} size="sm">
+                          {toLocale(nplayer.population)}
+                        </Text>
                       </Table.Td>
-                      <Table.Td className="px-4 py-2" style={{ borderColor: '#1f2b3b' }}>
-                        <Text c="white" fw={700} size="sm">{player.level}</Text>
+                      <Table.Td
+                        className="px-4 py-2"
+                        style={{ borderColor: '#1f2b3b' }}
+                      >
+                        <Text c="white" fw={700} size="sm">
+                          {player.level}
+                        </Text>
                       </Table.Td>
                     </Table.Tr>
                   );
@@ -789,12 +1039,9 @@ const Users = ({ allUsers }: InferGetServerSidePropsType<typeof getServerSidePro
 
 export const getServerSideProps = async (context: any) => {
   try {
-    let allUsers = await prisma.users.findMany({
+    const allUsers = await prisma.users.findMany({
       where: {
-        AND: [
-          { id: { not: 0 } },
-          { last_active: { not: null } },
-        ],
+        AND: [{ id: { not: 0 } }, { last_active: { not: null } }],
       },
       select: {
         id: true,
@@ -820,43 +1067,46 @@ export const getServerSideProps = async (context: any) => {
     });
     logInfo(`Fetched ${allUsers.length} users from database.`);
     const sanitizedUsers = allUsers
-      .filter(user => user.statusHistories[0]?.status === 'ACTIVE')
-      .map(user => {
-      const nowdate = new Date();
-      const lastActiveDate = new Date(user.last_active);
-      const lastActiveTimestamp = lastActiveDate.getTime();
-      const nowTimestamp = nowdate.getTime();
-      const population = user.UserUnit?.reduce((acc, unit) => acc + (unit.quantity || 0), 0) || 0;
+      .filter((user) => user.statusHistories[0]?.status === 'ACTIVE')
+      .map((user) => {
+        const nowdate = new Date();
+        const lastActiveDate = new Date(user.last_active);
+        const lastActiveTimestamp = lastActiveDate.getTime();
+        const nowTimestamp = nowdate.getTime();
+        const population =
+          user.UserUnit?.reduce((acc, unit) => acc + (unit.quantity || 0), 0) ||
+          0;
 
-      // prepare safe last_active string and online flag
-      let lastActiveStr: string | null = null;
-      let isOnline = false;
-      if (!isNaN(lastActiveTimestamp)) {
-        lastActiveStr = lastActiveDate.toISOString();
-        isOnline = ((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
-      }
+        // prepare safe last_active string and online flag
+        let lastActiveStr: string | null = null;
+        let isOnline = false;
+        if (!isNaN(lastActiveTimestamp)) {
+          lastActiveStr = lastActiveDate.toISOString();
+          isOnline = (nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15;
+        }
 
-      // remove units so there's no leakage of data
-      return {
-        id: user.id,
-        display_name: user.display_name,
-        rank: user.rank,
-        last_active: lastActiveStr,
-        avatar: user.avatar,
-        gold: user.gold.toString(),
-        race: user.race,
-        class: user.class,
-        experience: user.experience,
-        population: population,
-        isOnline: isOnline,
-        alliances: (user.alliance_memberships || []).map((m) => ({
-          id: m.alliance.id,
-          name: m.alliance.name,
-        })),
-        allianceIds: (user.alliance_memberships || []).map((m) => m.alliance.id),
-
-      };
-    });
+        // remove units so there's no leakage of data
+        return {
+          id: user.id,
+          display_name: user.display_name,
+          rank: user.rank,
+          last_active: lastActiveStr,
+          avatar: user.avatar,
+          gold: user.gold.toString(),
+          race: user.race,
+          class: user.class,
+          experience: user.experience,
+          population,
+          isOnline,
+          alliances: (user.alliance_memberships || []).map((m) => ({
+            id: m.alliance.id,
+            name: m.alliance.name,
+          })),
+          allianceIds: (user.alliance_memberships || []).map(
+            (m) => m.alliance.id,
+          ),
+        };
+      });
     logInfo(`Sanitized ${sanitizedUsers.length} users.`);
     sanitizedUsers.sort((a, b) => a.rank - b.rank);
     return {

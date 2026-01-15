@@ -1,8 +1,13 @@
 import { alertService } from '@/services/Alert.service';
+
 import { logError } from './logger';
 
 // utils/buyStructureUpgrade.js
-const buyUpgrade = async (currentPage: string, index: number, forceUpdate: () => void) => {
+const buyUpgrade = async (
+  currentPage: string,
+  index: number,
+  forceUpdate: () => void,
+) => {
   const response = await fetch('/api/structures/upgrades', {
     method: 'POST',
     headers: {
@@ -21,7 +26,7 @@ const buyUpgrade = async (currentPage: string, index: number, forceUpdate: () =>
     alertService.success(data.message);
   } else {
     // Handle errors
-    logError("Error Buying Upgrade", data.error);
+    logError('Error Buying Upgrade', data.error);
     alertService.error(data?.error);
   }
 };

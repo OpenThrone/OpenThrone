@@ -1,16 +1,9 @@
 'use client';
 
-import {
-  Box,
-  Group,
-  SimpleGrid,
-  SegmentedControl,
-  Text,
-  useMantineTheme
-} from '@mantine/core';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
+import { Box, Group, SegmentedControl, SimpleGrid, Text } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
-import MainArea from '@/components/MainArea';
+
 // --- REMOVED: Old Components that didn't fit the theme ---
 // import ContentCard from '@/components/ContentCard';
 // import LossesList from '@/components/LossesList';
@@ -21,42 +14,82 @@ import MainArea from '@/components/MainArea';
 // import ThemedCard from '@/components/themedCard';
 // import { NeumorphicTable } from '@/components/NumericTable';
 // import { PaperTable } from '@/components/PaperTable';
-
 // --- KEPT/ADDED: The New Design System ---
 import { GameCard } from '@/components/game/GameCard';
-import { UnitTrainingPanel } from '@/components/game/UnitTrainingPanel';
-import { WarRoomLog } from '@/components/game/WarRoomLog';
-import { WarlordTable, type PlayerData } from '@/components/game/WarlordTable';
 import { StatGrid } from '@/components/game/StatGrid';
-
+import { StyledContent } from '@/components/game/StyledContent';
+import { StyledLosses } from '@/components/game/StyledLosses';
 // --- IMPORT THE NEW WRAPPERS (Make sure you create these files first) ---
 import { StyledNews } from '@/components/game/StyledNews';
-import { StyledLosses } from '@/components/game/StyledLosses';
-import { StyledContent } from '@/components/game/StyledContent';
-
+import { UnitTrainingPanel } from '@/components/game/UnitTrainingPanel';
+import { type PlayerData, WarlordTable } from '@/components/game/WarlordTable';
+import { WarRoomLog } from '@/components/game/WarRoomLog';
+import MainArea from '@/components/MainArea';
 import type { PlayerRace } from '@/types/typings';
 
 // --- Types & Mock Data ---
 const PLAYERS: PlayerData[] = [
-  { rank: 1, name: 'DasTacoMann', race: 'HUMAN FIGHTER', gold: '49,063,738', level: 42, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' },
-  { rank: 2, name: 'uaktags', race: 'UNDEAD ROGUE', gold: '8,662,220', level: 42, active: true, avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Aneka' },
-  { rank: 3, name: 'IronBreaker', race: 'GOBLIN SHAMAN', gold: '5,100,432', level: 41, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack' },
-  { rank: 4, name: 'ShadowWeaver', race: 'ELF MAGE', gold: '4,888,100', level: 40, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lola' },
-  { rank: 5, name: 'BloodRaven', race: 'HUMAN CLERIC', gold: '4,102,999', level: 39, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bo' },
+  {
+    rank: 1,
+    name: 'DasTacoMann',
+    race: 'HUMAN FIGHTER',
+    gold: '49,063,738',
+    level: 42,
+    active: false,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+  },
+  {
+    rank: 2,
+    name: 'uaktags',
+    race: 'UNDEAD ROGUE',
+    gold: '8,662,220',
+    level: 42,
+    active: true,
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Aneka',
+  },
+  {
+    rank: 3,
+    name: 'IronBreaker',
+    race: 'GOBLIN SHAMAN',
+    gold: '5,100,432',
+    level: 41,
+    active: false,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack',
+  },
+  {
+    rank: 4,
+    name: 'ShadowWeaver',
+    race: 'ELF MAGE',
+    gold: '4,888,100',
+    level: 40,
+    active: false,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lola',
+  },
+  {
+    rank: 5,
+    name: 'BloodRaven',
+    race: 'HUMAN CLERIC',
+    gold: '4,102,999',
+    level: 39,
+    active: false,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bo',
+  },
 ];
 
 const NEWS_ITEMS = [
   {
     id: 1,
     title: 'Siege of the Northwatch',
-    content: 'Scouts report movement along the northern ridge. War parties gather beyond the pass.',
+    content:
+      'Scouts report movement along the northern ridge. War parties gather beyond the pass.',
     created_timestamp: new Date().toISOString(),
     read: false,
   },
   {
     id: 2,
     title: 'Guild Treasury Grows',
-    content: 'The treasury swells with fresh tribute. Consider investing in fortifications.',
+    content:
+      'The treasury swells with fresh tribute. Consider investing in fortifications.',
     created_timestamp: new Date(Date.now() - 86400000).toISOString(),
     read: true,
   },
@@ -84,7 +117,9 @@ export default function GameTableDemo() {
     { value: 'GOBLIN', label: 'Goblin' },
     { value: 'UNDEAD', label: 'Undead' },
   ];
-  const activeScheme = raceOptions.some((option) => option.value === previewScheme)
+  const activeScheme = raceOptions.some(
+    (option) => option.value === previewScheme,
+  )
     ? (previewScheme as string)
     : 'ACCOUNT';
 
@@ -95,14 +130,20 @@ export default function GameTableDemo() {
           <GameCard title="Theme Switcher" goldAccent={false}>
             <Group justify="space-between" align="center">
               <Box>
-                <Text size="sm" fw={600} c="gray.2">Race Theme</Text>
+                <Text size="sm" fw={600} c="gray.2">
+                  Race Theme
+                </Text>
                 <Text size="xs" c="dimmed">
                   Swap the global Mantine theme to preview each race.
                 </Text>
               </Box>
               <SegmentedControl
                 value={activeScheme}
-                onChange={(value) => setPreviewScheme(value === 'ACCOUNT' ? '' : (value as PlayerRace))}
+                onChange={(value) =>
+                  setPreviewScheme(
+                    value === 'ACCOUNT' ? '' : (value as PlayerRace),
+                  )
+                }
                 data={raceOptions}
                 radius="sm"
                 withItemsBorders={false}
@@ -115,8 +156,9 @@ export default function GameTableDemo() {
         {/* Top Row: Quick Stats & Advisor */}
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mb="lg">
           <GameCard title="Advisor" icon={faScroll}>
-            <div className="p-4 text-gray-300 italic">
-              &ldquo;My Liege, the goblins are massing near the border. We should train more Archers.&rdquo;
+            <div className="p-4 italic text-gray-300">
+              &ldquo;My Liege, the goblins are massing near the border. We
+              should train more Archers.&rdquo;
             </div>
           </GameCard>
 
@@ -141,7 +183,6 @@ export default function GameTableDemo() {
 
         {/* Row: Training & Content */}
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" mb="lg">
-
           {/* Styled Content (Replaces ContentCard) */}
           <StyledContent
             title="Quest Log"
@@ -170,7 +211,6 @@ export default function GameTableDemo() {
           <StyledNews news={NEWS_ITEMS} />
           <StyledLosses losses={LOSS_SAMPLE} />
         </SimpleGrid>
-
       </div>
     </MainArea>
   );

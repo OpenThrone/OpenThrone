@@ -1,9 +1,10 @@
 import type { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
-import { logError } from '@/utils/logger';
 import { AccountService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 // Zod schema for the request body
 const ResetRequestSchema = z.object({
@@ -14,10 +15,9 @@ const ResetRequestSchema = z.object({
 type ApiErrorResponse = { error: string; details?: any };
 type ApiSuccessResponse = { message: string };
 
-
 const handler = async (
   req: AuthenticatedRequest,
-  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>
+  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>,
 ) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -25,7 +25,11 @@ const handler = async (
   }
 
   if (!req.session?.user?.id) {
-    logError(null, { requestPath: req.url }, 'Auth session missing in resetAccount handler');
+    logError(
+      null,
+      { requestPath: req.url },
+      'Auth session missing in resetAccount handler',
+    );
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
@@ -45,7 +49,6 @@ const handler = async (
     const result = await AccountService.resetAccount(userId, { password });
 
     return res.status(200).json(result);
-
   } catch (error: any) {
     const logContext = { userId }; // Don't log password
     logError(error, logContext, 'API Error: /api/account/resetAccount');
@@ -55,11 +58,15 @@ const handler = async (
       return res.status(401).json({ error: error.message }); // Use 401 for invalid password
     }
     if (error.message === 'User not found or password hash missing.') {
-       return res.status(404).json({ error: 'User not found or account issue.' });
+      return res
+        .status(404)
+        .json({ error: 'User not found or account issue.' });
     }
     // Generic error
-    return res.status(500).json({ error: 'An unexpected error occurred while resetting the account.' });
+    return res.status(500).json({
+      error: 'An unexpected error occurred while resetting the account.',
+    });
   }
-}
+};
 
 export default withAuth(handler);

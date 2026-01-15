@@ -1,5 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'bun:test';
-import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/mockPrisma';
+import { beforeEach, describe, expect, it, vi } from 'bun:test';
+import {
+  installMockPrisma,
+  mockPrisma,
+  resetMockPrisma,
+} from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
 
@@ -15,18 +19,18 @@ describe('API stats', () => {
     const req: any = { method: 'GET' };
     const json = vi.fn();
     const status = vi.fn().mockReturnValue({ json });
-    const res: any = { 
-      status, 
+    const res: any = {
+      status,
       setHeader: vi.fn(),
     };
 
     const mockStartDate = new Date('2024-01-01');
 
     // Setup mocks
-    mockPrisma.era.findFirst = vi.fn().mockResolvedValue({ 
-      id: 1, 
-      name: 'Era Test', 
-      startDate: mockStartDate 
+    mockPrisma.era.findFirst = vi.fn().mockResolvedValue({
+      id: 1,
+      name: 'Era Test',
+      startDate: mockStartDate,
     });
     mockPrisma.users.count = vi.fn().mockResolvedValue(1234);
     mockPrisma.attack_log.count = vi.fn().mockResolvedValue(5678);
@@ -55,9 +59,9 @@ describe('API stats', () => {
     const req: any = { method: 'GET' };
     const json = vi.fn();
     const status = vi.fn().mockReturnValue({ json });
-    const res: any = { 
-        status,
-        setHeader: vi.fn()
+    const res: any = {
+      status,
+      setHeader: vi.fn(),
     };
 
     mockPrisma.users.count = vi.fn().mockRejectedValue(new Error('DB Error'));
@@ -72,9 +76,9 @@ describe('API stats', () => {
     const req: any = { method: 'POST' };
     const end = vi.fn();
     const status = vi.fn().mockReturnValue({ end });
-    const res: any = { 
-        status, 
-        setHeader: vi.fn() 
+    const res: any = {
+      status,
+      setHeader: vi.fn(),
     };
 
     await handler(req, res);

@@ -1,9 +1,10 @@
 import type { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
-import { logError } from '@/utils/logger';
 import { AccountService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 const ForgetRequestSchema = z.object({
   password: z.string().min(1, { message: 'Password is required.' }),
@@ -15,7 +16,7 @@ type ApiSuccessResponse = { message: string };
 
 const handler = async (
   req: AuthenticatedRequest,
-  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>
+  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>,
 ) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -23,7 +24,11 @@ const handler = async (
   }
 
   if (!req.session?.user?.id) {
-    logError(null, { requestPath: req.url }, 'Auth session missing in forget account handler');
+    logError(
+      null,
+      { requestPath: req.url },
+      'Auth session missing in forget account handler',
+    );
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
@@ -39,7 +44,10 @@ const handler = async (
   const userId = req.session.user.id;
 
   try {
-    const result = await AccountService.forgetAccount(userId, { password, reason });
+    const result = await AccountService.forgetAccount(userId, {
+      password,
+      reason,
+    });
     return res.status(200).json(result);
   } catch (error: any) {
     const logContext = { userId };
@@ -49,9 +57,13 @@ const handler = async (
       return res.status(401).json({ error: error.message });
     }
     if (error.message === 'User not found or password hash missing.') {
-      return res.status(404).json({ error: 'User not found or account issue.' });
+      return res
+        .status(404)
+        .json({ error: 'User not found or account issue.' });
     }
-    return res.status(500).json({ error: 'An unexpected error occurred while removing account data.' });
+    return res.status(500).json({
+      error: 'An unexpected error occurred while removing account data.',
+    });
   }
 };
 

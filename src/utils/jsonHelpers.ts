@@ -3,7 +3,7 @@
  */
 const bigIntReplacer = (key: string, value: any): any => {
   if (typeof value === 'bigint') {
-    return value.toString() + 'n';
+    return `${value.toString()}n`;
   }
   return value;
 };
@@ -53,7 +53,7 @@ export const safeParse = (json: string): any => {
 export const stringifyObj = (obj: any): any => {
   // If the value itself is a bigint primitive, convert and return immediately.
   if (typeof obj === 'bigint') {
-    return obj.toString() + 'n';
+    return `${obj.toString()}n`;
   }
 
   // Primitives (including null, number, string, boolean, undefined) are returned as-is.
@@ -74,7 +74,7 @@ export const stringifyObj = (obj: any): any => {
   // For plain objects, recurse over own enumerable properties.
   const result: any = {};
   for (const key of Object.keys(obj)) {
-    result[key] = stringifyObj((obj as any)[key]);
+    result[key] = stringifyObj(obj[key]);
   }
   return result;
 };
@@ -89,7 +89,9 @@ export const parseBigInt = (v: any): bigint | null => {
   if (typeof v === 'number' && Number.isInteger(v)) return BigInt(v);
   if (typeof v === 'string') {
     const cleaned = v.replace(/,/g, '').trim();
-    const withoutSuffix = cleaned.endsWith('n') ? cleaned.slice(0, -1) : cleaned;
+    const withoutSuffix = cleaned.endsWith('n')
+      ? cleaned.slice(0, -1)
+      : cleaned;
     try {
       return BigInt(withoutSuffix);
     } catch (e) {

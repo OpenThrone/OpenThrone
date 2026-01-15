@@ -1,41 +1,43 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from 'next-i18next';
-
-import { RichTextEditor } from "@mantine/tiptap";
-import { useEditor } from "@tiptap/react";
-import { StarterKit } from "@tiptap/starter-kit";
-import { Underline } from "@tiptap/extension-underline";
-import { Link as tiptapLink } from "@tiptap/extension-link";
-import { Superscript } from "@tiptap/extension-superscript";
-import { Subscript } from "@tiptap/extension-subscript";
-import { Highlight } from "@tiptap/extension-highlight";
-import { TextAlign } from "@tiptap/extension-text-align";
-import { Markdown } from "tiptap-markdown";
-import { Table } from "@tiptap/extension-table";
-import { TableRow } from "@tiptap/extension-table-row";
-import { TableHeader } from "@tiptap/extension-table-header";
-import { TableCell } from "@tiptap/extension-table-cell";
-import { useUser } from "@/context/users";
-import { alertService } from "@/services/Alert.service";
 import {
-  Group,
-  Space,
   Avatar,
   Button,
-  Text,
   FileButton,
-  Grid
-} from "@mantine/core";
-import Link from "next/link";
-import MainArea from "@/components/MainArea";
-import { logDebug } from "@/utils/logger";
-import { GameCard } from "@/components/game/GameCard";
+  Grid,
+  Group,
+  Space,
+  Text,
+} from '@mantine/core';
+import { RichTextEditor } from '@mantine/tiptap';
+import { Highlight } from '@tiptap/extension-highlight';
+import { Link as tiptapLink } from '@tiptap/extension-link';
+import { Subscript } from '@tiptap/extension-subscript';
+import { Superscript } from '@tiptap/extension-superscript';
+import { Table } from '@tiptap/extension-table';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
+import { useEditor } from '@tiptap/react';
+import { StarterKit } from '@tiptap/starter-kit';
+import Link from 'next/link';
+import { useTranslation } from 'next-i18next';
+import { useEffect, useState } from 'react';
+import { Markdown } from 'tiptap-markdown';
+
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
+import { logDebug } from '@/utils/logger';
 
 const Profile = (props) => {
   const { t } = useTranslation('home');
   const [file, setFile] = useState<File | null>(null);
   const { user, forceUpdate } = useUser();
-  const [initialContent, setInitialContent] = useState("This feature is not implemented yet");
+  const [initialContent, setInitialContent] = useState(
+    'This feature is not implemented yet',
+  );
   const [loading, setLoading] = useState(true);
   const [markdownContent, setMarkdownContent] = useState(initialContent);
   const [contentChanged, setContentChanged] = useState(false);
@@ -51,7 +53,7 @@ const Profile = (props) => {
       Subscript,
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Markdown,  // Include Markdown extension
+      Markdown, // Include Markdown extension
       Table.configure({
         resizable: true,
       }),
@@ -65,8 +67,8 @@ const Profile = (props) => {
       if (editor) {
         let content = editor.storage.markdown
           .getMarkdown()
-          .replace(/\n\n/g, "\n");
-        
+          .replace(/\n\n/g, '\n');
+
         // Enforce character limit
         if (content.length > maxChars) {
           content = content.substring(0, maxChars);
@@ -81,13 +83,13 @@ const Profile = (props) => {
 
   useEffect(() => {
     if (loading) {
-      logDebug("Loading is true");
+      logDebug('Loading is true');
       return;
     }
     if (!editor) {
       return;
     }
-    if(markdownContent !== initialContent) {
+    if (markdownContent !== initialContent) {
       setContentChanged(true);
     } else {
       setContentChanged(false);
@@ -96,7 +98,7 @@ const Profile = (props) => {
 
   useEffect(() => {
     if (!editor) {
-      return
+      return;
     }
     if (loading && user) {
       setInitialContent(user.bio);
@@ -107,34 +109,34 @@ const Profile = (props) => {
   }, [loading, user, editor]);
 
   const saveProfile = async () => {
-    console.log(editor.storage.markdown.getMarkdown())
-    if (loading)
-      return;
+    console.log(editor.storage.markdown.getMarkdown());
+    if (loading) return;
 
     if (file || contentChanged) {
       const formData = new FormData();
       if (contentChanged) {
-        formData.append("bio", editor.storage.markdown.getMarkdown());
+        formData.append('bio', editor.storage.markdown.getMarkdown());
       }
       if (file) {
-        formData.append("avatar", file);
+        formData.append('avatar', file);
       }
 
       try {
-        const response = await fetch("/api/account/profile", {
-          method: "POST",
+        const response = await fetch('/api/account/profile', {
+          method: 'POST',
           body: formData,
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          const msg = (err) => { // TODO: Need to identify different errors that aren't understood well
-            if (err.includes("options.maxTotalFileSize")) {
+          const msg = (err) => {
+            // TODO: Need to identify different errors that aren't understood well
+            if (err.includes('options.maxTotalFileSize')) {
               return t('profile.fileSizeLimit');
             }
             return err;
-          }
+          };
           throw new Error(msg(data.error));
         }
 
@@ -144,14 +146,15 @@ const Profile = (props) => {
         alertService.success(t('profile.fileUploadedSuccessfully'));
         forceUpdate();
       } catch (error) {
-        alertService.error(t('profile.errorUploadingFile') + " " + error.message);
+        alertService.error(
+          `${t('profile.errorUploadingFile')} ${error.message}`,
+        );
       }
     }
   };
 
   return (
-    <MainArea
-      title={t('profile.title')}>
+    <MainArea title={t('profile.title')}>
       <Grid gutter="lg">
         <Grid.Col span={6}>
           <GameCard title={t('profile.currentAvatar')}>
@@ -162,11 +165,24 @@ const Profile = (props) => {
         </Grid.Col>
         <Grid.Col span={6}>
           <GameCard title={t('profile.newAvatar')}>
-            <Text size="sm" c="dimmed">{t('profile.limits')}</Text>
+            <Text size="sm" c="dimmed">
+              {t('profile.limits')}
+            </Text>
             <Group align="center" mt="md">
-              <Avatar src={file ? URL.createObjectURL(file) : ""} size={150} radius="md" />
-              <FileButton accept="image/jpeg, image/jpg, image/gif, image/png, image/webp" onChange={setFile}>
-                {(props) => <Button {...props} color="yellow">{t('profile.uploadImage')}</Button>}
+              <Avatar
+                src={file ? URL.createObjectURL(file) : ''}
+                size={150}
+                radius="md"
+              />
+              <FileButton
+                accept="image/jpeg, image/jpg, image/gif, image/png, image/webp"
+                onChange={setFile}
+              >
+                {(props) => (
+                  <Button {...props} color="yellow">
+                    {t('profile.uploadImage')}
+                  </Button>
+                )}
               </FileButton>
             </Group>
           </GameCard>
@@ -240,9 +256,9 @@ const Profile = (props) => {
           >
             {t('profile.saveProfile')}
           </Button>
-          <Link href={'/userprofile/' + user?.id}>
+          <Link href={`/userprofile/${user?.id}`}>
             <Button className="rounded bg-green-700 px-4 py-2 font-bold text-white hover:bg-blue-700">
-            {t('profile.viewProfile')}
+              {t('profile.viewProfile')}
             </Button>
           </Link>
         </Group>

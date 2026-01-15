@@ -1,13 +1,14 @@
 import type {
-  Prisma,
   BattleUpgradeType,
   BonusPointsType,
-  StructureUpgradeType,
   ItemType,
   ItemUsage,
+  Prisma,
+  StructureUpgradeType,
 } from '@prisma/client';
+
 import { Fortifications } from '@/constants';
-import { UnitType } from '@/types/typings';
+import type { UnitType } from '@/types/typings';
 
 type Tx = Prisma.TransactionClient;
 
@@ -81,7 +82,9 @@ export const resolveColorScheme = (
   return colorScheme ?? race ?? 'ELF';
 };
 
-export const buildDefaultUserUpdate = (overrides: Partial<typeof DEFAULT_USER_SCALARS> = {}) => ({
+export const buildDefaultUserUpdate = (
+  overrides: Partial<typeof DEFAULT_USER_SCALARS> = {},
+) => ({
   ...DEFAULT_USER_SCALARS,
   ...overrides,
 });
@@ -97,19 +100,25 @@ export const resetUserRelations = async (tx: Tx, userId: number) => {
 
   await Promise.all([
     tx.userUnit.createMany({
-      data: ERA_DEFAULT_UNITS.map(unit => ({ ...unit, userId })),
+      data: ERA_DEFAULT_UNITS.map((unit) => ({ ...unit, userId })),
     }),
     tx.userItem.createMany({
-      data: ERA_DEFAULT_ITEMS.map(item => ({ ...item, userId })),
+      data: ERA_DEFAULT_ITEMS.map((item) => ({ ...item, userId })),
     }),
     tx.userStructureUpgrade.createMany({
-      data: ERA_DEFAULT_STRUCTURE_UPGRADES.map(upgrade => ({ ...upgrade, userId })),
+      data: ERA_DEFAULT_STRUCTURE_UPGRADES.map((upgrade) => ({
+        ...upgrade,
+        userId,
+      })),
     }),
     tx.userBattleUpgrade.createMany({
-      data: ERA_DEFAULT_BATTLE_UPGRADES.map(upgrade => ({ ...upgrade, userId })),
+      data: ERA_DEFAULT_BATTLE_UPGRADES.map((upgrade) => ({
+        ...upgrade,
+        userId,
+      })),
     }),
     tx.userBonusPoints.createMany({
-      data: ERA_DEFAULT_BONUS_POINTS.map(bonus => ({ ...bonus, userId })),
+      data: ERA_DEFAULT_BONUS_POINTS.map((bonus) => ({ ...bonus, userId })),
     }),
   ]);
 };

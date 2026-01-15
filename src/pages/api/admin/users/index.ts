@@ -1,12 +1,13 @@
-import { NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
+
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
+import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
 import { isAdmin } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
-import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
-  const session = req.session;
+  const { session } = req;
 
   // Check admin authorization (handle potentially undefined session/user/id)
   if (!session?.user?.id || !(await isAdmin(session.user.id))) {
@@ -24,28 +25,33 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         limit = '10', // Default limit
         offset = '0', // Default offset
         sort = 'id', // Default sort field
-        order = 'asc' // Default sort order
+        order = 'asc', // Default sort order
       } = req.query;
 
       const take = parseInt(limit as string, 10);
       const skip = parseInt(offset as string, 10);
       const sortField = sort as string;
       const sortOrder = order as 'asc' | 'desc';
-      
+
       // Build where clause based on provided filters
       const whereClause: any = {};
-      
+
       if (id) whereClause.id = parseInt(id as string, 10);
-      if (username) whereClause.display_name = { contains: username as string, mode: 'insensitive' };
-      if (email) whereClause.email = { contains: email as string, mode: 'insensitive' };
-      
+      if (username)
+        whereClause.display_name = {
+          contains: username as string,
+          mode: 'insensitive',
+        };
+      if (email)
+        whereClause.email = { contains: email as string, mode: 'insensitive' };
+
       // Handle status filter if provided
       if (status) {
         whereClause.statusHistories = {
           some: {
             status: status as string,
-            end_date: null // Current status has no end date
-          }
+            end_date: null, // Current status has no end date
+          },
         };
       }
 
@@ -64,7 +70,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         orderByClause[sortFieldMapping[sortField]] = sortOrder;
       } else {
         // Default sort if field is invalid or status
-        orderByClause['id'] = 'asc';
+        orderByClause.id = 'asc';
       }
 
       // Query the database for users and total count in parallel
@@ -81,32 +87,32 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
               orderBy: { start_date: 'desc' },
               take: 1,
               select: {
-                status: true
-              }
+                status: true,
+              },
             },
             permissions: {
               select: {
-                type: true
-              }
-            }
+                type: true,
+              },
+            },
           },
           orderBy: orderByClause,
-          take: take,
-          skip: skip,
+          take,
+          skip,
         }),
         prisma.users.count({
           where: whereClause,
-        })
+        }),
       ]);
 
       // Format the response
-      const formattedUsers = users.map(user => ({
+      const formattedUsers = users.map((user) => ({
         id: user.id.toString(),
         username: user.display_name,
         email: user.email,
         status: user.statusHistories[0]?.status || 'ACTIVE', // Default to ACTIVE if no status history
         lastActive: user.last_active,
-        permissions: user.permissions.map(p => p.type)
+        permissions: user.permissions.map((p) => p.type),
       }));
 
       res.status(200).json({ users: formattedUsers, total });

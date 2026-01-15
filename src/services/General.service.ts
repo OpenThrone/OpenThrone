@@ -1,13 +1,24 @@
-import { AccountStatus } from '@prisma/client';
+import type { AccountStatus } from '@prisma/client';
 import { z } from 'zod';
+
 import prisma from '@/lib/prisma';
 import { getDepositHistory } from '@/services/Bank.service';
-import { getUpdatedStatus } from '@/services/User.service';
 import { ensureActiveEra } from '@/services/Era.service';
-import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
+import { getUpdatedStatus } from '@/services/User.service';
 import { UserEconomyService } from '@/services/UserEconomyService';
-import type { UserApiResponse, PlayerRace, PlayerClass, Locales } from '@/types/typings';
+import type {
+  Locales,
+  PlayerClass,
+  PlayerRace,
+  UserApiResponse,
+} from '@/types/typings';
 import { logError } from '@/utils/logger';
+
+import {
+  buildDefaultUserUpdate,
+  resetUserRelations,
+  resolveColorScheme,
+} from './UserDefaults.service';
 
 // Type definitions for general operations
 export interface SearchUsersResult {
@@ -39,11 +50,11 @@ export interface RankBreakdown {
 
 // Zod schemas for validation
 const SearchUsersSchema = z.object({
-  searchTerm: z.string().min(1)
+  searchTerm: z.string().min(1),
 });
 
 const CheckDisplayNameSchema = z.object({
-  displayName: z.string().min(1)
+  displayName: z.string().min(1),
 });
 
 // Result interfaces
@@ -60,13 +71,13 @@ export class GeneralService {
   static async getUserData(userId: number): Promise<UserApiResponse> {
     try {
       // Select only the fields needed for the DTO and calculations, using new relational tables
-    let user = await prisma.users.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        display_name: true,
-        race: true,
-        class: true,
+      let user = await prisma.users.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          display_name: true,
+          race: true,
+          class: true,
           experience: true,
           gold: true,
           gold_in_bank: true,
@@ -78,16 +89,16 @@ export class GeneralService {
           bio: true,
           colorScheme: true,
           economy_level: true,
-        avatar: true,
-        locale: true,
-        stats: true,
-        achievements: true,
-        currentEraId: true,
-        permissions: { select: { type: true } },
-        UserUnit: true,
-        UserItem: true,
-        UserStructureUpgrade: true,
-        UserBattleUpgrade: true,
+          avatar: true,
+          locale: true,
+          stats: true,
+          achievements: true,
+          currentEraId: true,
+          permissions: { select: { type: true } },
+          UserUnit: true,
+          UserItem: true,
+          UserStructureUpgrade: true,
+          UserBattleUpgrade: true,
           UserBonusPoints: true,
         },
       });
@@ -98,7 +109,9 @@ export class GeneralService {
 
       // Update last active if over 10 minutes
       const now = new Date();
-      const lastActiveDate = user.last_active ? new Date(user.last_active) : new Date(0);
+      const lastActiveDate = user.last_active
+        ? new Date(user.last_active)
+        : new Date(0);
       const timeSinceLastActive = now.getTime() - lastActiveDate.getTime();
 
       if (timeSinceLastActive > 10 * 60 * 1000) {
@@ -185,7 +198,11 @@ export class GeneralService {
       }
 
       // If user's status is not ACTIVE, throw error
-      if (['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT', 'VACATION'].includes(currentStatus)) {
+      if (
+        ['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT', 'VACATION'].includes(
+          currentStatus,
+        )
+      ) {
         throw new Error(`Account is in ${currentStatus.toLowerCase()} status`);
       }
 
@@ -198,23 +215,34 @@ export class GeneralService {
         select: {
           type: true,
           winner: true,
-        }
+        },
       });
 
       // Calculate attack status
-      const beenAttacked = attacksSinceLastActive.some(attack => attack.type === 'attack');
-      const detectedSpy = attacksSinceLastActive.some(attack => attack.type !== 'attack' && attack.winner === user.id);
+      const beenAttacked = attacksSinceLastActive.some(
+        (attack) => attack.type === 'attack',
+      );
+      const detectedSpy = attacksSinceLastActive.some(
+        (attack) => attack.type !== 'attack' && attack.winner === user.id,
+      );
 
       // Count won attacks, won defends, total attacks, and total defends
-      const [wonAttacks, wonDefends, totalAttacks, totalDefends] = await Promise.all([
-        prisma.attack_log.count({ where: { attacker_id: user.id, winner: user.id } }),
-        prisma.attack_log.count({ where: { defender_id: user.id, winner: user.id } }),
-        prisma.attack_log.count({ where: { attacker_id: user.id } }),
-        prisma.attack_log.count({ where: { defender_id: user.id } }),
-      ]);
+      const [wonAttacks, wonDefends, totalAttacks, totalDefends] =
+        await Promise.all([
+          prisma.attack_log.count({
+            where: { attacker_id: user.id, winner: user.id },
+          }),
+          prisma.attack_log.count({
+            where: { defender_id: user.id, winner: user.id },
+          }),
+          prisma.attack_log.count({ where: { attacker_id: user.id } }),
+          prisma.attack_log.count({ where: { defender_id: user.id } }),
+        ]);
 
       const depositHistory = await getDepositHistory(userId);
-      const economyService = new UserEconomyService({ economyLevel: user.economy_level });
+      const economyService = new UserEconomyService({
+        economyLevel: user.economy_level,
+      });
       const maximumBankDeposits = economyService.getMaximumBankDeposits();
       const depositsAvailable = maximumBankDeposits - depositHistory.length;
       const getCountdown = (timestamp: string) => {
@@ -225,7 +253,9 @@ export class GeneralService {
 
         if (timeDiff > 0) {
           const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-          const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+          const minutes = Math.floor(
+            (timeDiff % (1000 * 60 * 60)) / (1000 * 60),
+          );
           const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
           return { hours, minutes, seconds };
         }
@@ -233,7 +263,9 @@ export class GeneralService {
         return { hours: 0, minutes: 0, seconds: 0 };
       };
       const nextDepositAvailable =
-        depositHistory.length > 0 ? getCountdown(depositHistory[0].date_time.toString()) : 0;
+        depositHistory.length > 0
+          ? getCountdown(depositHistory[0].date_time.toString())
+          : 0;
 
       // Construct the DTO
       const responseDto: UserApiResponse = {
@@ -259,14 +291,17 @@ export class GeneralService {
         economy_level: user.economy_level,
         avatar: user.avatar,
         locale: user.locale as Locales,
-        stats: typeof user.stats === 'string' ? JSON.parse(user.stats) : user.stats ?? [],
+        stats:
+          typeof user.stats === 'string'
+            ? JSON.parse(user.stats)
+            : (user.stats ?? []),
         permissions: user.permissions,
         beenAttacked,
         detectedSpy,
         won_attacks: wonAttacks,
         won_defends: wonDefends,
-        totalAttacks: totalAttacks,
-        totalDefends: totalDefends,
+        totalAttacks,
+        totalDefends,
         currentStatus: currentStatus as AccountStatus | string,
         goldPerTurn: user.goldPerTurn,
         depositsAvailable,
@@ -317,16 +352,26 @@ export class GeneralService {
    */
   static async getOnlinePlayersStats(): Promise<OnlinePlayersStats> {
     try {
-      const allUsersCounted = await prisma.users.count({ where: { NOT: { id: 0 } } });
-      const onlineUsers = await prisma.users.count({ where: { last_active: { gte: new Date(Date.now() - 1000 * 60 * 10) } } });
-      const newUsers = await prisma.users.count({ where: { created_at: { gte: new Date(Date.now() - 1000 * 60 * 60 * 24) } } });
-      const newestUser = await prisma.users.findFirst({ orderBy: { created_at: 'desc' } });
+      const allUsersCounted = await prisma.users.count({
+        where: { NOT: { id: 0 } },
+      });
+      const onlineUsers = await prisma.users.count({
+        where: { last_active: { gte: new Date(Date.now() - 1000 * 60 * 10) } },
+      });
+      const newUsers = await prisma.users.count({
+        where: {
+          created_at: { gte: new Date(Date.now() - 1000 * 60 * 60 * 24) },
+        },
+      });
+      const newestUser = await prisma.users.findFirst({
+        orderBy: { created_at: 'desc' },
+      });
 
       return {
         allUsersCounted,
         onlineUsers,
         newUsers,
-        newestUser: newestUser ? newestUser.display_name : null
+        newestUser: newestUser ? newestUser.display_name : null,
       };
     } catch (error: any) {
       logError('Error getting online players stats', { error });
@@ -337,7 +382,9 @@ export class GeneralService {
   /**
    * Checks if a display name exists and returns possible matches
    */
-  static async checkDisplayName(displayName: string): Promise<DisplayNameCheckResult> {
+  static async checkDisplayName(
+    displayName: string,
+  ): Promise<DisplayNameCheckResult> {
     const validatedData = CheckDisplayNameSchema.parse({ displayName });
 
     try {
@@ -383,7 +430,10 @@ export class GeneralService {
 
       return user;
     } catch (error: any) {
-      logError('Error getting user info by recruit link', { recruitLink, error });
+      logError('Error getting user info by recruit link', {
+        recruitLink,
+        error,
+      });
       throw error;
     }
   }
@@ -481,7 +531,12 @@ export class GeneralService {
   /**
    * Logs an audit action
    */
-  static async logAuditAction(userId: number, action: string, ip: string, details: any = {}): Promise<void> {
+  static async logAuditAction(
+    userId: number,
+    action: string,
+    ip: string,
+    details: any = {},
+  ): Promise<void> {
     try {
       await prisma.auditLog.create({
         data: {
@@ -492,7 +547,13 @@ export class GeneralService {
         },
       });
     } catch (error: any) {
-      logError('Failed to log audit action', { userId, action, ip, details, error });
+      logError('Failed to log audit action', {
+        userId,
+        action,
+        ip,
+        details,
+        error,
+      });
     }
   }
 

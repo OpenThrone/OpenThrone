@@ -1,15 +1,16 @@
-import { NextApiResponse } from 'next';
-import { withAuth } from '@/middleware/auth';
+import md5 from 'md5';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
-import { SocialService } from '@/services/Social.service';
-import type { AuthenticatedRequest } from '@/types/api';
+
 import prisma from '@/lib/prisma';
 import { getSocketIO } from '@/lib/socket';
-import md5 from 'md5';
+import { withAuth } from '@/middleware/auth';
+import { SocialService } from '@/services/Social.service';
+import type { AuthenticatedRequest } from '@/types/api';
 
 const AddSocialSchema = z.object({
   friendId: z.number().int(),
-  relationshipType: z.enum(['FRIEND', 'ENEMY'])
+  relationshipType: z.enum(['FRIEND', 'ENEMY']),
 });
 
 const emitSocialCountUpdate = async (userId: number) => {
@@ -24,26 +25,35 @@ const emitSocialCountUpdate = async (userId: number) => {
   io.to(`user-${userId}`).emit('socialCountUpdate', { count: totalCount });
 };
 
-const addSocialRelation = async (req: AuthenticatedRequest, res: NextApiResponse) => {
+const addSocialRelation = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const parseResult = AddSocialSchema.safeParse(req.body);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
 
   const { friendId, relationshipType } = parseResult.data;
   const playerId = session.user.id;
 
   try {
-    const result = await SocialService.addRelationship(playerId, { friendId, relationshipType });
+    const result = await SocialService.addRelationship(playerId, {
+      friendId,
+      relationshipType,
+    });
 
     if (relationshipType === 'FRIEND') {
       const sender = await prisma.users.findUnique({

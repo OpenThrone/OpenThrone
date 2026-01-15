@@ -1,6 +1,7 @@
-import { AllianceService } from '@/services';
-import { withAuth } from '@/middleware/auth';
 import { z } from 'zod';
+
+import { withAuth } from '@/middleware/auth';
+import { AllianceService } from '@/services';
 
 const CreateAllianceSchema = z.object({
   allianceName: z.string().optional(),
@@ -20,7 +21,10 @@ const createAlliance = async (req, res) => {
 
   const validatedBody = CreateAllianceSchema.safeParse(req.body);
   if (!validatedBody.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: validatedBody.error.flatten().fieldErrors,
+    });
   }
 
   const { user } = req.session;
@@ -35,9 +39,9 @@ const createAlliance = async (req, res) => {
     closed_enrollment,
   } = validatedBody.data;
 
-  const resolvedName = (name ?? allianceName ?? "").toString().trim();
+  const resolvedName = (name ?? allianceName ?? '').toString().trim();
   if (!resolvedName) {
-    return res.status(400).json({ error: "Alliance name is required" });
+    return res.status(400).json({ error: 'Alliance name is required' });
   }
 
   try {
@@ -46,10 +50,11 @@ const createAlliance = async (req, res) => {
       avatar: avatar ? String(avatar) : undefined,
       motto: motto ? String(motto) : undefined,
       comments: comments ? String(comments) : undefined,
-      is_public: typeof is_public === "boolean" ? is_public : undefined,
-      require_auth: typeof require_auth === "boolean" ? require_auth : undefined,
+      is_public: typeof is_public === 'boolean' ? is_public : undefined,
+      require_auth:
+        typeof require_auth === 'boolean' ? require_auth : undefined,
       closed_enrollment:
-        typeof closed_enrollment === "boolean" ? closed_enrollment : undefined,
+        typeof closed_enrollment === 'boolean' ? closed_enrollment : undefined,
     });
     return res.status(200).json(alliance);
   } catch (error) {

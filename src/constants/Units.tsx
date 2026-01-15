@@ -24,7 +24,7 @@ export const UnitTypes: Unit[] = [
     cost: 2000,
     fortLevel: 1,
     hp: 20,
-    MeleeAtkPower: .6,
+    MeleeAtkPower: 0.6,
     MeleeDefPower: 1,
     RangedAtkPower: 0,
     RangedDefPower: 0,

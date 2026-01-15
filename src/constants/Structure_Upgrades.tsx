@@ -15,7 +15,7 @@ export const EconomyUpgrades = [
     cost: 0,
     index: 0,
     level: 1,
-    bankCap: 10000000
+    bankCap: 10000000,
   },
   {
     name: 'Produce Market',
@@ -27,7 +27,7 @@ export const EconomyUpgrades = [
     cost: 500000,
     index: 1,
     level: 2,
-    bankCap: 25000000
+    bankCap: 25000000,
   },
   {
     name: 'Livestock Market',
@@ -39,7 +39,7 @@ export const EconomyUpgrades = [
     cost: 2000000,
     index: 2,
     level: 3,
-    bankCap: 50000000
+    bankCap: 50000000,
   },
   {
     name: 'Coal Mine',
@@ -51,7 +51,7 @@ export const EconomyUpgrades = [
     cost: 5000000,
     index: 3,
     level: 4,
-    bankCap: 100000000
+    bankCap: 100000000,
   },
   {
     name: 'Tavern',
@@ -63,7 +63,7 @@ export const EconomyUpgrades = [
     cost: 15000000,
     index: 4,
     level: 5,
-    bankCap: 200000000
+    bankCap: 200000000,
   },
   {
     name: 'Copper Mine',
@@ -75,7 +75,7 @@ export const EconomyUpgrades = [
     cost: 37500000,
     index: 5,
     level: 6,
-    bankCap: 350000000
+    bankCap: 350000000,
   },
   {
     name: 'Meat Market',
@@ -87,7 +87,7 @@ export const EconomyUpgrades = [
     cost: 100000000,
     index: 6,
     level: 7,
-    bankCap: 500000000
+    bankCap: 500000000,
   },
 ];
 
@@ -726,7 +726,7 @@ export const HouseUpgrades = {
     index: 0,
     level: 1,
     softCapBonus: 0,
-    hardCapBonus: 0
+    hardCapBonus: 0,
   },
   1: {
     name: 'Housing Level 1',
@@ -736,7 +736,7 @@ export const HouseUpgrades = {
     index: 1,
     level: 2,
     softCapBonus: 5000,
-    hardCapBonus: 15000
+    hardCapBonus: 15000,
   },
   2: {
     name: 'Housing Level 2',
@@ -746,7 +746,7 @@ export const HouseUpgrades = {
     index: 2,
     level: 3,
     softCapBonus: 10000,
-    hardCapBonus: 30000
+    hardCapBonus: 30000,
   },
   3: {
     name: 'Housing Level 3',
@@ -756,7 +756,7 @@ export const HouseUpgrades = {
     index: 3,
     level: 4,
     softCapBonus: 15000,
-    hardCapBonus: 45000
+    hardCapBonus: 45000,
   },
   4: {
     name: 'Housing Level 4',
@@ -766,7 +766,7 @@ export const HouseUpgrades = {
     index: 4,
     level: 5,
     softCapBonus: 20000,
-    hardCapBonus: 60000
+    hardCapBonus: 60000,
   },
   5: {
     name: 'Housing Level 5',
@@ -776,7 +776,7 @@ export const HouseUpgrades = {
     index: 5,
     level: 6,
     softCapBonus: 25000,
-    hardCapBonus: 75000
+    hardCapBonus: 75000,
   },
   6: {
     name: 'Housing Level 6',
@@ -786,6 +786,6 @@ export const HouseUpgrades = {
     index: 6,
     level: 7,
     softCapBonus: 30000,
-    hardCapBonus: 90000
+    hardCapBonus: 90000,
   },
 };

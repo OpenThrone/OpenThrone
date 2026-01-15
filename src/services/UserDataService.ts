@@ -1,17 +1,18 @@
-import { AccountStatus } from '@prisma/client';
+import type { AccountStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import { getDepositHistory } from '@/services/Bank.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getUpdatedStatus } from '@/services/User.service';
+import type { Locales, PlayerClass, PlayerRace } from '@/types/typings';
 import { safeToISOString } from '@/utils/dateHelpers';
-import type {
-  PlayerRace,
-  PlayerClass,
-  Locales,
-} from '@/types/typings';
-import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
+
+import {
+  buildDefaultUserUpdate,
+  resetUserRelations,
+  resolveColorScheme,
+} from './UserDefaults.service';
 import { UserEconomyService } from './UserEconomyService';
 import { UserStatsService } from './UserStatsService';
 import { UserUnitsService } from './UserUnitsService';
@@ -95,7 +96,10 @@ export class UserDataService {
       },
     });
 
-    console.log(`[DEBUG] UserDataService: Units from DB for user ${userId}:`, JSON.stringify(user?.UserUnit));
+    console.log(
+      `[DEBUG] UserDataService: Units from DB for user ${userId}:`,
+      JSON.stringify(user?.UserUnit),
+    );
 
     if (!user) {
       return null;
@@ -166,7 +170,7 @@ export class UserDataService {
     }
 
     // Handle non-active statuses
-    if (["BANNED", "SUSPENDED", "CLOSED", "TIMEOUT"].includes(currentStatus)) {
+    if (['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT'].includes(currentStatus)) {
       throw new Error(`Account is in ${currentStatus.toLowerCase()} status`);
     }
 
@@ -230,7 +234,8 @@ export class UserDataService {
       economy_level: user.economy_level,
       avatar: user.avatar,
       locale: user.locale as Locales,
-      stats: typeof user.stats === 'string' ? JSON.parse(user.stats) : user.stats,
+      stats:
+        typeof user.stats === 'string' ? JSON.parse(user.stats) : user.stats,
       permissions: user.permissions,
       currentEra: user.currentEra
         ? {
@@ -251,7 +256,7 @@ export class UserDataService {
       won_defends: attackStats.wonDefends,
       totalAttacks: attackStats.totalAttacks,
       totalDefends: attackStats.totalDefends,
-      currentStatus: currentStatus,
+      currentStatus,
       depositsAvailable,
       nextDepositAvailable,
       armySize: unitsService.getArmySize(),
@@ -269,7 +274,9 @@ export class UserDataService {
    */
   private static async updateLastActiveIfNeeded(user: any): Promise<void> {
     const now = new Date();
-    const lastActiveDate = user.last_active ? new Date(user.last_active) : new Date(0);
+    const lastActiveDate = user.last_active
+      ? new Date(user.last_active)
+      : new Date(0);
     const timeSinceLastActive = now.getTime() - lastActiveDate.getTime();
 
     if (timeSinceLastActive > 10 * 60 * 1000) {
@@ -287,10 +294,13 @@ export class UserDataService {
    * @param lastActiveDate The user's last active timestamp.
    * @returns An object with attack statistics.
    */
-  private static async getAttackStats(userId: number, lastActiveDate: Date | null) {
+  private static async getAttackStats(
+    userId: number,
+    lastActiveDate: Date | null,
+  ) {
     let ts = lastActiveDate ? new Date(lastActiveDate) : new Date(0);
     if (isNaN(ts.getTime())) {
-        ts = new Date(0);
+      ts = new Date(0);
     }
 
     const attacksSinceLastActive = await prisma.attack_log.findMany({
@@ -369,7 +379,10 @@ export class UserDataService {
    * @param maxStamina The new maxStamina value.
    * @returns A promise that resolves when the update is complete.
    */
-  static async updateMaxStamina(userId: number, maxStamina: number): Promise<void> {
+  static async updateMaxStamina(
+    userId: number,
+    maxStamina: number,
+  ): Promise<void> {
     const validatedUserId = UserIdSchema.parse(userId);
     await prisma.users.update({
       where: { id: validatedUserId },

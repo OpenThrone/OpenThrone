@@ -3,7 +3,7 @@ import { logError } from '@/utils/logger';
 // Options for the rate limiter
 interface RateLimiterOptions {
   windowMs: number; // The time window in milliseconds
-  max: number;      // The maximum number of requests allowed in the window
+  max: number; // The maximum number of requests allowed in the window
 }
 
 // Store for tracking request timestamps for each user
@@ -16,7 +16,10 @@ const userRequestTimestamps = new Map<string, number[]>();
  * @param options - The rate limiting options (windowMs, max).
  * @returns - True if the request is allowed, false otherwise.
  */
-export const rateLimiter = (key: string, options: RateLimiterOptions): boolean => {
+export const rateLimiter = (
+  key: string,
+  options: RateLimiterOptions,
+): boolean => {
   const { windowMs, max } = options;
   const now = Date.now();
 
@@ -24,11 +27,11 @@ export const rateLimiter = (key: string, options: RateLimiterOptions): boolean =
   if (!userRequestTimestamps.has(key)) {
     userRequestTimestamps.set(key, []);
   }
-  const timestamps = userRequestTimestamps.get(key)!;
+  const timestamps = userRequestTimestamps.get(key);
 
   // Remove timestamps that are outside the current window
   const updatedTimestamps = timestamps.filter(
-    (timestamp) => timestamp > now - windowMs
+    (timestamp) => timestamp > now - windowMs,
   );
 
   // If the number of requests is under the max, allow it

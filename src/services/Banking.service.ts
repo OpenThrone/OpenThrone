@@ -1,13 +1,23 @@
-import prisma from '@/lib/prisma';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
+import UserModel from '@/models/Users';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
-import { Prisma, PrismaClient } from '@prisma/client';
-import { deposit, withdraw, getDepositHistory, getBankHistory } from './Bank.service';
-import UserModel from '@/models/Users';
+
+import {
+  deposit,
+  getBankHistory,
+  getDepositHistory,
+  withdraw,
+} from './Bank.service';
 
 // Define the type for the transaction client
-type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+type TransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 
 // Type definitions for banking operations
 export interface DepositData {
@@ -48,11 +58,13 @@ export interface BankTransaction {
 
 export interface DepositHistoryInfo {
   remainingDeposits: number;
-  nextDepositAvailable: {
-    hours: number;
-    minutes: number;
-    seconds: number;
-  } | number;
+  nextDepositAvailable:
+    | {
+        hours: number;
+        minutes: number;
+        seconds: number;
+      }
+    | number;
 }
 
 export interface BankBalance {
@@ -71,11 +83,17 @@ export interface BankingValidationResult {
 
 // Zod schemas for validation
 const DepositSchema = z.object({
-  amount: z.string().transform(val => BigInt(val)).refine(val => val > 0n, 'Deposit amount must be positive')
+  amount: z
+    .string()
+    .transform((val) => BigInt(val))
+    .refine((val) => val > 0n, 'Deposit amount must be positive'),
 });
 
 const WithdrawSchema = z.object({
-  amount: z.string().transform(val => BigInt(val)).refine(val => val > 0n, 'Withdrawal amount must be positive')
+  amount: z
+    .string()
+    .transform((val) => BigInt(val))
+    .refine((val) => val > 0n, 'Withdrawal amount must be positive'),
 });
 
 const BankHistoryQuerySchema = z.object({
@@ -98,9 +116,12 @@ export class BankingService {
   /**
    * Validates deposit conditions for a user
    */
-  private static async validateDeposit(userId: number, amount: bigint): Promise<BankingValidationResult> {
+  private static async validateDeposit(
+    userId: number,
+    amount: bigint,
+  ): Promise<BankingValidationResult> {
     const errors: string[] = [];
-    
+
     try {
       // Fetch user data
       const user = await prisma.users.findUnique({
@@ -113,7 +134,7 @@ export class BankingService {
           canDeposit: false,
           canWithdraw: false,
           remainingDeposits: 0,
-          errors
+          errors,
         };
       }
 
@@ -136,16 +157,20 @@ export class BankingService {
         canWithdraw: true, // Withdraw validation is separate
         remainingDeposits,
         lastDepositTime: history.length > 0 ? history[0].date_time : undefined,
-        errors
+        errors,
       };
     } catch (error: any) {
-      logError('Error validating deposit', { userId, amount: amount.toString(), error });
+      logError('Error validating deposit', {
+        userId,
+        amount: amount.toString(),
+        error,
+      });
       errors.push('Validation failed');
       return {
         canDeposit: false,
         canWithdraw: false,
         remainingDeposits: 0,
-        errors
+        errors,
       };
     }
   }
@@ -153,9 +178,12 @@ export class BankingService {
   /**
    * Validates withdrawal conditions for a user
    */
-  private static async validateWithdrawal(userId: number, amount: bigint): Promise<{ canWithdraw: boolean; errors: string[] }> {
+  private static async validateWithdrawal(
+    userId: number,
+    amount: bigint,
+  ): Promise<{ canWithdraw: boolean; errors: string[] }> {
     const errors: string[] = [];
-    
+
     try {
       // Fetch user data
       const user = await prisma.users.findUnique({
@@ -174,10 +202,14 @@ export class BankingService {
 
       return {
         canWithdraw: errors.length === 0,
-        errors
+        errors,
       };
     } catch (error: any) {
-      logError('Error validating withdrawal', { userId, amount: amount.toString(), error });
+      logError('Error validating withdrawal', {
+        userId,
+        amount: amount.toString(),
+        error,
+      });
       errors.push('Validation failed');
       return { canWithdraw: false, errors };
     }
@@ -191,7 +223,10 @@ export class BankingService {
 
     try {
       // Validate deposit conditions
-      const validation = await this.validateDeposit(userId, validatedData.amount);
+      const validation = await this.validateDeposit(
+        userId,
+        validatedData.amount,
+      );
       if (!validation.canDeposit) {
         throw new Error(validation.errors.join(', '));
       }
@@ -202,10 +237,14 @@ export class BankingService {
       return {
         message: 'Deposit successful',
         data: stringifyObj(updatedUser),
-        remainingDeposits: validation.remainingDeposits - 1
+        remainingDeposits: validation.remainingDeposits - 1,
       };
     } catch (error: any) {
-      logError('Error depositing to bank', { userId, amount: validatedData.amount.toString(), error });
+      logError('Error depositing to bank', {
+        userId,
+        amount: validatedData.amount.toString(),
+        error,
+      });
       throw error;
     }
   }
@@ -218,7 +257,10 @@ export class BankingService {
 
     try {
       // Validate withdrawal conditions
-      const validation = await this.validateWithdrawal(userId, validatedData.amount);
+      const validation = await this.validateWithdrawal(
+        userId,
+        validatedData.amount,
+      );
       if (!validation.canWithdraw) {
         throw new Error(validation.errors.join(', '));
       }
@@ -228,10 +270,14 @@ export class BankingService {
 
       return {
         message: 'Withdrawal successful',
-        data: stringifyObj(updatedUser)
+        data: stringifyObj(updatedUser),
       };
     } catch (error: any) {
-      logError('Error withdrawing from bank', { userId, amount: validatedData.amount.toString(), error });
+      logError('Error withdrawing from bank', {
+        userId,
+        amount: validatedData.amount.toString(),
+        error,
+      });
       throw error;
     }
   }
@@ -278,17 +324,12 @@ export class BankingService {
           history_type: 'PLAYER_TRANSFER',
           AND: [
             {
-              OR: [
-                { from_user_id: userId },
-                { to_user_id: userId }
-              ]
+              OR: [{ from_user_id: userId }, { to_user_id: userId }],
             },
             {
-              NOT: [
-                { from_user_id: userId, to_user_id: userId }
-              ]
-            }
-          ]
+              NOT: [{ from_user_id: userId, to_user_id: userId }],
+            },
+          ],
         });
       }
 
@@ -320,22 +361,22 @@ export class BankingService {
             stats: {
               path: ['type'],
               string_contains: 'ARMORY',
-            }
+            },
           },
           {
             history_type: 'SALE',
             stats: {
               path: ['type'],
               string_contains: '_UPGRADES',
-            }
+            },
           },
           {
             history_type: 'SALE',
             stats: {
               path: ['action'],
               string_contains: '_upgrade',
-            }
-          }
+            },
+          },
         );
       }
 
@@ -359,10 +400,7 @@ export class BankingService {
       if (validatedQuery.friend_transfers) {
         transactionConditions.push({
           history_type: { in: ['FRIEND_TRANSFER', 'FRIEND_REQUEST'] },
-          OR: [
-            { from_user_id: userId },
-            { to_user_id: userId }
-          ]
+          OR: [{ from_user_id: userId }, { to_user_id: userId }],
         });
       }
 
@@ -375,14 +413,15 @@ export class BankingService {
 
       // Always include user's own transactions
       conditions.push({
-        OR: [
-          { from_user_id: userId },
-          { to_user_id: userId },
-        ],
+        OR: [{ from_user_id: userId }, { to_user_id: userId }],
       });
 
       // Use existing Bank.service method
-      const { rows, total } = await getBankHistory(conditions, validatedQuery.limit, validatedQuery.page);
+      const { rows, total } = await getBankHistory(
+        conditions,
+        validatedQuery.limit,
+        validatedQuery.page,
+      );
       const totalPages = Math.ceil(total / validatedQuery.limit);
 
       return {
@@ -393,7 +432,11 @@ export class BankingService {
         limit: validatedQuery.limit,
       };
     } catch (error: any) {
-      logError('Error getting bank history', { userId, query: validatedQuery, error });
+      logError('Error getting bank history', {
+        userId,
+        query: validatedQuery,
+        error,
+      });
       throw error;
     }
   }
@@ -407,7 +450,7 @@ export class BankingService {
         prisma.users.findUnique({
           where: { id: userId },
         }),
-        getDepositHistory(userId)
+        getDepositHistory(userId),
       ]);
 
       if (!user) {
@@ -428,12 +471,13 @@ export class BankingService {
 
           if (timeDiff > 0) {
             const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const minutes = Math.floor(
+              (timeDiff % (1000 * 60 * 60)) / (1000 * 60),
+            );
             const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
             return { hours, minutes, seconds };
-          } else {
-            return { hours: 0, minutes: 0, seconds: 0 };
           }
+          return { hours: 0, minutes: 0, seconds: 0 };
         };
 
         nextDepositAvailable = getCountdown(history[0].date_time.toString());
@@ -441,7 +485,7 @@ export class BankingService {
 
       return {
         remainingDeposits,
-        nextDepositAvailable
+        nextDepositAvailable,
       };
     } catch (error: any) {
       logError('Error getting deposit info', { userId, error });
@@ -456,7 +500,7 @@ export class BankingService {
     try {
       const user = await prisma.users.findUnique({
         where: { id: userId },
-        select: { gold: true, gold_in_bank: true }
+        select: { gold: true, gold_in_bank: true },
       });
 
       if (!user) {
@@ -470,7 +514,7 @@ export class BankingService {
       return {
         gold,
         gold_in_bank: goldInBank,
-        total
+        total,
       };
     } catch (error: any) {
       logError('Error getting bank balance', { userId, error });
@@ -481,7 +525,11 @@ export class BankingService {
   /**
    * Validates if a user can perform a banking operation
    */
-  static async validateBankingOperation(userId: number, operation: 'deposit' | 'withdraw', amount?: bigint): Promise<BankingValidationResult> {
+  static async validateBankingOperation(
+    userId: number,
+    operation: 'deposit' | 'withdraw',
+    amount?: bigint,
+  ): Promise<BankingValidationResult> {
     try {
       const user = await prisma.users.findUnique({
         where: { id: userId },
@@ -492,7 +540,7 @@ export class BankingService {
           canDeposit: false,
           canWithdraw: false,
           remainingDeposits: 0,
-          errors: ['User not found']
+          errors: ['User not found'],
         };
       }
 
@@ -505,7 +553,7 @@ export class BankingService {
         canWithdraw: true,
         remainingDeposits,
         lastDepositTime: history.length > 0 ? history[0].date_time : undefined,
-        errors: []
+        errors: [],
       };
 
       // Check specific operation validation
@@ -523,12 +571,17 @@ export class BankingService {
 
       return result;
     } catch (error: any) {
-      logError('Error validating banking operation', { userId, operation, amount: amount?.toString(), error });
+      logError('Error validating banking operation', {
+        userId,
+        operation,
+        amount: amount?.toString(),
+        error,
+      });
       return {
         canDeposit: false,
         canWithdraw: false,
         remainingDeposits: 0,
-        errors: ['Validation failed']
+        errors: ['Validation failed'],
       };
     }
   }
@@ -541,14 +594,14 @@ export class BankingService {
       const [balance, depositInfo, recentHistory] = await Promise.all([
         this.getBankBalance(userId),
         this.getDepositInfo(userId),
-        this.getBankHistory(userId, { limit: 5, page: 0 })
+        this.getBankHistory(userId, { limit: 5, page: 0 }),
       ]);
 
       return {
         balance,
         depositInfo,
         recentTransactions: recentHistory.rows,
-        totalTransactions: recentHistory.total
+        totalTransactions: recentHistory.total,
       };
     } catch (error: any) {
       logError('Error getting banking stats', { userId, error });

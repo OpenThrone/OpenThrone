@@ -1,9 +1,10 @@
-import { NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
 import { getBankHistory } from '@/services/Bank.service';
-import { stringifyObj } from '@/utils/jsonHelpers';
 import type { AuthenticatedRequest } from '@/types/api';
-import { z } from 'zod';
+import { stringifyObj } from '@/utils/jsonHelpers';
 
 const HistoryQuerySchema = z.object({
   deposits: z.string().optional(),
@@ -21,22 +22,42 @@ const HistoryQuerySchema = z.object({
   limit: z.coerce.number().int().optional().default(10),
 });
 
-const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
+const historyHandler = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
   }
 
   const validatedQuery = HistoryQuerySchema.safeParse(req.query);
   if (!validatedQuery.success) {
-    return res.status(400).json({ error: 'Invalid query parameters', details: validatedQuery.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid query parameters',
+      details: validatedQuery.error.flatten().fieldErrors,
+    });
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { deposits, withdraws, war_spoils, transfers, sale, training, economy, recruitment, fortification, daily, friend_transfers, page, limit } = validatedQuery.data;
+  const {
+    deposits,
+    withdraws,
+    war_spoils,
+    transfers,
+    sale,
+    training,
+    economy,
+    recruitment,
+    fortification,
+    daily,
+    friend_transfers,
+    page,
+    limit,
+  } = validatedQuery.data;
   const conditions = [];
   const transactionConditions = [];
 
@@ -73,15 +94,13 @@ const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
         {
           OR: [
             { from_user_id: session.user.id },
-            { to_user_id: session.user.id }
-          ]
+            { to_user_id: session.user.id },
+          ],
         },
         {
-          NOT: [
-            { from_user_id: session.user.id, to_user_id: session.user.id }
-          ]
-        }
-      ]
+          NOT: [{ from_user_id: session.user.id, to_user_id: session.user.id }],
+        },
+      ],
     });
   }
 
@@ -112,23 +131,23 @@ const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
       stats: {
         path: ['type'],
         string_contains: 'ARMORY',
-      }
+      },
     });
     transactionConditions.push({
       history_type: 'SALE',
       stats: {
         path: ['type'],
         string_contains: '_UPGRADES',
-      }
+      },
     });
     transactionConditions.push({
       history_type: 'SALE',
       stats: {
         path: ['action'],
         string_contains: '_upgrade',
-      }
+      },
     });
-    console.log(transactionConditions)
+    console.log(transactionConditions);
   }
 
   if (training === 'true') {
@@ -151,10 +170,7 @@ const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
   if (friend_transfers === 'true') {
     transactionConditions.push({
       history_type: { in: ['FRIEND_TRANSFER', 'FRIEND_REQUEST'] },
-      OR: [
-        { from_user_id: session.user.id },
-        { to_user_id: session.user.id }
-      ]
+      OR: [{ from_user_id: session.user.id }, { to_user_id: session.user.id }],
     });
   }
 
@@ -165,16 +181,16 @@ const historyHandler = async (req: AuthenticatedRequest, res: NextApiResponse) =
   }
 
   conditions.push({
-    OR: [
-      { from_user_id: session.user.id },
-      { to_user_id: session.user.id },
-    ],
+    OR: [{ from_user_id: session.user.id }, { to_user_id: session.user.id }],
   });
 
-  //console.log('conditions: ', JSON.stringify(conditions));
+  // console.log('conditions: ', JSON.stringify(conditions));
   try {
-    
-    const { rows, total } = await getBankHistory(conditions, Number(limit), Number(page));
+    const { rows, total } = await getBankHistory(
+      conditions,
+      Number(limit),
+      Number(page),
+    );
     // We can calculate totalPages if desired, as:
     const totalPages = Math.ceil(total / Number(limit));
 

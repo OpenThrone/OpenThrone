@@ -1,11 +1,15 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
 import { PermissionType } from '@prisma/client';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth';
+
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { startNewEra } from '@/services/Era.service';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -20,7 +24,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     include: { permissions: true },
   });
 
-  if (!user || !user.permissions.some(p => p.type === PermissionType.ADMINISTRATOR)) {
+  if (
+    !user ||
+    !user.permissions.some((p) => p.type === PermissionType.ADMINISTRATOR)
+  ) {
     return res.status(403).json({ error: 'Forbidden: Admin only' });
   }
 

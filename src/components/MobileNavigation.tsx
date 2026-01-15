@@ -26,16 +26,16 @@
  * };
  */
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import React, { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'next-i18next';
-
-import { SegmentedControl } from '@mantine/core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faComments, faGear } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { SegmentedControl } from '@mantine/core';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import React, { useEffect, useRef, useState } from 'react';
 
 import styles from '@/components/MobileNavigation.module.css';
+
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 
 type MenuItem = {
@@ -62,10 +62,11 @@ const MenuItemComponent: React.FC<{
   onItemClick: (onClick?: () => void) => void;
 }> = ({ item, onItemClick }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname();
-  const isActive = pathname === item.href;
+  const router = useRouter();
+  const currentPath = router.asPath?.split('?')[0] ?? '/';
+  const isActive = currentPath === item.href;
   const isChildActive =
-    item.children?.some((child) => pathname === child.href) ?? false;
+    item.children?.some((child) => currentPath === child.href) ?? false;
 
   const hasChildren = item.children && item.children.length > 0;
 
@@ -150,7 +151,9 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   const { t } = useTranslation('common');
   const menuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const [activeSection, setActiveSection] = useState<'menu' | 'sidebar'>('menu');
+  const [activeSection, setActiveSection] = useState<'menu' | 'sidebar'>(
+    'menu',
+  );
   const hasSidebar = Boolean(sidebarContent);
   const touchStartX = useRef<number>(0);
 
@@ -167,8 +170,12 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       if (!panel) {
         return [] as HTMLElement[];
       }
-      return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENT_SELECTOR)).filter(
-        (element) => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true',
+      return Array.from(
+        panel.querySelectorAll<HTMLElement>(FOCUSABLE_ELEMENT_SELECTOR),
+      ).filter(
+        (element) =>
+          !element.hasAttribute('disabled') &&
+          element.getAttribute('aria-hidden') !== 'true',
       );
     };
 
@@ -288,18 +295,16 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       >
         <div className="relative flex h-full flex-col p-4">
           <div className={styles.headerCard}>
-            <div className={styles.eyebrow}>
-              OpenThrone
-            </div>
-            <h2 className={styles.title}>
-              Menu
-            </h2>
+            <div className={styles.eyebrow}>OpenThrone</div>
+            <h2 className={styles.title}>Menu</h2>
             <div className={styles.divider} />
           </div>
           {hasSidebar && (
             <SegmentedControl
               value={activeSection}
-              onChange={(value) => setActiveSection(value as 'menu' | 'sidebar')}
+              onChange={(value) =>
+                setActiveSection(value as 'menu' | 'sidebar')
+              }
               data={[
                 { label: 'Menu', value: 'menu' },
                 { label: 'Sidebar', value: 'sidebar' },
@@ -317,14 +322,16 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
             {activeSection === 'menu' && (
               <ul className={styles.linkList}>
                 {menuItems.map((item) => (
-                  <MenuItemComponent key={item.key} item={item} onItemClick={handleItemClick} />
+                  <MenuItemComponent
+                    key={item.key}
+                    item={item}
+                    onItemClick={handleItemClick}
+                  />
                 ))}
               </ul>
             )}
             {hasSidebar && activeSection === 'sidebar' && (
-              <div className={styles.sidebarPanel}>
-                {sidebarContent}
-              </div>
+              <div className={styles.sidebarPanel}>{sidebarContent}</div>
             )}
           </div>
           <div className={styles.footer}>

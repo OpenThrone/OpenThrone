@@ -1,13 +1,10 @@
 import type { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
-import { getUserById, trainUnits, updateUserAndBankHistory } from '@/services';
+import { trainUnits } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
-import UserModel from '@/models/Users';
-import { PlayerUnit } from '@/types/typings';
-import { calculateTotalCost, updateUnitsMap } from '@/utils/units';
-import { calculateUserStats } from '@/utils/utilities';
 
 // Zod schema for individual unit training request
 const TrainUnitSchema = z.object({
@@ -15,7 +12,10 @@ const TrainUnitSchema = z.object({
   level: z.number().int().min(1),
   quantity: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int().positive({ message: 'Unit quantity must be a positive integer.' })
+    z
+      .number()
+      .int()
+      .positive({ message: 'Unit quantity must be a positive integer.' }),
   ),
 });
 
@@ -23,9 +23,11 @@ const TrainUnitSchema = z.object({
 const TrainRequestSchema = z.object({
   userId: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int()
+    z.number().int(),
   ),
-  units: z.array(TrainUnitSchema).min(1, { message: 'At least one unit type must be provided for training.' }),
+  units: z.array(TrainUnitSchema).min(1, {
+    message: 'At least one unit type must be provided for training.',
+  }),
 });
 
 // Define response types
@@ -39,10 +41,9 @@ interface UnitProps {
   quantity: number | string; // Keep string for DB compatibility if needed
 }
 
-
 const handler = async (
   req: AuthenticatedRequest,
-  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>
+  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>,
 ) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -50,7 +51,11 @@ const handler = async (
   }
 
   if (!req.session?.user?.id) {
-    logError(null, { requestPath: req.url }, 'Auth session missing in train handler');
+    logError(
+      null,
+      { requestPath: req.url },
+      'Auth session missing in train handler',
+    );
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
@@ -71,23 +76,42 @@ const handler = async (
   }
 
   try {
-    const result = await trainUnits({ userId, units: unitsToTrain as { type: string; level: number; quantity: number }[] });
+    const result = await trainUnits({
+      userId,
+      units: unitsToTrain as {
+        type: string;
+        level: number;
+        quantity: number;
+      }[],
+    });
 
-    return res.status(200).json({ message: result.message, data: result.units });
-
+    return res
+      .status(200)
+      .json({ message: result.message, data: result.units });
   } catch (error: any) {
-    const logContext = parseResult.success ? { userId: parseResult.data.userId, units: parseResult.data.units } : { body: req.body };
+    const logContext = parseResult.success
+      ? { userId: parseResult.data.userId, units: parseResult.data.units }
+      : { body: req.body };
     logError(error, logContext, 'API Error: /api/training/train');
 
     // Handle specific errors
-    if (error.message?.startsWith('Not enough gold') || error.message?.startsWith('Not enough citizens') || error.message?.startsWith('Invalid units quantity') || error.message?.startsWith('Invalid quantity format')) {
+    if (
+      error.message?.startsWith('Not enough gold') ||
+      error.message?.startsWith('Not enough citizens') ||
+      error.message?.startsWith('Invalid units quantity') ||
+      error.message?.startsWith('Invalid quantity format')
+    ) {
       return res.status(400).json({ error: error.message });
     }
     if (error.message === 'User not found within transaction') {
-      return res.status(404).json({ error: 'User data inconsistency during transaction.' });
+      return res
+        .status(404)
+        .json({ error: 'User data inconsistency during transaction.' });
     }
     // Generic error
-    return res.status(500).json({ error: 'An unexpected error occurred while training units.' });
+    return res
+      .status(500)
+      .json({ error: 'An unexpected error occurred while training units.' });
   }
 };
 

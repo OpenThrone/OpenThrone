@@ -17,13 +17,17 @@ describe('cors utils', () => {
 
   it('getRequestOrigin prefers Origin header', () => {
     expect(
-      getRequestOrigin({ headers: { origin: 'https://dashboard-test.openthrone.dev' } }),
+      getRequestOrigin({
+        headers: { origin: 'https://dashboard-test.openthrone.dev' },
+      }),
     ).toBe('https://dashboard-test.openthrone.dev');
   });
 
   it('getRequestOrigin falls back to Referer', () => {
     expect(
-      getRequestOrigin({ headers: { referer: 'https://dashboard-test.openthrone.dev/path?x=1' } }),
+      getRequestOrigin({
+        headers: { referer: 'https://dashboard-test.openthrone.dev/path?x=1' },
+      }),
     ).toBe('https://dashboard-test.openthrone.dev');
   });
 
@@ -36,7 +40,8 @@ describe('cors utils', () => {
   it('setCorsHeaders sets headers only for allowed origins', () => {
     const headers = new Map<string, string | string[]>();
     const res = {
-      setHeader: (name: string, value: string | string[]) => headers.set(name, value),
+      setHeader: (name: string, value: string | string[]) =>
+        headers.set(name, value),
       getHeader: (name: string) => headers.get(name),
     };
 
@@ -47,7 +52,8 @@ describe('cors utils', () => {
 
     const headers2 = new Map<string, string | string[]>();
     const res2 = {
-      setHeader: (name: string, value: string | string[]) => headers2.set(name, value),
+      setHeader: (name: string, value: string | string[]) =>
+        headers2.set(name, value),
       getHeader: (name: string) => headers2.get(name),
     };
 
@@ -55,4 +61,3 @@ describe('cors utils', () => {
     expect(headers2.get('Access-Control-Allow-Origin')).toBeUndefined();
   });
 });
-

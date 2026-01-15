@@ -1,33 +1,42 @@
 // pages/api/social/getTop.ts
-import { NextApiRequest, NextApiResponse } from 'next';
-import { withAuth } from '@/middleware/auth';
-import { SocialService } from '@/services/Social.service';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 
+import { withAuth } from '@/middleware/auth';
+import { SocialService } from '@/services/Social.service';
+
 const GetTopSocialQuerySchema = z.object({
-  type: z.enum(['FRIEND', 'ENEMY'])
+  type: z.enum(['FRIEND', 'ENEMY']),
 });
 
-const getTopSocialRelations = async (req: NextApiRequest, res: NextApiResponse) => {
+const getTopSocialRelations = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const parseResult = GetTopSocialQuerySchema.safeParse(req.query);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid query parameter', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid query parameter',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
 
   const playerId = session.user.id;
   const { type } = parseResult.data;
 
   try {
-    const relations = await SocialService.getTopRelationships(playerId, { type });
+    const relations = await SocialService.getTopRelationships(playerId, {
+      type,
+    });
     res.status(200).json(relations);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

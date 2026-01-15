@@ -1,11 +1,12 @@
-import { withAuth } from "@/middleware/auth";
-import { NextApiRequest, NextApiResponse } from "next";
-import { MessagingService } from "@/services/Messaging.service";
-import { logDebug, logError, logInfo } from "@/utils/logger";
-import { Session } from "next-auth"; // Import Session type
-import prisma from "@/lib/prisma";
-import { getSocketIO } from "@/lib/socket";
-import { z } from "zod";
+import type { NextApiRequest, NextApiResponse } from 'next';
+import type { Session } from 'next-auth'; // Import Session type
+import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
+import { getSocketIO } from '@/lib/socket';
+import { withAuth } from '@/middleware/auth';
+import { MessagingService } from '@/services/Messaging.service';
+import { logDebug, logError, logInfo } from '@/utils/logger';
 
 // Define a custom request type that includes the session injected by withAuth
 interface AuthenticatedRequest extends NextApiRequest {
@@ -19,15 +20,16 @@ const CreateRoomSchema = z.object({
   isPrivate: z.boolean().optional().default(true),
 });
 
-async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use AuthenticatedRequest
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+  // Use AuthenticatedRequest
   const userId = Number(req.session.user.id); // Access session correctly
 
-  if (req.method === "GET") {
+  if (req.method === 'GET') {
     try {
       const rooms = await MessagingService.getUserChatRooms(userId);
-      logInfo("Fetched rooms for user:", userId);
-      logInfo("Returning formatted rooms for user:", userId);
-      logDebug("Formatted rooms:", rooms);
+      logInfo('Fetched rooms for user:', userId);
+      logInfo('Returning formatted rooms for user:', userId);
+      logDebug('Formatted rooms:', rooms);
       return res.json(rooms);
     } catch (error) {
       logError('Error getting user chat rooms', { userId, error });
@@ -35,10 +37,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use
     }
   }
 
-  if (req.method === "POST") {
+  if (req.method === 'POST') {
     const validatedBody = CreateRoomSchema.safeParse(req.body);
     if (!validatedBody.success) {
-      return res.status(400).json({ message: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+      return res.status(400).json({
+        message: 'Invalid request body',
+        details: validatedBody.error.flatten().fieldErrors,
+      });
     }
 
     const { name, recipients, message, isPrivate } = validatedBody.data;
@@ -57,7 +62,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use
           const [latestMessage, participants] = await Promise.all([
             prisma.chatMessage.findFirst({
               where: { roomId: result.id },
-              orderBy: { sentAt: "desc" },
+              orderBy: { sentAt: 'desc' },
               select: {
                 id: true,
                 sentAt: true,
@@ -78,7 +83,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use
               senderName: latestMessage.sender.display_name,
               content:
                 latestMessage.content.substring(0, 50) +
-                (latestMessage.content.length > 50 ? "..." : ""),
+                (latestMessage.content.length > 50 ? '...' : ''),
               timestamp: latestMessage.sentAt.toISOString(),
               isRead: false,
               chatRoomId: result.id,
@@ -86,7 +91,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use
 
             participants.forEach((p) => {
               io.to(`user-${p.userId}`).emit(
-                "newMessageNotification",
+                'newMessageNotification',
                 notificationPayload,
               );
             });
@@ -96,8 +101,15 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use
 
       return res.status(result.isExisting ? 200 : 201).json(result);
     } catch (error) {
-      logError('Error creating or finding chat room', { userId, data: req.body, error });
-      if (error.message.includes('Conflict') || error.message.includes('could not create')) {
+      logError('Error creating or finding chat room', {
+        userId,
+        data: req.body,
+        error,
+      });
+      if (
+        error.message.includes('Conflict') ||
+        error.message.includes('could not create')
+      ) {
         return res.status(409).json({ message: error.message });
       }
       return res.status(500).json({ message: 'Failed to create conversation' });

@@ -1,6 +1,5 @@
 declare module '@/models/Users' {
-  import { PlayerUnit, PlayerItem, PlayerBattleUpgrade } from '@/types/typings';
-  import { Prisma } from '@prisma/client';
+  import type { Prisma } from '@prisma/client';
 
   // A permissive compatibility declaration for UserModel used during the
   // migration from legacy JSON fields to normalized relation arrays. This

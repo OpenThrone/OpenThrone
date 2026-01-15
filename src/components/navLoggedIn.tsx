@@ -1,18 +1,18 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
+import { Badge, Indicator } from '@mantine/core';
+import { PermissionType } from '@prisma/client';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { signOut } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'next-i18next';
 
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
-import { Badge, Indicator } from '@mantine/core';
-
-import { PermissionType } from '@prisma/client';
+import type { PlayerRace } from '@/types/typings';
 import { getAssetPath } from '@/utils/utilities';
-import { PlayerRace } from '@/types/typings';
+
 import MobileNavigation from './MobileNavigation';
 
 const parentLinks = [
@@ -29,7 +29,7 @@ const parentHrefs: Record<string, string> = {
   Home: '/home/overview',
   Battle: '/battle/users',
   Social: '/social/friends',
-  Structures: '/structures/bank',
+  Structures: '/structures/bank/deposit',
   Community: '/community/news',
   About: '/about',
 };
@@ -40,7 +40,6 @@ const subMenus: {
     href: string;
     parent: string;
     target?: string;
-
   }[];
 } = {
   Home: [
@@ -61,9 +60,21 @@ const subMenus: {
     { text: 'Requests', href: '/social/requests', parent: 'Social' },
   ],
   Structures: [
-    { text: 'Bank', href: '/structures/bank', parent: 'Structures' },
-    { text: 'Armory', href: '/structures/armory', parent: 'Structures' },
-    { text: 'Upgrades', href: '/structures/upgrades', parent: 'Structures' },
+    {
+      text: 'Bank',
+      href: '/structures/bank/deposit',
+      parent: 'Structures',
+    },
+    {
+      text: 'Armory',
+      href: '/structures/armory/offense',
+      parent: 'Structures',
+    },
+    {
+      text: 'Upgrades',
+      href: '/structures/upgrades/fortifications',
+      parent: 'Structures',
+    },
     { text: 'Housing', href: '/structures/housing', parent: 'Structures' },
     { text: 'Repair', href: '/structures/repair', parent: 'Structures' },
   ],
@@ -96,12 +107,11 @@ interface NavLoggedInProps {
 }
 
 export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
-  const pathName = usePathname();
-  const searchParms = useSearchParams();
   const router = useRouter();
+  const pathName = router.asPath?.split('?')[0] ?? '/';
   const { t } = useTranslation('common');
   const [activeSubMenu, setActiveSubMenu] = useState<
-    { text: string; href: string; parent: string, target?: string }[]
+    { text: string; href: string; parent: string; target?: string }[]
   >([]);
   const [activeParentLink, setActiveParentLink] = useState<string>('');
   const [activeSubLink, setActiveSubLink] = useState<string>('');
@@ -111,20 +121,23 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
   >([]);
   const [defaultParentLink, setDefaultParentLink] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [socialNotificationCount, setSocialNotificationCount] = useState<number>(0);
+  const [socialNotificationCount, setSocialNotificationCount] =
+    useState<number>(0);
   const layoutCont = useLayout();
   const { user, unreadMessagesCount } = useUser();
 
   // Add the administration link only if the user has admin privileges
   if (
-    user?.permissions?.some((perm) => perm.type === PermissionType.ADMINISTRATOR) &&
+    user?.permissions?.some(
+      (perm) => perm.type === PermissionType.ADMINISTRATOR,
+    ) &&
     !subMenus.Home.some((subNav) => subNav.text === 'Administration')
   ) {
-      subMenus.Home.push({
-        text: 'Administration',
-        href: '/home/admin',
-        parent: 'Home',
-      });
+    subMenus.Home.push({
+      text: 'Administration',
+      href: '/home/admin',
+      parent: 'Home',
+    });
   }
 
   const handleParentClick = (event: React.MouseEvent, link: string) => {
@@ -149,7 +162,10 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       secondPath = 'overview';
     }
 
-    if (currentPath === 'userprofile' || (currentPath === 'battle' && secondPath === 'users')) {
+    if (
+      currentPath === 'userprofile' ||
+      (currentPath === 'battle' && secondPath === 'users')
+    ) {
       setActiveParentLink('Battle');
       const subMenu = subMenus.Battle || [];
       setActiveSubMenu(subMenu);
@@ -163,7 +179,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       setActiveSubLink('War History');
       setDefaultParentLink('Battle');
       setDefaultSubMenu(subMenus.Battle || []);
-    } else if(currentPath === 'auto-recruit') {
+    } else if (currentPath === 'auto-recruit') {
       setActiveParentLink('Community');
       const subMenu = subMenus.Community || [];
       setActiveSubMenu(subMenu);
@@ -172,7 +188,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       setDefaultSubMenu(subMenus.Community || []);
     } else {
       const activeLink = parentLinks.find(
-        (link) => link.toLowerCase() === currentPath
+        (link) => link.toLowerCase() === currentPath,
       );
       if (activeLink) {
         setActiveParentLink(activeLink);
@@ -181,7 +197,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
 
         // Find the active sub link
         const activeSubLinkItem = subMenu.find(
-          (item) => item.text.toLowerCase() === secondPath
+          (item) => item.text.toLowerCase() === secondPath,
         );
         if (activeSubLinkItem) {
           setActiveSubLink(activeSubLinkItem.text);
@@ -193,7 +209,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
         setDefaultSubMenu(subMenus[activeLink] || []);
       }
     }
-  }, [pathName, searchParms]);
+  }, [pathName]);
 
   const [resetTimer, setResetTimer] = useState<number | null>(null);
 
@@ -216,7 +232,10 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
         fetchSocialNotifications();
       }
     };
-    const intervalId = window.setInterval(fetchSocialNotifications, 2 * 60 * 1000);
+    const intervalId = window.setInterval(
+      fetchSocialNotifications,
+      2 * 60 * 1000,
+    );
     window.addEventListener('focus', focusHandler);
     document.addEventListener('visibilitychange', visibilityHandler);
 
@@ -296,9 +315,9 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
         <div className="relative">
           <button
             type="button"
-            className={`p-2 min-h-[48px] min-w-[48px] rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 ${
+            className={`min-h-[48px] min-w-[48px] rounded-md p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 ${
               mobileMenuOpen
-                ? 'text-orange-300 bg-white/10'
+                ? 'bg-white/10 text-orange-300'
                 : 'text-white hover:text-gray-200'
             }`}
             onClick={() => setMobileMenuOpen(true)}
@@ -307,7 +326,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
             data-testid="mobile-menu-button"
           >
             <svg
-              className={`h-6 w-6 transition-transform ${
+              className={`size-6 transition-transform ${
                 mobileMenuOpen ? 'rotate-90' : ''
               }`}
               xmlns="http://www.w3.org/2000/svg"
@@ -329,8 +348,10 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
               color="red"
               variant="filled"
               size="xs"
-              className="absolute -top-1 -right-1"
-              aria-label={t('ariaLabels.unreadNotifications', { count: notificationSum })}
+              className="absolute -right-1 -top-1"
+              aria-label={t('ariaLabels.unreadNotifications', {
+                count: notificationSum,
+              })}
             >
               {badgeLabel}
             </Badge>
@@ -354,12 +375,14 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
         <nav
           className={`hidden h-10 ${layoutCont.raceClasses.menuPrimaryClass} lg:block`}
-          style={{backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme as PlayerRace)}')`}}
+          style={{
+            backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme as PlayerRace)}')`,
+          }}
           onMouseEnter={clearReset}
           role="navigation"
         >
-          <div className="mx-auto max-w-screen-2xl lg:block justify-center">
-            <ul className="flex flex-wrap items-center justify-center text-center text-lg md:text-xl py-1">
+          <div className="mx-auto max-w-screen-2xl justify-center lg:block">
+            <ul className="flex flex-wrap items-center justify-center py-1 text-center text-lg md:text-xl">
               {parentLinks.map((link) => {
                 return (
                   <li className="px-4 lg:px-6 " key={link}>
@@ -367,21 +390,21 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                       href={parentHrefs[link] || '/'}
                       className={`border-none ${
                         activeParentLink === link
-                        ? 'bg-orange-gradient text-gradient-orange'
+                          ? 'bg-orange-gradient text-gradient-orange'
                           : 'text-elf-link-link'
-                      }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-xs`}
+                      }  bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-xs text-uppercase-menu text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange`}
                       onMouseOver={() => {
                         setActiveSubMenu(subMenus[link] || []);
                       }}
                       data-testid={`nav-${link.toLowerCase()}-link`}
                       aria-label={link}
                     >
-                        {link}
+                      {link}
                     </Link>
                   </li>
                 );
               })}
-              <li className="xs:px-6 px-3" key={'signOut'}>
+              <li className="xs:px-6 px-3" key="signOut">
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: '/' })}
@@ -389,7 +412,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                     activeParentLink === 'signout'
                       ? 'text-elf-link-current'
                       : 'text-elf-link-link'
-                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-sm`}
+                  } bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-sm text-uppercase-menu text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange`}
                   data-testid="desktop-sign-out-button"
                 >
                   Sign Out
@@ -400,27 +423,33 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
         </nav>
         <nav
           className={`hidden h-10 ${layoutCont.raceClasses.menuSecondaryClass} lg:block`}
-          style={{ backgroundImage: `url('${getAssetPath('bottom-menu', null, user?.colorScheme as PlayerRace)}')` }}
-
+          style={{
+            backgroundImage: `url('${getAssetPath('bottom-menu', null, user?.colorScheme as PlayerRace)}')`,
+          }}
           onMouseEnter={clearReset}
           role="navigation"
         >
-          <div className="mx-auto max-w-screen-2xl lg:block justify-center">
-            <ul className="flex flex-wrap items-center justify-center text-center text-xl py-1">
+          <div className="mx-auto max-w-screen-2xl justify-center lg:block">
+            <ul className="flex flex-wrap items-center justify-center py-1 text-center text-xl">
               {activeSubMenu.map((item) => (
-                <li
-                  key={`${item.text}.${item.href}`}
-                  className="px-10"
-                >
-                  <Indicator inline offset={-10} position="middle-end" color='brand.2' size={8} processing disabled>
+                <li key={`${item.text}.${item.href}`} className="px-10">
+                  <Indicator
+                    inline
+                    offset={-10}
+                    position="middle-end"
+                    color="brand.2"
+                    size={8}
+                    processing
+                    disabled
+                  >
                     <Link
                       href={item.href}
                       className={`border-none
                       ${
                         activeSubLink === item.text
-                        ? 'text-gradient-orange bg-orange-gradient'
+                          ? 'bg-orange-gradient text-gradient-orange'
                           : 'text-elf-link-link'
-                    } bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-xs
+                      } bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-xs text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange
                     `}
                       target={item.target ? item.target : '_self'}
                       data-testid="nav-link"

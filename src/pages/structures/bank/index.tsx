@@ -1,14 +1,12 @@
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import type { GetServerSideProps } from 'next';
 
-const BankIndex = (props) => {
-  const router = useRouter();
+const BankIndex = () => null;
 
-  useEffect(() => {
-    router.replace('/structures/bank/deposit');
-  }, [router]);
-
-  return null;
-};
+export const getServerSideProps: GetServerSideProps = async () => ({
+  redirect: {
+    destination: '/structures/bank/deposit',
+    permanent: false,
+  },
+});
 
 export default BankIndex;

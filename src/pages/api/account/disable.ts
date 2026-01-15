@@ -1,9 +1,10 @@
 import type { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
-import { logError } from '@/utils/logger';
 import { AccountService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 const DisableRequestSchema = z.object({
   password: z.string().min(1, { message: 'Password is required.' }),
@@ -14,7 +15,7 @@ type ApiSuccessResponse = { message: string };
 
 const handler = async (
   req: AuthenticatedRequest,
-  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>
+  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>,
 ) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -22,7 +23,11 @@ const handler = async (
   }
 
   if (!req.session?.user?.id) {
-    logError(null, { requestPath: req.url }, 'Auth session missing in disable account handler');
+    logError(
+      null,
+      { requestPath: req.url },
+      'Auth session missing in disable account handler',
+    );
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
@@ -48,9 +53,13 @@ const handler = async (
       return res.status(401).json({ error: error.message });
     }
     if (error.message === 'User not found or password hash missing.') {
-      return res.status(404).json({ error: 'User not found or account issue.' });
+      return res
+        .status(404)
+        .json({ error: 'User not found or account issue.' });
     }
-    return res.status(500).json({ error: 'An unexpected error occurred while disabling the account.' });
+    return res.status(500).json({
+      error: 'An unexpected error occurred while disabling the account.',
+    });
   }
 };
 

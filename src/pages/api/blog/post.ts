@@ -1,11 +1,11 @@
-
-import { BlogService } from '@/services';
-import { withAuth } from '@/middleware/auth';
-import { logError } from '@/utils/logger';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getSocketIO } from '@/lib/socket';
 import md5 from 'md5';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
+
+import { getSocketIO } from '@/lib/socket';
+import { withAuth } from '@/middleware/auth';
+import { BlogService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const PostSchema = z.object({
   title: z.string(),
@@ -13,7 +13,7 @@ const PostSchema = z.object({
 });
 
 export async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = req.session;
+  const { session } = req;
 
   if (!session || session.user.id !== 1) {
     return res.status(403).json({ message: 'Forbidden' });
@@ -21,7 +21,10 @@ export async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const validatedBody = PostSchema.safeParse(req.body);
   if (!validatedBody.success) {
-    return res.status(400).json({ message: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+    return res.status(400).json({
+      message: 'Invalid request body',
+      details: validatedBody.error.flatten().fieldErrors,
+    });
   }
 
   const { title, content } = validatedBody.data;

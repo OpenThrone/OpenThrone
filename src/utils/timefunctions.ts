@@ -61,7 +61,7 @@ export function getOTStartDate(add: number = 0): Date {
  * Returns "HH:MM" if today, else locale date string.
  */
 export function formatLastMessageTime(
-  lastMessageTime: string | number | Date
+  lastMessageTime: string | number | Date,
 ): ReactNode {
   const date = new Date(lastMessageTime);
   const now = new Date();

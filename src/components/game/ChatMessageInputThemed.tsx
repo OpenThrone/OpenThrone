@@ -1,11 +1,20 @@
-import React, { useCallback, useState } from 'react';
-import { ActionIcon, Box, CloseButton, Group, Paper, Text, TextInput, Tooltip } from '@mantine/core';
+import { faPaperclip, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faPaperclip } from '@fortawesome/free-solid-svg-icons';
+import {
+  ActionIcon,
+  Box,
+  CloseButton,
+  Group,
+  Paper,
+  Text,
+  TextInput,
+  Tooltip,
+} from '@mantine/core';
+import React, { useCallback, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 
-import { logInfo } from '@/utils/logger';
 import type { ChatMessage } from '@/types/typings';
+import { logInfo } from '@/utils/logger';
 
 import styles from './ChatThemed.module.css';
 
@@ -34,24 +43,43 @@ const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
 }) => {
   const [newMessage, setNewMessage] = useState('');
 
-  const handleSendMessage = useCallback((content: string) => {
-    if (!selectedRoomId || !content.trim() || !socket || !isConnected || !currentUserId) {
-      return;
-    }
+  const handleSendMessage = useCallback(
+    (content: string) => {
+      if (
+        !selectedRoomId ||
+        !content.trim() ||
+        !socket ||
+        !isConnected ||
+        !currentUserId
+      ) {
+        return;
+      }
 
-    const messageContent = content.trim();
-    logInfo(`ChatMessageInputThemed: Emitting sendMessage for room ${selectedRoomId}`);
+      const messageContent = content.trim();
+      logInfo(
+        `ChatMessageInputThemed: Emitting sendMessage for room ${selectedRoomId}`,
+      );
 
-    socket.emit('sendMessage', {
-      roomId: selectedRoomId,
-      content: messageContent,
-      replyToMessageId: replyingToMessage?.id,
-    });
+      socket.emit('sendMessage', {
+        roomId: selectedRoomId,
+        content: messageContent,
+        replyToMessageId: replyingToMessage?.id,
+      });
 
-    markRoomAsRead(selectedRoomId);
-    setReplyingToMessage(null);
-    setNewMessage('');
-  }, [selectedRoomId, socket, isConnected, currentUserId, markRoomAsRead, replyingToMessage, setReplyingToMessage]);
+      markRoomAsRead(selectedRoomId);
+      setReplyingToMessage(null);
+      setNewMessage('');
+    },
+    [
+      selectedRoomId,
+      socket,
+      isConnected,
+      currentUserId,
+      markRoomAsRead,
+      replyingToMessage,
+      setReplyingToMessage,
+    ],
+  );
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -59,26 +87,53 @@ const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
   };
 
   return (
-    <Paper component="form" onSubmit={handleSubmit} className={styles.inputPanel} p="md" radius={0} shadow="sm">
+    <Paper
+      component="form"
+      onSubmit={handleSubmit}
+      className={styles.inputPanel}
+      p="md"
+      radius={0}
+      shadow="sm"
+    >
       {replyingToMessage && (
-        <Box p="xs" mb="xs" className={styles.inputReply} style={{ borderRadius: 'var(--mantine-radius-sm)' }}>
+        <Box
+          p="xs"
+          mb="xs"
+          className={styles.inputReply}
+          style={{ borderRadius: 'var(--mantine-radius-sm)' }}
+        >
           <Group justify="space-between">
             <div>
-              <Text size="xs" c="dimmed">Replying to {replyingToMessage.sender.display_name}</Text>
-              <Text size="sm" lineClamp={1}>{replyingToMessage.content}</Text>
+              <Text size="xs" c="dimmed">
+                Replying to {replyingToMessage.sender.display_name}
+              </Text>
+              <Text size="sm" lineClamp={1}>
+                {replyingToMessage.content}
+              </Text>
             </div>
-            <CloseButton size="sm" onClick={() => setReplyingToMessage(null)} title="Cancel reply" />
+            <CloseButton
+              size="sm"
+              onClick={() => setReplyingToMessage(null)}
+              title="Cancel reply"
+            />
           </Group>
         </Box>
       )}
       <Group gap="xs" wrap="nowrap">
         <Tooltip label="Share Attack Log">
-          <ActionIcon variant="subtle" onClick={() => setIsShareModalOpen(true)} size="lg" disabled={!canWrite}>
+          <ActionIcon
+            variant="subtle"
+            onClick={() => setIsShareModalOpen(true)}
+            size="lg"
+            disabled={!canWrite}
+          >
             <FontAwesomeIcon icon={faPaperclip} />
           </ActionIcon>
         </Tooltip>
         <TextInput
-          placeholder={replyingToMessage ? 'Type your reply...' : 'Type your message...'}
+          placeholder={
+            replyingToMessage ? 'Type your reply...' : 'Type your message...'
+          }
           value={newMessage}
           onChange={(event) => setNewMessage(event.target.value)}
           className="flex-1"

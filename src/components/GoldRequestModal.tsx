@@ -1,11 +1,20 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Alert,
+  Button,
+  Group,
+  Modal,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Modal, Button, TextInput, Textarea, Alert, Group, Stack, Text } from '@mantine/core';
+
+import { useUser } from '@/context/users';
 import { GoldRequestSchema } from '@/lib/validation';
 import { getCompleteFriendTransferConfig } from '@/services/Config.service';
-import { useUser } from '@/context/users';
 
 interface GoldRequestModalProps {
   isOpen: boolean;
@@ -15,25 +24,30 @@ interface GoldRequestModalProps {
   onRequestComplete: () => void;
 }
 
-export function GoldRequestModal({ 
-  isOpen, 
-  onClose, 
-  targetUserId, 
-  targetUserName, 
-  onRequestComplete 
+export function GoldRequestModal({
+  isOpen,
+  onClose,
+  targetUserId,
+  targetUserName,
+  onRequestComplete,
 }: GoldRequestModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { forceUpdate } = useUser();
   const config = getCompleteFriendTransferConfig();
-  
-  const { register, handleSubmit, formState: { errors }, watch } = useForm({
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm({
     resolver: zodResolver(GoldRequestSchema),
     defaultValues: {
       amount: '',
       friendId: targetUserId,
-      notes: ''
-    }
+      notes: '',
+    },
   });
 
   const watchedAmount = watch('amount');
@@ -41,7 +55,7 @@ export function GoldRequestModal({
   const onSubmit = async (data: any) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch('/api/social/gold-requests', {
         method: 'POST',
@@ -49,15 +63,15 @@ export function GoldRequestModal({
         body: JSON.stringify({
           friendId: data.friendId,
           amount: data.amount,
-          notes: data.notes
-        })
+          notes: data.notes,
+        }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Request failed');
       }
-      
+
       forceUpdate();
       onRequestComplete();
       onClose();
@@ -73,9 +87,9 @@ export function GoldRequestModal({
   };
 
   return (
-    <Modal 
-      opened={isOpen} 
-      onClose={onClose} 
+    <Modal
+      opened={isOpen}
+      onClose={onClose}
       title={`Request Gold from ${targetUserName}`}
       size="md"
     >
@@ -85,7 +99,7 @@ export function GoldRequestModal({
             {error}
           </Alert>
         )}
-        
+
         <Stack gap="md">
           <TextInput
             label="Request Amount"
@@ -98,12 +112,16 @@ export function GoldRequestModal({
             required
           />
           {errors.amount && (
-            <Text color="red" size="sm">{errors.amount.message}</Text>
+            <Text color="red" size="sm">
+              {errors.amount.message}
+            </Text>
           )}
-          
+
           {/* Request Information */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <Text size="sm" mb="xs" className="text-gray-400">Request Information</Text>
+          <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
+            <Text size="sm" mb="xs" className="text-gray-400">
+              Request Information
+            </Text>
             <Stack gap="xs">
               <Text size="xs" color="dimmed">
                 Maximum request: {formatNumber(config.maxAmount)} gold
@@ -116,7 +134,7 @@ export function GoldRequestModal({
               </Text>
             </Stack>
           </div>
-          
+
           <Textarea
             label="Reason (Optional)"
             placeholder="Why are you requesting gold?"
@@ -127,24 +145,28 @@ export function GoldRequestModal({
             resize="vertical"
           />
           {errors.notes && (
-            <Text color="red" size="sm">{errors.notes.message}</Text>
+            <Text color="red" size="sm">
+              {errors.notes.message}
+            </Text>
           )}
-          
+
           <Group justify="flex-end" mt="md">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               loading={loading}
-              disabled={!watchedAmount || 
-                       BigInt(watchedAmount) <= BigInt(0) ||
-                       !config.enabled}
+              disabled={
+                !watchedAmount ||
+                BigInt(watchedAmount) <= BigInt(0) ||
+                !config.enabled
+              }
             >
               Send Request
             </Button>

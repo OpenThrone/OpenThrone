@@ -1305,5 +1305,5 @@ export const ItemTypes: Item[] = [
     MeleeDefPower: 240,
     RangedAtkPower: 0,
     RangedDefPower: 0,
-  }
+  },
 ];

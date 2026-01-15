@@ -16,4 +16,4 @@ export const isModerator = async (userId: number): Promise<boolean> => {
     },
   });
   return !!moderatorUser;
-}
+};

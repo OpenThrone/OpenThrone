@@ -3,7 +3,10 @@ import { z } from 'zod';
 // Friend transfer configuration schema
 const friendTransferConfigSchema = z.object({
   NEXT_PUBLIC_ENABLE_FRIEND_TRANSFER: z.boolean().default(true),
-  FRIEND_TRANSFER_MAX_AMOUNT: z.string().transform(val => BigInt(val)).default('1000000'),
+  FRIEND_TRANSFER_MAX_AMOUNT: z
+    .string()
+    .transform((val) => BigInt(val))
+    .default('1000000'),
   FRIEND_TRANSFER_COOLDOWN_HOURS: z.coerce.number().int().min(1).default(24),
   FRIEND_TRANSFER_FEE_PERCENTAGE: z.coerce.number().min(0).max(100).default(5),
 });
@@ -12,7 +15,9 @@ const friendTransferConfigSchema = z.object({
 export type FriendTransferConfig = z.infer<typeof friendTransferConfigSchema>;
 
 // Friend transfer configuration with validation
-export const friendTransferConfig = friendTransferConfigSchema.parse(process.env);
+export const friendTransferConfig = friendTransferConfigSchema.parse(
+  process.env,
+);
 
 /**
  * Gets friend transfer configuration settings
@@ -95,10 +100,10 @@ export const getTransferCooldownMs = () => {
  */
 export const canMakeTransfer = (lastTransferTime: Date | null) => {
   if (!lastTransferTime) return true;
-  
+
   const cooldownMs = getTransferCooldownMs();
   const timeSinceLastTransfer = Date.now() - lastTransferTime.getTime();
-  
+
   return timeSinceLastTransfer >= cooldownMs;
 };
 

@@ -1,16 +1,16 @@
-import React from 'react';
 import {
-  Table,
-  Box,
-  Paper,
-  Text,
   Avatar,
-  Group,
   Badge,
-  ScrollArea,
+  Box,
+  Group,
+  Paper,
   rem,
-  useMantineTheme
+  ScrollArea,
+  Table,
+  Text,
+  useMantineTheme,
 } from '@mantine/core';
+import React from 'react';
 
 // --- Types ---
 export interface PlayerData {
@@ -29,14 +29,56 @@ interface WarlordTableProps {
 
 // --- Default Mock Data (if no props provided) ---
 const DEFAULT_PLAYERS: PlayerData[] = [
-  { rank: 1, name: 'DasTacoMann', race: 'HUMAN FIGHTER', gold: '49,063,738', level: 42, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' },
-  { rank: 2, name: 'uaktags', race: 'UNDEAD ROGUE', gold: '8,662,220', level: 42, active: true, avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Aneka' },
-  { rank: 3, name: 'IronBreaker', race: 'GOBLIN SHAMAN', gold: '5,100,432', level: 41, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack' },
-  { rank: 4, name: 'ShadowWeaver', race: 'ELF MAGE', gold: '4,888,100', level: 40, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lola' },
-  { rank: 5, name: 'BloodRaven', race: 'HUMAN CLERIC', gold: '4,102,999', level: 39, active: false, avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bo' },
+  {
+    rank: 1,
+    name: 'DasTacoMann',
+    race: 'HUMAN FIGHTER',
+    gold: '49,063,738',
+    level: 42,
+    active: false,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+  },
+  {
+    rank: 2,
+    name: 'uaktags',
+    race: 'UNDEAD ROGUE',
+    gold: '8,662,220',
+    level: 42,
+    active: true,
+    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Aneka',
+  },
+  {
+    rank: 3,
+    name: 'IronBreaker',
+    race: 'GOBLIN SHAMAN',
+    gold: '5,100,432',
+    level: 41,
+    active: false,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack',
+  },
+  {
+    rank: 4,
+    name: 'ShadowWeaver',
+    race: 'ELF MAGE',
+    gold: '4,888,100',
+    level: 40,
+    active: false,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lola',
+  },
+  {
+    rank: 5,
+    name: 'BloodRaven',
+    race: 'HUMAN CLERIC',
+    gold: '4,102,999',
+    level: 39,
+    active: false,
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bo',
+  },
 ];
 
-export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PLAYERS }) => {
+export const WarlordTable: React.FC<WarlordTableProps> = ({
+  players = DEFAULT_PLAYERS,
+}) => {
   const theme = useMantineTheme();
   const brand = theme.colors.brand ?? theme.colors.blue;
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
@@ -59,17 +101,34 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
       }}
     >
       <Table.Td style={{ borderColor: '#1f2b3b' }}>
-        <Text fw={700} c="dimmed" size="sm">#{player.rank}</Text>
+        <Text fw={700} c="dimmed" size="sm">
+          #{player.rank}
+        </Text>
       </Table.Td>
 
       <Table.Td style={{ borderColor: '#1f2b3b' }}>
         <Group gap="sm">
           {/* Hex/Tech Avatar Frame */}
-          <Box style={{ border: '1px solid #444', padding: '1px', background: '#000' }}>
-            <Avatar src={player.avatar} size={30} radius={0} data-testid="race-icon" />
+          <Box
+            style={{
+              border: '1px solid #444',
+              padding: '1px',
+              background: '#000',
+            }}
+          >
+            <Avatar
+              src={player.avatar}
+              size={30}
+              radius={0}
+              data-testid="race-icon"
+            />
           </Box>
           <Box>
-            <Text size="sm" fw={700} style={{ color: player.active ? activeText : 'white' }}>
+            <Text
+              size="sm"
+              fw={700}
+              style={{ color: player.active ? activeText : 'white' }}
+            >
               {player.name}{' '}
               {player.active && (
                 <Badge size="xs" radius="xs" color="brand" ml={5}>
@@ -77,21 +136,31 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({ players = DEFAULT_PL
                 </Badge>
               )}
             </Text>
-            <Text size="xs" c="dimmed" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <Text
+              size="xs"
+              c="dimmed"
+              style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
+            >
               {player.race}
             </Text>
           </Box>
         </Group>
       </Table.Td>
 
-      <Table.Td style={{ borderColor: '#1f2b3b', color: '#687b94' }}>-</Table.Td>
-
-      <Table.Td style={{ borderColor: '#1f2b3b' }}>
-        <Text style={{ color: accent }} fw={600} size="sm">{player.gold}</Text>
+      <Table.Td style={{ borderColor: '#1f2b3b', color: '#687b94' }}>
+        -
       </Table.Td>
 
       <Table.Td style={{ borderColor: '#1f2b3b' }}>
-        <Text c="white" fw={700} size="sm">{player.level}</Text>
+        <Text style={{ color: accent }} fw={600} size="sm">
+          {player.gold}
+        </Text>
+      </Table.Td>
+
+      <Table.Td style={{ borderColor: '#1f2b3b' }}>
+        <Text c="white" fw={700} size="sm">
+          {player.level}
+        </Text>
       </Table.Td>
     </Table.Tr>
   ));

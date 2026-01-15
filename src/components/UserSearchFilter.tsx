@@ -1,5 +1,5 @@
+import { Button, Group, Select, TextInput } from '@mantine/core';
 import React, { useState } from 'react';
-import { TextInput, Button, Group, Select } from '@mantine/core';
 
 interface UserSearchFilterProps {
   onSearch: (filters: Record<string, string>) => void;

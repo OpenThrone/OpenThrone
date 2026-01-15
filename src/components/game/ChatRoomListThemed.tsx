@@ -1,6 +1,6 @@
-import React from 'react';
-import clsx from 'clsx';
 import { Avatar, Group, Text } from '@mantine/core';
+import clsx from 'clsx';
+import React from 'react';
 
 import { formatLastMessageTime } from '@/utils/timefunctions';
 
@@ -42,7 +42,10 @@ const ChatRoomListThemed: React.FC<ChatRoomListThemedProps> = ({
         {rooms.map((room) => (
           <div
             key={room.id}
-            className={clsx(styles.roomItem, selectedRoomId === room.id && styles.roomItemActive)}
+            className={clsx(
+              styles.roomItem,
+              selectedRoomId === room.id && styles.roomItemActive,
+            )}
             onClick={() => onRoomSelect(room.id)}
             role="button"
             tabIndex={0}
@@ -54,7 +57,11 @@ const ChatRoomListThemed: React.FC<ChatRoomListThemedProps> = ({
             }}
           >
             <Avatar src={room.image || undefined} size={40} radius="xl">
-              {room.name ? room.name[0]?.toUpperCase() : (room.isDirect ? 'U' : 'G')}
+              {room.name
+                ? room.name[0]?.toUpperCase()
+                : room.isDirect
+                  ? 'U'
+                  : 'G'}
             </Avatar>
             <div className="flex-1">
               <Group justify="space-between" gap="xs" wrap="nowrap">

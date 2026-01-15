@@ -1,16 +1,17 @@
-import { Turnstile } from '@marsidev/react-turnstile';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Divider, Space, Text } from '@mantine/core';
-import { alertService } from '@/services/Alert.service';
+import { Turnstile } from '@marsidev/react-turnstile';
 import Image from 'next/image';
-import { useUser } from '@/context/users';
-import { getAssetPath } from '@/utils/utilities';
-import { PlayerRace } from '@/types/typings';
-import MainArea from '@/components/MainArea';
-import { logError } from '@/utils/logger';
-import { GameCard } from '@/components/game/GameCard';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
+import React, { useCallback, useEffect, useState } from 'react';
+
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
+import type { PlayerRace } from '@/types/typings';
+import { logError } from '@/utils/logger';
+import { getAssetPath } from '@/utils/utilities';
 
 interface RecruitProps {
   id: string;
@@ -22,10 +23,13 @@ interface RecruitProps {
 
 export default function Recruit(props) {
   const router = useRouter();
-  const params = useSearchParams();
   const [error, setError] = useState(null);
-  const autoRecruitParams = params?.get('auto_recruit');
-  const id = usePathname()?.split('/').pop();
+  const autoRecruitParams = Array.isArray(router.query.auto_recruit)
+    ? router.query.auto_recruit[0]
+    : router.query.auto_recruit;
+  const id = Array.isArray(router.query.id)
+    ? router.query.id[0]
+    : router.query.id;
   const [showCaptcha, setShowCaptcha] = useState(false);
   const formRef = React.useRef<HTMLFormElement | null>(null);
   const [userInfo, setUserInfo] = useState<RecruitProps | null>(null);
@@ -84,7 +88,7 @@ export default function Recruit(props) {
     };
 
     fetchUserInfo();
-  }, [params, autoRecruit, id, autoRecruitParams]);
+  }, [autoRecruit, id, autoRecruitParams]);
 
   const handleCaptchaSuccess = async () => {
     // event.preventDefault();
@@ -102,7 +106,6 @@ export default function Recruit(props) {
 
     const data = await res.json();
     if (data.success) {
-
       const response = await fetch('/api/recruit/handleRecruitment', {
         method: 'POST',
         headers: {
@@ -113,7 +116,7 @@ export default function Recruit(props) {
           selfRecruit: false,
         }),
       });
-      
+
       const recData = await response.json();
 
       if (recData.success) {
@@ -124,7 +127,7 @@ export default function Recruit(props) {
           await autoRecruit();
           return;
         }
-        //router.push(`/userprofile/${id}`);
+        // router.push(`/userprofile/${id}`);
         // Navigate to the user's profile page which is /userprofile/[id]
       }
 
@@ -140,16 +143,29 @@ export default function Recruit(props) {
   return (
     <MainArea title={t('recruit.title')}>
       {userInfo && (
-        <div className="mb-5 text-center items-center">
+        <div className="mb-5 items-center text-center">
           <p>
-            <Text size='xl'>{t('recruit.youAreBeingRecruited')} <span className="text-white">{userInfo.display_name}</span></Text>
-            <span className="text-white">{userInfo.display_name}</span> {t('recruit.level', { level: userInfo.level })} <span className="text-white">{userInfo.race}</span>{' '}
+            <Text size="xl">
+              {t('recruit.youAreBeingRecruited')}{' '}
+              <span className="text-white">{userInfo.display_name}</span>
+            </Text>
+            <span className="text-white">{userInfo.display_name}</span>{' '}
+            {t('recruit.level', { level: userInfo.level })}{' '}
+            <span className="text-white">{userInfo.race}</span>{' '}
             {t('recruit.race', { race: userInfo.race, class: userInfo.class })}.
             <center>
-              <Image src={getAssetPath('shields', '150x150', userInfo.race as PlayerRace)} width={'150'} height={'150'} alt="" />
+              <Image
+                src={getAssetPath(
+                  'shields',
+                  '150x150',
+                  userInfo.race as PlayerRace,
+                )}
+                width="150"
+                height="150"
+                alt=""
+              />
             </center>
             <Text size="md">{t('recruit.pleaseWaitCaptcha')}</Text>
-
           </p>
         </div>
       )}
@@ -176,25 +192,19 @@ export default function Recruit(props) {
           {!user && (
             <>
               <Space h="md" />
-            <Text size="md">
-              {t('recruit.dontHaveAccount')}
-            </Text>
+              <Text size="md">{t('recruit.dontHaveAccount')}</Text>
               <Button onClick={() => router.push(`/account/register`)}>
-              {t('buttons.register')}
-              </Button> 
+                {t('buttons.register')}
+              </Button>
             </>
           )}
           <Space h="md" />
           <Divider />
           <Space h="md" />
           <GameCard title={t('recruit.antiSpamPolicyTitle')}>
-            <Text size="sm">
-              {t('recruit.antiSpamPolicy')}
-            </Text>
+            <Text size="sm">{t('recruit.antiSpamPolicy')}</Text>
             <Space h="md" />
-            <Text size="sm">
-              {t('recruit.captchaPolicy')}
-            </Text>
+            <Text size="sm">{t('recruit.captchaPolicy')}</Text>
           </GameCard>
         </div>
       </div>

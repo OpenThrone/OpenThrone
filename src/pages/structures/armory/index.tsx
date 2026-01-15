@@ -1,14 +1,12 @@
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import type { GetServerSideProps } from 'next';
 
-const Armory = (props) => {
-  const router = useRouter();
+const Armory = () => null;
 
-  useEffect(() => {
-    router.replace('/structures/armory/offense');
-  }, [router]);
-
-  return null;
-};
+export const getServerSideProps: GetServerSideProps = async () => ({
+  redirect: {
+    destination: '/structures/armory/offense',
+    permanent: false,
+  },
+});
 
 export default Armory;

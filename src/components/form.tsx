@@ -1,27 +1,27 @@
-import { useRef, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-
-import { signIn } from 'next-auth/react';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Paper,
-  PasswordInput,
-  TextInput,
-  Text,
-  Select,
+  Box,
   Button,
-  Modal,
-  Title,
   Center,
   Flex,
+  Modal,
+  Paper,
+  PasswordInput,
+  Select,
   Space,
-  Box,
+  Text,
+  TextInput,
+  Title,
   useMantineTheme,
 } from '@mantine/core';
-import toast from 'react-hot-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { useForm, Controller, FieldErrorsImpl, Merge } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { signIn } from 'next-auth/react';
+import { useRef, useState } from 'react';
+import type { FieldErrorsImpl, Merge } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { z } from 'zod';
 
 import LoadingDots from '@/components/loading-dots';
@@ -30,32 +30,36 @@ import { logError } from '@/utils/logger';
 /**
  * Zod schema for user registration data validation.
  */
-const registerSchema = z.object({
-  /** User's chosen display name (min 3 characters). */
-  display_name: z.string().min(3, 'Display name must be at least 3 characters long.'),
-  /** User's email address. */
-  email: z.string().email('Invalid email address.'),
-  /** User's password (min 8 characters). */
-  password: z.string().min(8, 'Password must be at least 8 characters long.'),
-  /** Password confirmation field. */
-  password_confirm: z.string(),
-  /** Selected player race. */
-  race: z.enum(['HUMAN', 'UNDEAD', 'GOBLIN', 'ELF']),
-  /** Selected player class. */
-  class: z.enum(['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF']),
-}).refine(data => data.password === data.password_confirm, {
-  message: "Passwords don't match",
-  path: ["password_confirm"], // Specify the field for the error message
-});
+const registerSchema = z
+  .object({
+    /** User's chosen display name (min 3 characters). */
+    display_name: z
+      .string()
+      .min(3, 'Display name must be at least 3 characters long.'),
+    /** User's email address. */
+    email: z.string().email('Invalid email address.'),
+    /** User's password (min 8 characters). */
+    password: z.string().min(8, 'Password must be at least 8 characters long.'),
+    /** Password confirmation field. */
+    password_confirm: z.string(),
+    /** Selected player race. */
+    race: z.enum(['HUMAN', 'UNDEAD', 'GOBLIN', 'ELF']),
+    /** Selected player class. */
+    class: z.enum(['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF']),
+  })
+  .refine((data) => data.password === data.password_confirm, {
+    message: "Passwords don't match",
+    path: ['password_confirm'], // Specify the field for the error message
+  });
 
 /**
  * Zod schema for user login data validation.
  */
 const loginSchema = z.object({
-    /** User's email address. */
-    email: z.string().email('Invalid email address.'),
-    /** User's password. */
-    password: z.string().min(1, 'Password is required.'),
+  /** User's email address. */
+  email: z.string().email('Invalid email address.'),
+  /** User's password. */
+  password: z.string().min(1, 'Password is required.'),
 });
 
 /** Type inferred from the registerSchema. */
@@ -64,7 +68,10 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 type LoginFormData = z.infer<typeof loginSchema>;
 
 /** Combined type for potential form errors (login or register). */
-type FormErrors = Merge<FieldErrorsImpl<RegisterFormData>, FieldErrorsImpl<LoginFormData>>;
+type FormErrors = Merge<
+  FieldErrorsImpl<RegisterFormData>,
+  FieldErrorsImpl<LoginFormData>
+>;
 
 /**
  * Props for the Form component.
@@ -84,7 +91,11 @@ interface FormProps {
  * integrates with Cloudflare Turnstile for bot protection,
  * and manages API interactions for login/registration, including vacation mode handling.
  */
-const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) => {
+const Form: React.FC<FormProps> = ({
+  type,
+  setErrorMessage,
+  layout = 'paper',
+}) => {
   const [loading, setLoading] = useState(false);
   const [showVacationModal, setShowVacationModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -97,24 +108,33 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
   const captchaDisabled =
     process.env.NEXT_PUBLIC_USE_CAPTCHA === 'false' ||
     process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true';
-  const captchaEnabled = !captchaDisabled && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID;
+  const captchaEnabled =
+    !captchaDisabled && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID;
 
   const form = useForm<RegisterFormData | LoginFormData>({
     resolver: zodResolver(type === 'register' ? registerSchema : loginSchema),
-    defaultValues: type === 'register' ? {
-        display_name: '',
-        email: '',
-        password: '',
-        password_confirm: '',
-        race: 'HUMAN',
-        class: 'FIGHTER',
-    } : {
-        email: '',
-        password: '',
-    },
+    defaultValues:
+      type === 'register'
+        ? {
+            display_name: '',
+            email: '',
+            password: '',
+            password_confirm: '',
+            race: 'HUMAN',
+            class: 'FIGHTER',
+          }
+        : {
+            email: '',
+            password: '',
+          },
   });
 
-  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = form;
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = form;
 
   /**
    * Callback function executed when Turnstile verification is successful.
@@ -159,26 +179,26 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
    * Sends a request to the API and attempts to log the user in upon success.
    */
   const handleVacationOverride = async () => {
-     try {
-       const res = await fetch('/api/account/end-vacation', {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-         },
-         body: JSON.stringify({ userId }),
-       });
-       if (res.ok) {
-         setShowVacationModal(false);
-         toast.success('Vacation mode ended. Logging in...');
-         const loginValues = form.getValues() as LoginFormData;
-         await handleLogin(loginValues.email, loginValues.password);
-       } else {
-         throw new Error('Failed to end vacation mode');
-       }
-     } catch (error) {
-       logError(error);
-       setErrorMessage('Could not end vacation mode');
-     }
+    try {
+      const res = await fetch('/api/account/end-vacation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+      if (res.ok) {
+        setShowVacationModal(false);
+        toast.success('Vacation mode ended. Logging in...');
+        const loginValues = form.getValues() as LoginFormData;
+        await handleLogin(loginValues.email, loginValues.password);
+      } else {
+        throw new Error('Failed to end vacation mode');
+      }
+    } catch (error) {
+      logError(error);
+      setErrorMessage('Could not end vacation mode');
+    }
   };
 
   /**
@@ -188,37 +208,39 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
    * @param password - The user's password.
    */
   const handleLogin = async (email: string, password: string) => {
-     try {
-       const res = await signIn('credentials', {
-         redirect: false,
-         email,
-         password,
-         ...(captchaEnabled ? { turnstileToken } : {}),
-       });
+    try {
+      const res = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+        ...(captchaEnabled ? { turnstileToken } : {}),
+      });
 
-       if (res?.ok) {
-         router.push('/home/overview');
-       } else {
-         const error = res?.error;
-         try {
-           const errorObj = JSON.parse(error || '{}');
-           if (errorObj.message?.includes('on vacation')) {
-             setShowVacationModal(true);
-             setUserId(errorObj.userID);
-           } else {
-             setErrorMessage(errorObj.message || 'Invalid credentials or server error.');
-           }
-         } catch (parseError) {
-           setErrorMessage(error || 'Invalid credentials or server error.');
-         }
-       }
-     } catch (error) {
-       logError(error);
-       setErrorMessage('Something went wrong during login!');
-     } finally {
-       turnsTileRef.current?.reset();
-       setLoading(false); // Ensure loading is set to false after login attempt
-     }
+      if (res?.ok) {
+        router.push('/home/overview');
+      } else {
+        const error = res?.error;
+        try {
+          const errorObj = JSON.parse(error || '{}');
+          if (errorObj.message?.includes('on vacation')) {
+            setShowVacationModal(true);
+            setUserId(errorObj.userID);
+          } else {
+            setErrorMessage(
+              errorObj.message || 'Invalid credentials or server error.',
+            );
+          }
+        } catch (parseError) {
+          setErrorMessage(error || 'Invalid credentials or server error.');
+        }
+      }
+    } catch (error) {
+      logError(error);
+      setErrorMessage('Something went wrong during login!');
+    } finally {
+      turnsTileRef.current?.reset();
+      setLoading(false); // Ensure loading is set to false after login attempt
+    }
   };
 
   /**
@@ -242,7 +264,10 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ ...apiData, ...(captchaEnabled ? { turnstileToken } : {}) }),
+          body: JSON.stringify({
+            ...apiData,
+            ...(captchaEnabled ? { turnstileToken } : {}),
+          }),
         });
 
         if (res.status === 200) {
@@ -252,7 +277,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
           setErrorMessage(message.error || 'Registration failed.');
           turnsTileRef.current?.reset(); // Reset turnstile on registration failure
         }
-         setLoading(false); // Set loading false after registration attempt
+        setLoading(false); // Set loading false after registration attempt
       }
     } catch (error) {
       logError(error);
@@ -461,7 +486,11 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
                 htmlFor="captcha"
                 className="mantine-InputWrapper-label"
                 data-size="md"
-                style={{ color: 'darkgray', fontWeight: 'bolder', fontSize: '1.05rem' }}
+                style={{
+                  color: 'darkgray',
+                  fontWeight: 'bolder',
+                  fontSize: '1.05rem',
+                }}
               >
                 Captcha
               </label>
@@ -475,9 +504,7 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
           )}
           <Button
             disabled={
-              loading ||
-              isSubmitting ||
-              (captchaEnabled && !turnstileToken)
+              loading || isSubmitting || (captchaEnabled && !turnstileToken)
             }
             type="submit"
             fullWidth
@@ -486,7 +513,11 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
             data-testid="submit-button"
             styles={{ root: { minHeight: 48 } }}
           >
-            {loading || isSubmitting ? <LoadingDots color="#808080" /> : <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>}
+            {loading || isSubmitting ? (
+              <LoadingDots color="#808080" />
+            ) : (
+              <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>
+            )}
           </Button>
           <Space h="md" />
           {type === 'login' ? (
@@ -518,13 +549,17 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
   return (
     <Center>
       {layout === 'paper' ? (
-        <Paper withBorder shadow="md" p={30} radius="md" style={{ width: '100%', maxWidth: 400 }}>
+        <Paper
+          withBorder
+          shadow="md"
+          p={30}
+          radius="md"
+          style={{ width: '100%', maxWidth: 400 }}
+        >
           {formBody}
         </Paper>
       ) : (
-        <Box style={{ width: '100%', maxWidth: 420 }}>
-          {formBody}
-        </Box>
+        <Box style={{ width: '100%', maxWidth: 420 }}>{formBody}</Box>
       )}
 
       <Modal
@@ -533,7 +568,8 @@ const Form: React.FC<FormProps> = ({ type, setErrorMessage, layout = 'paper' }) 
         title="Vacation Mode Active"
       >
         <Text>
-          Your account is currently in vacation mode. Do you want to end vacation mode and log in?
+          Your account is currently in vacation mode. Do you want to end
+          vacation mode and log in?
         </Text>
         <Button onClick={handleVacationOverride} mt="md" fullWidth>
           End Vacation Mode

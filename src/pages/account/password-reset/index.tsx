@@ -1,11 +1,13 @@
-import { TextInput, Button, Container, Title, Paper } from '@mantine/core';
-import { useTranslation } from 'next-i18next';
-import router from 'next/router';
-import { useState } from 'react';
+import { Button, Container, Paper, TextInput, Title } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
-import classes from './floatinginput.module.css';
+import router from 'next/router';
+import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
+
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
+
+import classes from './floatinginput.module.css';
 
 const Index = (props) => {
   const { t } = useTranslation('account');
@@ -50,7 +52,13 @@ const Index = (props) => {
   return (
     <MainArea title={t('passwordReset.title')}>
       <Container size="sm" className="py-2 md:col-span-9">
-        <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565'}}>
+        <Paper
+          withBorder
+          shadow="md"
+          p="lg"
+          className="advisor my-3 rounded-lg"
+          style={{ backgroundColor: '#b5a565' }}
+        >
           <form onSubmit={handleSubmit}>
             <Title order={3}>{t('passwordReset.enterYourEmail')}</Title>
             <p className="text-gray-800">{t('passwordReset.sendLinkText')}</p>
@@ -69,12 +77,12 @@ const Index = (props) => {
               labelProps={{ 'data-floating': floating }}
               className="w-full rounded border border-gray-300"
             />
-            <div className="flex justify-end mt-4">
+            <div className="mt-4 flex justify-end">
               <Button
                 type="submit"
                 variant="filled"
                 color="blue"
-                className="inline-flex justify-center py-2 px-4 shadow-sm text-sm font-medium rounded-md text-white"
+                className="inline-flex justify-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm"
               >
                 {t('buttons.submit')}
               </Button>

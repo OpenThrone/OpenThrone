@@ -1,5 +1,15 @@
-import { Modal, Table, Button, Text, Group, Switch, Loader, Center } from '@mantine/core';
-import { useState, useEffect, useCallback } from 'react';
+import {
+  Button,
+  Center,
+  Group,
+  Loader,
+  Modal,
+  Switch,
+  Table,
+  Text,
+} from '@mantine/core';
+import { useCallback, useEffect, useState } from 'react';
+
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
@@ -81,11 +91,10 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
         setCountdown((prevCountdown) => {
           if (prevCountdown > 1) {
             return prevCountdown - 1;
-          } else {
-            // Countdown reached zero, refresh sessions
-            fetchSessions();
-            return AUTO_REFRESH_INTERVAL;
           }
+          // Countdown reached zero, refresh sessions
+          fetchSessions();
+          return AUTO_REFRESH_INTERVAL;
         });
       }, 1000);
     } else {
@@ -123,10 +132,10 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
         setEndSessionError(data.error || 'Failed to end session.');
       }
     } catch (error: any) {
-       setEndSessionError('Network error: Failed to end session.');
-       logError('End session error:', error); // Log the error
+      setEndSessionError('Network error: Failed to end session.');
+      logError('End session error:', error); // Log the error
     } finally {
-        setEndingSessionId(null); // Clear loading state for this session
+      setEndingSessionId(null); // Clear loading state for this session
     }
   };
 
@@ -139,12 +148,7 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
   };
 
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title="Active Sessions"
-      size="lg"
-    >
+    <Modal opened={opened} onClose={onClose} title="Active Sessions" size="lg">
       <Group mb="xs" align="center">
         <Switch
           label={
@@ -154,7 +158,9 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
               mb="md"
               style={{ width: '130px', display: 'inline-block' }}
             >
-              {autoRefresh ? `Refreshing in ${countdown}s` : 'Enable Auto-Refresh'}
+              {autoRefresh
+                ? `Refreshing in ${countdown}s`
+                : 'Enable Auto-Refresh'}
             </Text>
           }
           checked={autoRefresh}
@@ -166,13 +172,15 @@ const SessionModal: React.FC<SessionModalProps> = ({ opened, onClose }) => {
       </Group>
       {/* Display End Session Error */}
       {endSessionError && (
-          <Text color="red" size="sm" mt="xs" mb="xs" ta="center">
-              {endSessionError}
-          </Text>
+        <Text color="red" size="sm" mt="xs" mb="xs" ta="center">
+          {endSessionError}
+        </Text>
       )}
       {/* Session Table or Loading/Empty State */}
       {loading && sessions.length === 0 ? (
-        <Center><Loader /></Center> // Center loader
+        <Center>
+          <Loader />
+        </Center> // Center loader
       ) : sessions.length > 0 ? (
         <Table>
           <thead>

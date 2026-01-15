@@ -1,67 +1,67 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useTranslation } from 'next-i18next';
-
-import { useLayout } from "@/context/LayoutContext";
-import { useUser } from "@/context/users";
-import { alertService } from "@/services/Alert.service";
-import { logInfo, logError } from "@/utils/logger";
-import { Locales, PlayerRace } from "@/types/typings";
+import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  Modal,
   Button,
-  TextInput,
-  Textarea,
-  Tooltip,
-  Select,
   Collapse,
+  Grid,
   Group,
+  Modal,
   PasswordInput,
+  Select,
   Space,
   Text,
-  Grid
-} from "@mantine/core";
-import { useDisclosure, useDebouncedValue, useLocalStorage } from "@mantine/hooks";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
-import Image from "next/image";
-import MainArea from "@/components/MainArea";
-import { GameCard } from "@/components/game/GameCard";
+  Textarea,
+  TextInput,
+  Tooltip,
+} from '@mantine/core';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
+import Image from 'next/image';
+import { useTranslation } from 'next-i18next';
+import React, { useCallback, useEffect, useState } from 'react';
+
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
+import { useLayout } from '@/context/LayoutContext';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
+import type { Locales, PlayerRace } from '@/types/typings';
+import { logError, logInfo } from '@/utils/logger';
 
 const Settings = (props) => {
   const { t } = useTranslation('home');
-  const locales: Locales[] = ["en-US", "es-ES"];
-  const colorSchemes: PlayerRace[] = ["UNDEAD", "HUMAN", "GOBLIN", "ELF"];
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const locales: Locales[] = ['en-US', 'es-ES'];
+  const colorSchemes: PlayerRace[] = ['UNDEAD', 'HUMAN', 'GOBLIN', 'ELF'];
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { user, forceUpdate } = useUser();
   const { updateOptions, raceClasses } = useLayout();
-  
+
   // Add logging for debugging
   logInfo('Settings page - user object:', user);
   logInfo('Settings page - user.twoFactorSecret:', user?.twoFactorSecret);
-  
-  const [colorScheme, setColorScheme] = useState(user?.colorScheme || "ELF");
-  const [locale, setLocale] = useState(user?.locale || "en-US");
-  const [userEmail, setUserEmail] = useState(user?.email || "");
+
+  const [colorScheme, setColorScheme] = useState(user?.colorScheme || 'ELF');
+  const [locale, setLocale] = useState(user?.locale || 'en-US');
+  const [userEmail, setUserEmail] = useState(user?.email || '');
   const [passwordsMatch, setPasswordsMatch] = useState(true);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
   const [isForgetModalOpen, setIsForgetModalOpen] = useState(false);
   const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
-  const [resetPassword, setResetPassword] = useState("");
-  const [disablePassword, setDisablePassword] = useState("");
-  const [forgetPassword, setForgetPassword] = useState("");
-  const [forgetReason, setForgetReason] = useState("");
+  const [resetPassword, setResetPassword] = useState('');
+  const [disablePassword, setDisablePassword] = useState('');
+  const [forgetPassword, setForgetPassword] = useState('');
+  const [forgetReason, setForgetReason] = useState('');
   const [opened, { toggle }] = useDisclosure(false);
   const [debouncedNewPassword] = useDebouncedValue(newPassword, 300);
   const [debouncedConfirmPassword] = useDebouncedValue(confirmPassword, 300);
-  const [newEmail, setNewEmail] = useState("");
+  const [newEmail, setNewEmail] = useState('');
   const [debouncedEmail] = useDebouncedValue(newEmail, 300);
   const [showQR, setShowQR] = useState(false);
   const [qrCode, setQrCode] = useState('');
   const [totpToken, setTotpToken] = useState('');
- 
+
   const checkPasswordsMatch = useCallback(() => {
     setPasswordsMatch(debouncedNewPassword === debouncedConfirmPassword);
   }, [debouncedNewPassword, debouncedConfirmPassword]);
@@ -81,34 +81,34 @@ const Settings = (props) => {
   const updatePassword = async () => {
     checkPasswordsMatch();
     if (!passwordsMatch) return;
-    const response = await fetch("/api/account/settings", {
-      method: "POST",
+    const response = await fetch('/api/account/settings', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        type: "password",
+        type: 'password',
         password: newPassword,
         password_confirm: confirmPassword,
-        currentPassword: currentPassword,
+        currentPassword,
       }),
     });
     const data = await response.json();
-    if(response.ok) {
+    if (response.ok) {
       alertService.success(t('settings.passwordUpdatedSuccessfully'));
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } else {
       alertService.error(data.error);
     }
   };
 
   const updateEmail = async () => {
-    const response = await fetch("/api/account/emailChange", {
-      method: "POST",
+    const response = await fetch('/api/account/emailChange', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ newEmail, userEmail }),
     });
@@ -117,23 +117,23 @@ const Settings = (props) => {
     // Handle response
     if (response.ok) {
       alertService.success(t('settings.emailRequestSent'));
-      //forceUpdate();
+      // forceUpdate();
       updateOptions();
     } else {
       alertService.error(data.error);
     }
-  }
+  };
 
   const updateLocale = async () => {
-    const response = await fetch("/api/account/settings", {
-      method: "POST",
+    const response = await fetch('/api/account/settings', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        type: "gameoptions",
-        locale: locale,
-        colorScheme: colorScheme,
+        type: 'gameoptions',
+        locale,
+        colorScheme,
       }),
     });
     const data = await response.json();
@@ -148,10 +148,10 @@ const Settings = (props) => {
   };
 
   const handleVacationMode = async () => {
-    const response = await fetch("/api/account/start-vacation", {
-      method: "POST",
+    const response = await fetch('/api/account/start-vacation', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({}),
     });
@@ -164,13 +164,13 @@ const Settings = (props) => {
       alertService.error(data.error);
     }
     setIsVacationModalOpen(false);
-  }
+  };
 
   const handleResetAccount = async () => {
-    const response = await fetch("/api/account/resetAccount", {
-      method: "POST",
+    const response = await fetch('/api/account/resetAccount', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         password: resetPassword,
@@ -187,10 +187,10 @@ const Settings = (props) => {
   };
 
   const handleDisableAccount = async () => {
-    const response = await fetch("/api/account/disable", {
-      method: "POST",
+    const response = await fetch('/api/account/disable', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         password: disablePassword,
@@ -204,14 +204,14 @@ const Settings = (props) => {
       alertService.error(data.error);
     }
     setIsDisableModalOpen(false);
-    setDisablePassword("");
+    setDisablePassword('');
   };
 
   const handleForgetAccount = async () => {
-    const response = await fetch("/api/account/forget", {
-      method: "POST",
+    const response = await fetch('/api/account/forget', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         password: forgetPassword,
@@ -226,20 +226,20 @@ const Settings = (props) => {
       alertService.error(data.error);
     }
     setIsForgetModalOpen(false);
-    setForgetPassword("");
-    setForgetReason("");
+    setForgetPassword('');
+    setForgetReason('');
   };
 
   const handleToggle2FA = async () => {
     logInfo('handleToggle2FA called with user:', user);
     logInfo('handleToggle2FA - user.twoFactorSecret:', user?.twoFactorSecret);
-    
+
     if (!user) {
       logError('handleToggle2FA - user object is null');
       alertService.error(t('settings.userNotLoaded'));
       return;
     }
-    
+
     if (user.twoFactorSecret) {
       // Disable 2FA
       const response = await fetch('/api/account/disable-2fa', {
@@ -323,37 +323,37 @@ const Settings = (props) => {
                 {t('settings.passwordsDontMatch')}
               </Text>
             )}
-              <Space h="md" />
-              <Button
-                className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-                onClick={updatePassword}
-                >
-                {t('settings.save')}
-              </Button>
+            <Space h="md" />
+            <Button
+              className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+              onClick={updatePassword}
+            >
+              {t('settings.save')}
+            </Button>
           </GameCard>
-        </Grid.Col> 
-        
+        </Grid.Col>
+
         <Grid.Col span={6}>
           <GameCard title={t('settings.gameOptions')}>
-              <Text>{t('settings.localeFormatting')}</Text>
-              <Select
-                value={locale}
-                onChange={setLocale}
-                data={locales.map((locale) => ({
-                  value: locale,
-                  label: locale,
-                }))}
-                className={raceClasses.bgClass}
-              />
-              <Text>{t('settings.colorScheme')}</Text>
-              <Select
-                value={colorScheme}
-                onChange={setColorScheme}
-                data={colorSchemes.map((color) => ({
-                  value: color,
-                  label: color,
-                }))}
-                className={raceClasses.bgClass}
+            <Text>{t('settings.localeFormatting')}</Text>
+            <Select
+              value={locale}
+              onChange={setLocale}
+              data={locales.map((locale) => ({
+                value: locale,
+                label: locale,
+              }))}
+              className={raceClasses.bgClass}
+            />
+            <Text>{t('settings.colorScheme')}</Text>
+            <Select
+              value={colorScheme}
+              onChange={setColorScheme}
+              data={colorSchemes.map((color) => ({
+                value: color,
+                label: color,
+              }))}
+              className={raceClasses.bgClass}
             />
             <Space h="md" />
             <Button
@@ -363,19 +363,23 @@ const Settings = (props) => {
               {t('settings.save')}
             </Button>
           </GameCard>
-        </Grid.Col> 
-        
+        </Grid.Col>
+
         <Grid.Col span={6}>
           <GameCard title={t('settings.changeEmail')}>
             <Text>{t('settings.currentEmail')}</Text>
-            <Text c="dimmed" size="md">{userEmail}</Text>
+            <Text c="dimmed" size="md">
+              {userEmail}
+            </Text>
             <Text>{t('settings.newEmail')}</Text>
             <TextInput
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               className={raceClasses.bgClass}
             />
-            <Text size="sm" c="dimmed">{t('settings.emailConfirmation')}</Text>
+            <Text size="sm" c="dimmed">
+              {t('settings.emailConfirmation')}
+            </Text>
             <Space h="md" />
             <Button
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
@@ -407,12 +411,20 @@ const Settings = (props) => {
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
               onClick={handleToggle2FA}
             >
-              {user?.twoFactorSecret ? t('settings.disable2FA') : t('settings.enable2FA')}
+              {user?.twoFactorSecret
+                ? t('settings.disable2FA')
+                : t('settings.enable2FA')}
             </Button>
             {showQR && (
               <div>
                 <Space h="md" />
-                <Image src={qrCode} alt="QR Code" width={200} height={200} unoptimized />
+                <Image
+                  src={qrCode}
+                  alt="QR Code"
+                  width={200}
+                  height={200}
+                  unoptimized
+                />
                 <Space h="md" />
                 <TextInput
                   placeholder={t('settings.enter6DigitCode')}
@@ -429,15 +441,15 @@ const Settings = (props) => {
         <Grid.Col span={6}>
           <GameCard
             title={t('settings.accountActions')}
-            action={(
+            action={
               <FontAwesomeIcon
                 icon={opened ? faMinus : faPlus}
                 size="xs"
                 onClick={toggle}
               />
-            )}
+            }
           >
-            <Collapse in={opened}> 
+            <Collapse in={opened}>
               <Group mt="md" gap="md" wrap="wrap">
                 <Tooltip label={t('settings.resetAccountTooltip')} withArrow>
                   <Button
@@ -470,8 +482,8 @@ const Settings = (props) => {
             </Collapse>
           </GameCard>
         </Grid.Col>
-      </Grid> 
-      
+      </Grid>
+
       <Modal
         opened={isVacationModalOpen}
         onClose={() => setIsVacationModalOpen(false)}
@@ -480,7 +492,11 @@ const Settings = (props) => {
         <div>
           <Text>{t('settings.areYouSureStartVacation')}</Text>
           <Group mt="md">
-            <Button variant="outline" color="gray" onClick={() => setIsVacationModalOpen(false)}>
+            <Button
+              variant="outline"
+              color="gray"
+              onClick={() => setIsVacationModalOpen(false)}
+            >
               {t('settings.cancel')}
             </Button>
             <Button color="blue" onClick={handleVacationMode}>
@@ -488,8 +504,8 @@ const Settings = (props) => {
             </Button>
           </Group>
         </div>
-      </Modal> 
-      
+      </Modal>
+
       <Modal
         opened={isResetModalOpen}
         onClose={() => setIsResetModalOpen(false)}
@@ -502,10 +518,14 @@ const Settings = (props) => {
             value={resetPassword}
             onChange={(e) => setResetPassword(e.target.value)}
             placeholder={t('settings.enterPasswordConfirm')}
-            className="w-full rounded-md border p-2 mt-4"
+            className="mt-4 w-full rounded-md border p-2"
           />
           <Group align="right" mt="md">
-            <Button variant="outline" color="gray" onClick={() => setIsResetModalOpen(false)}>
+            <Button
+              variant="outline"
+              color="gray"
+              onClick={() => setIsResetModalOpen(false)}
+            >
               {t('settings.cancel')}
             </Button>
             <Button color="red" onClick={handleResetAccount}>
@@ -513,8 +533,8 @@ const Settings = (props) => {
             </Button>
           </Group>
         </div>
-      </Modal> 
-      
+      </Modal>
+
       <Modal
         opened={isDisableModalOpen}
         onClose={() => setIsDisableModalOpen(false)}
@@ -527,10 +547,14 @@ const Settings = (props) => {
             value={disablePassword}
             onChange={(e) => setDisablePassword(e.target.value)}
             placeholder={t('settings.enterPasswordConfirm')}
-            className="w-full rounded-md border p-2 mt-4"
+            className="mt-4 w-full rounded-md border p-2"
           />
           <Group align="right" mt="md">
-            <Button variant="outline" color="gray" onClick={() => setIsDisableModalOpen(false)}>
+            <Button
+              variant="outline"
+              color="gray"
+              onClick={() => setIsDisableModalOpen(false)}
+            >
               {t('settings.cancel')}
             </Button>
             <Button color="orange" onClick={handleDisableAccount}>
@@ -538,33 +562,35 @@ const Settings = (props) => {
             </Button>
           </Group>
         </div>
-      </Modal> 
-      
+      </Modal>
+
       <Modal
         opened={isForgetModalOpen}
         onClose={() => setIsForgetModalOpen(false)}
         title={t('settings.confirmAccountDeletion')}
       >
         <div>
-          <Text>
-            {t('settings.removeDataWarning')}
-          </Text>
+          <Text>{t('settings.removeDataWarning')}</Text>
           <TextInput
             type="password"
             value={forgetPassword}
             onChange={(e) => setForgetPassword(e.target.value)}
             placeholder={t('settings.enterPasswordConfirm')}
-            className="w-full rounded-md border p-2 mt-4"
+            className="mt-4 w-full rounded-md border p-2"
           />
           <Textarea
             value={forgetReason}
             onChange={(e) => setForgetReason(e.target.value)}
             placeholder={t('settings.optionalReason')}
-            className="w-full rounded-md border p-2 mt-4"
+            className="mt-4 w-full rounded-md border p-2"
             minRows={3}
           />
           <Group align="right" mt="md">
-            <Button variant="outline" color="gray" onClick={() => setIsForgetModalOpen(false)}>
+            <Button
+              variant="outline"
+              color="gray"
+              onClick={() => setIsForgetModalOpen(false)}
+            >
               {t('settings.cancel')}
             </Button>
             <Button color="red" onClick={handleForgetAccount}>
@@ -572,7 +598,7 @@ const Settings = (props) => {
             </Button>
           </Group>
         </div>
-      </Modal> 
+      </Modal>
     </MainArea>
   );
 };

@@ -1,30 +1,33 @@
-import { useEffect, useState } from 'react';
+import { Button, Table as MantineTable, Text, Title } from '@mantine/core';
 import { RichTextEditor } from '@mantine/tiptap';
+import { Highlight } from '@tiptap/extension-highlight';
+import { Link } from '@tiptap/extension-link';
+import { Subscript } from '@tiptap/extension-subscript';
+import { Superscript } from '@tiptap/extension-superscript';
+import { Table } from '@tiptap/extension-table';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
 import { useEditor } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
-import { Underline } from '@tiptap/extension-underline';
-import { Link } from '@tiptap/extension-link';
-import { Superscript } from '@tiptap/extension-superscript';
-import { Subscript } from '@tiptap/extension-subscript';
-import { Highlight } from '@tiptap/extension-highlight';
-import { TextAlign } from '@tiptap/extension-text-align';
-import { Markdown } from 'tiptap-markdown';
-import { Table } from '@tiptap/extension-table';
-import { TableRow } from '@tiptap/extension-table-row';
-import { TableHeader } from '@tiptap/extension-table-header';
-import { TableCell } from '@tiptap/extension-table-cell';
-import { Button, Table as MantineTable, Text, Title } from '@mantine/core';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import MainArea from '@/components/MainArea';
-import { GameCard } from '@/components/game/GameCard';
 import { useTranslation } from 'next-i18next';
+import { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import { Markdown } from 'tiptap-markdown';
+
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
 
 const Admin = (props) => {
   const { t } = useTranslation('admin');
   const [postHTML, setPostHTML] = useState(''); // Add this line to define postHTML state
-  const [markdownContent, setMarkdownContent] = useState(t('blog.initialContent'));
+  const [markdownContent, setMarkdownContent] = useState(
+    t('blog.initialContent'),
+  );
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -34,7 +37,7 @@ const Admin = (props) => {
       Subscript,
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Markdown,  // Include Markdown extension
+      Markdown, // Include Markdown extension
       Table.configure({
         resizable: true,
       }),
@@ -46,7 +49,9 @@ const Admin = (props) => {
     onUpdate: ({ editor }) => {
       // Ensure editor is defined before accessing storage
       if (editor) {
-        setMarkdownContent(editor.storage.markdown.getMarkdown().replace(/\n\n/g, '\n'));
+        setMarkdownContent(
+          editor.storage.markdown.getMarkdown().replace(/\n\n/g, '\n'),
+        );
       }
     },
   });
@@ -141,7 +146,7 @@ const Admin = (props) => {
             borderRadius: '6px',
             backgroundColor: '#0f141a',
           }}
-        ></div>
+        />
       </GameCard>
 
       <GameCard title={t('blog.markdownContent')} mt="md">
@@ -153,13 +158,28 @@ const Admin = (props) => {
             h3: ({ node, ...props }) => <Title order={3} {...props} />,
             h4: ({ node, ...props }) => <Title order={4} {...props} />,
             p: ({ node, ...props }) => (
-              <Text component="p" fw="normal" size="lg" mb="xl">{props.children}</Text>
+              <Text component="p" fw="normal" size="lg" mb="xl">
+                {props.children}
+              </Text>
             ),
             table: ({ node, ...props }) => (
-              <MantineTable striped highlightOnHover withRowBorders withColumnBorders {...props} />
+              <MantineTable
+                striped
+                highlightOnHover
+                withRowBorders
+                withColumnBorders
+                {...props}
+              />
             ),
             th: ({ node, ...props }) => (
-              <MantineTable.Th style={{ fontWeight: 'bold', textAlign: 'left', padding: '0.5em' }} {...props} />
+              <MantineTable.Th
+                style={{
+                  fontWeight: 'bold',
+                  textAlign: 'left',
+                  padding: '0.5em',
+                }}
+                {...props}
+              />
             ),
             td: ({ node, ...props }) => (
               <MantineTable.Td style={{ padding: '0.5em' }} {...props} />

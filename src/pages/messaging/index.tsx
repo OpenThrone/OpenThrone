@@ -1,22 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
-
 import { Button, Space, Switch } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
+import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import MainArea from '@/components/MainArea';
-import { GameCard } from '@/components/game/GameCard';
+import ChatMessageList from '@/components/ChatMessageList';
+import ChatRoomList from '@/components/ChatRoomList';
 import ChatMessageListThemed from '@/components/game/ChatMessageListThemed';
 import ChatRoomListThemed from '@/components/game/ChatRoomListThemed';
 import styles from '@/components/game/ChatThemed.module.css';
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
 import NewMessageModal from '@/components/NewMessageModal';
 import { useUser } from '@/context/users';
 import useSocket from '@/hooks/useSocket';
 import { logError, logInfo } from '@/utils/logger';
-import ChatRoomList from '@/components/ChatRoomList';
-import ChatMessageList from '@/components/ChatMessageList';
-import { useTranslation } from 'next-i18next';
 
 // Define a type for message structure used in frontend state
 interface FrontendMessage {
@@ -74,14 +73,13 @@ interface FrontendRoom {
   isAdmin: boolean;
   participants: {
     id: number;
-    role: "ADMIN" | "MEMBER";
+    role: 'ADMIN' | 'MEMBER';
     canWrite: boolean;
     display_name: string;
     avatar: string | null;
     is_online: boolean;
   }[];
 }
-
 
 const MessageList = (props) => {
   const [rooms, setRooms] = useState<FrontendRoom[]>([]);
@@ -103,11 +101,12 @@ const MessageList = (props) => {
       setRooms(data);
 
       // Auto-select room based on URL param or first room *only if no room is currently selected*
-      if (selectedRoomId === null) { // Check if a room isn't already selected
+      if (selectedRoomId === null) {
+        // Check if a room isn't already selected
         let roomToSelect: number | null = null;
         const paramRoomId = roomIdParam ? Number(roomIdParam) : null;
 
-        if (paramRoomId && data.some(room => room.id === paramRoomId)) {
+        if (paramRoomId && data.some((room) => room.id === paramRoomId)) {
           // Select room from URL parameter if valid
           roomToSelect = paramRoomId;
         } else if (data.length > 0) {
@@ -117,12 +116,11 @@ const MessageList = (props) => {
 
         // If we found a room to auto-select, update state
         if (roomToSelect !== null) {
-           logInfo(`Auto-selecting room ${roomToSelect}`);
-           setSelectedRoomId(roomToSelect);
-           markRoomAsRead(roomToSelect);
+          logInfo(`Auto-selecting room ${roomToSelect}`);
+          setSelectedRoomId(roomToSelect);
+          markRoomAsRead(roomToSelect);
         }
       }
-
     } catch (error) {
       logError(t('errorFetchingRooms'), error);
     }
@@ -143,7 +141,9 @@ const MessageList = (props) => {
           setMessages(data);
 
           if (router.query.roomId !== selectedRoomId.toString()) {
-            router.push(`/messaging?roomId=${selectedRoomId}`, undefined, { shallow: true });
+            router.push(`/messaging?roomId=${selectedRoomId}`, undefined, {
+              shallow: true,
+            });
           }
         } catch (error) {
           logError(t('errorFetchingMessages'), error);
@@ -158,10 +158,13 @@ const MessageList = (props) => {
     fetchMessages();
   }, [selectedRoomId, router, t]);
 
-  const handleRoomSelect = useCallback((roomId: number) => {
-    setSelectedRoomId(roomId);
-    markRoomAsRead(roomId);
-  }, [markRoomAsRead]);
+  const handleRoomSelect = useCallback(
+    (roomId: number) => {
+      setSelectedRoomId(roomId);
+      markRoomAsRead(roomId);
+    },
+    [markRoomAsRead],
+  );
 
   return (
     <>
@@ -203,7 +206,10 @@ const MessageListComponent = ({
 }) => {
   const router = useRouter();
   const { t } = useTranslation('messaging');
-  const selectedRoom = useMemo(() => rooms.find(room => room.id === selectedRoomId) || null, [rooms, selectedRoomId]);
+  const selectedRoom = useMemo(
+    () => rooms.find((room) => room.id === selectedRoomId) || null,
+    [rooms, selectedRoomId],
+  );
   const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
   const [useThemedChat, setUseThemedChat] = useLocalStorage({
     key: 'ot-chat-themed',
@@ -218,19 +224,28 @@ const MessageListComponent = ({
     if (!composeToUserId) return null;
     const rawName = router.query.composeToName;
     const rawAvatar = router.query.composeToAvatar;
-    const label = String(Array.isArray(rawName) ? rawName[0] : rawName || '').trim();
-    const image = String(Array.isArray(rawAvatar) ? rawAvatar[0] : rawAvatar || '').trim();
+    const label = String(
+      Array.isArray(rawName) ? rawName[0] : rawName || '',
+    ).trim();
+    const image = String(
+      Array.isArray(rawAvatar) ? rawAvatar[0] : rawAvatar || '',
+    ).trim();
     return {
       id: composeToUserId,
       label: label || t('user', { id: composeToUserId }),
       image: image || null,
     };
-  }, [composeToUserId, router.query.composeToAvatar, router.query.composeToName, t]);
+  }, [
+    composeToUserId,
+    router.query.composeToAvatar,
+    router.query.composeToName,
+    t,
+  ]);
 
   useEffect(() => {
     if (!composeToUserId) return;
     setIsNewMessageModalOpen(true);
-    router.replace("/messaging", undefined, { shallow: true });
+    router.replace('/messaging', undefined, { shallow: true });
   }, [composeToUserId, router]);
 
   const handleNewMessage = (newRoomId?: number) => {
@@ -238,9 +253,9 @@ const MessageListComponent = ({
       setSelectedRoomId(newRoomId);
     }
     fetch('/api/messages')
-      .then(res => res.json())
-      .then(data => setRooms(data))
-      .catch(err => logError(t('errorRefetchingRooms'), err));
+      .then((res) => res.json())
+      .then((data) => setRooms(data))
+      .catch((err) => logError(t('errorRefetchingRooms'), err));
   };
 
   return (
@@ -248,21 +263,28 @@ const MessageListComponent = ({
       <div className="p-4">
         <GameCard
           title={t('newMessage')}
-          action={(
+          action={
             <Switch
               checked={useThemedChat}
-              onChange={(event) => setUseThemedChat(event.currentTarget.checked)}
+              onChange={(event) =>
+                setUseThemedChat(event.currentTarget.checked)
+              }
               label={t('themedChat')}
               size="sm"
             />
-          )}
+          }
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-sm text-gray-300">{t('startConversation')}</div>
+              <div className="text-sm text-gray-300">
+                {t('startConversation')}
+              </div>
               <div className="text-xs text-gray-400">{t('toggleThemed')}</div>
             </div>
-            <Button color="yellow" onClick={() => setIsNewMessageModalOpen(true)}>
+            <Button
+              color="yellow"
+              onClick={() => setIsNewMessageModalOpen(true)}
+            >
               {t('compose')}
             </Button>
           </div>
@@ -295,7 +317,10 @@ const MessageListComponent = ({
               selectedRoomId={selectedRoomId}
             />
           </GameCard>
-          <GameCard title={selectedRoom?.name || t('selectRoom')} className="w-3/4">
+          <GameCard
+            title={selectedRoom?.name || t('selectRoom')}
+            className="w-3/4"
+          >
             <ChatMessageList
               selectedRoomId={selectedRoomId}
               messages={messages}
@@ -330,7 +355,8 @@ const RealtimeMessageHandler = ({
   setRooms: React.Dispatch<React.SetStateAction<FrontendRoom[]>>;
   fetchRooms: () => Promise<void>; // Type fetchRooms prop
 }) => {
-  const { addEventListener, removeEventListener, socket, isConnected } = useSocket(userId);
+  const { addEventListener, removeEventListener, socket, isConnected } =
+    useSocket(userId);
   const { t } = useTranslation('messaging');
   const currentRoomRef = useRef<number | null>(null);
 
@@ -354,41 +380,56 @@ const RealtimeMessageHandler = ({
 
     // --- Define Event Handlers ---
     const handleReceiveMessage = (messageData: FrontendMessage) => {
-      logInfo(`[User ${userId}] handleReceiveMessage CALLED. Msg ID: ${messageData.id}, Msg Room: ${messageData.roomId}, Selected Room: ${selectedRoomId}`);
+      logInfo(
+        `[User ${userId}] handleReceiveMessage CALLED. Msg ID: ${messageData.id}, Msg Room: ${messageData.roomId}, Selected Room: ${selectedRoomId}`,
+      );
       if (messageData.roomId === selectedRoomId) {
         setMessages((prev) => {
-          const optimisticIndex = prev.findIndex(msg => msg.isOptimistic && msg.tempId === messageData.tempId);
+          const optimisticIndex = prev.findIndex(
+            (msg) => msg.isOptimistic && msg.tempId === messageData.tempId,
+          );
           if (optimisticIndex > -1) {
             const newState = [...prev];
             newState[optimisticIndex] = { ...messageData, isOptimistic: false };
             return newState;
-          } else if (!prev.some(msg => msg.id === messageData.id)) {
+          }
+          if (!prev.some((msg) => msg.id === messageData.id)) {
             return [...prev, { ...messageData, isOptimistic: false }];
           }
           return prev;
         });
       }
-      setRooms(prevRooms => {
+      setRooms((prevRooms) => {
         let roomUpdated = false;
-        const updatedRooms = prevRooms.map(room => {
+        const updatedRooms = prevRooms.map((room) => {
           if (room.id === messageData.roomId) {
             roomUpdated = true;
             return {
               ...room,
-              lastMessage: messageData.content.substring(0, 50) + (messageData.content.length > 50 ? '...' : ''),
+              lastMessage:
+                messageData.content.substring(0, 50) +
+                (messageData.content.length > 50 ? '...' : ''),
               lastMessageTime: messageData.sentAt,
-              lastMessageSender: messageData.sender?.display_name || t('unknown'),
+              lastMessageSender:
+                messageData.sender?.display_name || t('unknown'),
               updatedAt: messageData.sentAt,
-              unreadCount: (messageData.senderId !== userId && messageData.roomId !== selectedRoomId) ? (room.unreadCount || 0) + 1 : room.unreadCount,
+              unreadCount:
+                messageData.senderId !== userId &&
+                messageData.roomId !== selectedRoomId
+                  ? (room.unreadCount || 0) + 1
+                  : room.unreadCount,
             };
           }
           return room;
         });
         if (!roomUpdated) {
-           fetchRooms(); // Trigger full refresh if room wasn't found (edge case)
-           return prevRooms;
+          fetchRooms(); // Trigger full refresh if room wasn't found (edge case)
+          return prevRooms;
         }
-        return updatedRooms.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        return updatedRooms.sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        );
       });
     };
 
@@ -397,21 +438,29 @@ const RealtimeMessageHandler = ({
       const roomId = Number(notificationData?.chatRoomId);
       if (!roomId) return;
 
-      setRooms(prevRooms => {
+      setRooms((prevRooms) => {
         let roomUpdated = false;
-        const updatedRooms = prevRooms.map(room => {
+        const updatedRooms = prevRooms.map((room) => {
           if (room.id === roomId) {
             roomUpdated = true;
             const content = String(notificationData?.content || '');
-            const timestamp = String(notificationData?.timestamp || new Date().toISOString());
+            const timestamp = String(
+              notificationData?.timestamp || new Date().toISOString(),
+            );
             const unreadCount =
-              roomId !== selectedRoomId ? (room.unreadCount || 0) + 1 : room.unreadCount;
+              roomId !== selectedRoomId
+                ? (room.unreadCount || 0) + 1
+                : room.unreadCount;
 
             return {
               ...room,
               lastMessage: content,
               lastMessageTime: timestamp,
-              lastMessageSender: String(notificationData?.senderName || room.lastMessageSender || t('unknown')),
+              lastMessageSender: String(
+                notificationData?.senderName ||
+                  room.lastMessageSender ||
+                  t('unknown'),
+              ),
               updatedAt: timestamp,
               unreadCount,
             };
@@ -423,68 +472,112 @@ const RealtimeMessageHandler = ({
           fetchRooms();
           return prevRooms;
         }
-        return updatedRooms.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        return updatedRooms.sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        );
       });
     };
 
-    const handleReactionAdded = (data: { messageId: number; userId: number; reaction: string; userDisplayName: string }) => {
+    const handleReactionAdded = (data: {
+      messageId: number;
+      userId: number;
+      reaction: string;
+      userDisplayName: string;
+    }) => {
       logInfo('Received reactionAdded:', data);
       setMessages((prevMessages) =>
         prevMessages.map((msg) => {
           if (msg.id === data.messageId) {
-            const reactionExists = msg.reactions?.some(r => r.userId === data.userId && r.reaction === data.reaction);
+            const reactionExists = msg.reactions?.some(
+              (r) => r.userId === data.userId && r.reaction === data.reaction,
+            );
             if (!reactionExists) {
-              const newReaction = { userId: data.userId, reaction: data.reaction, userDisplayName: data.userDisplayName };
-              return { ...msg, reactions: [...(msg.reactions || []), newReaction] };
+              const newReaction = {
+                userId: data.userId,
+                reaction: data.reaction,
+                userDisplayName: data.userDisplayName,
+              };
+              return {
+                ...msg,
+                reactions: [...(msg.reactions || []), newReaction],
+              };
             }
           }
           return msg;
-        })
+        }),
       );
     };
 
-    const handleReactionRemoved = (data: { messageId: number; userId: number; reaction: string }) => {
-       logInfo('Received reactionRemoved:', data);
-       setMessages((prevMessages) =>
-         prevMessages.map((msg) => {
-           if (msg.id === data.messageId) {
-             const updatedReactions = (msg.reactions || []).filter(r => !(r.userId === data.userId && r.reaction === data.reaction));
-             return { ...msg, reactions: updatedReactions };
-           }
-           return msg;
-         })
-       );
+    const handleReactionRemoved = (data: {
+      messageId: number;
+      userId: number;
+      reaction: string;
+    }) => {
+      logInfo('Received reactionRemoved:', data);
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) => {
+          if (msg.id === data.messageId) {
+            const updatedReactions = (msg.reactions || []).filter(
+              (r) =>
+                !(r.userId === data.userId && r.reaction === data.reaction),
+            );
+            return { ...msg, reactions: updatedReactions };
+          }
+          return msg;
+        }),
+      );
     };
 
-    const handleMessagesRead = (data: { roomId: number; updates: { messageId: number; userId: number; readAt: string }[] }) => {
+    const handleMessagesRead = (data: {
+      roomId: number;
+      updates: { messageId: number; userId: number; readAt: string }[];
+    }) => {
       logInfo('Received messagesRead:', data);
       if (data.roomId === selectedRoomId) {
         setMessages((prevMessages) =>
           prevMessages.map((msg) => {
-            const readUpdate = data.updates.find(update => update.messageId === msg.id);
+            const readUpdate = data.updates.find(
+              (update) => update.messageId === msg.id,
+            );
             if (readUpdate) {
-              const readerExists = msg.readBy?.some(r => r.userId === readUpdate.userId);
+              const readerExists = msg.readBy?.some(
+                (r) => r.userId === readUpdate.userId,
+              );
               if (!readerExists) {
-                 const updatedReadBy = [...(msg.readBy || [])];
-                 updatedReadBy.push({ userId: readUpdate.userId, readAt: readUpdate.readAt, userDisplayName: t('reader') /* Placeholder */ });
-                 return { ...msg, readBy: updatedReadBy };
+                const updatedReadBy = [...(msg.readBy || [])];
+                updatedReadBy.push({
+                  userId: readUpdate.userId,
+                  readAt: readUpdate.readAt,
+                  userDisplayName: t('reader') /* Placeholder */,
+                });
+                return { ...msg, readBy: updatedReadBy };
               }
             }
             return msg;
-          })
+          }),
         );
       }
-       setRooms(prevRooms => prevRooms.map(room => {
-           if (room.id === data.roomId) {
-                const currentUserRead = data.updates.some(u => u.userId === userId);
-                return { ...room, unreadCount: currentUserRead ? 0 : room.unreadCount };
-           }
-           return room;
-       }));
+      setRooms((prevRooms) =>
+        prevRooms.map((room) => {
+          if (room.id === data.roomId) {
+            const currentUserRead = data.updates.some(
+              (u) => u.userId === userId,
+            );
+            return {
+              ...room,
+              unreadCount: currentUserRead ? 0 : room.unreadCount,
+            };
+          }
+          return room;
+        }),
+      );
     };
 
     // --- Setup Listeners ---
-    logInfo(`[User ${userId}] Setting up ALL message listeners for selectedRoomId: ${selectedRoomId}`);
+    logInfo(
+      `[User ${userId}] Setting up ALL message listeners for selectedRoomId: ${selectedRoomId}`,
+    );
     addEventListener('receiveMessage', handleReceiveMessage);
     addEventListener('newMessageNotification', handleNewMessageNotification);
     addEventListener('reactionAdded', handleReactionAdded);
@@ -492,20 +585,27 @@ const RealtimeMessageHandler = ({
     addEventListener('messagesRead', handleMessagesRead);
 
     if (isConnected) {
-       socket.emit('registerUser', { userId });
+      socket.emit('registerUser', { userId });
     }
 
     // --- Cleanup ---
     return () => {
-      logInfo(`[User ${userId}] Cleaning up ALL message listeners for selectedRoomId: ${currentRoomRef.current}`);
+      logInfo(
+        `[User ${userId}] Cleaning up ALL message listeners for selectedRoomId: ${currentRoomRef.current}`,
+      );
       removeEventListener('receiveMessage', handleReceiveMessage);
-      removeEventListener('newMessageNotification', handleNewMessageNotification);
+      removeEventListener(
+        'newMessageNotification',
+        handleNewMessageNotification,
+      );
       removeEventListener('reactionAdded', handleReactionAdded);
       removeEventListener('reactionRemoved', handleReactionRemoved);
       removeEventListener('messagesRead', handleMessagesRead);
 
       if (currentRoomRef.current !== null && socket) {
-        logInfo(`Socket ${socket.id} leaving room-${currentRoomRef.current} on cleanup`);
+        logInfo(
+          `Socket ${socket.id} leaving room-${currentRoomRef.current} on cleanup`,
+        );
         socket.emit('leaveRoom', currentRoomRef.current);
       }
     };

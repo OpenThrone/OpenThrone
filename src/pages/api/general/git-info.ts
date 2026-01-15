@@ -1,5 +1,4 @@
 import { execSync } from 'child_process';
-import { z } from 'zod';
 
 export default function handler(req, res) {
   try {
@@ -7,11 +6,18 @@ export default function handler(req, res) {
     const latestCommit = execSync('git rev-parse HEAD').toString().trim();
 
     // Get the latest commit message
-    const latestCommitMessage = execSync('git log -1 --pretty=format:"%s"').toString().trim();
+    const latestCommitMessage = execSync('git log -1 --pretty=format:"%s"')
+      .toString()
+      .trim();
 
     // Get the number of pending changes
     const modifiedFiles = execSync('git diff --shortstat').toString().trim();
-    const untrackedFilesCount = execSync('git ls-files --others --exclude-standard').toString().split('\n').filter(Boolean).length;
+    const untrackedFilesCount = execSync(
+      'git ls-files --others --exclude-standard',
+    )
+      .toString()
+      .split('\n')
+      .filter(Boolean).length;
 
     // Formulate pending changes message
     const pendingChanges = `${modifiedFiles}, ${untrackedFilesCount} untracked files`;

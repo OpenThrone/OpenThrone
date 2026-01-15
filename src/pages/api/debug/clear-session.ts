@@ -12,7 +12,9 @@ const expireCookie = (name: string) =>
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ status: 'failed', message: 'Method not allowed' });
+    return res
+      .status(405)
+      .json({ status: 'failed', message: 'Method not allowed' });
   }
 
   res.setHeader(

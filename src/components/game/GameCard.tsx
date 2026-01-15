@@ -1,11 +1,15 @@
-import React, { useEffect } from 'react';
-import { Box, Paper, Text, Group, PaperProps, rem, useMantineTheme } from '@mantine/core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import {useUser} from "@/context/users";
-import { first } from 'rxjs';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { PaperProps } from '@mantine/core';
+import { Box, Group, Paper, rem, Text, useMantineTheme } from '@mantine/core';
+import React, { useEffect } from 'react';
 
-const CornerDecor: React.FC<{ rotation: number; color: string }> = ({ rotation, color }) => (
+import { useUser } from '@/context/users';
+
+const CornerDecor: React.FC<{ rotation: number; color: string }> = ({
+  rotation,
+  color,
+}) => (
   <svg
     width="15"
     height="15"
@@ -51,7 +55,9 @@ export const GameCard: React.FC<GameCardProps> = ({
 }) => {
   const theme = useMantineTheme();
   const brand = theme.colors.brand ?? theme.colors.blue;
-  const [accent, setAccent] = React.useState<string>(theme.colors.secondary[5] ?? '#e5c55a');
+  const [accent, setAccent] = React.useState<string>(
+    theme.colors.secondary[5] ?? '#e5c55a',
+  );
   const { user } = useUser();
   const [colorScheme, setColorScheme] = React.useState('ELF');
   const headerAccentByRace: Record<string, string> = {
@@ -62,18 +68,27 @@ export const GameCard: React.FC<GameCardProps> = ({
   };
   useEffect(() => {
     if (!user) return;
-    const storedRace = typeof window !== 'undefined' ? window.localStorage.getItem('userRace') : null;
+    const storedRace =
+      typeof window !== 'undefined'
+        ? window.localStorage.getItem('userRace')
+        : null;
     const nextScheme = storedRace || user?.colorScheme || 'ELF';
     setColorScheme(nextScheme);
     console.log('User color scheme:', nextScheme);
     console.log('Secondary 2:', theme.colors.secondary[2]);
     console.log('Secondary 5:', theme.colors.secondary[5]);
-    setAccent(nextScheme === 'UNDEAD' ? theme.colors.secondary[2] : theme.colors.secondary[5] ?? '#e5c55a');
+    setAccent(
+      nextScheme === 'UNDEAD'
+        ? theme.colors.secondary[2]
+        : (theme.colors.secondary[5] ?? '#e5c55a'),
+    );
     console.log('Accent color set to:', accent);
   }, [user, colorScheme, theme.colors.secondary, accent]);
   const headerAccent = headerAccentByRace[colorScheme] ?? accent;
-  
-  const isIconDefinition = (value: GameCardProps['icon']): value is IconDefinition =>
+
+  const isIconDefinition = (
+    value: GameCardProps['icon'],
+  ): value is IconDefinition =>
     Boolean(value && typeof value === 'object' && 'iconName' in value);
 
   return (
@@ -102,11 +117,14 @@ export const GameCard: React.FC<GameCardProps> = ({
 
       <Paper
         radius="xs"
-        className={['bg-rpg-panel', 'game-card', 'public-rise', className].filter(Boolean).join(' ')}
+        className={['bg-rpg-panel', 'game-card', 'public-rise', className]
+          .filter(Boolean)
+          .join(' ')}
         data-testid="game-card"
         style={{
           border: `1px solid ${goldAccent ? 'rgba(255,255,255,0.08)' : '#2f3e52'}`,
-          boxShadow: '0 15px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)',
+          boxShadow:
+            '0 15px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)',
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
@@ -125,7 +143,9 @@ export const GameCard: React.FC<GameCardProps> = ({
           style={{
             position: 'relative',
             background: `linear-gradient(180deg, rgba(37, 51, 70, 0.85), rgba(15, 21, 29, 0.9)), linear-gradient(90deg, ${headerAccent} 0%, transparent 70%)`,
-            borderBottom: goldAccent ? `2px solid ${accent}` : '1px solid rgba(255,255,255,0.1)',
+            borderBottom: goldAccent
+              ? `2px solid ${accent}`
+              : '1px solid rgba(255,255,255,0.1)',
             borderTop: '1px solid rgba(255,255,255,0.05)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -146,18 +166,25 @@ export const GameCard: React.FC<GameCardProps> = ({
           />
 
           <Group gap="xs">
-            {icon && (
-              isIconDefinition(icon) ? (
+            {icon &&
+              (isIconDefinition(icon) ? (
                 <FontAwesomeIcon
                   icon={icon}
-                  style={{ color: goldAccent ? accent : brand[2], fontSize: '14px' }}
+                  style={{
+                    color: goldAccent ? accent : brand[2],
+                    fontSize: '14px',
+                  }}
                 />
               ) : (
-                <Box style={{ color: goldAccent ? accent : brand[2], fontSize: '14px' }}>
+                <Box
+                  style={{
+                    color: goldAccent ? accent : brand[2],
+                    fontSize: '14px',
+                  }}
+                >
                   {icon}
                 </Box>
-              )
-            )}
+              ))}
             <Text
               style={{
                 fontFamily: 'MedievalSharp, serif',
@@ -185,7 +212,8 @@ export const GameCard: React.FC<GameCardProps> = ({
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',
-            background: 'linear-gradient(180deg, rgba(13,17,23,0.85), rgba(3,6,8,0.95))',
+            background:
+              'linear-gradient(180deg, rgba(13,17,23,0.85), rgba(3,6,8,0.95))',
             overflow: 'hidden',
           }}
         >
@@ -193,7 +221,8 @@ export const GameCard: React.FC<GameCardProps> = ({
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'radial-gradient(circle at top right, rgba(255,255,255,0.06), transparent 55%)',
+              background:
+                'radial-gradient(circle at top right, rgba(255,255,255,0.06), transparent 55%)',
               pointerEvents: 'none',
             }}
           />

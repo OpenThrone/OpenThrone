@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 const plugin = require('tailwindcss/plugin');
+
 const navLinkColor = 'rgb(253, 226, 101)';
 const titleColor = 'rgb(221, 149, 63)';
 
@@ -12,7 +13,7 @@ function generateRaceColors(
   sidebarBg,
   heading,
   bodyBg,
-  footer
+  footer,
 ) {
   return {
     link: {
@@ -54,7 +55,8 @@ module.exports = {
   },
   theme: {
     backgroundImage: {
-      'link-gradient': 'linear-gradient(90deg, rgb(253, 226, 101), rgb(253, 226, 101))',
+      'link-gradient':
+        'linear-gradient(90deg, rgb(253, 226, 101), rgb(253, 226, 101))',
       'orange-gradient': 'linear-gradient(360deg, orange, darkorange)',
     },
     fontSize: {
@@ -95,7 +97,7 @@ module.exports = {
           'rgb(11,32,18)',
           'rgb(11,32,18)',
           'rgb(11,32,18)',
-          'rgb(11,32,18)'
+          'rgb(11,32,18)',
         ),
         goblin: generateRaceColors(
           'rgb(236,155,0)',
@@ -106,7 +108,7 @@ module.exports = {
           '#70301a',
           'rgb(45, 12, 12)',
           'rgb(45, 12, 12)',
-          'rgb(11,32,18)'
+          'rgb(11,32,18)',
         ),
         human: generateRaceColors(
           'rgb(236,155,0)',
@@ -117,7 +119,7 @@ module.exports = {
           'rgb(14, 31, 53)',
           'rgb(26, 55, 93)',
           'rgb(26, 55, 93)',
-          'rgb(11,32,18)'
+          'rgb(11,32,18)',
         ),
         undead: generateRaceColors(
           'rgb(236,155,0)',
@@ -128,7 +130,7 @@ module.exports = {
           'rgb(77, 77, 77)',
           'rgb(33, 33, 33)',
           'rgb(77, 77, 77)',
-          'rgb(11,32,18)'
+          'rgb(11,32,18)',
         ),
         table: {
           odd: '#2c3034',
@@ -158,7 +160,8 @@ module.exports = {
         },
       },
       keyframes: {
-        'pulse-slow': {  // Use quotes for the property name with hyphen
+        'pulse-slow': {
+          // Use quotes for the property name with hyphen
           '0%, 100%': {
             opacity: 1,
             boxShadow: '0 0 10px rgba(234, 179, 8, 0.3)',
@@ -189,19 +192,24 @@ module.exports = {
       };
 
       // Generate offset utilities like .text-shadow-md that only set --ts-offsets
-      const textShadowOffsetUtilities = Object.entries(textShadows).reduce((acc, [key, value]) => {
-        acc[`.text-shadow-${key}`] = {
-          '--ts-offsets': value,
-        };
-        return acc;
-      }, {});
+      const textShadowOffsetUtilities = Object.entries(textShadows).reduce(
+        (acc, [key, value]) => {
+          acc[`.text-shadow-${key}`] = {
+            '--ts-offsets': value,
+          };
+          return acc;
+        },
+        {},
+      );
 
       // Generate color utilities like .text-shadow-color-blue-500 that only set --ts-color
       const textShadowColorUtilities = {};
       function addColorUtilities(obj, prefix = '') {
         for (const [colorName, colorValue] of Object.entries(obj)) {
           if (typeof colorValue === 'string') {
-            textShadowColorUtilities[`.text-shadow-color-${prefix}${colorName}`] = {
+            textShadowColorUtilities[
+              `.text-shadow-color-${prefix}${colorName}`
+            ] = {
               '--ts-color': colorValue,
             };
           } else if (typeof colorValue === 'object') {
@@ -227,7 +235,7 @@ module.exports = {
             textTransform: 'uppercase',
           },
         },
-        ['responsive', 'hover']
+        ['responsive', 'hover'],
       );
 
       // Gradient text utilities

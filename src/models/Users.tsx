@@ -1,35 +1,31 @@
-import md5 from "md5";
-import { getAssetPath } from "@/utils/utilities";
-import {
-  users as PrismaUser,
-  PermissionType,
-  AccountStatus,
-  UserUnit,
-  UserItem,
-  UserStructureUpgrade,
-  UserBattleUpgrade,
-  UserBonusPoints,
-} from "@prisma/client";
-
 import type {
+  AccountStatus,
+  PermissionType,
+  UserBattleUpgrade,
+  UserItem,
+  users as PrismaUser,
+  UserStructureUpgrade,
+  UserUnit,
+} from '@prisma/client';
+import md5 from 'md5';
+
+import { UserEconomyService } from '@/services/UserEconomyService';
+import { UserStatsService } from '@/services/UserStatsService';
+import { UserUnitsService } from '@/services/UserUnitsService';
+import type {
+  BattleUnits,
   BonusPointsItem,
   FortHealth,
   Locales,
   PlayerClass,
-  UnitTotalsType,
-  PlayerStat,
   PlayerRace,
-  UnitType,
-  BattleUnits,
+  PlayerStat,
   PlayerUnit, // Import BattleUnits
-} from "@/types/typings";
-
-import { stringifyObj } from "@/utils/numberFormatting";
-
-import { UserStatsService } from "@/services/UserStatsService";
-import { UserUnitsService } from "@/services/UserUnitsService";
-import { UserEconomyService } from "@/services/UserEconomyService";
-import { DetailedCalculatedStrength } from "@/utils/attackFunctions";
+  UnitTotalsType,
+  UnitType,
+} from '@/types/typings';
+import type { DetailedCalculatedStrength } from '@/utils/attackFunctions';
+import { getAssetPath } from '@/utils/utilities';
 
 /**
  * Safely converts a value to BigInt, handling various input types
@@ -42,7 +38,7 @@ const safeBigInt = (value: any): bigint => {
   }
 
   // If it's already a BigInt, return as-is
-  if (typeof value === "bigint") {
+  if (typeof value === 'bigint') {
     return value;
   }
 
@@ -50,7 +46,7 @@ const safeBigInt = (value: any): bigint => {
   const stringValue = String(value);
 
   // Remove any 'n' suffix if present (from JSON.stringify of BigInt)
-  const cleanValue = stringValue.replace(/n$/, "");
+  const cleanValue = stringValue.replace(/n$/, '');
 
   try {
     return BigInt(cleanValue);
@@ -141,7 +137,9 @@ class UserModel {
   /** Remaining deposits available in the last 24 hours. */
   public depositsAvailable: number;
   /** Countdown until the next deposit is available, or 0 when not applicable. */
-  public nextDepositAvailable: { hours: number; minutes: number; seconds: number } | 0;
+  public nextDepositAvailable:
+    | { hours: number; minutes: number; seconds: number }
+    | 0;
   /** List of structure upgrades and their levels owned by the user. */
   public structure_upgrades: UserStructureUpgrade[];
   /** List of battle upgrades purchased by the user. */
@@ -220,7 +218,8 @@ class UserModel {
     // relation params undefined.
     if (typeof units === 'boolean') {
       const filteredFlag = units as unknown as boolean;
-      const checkStatsFlag = typeof items === 'boolean' ? (items as unknown as boolean) : checkStats;
+      const checkStatsFlag =
+        typeof items === 'boolean' ? (items as unknown as boolean) : checkStats;
       units = undefined as any;
       items = undefined as any;
       structure_upgrades = undefined as any;
@@ -235,11 +234,11 @@ class UserModel {
     if (!safeUserData) {
       // Initialize with default values if no user data is provided
       this.id = 0;
-      this.displayName = "";
-      this.email = "";
-      this.passwordHash = "";
-      this.race = "ELF";
-      this.class = "ASSASSIN";
+      this.displayName = '';
+      this.email = '';
+      this.passwordHash = '';
+      this.race = 'ELF';
+      this.class = 'ASSASSIN';
       this.experience = 0;
       this.gold = BigInt(0);
       this.goldInBank = BigInt(0);
@@ -253,7 +252,7 @@ class UserModel {
       this.units = [];
       this.mercenaries = [];
       this.items = [];
-      this.bio = "";
+      this.bio = '';
       this.colorScheme = null;
       this.is_player = false;
       this.is_online = false;
@@ -265,7 +264,7 @@ class UserModel {
       this.structure_upgrades = [];
       this.battle_upgrades = [];
       this.stats = [];
-      this.locale = "en-US";
+      this.locale = 'en-US';
       this.avatar = null;
       this.permissions = [];
       this.attacks_made = 0;
@@ -274,7 +273,7 @@ class UserModel {
       this.defends_won = 0;
       this.beenAttacked = false;
       this.detectedSpy = false;
-      this.currentStatus = "ACTIVE";
+      this.currentStatus = 'ACTIVE';
       this.offense = 0;
       this.defense = 0;
       this.spy = 0;
@@ -285,11 +284,11 @@ class UserModel {
     }
 
     this.id = safeUserData.id ?? 0;
-    this.displayName = safeUserData.display_name ?? "";
-    this.email = "";
-    this.passwordHash = "";
-    this.race = safeUserData.race as PlayerRace ?? "ELF";
-    this.class = safeUserData.class as PlayerClass ?? "ASSASSIN";
+    this.displayName = safeUserData.display_name ?? '';
+    this.email = '';
+    this.passwordHash = '';
+    this.race = (safeUserData.race as PlayerRace) ?? 'ELF';
+    this.class = (safeUserData.class as PlayerClass) ?? 'ASSASSIN';
     this.experience = safeUserData.experience ?? 0;
     this.gold = safeBigInt(safeUserData.gold);
     this.goldInBank = safeBigInt(safeUserData.gold_in_bank);
@@ -305,10 +304,10 @@ class UserModel {
     const rawUnits = Array.isArray(units)
       ? units
       : Array.isArray((safeUserData as any).UserUnit)
-      ? (safeUserData as any).UserUnit
-      : Array.isArray((safeUserData as any).units)
-      ? (safeUserData as any).units
-      : [];
+        ? (safeUserData as any).UserUnit
+        : Array.isArray((safeUserData as any).units)
+          ? (safeUserData as any).units
+          : [];
 
     // Separate regular units and mercenaries
     this.units = rawUnits
@@ -330,12 +329,12 @@ class UserModel {
     const rawItems = Array.isArray(items)
       ? items
       : Array.isArray((safeUserData as any).UserItem)
-      ? (safeUserData as any).UserItem
-      : Array.isArray((safeUserData as any).items)
-      ? (safeUserData as any).items
-      : [];
+        ? (safeUserData as any).UserItem
+        : Array.isArray((safeUserData as any).items)
+          ? (safeUserData as any).items
+          : [];
     this.items = rawItems;
-    this.bio = safeUserData.bio ?? "";
+    this.bio = safeUserData.bio ?? '';
     this.colorScheme = safeUserData.colorScheme ?? null;
     this.is_player = false;
     this.is_online = false;
@@ -346,86 +345,83 @@ class UserModel {
     const rawStructureUpgrades = Array.isArray(structure_upgrades)
       ? structure_upgrades
       : Array.isArray((safeUserData as any).UserStructureUpgrade)
-      ? (safeUserData as any).UserStructureUpgrade
-      : Array.isArray((safeUserData as any).structure_upgrades)
-      ? (safeUserData as any).structure_upgrades
-      : [];
+        ? (safeUserData as any).UserStructureUpgrade
+        : Array.isArray((safeUserData as any).structure_upgrades)
+          ? (safeUserData as any).structure_upgrades
+          : [];
 
     const rawBattleUpgrades = Array.isArray(battle_upgrades)
       ? battle_upgrades
       : Array.isArray((safeUserData as any).UserBattleUpgrade)
-      ? (safeUserData as any).UserBattleUpgrade
-      : Array.isArray((safeUserData as any).battle_upgrades)
-      ? (safeUserData as any).battle_upgrades
-      : [];
+        ? (safeUserData as any).UserBattleUpgrade
+        : Array.isArray((safeUserData as any).battle_upgrades)
+          ? (safeUserData as any).battle_upgrades
+          : [];
 
     const rawBonusPoints = Array.isArray(bonus_points)
       ? bonus_points
       : Array.isArray((safeUserData as any).UserBonusPoints)
-      ? (safeUserData as any).UserBonusPoints
-      : Array.isArray((safeUserData as any).bonus_points)
-      ? (safeUserData as any).bonus_points
-      : [];
+        ? (safeUserData as any).UserBonusPoints
+        : Array.isArray((safeUserData as any).bonus_points)
+          ? (safeUserData as any).bonus_points
+          : [];
 
     const rawStats = Array.isArray(stats)
       ? stats
       : Array.isArray((safeUserData as any).stats)
-      ? (safeUserData as any).stats
-      : [];
+        ? (safeUserData as any).stats
+        : [];
 
-    this.bonus_points = rawBonusPoints as any;
+    this.bonus_points = rawBonusPoints;
     this.structure_upgrades = rawStructureUpgrades as UserStructureUpgrade[];
     this.battle_upgrades = rawBattleUpgrades as UserBattleUpgrade[];
     this.stats = rawStats as PlayerStat[];
-    this.locale = safeUserData.locale as Locales ?? "en-US";
+    this.locale = (safeUserData.locale as Locales) ?? 'en-US';
     this.avatar = safeUserData.avatar ?? null;
     const rawPermissions = Array.isArray(permissions)
       ? permissions
       : Array.isArray((safeUserData as any).permissions)
-      ? (safeUserData as any).permissions
-      : [];
+        ? (safeUserData as any).permissions
+        : [];
     this.permissions = rawPermissions as { type: PermissionType }[];
     this.attacks_made = this.normalizeCount(
-      (safeUserData as any).totalAttacks ??
-        (safeUserData as any).attacks_made,
+      (safeUserData as any).totalAttacks ?? (safeUserData as any).attacks_made,
     );
     this.attacks_defended = this.normalizeCount(
       (safeUserData as any).totalDefends ??
         (safeUserData as any).attacks_defended,
     );
     this.attacks_won = this.normalizeCount(
-      (safeUserData as any).won_attacks ??
-        (safeUserData as any).attacks_won,
+      (safeUserData as any).won_attacks ?? (safeUserData as any).attacks_won,
     );
     this.defends_won = this.normalizeCount(
-      (safeUserData as any).won_defends ??
-        (safeUserData as any).defends_won,
+      (safeUserData as any).won_defends ?? (safeUserData as any).defends_won,
     );
     this.beenAttacked = !!(safeUserData as any).beenAttacked;
     this.detectedSpy = !!(safeUserData as any).detectedSpy;
-    this.currentStatus = (safeUserData as any).currentStatus || "ACTIVE";
+    this.currentStatus = (safeUserData as any).currentStatus || 'ACTIVE';
     this.offense = 0;
     this.defense = 0;
     this.spy = 0;
     this.sentry = 0;
     this.achievements =
-      typeof safeUserData.achievements === "string"
+      typeof safeUserData.achievements === 'string'
         ? JSON.parse(safeUserData.achievements)
         : (safeUserData.achievements ?? {});
     this.twoFactorSecret = safeUserData.twoFactorSecret || null;
     if ((safeUserData as any).currentEra) {
-      this.currentEra = (safeUserData as any).currentEra as any;
+      this.currentEra = (safeUserData as any).currentEra;
     }
 
     if (!filtered) {
       this.email = safeUserData.email;
-      this.passwordHash = safeUserData.password_hash ?? "";
+      this.passwordHash = safeUserData.password_hash ?? '';
     }
 
-    if (this.avatar && this.avatar !== "SHIELD") {
+    if (this.avatar && this.avatar !== 'SHIELD') {
       // keep provided
     } else {
-      this.avatar = getAssetPath("shields", "150x150", this.race);
+      this.avatar = getAssetPath('shields', '150x150', this.race);
     }
 
     if (this.last_active) {
@@ -449,8 +445,8 @@ class UserModel {
     });
 
     this.unitsService = new UserUnitsService({
-      units: rawUnits.filter(u => !u.isMercenary), // Pass filtered raw units
-      mercenaries: rawUnits.filter(u => u.isMercenary), // Pass filtered raw mercenaries
+      units: rawUnits.filter((u) => !u.isMercenary), // Pass filtered raw units
+      mercenaries: rawUnits.filter((u) => u.isMercenary), // Pass filtered raw mercenaries
       items: this.items,
       fortLevel: this.fortLevel,
       structure_upgrades: this.structure_upgrades,
@@ -500,9 +496,10 @@ class UserModel {
 
   getArmyStat(type: UnitType): number {
     const stats = this.statsService.calculateArmyStat(type);
-    if (type === "OFFENSE") {
+    if (type === 'OFFENSE') {
       return stats.totalStats.MeleeAtkPower + stats.totalStats.RangedAtkPower;
-    } else if (type === "DEFENSE") {
+    }
+    if (type === 'DEFENSE') {
       return stats.totalStats.MeleeDefPower + stats.totalStats.RangedDefPower;
     }
     return 0;
@@ -515,7 +512,7 @@ class UserModel {
 
   // Return type intentionally 'any' to avoid exporting internal service types from this facade
   getArmyStatBreakdown(type: UnitType): any {
-    return {}; //This method is deprecated
+    return {}; // This method is deprecated
   }
 
   // Bonuses / points
@@ -610,7 +607,7 @@ class UserModel {
     assass: { perUser: number; perMission: number; perDay: number };
     stats: {
       level: number;
-      all: (typeof import("@/constants").SpyUpgrades)[number] | undefined;
+      all: (typeof import('@/constants').SpyUpgrades)[number] | undefined;
     };
   } {
     return this.unitsService.getSpyLimits();
@@ -649,27 +646,27 @@ class UserModel {
   // Structure-level helpers (small, read-only helpers left on model)
   get armoryLevel(): number {
     return (
-      (this.structure_upgrades || []).find((s) => s.type === "ARMORY")?.level ??
+      (this.structure_upgrades || []).find((s) => s.type === 'ARMORY')?.level ??
       1
     );
   }
 
   get offensiveLevel(): number {
     return (
-      (this.structure_upgrades || []).find((s) => s.type === "OFFENSE")
+      (this.structure_upgrades || []).find((s) => s.type === 'OFFENSE')
         ?.level ?? 1
     );
   }
 
   get spyLevel(): number {
     return (
-      (this.structure_upgrades || []).find((s) => s.type === "SPY")?.level ?? 1
+      (this.structure_upgrades || []).find((s) => s.type === 'SPY')?.level ?? 1
     );
   }
 
   get sentryLevel(): number {
     return (
-      (this.structure_upgrades || []).find((s) => s.type === "SENTRY")?.level ??
+      (this.structure_upgrades || []).find((s) => s.type === 'SENTRY')?.level ??
       1
     );
   }
@@ -680,10 +677,10 @@ class UserModel {
 
   // Simple boolean check encapsulated for compatibility
   canAttack(level: number): boolean {
-    if (process.env.NEXT_PUBLIC_ENABLE_ATTACKING === "false") return false;
+    if (process.env.NEXT_PUBLIC_ENABLE_ATTACKING === 'false') return false;
     const userLevel = this.level;
     const levelRange = parseInt(
-      process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || "5",
+      process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5',
       10,
     );
     return userLevel >= level - levelRange && userLevel <= level + levelRange;
@@ -691,7 +688,7 @@ class UserModel {
 
   get attackRange(): { min: number; max: number } {
     const levelRange = parseInt(
-      process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || "5",
+      process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5',
       10,
     );
     const currentLevel = this.level;
@@ -702,8 +699,8 @@ class UserModel {
   }
 
   statistics(
-    type: UnitType | "SPY" | "SENTRY",
-    outcome: "WON" | "LOST",
+    type: UnitType | 'SPY' | 'SENTRY',
+    outcome: 'WON' | 'LOST',
   ): number {
     const category = String(type).toUpperCase();
     const result = String(outcome).toUpperCase();
@@ -713,19 +710,19 @@ class UserModel {
     const defenseWon = this.normalizeCount(this.defends_won);
     const defenseTotal = this.normalizeCount(this.attacks_defended);
 
-    if (category === "OFFENSE") {
-      return result === "WON"
+    if (category === 'OFFENSE') {
+      return result === 'WON'
         ? offenseWon
         : Math.max(0, offenseTotal - offenseWon);
     }
 
-    if (category === "DEFENSE") {
-      return result === "WON"
+    if (category === 'DEFENSE') {
+      return result === 'WON'
         ? defenseWon
         : Math.max(0, defenseTotal - defenseWon);
     }
 
-    const spyLikeKey = category === "SPY" ? "spy" : "sentry";
+    const spyLikeKey = category === 'SPY' ? 'spy' : 'sentry';
     const wins = this.normalizeCount(
       (this as any)[`${spyLikeKey}_won`] ??
         (this as any)[`${spyLikeKey}Victories`],
@@ -739,14 +736,14 @@ class UserModel {
             (this as any)[`${spyLikeKey}Lost`],
         );
 
-    return result === "WON" ? wins : Math.max(0, total - wins);
+    return result === 'WON' ? wins : Math.max(0, total - wins);
   }
 
   private normalizeCount(value: any): number {
-    if (typeof value === "number" && Number.isFinite(value)) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
       return value;
     }
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
       const parsed = Number(value);
       if (Number.isFinite(parsed)) {
         return parsed;
@@ -756,7 +753,9 @@ class UserModel {
   }
 
   // Preserve existing mutating helper for structure upgrades (kept on model for API compatibility)
-  increaseStatLevel(type: UserStructureUpgrade["type"]): UserStructureUpgrade[] {
+  increaseStatLevel(
+    type: UserStructureUpgrade['type'],
+  ): UserStructureUpgrade[] {
     let found = false;
     const newUpgrades = (this.structure_upgrades || []).map((stat) => {
       if (stat.type === type) {
@@ -766,13 +765,13 @@ class UserModel {
       return stat;
     });
     if (!found) {
-      newUpgrades.push({ id: 0, userId: this.id, type: type, level: 1 });
+      newUpgrades.push({ id: 0, userId: this.id, type, level: 1 });
     }
     this.structure_upgrades = newUpgrades;
 
     // Get raw units for service reconstruction
     const allUnits = [...this.units, ...this.mercenaries];
-    const rawUnits = allUnits.map(bu => ({
+    const rawUnits = allUnits.map((bu) => ({
       id: bu.id || 0,
       userId: bu.userId || this.id,
       type: bu.type as any,
@@ -798,8 +797,8 @@ class UserModel {
     });
 
     this.unitsService = new UserUnitsService({
-      units: rawUnits.filter(u => !u.isMercenary),
-      mercenaries: rawUnits.filter(u => u.isMercenary),
+      units: rawUnits.filter((u) => !u.isMercenary),
+      mercenaries: rawUnits.filter((u) => u.isMercenary),
       items: this.items,
       fortLevel: this.fortLevel,
       structure_upgrades: this.structure_upgrades,
@@ -836,7 +835,7 @@ class UserModel {
 // Convert BattleUnits to PlayerUnit format for economy service
 const convertToPlayerUnit = (units: UserUnit[]): PlayerUnit[] => {
   return Array.isArray(units)
-    ? units.map(unit => ({
+    ? units.map((unit) => ({
         id: (unit as any).id ?? 0,
         userId: (unit as any).userId ?? 0,
         type: unit.type as UnitType,

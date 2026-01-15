@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'next-i18next';
-
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Group,
+  SimpleGrid,
+  Stack,
+  Text,
+  ThemeIcon,
+  Tooltip,
+} from '@mantine/core';
+import { useTranslation } from 'next-i18next';
+import { useEffect, useState } from 'react';
 import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
-import { Group, SimpleGrid, Stack, Text, ThemeIcon, Tooltip } from '@mantine/core';
-
-import { getSafeLocale } from '@/utils/i18n';
 
 import BattleUpgradesSection from '@/components/battle-upgrade';
 import { GameCard } from '@/components/game/GameCard';
@@ -17,7 +21,12 @@ import { useUser } from '@/context/users';
 import toLocale from '@/utils/numberFormatting';
 
 const useItems = (user) => {
-  const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
+  const [items, setItems] = useState({
+    OFFENSE: [],
+    DEFENSE: [],
+    SPY: [],
+    SENTRY: [],
+  });
 
   useEffect(() => {
     if (user) {
@@ -49,9 +58,7 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
     bonus: item.bonus,
     ownedItems:
       user?.battle_upgrades.find(
-        (i) =>
-          i.type === item.type &&
-          i.level === item.level 
+        (i) => i.type === item.type && i.level === item.level,
       )?.quantity || 0,
     cost: toLocale(
       item.cost - (user?.priceBonus / 100) * item.cost,
@@ -63,7 +70,9 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
     SiegeUpgradeLevel: item.SiegeUpgradeLevel,
     unitsCovered: item.unitsCovered,
     minUnitLevel: item.minUnitLevel,
-    SiegeUpgrade: OffensiveUpgrades.find((f) => f.level === item.SiegeUpgradeLevel)?.name,
+    SiegeUpgrade: OffensiveUpgrades.find(
+      (f) => f.level === item.SiegeUpgradeLevel,
+    )?.name,
   };
 };
 
@@ -73,14 +82,16 @@ const Upgrades = (props) => {
   const items = useItems(user);
 
   // Calculate total offensive and defensive units (level 2+)
-  const offensiveUnits = user?.units
-    .filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)
-    .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
-    
-  const defensiveUnits = user?.units
-    .filter((unit) => unit.type === 'DEFENSE' && unit.level > 1)
-    .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
-  
+  const offensiveUnits =
+    user?.units
+      .filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)
+      .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
+
+  const defensiveUnits =
+    user?.units
+      .filter((unit) => unit.type === 'DEFENSE' && unit.level > 1)
+      .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
+
   return (
     <MainArea title={t('upgrades.title')}>
       <Stack gap="md">
@@ -116,7 +127,13 @@ const Upgrades = (props) => {
                   {stat.icon}
                 </ThemeIcon>
                 <div>
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    c="dimmed"
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.4em' }}
+                  >
                     {stat.label}
                   </Text>
                   <Text size="sm" fw={700} c="gray.2">
@@ -142,7 +159,13 @@ const Upgrades = (props) => {
                   <RpgAwesomeIcon icon="crossed-swords" size="lg" />
                 </ThemeIcon>
                 <div>
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    c="dimmed"
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.4em' }}
+                  >
                     {t('upgrades.offensiveUnits')}
                   </Text>
                   <Text size="sm" fw={700} c="gray.2">
@@ -165,10 +188,19 @@ const Upgrades = (props) => {
                 }}
               >
                 <ThemeIcon c="white" variant="light">
-                  <FontAwesomeIcon icon={faShield} style={{ width: '18px', height: '18px' }} />
+                  <FontAwesomeIcon
+                    icon={faShield}
+                    style={{ width: '18px', height: '18px' }}
+                  />
                 </ThemeIcon>
                 <div>
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    c="dimmed"
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.4em' }}
+                  >
                     {t('upgrades.defensiveUnits')}
                   </Text>
                   <Text size="sm" fw={700} c="gray.2">
@@ -180,16 +212,35 @@ const Upgrades = (props) => {
           </SimpleGrid>
         </GameCard>
 
-        <GameCard title={t('upgrades.battleUpgradeInformation')} goldAccent={false}>
+        <GameCard
+          title={t('upgrades.battleUpgradeInformation')}
+          goldAccent={false}
+        >
           <Text size="sm" c="gray.3" lh={1.7}>
             {t('upgrades.battleUpgradeInfo')}
           </Text>
         </GameCard>
 
-        <BattleUpgradesSection heading={t('upgrades.offense')} type="OFFENSE" items={items.OFFENSE} />
-        <BattleUpgradesSection heading={t('upgrades.defense')} type="DEFENSE" items={items.DEFENSE} />
-        <BattleUpgradesSection heading={t('upgrades.spy')} type="SPY" items={items.SPY} />
-        <BattleUpgradesSection heading={t('upgrades.sentry')} type="SENTRY" items={items.SENTRY} />
+        <BattleUpgradesSection
+          heading={t('upgrades.offense')}
+          type="OFFENSE"
+          items={items.OFFENSE}
+        />
+        <BattleUpgradesSection
+          heading={t('upgrades.defense')}
+          type="DEFENSE"
+          items={items.DEFENSE}
+        />
+        <BattleUpgradesSection
+          heading={t('upgrades.spy')}
+          type="SPY"
+          items={items.SPY}
+        />
+        <BattleUpgradesSection
+          heading={t('upgrades.sentry')}
+          type="SENTRY"
+          items={items.SENTRY}
+        />
       </Stack>
     </MainArea>
   );

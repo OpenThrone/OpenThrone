@@ -1,9 +1,10 @@
+import router from 'next/router';
 import React, { useState } from 'react';
 
-import { useLayout } from '../context/LayoutContext';
-import router from 'next/router';
 import { useUser } from '@/context/users';
 import useSocket from '@/hooks/useSocket';
+
+import { useLayout } from '../context/LayoutContext';
 
 /**
  * Props for the attack confirmation Modal component.
@@ -23,7 +24,7 @@ interface ModalProps {
  */
 const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
   const [turns, setTurns] = useState(1);
-  const {user, forceUpdate} = useUser();
+  const { user, forceUpdate } = useUser();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const { socket } = useSocket(user?.id);
@@ -58,7 +59,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
       // No need to set error here as it's cleared at the start
       forceUpdate();
       if (socket) {
-        socket.emit('notifyAttack', { defenderId: profileID, battleId: results.attack_log });
+        socket.emit('notifyAttack', {
+          defenderId: profileID,
+          battleId: results.attack_log,
+        });
       }
       // Close the modal immediately after successful attack submission
       toggleModal();
@@ -138,7 +142,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
                   }`}
                   disabled={isLoading} // Disable button when loading
                 >
-                  {isLoading ? 'Submitting...' : 'Submit'} {/* Change text when loading */}
+                  {isLoading ? 'Submitting...' : 'Submit'}{' '}
+                  {/* Change text when loading */}
                 </button>
               </div>
             </form>

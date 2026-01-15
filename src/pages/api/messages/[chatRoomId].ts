@@ -1,10 +1,10 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { MessagingService } from '@/services/Messaging.service';
-import { getSocketIO } from '@/lib/socket';
-import { withAuth } from '@/middleware/auth';
-import { logError } from '@/utils/logger';
-import { Session } from 'next-auth'; // Import Session type
+import type { NextApiRequest, NextApiResponse } from 'next';
+import type { Session } from 'next-auth'; // Import Session type
 import { z } from 'zod';
+
+import { withAuth } from '@/middleware/auth';
+import { MessagingService } from '@/services/Messaging.service';
+import { logError } from '@/utils/logger';
 
 // Define a custom request type that includes the session injected by withAuth
 interface AuthenticatedRequest extends NextApiRequest {
@@ -15,13 +15,14 @@ const ChatRoomIdSchema = z.object({
   chatRoomId: z.coerce.number().int(),
 });
 
-async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use AuthenticatedRequest
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+  // Use AuthenticatedRequest
   const validatedQuery = ChatRoomIdSchema.safeParse(req.query);
   if (!validatedQuery.success) {
     return res.status(400).json({ message: 'Invalid chatRoomId' });
   }
   const { chatRoomId } = validatedQuery.data;
-  const session = req.session; // Now correctly typed
+  const { session } = req; // Now correctly typed
 
   if (!session) {
     // This should ideally not happen if withAuth is working correctly
@@ -37,7 +38,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) { // Use
       const messages = await MessagingService.getRoomMessages(userId, roomId);
       res.status(200).json(messages);
     } catch (error) {
-      logError("GET /api/messages/[chatRoomId] Error:", error);
+      logError('GET /api/messages/[chatRoomId] Error:', error);
       if (error.message.includes('Forbidden')) {
         return res.status(403).json({ message: error.message });
       }

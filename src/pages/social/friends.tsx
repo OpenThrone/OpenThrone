@@ -1,12 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'next-i18next';
-
+import {
+  Avatar,
+  Badge,
+  Group,
+  Indicator,
+  Loader,
+  Table,
+  Text,
+} from '@mantine/core';
 import Link from 'next/link';
-import { Table, Loader, Group, Avatar, Badge, Text, Indicator } from '@mantine/core';
-import MainArea from '@/components/MainArea';
-import UserModel from '@/models/Users';
+import { useTranslation } from 'next-i18next';
+import React, { useEffect, useState } from 'react';
+
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
+import MainArea from '@/components/MainArea';
+import UserModel from '@/models/Users';
 
 const Friends = (props) => {
   const { t } = useTranslation('social');
@@ -15,8 +23,8 @@ const Friends = (props) => {
 
   useEffect(() => {
     fetch('/api/social/listAll?type=FRIEND')
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         setFriends(data);
         setLoading(false);
       });
@@ -32,35 +40,38 @@ const Friends = (props) => {
     );
   }
 
-  const rows = friends.map(friend => {
+  const rows = friends.map((friend) => {
     const player = new UserModel(friend.friend, true, false);
     return (
       <Table.Tr key={player.id} style={{ background: '#0f141a' }}>
         <Table.Td style={{ borderColor: '#1f2b3b' }}>
-          <Group
-            gap={'sm'}
-            className='text-justify'
-          >
-            <Indicator color={player.is_online ? 'teal' : 'red'} >
+          <Group gap="sm" className="text-justify">
+            <Indicator color={player.is_online ? 'teal' : 'red'}>
               <Avatar src={player?.avatar} size={40} radius={40} />
             </Indicator>
             <div>
-              <Text fz='md' fw={500}>
+              <Text fz="md" fw={500}>
                 <Link
                   href={`/userprofile/${player.id}`}
-                  className='text-blue-500 hover:text-blue-700 font-bold'
+                  className="font-bold text-blue-500 hover:text-blue-700"
                 >
                   {player.displayName}
                 </Link>
-                {player.is_player && <Badge color='blue' ml={5}>{t('friends.you')}</Badge>}
+                {player.is_player && (
+                  <Badge color="blue" ml={5}>
+                    {t('friends.you')}
+                  </Badge>
+                )}
               </Text>
-              <Text fz='xs' c='dimmed'>
+              <Text fz="xs" c="dimmed">
                 {player.race} {player.class}
               </Text>
             </div>
           </Group>
         </Table.Td>
-        <Table.Td style={{ borderColor: '#1f2b3b' }}>{friend.acceptanceDate}</Table.Td>
+        <Table.Td style={{ borderColor: '#1f2b3b' }}>
+          {friend.acceptanceDate}
+        </Table.Td>
       </Table.Tr>
     );
   });

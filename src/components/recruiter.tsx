@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { Box, Text } from '@mantine/core';
 import { Turnstile } from '@marsidev/react-turnstile';
 import Image from 'next/image';
-import { Box, Text } from '@mantine/core';
+import React, { useEffect } from 'react';
+
 import { GameCard } from '@/components/game/GameCard';
-import { getLevelFromXP, getAssetPath } from '@/utils/utilities';
+import { getAssetPath, getLevelFromXP } from '@/utils/utilities';
 
 const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
   useEffect(() => {
@@ -18,15 +19,23 @@ const Recruiter = ({ user, showCaptcha, onSuccess, status }) => {
 
   return (
     <GameCard title="Recruitment Target">
-      <Box className="mb-5 text-center justify-center items-center content-center">
+      <Box className="mb-5 place-content-center items-center text-center">
         <Text>
-          {user.display_name} is a level {getLevelFromXP(user.experience)} {user.race} {user.class}.
+          {user.display_name} is a level {getLevelFromXP(user.experience)}{' '}
+          {user.race} {user.class}.
         </Text>
         <center>
-          <Image src={getAssetPath('shields', '150x150', user.race)} width={'150'} height={'150'} alt="" />
+          <Image
+            src={getAssetPath('shields', '150x150', user.race)}
+            width="150"
+            height="150"
+            alt=""
+          />
         </center>
         {status && (
-          <Text className="mt-2 text-lg font-semibold text-green-400">{status}</Text>
+          <Text className="mt-2 text-lg font-semibold text-green-400">
+            {status}
+          </Text>
         )}
       </Box>
       <Box className="flex items-center justify-center">

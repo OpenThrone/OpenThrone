@@ -1,18 +1,19 @@
-import { logError } from "@/utils/logger";
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { AuthService } from '@/services';
-import { RegisterSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
+
+import { RegisterSchema } from '@/lib/validation';
+import { AuthService } from '@/services';
+import { logError } from '@/utils/logger';
 
 export default async function handle(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method === 'POST') {
     await handlePOST(res, req);
   } else {
     throw new Error(
-      `The HTTP ${req.method} method is not supported at this route.`
+      `The HTTP ${req.method} method is not supported at this route.`,
     );
   }
 }
@@ -27,15 +28,21 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
       process.env.DISABLE_TURNSTILE === 'true' ||
       process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true' ||
       process.env.NEXT_PUBLIC_USE_CAPTCHA === 'false';
-    const turnstileConfigured = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SECRET);
+    const turnstileConfigured = Boolean(
+      process.env.NEXT_PUBLIC_TURNSTILE_SECRET,
+    );
     const enforceTurnstile =
       !disableTurnstile &&
       (process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' || turnstileConfigured);
 
     if (enforceTurnstile) {
       if (!process.env.NEXT_PUBLIC_TURNSTILE_SECRET) {
-        logError('Registration captcha enabled but NEXT_PUBLIC_TURNSTILE_SECRET is not set');
-        return res.status(500).json({ error: 'Captcha is enabled but not configured on the server' });
+        logError(
+          'Registration captcha enabled but NEXT_PUBLIC_TURNSTILE_SECRET is not set',
+        );
+        return res.status(500).json({
+          error: 'Captcha is enabled but not configured on the server',
+        });
       }
 
       const { turnstileToken } = req.body as { turnstileToken?: string };
@@ -43,11 +50,14 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
         return res.status(400).json({ error: 'Captcha token required' });
       }
 
-      const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: turnstileToken }),
-      });
+      const captchaRes = await fetch(
+        `${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: turnstileToken }),
+        },
+      );
       const captchaData = await captchaRes.json();
       if (!captchaData.success) {
         return res.status(400).json({ error: 'Captcha verification failed' });
@@ -72,11 +82,12 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
       return res.json(user);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: 'Invalid input', details: error.format() });
+        return res
+          .status(400)
+          .json({ error: 'Invalid input', details: error.format() });
       }
       throw error;
     }
-
   } catch (error) {
     logError('Error in handlePOST:', error);
     return res.status(500).json({ error: 'Internal Server Error' });

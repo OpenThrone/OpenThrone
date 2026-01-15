@@ -22,11 +22,11 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           className="flex w-full items-center justify-between text-lg font-medium text-black hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
           aria-expanded={isOpen}
         >
-          <span className="text-shadow-color-white text-yellow-500">{title}</span>
+          <span className="text-yellow-500 text-shadow-color-white">
+            {title}
+          </span>
           <span
-            className={`transform transition-transform ${
-              isOpen ? 'rotate-180' : ''
-            }`}
+            className={`transition-transform${isOpen ? 'rotate-180' : ''}`}
             aria-hidden="true"
           >
             &#9662;

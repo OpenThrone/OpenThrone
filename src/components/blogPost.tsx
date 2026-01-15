@@ -1,43 +1,44 @@
 /* eslint-disable @next/next/no-img-element */
-import React, { useMemo, useCallback } from "react";
+import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import {
-  Space,
-  Title,
-  Text,
-  Badge,
-  Group,
   ActionIcon,
-  Switch,
+  Badge,
   Divider,
+  Group,
+  Space,
   Stack,
-} from "@mantine/core";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize from "rehype-sanitize";
-import { faScroll } from "@fortawesome/free-solid-svg-icons";
-import { GameCard } from "./game/GameCard";
+  Switch,
+  Text,
+  Title,
+} from '@mantine/core';
+import React, { useCallback, useMemo } from 'react';
+import Markdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
+import remarkGfm from 'remark-gfm';
+
+import { GameCard } from './game/GameCard';
 
 /** @param {string|number|Date} ts */
 const formatDate = (ts: any) => {
   try {
     const d = new Date(ts);
     return new Intl.DateTimeFormat(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "numeric",
-      minute: "2-digit",
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit',
     }).format(d);
   } catch {
-    return "";
+    return '';
   }
 };
 
 /** @param {string} markdown */
-const estimateReadTime = (markdown = "") => {
+const estimateReadTime = (markdown = '') => {
   const words = markdown
-    .replace(/<[^>]*>/g, "")
+    .replace(/<[^>]*>/g, '')
     .split(/\s+/)
     .filter(Boolean).length;
   const minutes = Math.max(1, Math.ceil(words / 200));
@@ -52,12 +53,12 @@ type BlogPostProps = {
 
 const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
   const readTime = useMemo(
-    () => estimateReadTime(post?.content ?? ""),
+    () => estimateReadTime(post?.content ?? ''),
     [post?.content],
   );
 
   const onShare = useCallback(async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
+    const url = typeof window !== 'undefined' ? window.location.href : '';
     try {
       if (navigator.share) {
         await navigator.share({ title: post.title, text: post.title, url });
@@ -76,7 +77,7 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
           title={post.title}
           icon={faScroll}
           goldAccent
-          action={(
+          action={
             <div className="flex flex-col items-end gap-1">
               <Text size="xs" c="dimmed" className="opacity-70">
                 {formatDate(post.created_timestamp)} • {readTime}
@@ -91,8 +92,8 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
                     onLabel="READ"
                     offLabel="NEW"
                     styles={{
-                      track: { border: "1px solid rgba(255,255,255,0.12)" },
-                      thumb: { boxShadow: "none" },
+                      track: { border: '1px solid rgba(255,255,255,0.12)' },
+                      thumb: { boxShadow: 'none' },
                     }}
                   />
                 )}
@@ -104,7 +105,7 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
                   aria-label="Share post"
                 >
                   <svg
-                    className="w-4 h-4"
+                    className="size-4"
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -127,14 +128,14 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
                 </ActionIcon>
               </Group>
             </div>
-          )}
+          }
         >
           <Stack gap="md">
             {post.image && (
               <img
                 src={post.image}
-                alt={post.title ?? "hero image"}
-                className="w-full h-64 object-cover rounded-lg"
+                alt={post.title ?? 'hero image'}
+                className="h-64 w-full rounded-lg object-cover"
               />
             )}
 
@@ -156,14 +157,14 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
                   a: ({ ...props }) => (
                     <a
                       {...props}
-                      className="text-yellow-300 hover:underline underline-offset-4"
+                      className="text-yellow-300 underline-offset-4 hover:underline"
                     />
                   ),
                   img: ({ ...props }) => (
                     <img
                       {...props}
-                      className="w-full h-auto rounded-lg"
-                      alt={props.alt ?? ""}
+                      className="h-auto w-full rounded-lg"
+                      alt={props.alt ?? ''}
                     />
                   ),
                   blockquote: ({ ...props }) => (
@@ -184,7 +185,7 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
                     key={t}
                     variant="light"
                     radius="sm"
-                    className="bg-[#0f1720] text-yellow-200 border border-white/10"
+                    className="border border-white/10 bg-[#0f1720] text-yellow-200"
                   >
                     {t}
                   </Badge>

@@ -1,10 +1,17 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import React, { useEffect, useState } from 'react';
+import { faKey, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
+import {
+  Alert,
+  Box,
+  Button,
+  Group,
+  SimpleGrid,
+  Space,
+  Text,
+} from '@mantine/core';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
-
-import { Alert, Box, Button, Group, SimpleGrid, Space, Text } from '@mantine/core';
-import { faKey, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
+import React, { useEffect, useState } from 'react';
 
 import Form from '@/components/form';
 import { GameCard } from '@/components/game/GameCard';
@@ -20,7 +27,7 @@ const Login = (props) => {
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
-    if (setMeta && meta && meta.title !== "OpenThrone - Login") {
+    if (setMeta && meta && meta.title !== 'OpenThrone - Login') {
       setMeta({
         title: 'OpenThrone - Login',
         description: 'Meta Description',
@@ -44,12 +51,22 @@ const Login = (props) => {
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
           <div className="public-rise">
-            <GameCard title={t('login.returnToWarRoom')} icon={faKey} goldAccent={false}>
+            <GameCard
+              title={t('login.returnToWarRoom')}
+              icon={faKey}
+              goldAccent={false}
+            >
               <Text size="sm" c="gray.3" lh={1.7}>
                 {t('login.kingdomWaiting')}
               </Text>
               <Box mt="md">
-                <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
+                <Text
+                  size="xs"
+                  c="dimmed"
+                  tt="uppercase"
+                  fw={700}
+                  style={{ letterSpacing: '0.3em' }}
+                >
                   {t('login.beforeYouEnter')}
                 </Text>
                 <Text size="sm" c="gray.4" mt="xs">
@@ -57,10 +74,21 @@ const Login = (props) => {
                 </Text>
               </Box>
               <Group mt="md">
-                <Button component={Link} href="/account/register" size="sm" color="yellow">
+                <Button
+                  component={Link}
+                  href="/account/register"
+                  size="sm"
+                  color="yellow"
+                >
                   {t('login.createCommander')}
                 </Button>
-                <Button component={Link} href="/community/news" size="sm" variant="outline" color="gray">
+                <Button
+                  component={Link}
+                  href="/community/news"
+                  size="sm"
+                  variant="outline"
+                  color="gray"
+                >
                   {t('login.latestNews')}
                 </Button>
               </Group>
@@ -84,17 +112,31 @@ const Login = (props) => {
                   <Space h="md" />
                 </>
               )}
-              {(process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true') && (
+              {process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && (
                 <>
-                  <Alert variant="filled" color="red" title={t('login.loginDisabled')}>
+                  <Alert
+                    variant="filled"
+                    color="red"
+                    title={t('login.loginDisabled')}
+                  >
                     {t('login.checkDiscordNews')}
                   </Alert>
                   <Space h="md" />
                 </>
               )}
-              <Form type="login" setErrorMessage={setErrorMessage} layout="bare" />
+              <Form
+                type="login"
+                setErrorMessage={setErrorMessage}
+                layout="bare"
+              />
               <Group mt="md" justify="center">
-                <Button component={Link} href="/account/password-reset" variant="subtle" size="xs" color="gray">
+                <Button
+                  component={Link}
+                  href="/account/password-reset"
+                  variant="subtle"
+                  size="xs"
+                  color="gray"
+                >
                   {t('login.recoverLostAccount')}
                 </Button>
               </Group>

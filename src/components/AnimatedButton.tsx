@@ -1,16 +1,16 @@
-import { ActionIcon, Group, Tooltip, useMantineTheme } from "@mantine/core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon, Group, Tooltip, useMantineTheme } from '@mantine/core';
 
 type ButtonColor =
-  | "blue"
-  | "red"
-  | "green"
-  | "yellow"
-  | "teal"
-  | "violet"
-  | "gray"
-  | "dark";
+  | 'blue'
+  | 'red'
+  | 'green'
+  | 'yellow'
+  | 'teal'
+  | 'violet'
+  | 'gray'
+  | 'dark';
 
 interface AnimatedButtonItem {
   icon: IconDefinition;
@@ -24,19 +24,19 @@ interface AnimatedButtonItem {
 
 interface AnimatedButtonsProps {
   buttons: AnimatedButtonItem[];
-  orientation?: "horizontal" | "vertical";
+  orientation?: 'horizontal' | 'vertical';
   spacing?: number | string;
 }
 
 export default function AnimatedButtons({
   buttons,
-  orientation = "horizontal",
-  spacing = "md",
+  orientation = 'horizontal',
+  spacing = 'md',
 }: AnimatedButtonsProps) {
   const theme = useMantineTheme();
   // Use explicit prop shaping for Mantine Group
   const groupProps: any =
-    orientation === "vertical" ? { direction: "column", spacing } : { spacing };
+    orientation === 'vertical' ? { direction: 'column', spacing } : { spacing };
 
   return (
     <Group {...groupProps}>
@@ -46,12 +46,12 @@ export default function AnimatedButtons({
             icon,
             label,
             onClick,
-            color = "blue",
+            color = 'blue',
             tooltip,
             ariaLabel,
             disabled = false,
           },
-          idx
+          idx,
         ) => (
           <Tooltip
             key={label + idx}
@@ -64,18 +64,18 @@ export default function AnimatedButtons({
               type="button"
               className={`
                 group relative flex items-center justify-center
-                bg-transparent
-                px-3 py-2 rounded-md
+                rounded-md
+                bg-transparent px-3 py-2
                 transition
                 hover:bg-gray-800
                 focus:outline-none
-                disabled:opacity-50 disabled:cursor-not-allowed
+                disabled:cursor-not-allowed disabled:opacity-50
               `}
               onClick={onClick}
               aria-label={ariaLabel || label}
               disabled={disabled}
               style={{
-                border: "1px solid transparent",
+                border: '1px solid transparent',
                 width: 48,
                 height: 48,
               }}
@@ -95,27 +95,28 @@ export default function AnimatedButtons({
                   pointer-events-none
                   absolute left-1/2 top-0
                   -translate-x-1/2 -translate-y-full
-                  px-2 py-1 rounded
-                  bg-gray-900 bg-opacity-90
+                  rounded bg-gray-900 bg-opacity-90
+                  px-2 py-1
                   text-sm
-                  ${ (theme as any).colorScheme === "dark"
-                    ? "text-blue-200"
-                    : "text-blue-700"
+                  ${
+                    (theme as any).colorScheme === 'dark'
+                      ? 'text-blue-200'
+                      : 'text-blue-700'
                   }
-                  font-medium
-                  opacity-0
-                  group-hover:opacity-100
-                  transition-opacity duration-200
                   z-20
-                  shadow-lg
                   whitespace-nowrap
+                  font-medium
+                  opacity-0 shadow-lg
+                  transition-opacity
+                  duration-200
+                  group-hover:opacity-100
                 `}
               >
                 {label}
               </span>
             </button>
           </Tooltip>
-        )
+        ),
       )}
     </Group>
   );

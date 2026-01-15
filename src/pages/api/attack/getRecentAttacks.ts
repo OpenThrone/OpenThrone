@@ -1,15 +1,15 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { withAuth } from '@/middleware/auth';
-import { logError } from "@/utils/logger";
 import { BattleService } from '@/services';
-import { z } from 'zod';
+import { logError } from '@/utils/logger';
 
 const getRecentAttacks = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }

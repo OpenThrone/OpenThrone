@@ -1,16 +1,22 @@
-import { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api';
-import { withAuth } from '@/middleware/auth';
-import { withdraw } from '@/services/Bank.service';
-import { stringifyObj } from '@/utils/numberFormatting';
-import { parseBigInt } from '@/utils/jsonHelpers';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
+import { withAuth } from '@/middleware/auth';
+import { withdraw } from '@/services/Bank.service';
+import type { AuthenticatedRequest } from '@/types/api';
+import { stringifyObj } from '@/utils/numberFormatting';
+
 const WithdrawSchema = z.object({
-  withdrawAmount: z.string().or(z.number()).transform(val => BigInt(val)),
+  withdrawAmount: z
+    .string()
+    .or(z.number())
+    .transform((val) => BigInt(val)),
 });
 
-const withdrawHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
+const withdrawHandler = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
@@ -20,7 +26,7 @@ const withdrawHandler = async (req: AuthenticatedRequest, res: NextApiResponse) 
     return res.status(400).json({ error: 'Invalid withdraw amount' });
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -33,7 +39,10 @@ const withdrawHandler = async (req: AuthenticatedRequest, res: NextApiResponse) 
 
   try {
     const updatedUser = await withdraw(Number(session.user.id), withdrawAmount);
-    return res.status(200).json({ message: 'Withdraw successful', data: stringifyObj(updatedUser) });
+    return res.status(200).json({
+      message: 'Withdraw successful',
+      data: stringifyObj(updatedUser),
+    });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

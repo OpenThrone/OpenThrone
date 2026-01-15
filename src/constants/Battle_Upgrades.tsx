@@ -17,7 +17,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
   {
     type: 'OFFENSE',
     name: 'War Elephant',
-    SiegeUpgradeLevel: 6, //16
+    SiegeUpgradeLevel: 6, // 16
     level: 2,
     cost: 5000000,
     unitsCovered: 1,
@@ -43,7 +43,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
   {
     type: 'DEFENSE',
     name: 'Catapult',
-    SiegeUpgradeLevel: 6, //16
+    SiegeUpgradeLevel: 6, // 16
     level: 2,
     cost: 5000000,
     unitsCovered: 1,
@@ -69,7 +69,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
   {
     type: 'SPY',
     name: 'Informant',
-    SiegeUpgradeLevel: 6, //16
+    SiegeUpgradeLevel: 6, // 16
     level: 2,
     cost: 5000000,
     unitsCovered: 1,
@@ -95,7 +95,7 @@ export const BattleUpgrades: UnitUpgradeType[] = [
   {
     type: 'SENTRY',
     name: 'Watch Tower',
-    SiegeUpgradeLevel: 6, //16
+    SiegeUpgradeLevel: 6, // 16
     level: 2,
     cost: 5000000,
     unitsCovered: 5,
@@ -104,5 +104,5 @@ export const BattleUpgrades: UnitUpgradeType[] = [
     MeleeDefPower: 0,
     RangedAtkPower: 0,
     RangedDefPower: 0,
-  }
+  },
 ];

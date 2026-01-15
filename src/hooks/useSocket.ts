@@ -1,6 +1,8 @@
-import { logInfo } from '@/utils/logger';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
+
+import { logInfo } from '@/utils/logger';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
 
@@ -56,7 +58,10 @@ function reconcileSocketConnection() {
 
   if (!desiredUserId) return;
   if (uniqueUserIds.length > 1) {
-    console.error('Multiple different userIds requested for socket connection:', uniqueUserIds);
+    console.error(
+      'Multiple different userIds requested for socket connection:',
+      uniqueUserIds,
+    );
   }
 
   if (sharedSocket && sharedUserId === desiredUserId) {
@@ -116,12 +121,15 @@ export default function useSocket(userId: number | null) {
   }, []); // Empty dependency array means this function reference never changes
 
   // Memoize removeEventListener
-  const removeEventListener = useCallback((event: string, listener: Function) => {
-    if (eventListeners[event]) {
-      eventListeners[event].delete(listener);
-      logInfo(`Removed listener for event: ${event}`);
-    }
-  }, []); // Empty dependency array
+  const removeEventListener = useCallback(
+    (event: string, listener: Function) => {
+      if (eventListeners[event]) {
+        eventListeners[event].delete(listener);
+        logInfo(`Removed listener for event: ${event}`);
+      }
+    },
+    [],
+  ); // Empty dependency array
 
   useEffect(() => {
     const clientId = clientIdRef.current;
@@ -135,8 +143,10 @@ export default function useSocket(userId: number | null) {
   }, [userId]);
 
   useEffect(() => {
-    const handleConnectionUpdate = (connected: boolean) => setIsConnected(connected);
-    const handleSocketUpdate = (nextSocket: Socket | null) => setSocket(nextSocket);
+    const handleConnectionUpdate = (connected: boolean) =>
+      setIsConnected(connected);
+    const handleSocketUpdate = (nextSocket: Socket | null) =>
+      setSocket(nextSocket);
     connectionSubscribers.add(handleConnectionUpdate);
     socketSubscribers.add(handleSocketUpdate);
     return () => {
@@ -146,20 +156,31 @@ export default function useSocket(userId: number | null) {
   }, []);
 
   // --- Emitter Functions ---
-  const emitAddReaction = (data: { messageId: number; reaction: string; roomId: number }) => {
+  const emitAddReaction = (data: {
+    messageId: number;
+    reaction: string;
+    roomId: number;
+  }) => {
     sharedSocket?.emit('addReaction', data);
   };
 
-  const emitRemoveReaction = (data: { messageId: number; reaction: string; roomId: number }) => {
+  const emitRemoveReaction = (data: {
+    messageId: number;
+    reaction: string;
+    roomId: number;
+  }) => {
     sharedSocket?.emit('removeReaction', data);
   };
 
-  const emitMarkAsRead = (data: { messageId: number; roomId: number } | { messageIds: number[]; roomId: number }) => {
+  const emitMarkAsRead = (
+    data:
+      | { messageId: number; roomId: number }
+      | { messageIds: number[]; roomId: number },
+  ) => {
     sharedSocket?.emit('markAsRead', data);
   };
 
   // Add other emitters here if needed (e.g., for typing indicators)
-
 
   return {
     socket,

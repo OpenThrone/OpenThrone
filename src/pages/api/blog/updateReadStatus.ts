@@ -1,18 +1,20 @@
-import { BlogService } from '@/services';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { withAuth } from '@/middleware/auth';
 import { z } from 'zod';
+
+import { withAuth } from '@/middleware/auth';
+import { BlogService } from '@/services';
+
 const UpdateReadStatusSchema = z.object({
   postId: z.number().int(),
 });
 
-const updateReadStatus = async(req: NextApiRequest, res: NextApiResponse) => {
-  if(req.method !== 'POST') {
-    res.status(405).json({error: 'Method not allowed'});
+const updateReadStatus = async (req: NextApiRequest, res: NextApiResponse) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
     return;
   }
   // Get the session on the server-side
-  const session =req.session;
+  const { session } = req;
   if (!session) {
     res.status(401).json({ error: 'Not authenticated' });
     return;
@@ -20,7 +22,10 @@ const updateReadStatus = async(req: NextApiRequest, res: NextApiResponse) => {
 
   const validatedBody = UpdateReadStatusSchema.safeParse(req.body);
   if (!validatedBody.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: validatedBody.error.flatten().fieldErrors,
+    });
   }
 
   const { postId } = validatedBody.data;
@@ -40,6 +45,6 @@ const updateReadStatus = async(req: NextApiRequest, res: NextApiResponse) => {
     console.log(error);
     res.status(500).json({ error: 'Internal server error' });
   }
-}
+};
 
 export default withAuth(updateReadStatus);

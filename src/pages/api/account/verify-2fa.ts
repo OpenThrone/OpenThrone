@@ -1,16 +1,21 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import speakeasy from 'speakeasy';
 import { z } from 'zod';
-import { authOptions } from '../auth/[...nextauth]';
+
 import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
+
+import { authOptions } from '../auth/[...nextauth]';
 
 const Verify2faSchema = z.object({
   token: z.string().min(6).max(6),
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

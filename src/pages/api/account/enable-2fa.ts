@@ -1,10 +1,15 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
+
 import { AuthService } from '@/services';
 import { logError } from '@/utils/logger';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+import { authOptions } from '../auth/[...nextauth]';
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

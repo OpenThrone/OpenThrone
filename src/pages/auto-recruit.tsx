@@ -1,17 +1,17 @@
 // src/pages/auto-recruit.tsx
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'next-i18next';
-
 import { Button, Center, Flex, Space, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
 import SessionModal from '@/components/SessionModal';
+import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { UserApiResponse } from '@/types/typings';
-import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
+
 import Recruiter from '../components/recruiter';
-import MainArea from '@/components/MainArea';
 
 /**
  * Page component for Auto Recruiter feature.
@@ -66,49 +66,57 @@ export default function AutoRecruiter(props) {
     alertService.error(t('autoRecruit.sessionInvalid'), false);
   }, [t]);
 
-  const stopRecruiting = useCallback(async (endSession = false) => {
-    if (isStoppingSession) return;
-    setIsStoppingSession(true);
-    setIsPaused(true);
-    setIsHandlingRecruitment(false);
-    setIsFetchingUser(false);
+  const stopRecruiting = useCallback(
+    async (endSession = false) => {
+      if (isStoppingSession) return;
+      setIsStoppingSession(true);
+      setIsPaused(true);
+      setIsHandlingRecruitment(false);
+      setIsFetchingUser(false);
 
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setCountdown(0);
-
-    if (endSession) {
-      setSessionId(null);
-      sessionIdRef.current = null;
-      try {
-        const response = await fetch('/api/recruit/endSession', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ sessionId: sessionIdRef.current }),
-        });
-        const data = await response.json();
-        if (response.ok) {
-          alertService.success(t('autoRecruit.sessionEnded'));
-          forceUpdate();
-        } else {
-          logError('Error ending recruitment session:', data.error);
-        }
-      } catch (error) {
-        logError('Error ending recruitment session:', error);
-        alertService.error(t('autoRecruit.failedToCleanlyEndServerSession'), false);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
-    }
-    setIsStoppingSession(false);
-  }, [isStoppingSession, forceUpdate, t]);
+      setCountdown(0);
+
+      if (endSession) {
+        setSessionId(null);
+        sessionIdRef.current = null;
+        try {
+          const response = await fetch('/api/recruit/endSession', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sessionId: sessionIdRef.current }),
+          });
+          const data = await response.json();
+          if (response.ok) {
+            alertService.success(t('autoRecruit.sessionEnded'));
+            forceUpdate();
+          } else {
+            logError('Error ending recruitment session:', data.error);
+          }
+        } catch (error) {
+          logError('Error ending recruitment session:', error);
+          alertService.error(
+            t('autoRecruit.failedToCleanlyEndServerSession'),
+            false,
+          );
+        }
+      }
+      setIsStoppingSession(false);
+    },
+    [isStoppingSession, forceUpdate, t],
+  );
 
   const fetchRandomUser = useCallback(async () => {
     if (isFetchingUser || isPausedRef.current || !sessionIdRef.current) {
-      if (!sessionIdRef.current) logError('No session ID for fetchRandomUser', sessionIdRef.current);
-      if (isPausedRef.current) console.log('Recruiting is paused. Aborting fetchRandomUser.');
+      if (!sessionIdRef.current)
+        logError('No session ID for fetchRandomUser', sessionIdRef.current);
+      if (isPausedRef.current)
+        console.log('Recruiting is paused. Aborting fetchRandomUser.');
       return;
     }
     setIsFetchingUser(true);
@@ -141,8 +149,14 @@ export default function AutoRecruiter(props) {
         } else {
           setHasEnded(true);
           setIsPaused(true);
-          alertService.error(data.error || t('autoRecruit.errorFetchingNewUser'), false);
-          logError('Error fetching new user:', data.error || 'Unknown API error');
+          alertService.error(
+            data.error || t('autoRecruit.errorFetchingNewUser'),
+            false,
+          );
+          logError(
+            'Error fetching new user:',
+            data.error || 'Unknown API error',
+          );
         }
       }
     } catch (error) {
@@ -187,7 +201,8 @@ export default function AutoRecruiter(props) {
   const handleRecruitment = useCallback(async () => {
     if (isHandlingRecruitment || !user || !sessionIdRef.current) {
       if (!user) logError('handleRecruitment called without user');
-      if (!sessionIdRef.current) logError('handleRecruitment called without session ID');
+      if (!sessionIdRef.current)
+        logError('handleRecruitment called without session ID');
       return;
     }
     setIsHandlingRecruitment(true);
@@ -210,11 +225,15 @@ export default function AutoRecruiter(props) {
         if (viewer) {
           forceUpdate();
         }
-        setTotalLeft(prev => prev > 0 ? prev - 1 : 0);
+        setTotalLeft((prev) => (prev > 0 ? prev - 1 : 0));
 
         if (totalLeft - 1 <= 0) {
           stopRecruiting(true);
-          alertService.success(t('autoRecruit.recruitedSuccessfully', { name: user?.display_name }));
+          alertService.success(
+            t('autoRecruit.recruitedSuccessfully', {
+              name: user?.display_name,
+            }),
+          );
           setTimeout(() => {
             setRecruitStatus(t('autoRecruit.recruiting'));
             setIsCountdown(true);
@@ -228,7 +247,10 @@ export default function AutoRecruiter(props) {
           handleInvalidSession();
         } else {
           logError('Error handling recruitment:', data.error);
-          alertService.error(data.error || t('autoRecruit.errorHandlingRecruitment'), false);
+          alertService.error(
+            data.error || t('autoRecruit.errorHandlingRecruitment'),
+            false,
+          );
         }
       }
     } catch (error) {
@@ -238,7 +260,17 @@ export default function AutoRecruiter(props) {
     } finally {
       setIsHandlingRecruitment(false);
     }
-  }, [isHandlingRecruitment, user, viewer, forceUpdate, totalLeft, startCountdown, handleInvalidSession, stopRecruiting, t]);
+  }, [
+    isHandlingRecruitment,
+    user,
+    viewer,
+    forceUpdate,
+    totalLeft,
+    startCountdown,
+    handleInvalidSession,
+    stopRecruiting,
+    t,
+  ]);
 
   const resumeRecruiting = useCallback(async () => {
     if (isResumingSession || !sessionIdRef.current) {
@@ -274,7 +306,14 @@ export default function AutoRecruiter(props) {
     } finally {
       setIsResumingSession(false);
     }
-  }, [isResumingSession, handleInvalidSession, startCountdown, fetchRandomUser, isFetchingUser, t]);
+  }, [
+    isResumingSession,
+    handleInvalidSession,
+    startCountdown,
+    fetchRandomUser,
+    isFetchingUser,
+    t,
+  ]);
 
   const startRecruiting = useCallback(async () => {
     if (isStartingSession) return;
@@ -314,10 +353,18 @@ export default function AutoRecruiter(props) {
           <GameCard title={t('autoRecruit.sessionControls')} goldAccent={false}>
             <Stack align="center">
               <Text>{t('autoRecruit.clickStart')}</Text>
-              <Button color="yellow" onClick={startRecruiting} loading={isStartingSession}>
+              <Button
+                color="yellow"
+                onClick={startRecruiting}
+                loading={isStartingSession}
+              >
                 {t('autoRecruit.startSession')}
               </Button>
-              <Button variant="default" onClick={() => setSessionModalOpened(true)} disabled={isStartingSession}>
+              <Button
+                variant="default"
+                onClick={() => setSessionModalOpened(true)}
+                disabled={isStartingSession}
+              >
                 {t('autoRecruit.manageSessions')}
               </Button>
             </Stack>
@@ -358,7 +405,11 @@ export default function AutoRecruiter(props) {
           <GameCard title={t('autoRecruit.sessionComplete')} goldAccent={false}>
             <Stack align="center">
               <Text>{t('autoRecruit.sessionEnded')}</Text>
-              <Button color="yellow" onClick={startRecruiting} loading={isStartingSession}>
+              <Button
+                color="yellow"
+                onClick={startRecruiting}
+                loading={isStartingSession}
+              >
                 {t('autoRecruit.startNewSession')}
               </Button>
             </Stack>
@@ -384,15 +435,23 @@ export default function AutoRecruiter(props) {
           <Recruiter
             key={user.id}
             user={user}
-            showCaptcha={process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' ? consecutiveSuccesses < 3 : false}
+            showCaptcha={
+              process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true'
+                ? consecutiveSuccesses < 3
+                : false
+            }
             onSuccess={handleRecruitment}
-            status={recruitStatus === 'success' ? t('autoRecruit.recruitedSuccessfully') : `Recruiting ${user?.display_name}...`}
+            status={
+              recruitStatus === 'success'
+                ? t('autoRecruit.recruitedSuccessfully')
+                : `Recruiting ${user?.display_name}...`
+            }
           />
         )}
       </GameCard>
       <Space h="md" />
       <GameCard title={t('autoRecruit.controls')} goldAccent={false}>
-        <Flex justify={'center'} align={'center'} direction={'column'} gap="md">
+        <Flex justify="center" align="center" direction="column" gap="md">
           {!isPaused && isCountdown && countdown > 0 && (
             <Text>
               {t('autoRecruit.loadingNextUser', { count: countdown })}

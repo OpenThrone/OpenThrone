@@ -1,16 +1,15 @@
-import MainArea from "@/components/MainArea";
-import { useUser } from "@/context/users";
-import { alertService } from "@/services/Alert.service";
-import { Button, Grid, Space, Text, TextInput, Modal } from "@mantine/core";
-import { useSearchParams } from "next/navigation";
+import { Button, Grid, Modal, Space, Text, TextInput } from '@mantine/core';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
-import router from "next/router";
-import { useState, useEffect } from "react";
-import { logError } from '@/utils/logger';
+import { useEffect, useState } from 'react';
+
+import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
 
 const EmailVerify = (props) => {
   const { t } = useTranslation('account');
-  const searchParams = useSearchParams();
+  const router = useRouter();
   const [input, setInput] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,10 +17,13 @@ const EmailVerify = (props) => {
   const [opened, setOpened] = useState(false);
 
   useEffect(() => {
-    if (searchParams.has('code')) {
-      setInput(searchParams.get('code'));
+    const codeParam = Array.isArray(router.query.code)
+      ? router.query.code[0]
+      : router.query.code;
+    if (codeParam) {
+      setInput(codeParam);
     }
-  }, [searchParams]);
+  }, [router.query.code]);
 
   const onChange = (event) => {
     const { name, value } = event.currentTarget;
@@ -51,12 +53,14 @@ const EmailVerify = (props) => {
       // Open confirmation modal
       setOpened(true);
     } else {
-      alertService.error(t('emailVerify.verificationFailedError') + " " + data.error);
+      alertService.error(
+        `${t('emailVerify.verificationFailedError')} ${data.error}`,
+      );
     }
   };
 
   const handleEmailUpdate = async () => {
-    if(!user) return;
+    if (!user) return;
     setOpened(false); // Close the modal after confirming
     // Send request to update the email
     const updateResponse = await fetch('/api/account/update-email', {
@@ -74,15 +78,15 @@ const EmailVerify = (props) => {
     if (updateResponse.ok) {
       alertService.success(t('emailVerify.emailUpdatedSuccessfully'), true);
       return router.push('/home/settings');
-    } else {
-      const data = await updateResponse.json();
-      return alertService.error(t('emailVerify.failedToUpdateEmail') + ": " + data.error);
     }
+    const data = await updateResponse.json();
+    return alertService.error(
+      `${t('emailVerify.failedToUpdateEmail')}: ${data.error}`,
+    );
   };
 
   return (
-    <MainArea
-      title={t('emailVerify.pageTitle')}>
+    <MainArea title={t('emailVerify.pageTitle')}>
       <form onSubmit={handleSubmit}>
         <Grid gutter="lg">
           <Grid.Col span={6}>
@@ -95,7 +99,7 @@ const EmailVerify = (props) => {
               value={input}
               onChange={onChange}
             />
-            <Space h='xs' />
+            <Space h="xs" />
             <Text>{t('emailVerify.newEmail')}</Text>
             <TextInput
               id="email"
@@ -105,7 +109,7 @@ const EmailVerify = (props) => {
               value={email}
               onChange={onChange}
             />
-            <Space h='xs' />
+            <Space h="xs" />
             <Text>{t('emailVerify.currentPassword')}</Text>
             <TextInput
               id="password"
@@ -116,12 +120,8 @@ const EmailVerify = (props) => {
               value={password}
               onChange={onChange}
             />
-            <Space h='xs' />
-            <Button
-              type="submit"
-              size="lg"
-              fullWidth
-            >
+            <Space h="xs" />
+            <Button type="submit" size="lg" fullWidth>
               {t('emailVerify.verifyAndChangeEmail')}
             </Button>
           </Grid.Col>
@@ -133,7 +133,12 @@ const EmailVerify = (props) => {
         onClose={() => setOpened(false)}
         title={t('emailVerify.confirmEmailChange')}
       >
-        <Text>{t('emailVerify.changingEmailConfirm', { oldEmail: user?.email, newEmail: email })}</Text>
+        <Text>
+          {t('emailVerify.changingEmailConfirm', {
+            oldEmail: user?.email,
+            newEmail: email,
+          })}
+        </Text>
         <Space h="md" />
         <Button onClick={handleEmailUpdate} fullWidth>
           {t('emailVerify.confirm')}

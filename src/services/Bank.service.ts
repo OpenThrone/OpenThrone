@@ -1,10 +1,14 @@
-import { stringifyObj } from '@/utils/numberFormatting';
-import prisma from '@/lib/prisma';
-import { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
+import type { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
 import { z } from 'zod';
 
+import prisma from '@/lib/prisma';
+import { stringifyObj } from '@/utils/numberFormatting';
+
 // Define the type for the transaction client
-type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+type TransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 
 const DepositSchema = z.object({
   userId: z.number().int().positive(),
@@ -28,17 +32,21 @@ export const deposit = async (userId: number, depositAmount: bigint) => {
   const validatedData = DepositSchema.parse({ userId, depositAmount });
 
   return await prisma.$transaction(async (tx: TransactionClient) => {
-    const user = await tx.users.findUnique({ where: { id: validatedData.userId } });
+    const user = await tx.users.findUnique({
+      where: { id: validatedData.userId },
+    });
 
     if (!user) throw new Error('User not found');
     // Ensure user.gold is treated as BigInt for comparison
-    if (validatedData.depositAmount > BigInt(user.gold ?? 0)) throw new Error('Not enough gold for deposit');
+    if (validatedData.depositAmount > BigInt(user.gold ?? 0))
+      throw new Error('Not enough gold for deposit');
 
     const updatedUser = await tx.users.update({
       where: { id: validatedData.userId },
       data: {
         gold: BigInt(user.gold ?? 0) - validatedData.depositAmount,
-        gold_in_bank: BigInt(user.gold_in_bank ?? 0) + validatedData.depositAmount,
+        gold_in_bank:
+          BigInt(user.gold_in_bank ?? 0) + validatedData.depositAmount,
       },
     });
 
@@ -71,17 +79,21 @@ export const withdraw = async (userId: number, withdrawAmount: bigint) => {
   const validatedData = WithdrawSchema.parse({ userId, withdrawAmount });
 
   return await prisma.$transaction(async (tx: TransactionClient) => {
-    const user = await tx.users.findUnique({ where: { id: validatedData.userId } });
+    const user = await tx.users.findUnique({
+      where: { id: validatedData.userId },
+    });
 
     if (!user) throw new Error('User not found');
     // Ensure user.gold_in_bank is treated as BigInt
-    if (validatedData.withdrawAmount > BigInt(user.gold_in_bank ?? 0)) throw new Error('Not enough gold for withdrawal');
+    if (validatedData.withdrawAmount > BigInt(user.gold_in_bank ?? 0))
+      throw new Error('Not enough gold for withdrawal');
 
     const updatedUser = await tx.users.update({
       where: { id: validatedData.userId },
       data: {
         gold: BigInt(user.gold ?? 0) + validatedData.withdrawAmount,
-        gold_in_bank: BigInt(user.gold_in_bank ?? 0) - validatedData.withdrawAmount,
+        gold_in_bank:
+          BigInt(user.gold_in_bank ?? 0) - validatedData.withdrawAmount,
       },
     });
 
@@ -131,7 +143,11 @@ export const getDepositHistory = async (userId: number) => {
  * @param skip - The number of records to skip for pagination (default: 0).
  * @returns An object containing the history rows and the total count of matching records.
  */
-export const getBankHistory = async (conditions: Prisma.bank_historyWhereInput[], limit: number = 10, skip: number = 0) => {
+export const getBankHistory = async (
+  conditions: Prisma.bank_historyWhereInput[],
+  limit: number = 10,
+  skip: number = 0,
+) => {
   // Combine conditions using AND logic
   const whereClause: Prisma.bank_historyWhereInput = { AND: conditions };
 
@@ -142,7 +158,7 @@ export const getBankHistory = async (conditions: Prisma.bank_historyWhereInput[]
   const rows = await prisma.bank_history.findMany({
     where: whereClause,
     take: limit,
-    skip: skip,
+    skip,
     orderBy: {
       date_time: 'desc',
     },

@@ -11,7 +11,9 @@ declare interface ViMockMeta {
 }
 
 // Basic shape of a mocked function returned by `vi.fn()` or `vi.spyOn()`.
-declare interface ViMockFn<T extends (...args: any[]) => any = (...args: any[]) => any> {
+declare interface ViMockFn<
+  T extends (...args: any[]) => any = (...args: any[]) => any,
+> {
   (...args: Parameters<T>): ReturnType<T>;
   // chaining-style setters
   mockImplementation(impl: T): this;
@@ -34,14 +36,19 @@ declare interface ViMockFn<T extends (...args: any[]) => any = (...args: any[]) 
 
 declare interface ViMock {
   // create a mock function
-  fn: <T extends (...args: any[]) => any = (...args: any[]) => any>(impl?: T) => ViMockFn<T>;
+  fn: <T extends (...args: any[]) => any = (...args: any[]) => any>(
+    impl?: T,
+  ) => ViMockFn<T>;
 
   // module mocking
   mock(id: string, factory: () => any): void;
   importActual(id: string): any;
 
   // spy on an object method; the returned mock preserves the function signature
-  spyOn: <O extends object, K extends keyof O>(obj: O, method: K) => ViMockFn<Extract<O[K], Function>>;
+  spyOn: <O extends object, K extends keyof O>(
+    obj: O,
+    method: K,
+  ) => ViMockFn<Extract<O[K], Function>>;
 
   // global mock lifecycle helpers
   clearAllMocks(): void;

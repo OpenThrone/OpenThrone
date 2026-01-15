@@ -1,65 +1,70 @@
-import { AccountService } from "@/services";
-import { AuthService } from "@/services";
-import { BattleService } from "@/services";
-import { ArmoryService } from "@/services";
-import { SocialService } from "@/services/Social.service";
+import { Prisma } from '@prisma/client'; // Added for types
+import argon2 from 'argon2';
+import cookie from 'cookie';
+import type { Server as HttpServer } from 'http';
+import md5 from 'md5';
+import { getToken } from 'next-auth/jwt';
+import type { Socket } from 'socket.io';
+import { Server } from 'socket.io';
+
+import { RecruitSchema } from '@/lib/validation';
+import UserModel from '@/models/Users';
+import {
+  AccountService,
+  ArmoryService,
+  AuthService,
+  BattleService,
+} from '@/services';
+import { AdminService } from '@/services/Admin.service';
 import {
   deposit,
-  withdraw,
-  getDepositHistory,
   getBankHistory,
-} from "@/services/Bank.service";
-import { UserDataService } from "@/services/UserDataService";
+  getDepositHistory,
+  withdraw,
+} from '@/services/Bank.service';
+import { BlogService } from '@/services/Blog.service';
+import { CronJobService } from '@/services/CronJob.service';
+import { startNewEra } from '@/services/Era.service';
+import { GeneralService } from '@/services/General.service';
+import { MessagingService } from '@/services/Messaging.service';
+import {
+  getRandomAutoRecruitUser,
+  getRecruitmentRecords,
+  getUserByRecruitLink,
+  getValidUsersForRecruitment,
+  performRecruitmentWithSessionValidation,
+} from '@/services/Recruitment.service';
 import {
   createSession,
   endSession,
-  listSessions,
-  validateSession,
   getSession,
+  listSessions,
   updateSessionActivity,
-} from "@/services/Sessions.service";
+  validateSession,
+} from '@/services/Sessions.service';
+import { SocialService } from '@/services/Social.service';
+import { StructureService } from '@/services/Structure.service';
 import {
-  performRecruitmentWithSessionValidation,
-  getUserByRecruitLink,
-  getRecruitmentRecords,
-  getRandomAutoRecruitUser,
-  getValidUsersForRecruitment,
-} from "@/services/Recruitment.service";
-import { MessagingService } from "@/services/Messaging.service";
-import {
+  convertUnits,
   trainUnits,
   untrainUnits,
-  convertUnits,
-} from "@/services/Training.service";
-import { StructureService } from "@/services/Structure.service";
-import { BlogService } from "@/services/Blog.service";
-import { GeneralService } from "@/services/General.service";
-import { AdminService } from "@/services/Admin.service";
-import { startNewEra } from "@/services/Era.service";
-import { CronJobService } from "@/services/CronJob.service";
-import { parseBigInt } from "@/utils/jsonHelpers";
-import UserModel from "@/models/Users";
-import { safeToISOString } from "@/utils/dateHelpers";
+} from '@/services/Training.service';
+import { UserDataService } from '@/services/UserDataService';
+import { logAction } from '@/utils/auditLogger';
 import {
   DEFAULT_DASHBOARD_TEST_ORIGIN,
   isOriginAllowed,
   parseOriginList,
-} from "@/utils/cors";
-import { Server as HttpServer } from "http";
-import { Server, Socket } from "socket.io";
-import prisma from "./prisma";
-import { getToken } from "next-auth/jwt";
-import cookie from "cookie";
-import md5 from "md5";
-import argon2 from "argon2";
-import { logError, logInfo } from "@/utils/logger";
-import { Prisma } from "@prisma/client"; // Added for types
-import { rateLimiter } from "./rate-limiter";
-import mtrand from "@/utils/mtrand";
-import { getIpAddress } from "@/utils/ipUtils";
-import { getOTStartDate } from "@/utils/timefunctions";
-import { logAction } from "@/utils/auditLogger";
-import { RecruitSchema } from "@/lib/validation";
+} from '@/utils/cors';
+import { safeToISOString } from '@/utils/dateHelpers';
+import { getIpAddress } from '@/utils/ipUtils';
+import { parseBigInt } from '@/utils/jsonHelpers';
+import { logError, logInfo } from '@/utils/logger';
+import mtrand from '@/utils/mtrand';
+import { getOTStartDate } from '@/utils/timefunctions';
+
+import prisma from './prisma';
+import { rateLimiter } from './rate-limiter';
 
 let io: Server | null = null;
 // Store mapping of userId to a Set of socketIds
@@ -67,10 +72,10 @@ const userSockets = new Map<number, Set<string>>();
 
 // --- Event Handlers ---
 const handleConnection = (socket: Socket) => {
-  const userId: number | undefined = (socket.request as any).userId;
+  const { userId } = socket.request as any;
 
   if (userId === undefined) {
-    logError("Socket connected without userId. Disconnecting.");
+    logError('Socket connected without userId. Disconnecting.');
     socket.disconnect(true);
     return;
   }
@@ -82,7 +87,7 @@ const handleConnection = (socket: Socket) => {
   }
   userSockets.get(userId)?.add(socket.id);
 
-  socket.on("registerUser", (data: { userId: number }) => {
+  socket.on('registerUser', (data: { userId: number }) => {
     const requestedUserId = Number(data?.userId);
     if (!requestedUserId) return;
 
@@ -103,191 +108,191 @@ const handleConnection = (socket: Socket) => {
   });
 
   // Register event handlers
-  socket.on("requestUserData", () => handleRequestUserData(socket, userId));
-  socket.on("sendMessage", (data) => handleSendMessage(socket, userId, data));
-  socket.on("joinRoom", (roomId) => handleJoinRoom(socket, userId, roomId));
-  socket.on("leaveRoom", (roomId) => handleLeaveRoom(socket, userId, roomId));
-  socket.on("addReaction", (data) => handleAddReaction(socket, userId, data));
-  socket.on("removeReaction", (data) =>
+  socket.on('requestUserData', () => handleRequestUserData(socket, userId));
+  socket.on('sendMessage', (data) => handleSendMessage(socket, userId, data));
+  socket.on('joinRoom', (roomId) => handleJoinRoom(socket, userId, roomId));
+  socket.on('leaveRoom', (roomId) => handleLeaveRoom(socket, userId, roomId));
+  socket.on('addReaction', (data) => handleAddReaction(socket, userId, data));
+  socket.on('removeReaction', (data) =>
     handleRemoveReaction(socket, userId, data),
   );
-  socket.on("markAsRead", (data) => handleMarkAsRead(socket, userId, data));
-  socket.on("getChatRooms", () => handleGetChatRooms(socket, userId));
-  socket.on("createChatRoom", (data) =>
+  socket.on('markAsRead', (data) => handleMarkAsRead(socket, userId, data));
+  socket.on('getChatRooms', () => handleGetChatRooms(socket, userId));
+  socket.on('createChatRoom', (data) =>
     handleCreateChatRoom(socket, userId, data),
   );
-  socket.on("getRoomMessages", (data) =>
+  socket.on('getRoomMessages', (data) =>
     handleGetRoomMessages(socket, userId, data),
   );
-  socket.on("addParticipants", (data) =>
+  socket.on('addParticipants', (data) =>
     handleAddParticipants(socket, userId, data),
   );
-  socket.on("manageParticipant", (data) =>
+  socket.on('manageParticipant', (data) =>
     handleManageParticipant(socket, userId, data),
   );
-  socket.on("removeParticipant", (data) =>
+  socket.on('removeParticipant', (data) =>
     handleRemoveParticipant(socket, userId, data),
   );
-  socket.on("searchMessages", (data) =>
+  socket.on('searchMessages', (data) =>
     handleSearchMessages(socket, userId, data),
   );
-  socket.on("trainUnits", (data) => handleTrainUnits(socket, userId, data));
-  socket.on("untrainUnits", (data) => handleUntrainUnits(socket, userId, data));
-  socket.on("convertUnits", (data) => handleConvertUnits(socket, userId, data));
-  socket.on("manageStructureUpgrades", (data) =>
+  socket.on('trainUnits', (data) => handleTrainUnits(socket, userId, data));
+  socket.on('untrainUnits', (data) => handleUntrainUnits(socket, userId, data));
+  socket.on('convertUnits', (data) => handleConvertUnits(socket, userId, data));
+  socket.on('manageStructureUpgrades', (data) =>
     handleManageStructureUpgrades(socket, userId, data),
   );
-  socket.on("manageBattleUpgrades", (data) =>
+  socket.on('manageBattleUpgrades', (data) =>
     handleManageBattleUpgrades(socket, userId, data),
   );
-  socket.on("createBlogPost", (data) =>
+  socket.on('createBlogPost', (data) =>
     handleCreateBlogPost(socket, userId, data),
   );
-  socket.on("getBlogPosts", () => handleGetBlogPosts(socket, userId));
-  socket.on("getRecentBlogPosts", () =>
+  socket.on('getBlogPosts', () => handleGetBlogPosts(socket, userId));
+  socket.on('getRecentBlogPosts', () =>
     handleGetRecentBlogPosts(socket, userId),
   );
-  socket.on("updateBlogReadStatus", (data) =>
+  socket.on('updateBlogReadStatus', (data) =>
     handleUpdateBlogReadStatus(socket, userId, data),
   );
-  socket.on("getLatestUnreadBlogPost", () =>
+  socket.on('getLatestUnreadBlogPost', () =>
     handleGetLatestUnreadBlogPost(socket, userId),
   );
-  socket.on("getUserData", () => handleGetUserData(socket, userId));
-  socket.on("searchUsers", (data) => handleSearchUsers(socket, userId, data));
-  socket.on("checkDisplayName", (data) =>
+  socket.on('getUserData', () => handleGetUserData(socket, userId));
+  socket.on('searchUsers', (data) => handleSearchUsers(socket, userId, data));
+  socket.on('checkDisplayName', (data) =>
     handleCheckDisplayName(socket, userId, data),
   );
-  socket.on("getOnlinePlayers", () => handleGetOnlinePlayers(socket, userId));
-  socket.on("compareTop", () => handleCompareTop(socket, userId));
-  socket.on("resetGame", () => handleResetGame(socket, userId));
-  socket.on("revalidate", () => handleRevalidate(socket, userId));
-  socket.on("getUserBreakdown", () => handleGetUserBreakdown(socket, userId));
-  socket.on("getUserStats", () => handleGetUserStats(socket, userId));
-  socket.on("getUserInfoByRecruitLink", (data) =>
+  socket.on('getOnlinePlayers', () => handleGetOnlinePlayers(socket, userId));
+  socket.on('compareTop', () => handleCompareTop(socket, userId));
+  socket.on('resetGame', () => handleResetGame(socket, userId));
+  socket.on('revalidate', () => handleRevalidate(socket, userId));
+  socket.on('getUserBreakdown', () => handleGetUserBreakdown(socket, userId));
+  socket.on('getUserStats', () => handleGetUserStats(socket, userId));
+  socket.on('getUserInfoByRecruitLink', (data) =>
     handleGetUserInfoByRecruitLink(socket, userId, data),
   );
-  socket.on("updateBio", (data) => handleUpdateBio(socket, userId, data));
-  socket.on("updateProfile", (data) =>
+  socket.on('updateBio', (data) => handleUpdateBio(socket, userId, data));
+  socket.on('updateProfile', (data) =>
     handleUpdateProfile(socket, userId, data),
   );
-  socket.on("changePassword", (data) =>
+  socket.on('changePassword', (data) =>
     handleChangePassword(socket, userId, data),
   );
-  socket.on("updateSettings", (data) =>
+  socket.on('updateSettings', (data) =>
     handleUpdateSettings(socket, userId, data),
   );
-  socket.on("updateEmail", (data) => handleUpdateEmail(socket, userId, data));
-  socket.on("enable2FA", () => handleEnable2FA(socket, userId));
-  socket.on("disable2FA", () => handleDisable2FA(socket, userId));
-  socket.on("verify2FA", (data) => handleVerify2FA(socket, userId, data));
-  socket.on("startVacation", () => handleStartVacation(socket, userId));
-  socket.on("endVacation", () => handleEndVacation(socket, userId));
-  socket.on("repairAccount", (data) =>
+  socket.on('updateEmail', (data) => handleUpdateEmail(socket, userId, data));
+  socket.on('enable2FA', () => handleEnable2FA(socket, userId));
+  socket.on('disable2FA', () => handleDisable2FA(socket, userId));
+  socket.on('verify2FA', (data) => handleVerify2FA(socket, userId, data));
+  socket.on('startVacation', () => handleStartVacation(socket, userId));
+  socket.on('endVacation', () => handleEndVacation(socket, userId));
+  socket.on('repairAccount', (data) =>
     handleRepairAccount(socket, userId, data),
   );
-  socket.on("resetAccount", (data) => handleResetAccount(socket, userId, data));
-  socket.on("updateLastActive", () => handleUpdateLastActive(socket, userId));
-  socket.on("executeAttack", (data) =>
+  socket.on('resetAccount', (data) => handleResetAccount(socket, userId, data));
+  socket.on('updateLastActive', () => handleUpdateLastActive(socket, userId));
+  socket.on('executeAttack', (data) =>
     handleExecuteAttack(socket, userId, data),
   );
-  socket.on("getAttackLogs", (data) =>
+  socket.on('getAttackLogs', (data) =>
     handleGetAttackLogs(socket, userId, data),
   );
-  socket.on("getRecentAttacks", () => handleGetRecentAttacks(socket, userId));
-  socket.on("grantAttackLogACL", (data) =>
+  socket.on('getRecentAttacks', () => handleGetRecentAttacks(socket, userId));
+  socket.on('grantAttackLogACL', (data) =>
     handleGrantAttackLogACL(socket, userId, data),
   );
-  socket.on("battleTest", (data) => handleBattleTest(socket, userId, data));
-  socket.on("fullScaleBattleTest", (data) =>
+  socket.on('battleTest', (data) => handleBattleTest(socket, userId, data));
+  socket.on('fullScaleBattleTest', (data) =>
     handleFullScaleBattleTest(socket, userId, data),
   );
-  socket.on("retestAttack", (data) => handleRetestAttack(socket, userId, data));
-  socket.on("depositGold", (data) => handleDepositGold(socket, userId, data));
-  socket.on("withdrawGold", (data) => handleWithdrawGold(socket, userId, data));
-  socket.on("getDeposits", () => handleGetDeposits(socket, userId));
-  socket.on("getBankHistory", (data) =>
+  socket.on('retestAttack', (data) => handleRetestAttack(socket, userId, data));
+  socket.on('depositGold', (data) => handleDepositGold(socket, userId, data));
+  socket.on('withdrawGold', (data) => handleWithdrawGold(socket, userId, data));
+  socket.on('getDeposits', () => handleGetDeposits(socket, userId));
+  socket.on('getBankHistory', (data) =>
     handleGetBankHistory(socket, userId, data),
   );
-  socket.on("equipItem", (data) => handleEquipItem(socket, userId, data));
-  socket.on("unequipItem", (data) => handleUnequipItem(socket, userId, data));
-  socket.on("hireMercenary", (data) =>
+  socket.on('equipItem', (data) => handleEquipItem(socket, userId, data));
+  socket.on('unequipItem', (data) => handleUnequipItem(socket, userId, data));
+  socket.on('hireMercenary', (data) =>
     handleHireMercenary(socket, userId, data),
   );
-  socket.on("dismissMercenary", (data) =>
+  socket.on('dismissMercenary', (data) =>
     handleDismissMercenary(socket, userId, data),
   );
-  socket.on("convertItem", (data) => handleConvertItem(socket, userId, data));
-  socket.on("addFriend", (data) => handleAddFriend(socket, userId, data));
-  socket.on("removeFriend", (data) => handleRemoveFriend(socket, userId, data));
-  socket.on("respondToFriendRequest", (data) =>
+  socket.on('convertItem', (data) => handleConvertItem(socket, userId, data));
+  socket.on('addFriend', (data) => handleAddFriend(socket, userId, data));
+  socket.on('removeFriend', (data) => handleRemoveFriend(socket, userId, data));
+  socket.on('respondToFriendRequest', (data) =>
     handleRespondToFriendRequest(socket, userId, data),
   );
-  socket.on("getFriends", () => handleGetFriends(socket, userId));
-  socket.on("transferGold", (data) => handleTransferGold(socket, userId, data));
-  socket.on("sendGoldRequest", (data) =>
+  socket.on('getFriends', () => handleGetFriends(socket, userId));
+  socket.on('transferGold', (data) => handleTransferGold(socket, userId, data));
+  socket.on('sendGoldRequest', (data) =>
     handleSendGoldRequest(socket, userId, data),
   );
-  socket.on("respondToGoldRequest", (data) =>
+  socket.on('respondToGoldRequest', (data) =>
     handleRespondToGoldRequest(socket, userId, data),
   );
-  socket.on("getGoldRequests", () => handleGetGoldRequests(socket, userId));
-  socket.on("getSocialRelationships", () =>
+  socket.on('getGoldRequests', () => handleGetGoldRequests(socket, userId));
+  socket.on('getSocialRelationships', () =>
     handleGetSocialRelationships(socket, userId),
   );
-  socket.on("getTopPlayers", () => handleGetTopPlayers(socket, userId));
-  socket.on("listAllSocial", () => handleListAllSocial(socket, userId));
-  socket.on("startRecruitSession", (data) =>
+  socket.on('getTopPlayers', () => handleGetTopPlayers(socket, userId));
+  socket.on('listAllSocial', () => handleListAllSocial(socket, userId));
+  socket.on('startRecruitSession', (data) =>
     handleStartRecruitSession(socket, userId, data),
   );
-  socket.on("endRecruitSession", (data) =>
+  socket.on('endRecruitSession', (data) =>
     handleEndRecruitSession(socket, userId, data),
   );
-  socket.on("listRecruitSessions", () =>
+  socket.on('listRecruitSessions', () =>
     handleListRecruitSessions(socket, userId),
   );
-  socket.on("verifyRecruitSession", (data) =>
+  socket.on('verifyRecruitSession', (data) =>
     handleVerifyRecruitSession(socket, userId, data),
   );
-  socket.on("handleRecruitment", (data) =>
+  socket.on('handleRecruitment', (data) =>
     handleRecruitment(socket, userId, data),
   );
-  socket.on("getRecruitHistory", () => handleGetRecruitHistory(socket, userId));
-  socket.on("autoRecruit", () => handleAutoRecruit(socket, userId));
-  socket.on("getRandomRecruitUser", (data) =>
+  socket.on('getRecruitHistory', () => handleGetRecruitHistory(socket, userId));
+  socket.on('autoRecruit', () => handleAutoRecruit(socket, userId));
+  socket.on('getRandomRecruitUser', (data) =>
     handleGetRandomRecruitUser(socket, userId, data),
   );
-  socket.on("notifyAttack", handleNotifyAttack);
-  socket.on("notifyFriendRequest", handleNotifyFriendRequest);
-  socket.on("notifyEnemyDeclaration", handleNotifyEnemyDeclaration);
-  socket.on("notifyGoldRequest", handleNotifyGoldRequest);
-  socket.on("alertNotification", handleAlertNotification);
-  socket.on("ping", handlePing);
-  socket.on("adminAccountAction", (data) =>
+  socket.on('notifyAttack', handleNotifyAttack);
+  socket.on('notifyFriendRequest', handleNotifyFriendRequest);
+  socket.on('notifyEnemyDeclaration', handleNotifyEnemyDeclaration);
+  socket.on('notifyGoldRequest', handleNotifyGoldRequest);
+  socket.on('alertNotification', handleAlertNotification);
+  socket.on('ping', handlePing);
+  socket.on('adminAccountAction', (data) =>
     handleAdminAccountAction(socket, userId, data),
   );
-  socket.on("grantPermission", (data) =>
+  socket.on('grantPermission', (data) =>
     handleGrantPermission(socket, userId, data),
   );
-  socket.on("startEra", () => handleStartEra(socket, userId));
-  socket.on("getConstants", () => handleGetConstants(socket, userId));
-  socket.on("getRankBreakdown", () => handleGetRankBreakdown(socket, userId));
-  socket.on("dailyCron", (data) => handleDailyCron(socket, userId, data));
-  socket.on("turnsCron", (data) => handleTurnsCron(socket, userId, data));
-  socket.on("accountStatusCron", (data) =>
+  socket.on('startEra', () => handleStartEra(socket, userId));
+  socket.on('getConstants', () => handleGetConstants(socket, userId));
+  socket.on('getRankBreakdown', () => handleGetRankBreakdown(socket, userId));
+  socket.on('dailyCron', (data) => handleDailyCron(socket, userId, data));
+  socket.on('turnsCron', (data) => handleTurnsCron(socket, userId, data));
+  socket.on('accountStatusCron', (data) =>
     handleAccountStatusCron(socket, userId, data),
   );
-  socket.on("verifyCaptcha", (data) =>
+  socket.on('verifyCaptcha', (data) =>
     handleVerifyCaptcha(socket, userId, data),
   );
-  socket.on("disconnect", (reason) => handleDisconnect(socket, userId, reason));
+  socket.on('disconnect', (reason) => handleDisconnect(socket, userId, reason));
 };
 
 // Helper to serialize potentially complex message objects including BigInts and Dates
 const serializeData = (data: any): any => {
   return JSON.parse(
     JSON.stringify(data, (key, value) => {
-      if (typeof value === "bigint") return value.toString();
+      if (typeof value === 'bigint') return value.toString();
       if (value instanceof Date) {
         return safeToISOString(value);
       }
@@ -338,7 +343,7 @@ type MessageWithRelationsPayload = Prisma.ChatMessageGetPayload<{
 
 export const initializeSocket = (httpServer: HttpServer) => {
   if (io) {
-    logInfo("Socket.IO already initialized");
+    logInfo('Socket.IO already initialized');
     return io;
   }
 
@@ -346,25 +351,25 @@ export const initializeSocket = (httpServer: HttpServer) => {
     const raw =
       process.env.OT_SOCKET_CORS_ORIGINS ??
       process.env.NEXT_PUBLIC_SOCKET_IO_ORIGIN ??
-      "*";
-    if (raw.trim() === "*") return ["*"];
+      '*';
+    if (raw.trim() === '*') return ['*'];
     return Array.from(
       new Set([...parseOriginList(raw), DEFAULT_DASHBOARD_TEST_ORIGIN]),
     );
   })();
 
-  logInfo("Initializing Socket.IO...");
+  logInfo('Initializing Socket.IO...');
   io = new Server(httpServer, {
     cors: {
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);
-        if (socketCorsAllowlist.includes("*")) return callback(null, true);
+        if (socketCorsAllowlist.includes('*')) return callback(null, true);
         return callback(null, isOriginAllowed(origin, socketCorsAllowlist));
       },
-      methods: ["GET", "POST"],
+      methods: ['GET', 'POST'],
       credentials: true,
     },
-    path: "/socket.io",
+    path: '/socket.io',
     allowRequest: async (req, callback) => {
       try {
         // --- Token Sources ---
@@ -375,34 +380,35 @@ export const initializeSocket = (httpServer: HttpServer) => {
         const parsedUrl = (() => {
           try {
             // req.url is typically like "/socket.io/?EIO=4&transport=polling&t=..."
-            return new URL(req.url || "", "http://localhost");
+            return new URL(req.url || '', 'http://localhost');
           } catch {
             return null;
           }
         })();
 
-        const authHeader = String(req.headers.authorization || "");
-        const bearerToken = authHeader.toLowerCase().startsWith("bearer ")
-          ? authHeader.slice("bearer ".length).trim()
-          : "";
+        const authHeader = String(req.headers.authorization || '');
+        const bearerToken = authHeader.toLowerCase().startsWith('bearer ')
+          ? authHeader.slice('bearer '.length).trim()
+          : '';
 
-        const cookies = cookie.parse(req.headers.cookie || "");
+        const cookies = cookie.parse(req.headers.cookie || '');
         const sessionTokenCookie =
-          cookies["next-auth.session-token"] ||
-          cookies["__Secure-next-auth.session-token"];
+          cookies['next-auth.session-token'] ||
+          cookies['__Secure-next-auth.session-token'];
 
-        const queryToken = parsedUrl?.searchParams.get("token") || "";
-        const tokenFromClient = bearerToken || queryToken || sessionTokenCookie || "";
+        const queryToken = parsedUrl?.searchParams.get('token') || '';
+        const tokenFromClient =
+          bearerToken || queryToken || sessionTokenCookie || '';
 
         if (!tokenFromClient) {
-          return callback("No session token", false);
+          return callback('No session token', false);
         }
 
         const minimalReq = {
           headers: req.headers,
           cookies: {
-            "next-auth.session-token": tokenFromClient,
-            "__Secure-next-auth.session-token": tokenFromClient,
+            'next-auth.session-token': tokenFromClient,
+            '__Secure-next-auth.session-token': tokenFromClient,
           },
         };
 
@@ -416,29 +422,29 @@ export const initializeSocket = (httpServer: HttpServer) => {
         });
 
         if (!token || !(token.user && token.user.id)) {
-          logInfo("Socket Auth: Invalid or missing token/user ID");
-          return callback("Invalid token", false);
+          logInfo('Socket Auth: Invalid or missing token/user ID');
+          return callback('Invalid token', false);
         }
 
         (req as any).userId = Number(token.user.id);
         logInfo(`Socket Auth: User ${token.user.id} authorized.`);
         callback(null, true);
       } catch (err: any) {
-        logInfo("Socket Auth Error:", err.message);
-        return callback("Authentication error", false);
+        logInfo('Socket Auth Error:', err.message);
+        return callback('Authentication error', false);
       }
     },
   });
 
-  io.on("connection", handleConnection);
+  io.on('connection', handleConnection);
 
-  logInfo("Socket.IO initialized successfully");
+  logInfo('Socket.IO initialized successfully');
   return io;
 };
 
 const handleRequestUserData = async (socket: Socket, userId: number) => {
   if (isNaN(userId)) {
-    logError("Invalid userId:", userId);
+    logError('Invalid userId:', userId);
     return;
   }
   try {
@@ -446,14 +452,14 @@ const handleRequestUserData = async (socket: Socket, userId: number) => {
     const userData = await UserDataService.getFullUserData(userId);
 
     if (!userData) {
-      socket.emit("userDataError", { error: "User not found" });
+      socket.emit('userDataError', { error: 'User not found' });
       return;
     }
 
     // Handle VACATION status separately as the service throws for other statuses
-    if (userData.currentStatus === "VACATION") {
+    if (userData.currentStatus === 'VACATION') {
       socket.emit(
-        "userVacation",
+        'userVacation',
         serializeData({ ...userData, currentStatus: userData.currentStatus }),
       );
       return;
@@ -466,15 +472,15 @@ const handleRequestUserData = async (socket: Socket, userId: number) => {
       last_active: safeToISOString(userData.last_active),
     };
 
-    socket.emit("userData", serializeData(normalizedUserData));
+    socket.emit('userData', serializeData(normalizedUserData));
   } catch (error) {
-    logError("Socket || Error fetching user data:", error);
+    logError('Socket || Error fetching user data:', error);
     // Handle the specific error thrown by the service for banned/suspended users
-    if (error instanceof Error && error.message.includes("Account is in")) {
-      socket.emit("userDataError", { error: error.message });
+    if (error instanceof Error && error.message.includes('Account is in')) {
+      socket.emit('userDataError', { error: error.message });
     } else {
-      socket.emit("userDataError", {
-        error: "Internal server error while fetching user data.",
+      socket.emit('userDataError', {
+        error: 'Internal server error while fetching user data.',
       });
     }
   }
@@ -493,9 +499,9 @@ const handleSendMessage = async (
   },
 ) => {
   if (!rateLimiter(`sendMessage-${userId}`, { windowMs: 10000, max: 10 })) {
-    socket.emit("messageError", {
+    socket.emit('messageError', {
       tempId: data.tempId,
-      error: "You are sending messages too quickly.",
+      error: 'You are sending messages too quickly.',
     });
     return;
   }
@@ -503,7 +509,7 @@ const handleSendMessage = async (
     roomId,
     content,
     replyToMessageId,
-    messageType = "TEXT",
+    messageType = 'TEXT',
     sharedAttackLogId,
   } = data;
   logInfo(
@@ -512,10 +518,10 @@ const handleSendMessage = async (
   );
 
   if (!roomId || !content || userId === undefined) {
-    logInfo("sendMessage failed: Missing required data or userId");
-    socket.emit("messageError", {
+    logInfo('sendMessage failed: Missing required data or userId');
+    socket.emit('messageError', {
       tempId: data.tempId,
-      error: "Invalid message data",
+      error: 'Invalid message data',
     });
     return;
   }
@@ -523,7 +529,7 @@ const handleSendMessage = async (
   try {
     // 1. Verify participant and permissions
     const participant = await prisma.chatRoomParticipant.findUnique({
-      where: { roomId_userId: { roomId: Number(roomId), userId: userId } },
+      where: { roomId_userId: { roomId: Number(roomId), userId } },
       include: { room: { select: { allianceId: true } } },
     });
 
@@ -531,9 +537,9 @@ const handleSendMessage = async (
       logInfo(
         `sendMessage failed: User ${userId} cannot write or not in room ${roomId}`,
       );
-      socket.emit("messageError", {
+      socket.emit('messageError', {
         tempId: data.tempId,
-        error: "Cannot send message in this room.",
+        error: 'Cannot send message in this room.',
       });
       return;
     }
@@ -552,9 +558,9 @@ const handleSendMessage = async (
         logInfo(
           `sendMessage failed: User ${userId} not member of alliance ${participant.room.allianceId}`,
         );
-        socket.emit("messageError", {
+        socket.emit('messageError', {
           tempId: data.tempId,
-          error: "Not an alliance member.",
+          error: 'Not an alliance member.',
         });
         return;
       }
@@ -570,9 +576,9 @@ const handleSendMessage = async (
         logInfo(
           `sendMessage failed: replyToMessageId ${replyToMessageId} invalid`,
         );
-        socket.emit("messageError", {
+        socket.emit('messageError', {
           tempId: data.tempId,
-          error: "Cannot reply to this message.",
+          error: 'Cannot reply to this message.',
         });
         return;
       }
@@ -581,7 +587,7 @@ const handleSendMessage = async (
 
     // 3. Validate Shared Log ID and Permissions
     let validSharedAttackLogId: number | null = null;
-    if (messageType === "ATTACK_LOG_SHARE" && sharedAttackLogId) {
+    if (messageType === 'ATTACK_LOG_SHARE' && sharedAttackLogId) {
       const log = await prisma.attack_log.findUnique({
         where: { id: sharedAttackLogId },
         select: {
@@ -597,18 +603,18 @@ const handleSendMessage = async (
         },
       });
       if (!log) {
-        socket.emit("messageError", {
+        socket.emit('messageError', {
           tempId: data.tempId,
-          error: "Attack log not found.",
+          error: 'Attack log not found.',
         });
         return;
       }
       // Check Permissions
       const canShare = await checkLogSharePermission(userId, log);
       if (!canShare) {
-        socket.emit("messageError", {
+        socket.emit('messageError', {
           tempId: data.tempId,
-          error: "No permission to share this log.",
+          error: 'No permission to share this log.',
         });
         return;
       }
@@ -616,10 +622,10 @@ const handleSendMessage = async (
       logInfo(
         `User ${userId} has permission to share attack log ${sharedAttackLogId}`,
       );
-    } else if (messageType !== "TEXT") {
-      socket.emit("messageError", {
+    } else if (messageType !== 'TEXT') {
+      socket.emit('messageError', {
         tempId: data.tempId,
-        error: "Unsupported message type.",
+        error: 'Unsupported message type.',
       });
       return;
     }
@@ -629,8 +635,8 @@ const handleSendMessage = async (
       data: {
         roomId: Number(roomId),
         senderId: userId,
-        content: content,
-        messageType: messageType,
+        content,
+        messageType,
         replyToMessageId: validReplyToId,
         sharedAttackLogId: validSharedAttackLogId,
       },
@@ -685,7 +691,7 @@ const handleSendMessage = async (
 
     // 6. Grant ACL access if sharing a log
     if (
-      newMessage.messageType === "ATTACK_LOG_SHARE" &&
+      newMessage.messageType === 'ATTACK_LOG_SHARE' &&
       newMessage.sharedAttackLogId
     ) {
       await grantAclToParticipants(
@@ -703,22 +709,22 @@ const handleSendMessage = async (
     const roomChannel = `room-${roomId}`;
 
     // Log sockets before emitting
-    const socketsInRoom = await io!.in(roomChannel).fetchSockets();
+    const socketsInRoom = await io.in(roomChannel).fetchSockets();
     logInfo(
       `<<< SERVER >>> Sockets currently in ${roomChannel} before emit:`,
       socketsInRoom.map((s) => `${s.id} (User: ${findUserIdBySocketId(s.id)})`),
     );
 
-    io!.to(roomChannel).emit("receiveMessage", messagePayload);
+    io.to(roomChannel).emit('receiveMessage', messagePayload);
     logInfo(`<<< SERVER >>> Emitted 'receiveMessage' to ${roomChannel}`);
 
     // 8. Emit Notifications
     await sendNotifications(Number(roomId), userId, newMessage);
   } catch (error) {
     logError(`Error handling sendMessage for room ${roomId}:`, error);
-    socket.emit("messageError", {
+    socket.emit('messageError', {
       tempId: data.tempId,
-      error: "Failed to send message.",
+      error: 'Failed to send message.',
     });
   }
 };
@@ -729,9 +735,9 @@ const handleJoinRoom = async (socket: Socket, userId: number, roomId: any) => {
     logError(
       `<<< SERVER >>> Invalid roomId for joinRoom from Socket ${socket.id}: ${roomId}`,
     );
-    socket.emit("joinRoomError", {
-      roomId: roomId,
-      error: "Invalid room ID format.",
+    socket.emit('joinRoomError', {
+      roomId,
+      error: 'Invalid room ID format.',
     });
     return;
   }
@@ -746,9 +752,9 @@ const handleJoinRoom = async (socket: Socket, userId: number, roomId: any) => {
       logError(
         `<<< SERVER >>> Room ${numericRoomId} not found for joinRoom User ${userId}`,
       );
-      socket.emit("joinRoomError", {
+      socket.emit('joinRoomError', {
         roomId: numericRoomId,
-        error: "Room not found.",
+        error: 'Room not found.',
       });
       return;
     }
@@ -767,9 +773,9 @@ const handleJoinRoom = async (socket: Socket, userId: number, roomId: any) => {
         logInfo(
           `<<< SERVER >>> User ${userId} denied joining alliance room ${numericRoomId}`,
         );
-        socket.emit("joinRoomError", {
+        socket.emit('joinRoomError', {
           roomId: numericRoomId,
-          error: "You are not a member of the alliance for this chat.",
+          error: 'You are not a member of the alliance for this chat.',
         });
         return;
       }
@@ -778,27 +784,27 @@ const handleJoinRoom = async (socket: Socket, userId: number, roomId: any) => {
     const roomChannel = `room-${numericRoomId}`;
     socket.join(roomChannel);
     // Confirm join and check adapter rooms
-    const adapterRooms = io!.sockets.adapter.rooms.get(roomChannel);
+    const adapterRooms = io.sockets.adapter.rooms.get(roomChannel);
     logInfo(
-      `<<< SERVER >>> Socket ${socket.id} (User ${userId}) attempted join on ${roomChannel}. Sockets in room now: ${adapterRooms ? Array.from(adapterRooms) : "None"}`,
+      `<<< SERVER >>> Socket ${socket.id} (User ${userId}) attempted join on ${roomChannel}. Sockets in room now: ${adapterRooms ? Array.from(adapterRooms) : 'None'}`,
     );
-    socket.emit("joinedRoom", { roomId: numericRoomId });
+    socket.emit('joinedRoom', { roomId: numericRoomId });
   } catch (error) {
     logError(
       `<<< SERVER >>> Error during joinRoom User ${userId}, Room ${numericRoomId}:`,
       error,
     );
-    socket.emit("joinRoomError", {
+    socket.emit('joinRoomError', {
       roomId: numericRoomId,
-      error: "Server error joining room.",
+      error: 'Server error joining room.',
     });
   }
 };
 
 const handleLeaveRoom = (socket: Socket, userId: number, roomId: any) => {
   if (
-    typeof roomId === "number" ||
-    (typeof roomId === "string" && !isNaN(Number(roomId)))
+    typeof roomId === 'number' ||
+    (typeof roomId === 'string' && !isNaN(Number(roomId)))
   ) {
     const roomChannel = `room-${Number(roomId)}`;
     socket.leave(roomChannel);
@@ -818,9 +824,9 @@ const handleAddReaction = async (
   data: { messageId: number; reaction: string; roomId: number },
 ) => {
   if (!rateLimiter(`addReaction-${userId}`, { windowMs: 10000, max: 20 })) {
-    socket.emit("reactionError", {
+    socket.emit('reactionError', {
       messageId: data.messageId,
-      error: "You are reacting too quickly.",
+      error: 'You are reacting too quickly.',
     });
     return;
   }
@@ -830,10 +836,10 @@ const handleAddReaction = async (
   );
 
   if (!messageId || !reaction || !roomId || userId === undefined) {
-    socket.emit("reactionError", {
+    socket.emit('reactionError', {
       messageId,
       reaction,
-      error: "Invalid reaction data.",
+      error: 'Invalid reaction data.',
     });
     return;
   }
@@ -844,7 +850,7 @@ const handleAddReaction = async (
       where: {
         id: messageId,
         roomId: Number(roomId),
-        room: { participants: { some: { userId: userId } } },
+        room: { participants: { some: { userId } } },
       },
       select: { id: true },
     });
@@ -852,17 +858,17 @@ const handleAddReaction = async (
       logInfo(
         `addReaction failed: Message ${messageId} not found in room ${roomId} or user ${userId} not participant.`,
       );
-      socket.emit("reactionError", {
+      socket.emit('reactionError', {
         messageId,
         reaction,
-        error: "Message not found or you are not in this room.",
+        error: 'Message not found or you are not in this room.',
       });
       return;
     }
 
     // Create reaction
     const newReaction = await prisma.chatMessageReaction.create({
-      data: { messageId: messageId, userId: userId, reaction: reaction },
+      data: { messageId, userId, reaction },
       select: {
         messageId: true,
         userId: true,
@@ -878,27 +884,27 @@ const handleAddReaction = async (
       reaction: newReaction.reaction,
       userDisplayName: newReaction.user.display_name,
     };
-    io!.to(`room-${roomId}`).emit("reactionAdded", reactionPayload);
+    io.to(`room-${roomId}`).emit('reactionAdded', reactionPayload);
     logInfo(`Emitted 'reactionAdded' to room-${roomId}`, reactionPayload);
   } catch (error: any) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
+      error.code === 'P2002'
     ) {
       logInfo(
         `addReaction failed: User ${userId} already reacted with ${reaction} on msg ${messageId}`,
       );
-      socket.emit("reactionError", {
+      socket.emit('reactionError', {
         messageId,
         reaction,
-        error: "You already added this reaction.",
+        error: 'You already added this reaction.',
       });
     } else {
       logError(`Error handling addReaction for msg ${messageId}:`, error);
-      socket.emit("reactionError", {
+      socket.emit('reactionError', {
         messageId,
         reaction,
-        error: "Failed to add reaction.",
+        error: 'Failed to add reaction.',
       });
     }
   }
@@ -915,10 +921,10 @@ const handleRemoveReaction = async (
   );
 
   if (!messageId || !reaction || !roomId || userId === undefined) {
-    socket.emit("reactionError", {
+    socket.emit('reactionError', {
       messageId,
       reaction,
-      error: "Invalid reaction data.",
+      error: 'Invalid reaction data.',
     });
     return;
   }
@@ -927,20 +933,20 @@ const handleRemoveReaction = async (
     // Verify user is in the room (implicit check via deleteMany condition)
     const deleteResult = await prisma.chatMessageReaction.deleteMany({
       where: {
-        messageId: messageId,
-        userId: userId,
-        reaction: reaction,
+        messageId,
+        userId,
+        reaction,
         message: { roomId: Number(roomId) },
       },
     });
 
     if (deleteResult.count > 0) {
       const reactionPayload = {
-        messageId: messageId,
-        userId: userId,
-        reaction: reaction,
+        messageId,
+        userId,
+        reaction,
       };
-      io!.to(`room-${roomId}`).emit("reactionRemoved", reactionPayload);
+      io.to(`room-${roomId}`).emit('reactionRemoved', reactionPayload);
       logInfo(`Emitted 'reactionRemoved' to room-${roomId}`, reactionPayload);
     } else {
       logInfo(
@@ -949,10 +955,10 @@ const handleRemoveReaction = async (
     }
   } catch (error) {
     logError(`Error handling removeReaction for msg ${messageId}:`, error);
-    socket.emit("reactionError", {
+    socket.emit('reactionError', {
       messageId,
       reaction,
-      error: "Failed to remove reaction.",
+      error: 'Failed to remove reaction.',
     });
   }
 };
@@ -965,9 +971,9 @@ const handleMarkAsRead = async (
     | { messageIds: number[]; roomId: number },
 ) => {
   const { roomId } = data;
-  const messageIds = "messageId" in data ? [data.messageId] : data.messageIds;
+  const messageIds = 'messageId' in data ? [data.messageId] : data.messageIds;
   logInfo(
-    `markAsRead event: msgs ${messageIds.join(", ")}, room ${roomId}, user ${userId}`,
+    `markAsRead event: msgs ${messageIds.join(', ')}, room ${roomId}, user ${userId}`,
   );
 
   if (
@@ -982,7 +988,7 @@ const handleMarkAsRead = async (
   try {
     // Verify user is in the room
     const participant = await prisma.chatRoomParticipant.findUnique({
-      where: { roomId_userId: { roomId: Number(roomId), userId: userId } },
+      where: { roomId_userId: { roomId: Number(roomId), userId } },
       select: { userId: true },
     });
     if (!participant) {
@@ -993,11 +999,11 @@ const handleMarkAsRead = async (
     // Upsert read status
     const upsertPromises = messageIds.map((msgId) =>
       prisma.chatMessageReadStatus.upsert({
-        where: { messageId_userId: { messageId: msgId, userId: userId } },
+        where: { messageId_userId: { messageId: msgId, userId } },
         update: {
           /* readAt updates automatically via @updatedAt */
         },
-        create: { messageId: msgId, userId: userId },
+        create: { messageId: msgId, userId },
         select: { messageId: true, userId: true, readAt: true },
       }),
     );
@@ -1011,7 +1017,7 @@ const handleMarkAsRead = async (
     }));
 
     if (readPayloads.length > 0) {
-      io!.to(`room-${roomId}`).emit("messagesRead", {
+      io.to(`room-${roomId}`).emit('messagesRead', {
         roomId: Number(roomId),
         updates: readPayloads,
       });
@@ -1032,10 +1038,10 @@ const handleUpdateBio = async (
   try {
     const { bio } = data;
     const result = await AccountService.updateBio(userId, bio);
-    socket.emit("updateBioSuccess", serializeData(result));
+    socket.emit('updateBioSuccess', serializeData(result));
   } catch (error) {
-    logError("Error updating bio:", error);
-    socket.emit("updateBioError", { error: "Error updating bio" });
+    logError('Error updating bio:', error);
+    socket.emit('updateBioError', { error: 'Error updating bio' });
   }
 };
 
@@ -1046,7 +1052,7 @@ const handleUpdateProfile = async (
 ) => {
   try {
     const { bio, avatarFile } = data;
-    let updateData: any = {};
+    const updateData: any = {};
 
     if (bio !== undefined) {
       updateData.bio = bio;
@@ -1057,15 +1063,15 @@ const handleUpdateProfile = async (
     }
 
     if (Object.keys(updateData).length === 0) {
-      socket.emit("updateProfileError", { error: "No data to update" });
+      socket.emit('updateProfileError', { error: 'No data to update' });
       return;
     }
 
     const result = await AccountService.updateProfile(userId, updateData);
-    socket.emit("updateProfileSuccess", serializeData(result));
+    socket.emit('updateProfileSuccess', serializeData(result));
   } catch (error) {
-    logError("Error updating profile:", error);
-    socket.emit("updateProfileError", { error: "Error updating profile" });
+    logError('Error updating profile:', error);
+    socket.emit('updateProfileError', { error: 'Error updating profile' });
   }
 };
 
@@ -1080,11 +1086,11 @@ const handleChangePassword = async (
 ) => {
   try {
     const result = await AccountService.changePassword(userId, data);
-    socket.emit("changePasswordSuccess", serializeData(result));
+    socket.emit('changePasswordSuccess', serializeData(result));
   } catch (error) {
-    logError("Error changing password:", error);
-    socket.emit("changePasswordError", {
-      error: error.message || "Error changing password",
+    logError('Error changing password:', error);
+    socket.emit('changePasswordError', {
+      error: error.message || 'Error changing password',
     });
   }
 };
@@ -1096,7 +1102,7 @@ const handleUpdateSettings = async (
 ) => {
   try {
     const { locale, colorScheme } = data;
-    let updateData: any = {};
+    const updateData: any = {};
 
     if (locale) {
       updateData.locale = locale;
@@ -1107,16 +1113,16 @@ const handleUpdateSettings = async (
     }
 
     if (Object.keys(updateData).length === 0) {
-      socket.emit("updateSettingsError", { error: "No data to update" });
+      socket.emit('updateSettingsError', { error: 'No data to update' });
       return;
     }
 
     const result = await AccountService.updateGameOptions(userId, updateData);
-    socket.emit("updateSettingsSuccess", serializeData(result));
+    socket.emit('updateSettingsSuccess', serializeData(result));
   } catch (error) {
-    logError("Error updating settings:", error);
-    socket.emit("updateSettingsError", {
-      error: error.message || "Error updating settings",
+    logError('Error updating settings:', error);
+    socket.emit('updateSettingsError', {
+      error: error.message || 'Error updating settings',
     });
   }
 };
@@ -1137,21 +1143,21 @@ const handleUpdateEmail = async (
       });
 
       if (existingUserWithNewEmail && existingUserWithNewEmail.id !== userId) {
-        throw new Error("Email is already in use by another account.");
+        throw new Error('Email is already in use by another account.');
       }
 
       // 2. Find the valid verification code for this user
       const verificationRecord = await tx.passwordReset.findFirst({
         where: {
-          userId: userId,
+          userId,
           verificationCode: verify,
           status: 0,
-          type: "EMAIL",
+          type: 'EMAIL',
         },
       });
 
       if (!verificationRecord) {
-        throw new Error("Invalid or expired verification code.");
+        throw new Error('Invalid or expired verification code.');
       }
 
       // 3. Verify the user's current password
@@ -1161,7 +1167,7 @@ const handleUpdateEmail = async (
       });
 
       if (!currentUser || !currentUser.password_hash) {
-        throw new Error("User account not found or password hash missing.");
+        throw new Error('User account not found or password hash missing.');
       }
 
       const passwordMatch = await argon2.verify(
@@ -1169,7 +1175,7 @@ const handleUpdateEmail = async (
         password,
       );
       if (!passwordMatch) {
-        throw new Error("Invalid password.");
+        throw new Error('Invalid password.');
       }
 
       // 4. Update the user's email
@@ -1185,13 +1191,13 @@ const handleUpdateEmail = async (
       });
     });
 
-    socket.emit("updateEmailSuccess", {
-      message: "Email updated successfully.",
+    socket.emit('updateEmailSuccess', {
+      message: 'Email updated successfully.',
     });
   } catch (error: any) {
-    logError("Error updating email:", error);
-    socket.emit("updateEmailError", {
-      error: error.message || "Error updating email",
+    logError('Error updating email:', error);
+    socket.emit('updateEmailError', {
+      error: error.message || 'Error updating email',
     });
   }
 };
@@ -1204,15 +1210,15 @@ const handleEnable2FA = async (socket: Socket, userId: number) => {
       select: { display_name: true },
     });
     if (!user) {
-      socket.emit("enable2FAError", { error: "User not found" });
+      socket.emit('enable2FAError', { error: 'User not found' });
       return;
     }
     const result = await AuthService.enable2FA(userId, user.display_name);
-    socket.emit("enable2FASuccess", serializeData(result));
+    socket.emit('enable2FASuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error enabling 2FA:", error);
-    socket.emit("enable2FAError", {
-      error: error.message || "Error enabling 2FA",
+    logError('Error enabling 2FA:', error);
+    socket.emit('enable2FAError', {
+      error: error.message || 'Error enabling 2FA',
     });
   }
 };
@@ -1220,11 +1226,11 @@ const handleEnable2FA = async (socket: Socket, userId: number) => {
 const handleDisable2FA = async (socket: Socket, userId: number) => {
   try {
     const result = await AuthService.disable2FA(userId);
-    socket.emit("disable2FASuccess", serializeData(result));
+    socket.emit('disable2FASuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error disabling 2FA:", error);
-    socket.emit("disable2FAError", {
-      error: error.message || "Error disabling 2FA",
+    logError('Error disabling 2FA:', error);
+    socket.emit('disable2FAError', {
+      error: error.message || 'Error disabling 2FA',
     });
   }
 };
@@ -1237,11 +1243,11 @@ const handleVerify2FA = async (
   try {
     const { token } = data;
     const result = await AuthService.verify2FA(userId, token);
-    socket.emit("verify2FASuccess", serializeData(result));
+    socket.emit('verify2FASuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error verifying 2FA:", error);
-    socket.emit("verify2FAError", {
-      error: error.message || "Error verifying 2FA",
+    logError('Error verifying 2FA:', error);
+    socket.emit('verify2FAError', {
+      error: error.message || 'Error verifying 2FA',
     });
   }
 };
@@ -1249,11 +1255,11 @@ const handleVerify2FA = async (
 const handleStartVacation = async (socket: Socket, userId: number) => {
   try {
     const result = await AccountService.startVacation(userId);
-    socket.emit("startVacationSuccess", serializeData(result));
+    socket.emit('startVacationSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error starting vacation:", error);
-    socket.emit("startVacationError", {
-      error: error.message || "Error starting vacation",
+    logError('Error starting vacation:', error);
+    socket.emit('startVacationError', {
+      error: error.message || 'Error starting vacation',
     });
   }
 };
@@ -1261,11 +1267,11 @@ const handleStartVacation = async (socket: Socket, userId: number) => {
 const handleEndVacation = async (socket: Socket, userId: number) => {
   try {
     const result = await AccountService.endVacation(userId);
-    socket.emit("endVacationSuccess", serializeData(result));
+    socket.emit('endVacationSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error ending vacation:", error);
-    socket.emit("endVacationError", {
-      error: error.message || "Error ending vacation",
+    logError('Error ending vacation:', error);
+    socket.emit('endVacationError', {
+      error: error.message || 'Error ending vacation',
     });
   }
 };
@@ -1277,11 +1283,11 @@ const handleRepairAccount = async (
 ) => {
   try {
     const result = await AccountService.repairFortification(userId, data);
-    socket.emit("repairAccountSuccess", serializeData(result));
+    socket.emit('repairAccountSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error repairing account:", error);
-    socket.emit("repairAccountError", {
-      error: error.message || "Error repairing account",
+    logError('Error repairing account:', error);
+    socket.emit('repairAccountError', {
+      error: error.message || 'Error repairing account',
     });
   }
 };
@@ -1293,11 +1299,11 @@ const handleResetAccount = async (
 ) => {
   try {
     const result = await AccountService.resetAccount(userId, data);
-    socket.emit("resetAccountSuccess", serializeData(result));
+    socket.emit('resetAccountSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error resetting account:", error);
-    socket.emit("resetAccountError", {
-      error: error.message || "Error resetting account",
+    logError('Error resetting account:', error);
+    socket.emit('resetAccountError', {
+      error: error.message || 'Error resetting account',
     });
   }
 };
@@ -1305,11 +1311,11 @@ const handleResetAccount = async (
 const handleUpdateLastActive = async (socket: Socket, userId: number) => {
   try {
     const result = await AccountService.updateLastActive({ userId });
-    socket.emit("updateLastActiveSuccess", serializeData(result));
+    socket.emit('updateLastActiveSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error updating last active:", error);
-    socket.emit("updateLastActiveError", {
-      error: error.message || "Error updating last active",
+    logError('Error updating last active:', error);
+    socket.emit('updateLastActiveError', {
+      error: error.message || 'Error updating last active',
     });
   }
 };
@@ -1326,12 +1332,12 @@ const handleExecuteAttack = async (
       defenderId,
       attackTurns: turns,
     });
-    socket.emit("executeAttackSuccess", serializeData(result));
+    socket.emit('executeAttackSuccess', serializeData(result));
 
-    if (result?.status === "success" && result.attack_log) {
+    if (result?.status === 'success' && result.attack_log) {
       const message = `You were attacked in battle ${result.attack_log}`;
       const hash = md5(message + result.attack_log + defenderId);
-      io?.to(`user-${defenderId}`).emit("attackNotification", {
+      io?.to(`user-${defenderId}`).emit('attackNotification', {
         message,
         hash,
         battleId: result.attack_log,
@@ -1339,9 +1345,9 @@ const handleExecuteAttack = async (
       });
     }
   } catch (error: any) {
-    logError("Error executing attack:", error);
-    socket.emit("executeAttackError", {
-      error: error.message || "Error executing attack",
+    logError('Error executing attack:', error);
+    socket.emit('executeAttackError', {
+      error: error.message || 'Error executing attack',
     });
   }
 };
@@ -1356,16 +1362,16 @@ const handleGetAttackLogs = async (
     minPillage?: number;
     maxPillage?: number;
     sortBy?: string;
-    sortOrder?: "asc" | "desc";
+    sortOrder?: 'asc' | 'desc';
   },
 ) => {
   try {
     const result = await BattleService.getAttackLogs(userId, data);
-    socket.emit("getAttackLogsSuccess", serializeData(result));
+    socket.emit('getAttackLogsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting attack logs:", error);
-    socket.emit("getAttackLogsError", {
-      error: error.message || "Error getting attack logs",
+    logError('Error getting attack logs:', error);
+    socket.emit('getAttackLogsError', {
+      error: error.message || 'Error getting attack logs',
     });
   }
 };
@@ -1373,11 +1379,11 @@ const handleGetAttackLogs = async (
 const handleGetRecentAttacks = async (socket: Socket, userId: number) => {
   try {
     const result = await BattleService.getRecentAttacks({ timeWindow: 7 });
-    socket.emit("getRecentAttacksSuccess", serializeData(result));
+    socket.emit('getRecentAttacksSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting recent attacks:", error);
-    socket.emit("getRecentAttacksError", {
-      error: error.message || "Error getting recent attacks",
+    logError('Error getting recent attacks:', error);
+    socket.emit('getRecentAttacksError', {
+      error: error.message || 'Error getting recent attacks',
     });
   }
 };
@@ -1394,11 +1400,11 @@ const handleGrantAttackLogACL = async (
       roomId,
       participantIds,
     });
-    socket.emit("grantAttackLogACLSuccess", serializeData(result));
+    socket.emit('grantAttackLogACLSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error granting attack log ACL:", error);
-    socket.emit("grantAttackLogACLError", {
-      error: error.message || "Error granting attack log ACL",
+    logError('Error granting attack log ACL:', error);
+    socket.emit('grantAttackLogACLError', {
+      error: error.message || 'Error granting attack log ACL',
     });
   }
 };
@@ -1418,11 +1424,11 @@ const handleBattleTest = async (
       defenderId,
       turns: 10,
     });
-    socket.emit("battleTestSuccess", serializeData(result));
+    socket.emit('battleTestSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error running battle test:", error);
-    socket.emit("battleTestError", {
-      error: error.message || "Error running battle test",
+    logError('Error running battle test:', error);
+    socket.emit('battleTestError', {
+      error: error.message || 'Error running battle test',
     });
   }
 };
@@ -1435,16 +1441,16 @@ const handleFullScaleBattleTest = async (
   try {
     // Only admins can run full scale battle test
     if (userId !== 1 && userId !== 2) {
-      socket.emit("fullScaleBattleTestError", { error: "Unauthorized" });
+      socket.emit('fullScaleBattleTestError', { error: 'Unauthorized' });
       return;
     }
     const { attackerId } = data;
     const result = await BattleService.fullScaleBattleTest(attackerId);
-    socket.emit("fullScaleBattleTestSuccess", serializeData(result));
+    socket.emit('fullScaleBattleTestSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error running full scale battle test:", error);
-    socket.emit("fullScaleBattleTestError", {
-      error: error.message || "Error running full scale battle test",
+    logError('Error running full scale battle test:', error);
+    socket.emit('fullScaleBattleTestError', {
+      error: error.message || 'Error running full scale battle test',
     });
   }
 };
@@ -1457,11 +1463,11 @@ const handleRetestAttack = async (
   try {
     const { attackLogId } = data;
     const result = await BattleService.retestBattle(attackLogId);
-    socket.emit("retestAttackSuccess", serializeData(result));
+    socket.emit('retestAttackSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error retesting attack:", error);
-    socket.emit("retestAttackError", {
-      error: error.message || "Error retesting attack",
+    logError('Error retesting attack:', error);
+    socket.emit('retestAttackError', {
+      error: error.message || 'Error retesting attack',
     });
   }
 };
@@ -1474,7 +1480,9 @@ const handleDepositGold = async (
   try {
     const depositAmount = parseBigInt(data.depositAmount);
     if (depositAmount === null || depositAmount <= 0) {
-      socket.emit("depositGoldError", { error: "Invalid deposit amount: " + data.depositAmount });
+      socket.emit('depositGoldError', {
+        error: `Invalid deposit amount: ${data.depositAmount}`,
+      });
       return;
     }
 
@@ -1484,22 +1492,22 @@ const handleDepositGold = async (
     });
 
     if (!user) {
-      socket.emit("depositGoldError", { error: "User not found" });
+      socket.emit('depositGoldError', { error: 'User not found' });
       return;
     }
 
     const uModel = new UserModel(user);
     if (uModel.maximumBankDeposits - history.length <= 0) {
-      socket.emit("depositGoldError", { error: "Maximum deposits reached" });
+      socket.emit('depositGoldError', { error: 'Maximum deposits reached' });
       return;
     }
 
     const result = await deposit(userId, depositAmount);
-    socket.emit("depositGoldSuccess", serializeData(result));
+    socket.emit('depositGoldSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error depositing gold:", error);
-    socket.emit("depositGoldError", {
-      error: error.message || "Error depositing gold",
+    logError('Error depositing gold:', error);
+    socket.emit('depositGoldError', {
+      error: error.message || 'Error depositing gold',
     });
   }
 };
@@ -1512,16 +1520,16 @@ const handleWithdrawGold = async (
   try {
     const withdrawAmount = parseBigInt(data.withdrawAmount);
     if (withdrawAmount === null || withdrawAmount <= 0) {
-      socket.emit("withdrawGoldError", { error: "Invalid withdraw amount" });
+      socket.emit('withdrawGoldError', { error: 'Invalid withdraw amount' });
       return;
     }
 
     const result = await withdraw(userId, withdrawAmount);
-    socket.emit("withdrawGoldSuccess", serializeData(result));
+    socket.emit('withdrawGoldSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error withdrawing gold:", error);
-    socket.emit("withdrawGoldError", {
-      error: error.message || "Error withdrawing gold",
+    logError('Error withdrawing gold:', error);
+    socket.emit('withdrawGoldError', {
+      error: error.message || 'Error withdrawing gold',
     });
   }
 };
@@ -1534,24 +1542,23 @@ const handleGetDeposits = async (socket: Socket, userId: number) => {
     });
 
     if (!user) {
-      socket.emit("getDepositsError", { error: "User not found" });
+      socket.emit('getDepositsError', { error: 'User not found' });
       return;
     }
 
     const getCountdown = (timestamp: string) => {
-      var targetDate = new Date(timestamp);
+      const targetDate = new Date(timestamp);
       targetDate.setHours(targetDate.getHours() + 24);
-      var currentDate = new Date();
-      var timeDiff = targetDate.getTime() - currentDate.getTime();
+      const currentDate = new Date();
+      const timeDiff = targetDate.getTime() - currentDate.getTime();
 
       if (timeDiff > 0) {
-        var hours = Math.floor(timeDiff / (1000 * 60 * 60));
-        var minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-        var seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
         return { hours, minutes, seconds };
-      } else {
-        return { hours: 0, minutes: 0, seconds: 0 };
       }
+      return { hours: 0, minutes: 0, seconds: 0 };
     };
 
     const userMod = new UserModel(user);
@@ -1560,11 +1567,11 @@ const handleGetDeposits = async (socket: Socket, userId: number) => {
       nextDepositAvailable:
         history.length > 0 ? getCountdown(history[0].date_time.toString()) : 0,
     };
-    socket.emit("getDepositsSuccess", serializeData(result));
+    socket.emit('getDepositsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting deposits:", error);
-    socket.emit("getDepositsError", {
-      error: error.message || "Error getting deposits",
+    logError('Error getting deposits:', error);
+    socket.emit('getDepositsError', {
+      error: error.message || 'Error getting deposits',
     });
   }
 };
@@ -1609,45 +1616,45 @@ const handleGetBankHistory = async (
 
     if (deposits) {
       transactionConditions.push({
-        from_user_account_type: "HAND",
+        from_user_account_type: 'HAND',
         to_user_id: userId,
-        to_user_account_type: "BANK",
+        to_user_account_type: 'BANK',
         from_user_id: userId,
-        history_type: "PLAYER_TRANSFER",
+        history_type: 'PLAYER_TRANSFER',
       });
     }
 
     if (withdraws) {
       transactionConditions.push({
-        from_user_account_type: "BANK",
+        from_user_account_type: 'BANK',
         to_user_id: userId,
-        to_user_account_type: "HAND",
+        to_user_account_type: 'HAND',
         from_user_id: userId,
-        history_type: "PLAYER_TRANSFER",
+        history_type: 'PLAYER_TRANSFER',
       });
     }
 
     if (war_spoils) {
       transactionConditions.push({
-        history_type: "WAR_SPOILS",
+        history_type: 'WAR_SPOILS',
       });
     }
 
     if (transfers) {
       transactionConditions.push({
-        history_type: "PLAYER_TRANSFER",
+        history_type: 'PLAYER_TRANSFER',
         AND: [
           { OR: [{ from_user_id: userId }, { to_user_id: userId }] },
           {
             NOT: {
-              from_user_account_type: "HAND",
-              to_user_account_type: "BANK",
+              from_user_account_type: 'HAND',
+              to_user_account_type: 'BANK',
             },
           },
           {
             NOT: {
-              from_user_account_type: "BANK",
-              to_user_account_type: "HAND",
+              from_user_account_type: 'BANK',
+              to_user_account_type: 'HAND',
             },
           },
         ],
@@ -1656,43 +1663,43 @@ const handleGetBankHistory = async (
 
     if (sale) {
       transactionConditions.push({
-        history_type: "SALE",
+        history_type: 'SALE',
       });
     }
 
     if (training) {
       transactionConditions.push({
-        history_type: "TRAINING",
+        history_type: 'TRAINING',
       });
     }
 
     if (economy) {
       transactionConditions.push({
-        history_type: "ECONOMY",
+        history_type: 'ECONOMY',
       });
     }
 
     if (recruitment) {
       transactionConditions.push({
-        history_type: "RECRUITMENT",
+        history_type: 'RECRUITMENT',
       });
     }
 
     if (fortification) {
       transactionConditions.push({
-        history_type: "FORTIFICATION",
+        history_type: 'FORTIFICATION',
       });
     }
 
     if (daily) {
       transactionConditions.push({
-        history_type: "DAILY",
+        history_type: 'DAILY',
       });
     }
 
     if (friend_transfers) {
       transactionConditions.push({
-        history_type: "FRIEND_TRANSFER",
+        history_type: 'FRIEND_TRANSFER',
       });
     }
 
@@ -1701,11 +1708,11 @@ const handleGetBankHistory = async (
     }
 
     const result = await getBankHistory(conditions, limit, page * limit);
-    socket.emit("getBankHistorySuccess", serializeData(result));
+    socket.emit('getBankHistorySuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting bank history:", error);
-    socket.emit("getBankHistoryError", {
-      error: error.message || "Error getting bank history",
+    logError('Error getting bank history:', error);
+    socket.emit('getBankHistoryError', {
+      error: error.message || 'Error getting bank history',
     });
   }
 };
@@ -1718,11 +1725,11 @@ const handleEquipItem = async (
   try {
     const { items } = data;
     const result = await ArmoryService.equipItems({ userId, items });
-    socket.emit("equipItemSuccess", serializeData(result));
+    socket.emit('equipItemSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error equipping item:", error);
-    socket.emit("equipItemError", {
-      error: error.message || "Error equipping item",
+    logError('Error equipping item:', error);
+    socket.emit('equipItemError', {
+      error: error.message || 'Error equipping item',
     });
   }
 };
@@ -1735,11 +1742,11 @@ const handleUnequipItem = async (
   try {
     const { items } = data;
     const result = await ArmoryService.unequipItems({ userId, items });
-    socket.emit("unequipItemSuccess", serializeData(result));
+    socket.emit('unequipItemSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error unequipping item:", error);
-    socket.emit("unequipItemError", {
-      error: error.message || "Error unequipping item",
+    logError('Error unequipping item:', error);
+    socket.emit('unequipItemError', {
+      error: error.message || 'Error unequipping item',
     });
   }
 };
@@ -1751,11 +1758,11 @@ const handleHireMercenary = async (
 ) => {
   try {
     const result = await ArmoryService.hireMercenary({ userId, ...data });
-    socket.emit("hireMercenarySuccess", serializeData(result));
+    socket.emit('hireMercenarySuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error hiring mercenary:", error);
-    socket.emit("hireMercenaryError", {
-      error: error.message || "Error hiring mercenary",
+    logError('Error hiring mercenary:', error);
+    socket.emit('hireMercenaryError', {
+      error: error.message || 'Error hiring mercenary',
     });
   }
 };
@@ -1767,11 +1774,11 @@ const handleDismissMercenary = async (
 ) => {
   try {
     const result = await ArmoryService.dismissMercenary({ userId, ...data });
-    socket.emit("dismissMercenarySuccess", serializeData(result));
+    socket.emit('dismissMercenarySuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error dismissing mercenary:", error);
-    socket.emit("dismissMercenaryError", {
-      error: error.message || "Error dismissing mercenary",
+    logError('Error dismissing mercenary:', error);
+    socket.emit('dismissMercenaryError', {
+      error: error.message || 'Error dismissing mercenary',
     });
   }
 };
@@ -1783,11 +1790,11 @@ const handleConvertItem = async (
 ) => {
   try {
     const result = await ArmoryService.convertItems({ userId, ...data });
-    socket.emit("convertItemSuccess", serializeData(result));
+    socket.emit('convertItemSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error converting item:", error);
-    socket.emit("convertItemError", {
-      error: error.message || "Error converting item",
+    logError('Error converting item:', error);
+    socket.emit('convertItemError', {
+      error: error.message || 'Error converting item',
     });
   }
 };
@@ -1795,22 +1802,22 @@ const handleConvertItem = async (
 const handleAddFriend = async (
   socket: Socket,
   userId: number,
-  data: { friendId: number; relationshipType: "FRIEND" | "ENEMY" },
+  data: { friendId: number; relationshipType: 'FRIEND' | 'ENEMY' },
 ) => {
   try {
     const result = await SocialService.addRelationship(userId, data);
-    socket.emit("addFriendSuccess", serializeData(result));
+    socket.emit('addFriendSuccess', serializeData(result));
 
     // Notify the target user if it's a friend request
-    if (data.relationshipType === "FRIEND") {
+    if (data.relationshipType === 'FRIEND') {
       const sender = await prisma.users.findUnique({
         where: { id: userId },
         select: { display_name: true },
       });
-      const senderName = sender?.display_name || "someone";
+      const senderName = sender?.display_name || 'someone';
       const message = `You have received a friend request from ${senderName}`;
       const hash = md5(message + data.friendId);
-      io?.to(`user-${data.friendId}`).emit("friendRequestNotification", {
+      io?.to(`user-${data.friendId}`).emit('friendRequestNotification', {
         message,
         hash,
         senderId: userId,
@@ -1820,9 +1827,9 @@ const handleAddFriend = async (
       await emitSocialCountUpdate(data.friendId);
     }
   } catch (error: any) {
-    logError("Error adding friend:", error);
-    socket.emit("addFriendError", {
-      error: error.message || "Error adding friend",
+    logError('Error adding friend:', error);
+    socket.emit('addFriendError', {
+      error: error.message || 'Error adding friend',
     });
   }
 };
@@ -1830,15 +1837,15 @@ const handleAddFriend = async (
 const handleRemoveFriend = async (
   socket: Socket,
   userId: number,
-  data: { friendId: number; relationshipType: "FRIEND" | "ENEMY" },
+  data: { friendId: number; relationshipType: 'FRIEND' | 'ENEMY' },
 ) => {
   try {
     const result = await SocialService.removeRelationship(userId, data);
-    socket.emit("removeFriendSuccess", serializeData(result));
+    socket.emit('removeFriendSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error removing friend:", error);
-    socket.emit("removeFriendError", {
-      error: error.message || "Error removing friend",
+    logError('Error removing friend:', error);
+    socket.emit('removeFriendError', {
+      error: error.message || 'Error removing friend',
     });
   }
 };
@@ -1846,11 +1853,11 @@ const handleRemoveFriend = async (
 const handleRespondToFriendRequest = async (
   socket: Socket,
   userId: number,
-  data: { requestId: number; action: "accept" | "decline" },
+  data: { requestId: number; action: 'accept' | 'decline' },
 ) => {
   try {
     const result = await SocialService.respondToRequest(userId, data);
-    socket.emit("respondToFriendRequestSuccess", serializeData(result));
+    socket.emit('respondToFriendRequestSuccess', serializeData(result));
 
     // Update social counts for both users
     await emitSocialCountUpdate(userId);
@@ -1865,9 +1872,9 @@ const handleRespondToFriendRequest = async (
       await emitSocialCountUpdate(requesterId);
     }
   } catch (error: any) {
-    logError("Error responding to friend request:", error);
-    socket.emit("respondToFriendRequestError", {
-      error: error.message || "Error responding to friend request",
+    logError('Error responding to friend request:', error);
+    socket.emit('respondToFriendRequestError', {
+      error: error.message || 'Error responding to friend request',
     });
   }
 };
@@ -1875,13 +1882,13 @@ const handleRespondToFriendRequest = async (
 const handleGetFriends = async (socket: Socket, userId: number) => {
   try {
     const result = await SocialService.listRelationships(userId, {
-      type: "FRIEND",
+      type: 'FRIEND',
     });
-    socket.emit("getFriendsSuccess", serializeData(result));
+    socket.emit('getFriendsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting friends:", error);
-    socket.emit("getFriendsError", {
-      error: error.message || "Error getting friends",
+    logError('Error getting friends:', error);
+    socket.emit('getFriendsError', {
+      error: error.message || 'Error getting friends',
     });
   }
 };
@@ -1894,7 +1901,7 @@ const handleTransferGold = async (
   try {
     const amount = parseBigInt(data.amount);
     if (amount === null || amount <= 0) {
-      socket.emit("transferGoldError", { error: "Invalid amount" });
+      socket.emit('transferGoldError', { error: 'Invalid amount' });
       return;
     }
     const result = await SocialService.transferGoldToFriend(
@@ -1903,16 +1910,16 @@ const handleTransferGold = async (
       amount,
       data.notes,
     );
-    socket.emit("transferGoldSuccess", serializeData(result));
+    socket.emit('transferGoldSuccess', serializeData(result));
 
     const sender = await prisma.users.findUnique({
       where: { id: userId },
       select: { display_name: true },
     });
-    const senderName = sender?.display_name || "someone";
+    const senderName = sender?.display_name || 'someone';
     const message = `You received ${amount.toString()} gold from ${senderName}`;
     const hash = md5(message + data.friendId + result?.transferId);
-    io?.to(`user-${data.friendId}`).emit("goldTransferReceived", {
+    io?.to(`user-${data.friendId}`).emit('goldTransferReceived', {
       message,
       hash,
       fromUserId: userId,
@@ -1920,9 +1927,9 @@ const handleTransferGold = async (
       amount: amount.toString(),
     });
   } catch (error: any) {
-    logError("Error transferring gold:", error);
-    socket.emit("transferGoldError", {
-      error: error.message || "Error transferring gold",
+    logError('Error transferring gold:', error);
+    socket.emit('transferGoldError', {
+      error: error.message || 'Error transferring gold',
     });
   }
 };
@@ -1935,7 +1942,7 @@ const handleSendGoldRequest = async (
   try {
     const amount = parseBigInt(data.amount);
     if (amount === null || amount <= 0) {
-      socket.emit("sendGoldRequestError", { error: "Invalid amount" });
+      socket.emit('sendGoldRequestError', { error: 'Invalid amount' });
       return;
     }
     const result = await SocialService.createGoldRequest(userId, {
@@ -1943,7 +1950,7 @@ const handleSendGoldRequest = async (
       amount,
       notes: data.notes,
     });
-    socket.emit("sendGoldRequestSuccess", serializeData(result));
+    socket.emit('sendGoldRequestSuccess', serializeData(result));
 
     // Notify the target user
     const message = `You have received a gold request from user ${userId}`;
@@ -1952,9 +1959,9 @@ const handleSendGoldRequest = async (
     await emitSocialCountUpdate(data.friendId);
     await emitGoldRequestCountUpdate(data.friendId);
   } catch (error: any) {
-    logError("Error sending gold request:", error);
-    socket.emit("sendGoldRequestError", {
-      error: error.message || "Error sending gold request",
+    logError('Error sending gold request:', error);
+    socket.emit('sendGoldRequestError', {
+      error: error.message || 'Error sending gold request',
     });
   }
 };
@@ -1962,11 +1969,11 @@ const handleSendGoldRequest = async (
 const handleRespondToGoldRequest = async (
   socket: Socket,
   userId: number,
-  data: { requestId: number; action: "accept" | "decline"; message?: string },
+  data: { requestId: number; action: 'accept' | 'decline'; message?: string },
 ) => {
   try {
     const result = await SocialService.respondToGoldRequest(userId, data);
-    socket.emit("respondToGoldRequestSuccess", serializeData(result));
+    socket.emit('respondToGoldRequestSuccess', serializeData(result));
 
     // Update social counts for both users
     await emitSocialCountUpdate(userId);
@@ -1982,9 +1989,9 @@ const handleRespondToGoldRequest = async (
       await emitGoldRequestCountUpdate(requesterId);
     }
   } catch (error: any) {
-    logError("Error responding to gold request:", error);
-    socket.emit("respondToGoldRequestError", {
-      error: error.message || "Error responding to gold request",
+    logError('Error responding to gold request:', error);
+    socket.emit('respondToGoldRequestError', {
+      error: error.message || 'Error responding to gold request',
     });
   }
 };
@@ -1992,11 +1999,11 @@ const handleRespondToGoldRequest = async (
 const handleGetGoldRequests = async (socket: Socket, userId: number) => {
   try {
     const result = await SocialService.getPendingGoldRequests(userId);
-    socket.emit("getGoldRequestsSuccess", serializeData(result));
+    socket.emit('getGoldRequestsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting gold requests:", error);
-    socket.emit("getGoldRequestsError", {
-      error: error.message || "Error getting gold requests",
+    logError('Error getting gold requests:', error);
+    socket.emit('getGoldRequestsError', {
+      error: error.message || 'Error getting gold requests',
     });
   }
 };
@@ -2004,11 +2011,11 @@ const handleGetGoldRequests = async (socket: Socket, userId: number) => {
 const handleGetSocialRelationships = async (socket: Socket, userId: number) => {
   try {
     const result = await SocialService.getSocialSummary(userId);
-    socket.emit("getSocialRelationshipsSuccess", serializeData(result));
+    socket.emit('getSocialRelationshipsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting social relationships:", error);
-    socket.emit("getSocialRelationshipsError", {
-      error: error.message || "Error getting social relationships",
+    logError('Error getting social relationships:', error);
+    socket.emit('getSocialRelationshipsError', {
+      error: error.message || 'Error getting social relationships',
     });
   }
 };
@@ -2016,13 +2023,13 @@ const handleGetSocialRelationships = async (socket: Socket, userId: number) => {
 const handleGetTopPlayers = async (socket: Socket, userId: number) => {
   try {
     const result = await SocialService.getTopRelationships(userId, {
-      type: "FRIEND",
+      type: 'FRIEND',
     });
-    socket.emit("getTopPlayersSuccess", serializeData(result));
+    socket.emit('getTopPlayersSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting top players:", error);
-    socket.emit("getTopPlayersError", {
-      error: error.message || "Error getting top players",
+    logError('Error getting top players:', error);
+    socket.emit('getTopPlayersError', {
+      error: error.message || 'Error getting top players',
     });
   }
 };
@@ -2030,13 +2037,13 @@ const handleGetTopPlayers = async (socket: Socket, userId: number) => {
 const handleListAllSocial = async (socket: Socket, userId: number) => {
   try {
     const result = await SocialService.listRelationships(userId, {
-      type: "FRIEND",
+      type: 'FRIEND',
     });
-    socket.emit("listAllSocialSuccess", serializeData(result));
+    socket.emit('listAllSocialSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error listing all social:", error);
-    socket.emit("listAllSocialError", {
-      error: error.message || "Error listing all social",
+    logError('Error listing all social:', error);
+    socket.emit('listAllSocialError', {
+      error: error.message || 'Error listing all social',
     });
   }
 };
@@ -2048,11 +2055,11 @@ const handleStartRecruitSession = async (
 ) => {
   try {
     const result = await createSession(userId);
-    socket.emit("startRecruitSessionSuccess", serializeData(result));
+    socket.emit('startRecruitSessionSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error starting recruit session:", error);
-    socket.emit("startRecruitSessionError", {
-      error: error.message || "Error starting recruit session",
+    logError('Error starting recruit session:', error);
+    socket.emit('startRecruitSessionError', {
+      error: error.message || 'Error starting recruit session',
     });
   }
 };
@@ -2064,11 +2071,11 @@ const handleEndRecruitSession = async (
 ) => {
   try {
     const result = await endSession(userId, data.sessionId);
-    socket.emit("endRecruitSessionSuccess", serializeData(result));
+    socket.emit('endRecruitSessionSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error ending recruit session:", error);
-    socket.emit("endRecruitSessionError", {
-      error: error.message || "Error ending recruit session",
+    logError('Error ending recruit session:', error);
+    socket.emit('endRecruitSessionError', {
+      error: error.message || 'Error ending recruit session',
     });
   }
 };
@@ -2076,11 +2083,11 @@ const handleEndRecruitSession = async (
 const handleListRecruitSessions = async (socket: Socket, userId: number) => {
   try {
     const result = await listSessions(userId);
-    socket.emit("listRecruitSessionsSuccess", serializeData(result));
+    socket.emit('listRecruitSessionsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error listing recruit sessions:", error);
-    socket.emit("listRecruitSessionsError", {
-      error: error.message || "Error listing recruit sessions",
+    logError('Error listing recruit sessions:', error);
+    socket.emit('listRecruitSessionsError', {
+      error: error.message || 'Error listing recruit sessions',
     });
   }
 };
@@ -2092,11 +2099,11 @@ const handleVerifyRecruitSession = async (
 ) => {
   try {
     const result = await validateSession(userId, data.sessionId);
-    socket.emit("verifyRecruitSessionSuccess", serializeData(result));
+    socket.emit('verifyRecruitSessionSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error verifying recruit session:", error);
-    socket.emit("verifyRecruitSessionError", {
-      error: error.message || "Error verifying recruit session",
+    logError('Error verifying recruit session:', error);
+    socket.emit('verifyRecruitSessionError', {
+      error: error.message || 'Error verifying recruit session',
     });
   }
 };
@@ -2112,7 +2119,7 @@ const handleRecruitment = async (socket: Socket, userId: number, data: any) => {
       : null;
 
     if (
-      typeof recruitedUserId === "string" &&
+      typeof recruitedUserId === 'string' &&
       !Number.isInteger(Number(recruitedUserId))
     ) {
       const recruitedUser = await getUserByRecruitLink(recruitedUserId);
@@ -2125,7 +2132,7 @@ const handleRecruitment = async (socket: Socket, userId: number, data: any) => {
 
     const ipAddress = getIpAddress({ headers: {} } as any);
     const fromUser = userId ? Number(recruitedUserId) : userId;
-    const toUser = userId ? userId : Number(recruitedUserId);
+    const toUser = userId || Number(recruitedUserId);
     const userIdToLock = selfRecruit ? Number(recruitedUserId) : Number(toUser);
     const delayMs = mtrand(5, 17) * 100;
 
@@ -2137,7 +2144,7 @@ const handleRecruitment = async (socket: Socket, userId: number, data: any) => {
           toUser,
           userIdToUpdate: userIdToLock,
           ipAddress,
-          strategy: "standard",
+          strategy: 'standard',
           goldReward: 250,
           delayMs,
           sessionId: sessionIdNum,
@@ -2146,27 +2153,27 @@ const handleRecruitment = async (socket: Socket, userId: number, data: any) => {
       { timeout: 15000, maxWait: 5000 },
     );
 
-    await logAction(userId || toUser, "RECRUIT", ipAddress, {
+    await logAction(userId || toUser, 'RECRUIT', ipAddress, {
       recruitedUserId,
       selfRecruit,
     });
 
-    socket.emit("handleRecruitmentSuccess", serializeData(result));
+    socket.emit('handleRecruitmentSuccess', serializeData(result));
   } catch (error: any) {
-    if (error.name === "ZodError") {
-      socket.emit("handleRecruitmentError", {
-        error: "Invalid input",
+    if (error.name === 'ZodError') {
+      socket.emit('handleRecruitmentError', {
+        error: 'Invalid input',
         details: error.format(),
       });
       return;
     }
-    logError("Error in recruitment:", error.message);
+    logError('Error in recruitment:', error.message);
     const statusCode =
-      error.message.includes("recruited 5 times") ||
-      error.message.includes("Session")
+      error.message.includes('recruited 5 times') ||
+      error.message.includes('Session')
         ? 409
         : 500;
-    socket.emit("handleRecruitmentError", { error: error.message, statusCode });
+    socket.emit('handleRecruitmentError', { error: error.message, statusCode });
   }
 };
 
@@ -2181,21 +2188,21 @@ const handleGetRecruitHistory = async (socket: Socket, userId: number) => {
     );
 
     if (!usersWithRecruitCount.length) {
-      socket.emit("getRecruitHistoryError", {
-        error: "No recruitment history found in the last 24 hours.",
-        "24hoursago": getOTStartDate(),
+      socket.emit('getRecruitHistoryError', {
+        error: 'No recruitment history found in the last 24 hours.',
+        '24hoursago': getOTStartDate(),
       });
       return;
     }
 
     socket.emit(
-      "getRecruitHistorySuccess",
-      serializeData({ usersWithRecruitCount, "24hoursago": getOTStartDate() }),
+      'getRecruitHistorySuccess',
+      serializeData({ usersWithRecruitCount, '24hoursago': getOTStartDate() }),
     );
   } catch (error: any) {
-    logError("Error getting recruit history:", error);
-    socket.emit("getRecruitHistoryError", {
-      error: error.message || "Error getting recruit history",
+    logError('Error getting recruit history:', error);
+    socket.emit('getRecruitHistoryError', {
+      error: error.message || 'Error getting recruit history',
     });
   }
 };
@@ -2205,20 +2212,20 @@ const handleAutoRecruit = async (socket: Socket, userId: number) => {
     const randomUser = await getRandomAutoRecruitUser();
 
     if (!randomUser) {
-      socket.emit("autoRecruitError", {
-        error: "No valid users available for recruitment.",
+      socket.emit('autoRecruitError', {
+        error: 'No valid users available for recruitment.',
       });
       return;
     }
 
     socket.emit(
-      "autoRecruitSuccess",
+      'autoRecruitSuccess',
       serializeData({ recruit_link: randomUser.recruit_link }),
     );
   } catch (error: any) {
-    logError("Error in auto recruit:", error);
-    socket.emit("autoRecruitError", {
-      error: error.message || "Error in auto recruit",
+    logError('Error in auto recruit:', error);
+    socket.emit('autoRecruitError', {
+      error: error.message || 'Error in auto recruit',
     });
   }
 };
@@ -2235,8 +2242,8 @@ const handleGetRandomRecruitUser = async (
       const sessionRecord = await getSession(userId, sessionId);
 
       if (!sessionRecord || sessionRecord.userId !== userId) {
-        socket.emit("getRandomRecruitUserError", {
-          error: "Invalid session ID",
+        socket.emit('getRandomRecruitUserError', {
+          error: 'Invalid session ID',
         });
         return;
       }
@@ -2246,9 +2253,9 @@ const handleGetRandomRecruitUser = async (
 
     const ipAddress = getIpAddress({ headers: {} } as any);
     const result = await getValidUsersForRecruitment(userId, ipAddress);
-    if (!result || !("usersLeft" in result) || !("activeUsers" in result)) {
-      socket.emit("getRandomRecruitUserError", {
-        error: "Invalid response from recruitment service",
+    if (!result || !('usersLeft' in result) || !('activeUsers' in result)) {
+      socket.emit('getRandomRecruitUserError', {
+        error: 'Invalid response from recruitment service',
       });
       return;
     }
@@ -2266,8 +2273,8 @@ const handleGetRandomRecruitUser = async (
       : [];
 
     if (!validUsers || actuallyRecruitableUsers.length === 0) {
-      socket.emit("getRandomRecruitUserError", {
-        error: "NO_RECRUITABLE_USERS_FOUND",
+      socket.emit('getRandomRecruitUserError', {
+        error: 'NO_RECRUITABLE_USERS_FOUND',
         randomUser: null,
         recruitsLeft: 0,
         totalPlayerCount: validUsers.length,
@@ -2283,16 +2290,16 @@ const handleGetRandomRecruitUser = async (
 
     if (!randomUser) {
       logError(
-        "Failed to select a random user even though actuallyRecruitableUsers was not empty.",
+        'Failed to select a random user even though actuallyRecruitableUsers was not empty.',
       );
-      socket.emit("getRandomRecruitUserError", {
-        error: "Internal error selecting recruitable user.",
+      socket.emit('getRandomRecruitUserError', {
+        error: 'Internal error selecting recruitable user.',
       });
       return;
     }
 
     socket.emit(
-      "getRandomRecruitUserSuccess",
+      'getRandomRecruitUserSuccess',
       serializeData({
         randomUser: {
           ...randomUser.user,
@@ -2304,9 +2311,9 @@ const handleGetRandomRecruitUser = async (
       }),
     );
   } catch (error: any) {
-    logError("Error getting random recruit user:", error);
-    socket.emit("getRandomRecruitUserError", {
-      error: error.message || "Error getting random recruit user",
+    logError('Error getting random recruit user:', error);
+    socket.emit('getRandomRecruitUserError', {
+      error: error.message || 'Error getting random recruit user',
     });
   }
 };
@@ -2314,11 +2321,11 @@ const handleGetRandomRecruitUser = async (
 const handleGetChatRooms = async (socket: Socket, userId: number) => {
   try {
     const rooms = await MessagingService.getUserChatRooms(userId);
-    socket.emit("getChatRoomsSuccess", serializeData(rooms));
+    socket.emit('getChatRoomsSuccess', serializeData(rooms));
   } catch (error: any) {
-    logError("Error getting chat rooms:", error);
-    socket.emit("getChatRoomsError", {
-      error: error.message || "Error getting chat rooms",
+    logError('Error getting chat rooms:', error);
+    socket.emit('getChatRoomsError', {
+      error: error.message || 'Error getting chat rooms',
     });
   }
 };
@@ -2335,11 +2342,11 @@ const handleCreateChatRoom = async (
 ) => {
   try {
     const result = await MessagingService.createOrFindRoom(userId, data);
-    socket.emit("createChatRoomSuccess", serializeData(result));
+    socket.emit('createChatRoomSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error creating chat room:", error);
-    socket.emit("createChatRoomError", {
-      error: error.message || "Error creating chat room",
+    logError('Error creating chat room:', error);
+    socket.emit('createChatRoomError', {
+      error: error.message || 'Error creating chat room',
     });
   }
 };
@@ -2354,11 +2361,11 @@ const handleGetRoomMessages = async (
       userId,
       data.roomId,
     );
-    socket.emit("getRoomMessagesSuccess", serializeData(messages));
+    socket.emit('getRoomMessagesSuccess', serializeData(messages));
   } catch (error: any) {
-    logError("Error getting room messages:", error);
-    socket.emit("getRoomMessagesError", {
-      error: error.message || "Error getting room messages",
+    logError('Error getting room messages:', error);
+    socket.emit('getRoomMessagesError', {
+      error: error.message || 'Error getting room messages',
     });
   }
 };
@@ -2372,11 +2379,11 @@ const handleAddParticipants = async (
     const result = await MessagingService.addParticipants(userId, data.roomId, {
       userIds: data.userIds,
     });
-    socket.emit("addParticipantsSuccess", serializeData(result));
+    socket.emit('addParticipantsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error adding participants:", error);
-    socket.emit("addParticipantsError", {
-      error: error.message || "Error adding participants",
+    logError('Error adding participants:', error);
+    socket.emit('addParticipantsError', {
+      error: error.message || 'Error adding participants',
     });
   }
 };
@@ -2387,7 +2394,7 @@ const handleManageParticipant = async (
   data: {
     roomId: number;
     targetUserId: number;
-    action: "promote" | "demote" | "updatePermissions";
+    action: 'promote' | 'demote' | 'updatePermissions';
     canWrite?: boolean;
   },
 ) => {
@@ -2398,11 +2405,11 @@ const handleManageParticipant = async (
       data.targetUserId,
       { action: data.action, canWrite: data.canWrite },
     );
-    socket.emit("manageParticipantSuccess", serializeData(result));
+    socket.emit('manageParticipantSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error managing participant:", error);
-    socket.emit("manageParticipantError", {
-      error: error.message || "Error managing participant",
+    logError('Error managing participant:', error);
+    socket.emit('manageParticipantError', {
+      error: error.message || 'Error managing participant',
     });
   }
 };
@@ -2418,11 +2425,11 @@ const handleRemoveParticipant = async (
       data.roomId,
       data.targetUserId,
     );
-    socket.emit("removeParticipantSuccess", serializeData(result));
+    socket.emit('removeParticipantSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error removing participant:", error);
-    socket.emit("removeParticipantError", {
-      error: error.message || "Error removing participant",
+    logError('Error removing participant:', error);
+    socket.emit('removeParticipantError', {
+      error: error.message || 'Error removing participant',
     });
   }
 };
@@ -2443,11 +2450,11 @@ const handleSearchMessages = async (
 ) => {
   try {
     const result = await MessagingService.searchMessages(userId, data);
-    socket.emit("searchMessagesSuccess", serializeData(result));
+    socket.emit('searchMessagesSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error searching messages:", error);
-    socket.emit("searchMessagesError", {
-      error: error.message || "Error searching messages",
+    logError('Error searching messages:', error);
+    socket.emit('searchMessagesError', {
+      error: error.message || 'Error searching messages',
     });
   }
 };
@@ -2462,11 +2469,11 @@ const handleTrainUnits = async (
 ) => {
   try {
     const result = await trainUnits(data);
-    socket.emit("trainUnitsSuccess", serializeData(result));
+    socket.emit('trainUnitsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error training units:", error);
-    socket.emit("trainUnitsError", {
-      error: error.message || "Error training units",
+    logError('Error training units:', error);
+    socket.emit('trainUnitsError', {
+      error: error.message || 'Error training units',
     });
   }
 };
@@ -2481,11 +2488,11 @@ const handleUntrainUnits = async (
 ) => {
   try {
     const result = await untrainUnits(data);
-    socket.emit("untrainUnitsSuccess", serializeData(result));
+    socket.emit('untrainUnitsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error untraining units:", error);
-    socket.emit("untrainUnitsError", {
-      error: error.message || "Error untraining units",
+    logError('Error untraining units:', error);
+    socket.emit('untrainUnitsError', {
+      error: error.message || 'Error untraining units',
     });
   }
 };
@@ -2502,11 +2509,11 @@ const handleConvertUnits = async (
 ) => {
   try {
     const result = await convertUnits(data);
-    socket.emit("convertUnitsSuccess", serializeData(result));
+    socket.emit('convertUnitsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error converting units:", error);
-    socket.emit("convertUnitsError", {
-      error: error.message || "Error converting units",
+    logError('Error converting units:', error);
+    socket.emit('convertUnitsError', {
+      error: error.message || 'Error converting units',
     });
   }
 };
@@ -2516,12 +2523,12 @@ const handleManageStructureUpgrades = async (
   userId: number,
   data: {
     currentPage:
-      | "fortifications"
-      | "houses"
-      | "economy"
-      | "offense"
-      | "armory"
-      | "spy";
+      | 'fortifications'
+      | 'houses'
+      | 'economy'
+      | 'offense'
+      | 'armory'
+      | 'spy';
     index: number;
   },
 ) => {
@@ -2530,11 +2537,11 @@ const handleManageStructureUpgrades = async (
       upgradeType: data.currentPage,
       index: data.index,
     });
-    socket.emit("manageStructureUpgradesSuccess", serializeData(result));
+    socket.emit('manageStructureUpgradesSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error managing structure upgrades:", error);
-    socket.emit("manageStructureUpgradesError", {
-      error: error.message || "Error managing structure upgrades",
+    logError('Error managing structure upgrades:', error);
+    socket.emit('manageStructureUpgradesError', {
+      error: error.message || 'Error managing structure upgrades',
     });
   }
 };
@@ -2542,19 +2549,19 @@ const handleManageStructureUpgrades = async (
 const handleManageBattleUpgrades = async (
   socket: Socket,
   userId: number,
-  data: { items: any[]; operation?: "buy" | "sell" },
+  data: { items: any[]; operation?: 'buy' | 'sell' },
 ) => {
   try {
     const result = await BattleService.manageBattleUpgrades({
       userId,
       items: data.items,
-      operation: data.operation || "buy",
+      operation: data.operation || 'buy',
     });
-    socket.emit("manageBattleUpgradesSuccess", serializeData(result));
+    socket.emit('manageBattleUpgradesSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error managing battle upgrades:", error);
-    socket.emit("manageBattleUpgradesError", {
-      error: error.message || "Error managing battle upgrades",
+    logError('Error managing battle upgrades:', error);
+    socket.emit('manageBattleUpgradesError', {
+      error: error.message || 'Error managing battle upgrades',
     });
   }
 };
@@ -2570,12 +2577,12 @@ const handleCreateBlogPost = async (
       title: data.title,
       content: data.content,
     });
-    socket.emit("createBlogPostSuccess", serializeData(result));
+    socket.emit('createBlogPostSuccess', serializeData(result));
 
     if (result?.success && result.data?.id) {
-      const message = `New blog post: ${result.data.title || "Untitled"}`;
+      const message = `New blog post: ${result.data.title || 'Untitled'}`;
       const hash = md5(message + result.data.id);
-      io?.emit("blogPostNotification", {
+      io?.emit('blogPostNotification', {
         message,
         hash,
         postId: result.data.id,
@@ -2583,9 +2590,9 @@ const handleCreateBlogPost = async (
       });
     }
   } catch (error: any) {
-    logError("Error creating blog post:", error);
-    socket.emit("createBlogPostError", {
-      error: error.message || "Error creating blog post",
+    logError('Error creating blog post:', error);
+    socket.emit('createBlogPostError', {
+      error: error.message || 'Error creating blog post',
     });
   }
 };
@@ -2593,11 +2600,11 @@ const handleCreateBlogPost = async (
 const handleGetBlogPosts = async (socket: Socket, userId: number) => {
   try {
     const result = await BlogService.getPosts(userId);
-    socket.emit("getBlogPostsSuccess", serializeData(result));
+    socket.emit('getBlogPostsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting blog posts:", error);
-    socket.emit("getBlogPostsError", {
-      error: error.message || "Error getting blog posts",
+    logError('Error getting blog posts:', error);
+    socket.emit('getBlogPostsError', {
+      error: error.message || 'Error getting blog posts',
     });
   }
 };
@@ -2605,11 +2612,11 @@ const handleGetBlogPosts = async (socket: Socket, userId: number) => {
 const handleGetRecentBlogPosts = async (socket: Socket, userId: number) => {
   try {
     const result = await BlogService.getRecentPosts(userId);
-    socket.emit("getRecentBlogPostsSuccess", serializeData(result));
+    socket.emit('getRecentBlogPostsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting recent blog posts:", error);
-    socket.emit("getRecentBlogPostsError", {
-      error: error.message || "Error getting recent blog posts",
+    logError('Error getting recent blog posts:', error);
+    socket.emit('getRecentBlogPostsError', {
+      error: error.message || 'Error getting recent blog posts',
     });
   }
 };
@@ -2624,11 +2631,11 @@ const handleUpdateBlogReadStatus = async (
       userId,
       postId: data.postId,
     });
-    socket.emit("updateBlogReadStatusSuccess", serializeData(result));
+    socket.emit('updateBlogReadStatusSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error updating blog read status:", error);
-    socket.emit("updateBlogReadStatusError", {
-      error: error.message || "Error updating blog read status",
+    logError('Error updating blog read status:', error);
+    socket.emit('updateBlogReadStatusError', {
+      error: error.message || 'Error updating blog read status',
     });
   }
 };
@@ -2639,11 +2646,11 @@ const handleGetLatestUnreadBlogPost = async (
 ) => {
   try {
     const result = await BlogService.getLatestUnreadPost(userId);
-    socket.emit("getLatestUnreadBlogPostSuccess", serializeData(result));
+    socket.emit('getLatestUnreadBlogPostSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting latest unread blog post:", error);
-    socket.emit("getLatestUnreadBlogPostError", {
-      error: error.message || "Error getting latest unread blog post",
+    logError('Error getting latest unread blog post:', error);
+    socket.emit('getLatestUnreadBlogPostError', {
+      error: error.message || 'Error getting latest unread blog post',
     });
   }
 };
@@ -2651,11 +2658,11 @@ const handleGetLatestUnreadBlogPost = async (
 const handleGetUserData = async (socket: Socket, userId: number) => {
   try {
     const result = await GeneralService.getUserData(userId);
-    socket.emit("getUserDataSuccess", serializeData(result));
+    socket.emit('getUserDataSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting user data:", error);
-    socket.emit("getUserDataError", {
-      error: error.message || "Error getting user data",
+    logError('Error getting user data:', error);
+    socket.emit('getUserDataError', {
+      error: error.message || 'Error getting user data',
     });
   }
 };
@@ -2667,11 +2674,11 @@ const handleSearchUsers = async (
 ) => {
   try {
     const result = await GeneralService.searchUsers(data.name);
-    socket.emit("searchUsersSuccess", serializeData(result));
+    socket.emit('searchUsersSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error searching users:", error);
-    socket.emit("searchUsersError", {
-      error: error.message || "Error searching users",
+    logError('Error searching users:', error);
+    socket.emit('searchUsersError', {
+      error: error.message || 'Error searching users',
     });
   }
 };
@@ -2687,7 +2694,7 @@ const handleCheckDisplayName = async (
       where: {
         display_name: {
           equals: data.displayName,
-          mode: "insensitive",
+          mode: 'insensitive',
         },
       },
     });
@@ -2696,13 +2703,13 @@ const handleCheckDisplayName = async (
     const possibleMatches = exists ? [] : []; // Could implement fuzzy matching here
 
     socket.emit(
-      "checkDisplayNameSuccess",
+      'checkDisplayNameSuccess',
       serializeData({ exists, possibleMatches }),
     );
   } catch (error: any) {
-    logError("Error checking display name:", error);
-    socket.emit("checkDisplayNameError", {
-      error: error.message || "Error checking display name",
+    logError('Error checking display name:', error);
+    socket.emit('checkDisplayNameError', {
+      error: error.message || 'Error checking display name',
     });
   }
 };
@@ -2731,7 +2738,7 @@ const handleGetOnlinePlayers = async (socket: Socket, userId: number) => {
         }),
         prisma.users.findFirst({
           orderBy: {
-            created_at: "desc",
+            created_at: 'desc',
           },
           select: {
             display_name: true,
@@ -2746,11 +2753,11 @@ const handleGetOnlinePlayers = async (socket: Socket, userId: number) => {
       newestUser: newestUser?.display_name || null,
     };
 
-    socket.emit("getOnlinePlayersSuccess", serializeData(result));
+    socket.emit('getOnlinePlayersSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting online players:", error);
-    socket.emit("getOnlinePlayersError", {
-      error: error.message || "Error getting online players",
+    logError('Error getting online players:', error);
+    socket.emit('getOnlinePlayersError', {
+      error: error.message || 'Error getting online players',
     });
   }
 };
@@ -2761,7 +2768,7 @@ const handleCompareTop = async (socket: Socket, userId: number) => {
     const topPlayers = await prisma.users.findMany({
       take: 10,
       orderBy: {
-        experience: "desc",
+        experience: 'desc',
       },
       select: {
         id: true,
@@ -2772,11 +2779,11 @@ const handleCompareTop = async (socket: Socket, userId: number) => {
       },
     });
 
-    socket.emit("compareTopSuccess", serializeData({ topPlayers }));
+    socket.emit('compareTopSuccess', serializeData({ topPlayers }));
   } catch (error: any) {
-    logError("Error comparing top players:", error);
-    socket.emit("compareTopError", {
-      error: error.message || "Error comparing top players",
+    logError('Error comparing top players:', error);
+    socket.emit('compareTopError', {
+      error: error.message || 'Error comparing top players',
     });
   }
 };
@@ -2786,13 +2793,13 @@ const handleResetGame = async (socket: Socket, userId: number) => {
     // This function doesn't exist in GeneralService, so I'll implement it directly
     // Reset game functionality - this is a complex operation that would need careful implementation
     // For now, just return an error indicating this needs to be implemented
-    socket.emit("resetGameError", {
-      error: "Game reset functionality not yet implemented",
+    socket.emit('resetGameError', {
+      error: 'Game reset functionality not yet implemented',
     });
   } catch (error: any) {
-    logError("Error resetting game:", error);
-    socket.emit("resetGameError", {
-      error: error.message || "Error resetting game",
+    logError('Error resetting game:', error);
+    socket.emit('resetGameError', {
+      error: error.message || 'Error resetting game',
     });
   }
 };
@@ -2802,13 +2809,13 @@ const handleRevalidate = async (socket: Socket, userId: number) => {
     // Revalidate user data - could trigger a refresh of cached data
     const userData = await UserDataService.getFullUserData(userId);
     socket.emit(
-      "revalidateSuccess",
-      serializeData({ userData, message: "User data revalidated" }),
+      'revalidateSuccess',
+      serializeData({ userData, message: 'User data revalidated' }),
     );
   } catch (error: any) {
-    logError("Error revalidating:", error);
-    socket.emit("revalidateError", {
-      error: error.message || "Error revalidating",
+    logError('Error revalidating:', error);
+    socket.emit('revalidateError', {
+      error: error.message || 'Error revalidating',
     });
   }
 };
@@ -2827,7 +2834,7 @@ const handleGetUserBreakdown = async (socket: Socket, userId: number) => {
     });
 
     if (!user) {
-      socket.emit("getUserBreakdownError", { error: "User not found" });
+      socket.emit('getUserBreakdownError', { error: 'User not found' });
       return;
     }
 
@@ -2838,11 +2845,11 @@ const handleGetUserBreakdown = async (socket: Socket, userId: number) => {
       battleUpgrades: user.UserBattleUpgrade,
     };
 
-    socket.emit("getUserBreakdownSuccess", serializeData(breakdown));
+    socket.emit('getUserBreakdownSuccess', serializeData(breakdown));
   } catch (error: any) {
-    logError("Error getting user breakdown:", error);
-    socket.emit("getUserBreakdownError", {
-      error: error.message || "Error getting user breakdown",
+    logError('Error getting user breakdown:', error);
+    socket.emit('getUserBreakdownError', {
+      error: error.message || 'Error getting user breakdown',
     });
   }
 };
@@ -2864,12 +2871,12 @@ const handleGetUserStats = async (socket: Socket, userId: number) => {
     });
 
     if (!user) {
-      socket.emit("getUserStatsError", { error: "User not found" });
+      socket.emit('getUserStatsError', { error: 'User not found' });
       return;
     }
 
     const stats =
-      typeof user.stats === "string"
+      typeof user.stats === 'string'
         ? JSON.parse(user.stats)
         : user.stats || [];
     const result = {
@@ -2877,11 +2884,11 @@ const handleGetUserStats = async (socket: Socket, userId: number) => {
       stats,
     };
 
-    socket.emit("getUserStatsSuccess", serializeData(result));
+    socket.emit('getUserStatsSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error getting user stats:", error);
-    socket.emit("getUserStatsError", {
-      error: error.message || "Error getting user stats",
+    logError('Error getting user stats:', error);
+    socket.emit('getUserStatsError', {
+      error: error.message || 'Error getting user stats',
     });
   }
 };
@@ -2906,15 +2913,15 @@ const handleGetUserInfoByRecruitLink = async (
     });
 
     if (!user) {
-      socket.emit("getUserInfoByRecruitLinkError", { error: "User not found" });
+      socket.emit('getUserInfoByRecruitLinkError', { error: 'User not found' });
       return;
     }
 
-    socket.emit("getUserInfoByRecruitLinkSuccess", serializeData(user));
+    socket.emit('getUserInfoByRecruitLinkSuccess', serializeData(user));
   } catch (error: any) {
-    logError("Error getting user info by recruit link:", error);
-    socket.emit("getUserInfoByRecruitLinkError", {
-      error: error.message || "Error getting user info by recruit link",
+    logError('Error getting user info by recruit link:', error);
+    socket.emit('getUserInfoByRecruitLinkError', {
+      error: error.message || 'Error getting user info by recruit link',
     });
   }
 };
@@ -2929,18 +2936,18 @@ const handleAdminAccountAction = async (
   try {
     const accountActionData = {
       userId: data.targetUserId,
-      action: data.action as "SUSPENDED" | "BANNED" | "CLOSED" | "ACTIVE",
+      action: data.action as 'SUSPENDED' | 'BANNED' | 'CLOSED' | 'ACTIVE',
       reason: data.reason,
     };
     const result = await AdminService.performAccountAction(
       userId,
       accountActionData,
     );
-    socket.emit("adminAccountActionSuccess", serializeData(result));
+    socket.emit('adminAccountActionSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error in admin account action:", error);
-    socket.emit("adminAccountActionError", {
-      error: error.message || "Error performing admin account action",
+    logError('Error in admin account action:', error);
+    socket.emit('adminAccountActionError', {
+      error: error.message || 'Error performing admin account action',
     });
   }
 };
@@ -2958,7 +2965,7 @@ const handleGrantPermission = async (
     });
 
     if (!targetUser) {
-      socket.emit("grantPermissionError", { error: "Target user not found" });
+      socket.emit('grantPermissionError', { error: 'Target user not found' });
       return;
     }
 
@@ -2968,11 +2975,11 @@ const handleGrantPermission = async (
     };
 
     const result = await AdminService.grantPermission(userId, grantData);
-    socket.emit("grantPermissionSuccess", serializeData(result));
+    socket.emit('grantPermissionSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error granting permission:", error);
-    socket.emit("grantPermissionError", {
-      error: error.message || "Error granting permission",
+    logError('Error granting permission:', error);
+    socket.emit('grantPermissionError', {
+      error: error.message || 'Error granting permission',
     });
   }
 };
@@ -2980,11 +2987,11 @@ const handleGrantPermission = async (
 const handleStartEra = async (socket: Socket, userId: number) => {
   try {
     const result = await startNewEra();
-    socket.emit("startEraSuccess", serializeData(result));
+    socket.emit('startEraSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error starting new era:", error);
-    socket.emit("startEraError", {
-      error: error.message || "Error starting new era",
+    logError('Error starting new era:', error);
+    socket.emit('startEraError', {
+      error: error.message || 'Error starting new era',
     });
   }
 };
@@ -2992,11 +2999,11 @@ const handleStartEra = async (socket: Socket, userId: number) => {
 const handleGetConstants = async (socket: Socket, userId: number) => {
   try {
     // Import constants from their respective files
-    const { UnitTypes } = await import("@/constants/Units");
-    const { ItemTypes } = await import("@/constants/Items");
+    const { UnitTypes } = await import('@/constants/Units');
+    const { ItemTypes } = await import('@/constants/Items');
     const { EconomyUpgrades, OffensiveUpgrades, SentryUpgrades, SpyUpgrades } =
-      await import("@/constants/Structure_Upgrades");
-    const { BattleUpgrades } = await import("@/constants/Battle_Upgrades");
+      await import('@/constants/Structure_Upgrades');
+    const { BattleUpgrades } = await import('@/constants/Battle_Upgrades');
 
     const constants = {
       units: UnitTypes,
@@ -3010,18 +3017,18 @@ const handleGetConstants = async (socket: Socket, userId: number) => {
       battleUpgrades: BattleUpgrades,
     };
 
-    socket.emit("getConstantsSuccess", serializeData(constants));
+    socket.emit('getConstantsSuccess', serializeData(constants));
   } catch (error: any) {
-    logError("Error getting constants:", error);
-    socket.emit("getConstantsError", {
-      error: error.message || "Error getting constants",
+    logError('Error getting constants:', error);
+    socket.emit('getConstantsError', {
+      error: error.message || 'Error getting constants',
     });
   }
 };
 
 const handleGetRankBreakdown = async (socket: Socket, userId: number) => {
   try {
-    const { calculateOverallRank } = await import("@/utils/utilities");
+    const { calculateOverallRank } = await import('@/utils/utilities');
 
     const allUsers = await prisma.users.findMany({
       include: {
@@ -3063,11 +3070,11 @@ const handleGetRankBreakdown = async (socket: Socket, userId: number) => {
 
     userRanks.sort((a, b) => b.rankScore - a.rankScore);
 
-    socket.emit("getRankBreakdownSuccess", serializeData(userRanks));
+    socket.emit('getRankBreakdownSuccess', serializeData(userRanks));
   } catch (error: any) {
-    logError("Error getting rank breakdown:", error);
-    socket.emit("getRankBreakdownError", {
-      error: error.message || "Error getting rank breakdown",
+    logError('Error getting rank breakdown:', error);
+    socket.emit('getRankBreakdownError', {
+      error: error.message || 'Error getting rank breakdown',
     });
   }
 };
@@ -3084,19 +3091,19 @@ const handleDailyCron = async (
       include: { permissions: true },
     });
 
-    if (!user || !user.permissions.some((p) => p === "ADMINISTRATOR")) {
-      socket.emit("dailyCronError", {
-        error: "Unauthorized: Administrator access required",
+    if (!user || !user.permissions.some((p) => p === 'ADMINISTRATOR')) {
+      socket.emit('dailyCronError', {
+        error: 'Unauthorized: Administrator access required',
       });
       return;
     }
 
     const result = await CronJobService.processDailyUpdates();
-    socket.emit("dailyCronSuccess", serializeData(result));
+    socket.emit('dailyCronSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error running daily cron:", error);
-    socket.emit("dailyCronError", {
-      error: error.message || "Error running daily cron",
+    logError('Error running daily cron:', error);
+    socket.emit('dailyCronError', {
+      error: error.message || 'Error running daily cron',
     });
   }
 };
@@ -3113,19 +3120,19 @@ const handleTurnsCron = async (
       include: { permissions: true },
     });
 
-    if (!user || !user.permissions.some((p) => p === "ADMINISTRATOR")) {
-      socket.emit("turnsCronError", {
-        error: "Unauthorized: Administrator access required",
+    if (!user || !user.permissions.some((p) => p === 'ADMINISTRATOR')) {
+      socket.emit('turnsCronError', {
+        error: 'Unauthorized: Administrator access required',
       });
       return;
     }
 
     const result = await CronJobService.processTurnUpdates();
-    socket.emit("turnsCronSuccess", serializeData(result));
+    socket.emit('turnsCronSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error running turns cron:", error);
-    socket.emit("turnsCronError", {
-      error: error.message || "Error running turns cron",
+    logError('Error running turns cron:', error);
+    socket.emit('turnsCronError', {
+      error: error.message || 'Error running turns cron',
     });
   }
 };
@@ -3142,19 +3149,19 @@ const handleAccountStatusCron = async (
       include: { permissions: true },
     });
 
-    if (!user || !user.permissions.some((p) => p === "ADMINISTRATOR")) {
-      socket.emit("accountStatusCronError", {
-        error: "Unauthorized: Administrator access required",
+    if (!user || !user.permissions.some((p) => p === 'ADMINISTRATOR')) {
+      socket.emit('accountStatusCronError', {
+        error: 'Unauthorized: Administrator access required',
       });
       return;
     }
 
     const result = await CronJobService.processAccountStatusUpdates();
-    socket.emit("accountStatusCronSuccess", serializeData(result));
+    socket.emit('accountStatusCronSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error running account status cron:", error);
-    socket.emit("accountStatusCronError", {
-      error: error.message || "Error running account status cron",
+    logError('Error running account status cron:', error);
+    socket.emit('accountStatusCronError', {
+      error: error.message || 'Error running account status cron',
     });
   }
 };
@@ -3166,45 +3173,52 @@ const handleVerifyCaptcha = async (
 ) => {
   try {
     const disableTurnstile =
-      process.env.DISABLE_TURNSTILE === "true" ||
-      process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === "true" ||
-      process.env.NEXT_PUBLIC_USE_CAPTCHA === "false";
-    const turnstileConfigured = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SECRET);
+      process.env.DISABLE_TURNSTILE === 'true' ||
+      process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true' ||
+      process.env.NEXT_PUBLIC_USE_CAPTCHA === 'false';
+    const turnstileConfigured = Boolean(
+      process.env.NEXT_PUBLIC_TURNSTILE_SECRET,
+    );
     const enforceTurnstile =
       !disableTurnstile &&
-      (process.env.NEXT_PUBLIC_USE_CAPTCHA === "true" || turnstileConfigured);
+      (process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' || turnstileConfigured);
 
     if (!enforceTurnstile) {
-      socket.emit("verifyCaptchaSuccess", serializeData({ success: true, bypassed: true }));
+      socket.emit(
+        'verifyCaptchaSuccess',
+        serializeData({ success: true, bypassed: true }),
+      );
       return;
     }
 
     const verifyEndpoint =
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify';
     const secret = process.env.NEXT_PUBLIC_TURNSTILE_SECRET;
     if (!secret) {
-      socket.emit("verifyCaptchaError", { error: "Captcha is enabled but not configured on the server" });
+      socket.emit('verifyCaptchaError', {
+        error: 'Captcha is enabled but not configured on the server',
+      });
       return;
     }
 
     const response = await fetch(verifyEndpoint, {
-      method: "POST",
+      method: 'POST',
       body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(data.token)}`,
       headers: {
-        "content-type": "application/x-www-form-urlencoded",
+        'content-type': 'application/x-www-form-urlencoded',
       },
     });
 
     if (!response.ok) {
-      throw new Error("Verification failed");
+      throw new Error('Verification failed');
     }
 
     const result = await response.json();
-    socket.emit("verifyCaptchaSuccess", serializeData(result));
+    socket.emit('verifyCaptchaSuccess', serializeData(result));
   } catch (error: any) {
-    logError("Error verifying captcha:", error);
-    socket.emit("verifyCaptchaError", {
-      error: error.message || "Error verifying captcha",
+    logError('Error verifying captcha:', error);
+    socket.emit('verifyCaptchaError', {
+      error: error.message || 'Error verifying captcha',
     });
   }
 };
@@ -3212,14 +3226,15 @@ const handleVerifyCaptcha = async (
 const handleNotifyAttack = async ({ battleId, defenderId }) => {
   const message = `You were attacked in battle ${battleId}`;
   const hash = md5(message + battleId + defenderId);
-  io!.to(`user-${defenderId}`).emit("attackNotification", { message, hash });
+  io.to(`user-${defenderId}`).emit('attackNotification', { message, hash });
 };
 
 const handleNotifyFriendRequest = async ({ userId: targetUserId, message }) => {
   const hash = md5(message + targetUserId);
-  io!
-    .to(`user-${targetUserId}`)
-    .emit("friendRequestNotification", { message, hash });
+  io.to(`user-${targetUserId}`).emit('friendRequestNotification', {
+    message,
+    hash,
+  });
 };
 
 const handleNotifyEnemyDeclaration = async ({
@@ -3227,26 +3242,28 @@ const handleNotifyEnemyDeclaration = async ({
   message,
 }) => {
   const hash = md5(message + targetUserId);
-  io!
-    .to(`user-${targetUserId}`)
-    .emit("enemyDeclarationNotification", { message, hash });
+  io.to(`user-${targetUserId}`).emit('enemyDeclarationNotification', {
+    message,
+    hash,
+  });
 };
 
 const handleNotifyGoldRequest = async ({ userId: targetUserId, message }) => {
   const hash = md5(message + targetUserId);
-  io!
-    .to(`user-${targetUserId}`)
-    .emit("goldRequestNotification", { message, hash });
+  io.to(`user-${targetUserId}`).emit('goldRequestNotification', {
+    message,
+    hash,
+  });
 };
 
 const handleAlertNotification = (alert: any) => {
-  logInfo("Received alert notification:", alert);
-  io!.emit("alertNotification", alert); // Broadcast to all
+  logInfo('Received alert notification:', alert);
+  io.emit('alertNotification', alert); // Broadcast to all
 };
 
 const handlePing = ({ userId: targetUserId }) => {
-  logInfo("Ping received for user:", targetUserId);
-  io!.to(`user-${targetUserId}`).emit("pong");
+  logInfo('Ping received for user:', targetUserId);
+  io.to(`user-${targetUserId}`).emit('pong');
 };
 
 const handleDisconnect = (socket: Socket, userId: number, reason: string) => {
@@ -3313,7 +3330,7 @@ async function grantAclToParticipants(
   );
   try {
     const recipientParticipants = await prisma.chatRoomParticipant.findMany({
-      where: { roomId: roomId, userId: { not: senderId } },
+      where: { roomId, userId: { not: senderId } },
       select: { userId: true },
     });
     logInfo(
@@ -3357,17 +3374,17 @@ async function sendNotifications(
   message: MessageWithRelationsPayload,
 ) {
   const participants = await prisma.chatRoomParticipant.findMany({
-    where: { roomId: roomId, userId: { not: senderId } },
+    where: { roomId, userId: { not: senderId } },
     select: { userId: true },
   });
 
   const notificationPayload = {
     id: message.id,
-    senderId: senderId,
+    senderId,
     senderName: message.sender.display_name,
     content:
       message.content.substring(0, 50) +
-      (message.content.length > 50 ? "..." : ""),
+      (message.content.length > 50 ? '...' : ''),
     timestamp: safeToISOString(message.sentAt),
     isRead: false,
     chatRoomId: roomId,
@@ -3377,7 +3394,7 @@ async function sendNotifications(
     const recipientUserId = p.userId;
     logInfo(`Emitting 'newMessageNotification' to user-${recipientUserId}`);
     io?.to(`user-${recipientUserId}`).emit(
-      "newMessageNotification",
+      'newMessageNotification',
       notificationPayload,
     ); // Use optional chaining for io
   });
@@ -3385,7 +3402,7 @@ async function sendNotifications(
 
 // Helper function to find userId from socketId using the userSockets map
 const findUserIdBySocketId = (socketId: string): number | string => {
-  let foundUserId: number | string = "Unknown";
+  let foundUserId: number | string = 'Unknown';
   userSockets.forEach((socketIdSet, uid) => {
     if (socketIdSet.has(socketId)) {
       foundUserId = uid;
@@ -3403,9 +3420,9 @@ const emitSocialCountUpdate = async (userId: number) => {
       SocialService.countPendingGoldRequests(userId),
     ]);
     const totalCount = (friendRequests.count || 0) + (goldRequests.count || 0);
-    io!.to(`user-${userId}`).emit("socialCountUpdate", { count: totalCount });
+    io.to(`user-${userId}`).emit('socialCountUpdate', { count: totalCount });
   } catch (error) {
-    logError("Error emitting social count update:", error);
+    logError('Error emitting social count update:', error);
   }
 };
 
@@ -3413,17 +3430,17 @@ const emitSocialCountUpdate = async (userId: number) => {
 const emitGoldRequestCountUpdate = async (userId: number) => {
   try {
     const result = await SocialService.countPendingGoldRequests(userId);
-    io!
-      .to(`user-${userId}`)
-      .emit("goldRequestCountUpdate", { count: result.count || 0 });
+    io.to(`user-${userId}`).emit('goldRequestCountUpdate', {
+      count: result.count || 0,
+    });
   } catch (error) {
-    logError("Error emitting gold request count update:", error);
+    logError('Error emitting gold request count update:', error);
   }
 };
 
 export const getSocketIO = (): Server | null => {
   if (!io) {
-    logError("Socket.IO has not been initialized!");
+    logError('Socket.IO has not been initialized!');
     return null;
   }
   return io;

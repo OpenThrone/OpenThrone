@@ -45,8 +45,9 @@ export class AssassinationResult {
     this.goldStolen = 0;
     this.units = (defender.units as PlayerUnit[]).filter((unit) =>
       target === CITIZEN_WORKERS_TARGET
-        ? unit.type === ('CITIZEN' as UnitType) || unit.type === ('WORKER' as UnitType)
-        : unit.type === (target as UnitType)
+        ? unit.type === ('CITIZEN' as UnitType) ||
+          unit.type === ('WORKER' as UnitType)
+        : unit.type === target,
     );
   }
 }
@@ -69,9 +70,13 @@ export class IntelResult {
     goldInBank: number | null;
   } | null;
 
-  constructor(attacker: SpyMissionUser, defender: SpyMissionUser, spiesSent: number) {
-    this.attacker = attacker;  // deep copy
-    this.defender = defender;  // deep copy
+  constructor(
+    attacker: SpyMissionUser,
+    defender: SpyMissionUser,
+    spiesSent: number,
+  ) {
+    this.attacker = attacker; // deep copy
+    this.defender = defender; // deep copy
     this.spiesSent = spiesSent;
     this.spiesLost = 0;
     this.success = false;
@@ -87,9 +92,13 @@ export class InfiltrationResult {
   success: boolean;
   fortDmg: number;
 
-  constructor(attacker: SpyMissionUser, defender: SpyMissionUser, spiesSent: number) {
-    this.attacker = attacker;  // deep copy
-    this.defender = defender;  // deep copy
+  constructor(
+    attacker: SpyMissionUser,
+    defender: SpyMissionUser,
+    spiesSent: number,
+  ) {
+    this.attacker = attacker; // deep copy
+    this.defender = defender; // deep copy
     this.spiesSent = spiesSent;
     this.spiesLost = 0;
     this.success = false;

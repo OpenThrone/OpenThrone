@@ -2,9 +2,9 @@ import type {
   UserBattleUpgrade,
   UserBonusPoints,
   UserItem,
+  users as PrismaUser,
   UserStructureUpgrade,
   UserUnit,
-  users as PrismaUser,
 } from '@prisma/client';
 
 export type BaseUserRelations = {

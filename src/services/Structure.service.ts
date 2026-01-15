@@ -1,13 +1,27 @@
-import prisma from '@/lib/prisma';
 import { z } from 'zod';
-import { logError } from '@/utils/logger';
-import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, OffensiveUpgrades, SpyUpgrades } from '@/constants';
+
+import {
+  ArmoryUpgrades,
+  EconomyUpgrades,
+  Fortifications,
+  HouseUpgrades,
+  OffensiveUpgrades,
+  SpyUpgrades,
+} from '@/constants';
+import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services';
+import { logError } from '@/utils/logger';
 
 // Type definitions for structure operations
 export interface StructureUpgradeData {
-  upgradeType: 'fortifications' | 'houses' | 'economy' | 'offense' | 'armory' | 'spy';
+  upgradeType:
+    | 'fortifications'
+    | 'houses'
+    | 'economy'
+    | 'offense'
+    | 'armory'
+    | 'spy';
   index: number;
 }
 
@@ -22,15 +36,28 @@ export interface StructureUpgradeResult {
 
 // Zod schemas for validation
 const StructureUpgradeSchema = z.object({
-  upgradeType: z.enum(['fortifications', 'houses', 'economy', 'offense', 'armory', 'spy']),
-  index: z.number().int().nonnegative({ message: 'Index must be a non-negative integer.' })
+  upgradeType: z.enum([
+    'fortifications',
+    'houses',
+    'economy',
+    'offense',
+    'armory',
+    'spy',
+  ]),
+  index: z
+    .number()
+    .int()
+    .nonnegative({ message: 'Index must be a non-negative integer.' }),
 });
 
 export class StructureService {
   /**
    * Upgrades a structure for a user
    */
-  static async upgradeStructure(userId: number, data: StructureUpgradeData): Promise<StructureUpgradeResult> {
+  static async upgradeStructure(
+    userId: number,
+    data: StructureUpgradeData,
+  ): Promise<StructureUpgradeResult> {
     const validatedData = StructureUpgradeSchema.parse(data);
     const { upgradeType, index: requestedIndex } = validatedData;
 
@@ -52,34 +79,54 @@ export class StructureService {
         let structureUpgrades: any[] = [];
         if (Array.isArray((user as any).structure_upgrades)) {
           structureUpgrades = (user as any).structure_upgrades.filter(
-            (upg: any) => typeof upg === 'object' && upg !== null && typeof upg.type === 'string' && typeof upg.level === 'number'
+            (upg: any) =>
+              typeof upg === 'object' &&
+              upg !== null &&
+              typeof upg.type === 'string' &&
+              typeof upg.level === 'number',
           );
         }
 
         // Determine upgrade details based on type
         switch (upgradeType) {
           case 'fortifications':
-            currentLevel = (user as any).fortLevel ?? (user as any).fort_level ?? 0;
-            if (requestedIndex >= Fortifications.length) throw new Error('Upgrade index out of bounds.');
-            if (requestedIndex !== currentLevel) throw new Error(`Cannot purchase level ${requestedIndex + 1}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`);
+            currentLevel =
+              (user as any).fortLevel ?? (user as any).fort_level ?? 0;
+            if (requestedIndex >= Fortifications.length)
+              throw new Error('Upgrade index out of bounds.');
+            if (requestedIndex !== currentLevel)
+              throw new Error(
+                `Cannot purchase level ${requestedIndex + 1}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`,
+              );
             upgradeData = Fortifications[requestedIndex];
             upgradeCost = BigInt(upgradeData.cost);
             newLevel = requestedIndex + 1;
             break;
 
           case 'houses':
-            currentLevel = (user as any).houseLevel ?? (user as any).house_level ?? 0;
-            if (!(requestedIndex in HouseUpgrades)) throw new Error('Upgrade index out of bounds.');
-            if (requestedIndex !== currentLevel + 1) throw new Error(`Cannot purchase level ${requestedIndex}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`);
-            upgradeData = HouseUpgrades[requestedIndex as keyof typeof HouseUpgrades];
+            currentLevel =
+              (user as any).houseLevel ?? (user as any).house_level ?? 0;
+            if (!(requestedIndex in HouseUpgrades))
+              throw new Error('Upgrade index out of bounds.');
+            if (requestedIndex !== currentLevel + 1)
+              throw new Error(
+                `Cannot purchase level ${requestedIndex}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`,
+              );
+            upgradeData =
+              HouseUpgrades[requestedIndex as keyof typeof HouseUpgrades];
             upgradeCost = BigInt(upgradeData.cost);
             newLevel = requestedIndex;
             break;
 
           case 'economy':
-            currentLevel = (user as any).economyLevel ?? (user as any).economy_level ?? 0;
-            if (requestedIndex >= EconomyUpgrades.length) throw new Error('Upgrade index out of bounds.');
-            if (requestedIndex !== currentLevel + 1) throw new Error(`Cannot purchase level ${requestedIndex}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`);
+            currentLevel =
+              (user as any).economyLevel ?? (user as any).economy_level ?? 0;
+            if (requestedIndex >= EconomyUpgrades.length)
+              throw new Error('Upgrade index out of bounds.');
+            if (requestedIndex !== currentLevel + 1)
+              throw new Error(
+                `Cannot purchase level ${requestedIndex}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`,
+              );
             upgradeData = EconomyUpgrades[requestedIndex];
             upgradeCost = BigInt(upgradeData.cost);
             newLevel = requestedIndex;
@@ -89,27 +136,46 @@ export class StructureService {
           case 'armory':
           case 'spy':
             const structureType = upgradeType.toUpperCase();
-            const upgradesArray = upgradeType === 'offense' ? OffensiveUpgrades : upgradeType === 'armory' ? ArmoryUpgrades : SpyUpgrades;
-            const currentStructure = structureUpgrades.find(s => s.type === structureType);
+            const upgradesArray =
+              upgradeType === 'offense'
+                ? OffensiveUpgrades
+                : upgradeType === 'armory'
+                  ? ArmoryUpgrades
+                  : SpyUpgrades;
+            const currentStructure = structureUpgrades.find(
+              (s) => s.type === structureType,
+            );
             currentLevel = currentStructure ? currentStructure.level : 1;
 
-            if (requestedIndex >= upgradesArray.length) throw new Error('Upgrade index out of bounds.');
-            if (requestedIndex !== currentLevel) throw new Error(`Cannot purchase level ${requestedIndex + 1}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`);
+            if (requestedIndex >= upgradesArray.length)
+              throw new Error('Upgrade index out of bounds.');
+            if (requestedIndex !== currentLevel)
+              throw new Error(
+                `Cannot purchase level ${requestedIndex + 1}. Current level is ${currentLevel}. Purchase level ${currentLevel + 1}.`,
+              );
 
             upgradeData = upgradesArray[requestedIndex];
             upgradeCost = BigInt(upgradeData.cost);
             newLevel = requestedIndex + 1;
 
             // Update the specific structure level within the array
-            const updatedStructures = structureUpgrades.filter(s => s.type !== structureType);
-            updatedStructures.push({ type: structureType, level: newLevel, userId });
+            const updatedStructures = structureUpgrades.filter(
+              (s) => s.type !== structureType,
+            );
+            updatedStructures.push({
+              type: structureType,
+              level: newLevel,
+              userId,
+            });
             structureUpgrades = updatedStructures;
             break;
         }
 
         // Check gold
         if (user.gold < upgradeCost) {
-          throw new Error(`Not enough gold. Required: ${upgradeCost}, Available: ${user.gold}`);
+          throw new Error(
+            `Not enough gold. Required: ${upgradeCost}, Available: ${user.gold}`,
+          );
         }
 
         // Update user
@@ -117,11 +183,14 @@ export class StructureService {
           where: { id: userId },
           data: {
             gold: user.gold - upgradeCost,
-            ...(upgradeType === 'fortifications' && { fort_level: newLevel, fort_hitpoints: upgradeData.hitpoints }),
+            ...(upgradeType === 'fortifications' && {
+              fort_level: newLevel,
+              fort_hitpoints: upgradeData.hitpoints,
+            }),
             ...(upgradeType === 'houses' && { house_level: newLevel }),
             ...(upgradeType === 'economy' && { economy_level: newLevel }),
           },
-          select: { gold: true }
+          select: { gold: true },
         });
 
         // Update structure upgrades if needed (persist per-type rows)
@@ -130,13 +199,13 @@ export class StructureService {
             await tx.userStructureUpgrade.upsert({
               where: {
                 userId_type: {
-                  userId: userId,
-                  type: s.type as any,
+                  userId,
+                  type: s.type,
                 },
               },
               create: {
-                userId: userId,
-                type: s.type as any,
+                userId,
+                type: s.type,
                 level: s.level,
               },
               update: {
@@ -165,7 +234,7 @@ export class StructureService {
         });
 
         return {
-          newLevel: newLevel,
+          newLevel,
           newGold: updatedUser.gold.toString(),
         };
       });
@@ -173,13 +242,18 @@ export class StructureService {
       return {
         message: `${upgradeType} upgrade purchased successfully to level ${result.newLevel}`,
         data: {
-          upgradeType: upgradeType,
+          upgradeType,
           newLevel: result.newLevel,
           newGold: result.newGold,
         },
       };
     } catch (error: any) {
-      logError('Error upgrading structure', { userId, upgradeType, requestedIndex, error });
+      logError('Error upgrading structure', {
+        userId,
+        upgradeType,
+        requestedIndex,
+        error,
+      });
       throw error;
     }
   }

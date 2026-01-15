@@ -1,12 +1,21 @@
-import { useState, useEffect } from "react";
-import { alertService } from "@/services/Alert.service";
-import { getLevelFromXP } from "@/utils/utilities";
-import { Group, Avatar, Text, Autocomplete, Button, MultiSelect, Badge, Stack, Loader } from "@mantine/core";
-import { useDebouncedCallback } from "@mantine/hooks";
-import { PermissionType } from "@prisma/client";
+import {
+  Autocomplete,
+  Avatar,
+  Button,
+  Group,
+  Loader,
+  MultiSelect,
+  Stack,
+  Text,
+} from '@mantine/core';
+import { useDebouncedCallback } from '@mantine/hooks';
+import { PermissionType } from '@prisma/client';
+import { useEffect, useState } from 'react';
+
+import { alertService } from '@/services/Alert.service';
 
 const GrantUserForm = () => {
-  const [grantUser, setGrantUser] = useState<string>("");
+  const [grantUser, setGrantUser] = useState<string>('');
   const [grantLevel, setGrantLevel] = useState<string[]>([]);
   const [usersData, setUsersData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -16,10 +25,12 @@ const GrantUserForm = () => {
     if (!searchTerm.trim()) return [];
     setLoading(true);
     try {
-      const response = await fetch(`/api/general/searchUsers?name=${searchTerm}`);
+      const response = await fetch(
+        `/api/general/searchUsers?name=${searchTerm}`,
+      );
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
-      return data.map(user => ({
+      return data.map((user) => ({
         value: user.display_name,
         label: user.display_name,
         image: user.avatar,
@@ -27,7 +38,7 @@ const GrantUserForm = () => {
         permissions: user.permissions,
       }));
     } catch (error) {
-      console.error("Failed to fetch users:", error);
+      console.error('Failed to fetch users:', error);
       return [];
     } finally {
       setLoading(false);
@@ -43,12 +54,16 @@ const GrantUserForm = () => {
     setUsersData(users);
   }, 300);
 
-  useEffect(() => { handleSearch(grantUser); }, [grantUser, handleSearch]);
+  useEffect(() => {
+    handleSearch(grantUser);
+  }, [grantUser, handleSearch]);
 
   useEffect(() => {
     const selectedUser = usersData.find((user) => user.label === grantUser);
     setIsUserValid(!!selectedUser);
-    setGrantLevel(selectedUser ? selectedUser.permissions.map((p) => p.type) : []);
+    setGrantLevel(
+      selectedUser ? selectedUser.permissions.map((p) => p.type) : [],
+    );
   }, [grantUser, usersData]);
 
   const grantUserPermission = async () => {
@@ -60,18 +75,20 @@ const GrantUserForm = () => {
     const data = await response.json();
     if (response.ok) {
       alertService.success(`Successfully updated permissions for ${grantUser}`);
-      setGrantUser("");
+      setGrantUser('');
     } else {
       alertService.error(data.error);
     }
   };
-  
+
   const renderAutocompleteOption = ({ option }: { option: any }) => (
     <Group>
       <Avatar src={option.image} size="lg" radius="xl" />
       <div>
         <Text size="sm">{option.label}</Text>
-        <Text size="xs" opacity={0.5}>ID: {option.id}</Text>
+        <Text size="xs" opacity={0.5}>
+          ID: {option.id}
+        </Text>
       </div>
     </Group>
   );

@@ -1,10 +1,11 @@
+import { z } from 'zod';
+
 import prisma from '@/lib/prisma';
-import { logError } from '@/utils/logger';
 import UserModel from '@/models/Users';
 import { getAllUsers } from '@/services';
-import { calculateOverallRank } from '@/utils/utilities';
 import { getUpdatedStatus } from '@/services/User.service';
-import { z } from 'zod';
+import { logError } from '@/utils/logger';
+import { calculateOverallRank } from '@/utils/utilities';
 
 // Zod schemas for validation
 const RankSchema = z.number().int().positive();
@@ -26,8 +27,17 @@ export class CronJobService {
       const allUsers = await getAllUsers();
 
       // Initialize the queue with users and attempt counts
-      let queue = allUsers.map((singleUser) => ({
-        user: new UserModel(singleUser, singleUser.UserUnit, singleUser.UserItem, singleUser.UserStructureUpgrade, singleUser.UserBattleUpgrade, singleUser.UserBonusPoints, singleUser.permissions.map(p => ({ type: p })), singleUser.stats),
+      const queue = allUsers.map((singleUser) => ({
+        user: new UserModel(
+          singleUser,
+          singleUser.UserUnit,
+          singleUser.UserItem,
+          singleUser.UserStructureUpgrade,
+          singleUser.UserBattleUpgrade,
+          singleUser.UserBonusPoints,
+          singleUser.permissions.map((p) => ({ type: p })),
+          singleUser.stats,
+        ),
         attempts: 0,
       }));
 
@@ -49,7 +59,9 @@ export class CronJobService {
             queue.push(currentTask);
           } else {
             failed++;
-            logError(`Failed to update user ${currentTask.user.id} after 3 attempts.`);
+            logError(
+              `Failed to update user ${currentTask.user.id} after 3 attempts.`,
+            );
           }
         }
       }
@@ -97,7 +109,7 @@ export class CronJobService {
 
       userRanks.sort((a, b) => b.rankScore - a.rankScore);
 
-      let queue = userRanks.map((userRank, index) => ({
+      const queue = userRanks.map((userRank, index) => ({
         user: userRank.newUser,
         rank: index + 1,
         attempts: 0,
@@ -109,7 +121,10 @@ export class CronJobService {
       while (queue.length > 0) {
         const currentTask = queue.shift();
 
-        const success = await this.updateUserPerTurn(currentTask.user, currentTask.rank);
+        const success = await this.updateUserPerTurn(
+          currentTask.user,
+          currentTask.rank,
+        );
 
         if (success) {
           processed++;
@@ -119,7 +134,9 @@ export class CronJobService {
             queue.push(currentTask);
           } else {
             failed++;
-            logError(`Failed to update user ${currentTask.user.id} after 3 attempts.`);
+            logError(
+              `Failed to update user ${currentTask.user.id} after 3 attempts.`,
+            );
           }
         }
       }
@@ -154,7 +171,7 @@ export class CronJobService {
 
       userRanks.sort((a, b) => b.id - a.id);
 
-      let queue = userRanks.map((userRank) => ({
+      const queue = userRanks.map((userRank) => ({
         user: userRank.newUser,
         attempts: 0,
       }));
@@ -175,7 +192,9 @@ export class CronJobService {
             queue.push(currentTask);
           } else {
             failed++;
-            logError(`Failed to update account status for user ${currentTask.user.id} after 3 attempts.`);
+            logError(
+              `Failed to update account status for user ${currentTask.user.id} after 3 attempts.`,
+            );
           }
         }
       }
@@ -195,7 +214,9 @@ export class CronJobService {
   /**
    * Updates a single user for daily changes
    */
-  private static async updateUserPerDay(currentUser: UserModel): Promise<boolean> {
+  private static async updateUserPerDay(
+    currentUser: UserModel,
+  ): Promise<boolean> {
     try {
       const originalCitizens = Number(currentUser.citizens ?? 0);
       const recruitingBonus = Number(currentUser.recruitBonus ?? 0) || 0;
@@ -234,7 +255,7 @@ export class CronJobService {
           history_type: 'DAILY_RECRUIT',
           stats: {
             currentCitizens: originalCitizens,
-            newCitizens: newCitizens,
+            newCitizens,
             recruitingBonus: currentUser.recruitBonus,
           },
         },
@@ -250,14 +271,18 @@ export class CronJobService {
   /**
    * Updates a single user for turn changes
    */
-  private static async updateUserPerTurn(currentUser: UserModel, rank: number): Promise<boolean> {
+  private static async updateUserPerTurn(
+    currentUser: UserModel,
+    rank: number,
+  ): Promise<boolean> {
     try {
-      const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + BigInt(currentUser.gold);
+      const updatedGold =
+        BigInt(currentUser.goldPerTurn.toString()) + BigInt(currentUser.gold);
 
       const updateData = {
         gold: updatedGold,
         attack_turns: currentUser.attackTurns + 1,
-        rank: rank,
+        rank,
         offense: currentUser.offense,
         defense: currentUser.defense,
         spy: currentUser.spy,
@@ -297,12 +322,16 @@ export class CronJobService {
   /**
    * Updates account status for a single user
    */
-  private static async updateUserAccountStatus(currentUser: UserModel): Promise<boolean> {
+  private static async updateUserAccountStatus(
+    currentUser: UserModel,
+  ): Promise<boolean> {
     try {
       await getUpdatedStatus(currentUser.id);
       return true;
     } catch (error) {
-      logError(`Error updating account status for user ${currentUser.id}`, { error });
+      logError(`Error updating account status for user ${currentUser.id}`, {
+        error,
+      });
       return false;
     }
   }
@@ -318,14 +347,15 @@ export class CronJobService {
       { name: 'recruit_history', dateField: 'timestamp' },
     ];
 
-    const cleanupPromises = tablesToClean.map(async (table) =>
-      await prisma[table.name].deleteMany({
-        where: {
-          [table.dateField]: {
-            lt: twentyDaysAgo,
+    const cleanupPromises = tablesToClean.map(
+      async (table) =>
+        await prisma[table.name].deleteMany({
+          where: {
+            [table.dateField]: {
+              lt: twentyDaysAgo,
+            },
           },
-        },
-      })
+        }),
     );
 
     await Promise.all(cleanupPromises);

@@ -1,16 +1,20 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '@/lib/prisma';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
+import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
 import { isAdmin } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
-import { z } from 'zod';
 
 const AdminVacationSchema = z.object({
   userId: z.number().int(),
-  action: z.enum(['start', 'end'])
+  action: z.enum(['start', 'end']),
 });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const session = await getSession({ req });
   if (!session || !session.user || !(await isAdmin(Number(session.user.id)))) {
     return res.status(401).json({ error: 'Unauthorized' });
@@ -18,7 +22,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const parseResult = AdminVacationSchema.safeParse(req.body);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
   const { userId, action } = parseResult.data;
 
@@ -40,7 +47,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
 
-      res.status(200).json({ message: 'Vacation mode started for user', vacationEndDate });
+      res
+        .status(200)
+        .json({ message: 'Vacation mode started for user', vacationEndDate });
     } catch (error) {
       logError('Error starting vacation mode for user:', error);
       res.status(500).json({ error: 'Failed to start vacation mode for user' });

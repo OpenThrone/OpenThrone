@@ -1,9 +1,7 @@
-import type { BattleUnits, PlayerUnit } from '@/types/typings';
-
-import BattleSimulationResult from './BattleSimulationResult';
-import type UserModel from './Users';
+import type { BattleUnits } from '@/types/typings';
 import { stringifyObj } from '@/utils/numberFormatting';
-import mtRand from '@/utils/mtrand';
+
+import type UserModel from './Users';
 
 class BattleResult {
   attacker: UserModel;
@@ -74,17 +72,27 @@ class BattleResult {
   Losses: {
     Attacker: {
       total: number;
-      units: BattleUnits[]
+      units: BattleUnits[];
     };
     Defender: {
       total: number;
-      units: BattleUnits[]
+      units: BattleUnits[];
     };
-
-    
   };
-  defenderStats: { defenseRemaining: number; meleeAtkPower: number; meleeDefPower: number; rangedAtkPower: number; rangedDefPower: number; };
-  attackerStats: { offenseRemaining: number; meleeAtkPower: number; meleeDefPower: number; rangedAtkPower: number; rangedDefPower: number; };
+  defenderStats: {
+    defenseRemaining: number;
+    meleeAtkPower: number;
+    meleeDefPower: number;
+    rangedAtkPower: number;
+    rangedDefPower: number;
+  };
+  attackerStats: {
+    offenseRemaining: number;
+    meleeAtkPower: number;
+    meleeDefPower: number;
+    rangedAtkPower: number;
+    rangedDefPower: number;
+  };
 
   constructor(attacker: UserModel, defender: UserModel) {
     this.attacker = JSON.parse(JSON.stringify(stringifyObj(attacker))); // deep copy but we don't need email, passwordHash, goldInBank, bio, colorScheme
@@ -108,7 +116,6 @@ class BattleResult {
       },
     };
   }
-
 }
 
 export default BattleResult;

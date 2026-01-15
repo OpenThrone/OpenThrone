@@ -1,29 +1,54 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { NextPage } from 'next';
-import { Button, NumberInput, Loader, Alert, Group } from '@mantine/core';
+import { faCopy, faPlay, faRedo } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Alert, Button, Group, Loader, NumberInput } from '@mantine/core';
+import { useClipboard, useLocalStorage } from '@mantine/hooks';
+import type { NextPage } from 'next';
+import router from 'next/router';
+import { useTranslation } from 'next-i18next';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
 import ArmyInputForm from '@/components/ArmyInputForm';
 import BattleResults from '@/components/BattleTestResults';
-import MockUserGenerator from '@/utils/MockUserGenerator';
-import { PlayerRace, ShareableArmyData, User } from '@/types/typings';
-import stringifyObj from '@/utils/numberFormatting';
-import { useClipboard, useLocalStorage } from '@mantine/hooks';
-import router from 'next/router';
-import { encodeBattleData, decodeBattleData } from '@/utils/battleEncoding';
-import logError from '@/utils/logger';
 import { GameCard } from '@/components/game/GameCard';
-import { faCopy, faPlay, faRedo, faSync } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import MainArea from '@/components/MainArea';
-import { useTranslation } from 'next-i18next';
+import type { PlayerRace, ShareableArmyData, User } from '@/types/typings';
+import { decodeBattleData, encodeBattleData } from '@/utils/battleEncoding';
+import MockUserGenerator from '@/utils/MockUserGenerator';
+import stringifyObj from '@/utils/numberFormatting';
 
 const BattleSimulator: NextPage = () => {
   const { t } = useTranslation('battle');
-  const defenderGenerator = useMemo(() => new MockUserGenerator().setBasicInfo({ display_name: 'Defender' }), []);
-  const attackerGenerator = useMemo(() => new MockUserGenerator().setBasicInfo({ display_name: 'Attacker' }), []);
+  const defenderGenerator = useMemo(
+    () => new MockUserGenerator().setBasicInfo({ display_name: 'Defender' }),
+    [],
+  );
+  const attackerGenerator = useMemo(
+    () => new MockUserGenerator().setBasicInfo({ display_name: 'Attacker' }),
+    [],
+  );
 
-  const [attacker, setAttacker] = useLocalStorage<User>({ key: 'battle-sim-attacker', defaultValue: attackerGenerator.getUser(), serialize: (v) => JSON.stringify(stringifyObj(v)), deserialize: (v) => JSON.parse(v) });
-  const [defender, setDefender] = useLocalStorage<User>({ key: 'battle-sim-defender', defaultValue: defenderGenerator.getUser(), serialize: (v) => JSON.stringify(stringifyObj(v)), deserialize: (v) => JSON.parse(v) });
-  const [turns, setTurns] = useLocalStorage<number>({ key: 'battle-sim-turns', defaultValue: 1 });
+  const [attacker, setAttacker] = useLocalStorage<User>({
+    key: 'battle-sim-attacker',
+    defaultValue: attackerGenerator.getUser(),
+    serialize: (v) => JSON.stringify(stringifyObj(v)),
+    deserialize: (v) => JSON.parse(v),
+  });
+  const [defender, setDefender] = useLocalStorage<User>({
+    key: 'battle-sim-defender',
+    defaultValue: defenderGenerator.getUser(),
+    serialize: (v) => JSON.stringify(stringifyObj(v)),
+    deserialize: (v) => JSON.parse(v),
+  });
+  const [turns, setTurns] = useLocalStorage<number>({
+    key: 'battle-sim-turns',
+    defaultValue: 1,
+  });
 
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +68,11 @@ const BattleSimulator: NextPage = () => {
       const response = await fetch('/api/attack/battleTest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attacker: JSON.stringify(stringifyObj(updatedAttacker)), defender: JSON.stringify(stringifyObj(updatedDefender)), turns }),
+        body: JSON.stringify({
+          attacker: JSON.stringify(stringifyObj(updatedAttacker)),
+          defender: JSON.stringify(stringifyObj(updatedDefender)),
+          turns,
+        }),
       });
       const data = await response.json();
       setResults(data);
@@ -69,9 +98,12 @@ const BattleSimulator: NextPage = () => {
 
   useEffect(() => {
     if (battleParam) {
-      const data = decodeBattleData(battleParam as string);
+      const data = decodeBattleData(battleParam);
       if (data) {
-        const convertToUser = (userData: ShareableArmyData, baseUser: User): User => ({
+        const convertToUser = (
+          userData: ShareableArmyData,
+          baseUser: User,
+        ): User => ({
           ...baseUser,
           race: userData.race as PlayerRace,
           experience: userData.experience,
@@ -93,29 +125,68 @@ const BattleSimulator: NextPage = () => {
     <MainArea title={t('battleSimulator.title')}>
       <GameCard title={t('battleSimulator.title')}>
         <Group>
-          <Button onClick={handleCopy} leftSection={<FontAwesomeIcon icon={faCopy} />}>
-            {clipboard.copied ? t('battleSimulator.linkCopied') : t('battleSimulator.copyLink')}
+          <Button
+            onClick={handleCopy}
+            leftSection={<FontAwesomeIcon icon={faCopy} />}
+          >
+            {clipboard.copied
+              ? t('battleSimulator.linkCopied')
+              : t('battleSimulator.copyLink')}
           </Button>
         </Group>
       </GameCard>
 
-      {error && <Alert color="red" my="lg">{error}</Alert>}
+      {error && (
+        <Alert color="red" my="lg">
+          {error}
+        </Alert>
+      )}
 
       <GameCard title={t('battleSimulator.attacker')} mt="md">
-        <ArmyInputForm ref={attackerFormRef} title={t('battleSimulator.attacker')} armyData={attacker} attacker key={`attacker-form-${attacker.id}`} />
+        <ArmyInputForm
+          ref={attackerFormRef}
+          title={t('battleSimulator.attacker')}
+          armyData={attacker}
+          attacker
+          key={`attacker-form-${attacker.id}`}
+        />
       </GameCard>
 
       <GameCard title={t('battleSimulator.defender')} mt="md">
-        <ArmyInputForm ref={defenderFormRef} title={t('battleSimulator.defender')} armyData={defender} attacker={false} key={`defender-form-${defender.id}`} />
+        <ArmyInputForm
+          ref={defenderFormRef}
+          title={t('battleSimulator.defender')}
+          armyData={defender}
+          attacker={false}
+          key={`defender-form-${defender.id}`}
+        />
       </GameCard>
 
       <GameCard title={t('battleSimulator.controls')} mt="md">
-        <NumberInput label={t('battleSimulator.turns')} value={turns} min={1} max={50} onChange={(val) => setTurns(val as number)} />
+        <NumberInput
+          label={t('battleSimulator.turns')}
+          value={turns}
+          min={1}
+          max={50}
+          onChange={(val) => setTurns(val as number)}
+        />
         <Group mt="md">
-          <Button loading={loading} onClick={handleRunSimulation} leftSection={<FontAwesomeIcon icon={faPlay} />}>
+          <Button
+            loading={loading}
+            onClick={handleRunSimulation}
+            leftSection={<FontAwesomeIcon icon={faPlay} />}
+          >
             {t('battleSimulator.runSimulation')}
           </Button>
-          {results && <Button variant="outline" onClick={handleReset} leftSection={<FontAwesomeIcon icon={faRedo} />}>{t('battleSimulator.reset')}</Button>}
+          {results && (
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              leftSection={<FontAwesomeIcon icon={faRedo} />}
+            >
+              {t('battleSimulator.reset')}
+            </Button>
+          )}
         </Group>
       </GameCard>
 

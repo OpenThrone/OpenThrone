@@ -1,8 +1,3 @@
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import router from 'next/router';
-
-import { Box, Button, Center, Group, Loader, SimpleGrid, Text, ThemeIcon } from '@mantine/core';
 import {
   faBolt,
   faCrown,
@@ -13,13 +8,26 @@ import {
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Box,
+  Button,
+  Center,
+  Group,
+  Loader,
+  SimpleGrid,
+  Text,
+  ThemeIcon,
+} from '@mantine/core';
+import Link from 'next/link';
+import router from 'next/router';
 import { useSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import React, { useEffect, useState } from 'react';
 
-import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
+import MainArea from '@/components/MainArea';
 import { useLayout } from '@/context/LayoutContext';
-import { useTranslation } from 'next-i18next';
 
 const Index = (props) => {
   const { setMeta, meta } = useLayout();
@@ -51,7 +59,7 @@ const Index = (props) => {
 
     if (status === 'authenticated') {
       // User is logged in, redirect to dashboard
-      console.log("User authenticated, redirecting to /home/overview");
+      console.log('User authenticated, redirecting to /home/overview');
       router.replace('/home/overview');
       setIsRedirecting(true);
     } else {
@@ -66,9 +74,21 @@ const Index = (props) => {
         if (res.ok) {
           const data = await res.json();
           setWorldStats({
-            players: data.players !== undefined ? Number(data.players).toLocaleString() : '1,200+',
-            battles: data.battles !== undefined ? new Intl.NumberFormat('en-US', { notation: "compact", maximumFractionDigits:1 }).format(Number(data.battles)) : '4.8M',
-            alliances: data.alliances !== undefined ? Number(data.alliances).toLocaleString() : '312',
+            players:
+              data.players !== undefined
+                ? Number(data.players).toLocaleString()
+                : '1,200+',
+            battles:
+              data.battles !== undefined
+                ? new Intl.NumberFormat('en-US', {
+                    notation: 'compact',
+                    maximumFractionDigits: 1,
+                  }).format(Number(data.battles))
+                : '4.8M',
+            alliances:
+              data.alliances !== undefined
+                ? Number(data.alliances).toLocaleString()
+                : '312',
             epoch: data.epoch || 'Era VIII',
           });
         }
@@ -82,20 +102,23 @@ const Index = (props) => {
   if (status === 'loading' || (status === 'authenticated' && isRedirecting)) {
     return (
       <MainArea title={t('title')}>
-        <Center style={{ height: '50vh' }}> {/* Adjust height as needed */}
+        <Center style={{ height: '50vh' }}>
+          {' '}
+          {/* Adjust height as needed */}
           <Loader />
         </Center>
-        </MainArea>
+      </MainArea>
     );
   }
 
   return (
     <MainArea title={t('title')}>
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 app-bg">
+      <div className="app-bg mx-auto w-full max-w-6xl px-4 py-8">
         <Box
           className="public-rise"
           style={{
-            background: 'linear-gradient(135deg, rgba(34,48,66,0.95) 0%, rgba(15,20,26,0.9) 55%, rgba(8,12,18,0.95) 100%)',
+            background:
+              'linear-gradient(135deg, rgba(34,48,66,0.95) 0%, rgba(15,20,26,0.9) 55%, rgba(8,12,18,0.95) 100%)',
             border: '1px solid #2f3e52',
             borderRadius: '12px',
             padding: '32px',
@@ -111,13 +134,20 @@ const Index = (props) => {
               right: '-140px',
               width: '280px',
               height: '280px',
-              background: 'radial-gradient(circle, rgba(229,197,90,0.22) 0%, rgba(229,197,90,0) 70%)',
+              background:
+                'radial-gradient(circle, rgba(229,197,90,0.22) 0%, rgba(229,197,90,0) 70%)',
               pointerEvents: 'none',
             }}
           />
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
             <Box>
-              <Text size="xs" fw={700} tt="uppercase" c="gray.4" style={{ letterSpacing: '0.4em' }}>
+              <Text
+                size="xs"
+                fw={700}
+                tt="uppercase"
+                c="gray.4"
+                style={{ letterSpacing: '0.4em' }}
+              >
                 {t('hero.signUpNowAnd')}
               </Text>
               <Text
@@ -136,7 +166,12 @@ const Index = (props) => {
                 {t('hero.tagline')}
               </Text>
               <Box mt="md">
-                <Text size="sm" c="gray.4" component="ul" style={{ paddingLeft: '1.2rem', lineHeight: 1.7 }}>
+                <Text
+                  size="sm"
+                  c="gray.4"
+                  component="ul"
+                  style={{ paddingLeft: '1.2rem', lineHeight: 1.7 }}
+                >
                   <li>{t('hero.features.chooseRace')}</li>
                   <li>{t('hero.features.trainCitizens')}</li>
                   <li>{t('hero.features.equipArmy')}</li>
@@ -178,10 +213,26 @@ const Index = (props) => {
               <StatGrid
                 title={t('worldStats.title')}
                 stats={[
-                  { label: t('worldStats.totalPlayers'), value: worldStats.players, icon: <FontAwesomeIcon icon={faCrown} /> },
-                  { label: t('worldStats.battlesFought'), value: worldStats.battles, icon: <FontAwesomeIcon icon={faSkullCrossbones} /> },
-                  { label: t('worldStats.alliances'), value: worldStats.alliances, icon: <FontAwesomeIcon icon={faUsers} /> },
-                  { label: t('worldStats.epoch'), value: worldStats.epoch, icon: <FontAwesomeIcon icon={faShieldHalved} /> },
+                  {
+                    label: t('worldStats.totalPlayers'),
+                    value: worldStats.players,
+                    icon: <FontAwesomeIcon icon={faCrown} />,
+                  },
+                  {
+                    label: t('worldStats.battlesFought'),
+                    value: worldStats.battles,
+                    icon: <FontAwesomeIcon icon={faSkullCrossbones} />,
+                  },
+                  {
+                    label: t('worldStats.alliances'),
+                    value: worldStats.alliances,
+                    icon: <FontAwesomeIcon icon={faUsers} />,
+                  },
+                  {
+                    label: t('worldStats.epoch'),
+                    value: worldStats.epoch,
+                    icon: <FontAwesomeIcon icon={faShieldHalved} />,
+                  },
                 ]}
                 columns={2}
               />
@@ -191,9 +242,21 @@ const Index = (props) => {
 
         <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg" mt="xl">
           {[
-            { title: t('highlights.strategicCombat.title'), description: t('highlights.strategicCombat.description'), icon: faCrown },
-            { title: t('highlights.espionageOperations.title'), description: t('highlights.espionageOperations.description'), icon: faDragon },
-            { title: t('highlights.empireBuilding.title'), description: t('highlights.empireBuilding.description'), icon: faShieldHalved },
+            {
+              title: t('highlights.strategicCombat.title'),
+              description: t('highlights.strategicCombat.description'),
+              icon: faCrown,
+            },
+            {
+              title: t('highlights.espionageOperations.title'),
+              description: t('highlights.espionageOperations.description'),
+              icon: faDragon,
+            },
+            {
+              title: t('highlights.empireBuilding.title'),
+              description: t('highlights.empireBuilding.description'),
+              icon: faShieldHalved,
+            },
           ].map((item, index) => (
             <div
               key={item.title}
@@ -214,7 +277,13 @@ const Index = (props) => {
               {t('warCouncilBriefing.description')}
             </Text>
             <Group mt="md">
-              <Button component={Link} href="/community/news" size="sm" variant="light" color="yellow">
+              <Button
+                component={Link}
+                href="/community/news"
+                size="sm"
+                variant="light"
+                color="yellow"
+              >
                 {t('warCouncilBriefing.readTheNews')}
               </Button>
               <Button
@@ -234,10 +303,21 @@ const Index = (props) => {
               {t('newcomerProtocol.description')}
             </Text>
             <Group mt="md">
-              <Button component={Link} href="/account/register" size="sm" color="yellow">
+              <Button
+                component={Link}
+                href="/account/register"
+                size="sm"
+                color="yellow"
+              >
                 {t('newcomerProtocol.createCommander')}
               </Button>
-              <Button component={Link} href="/account/login" size="sm" variant="outline" color="gray">
+              <Button
+                component={Link}
+                href="/account/login"
+                size="sm"
+                variant="outline"
+                color="gray"
+              >
                 {t('newcomerProtocol.returnToBattle')}
               </Button>
             </Group>
@@ -246,12 +326,28 @@ const Index = (props) => {
 
         <Box mt={50} style={{ textAlign: 'center', opacity: 0.6 }}>
           <Group justify="center" gap="xl">
-             <Link href="/about" style={{ color: '#adb5bd', textDecoration: 'none', fontSize: '0.9rem' }}>
-                {t('footer.aboutProject')}
-             </Link>
-             <a href="https://github.com/OpenThrone/OpenThrone" target="_blank" rel="noreferrer" style={{ color: '#adb5bd', textDecoration: 'none', fontSize: '0.9rem' }}>
-                {t('footer.github')}
-             </a>
+            <Link
+              href="/about"
+              style={{
+                color: '#adb5bd',
+                textDecoration: 'none',
+                fontSize: '0.9rem',
+              }}
+            >
+              {t('footer.aboutProject')}
+            </Link>
+            <a
+              href="https://github.com/OpenThrone/OpenThrone"
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                color: '#adb5bd',
+                textDecoration: 'none',
+                fontSize: '0.9rem',
+              }}
+            >
+              {t('footer.github')}
+            </a>
           </Group>
           <Text size="xs" c="dimmed" mt="sm">
             {t('footer.communityDriven')}

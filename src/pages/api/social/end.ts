@@ -1,10 +1,11 @@
-import { withAuth } from "@/middleware/auth";
-import { logError } from "@/utils/logger";
-import { SocialService } from '@/services/Social.service';
 import { z } from 'zod';
 
+import { withAuth } from '@/middleware/auth';
+import { SocialService } from '@/services/Social.service';
+import { logError } from '@/utils/logger';
+
 const EndRelationshipSchema = z.object({
-  friendId: z.number().int()
+  friendId: z.number().int(),
 });
 
 const handler = async (req, res) => {
@@ -12,14 +13,17 @@ const handler = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const parseResult = EndRelationshipSchema.safeParse(req.body);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
 
   const { friendId } = parseResult.data;
@@ -29,7 +33,7 @@ const handler = async (req, res) => {
     const result = await SocialService.endRelationship(playerId, { friendId });
     return res.status(200).json(result);
   } catch (error) {
-    logError("Error ending friendship:", error);
+    logError('Error ending friendship:', error);
     return res.status(500).json({ error: error.message });
   }
 };

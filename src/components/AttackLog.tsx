@@ -1,14 +1,24 @@
-import { faPlus, faMinus, faSort, faSortUp, faSortDown, faEye, faRedo } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Stack, Chip, Paper, Table, rem, Box } from "@mantine/core";
-import router from "next/router";
-import { useState, useMemo } from "react";
-import LossesList from "./LossesList";
-import PlayerOutcome from "./PlayerOutcome";
-import StatsList from "./StatsList";
-import { Log } from "@/types/typings";
-import AnimatedButtons from "./AnimatedButton";
-import Modal from "../components/modal";
+import {
+  faEye,
+  faMinus,
+  faPlus,
+  faRedo,
+  faSort,
+  faSortDown,
+  faSortUp,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Box, Chip, Paper, rem, Stack, Table } from '@mantine/core';
+import router from 'next/router';
+import { useMemo, useState } from 'react';
+
+import type { Log } from '@/types/typings';
+
+import AnimatedButtons from './AnimatedButton';
+import LossesList from './LossesList';
+import Modal from './modal';
+import PlayerOutcome from './PlayerOutcome';
+import StatsList from './StatsList';
 
 interface AttackLogTableProps {
   logs: Log[];
@@ -22,8 +32,10 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
   const isEmpty = logs.length === 0;
 
   const [openModalId, setOpenModalId] = useState<string | null>(null);
-  const [collapsedLogs, setCollapsedLogs] = useState<Record<string, boolean>>({});
-  
+  const [collapsedLogs, setCollapsedLogs] = useState<Record<string, boolean>>(
+    {},
+  );
+
   const [sortColumn, setSortColumn] = useState<SortableColumn>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
@@ -55,36 +67,57 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
 
   const sortedLogs = useMemo(() => {
     if (!sortColumn || !sortDirection) return logs;
-    
+
     return [...logs].sort((a, b) => {
       let compareResult = 0;
-      
-      switch(sortColumn) {
+
+      switch (sortColumn) {
         case 'outcome':
-          const aWon = a.winner === (type === 'offense' ? a.attacker_id : a.defender_id);
-          const bWon = b.winner === (type === 'offense' ? b.attacker_id : b.defender_id);
+          const aWon =
+            a.winner === (type === 'offense' ? a.attacker_id : a.defender_id);
+          const bWon =
+            b.winner === (type === 'offense' ? b.attacker_id : b.defender_id);
           compareResult = Number(aWon) - Number(bWon);
           break;
         case 'player':
-          const aName = type === 'defense' ? (a.attackerPlayer?.display_name || '') : (a.defenderPlayer?.display_name || '');
-          const bName = type === 'defense' ? (b.attackerPlayer?.display_name || '') : (b.defenderPlayer?.display_name || '');
+          const aName =
+            type === 'defense'
+              ? a.attackerPlayer?.display_name || ''
+              : a.defenderPlayer?.display_name || '';
+          const bName =
+            type === 'defense'
+              ? b.attackerPlayer?.display_name || ''
+              : b.defenderPlayer?.display_name || '';
           compareResult = aName.localeCompare(bName);
           break;
         case 'pillage':
-          compareResult = (a.stats.pillagedGold || 0) - (b.stats.pillagedGold || 0);
+          compareResult =
+            (a.stats.pillagedGold || 0) - (b.stats.pillagedGold || 0);
           break;
         case 'casualties':
-          const aCasualties = (type === 'offense' ? (JSON.parse(a.stats.attacker_losses)?.total || 0) : (JSON.parse(a.stats.defender_losses)?.total || 0));
-          const bCasualties = (type === 'offense' ? (JSON.parse(b.stats.attacker_losses)?.total || 0) : (JSON.parse(b.stats.defender_losses)?.total || 0));
+          const aCasualties =
+            type === 'offense'
+              ? JSON.parse(a.stats.attacker_losses)?.total || 0
+              : JSON.parse(a.stats.defender_losses)?.total || 0;
+          const bCasualties =
+            type === 'offense'
+              ? JSON.parse(b.stats.attacker_losses)?.total || 0
+              : JSON.parse(b.stats.defender_losses)?.total || 0;
           compareResult = aCasualties - bCasualties;
           break;
       }
-      
+
       return sortDirection === 'asc' ? compareResult : -compareResult;
     });
   }, [logs, sortColumn, sortDirection, type]);
 
-  const SortableHeader = ({ column, label }: { column: SortableColumn | null, label: string }) => {
+  const SortableHeader = ({
+    column,
+    label,
+  }: {
+    column: SortableColumn | null;
+    label: string;
+  }) => {
     const thStyle = {
       color: '#687b94',
       borderBottom: '1px solid #2f3e52',
@@ -131,85 +164,127 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({ logs, type }) => {
         <Table verticalSpacing="sm" data-testid="styled-table">
           <Table.Thead style={{ background: '#0e1520' }}>
             <Table.Tr data-testid="table-row">
-            <SortableHeader column={null} label="" />
-            <SortableHeader column="outcome" label="Outcome" />
-            <SortableHeader column="player" label="Player" />
-            <SortableHeader column="pillage" label="Pillage & Exp" />
-            <SortableHeader column="casualties" label="Casualties" />
-            <SortableHeader column={null} label="Action" />
+              <SortableHeader column={null} label="" />
+              <SortableHeader column="outcome" label="Outcome" />
+              <SortableHeader column="player" label="Player" />
+              <SortableHeader column="pillage" label="Pillage & Exp" />
+              <SortableHeader column="casualties" label="Casualties" />
+              <SortableHeader column={null} label="Action" />
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {isEmpty ? (
               <Table.Tr data-testid="table-row">
-                <Table.Td colSpan={6} className="text-center" style={{ borderColor: '#1f2b3b' }}>
+                <Table.Td
+                  colSpan={6}
+                  className="text-center"
+                  style={{ borderColor: '#1f2b3b' }}
+                >
                   No battles recorded
                 </Table.Td>
               </Table.Tr>
             ) : (
               sortedLogs.map((log) => {
                 const isCollapsed = collapsedLogs[log.id] ?? true;
-                const profileId = type === 'defense' ? log.attacker_id : log.defender_id;
-                const modalLabel = type === 'defense' ? 'Attack Back' : 'Attack Again';
+                const profileId =
+                  type === 'defense' ? log.attacker_id : log.defender_id;
+                const modalLabel =
+                  type === 'defense' ? 'Attack Back' : 'Attack Again';
 
                 return (
                   <Table.Tr key={log.id} data-testid="table-row">
-                  <Table.Td style={{ borderColor: '#1f2b3b', width: '20px' }}>
-                    <button onClick={() => toggleCollapse(log.id.toString())} aria-expanded={!isCollapsed} className="focus:outline-none">
-                      <FontAwesomeIcon icon={isCollapsed ? faPlus : faMinus} size="sm" />
-                    </button>
-                  </Table.Td>
-                  <PlayerOutcome log={log} type={type} collapsed={isCollapsed} />
-                  <Table.Td style={{ borderColor: '#1f2b3b' }}>
-                    <StatsList stats={log.stats} type={type} subType={log.type} collapsed={isCollapsed} />
-                  </Table.Td>
-                  <Table.Td style={{ borderColor: '#1f2b3b' }}>
-                    {isCollapsed ? (
-                      '...'
-                    ) : (
-                      <Stack align="center" justify="center" gap="xs">
-                        <Chip>
-                          Attacker Losses: <LossesList losses={log.stats.attacker_losses || { total: 0, units: [] }} />
-                        </Chip>
-                        <Chip>
-                          Defender Losses: <LossesList losses={log.stats.defender_losses || { total: 0, units: [] }} />
-                        </Chip>
-                        <Chip>
-                          Fort Damage: {(log.stats.forthpAtStart || 0) - (log.stats.forthpAtEnd || 0)}
-                        </Chip>
-                      </Stack>
-                    )}
-                  </Table.Td>
-                  <Table.Td style={{ borderColor: '#1f2b3b', textAlign: 'center' }}>
-                    <AnimatedButtons
-                      buttons={[
-                        {
-                          icon: faRedo,
-                          label: modalLabel,
-                          onClick: () => toggleModal(profileId.toString()),
-                          color: "blue",
-                          tooltip: modalLabel,
-                          ariaLabel: modalLabel,
-                        },
-                        {
-                          icon: faEye,
-                          label: "View Battle",
-                          onClick: () => router.push(`/battle/results/${log.id}`),
-                          color: "teal",
-                          tooltip: "View battle details",
-                          ariaLabel: "View Battle",
-                        },
-                      ]}
-                      orientation="vertical"
-                      spacing="xs"
+                    <Table.Td style={{ borderColor: '#1f2b3b', width: '20px' }}>
+                      <button
+                        onClick={() => toggleCollapse(log.id.toString())}
+                        aria-expanded={!isCollapsed}
+                        className="focus:outline-none"
+                      >
+                        <FontAwesomeIcon
+                          icon={isCollapsed ? faPlus : faMinus}
+                          size="sm"
+                        />
+                      </button>
+                    </Table.Td>
+                    <PlayerOutcome
+                      log={log}
+                      type={type}
+                      collapsed={isCollapsed}
                     />
-                    <Modal
-                      isOpen={openModalId === profileId.toString()}
-                      toggleModal={() => toggleModal(profileId.toString())}
-                      profileID={profileId}
+                    <Table.Td style={{ borderColor: '#1f2b3b' }}>
+                      <StatsList
+                        stats={log.stats}
+                        type={type}
+                        subType={log.type}
+                        collapsed={isCollapsed}
+                      />
+                    </Table.Td>
+                    <Table.Td style={{ borderColor: '#1f2b3b' }}>
+                      {isCollapsed ? (
+                        '...'
+                      ) : (
+                        <Stack align="center" justify="center" gap="xs">
+                          <Chip>
+                            Attacker Losses:{' '}
+                            <LossesList
+                              losses={
+                                log.stats.attacker_losses || {
+                                  total: 0,
+                                  units: [],
+                                }
+                              }
+                            />
+                          </Chip>
+                          <Chip>
+                            Defender Losses:{' '}
+                            <LossesList
+                              losses={
+                                log.stats.defender_losses || {
+                                  total: 0,
+                                  units: [],
+                                }
+                              }
+                            />
+                          </Chip>
+                          <Chip>
+                            Fort Damage:{' '}
+                            {(log.stats.forthpAtStart || 0) -
+                              (log.stats.forthpAtEnd || 0)}
+                          </Chip>
+                        </Stack>
+                      )}
+                    </Table.Td>
+                    <Table.Td
+                      style={{ borderColor: '#1f2b3b', textAlign: 'center' }}
                     >
-                    </Modal>
-                  </Table.Td>
+                      <AnimatedButtons
+                        buttons={[
+                          {
+                            icon: faRedo,
+                            label: modalLabel,
+                            onClick: () => toggleModal(profileId.toString()),
+                            color: 'blue',
+                            tooltip: modalLabel,
+                            ariaLabel: modalLabel,
+                          },
+                          {
+                            icon: faEye,
+                            label: 'View Battle',
+                            onClick: () =>
+                              router.push(`/battle/results/${log.id}`),
+                            color: 'teal',
+                            tooltip: 'View battle details',
+                            ariaLabel: 'View Battle',
+                          },
+                        ]}
+                        orientation="vertical"
+                        spacing="xs"
+                      />
+                      <Modal
+                        isOpen={openModalId === profileId.toString()}
+                        toggleModal={() => toggleModal(profileId.toString())}
+                        profileID={profileId}
+                      />
+                    </Table.Td>
                   </Table.Tr>
                 );
               })

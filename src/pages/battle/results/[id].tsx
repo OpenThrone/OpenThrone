@@ -1,21 +1,28 @@
+import type { InferGetServerSidePropsType } from 'next';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
-import prisma from '@/lib/prisma';
-import AttackResult from '@/components/attackResult';
-import IntelResult from '@/components/IntelResult';
+
 import AssassinateResult from '@/components/AssassinateResult';
+import AttackResult from '@/components/attackResult';
 import InfiltrationResult from '@/components/InfiltrationResult';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
-
+import IntelResult from '@/components/IntelResult';
 import MainArea from '@/components/MainArea';
-
+import prisma from '@/lib/prisma';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { serializeDates } from '@/utils/utilities';
-import { InferGetServerSidePropsType } from "next";
 
-const ResultsPage = ({ battle, lastGenerated, viewerID }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const ResultsPage = ({
+  battle,
+  lastGenerated,
+  viewerID,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { t } = useTranslation('battle');
   if (!battle) {
-    return <MainArea title={t('results.title')}><p>{t('results.noPermission')}</p></MainArea>;
+    return (
+      <MainArea title={t('results.title')}>
+        <p>{t('results.noPermission')}</p>
+      </MainArea>
+    );
   }
 
   return (
@@ -25,9 +32,17 @@ const ResultsPage = ({ battle, lastGenerated, viewerID }: InferGetServerSideProp
       ) : battle.type === 'ASSASSINATE' ? (
         <AssassinateResult battle={battle} viewerID={Number(viewerID)} />
       ) : battle.type === 'INFILTRATE' ? (
-        <InfiltrationResult battle={battle} lastGenerated={lastGenerated} viewerID={Number(viewerID)} />
+        <InfiltrationResult
+          battle={battle}
+          lastGenerated={lastGenerated}
+          viewerID={Number(viewerID)}
+        />
       ) : (
-        <IntelResult battle={battle} lastGenerated={lastGenerated} viewerID={Number(viewerID)} />
+        <IntelResult
+          battle={battle}
+          lastGenerated={lastGenerated}
+          viewerID={Number(viewerID)}
+        />
       )}
     </MainArea>
   );
@@ -65,11 +80,22 @@ export const getServerSideProps = async (context) => {
           id: true,
           display_name: true,
           avatar: true,
-          race: true
+          race: true,
         },
       },
     },
   });
+
+  // If no battle found, return early (prevents accessing properties of null)
+  if (!battle) {
+    return {
+      props: {
+        battle: null,
+        lastGenerated: null,
+        viewerID: null,
+      },
+    };
+  }
 
   // Get current user's permissions
   const userPermissions = await prisma.permissionGrant.findMany({
@@ -80,7 +106,7 @@ export const getServerSideProps = async (context) => {
 
   // Check if user has "MODERATOR" or "ADMINISTRATOR" permission
   const isModeratorOrAdmin = userPermissions.some(
-    (perm) => perm.type === 'MODERATOR' || perm.type === 'ADMINISTRATOR'
+    (perm) => perm.type === 'MODERATOR' || perm.type === 'ADMINISTRATOR',
   );
 
   // Check if user is attacker or defender
@@ -88,7 +114,7 @@ export const getServerSideProps = async (context) => {
   const isDefender = battle.defenderPlayer.id === session.user.id;
 
   // Check if user is part of ACL (Access Control List)
-  const isInACL = battle.acl.some((aclEntry) => {
+  const isInACL = (battle.acl ?? []).some((aclEntry) => {
     // Check if it's shared with user
     if (aclEntry.shared_with_user) {
       return aclEntry.shared_with_user.id === session.user.id;
@@ -101,7 +127,8 @@ export const getServerSideProps = async (context) => {
   });
 
   // Combine all permission checks
-  const hasPermission = isModeratorOrAdmin || isAttacker || isDefender || isInACL;
+  const hasPermission =
+    isModeratorOrAdmin || isAttacker || isDefender || isInACL;
 
   if (!hasPermission) {
     return {

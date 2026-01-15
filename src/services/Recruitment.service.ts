@@ -1,8 +1,9 @@
-import prisma from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { getOTStartDate } from '@/utils/timefunctions';
+
+import prisma from '@/lib/prisma';
 import { getUserById } from '@/services/AttackDataService';
+import { getOTStartDate } from '@/utils/timefunctions';
 
 const CreateRecruitmentRecordSchema = z.object({
   fromUser: z.number().int(),
@@ -34,7 +35,11 @@ export async function createRecruitmentRecord({
   toUser: number;
   ipAddress: string;
 }) {
-  const validatedData = CreateRecruitmentRecordSchema.parse({ fromUser, toUser, ipAddress });
+  const validatedData = CreateRecruitmentRecordSchema.parse({
+    fromUser,
+    toUser,
+    ipAddress,
+  });
   return prisma.recruit_history.create({
     data: {
       from_user: validatedData.fromUser,
@@ -56,7 +61,12 @@ export async function hasExceededRecruitmentLimit({
   ipAddress: string;
   recruiterUserId: number;
 }) {
-  const validatedData = HasExceededRecruitmentLimitSchema.parse({ fromUser, toUser, ipAddress, recruiterUserId });
+  const validatedData = HasExceededRecruitmentLimitSchema.parse({
+    fromUser,
+    toUser,
+    ipAddress,
+    recruiterUserId,
+  });
   const recruitments = await prisma.recruit_history.findMany({
     where: {
       from_user: validatedData.fromUser,
@@ -302,7 +312,10 @@ export const performRecruitment = async ({
 
   if (sessionUpdate?.sessionId) {
     await tx.autoRecruitSession.update({
-      where: { id: sessionUpdate.sessionId, userId: sessionUpdate.recruiterUserId },
+      where: {
+        id: sessionUpdate.sessionId,
+        userId: sessionUpdate.recruiterUserId,
+      },
       data: { lastActivityAt: new Date() },
     });
   }
@@ -343,7 +356,8 @@ export const performRecruitmentWithSessionValidation = async ({
       throw new Error('Invalid session ID');
     }
 
-    if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) { // 1 minute
+    if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) {
+      // 1 minute
       await tx.autoRecruitSession.deleteMany({
         where: { id: sessionId, userId: recruiterUserId },
       });
@@ -360,13 +374,14 @@ export const performRecruitmentWithSessionValidation = async ({
     strategy,
     goldReward,
     delayMs,
-    sessionUpdate: sessionId
-      ? { sessionId, recruiterUserId }
-      : null,
+    sessionUpdate: sessionId ? { sessionId, recruiterUserId } : null,
   });
 };
 
-export async function getValidUsersForRecruitment(recruiterID: number, ipAddress: string) {
+export async function getValidUsersForRecruitment(
+  recruiterID: number,
+  ipAddress: string,
+) {
   // Fetch users excluding the recruiter and ID 0, created before OT start date
   const usersWithStatus = await prisma.users.findMany({
     where: {
@@ -392,7 +407,7 @@ export async function getValidUsersForRecruitment(recruiterID: number, ipAddress
 
   // Filter users whose latest status is 'ACTIVE'
   const activeUsers = usersWithStatus.filter(
-    (user) => user.statusHistories[0]?.status === 'ACTIVE'
+    (user) => user.statusHistories[0]?.status === 'ACTIVE',
   );
 
   if (activeUsers.length === 0) {
@@ -417,10 +432,13 @@ export async function getValidUsersForRecruitment(recruiterID: number, ipAddress
   });
 
   // Initialize counts map with all active users set to 0
-  const countsMap: { [key: number]: number } = userIds.reduce((acc, userId) => {
-    acc[userId] = 0;
-    return acc;
-  }, {} as { [key: number]: number });
+  const countsMap: { [key: number]: number } = userIds.reduce(
+    (acc, userId) => {
+      acc[userId] = 0;
+      return acc;
+    },
+    {} as { [key: number]: number },
+  );
 
   // Update countsMap with actual recruitment counts
   recruitments.forEach((recruitment) => {
@@ -442,7 +460,11 @@ export async function getValidUsersForRecruitment(recruiterID: number, ipAddress
   return { usersLeft: validUsers || 0, activeUsers };
 }
 
-export async function getRecruitmentRecords(recruiterID: number, startDate: Date, endDate: Date) {
+export async function getRecruitmentRecords(
+  recruiterID: number,
+  startDate: Date,
+  endDate: Date,
+) {
   const recruitmentRecords = await prisma.recruit_history.findMany({
     where: {
       from_user: { not: { in: [0, recruiterID] } },
@@ -466,7 +488,8 @@ export async function getRecruitmentRecords(recruiterID: number, startDate: Date
   // Count the number of times each user has been recruited
   const recruitCountMap: { [key: number]: number } = {};
   recruitmentRecords.forEach((record) => {
-    recruitCountMap[record.from_user] = (recruitCountMap[record.from_user] || 0) + 1;
+    recruitCountMap[record.from_user] =
+      (recruitCountMap[record.from_user] || 0) + 1;
   });
 
   // Fetch user details for the recruited users

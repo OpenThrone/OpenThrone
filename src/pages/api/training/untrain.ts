@@ -1,8 +1,9 @@
 import type { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
 import { untrainUnits } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
 // Zod schema for individual unit untraining request
@@ -11,7 +12,10 @@ const UntrainUnitSchema = z.object({
   level: z.number().int().min(1),
   quantity: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int().positive({ message: 'Unit quantity must be a positive integer.' })
+    z
+      .number()
+      .int()
+      .positive({ message: 'Unit quantity must be a positive integer.' }),
   ),
 });
 
@@ -19,9 +23,11 @@ const UntrainUnitSchema = z.object({
 const UntrainRequestSchema = z.object({
   userId: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int()
+    z.number().int(),
   ),
-  units: z.array(UntrainUnitSchema).min(1, { message: 'At least one unit type must be provided for untraining.' }),
+  units: z.array(UntrainUnitSchema).min(1, {
+    message: 'At least one unit type must be provided for untraining.',
+  }),
 });
 
 // Define response types
@@ -37,7 +43,7 @@ interface UnitProps {
 
 const handler = async (
   req: AuthenticatedRequest,
-  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>
+  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>,
 ) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -45,7 +51,11 @@ const handler = async (
   }
 
   if (!req.session?.user?.id) {
-    logError(null, { requestPath: req.url }, 'Auth session missing in untrain handler');
+    logError(
+      null,
+      { requestPath: req.url },
+      'Auth session missing in untrain handler',
+    );
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
@@ -66,23 +76,41 @@ const handler = async (
   }
 
   try {
-    const result = await untrainUnits({ userId, units: unitsToUntrain as { type: string; level: number; quantity: number }[] });
+    const result = await untrainUnits({
+      userId,
+      units: unitsToUntrain as {
+        type: string;
+        level: number;
+        quantity: number;
+      }[],
+    });
 
-    return res.status(200).json({ message: result.message, data: result.units });
-
+    return res
+      .status(200)
+      .json({ message: result.message, data: result.units });
   } catch (error: any) {
-    const logContext = parseResult.success ? { userId: parseResult.data.userId, units: parseResult.data.units } : { body: req.body };
+    const logContext = parseResult.success
+      ? { userId: parseResult.data.userId, units: parseResult.data.units }
+      : { body: req.body };
     logError(error, logContext, 'API Error: /api/training/untrain');
 
     // Handle specific errors
-    if (error.message?.startsWith('Not enough') || error.message?.startsWith('Invalid units quantity') || error.message?.startsWith('Invalid quantity format')) {
+    if (
+      error.message?.startsWith('Not enough') ||
+      error.message?.startsWith('Invalid units quantity') ||
+      error.message?.startsWith('Invalid quantity format')
+    ) {
       return res.status(400).json({ error: error.message });
     }
-     if (error.message === 'User not found within transaction') {
-       return res.status(404).json({ error: 'User data inconsistency during transaction.' });
+    if (error.message === 'User not found within transaction') {
+      return res
+        .status(404)
+        .json({ error: 'User data inconsistency during transaction.' });
     }
     // Generic error
-    return res.status(500).json({ error: 'An unexpected error occurred while untraining units.' });
+    return res
+      .status(500)
+      .json({ error: 'An unexpected error occurred while untraining units.' });
   }
 };
 

@@ -1,7 +1,8 @@
-import prisma from '@/lib/prisma';
-import { z } from 'zod';
-import UserModel from '@/models/Users';
 import type { Prisma, users as PrismaUser } from '@prisma/client';
+import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
+import UserModel from '@/models/Users';
 
 const UserIdSchema = z.number().int().positive();
 const UserSchema = z.object({
@@ -28,22 +29,32 @@ export const getUserWithAllRelations = async (userId: number) => {
   });
 };
 
-export const getUsersWithRelations = async (where = {}, db: Prisma.TransactionClient | typeof prisma = prisma) => {
-  return db.users.findMany({ where, include: {
-    UserUnit: true,
-    UserItem: true,
-    UserStructureUpgrade: true,
-    UserBattleUpgrade: true,
-    UserBonusPoints: true,
-    permissions: true,
-  } });
+export const getUsersWithRelations = async (
+  where = {},
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) => {
+  return db.users.findMany({
+    where,
+    include: {
+      UserUnit: true,
+      UserItem: true,
+      UserStructureUpgrade: true,
+      UserBattleUpgrade: true,
+      UserBonusPoints: true,
+      permissions: true,
+    },
+  });
 };
 
 /**
  * Build a UserModel instance from either a user id or a partial/full Prisma user row.
  * If the provided row is missing relation arrays, we'll fetch them from the DB.
  */
-export const buildUserModel = async (userOrId: number | Partial<PrismaUser> | null, filtered = true, checkStats = true) => {
+export const buildUserModel = async (
+  userOrId: number | Partial<PrismaUser> | null,
+  filtered = true,
+  checkStats = true,
+) => {
   if (!userOrId) return new UserModel(null as any);
 
   // If caller supplied an id, fetch full row
@@ -58,19 +69,49 @@ export const buildUserModel = async (userOrId: number | Partial<PrismaUser> | nu
   if (!row) return new UserModel(null as any);
 
   // Ensure relations exist; if not present, fetch them
-  const hasUnits = Array.isArray((row as any).UserUnit) || Array.isArray((row as any).units);
-  const hasItems = Array.isArray((row as any).UserItem) || Array.isArray((row as any).items);
-  const hasStructures = Array.isArray((row as any).UserStructureUpgrade) || Array.isArray((row as any).structure_upgrades);
-  const hasBattle = Array.isArray((row as any).UserBattleUpgrade) || Array.isArray((row as any).battle_upgrades);
-  const hasBonus = Array.isArray((row as any).UserBonusPoints) || Array.isArray((row as any).bonus_points);
+  const hasUnits =
+    Array.isArray((row as any).UserUnit) || Array.isArray((row as any).units);
+  const hasItems =
+    Array.isArray((row as any).UserItem) || Array.isArray((row as any).items);
+  const hasStructures =
+    Array.isArray((row as any).UserStructureUpgrade) ||
+    Array.isArray((row as any).structure_upgrades);
+  const hasBattle =
+    Array.isArray((row as any).UserBattleUpgrade) ||
+    Array.isArray((row as any).battle_upgrades);
+  const hasBonus =
+    Array.isArray((row as any).UserBonusPoints) ||
+    Array.isArray((row as any).bonus_points);
 
   if (hasUnits && hasItems && hasStructures && hasBattle && hasBonus) {
-    return new UserModel(row as any, (row as any).UserUnit, (row as any).UserItem, (row as any).UserStructureUpgrade, (row as any).UserBattleUpgrade, (row as any).UserBonusPoints, (row as any).permissions, (row as any).stats, filtered, checkStats);
+    return new UserModel(
+      row as any,
+      (row as any).UserUnit,
+      (row as any).UserItem,
+      (row as any).UserStructureUpgrade,
+      (row as any).UserBattleUpgrade,
+      (row as any).UserBonusPoints,
+      (row as any).permissions,
+      (row as any).stats,
+      filtered,
+      checkStats,
+    );
   }
 
   // Fetch fresh row with relations
-  const full = await getUserWithAllRelations(row.id as number);
+  const full = await getUserWithAllRelations(row.id);
   if (!full) return new UserModel(row as any);
 
-  return new UserModel(full as any, full.UserUnit, full.UserItem, full.UserStructureUpgrade, full.UserBattleUpgrade, full.UserBonusPoints, full.permissions, (full as any).stats, filtered, checkStats);
+  return new UserModel(
+    full,
+    full.UserUnit,
+    full.UserItem,
+    full.UserStructureUpgrade,
+    full.UserBattleUpgrade,
+    full.UserBonusPoints,
+    full.permissions,
+    full.stats,
+    filtered,
+    checkStats,
+  );
 };

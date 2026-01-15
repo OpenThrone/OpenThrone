@@ -1,6 +1,8 @@
+import { Group, Pagination, Table, Text } from '@mantine/core';
 import React from 'react';
-import { Table, Group, Text, Pagination } from '@mantine/core';
+
 import toLocale from '@/utils/numberFormatting';
+
 import { StyledTable } from './game/StyledTable';
 
 interface BankHistoryTableProps {
@@ -24,15 +26,25 @@ export default function BankHistoryTable({
   totalPages,
   onPageChange,
 }: BankHistoryTableProps) {
-   
-  if (message) return <Text ta="center" p="md">{message}</Text>;
-  if (!bankHistory || bankHistory.length === 0) return <Text ta="center" p="md">No Records Found</Text>;
+  if (message)
+    return (
+      <Text ta="center" p="md">
+        {message}
+      </Text>
+    );
+  if (!bankHistory || bankHistory.length === 0)
+    return (
+      <Text ta="center" p="md">
+        No Records Found
+      </Text>
+    );
 
   const rows = bankHistory.map((entry, index) => {
     const transactionType = getTransactionType(entry);
-    const displayAmount = transactionType === 'Daily Reward'
-      ? `+${entry.stats.newCitizens - entry.stats.currentCitizens} Citizens`
-      : `${getGoldTxSymbol(entry, user)}${toLocale(entry.gold_amount, user?.locale)} gold`;
+    const displayAmount =
+      transactionType === 'Daily Reward'
+        ? `+${entry.stats.newCitizens - entry.stats.currentCitizens} Citizens`
+        : `${getGoldTxSymbol(entry, user)}${toLocale(entry.gold_amount, user?.locale)} gold`;
 
     return (
       <Table.Tr key={index}>

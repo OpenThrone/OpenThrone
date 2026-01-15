@@ -1,11 +1,11 @@
 // pages/api/armory/convert.ts
-import type { NextApiResponse } from "next"; // Removed NextApiRequest
-import { withAuth } from "@/middleware/auth";
+import type { NextApiResponse } from 'next'; // Removed NextApiRequest
+import { z } from 'zod';
+
+import { withAuth } from '@/middleware/auth';
+import { ArmoryService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api'; // Import AuthenticatedRequest
-import { ArmoryService } from "@/services";
-import { logError } from "@/utils/logger";
-import { error } from "console";
-import { z } from "zod";
+import { logError } from '@/utils/logger';
 
 const ConvertSchema = z.object({
   userId: z.number().int(),
@@ -14,19 +14,24 @@ const ConvertSchema = z.object({
   conversionAmount: z.number().int(),
 });
 
-const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => { // Use AuthenticatedRequest
+const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
+  // Use AuthenticatedRequest
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const validatedBody = ConvertSchema.safeParse(req.body);
   if (!validatedBody.success) {
-    return res.status(400).json({ error: 'Invalid input data', details: validatedBody.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid input data',
+      details: validatedBody.error.flatten().fieldErrors,
+    });
   }
 
   const { userId, fromItem, toItem, conversionAmount } = validatedBody.data;
 
-  if (userId !== req.session.user.id) return res.status(401).json({ error: 'Unauthorized' });
+  if (userId !== req.session.user.id)
+    return res.status(401).json({ error: 'Unauthorized' });
 
   try {
     const result = await ArmoryService.convertItems({

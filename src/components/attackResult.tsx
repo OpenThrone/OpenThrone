@@ -1,13 +1,15 @@
-import { useState } from "react";
-import { faScroll } from "@fortawesome/free-solid-svg-icons";
-import { AnimatePresence, motion } from "framer-motion";
-import { Box, Button, Grid, Group, Space, Text, useMantineTheme } from "@mantine/core";
-import Image from "next/image";
+import { faScroll } from '@fortawesome/free-solid-svg-icons';
+import { Box, Button, Grid, Space, Text, useMantineTheme } from '@mantine/core';
+import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
+import { useState } from 'react';
 
-import { GameCard } from "./game/GameCard";
-import Modal from "./modal";
-import toLocale from "@/utils/numberFormatting";
-import { getLevelFromXP, getAssetPath } from "@/utils/utilities";
+import toLocale from '@/utils/numberFormatting';
+import { getAssetPath, getLevelFromXP } from '@/utils/utilities';
+
+import { FramedAvatar } from './FramedAvatar';
+import { GameCard } from './game/GameCard';
+import Modal from './modal';
 
 const AttackResults = ({ battle, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
@@ -23,7 +25,10 @@ const AttackResults = ({ battle, viewerID }) => {
   const totalLosses = (losses: string): number => {
     try {
       const parsedLosses = JSON.parse(losses);
-      return Object.values(parsedLosses.units || {}).reduce((acc: number, curr: any) => acc + curr, 0) as number;
+      return Object.values(parsedLosses.units || {}).reduce(
+        (acc: number, curr: any) => acc + curr,
+        0,
+      ) as number;
     } catch (e) {
       return 0;
     }
@@ -36,8 +41,8 @@ const AttackResults = ({ battle, viewerID }) => {
     const unitsArray = Array.isArray(units) ? units : Object.values(units);
     return toLocale(
       unitsArray
-        .filter(unit => unit.type === type)
-        .reduce((acc, curr) => acc + curr.quantity, 0)
+        .filter((unit) => unit.type === type)
+        .reduce((acc, curr) => acc + curr.quantity, 0),
     );
   };
 
@@ -55,15 +60,30 @@ const AttackResults = ({ battle, viewerID }) => {
     `Total Units Lost by Defender: ${defenderTotalLosses}`,
   ];
 
-  const sentence = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { delayChildren: 1, staggerChildren: 0.06 } } };
-  const letter = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.3 } } };
+  const sentence = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { delayChildren: 1, staggerChildren: 0.06 },
+    },
+  };
+  const letter = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.3 } },
+  };
+
+  const frameSrc = getAssetPath('avatarFrame');
 
   return (
     <GameCard title="Battle Report" icon={faScroll}>
       <Grid grow gutter="lg">
         <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Text size="xl" fw={700}>{attackerPlayer?.display_name}</Text>
-          <Text c="dimmed">Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}</Text>
+          <Text size="xl" fw={700}>
+            {attackerPlayer?.display_name}
+          </Text>
+          <Text c="dimmed">
+            Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
+          </Text>
           <Image
             src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
             alt="attacker avatar"
@@ -73,7 +93,10 @@ const AttackResults = ({ battle, viewerID }) => {
           />
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, md: 2 }} style={{ textAlign: 'center', alignSelf: 'center' }}>
+        <Grid.Col
+          span={{ base: 12, md: 2 }}
+          style={{ textAlign: 'center', alignSelf: 'center' }}
+        >
           <Text size="lg" fw="bold" color={isAttackerWinner ? 'green' : 'red'}>
             {isAttackerWinner ? 'Victory' : 'Defeat'}
           </Text>
@@ -81,18 +104,34 @@ const AttackResults = ({ battle, viewerID }) => {
           <Button onClick={toggleModal}>
             {isViewerAttacker ? 'Attack Again' : 'Attack Back'}
           </Button>
-          <Modal isOpen={isOpen} toggleModal={toggleModal} profileID={isViewerAttacker ? defenderPlayer.id : attackerPlayer.id} />
+          <Modal
+            isOpen={isOpen}
+            toggleModal={toggleModal}
+            profileID={isViewerAttacker ? defenderPlayer.id : attackerPlayer.id}
+          />
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Text size="xl" fw={700}>{defenderPlayer?.display_name}</Text>
-          <Text c="dimmed">Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}</Text>
-          <Image
+          <Text size="xl" fw={700}>
+            {defenderPlayer?.display_name}
+          </Text>
+          <Text c="dimmed">
+            Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}
+          </Text>
+          <Text size="xl" fw={700}>
+            {attackerPlayer?.display_name}
+          </Text>
+          <Text c="dimmed">
+            Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
+          </Text>
+
+          <FramedAvatar
+            frameSrc={frameSrc}
             src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
             alt="defender avatar"
-            width={150}
-            height={150}
-            style={{ margin: 'auto' }}
+            size={380} // outer size
+            insetX={60}
+            insetY={90}
           />
         </Grid.Col>
       </Grid>

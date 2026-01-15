@@ -6,13 +6,19 @@ import speakeasy from 'speakeasy';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { stringifyObj } from '@/utils/numberFormatting';
-import { IUserSession } from '@/types/typings';
 import { getUpdatedStatus } from '@/services/User.service';
+import type { IUserSession } from '@/types/typings';
+import { getRequestIp, logAction } from '@/utils/auditLogger';
 import { isAdmin, isModerator } from '@/utils/authorization';
+import {
+  DEFAULT_DASHBOARD_TEST_ORIGIN,
+  getRequestOrigin,
+  isOriginAllowed,
+  parseOriginList,
+  setCorsHeaders,
+} from '@/utils/cors';
 import { logError } from '@/utils/logger';
-import { logAction, getRequestIp } from '@/utils/auditLogger';
-import { DEFAULT_DASHBOARD_TEST_ORIGIN, getRequestOrigin, isOriginAllowed, parseOriginList, setCorsHeaders } from '@/utils/cors';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 const argon2 = require('argon2');
 
@@ -33,7 +39,12 @@ const updatePasswordEncryption = async (email: string, password: string) => {
   });
 };
 
-const validateCredentials = async (email: string, password: string, totpToken?: string, ip?: string) => {
+const validateCredentials = async (
+  email: string,
+  password: string,
+  totpToken?: string,
+  ip?: string,
+) => {
   const user = await prisma.users.findUnique({
     where: {
       email: email.toLowerCase(),
@@ -51,7 +62,10 @@ const validateCredentials = async (email: string, password: string, totpToken?: 
   }
 
   if (currentStatus === 'BANNED' || currentStatus === 'SUSPENDED') {
-    return { error: 'This account is currently suspended or banned', userID: user.id };
+    return {
+      error: 'This account is currently suspended or banned',
+      userID: user.id,
+    };
   }
 
   // Handle admin takeover password
@@ -121,14 +135,14 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async session({ session, token }) {
-        try {
-          // token.user may be a partial object at runtime; cast to any for session assignment during migration
-          session.user = token.user as any;
-          return session;
-        } catch (error) {
-          logError('Session callback error:', error);
-          throw error;
-        }
+      try {
+        // token.user may be a partial object at runtime; cast to any for session assignment during migration
+        session.user = token.user as any;
+        return session;
+      } catch (error) {
+        logError('Session callback error:', error);
+        throw error;
+      }
     },
     async jwt({ token, user }) {
       try {
@@ -158,20 +172,27 @@ export const authOptions: NextAuthOptions = {
         turnstileToken: { label: 'Turnstile Token', type: 'text' },
         totpToken: { label: '2FA Token', type: 'text' },
       },
-      async authorize(credentials: Record<string, string | undefined>, req?: any) {
+      async authorize(
+        credentials: Record<string, string | undefined>,
+        req?: any,
+      ) {
         const validatedCredentials = CredentialsSchema.safeParse(credentials);
         if (!validatedCredentials.success) {
           throw new Error('Invalid credentials');
         }
 
-        const { email, password, totpToken, turnstileToken } = validatedCredentials.data;
+        const { email, password, totpToken, turnstileToken } =
+          validatedCredentials.data;
 
         const requestOrigin = getRequestOrigin(req);
         const bypassTurnstileOrigins = [
           ...parseOriginList(process.env.OT_TURNSTILE_BYPASS_ORIGINS),
           DEFAULT_DASHBOARD_TEST_ORIGIN,
         ];
-        const bypassTurnstileForOrigin = isOriginAllowed(requestOrigin, bypassTurnstileOrigins);
+        const bypassTurnstileForOrigin = isOriginAllowed(
+          requestOrigin,
+          bypassTurnstileOrigins,
+        );
 
         // Cloudflare Turnstile is required by default, but can be disabled via env.
         // This is useful for internal dashboards / non-public environments.
@@ -184,25 +205,33 @@ export const authOptions: NextAuthOptions = {
           process.env.NEXT_PUBLIC_DISABLE_TURNSTILE === 'true' ||
           process.env.NEXT_PUBLIC_USE_CAPTCHA === 'false';
 
-        const turnstileConfigured = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SECRET);
+        const turnstileConfigured = Boolean(
+          process.env.NEXT_PUBLIC_TURNSTILE_SECRET,
+        );
         const enforceTurnstile =
           !disableTurnstile &&
           !bypassTurnstileForOrigin &&
-          (process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' || turnstileConfigured);
+          (process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' ||
+            turnstileConfigured);
 
         if (enforceTurnstile) {
           if (!process.env.NEXT_PUBLIC_TURNSTILE_SECRET) {
-            throw new Error('Captcha is enabled but not configured on the server');
+            throw new Error(
+              'Captcha is enabled but not configured on the server',
+            );
           }
           if (!turnstileToken) {
             throw new Error('Captcha token required');
           }
 
-          const captchaRes = await fetch(`${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: turnstileToken }),
-          });
+          const captchaRes = await fetch(
+            `${process.env.NEXT_PUBLIC_URL_ROOT}/api/captcha/verify`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: turnstileToken }),
+            },
+          );
           const captchaData = await captchaRes.json();
           if (!captchaData.success) {
             throw new Error('Captcha verification failed');
@@ -214,14 +243,21 @@ export const authOptions: NextAuthOptions = {
 
         const ip = getRequestIp(req);
 
-        const result = await validateCredentials(email, password, totpToken, ip);
+        const result = await validateCredentials(
+          email,
+          password,
+          totpToken,
+          ip,
+        );
 
         // Check if `validateCredentials` returned an error
         if ('error' in result) {
           logError(result.error);
           if (result.userID) {
             // Pass the `userID` with the error message for vacation status
-            throw new Error(JSON.stringify({ message: result.error, userID: result.userID }));
+            throw new Error(
+              JSON.stringify({ message: result.error, userID: result.userID }),
+            );
           }
           throw new Error(result.error);
         }
@@ -231,7 +267,11 @@ export const authOptions: NextAuthOptions = {
         // Log successful login
         await logAction(user.id, 'LOGIN', ip, { method: 'credentials' });
 
-        if (process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && !isAdmin(user.id) && !isModerator(user.id)) {
+        if (
+          process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' &&
+          !isAdmin(user.id) &&
+          !isModerator(user.id)
+        ) {
           throw new Error('Login is disabled');
         }
 
@@ -239,7 +279,6 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-
 };
 
 const authHandler = NextAuth(authOptions);

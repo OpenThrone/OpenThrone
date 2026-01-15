@@ -1,5 +1,14 @@
+import {
+  Badge,
+  Button,
+  Group,
+  Pagination,
+  Skeleton,
+  Table,
+  Text,
+} from '@mantine/core';
 import React from 'react';
-import { Table, Button, Box, Text, Badge, Group, Pagination, UnstyledButton, Skeleton } from '@mantine/core';
+
 import { StyledTable } from './game/StyledTable';
 
 interface UserSummary {
@@ -36,12 +45,18 @@ const UserList: React.FC<UserListProps> = ({
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE': return 'green';
-      case 'VACATION': return 'blue';
-      case 'SUSPENDED': return 'yellow';
-      case 'BANNED': return 'red';
-      case 'CLOSED': return 'gray';
-      default: return 'gray';
+      case 'ACTIVE':
+        return 'green';
+      case 'VACATION':
+        return 'blue';
+      case 'SUSPENDED':
+        return 'yellow';
+      case 'BANNED':
+        return 'red';
+      case 'CLOSED':
+        return 'gray';
+      default:
+        return 'gray';
     }
   };
 
@@ -49,17 +64,32 @@ const UserList: React.FC<UserListProps> = ({
     if (!date) return 'N/A';
     return new Date(date).toLocaleString();
   };
-  
-  const headers = ['ID', 'Username', 'Email', 'Status', 'Last Active', 'Actions'];
+
+  const headers = [
+    'ID',
+    'Username',
+    'Email',
+    'Status',
+    'Last Active',
+    'Actions',
+  ];
 
   const rows = users.map((user) => (
     <Table.Tr key={user.id}>
       <Table.Td>{user.id}</Table.Td>
       <Table.Td>{user.username}</Table.Td>
       <Table.Td>{user.email || 'N/A'}</Table.Td>
-      <Table.Td><Badge color={getStatusColor(user.status)}>{user.status || 'N/A'}</Badge></Table.Td>
+      <Table.Td>
+        <Badge color={getStatusColor(user.status)}>
+          {user.status || 'N/A'}
+        </Badge>
+      </Table.Td>
       <Table.Td>{formatDate(user.lastActive)}</Table.Td>
-      <Table.Td><Button size="xs" onClick={() => onEditUser(user.id)}>Edit</Button></Table.Td>
+      <Table.Td>
+        <Button size="xs" onClick={() => onEditUser(user.id)}>
+          Edit
+        </Button>
+      </Table.Td>
     </Table.Tr>
   ));
 
@@ -73,9 +103,7 @@ const UserList: React.FC<UserListProps> = ({
 
   return (
     <>
-      <StyledTable headers={headers}>
-        {rows}
-      </StyledTable>
+      <StyledTable headers={headers}>{rows}</StyledTable>
       <Group justify="center" mt="md">
         <Pagination value={page} onChange={onPageChange} total={totalPages} />
       </Group>

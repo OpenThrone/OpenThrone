@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Space, NumberInput, Button, Group, Text } from '@mantine/core';
-import toLocale from '@/utils/numberFormatting';
+import { Button, Group, NumberInput, Space, Table } from '@mantine/core';
+import React, { useEffect, useState } from 'react';
+
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+import toLocale from '@/utils/numberFormatting';
+import { getGoldTxSymbol, getTransactionType } from '@/utils/utilities';
+
 import { GameCard } from './game/GameCard';
 import { StyledTable } from './game/StyledTable';
-import { getTransactionType, getGoldTxSymbol } from '@/utils/utilities';
 
 export default function BankDepositWithdraw({ user, forceUpdate }) {
   const [depositAmount, setDepositAmount] = useState(BigInt(0));
@@ -15,13 +17,16 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
   useEffect(() => {
     if (user) {
       fetch('/api/bank/history?deposits=true&withdraws=true&limit=10&page=0')
-        .then(res => res.json())
-        .then(data => setHistory(data.rows))
-        .catch(err => logError('Error fetching bank history:', err));
+        .then((res) => res.json())
+        .then((data) => setHistory(data.rows))
+        .catch((err) => logError('Error fetching bank history:', err));
     }
   }, [user]);
 
-  const handleTransaction = async (type: 'deposit' | 'withdraw', amount: bigint) => {
+  const handleTransaction = async (
+    type: 'deposit' | 'withdraw',
+    amount: bigint,
+  ) => {
     if (amount <= 0) return;
     try {
       const response = await fetch(`/api/bank/${type}`, {
@@ -44,7 +49,10 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
     <Table.Tr key={index}>
       <Table.Td>{new Date(entry?.date_time).toLocaleString()}</Table.Td>
       <Table.Td>{getTransactionType(entry)}</Table.Td>
-      <Table.Td>{getGoldTxSymbol(entry, user)}{toLocale(entry.gold_amount, user?.locale)} gold</Table.Td>
+      <Table.Td>
+        {getGoldTxSymbol(entry, user)}
+        {toLocale(entry.gold_amount, user?.locale)} gold
+      </Table.Td>
     </Table.Tr>
   ));
 
@@ -52,12 +60,32 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
     <>
       <Group grow>
         <GameCard title="Deposit">
-          <NumberInput label="Amount" value={depositAmount.toString()} onChange={(val) => setDepositAmount(BigInt(val))} min={0} />
-          <Button mt="md" onClick={() => handleTransaction('deposit', depositAmount)}>Deposit</Button>
+          <NumberInput
+            label="Amount"
+            value={depositAmount.toString()}
+            onChange={(val) => setDepositAmount(BigInt(val))}
+            min={0}
+          />
+          <Button
+            mt="md"
+            onClick={() => handleTransaction('deposit', depositAmount)}
+          >
+            Deposit
+          </Button>
         </GameCard>
         <GameCard title="Withdraw">
-          <NumberInput label="Amount" value={withdrawAmount.toString()} onChange={(val) => setWithdrawAmount(BigInt(val))} min={0} />
-          <Button mt="md" onClick={() => handleTransaction('withdraw', withdrawAmount)}>Withdraw</Button>
+          <NumberInput
+            label="Amount"
+            value={withdrawAmount.toString()}
+            onChange={(val) => setWithdrawAmount(BigInt(val))}
+            min={0}
+          />
+          <Button
+            mt="md"
+            onClick={() => handleTransaction('withdraw', withdrawAmount)}
+          >
+            Withdraw
+          </Button>
         </GameCard>
       </Group>
       <Space h="md" />

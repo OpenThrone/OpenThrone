@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
-import { Box, Group, Text, Button, NumberInput, Grid, useMantineTheme } from '@mantine/core';
-import { GameCard } from './GameCard';
 import { faHammer } from '@fortawesome/free-solid-svg-icons';
+import {
+  Box,
+  Button,
+  Grid,
+  Group,
+  NumberInput,
+  Text,
+  useMantineTheme,
+} from '@mantine/core';
+import React, { useState } from 'react';
+
 import RpgAwesomeIcon from '../RpgAwesomeIcon';
+import { GameCard } from './GameCard';
 
 // Mock data structure matching your potential unit types
 const UNITS = [
@@ -29,7 +38,10 @@ export const UnitTrainingPanel = () => {
         </Grid>
 
         {/* Total Footer */}
-        <Box mt="lg" style={{ borderTop: '1px dashed #2f3e52', paddingTop: '16px' }}>
+        <Box
+          mt="lg"
+          style={{ borderTop: '1px dashed #2f3e52', paddingTop: '16px' }}
+        >
           <Group justify="flex-end">
             <Button
               variant="filled"
@@ -39,7 +51,7 @@ export const UnitTrainingPanel = () => {
                 background: `linear-gradient(180deg, ${accent} 0%, ${accentDark} 100%)`,
                 color: '#000',
                 border: `1px solid ${accent}`,
-                boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
               }}
             >
               TRAIN ALL UNITS
@@ -83,13 +95,22 @@ const TrainingSlot = ({ unit }: { unit: any }) => {
             alignItems: 'center',
             justifyContent: 'center',
             border: '1px solid #333',
-            borderRadius: '4px'
+            borderRadius: '4px',
           }}
         >
-          <RpgAwesomeIcon icon={unit.icon} size="2x" color={brand[3] ?? '#6b7280'} />
+          <RpgAwesomeIcon
+            icon={unit.icon}
+            size="2x"
+            color={brand[3] ?? '#6b7280'}
+          />
         </Box>
         <Box>
-          <Text fw={700} c="gray.3" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }} data-testid="unit-name">
+          <Text
+            fw={700}
+            c="gray.3"
+            style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
+            data-testid="unit-name"
+          >
             {unit.name}
           </Text>
           <Group gap={6} data-testid="unit-stats">
@@ -99,8 +120,12 @@ const TrainingSlot = ({ unit }: { unit: any }) => {
                 {unit.cost}
               </span>
             </Text>
-            <Text size="xs" c="dimmed">|</Text>
-            <Text size="xs" c="dimmed">Owned: {unit.owned}</Text>
+            <Text size="xs" c="dimmed">
+              |
+            </Text>
+            <Text size="xs" c="dimmed">
+              Owned: {unit.owned}
+            </Text>
           </Group>
         </Box>
       </Group>
@@ -132,7 +157,8 @@ const TrainingSlot = ({ unit }: { unit: any }) => {
           aria-label={`Set max ${unit.name}`}
           role="button"
           style={{
-            backgroundImage: 'linear-gradient(180deg, #2b3747 0%, #1f2b3b 100%)',
+            backgroundImage:
+              'linear-gradient(180deg, #2b3747 0%, #1f2b3b 100%)',
             borderColor: '#2f3e52',
             color: '#9ca3af',
             minWidth: '48px',

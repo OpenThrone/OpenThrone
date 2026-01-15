@@ -8,7 +8,7 @@ const LogLevel = {
 } as const;
 
 type LogLevelKey = keyof typeof LogLevel;
-type LogLevelValue = typeof LogLevel[LogLevelKey];
+type LogLevelValue = (typeof LogLevel)[LogLevelKey];
 
 // Function to get the numeric level from a string name
 const getLevelFromString = (levelStr: string | undefined): LogLevelValue => {
@@ -28,28 +28,33 @@ if (typeof window === 'undefined') {
   // console.log(`[Logger Setup - Client] Log level set to: ${Object.keys(LogLevel).find(key => LogLevel[key as LogLevelKey] === currentLogLevel)} (${currentLogLevel})`);
 }
 
-
 // Helper to format messages (optional, but nice)
-const formatMessage = (level: LogLevelKey, message: any, ...optionalParams: any[]): string => {
+const formatMessage = (
+  level: LogLevelKey,
+  message: any,
+  ...optionalParams: any[]
+): string => {
   const timestamp = new Date().toISOString();
   let formattedMessage = `[${timestamp}] [${level}] ${message}`;
 
   // Basic handling for additional parameters (stringify objects/arrays)
   if (optionalParams.length > 0) {
-    formattedMessage += ' - ' + optionalParams.map(param => {
-      if (param instanceof Error) {
-        // Handle Error objects explicitly for better logging
-        return `{ name: '${param.name}', message: '${param.message}', stack: '${param.stack?.replace(/\n/g, '\\n')}' }`;
-      }
-      if (typeof param === 'object' && param !== null) {
-        try {
-          return JSON.stringify(param);
-        } catch (e) {
-          return '[Unserializable Object]';
+    formattedMessage += ` - ${optionalParams
+      .map((param) => {
+        if (param instanceof Error) {
+          // Handle Error objects explicitly for better logging
+          return `{ name: '${param.name}', message: '${param.message}', stack: '${param.stack?.replace(/\n/g, '\\n')}' }`;
         }
-      }
-      return String(param);
-    }).join(' ');
+        if (typeof param === 'object' && param !== null) {
+          try {
+            return JSON.stringify(param);
+          } catch (e) {
+            return '[Unserializable Object]';
+          }
+        }
+        return String(param);
+      })
+      .join(' ')}`;
   }
   return formattedMessage;
 };

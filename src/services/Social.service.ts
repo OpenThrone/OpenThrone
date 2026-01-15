@@ -1,14 +1,16 @@
-import prisma from '@/lib/prisma';
 import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
-import { 
-  createGoldRequest, 
-  getPendingFriendTransfers, 
+
+import {
+  cancelFriendTransfer,
+  createGoldRequest,
+  getFriendTransferHistory,
+  getPendingFriendTransfers,
   respondToGoldRequest,
   transferGoldToFriend,
-  getFriendTransferHistory,
-  cancelFriendTransfer
 } from './FriendTransfer.service';
 
 // Type definitions for social operations
@@ -86,55 +88,58 @@ export interface RelationshipInfo {
 // Zod schemas for validation
 const AddSocialSchema = z.object({
   friendId: z.number().int(),
-  relationshipType: z.enum(['FRIEND', 'ENEMY'])
+  relationshipType: z.enum(['FRIEND', 'ENEMY']),
 });
 
 const RemoveSocialSchema = z.object({
   friendId: z.number().int(),
-  relationshipType: z.enum(['FRIEND', 'ENEMY'])
+  relationshipType: z.enum(['FRIEND', 'ENEMY']),
 });
 
 const EndRelationshipSchema = z.object({
-  friendId: z.number().int()
+  friendId: z.number().int(),
 });
 
 const RespondToRequestSchema = z.object({
   requestId: z.number().int(),
-  action: z.enum(['accept', 'decline'])
+  action: z.enum(['accept', 'decline']),
 });
 
 const GetRelationshipSchema = z.object({
   userId: z.coerce.number().int(),
-  targetUserId: z.coerce.number().int()
+  targetUserId: z.coerce.number().int(),
 });
 
 const ListSocialSchema = z.object({
   type: z.enum(['FRIEND', 'ENEMY', 'REQUESTS']),
   limit: z.coerce.number().int().positive().max(100).optional(),
-  playerId: z.coerce.number().int().optional()
+  playerId: z.coerce.number().int().optional(),
 });
 
 const GetTopSocialSchema = z.object({
-  type: z.enum(['FRIEND', 'ENEMY'])
+  type: z.enum(['FRIEND', 'ENEMY']),
 });
 
 const GoldRequestSchema = z.object({
   friendId: z.number().int(),
-  amount: z.string().transform(val => BigInt(val)),
-  notes: z.string().optional()
+  amount: z.string().transform((val) => BigInt(val)),
+  notes: z.string().optional(),
 });
 
 const GoldRequestResponseSchema = z.object({
   requestId: z.number().int(),
   action: z.enum(['accept', 'decline']),
-  message: z.string().optional()
+  message: z.string().optional(),
 });
 
 export class SocialService {
   /**
    * Validates that a user can add a relationship with another user
    */
-  private static async validateAddRelationship(playerId: number, friendId: number) {
+  private static async validateAddRelationship(
+    playerId: number,
+    friendId: number,
+  ) {
     // Check if user is trying to add relationship with themselves
     if (playerId === friendId) {
       throw new Error('Cannot create relationship with yourself');
@@ -144,36 +149,36 @@ export class SocialService {
     const existingRelationship = await prisma.social.findFirst({
       where: {
         OR: [
-          { 
-            AND: [
-              { playerId },
-              { friendId },
-            ]
+          {
+            AND: [{ playerId }, { friendId }],
           },
           {
-            AND: [
-              { playerId: friendId },
-              { friendId: playerId },
-            ]
-          }
-        ]
+            AND: [{ playerId: friendId }, { friendId: playerId }],
+          },
+        ],
       },
     });
 
     if (existingRelationship) {
       if (existingRelationship.status === 'requested') {
-        throw new Error(`A ${existingRelationship.relationshipType.toLowerCase()} request is already pending between you and this user.`);
+        throw new Error(
+          `A ${existingRelationship.relationshipType.toLowerCase()} request is already pending between you and this user.`,
+        );
       } else if (existingRelationship.status === 'accepted') {
-        throw new Error(`You already have an active ${existingRelationship.relationshipType.toLowerCase()} relationship with this user.`);
+        throw new Error(
+          `You already have an active ${existingRelationship.relationshipType.toLowerCase()} relationship with this user.`,
+        );
       } else {
-        throw new Error(`A ${existingRelationship.relationshipType.toLowerCase()} relationship already exists with this user.`);
+        throw new Error(
+          `A ${existingRelationship.relationshipType.toLowerCase()} relationship already exists with this user.`,
+        );
       }
     }
 
     // Check if target user exists
     const targetUser = await prisma.users.findUnique({
       where: { id: friendId },
-      select: { id: true, display_name: true }
+      select: { id: true, display_name: true },
     });
 
     if (!targetUser) {
@@ -203,10 +208,14 @@ export class SocialService {
       return {
         message: `${validatedData.relationshipType} request sent successfully`,
         relationshipType: validatedData.relationshipType,
-        relationship
+        relationship,
       };
     } catch (error: any) {
-      logError('Error adding social relationship', { playerId, friendId: validatedData.friendId, error });
+      logError('Error adding social relationship', {
+        playerId,
+        friendId: validatedData.friendId,
+        error,
+      });
       throw error;
     }
   }
@@ -223,20 +232,26 @@ export class SocialService {
           playerId,
           friendId: validatedData.friendId,
           relationshipType: validatedData.relationshipType,
-          status: 'requested' // Only allow removing pending requests
+          status: 'requested', // Only allow removing pending requests
         },
       });
 
       if (result.count === 0) {
-        throw new Error('No active relationship request found with the specified user');
+        throw new Error(
+          'No active relationship request found with the specified user',
+        );
       }
 
       return {
         message: `${validatedData.relationshipType} relationship request removed successfully`,
-        relationshipType: validatedData.relationshipType
+        relationshipType: validatedData.relationshipType,
       };
     } catch (error: any) {
-      logError('Error removing social relationship', { playerId, friendId: validatedData.friendId, error });
+      logError('Error removing social relationship', {
+        playerId,
+        friendId: validatedData.friendId,
+        error,
+      });
       throw error;
     }
   }
@@ -251,19 +266,31 @@ export class SocialService {
       await prisma.social.updateMany({
         where: {
           OR: [
-            { playerId: playerId, friendId: validatedData.friendId, status: 'accepted' },
-            { playerId: validatedData.friendId, friendId: playerId, status: 'accepted' }
-          ]
+            {
+              playerId,
+              friendId: validatedData.friendId,
+              status: 'accepted',
+            },
+            {
+              playerId: validatedData.friendId,
+              friendId: playerId,
+              status: 'accepted',
+            },
+          ],
         },
         data: {
           status: 'ended',
-          endDate: new Date()
-        }
+          endDate: new Date(),
+        },
       });
 
       return { message: 'Friendship ended successfully' };
     } catch (error: any) {
-      logError('Error ending social relationship', { playerId, friendId: validatedData.friendId, error });
+      logError('Error ending social relationship', {
+        playerId,
+        friendId: validatedData.friendId,
+        error,
+      });
       throw error;
     }
   }
@@ -275,38 +302,45 @@ export class SocialService {
     const validatedData = RespondToRequestSchema.parse(data);
 
     try {
-      const newStatus = validatedData.action === 'accept' ? 'accepted' : 'declined';
-      const acceptanceDate = validatedData.action === 'accept' ? new Date() : null;
+      const newStatus =
+        validatedData.action === 'accept' ? 'accepted' : 'declined';
+      const acceptanceDate =
+        validatedData.action === 'accept' ? new Date() : null;
       const endDate = validatedData.action === 'decline' ? new Date() : null;
 
       const updateResult = await prisma.social.updateMany({
         where: {
           id: validatedData.requestId,
           friendId: userId,
-          status: 'requested'
+          status: 'requested',
         },
         data: {
           status: newStatus,
-          acceptanceDate: acceptanceDate,
-          endDate: endDate
-        }
+          acceptanceDate,
+          endDate,
+        },
       });
 
       if (updateResult.count === 0) {
         throw new Error('Relationship request not found or already processed');
       }
 
-      const message = validatedData.action === 'accept'
-        ? 'Relationship request accepted successfully'
-        : 'Relationship request declined successfully';
+      const message =
+        validatedData.action === 'accept'
+          ? 'Relationship request accepted successfully'
+          : 'Relationship request declined successfully';
 
       return {
         message,
         action: validatedData.action,
-        requestId: validatedData.requestId
+        requestId: validatedData.requestId,
       };
     } catch (error: any) {
-      logError('Error responding to relationship request', { userId, requestId: validatedData.requestId, error });
+      logError('Error responding to relationship request', {
+        userId,
+        requestId: validatedData.requestId,
+        error,
+      });
       throw error;
     }
   }
@@ -320,7 +354,9 @@ export class SocialService {
     try {
       // Check if the requesting user is the same as the userId parameter
       if (userId !== validatedData.userId) {
-        throw new Error('Forbidden: Cannot check relationship for another user');
+        throw new Error(
+          'Forbidden: Cannot check relationship for another user',
+        );
       }
 
       // Find the relationship between the two users
@@ -343,7 +379,7 @@ export class SocialService {
         return {
           relationship: null,
           canInteract: true,
-          availableActions: ['add']
+          availableActions: ['add'],
         } as RelationshipInfo;
       }
 
@@ -362,7 +398,10 @@ export class SocialService {
       } else if (relationship.status === 'accepted') {
         // Existing relationship
         availableActions = ['remove'];
-      } else if (relationship.status === 'declined' || relationship.status === 'ended') {
+      } else if (
+        relationship.status === 'declined' ||
+        relationship.status === 'ended'
+      ) {
         // Ended relationship
         availableActions = ['add'];
         canInteract = true;
@@ -374,7 +413,11 @@ export class SocialService {
         availableActions,
       } as RelationshipInfo;
     } catch (error: any) {
-      logError('Error getting relationship', { userId, targetUserId: validatedData.targetUserId, error });
+      logError('Error getting relationship', {
+        userId,
+        targetUserId: validatedData.targetUserId,
+        error,
+      });
       throw error;
     }
   }
@@ -390,12 +433,9 @@ export class SocialService {
       const whereCondition: any = {
         AND: [
           {
-            OR: [
-              { playerId: playerId },
-              { friendId: playerId }
-            ]
-          }
-        ]
+            OR: [{ playerId }, { friendId: playerId }],
+          },
+        ],
       };
 
       if (validatedData.type === 'REQUESTS') {
@@ -403,7 +443,7 @@ export class SocialService {
       } else {
         whereCondition.AND.push({
           relationshipType: validatedData.type,
-          status: 'accepted'
+          status: 'accepted',
         });
       }
 
@@ -411,44 +451,48 @@ export class SocialService {
         where: whereCondition,
         include: {
           player: {
-            select: { 
-              id: true, 
-              display_name: true, 
-              race: true, 
-              class: true, 
-              avatar: true, 
-              last_active: true 
-            }
+            select: {
+              id: true,
+              display_name: true,
+              race: true,
+              class: true,
+              avatar: true,
+              last_active: true,
+            },
           },
           friend: {
-            select: { 
-              id: true, 
-              display_name: true, 
-              race: true, 
-              class: true, 
-              avatar: true, 
-              last_active: true 
-            }
-          }
+            select: {
+              id: true,
+              display_name: true,
+              race: true,
+              class: true,
+              avatar: true,
+              last_active: true,
+            },
+          },
         },
         take: validatedData.limit || 50,
-        orderBy: { requestDate: 'desc' }
+        orderBy: { requestDate: 'desc' },
       });
 
       // Filter out the current player details and keep only the friend's details
-      const modifiedRelations = relations.map(relation => {
+      const modifiedRelations = relations.map((relation) => {
         const { player, friend, ...restRelation } = relation;
         const contact = playerId === player.id ? friend : player;
 
         return {
           ...restRelation,
-          friend: contact
+          friend: contact,
         };
       });
 
       return stringifyObj(modifiedRelations);
     } catch (error: any) {
-      logError('Error listing social relationships', { userId, data: validatedData, error });
+      logError('Error listing social relationships', {
+        userId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -464,7 +508,7 @@ export class SocialService {
         where: {
           playerId,
           relationshipType: validatedData.type,
-          status: 'accepted'
+          status: 'accepted',
         },
         take: 5,
         include: {
@@ -475,16 +519,20 @@ export class SocialService {
               race: true,
               class: true,
               avatar: true,
-              last_active: true
-            }
-          }
+              last_active: true,
+            },
+          },
         },
-        orderBy: { acceptanceDate: 'desc' }
+        orderBy: { acceptanceDate: 'desc' },
       });
 
       return relations;
     } catch (error: any) {
-      logError('Error getting top relationships', { playerId, type: validatedData.type, error });
+      logError('Error getting top relationships', {
+        playerId,
+        type: validatedData.type,
+        error,
+      });
       throw error;
     }
   }
@@ -533,7 +581,11 @@ export class SocialService {
         amount: validatedData.amount.toString(),
       };
     } catch (error: any) {
-      logError('Error creating gold request', { userId, friendId: validatedData.friendId, error });
+      logError('Error creating gold request', {
+        userId,
+        friendId: validatedData.friendId,
+        error,
+      });
       throw error;
     }
   }
@@ -549,11 +601,11 @@ export class SocialService {
           history_type: 'FRIEND_REQUEST',
           stats: {
             path: ['transferType'],
-            equals: 'FRIEND_REQUEST'
+            equals: 'FRIEND_REQUEST',
           },
           date_time: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-          }
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+          },
         },
       });
 
@@ -579,7 +631,10 @@ export class SocialService {
   /**
    * Responds to a gold transfer request (accept/decline)
    */
-  static async respondToGoldRequest(userId: number, data: GoldRequestResponseData) {
+  static async respondToGoldRequest(
+    userId: number,
+    data: GoldRequestResponseData,
+  ) {
     const validatedData = GoldRequestResponseSchema.parse(data);
 
     try {
@@ -592,10 +647,14 @@ export class SocialService {
       return {
         message: `Gold request ${validatedData.action}ed successfully`,
         action: validatedData.action,
-        requestId: validatedData.requestId
+        requestId: validatedData.requestId,
       };
     } catch (error: any) {
-      logError('Error responding to gold request', { userId, requestId: validatedData.requestId, error });
+      logError('Error responding to gold request', {
+        userId,
+        requestId: validatedData.requestId,
+        error,
+      });
       throw error;
     }
   }
@@ -603,16 +662,25 @@ export class SocialService {
   /**
    * Gets friend transfer history for a user
    */
-  static async getFriendTransferHistory(userId: number, friendId?: number, page?: number, limit?: number) {
+  static async getFriendTransferHistory(
+    userId: number,
+    friendId?: number,
+    page?: number,
+    limit?: number,
+  ) {
     try {
       return await getFriendTransferHistory({
         userId,
         friendId,
         page,
-        limit
+        limit,
       });
     } catch (error: any) {
-      logError('Error getting friend transfer history', { userId, friendId, error });
+      logError('Error getting friend transfer history', {
+        userId,
+        friendId,
+        error,
+      });
       throw error;
     }
   }
@@ -624,7 +692,11 @@ export class SocialService {
     try {
       return await cancelFriendTransfer(requestId, fromUserId);
     } catch (error: any) {
-      logError('Error canceling gold request', { fromUserId, requestId, error });
+      logError('Error canceling gold request', {
+        fromUserId,
+        requestId,
+        error,
+      });
       throw error;
     }
   }
@@ -632,16 +704,25 @@ export class SocialService {
   /**
    * Transfers gold directly to a friend
    */
-  static async transferGoldToFriend(fromUserId: number, toUserId: number, amount: bigint, notes?: string) {
+  static async transferGoldToFriend(
+    fromUserId: number,
+    toUserId: number,
+    amount: bigint,
+    notes?: string,
+  ) {
     try {
       return await transferGoldToFriend({
         fromUserId,
         toUserId,
         amount,
-        notes
+        notes,
       });
     } catch (error: any) {
-      logError('Error transferring gold to friend', { fromUserId, toUserId, error });
+      logError('Error transferring gold to friend', {
+        fromUserId,
+        toUserId,
+        error,
+      });
       throw error;
     }
   }
@@ -651,32 +732,31 @@ export class SocialService {
    */
   static async getSocialStats(userId: number) {
     try {
-      const [friendCount, enemyCount, pendingRequestCount, pendingGoldRequestCount] = await Promise.all([
+      const [
+        friendCount,
+        enemyCount,
+        pendingRequestCount,
+        pendingGoldRequestCount,
+      ] = await Promise.all([
         prisma.social.count({
           where: {
-            OR: [
-              { playerId: userId },
-              { friendId: userId }
-            ],
+            OR: [{ playerId: userId }, { friendId: userId }],
             relationshipType: 'FRIEND',
-            status: 'accepted'
-          }
+            status: 'accepted',
+          },
         }),
         prisma.social.count({
           where: {
-            OR: [
-              { playerId: userId },
-              { friendId: userId }
-            ],
+            OR: [{ playerId: userId }, { friendId: userId }],
             relationshipType: 'ENEMY',
-            status: 'accepted'
-          }
+            status: 'accepted',
+          },
         }),
         prisma.social.count({
           where: {
             friendId: userId,
-            status: 'requested'
-          }
+            status: 'requested',
+          },
         }),
         prisma.bank_history.count({
           where: {
@@ -684,20 +764,20 @@ export class SocialService {
             history_type: 'FRIEND_REQUEST',
             stats: {
               path: ['transferType'],
-              equals: 'FRIEND_REQUEST'
+              equals: 'FRIEND_REQUEST',
             },
             date_time: {
-              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-            }
-          }
-        })
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+            },
+          },
+        }),
       ]);
 
       return {
         friends: friendCount,
         enemies: enemyCount,
         pendingRequests: pendingRequestCount,
-        pendingGoldRequests: pendingGoldRequestCount
+        pendingGoldRequests: pendingGoldRequestCount,
       };
     } catch (error: any) {
       logError('Error getting social stats', { userId, error });
@@ -714,15 +794,12 @@ export class SocialService {
         // Get recent friendships (last 30 days)
         prisma.social.findMany({
           where: {
-            OR: [
-              { playerId: userId },
-              { friendId: userId }
-            ],
+            OR: [{ playerId: userId }, { friendId: userId }],
             relationshipType: 'FRIEND',
             status: 'accepted',
             acceptanceDate: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-            }
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+            },
           },
           include: {
             friend: {
@@ -732,8 +809,8 @@ export class SocialService {
                 race: true,
                 class: true,
                 avatar: true,
-                last_active: true
-              }
+                last_active: true,
+              },
             },
             player: {
               select: {
@@ -742,23 +819,20 @@ export class SocialService {
                 race: true,
                 class: true,
                 avatar: true,
-                last_active: true
-              }
-            }
+                last_active: true,
+              },
+            },
           },
           orderBy: { acceptanceDate: 'desc' },
-          take: 10
+          take: 10,
         }),
         // Get recent social activity (last 7 days)
         prisma.social.findMany({
           where: {
-            OR: [
-              { playerId: userId },
-              { friendId: userId }
-            ],
+            OR: [{ playerId: userId }, { friendId: userId }],
             requestDate: {
-              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-            }
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+            },
           },
           include: {
             friend: {
@@ -767,8 +841,8 @@ export class SocialService {
                 display_name: true,
                 race: true,
                 class: true,
-                avatar: true
-              }
+                avatar: true,
+              },
             },
             player: {
               select: {
@@ -776,38 +850,40 @@ export class SocialService {
                 display_name: true,
                 race: true,
                 class: true,
-                avatar: true
-              }
-            }
+                avatar: true,
+              },
+            },
           },
           orderBy: { requestDate: 'desc' },
-          take: 20
+          take: 20,
         }),
-        this.getSocialStats(userId)
+        this.getSocialStats(userId),
       ]);
 
       // Format recent friends
-      const formattedRecentFriends = recentFriends.map(relation => {
-        const contact = userId === relation.player.id ? relation.friend : relation.player;
+      const formattedRecentFriends = recentFriends.map((relation) => {
+        const contact =
+          userId === relation.player.id ? relation.friend : relation.player;
         return {
           ...relation,
-          friend: contact
+          friend: contact,
         };
       });
 
       // Format recent activity
-      const formattedRecentActivity = recentActivity.map(relation => {
-        const contact = userId === relation.player.id ? relation.friend : relation.player;
+      const formattedRecentActivity = recentActivity.map((relation) => {
+        const contact =
+          userId === relation.player.id ? relation.friend : relation.player;
         return {
           ...relation,
-          friend: contact
+          friend: contact,
         };
       });
 
       return {
         stats,
         recentFriends: formattedRecentFriends,
-        recentActivity: formattedRecentActivity
+        recentActivity: formattedRecentActivity,
       };
     } catch (error: any) {
       logError('Error getting social summary', { userId, error });

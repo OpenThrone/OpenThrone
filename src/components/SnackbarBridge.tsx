@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { alertService, AlertType } from '@/services/Alert.service';
-import { useSnackbar, SnackType } from '@/context/snackbar-context';
-import { logError } from '@/utils/logger';
+
+import type { SnackType } from '@/context/snackbar-context';
+import { useSnackbar } from '@/context/snackbar-context';
+import type { AlertType } from '@/services/Alert.service';
+import { alertService } from '@/services/Alert.service';
 
 // Map alert types to snackbar types
 const mapAlertTypeToSnackType = (type: AlertType['type']): SnackType => {
@@ -36,24 +38,39 @@ const SnackbarBridge: React.FC = () => {
         const snackType = mapAlertTypeToSnackType(alert.type);
         const options = {
           duration: alert.timeout ?? undefined,
-          action: alert.showButton && alert.button ? {
-            label: 'Action',
-            onClick: () => {
-              console.warn('SnackbarBridge action clicked, original button logic might need adjustment.');
-            }
-          } : undefined,
+          action:
+            alert.showButton && alert.button
+              ? {
+                  label: 'Action',
+                  onClick: () => {
+                    console.warn(
+                      'SnackbarBridge action clicked, original button logic might need adjustment.',
+                    );
+                  },
+                }
+              : undefined,
         };
-        const messageString = typeof alert.message === 'string' ? alert.message : 'Notification';
+        const messageString =
+          typeof alert.message === 'string' ? alert.message : 'Notification';
         if (typeof alert.message !== 'string') {
-          console.warn('SnackbarBridge received non-string message:', alert.message);
+          console.warn(
+            'SnackbarBridge received non-string message:',
+            alert.message,
+          );
         }
         if (alert.type === 'loading') {
           if (loadingSnackIdRef.current) {
             snackbar.dismiss([loadingSnackIdRef.current]);
           }
-          loadingSnackIdRef.current = snackbar.info(messageString, { ...options, duration: 999999 });
+          loadingSnackIdRef.current = snackbar.info(messageString, {
+            ...options,
+            duration: 999999,
+          });
         } else {
-          if (loadingSnackIdRef.current && (alert.type === 'success' || alert.type === 'error')) {
+          if (
+            loadingSnackIdRef.current &&
+            (alert.type === 'success' || alert.type === 'error')
+          ) {
             snackbar.dismiss([loadingSnackIdRef.current]);
             loadingSnackIdRef.current = null;
           }
@@ -76,11 +93,9 @@ const SnackbarBridge: React.FC = () => {
         }
         // Clear the alert after showing to prevent repeated notifications
         setTimeout(() => alertService.clear(), 100);
-      } else {
-        if (loadingSnackIdRef.current) {
-          snackbar.dismiss([loadingSnackIdRef.current]);
-          loadingSnackIdRef.current = null;
-        }
+      } else if (loadingSnackIdRef.current) {
+        snackbar.dismiss([loadingSnackIdRef.current]);
+        loadingSnackIdRef.current = null;
       }
     });
     return () => {

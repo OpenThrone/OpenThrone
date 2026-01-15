@@ -1,21 +1,32 @@
-import { Fortifications, HouseUpgrades } from '@/constants';
-import { useUser } from '@/context/users';
-import { Box, Group, Text, SimpleGrid, Space, Stack, Button, Tooltip } from '@mantine/core';
-import { BiCoinStack, BiSolidBank, BiHome, BiUpArrowAlt } from 'react-icons/bi';
-import { useEffect, useState, type ReactNode } from 'react';
-import toLocale from '@/utils/numberFormatting';
-import MainArea from '@/components/MainArea';
+import {
+  Box,
+  Button,
+  Group,
+  SimpleGrid,
+  Space,
+  Stack,
+  Text,
+  Tooltip,
+} from '@mantine/core';
+import { type ReactNode, useEffect, useState } from 'react';
+import { BiCoinStack, BiHome, BiSolidBank, BiUpArrowAlt } from 'react-icons/bi';
+
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
+import MainArea from '@/components/MainArea';
+import { Fortifications, HouseUpgrades } from '@/constants';
+import { useUser } from '@/context/users';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { logError } from '@/utils/logger'; // Import logError
+import toLocale from '@/utils/numberFormatting';
 
 /**
  * Page component for viewing and upgrading housing structures.
  * Displays current housing level, benefits, next upgrade details, cost, and requirements.
  * Allows users to purchase the next housing upgrade.
  */
-const Housing: React.FC = (props) => { // Removed unused props
+const Housing: React.FC = (props) => {
+  // Removed unused props
   const { user, forceUpdate } = useUser();
   const [mounted, setMounted] = useState(false);
   const [houseLevel, setHouseLevel] = useState(1);
@@ -59,7 +70,12 @@ const Housing: React.FC = (props) => { // Removed unused props
   };
 
   // Avoid rendering until component is mounted (prevents hydration errors)
-  if (!mounted || !user) return <MainArea title='Housing'><Text>Loading...</Text></MainArea>;
+  if (!mounted || !user)
+    return (
+      <MainArea title="Housing">
+        <Text>Loading...</Text>
+      </MainArea>
+    );
 
   const nextUpgradeCost = BigInt(nextUpgrade?.cost ?? 0);
   const userGold = BigInt(user.gold ?? 0);
@@ -70,33 +86,41 @@ const Housing: React.FC = (props) => { // Removed unused props
   // Determine tooltip message
   let tooltipMessage = '';
   if (!canUpgrade && nextUpgrade) {
-      const reasons = [];
-      if (needsMoreGold) reasons.push(`Requires ${toLocale(nextUpgradeCost, user.locale)} Gold`);
-      if (needsHigherFort) reasons.push(`Requires Fortification: ${Fortifications[nextUpgrade.fortLevel]?.name ?? 'Unknown'}`);
-      tooltipMessage = reasons.join(' and ');
+    const reasons = [];
+    if (needsMoreGold)
+      reasons.push(`Requires ${toLocale(nextUpgradeCost, user.locale)} Gold`);
+    if (needsHigherFort)
+      reasons.push(
+        `Requires Fortification: ${Fortifications[nextUpgrade.fortLevel]?.name ?? 'Unknown'}`,
+      );
+    tooltipMessage = reasons.join(' and ');
   } else if (!nextUpgrade) {
-      tooltipMessage = 'Max level reached';
+    tooltipMessage = 'Max level reached';
   }
 
   const statItems = [
     {
-      label: "Gold In Hand",
+      label: 'Gold In Hand',
       value: toLocale(user.gold ?? 0, user.locale),
       icon: <BiCoinStack size={18} />,
     },
     {
-      label: "Banked Gold",
+      label: 'Banked Gold',
       value: toLocale(user.goldInBank ?? 0, user.locale),
       icon: <BiSolidBank size={18} />,
     },
     {
-      label: "Citizens",
+      label: 'Citizens',
       value: `${toLocale(user?.citizens ?? 0, user.locale)} (+${citizensDaily}/day)`,
       icon: <BiHome size={18} />,
     },
   ];
 
-  const renderSlotRow = (label: string, value: ReactNode, highlight?: boolean) => (
+  const renderSlotRow = (
+    label: string,
+    value: ReactNode,
+    highlight?: boolean,
+  ) => (
     <Group
       justify="space-between"
       style={{
@@ -117,14 +141,14 @@ const Housing: React.FC = (props) => { // Removed unused props
   );
 
   return (
-    <MainArea title='Housing'>
+    <MainArea title="Housing">
       <StatGrid title="Housing Overview" stats={statItems} columns={3} />
       <Space h="md" />
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
         <GameCard title="Current Housing" icon={<BiHome size={16} />}>
           <Stack gap="md">
-            <Text fw={700} size="xl" className="font-medieval text-center">
+            <Text fw={700} size="xl" className="text-center font-medieval">
               {houseUpgrade?.name ?? 'N/A'}
             </Text>
 
@@ -132,23 +156,31 @@ const Housing: React.FC = (props) => { // Removed unused props
               Housing brings new citizens to your fortification every day.
             </Text>
 
-            {renderSlotRow('New Citizens Per Day', houseUpgrade?.citizensDaily ?? 0)}
+            {renderSlotRow(
+              'New Citizens Per Day',
+              houseUpgrade?.citizensDaily ?? 0,
+            )}
 
-            <Text size="xs" c="dimmed" className="italic text-center">
+            <Text size="xs" c="dimmed" className="text-center italic">
               You will gain the above citizens every day at midnight OT time.
             </Text>
           </Stack>
         </GameCard>
 
         {nextUpgrade ? (
-          <GameCard title="Next Upgrade" icon={<BiUpArrowAlt size={16} />} goldAccent={canUpgrade}>
+          <GameCard
+            title="Next Upgrade"
+            icon={<BiUpArrowAlt size={16} />}
+            goldAccent={canUpgrade}
+          >
             <Stack gap="md">
-              <Text fw={700} size="xl" className="font-medieval text-center">
+              <Text fw={700} size="xl" className="text-center font-medieval">
                 {nextUpgrade.name}
               </Text>
 
               <Text size="sm" c="dimmed" ta="center">
-                Upgrade your housing to bring more citizens to your fortification every day.
+                Upgrade your housing to bring more citizens to your
+                fortification every day.
               </Text>
 
               {renderSlotRow('New Citizens Per Day', nextUpgrade.citizensDaily)}
@@ -163,7 +195,12 @@ const Housing: React.FC = (props) => { // Removed unused props
                 needsMoreGold,
               )}
 
-              <Tooltip label={tooltipMessage} disabled={canUpgrade || isUpgrading} withArrow position="bottom">
+              <Tooltip
+                label={tooltipMessage}
+                disabled={canUpgrade || isUpgrading}
+                withArrow
+                position="bottom"
+              >
                 <Box>
                   <Button
                     color="yellow"
@@ -172,7 +209,7 @@ const Housing: React.FC = (props) => { // Removed unused props
                     loading={isUpgrading}
                     disabled={!canUpgrade || isUpgrading}
                   >
-                    {canUpgrade ? "Upgrade Now" : "Cannot Upgrade Yet"}
+                    {canUpgrade ? 'Upgrade Now' : 'Cannot Upgrade Yet'}
                   </Button>
                 </Box>
               </Tooltip>

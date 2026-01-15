@@ -1,15 +1,19 @@
-import { BlogService } from '@/services';
-import { withAuth } from '@/middleware/auth';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const getRecentPostsAPI = async(req: NextApiRequest, res: NextApiResponse) => {
+import { withAuth } from '@/middleware/auth';
+import { BlogService } from '@/services';
+
+const getRecentPostsAPI = async (req: NextApiRequest, res: NextApiResponse) => {
   // Get the session on the server-side
   const session = req?.session;
 
   try {
     let userId: number | undefined;
     if (session?.user) {
-      userId = typeof (session.user.id) === 'string' ? parseInt(session.user.id) : session.user.id;
+      userId =
+        typeof session.user.id === 'string'
+          ? parseInt(session.user.id)
+          : session.user.id;
     }
 
     const result = await BlogService.getRecentPosts(userId);

@@ -1,8 +1,8 @@
-import { NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import { withAuth } from '@/middleware/auth';
 import prisma from '@/lib/prisma';
+import { withAuth } from '@/middleware/auth';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
@@ -15,14 +15,17 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     return res.status(405).end();
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session?.user?.id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const parseResult = QuerySchema.safeParse(req.query);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid query parameters', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid query parameters',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
 
   const userId = Number(session.user.id);
@@ -72,10 +75,13 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       theyBeatMeIds: Array.from(theyBeatMeIds),
     });
   } catch (error: any) {
-    logError('Error building /battle/users filter meta', { userId, days, error });
+    logError('Error building /battle/users filter meta', {
+      userId,
+      days,
+      error,
+    });
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 export default withAuth(handler);
-

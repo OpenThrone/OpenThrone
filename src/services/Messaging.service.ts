@@ -1,8 +1,8 @@
-import prisma from '@/lib/prisma';
+import { ChatRole, Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { ChatRole } from '@prisma/client';
+
+import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
-import { Prisma } from '@prisma/client';
 
 // Type definitions for messaging operations
 export interface CreateRoomData {
@@ -100,7 +100,7 @@ export class MessagingService {
     try {
       const rooms = await prisma.chatRoom.findMany({
         where: {
-          participants: { some: { userId } }
+          participants: { some: { userId } },
         },
         include: {
           participants: {
@@ -110,92 +110,104 @@ export class MessagingService {
                   id: true,
                   display_name: true,
                   avatar: true,
-                  last_active: true
-                }
-              }
-            }
+                  last_active: true,
+                },
+              },
+            },
           },
           messages: {
             take: 1,
-            orderBy: { sentAt: "desc" },
+            orderBy: { sentAt: 'desc' },
             include: {
-              sender: { select: { id: true, display_name: true } }
-            }
+              sender: { select: { id: true, display_name: true } },
+            },
           },
           creator: {
-            select: { id: true, display_name: true }
-          }
+            select: { id: true, display_name: true },
+          },
         },
-        orderBy: { updatedAt: 'desc' }
+        orderBy: { updatedAt: 'desc' },
       });
 
       // Get all read statuses for the user to build a lookup map
       const userReadStatuses = await prisma.chatMessageReadStatus.findMany({
-        where: { userId: userId },
-        select: { readAt: true, message: { select: { roomId: true } } }
+        where: { userId },
+        select: { readAt: true, message: { select: { roomId: true } } },
       });
 
       // Create a map of roomId -> latest readAt timestamp
-      const lastReadByRoom = userReadStatuses.reduce((acc, status) => {
-        if (status.message && status.message.roomId) {
-          const roomId = status.message.roomId;
-          if (!acc[roomId] || status.readAt > acc[roomId]) {
-            acc[roomId] = status.readAt;
+      const lastReadByRoom = userReadStatuses.reduce(
+        (acc, status) => {
+          if (status.message && status.message.roomId) {
+            const { roomId } = status.message;
+            if (!acc[roomId] || status.readAt > acc[roomId]) {
+              acc[roomId] = status.readAt;
+            }
           }
-        }
-        return acc;
-      }, {} as Record<number, Date>);
+          return acc;
+        },
+        {} as Record<number, Date>,
+      );
 
       // Format rooms with unread counts
-      const formattedRooms = await Promise.all(rooms.map(async (room) => {
-        const isDirect = room.participants.length === 2 && !room.name;
-        let displayName = room.name;
-        let otherParticipant = null;
+      const formattedRooms = await Promise.all(
+        rooms.map(async (room) => {
+          const isDirect = room.participants.length === 2 && !room.name;
+          let displayName = room.name;
+          let otherParticipant = null;
 
-        if (isDirect) {
-          otherParticipant = room.participants.find(p => p.userId !== userId)?.user;
-          displayName = otherParticipant?.display_name || 'Unknown User';
-        }
-
-        // Calculate unread messages
-        const lastReadTimestamp = lastReadByRoom[room.id] || new Date(0);
-        const unreadCount = await prisma.chatMessage.count({
-          where: {
-            roomId: room.id,
-            senderId: { not: userId },
-            sentAt: { gt: lastReadTimestamp }
+          if (isDirect) {
+            otherParticipant = room.participants.find(
+              (p) => p.userId !== userId,
+            )?.user;
+            displayName = otherParticipant?.display_name || 'Unknown User';
           }
-        });
 
-        // Check if user is an admin
-        const userParticipant = room.participants.find(p => p.userId === userId);
-        const isAdmin = room.createdById === userId || userParticipant?.role === 'ADMIN';
+          // Calculate unread messages
+          const lastReadTimestamp = lastReadByRoom[room.id] || new Date(0);
+          const unreadCount = await prisma.chatMessage.count({
+            where: {
+              roomId: room.id,
+              senderId: { not: userId },
+              sentAt: { gt: lastReadTimestamp },
+            },
+          });
 
-        return {
-          id: room.id,
-          name: displayName,
-          isPrivate: room.isPrivate,
-          isDirect: isDirect,
-          createdById: room.createdById,
-          createdAt: room.createdAt,
-          updatedAt: room.updatedAt,
-          lastMessage: room.messages[0]?.content || null,
-          lastMessageTime: room.messages[0]?.sentAt || null,
-          lastMessageSender: room.messages[0]?.sender.display_name || null,
-          unreadCount: unreadCount,
-          isAdmin: isAdmin,
-          participants: room.participants.map(p => ({
-            id: p.user.id,
-            role: p.role,
-            canWrite: p.canWrite,
-            display_name: p.user.display_name,
-            avatar: p.user.avatar,
-            is_online: p.user.last_active ?
-              (new Date().getTime() - new Date(p.user.last_active).getTime()) < 5 * 60 * 1000
-              : false
-          })),
-        };
-      }));
+          // Check if user is an admin
+          const userParticipant = room.participants.find(
+            (p) => p.userId === userId,
+          );
+          const isAdmin =
+            room.createdById === userId || userParticipant?.role === 'ADMIN';
+
+          return {
+            id: room.id,
+            name: displayName,
+            isPrivate: room.isPrivate,
+            isDirect,
+            createdById: room.createdById,
+            createdAt: room.createdAt,
+            updatedAt: room.updatedAt,
+            lastMessage: room.messages[0]?.content || null,
+            lastMessageTime: room.messages[0]?.sentAt || null,
+            lastMessageSender: room.messages[0]?.sender.display_name || null,
+            unreadCount,
+            isAdmin,
+            participants: room.participants.map((p) => ({
+              id: p.user.id,
+              role: p.role,
+              canWrite: p.canWrite,
+              display_name: p.user.display_name,
+              avatar: p.user.avatar,
+              is_online: p.user.last_active
+                ? new Date().getTime() -
+                    new Date(p.user.last_active).getTime() <
+                  5 * 60 * 1000
+                : false,
+            })),
+          };
+        }),
+      );
 
       return formattedRooms;
     } catch (error) {
@@ -209,8 +221,11 @@ export class MessagingService {
    */
   static async createOrFindRoom(userId: number, data: CreateRoomData) {
     const validatedData = CreateRoomSchema.parse(data);
-    const isDirect = validatedData.recipients.length === 1 && !validatedData.name;
-    const uniqueRecipients = Array.from(new Set(validatedData.recipients.map(id => Number(id))));
+    const isDirect =
+      validatedData.recipients.length === 1 && !validatedData.name;
+    const uniqueRecipients = Array.from(
+      new Set(validatedData.recipients.map((id) => Number(id))),
+    );
 
     try {
       // For direct messages, check if a room already exists with this recipient
@@ -223,19 +238,19 @@ export class MessagingService {
             participants: {
               every: {
                 userId: {
-                  in: [userId, recipientId]
-                }
-              }
-            }
+                  in: [userId, recipientId],
+                },
+              },
+            },
           },
           include: {
             participants: true,
             _count: {
               select: {
-                participants: true
-              }
-            }
-          }
+                participants: true,
+              },
+            },
+          },
         });
 
         // If room exists with exactly 2 participants, add the new message to it
@@ -246,54 +261,56 @@ export class MessagingService {
               data: {
                 roomId: existingRoom.id,
                 senderId: userId,
-                content: validatedData.message
-              }
+                content: validatedData.message,
+              },
             });
           }
 
           return {
             id: existingRoom.id,
             isExisting: true,
-            message: 'Message sent to existing conversation'
+            message: 'Message sent to existing conversation',
           };
         }
       } else {
         // For group chats, check if there's already a room with exactly these participants
-        const allParticipantIds = Array.from(new Set([userId, ...uniqueRecipients]));
+        const allParticipantIds = Array.from(
+          new Set([userId, ...uniqueRecipients]),
+        );
 
         const existingRooms = await prisma.chatRoom.findMany({
           where: {
             participants: {
               every: {
                 userId: {
-                  in: allParticipantIds
-                }
-              }
+                  in: allParticipantIds,
+                },
+              },
             },
             AND: {
               participants: {
                 none: {
                   userId: {
-                    notIn: allParticipantIds
-                  }
-                }
-              }
+                    notIn: allParticipantIds,
+                  },
+                },
+              },
             },
-            ...(validatedData.name ? { name: validatedData.name } : {})
+            ...(validatedData.name ? { name: validatedData.name } : {}),
           },
           include: {
             participants: true,
             _count: {
               select: {
-                participants: true
-              }
-            }
-          }
+                participants: true,
+              },
+            },
+          },
         });
 
         // If a matching room exists with the exact same participants, use it
-        const exactMatch = existingRooms.find(room =>
-          room._count.participants === allParticipantIds.length
+        const exactMatch = existingRooms.find(
+          (room) => room._count.participants === allParticipantIds.length,
         );
 
         if (exactMatch) {
@@ -302,15 +319,15 @@ export class MessagingService {
               data: {
                 roomId: exactMatch.id,
                 senderId: userId,
-                content: validatedData.message
-              }
+                content: validatedData.message,
+              },
             });
           }
 
           return {
             id: exactMatch.id,
             isExisting: true,
-            message: 'Message sent to existing conversation'
+            message: 'Message sent to existing conversation',
           };
         }
       }
@@ -324,63 +341,87 @@ export class MessagingService {
           participants: {
             create: [
               {
-                userId: userId,
-                role: isDirect ? 'MEMBER' : 'ADMIN'
+                userId,
+                role: isDirect ? 'MEMBER' : 'ADMIN',
               },
               ...uniqueRecipients.map((recipientId: number) => ({
                 userId: Number(recipientId),
-                role: 'MEMBER' as const
-              }))
-            ]
+                role: 'MEMBER' as const,
+              })),
+            ],
           },
-          ...(validatedData.message && validatedData.message.trim() ? {
-            messages: {
-              create: {
-                senderId: userId,
-                content: validatedData.message
+          ...(validatedData.message && validatedData.message.trim()
+            ? {
+                messages: {
+                  create: {
+                    senderId: userId,
+                    content: validatedData.message,
+                  },
+                },
               }
-            }
-          } : {})
+            : {}),
         },
         include: {
           participants: true,
-          messages: true
-        }
+          messages: true,
+        },
       });
 
       return {
         id: newRoom.id,
         isExisting: false,
-        message: 'New conversation created'
+        message: 'New conversation created',
       };
     } catch (error) {
-      logError('Error creating or finding chat room', { userId, data: validatedData, error });
-      
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        if (isDirect && error.meta?.target === 'ChatRoomParticipant_roomId_userId_key') {
+      logError('Error creating or finding chat room', {
+        userId,
+        data: validatedData,
+        error,
+      });
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        if (
+          isDirect &&
+          error.meta?.target === 'ChatRoomParticipant_roomId_userId_key'
+        ) {
           const recipientId = Number(validatedData.recipients[0]);
           try {
             const existingRoom = await prisma.chatRoom.findFirst({
               where: {
                 name: null,
-                participants: { every: { userId: { in: [userId, recipientId] } } }
+                participants: {
+                  every: { userId: { in: [userId, recipientId] } },
+                },
               },
-              include: { _count: { select: { participants: true } } }
+              include: { _count: { select: { participants: true } } },
             });
 
             if (existingRoom && existingRoom._count.participants === 2) {
               if (validatedData.message && validatedData.message.trim()) {
                 await prisma.chatMessage.create({
-                  data: { roomId: existingRoom.id, senderId: userId, content: validatedData.message }
+                  data: {
+                    roomId: existingRoom.id,
+                    senderId: userId,
+                    content: validatedData.message,
+                  },
                 });
               }
-              return { id: existingRoom.id, isExisting: true, message: 'Message sent to existing conversation' };
+              return {
+                id: existingRoom.id,
+                isExisting: true,
+                message: 'Message sent to existing conversation',
+              };
             }
           } catch (recoverError) {
             logError('Error recovering from unique constraint', recoverError);
           }
         }
-        throw new Error('Conflict: Could not create conversation, possibly due to existing participants.');
+        throw new Error(
+          'Conflict: Could not create conversation, possibly due to existing participants.',
+        );
       }
       throw error;
     }
@@ -393,16 +434,16 @@ export class MessagingService {
     try {
       // Verify user is a participant in the room
       const roomParticipant = await prisma.chatRoomParticipant.findUnique({
-        where: { roomId_userId: { roomId: roomId, userId: userId } },
+        where: { roomId_userId: { roomId, userId } },
         include: {
           room: {
             include: {
               participants: {
-                select: { userId: true }
-              }
-            }
-          }
-        }
+                select: { userId: true },
+              },
+            },
+          },
+        },
       });
 
       if (!roomParticipant) {
@@ -410,32 +451,37 @@ export class MessagingService {
       }
 
       const messages = await prisma.chatMessage.findMany({
-        where: { roomId: roomId },
+        where: { roomId },
         orderBy: { sentAt: 'asc' },
         include: {
           sender: {
-            select: { id: true, display_name: true, avatar: true, last_active: true },
+            select: {
+              id: true,
+              display_name: true,
+              avatar: true,
+              last_active: true,
+            },
           },
           reactions: {
             select: {
               userId: true,
               reaction: true,
-              user: { select: { id: true, display_name: true } }
-            }
+              user: { select: { id: true, display_name: true } },
+            },
           },
           readBy: {
             select: {
               userId: true,
               readAt: true,
-              user: { select: { id: true, display_name: true } }
-            }
+              user: { select: { id: true, display_name: true } },
+            },
           },
           replyToMessage: {
             select: {
               id: true,
               content: true,
-              sender: { select: { id: true, display_name: true } }
-            }
+              sender: { select: { id: true, display_name: true } },
+            },
           },
           sharedAttackLog: {
             select: {
@@ -444,39 +490,48 @@ export class MessagingService {
               defender_id: true,
               winner: true,
               timestamp: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
-      const transformedMessages = messages.map(message => {
-        const isOnline = message.sender.last_active ?
-          (new Date().getTime() - new Date(message.sender.last_active).getTime()) < 5 * 60 * 1000
+      const transformedMessages = messages.map((message) => {
+        const isOnline = message.sender.last_active
+          ? new Date().getTime() -
+              new Date(message.sender.last_active).getTime() <
+            5 * 60 * 1000
           : false;
 
-        const reactions = message.reactions.map(r => ({
+        const reactions = message.reactions.map((r) => ({
           userId: r.userId,
           reaction: r.reaction,
           userDisplayName: r.user.display_name,
         }));
 
-        const readBy = message.readBy.map(r => ({
+        const readBy = message.readBy.map((r) => ({
           userId: r.userId,
           readAt: r.readAt.toISOString(),
           userDisplayName: r.user.display_name,
         }));
 
-        const replyToMessage = message.replyToMessage ? 
-          JSON.parse(JSON.stringify(message.replyToMessage, (key, value) =>
-            typeof value === 'bigint' ? value.toString() : value
-          )) : null;
+        const replyToMessage = message.replyToMessage
+          ? JSON.parse(
+              JSON.stringify(message.replyToMessage, (key, value) =>
+                typeof value === 'bigint' ? value.toString() : value,
+              ),
+            )
+          : null;
 
-        const sharedAttackLog = message.sharedAttackLog ? {
-          ...JSON.parse(JSON.stringify(message.sharedAttackLog, (key, value) =>
-            typeof value === 'bigint' ? value.toString() : value
-          )),
-          timestamp: message.sharedAttackLog.timestamp?.toISOString(),
-        } : null;
+        const sharedAttackLog = message.sharedAttackLog
+          ? {
+              ...JSON.parse(
+                JSON.stringify(message.sharedAttackLog, (key, value) =>
+                  typeof value === 'bigint' ? value.toString() : value,
+                ),
+              ),
+              timestamp: message.sharedAttackLog.timestamp?.toISOString(),
+            }
+          : null;
 
         return {
           id: message.id,
@@ -489,12 +544,12 @@ export class MessagingService {
             id: message.sender.id,
             display_name: message.sender.display_name,
             avatar: message.sender.avatar,
-            is_online: isOnline
+            is_online: isOnline,
           },
-          reactions: reactions,
-          readBy: readBy,
-          replyToMessage: replyToMessage,
-          sharedAttackLog: sharedAttackLog,
+          reactions,
+          readBy,
+          replyToMessage,
+          sharedAttackLog,
         };
       });
 
@@ -508,7 +563,11 @@ export class MessagingService {
   /**
    * Adds participants to a chat room
    */
-  static async addParticipants(userId: number, roomId: number, data: ParticipantData) {
+  static async addParticipants(
+    userId: number,
+    roomId: number,
+    data: ParticipantData,
+  ) {
     const validatedData = ParticipantSchema.parse(data);
 
     try {
@@ -516,8 +575,8 @@ export class MessagingService {
       const room = await prisma.chatRoom.findUnique({
         where: { id: roomId },
         include: {
-          participants: { where: { userId: userId }, select: { role: true } }
-        }
+          participants: { where: { userId }, select: { role: true } },
+        },
       });
 
       if (!room) {
@@ -527,17 +586,19 @@ export class MessagingService {
       const currentUserIsAdmin = room.participants[0]?.role === ChatRole.ADMIN;
 
       if (room.isPrivate && !currentUserIsAdmin) {
-        throw new Error('Forbidden: Only admins can add users to this private room.');
+        throw new Error(
+          'Forbidden: Only admins can add users to this private room.',
+        );
       }
 
       const participantsToAdd = validatedData.userIds
-        .map(id => Number(id))
-        .filter(id => !isNaN(id) && id !== userId)
-        .map(userId => ({
-          roomId: roomId,
-          userId: userId,
+        .map((id) => Number(id))
+        .filter((id) => !isNaN(id) && id !== userId)
+        .map((userId) => ({
+          roomId,
+          userId,
           role: ChatRole.MEMBER,
-          canWrite: true
+          canWrite: true,
         }));
 
       if (participantsToAdd.length === 0) {
@@ -557,10 +618,15 @@ export class MessagingService {
 
       return {
         message: `${result.count} user(s) added successfully.`,
-        count: result.count
+        count: result.count,
       };
     } catch (error) {
-      logError('Error adding participants', { userId, roomId, data: validatedData, error });
+      logError('Error adding participants', {
+        userId,
+        roomId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -568,23 +634,34 @@ export class MessagingService {
   /**
    * Updates participant permissions or removes them
    */
-  static async manageParticipant(userId: number, roomId: number, targetUserId: number, data: ParticipantUpdateData) {
+  static async manageParticipant(
+    userId: number,
+    roomId: number,
+    targetUserId: number,
+    data: ParticipantUpdateData,
+  ) {
     const validatedData = ParticipantUpdateSchema.parse(data);
 
     try {
       // Verify current user is an ADMIN in this room
-      const currentUserParticipant = await prisma.chatRoomParticipant.findUnique({
-        where: { roomId_userId: { roomId, userId: userId } },
-        select: { role: true }
-      });
+      const currentUserParticipant =
+        await prisma.chatRoomParticipant.findUnique({
+          where: { roomId_userId: { roomId, userId } },
+          select: { role: true },
+        });
 
-      if (!currentUserParticipant || currentUserParticipant.role !== ChatRole.ADMIN) {
-        throw new Error('Forbidden: You do not have admin rights in this room.');
+      if (
+        !currentUserParticipant ||
+        currentUserParticipant.role !== ChatRole.ADMIN
+      ) {
+        throw new Error(
+          'Forbidden: You do not have admin rights in this room.',
+        );
       }
 
       // Verify target user is actually in the room
       const targetParticipant = await prisma.chatRoomParticipant.findUnique({
-        where: { roomId_userId: { roomId, userId: targetUserId } }
+        where: { roomId_userId: { roomId, userId: targetUserId } },
       });
 
       if (!targetParticipant) {
@@ -592,10 +669,10 @@ export class MessagingService {
       }
 
       if (targetUserId === userId) {
-        throw new Error("You cannot manage your own role or permissions.");
+        throw new Error('You cannot manage your own role or permissions.');
       }
 
-      let updateData: any = {};
+      const updateData: any = {};
       let action = '';
 
       switch (validatedData.action) {
@@ -629,14 +706,21 @@ export class MessagingService {
       if (Object.keys(updateData).length > 0) {
         await prisma.chatRoomParticipant.update({
           where: { roomId_userId: { roomId, userId: targetUserId } },
-          data: updateData
+          data: updateData,
         });
-        return { message: `Permissions updated successfully for user ${targetUserId}.` };
-      } else {
-        throw new Error('No changes applied.');
+        return {
+          message: `Permissions updated successfully for user ${targetUserId}.`,
+        };
       }
+      throw new Error('No changes applied.');
     } catch (error) {
-      logError('Error managing participant', { userId, roomId, targetUserId, data: validatedData, error });
+      logError('Error managing participant', {
+        userId,
+        roomId,
+        targetUserId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -644,20 +728,30 @@ export class MessagingService {
   /**
    * Removes a participant from a chat room
    */
-  static async removeParticipant(userId: number, roomId: number, targetUserId: number) {
+  static async removeParticipant(
+    userId: number,
+    roomId: number,
+    targetUserId: number,
+  ) {
     try {
       // Verify current user is an ADMIN in this room
-      const currentUserParticipant = await prisma.chatRoomParticipant.findUnique({
-        where: { roomId_userId: { roomId, userId: userId } },
-        select: { role: true }
-      });
+      const currentUserParticipant =
+        await prisma.chatRoomParticipant.findUnique({
+          where: { roomId_userId: { roomId, userId } },
+          select: { role: true },
+        });
 
-      if (!currentUserParticipant || currentUserParticipant.role !== ChatRole.ADMIN) {
-        throw new Error('Forbidden: You do not have admin rights in this room.');
+      if (
+        !currentUserParticipant ||
+        currentUserParticipant.role !== ChatRole.ADMIN
+      ) {
+        throw new Error(
+          'Forbidden: You do not have admin rights in this room.',
+        );
       }
 
       const targetParticipant = await prisma.chatRoomParticipant.findUnique({
-        where: { roomId_userId: { roomId, userId: targetUserId } }
+        where: { roomId_userId: { roomId, userId: targetUserId } },
       });
 
       if (!targetParticipant) {
@@ -667,7 +761,7 @@ export class MessagingService {
       // Prevent removing the last admin if they are the only admin left
       if (targetParticipant.role === ChatRole.ADMIN) {
         const adminCount = await prisma.chatRoomParticipant.count({
-          where: { roomId, role: ChatRole.ADMIN }
+          where: { roomId, role: ChatRole.ADMIN },
         });
         if (adminCount <= 1) {
           throw new Error('Cannot remove the last admin.');
@@ -675,12 +769,17 @@ export class MessagingService {
       }
 
       await prisma.chatRoomParticipant.delete({
-        where: { roomId_userId: { roomId, userId: targetUserId } }
+        where: { roomId_userId: { roomId, userId: targetUserId } },
       });
 
       return { message: `User ${targetUserId} removed from room.` };
     } catch (error) {
-      logError('Error removing participant', { userId, roomId, targetUserId, error });
+      logError('Error removing participant', {
+        userId,
+        roomId,
+        targetUserId,
+        error,
+      });
       throw error;
     }
   }
@@ -694,8 +793,8 @@ export class MessagingService {
     try {
       // Verify user is a participant and has write permission
       const roomParticipant = await prisma.chatRoomParticipant.findUnique({
-        where: { roomId_userId: { roomId, userId: userId } },
-        select: { canWrite: true }
+        where: { roomId_userId: { roomId, userId } },
+        select: { canWrite: true },
       });
 
       if (!roomParticipant) {
@@ -703,23 +802,25 @@ export class MessagingService {
       }
 
       if (!roomParticipant.canWrite) {
-        throw new Error('Forbidden: You do not have permission to send messages in this room.');
+        throw new Error(
+          'Forbidden: You do not have permission to send messages in this room.',
+        );
       }
 
       const message = await prisma.chatMessage.create({
         data: {
-          roomId: roomId,
+          roomId,
           senderId: userId,
           content: validatedData.content,
           messageType: validatedData.messageType,
           replyToMessageId: validatedData.replyToMessageId,
-          sharedAttackLogId: validatedData.sharedAttackLogId
+          sharedAttackLogId: validatedData.sharedAttackLogId,
         },
         include: {
           sender: {
-            select: { id: true, display_name: true, avatar: true }
-          }
-        }
+            select: { id: true, display_name: true, avatar: true },
+          },
+        },
       });
 
       // Update room's updatedAt timestamp
@@ -738,11 +839,16 @@ export class MessagingService {
         sender: {
           id: message.sender.id,
           display_name: message.sender.display_name,
-          avatar: message.sender.avatar
-        }
+          avatar: message.sender.avatar,
+        },
       };
     } catch (error) {
-      logError('Error sending message', { userId, roomId, data: validatedData, error });
+      logError('Error sending message', {
+        userId,
+        roomId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -756,7 +862,9 @@ export class MessagingService {
     try {
       // Verify user is a participant in the room
       const roomParticipant = await prisma.chatRoomParticipant.findUnique({
-        where: { roomId_userId: { roomId: validatedQuery.roomId, userId: userId } }
+        where: {
+          roomId_userId: { roomId: validatedQuery.roomId, userId },
+        },
       });
 
       if (!roomParticipant) {
@@ -764,13 +872,13 @@ export class MessagingService {
       }
 
       const whereClause: any = {
-        roomId: validatedQuery.roomId
+        roomId: validatedQuery.roomId,
       };
 
       if (validatedQuery.searchTerm) {
         whereClause.content = {
           contains: validatedQuery.searchTerm,
-          mode: 'insensitive'
+          mode: 'insensitive',
         };
       }
 
@@ -799,19 +907,19 @@ export class MessagingService {
         skip: validatedQuery.offset,
         include: {
           sender: {
-            select: { id: true, display_name: true, avatar: true }
+            select: { id: true, display_name: true, avatar: true },
           },
           replyToMessage: {
             select: {
               id: true,
               content: true,
-              sender: { select: { id: true, display_name: true } }
-            }
-          }
-        }
+              sender: { select: { id: true, display_name: true } },
+            },
+          },
+        },
       });
 
-      return messages.map(message => ({
+      return messages.map((message) => ({
         id: message.id,
         roomId: message.roomId,
         senderId: message.senderId,
@@ -821,16 +929,22 @@ export class MessagingService {
         sender: {
           id: message.sender.id,
           display_name: message.sender.display_name,
-          avatar: message.sender.avatar
+          avatar: message.sender.avatar,
         },
-        replyToMessage: message.replyToMessage ? {
-          id: message.replyToMessage.id,
-          content: message.replyToMessage.content,
-          sender: message.replyToMessage.sender
-        } : null
+        replyToMessage: message.replyToMessage
+          ? {
+              id: message.replyToMessage.id,
+              content: message.replyToMessage.content,
+              sender: message.replyToMessage.sender,
+            }
+          : null,
       }));
     } catch (error) {
-      logError('Error searching messages', { userId, query: validatedQuery, error });
+      logError('Error searching messages', {
+        userId,
+        query: validatedQuery,
+        error,
+      });
       throw error;
     }
   }
@@ -845,7 +959,7 @@ export class MessagingService {
       // Verify user is a participant in the room
       const message = await prisma.chatMessage.findUnique({
         where: { id: validatedData.messageId },
-        include: { room: { include: { participants: { where: { userId } } } } }
+        include: { room: { include: { participants: { where: { userId } } } } },
       });
 
       if (!message || message.room.participants.length === 0) {
@@ -856,9 +970,9 @@ export class MessagingService {
       const removed = await prisma.chatMessageReaction.deleteMany({
         where: {
           messageId: validatedData.messageId,
-          userId: userId,
-          reaction: validatedData.reaction
-        }
+          userId,
+          reaction: validatedData.reaction,
+        },
       });
 
       // If reaction was not removed (didn't exist), add it
@@ -866,16 +980,19 @@ export class MessagingService {
         await prisma.chatMessageReaction.create({
           data: {
             messageId: validatedData.messageId,
-            userId: userId,
-            reaction: validatedData.reaction
-          }
+            userId,
+            reaction: validatedData.reaction,
+          },
         });
         return { action: 'added', reaction: validatedData.reaction };
-      } else {
-        return { action: 'removed', reaction: validatedData.reaction };
       }
+      return { action: 'removed', reaction: validatedData.reaction };
     } catch (error) {
-      logError('Error toggling reaction', { userId, data: validatedData, error });
+      logError('Error toggling reaction', {
+        userId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -890,29 +1007,35 @@ export class MessagingService {
       const now = new Date();
 
       await prisma.$transaction(
-        validatedData.messageIds.map(messageId =>
+        validatedData.messageIds.map((messageId) =>
           prisma.chatMessageReadStatus.upsert({
             where: {
               messageId_userId: {
-                messageId: messageId,
-                userId: userId
-              }
+                messageId,
+                userId,
+              },
             },
             update: {
-              readAt: now
+              readAt: now,
             },
             create: {
-              messageId: messageId,
-              userId: userId,
-              readAt: now
-            }
-          })
-        )
+              messageId,
+              userId,
+              readAt: now,
+            },
+          }),
+        ),
       );
 
-      return { message: `${validatedData.messageIds.length} messages marked as read.` };
+      return {
+        message: `${validatedData.messageIds.length} messages marked as read.`,
+      };
     } catch (error) {
-      logError('Error marking messages as read', { userId, data: validatedData, error });
+      logError('Error marking messages as read', {
+        userId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -924,7 +1047,7 @@ export class MessagingService {
     try {
       // Verify user is a participant in the room
       const roomParticipant = await prisma.chatRoomParticipant.findUnique({
-        where: { roomId_userId: { roomId, userId: userId } }
+        where: { roomId_userId: { roomId, userId } },
       });
 
       if (!roomParticipant) {
@@ -933,23 +1056,23 @@ export class MessagingService {
 
       // Get the latest read timestamp for this user in this room
       const lastReadStatus = await prisma.chatMessageReadStatus.findFirst({
-        where: { userId: userId },
+        where: { userId },
         orderBy: { readAt: 'desc' },
         include: {
           message: {
-            select: { roomId: true }
-          }
-        }
+            select: { roomId: true },
+          },
+        },
       });
 
       const lastReadTimestamp = lastReadStatus?.readAt || new Date(0);
 
       const unreadCount = await prisma.chatMessage.count({
         where: {
-          roomId: roomId,
+          roomId,
           senderId: { not: userId },
-          sentAt: { gt: lastReadTimestamp }
-        }
+          sentAt: { gt: lastReadTimestamp },
+        },
       });
 
       return { unreadCount };
@@ -966,7 +1089,7 @@ export class MessagingService {
     try {
       // Verify user is a participant in the room
       const roomParticipant = await prisma.chatRoomParticipant.findUnique({
-        where: { roomId_userId: { roomId, userId: userId } }
+        where: { roomId_userId: { roomId, userId } },
       });
 
       if (!roomParticipant) {
@@ -974,21 +1097,21 @@ export class MessagingService {
       }
 
       const participants = await prisma.chatRoomParticipant.findMany({
-        where: { roomId: roomId },
+        where: { roomId },
         include: {
           user: {
             select: {
               id: true,
               display_name: true,
               avatar: true,
-              last_active: true
-            }
-          }
+              last_active: true,
+            },
+          },
         },
-        orderBy: { joinedAt: 'asc' }
+        orderBy: { joinedAt: 'asc' },
       });
 
-      return participants.map(p => ({
+      return participants.map((p) => ({
         id: p.user.id,
         userId: p.userId,
         role: p.role,
@@ -996,9 +1119,10 @@ export class MessagingService {
         joinedAt: p.joinedAt,
         display_name: p.user.display_name,
         avatar: p.user.avatar,
-        is_online: p.user.last_active ?
-          (new Date().getTime() - new Date(p.user.last_active).getTime()) < 5 * 60 * 1000
-          : false
+        is_online: p.user.last_active
+          ? new Date().getTime() - new Date(p.user.last_active).getTime() <
+            5 * 60 * 1000
+          : false,
       }));
     } catch (error) {
       logError('Error getting room participants', { userId, roomId, error });

@@ -1,6 +1,5 @@
-import React from 'react';
 import clsx from 'clsx';
-import { color } from 'bun';
+import React from 'react';
 
 interface RpgAwesomeIconProps {
   icon: string;
@@ -54,21 +53,14 @@ const RpgAwesomeIcon: React.FC<RpgAwesomeIconProps> = ({
       [`ra-flip-${flip}`]: flip,
       [`ra-stack-${stack}`]: stack,
     },
-    className
+    className,
   );
 
   // Merge style with color if provided
-  const mergedStyle = color
-    ? { ...style, color }
-    : style;
+  const mergedStyle = color ? { ...style, color } : style;
 
   return (
-    <i 
-      className={classes} 
-      style={mergedStyle} 
-      onClick={onClick} 
-      {...rest} 
-    />
+    <i className={classes} style={mergedStyle} onClick={onClick} {...rest} />
   );
 };
 

@@ -1,13 +1,15 @@
+import type { Prisma } from '@prisma/client';
+import { z } from 'zod';
+
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
-import { Prisma } from '@prisma/client';
-import { getUsersWithRelations } from './UserLoader.service';
-import { z } from 'zod';
+
 import {
   buildDefaultUserUpdate,
   resetUserRelations,
   resolveColorScheme,
 } from './UserDefaults.service';
+import { getUsersWithRelations } from './UserLoader.service';
 
 // Zod schemas for validation
 const EraIdSchema = z.number().int().positive();
@@ -19,11 +21,15 @@ const EraDataSchema = z.object({
   endDate: z.date().optional().nullable(),
 });
 
- type Tx = Prisma.TransactionClient;
+type Tx = Prisma.TransactionClient;
 
 const buildLifetimeAchievements = (
   current: unknown,
-  eraAchievements: { maxLevelReached: number; totalAttacksWon: number; totalDefendsWon: number },
+  eraAchievements: {
+    maxLevelReached: number;
+    totalAttacksWon: number;
+    totalDefendsWon: number;
+  },
 ) => {
   let parsed: Record<string, any> = {};
 
@@ -39,13 +45,23 @@ const buildLifetimeAchievements = (
 
   return {
     ...parsed,
-    maxLevelReached: Math.max(parsed.maxLevelReached ?? 0, eraAchievements.maxLevelReached ?? 0),
-    totalAttacksWon: (parsed.totalAttacksWon ?? 0) + (eraAchievements.totalAttacksWon ?? 0),
-    totalDefendsWon: (parsed.totalDefendsWon ?? 0) + (eraAchievements.totalDefendsWon ?? 0),
+    maxLevelReached: Math.max(
+      parsed.maxLevelReached ?? 0,
+      eraAchievements.maxLevelReached ?? 0,
+    ),
+    totalAttacksWon:
+      (parsed.totalAttacksWon ?? 0) + (eraAchievements.totalAttacksWon ?? 0),
+    totalDefendsWon:
+      (parsed.totalDefendsWon ?? 0) + (eraAchievements.totalDefendsWon ?? 0),
   };
 };
 
-const resetUserState = async (tx: Tx, userId: number, newEraId: number, achievements: Record<string, any>) => {
+const resetUserState = async (
+  tx: Tx,
+  userId: number,
+  newEraId: number,
+  achievements: Record<string, any>,
+) => {
   await resetUserRelations(tx, userId);
 
   const user = await tx.users.findUnique({
@@ -59,7 +75,10 @@ const resetUserState = async (tx: Tx, userId: number, newEraId: number, achievem
       ...buildDefaultUserUpdate(),
       currentEraId: newEraId,
       achievements,
-      colorScheme: resolveColorScheme(user?.colorScheme ?? null, user?.race ?? null),
+      colorScheme: resolveColorScheme(
+        user?.colorScheme ?? null,
+        user?.race ?? null,
+      ),
     },
   });
 };
@@ -80,7 +99,7 @@ export const ensureActiveEra = async (tx: Tx | typeof prisma = prisma) => {
 };
 
 export const startNewEra = async () => {
-  return prisma.$transaction(async tx => {
+  return prisma.$transaction(async (tx) => {
     const currentEra = await getActiveEra(tx);
     let previousEraId: number | null = null;
 
@@ -104,14 +123,14 @@ export const startNewEra = async () => {
 
     for (const u of users) {
       const userModel = new UserModel(
-        u as any,
-        (u as any).UserUnit,
-        (u as any).UserItem,
-        (u as any).UserStructureUpgrade,
-        (u as any).UserBattleUpgrade,
-        (u as any).UserBonusPoints,
-        (u as any).permissions,
-        (u as any).stats,
+        u,
+        u.UserUnit,
+        u.UserItem,
+        u.UserStructureUpgrade,
+        u.UserBattleUpgrade,
+        u.UserBonusPoints,
+        u.permissions,
+        u.stats,
         false,
         true,
       );
@@ -151,7 +170,10 @@ export const startNewEra = async () => {
         });
       }
 
-      const lifetimeAchievements = buildLifetimeAchievements(u.achievements, eraAchievements);
+      const lifetimeAchievements = buildLifetimeAchievements(
+        u.achievements,
+        eraAchievements,
+      );
       const validatedNewEraId = EraIdSchema.parse(newEra.id);
       await resetUserState(tx, u.id, validatedNewEraId, lifetimeAchievements);
     }

@@ -1,4 +1,4 @@
-import { logInfo, logError } from "./logger";
+import { logError, logInfo } from './logger';
 
 export const fetchWithFallback = async (
   socket: any,
@@ -7,7 +7,7 @@ export const fetchWithFallback = async (
   fallbackUrl: string,
   payload: object,
   setData: (data: any) => void,
-  setLoading: (loading: boolean) => void
+  setLoading: (loading: boolean) => void,
 ) => {
   setLoading(true);
   try {

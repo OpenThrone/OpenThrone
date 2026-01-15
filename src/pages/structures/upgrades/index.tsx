@@ -1,14 +1,12 @@
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import type { GetServerSideProps } from 'next';
 
-const UpgradesIndex = (props) => {
-  const router = useRouter();
+const UpgradesIndex = () => null;
 
-  useEffect(() => {
-    router.push('/structures/upgrades/fortifications');
-  }, [router]);
-
-  return null;
-};
+export const getServerSideProps: GetServerSideProps = async () => ({
+  redirect: {
+    destination: '/structures/upgrades/fortifications',
+    permanent: false,
+  },
+});
 
 export default UpgradesIndex;

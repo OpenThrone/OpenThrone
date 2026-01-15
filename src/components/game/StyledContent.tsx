@@ -1,5 +1,6 @@
+import { Badge, Box, Group, Text } from '@mantine/core';
 import React from 'react';
-import { Box, Text, Group, Badge } from '@mantine/core';
+
 import { GameCard } from './GameCard';
 
 interface StyledContentProps {
@@ -8,7 +9,11 @@ interface StyledContentProps {
   badgeText?: string;
 }
 
-export const StyledContent: React.FC<StyledContentProps> = ({ title, content, badgeText }) => {
+export const StyledContent: React.FC<StyledContentProps> = ({
+  title,
+  content,
+  badgeText,
+}) => {
   return (
     <GameCard title={title}>
       <Box
@@ -21,8 +26,14 @@ export const StyledContent: React.FC<StyledContentProps> = ({ title, content, ba
         }}
       >
         <Group justify="space-between" mb="xs">
-          <Text size="sm" fw={700} c="gray.2">Treasury Ledger</Text>
-          {badgeText && <Badge size="xs" variant="outline" color="yellow">{badgeText}</Badge>}
+          <Text size="sm" fw={700} c="gray.2">
+            Treasury Ledger
+          </Text>
+          {badgeText && (
+            <Badge size="xs" variant="outline" color="yellow">
+              {badgeText}
+            </Badge>
+          )}
         </Group>
         <Text size="sm" c="dimmed" style={{ lineHeight: 1.5 }}>
           {content}

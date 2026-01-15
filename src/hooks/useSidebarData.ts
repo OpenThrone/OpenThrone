@@ -1,6 +1,7 @@
 import { useDebouncedCallback } from '@mantine/hooks';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { levelXPArray } from '@/constants/XPLevels';
 import useSocket from '@/hooks/useSocket';
 import type UserModel from '@/models/Users';
@@ -73,24 +74,32 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
       clearInterval(advisorIntervalIdRef.current);
     }
     advisorIntervalIdRef.current = setInterval(() => {
-      setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % advisorMessages.length);
+      setCurrentMessageIndex(
+        (prevIndex) => (prevIndex + 1) % advisorMessages.length,
+      );
     }, ADVISOR_ROTATE_MS);
   }, [advisorMessages.length]);
 
   const handlePrevAdvisor = useCallback(() => {
-    setCurrentMessageIndex((prevIndex) => (prevIndex - 1 + advisorMessages.length) % advisorMessages.length);
+    setCurrentMessageIndex(
+      (prevIndex) =>
+        (prevIndex - 1 + advisorMessages.length) % advisorMessages.length,
+    );
     resetAdvisorInterval();
   }, [advisorMessages.length, resetAdvisorInterval]);
 
   const handleNextAdvisor = useCallback(() => {
-    setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % advisorMessages.length);
+    setCurrentMessageIndex(
+      (prevIndex) => (prevIndex + 1) % advisorMessages.length,
+    );
     resetAdvisorInterval();
   }, [advisorMessages.length, resetAdvisorInterval]);
 
   useEffect(() => {
     resetAdvisorInterval();
     return () => {
-      if (advisorIntervalIdRef.current) clearInterval(advisorIntervalIdRef.current);
+      if (advisorIntervalIdRef.current)
+        clearInterval(advisorIntervalIdRef.current);
     };
   }, [resetAdvisorInterval]);
 
@@ -107,7 +116,9 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
     const xpGainedThisLevel = user.experience - xpForCurrentLevel;
 
     const progressPercentage =
-      xpNeededForNextLevel > 0 ? (xpGainedThisLevel / xpNeededForNextLevel) * 100 : 100;
+      xpNeededForNextLevel > 0
+        ? (xpGainedThisLevel / xpNeededForNextLevel) * 100
+        : 100;
 
     setSidebar({
       gold: toLocale(user.gold, user?.locale),
@@ -122,7 +133,10 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
 
   useEffect(() => {
     refreshGoldRequestCount();
-    const interval = setInterval(refreshGoldRequestCount, GOLD_REQUEST_FALLBACK_POLL_MS);
+    const interval = setInterval(
+      refreshGoldRequestCount,
+      GOLD_REQUEST_FALLBACK_POLL_MS,
+    );
     return () => clearInterval(interval);
   }, [refreshGoldRequestCount]);
 
@@ -133,7 +147,10 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
 
     addEventListener('goldRequestCountUpdate', handleGoldRequestCountUpdate);
     return () => {
-      removeEventListener('goldRequestCountUpdate', handleGoldRequestCountUpdate);
+      removeEventListener(
+        'goldRequestCountUpdate',
+        handleGoldRequestCountUpdate,
+      );
     };
   }, [addEventListener, removeEventListener]);
 
@@ -219,4 +236,3 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
     handleSubmit,
   };
 }
-

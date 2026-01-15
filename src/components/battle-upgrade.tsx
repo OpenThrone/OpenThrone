@@ -1,12 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import type { UnitProps, UnitSectionProps } from '@/types/typings';
-import toLocale from '@/utils/numberFormatting';
-import { useUser } from '../context/users';
-import { alertService } from '@/services/Alert.service';
-import { Button, Flex, Group, NumberInput, Text, Box, useMantineTheme, Grid } from '@mantine/core';
-import { logError } from '@/utils/logger';
-import { GameCard } from './game/GameCard';
 import { faHammer } from '@fortawesome/free-solid-svg-icons';
+import {
+  Box,
+  Button,
+  Grid,
+  Group,
+  NumberInput,
+  Text,
+  useMantineTheme,
+} from '@mantine/core';
+import React, { useEffect, useState } from 'react';
+
+import { alertService } from '@/services/Alert.service';
+import type { UnitProps, UnitSectionProps } from '@/types/typings';
+import { logError } from '@/utils/logger';
+import toLocale from '@/utils/numberFormatting';
+
+import { useUser } from '../context/users';
+import { GameCard } from './game/GameCard';
 
 const UpgradeSlot = ({
   item,
@@ -61,18 +71,35 @@ const UpgradeSlot = ({
       }}
     >
       <Box style={{ flex: 1 }}>
-        <Text fw={700} c="gray.3" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <Text
+          fw={700}
+          c="gray.3"
+          style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
+        >
           {item.name}
-          <span className='text-xs font-medieval'>
-            {' '}(+{item.bonus} {heading})
+          <span className="font-medieval text-xs">
+            {' '}
+            (+{item.bonus} {heading})
           </span>
         </Text>
         <Group gap={6}>
-          <Text size="xs" c="dimmed">Cost: <span style={{ color: accent }}>{toLocale(item.cost)} Gold</span></Text>
-          <Text size="xs" c="dimmed">|</Text>
-          <Text size="xs" c="dimmed">Sale Value: {toLocale(Number(String(item.cost).replace(/,/g, '')) * 0.75)} Gold</Text>
-          <Text size="xs" c="dimmed">|</Text>
-          <Text size="xs" c="dimmed">Owned: {toLocale(item.ownedItems)}</Text>
+          <Text size="xs" c="dimmed">
+            Cost:{' '}
+            <span style={{ color: accent }}>{toLocale(item.cost)} Gold</span>
+          </Text>
+          <Text size="xs" c="dimmed">
+            |
+          </Text>
+          <Text size="xs" c="dimmed">
+            Sale Value:{' '}
+            {toLocale(Number(String(item.cost).replace(/,/g, '')) * 0.75)} Gold
+          </Text>
+          <Text size="xs" c="dimmed">
+            |
+          </Text>
+          <Text size="xs" c="dimmed">
+            Owned: {toLocale(item.ownedItems)}
+          </Text>
         </Group>
       </Box>
       <Group gap="xs">
@@ -93,7 +120,9 @@ const UpgradeSlot = ({
             },
           }}
           value={itemsToEquip[`${item.type}_${item.level}`] || 0}
-          onChange={(value: number | undefined) => handleInputChange(`${item.type}_${item.level}`, value)}
+          onChange={(value: number | undefined) =>
+            handleInputChange(`${item.type}_${item.level}`, value)
+          }
           allowNegative={false}
         />
       </Group>
@@ -108,7 +137,9 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   const { user, forceUpdate } = useUser();
   const [getItems, setItems] = useState<UnitProps[]>(items || []);
   const [sectionEnabled, setSectionEnabled] = useState(false);
-  const [itemsToEquip, setItemsToEquip] = useState<{ [key: string]: number }>({});
+  const [itemsToEquip, setItemsToEquip] = useState<{ [key: string]: number }>(
+    {},
+  );
   const theme = useMantineTheme();
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
   const accent = secondary[4] ?? '#e5c55a';
@@ -116,16 +147,20 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
 
   useEffect(() => {
     if (items) {
-      setItems(prevItems => {
-        return items.map(newItem => {
-          const oldItem = prevItems.find(o => o.id === newItem.id);
+      setItems((prevItems) => {
+        return items.map((newItem) => {
+          const oldItem = prevItems.find((o) => o.id === newItem.id);
           return oldItem
-            ? { ...oldItem, ownedItems: newItem.ownedItems, enabled: newItem.enabled }
+            ? {
+                ...oldItem,
+                ownedItems: newItem.ownedItems,
+                enabled: newItem.enabled,
+              }
             : newItem;
         });
       });
-  
-      setItemsToEquip(prev => {
+
+      setItemsToEquip((prev) => {
         const updated = { ...prev };
         for (const newItem of items) {
           if (!(newItem.id in updated)) {
@@ -134,8 +169,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
         }
         return updated;
       });
-      setSectionEnabled(items.some(item => item.enabled));
-      
+      setSectionEnabled(items.some((item) => item.enabled));
     }
   }, [items]);
 
@@ -151,27 +185,29 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   const handleInputChange = (unitId, value) => {
     const intValue = Number.parseInt(value, 10);
     if (!Number.isNaN(intValue) || typeof value === 'string') {
-      setItemsToEquip(prev => ({
+      setItemsToEquip((prev) => ({
         ...prev,
-        [unitId]: !Number.isNaN(intValue)? intValue : 0,
+        [unitId]: !Number.isNaN(intValue) ? intValue : 0,
       }));
     } else {
-      logError("Invalid input:", value, "for", unitId);
+      logError('Invalid input:', value, 'for', unitId);
     }
   };
 
   const handleEquip = async (operation: string) => {
     if (!getItems || getItems.length === 0) return;
 
-    const itemsToEquipList = getItems.map((item) => {
-      const qty = itemsToEquip[`${item.type}_${item.level}`] || 0;
-      return {
-        type: item.type,
-        quantity: qty,
-        usage: item.usage,
-        level: item.level,
-      };
-    }).filter((item) => item.quantity > 0);
+    const itemsToEquipList = getItems
+      .map((item) => {
+        const qty = itemsToEquip[`${item.type}_${item.level}`] || 0;
+        return {
+          type: item.type,
+          quantity: qty,
+          usage: item.usage,
+          level: item.level,
+        };
+      })
+      .filter((item) => item.quantity > 0);
 
     if (!user) {
       alertService.error('User not found');
@@ -190,7 +226,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
         body: JSON.stringify({
           userId: user.id,
           items: itemsToEquipList,
-          operation: operation,
+          operation,
         }),
       });
 
@@ -242,9 +278,17 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
           </Grid.Col>
         ))}
       </Grid>
-      <Box mt="lg" style={{ borderTop: '1px dashed #2f3e52', paddingTop: '16px' }}>
+      <Box
+        mt="lg"
+        style={{ borderTop: '1px dashed #2f3e52', paddingTop: '16px' }}
+      >
         <Group justify="space-between">
-          <Text c="dimmed">Total Cost: <span style={{ color: accent }}>{toLocale(getSectionTotalCost(), user?.locale)} Gold</span></Text>
+          <Text c="dimmed">
+            Total Cost:{' '}
+            <span style={{ color: accent }}>
+              {toLocale(getSectionTotalCost(), user?.locale)} Gold
+            </span>
+          </Text>
           <Group>
             <Button
               variant="filled"
@@ -254,10 +298,10 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
                 background: `linear-gradient(180deg, ${accent} 0%, ${accentDark} 100%)`,
                 color: '#000',
                 border: `1px solid ${accent}`,
-                boxShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
               }}
               disabled={!sectionEnabled}
-              onClick={async () => await handleEquip('buy')}
+              onClick={async () => handleEquip('buy')}
             >
               Buy
             </Button>
@@ -270,7 +314,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
                 color: '#9ca3af',
               }}
               disabled={!sectionEnabled}
-              onClick={async () => await handleEquip('sell')}
+              onClick={async () => handleEquip('sell')}
             >
               Sell
             </Button>

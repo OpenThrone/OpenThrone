@@ -1,13 +1,14 @@
+import type { UserItem, UserStructureUpgrade, UserUnit } from '@prisma/client';
+import { z } from 'zod';
+
 import type {
+  Item,
   Unit,
   UnitTotalsType,
   UnitType as TUnitType, // Renaming to avoid conflict with enum
-  Item,
-} from "@/types/typings";
-import { UserUnit, UserItem, UserStructureUpgrade } from "@prisma/client";
-import { z } from 'zod';
+} from '@/types/typings';
 
-import { UnitTypes, ItemTypes, SpyUpgrades } from "../constants";
+import { ItemTypes, SpyUpgrades, UnitTypes } from '../constants';
 
 const UserDataSchema = z.object({
   units: z.array(z.any()).optional(),
@@ -39,7 +40,6 @@ export class UserUnitsService {
     this.fortLevel = validatedData.fortLevel ?? 0;
     this.structure_upgrades = validatedData.structure_upgrades ?? [];
     this.mercenaries = validatedData.mercenaries ?? [];
-
   }
 
   getUnitTotals(): UnitTotalsType {
@@ -59,24 +59,24 @@ export class UserUnitsService {
       units.forEach((unit) => {
         const quantity = unit.quantity || 0;
         switch (unit.type) {
-          case "CITIZEN":
+          case 'CITIZEN':
             totals.citizens += quantity;
             break;
-          case "WORKER":
+          case 'WORKER':
             totals.workers += quantity;
             break;
-          case "OFFENSE":
+          case 'OFFENSE':
             totals.offense += quantity;
             break;
-          case "DEFENSE":
+          case 'DEFENSE':
             totals.defense += quantity;
             break;
-          case "SPY":
+          case 'SPY':
             totals.spies += quantity;
             if (unit.level === 2) totals.infiltrators += quantity;
             if (unit.level === 3) totals.assassins += quantity;
             break;
-          case "SENTRY":
+          case 'SENTRY':
             totals.sentries += quantity;
             break;
         }
@@ -86,7 +86,7 @@ export class UserUnitsService {
     // Process both regular units and mercenaries
     processUnits(this.units);
     processUnits(this.mercenaries);
-    
+
     return totals;
   }
 
@@ -101,7 +101,10 @@ export class UserUnitsService {
   getArmySize(): number {
     const allUnits = [...this.units, ...this.mercenaries];
     return allUnits
-      .filter((unit) => unit.type && unit.type !== "CITIZEN" && unit.type !== "WORKER")
+      .filter(
+        (unit) =>
+          unit.type && unit.type !== 'CITIZEN' && unit.type !== 'WORKER',
+      )
       .reduce((acc, unit) => acc + (unit.quantity || 0), 0);
   }
 
@@ -112,7 +115,7 @@ export class UserUnitsService {
 
   getCitizens(): number {
     const allUnits = [...this.units, ...this.mercenaries];
-    return allUnits?.find((unit) => unit.type === "CITIZEN")?.quantity ?? 0;
+    return allUnits?.find((unit) => unit.type === 'CITIZEN')?.quantity ?? 0;
   }
 
   getSortedUnits(type: TUnitType): UserUnit[] {
@@ -127,7 +130,7 @@ export class UserUnitsService {
   }
 
   getLevelForUnit(type: TUnitType): number {
-    if (["OFFENSE", "DEFENSE", "SENTRY", "SPY"].includes(type)) {
+    if (['OFFENSE', 'DEFENSE', 'SENTRY', 'SPY'].includes(type)) {
       return this.fortLevel;
     }
     return 1;
@@ -143,14 +146,14 @@ export class UserUnitsService {
     { enabled: boolean; requiredLevel: number }
   > {
     const missions = [
-      { name: "intel", requiredLevel: SpyUpgrades[0]?.level ?? 1 },
+      { name: 'intel', requiredLevel: SpyUpgrades[0]?.level ?? 1 },
       {
-        name: "infil",
+        name: 'infil',
         requiredLevel:
           SpyUpgrades.find((u) => u.maxInfiltrations > 0)?.level ?? Infinity,
       },
       {
-        name: "assass",
+        name: 'assass',
         requiredLevel:
           SpyUpgrades.find((u) => u.maxAssassinations > 0)?.level ?? Infinity,
       },
@@ -196,10 +199,10 @@ export class UserUnitsService {
   }
 
   private getArmoryLevel(): number {
-    return this.structure_upgrades.find((s) => s.type === "ARMORY")?.level ?? 1;
+    return this.structure_upgrades.find((s) => s.type === 'ARMORY')?.level ?? 1;
   }
 
   private getSpyLevel(): number {
-    return this.structure_upgrades.find((s) => s.type === "SPY")?.level ?? 0;
+    return this.structure_upgrades.find((s) => s.type === 'SPY')?.level ?? 0;
   }
 }

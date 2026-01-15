@@ -1,22 +1,24 @@
 import type { NextApiResponse } from 'next';
-import prisma from '@/lib/prisma';
-import { withAuth } from '@/middleware/auth';
-import mtrand from '@/utils/mtrand';
-import { getIpAddress } from '@/utils/ipUtils';
-import { logAction } from '@/utils/auditLogger';
-
-import { RecruitSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
-import { AuthenticatedRequest } from '@/types/api';
-import { performRecruitmentWithSessionValidation, getUserByRecruitLink } from '@/services/Recruitment.service';
-import { error } from 'console';
+
+import prisma from '@/lib/prisma';
+import { RecruitSchema } from '@/lib/validation';
+import { withAuth } from '@/middleware/auth';
+import {
+  getUserByRecruitLink,
+  performRecruitmentWithSessionValidation,
+} from '@/services/Recruitment.service';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logAction } from '@/utils/auditLogger';
+import { getIpAddress } from '@/utils/ipUtils';
+import mtrand from '@/utils/mtrand';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end(); // Method not allowed
   }
 
-  const session = req.session;
+  const { session } = req;
   const recruiterUserId = session ? session.user.id : 0;
 
   let recruitedUserId: number | string = 0;
@@ -26,9 +28,14 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     recruitedUserId = data.recruitedUserId || 0;
     selfRecruit = data.selfRecruit || false;
     const sessionIdStr = data.sessionId || null;
-    let sessionIdNum: number | null = sessionIdStr ? parseInt(sessionIdStr, 10) : null;
+    let sessionIdNum: number | null = sessionIdStr
+      ? parseInt(sessionIdStr, 10)
+      : null;
 
-    if (typeof recruitedUserId === 'string' && !Number.isInteger(Number(recruitedUserId))) {
+    if (
+      typeof recruitedUserId === 'string' &&
+      !Number.isInteger(Number(recruitedUserId))
+    ) {
       const recruitedUser = await getUserByRecruitLink(recruitedUserId);
       recruitedUserId = recruitedUser?.id || 0;
     }
@@ -39,38 +46,55 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     }
 
     const ipAddress = getIpAddress(req);
-    const fromUser = recruiterUserId ? Number(recruitedUserId) : recruiterUserId;
-    const toUser = recruiterUserId ? recruiterUserId : Number(recruitedUserId);
+    const fromUser = recruiterUserId
+      ? Number(recruitedUserId)
+      : recruiterUserId;
+    const toUser = recruiterUserId || Number(recruitedUserId);
     const userIdToLock = selfRecruit ? Number(recruitedUserId) : Number(toUser);
     const delayMs = mtrand(5, 17) * 100;
 
-    const result = await prisma.$transaction((tx) =>
-      performRecruitmentWithSessionValidation({
-        tx,
-        fromUser,
-        toUser,
-        userIdToUpdate: userIdToLock,
-        ipAddress,
-        strategy: 'standard',
-        goldReward: 250,
-        delayMs,
-        sessionId: sessionIdNum,
-        recruiterUserId,
-      })
-    , { timeout: 15000, maxWait: 5000 });
+    const result = await prisma.$transaction(
+      (tx) =>
+        performRecruitmentWithSessionValidation({
+          tx,
+          fromUser,
+          toUser,
+          userIdToUpdate: userIdToLock,
+          ipAddress,
+          strategy: 'standard',
+          goldReward: 250,
+          delayMs,
+          sessionId: sessionIdNum,
+          recruiterUserId,
+        }),
+      { timeout: 15000, maxWait: 5000 },
+    );
 
     const ip = getIpAddress(req);
-    await logAction(recruiterUserId || toUser, 'RECRUIT', ip, { recruitedUserId, selfRecruit });
+    await logAction(recruiterUserId || toUser, 'RECRUIT', ip, {
+      recruitedUserId,
+      selfRecruit,
+    });
 
     return res.status(200).json(result);
   } catch (error) {
     if (error instanceof ZodError) {
-      return res.status(400).json({ error: 'Invalid input', details: error.format() });
+      return res
+        .status(400)
+        .json({ error: 'Invalid input', details: error.format() });
     }
-    console.log('Error in recruitment:', error.message, "IPAddr: " + getIpAddress(req), 'PlayerID: ' + recruitedUserId, 'RecruiterID: ' + recruiterUserId);
-    const statusCode = error.message.includes('recruited 5 times') || error.message.includes('Session')
-      ? 409
-      : 500;
+    console.log(
+      'Error in recruitment:',
+      error.message,
+      `IPAddr: ${getIpAddress(req)}`,
+      `PlayerID: ${recruitedUserId}`,
+      `RecruiterID: ${recruiterUserId}`,
+    );
+    const statusCode =
+      error.message.includes('recruited 5 times') ||
+      error.message.includes('Session')
+        ? 409
+        : 500;
     return res.status(statusCode).json({ error: error.message });
   }
 };

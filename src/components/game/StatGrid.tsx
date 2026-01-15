@@ -1,7 +1,8 @@
-import React from 'react';
-import { Box, Group, Text, SimpleGrid, useMantineTheme } from '@mantine/core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Box, Group, SimpleGrid, Text, useMantineTheme } from '@mantine/core';
+import React from 'react';
+
 import { GameCard } from './GameCard';
 
 interface StatItem {
@@ -30,7 +31,11 @@ export const StatGrid: React.FC<StatGridProps> = ({
 
   return (
     <GameCard title={title}>
-      <SimpleGrid cols={{ base: 1, sm: columns }} spacing="sm" data-testid="stat-grid">
+      <SimpleGrid
+        cols={{ base: 1, sm: columns }}
+        spacing="sm"
+        data-testid="stat-grid"
+      >
         {stats.map((stat, index) => (
           <Box
             key={index}
@@ -70,13 +75,22 @@ export const StatGrid: React.FC<StatGridProps> = ({
                     alignItems: 'center',
                   }}
                 >
-                  {isIconDefinition(stat.icon)
-                    ? <FontAwesomeIcon icon={stat.icon} />
-                    : stat.icon}
+                  {isIconDefinition(stat.icon) ? (
+                    <FontAwesomeIcon icon={stat.icon} />
+                  ) : (
+                    stat.icon
+                  )}
                 </div>
               )}
               <div>
-                <Text size="xs" c="dimmed" fw={700} tt="uppercase" style={{ letterSpacing: '0.5px' }} data-testid="stat-label">
+                <Text
+                  size="xs"
+                  c="dimmed"
+                  fw={700}
+                  tt="uppercase"
+                  style={{ letterSpacing: '0.5px' }}
+                  data-testid="stat-label"
+                >
                   {stat.label}
                 </Text>
               </div>
@@ -91,7 +105,10 @@ export const StatGrid: React.FC<StatGridProps> = ({
                 fontFamily: 'monospace', // Monospace for numbers (very RPG)
                 zIndex: 1,
                 color: stat.isPositive === false ? '#ef4444' : undefined,
-                textShadow: stat.isPositive === false ? '0 0 5px rgba(239, 68, 68, 0.6)' : '0 0 10px rgba(229, 197, 90, 0.1)',
+                textShadow:
+                  stat.isPositive === false
+                    ? '0 0 5px rgba(239, 68, 68, 0.6)'
+                    : '0 0 10px rgba(229, 197, 90, 0.1)',
               }}
             >
               {stat.value}

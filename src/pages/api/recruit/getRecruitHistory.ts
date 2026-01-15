@@ -1,39 +1,49 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '@/lib/prisma';
-import { withAuth } from '@/middleware/auth';
-import { getOTStartDate } from '@/utils/timefunctions';
-import { getRecruitmentRecords } from '@/services/Recruitment.service';
 import { z } from 'zod';
+
+import { withAuth } from '@/middleware/auth';
+import { getRecruitmentRecords } from '@/services/Recruitment.service';
+import { getOTStartDate } from '@/utils/timefunctions';
 
 const GetRecruitHistorySchema = z.object({
   id: z.coerce.number().int().optional(),
 });
 
-const handler = async (
-  req: NextApiRequest,
-  res: NextApiResponse,
-) => {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
     return res.status(405).end(); // Method not allowed
   }
 
   const validatedQuery = GetRecruitHistorySchema.safeParse(req.query);
   if (!validatedQuery.success) {
-    return res.status(400).json({ error: 'Invalid query parameters', details: validatedQuery.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid query parameters',
+      details: validatedQuery.error.flatten().fieldErrors,
+    });
   }
 
   const session = req?.session;
   const { id } = validatedQuery.data;
-  const recruiterID = id ? id : (session ? parseInt(session.user?.id.toLocaleString()) : 0);
-  const startDate = getOTStartDate(); //new Date(Number(getOTStartDate()) - 1 * 24 * 60 * 60 * 1000); // The start of the day 1 day ago
+  const recruiterID =
+    id || (session ? parseInt(session.user?.id.toLocaleString()) : 0);
+  const startDate = getOTStartDate(); // new Date(Number(getOTStartDate()) - 1 * 24 * 60 * 60 * 1000); // The start of the day 1 day ago
   const endDate = getOTStartDate(1); // The start of current day
-  const usersWithRecruitCount = await getRecruitmentRecords(recruiterID, startDate, endDate);
+  const usersWithRecruitCount = await getRecruitmentRecords(
+    recruiterID,
+    startDate,
+    endDate,
+  );
 
   if (!usersWithRecruitCount.length) {
-    return res.status(404).json({ error: 'No recruitment history found in the last 24 hours.', '24hoursago': getOTStartDate(), });
+    return res.status(404).json({
+      error: 'No recruitment history found in the last 24 hours.',
+      '24hoursago': getOTStartDate(),
+    });
   }
 
-  return res.status(200).json({ usersWithRecruitCount, '24hoursago': getOTStartDate() });
-}
+  return res
+    .status(200)
+    .json({ usersWithRecruitCount, '24hoursago': getOTStartDate() });
+};
 
 export default withAuth(handler);

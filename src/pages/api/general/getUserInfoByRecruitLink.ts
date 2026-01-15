@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { GeneralService } from '@/services';
+
 import UserModel from '@/models/Users';
+import { GeneralService } from '@/services';
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,7 +11,10 @@ export default async function handler(
   const RecruitLinkSchema = z.object({ recruit_link: z.string().min(1) });
   const parseResult = RecruitLinkSchema.safeParse(req.query);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid or missing recruit_link', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid or missing recruit_link',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
   const { recruit_link } = parseResult.data;
 

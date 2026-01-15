@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET']);
@@ -28,9 +28,9 @@ export default async function handler(
     ]);
 
     const stats = {
-      players: players,
-      battles: battles,
-      alliances: alliances,
+      players,
+      battles,
+      alliances,
       epoch: currentEra?.name || 'Era VIII',
     };
     return res.status(200).json(stats);

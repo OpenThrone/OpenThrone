@@ -1,12 +1,30 @@
+import {
+  Avatar,
+  Box,
+  Button,
+  Group,
+  Image,
+  SimpleGrid,
+  Stack,
+  Text,
+} from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
-import { Avatar, Text, Group, Button, SimpleGrid, Image, Box, Stack } from '@mantine/core';
-import toLocale from '@/utils/numberFormatting';
+
+import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { logError } from '@/utils/logger';
-import { GameCard } from '@/components/game/GameCard';
-import { useTranslation } from 'next-i18next';
+import toLocale from '@/utils/numberFormatting';
 
-export const UserCardImage = ({ name, members, description, gold, joinText, imgsrc, bannerimgsrc }) => {
+export const UserCardImage = ({
+  name,
+  members,
+  description,
+  gold,
+  joinText,
+  imgsrc,
+  bannerimgsrc,
+}) => {
   const { t } = useTranslation('alliances');
   return (
     <GameCard title={name}>
@@ -25,7 +43,10 @@ export const UserCardImage = ({ name, members, description, gold, joinText, imgs
             src={imgsrc}
             size={96}
             radius={96}
-            style={{ border: '2px solid #1f2b3b', boxShadow: '0 6px 16px rgba(0,0,0,0.6)' }}
+            style={{
+              border: '2px solid #1f2b3b',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.6)',
+            }}
           />
         </Group>
         <Text ta="center" fz="sm" c="dimmed">
@@ -42,11 +63,15 @@ export const UserCardImage = ({ name, members, description, gold, joinText, imgs
           }}
         >
           <div>
-            <Text size="xs" c="dimmed" tt="uppercase">{t('browse.gold')}</Text>
+            <Text size="xs" c="dimmed" tt="uppercase">
+              {t('browse.gold')}
+            </Text>
             <Text fw={700}>{toLocale(gold)}</Text>
           </div>
           <div>
-            <Text size="xs" c="dimmed" tt="uppercase">{t('browse.members')}</Text>
+            <Text size="xs" c="dimmed" tt="uppercase">
+              {t('browse.members')}
+            </Text>
             <Text fw={700}>{toLocale(members)}</Text>
           </div>
         </Group>

@@ -1,41 +1,67 @@
-import React from 'react';
-import Link from 'next/link';
 import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { ActionIcon, Button, Popover, Table, Text, useMantineTheme } from '@mantine/core';
+import {
+  ActionIcon,
+  Button,
+  Popover,
+  Table,
+  Text,
+  useMantineTheme,
+} from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import Link from 'next/link';
+import React from 'react';
+
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
 import toLocale from '@/utils/numberFormatting';
 
-const StatsTable = ({ title, data, description = "description", displayButton = true }) => {
+const StatsTable = ({
+  title,
+  data,
+  description = 'description',
+  displayButton = true,
+}) => {
   const [opened, { close, open }] = useDisclosure(false);
   const theme = useMantineTheme();
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
   const accent = secondary[4] ?? '#e5c55a';
-  const headers = ['Rank', 'Player', 'Stat', ...(displayButton ? ['Action'] : [])];
+  const headers = [
+    'Rank',
+    'Player',
+    'Stat',
+    ...(displayButton ? ['Action'] : []),
+  ];
 
   return (
     <GameCard
       title={title}
-      action={description ? (
-        <Popover withArrow shadow="md" width={260} opened={opened} position="bottom">
-          <Popover.Target>
-            <ActionIcon
-              variant="subtle"
-              color="yellow"
-              onMouseEnter={open}
-              onMouseLeave={close}
-              aria-label={`${title} description`}
-            >
-              <FontAwesomeIcon icon={faCircleInfo} />
-            </ActionIcon>
-          </Popover.Target>
-          <Popover.Dropdown style={{ pointerEvents: 'none' }}>
-            <Text size="sm">{description}</Text>
-          </Popover.Dropdown>
-        </Popover>
-      ) : null}
+      action={
+        description ? (
+          <Popover
+            withArrow
+            shadow="md"
+            width={260}
+            opened={opened}
+            position="bottom"
+          >
+            <Popover.Target>
+              <ActionIcon
+                variant="subtle"
+                color="yellow"
+                onMouseEnter={open}
+                onMouseLeave={close}
+                aria-label={`${title} description`}
+              >
+                <FontAwesomeIcon icon={faCircleInfo} />
+              </ActionIcon>
+            </Popover.Target>
+            <Popover.Dropdown style={{ pointerEvents: 'none' }}>
+              <Text size="sm">{description}</Text>
+            </Popover.Dropdown>
+          </Popover>
+        ) : null
+      }
     >
       <StyledTable headers={headers}>
         {data.map((player, index) => (

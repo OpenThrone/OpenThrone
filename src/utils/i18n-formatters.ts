@@ -6,7 +6,7 @@
 export const formatNumber = (
   value: number,
   locale: string = 'en',
-  options?: Intl.NumberFormatOptions
+  options?: Intl.NumberFormatOptions,
 ): string => {
   return new Intl.NumberFormat(locale, options).format(value);
 };
@@ -14,7 +14,7 @@ export const formatNumber = (
 export const formatCurrency = (
   value: number,
   locale: string = 'en',
-  currency: string = 'USD'
+  currency: string = 'USD',
 ): string => {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -22,10 +22,7 @@ export const formatCurrency = (
   }).format(value);
 };
 
-export const formatGold = (
-  value: number,
-  locale: string = 'en'
-): string => {
+export const formatGold = (value: number, locale: string = 'en'): string => {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'USD',
@@ -36,7 +33,7 @@ export const formatGold = (
 
 export const formatCompactNumber = (
   value: number,
-  locale: string = 'en'
+  locale: string = 'en',
 ): string => {
   return new Intl.NumberFormat(locale, {
     notation: 'compact',
@@ -48,7 +45,7 @@ export const formatCompactNumber = (
 export const formatDate = (
   date: Date | string,
   locale: string = 'en',
-  options?: Intl.DateTimeFormatOptions
+  options?: Intl.DateTimeFormatOptions,
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return new Intl.DateTimeFormat(locale, options).format(dateObj);
@@ -56,7 +53,7 @@ export const formatDate = (
 
 export const formatTime = (
   date: Date | string,
-  locale: string = 'en'
+  locale: string = 'en',
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return new Intl.DateTimeFormat(locale, {
@@ -68,7 +65,7 @@ export const formatTime = (
 
 export const formatRelativeTime = (
   date: Date | string,
-  locale: string = 'en'
+  locale: string = 'en',
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
@@ -79,24 +76,28 @@ export const formatRelativeTime = (
 
   if (absDiff < 60) {
     return rtf.format(-Math.floor(diffInSeconds / 1), 'second');
-  } else if (absDiff < 3600) {
-    return rtf.format(-Math.floor(diffInSeconds / 60), 'minute');
-  } else if (absDiff < 86400) {
-    return rtf.format(-Math.floor(diffInSeconds / 3600), 'hour');
-  } else if (absDiff < 2592000) {
-    return rtf.format(-Math.floor(diffInSeconds / 86400), 'day');
-  } else if (absDiff < 31536000) {
-    return rtf.format(-Math.floor(diffInSeconds / 2592000), 'week');
-  } else if (absDiff < 3153600000) {
-    return rtf.format(-Math.floor(diffInSeconds / 31536000), 'month');
-  } else {
-    return rtf.format(-Math.floor(diffInSeconds / 315360000), 'year');
   }
+  if (absDiff < 3600) {
+    return rtf.format(-Math.floor(diffInSeconds / 60), 'minute');
+  }
+  if (absDiff < 86400) {
+    return rtf.format(-Math.floor(diffInSeconds / 3600), 'hour');
+  }
+  if (absDiff < 2592000) {
+    return rtf.format(-Math.floor(diffInSeconds / 86400), 'day');
+  }
+  if (absDiff < 31536000) {
+    return rtf.format(-Math.floor(diffInSeconds / 2592000), 'week');
+  }
+  if (absDiff < 3153600000) {
+    return rtf.format(-Math.floor(diffInSeconds / 31536000), 'month');
+  }
+  return rtf.format(-Math.floor(diffInSeconds / 315360000), 'year');
 };
 
 export const formatShortDate = (
   date: Date | string,
-  locale: string = 'en'
+  locale: string = 'en',
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return new Intl.DateTimeFormat(locale, {
@@ -108,7 +109,7 @@ export const formatShortDate = (
 
 export const formatLongDate = (
   date: Date | string,
-  locale: string = 'en'
+  locale: string = 'en',
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return new Intl.DateTimeFormat(locale, {
@@ -120,7 +121,7 @@ export const formatLongDate = (
 
 export const formatDateTime = (
   date: Date | string,
-  locale: string = 'en'
+  locale: string = 'en',
 ): string => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   return new Intl.DateTimeFormat(locale, {
@@ -136,7 +137,7 @@ export const formatDateTime = (
 export const formatPercentage = (
   value: number,
   locale: string = 'en',
-  maximumFractionDigits: number = 0
+  maximumFractionDigits: number = 0,
 ): string => {
   return new Intl.NumberFormat(locale, {
     style: 'percent',
@@ -144,7 +145,9 @@ export const formatPercentage = (
   }).format(value);
 };
 
-export const getNumberSeparator = (locale: string = 'en'): { decimal: string; group: string } => {
+export const getNumberSeparator = (
+  locale: string = 'en',
+): { decimal: string; group: string } => {
   const format = new Intl.NumberFormat(locale);
   const parts = format.formatToParts(1000.1);
   const decimal = parts.find((part) => part.type === 'decimal')?.value || '.';
@@ -156,23 +159,23 @@ export const formatPlural = (
   count: number,
   singular: string,
   plural: string,
-  locale: string = 'en'
+  locale: string = 'en',
 ): string => {
   return count === 1 ? singular : plural;
 };
 
 export const formatDuration = (
   seconds: number,
-  locale: string = 'en'
+  locale: string = 'en',
 ): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
 
   if (hours === 0) {
     return `${minutes}m`;
-  } else if (minutes === 0) {
-    return `${hours}h`;
-  } else {
-    return `${hours}h ${minutes}m`;
   }
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+  return `${hours}h ${minutes}m`;
 };

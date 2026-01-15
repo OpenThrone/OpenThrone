@@ -1,5 +1,6 @@
+import { Box, Group, Progress, Table, Text } from '@mantine/core';
 import React from 'react';
-import { Box, Text, Table, Progress, Group } from '@mantine/core';
+
 import { GameCard } from './GameCard';
 
 // Assuming LossesList is the component you have, or we render the raw data logic here
@@ -23,8 +24,15 @@ export const StyledLosses: React.FC<StyledLossesProps> = ({ losses }) => {
         }}
       >
         <Group justify="space-between" mb="sm">
-          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Total Lost</Text>
-          <Text size="lg" fw={900} c="red.4" style={{ fontFamily: 'monospace' }}>
+          <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+            Total Lost
+          </Text>
+          <Text
+            size="lg"
+            fw={900}
+            c="red.4"
+            style={{ fontFamily: 'monospace' }}
+          >
             {data.total}
           </Text>
         </Group>
@@ -34,7 +42,9 @@ export const StyledLosses: React.FC<StyledLossesProps> = ({ losses }) => {
             {data.units.map((unit: any, idx: number) => (
               <Table.Tr key={idx}>
                 <Table.Td style={{ border: 'none', width: '50%' }}>
-                  <Text size="sm" c="gray.2">Lvl {unit.level} {unit.type}</Text>
+                  <Text size="sm" c="gray.2">
+                    Lvl {unit.level} {unit.type}
+                  </Text>
                 </Table.Td>
                 <Table.Td style={{ border: 'none', width: '50%' }}>
                   <Progress
@@ -42,7 +52,9 @@ export const StyledLosses: React.FC<StyledLossesProps> = ({ losses }) => {
                     color="red"
                     size="xs"
                   />
-                  <Text size="xs" c="dimmed" ta="right" mt={2}>{unit.quantity}</Text>
+                  <Text size="xs" c="dimmed" ta="right" mt={2}>
+                    {unit.quantity}
+                  </Text>
                 </Table.Td>
               </Table.Tr>
             ))}

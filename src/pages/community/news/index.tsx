@@ -1,32 +1,47 @@
-import { useState } from 'react';
-import { useTranslation } from 'next-i18next';
-
-import { Box, Button, Group, Modal, SimpleGrid, Space, Text, Textarea, TextInput } from '@mantine/core';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
+import {
+  Box,
+  Button,
+  Group,
+  Modal,
+  SimpleGrid,
+  Space,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
+import type { InferGetServerSidePropsType } from 'next';
 import { getSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
 
 import BlogPost from '@/components/blogPost';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { BlogService } from '@/services/Blog.service';
 import { logError } from '@/utils/logger';
-import { InferGetServerSidePropsType } from "next";
 
-const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const News = ({
+  posts: serverPosts,
+  loggedIn,
+  userId = 0,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { t } = useTranslation('community');
-  const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })));
+  const [posts, setPosts] = useState(serverPosts.map((post) => ({ ...post })));
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '' });
 
   const handleReadChange = async (postId) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return { ...post, isRead: !post.isRead };
-      }
-      return post;
-    }));
+    setPosts(
+      posts.map((post) => {
+        if (post.id === postId) {
+          return { ...post, isRead: !post.isRead };
+        }
+        return post;
+      }),
+    );
 
-    const postToUpdate = posts.find(post => post.id === postId);
+    const postToUpdate = posts.find((post) => post.id === postId);
     const newReadStatus = postToUpdate ? !postToUpdate.isRead : false;
 
     try {
@@ -47,12 +62,14 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
       logError('Error updating read status:', error);
 
       // Revert UI in case of error
-      setPosts(posts.map(post => {
-        if (post.id === postId) {
-          return { ...post, isRead: !post.isRead }; // Revert isRead status
-        }
-        return post;
-      }));
+      setPosts(
+        posts.map((post) => {
+          if (post.id === postId) {
+            return { ...post, isRead: !post.isRead }; // Revert isRead status
+          }
+          return post;
+        }),
+      );
     }
   };
 
@@ -87,17 +104,29 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
             <GameCard
               title={t('news.realmDispatches')}
               icon={faScroll}
-              action={loggedIn && userId === 1 ? (
-                <Button size="xs" color="yellow" onClick={() => setModalIsOpen(true)}>
-                  {t('news.postNew')}
-                </Button>
-              ) : null}
+              action={
+                loggedIn && userId === 1 ? (
+                  <Button
+                    size="xs"
+                    color="yellow"
+                    onClick={() => setModalIsOpen(true)}
+                  >
+                    {t('news.postNew')}
+                  </Button>
+                ) : null
+              }
             >
               <Text size="sm" c="gray.3" lh={1.7}>
                 {t('news.officialProclamations')}
               </Text>
               <Group mt="md" gap="xs">
-                <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
+                <Text
+                  size="xs"
+                  c="dimmed"
+                  tt="uppercase"
+                  fw={700}
+                  style={{ letterSpacing: '0.3em' }}
+                >
                   {t('news.readStatus')}
                 </Text>
                 <Text size="xs" c="gray.5">
@@ -108,12 +137,22 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
           </div>
 
           <div className="public-rise public-rise-delay-1">
-            <GameCard title={t('news.warCouncilNotes')} icon={faScroll} goldAccent={false}>
+            <GameCard
+              title={t('news.warCouncilNotes')}
+              icon={faScroll}
+              goldAccent={false}
+            >
               <Text size="sm" c="gray.3" lh={1.7}>
                 {t('news.followOngoingStoryArc')}
               </Text>
               <Box mt="md">
-                <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
+                <Text
+                  size="xs"
+                  c="dimmed"
+                  tt="uppercase"
+                  fw={700}
+                  style={{ letterSpacing: '0.3em' }}
+                >
                   {t('news.proTip')}
                 </Text>
                 <Text size="sm" c="gray.4">
@@ -123,22 +162,33 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
             </GameCard>
           </div>
         </SimpleGrid>
-          
+
         <SimpleGrid cols={1} spacing="lg" mt="xl">
           <Space h="lg" />
 
           {posts.length === 0 ? (
-            <GameCard title={t('news.noNewsYet')} icon={faScroll} goldAccent={false}>
+            <GameCard
+              title={t('news.noNewsYet')}
+              icon={faScroll}
+              goldAccent={false}
+            >
               <Text size="sm" c="gray.3">
                 {t('news.noNewsYet')}
               </Text>
               <Group mt="md">
-                <Button onClick={() => setModalIsOpen(true)}>{t('news.createFirstPost')}</Button>
+                <Button onClick={() => setModalIsOpen(true)}>
+                  {t('news.createFirstPost')}
+                </Button>
               </Group>
             </GameCard>
           ) : (
             posts.map((post) => (
-              <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} key={`Post_${post.id}`} />
+              <BlogPost
+                post={post}
+                loggedIn={loggedIn}
+                handleReadChange={handleReadChange}
+                key={`Post_${post.id}`}
+              />
             ))
           )}
         </SimpleGrid>
@@ -148,21 +198,39 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
           onClose={() => setModalIsOpen(false)}
           title={t('news.title')}
         >
-          <form onSubmit={(e) => { e.preventDefault(); handlePostNew(); }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handlePostNew();
+            }}
+          >
             <TextInput
               label={t('news.fieldTitle')}
               value={newPost.title}
-              onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+              onChange={(e) =>
+                setNewPost({ ...newPost, title: e.target.value })
+              }
               required
             />
             <Textarea
               label={t('news.content')}
               value={newPost.content}
-              onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+              onChange={(e) =>
+                setNewPost({ ...newPost, content: e.target.value })
+              }
               required
             />
-            <Button type="submit" className="mt-4">{t('news.submit')}</Button>
-            <Button type="button" className="mt-2" variant="outline" onClick={() => setModalIsOpen(false)}>{t('news.cancel')}</Button>
+            <Button type="submit" className="mt-4">
+              {t('news.submit')}
+            </Button>
+            <Button
+              type="button"
+              className="mt-2"
+              variant="outline"
+              onClick={() => setModalIsOpen(false)}
+            >
+              {t('news.cancel')}
+            </Button>
           </form>
         </Modal>
       </div>
@@ -174,7 +242,10 @@ export const getServerSideProps = async (context) => {
   const session = await getSession(context);
   try {
     if (session) {
-      const userId = typeof session.user.id === 'string' ? parseInt(session.user.id) : session.user.id;
+      const userId =
+        typeof session.user.id === 'string'
+          ? parseInt(session.user.id)
+          : session.user.id;
       const result = await BlogService.getPosts(userId);
       return { props: { posts: result.posts, loggedIn: true, userId } };
     }

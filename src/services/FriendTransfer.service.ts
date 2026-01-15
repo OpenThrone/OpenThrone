@@ -1,12 +1,23 @@
-import prisma from '@/lib/prisma';
-import { Prisma, PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import type { Omit } from '@prisma/client/runtime/library';
 import { z } from 'zod';
-import { getFriendTransferConfig, calculateTransferFee, isValidTransferAmount, canMakeTransfer, friendTransferCompleteConfig } from './Config.service';
-import ApiError, { createApiError } from '@/utils/api-error';
-import { Omit } from '@prisma/client/runtime/library';
+
+import prisma from '@/lib/prisma';
+import { createApiError } from '@/utils/api-error';
+
+import {
+  calculateTransferFee,
+  canMakeTransfer,
+  friendTransferCompleteConfig,
+  getFriendTransferConfig,
+  isValidTransferAmount,
+} from './Config.service';
 
 // Define the type for the transaction client
-type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+type TransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 
 // Extended bank history type for friend transfers
 export interface FriendTransferRecord {
@@ -84,19 +95,23 @@ const CancelFriendTransferParamsSchema = z.object({
  * @returns The friendship record
  * @throws Error if users are not friends
  */
-const verifyFriendship = async (fromUserId: number, toUserId: number, tx: TransactionClient) => {
+const verifyFriendship = async (
+  fromUserId: number,
+  toUserId: number,
+  tx: TransactionClient,
+) => {
   const friendship = await tx.social.findFirst({
     where: {
       OR: [
         { playerId: fromUserId, friendId: toUserId, status: 'accepted' },
-        { playerId: toUserId, friendId: fromUserId, status: 'accepted' }
-      ]
-    }
+        { playerId: toUserId, friendId: fromUserId, status: 'accepted' },
+      ],
+    },
   });
 
-    if (!friendship) {
-      throw createApiError('Users must be friends to perform this operation');
-    }
+  if (!friendship) {
+    throw createApiError('Users must be friends to perform this operation');
+  }
 
   return friendship;
 };
@@ -108,9 +123,13 @@ const verifyFriendship = async (fromUserId: number, toUserId: number, tx: Transa
  * @param amount - The transfer amount
  * @returns Validation result
  */
-const validateFriendTransfer = async (fromUserId: number, toUserId: number, amount: bigint) => {
+const validateFriendTransfer = async (
+  fromUserId: number,
+  toUserId: number,
+  amount: bigint,
+) => {
   const config = getFriendTransferConfig();
-  
+
   // Check if feature is enabled
   if (!config.enabled) {
     return { valid: false, error: 'Friend transfers are currently disabled' };
@@ -118,7 +137,10 @@ const validateFriendTransfer = async (fromUserId: number, toUserId: number, amou
 
   // Validate amount
   if (!isValidTransferAmount(amount)) {
-    return { valid: false, error: `Transfer amount must be between 1 and ${config.maxAmount} gold` };
+    return {
+      valid: false,
+      error: `Transfer amount must be between 1 and ${config.maxAmount} gold`,
+    };
   }
 
   // Check if user can make transfer (cooldown)
@@ -127,14 +149,17 @@ const validateFriendTransfer = async (fromUserId: number, toUserId: number, amou
       from_user_id: fromUserId,
       history_type: 'FRIEND_TRANSFER',
       date_time: {
-        gte: new Date(Date.now() - friendTransferCompleteConfig.cooldownMs)
-      }
+        gte: new Date(Date.now() - friendTransferCompleteConfig.cooldownMs),
+      },
     },
-    orderBy: { date_time: 'desc' }
+    orderBy: { date_time: 'desc' },
   });
 
   if (lastTransfer && !canMakeTransfer(lastTransfer.date_time)) {
-    return { valid: false, error: 'You must wait before making another transfer' };
+    return {
+      valid: false,
+      error: 'You must wait before making another transfer',
+    };
   }
 
   return { valid: true };
@@ -147,9 +172,13 @@ const validateFriendTransfer = async (fromUserId: number, toUserId: number, amou
  * @param amount - The request amount
  * @returns Validation result
  */
-const validateGoldRequest = async (fromUserId: number, toUserId: number, amount: bigint) => {
+const validateGoldRequest = async (
+  fromUserId: number,
+  toUserId: number,
+  amount: bigint,
+) => {
   const config = getFriendTransferConfig();
-  
+
   // Check if feature is enabled
   if (!config.enabled) {
     return { valid: false, error: 'Friend transfers are currently disabled' };
@@ -157,7 +186,10 @@ const validateGoldRequest = async (fromUserId: number, toUserId: number, amount:
 
   // Validate amount
   if (!isValidTransferAmount(amount)) {
-    return { valid: false, error: `Request amount must be between 1 and ${config.maxAmount} gold` };
+    return {
+      valid: false,
+      error: `Request amount must be between 1 and ${config.maxAmount} gold`,
+    };
   }
 
   // Check if user can make request (cooldown)
@@ -167,13 +199,16 @@ const validateGoldRequest = async (fromUserId: number, toUserId: number, amount:
       to_user_id: toUserId,
       history_type: 'FRIEND_REQUEST',
       date_time: {
-        gte: new Date(Date.now() - friendTransferCompleteConfig.cooldownMs)
-      }
-    }
+        gte: new Date(Date.now() - friendTransferCompleteConfig.cooldownMs),
+      },
+    },
   });
 
   if (existingRequest) {
-    return { valid: false, error: 'You must wait before making another request to this friend' };
+    return {
+      valid: false,
+      error: 'You must wait before making another request to this friend',
+    };
   }
 
   return { valid: true };
@@ -188,58 +223,66 @@ export const transferGoldToFriend = async (params: {
   const validatedParams = TransferParamsSchema.parse(params);
   return await prisma.$transaction(async (tx: TransactionClient) => {
     // Verify friendship exists and is accepted
-    const friendship = await verifyFriendship(validatedParams.fromUserId, validatedParams.toUserId, tx);
-    
+    const friendship = await verifyFriendship(
+      validatedParams.fromUserId,
+      validatedParams.toUserId,
+      tx,
+    );
+
     // Check transfer limits and validation
-    const validation = (await validateFriendTransfer(validatedParams.fromUserId, validatedParams.toUserId, validatedParams.amount)) as any;
+    const validation = (await validateFriendTransfer(
+      validatedParams.fromUserId,
+      validatedParams.toUserId,
+      validatedParams.amount,
+    )) as any;
     if (!validation.valid) {
-      throw ({ message: validation.error } as any);
+      throw { message: validation.error } as any;
     }
-    
+
     // Check sender's gold balance
     const sender = await tx.users.findUnique({
-      where: { id: validatedParams.fromUserId }
+      where: { id: validatedParams.fromUserId },
     });
 
     if (!sender) {
-      throw ({ message: 'Sender not found' } as any);
+      throw { message: 'Sender not found' } as any;
     }
 
     if ((BigInt as any)(sender.gold ?? 0) < validatedParams.amount) {
-      throw ({ message: 'Insufficient gold for transfer' } as any);
+      throw { message: 'Insufficient gold for transfer' } as any;
     }
-    
+
     // Calculate tax if enabled
     const config = getFriendTransferConfig();
     const taxAmount = calculateTransferFee(validatedParams.amount);
     const totalAmount = validatedParams.amount + taxAmount;
-    
+
     // Update user gold balances
     await tx.users.update({
       where: { id: validatedParams.fromUserId },
-      data: ({
-        gold: (BigInt as any)(sender.gold ?? 0) - totalAmount
-      } as any)
+      data: {
+        gold: (BigInt as any)(sender.gold ?? 0) - totalAmount,
+      } as any,
     });
-    
+
     const receiver = await tx.users.findUnique({
-      where: { id: validatedParams.toUserId }
+      where: { id: validatedParams.toUserId },
     });
 
     if (!receiver) {
-      throw ({ message: 'Receiver not found' } as any);
+      throw { message: 'Receiver not found' } as any;
     }
-    
+
     await tx.users.update({
       where: { id: validatedParams.toUserId },
-      data: ({
-        gold: (BigInt as any)(receiver.gold ?? 0) + validatedParams.amount
-      } as any)
+      data: {
+        gold: (BigInt as any)(receiver.gold ?? 0) + validatedParams.amount,
+      } as any,
     });
-    
+
     // Create bank history record for transfer
     const transferRecord = await tx.bank_history.create({
-      data: ({
+      data: {
         gold_amount: validatedParams.amount,
         from_user_id: validatedParams.fromUserId,
         from_user_account_type: 'HAND',
@@ -252,17 +295,19 @@ export const transferGoldToFriend = async (params: {
           friendshipId: (friendship as any).id,
           senderNote: validatedParams.notes,
           taxAmount: (taxAmount as any).toString(),
-          totalAmount: (totalAmount as any).toString()
-        }
-      } as any)
+          totalAmount: (totalAmount as any).toString(),
+        },
+      } as any,
     });
-    
+
     // Create bank history record for tax (if any)
     if (taxAmount > 0) {
       // Use configured system user id for tax receipts; database requires a non-null to_user_id
-      const systemUserId = process.env.SYSTEM_USER_ID ? Number(process.env.SYSTEM_USER_ID) : 0;
+      const systemUserId = process.env.SYSTEM_USER_ID
+        ? Number(process.env.SYSTEM_USER_ID)
+        : 0;
       await tx.bank_history.create({
-        data: ({
+        data: {
           gold_amount: taxAmount,
           from_user_id: validatedParams.fromUserId,
           from_user_account_type: 'HAND',
@@ -274,12 +319,12 @@ export const transferGoldToFriend = async (params: {
             transferType: 'FRIEND_TRANSFER_TAX',
             friendshipId: (friendship as any).id,
             originalAmount: (validatedParams.amount as any).toString(),
-            taxAmount: (taxAmount as any).toString()
-          }
-        } as any)
+            taxAmount: (taxAmount as any).toString(),
+          },
+        } as any,
       });
     }
-    
+
     return { success: true, transferId: transferRecord.id };
   });
 };
@@ -298,18 +343,26 @@ export const createGoldRequest = async (params: {
   const validatedParams = GoldRequestParamsSchema.parse(params);
   return await prisma.$transaction(async (tx: TransactionClient) => {
     // Verify friendship exists and is accepted
-    const friendship = await verifyFriendship(validatedParams.fromUserId, validatedParams.toUserId, tx);
-    
+    const friendship = await verifyFriendship(
+      validatedParams.fromUserId,
+      validatedParams.toUserId,
+      tx,
+    );
+
     // Check request validation
-    const validation = (await validateGoldRequest(validatedParams.fromUserId, validatedParams.toUserId, validatedParams.amount)) as any;
+    const validation = (await validateGoldRequest(
+      validatedParams.fromUserId,
+      validatedParams.toUserId,
+      validatedParams.amount,
+    )) as any;
     if (!validation.valid) {
-      throw ({ message: validation.error } as any);
+      throw { message: validation.error } as any;
     }
-    
+
     // Create bank history record for request
     const config = getFriendTransferConfig();
     const requestRecord = await tx.bank_history.create({
-      data: ({
+      data: {
         gold_amount: validatedParams.amount,
         from_user_id: validatedParams.fromUserId,
         from_user_account_type: 'REQUEST',
@@ -321,11 +374,13 @@ export const createGoldRequest = async (params: {
           transferType: 'FRIEND_REQUEST',
           friendshipId: (friendship as any).id,
           senderNote: validatedParams.notes,
-          expiresAt: new Date(Date.now() + config.cooldownHours * 60 * 60 * 1000).toISOString()
-        }
-      } as any)
+          expiresAt: new Date(
+            Date.now() + config.cooldownHours * 60 * 60 * 1000,
+          ).toISOString(),
+        },
+      } as any,
     });
-    
+
     return { success: true, requestId: requestRecord.id };
   });
 };
@@ -349,67 +404,76 @@ export const respondToGoldRequest = async (params: {
         from_user: {
           select: {
             id: true,
-            display_name: true
-          }
+            display_name: true,
+          },
         },
         to_user: {
           select: {
             id: true,
-            display_name: true
-          }
-        }
-      }
+            display_name: true,
+          },
+        },
+      },
     });
-    
+
     if (!request || request.history_type !== 'FRIEND_REQUEST') {
-      throw ({ message: 'Invalid request' } as any);
+      throw { message: 'Invalid request' } as any;
     }
-    
+
     if (validatedParams.action === 'accept') {
       // Fulfill the request using transfer logic
       await transferGoldToFriend({
         fromUserId: request.to_user_id,
         toUserId: request.from_user_id,
         amount: request.gold_amount,
-        notes: `Accepted request: ${request.stats && typeof request.stats === 'object' && 'senderNote' in request.stats ? (request.stats as any).senderNote : ''}`,
-        friendshipId: request.stats && typeof request.stats === 'object' && 'friendshipId' in request.stats ? (request.stats as any).friendshipId : undefined
+        notes: `Accepted request: ${request.stats && typeof request.stats === 'object' && 'senderNote' in request.stats ? request.stats.senderNote : ''}`,
+        friendshipId:
+          request.stats &&
+          typeof request.stats === 'object' &&
+          'friendshipId' in request.stats
+            ? request.stats.friendshipId
+            : undefined,
       });
-      
+
       // Update request status
       await tx.bank_history.update({
         where: { id: validatedParams.requestId },
-        data: ({
-          stats: request.stats ? {
-            ...(request.stats as any),
-            transferType: 'FRIEND_REQUEST_FULFILLED',
-            acceptedAt: new Date().toISOString(),
-            fulfillerMessage: validatedParams.message
-          } : {
-            transferType: 'FRIEND_REQUEST_FULFILLED',
-            acceptedAt: new Date().toISOString(),
-            fulfillerMessage: validatedParams.message
-          }
-        } as any)
+        data: {
+          stats: request.stats
+            ? {
+                ...request.stats,
+                transferType: 'FRIEND_REQUEST_FULFILLED',
+                acceptedAt: new Date().toISOString(),
+                fulfillerMessage: validatedParams.message,
+              }
+            : {
+                transferType: 'FRIEND_REQUEST_FULFILLED',
+                acceptedAt: new Date().toISOString(),
+                fulfillerMessage: validatedParams.message,
+              },
+        } as any,
       });
     } else {
       // Decline the request
       await tx.bank_history.update({
         where: { id: validatedParams.requestId },
-        data: ({
-          stats: request.stats ? {
-            ...(request.stats as any),
-            transferType: 'FRIEND_REQUEST_DECLINED',
-            declinedAt: new Date().toISOString(),
-            declineReason: validatedParams.message
-          } : {
-            transferType: 'FRIEND_REQUEST_DECLINED',
-            declinedAt: new Date().toISOString(),
-            declineReason: validatedParams.message
-          }
-        } as any)
+        data: {
+          stats: request.stats
+            ? {
+                ...request.stats,
+                transferType: 'FRIEND_REQUEST_DECLINED',
+                declinedAt: new Date().toISOString(),
+                declineReason: validatedParams.message,
+              }
+            : {
+                transferType: 'FRIEND_REQUEST_DECLINED',
+                declinedAt: new Date().toISOString(),
+                declineReason: validatedParams.message,
+              },
+        } as any,
       });
     }
-    
+
     return { success: true };
   });
 };
@@ -430,45 +494,53 @@ export const getFriendTransferHistory = async (params: {
     history_type: { in: ['FRIEND_TRANSFER', 'FRIEND_REQUEST'] },
     OR: [
       { from_user_id: validatedParams.userId },
-      { to_user_id: validatedParams.userId }
-    ]
+      { to_user_id: validatedParams.userId },
+    ],
   };
-  
+
   if (validatedParams.friendId) {
     where.OR = [
-      { from_user_id: validatedParams.userId, to_user_id: validatedParams.friendId },
-      { from_user_id: validatedParams.friendId, to_user_id: validatedParams.userId }
+      {
+        from_user_id: validatedParams.userId,
+        to_user_id: validatedParams.friendId,
+      },
+      {
+        from_user_id: validatedParams.friendId,
+        to_user_id: validatedParams.userId,
+      },
     ];
   }
-  
+
   const [transfers, total] = await Promise.all([
     prisma.bank_history.findMany({
       where,
       include: {
-        from_user: { 
-          select: { 
-            id: true, 
+        from_user: {
+          select: {
+            id: true,
             display_name: true,
             race: true,
-            class: true
-          } 
+            class: true,
+          },
         },
-        to_user: { 
-          select: { 
-            id: true, 
+        to_user: {
+          select: {
+            id: true,
             display_name: true,
             race: true,
-            class: true
-          } 
-        }
+            class: true,
+          },
+        },
       },
       orderBy: { date_time: 'desc' },
-      skip: validatedParams.page ? (validatedParams.page - 1) * (validatedParams.limit || 20) : 0,
-      take: validatedParams.limit || 20
+      skip: validatedParams.page
+        ? (validatedParams.page - 1) * (validatedParams.limit || 20)
+        : 0,
+      take: validatedParams.limit || 20,
     }),
-    prisma.bank_history.count({ where })
+    prisma.bank_history.count({ where }),
   ]);
-  
+
   return { transfers, total };
 };
 
@@ -484,11 +556,11 @@ export const getPendingFriendTransfers = async (userId: number) => {
       history_type: 'FRIEND_REQUEST',
       stats: {
         path: ['transferType'],
-        equals: 'FRIEND_REQUEST'
+        equals: 'FRIEND_REQUEST',
       },
       date_time: {
-        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-      }
+        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+      },
     },
     include: {
       from_user: {
@@ -496,23 +568,33 @@ export const getPendingFriendTransfers = async (userId: number) => {
           id: true,
           display_name: true,
           race: true,
-          class: true
-        }
-      }
+          class: true,
+        },
+      },
     },
-    orderBy: { date_time: 'desc' }
+    orderBy: { date_time: 'desc' },
   });
 
-  return requests.map(request => ({
+  return requests.map((request) => ({
     id: request.id,
     from_user_id: request.from_user_id,
     to_user_id: request.to_user_id,
     amount: request.gold_amount,
-    message: request.stats && typeof request.stats === 'object' && 'senderNote' in request.stats ? (request.stats as any).senderNote : undefined,
+    message:
+      request.stats &&
+      typeof request.stats === 'object' &&
+      'senderNote' in request.stats
+        ? request.stats.senderNote
+        : undefined,
     status: 'PENDING' as const,
     created_at: request.date_time,
     from_user: request.from_user,
-    expires_at: request.stats && typeof request.stats === 'object' && 'expiresAt' in request.stats ? new Date((request.stats as any).expiresAt) : null
+    expires_at:
+      request.stats &&
+      typeof request.stats === 'object' &&
+      'expiresAt' in request.stats
+        ? new Date(request.stats.expiresAt)
+        : null,
   }));
 };
 
@@ -523,38 +605,53 @@ export const getPendingFriendTransfers = async (userId: number) => {
  * @returns The updated transfer record
  * @throws Error if transfer not found, not pending, or not authorized
  */
-export const cancelFriendTransfer = async (transferId: number, fromUserId: number) => {
-  const validatedParams = CancelFriendTransferParamsSchema.parse({ transferId, fromUserId });
+export const cancelFriendTransfer = async (
+  transferId: number,
+  fromUserId: number,
+) => {
+  const validatedParams = CancelFriendTransferParamsSchema.parse({
+    transferId,
+    fromUserId,
+  });
   return await prisma.$transaction(async (tx: TransactionClient) => {
     const request = await tx.bank_history.findUnique({
-      where: { id: validatedParams.transferId }
+      where: { id: validatedParams.transferId },
     });
 
     if (!request) {
-      throw ({ message: 'Transfer request not found' } as any);
+      throw { message: 'Transfer request not found' } as any;
     }
 
     if (request.from_user_id !== validatedParams.fromUserId) {
-      throw ({ message: 'You are not authorized to cancel this transfer' } as any);
+      throw {
+        message: 'You are not authorized to cancel this transfer',
+      } as any;
     }
 
-    if (request.history_type !== 'FRIEND_REQUEST' || (request.stats && typeof request.stats === 'object' && 'transferType' in request.stats ? (request.stats as any).transferType !== 'FRIEND_REQUEST' : true)) {
-  throw ({ message: 'Transfer request is not cancellable' } as any);
+    if (
+      request.history_type !== 'FRIEND_REQUEST' ||
+      (request.stats &&
+      typeof request.stats === 'object' &&
+      'transferType' in request.stats
+        ? (request.stats as any).transferType !== 'FRIEND_REQUEST'
+        : true)
+    ) {
+      throw { message: 'Transfer request is not cancellable' } as any;
     }
 
     // Update request status
     const updatedRequest = await tx.bank_history.update({
       where: { id: validatedParams.transferId },
       // Cast update payload to any to avoid strict Prisma input typing during migration
-      data: ({
+      data: {
         stats: {
           ...(request.stats as any),
           transferType: 'FRIEND_REQUEST_CANCELLED',
-          cancelledAt: new Date().toISOString()
-        }
-      } as any)
+          cancelledAt: new Date().toISOString(),
+        },
+      } as any,
     });
-// Cast update payload to any to avoid strict Prisma input typing during migration
+    // Cast update payload to any to avoid strict Prisma input typing during migration
     const updatedRequestCasted = updatedRequest as any;
 
     return {
@@ -562,10 +659,15 @@ export const cancelFriendTransfer = async (transferId: number, fromUserId: numbe
       from_user_id: updatedRequest.from_user_id,
       to_user_id: updatedRequest.to_user_id,
       amount: updatedRequest.gold_amount,
-      message: updatedRequest.stats && typeof updatedRequest.stats === 'object' && 'senderNote' in updatedRequest.stats ? (updatedRequest.stats as any).senderNote : undefined,
+      message:
+        updatedRequest.stats &&
+        typeof updatedRequest.stats === 'object' &&
+        'senderNote' in updatedRequest.stats
+          ? (updatedRequest.stats as any).senderNote
+          : undefined,
       status: 'CANCELLED' as const,
       created_at: updatedRequest.date_time,
-      cancelled_at: new Date()
+      cancelled_at: new Date(),
     };
   });
 };

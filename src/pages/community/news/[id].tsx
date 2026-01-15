@@ -1,14 +1,12 @@
-import { useState } from 'react';
-import Link from 'next/link';
-
 import { Button, Group } from '@mantine/core';
+import Link from 'next/link';
 import { getSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
 
 import BlogPost from '@/components/blogPost';
 import MainArea from '@/components/MainArea';
 import { BlogService } from '@/services/Blog.service';
-import { useTranslation } from 'next-i18next';
-import { InferGetServerSidePropsType } from "next";
 
 type NewsPost = {
   id: number;
@@ -22,7 +20,13 @@ type NewsPost = {
   isRead?: boolean;
 };
 
-const News = ({ post: serverPost, loggedIn }: { post: NewsPost; loggedIn: boolean }) => {
+const News = ({
+  post: serverPost,
+  loggedIn,
+}: {
+  post: NewsPost;
+  loggedIn: boolean;
+}) => {
   const { t } = useTranslation('community');
   const [post, setPost] = useState<NewsPost>(() => ({
     ...serverPost,
@@ -49,11 +53,21 @@ const News = ({ post: serverPost, loggedIn }: { post: NewsPost; loggedIn: boolea
     <MainArea title={t('news.title')}>
       <div className="mx-auto w-full max-w-6xl px-4 pt-6">
         <Group>
-          <Button component={Link} href="/community/news" variant="outline" color="gray" size="xs">
+          <Button
+            component={Link}
+            href="/community/news"
+            variant="outline"
+            color="gray"
+            size="xs"
+          >
             {t('news.backToNews')}
           </Button>
         </Group>
-        <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} />
+        <BlogPost
+          post={post}
+          loggedIn={loggedIn}
+          handleReadChange={handleReadChange}
+        />
       </div>
     </MainArea>
   );
@@ -62,7 +76,9 @@ const News = ({ post: serverPost, loggedIn }: { post: NewsPost; loggedIn: boolea
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
   const userId = session
-    ? (typeof session.user.id === 'string' ? parseInt(session.user.id) : session.user.id)
+    ? typeof session.user.id === 'string'
+      ? parseInt(session.user.id)
+      : session.user.id
     : undefined;
   const postId = parseInt(context.params.id as string);
 

@@ -1,17 +1,10 @@
-import type {
-  UserBattleUpgrade,
-  UserBonusPoints,
-  UserItem,
-  UserStructureUpgrade,
-  UserUnit,
-  users as PrismaUser,
-} from '@prisma/client';
+import type { users as PrismaUser, UserUnit } from '@prisma/client';
 
 import { UnitTypes } from '@/constants';
 import { UserStatsService } from '@/services/UserStatsService';
-import { getLevelFromXP } from '@/utils/utilities';
 import type { FortHealth } from '@/types/typings';
 import type { DetailedCalculatedStrength } from '@/utils/attackFunctions';
+import { getLevelFromXP } from '@/utils/utilities';
 
 import { BaseUser, type BaseUserRelations } from './BaseUser';
 
@@ -95,14 +88,22 @@ export class BattleUser extends BaseUser {
     this.sentry = s.sentry.totalStats.MeleeDefPower;
   }
 
-  getDetailedArmyStat(type: 'OFFENSE' | 'DEFENSE' | 'SPY' | 'SENTRY'): DetailedCalculatedStrength {
+  getDetailedArmyStat(
+    type: 'OFFENSE' | 'DEFENSE' | 'SPY' | 'SENTRY',
+  ): DetailedCalculatedStrength {
     return this.statsService.calculateArmyStat(type as any) as any;
   }
 
   canAttack(targetLevel: number): boolean {
     if (process.env.NEXT_PUBLIC_ENABLE_ATTACKING === 'false') return false;
-    const levelRange = parseInt(process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5', 10);
-    return this.level >= targetLevel - levelRange && this.level <= targetLevel + levelRange;
+    const levelRange = parseInt(
+      process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE || '5',
+      10,
+    );
+    return (
+      this.level >= targetLevel - levelRange &&
+      this.level <= targetLevel + levelRange
+    );
   }
 
   getUnitsForDbUpdate(): UserUnit[] {

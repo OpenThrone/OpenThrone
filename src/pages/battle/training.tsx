@@ -1,19 +1,35 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Box,
+  Button,
+  Flex,
+  Group,
+  rem,
+  SimpleGrid,
+  Stack,
+  Text,
+  ThemeIcon,
+} from '@mantine/core';
 import { useTranslation } from 'next-i18next';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
 import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
-import toLocale  from '@/utils/numberFormatting';
-import { Group, SimpleGrid, Text, Button, Flex, Stack, Box, ThemeIcon, rem } from '@mantine/core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
-import MainArea from '@/components/MainArea';
 import type { PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
-import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 import { logDebug, logError } from '@/utils/logger'; // Added logError
-import { GameCard } from '@/components/game/GameCard';
+import toLocale from '@/utils/numberFormatting';
 
 /**
  * Represents data structure for a unit displayed in training section.
@@ -47,7 +63,8 @@ interface UnitTypeIndex {
  * and allows users to manage unit quantities. Includes a sticky footer
  * for order summary and actions.
  */
-const Training: React.FC = (props) => { // Removed unused props
+const Training: React.FC = (props) => {
+  // Removed unused props
   const { t } = useTranslation('battle');
   const { user, forceUpdate } = useUser();
   const [totalCost, setTotalCost] = useState(0);
@@ -63,24 +80,54 @@ const Training: React.FC = (props) => { // Removed unused props
   const [sentryUnits, setSentryUnits] = useState<UnitData[] | null>(null);
 
   // Memoized index for managing unit sections and their state
-  const unitTypesIndex: UnitTypeIndex[] = useMemo(() => [
-    { type: 'WORKER' as UnitType, sectionTitle: t('training.economy'), unitData: workerUnits, updateFn: setWorkerUnits },
-    { type: 'OFFENSE' as UnitType, sectionTitle: t('training.offense'), unitData: offenseUnits, updateFn: setOffenseUnits },
-    { type: 'DEFENSE' as UnitType, sectionTitle: t('training.defense'), unitData: defenseUnits, updateFn: setDefenseUnits },
-    { type: 'SPY' as UnitType, sectionTitle: t('training.spy'), unitData: spyUnits, updateFn: setSpyUnits },
-    { type: 'SENTRY' as UnitType, sectionTitle: t('training.sentry'), unitData: sentryUnits, updateFn: setSentryUnits },
-  ], [workerUnits, offenseUnits, defenseUnits, spyUnits, sentryUnits, t]);
+  const unitTypesIndex: UnitTypeIndex[] = useMemo(
+    () => [
+      {
+        type: 'WORKER' as UnitType,
+        sectionTitle: t('training.economy'),
+        unitData: workerUnits,
+        updateFn: setWorkerUnits,
+      },
+      {
+        type: 'OFFENSE' as UnitType,
+        sectionTitle: t('training.offense'),
+        unitData: offenseUnits,
+        updateFn: setOffenseUnits,
+      },
+      {
+        type: 'DEFENSE' as UnitType,
+        sectionTitle: t('training.defense'),
+        unitData: defenseUnits,
+        updateFn: setDefenseUnits,
+      },
+      {
+        type: 'SPY' as UnitType,
+        sectionTitle: t('training.spy'),
+        unitData: spyUnits,
+        updateFn: setSpyUnits,
+      },
+      {
+        type: 'SENTRY' as UnitType,
+        sectionTitle: t('training.sentry'),
+        unitData: sentryUnits,
+        updateFn: setSentryUnits,
+      },
+    ],
+    [workerUnits, offenseUnits, defenseUnits, spyUnits, sentryUnits, t],
+  );
 
   /**
    * Creates an object with section types as keys and 0 as values, used for initializing section costs.
    */
   const getBlankSectionCosts = useCallback((): { [key: string]: number } => {
     return Object.fromEntries(
-      unitTypesIndex.map((unitType) => [unitType.type, 0])
+      unitTypesIndex.map((unitType) => [unitType.type, 0]),
     );
   }, [unitTypesIndex]);
 
-  const [sectionCosts, setSectionCosts] = useState(() => getBlankSectionCosts());
+  const [sectionCosts, setSectionCosts] = useState(() =>
+    getBlankSectionCosts(),
+  );
 
   /**
    * Callback function passed to NewUnitSection to update cost contribution of that section.
@@ -96,7 +143,7 @@ const Training: React.FC = (props) => { // Removed unused props
       // Recalculate total cost from updated section costs
       const newTotalCost = Object.values(updatedCosts).reduce(
         (acc, curr) => acc + (Number.isFinite(curr) ? curr : 0), // Sum only valid numbers
-        0
+        0,
       );
       setTotalCost(Number.isFinite(newTotalCost) ? newTotalCost : 0); // Ensure total cost is valid
       return updatedCosts;
@@ -119,32 +166,40 @@ const Training: React.FC = (props) => { // Removed unused props
    * @param idPrefix - The UnitType prefix for unit ID.
    * @returns A UnitData object or undefined if user is not available.
    */
-  const unitMapFunction = useCallback((unit: any, idPrefix: string): UnitData | undefined => {
-    if (!user) return undefined;
-    const bonus =
-      unit.name === 'Worker'
-        ? EconomyUpgrades?.[user.economyLevel]?.goldPerWorker // Specific bonus for workers
-        : unit.bonus;
-    const unitId = `${idPrefix}_${unit.level}`;
-    const ownedUnit = user.units?.find((u: PlayerUnit) => u.type === unit.type && u.level === unit.level);
-    const requirementFort = Fortifications.find((fort) => fort.level === unit.fortLevel);
-    const baseCost = Number(String(unit.cost || '0').replace(/,/g, '')) || 0;
-    const userPriceBonus = (user?.priceBonus ?? 0); // e.g. 10 means 10%
-    const discountAmount = Math.ceil((userPriceBonus / 100) * baseCost);
-    const adjustedCost = Math.max(0, baseCost - discountAmount);
-    return {
-      id: unitId,
-      name: unit.name,
-      bonus: bonus ?? 0,
-      ownedUnits: ownedUnit?.quantity || 0,
-      requirement: requirementFort?.name || 'Unknown',
-  cost: adjustedCost,
-      enabled: user.fortLevel !== undefined && unit.fortLevel <= user.fortLevel,
-      level: unit.level,
-      usage: unit.type as UnitType, // Assuming unit.type is compatible
-      fortLevel: unit.fortLevel,
-    };
-  }, [user]); // Depends on user object
+  const unitMapFunction = useCallback(
+    (unit: any, idPrefix: string): UnitData | undefined => {
+      if (!user) return undefined;
+      const bonus =
+        unit.name === 'Worker'
+          ? EconomyUpgrades?.[user.economyLevel]?.goldPerWorker // Specific bonus for workers
+          : unit.bonus;
+      const unitId = `${idPrefix}_${unit.level}`;
+      const ownedUnit = user.units?.find(
+        (u: PlayerUnit) => u.type === unit.type && u.level === unit.level,
+      );
+      const requirementFort = Fortifications.find(
+        (fort) => fort.level === unit.fortLevel,
+      );
+      const baseCost = Number(String(unit.cost || '0').replace(/,/g, '')) || 0;
+      const userPriceBonus = user?.priceBonus ?? 0; // e.g. 10 means 10%
+      const discountAmount = Math.ceil((userPriceBonus / 100) * baseCost);
+      const adjustedCost = Math.max(0, baseCost - discountAmount);
+      return {
+        id: unitId,
+        name: unit.name,
+        bonus: bonus ?? 0,
+        ownedUnits: ownedUnit?.quantity || 0,
+        requirement: requirementFort?.name || 'Unknown',
+        cost: adjustedCost,
+        enabled:
+          user.fortLevel !== undefined && unit.fortLevel <= user.fortLevel,
+        level: unit.level,
+        usage: unit.type as UnitType, // Assuming unit.type is compatible
+        fortLevel: unit.fortLevel,
+      };
+    },
+    [user],
+  ); // Depends on user object
 
   // Effect to populate unit section states when user data is available or changes
   useEffect(() => {
@@ -158,7 +213,9 @@ const Training: React.FC = (props) => { // Removed unused props
         .filter((unit): unit is UnitData => unit !== undefined); // Ensure map function didn't return undefined
 
       // Only update state if data has actually changed to prevent infinite loops
-      if (JSON.stringify(newUnitData) !== JSON.stringify(unitTypeInfo.unitData)) {
+      if (
+        JSON.stringify(newUnitData) !== JSON.stringify(unitTypeInfo.unitData)
+      ) {
         unitTypeInfo.updateFn(newUnitData);
         stateChanged = true;
       }
@@ -174,9 +231,12 @@ const Training: React.FC = (props) => { // Removed unused props
    * @returns An array of objects containing unit type, quantity, and level for units with quantity > 0.
    */
   const getUnitQuantities = useCallback(() => {
-    return unitTypesIndex.reduce<UnitData[]>((curVal, unitType) =>
-      unitType.unitData ? [...curVal, ...unitType.unitData] : curVal, // Flatten unit data from all sections
-      [])
+    return unitTypesIndex
+      .reduce<UnitData[]>(
+        (curVal, unitType) =>
+          unitType.unitData ? [...curVal, ...unitType.unitData] : curVal, // Flatten unit data from all sections
+        [],
+      )
       .filter((unit): unit is UnitData => unit !== null) // Filter out null/disabled units
       .map((unit) => {
         // const unitComponents = unit.id.split('_'); // ID format like "OFFENSE_1"
@@ -186,7 +246,7 @@ const Training: React.FC = (props) => { // Removed unused props
           level: unit.level, // Use level directly
         };
       })
-      .filter(unit => unit.quantity > 0); // Only include units with quantity > 0
+      .filter((unit) => unit.quantity > 0); // Only include units with quantity > 0
   }, [unitTypesIndex, unitCosts]);
 
   /**
@@ -197,106 +257,153 @@ const Training: React.FC = (props) => { // Removed unused props
    * @returns The API response data on success, or null on failure/no units.
    * @throws Error if API call fails or returns an error status.
    */
-  const callTrainingApi = useCallback(async (endpoint: 'train' | 'untrain', user: User, units: { type: UnitType; quantity: number; level: number }[]) => {
-    if (units.length === 0) {
-      alertService.warn(t('training.noUnitsSelected', { action: endpoint }));
-      return null;
-    }
-    try {
-      const response = await fetch(`/api/training/${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, units: units }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || `Calling training API endpoint ${endpoint} failed with status ${response.status}.`);
+  const callTrainingApi = useCallback(
+    async (
+      endpoint: 'train' | 'untrain',
+      user: User,
+      units: { type: UnitType; quantity: number; level: number }[],
+    ) => {
+      if (units.length === 0) {
+        alertService.warn(t('training.noUnitsSelected', { action: endpoint }));
+        return null;
       }
-      alertService.success(data.message || t('training.trainingSuccessful', { action: endpoint.charAt(0).toUpperCase() + endpoint.slice(1) }));
-      return data;
-    } catch (error: any) {
-      logError(`Error calling ${endpoint} API:`, error); // Use logError
-      throw new Error(error.message || `An unexpected error occurred during ${endpoint}.`);
-    }
-  }, []);
+      try {
+        const response = await fetch(`/api/training/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, units }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            data?.error ||
+              `Calling training API endpoint ${endpoint} failed with status ${response.status}.`,
+          );
+        }
+        alertService.success(
+          data.message ||
+            t('training.trainingSuccessful', {
+              action: endpoint.charAt(0).toUpperCase() + endpoint.slice(1),
+            }),
+        );
+        return data;
+      } catch (error: any) {
+        logError(`Error calling ${endpoint} API:`, error); // Use logError
+        throw new Error(
+          error.message || `An unexpected error occurred during ${endpoint}.`,
+        );
+      }
+    },
+    [],
+  );
 
   /**
    * Updates local state of unit sections based on API response after training/untraining.
    * @param data - The data object returned from API, expected to contain a `data` array of updated units.
    */
-  const updateLocalUnits = useCallback((data: any) => {
-    if (!data?.data || !Array.isArray(data.data)) {
-      console.warn("API response missing expected data structure for unit update.");
-      forceUpdate(); // Force update anyway, maybe backend succeeded
-      return;
-    }
+  const updateLocalUnits = useCallback(
+    (data: any) => {
+      if (!data?.data || !Array.isArray(data.data)) {
+        console.warn(
+          'API response missing expected data structure for unit update.',
+        );
+        forceUpdate(); // Force update anyway, maybe backend succeeded
+        return;
+      }
 
-    const updatedUnitMap = new Map<string, number>();
-    // Assuming data.data is an array of { type: UnitType; level: number; quantity: number }
-    data.data.forEach((u: { type: UnitType; level: number; quantity: number }) => {
-      updatedUnitMap.set(`${u.type}_${u.level}`, u.quantity);
-    });
+      const updatedUnitMap = new Map<string, number>();
+      // Assuming data.data is an array of { type: UnitType; level: number; quantity: number }
+      data.data.forEach(
+        (u: { type: UnitType; level: number; quantity: number }) => {
+          updatedUnitMap.set(`${u.type}_${u.level}`, u.quantity);
+        },
+      );
 
-    // Update state for each section
-    unitTypesIndex.forEach((unitTypeInfo) => {
-      unitTypeInfo.updateFn((prevUnits) => {
-        if (!prevUnits) return null;
-        return prevUnits.map((unit) => {
-          const updatedQuantity = updatedUnitMap.get(unit.id);
-          // If an updated quantity exists for this unit ID, update ownedUnits
-          return updatedQuantity !== undefined ? { ...unit, ownedUnits: updatedQuantity } : unit;
+      // Update state for each section
+      unitTypesIndex.forEach((unitTypeInfo) => {
+        unitTypeInfo.updateFn((prevUnits) => {
+          if (!prevUnits) return null;
+          return prevUnits.map((unit) => {
+            const updatedQuantity = updatedUnitMap.get(unit.id);
+            // If an updated quantity exists for this unit ID, update ownedUnits
+            return updatedQuantity !== undefined
+              ? { ...unit, ownedUnits: updatedQuantity }
+              : unit;
+          });
         });
       });
-    });
 
-    resetUnitCosts(); // Reset input fields and costs
-    forceUpdate(); // Force user context update
-  }, [unitTypesIndex, resetUnitCosts, forceUpdate]);
+      resetUnitCosts(); // Reset input fields and costs
+      forceUpdate(); // Force user context update
+    },
+    [unitTypesIndex, resetUnitCosts, forceUpdate],
+  );
 
   /**
    * Handles form submission for either training or untraining all selected units.
    * Validates input, checks gold/citizens, calls API, and updates local state.
    * @param submitType - Whether to 'train' or 'untrain'.
    */
-  const handleFormSubmit = useCallback(async (submitType: 'train' | 'untrain') => {
-    if (!user) {
-      alertService.error(t('training.userNotFound'));
-      return;
-    }
-    const unitsToModify = getUnitQuantities();
+  const handleFormSubmit = useCallback(
+    async (submitType: 'train' | 'untrain') => {
+      if (!user) {
+        alertService.error(t('training.userNotFound'));
+        return;
+      }
+      const unitsToModify = getUnitQuantities();
 
-    if (unitsToModify.length === 0) {
-      alertService.warn(`Please enter quantity of units you wish to ${submitType}.`);
-      return;
-    }
+      if (unitsToModify.length === 0) {
+        alertService.warn(
+          `Please enter quantity of units you wish to ${submitType}.`,
+        );
+        return;
+      }
 
-    // Validation for training
-    if (submitType === 'train') {
+      // Validation for training
+      if (submitType === 'train') {
         const requiredGold = BigInt(totalCost); // totalCost should be up-to-date number
         const userGold = BigInt(user.gold ?? 0);
         if (requiredGold > userGold) {
-            alertService.error(t('training.insufficientGold', { needed: toLocale(requiredGold, user.locale), have: toLocale(userGold, user.locale) }));
-            return;
+          alertService.error(
+            t('training.insufficientGold', {
+              needed: toLocale(requiredGold, user.locale),
+              have: toLocale(userGold, user.locale),
+            }),
+          );
+          return;
         }
-        const citizensRequired = unitsToModify.reduce((sum, unit) => sum + unit.quantity, 0);
-        const availableCitizens = user.units?.find(u => u.type === 'CITIZEN')?.quantity ?? 0;
+        const citizensRequired = unitsToModify.reduce(
+          (sum, unit) => sum + unit.quantity,
+          0,
+        );
+        const availableCitizens =
+          user.units?.find((u) => u.type === 'CITIZEN')?.quantity ?? 0;
         if (citizensRequired > availableCitizens) {
-             alertService.error(t('training.insufficientCitizens', { needed: toLocale(citizensRequired, user.locale), have: toLocale(availableCitizens, user.locale) }));
-             return;
+          alertService.error(
+            t('training.insufficientCitizens', {
+              needed: toLocale(citizensRequired, user.locale),
+              have: toLocale(availableCitizens, user.locale),
+            }),
+          );
+          return;
         }
-    }
-    // Validation for untraining (already partially handled in getUnitQuantities, but double-check here if needed)
-    // Could add a check here to ensure untrain quantity doesn't exceed owned for each unit type again if necessary
-
-    try {
-      const data = await callTrainingApi(submitType, user, unitsToModify);
-      if (data) {
-        updateLocalUnits(data); // Update UI on success
       }
-    } catch (error: any) {
-      alertService.error(error.message || t('training.failedToTrain', { action: submitType }));
-    }
-  }, [user, getUnitQuantities, totalCost, updateLocalUnits, callTrainingApi, t]); // Added callTrainingApi dependency
+      // Validation for untraining (already partially handled in getUnitQuantities, but double-check here if needed)
+      // Could add a check here to ensure untrain quantity doesn't exceed owned for each unit type again if necessary
+
+      try {
+        const data = await callTrainingApi(submitType, user, unitsToModify);
+        if (data) {
+          updateLocalUnits(data); // Update UI on success
+        }
+      } catch (error: any) {
+        alertService.error(
+          error.message || t('training.failedToTrain', { action: submitType }),
+        );
+      }
+    },
+    [user, getUnitQuantities, totalCost, updateLocalUnits, callTrainingApi, t],
+  ); // Added callTrainingApi dependency
 
   const handleTrainAll = () => handleFormSubmit('train');
   const handleUntrainAll = () => handleFormSubmit('untrain');
@@ -324,12 +431,17 @@ const Training: React.FC = (props) => { // Removed unused props
   }, [hasOrder]);
 
   if (!user) {
-    return <MainArea title={t('training.title')}><Text>{t('training.loadingUserData')}</Text></MainArea>;
+    return (
+      <MainArea title={t('training.title')}>
+        <Text>{t('training.loadingUserData')}</Text>
+      </MainArea>
+    );
   }
 
-  const citizenCount = user.units?.find(unit => unit.type === 'CITIZEN')?.quantity ?? 0;
+  const citizenCount =
+    user.units?.find((unit) => unit.type === 'CITIZEN')?.quantity ?? 0;
   const defenseTotal = user.unitTotals?.defense ?? 0;
-  const population = (user.population ?? 0); // Use pre-calculated population if available
+  const population = user.population ?? 0; // Use pre-calculated population if available
   const defenseRatio = population > 0 ? defenseTotal / population : 0;
 
   return (
@@ -340,7 +452,12 @@ const Training: React.FC = (props) => { // Removed unused props
             {
               label: t('training.untrainedCitizens'),
               value: toLocale(citizenCount),
-              icon: <FontAwesomeIcon icon={faPeopleGroup} style={{ width: rem(15), height: rem(15) }} />,
+              icon: (
+                <FontAwesomeIcon
+                  icon={faPeopleGroup}
+                  style={{ width: rem(15), height: rem(15) }}
+                />
+              ),
             },
             {
               label: t('training.goldOnHand'),
@@ -355,7 +472,12 @@ const Training: React.FC = (props) => { // Removed unused props
             {
               label: t('training.defenseRatio'),
               value: `${toLocale(defenseRatio * 100, user.locale)} %`,
-              icon: <FontAwesomeIcon icon={faShield} style={{ width: rem(15), height: rem(15) }} />,
+              icon: (
+                <FontAwesomeIcon
+                  icon={faShield}
+                  style={{ width: rem(15), height: rem(15) }}
+                />
+              ),
             },
           ].map((stat) => (
             <Group
@@ -375,7 +497,13 @@ const Training: React.FC = (props) => { // Removed unused props
                 {stat.icon}
               </ThemeIcon>
               <div>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }}>
+                <Text
+                  size="xs"
+                  fw={700}
+                  c="dimmed"
+                  tt="uppercase"
+                  style={{ letterSpacing: '0.4em' }}
+                >
                   {stat.label}
                 </Text>
                 <Text size="sm" fw={700} c="gray.2">
@@ -387,30 +515,49 @@ const Training: React.FC = (props) => { // Removed unused props
         </SimpleGrid>
       </GameCard>
       {/* Add padding to bottom of main content area to prevent overlap with fixed footer */}
-      <Box style={{ paddingBottom: hasOrder ? '160px' : 0 }} data-testid="unit-training-panel">
+      <Box
+        style={{ paddingBottom: hasOrder ? '160px' : 0 }}
+        data-testid="unit-training-panel"
+      >
         {unitTypesIndex
           .filter((unitType) => unitType.unitData !== null)
           .map((unitType) => (
-              <NewUnitSection
-                heading={unitType.sectionTitle}
-                units={(unitType.unitData ?? []).filter((u): u is UnitData => u !== undefined).map(u => ({ ...u, type: u.usage, cost: u.cost.toString() }))}
-                updateTotalCost={updateTotalCost}
-                unitCosts={unitCosts}
-                setUnitCosts={setUnitCosts}
-                unitType={unitType.type}
-                key={unitType.type}
-              />
+            <NewUnitSection
+              heading={unitType.sectionTitle}
+              units={(unitType.unitData ?? [])
+                .filter((u): u is UnitData => u !== undefined)
+                .map((u) => ({ ...u, type: u.usage, cost: u.cost.toString() }))}
+              updateTotalCost={updateTotalCost}
+              unitCosts={unitCosts}
+              setUnitCosts={setUnitCosts}
+              unitType={unitType.type}
+              key={unitType.type}
+            />
           ))}
       </Box>
       <div ref={summarySentinelRef} />
       {hasOrder && (
-        <Box className={`training-order-summary${isSummaryDocked ? '' : ' training-order-summary--inline'}`}>
+        <Box
+          className={`training-order-summary${isSummaryDocked ? '' : ' training-order-summary--inline'}`}
+        >
           <Box style={{ padding: '0 16px' }}>
             <GameCard title={t('training.orderSummary')} goldAccent>
-              <Flex justify="space-between" align="center" wrap="wrap" gap="md" p="xs">
+              <Flex
+                justify="space-between"
+                align="center"
+                wrap="wrap"
+                gap="md"
+                p="xs"
+              >
                 <Group gap="xl" wrap="wrap">
                   <Stack gap={2}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
+                    <Text
+                      size="xs"
+                      c="dimmed"
+                      tt="uppercase"
+                      fw={700}
+                      style={{ letterSpacing: '0.3em' }}
+                    >
                       {t('training.totalCost')}
                     </Text>
                     <Text size="lg" fw={800} c="gray.1">
@@ -418,7 +565,13 @@ const Training: React.FC = (props) => { // Removed unused props
                     </Text>
                   </Stack>
                   <Stack gap={2}>
-                    <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.3em' }}>
+                    <Text
+                      size="xs"
+                      c="dimmed"
+                      tt="uppercase"
+                      fw={700}
+                      style={{ letterSpacing: '0.3em' }}
+                    >
                       {t('training.refund')}
                     </Text>
                     <Text size="sm" fw={700} c="dimmed">
@@ -430,9 +583,13 @@ const Training: React.FC = (props) => { // Removed unused props
                   <Button
                     color="yellow"
                     onClick={handleTrainAll}
-                    disabled={totalCost <= 0 || BigInt(Math.ceil(totalCost)) > (user.gold ?? 0)}
+                    disabled={
+                      totalCost <= 0 ||
+                      BigInt(Math.ceil(totalCost)) > (user.gold ?? 0)
+                    }
                     style={{
-                      background: 'linear-gradient(180deg, #e5c55a 0%, #b98f2f 100%)',
+                      background:
+                        'linear-gradient(180deg, #e5c55a 0%, #b98f2f 100%)',
                       color: '#000',
                       border: '1px solid #e5c55a',
                       boxShadow: '0 4px 10px rgba(0,0,0,0.5)',

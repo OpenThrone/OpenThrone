@@ -1,11 +1,23 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Alert,
+  Button,
+  Group,
+  Modal,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Modal, Button, TextInput, Textarea, NumberInput, Alert, Group, Stack, Text } from '@mantine/core';
-import { GoldTransferSchema } from '@/lib/validation';
-import { getCompleteFriendTransferConfig, calculateTransferFee } from '@/services/Config.service';
+
 import { useUser } from '@/context/users';
+import { GoldTransferSchema } from '@/lib/validation';
+import {
+  calculateTransferFee,
+  getCompleteFriendTransferConfig,
+} from '@/services/Config.service';
 
 interface GoldTransferModalProps {
   isOpen: boolean;
@@ -16,51 +28,63 @@ interface GoldTransferModalProps {
   onTransferComplete: () => void;
 }
 
-export function GoldTransferModal({ 
-  isOpen, 
-  onClose, 
-  targetUserId, 
-  targetUserName, 
-  userGold, 
-  onTransferComplete 
+export function GoldTransferModal({
+  isOpen,
+  onClose,
+  targetUserId,
+  targetUserName,
+  userGold,
+  onTransferComplete,
 }: GoldTransferModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { forceUpdate } = useUser();
   const config = getCompleteFriendTransferConfig();
-  
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm({
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    setValue,
+  } = useForm({
     resolver: zodResolver(GoldTransferSchema),
     defaultValues: {
       amount: '',
-      notes: ''
-    }
+      notes: '',
+    },
   });
 
   const watchedAmount = watch('amount');
   const transferAmount = watchedAmount ? BigInt(watchedAmount) : BigInt(0);
-  const feeAmount = transferAmount > BigInt(0) ? calculateTransferFee(transferAmount) : BigInt(0);
+  const feeAmount =
+    transferAmount > BigInt(0)
+      ? calculateTransferFee(transferAmount)
+      : BigInt(0);
   const totalCost = transferAmount + feeAmount;
 
   const onSubmit = async (data: any) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch(`/api/social/friends/${targetUserId}/transfer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: data.amount,
-          notes: data.notes
-        })
-      });
-      
+      const response = await fetch(
+        `/api/social/friends/${targetUserId}/transfer`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: data.amount,
+            notes: data.notes,
+          }),
+        },
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Transfer failed');
       }
-      
+
       forceUpdate();
       onTransferComplete();
       onClose();
@@ -76,9 +100,9 @@ export function GoldTransferModal({
   };
 
   return (
-    <Modal 
-      opened={isOpen} 
-      onClose={onClose} 
+    <Modal
+      opened={isOpen}
+      onClose={onClose}
       title={`Transfer Gold to ${targetUserName}`}
       size="md"
     >
@@ -88,7 +112,7 @@ export function GoldTransferModal({
             {error}
           </Alert>
         )}
-        
+
         <Stack gap="md">
           <TextInput
             label="Transfer Amount"
@@ -101,38 +125,53 @@ export function GoldTransferModal({
             step={1}
           />
           {errors.amount && (
-            <Text color="red" size="sm">{errors.amount.message}</Text>
+            <Text color="red" size="sm">
+              {errors.amount.message}
+            </Text>
           )}
-          
+
           {/* Transfer Summary */}
-          <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-            <Text size="sm" mb="xs" className="text-gray-400">Transfer Summary</Text>
+          <div className="rounded-lg border border-gray-700 bg-gray-800 p-4">
+            <Text size="sm" mb="xs" className="text-gray-400">
+              Transfer Summary
+            </Text>
             <Stack gap="xs">
               <Group justify="space-between">
                 <span className="text-gray-300">Transfer Amount:</span>
-                <span className="text-white">{formatNumber(transferAmount)} gold</span>
+                <span className="text-white">
+                  {formatNumber(transferAmount)} gold
+                </span>
               </Group>
-              
+
               {feeAmount > BigInt(0) && (
                 <Group justify="space-between">
-                  <span className="text-gray-300">Transfer Fee ({config.feePercentage}%):</span>
-                  <span className="text-yellow-400">{formatNumber(feeAmount)} gold</span>
+                  <span className="text-gray-300">
+                    Transfer Fee ({config.feePercentage}%):
+                  </span>
+                  <span className="text-yellow-400">
+                    {formatNumber(feeAmount)} gold
+                  </span>
                 </Group>
               )}
-              
-              <Group justify="space-between" className="pt-2 border-t border-gray-700">
-                <span className="text-white font-medium">Total Cost:</span>
-                <span className="text-green-400 font-medium">{formatNumber(totalCost)} gold</span>
+
+              <Group
+                justify="space-between"
+                className="border-t border-gray-700 pt-2"
+              >
+                <span className="font-medium text-white">Total Cost:</span>
+                <span className="font-medium text-green-400">
+                  {formatNumber(totalCost)} gold
+                </span>
               </Group>
-              
+
               <Text size="xs" color="dimmed" mt="xs">
                 Maximum transfer: {formatNumber(config.maxAmount)} gold
               </Text>
-              
+
               <Text size="xs" color="dimmed">
                 Your available gold: {formatNumber(userGold)} gold
               </Text>
-              
+
               {totalCost > userGold && (
                 <Text size="xs" color="red">
                   Insufficient gold for this transfer
@@ -140,7 +179,7 @@ export function GoldTransferModal({
               )}
             </Stack>
           </div>
-          
+
           <Textarea
             label="Optional Notes"
             placeholder="Add a message for your friend"
@@ -151,25 +190,29 @@ export function GoldTransferModal({
             resize="vertical"
           />
           {errors.notes && (
-            <Text color="red" size="sm">{errors.notes.message}</Text>
+            <Text color="red" size="sm">
+              {errors.notes.message}
+            </Text>
           )}
-          
+
           <Group justify="flex-end" mt="md">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={onClose}
               disabled={loading}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               loading={loading}
-              disabled={!watchedAmount || 
-                       BigInt(watchedAmount) <= BigInt(0) || 
-                       totalCost > userGold ||
-                       !config.enabled}
+              disabled={
+                !watchedAmount ||
+                BigInt(watchedAmount) <= BigInt(0) ||
+                totalCost > userGold ||
+                !config.enabled
+              }
             >
               Transfer Gold
             </Button>

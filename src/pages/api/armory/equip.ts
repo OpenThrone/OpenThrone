@@ -1,8 +1,10 @@
 import type { NextApiResponse } from 'next'; // Removed NextApiRequest
-import type { AuthenticatedRequest } from '@/types/api'; // Import AuthenticatedRequest
 import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
-import { ArmoryService, ArmoryItem } from '@/services';
+import type { ArmoryItem } from '@/services';
+import { ArmoryService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api'; // Import AuthenticatedRequest
 import { logError } from '@/utils/logger'; // Added logError import
 
 // Define Zod schema for request body validation
@@ -13,7 +15,10 @@ const EquipItemSchema = z.object({
   // Ensure quantity is parsed as a number and is positive
   quantity: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int().positive({ message: 'Quantity must be a positive integer.' })
+    z
+      .number()
+      .int()
+      .positive({ message: 'Quantity must be a positive integer.' }),
   ),
 });
 
@@ -21,17 +26,16 @@ const EquipRequestSchema = z.object({
   // Ensure userId is parsed as a number
   userId: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int()
+    z.number().int(),
   ),
-  items: z.array(EquipItemSchema).min(1, { message: 'At least one item must be provided.' }),
+  items: z
+    .array(EquipItemSchema)
+    .min(1, { message: 'At least one item must be provided.' }),
 });
 
 // Define response types
 type ApiErrorResponse = { error: string; details?: any }; // Added optional details
 type ApiSuccessResponse = { message: string; data: any }; // Consider defining a more specific data type
-
-
-
 
 const handler = async (
   req: AuthenticatedRequest, // Use AuthenticatedRequest type
@@ -41,7 +45,11 @@ const handler = async (
   // The check below ensures session and user exist, satisfying TypeScript
   if (!req.session?.user?.id) {
     // This should technically be caught by withAuth, but belt-and-suspenders
-    logError(null, { requestPath: req.url }, 'Auth session missing in equip handler');
+    logError(
+      null,
+      { requestPath: req.url },
+      'Auth session missing in equip handler',
+    );
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
@@ -66,7 +74,9 @@ const handler = async (
   // Normalize the session user id once (guards for string vs number) and use it for authorization
   const sessionUserId = req.session?.user?.id;
   const normalizedSessionUserId =
-    typeof sessionUserId === 'string' ? parseInt(sessionUserId, 10) : Number(sessionUserId ?? 0);
+    typeof sessionUserId === 'string'
+      ? parseInt(sessionUserId, 10)
+      : Number(sessionUserId ?? 0);
 
   // Authorization check using validated userId against the normalized session id
   if (userId !== normalizedSessionUserId) {
@@ -74,15 +84,21 @@ const handler = async (
   }
 
   try {
-    const result = await ArmoryService.equipItems({ userId, items: itemsToEquip as ArmoryItem[] });
+    const result = await ArmoryService.equipItems({
+      userId,
+      items: itemsToEquip as ArmoryItem[],
+    });
 
     return res.status(200).json({
       message: result.message,
       data: result.data,
     });
-
   } catch (error: any) {
-    logError(error, { userId, items: itemsToEquip }, 'API Error: /api/armory/equip');
+    logError(
+      error,
+      { userId, items: itemsToEquip },
+      'API Error: /api/armory/equip',
+    );
 
     // Check for specific errors
     if (error.message?.startsWith('Not enough gold')) {
@@ -92,8 +108,10 @@ const handler = async (
       return res.status(404).json({ error: 'User not found' });
     }
     // Generic internal server error for other cases
-    return res.status(500).json({ error: 'An unexpected error occurred while equipping items.' });
+    return res
+      .status(500)
+      .json({ error: 'An unexpected error occurred while equipping items.' });
   }
-}
+};
 
 export default withAuth(handler);

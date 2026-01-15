@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
+
 import { AccountService } from '@/services';
 
 export default async function handler(
@@ -13,11 +14,16 @@ export default async function handler(
   const PassChangeSchema = z.object({
     email: z.string().email({ message: 'Invalid email format.' }),
     verify: z.string().min(1),
-    newPassword: z.string().min(8, { message: 'Password must be at least 8 characters.' })
+    newPassword: z
+      .string()
+      .min(8, { message: 'Password must be at least 8 characters.' }),
   });
   const parseResult = PassChangeSchema.safeParse(req.body);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
 
   const { email, verify, newPassword } = parseResult.data;

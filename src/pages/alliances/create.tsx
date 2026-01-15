@@ -1,13 +1,22 @@
-import { useRouter } from 'next/router';
-import { useState } from 'react';
-import { Alert, Button, Group, Loader, Text, Textarea, TextInput } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Group,
+  Loader,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { alertService } from '@/services/Alert.service';
-import { useUser } from '@/context/users';
-import { logError } from '@/utils/logger';
-import MainArea from '@/components/MainArea';
-import { GameCard } from '@/components/game/GameCard';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
+
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
+import { logError } from '@/utils/logger';
 
 export default function CreateAlliance(props) {
   const { user } = useUser();
@@ -48,9 +57,7 @@ export default function CreateAlliance(props) {
   if (user.level < 10) {
     return (
       <MainArea title={t('create.title')}>
-        <Alert color="red">
-          {t('create.levelRequired', { level: 10 })}
-        </Alert>
+        <Alert color="red">{t('create.levelRequired', { level: 10 })}</Alert>
       </MainArea>
     );
   }
@@ -58,7 +65,9 @@ export default function CreateAlliance(props) {
   if (user.gold < 100000000) {
     return (
       <MainArea title={t('create.title')}>
-        <Alert color="red">{t('create.goldRequired', { cost: '100 million' })}</Alert>
+        <Alert color="red">
+          {t('create.goldRequired', { cost: '100 million' })}
+        </Alert>
       </MainArea>
     );
   }
@@ -84,7 +93,7 @@ export default function CreateAlliance(props) {
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        const message = (data as any)?.error || t('create.error');
+        const message = data?.error || t('create.error');
         alertService.error(message);
         return;
       }

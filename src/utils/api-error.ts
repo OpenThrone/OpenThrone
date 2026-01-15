@@ -12,7 +12,10 @@ export class ApiError extends Error {
   }
 }
 
-export const createApiError = (message: string, statusCode?: number, details?: any) =>
-  new ApiError(message, statusCode, details);
+export const createApiError = (
+  message: string,
+  statusCode?: number,
+  details?: any,
+) => new ApiError(message, statusCode, details);
 
 export default ApiError;

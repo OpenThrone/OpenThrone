@@ -4,7 +4,9 @@
 
 export const mockPrisma: any = {
   // placeholder; will be replaced by installMockPrisma
-  $transaction: (..._args: any[]) => { throw new Error('installMockPrisma not called'); },
+  $transaction: (..._args: any[]) => {
+    throw new Error('installMockPrisma not called');
+  },
   social: {},
   users: {},
   bank_history: {},
@@ -44,14 +46,15 @@ export function installMockPrisma(vi: any) {
 export function resetMockPrisma() {
   // Clear vi mocks if present
   try {
-    const clearFn = (fn: any) => typeof fn?.mockClear === 'function' && fn.mockClear();
+    const clearFn = (fn: any) =>
+      typeof fn?.mockClear === 'function' && fn.mockClear();
 
-    clearFn((mockPrisma as any).$transaction);
+    clearFn(mockPrisma.$transaction);
 
-    Object.values((mockPrisma as any).social || {}).forEach(clearFn);
-    Object.values((mockPrisma as any).users || {}).forEach(clearFn);
-    Object.values((mockPrisma as any).bank_history || {}).forEach(clearFn);
-    Object.values((mockPrisma as any).attack_log || {}).forEach(clearFn);
+    Object.values(mockPrisma.social || {}).forEach(clearFn);
+    Object.values(mockPrisma.users || {}).forEach(clearFn);
+    Object.values(mockPrisma.bank_history || {}).forEach(clearFn);
+    Object.values(mockPrisma.attack_log || {}).forEach(clearFn);
   } catch (e) {
     // no-op
   }

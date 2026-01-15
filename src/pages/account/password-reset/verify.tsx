@@ -1,12 +1,14 @@
-import router from 'next/router';
-import { useState } from 'react';
+import { Button, Container, Paper, Space, TextInput } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
-import { alertService } from '@/services/Alert.service';
-import { Space, TextInput, Button, Container, Title, Paper } from '@mantine/core';
+import router from 'next/router';
 import { useTranslation } from 'next-i18next';
-import classes from './floatinginput.module.css';
+import { useState } from 'react';
+
 import MainArea from '@/components/MainArea';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+
+import classes from './floatinginput.module.css';
 
 const Index = (props) => {
   const { t } = useTranslation('account');
@@ -17,7 +19,8 @@ const Index = (props) => {
   const [emailFocused, setEmailFocused] = useState(false);
   const [verifyFocused, setVerifyFocused] = useState(false);
   const emailFloating = email.trim().length !== 0 || emailFocused || undefined;
-  const verifyFloating = verify.trim().length !== 0 || verifyFocused || undefined;
+  const verifyFloating =
+    verify.trim().length !== 0 || verifyFocused || undefined;
 
   const handleVerifySubmit = async (e) => {
     e.preventDefault(); // Prevent's default form submit action
@@ -87,8 +90,14 @@ const Index = (props) => {
     // Verification form
     return (
       <MainArea title={t('passwordReset.title')}>
-        <Container size='lg' className="py-2 md:col-span-9">
-          <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565' }}>
+        <Container size="lg" className="py-2 md:col-span-9">
+          <Paper
+            withBorder
+            shadow="md"
+            p="lg"
+            className="advisor my-3 rounded-lg"
+            style={{ backgroundColor: '#b5a565' }}
+          >
             <form onSubmit={handleVerifySubmit}>
               <TextInput
                 label={t('passwordReset.email')}
@@ -125,12 +134,12 @@ const Index = (props) => {
                 labelProps={{ 'data-floating': verifyFloating }}
                 className="w-full rounded border border-gray-300"
               />
-              <div className="flex justify-end mt-4">
+              <div className="mt-4 flex justify-end">
                 <Button
                   type="submit"
                   variant="filled"
                   color="blue"
-                  className="inline-flex justify-center py-2 px-4 shadow-sm text-sm font-medium rounded-md text-white"
+                  className="inline-flex justify-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm"
                 >
                   {t('passwordReset.verify')}
                 </Button>
@@ -140,37 +149,42 @@ const Index = (props) => {
         </Container>
       </MainArea>
     );
-  } else {
-    return (
-      <MainArea title={t('passwordReset.setNewPasswordTitle')}>
-        <Container size="xs" className="py-2 md:col-span-9">
-          <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565' }}>
-            <form onSubmit={handlePasswordReset}>
-              <TextInput
-                label={t('passwordReset.newPassword')}
-                placeholder={t('passwordReset.enterNewPassword')}
-                type="password"
-                required
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded border border-gray-300 px-3 py-2"
-              />
-              <div className="flex justify-end mt-4">
-                <Button
-                  type="submit"
-                  variant="filled"
-                  color="blue"
-                  className="inline-flex justify-center py-2 px-4 shadow-sm text-sm font-medium rounded-md text-white"
-                >
-                  {t('passwordReset.setNewPassword')}
-                </Button>
-              </div>
-            </form>
-          </Paper>
-        </Container>
-      </MainArea>
-    );
   }
+  return (
+    <MainArea title={t('passwordReset.setNewPasswordTitle')}>
+      <Container size="xs" className="py-2 md:col-span-9">
+        <Paper
+          withBorder
+          shadow="md"
+          p="lg"
+          className="advisor my-3 rounded-lg"
+          style={{ backgroundColor: '#b5a565' }}
+        >
+          <form onSubmit={handlePasswordReset}>
+            <TextInput
+              label={t('passwordReset.newPassword')}
+              placeholder={t('passwordReset.enterNewPassword')}
+              type="password"
+              required
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full rounded border border-gray-300 px-3 py-2"
+            />
+            <div className="mt-4 flex justify-end">
+              <Button
+                type="submit"
+                variant="filled"
+                color="blue"
+                className="inline-flex justify-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm"
+              >
+                {t('passwordReset.setNewPassword')}
+              </Button>
+            </div>
+          </form>
+        </Paper>
+      </Container>
+    </MainArea>
+  );
 };
 
 export default Index;

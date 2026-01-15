@@ -9,7 +9,9 @@ export class UserSessionService {
 
   constructor(userData: { last_active?: Date | string | null } = {}) {
     const validatedData = UserDataSchema.parse(userData);
-    this.lastActive = validatedData.last_active ? new Date(validatedData.last_active) : null;
+    this.lastActive = validatedData.last_active
+      ? new Date(validatedData.last_active)
+      : null;
   }
 
   isOnline(minutesWindow = 15): boolean {

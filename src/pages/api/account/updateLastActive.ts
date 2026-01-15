@@ -1,17 +1,21 @@
-import { NextApiResponse } from 'next';
-import { withAuth } from '@/middleware/auth';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
-import { logError } from '@/utils/logger';
-import type { AuthenticatedRequest } from '@/types/api';
-import { AccountService } from '@/services';
 
-const UpdateLastActiveSchema = z.object({
-  email: z.string().email().optional(),
-  userId: z.number().int().positive().optional(),
-  displayName: z.string().optional(),
-}).refine(data => data.email || data.userId || data.displayName, {
-  message: "At least one identifier (email, userId, or displayName) must be provided",
-});
+import { withAuth } from '@/middleware/auth';
+import { AccountService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
+
+const UpdateLastActiveSchema = z
+  .object({
+    email: z.string().email().optional(),
+    userId: z.number().int().positive().optional(),
+    displayName: z.string().optional(),
+  })
+  .refine((data) => data.email || data.userId || data.displayName, {
+    message:
+      'At least one identifier (email, userId, or displayName) must be provided',
+  });
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -20,18 +24,25 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
 
   const validatedBody = UpdateLastActiveSchema.safeParse(req.body);
   if (!validatedBody.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: validatedBody.error.flatten().fieldErrors,
+    });
   }
 
   try {
     const { email, userId, displayName } = validatedBody.data;
-    const session = req.session;
+    const { session } = req;
 
     if (!session) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const result = await AccountService.updateLastActive({ email, userId, displayName });
+    const result = await AccountService.updateLastActive({
+      email,
+      userId,
+      displayName,
+    });
 
     return res.status(200).json(result);
   } catch (error) {

@@ -1,5 +1,6 @@
-import prisma from '@/lib/prisma';
 import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
 
 // Type definitions for blog operations
@@ -40,12 +41,12 @@ export interface UpdateReadStatusData {
 const CreatePostSchema = z.object({
   userId: z.number().int(),
   title: z.string().min(1, 'Title is required'),
-  content: z.string().min(1, 'Content is required')
+  content: z.string().min(1, 'Content is required'),
 });
 
 const UpdateReadStatusSchema = z.object({
   userId: z.number().int(),
-  postId: z.number().int()
+  postId: z.number().int(),
 });
 
 // Result interfaces
@@ -125,9 +126,17 @@ export class BlogService {
           title: p.title,
           content: p.content,
           postedby_id: p.postedby_id,
-          created_timestamp: p.created_timestamp instanceof Date ? p.created_timestamp.toISOString() : String(p.created_timestamp),
+          created_timestamp:
+            p.created_timestamp instanceof Date
+              ? p.created_timestamp.toISOString()
+              : String(p.created_timestamp),
           isRead: Boolean(isRead),
-          lastReadAt: isRead && p.postReadStatus[0] && p.postReadStatus[0].last_read_at ? (p.postReadStatus[0].last_read_at instanceof Date ? p.postReadStatus[0].last_read_at.toISOString() : String(p.postReadStatus[0].last_read_at)) : null,
+          lastReadAt:
+            isRead && p.postReadStatus[0] && p.postReadStatus[0].last_read_at
+              ? p.postReadStatus[0].last_read_at instanceof Date
+                ? p.postReadStatus[0].last_read_at.toISOString()
+                : String(p.postReadStatus[0].last_read_at)
+              : null,
         };
       });
 
@@ -148,7 +157,10 @@ export class BlogService {
   /**
    * Get a single post by id, optionally including the read status for a user
    */
-  static async getPost(postId: number, userId?: number): Promise<{ post: BlogPost | null }> {
+  static async getPost(
+    postId: number,
+    userId?: number,
+  ): Promise<{ post: BlogPost | null }> {
     try {
       const include = userId
         ? {
@@ -177,9 +189,19 @@ export class BlogService {
         title: post.title,
         content: post.content,
         postedby_id: post.postedby_id,
-        created_timestamp: post.created_timestamp instanceof Date ? post.created_timestamp.toISOString() : String(post.created_timestamp),
+        created_timestamp:
+          post.created_timestamp instanceof Date
+            ? post.created_timestamp.toISOString()
+            : String(post.created_timestamp),
         isRead: Boolean(isRead),
-        lastReadAt: isRead && post.postReadStatus[0] && post.postReadStatus[0].last_read_at ? (post.postReadStatus[0].last_read_at instanceof Date ? post.postReadStatus[0].last_read_at.toISOString() : String(post.postReadStatus[0].last_read_at)) : null,
+        lastReadAt:
+          isRead &&
+          post.postReadStatus[0] &&
+          post.postReadStatus[0].last_read_at
+            ? post.postReadStatus[0].last_read_at instanceof Date
+              ? post.postReadStatus[0].last_read_at.toISOString()
+              : String(post.postReadStatus[0].last_read_at)
+            : null,
       };
 
       return { post: dto as any };
@@ -192,7 +214,9 @@ export class BlogService {
   /**
    * Updates the read status for a blog post
    */
-  static async updateReadStatus(data: UpdateReadStatusData): Promise<BlogOperationResult> {
+  static async updateReadStatus(
+    data: UpdateReadStatusData,
+  ): Promise<BlogOperationResult> {
     const validatedData = UpdateReadStatusSchema.parse(data);
     const { userId, postId } = validatedData;
 
@@ -227,7 +251,9 @@ export class BlogService {
   /**
    * Gets the latest unread post from the last 2 weeks
    */
-  static async getLatestUnreadPost(userId: number): Promise<BlogOperationResult> {
+  static async getLatestUnreadPost(
+    userId: number,
+  ): Promise<BlogOperationResult> {
     try {
       // Calculate the date 2 weeks ago
       const twoWeeksAgo = new Date();
@@ -235,10 +261,10 @@ export class BlogService {
 
       const posts = await prisma.blog_posts.findMany({
         where: {
-          created_timestamp: { gte: twoWeeksAgo }
+          created_timestamp: { gte: twoWeeksAgo },
         },
         orderBy: {
-          created_timestamp: 'desc'
+          created_timestamp: 'desc',
         },
       });
 
@@ -253,7 +279,7 @@ export class BlogService {
       const latestRead = await prisma.post_read_status.count({
         where: {
           user_id: userId,
-          post_id: posts[0].id
+          post_id: posts[0].id,
         },
       });
 

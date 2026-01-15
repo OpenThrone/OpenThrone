@@ -1,34 +1,35 @@
-import React, { forwardRef, useCallback, useEffect, useState } from "react";
-import {
-  Space,
-  Group,
-  SimpleGrid,
-  Container,
-  Menu,
-  UnstyledButton,
-  Title,
-  Badge,
-  Text,
-  ScrollArea,
-  Alert,
-} from "@mantine/core"; // Added ScrollArea
-import { alertService } from "../services/Alert.service";
 import {
   faArrowRightFromBracket,
   faComments,
   faGear,
   faIdCard,
   faSkullCrossbones,
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Link from "next/link";
-import { signOut } from "next-auth/react";
-import { useLayout } from "@/context/LayoutContext";
-import RpgAwesomeIcon from "./RpgAwesomeIcon";
-import { useUser } from "@/context/users";
-import { formatLastMessageTime } from "@/utils/timefunctions"; // Import time formatter
-import useSocket from "@/hooks/useSocket";
-import HeaderIconButton from "./HeaderIconButton";
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Badge,
+  Container,
+  Group,
+  Menu,
+  ScrollArea,
+  Space,
+  Text,
+  Title,
+  UnstyledButton,
+} from '@mantine/core'; // Added ScrollArea
+import Link from 'next/link';
+import { signOut } from 'next-auth/react';
+import React, { forwardRef, useCallback, useEffect, useState } from 'react';
+
+import { useLayout } from '@/context/LayoutContext';
+import { useUser } from '@/context/users';
+import useSocket from '@/hooks/useSocket';
+import { formatLastMessageTime } from '@/utils/timefunctions'; // Import time formatter
+
+import { alertService } from '../services/Alert.service';
+import HeaderIconButton from './HeaderIconButton';
+import RpgAwesomeIcon from './RpgAwesomeIcon';
+
 interface MainAreaProps {
   title: string;
   children: React.ReactNode;
@@ -48,7 +49,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
   const [socialNotificationCount, setSocialNotificationCount] =
     useState<number>(0);
 
-  const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === "true";
+  const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
 
   // Socket integration for real-time updates
   const { addEventListener, isConnected, removeEventListener } = useSocket(
@@ -57,7 +58,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
 
   const fetchSocialNotificationCount = useCallback(async () => {
     try {
-      const res = await fetch("/api/social/notifications/count");
+      const res = await fetch('/api/social/notifications/count');
       if (!res.ok) return;
       const data = await res.json();
       setSocialNotificationCount(Number(data.count) || 0);
@@ -86,16 +87,16 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
   useEffect(() => {
     const handleFocus = () => fetchSocialNotificationCount();
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === 'visible') {
         fetchSocialNotificationCount();
       }
     };
 
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [fetchSocialNotificationCount]);
 
@@ -108,7 +109,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
     const handleFriendRequestNotification = (data: any) => {
       // Show toast notification for friend request
       alertService.success(
-        `New friend request from ${data.senderName || "someone"}`,
+        `New friend request from ${data.senderName || 'someone'}`,
       );
       // Refresh count
       fetchSocialNotificationCount();
@@ -117,27 +118,27 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
     const handleGoldRequestNotification = (data: any) => {
       // Show toast notification for gold request
       alertService.success(
-        `New gold request from ${data.senderName || "someone"}`,
+        `New gold request from ${data.senderName || 'someone'}`,
       );
       // Refresh count
       fetchSocialNotificationCount();
     };
 
-    addEventListener("socialCountUpdate", handleSocialCountUpdate);
+    addEventListener('socialCountUpdate', handleSocialCountUpdate);
     addEventListener(
-      "friendRequestNotification",
+      'friendRequestNotification',
       handleFriendRequestNotification,
     );
-    addEventListener("goldRequestNotification", handleGoldRequestNotification);
+    addEventListener('goldRequestNotification', handleGoldRequestNotification);
 
     return () => {
-      removeEventListener("socialCountUpdate", handleSocialCountUpdate);
+      removeEventListener('socialCountUpdate', handleSocialCountUpdate);
       removeEventListener(
-        "friendRequestNotification",
+        'friendRequestNotification',
         handleFriendRequestNotification,
       );
       removeEventListener(
-        "goldRequestNotification",
+        'goldRequestNotification',
         handleGoldRequestNotification,
       );
     };
@@ -145,56 +146,57 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
 
   return (
     <div
-      className="mainArea pb-10 w-full flex flex-col flex-grow overflow-y-auto"
+      className="mainArea flex w-full grow flex-col overflow-y-auto pb-10"
       ref={ref || null}
     >
-      <header className="main-header-titleBar"
+      <header
+        className="main-header-titleBar"
         style={{
-          height: "56px",
+          height: '56px',
           borderBottom:
-            "1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))",
+            '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
           flexShrink: 0,
         }}
       >
         <Container
           fluid
           style={{
-            height: "56px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            paddingLeft: "16px",
-            paddingRight: "16px",
+            height: '56px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingLeft: '16px',
+            paddingRight: '16px',
           }}
         >
           <Title
             order={2}
-            className="main-header-title text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs"
+            className="main-header-title bg-orange-gradient text-shadow text-shadow-xs text-gradient-orange"
             data-testid="page-title"
           >
             {title}
           </Title>
           {authorized && (
-            <Group gap={"lg"} visibleFrom="md">
+            <Group gap="lg" visibleFrom="md">
               <Menu
                 width={320}
                 position="bottom-end"
-                transitionProps={{ transition: "pop-top-right" }}
+                transitionProps={{ transition: 'pop-top-right' }}
                 onClose={() => setMessageMenuOpened(false)}
                 onOpen={() => setMessageMenuOpened(true)}
                 withinPortal
                 shadow="md"
               >
                 <Menu.Target>
-                      <div style={{ display: "inline-block" }}>
-                        <HeaderIconButton
-                          label="Messages"
-                          count={unreadMessagesCount}
-                          data-testid="action-button"
-                        >
-                          <FontAwesomeIcon icon={faComments} fixedWidth />
-                        </HeaderIconButton>
-                      </div>
+                  <div style={{ display: 'inline-block' }}>
+                    <HeaderIconButton
+                      label="Messages"
+                      count={unreadMessagesCount}
+                      data-testid="action-button"
+                    >
+                      <FontAwesomeIcon icon={faComments} fixedWidth />
+                    </HeaderIconButton>
+                  </div>
                 </Menu.Target>
 
                 <Menu.Dropdown>
@@ -221,10 +223,10 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                               handleMessageItemClick(msg.chatRoomId)
                             } // Use handler
                             style={{
-                              whiteSpace: "normal", // Allow text wrapping
-                              height: "auto", // Adjust height automatically
-                              paddingTop: "8px",
-                              paddingBottom: "8px",
+                              whiteSpace: 'normal', // Allow text wrapping
+                              height: 'auto', // Adjust height automatically
+                              paddingTop: '8px',
+                              paddingBottom: '8px',
                             }}
                           >
                             <div>
@@ -237,7 +239,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                                 </Text>
                               </Group>
                               <Text size="xs" lineClamp={2}>
-                                {" "}
+                                {' '}
                                 {/* Allow 2 lines */}
                                 {msg.content}
                               </Text>
@@ -255,17 +257,20 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
               <Menu
                 width={260}
                 position="bottom-end"
-                transitionProps={{ transition: "pop-top-right" }}
+                transitionProps={{ transition: 'pop-top-right' }}
                 onClose={() => setUserMenuOpened(false)}
                 onOpen={() => setUserMenuOpened(true)}
                 withinPortal
               >
                 <Menu.Target>
-                    <div style={{ display: "inline-block" }}>
-                      <HeaderIconButton label="Social" count={socialNotificationCount}>
-                        <RpgAwesomeIcon icon="double-team" fw />
-                      </HeaderIconButton>
-                    </div>
+                  <div style={{ display: 'inline-block' }}>
+                    <HeaderIconButton
+                      label="Social"
+                      count={socialNotificationCount}
+                    >
+                      <RpgAwesomeIcon icon="double-team" fw />
+                    </HeaderIconButton>
+                  </div>
                 </Menu.Target>
 
                 <Menu.Dropdown>
@@ -275,8 +280,8 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                       leftSection={
                         <FontAwesomeIcon
                           icon={faIdCard}
-                          size={"sm"}
-                          stroke={"1.5"}
+                          size="sm"
+                          stroke="1.5"
                         />
                       }
                     >
@@ -288,8 +293,8 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                       leftSection={
                         <FontAwesomeIcon
                           icon={faSkullCrossbones}
-                          size={"sm"}
-                          stroke={"1.5"}
+                          size="sm"
+                          stroke="1.5"
                         />
                       }
                     >
@@ -301,8 +306,8 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                       leftSection={
                         <FontAwesomeIcon
                           icon={faComments}
-                          size={"sm"}
-                          stroke={"1.5"}
+                          size="sm"
+                          stroke="1.5"
                         />
                       }
                       rightSection={
@@ -311,11 +316,11 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                           variant="filled"
                           size="xs"
                           display={
-                            socialNotificationCount > 0 ? "none" : "none"
+                            socialNotificationCount > 0 ? 'none' : 'none'
                           }
                         >
                           {socialNotificationCount > 9
-                            ? "9+"
+                            ? '9+'
                             : socialNotificationCount}
                         </Badge>
                       }
@@ -328,28 +333,24 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
               <Menu
                 width={260}
                 position="bottom-end"
-                transitionProps={{ transition: "pop-top-right" }}
+                transitionProps={{ transition: 'pop-top-right' }}
                 onClose={() => setUserMenuOpened(false)}
                 onOpen={() => setUserMenuOpened(true)}
                 withinPortal
               >
                 <Menu.Target>
-                    <div style={{ display: "inline-block" }}>
-                      <HeaderIconButton label="Settings">
-                        <RpgAwesomeIcon icon="player" fw />
-                      </HeaderIconButton>
-                    </div>
+                  <div style={{ display: 'inline-block' }}>
+                    <HeaderIconButton label="Settings">
+                      <RpgAwesomeIcon icon="player" fw />
+                    </HeaderIconButton>
+                  </div>
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Label>Settings</Menu.Label>
                   <Link href="/home/settings" passHref>
                     <Menu.Item
                       leftSection={
-                        <FontAwesomeIcon
-                          icon={faGear}
-                          size={"sm"}
-                          stroke={"1.5"}
-                        />
+                        <FontAwesomeIcon icon={faGear} size="sm" stroke="1.5" />
                       }
                     >
                       <UnstyledButton component="a">
@@ -362,8 +363,8 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                       leftSection={
                         <FontAwesomeIcon
                           icon={faIdCard}
-                          size={"sm"}
-                          stroke={"1.5"}
+                          size="sm"
+                          stroke="1.5"
                         />
                       }
                     >
@@ -374,13 +375,13 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                     leftSection={
                       <FontAwesomeIcon
                         icon={faArrowRightFromBracket}
-                        size={"sm"}
-                        stroke={"1.5"}
-                        color={"indianred"}
+                        size="sm"
+                        stroke="1.5"
+                        color="indianred"
                       />
                     }
                   >
-                    <span onClick={() => signOut({ callbackUrl: "/" })}>
+                    <span onClick={() => signOut({ callbackUrl: '/' })}>
                       Logout
                     </span>
                   </Menu.Item>

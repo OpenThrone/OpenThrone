@@ -1,13 +1,22 @@
-import { useState } from "react";
-import { faUserSecret } from "@fortawesome/free-solid-svg-icons";
-import { AnimatePresence, motion } from "framer-motion";
-import { Box, Button, Grid, Group, Space, Stack, Text, useMantineTheme } from "@mantine/core";
-import Image from "next/image";
+import { faUserSecret } from '@fortawesome/free-solid-svg-icons';
+import {
+  Box,
+  Button,
+  Grid,
+  Space,
+  Stack,
+  Text,
+  useMantineTheme,
+} from '@mantine/core';
+import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
+import { useState } from 'react';
 
-import { GameCard } from "./game/GameCard";
-import Modal from "./modal";
-import SpyMissionsModal from "./spyMissionsModal";
-import { getAssetPath } from "@/utils/utilities";
+import { getAssetPath } from '@/utils/utilities';
+
+import { GameCard } from './game/GameCard';
+import Modal from './modal';
+import SpyMissionsModal from './spyMissionsModal';
 
 const AssassinateResult = ({ battle, viewerID }) => {
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
@@ -22,48 +31,86 @@ const AssassinateResult = ({ battle, viewerID }) => {
 
   const unitToAttack = () => {
     switch (stats.spyResults.unit) {
-      case 'CITIZEN/WORKERS': return 'Citizens and Workers';
-      case 'OFFENSE': return 'Offensive Units';
-      case 'DEFENSE': return 'Defensive Units';
-      default: return 'units';
+      case 'CITIZEN/WORKERS':
+        return 'Citizens and Workers';
+      case 'OFFENSE':
+        return 'Offensive Units';
+      case 'DEFENSE':
+        return 'Defensive Units';
+      default:
+        return 'units';
     }
   };
-  
+
   const summaryLines = [
     `Battle ID: ${battle.id}`,
-    isViewerAttacker ? `You sent ${stats.spyResults.spiesSent} ${stats.spyResults.spiesSent > 1 ? 'spies' : 'spy'} to ${defenderPlayer.display_name}` : '',
+    isViewerAttacker
+      ? `You sent ${stats.spyResults.spiesSent} ${stats.spyResults.spiesSent > 1 ? 'spies' : 'spy'} to ${defenderPlayer.display_name}`
+      : '',
     `${isViewerAttacker ? 'You were' : `${attackerPlayer.display_name} was`} ${isAttackerWinner && stats.spyResults.unitsKilled > 0 ? 'successful' : 'unsuccessful.'}`,
     `Your spies were tasked with killing as many ${unitToAttack()} as possible.`,
-    isAttackerWinner && stats.spyResults.unitsKilled > 0 ? `You successfully killed ${stats.spyResults.unitsKilled} ${unitToAttack()}.` : 'No units were killed.',
-    stats.spyResults.spiesLost > 0 ? `${stats.spyResults.spiesLost} of your spies were lost in the attempt.` : 'All of your spies returned safely.'
-  ].filter(line => line);
+    isAttackerWinner && stats.spyResults.unitsKilled > 0
+      ? `You successfully killed ${stats.spyResults.unitsKilled} ${unitToAttack()}.`
+      : 'No units were killed.',
+    stats.spyResults.spiesLost > 0
+      ? `${stats.spyResults.spiesLost} of your spies were lost in the attempt.`
+      : 'All of your spies returned safely.',
+  ].filter((line) => line);
 
-  const sentence = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.06 } } };
+  const sentence = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
+  };
   const letter = { hidden: { opacity: 0 }, visible: { opacity: 1 } };
 
   return (
     <GameCard title="Assassination Report" icon={faUserSecret}>
       <Grid grow gutter="lg">
         <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Text size="xl" fw={700}>{attackerPlayer?.display_name}</Text>
-          <Image src={getAssetPath('shields', '150x150', attackerPlayer?.race)} alt="attacker avatar" width={150} height={150} style={{ margin: 'auto' }} />
+          <Text size="xl" fw={700}>
+            {attackerPlayer?.display_name}
+          </Text>
+          <Image
+            src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
+            alt="attacker avatar"
+            width={150}
+            height={150}
+            style={{ margin: 'auto' }}
+          />
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 2 }} style={{ textAlign: 'center', alignSelf: 'center' }}>
-          <Text size="lg" fw="bold" color={isAttackerWinner ? 'green' : 'red'}>{isAttackerWinner ? 'Success' : 'Failure'}</Text>
+        <Grid.Col
+          span={{ base: 12, md: 2 }}
+          style={{ textAlign: 'center', alignSelf: 'center' }}
+        >
+          <Text size="lg" fw="bold" color={isAttackerWinner ? 'green' : 'red'}>
+            {isAttackerWinner ? 'Success' : 'Failure'}
+          </Text>
           <Space h="md" />
           {isViewerAttacker && (
             <Stack align="center" gap="xs">
-              <Button size="xs" onClick={toggleSpyModal}>Send More Spies</Button>
-              <Button size="xs" onClick={toggleAttackModal}>Attack</Button>
+              <Button size="xs" onClick={toggleSpyModal}>
+                Send More Spies
+              </Button>
+              <Button size="xs" onClick={toggleAttackModal}>
+                Attack
+              </Button>
             </Stack>
           )}
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Text size="xl" fw={700}>{defenderPlayer?.display_name}</Text>
-          <Image src={getAssetPath('shields', '150x150', defenderPlayer?.race)} alt="defender avatar" width={150} height={150} style={{ margin: 'auto' }} />
+          <Text size="xl" fw={700}>
+            {defenderPlayer?.display_name}
+          </Text>
+          <Image
+            src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
+            alt="defender avatar"
+            width={150}
+            height={150}
+            style={{ margin: 'auto' }}
+          />
         </Grid.Col>
       </Grid>
-      
+
       <GameCard title="Mission Log" goldAccent={false}>
         <Box
           style={{
@@ -98,8 +145,16 @@ const AssassinateResult = ({ battle, viewerID }) => {
         </Box>
       </GameCard>
 
-      <SpyMissionsModal isOpen={isSpyModalOpen} toggleModal={toggleSpyModal} defenderID={defenderPlayer?.id} />
-      <Modal isOpen={isAttackModalOpen} toggleModal={toggleAttackModal} profileID={defenderPlayer.id} />
+      <SpyMissionsModal
+        isOpen={isSpyModalOpen}
+        toggleModal={toggleSpyModal}
+        defenderID={defenderPlayer?.id}
+      />
+      <Modal
+        isOpen={isAttackModalOpen}
+        toggleModal={toggleAttackModal}
+        profileID={defenderPlayer.id}
+      />
     </GameCard>
   );
 };

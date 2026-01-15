@@ -1,4 +1,3 @@
-
 class BattleSimulationResult {
   Result: string; // Either 'Win' or 'Lost'
   Experience: {

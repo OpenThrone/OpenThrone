@@ -1,6 +1,6 @@
-import { useUser } from "@/context/users";
-import { Text } from "@mantine/core";
-import { PermissionType } from "@prisma/client";
+import { Text } from '@mantine/core';
+
+import { useUser } from '@/context/users';
 
 const PermissionCheck = ({ children, permission }) => {
   const { user } = useUser();
@@ -8,7 +8,15 @@ const PermissionCheck = ({ children, permission }) => {
   if (!user?.permissions?.some((perm) => perm.type === permission)) {
     return (
       <div>
-        <Text style={{ background: 'linear-gradient(360deg, orange, darkorange)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: '1.5rem', fontWeight: 'bold' }}>
+        <Text
+          style={{
+            background: 'linear-gradient(360deg, orange, darkorange)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+          }}
+        >
           Permission Denied
         </Text>
         <Text>You do not have sufficient permissions to access this page.</Text>

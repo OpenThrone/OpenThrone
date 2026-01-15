@@ -1,8 +1,10 @@
-import { getAssetPath } from '@/utils/utilities';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
+import { useEffect, useState } from 'react';
+
+import { getAssetPath } from '@/utils/utilities';
+
 import MobileNavigation from './MobileNavigation';
 
 const parentLinks = [
@@ -14,7 +16,8 @@ const parentLinks = [
 ] as const;
 
 export const NavLoggedOut: React.FC = () => {
-  const pathName = usePathname();
+  const router = useRouter();
+  const pathName = router.asPath?.split('?')[0] ?? '/';
   const { t } = useTranslation('common');
   const [activeParentLink, setActiveParentLink] = useState<string>('');
 
@@ -42,13 +45,13 @@ export const NavLoggedOut: React.FC = () => {
     <>
       <button
         type="button"
-        className="block md:hidden p-2 min-h-[48px] min-w-[48px] text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+        className="block min-h-[48px] min-w-[48px] p-2 text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white md:hidden"
         onClick={() => setMobileMenuOpen(true)}
         aria-label={t('ariaLabels.openMenu')}
         data-testid="mobile-menu-button"
       >
         <svg
-          className="h-6 w-6"
+          className="size-6"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -83,10 +86,11 @@ export const NavLoggedOut: React.FC = () => {
                 <li className="mr-6" key={link.title}>
                   <Link
                     href={link.url}
-                    className={`border-none ${activeParentLink === link.url
+                    className={`border-none ${
+                      activeParentLink === link.url
                         ? 'bg-orange-gradient text-gradient-orange'
                         : 'text-elf-link-link'
-                      }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-sm`}
+                    }  bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-sm text-uppercase-menu text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange`}
                     data-testid={`nav-${link.title.toLowerCase()}-link`}
                   >
                     {link.title}

@@ -1,16 +1,41 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'next-i18next';
-
-import { Center, Group, Loader, SimpleGrid, Space, Table, Text, ThemeIcon, Popover } from '@mantine/core';
-import { faCoins, faCrown, faEye, faLevelUpAlt, faMedal, faMoneyBills, faPiggyBank, faShieldAlt, faShieldVirus, faStar, faSyncAlt, faTrophy, faUserSecret, faUserShield, faUsers } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCoins,
+  faCrown,
+  faEye,
+  faLevelUpAlt,
+  faMedal,
+  faMoneyBills,
+  faPiggyBank,
+  faShieldAlt,
+  faShieldVirus,
+  faStar,
+  faSyncAlt,
+  faTrophy,
+  faUsers,
+  faUserSecret,
+  faUserShield,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Center,
+  Group,
+  Loader,
+  Popover,
+  SimpleGrid,
+  Space,
+  Table,
+  Text,
+  ThemeIcon,
+} from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
+import { useTranslation } from 'next-i18next';
+import { useEffect, useMemo, useState } from 'react';
 
-import HeroBanner from '@/components/HeroBanner';
-import MainArea from '@/components/MainArea';
 import { GameCard } from '@/components/game/GameCard';
 import { StyledNews } from '@/components/game/StyledNews';
 import { StyledTable } from '@/components/game/StyledTable';
+import HeroBanner from '@/components/HeroBanner';
+import MainArea from '@/components/MainArea';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
@@ -42,15 +67,16 @@ const Overview = (props) => {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const newsItems = useMemo(
-    () => (Array.isArray(getNews)
-      ? getNews.map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        content: item.content,
-        created_timestamp: item.created_timestamp,
-        read: Boolean(item.isRead),
-      }))
-      : []),
+    () =>
+      Array.isArray(getNews)
+        ? getNews.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            content: item.content,
+            created_timestamp: item.created_timestamp,
+            read: Boolean(item.isRead),
+          }))
+        : [],
     [getNews],
   );
 
@@ -133,17 +159,19 @@ const Overview = (props) => {
               </span>
             </>
           }
-          subtitle={recruitLink ? (
-            <>
-              {t('overview.shareRecruitLink')}{' '}
-              <a
-                href={recruitLink}
-                style={{ color: '#7dd3fc', textDecoration: 'none' }}
-              >
-                {user.recruitingLink}
-              </a>
-            </>
-          ) : undefined}
+          subtitle={
+            recruitLink ? (
+              <>
+                {t('overview.shareRecruitLink')}{' '}
+                <a
+                  href={recruitLink}
+                  style={{ color: '#7dd3fc', textDecoration: 'none' }}
+                >
+                  {user.recruitingLink}
+                </a>
+              </>
+            ) : undefined
+          }
         />
       </Center>
       <Text size="sm" c="gray.3" ta="center" data-testid="content-text">
@@ -152,17 +180,25 @@ const Overview = (props) => {
       <Space h="md" />
       {isMobile && (
         <>
-          <GameCard title={t('overview.commanderBriefing')} icon={faCrown} goldAccent={false}>
+          <GameCard
+            title={t('overview.commanderBriefing')}
+            icon={faCrown}
+            goldAccent={false}
+          >
             <Text size="md" c="gray.2" fw={700}>
               {user.displayName}
             </Text>
             <Text size="sm" c="gray.3">
-              {user.race === 'ELF' || user.race === 'UNDEAD' ? 'An' : 'A'} {user.race} {user.class}
+              {user.race === 'ELF' || user.race === 'UNDEAD' ? 'An' : 'A'}{' '}
+              {user.race} {user.class}
             </Text>
             {recruitLink ? (
               <Text size="sm" c="gray.4" mt="sm">
                 {t('overview.shareRecruitLink')}{' '}
-                <a href={recruitLink} style={{ color: '#7dd3fc', textDecoration: 'none' }}>
+                <a
+                  href={recruitLink}
+                  style={{ color: '#7dd3fc', textDecoration: 'none' }}
+                >
                   {user.recruitingLink}
                 </a>
               </Text>
@@ -172,7 +208,11 @@ const Overview = (props) => {
         </>
       )}
       <GameCard title={t('overview.kingdomStats')} icon={faCrown}>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" data-testid="stat-grid">
+        <SimpleGrid
+          cols={{ base: 1, md: 2 }}
+          spacing="sm"
+          data-testid="stat-grid"
+        >
           {kingdomStats.map((stat) => (
             <Group
               key={stat.label}
@@ -192,10 +232,22 @@ const Overview = (props) => {
                 <FontAwesomeIcon icon={stat.icon} />
               </ThemeIcon>
               <div>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }} data-testid="stat-label">
+                <Text
+                  size="xs"
+                  fw={700}
+                  c="dimmed"
+                  tt="uppercase"
+                  style={{ letterSpacing: '0.4em' }}
+                  data-testid="stat-label"
+                >
                   {stat.label}
                 </Text>
-                <Text size="sm" fw={700} style={{ color: '#ffd700' }} data-testid="stat-value">
+                <Text
+                  size="sm"
+                  fw={700}
+                  style={{ color: '#ffd700' }}
+                  data-testid="stat-value"
+                >
                   {stat.value}
                 </Text>
               </div>
@@ -207,7 +259,11 @@ const Overview = (props) => {
       <Space h="md" />
 
       <GameCard title={t('overview.militaryStats')} icon={faShieldAlt}>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm" data-testid="stat-grid">
+        <SimpleGrid
+          cols={{ base: 1, md: 2 }}
+          spacing="sm"
+          data-testid="stat-grid"
+        >
           {[
             {
               icon: <RpgAwesomeIcon icon="crossed-swords" fw />,
@@ -270,113 +326,233 @@ const Overview = (props) => {
                 {stat.icon}
               </ThemeIcon>
               <div>
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.4em' }} data-testid="stat-label">
+                <Text
+                  size="xs"
+                  fw={700}
+                  c="dimmed"
+                  tt="uppercase"
+                  style={{ letterSpacing: '0.4em' }}
+                  data-testid="stat-label"
+                >
                   {stat.label}
                 </Text>
                 {stat.withPopover ? (
-                  <Popover width={400} position="bottom" withArrow shadow="md" opened={undefined}>
+                  <Popover
+                    width={400}
+                    position="bottom"
+                    withArrow
+                    shadow="md"
+                    opened={undefined}
+                  >
                     <Popover.Target>
                       <Text
                         size="sm"
                         fw={700}
-                        style={{ color: '#ffd700', cursor: 'pointer', textDecoration: 'underline dotted' }}
+                        style={{
+                          color: '#ffd700',
+                          cursor: 'pointer',
+                          textDecoration: 'underline dotted',
+                        }}
                         data-testid="stat-value"
                       >
                         {stat.value}
                       </Text>
                     </Popover.Target>
                     <Popover.Dropdown>
-                      {user.getArmyStatBreakdown ? (() => {
-                        const breakdown = user.getArmyStatBreakdown('OFFENSE');
-                        if (!breakdown) return <Text>{t('overview.noBreakdownAvailable')}</Text>;
-                        const { units = [], items = [], battleUpgrades = [], bonuses = [], finalTotal } = breakdown;
-                        const unitsTotal = units.reduce((sum, u) => sum + (u.subtotal || 0), 0);
-                        const upgradesTotal = battleUpgrades.reduce((sum, u) => sum + (u.subtotal || 0), 0);
-                        const bonusesTotal = bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0);
-                        const itemsByType = items.reduce((acc, item) => {
-                          const type = (item as any).type || 'Unknown';
-                          if (!acc[type]) acc[type] = [];
-                          acc[type].push(item);
-                          return acc;
-                        }, {} as Record<string, typeof items>);
-                        const itemsTotal = items.reduce((sum, i) => sum + (i.subtotal || 0), 0);
-                        return (
-                          <div style={{ maxHeight: 350, overflowY: 'auto' }}>
-                            <strong>{t('overview.offenseBreakdown')}</strong>
-                            {units.length > 0 && <>
-                              <Text mt="xs" mb={2} fw={700}>{t('overview.units')}</Text>
-                              <StyledTable headers={[t('overview.name'), t('overview.quantity'), t('overview.bonusPerItem'), t('overview.subtotal')]}>
-                                  {units.map((u, i) => (
-                                    <Table.Tr key={`unit-${i}`}>
-                                      <Table.Td>{u.name}</Table.Td>
-                                      <Table.Td>{u.quantity}</Table.Td>
-                                      <Table.Td>{u.bonus}</Table.Td>
-                                      <Table.Td>{toLocale(u.subtotal)}</Table.Td>
-                                    </Table.Tr>
-                                  ))}
-                                </StyledTable>
-                            </>}
-                            {Object.keys(itemsByType).length > 0 && <>
-                              <Text mt="xs" mb={2} fw={700}>{t('overview.items')}</Text>
-                              {Object.entries(itemsByType).map(([type, itemsArr]) => (
-                                <div key={type} style={{ marginBottom: 8 }}>
-                                  <Text size="sm" fw={600} mb={2}>{type}</Text>
-                                  <StyledTable headers={[t('overview.name'), t('overview.quantity'), t('overview.bonusPerItem'), t('overview.subtotal')]}>
-                                    {(itemsArr as any[]).map((it, i) => (
-                                      <Table.Tr key={`item-${type}-${i}`}>
-                                        <Table.Td>{it.name}</Table.Td>
-                                        <Table.Td>{it.quantity}</Table.Td>
-                                        <Table.Td>{it.bonus}</Table.Td>
-                                        <Table.Td>{toLocale(it.subtotal)}</Table.Td>
+                      {user.getArmyStatBreakdown ? (
+                        (() => {
+                          const breakdown =
+                            user.getArmyStatBreakdown('OFFENSE');
+                          if (!breakdown)
+                            return (
+                              <Text>{t('overview.noBreakdownAvailable')}</Text>
+                            );
+                          const {
+                            units = [],
+                            items = [],
+                            battleUpgrades = [],
+                            bonuses = [],
+                            finalTotal,
+                          } = breakdown;
+                          const unitsTotal = units.reduce(
+                            (sum, u) => sum + (u.subtotal || 0),
+                            0,
+                          );
+                          const upgradesTotal = battleUpgrades.reduce(
+                            (sum, u) => sum + (u.subtotal || 0),
+                            0,
+                          );
+                          const bonusesTotal = bonuses.reduce(
+                            (sum, b) => sum + (b.bonusAmount || 0),
+                            0,
+                          );
+                          const itemsByType = items.reduce(
+                            (acc, item) => {
+                              const type = item.type || 'Unknown';
+                              if (!acc[type]) acc[type] = [];
+                              acc[type].push(item);
+                              return acc;
+                            },
+                            {} as Record<string, typeof items>,
+                          );
+                          const itemsTotal = items.reduce(
+                            (sum, i) => sum + (i.subtotal || 0),
+                            0,
+                          );
+                          return (
+                            <div style={{ maxHeight: 350, overflowY: 'auto' }}>
+                              <strong>{t('overview.offenseBreakdown')}</strong>
+                              {units.length > 0 && (
+                                <>
+                                  <Text mt="xs" mb={2} fw={700}>
+                                    {t('overview.units')}
+                                  </Text>
+                                  <StyledTable
+                                    headers={[
+                                      t('overview.name'),
+                                      t('overview.quantity'),
+                                      t('overview.bonusPerItem'),
+                                      t('overview.subtotal'),
+                                    ]}
+                                  >
+                                    {units.map((u, i) => (
+                                      <Table.Tr key={`unit-${i}`}>
+                                        <Table.Td>{u.name}</Table.Td>
+                                        <Table.Td>{u.quantity}</Table.Td>
+                                        <Table.Td>{u.bonus}</Table.Td>
+                                        <Table.Td>
+                                          {toLocale(u.subtotal)}
+                                        </Table.Td>
                                       </Table.Tr>
                                     ))}
                                   </StyledTable>
-                                </div>
-                              ))}
-                            </>}
-                            {battleUpgrades.length > 0 && <>
-                              <Text mt="xs" mb={2} fw={700}>{t('overview.upgrades')}</Text>
-                              <StyledTable headers={[t('overview.name'), t('overview.bonus'), t('overview.subtotal')]}>
-                                  {battleUpgrades.map((up, i) => (
-                                    <Table.Tr key={`upgrade-${i}`}>
-                                      <Table.Td>{up.name}</Table.Td>
-                                      <Table.Td>{up.bonus}</Table.Td>
-                                      <Table.Td>{toLocale(up.subtotal)}</Table.Td>
-                                    </Table.Tr>
-                                  ))}
-                                </StyledTable>
-                            </>}
-                            {bonuses.length > 0 && <>
-                              <Text mt="xs" mb={2} fw={700}>{t('overview.bonuses')}</Text>
-                              <StyledTable headers={[t('overview.name'), t('overview.percent'), t('overview.appliedTo'), t('overview.bonusAmount')]}>
-                                  {bonuses.map((b, i) => (
-                                    <Table.Tr key={`bonus-${i}`}>
-                                      <Table.Td>{b.name}</Table.Td>
-                                      <Table.Td>{b.percent ? `+${b.percent}%` : ''}</Table.Td>
-                                      <Table.Td>{b.appliedTo ? toLocale(b.appliedTo) : ''}</Table.Td>
-                                      <Table.Td>{toLocale(b.bonusAmount)}</Table.Td>
-                                    </Table.Tr>
-                                  ))}
-                                </StyledTable>
-                            </>}
-                            <div style={{ fontSize: 13, marginTop: 8 }}>
-                              <strong>{t('overview.equation')}:</strong><br />
-                              ({toLocale(unitsTotal)} {t('overview.units')}
-                              {itemsTotal ? ` + ${toLocale(itemsTotal)} ${t('overview.items')}` : ''}
-                              {upgradesTotal ? ` + ${toLocale(upgradesTotal)} ${t('overview.upgrades')}` : ''}
-                              )
-                              {bonusesTotal ? ` + ${toLocale(bonusesTotal)} ${t('overview.bonuses')}` : ''}
-                              = <strong>{toLocale(finalTotal)}</strong>
+                                </>
+                              )}
+                              {Object.keys(itemsByType).length > 0 && (
+                                <>
+                                  <Text mt="xs" mb={2} fw={700}>
+                                    {t('overview.items')}
+                                  </Text>
+                                  {Object.entries(itemsByType).map(
+                                    ([type, itemsArr]) => (
+                                      <div
+                                        key={type}
+                                        style={{ marginBottom: 8 }}
+                                      >
+                                        <Text size="sm" fw={600} mb={2}>
+                                          {type}
+                                        </Text>
+                                        <StyledTable
+                                          headers={[
+                                            t('overview.name'),
+                                            t('overview.quantity'),
+                                            t('overview.bonusPerItem'),
+                                            t('overview.subtotal'),
+                                          ]}
+                                        >
+                                          {(itemsArr as any[]).map((it, i) => (
+                                            <Table.Tr key={`item-${type}-${i}`}>
+                                              <Table.Td>{it.name}</Table.Td>
+                                              <Table.Td>{it.quantity}</Table.Td>
+                                              <Table.Td>{it.bonus}</Table.Td>
+                                              <Table.Td>
+                                                {toLocale(it.subtotal)}
+                                              </Table.Td>
+                                            </Table.Tr>
+                                          ))}
+                                        </StyledTable>
+                                      </div>
+                                    ),
+                                  )}
+                                </>
+                              )}
+                              {battleUpgrades.length > 0 && (
+                                <>
+                                  <Text mt="xs" mb={2} fw={700}>
+                                    {t('overview.upgrades')}
+                                  </Text>
+                                  <StyledTable
+                                    headers={[
+                                      t('overview.name'),
+                                      t('overview.bonus'),
+                                      t('overview.subtotal'),
+                                    ]}
+                                  >
+                                    {battleUpgrades.map((up, i) => (
+                                      <Table.Tr key={`upgrade-${i}`}>
+                                        <Table.Td>{up.name}</Table.Td>
+                                        <Table.Td>{up.bonus}</Table.Td>
+                                        <Table.Td>
+                                          {toLocale(up.subtotal)}
+                                        </Table.Td>
+                                      </Table.Tr>
+                                    ))}
+                                  </StyledTable>
+                                </>
+                              )}
+                              {bonuses.length > 0 && (
+                                <>
+                                  <Text mt="xs" mb={2} fw={700}>
+                                    {t('overview.bonuses')}
+                                  </Text>
+                                  <StyledTable
+                                    headers={[
+                                      t('overview.name'),
+                                      t('overview.percent'),
+                                      t('overview.appliedTo'),
+                                      t('overview.bonusAmount'),
+                                    ]}
+                                  >
+                                    {bonuses.map((b, i) => (
+                                      <Table.Tr key={`bonus-${i}`}>
+                                        <Table.Td>{b.name}</Table.Td>
+                                        <Table.Td>
+                                          {b.percent ? `+${b.percent}%` : ''}
+                                        </Table.Td>
+                                        <Table.Td>
+                                          {b.appliedTo
+                                            ? toLocale(b.appliedTo)
+                                            : ''}
+                                        </Table.Td>
+                                        <Table.Td>
+                                          {toLocale(b.bonusAmount)}
+                                        </Table.Td>
+                                      </Table.Tr>
+                                    ))}
+                                  </StyledTable>
+                                </>
+                              )}
+                              <div style={{ fontSize: 13, marginTop: 8 }}>
+                                <strong>{t('overview.equation')}:</strong>
+                                <br />({toLocale(unitsTotal)}{' '}
+                                {t('overview.units')}
+                                {itemsTotal
+                                  ? ` + ${toLocale(itemsTotal)} ${t('overview.items')}`
+                                  : ''}
+                                {upgradesTotal
+                                  ? ` + ${toLocale(upgradesTotal)} ${t('overview.upgrades')}`
+                                  : ''}
+                                )
+                                {bonusesTotal
+                                  ? ` + ${toLocale(bonusesTotal)} ${t('overview.bonuses')}`
+                                  : ''}
+                                = <strong>{toLocale(finalTotal)}</strong>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })() : (
+                          );
+                        })()
+                      ) : (
                         <Text>{t('overview.noBreakdownAvailable')}</Text>
                       )}
                     </Popover.Dropdown>
                   </Popover>
                 ) : (
-                  <Text size="sm" fw={700} style={{ color: '#ffd700' }} data-testid="stat-value">
+                  <Text
+                    size="sm"
+                    fw={700}
+                    style={{ color: '#ffd700' }}
+                    data-testid="stat-value"
+                  >
                     {stat.value}
                   </Text>
                 )}
@@ -389,7 +565,6 @@ const Overview = (props) => {
             </Group>
           ))}
         </SimpleGrid>
-
       </GameCard>
 
       <Space h="md" />

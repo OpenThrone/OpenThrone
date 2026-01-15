@@ -1,36 +1,42 @@
 'use server';
-import { GeneralService } from '@/services';
-import UserModel from '@/models/Users';
-import { withAuth } from '@/middleware/auth';
-import { IdQuerySchema } from '@/lib/validation';
 
-const handler = async(req, res) => {
-  const session = req.session;
+import { IdQuerySchema } from '@/lib/validation';
+import { withAuth } from '@/middleware/auth';
+import UserModel from '@/models/Users';
+import { GeneralService } from '@/services';
+
+const handler = async (req, res) => {
+  const { session } = req;
   if (session) {
     const queryParse = IdQuerySchema.safeParse(req.query);
     if (!queryParse.success) {
-      return res.status(400).json({ status: 'failed', details: queryParse.error.flatten().fieldErrors });
+      return res.status(400).json({
+        status: 'failed',
+        details: queryParse.error.flatten().fieldErrors,
+      });
     }
     const { id } = queryParse.data;
-    if (session.user.id !== 1 && session.user.id !== 2 && session.user.id !== id) {
+    if (
+      session.user.id !== 1 &&
+      session.user.id !== 2 &&
+      session.user.id !== id
+    ) {
       return res.status(401).json({ status: 'Not authorized' });
     }
     const user = await GeneralService.getUserStats(Number(id));
     const userMod = new UserModel(user, true);
-    return res.status(200).json(
-      {
-        status: 'success',
-        player: userMod.displayName,
-        level: userMod.level,
-        offense: userMod.offense,
-        defense: userMod.defense,
-        units: userMod.units,
-        items: userMod.items,
-
-      });
+    return res.status(200).json({
+      status: 'success',
+      player: userMod.displayName,
+      level: userMod.level,
+      offense: userMod.offense,
+      defense: userMod.defense,
+      units: userMod.units,
+      items: userMod.items,
+    });
   }
   // console.log('failed: ', session);
   return res.status(401).json({ status: 'Not logged in' });
-}
+};
 
 export default withAuth(handler);

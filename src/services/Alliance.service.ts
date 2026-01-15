@@ -1,5 +1,6 @@
-import prisma from '@/lib/prisma';
 import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 
@@ -146,7 +147,7 @@ const CreateAllianceSchema = z.object({
   comments: z.string().max(1000).optional(),
   is_public: z.boolean().optional(),
   require_auth: z.boolean().optional(),
-  closed_enrollment: z.boolean().optional()
+  closed_enrollment: z.boolean().optional(),
 });
 
 const UpdateAllianceSchema = z.object({
@@ -158,25 +159,25 @@ const UpdateAllianceSchema = z.object({
   require_auth: z.boolean().optional(),
   closed_enrollment: z.boolean().optional(),
   bannerimg: z.string().optional(),
-  slug: z.string().optional()
+  slug: z.string().optional(),
 });
 
 const JoinAllianceSchema = z.object({
-  allianceId: z.number().int().positive()
+  allianceId: z.number().int().positive(),
 });
 
 const LeaveAllianceSchema = z.object({
-  allianceId: z.number().int().positive()
+  allianceId: z.number().int().positive(),
 });
 
 const KickMemberSchema = z.object({
   allianceId: z.number().int().positive(),
-  memberId: z.number().int().positive()
+  memberId: z.number().int().positive(),
 });
 
 const TransferLeadershipSchema = z.object({
   allianceId: z.number().int().positive(),
-  newLeaderId: z.number().int().positive()
+  newLeaderId: z.number().int().positive(),
 });
 
 const CreateRoleSchema = z.object({
@@ -191,23 +192,25 @@ const CreateRoleSchema = z.object({
     manage_allies: z.boolean().optional(),
     manage_enemies: z.boolean().optional(),
     edit_list: z.boolean().optional(),
-    view_list: z.boolean().optional()
-  })
+    view_list: z.boolean().optional(),
+  }),
 });
 
 const UpdateRoleSchema = z.object({
   name: z.string().min(1).max(50).optional(),
-  permissions: z.object({
-    invite_member: z.boolean().optional(),
-    grant_access: z.boolean().optional(),
-    edit_ranks: z.boolean().optional(),
-    send_messages: z.boolean().optional(),
-    edit_profile: z.boolean().optional(),
-    manage_allies: z.boolean().optional(),
-    manage_enemies: z.boolean().optional(),
-    edit_list: z.boolean().optional(),
-    view_list: z.boolean().optional()
-  }).optional()
+  permissions: z
+    .object({
+      invite_member: z.boolean().optional(),
+      grant_access: z.boolean().optional(),
+      edit_ranks: z.boolean().optional(),
+      send_messages: z.boolean().optional(),
+      edit_profile: z.boolean().optional(),
+      manage_allies: z.boolean().optional(),
+      manage_enemies: z.boolean().optional(),
+      edit_list: z.boolean().optional(),
+      view_list: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 const AllianceSearchSchema = z.object({
@@ -215,17 +218,28 @@ const AllianceSearchSchema = z.object({
   is_public: z.boolean().optional(),
   closed_enrollment: z.boolean().optional(),
   limit: z.coerce.number().int().positive().max(100).optional(),
-  offset: z.coerce.number().int().nonnegative().optional()
+  offset: z.coerce.number().int().nonnegative().optional(),
 });
 
 export class AllianceService {
   /**
    * Validates that a user can create an alliance
    */
-  private static async validateAllianceCreation(userId: number, data: { name: string; avatar?: string; motto?: string; comments?: string; is_public?: boolean; require_auth?: boolean; closed_enrollment?: boolean; }) {
+  private static async validateAllianceCreation(
+    userId: number,
+    data: {
+      name: string;
+      avatar?: string;
+      motto?: string;
+      comments?: string;
+      is_public?: boolean;
+      require_auth?: boolean;
+      closed_enrollment?: boolean;
+    },
+  ) {
     // Check if user already leads an alliance
     const existingAlliance = await prisma.alliances.findFirst({
-      where: { leader_id: userId }
+      where: { leader_id: userId },
     });
 
     if (existingAlliance) {
@@ -234,7 +248,7 @@ export class AllianceService {
 
     // Check if user is already in an alliance
     const existingMembership = await prisma.alliance_memberships.findFirst({
-      where: { user_id: userId }
+      where: { user_id: userId },
     });
 
     if (existingMembership) {
@@ -243,7 +257,7 @@ export class AllianceService {
 
     // Check if alliance name is already taken
     const existingAllianceWithName = await prisma.alliances.findFirst({
-      where: { name: data.name }
+      where: { name: data.name },
     });
 
     if (existingAllianceWithName) {
@@ -259,9 +273,11 @@ export class AllianceService {
     if (!data.name || data.name.trim().length === 0) {
       throw new Error('Alliance name is required');
     }
-    
-    const validatedData = CreateAllianceSchema.parse(data) as CreateAllianceData;
-    
+
+    const validatedData = CreateAllianceSchema.parse(
+      data,
+    ) as CreateAllianceData;
+
     // After validation, ensure name is still present
     if (!validatedData.name) {
       throw new Error('Alliance name is required');
@@ -273,7 +289,7 @@ export class AllianceService {
       // Get the user to check level and gold requirements
       const user = await prisma.users.findUnique({
         where: { id: userId },
-        select: { level: true, gold: true, display_name: true }
+        select: { level: true, gold: true, display_name: true },
       });
 
       if (!user) {
@@ -304,12 +320,12 @@ export class AllianceService {
           },
           include: {
             leader: {
-              select: { display_name: true }
+              select: { display_name: true },
             },
             _count: {
-              select: { members: true }
-            }
-          }
+              select: { members: true },
+            },
+          },
         });
 
         // Create default role
@@ -326,9 +342,9 @@ export class AllianceService {
               manage_allies: false,
               manage_enemies: false,
               edit_list: false,
-              view_list: true
-            }
-          }
+              view_list: true,
+            },
+          },
         });
 
         // Add leader as member with default role
@@ -336,8 +352,8 @@ export class AllianceService {
           data: {
             alliance_id: alliance.id,
             user_id: userId,
-            role_id: defaultRole.id
-          }
+            role_id: defaultRole.id,
+          },
         });
 
         // Deduct gold from user
@@ -345,15 +361,19 @@ export class AllianceService {
           where: { id: userId },
           data: {
             gold: {
-              decrement: allianceCreationCost
-            }
-          }
+              decrement: allianceCreationCost,
+            },
+          },
         });
 
         return alliance;
       });
     } catch (error: any) {
-      logError('Error creating alliance', { userId, data: validatedData, error });
+      logError('Error creating alliance', {
+        userId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -371,7 +391,12 @@ export class AllianceService {
         whereCondition.OR = [
           { name: { contains: validatedFilters.search, mode: 'insensitive' } },
           { motto: { contains: validatedFilters.search, mode: 'insensitive' } },
-          { comments: { contains: validatedFilters.search, mode: 'insensitive' } }
+          {
+            comments: {
+              contains: validatedFilters.search,
+              mode: 'insensitive',
+            },
+          },
         ];
       }
 
@@ -414,12 +439,15 @@ export class AllianceService {
         },
         take: validatedFilters.limit || 50,
         skip: validatedFilters.offset || 0,
-        orderBy: { created_at: 'desc' }
+        orderBy: { created_at: 'desc' },
       });
 
       return stringifyObj(alliances);
     } catch (error: any) {
-      logError('Error getting all alliances', { filters: validatedFilters, error });
+      logError('Error getting all alliances', {
+        filters: validatedFilters,
+        error,
+      });
       throw error;
     }
   }
@@ -461,10 +489,10 @@ export class AllianceService {
                 },
               },
             },
-            orderBy: { created_at: 'asc' }
+            orderBy: { created_at: 'asc' },
           },
           alliance_roles: {
-            orderBy: { created_at: 'asc' }
+            orderBy: { created_at: 'asc' },
           },
           _count: {
             select: {
@@ -488,13 +516,17 @@ export class AllianceService {
   /**
    * Updates alliance information
    */
-  static async updateAlliance(allianceId: number, leaderId: number, data: UpdateAllianceData) {
+  static async updateAlliance(
+    allianceId: number,
+    leaderId: number,
+    data: UpdateAllianceData,
+  ) {
     const validatedData = UpdateAllianceSchema.parse(data);
 
     try {
       // Verify the user is the leader of the alliance
       const alliance = await prisma.alliances.findFirst({
-        where: { id: allianceId, leader_id: leaderId }
+        where: { id: allianceId, leader_id: leaderId },
       });
 
       if (!alliance) {
@@ -506,17 +538,22 @@ export class AllianceService {
         data: validatedData,
         include: {
           leader: {
-            select: { display_name: true }
+            select: { display_name: true },
           },
           _count: {
-            select: { members: true }
-          }
-        }
+            select: { members: true },
+          },
+        },
       });
 
       return updatedAlliance;
     } catch (error: any) {
-      logError('Error updating alliance', { allianceId, leaderId, data: validatedData, error });
+      logError('Error updating alliance', {
+        allianceId,
+        leaderId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -528,7 +565,7 @@ export class AllianceService {
     try {
       // Verify the user is the leader of the alliance
       const alliance = await prisma.alliances.findFirst({
-        where: { id: allianceId, leader_id: leaderId }
+        where: { id: allianceId, leader_id: leaderId },
       });
 
       if (!alliance) {
@@ -537,7 +574,7 @@ export class AllianceService {
 
       // Delete the alliance (cascade will handle memberships and roles)
       await prisma.alliances.delete({
-        where: { id: allianceId }
+        where: { id: allianceId },
       });
 
       return { message: 'Alliance deleted successfully' };
@@ -556,7 +593,7 @@ export class AllianceService {
     try {
       // Check if user is already in an alliance
       const existingMembership = await prisma.alliance_memberships.findFirst({
-        where: { user_id: userId }
+        where: { user_id: userId },
       });
 
       if (existingMembership) {
@@ -569,12 +606,12 @@ export class AllianceService {
         include: {
           alliance_roles: {
             where: { name: 'Member' },
-            take: 1
+            take: 1,
           },
           _count: {
-            select: { members: true }
-          }
-        }
+            select: { members: true },
+          },
+        },
       });
 
       if (!alliance) {
@@ -599,28 +636,32 @@ export class AllianceService {
         data: {
           alliance_id: validatedData.allianceId,
           user_id: userId,
-          role_id: defaultRole.id
+          role_id: defaultRole.id,
         },
         include: {
           user: {
             select: {
-              display_name: true
-            }
+              display_name: true,
+            },
           },
           role: {
             select: {
-              name: true
-            }
-          }
-        }
+              name: true,
+            },
+          },
+        },
       });
 
       return {
         message: 'Successfully joined alliance',
-        membership
+        membership,
       };
     } catch (error: any) {
-      logError('Error joining alliance', { userId, data: validatedData, error });
+      logError('Error joining alliance', {
+        userId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -636,11 +677,11 @@ export class AllianceService {
       const membership = await prisma.alliance_memberships.findFirst({
         where: {
           alliance_id: validatedData.allianceId,
-          user_id: userId
+          user_id: userId,
         },
         include: {
-          alliance: true
-        }
+          alliance: true,
+        },
       });
 
       if (!membership) {
@@ -649,19 +690,25 @@ export class AllianceService {
 
       // Check if user is the leader
       if (membership.alliance.leader_id === userId) {
-        throw new Error('Alliance leaders cannot leave their alliance. Transfer leadership first.');
+        throw new Error(
+          'Alliance leaders cannot leave their alliance. Transfer leadership first.',
+        );
       }
 
       // Remove membership
       await prisma.alliance_memberships.delete({
         where: {
-          id: membership.id
-        }
+          id: membership.id,
+        },
       });
 
       return { message: 'Successfully left alliance' };
     } catch (error: any) {
-      logError('Error leaving alliance', { userId, data: validatedData, error });
+      logError('Error leaving alliance', {
+        userId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -669,7 +716,11 @@ export class AllianceService {
   /**
    * Kicks a member from an alliance (leader or admin role only)
    */
-  static async kickMember(allianceId: number, kickerId: number, data: KickMemberData) {
+  static async kickMember(
+    allianceId: number,
+    kickerId: number,
+    data: KickMemberData,
+  ) {
     const validatedData = KickMemberSchema.parse(data);
 
     try {
@@ -677,12 +728,12 @@ export class AllianceService {
       const kickerMembership = await prisma.alliance_memberships.findFirst({
         where: {
           alliance_id: allianceId,
-          user_id: kickerId
+          user_id: kickerId,
         },
         include: {
           role: true,
-          alliance: true
-        }
+          alliance: true,
+        },
       });
 
       if (!kickerMembership) {
@@ -690,8 +741,9 @@ export class AllianceService {
       }
 
       // Check permissions
-      const canKick = kickerMembership.role.permissions?.edit_ranks || 
-                     kickerMembership.alliance.leader_id === kickerId;
+      const canKick =
+        kickerMembership.role.permissions?.edit_ranks ||
+        kickerMembership.alliance.leader_id === kickerId;
 
       if (!canKick) {
         throw new Error('You do not have permission to kick members');
@@ -701,11 +753,11 @@ export class AllianceService {
       const memberToKick = await prisma.alliance_memberships.findFirst({
         where: {
           alliance_id: allianceId,
-          user_id: validatedData.memberId
+          user_id: validatedData.memberId,
         },
         include: {
-          alliance: true
-        }
+          alliance: true,
+        },
       });
 
       if (!memberToKick) {
@@ -720,13 +772,18 @@ export class AllianceService {
       // Remove membership
       await prisma.alliance_memberships.delete({
         where: {
-          id: memberToKick.id
-        }
+          id: memberToKick.id,
+        },
       });
 
       return { message: 'Member kicked successfully' };
     } catch (error: any) {
-      logError('Error kicking member', { allianceId, kickerId, data: validatedData, error });
+      logError('Error kicking member', {
+        allianceId,
+        kickerId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -734,16 +791,20 @@ export class AllianceService {
   /**
    * Transfers alliance leadership to another member
    */
-  static async transferLeadership(allianceId: number, currentLeaderId: number, data: TransferLeadershipData) {
+  static async transferLeadership(
+    allianceId: number,
+    currentLeaderId: number,
+    data: TransferLeadershipData,
+  ) {
     const validatedData = TransferLeadershipSchema.parse(data);
 
     try {
       // Verify current user is the leader
       const alliance = await prisma.alliances.findFirst({
-        where: { 
-          id: allianceId, 
-          leader_id: currentLeaderId 
-        }
+        where: {
+          id: allianceId,
+          leader_id: currentLeaderId,
+        },
       });
 
       if (!alliance) {
@@ -754,8 +815,8 @@ export class AllianceService {
       const newLeaderMembership = await prisma.alliance_memberships.findFirst({
         where: {
           alliance_id: allianceId,
-          user_id: validatedData.newLeaderId
-        }
+          user_id: validatedData.newLeaderId,
+        },
       });
 
       if (!newLeaderMembership) {
@@ -768,20 +829,25 @@ export class AllianceService {
         data: { leader_id: validatedData.newLeaderId },
         include: {
           leader: {
-            select: { display_name: true }
+            select: { display_name: true },
           },
           _count: {
-            select: { members: true }
-          }
-        }
+            select: { members: true },
+          },
+        },
       });
 
       return {
         message: 'Leadership transferred successfully',
-        alliance: updatedAlliance
+        alliance: updatedAlliance,
       };
     } catch (error: any) {
-      logError('Error transferring leadership', { allianceId, currentLeaderId, data: validatedData, error });
+      logError('Error transferring leadership', {
+        allianceId,
+        currentLeaderId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -797,20 +863,20 @@ export class AllianceService {
           alliance: {
             include: {
               leader: {
-                select: { display_name: true }
+                select: { display_name: true },
               },
               _count: {
-                select: { members: true }
-              }
-            }
+                select: { members: true },
+              },
+            },
           },
           role: {
             select: {
               name: true,
-              permissions: true
-            }
-          }
-        }
+              permissions: true,
+            },
+          },
+        },
       });
 
       return membership;
@@ -823,7 +889,11 @@ export class AllianceService {
   /**
    * Creates a new alliance role
    */
-  static async createRole(allianceId: number, creatorId: number, data: CreateRoleData) {
+  static async createRole(
+    allianceId: number,
+    creatorId: number,
+    data: CreateRoleData,
+  ) {
     const validatedData = CreateRoleSchema.parse(data);
 
     try {
@@ -831,20 +901,21 @@ export class AllianceService {
       const creatorMembership = await prisma.alliance_memberships.findFirst({
         where: {
           alliance_id: allianceId,
-          user_id: creatorId
+          user_id: creatorId,
         },
         include: {
           role: true,
-          alliance: true
-        }
+          alliance: true,
+        },
       });
 
       if (!creatorMembership) {
         throw new Error('You are not a member of this alliance');
       }
 
-      const canManageRoles = creatorMembership.role.permissions?.edit_ranks || 
-                           creatorMembership.alliance.leader_id === creatorId;
+      const canManageRoles =
+        creatorMembership.role.permissions?.edit_ranks ||
+        creatorMembership.alliance.leader_id === creatorId;
 
       if (!canManageRoles) {
         throw new Error('You do not have permission to manage roles');
@@ -854,13 +925,18 @@ export class AllianceService {
         data: {
           name: validatedData.name,
           alliance_id: allianceId,
-          permissions: validatedData.permissions
-        }
+          permissions: validatedData.permissions,
+        },
       });
 
       return role;
     } catch (error: any) {
-      logError('Error creating alliance role', { allianceId, creatorId, data: validatedData, error });
+      logError('Error creating alliance role', {
+        allianceId,
+        creatorId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -868,7 +944,12 @@ export class AllianceService {
   /**
    * Updates an alliance role
    */
-  static async updateRole(allianceId: number, roleId: number, updaterId: number, data: UpdateRoleData) {
+  static async updateRole(
+    allianceId: number,
+    roleId: number,
+    updaterId: number,
+    data: UpdateRoleData,
+  ) {
     const validatedData = UpdateRoleSchema.parse(data);
 
     try {
@@ -876,20 +957,21 @@ export class AllianceService {
       const updaterMembership = await prisma.alliance_memberships.findFirst({
         where: {
           alliance_id: allianceId,
-          user_id: updaterId
+          user_id: updaterId,
         },
         include: {
           role: true,
-          alliance: true
-        }
+          alliance: true,
+        },
       });
 
       if (!updaterMembership) {
         throw new Error('You are not a member of this alliance');
       }
 
-      const canManageRoles = updaterMembership.role.permissions?.edit_ranks || 
-                           updaterMembership.alliance.leader_id === updaterId;
+      const canManageRoles =
+        updaterMembership.role.permissions?.edit_ranks ||
+        updaterMembership.alliance.leader_id === updaterId;
 
       if (!canManageRoles) {
         throw new Error('You do not have permission to manage roles');
@@ -898,12 +980,18 @@ export class AllianceService {
       // Update the role
       const updatedRole = await prisma.alliance_roles.update({
         where: { id: roleId },
-        data: validatedData
+        data: validatedData,
       });
 
       return updatedRole;
     } catch (error: any) {
-      logError('Error updating alliance role', { allianceId, roleId, updaterId, data: validatedData, error });
+      logError('Error updating alliance role', {
+        allianceId,
+        roleId,
+        updaterId,
+        data: validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -911,26 +999,31 @@ export class AllianceService {
   /**
    * Deletes an alliance role
    */
-  static async deleteRole(allianceId: number, roleId: number, deleterId: number) {
+  static async deleteRole(
+    allianceId: number,
+    roleId: number,
+    deleterId: number,
+  ) {
     try {
       // Verify deleter has permissions
       const deleterMembership = await prisma.alliance_memberships.findFirst({
         where: {
           alliance_id: allianceId,
-          user_id: deleterId
+          user_id: deleterId,
         },
         include: {
           role: true,
-          alliance: true
-        }
+          alliance: true,
+        },
       });
 
       if (!deleterMembership) {
         throw new Error('You are not a member of this alliance');
       }
 
-      const canManageRoles = deleterMembership.role.permissions?.edit_ranks || 
-                           deleterMembership.alliance.leader_id === deleterId;
+      const canManageRoles =
+        deleterMembership.role.permissions?.edit_ranks ||
+        deleterMembership.alliance.leader_id === deleterId;
 
       if (!canManageRoles) {
         throw new Error('You do not have permission to manage roles');
@@ -938,7 +1031,7 @@ export class AllianceService {
 
       // Check if role is in use
       const roleUsage = await prisma.alliance_memberships.count({
-        where: { role_id: roleId }
+        where: { role_id: roleId },
       });
 
       if (roleUsage > 0) {
@@ -947,12 +1040,17 @@ export class AllianceService {
 
       // Delete the role
       await prisma.alliance_roles.delete({
-        where: { id: roleId }
+        where: { id: roleId },
       });
 
       return { message: 'Role deleted successfully' };
     } catch (error: any) {
-      logError('Error deleting alliance role', { allianceId, roleId, deleterId, error });
+      logError('Error deleting alliance role', {
+        allianceId,
+        roleId,
+        deleterId,
+        error,
+      });
       throw error;
     }
   }
@@ -964,25 +1062,25 @@ export class AllianceService {
     try {
       const [totalMembers, totalRoles, recentJoins] = await Promise.all([
         prisma.alliance_memberships.count({
-          where: { alliance_id: allianceId }
+          where: { alliance_id: allianceId },
         }),
         prisma.alliance_roles.count({
-          where: { alliance_id: allianceId }
+          where: { alliance_id: allianceId },
         }),
         prisma.alliance_memberships.count({
           where: {
             alliance_id: allianceId,
             created_at: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-            }
-          }
-        })
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+            },
+          },
+        }),
       ]);
 
       return {
         totalMembers,
         totalRoles,
-        recentJoins
+        recentJoins,
       };
     } catch (error: any) {
       logError('Error getting alliance stats', { allianceId, error });
@@ -999,7 +1097,10 @@ export class AllianceService {
     try {
       return await this.getAllAlliances(validatedFilters);
     } catch (error: any) {
-      logError('Error searching alliances', { filters: validatedFilters, error });
+      logError('Error searching alliances', {
+        filters: validatedFilters,
+        error,
+      });
       throw error;
     }
   }

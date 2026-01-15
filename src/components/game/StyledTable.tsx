@@ -1,5 +1,5 @@
+import { Box, Paper, Table, useMantineTheme } from '@mantine/core';
 import React from 'react';
-import { Table, Paper, Box, Text, rem, useMantineTheme } from '@mantine/core';
 
 export const StyledTable = ({ headers, children }) => {
   const theme = useMantineTheme();

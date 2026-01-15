@@ -1,12 +1,13 @@
 // pages/api/getRandomUser.ts
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
-import { getSession, updateSessionActivity } from '@/services/Sessions.service';
 import { getValidUsersForRecruitment } from '@/services/Recruitment.service';
-import mtrand from '@/utils/mtrand';
+import { getSession, updateSessionActivity } from '@/services/Sessions.service';
 import { getIpAddress } from '@/utils/ipUtils';
 import { logError } from '@/utils/logger'; // Import logger at the top
-import { z } from 'zod';
+import mtrand from '@/utils/mtrand';
 
 const GetRandomUserSchema = z.object({
   sessionId: z.number().int().optional(),
@@ -16,10 +17,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Cast req to any to access session property added by middleware
   const { session } = req as any;
   const recruiterID = session ? parseInt(session.user?.id.toString()) : 0;
-  
+
   const validatedBody = GetRandomUserSchema.safeParse(req.body);
   if (!validatedBody.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: validatedBody.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: validatedBody.error.flatten().fieldErrors,
+    });
   }
   const { sessionId } = validatedBody.data;
 
@@ -41,18 +45,23 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const ipAddress = getIpAddress(req);
   const result = await getValidUsersForRecruitment(recruiterID, ipAddress);
   if (!result || !('usersLeft' in result) || !('activeUsers' in result)) {
-    return res.status(500).json({ error: 'Invalid response from recruitment service' });
+    return res
+      .status(500)
+      .json({ error: 'Invalid response from recruitment service' });
   }
   const { usersLeft, activeUsers: validUsers } = result;
 
   // Calculate total remaining recruits *before* filtering, ensuring usersLeft is an array
   const totalRecruitsLeft = Array.isArray(usersLeft)
-    ? usersLeft.reduce((sum, { remainingRecruits }) => sum + remainingRecruits, 0)
+    ? usersLeft.reduce(
+        (sum, { remainingRecruits }) => sum + remainingRecruits,
+        0,
+      )
     : 0;
 
   // Filter usersLeft to only include those who can still be recruited by the recruiter today, ensuring usersLeft is an array
   const actuallyRecruitableUsers = Array.isArray(usersLeft)
-    ? usersLeft.filter(user => user.remainingRecruits > 0)
+    ? usersLeft.filter((user) => user.remainingRecruits > 0)
     : [];
 
   if (!validUsers || actuallyRecruitableUsers.length === 0) {
@@ -67,17 +76,25 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   // Select a random user from the *filtered* list
-  const randomUserIndex = Math.floor(mtrand(0, actuallyRecruitableUsers.length - 1));
+  const randomUserIndex = Math.floor(
+    mtrand(0, actuallyRecruitableUsers.length - 1),
+  );
   const randomUser = actuallyRecruitableUsers[randomUserIndex];
 
   // This check should theoretically not be needed now, but keep as safeguard
   if (!randomUser) {
-     logError('Failed to select a random user even though actuallyRecruitableUsers was not empty.', { actuallyRecruitableUsers });
-     return res.status(500).json({ error: 'Internal error selecting recruitable user.' });
+    logError(
+      'Failed to select a random user even though actuallyRecruitableUsers was not empty.',
+      { actuallyRecruitableUsers },
+    );
+    return res
+      .status(500)
+      .json({ error: 'Internal error selecting recruitable user.' });
   }
 
   return res.status(200).json({
-    randomUser: { // Send the selected recruitable user
+    randomUser: {
+      // Send the selected recruitable user
       ...randomUser.user,
       remainingRecruits: randomUser.remainingRecruits,
     },

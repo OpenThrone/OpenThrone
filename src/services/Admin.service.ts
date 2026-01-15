@@ -1,11 +1,17 @@
-import prisma from '@/lib/prisma';
-import md5 from 'md5';
 import { PermissionType } from '@prisma/client';
+import md5 from 'md5';
 import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
 import { isAdmin, isModerator } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
-import { buildDefaultUserUpdate, resetUserRelations, resolveColorScheme } from './UserDefaults.service';
+
 import { ensureActiveEra } from './Era.service';
+import {
+  buildDefaultUserUpdate,
+  resetUserRelations,
+  resolveColorScheme,
+} from './UserDefaults.service';
 
 // Type definitions for admin operations
 export interface GrantPermissionData {
@@ -118,21 +124,25 @@ const UserUpdateDataSchema = z.object({
     level: z.number().int().positive().optional(),
   }),
   army: z.object({
-    units: z.array(z.object({
-      id: z.string(),
-      type: z.string(),
-      quantity: z.number().int().nonnegative(),
-      level: z.number().int().positive(),
-    })),
+    units: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        quantity: z.number().int().nonnegative(),
+        level: z.number().int().positive(),
+      }),
+    ),
   }),
   items: z.object({
-    items: z.array(z.object({
-      id: z.string(),
-      type: z.string(),
-      quantity: z.number().int().nonnegative(),
-      level: z.number().int().positive().optional(),
-      usage: z.string().optional(),
-    })),
+    items: z.array(
+      z.object({
+        id: z.string(),
+        type: z.string(),
+        quantity: z.number().int().nonnegative(),
+        level: z.number().int().positive().optional(),
+        usage: z.string().optional(),
+      }),
+    ),
   }),
   permissions: z.object({
     permissions: z.array(z.nativeEnum(PermissionType)),
@@ -159,14 +169,11 @@ export class AdminService {
     // Try to find by username first, then by email
     const user = await prisma.users.findFirst({
       where: {
-        OR: [
-          { display_name: identifier },
-          { email: identifier.toLowerCase() }
-        ]
+        OR: [{ display_name: identifier }, { email: identifier.toLowerCase() }],
       },
       include: {
         permissions: true,
-      }
+      },
     });
 
     return user;
@@ -185,20 +192,22 @@ export class AdminService {
 
     try {
       // Find the target user
-      const targetUser = await this.findUserByIdentifier(validatedData.userIdentifier);
+      const targetUser = await this.findUserByIdentifier(
+        validatedData.userIdentifier,
+      );
       if (!targetUser) {
         throw new Error('User not found');
       }
 
       // Check if user already has the permission
       const existingPermission = targetUser.permissions?.find(
-        perm => perm.type === validatedData.permission
+        (perm) => perm.type === validatedData.permission,
       );
 
       if (existingPermission) {
-        return { 
+        return {
           message: 'User already has that permission',
-          userId: targetUser.id 
+          userId: targetUser.id,
         };
       }
 
@@ -207,20 +216,20 @@ export class AdminService {
         data: {
           user_id: targetUser.id,
           type: validatedData.permission,
-        }
+        },
       });
 
       return {
         message: 'Successfully granted permission',
         userId: targetUser.id,
-        permission: validatedData.permission
+        permission: validatedData.permission,
       };
     } catch (error: any) {
-      logError('Error granting permission', { 
-        adminUserId, 
-        targetUser: validatedData.userIdentifier, 
-        permission: validatedData.permission, 
-        error 
+      logError('Error granting permission', {
+        adminUserId,
+        targetUser: validatedData.userIdentifier,
+        permission: validatedData.permission,
+        error,
       });
       throw error;
     }
@@ -229,7 +238,10 @@ export class AdminService {
   /**
    * Revokes a permission from a user
    */
-  static async revokePermission(adminUserId: number, data: GrantPermissionData) {
+  static async revokePermission(
+    adminUserId: number,
+    data: GrantPermissionData,
+  ) {
     const validatedData = GrantPermissionSchema.parse(data);
 
     // Check admin permission
@@ -239,7 +251,9 @@ export class AdminService {
 
     try {
       // Find the target user
-      const targetUser = await this.findUserByIdentifier(validatedData.userIdentifier);
+      const targetUser = await this.findUserByIdentifier(
+        validatedData.userIdentifier,
+      );
       if (!targetUser) {
         throw new Error('User not found');
       }
@@ -249,27 +263,27 @@ export class AdminService {
         where: {
           user_id: targetUser.id,
           type: validatedData.permission,
-        }
+        },
       });
 
       if (result.count === 0) {
         return {
           message: 'User does not have that permission to revoke',
-          userId: targetUser.id
+          userId: targetUser.id,
         };
       }
 
       return {
         message: 'Successfully revoked permission',
         userId: targetUser.id,
-        permission: validatedData.permission
+        permission: validatedData.permission,
       };
     } catch (error: any) {
-      logError('Error revoking permission', { 
-        adminUserId, 
-        targetUser: validatedData.userIdentifier, 
-        permission: validatedData.permission, 
-        error 
+      logError('Error revoking permission', {
+        adminUserId,
+        targetUser: validatedData.userIdentifier,
+        permission: validatedData.permission,
+        error,
       });
       throw error;
     }
@@ -278,7 +292,10 @@ export class AdminService {
   /**
    * Performs administrative actions on user accounts
    */
-  static async performAccountAction(adminUserId: number, data: AccountActionData) {
+  static async performAccountAction(
+    adminUserId: number,
+    data: AccountActionData,
+  ) {
     const validatedData = AccountActionSchema.parse(data);
 
     // Check admin permission
@@ -326,11 +343,11 @@ export class AdminService {
         endDate,
       };
     } catch (error: any) {
-      logError('Error performing account action', { 
-        adminUserId, 
-        userId: validatedData.userId, 
-        action: validatedData.action, 
-        error 
+      logError('Error performing account action', {
+        adminUserId,
+        userId: validatedData.userId,
+        action: validatedData.action,
+        error,
       });
       throw error;
     }
@@ -350,7 +367,7 @@ export class AdminService {
     try {
       return await prisma.$transaction(async (tx) => {
         // Fetch the user's current data
-        const user = await tx.users.findUnique({ 
+        const user = await tx.users.findUnique({
           where: { id: validatedData.userId },
           select: {
             email: true,
@@ -360,7 +377,7 @@ export class AdminService {
             class: true,
             colorScheme: true,
             locale: true,
-          }
+          },
         });
 
         if (!user) {
@@ -432,11 +449,11 @@ export class AdminService {
         };
       });
     } catch (error: any) {
-      logError('Error resetting account', { 
-        adminUserId, 
-        userId: validatedData.userId, 
-        reason: validatedData.reason, 
-        error 
+      logError('Error resetting account', {
+        adminUserId,
+        userId: validatedData.userId,
+        reason: validatedData.reason,
+        error,
       });
       throw error;
     }
@@ -445,7 +462,10 @@ export class AdminService {
   /**
    * Manages vacation mode for users (admin-initiated)
    */
-  static async manageUserVacation(adminUserId: number, data: VacationActionData) {
+  static async manageUserVacation(
+    adminUserId: number,
+    data: VacationActionData,
+  ) {
     const validatedData = VacationActionSchema.parse(data);
 
     // Check admin permission
@@ -476,7 +496,8 @@ export class AdminService {
           userId: validatedData.userId,
           vacationEndDate,
         };
-      } else if (validatedData.action === 'end') {
+      }
+      if (validatedData.action === 'end') {
         // End current vacation status
         await prisma.accountStatusHistory.updateMany({
           where: {
@@ -504,15 +525,14 @@ export class AdminService {
           message: 'Vacation mode ended for user',
           userId: validatedData.userId,
         };
-      } else {
-        throw new Error('Invalid action');
       }
+      throw new Error('Invalid action');
     } catch (error: any) {
-      logError('Error managing user vacation', { 
-        adminUserId, 
-        userId: validatedData.userId, 
-        action: validatedData.action, 
-        error 
+      logError('Error managing user vacation', {
+        adminUserId,
+        userId: validatedData.userId,
+        action: validatedData.action,
+        error,
       });
       throw error;
     }
@@ -532,28 +552,28 @@ export class AdminService {
     try {
       // Build where clause based on provided filters
       const whereClause: any = {};
-      
+
       if (validatedFilters.id) whereClause.id = validatedFilters.id;
       if (validatedFilters.username) {
-        whereClause.display_name = { 
-          contains: validatedFilters.username, 
-          mode: 'insensitive' 
+        whereClause.display_name = {
+          contains: validatedFilters.username,
+          mode: 'insensitive',
         };
       }
       if (validatedFilters.email) {
-        whereClause.email = { 
-          contains: validatedFilters.email, 
-          mode: 'insensitive' 
+        whereClause.email = {
+          contains: validatedFilters.email,
+          mode: 'insensitive',
         };
       }
-      
+
       // Handle status filter if provided
       if (validatedFilters.status) {
         whereClause.statusHistories = {
           some: {
             status: validatedFilters.status,
-            end_date: null // Current status has no end date
-          }
+            end_date: null, // Current status has no end date
+          },
         };
       }
 
@@ -568,9 +588,10 @@ export class AdminService {
       // Build orderBy clause
       const orderByClause: any = {};
       if (sortFieldMapping[validatedFilters.sort]) {
-        orderByClause[sortFieldMapping[validatedFilters.sort]] = validatedFilters.order;
+        orderByClause[sortFieldMapping[validatedFilters.sort]] =
+          validatedFilters.order;
       } else {
-        orderByClause['id'] = 'asc';
+        orderByClause.id = 'asc';
       }
 
       // Query the database for users and total count in parallel
@@ -587,14 +608,14 @@ export class AdminService {
               orderBy: { start_date: 'desc' },
               take: 1,
               select: {
-                status: true
-              }
+                status: true,
+              },
             },
             permissions: {
               select: {
-                type: true
-              }
-            }
+                type: true,
+              },
+            },
           },
           orderBy: orderByClause,
           take: validatedFilters.limit,
@@ -602,17 +623,17 @@ export class AdminService {
         }),
         prisma.users.count({
           where: whereClause,
-        })
+        }),
       ]);
 
       // Format the response
-      const formattedUsers = users.map(user => ({
+      const formattedUsers = users.map((user) => ({
         id: user.id.toString(),
         username: user.display_name,
         email: user.email,
         status: user.statusHistories[0]?.status || 'ACTIVE',
         lastActive: user.last_active,
-        permissions: user.permissions.map(p => p.type)
+        permissions: user.permissions.map((p) => p.type),
       }));
 
       return {
@@ -621,10 +642,10 @@ export class AdminService {
         filters: validatedFilters,
       };
     } catch (error: any) {
-      logError('Error listing users', { 
-        adminUserId, 
-        filters: validatedFilters, 
-        error 
+      logError('Error listing users', {
+        adminUserId,
+        filters: validatedFilters,
+        error,
       });
       throw error;
     }
@@ -645,9 +666,9 @@ export class AdminService {
         where: { id: userId },
         include: {
           permissions: {
-            select: { type: true }
-          }
-        }
+            select: { type: true },
+          },
+        },
       });
 
       if (!user) {
@@ -670,35 +691,39 @@ export class AdminService {
           goldInBank: user?.gold_in_bank?.toString() || '0',
         },
         army: {
-          units: user.units ? JSON.parse(JSON.stringify(user.units)).map((unit: any) => ({
-            id: unit.type,
-            name: unit.type,
-            quantity: unit.quantity || 0,
-            level: unit.level || 1,
-            type: unit.type,
-          })) : []
+          units: user.units
+            ? JSON.parse(JSON.stringify(user.units)).map((unit: any) => ({
+                id: unit.type,
+                name: unit.type,
+                quantity: unit.quantity || 0,
+                level: unit.level || 1,
+                type: unit.type,
+              }))
+            : [],
         },
         items: {
-          items: user.items ? JSON.parse(JSON.stringify(user.items)).map((item: any) => ({
-            id: item.type,
-            name: item.type,
-            quantity: item.quantity || 0,
-            level: item.level || undefined,
-            type: item.type,
-            usage: item.usage,
-          })) : []
+          items: user.items
+            ? JSON.parse(JSON.stringify(user.items)).map((item: any) => ({
+                id: item.type,
+                name: item.type,
+                quantity: item.quantity || 0,
+                level: item.level || undefined,
+                type: item.type,
+                usage: item.usage,
+              }))
+            : [],
         },
         permissions: {
-          permissions: user.permissions?.map(p => p.type) || []
-        }
+          permissions: user.permissions?.map((p) => p.type) || [],
+        },
       };
 
       return formattedResponse;
     } catch (error: any) {
-      logError('Error getting user details', { 
-        adminUserId, 
-        userId, 
-        error 
+      logError('Error getting user details', {
+        adminUserId,
+        userId,
+        error,
       });
       throw error;
     }
@@ -707,7 +732,11 @@ export class AdminService {
   /**
    * Updates a user's information
    */
-  static async updateUser(adminUserId: number, userId: number, data: UserUpdateData) {
+  static async updateUser(
+    adminUserId: number,
+    userId: number,
+    data: UserUpdateData,
+  ) {
     const validatedData = UserUpdateDataSchema.parse(data);
 
     // Check admin permission
@@ -720,9 +749,9 @@ export class AdminService {
       await prisma.$transaction(async (tx) => {
         // Fetch current user data to update JSON fields
         const user = await tx.users.findUnique({
-          where: { id: userId }
+          where: { id: userId },
         });
-        
+
         if (!user) {
           throw new Error('User not found');
         }
@@ -733,18 +762,22 @@ export class AdminService {
           data: {
             display_name: validatedData.profile.username,
             email: validatedData.profile.email,
-          }
+          },
         });
-        
+
         // Parse current units and items
-        const currentUnits = user.units ? JSON.parse(JSON.stringify(user.units)) : [];
-        const currentItems = user.items ? JSON.parse(JSON.stringify(user.items)) : [];
-        
+        const currentUnits = user.units
+          ? JSON.parse(JSON.stringify(user.units))
+          : [];
+        const currentItems = user.items
+          ? JSON.parse(JSON.stringify(user.items))
+          : [];
+
         // Update units
         for (const unit of validatedData.army.units) {
-          const type = unit.type;
-          const unitIndex = currentUnits.findIndex(u => u.type === type);
-          
+          const { type } = unit;
+          const unitIndex = currentUnits.findIndex((u) => u.type === type);
+
           if (unitIndex >= 0) {
             // Update existing unit
             currentUnits[unitIndex].quantity = unit.quantity;
@@ -752,35 +785,36 @@ export class AdminService {
           } else {
             // Add new unit
             currentUnits.push({
-              type: type,
+              type,
               level: unit.level,
-              quantity: unit.quantity
+              quantity: unit.quantity,
             });
           }
         }
-        
+
         // Update items
         for (const item of validatedData.items.items) {
-          const type = item.type;
+          const { type } = item;
           const usage = item.usage || 'GENERAL';
-          
-          const itemIndex = currentItems.findIndex(i => i.type === type);
-          
+
+          const itemIndex = currentItems.findIndex((i) => i.type === type);
+
           if (itemIndex >= 0) {
             // Update existing item
             currentItems[itemIndex].quantity = item.quantity;
-            if (item.level !== undefined) currentItems[itemIndex].level = item.level;
+            if (item.level !== undefined)
+              currentItems[itemIndex].level = item.level;
           } else {
             // Add new item
             currentItems.push({
-              type: type,
+              type,
               level: item.level,
               quantity: item.quantity,
-              usage: usage
+              usage,
             });
           }
         }
-        
+
         // Update the user with the modified JSON fields
         await tx.users.update({
           where: { id: userId },
@@ -789,35 +823,35 @@ export class AdminService {
             items: currentItems,
             gold: BigInt(validatedData.stats.gold),
             experience: validatedData.stats.experience,
-            rank: validatedData.stats.level
-          }
+            rank: validatedData.stats.level,
+          },
         });
-        
+
         // Update permissions - first delete all existing ones
         await tx.permissionGrant.deleteMany({
-          where: { user_id: userId }
+          where: { user_id: userId },
         });
-        
+
         // Then add the current ones
         for (const permission of validatedData.permissions.permissions) {
           await tx.permissionGrant.create({
             data: {
               user_id: userId,
-              type: permission
-            }
+              type: permission,
+            },
           });
         }
       });
-      
+
       return {
         message: 'User updated successfully',
         userId,
       };
     } catch (error: any) {
-      logError('Error updating user', { 
-        adminUserId, 
-        userId, 
-        error 
+      logError('Error updating user', {
+        adminUserId,
+        userId,
+        error,
       });
       throw error;
     }
@@ -827,7 +861,7 @@ export class AdminService {
    * Checks if a user has administrative privileges
    */
   static async hasAdminPrivileges(userId: number): Promise<boolean> {
-    return await this.checkAdminPermission(userId);
+    return this.checkAdminPermission(userId);
   }
 
   /**

@@ -1,8 +1,10 @@
 import type { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api'; // Import AuthenticatedRequest
 import { z } from 'zod'; // Added Zod import
+
 import { withAuth } from '@/middleware/auth';
-import { ArmoryService, ArmoryItem } from '@/services';
+import type { ArmoryItem } from '@/services';
+import { ArmoryService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api'; // Import AuthenticatedRequest
 import { logError } from '@/utils/logger'; // Added logError import
 
 // Define Zod schema for request body validation
@@ -13,7 +15,10 @@ const UnequipItemSchema = z.object({
   // Ensure quantity is parsed as a number and is positive
   quantity: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int().positive({ message: 'Quantity must be a positive integer.' })
+    z
+      .number()
+      .int()
+      .positive({ message: 'Quantity must be a positive integer.' }),
   ),
 });
 
@@ -21,16 +26,16 @@ const UnequipRequestSchema = z.object({
   // Ensure userId is parsed as a number
   userId: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int()
+    z.number().int(),
   ),
-  items: z.array(UnequipItemSchema).min(1, { message: 'At least one item must be provided.' }),
+  items: z
+    .array(UnequipItemSchema)
+    .min(1, { message: 'At least one item must be provided.' }),
 });
 
 // Define response types
 type ApiErrorResponse = { error: string; details?: any };
 type ApiSuccessResponse = { message: string; data: any }; // Consider defining a more specific data type
-
-
 
 const handler = async (
   req: AuthenticatedRequest, // Use AuthenticatedRequest
@@ -44,7 +49,11 @@ const handler = async (
 
   // Session check
   if (!req.session?.user?.id) {
-    logError(null, { requestPath: req.url }, 'Auth session missing in unequip handler');
+    logError(
+      null,
+      { requestPath: req.url },
+      'Auth session missing in unequip handler',
+    );
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
@@ -66,26 +75,37 @@ const handler = async (
   }
 
   try {
-    const result = await ArmoryService.unequipItems({ userId, items: itemsToUnequip as ArmoryItem[] });
+    const result = await ArmoryService.unequipItems({
+      userId,
+      items: itemsToUnequip as ArmoryItem[],
+    });
 
     return res.status(200).json({
       message: result.message,
       data: result.data,
     });
-
   } catch (error: any) {
-    logError(error, { userId, items: itemsToUnequip }, 'API Error: /api/armory/unequip');
+    logError(
+      error,
+      { userId, items: itemsToUnequip },
+      'API Error: /api/armory/unequip',
+    );
 
     // Check for specific errors
-    if (error.message?.startsWith('Not enough') || error.message?.startsWith('Invalid item')) {
+    if (
+      error.message?.startsWith('Not enough') ||
+      error.message?.startsWith('Invalid item')
+    ) {
       return res.status(400).json({ error: error.message });
     }
     if (error.message === 'User not found') {
       return res.status(404).json({ error: 'User not found' });
     }
     // Generic internal server error
-    return res.status(500).json({ error: 'An unexpected error occurred while unequipping items.' });
+    return res
+      .status(500)
+      .json({ error: 'An unexpected error occurred while unequipping items.' });
   }
-}
+};
 
 export default withAuth(handler);

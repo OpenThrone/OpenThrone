@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'bun:test';
 import { installMockMtRand, mtRandImpl } from 'test/utils/mockMtRand';
+
+import { mtRand } from './mtrand';
 
 // Use the shared test helper to mock the module before requiring it.
 installMockMtRand(vi);
-
-import { mtRand } from './mtrand';
 
 describe('mtRand', () => {
   beforeEach(() => {

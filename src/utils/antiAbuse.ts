@@ -2,7 +2,9 @@ import { createHash } from 'crypto';
 
 export const getAntiAbuseHash = (email: string) => {
   const salt = process.env.ANTI_ABUSE_SALT ?? 'anti-abuse';
-  return createHash('sha256').update(`${salt}:${email.toLowerCase()}`).digest('hex');
+  return createHash('sha256')
+    .update(`${salt}:${email.toLowerCase()}`)
+    .digest('hex');
 };
 
 export const getAntiAbuseExpiry = (days = 365) => {

@@ -8,9 +8,7 @@ try {
 }
 
 const defaultAppUrl =
-  process.env.CYPRESS_APP_URL ||
-  process.env.APP_URL ||
-  'http://localhost:3001';
+  process.env.CYPRESS_APP_URL || process.env.APP_URL || 'http://localhost:3001';
 
 module.exports = defineConfig({
   env: {

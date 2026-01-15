@@ -1,6 +1,7 @@
+import { describe, expect, it, vi } from 'bun:test';
+import { installMockMtRand } from 'test/utils/mockMtRand';
+
 import { generateRandomString, getAvatarSrc } from './utilities';
-import { describe, it, expect, beforeEach, vi } from 'bun:test';
-import { installMockMtRand, mtRandImpl } from 'test/utils/mockMtRand';
 
 // Install deterministic mtRand before importing modules that may use randomness
 installMockMtRand(vi);
@@ -24,11 +25,11 @@ describe('generateRandomString', () => {
     const randomString1 = generateRandomString(length);
     const randomString2 = generateRandomString(length);
     expect(randomString1).not.toBe(randomString2);
-  });    
+  });
 });
 
 describe('getAvatarSrc', () => {
-  it('should return the user\'s avatar image source', () => {
+  it("should return the user's avatar image source", () => {
     const avatar = 'SHIELD';
     // The implementation may return either a local path (/assets/...) or an S3 URL
     // depending on environment variables. Match the final filename so the test

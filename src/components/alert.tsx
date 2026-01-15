@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
@@ -44,7 +44,7 @@ const AlertComponent: React.FC = () => {
   useEffect(() => {
     // clear alert on location change, respecting the showAfterRedirect flag
     alertService.clear();
-  }, [router]);
+  }, [router.asPath]);
 
   if (!alert) return null;
 

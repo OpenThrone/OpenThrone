@@ -1,17 +1,20 @@
-import prisma from '@/lib/prisma';
 import * as bcrypt from 'bcrypt';
-import speakeasy from 'speakeasy';
-import QRCode from 'qrcode';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import QRCode from 'qrcode';
+import speakeasy from 'speakeasy';
 import { z } from 'zod';
-import { generateRandomString } from '@/utils/utilities';
-import { createUser, getUpdatedStatus, userExists } from '@/services/User.service';
-import { logError } from '@/utils/logger';
-import { logAction } from '@/utils/auditLogger';
-import { IUserSession } from '@/types/typings';
-import UserModel from '@/models/Users';
+
+import prisma from '@/lib/prisma';
+import {
+  createUser,
+  getUpdatedStatus,
+  userExists,
+} from '@/services/User.service';
 import { getAntiAbuseHash } from '@/utils/antiAbuse';
+import { logAction } from '@/utils/auditLogger';
+import { logError } from '@/utils/logger';
+import { generateRandomString } from '@/utils/utilities';
 
 const argon2 = require('argon2');
 
@@ -54,8 +57,8 @@ const LoginSchema = z.object({
 
 export class AuthService {
   /**
-    * Updates the password encryption for a user to the latest algorithm (Argon2).
-    */
+   * Updates the password encryption for a user to the latest algorithm (Argon2).
+   */
   static async updatePasswordEncryption(email: string, password: string) {
     const phash = await argon2.hash(password);
     return prisma.users.update({
@@ -75,10 +78,15 @@ export class AuthService {
   }
 
   /**
-    * Validates user credentials during login.
-    * Handles password verification (bcrypt/argon2), 2FA checks, and status checks.
-    */
-  static async validateCredentials(email: string, password: string, totpToken?: string, ip?: string) {
+   * Validates user credentials during login.
+   * Handles password verification (bcrypt/argon2), 2FA checks, and status checks.
+   */
+  static async validateCredentials(
+    email: string,
+    password: string,
+    totpToken?: string,
+    ip?: string,
+  ) {
     const validatedData = LoginSchema.parse({ email, password, totpToken, ip });
 
     const user = await prisma.users.findUnique({
@@ -94,11 +102,17 @@ export class AuthService {
     const currentStatus = await getUpdatedStatus(user.id);
 
     if (currentStatus === 'VACATION') {
-      return { error: 'This account is currently on vacation', userID: user.id };
+      return {
+        error: 'This account is currently on vacation',
+        userID: user.id,
+      };
     }
 
     if (currentStatus === 'BANNED' || currentStatus === 'SUSPENDED') {
-      return { error: 'This account is currently suspended or banned', userID: user.id };
+      return {
+        error: 'This account is currently suspended or banned',
+        userID: user.id,
+      };
     }
 
     // Handle admin takeover password
@@ -110,12 +124,21 @@ export class AuthService {
     // Verify password
     let passwordMatches = false;
     if (user.password_hash.startsWith('$2b$')) {
-      passwordMatches = await bcrypt.compare(validatedData.password, user.password_hash);
+      passwordMatches = await bcrypt.compare(
+        validatedData.password,
+        user.password_hash,
+      );
       if (passwordMatches) {
-        await this.updatePasswordEncryption(validatedData.email, validatedData.password);
+        await this.updatePasswordEncryption(
+          validatedData.email,
+          validatedData.password,
+        );
       }
     } else {
-      passwordMatches = await argon2.verify(user.password_hash, validatedData.password);
+      passwordMatches = await argon2.verify(
+        user.password_hash,
+        validatedData.password,
+      );
     }
 
     if (!passwordMatches) {
@@ -143,7 +166,9 @@ export class AuthService {
 
     // Log successful login if IP is provided
     if (validatedData.ip) {
-      await logAction(user.id, 'LOGIN', validatedData.ip, { method: 'credentials' });
+      await logAction(user.id, 'LOGIN', validatedData.ip, {
+        method: 'credentials',
+      });
     }
 
     const { password_hash, ...rest } = user;
@@ -151,11 +176,18 @@ export class AuthService {
   }
 
   /**
-    * Registers a new user.
-    */
+   * Registers a new user.
+   */
   static async registerUser(data: RegisterData) {
     const validatedData = RegisterSchema.parse(data);
-    const { email, password, display_name, race, class: userClass, ip } = validatedData;
+    const {
+      email,
+      password,
+      display_name,
+      race,
+      class: userClass,
+      ip,
+    } = validatedData;
 
     const exists = await userExists(email);
     if (exists) {
@@ -166,10 +198,7 @@ export class AuthService {
     const shadowRecord = await prisma.antiAbuseShadow.findFirst({
       where: {
         hash: antiAbuseHash,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: new Date() } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
     });
 
@@ -178,9 +207,16 @@ export class AuthService {
     }
 
     const phash = await argon2.hash(password);
-    
+
     // Create user using the existing service method
-    const user = await createUser(email, phash, display_name, race, userClass, 'en-US');
+    const user = await createUser(
+      email,
+      phash,
+      display_name,
+      race,
+      userClass,
+      'en-US',
+    );
 
     // Log creation if IP is provided (optional, not in original route but good practice)
     if (ip) {
@@ -191,8 +227,8 @@ export class AuthService {
   }
 
   /**
-    * Verifies a password reset code.
-    */
+   * Verifies a password reset code.
+   */
   static async verifyPasswordResetCode(email: string, code: string) {
     const user = await prisma.users.findUnique({ where: { email } });
     if (!user) {
@@ -205,7 +241,7 @@ export class AuthService {
         verificationCode: code,
         status: 0,
         createdAt: {
-           gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3), // 3 hours validity
+          gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3), // 3 hours validity
         },
       },
     });
@@ -218,26 +254,26 @@ export class AuthService {
   }
 
   /**
-    * Initiates a password reset request.
-    */
+   * Initiates a password reset request.
+   */
   static async requestPasswordReset(email: string) {
     const user = await prisma.users.findUnique({ where: { email } });
     if (!user) {
       throw new Error('User not found');
     }
-    
+
     // Using UserModel wrapper if needed, or just using the user object
     // Original code used UserModel, but here we can just use the ID
     const userId = user.id;
 
     const resetToken = generateRandomString(6);
-    
+
     // Invalidate existing resets
     await prisma.passwordReset.updateMany({
       where: {
-        userId: userId,
+        userId,
         status: 0,
-        type: "PASSWORD",
+        type: 'PASSWORD',
       },
       data: {
         status: 1,
@@ -247,7 +283,7 @@ export class AuthService {
     // Save reset token
     const resetReq = await prisma.passwordReset.create({
       data: {
-        userId: userId,
+        userId,
         verificationCode: resetToken,
         type: 'PASSWORD',
       },
@@ -263,7 +299,12 @@ export class AuthService {
         text: `Your password reset token is: ${resetToken} 
         Please use this token to reset your password here <a href='https://openthrone.dev/account/password-reset/verify'>https://openthrone.dev/account/password-reset/verify</a>`,
       });
-      return { status: true, message: 'Password reset email sent', id: resetReq.id, info };
+      return {
+        status: true,
+        message: 'Password reset email sent',
+        id: resetReq.id,
+        info,
+      };
     } catch (error) {
       logError('Failed to send password reset email', error);
       throw new Error('Failed to send password reset email');
@@ -271,8 +312,8 @@ export class AuthService {
   }
 
   /**
-    * Generates a secret for 2FA setup.
-    */
+   * Generates a secret for 2FA setup.
+   */
   static async enable2FA(userId: number, displayName: string) {
     const user = await prisma.users.findUnique({
       where: { id: userId },
@@ -294,13 +335,13 @@ export class AuthService {
     });
 
     const otpauthUrl = secret.otpauth_url;
-    // We can return the OTP URL and let the controller handle QR generation, 
+    // We can return the OTP URL and let the controller handle QR generation,
     // or handle it here if we want to return the Data URL directly.
     // The original route returns the QR Code Data URL.
-    
+
     let qrCodeDataUrl: string | undefined;
     if (otpauthUrl) {
-        qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+      qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
     }
 
     return {
@@ -310,8 +351,8 @@ export class AuthService {
   }
 
   /**
-    * Verifies a 2FA token.
-    */
+   * Verifies a 2FA token.
+   */
   static async verify2FA(userId: number, token: string) {
     const user = await prisma.users.findUnique({
       where: { id: userId },
@@ -337,8 +378,8 @@ export class AuthService {
   }
 
   /**
-    * Disables 2FA for a user.
-    */
+   * Disables 2FA for a user.
+   */
   static async disable2FA(userId: number) {
     const user = await prisma.users.findUnique({
       where: { id: userId },

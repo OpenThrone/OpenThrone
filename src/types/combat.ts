@@ -1,4 +1,4 @@
-import { BattleUnits, PlayerUnit, UnitType } from './typings';
+import type { BattleUnits, PlayerUnit, UnitType } from './typings';
 
 // Re-export existing types for convenience
 export type { BattleUnits, PlayerUnit, UnitType };

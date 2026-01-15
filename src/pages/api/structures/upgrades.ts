@@ -1,19 +1,19 @@
 import type { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api';
 import { z } from 'zod';
-import { ArmoryUpgrades, EconomyUpgrades, Fortifications, HouseUpgrades, OffensiveUpgrades, SpyUpgrades } from '@/constants';
-import { withAuth } from "@/middleware/auth";
-import { logError } from "@/utils/logger";
+
+import { withAuth } from '@/middleware/auth';
 import { StructureService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
 // Define allowed upgrade types
 const UpgradeTypeEnum = z.enum([
-  "fortifications",
-  "houses",
-  "economy",
-  "offense",
-  "armory",
-  "spy"
+  'fortifications',
+  'houses',
+  'economy',
+  'offense',
+  'armory',
+  'spy',
 ]);
 
 // Zod schema for the request body
@@ -21,7 +21,10 @@ const UpgradeRequestSchema = z.object({
   currentPage: UpgradeTypeEnum,
   index: z.preprocess(
     (val) => (typeof val === 'string' ? parseInt(val, 10) : val),
-    z.number().int().nonnegative({ message: 'Index must be a non-negative integer.' })
+    z
+      .number()
+      .int()
+      .nonnegative({ message: 'Index must be a non-negative integer.' }),
   ),
 });
 
@@ -38,7 +41,7 @@ type ApiSuccessResponse = {
 
 const handler = async (
   req: AuthenticatedRequest,
-  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>
+  res: NextApiResponse<ApiSuccessResponse | ApiErrorResponse>,
 ) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -46,7 +49,11 @@ const handler = async (
   }
 
   if (!req.session?.user?.id) {
-    logError(null, { requestPath: req.url }, 'Auth session missing in upgrades handler');
+    logError(
+      null,
+      { requestPath: req.url },
+      'Auth session missing in upgrades handler',
+    );
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
@@ -69,20 +76,30 @@ const handler = async (
     });
 
     return res.status(200).json(result);
-
   } catch (error: any) {
-    const logContext = parseResult.success ? { userId, ...parseResult.data } : { userId, body: req.body };
+    const logContext = parseResult.success
+      ? { userId, ...parseResult.data }
+      : { userId, body: req.body };
     logError(error, logContext, 'API Error: /api/structures/upgrades');
 
     // Handle specific errors
-    if (error.message?.includes("index out of bounds") || error.message?.startsWith("Cannot purchase level") || error.message?.startsWith("Not enough gold") || error.message?.startsWith("Invalid structure_upgrades format")) {
+    if (
+      error.message?.includes('index out of bounds') ||
+      error.message?.startsWith('Cannot purchase level') ||
+      error.message?.startsWith('Not enough gold') ||
+      error.message?.startsWith('Invalid structure_upgrades format')
+    ) {
       return res.status(400).json({ error: error.message });
     }
-     if (error.message === 'User not found within transaction') {
-       return res.status(404).json({ error: 'User data inconsistency during transaction.' });
+    if (error.message === 'User not found within transaction') {
+      return res
+        .status(404)
+        .json({ error: 'User data inconsistency during transaction.' });
     }
     // Generic error
-    return res.status(500).json({ error: 'An unexpected error occurred while processing the upgrade.' });
+    return res.status(500).json({
+      error: 'An unexpected error occurred while processing the upgrade.',
+    });
   }
 };
 

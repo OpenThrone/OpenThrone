@@ -1,20 +1,20 @@
 // Modal component for creating new messages or adding users to existing chats
-import { useState, useEffect, useCallback } from 'react';
-import { 
-  Modal, 
-  Button, 
-  TextInput, 
-  Textarea, 
-  MultiSelect, 
-  Avatar, 
-  Text, 
-  Group, 
-  Loader, 
-  Stack
+import { faPaperPlane, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Avatar,
+  Button,
+  Group,
+  Loader,
+  Modal,
+  MultiSelect,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useCallback, useEffect, useState } from 'react';
 
 interface NewMessageModalProps {
   opened: boolean;
@@ -32,11 +32,11 @@ interface NewMessageModalProps {
   } | null;
 }
 
-const NewMessageModal = ({ 
-  opened, 
-  onClose, 
+const NewMessageModal = ({
+  opened,
+  onClose,
   onRoomCreated,
-  existingChatId, 
+  existingChatId,
   existingUsers = [],
   isDirectMessage = false,
   prefillRecipient = null,
@@ -52,47 +52,54 @@ const NewMessageModal = ({
 
   // Mode depends on whether we have an existingChatId
   const isAddingToExistingChat = !!existingChatId;
-  
+
   // Title changes based on context
-  const modalTitle = isAddingToExistingChat 
-    ? (isDirectMessage ? "Create Group Chat" : "Add People to Chat") 
-    : "New Message";
+  const modalTitle = isAddingToExistingChat
+    ? isDirectMessage
+      ? 'Create Group Chat'
+      : 'Add People to Chat'
+    : 'New Message';
 
   // Wrap fetchUsers in useCallback
-  const fetchUsers = useCallback(async (query: string) => {
-    if (!query.trim()) return;
+  const fetchUsers = useCallback(
+    async (query: string) => {
+      if (!query.trim()) return;
 
-    setLoading(true);
-    try {
-      const response = await fetch('/api/general/searchUsers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: query }),
-      });
+      setLoading(true);
+      try {
+        const response = await fetch('/api/general/searchUsers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: query }),
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Filter out users that are already in the chat
-        const filteredUsers = data.filter(user => !existingUsers.includes(user.id));
-        
-        // Format for MultiSelect
-        const formattedUsers = filteredUsers.map(user => ({
-          value: user.id.toString(),
-          label: user.display_name,
-          image: user.avatar,
-          race: user.race,
-          class: user.class,
-        }));
-        
-        setAvailableUsers(formattedUsers);
+        if (response.ok) {
+          const data = await response.json();
+
+          // Filter out users that are already in the chat
+          const filteredUsers = data.filter(
+            (user) => !existingUsers.includes(user.id),
+          );
+
+          // Format for MultiSelect
+          const formattedUsers = filteredUsers.map((user) => ({
+            value: user.id.toString(),
+            label: user.display_name,
+            image: user.avatar,
+            race: user.race,
+            class: user.class,
+          }));
+
+          setAvailableUsers(formattedUsers);
+        }
+      } catch (error) {
+        logError('Failed to fetch users:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      logError("Failed to fetch users:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [existingUsers]);
+    },
+    [existingUsers],
+  );
 
   useEffect(() => {
     if (debouncedSearch.trim().length > 0) {
@@ -103,7 +110,9 @@ const NewMessageModal = ({
   useEffect(() => {
     if (!opened || !prefillRecipient?.id) return;
     const idStr = String(prefillRecipient.id);
-    setSelectedUsers((prev) => (prev.includes(idStr) ? prev : [idStr, ...prev]));
+    setSelectedUsers((prev) =>
+      prev.includes(idStr) ? prev : [idStr, ...prev],
+    );
     setAvailableUsers((prev) => {
       if (prev.some((u) => u.value === idStr)) return prev;
       return [
@@ -124,9 +133,9 @@ const NewMessageModal = ({
     if (selectedUsers.length === 0) return;
     if (!isAddingToExistingChat && !message.trim()) return;
     if (isDirectMessage && !groupName.trim()) return;
-    
+
     setSubmitting(true);
-    
+
     try {
       if (isAddingToExistingChat) {
         if (isDirectMessage) {
@@ -138,13 +147,13 @@ const NewMessageModal = ({
               name: groupName,
               recipients: [
                 ...existingUsers, // Current participants
-                ...selectedUsers.map(id => parseInt(id, 10)) // New users
+                ...selectedUsers.map((id) => parseInt(id, 10)), // New users
               ],
               message: message.trim() ? message : undefined, // Optional initial message
-              isPrivate: true
+              isPrivate: true,
             }),
           });
-          
+
           const data = await response.json();
           if (data.id) {
             // Navigate to new chat
@@ -152,14 +161,17 @@ const NewMessageModal = ({
           }
         } else {
           // Add users to existing group chat
-          const response = await fetch(`/api/messages/${existingChatId}/participants`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userIds: selectedUsers.map(id => parseInt(id, 10))
-            }),
-          });
-          
+          const response = await fetch(
+            `/api/messages/${existingChatId}/participants`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userIds: selectedUsers.map((id) => parseInt(id, 10)),
+              }),
+            },
+          );
+
           if (response.ok) {
             // Close modal and refresh chat list
             onClose();
@@ -173,12 +185,12 @@ const NewMessageModal = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: groupName.trim() || undefined, // If no name, it's a direct message
-            recipients: selectedUsers.map(id => parseInt(id, 10)),
+            recipients: selectedUsers.map((id) => parseInt(id, 10)),
             message,
-            isPrivate: true
+            isPrivate: true,
           }),
         });
-        
+
         const data = await response.json();
         if (data.id) {
           // Call onRoomCreated if provided, otherwise navigate
@@ -190,7 +202,7 @@ const NewMessageModal = ({
         }
       }
     } catch (error) {
-      logError("Error creating or modifying chat:", error);
+      logError('Error creating or modifying chat:', error);
     } finally {
       setSubmitting(false);
       onClose();
@@ -214,7 +226,10 @@ const NewMessageModal = ({
           {label?.[0]?.toUpperCase() || '?'}
         </Avatar>
         <div>
-          <Text size="sm">{label}{value}</Text>
+          <Text size="sm">
+            {label}
+            {value}
+          </Text>
           <Text size="xs" opacity={0.5}>
             {race} {userClass}
           </Text>
@@ -244,19 +259,22 @@ const NewMessageModal = ({
           label="Recipients"
           searchable
           clearable
-          nothingFoundMessage={loading ? <Loader size="xs" /> : "No users found"}
+          nothingFoundMessage={
+            loading ? <Loader size="xs" /> : 'No users found'
+          }
           maxDropdownHeight={200}
           renderOption={renderOption}
           styles={(theme) => ({
             pill: {
               backgroundColor: theme.colors.blue[7],
-              color: theme.white
-            }
+              color: theme.white,
+            },
           })}
           data-testid="user-search"
         />
 
-        {(isAddingToExistingChat && isDirectMessage) || (!isAddingToExistingChat && selectedUsers.length > 1) ? (
+        {(isAddingToExistingChat && isDirectMessage) ||
+        (!isAddingToExistingChat && selectedUsers.length > 1) ? (
           <TextInput
             label="Group Name"
             placeholder="Enter a name for this group"
@@ -294,12 +312,17 @@ const NewMessageModal = ({
           <Button
             onClick={handleSubmit}
             loading={submitting}
-            disabled={selectedUsers.length === 0 || (!isAddingToExistingChat && !message.trim())}
+            disabled={
+              selectedUsers.length === 0 ||
+              (!isAddingToExistingChat && !message.trim())
+            }
             leftSection={<FontAwesomeIcon icon={faPaperPlane} />}
           >
-            {isAddingToExistingChat 
-              ? (isDirectMessage ? "Create Group" : "Add People") 
-              : "Send Message"}
+            {isAddingToExistingChat
+              ? isDirectMessage
+                ? 'Create Group'
+                : 'Add People'
+              : 'Send Message'}
           </Button>
         </Group>
       </Stack>

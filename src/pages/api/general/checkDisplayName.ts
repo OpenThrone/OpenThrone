@@ -1,11 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
+
 import { GeneralService } from '@/services';
 import { logError } from '@/utils/logger';
 
 export default async function handle(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method === 'POST') {
     const DisplayNameSchema = z.object({ displayName: z.string().min(1) });

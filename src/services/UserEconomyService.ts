@@ -1,11 +1,8 @@
-import type { PlayerUnit } from '@/types/typings';
 import { z } from 'zod';
 
-import {
-  EconomyUpgrades,
-  HouseUpgrades,
-  Fortifications,
-} from '../constants';
+import type { PlayerUnit } from '@/types/typings';
+
+import { EconomyUpgrades, Fortifications, HouseUpgrades } from '../constants';
 
 const UserDataSchema = z.object({
   gold: z.bigint().optional(),
@@ -26,15 +23,17 @@ export class UserEconomyService {
   private incomeBonus: number;
   private fortLevel: number;
 
-  constructor(userData: {
-    gold?: bigint;
-    goldInBank?: bigint;
-    units?: PlayerUnit[];
-    economyLevel?: number;
-    houseLevel?: number;
-    incomeBonus?: number;
-    fortLevel?: number;
-  } = {}) {
+  constructor(
+    userData: {
+      gold?: bigint;
+      goldInBank?: bigint;
+      units?: PlayerUnit[];
+      economyLevel?: number;
+      houseLevel?: number;
+      incomeBonus?: number;
+      fortLevel?: number;
+    } = {},
+  ) {
     const validatedData = UserDataSchema.parse(userData);
     this.gold = validatedData.gold ?? BigInt(0);
     this.goldInBank = validatedData.goldInBank ?? BigInt(0);
@@ -59,14 +58,15 @@ export class UserEconomyService {
       return sum + baseWorkerGold + bonusGold;
     }, 0);
 
-    const fortGold = Fortifications.find(f => f.level === this.fortLevel)?.goldPerTurn ?? 0;
+    const fortGold =
+      Fortifications.find((f) => f.level === this.fortLevel)?.goldPerTurn ?? 0;
     const fortBonusGold = fortGold * (this.incomeBonus / 100);
 
     return BigInt(Math.ceil(workerGold + fortGold + fortBonusGold));
   }
 
   getWorkerGoldPerTurn(): number {
-    const workerUnits = this.units.filter(unit => unit.type === 'WORKER');
+    const workerUnits = this.units.filter((unit) => unit.type === 'WORKER');
     if (workerUnits.length === 0) return 0;
 
     const economyUpgrade = EconomyUpgrades[this.economyLevel];
@@ -89,7 +89,10 @@ export class UserEconomyService {
   }
 
   getFortificationGoldPerTurn(): number {
-    return Fortifications.find((fort) => fort.level === this.fortLevel)?.goldPerTurn ?? 0;
+    return (
+      Fortifications.find((fort) => fort.level === this.fortLevel)
+        ?.goldPerTurn ?? 0
+    );
   }
 
   getMaximumBankDeposits(): number {
@@ -98,7 +101,9 @@ export class UserEconomyService {
   }
 
   getRecruitingBonus(): number {
-    const houseBonus = HouseUpgrades[this.houseLevel as keyof typeof HouseUpgrades]?.citizensDaily ?? 0;
+    const houseBonus =
+      HouseUpgrades[this.houseLevel as keyof typeof HouseUpgrades]
+        ?.citizensDaily ?? 0;
     // Note: baseBonus from playerBonuses would be passed or injected from StatsService
     // For now, assuming passed as part of incomeBonus or separate; here using 0 as placeholder
     const baseBonus = 0; // To be replaced with getPlayerBonuses filter 'RECRUITING'
