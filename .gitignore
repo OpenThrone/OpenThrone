@@ -31,6 +31,16 @@ public/sitemap-*.xml
 # cache
 .swc/
 
+# local tooling
+.agent/
+.gemini/
+.opencode/
+
+# local workspace
+.vscode/
+plans/
+cypress-run.log
+
 # production
 /build
 
