@@ -19,8 +19,14 @@ describe('Simple E2E', () => {
     const base = appUrl.replace(/\/+$/, '');
     cy.visit(`${base}/account/login`);
 
-    cy.get('input#email', { timeout: 5000 }).as('email').should('exist').and('be.visible');
-    cy.get('input#password', { timeout: 5000 }).as('password').should('exist').and('be.visible');
+    cy.get('input#email', { timeout: 5000 })
+      .as('email')
+      .should('exist')
+      .and('be.visible');
+    cy.get('input#password', { timeout: 5000 })
+      .as('password')
+      .should('exist')
+      .and('be.visible');
 
     const randomEmail = `test-${Date.now()}@example.com`;
     const randomPassword = `pw-${Date.now()}-bad`;

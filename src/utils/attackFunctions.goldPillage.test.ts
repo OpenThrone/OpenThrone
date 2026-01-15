@@ -58,10 +58,6 @@ describe('Gold Pillage Fix - Edge Cases', () => {
       expect(loot).toBeGreaterThan(BigInt(0));
       expect(loot).toBeLessThanOrEqual(defender.gold);
       expect(typeof loot).toBe('bigint');
-
-      console.log(
-        `Large gold test - Defender gold: ${defender.gold}, Loot: ${loot}`,
-      );
     });
 
     it('should handle maximum BigInt values safely', () => {
@@ -138,10 +134,6 @@ describe('Gold Pillage Fix - Edge Cases', () => {
       expect(battleResult.pillagedGold).toBeGreaterThan(
         BigInt(100000000000000),
       ); // Should be substantial
-
-      console.log(
-        `Multi-turn large gold test - Total pillaged: ${battleResult.pillagedGold}`,
-      );
     });
   });
 
@@ -300,9 +292,6 @@ describe('Gold Pillage Fix - Edge Cases', () => {
         expect(typeof result.pillagedGold).toBe('bigint');
 
         // Gold should generally increase with more turns, but allow for some randomness
-        if (result.turns > 1) {
-          console.log(`Turns: ${result.turns}, Gold: ${result.pillagedGold}`);
-        }
         lastGold = result.pillagedGold;
       }
     });
@@ -346,10 +335,6 @@ describe('Gold Pillage Fix - Edge Cases', () => {
       // Note: In multi-turn battles, total pillaged gold can exceed defender's initial gold
       // because gold is calculated per turn based on defender's gold at that time
       expect(typeof battleResult.pillagedGold).toBe('bigint');
-
-      console.log(
-        `Max turns test - Total pillaged: ${battleResult.pillagedGold}`,
-      );
     });
   });
 

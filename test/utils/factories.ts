@@ -1,7 +1,11 @@
 import type { PlayerUnit, StructureUpgrade } from '@/types/typings';
 
 // Small helpers to create typed fixtures for tests.
-export function playerUnit(type: PlayerUnit['type'], level = 1, quantity = 1): PlayerUnit {
+export function playerUnit(
+  type: PlayerUnit['type'],
+  level = 1,
+  quantity = 1,
+): PlayerUnit {
   // Return a fully shaped PlayerUnit to match normalized Prisma relation objects used in production
   return {
     id: 0,
@@ -13,7 +17,10 @@ export function playerUnit(type: PlayerUnit['type'], level = 1, quantity = 1): P
   } as unknown as PlayerUnit;
 }
 
-export function structureUpgrade(type: StructureUpgrade['type'], level = 1): StructureUpgrade {
+export function structureUpgrade(
+  type: StructureUpgrade['type'],
+  level = 1,
+): StructureUpgrade {
   return { type, level } as unknown as StructureUpgrade;
 }
 
@@ -66,7 +73,7 @@ export function userFixture(opts: UserFixtureOptions = {}) {
 // some older tests: { OFFENSE: {1: qty, 2: qty }, DEFENSE: { ... } }
 export function unitsToLegacyMap(units: PlayerUnit[]) {
   const map: Record<string, Record<number, number>> = {};
-  units.forEach(u => {
+  units.forEach((u) => {
     if (!map[u.type]) map[u.type] = {};
     map[u.type][u.level] = (map[u.type][u.level] || 0) + u.quantity;
   });

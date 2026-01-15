@@ -1,14 +1,25 @@
-import { describe, it, test, expect, beforeEach, afterEach, vi } from 'bun:test';
-// We'll require the service and config modules after we set up vi.mock so the mocks take effect.
-let transferGoldToFriend: any, createGoldRequest: any, respondToGoldRequest: any, getFriendTransferHistory: any, getPendingFriendTransfers: any, cancelFriendTransfer: any;
-let getFriendTransferConfig: any, calculateTransferFee: any, isValidTransferAmount: any, canMakeTransfer: any;
-
-// Define the type for the transaction client (copied from the service)
-type TransactionClient = Omit<any, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+import { beforeEach, describe, expect, it, vi } from 'bun:test';
 
 // Use shared mock helpers
-import { installMockPrisma, mockPrisma, resetMockPrisma } from '../../../test/utils/mockPrisma';
 import { installMockMtRand } from '../../../test/utils/mockMtRand';
+import { installMockPrisma, mockPrisma } from '../../../test/utils/mockPrisma';
+// We'll require the service and config modules after we set up vi.mock so the mocks take effect.
+let transferGoldToFriend: any;
+let createGoldRequest: any;
+let respondToGoldRequest: any;
+let getFriendTransferHistory: any;
+let getPendingFriendTransfers: any;
+let cancelFriendTransfer: any;
+let getFriendTransferConfig: any;
+let calculateTransferFee: any;
+let isValidTransferAmount: any;
+let canMakeTransfer: any;
+
+// Define the type for the transaction client (copied from the service)
+type TransactionClient = Omit<
+  any,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
 
 // Install mocks before requiring modules under test
 installMockPrisma(vi);
@@ -25,20 +36,24 @@ const mockConfigService = {
 // Use typed vi.mock to provide the config service implementation backed by our mockConfigService
 vi.mock('../Config.service', () => ({
   getFriendTransferConfig: () => mockConfigService.getFriendTransferConfig(),
-  calculateTransferFee: (amount: any) => mockConfigService.calculateTransferFee(amount),
-  isValidTransferAmount: (amount: any) => mockConfigService.isValidTransferAmount(amount),
+  calculateTransferFee: (amount: any) =>
+    mockConfigService.calculateTransferFee(amount),
+  isValidTransferAmount: (amount: any) =>
+    mockConfigService.isValidTransferAmount(amount),
   canMakeTransfer: (date: any) => mockConfigService.canMakeTransfer(date),
   friendTransferCompleteConfig: { cooldownMs: 24 * 60 * 60 * 1000 },
 }));
 
 // Require modules after mocks are in place so the modules pick up our mocked implementations
 const configModule = require('../Config.service');
+
 getFriendTransferConfig = configModule.getFriendTransferConfig;
 calculateTransferFee = configModule.calculateTransferFee;
 isValidTransferAmount = configModule.isValidTransferAmount;
 canMakeTransfer = configModule.canMakeTransfer;
 
 const serviceModule = require('../FriendTransfer.service');
+
 transferGoldToFriend = serviceModule.transferGoldToFriend;
 createGoldRequest = serviceModule.createGoldRequest;
 respondToGoldRequest = serviceModule.respondToGoldRequest;
@@ -51,12 +66,12 @@ describe('FriendTransferService', () => {
   let mockConfig: any;
 
   beforeEach(() => {
-  // Reset all mocks
-  vi.clearAllMocks();
+    // Reset all mocks
+    vi.clearAllMocks();
     // For tests we alias mockTx to the shared mockPrisma so both transaction and top-level calls
     // operate on the same mock object. This keeps expectations consistent in tests that use
     // either `mockPrisma` or `mockTx`.
-  mockTx = mockPrisma;
+    mockTx = mockPrisma;
 
     // Default $transaction implementation: call the callback with the mockPrisma as the tx
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
@@ -72,8 +87,12 @@ describe('FriendTransferService', () => {
     };
 
     mockConfigService.getFriendTransferConfig.mockReturnValue(mockConfig);
-    mockConfigService.calculateTransferFee.mockImplementation((amount: bigint) => (amount * BigInt(5)) / BigInt(100));
-    mockConfigService.isValidTransferAmount.mockImplementation((amount: bigint) => amount > BigInt(0) && amount <= BigInt(1000000));
+    mockConfigService.calculateTransferFee.mockImplementation(
+      (amount: bigint) => (amount * BigInt(5)) / BigInt(100),
+    );
+    mockConfigService.isValidTransferAmount.mockImplementation(
+      (amount: bigint) => amount > BigInt(0) && amount <= BigInt(1000000),
+    );
     mockConfigService.canMakeTransfer.mockReturnValue(true);
   });
 
@@ -89,7 +108,7 @@ describe('FriendTransferService', () => {
     it('should successfully transfer gold between friends', async () => {
       // Mock friendship exists
       mockTx.social.findFirst.mockResolvedValue({ id: 123 });
-      
+
       // Mock sender and receiver
       mockTx.users.findUnique
         .mockResolvedValueOnce({ id: 1, gold: BigInt(5000) }) // Sender
@@ -107,9 +126,9 @@ describe('FriendTransferService', () => {
         where: {
           OR: [
             { playerId: 1, friendId: 2, status: 'accepted' },
-            { playerId: 2, friendId: 1, status: 'accepted' }
-          ]
-        }
+            { playerId: 2, friendId: 1, status: 'accepted' },
+          ],
+        },
       });
       expect(mockPrisma.users.update).toHaveBeenCalledTimes(2);
       expect(mockPrisma.bank_history.create).toHaveBeenCalledTimes(2);
@@ -118,14 +137,21 @@ describe('FriendTransferService', () => {
     it('should throw error if users are not friends', async () => {
       mockPrisma.social.findFirst.mockResolvedValue(null);
 
-      await expect(transferGoldToFriend(transferParams)).rejects.toThrow('Users must be friends to perform this operation');
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'Users must be friends to perform this operation',
+      );
     });
 
     it('should throw error if sender has insufficient gold', async () => {
       mockTx.social.findFirst.mockResolvedValue({ id: 123 });
-      mockPrisma.users.findUnique.mockResolvedValue({ id: 1, gold: BigInt(500) }); // Insufficient gold
+      mockPrisma.users.findUnique.mockResolvedValue({
+        id: 1,
+        gold: BigInt(500),
+      }); // Insufficient gold
 
-      await expect(transferGoldToFriend(transferParams)).rejects.toThrow('Insufficient gold for transfer');
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'Insufficient gold for transfer',
+      );
     });
 
     it('should throw error if feature is disabled', async () => {
@@ -133,30 +159,48 @@ describe('FriendTransferService', () => {
       mockConfigService.getFriendTransferConfig.mockReturnValue(mockConfig);
 
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
-      mockPrisma.users.findUnique.mockResolvedValue({ id: 1, gold: BigInt(5000) });
+      mockPrisma.users.findUnique.mockResolvedValue({
+        id: 1,
+        gold: BigInt(5000),
+      });
 
-      await expect(transferGoldToFriend(transferParams)).rejects.toThrow('Friend transfers are currently disabled');
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'Friend transfers are currently disabled',
+      );
     });
 
     it('should throw error if amount is invalid', async () => {
       mockConfigService.isValidTransferAmount.mockReturnValue(false);
 
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
-      mockPrisma.users.findUnique.mockResolvedValue({ id: 1, gold: BigInt(5000) });
+      mockPrisma.users.findUnique.mockResolvedValue({
+        id: 1,
+        gold: BigInt(5000),
+      });
 
-      await expect(transferGoldToFriend({ ...transferParams, amount: BigInt(0) })).rejects.toThrow('Transfer amount must be between 1 and 1000000 gold');
+      await expect(
+        transferGoldToFriend({ ...transferParams, amount: BigInt(0) }),
+      ).rejects.toThrow('Transfer amount must be between 1 and 1000000 gold');
     });
 
     it('should throw error if user is on cooldown', async () => {
       mockConfigService.canMakeTransfer.mockReturnValue(false);
 
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
-      mockPrisma.users.findUnique.mockResolvedValue({ id: 1, gold: BigInt(5000) });
+      mockPrisma.users.findUnique.mockResolvedValue({
+        id: 1,
+        gold: BigInt(5000),
+      });
 
       // Simulate that a recent transfer exists so the cooldown check runs
-      mockPrisma.bank_history.findFirst.mockResolvedValue({ id: 999, date_time: new Date() });
+      mockPrisma.bank_history.findFirst.mockResolvedValue({
+        id: 999,
+        date_time: new Date(),
+      });
 
-      await expect(transferGoldToFriend(transferParams)).rejects.toThrow('You must wait before making another transfer');
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'You must wait before making another transfer',
+      );
     });
 
     it('should calculate and apply transfer fee correctly', async () => {
@@ -174,18 +218,18 @@ describe('FriendTransferService', () => {
       // Service subtracts amount + fee from sender (totalAmount) and credits the receiver with amount
       expect(mockPrisma.users.update).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: { gold: BigInt(-50) } // 1000 - (1000 + 50) = -50
+        data: { gold: BigInt(-50) }, // 1000 - (1000 + 50) = -50
       });
 
       expect(mockPrisma.users.update).toHaveBeenCalledWith({
         where: { id: 2 },
-        data: { gold: BigInt(1000) } // 1000 received
+        data: { gold: BigInt(1000) }, // 1000 received
       });
     });
 
     it('should handle zero fee percentage correctly', async () => {
       mockConfigService.calculateTransferFee.mockReturnValue(BigInt(0));
-      
+
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
       mockPrisma.users.findUnique
         .mockResolvedValueOnce({ id: 1, gold: BigInt(1000) })
@@ -198,7 +242,7 @@ describe('FriendTransferService', () => {
       // With zero fee the sender is debited by the amount
       expect(mockPrisma.users.update).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: { gold: BigInt(0) } // 1000 - 1000 = 0
+        data: { gold: BigInt(0) }, // 1000 - 1000 = 0
       });
     });
   });
@@ -215,7 +259,7 @@ describe('FriendTransferService', () => {
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
       // Ensure there is no existing pending request
       mockPrisma.bank_history.findFirst.mockResolvedValue(null);
-  (mockPrisma.bank_history.create).mockResolvedValue({ id: 789 });
+      mockPrisma.bank_history.create.mockResolvedValue({ id: 789 });
 
       const result = await createGoldRequest(requestParams);
 
@@ -239,7 +283,9 @@ describe('FriendTransferService', () => {
     it('should throw error if users are not friends', async () => {
       mockPrisma.social.findFirst.mockResolvedValue(null);
 
-      await expect(createGoldRequest(requestParams)).rejects.toThrow('Users must be friends to perform this operation');
+      await expect(createGoldRequest(requestParams)).rejects.toThrow(
+        'Users must be friends to perform this operation',
+      );
     });
 
     it('should throw error if feature is disabled', async () => {
@@ -248,7 +294,9 @@ describe('FriendTransferService', () => {
 
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
 
-      await expect(createGoldRequest(requestParams)).rejects.toThrow('Friend transfers are currently disabled');
+      await expect(createGoldRequest(requestParams)).rejects.toThrow(
+        'Friend transfers are currently disabled',
+      );
     });
 
     it('should throw error if amount is invalid', async () => {
@@ -256,14 +304,18 @@ describe('FriendTransferService', () => {
 
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
 
-      await expect(createGoldRequest({ ...requestParams, amount: BigInt(0) })).rejects.toThrow('Request amount must be between 1 and 1000000 gold');
+      await expect(
+        createGoldRequest({ ...requestParams, amount: BigInt(0) }),
+      ).rejects.toThrow('Request amount must be between 1 and 1000000 gold');
     });
 
     it('should throw error if user has existing pending request', async () => {
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
       mockPrisma.bank_history.findFirst.mockResolvedValue({ id: 999 });
 
-      await expect(createGoldRequest(requestParams)).rejects.toThrow('You must wait before making another request to this friend');
+      await expect(createGoldRequest(requestParams)).rejects.toThrow(
+        'You must wait before making another request to this friend',
+      );
     });
   });
 
@@ -291,14 +343,22 @@ describe('FriendTransferService', () => {
       };
 
       mockPrisma.bank_history.findUnique.mockResolvedValue(mockRequest);
-      mockPrisma.bank_history.update.mockResolvedValue({ ...mockRequest, stats: { ...mockRequest.stats, transferType: 'FRIEND_REQUEST_FULFILLED' } });
+      mockPrisma.bank_history.update.mockResolvedValue({
+        ...mockRequest,
+        stats: {
+          ...mockRequest.stats,
+          transferType: 'FRIEND_REQUEST_FULFILLED',
+        },
+      });
 
       // Mock the transfer that happens when accepting
-  vi.spyOn(mockPrisma, '$transaction').mockImplementation(async (callback: any) => {
-        const tx = mockPrisma;
-        await callback(tx);
-        return { success: true };
-      });
+      vi.spyOn(mockPrisma, '$transaction').mockImplementation(
+        async (callback: any) => {
+          const tx = mockPrisma;
+          await callback(tx);
+          return { success: true };
+        },
+      );
 
       const result = await respondToGoldRequest(requestParams);
 
@@ -332,9 +392,18 @@ describe('FriendTransferService', () => {
       };
 
       mockTx.bank_history.findUnique.mockResolvedValue(mockRequest);
-      mockTx.bank_history.update.mockResolvedValue({ ...mockRequest, stats: { ...mockRequest.stats, transferType: 'FRIEND_REQUEST_DECLINED' } });
+      mockTx.bank_history.update.mockResolvedValue({
+        ...mockRequest,
+        stats: {
+          ...mockRequest.stats,
+          transferType: 'FRIEND_REQUEST_DECLINED',
+        },
+      });
 
-      const result = await respondToGoldRequest({ ...requestParams, action: 'decline' });
+      const result = await respondToGoldRequest({
+        ...requestParams,
+        action: 'decline',
+      });
 
       expect(result).toEqual({ success: true });
       expect(mockTx.bank_history.update).toHaveBeenCalledWith({
@@ -352,7 +421,9 @@ describe('FriendTransferService', () => {
     it('should throw error if request is not found', async () => {
       mockTx.bank_history.findUnique.mockResolvedValue(null);
 
-      await expect(respondToGoldRequest(requestParams)).rejects.toThrow('Invalid request');
+      await expect(respondToGoldRequest(requestParams)).rejects.toThrow(
+        'Invalid request',
+      );
     });
 
     it('should throw error if request is not a FRIEND_REQUEST type', async () => {
@@ -367,7 +438,9 @@ describe('FriendTransferService', () => {
 
       mockTx.bank_history.findUnique.mockResolvedValue(mockRequest);
 
-      await expect(respondToGoldRequest(requestParams)).rejects.toThrow('Invalid request');
+      await expect(respondToGoldRequest(requestParams)).rejects.toThrow(
+        'Invalid request',
+      );
     });
   });
 
@@ -381,8 +454,18 @@ describe('FriendTransferService', () => {
           to_user_id: 2,
           history_type: 'FRIEND_TRANSFER',
           date_time: new Date(),
-          from_user: { id: 1, display_name: 'User1', race: 'ELF', class: 'WARRIOR' },
-          to_user: { id: 2, display_name: 'User2', race: 'HUMAN', class: 'MAGE' },
+          from_user: {
+            id: 1,
+            display_name: 'User1',
+            race: 'ELF',
+            class: 'WARRIOR',
+          },
+          to_user: {
+            id: 2,
+            display_name: 'User2',
+            race: 'HUMAN',
+            class: 'MAGE',
+          },
         },
       ];
 
@@ -435,7 +518,7 @@ describe('FriendTransferService', () => {
         expect.objectContaining({
           skip: 10,
           take: 10,
-        })
+        }),
       );
     });
   });
@@ -454,7 +537,12 @@ describe('FriendTransferService', () => {
             senderNote: 'Test request',
             expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           },
-          from_user: { id: 2, display_name: 'Friend', race: 'ELF', class: 'WARRIOR' },
+          from_user: {
+            id: 2,
+            display_name: 'Friend',
+            race: 'ELF',
+            class: 'WARRIOR',
+          },
         },
       ];
 
@@ -471,7 +559,12 @@ describe('FriendTransferService', () => {
         message: 'Test request',
         status: 'PENDING',
         created_at: expect.any(Date),
-        from_user: { id: 2, display_name: 'Friend', race: 'ELF', class: 'WARRIOR' },
+        from_user: {
+          id: 2,
+          display_name: 'Friend',
+          race: 'ELF',
+          class: 'WARRIOR',
+        },
         expires_at: expect.any(Date),
       });
     });
@@ -501,7 +594,13 @@ describe('FriendTransferService', () => {
       };
 
       mockPrisma.bank_history.findUnique.mockResolvedValue(mockRequest);
-      mockPrisma.bank_history.update.mockResolvedValue({ ...mockRequest, stats: { ...mockRequest.stats, transferType: 'FRIEND_REQUEST_CANCELLED' } });
+      mockPrisma.bank_history.update.mockResolvedValue({
+        ...mockRequest,
+        stats: {
+          ...mockRequest.stats,
+          transferType: 'FRIEND_REQUEST_CANCELLED',
+        },
+      });
 
       const result = await cancelFriendTransfer(123, 1);
 
@@ -520,7 +619,9 @@ describe('FriendTransferService', () => {
     it('should throw error if transfer request not found', async () => {
       mockPrisma.bank_history.findUnique.mockResolvedValue(null);
 
-      await expect(cancelFriendTransfer(123, 1)).rejects.toThrow('Transfer request not found');
+      await expect(cancelFriendTransfer(123, 1)).rejects.toThrow(
+        'Transfer request not found',
+      );
     });
 
     it('should throw error if user is not authorized to cancel', async () => {
@@ -535,7 +636,9 @@ describe('FriendTransferService', () => {
 
       mockPrisma.bank_history.findUnique.mockResolvedValue(mockRequest);
 
-      await expect(cancelFriendTransfer(123, 1)).rejects.toThrow('You are not authorized to cancel this transfer');
+      await expect(cancelFriendTransfer(123, 1)).rejects.toThrow(
+        'You are not authorized to cancel this transfer',
+      );
     });
 
     it('should throw error if transfer request is not cancellable', async () => {
@@ -552,7 +655,9 @@ describe('FriendTransferService', () => {
 
       mockPrisma.bank_history.findUnique.mockResolvedValue(mockRequest);
 
-      await expect(cancelFriendTransfer(123, 1)).rejects.toThrow('Transfer request is not cancellable');
+      await expect(cancelFriendTransfer(123, 1)).rejects.toThrow(
+        'Transfer request is not cancellable',
+      );
     });
   });
 });

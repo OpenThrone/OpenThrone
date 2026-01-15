@@ -36,13 +36,19 @@ describe('NavLoggedIn', () => {
     cy.screenshot('nav-logged-in-attack-active');
 
     cy.visitApp('/battle/history');
-    cy.contains('a', 'War History').should('have.class', 'text-gradient-orange');
+    cy.contains('a', 'War History').should(
+      'have.class',
+      'text-gradient-orange',
+    );
     cy.screenshot('nav-logged-in-war-history-active');
   });
 
   it('highlights the Auto Recruit submenu item', () => {
     cy.visitApp('/auto-recruit');
-    cy.contains('a', 'Auto Recruit').should('have.class', 'text-gradient-orange');
+    cy.contains('a', 'Auto Recruit').should(
+      'have.class',
+      'text-gradient-orange',
+    );
     cy.screenshot('nav-logged-in-auto-recruit-active');
   });
 });

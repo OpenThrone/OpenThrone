@@ -1,15 +1,22 @@
-import { describe, it, expect, beforeEach, vi } from 'bun:test';
-import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/mockPrisma';
+import { beforeEach, describe, expect, it, vi } from 'bun:test';
+import {
+  installMockPrisma,
+  mockPrisma,
+  resetMockPrisma,
+} from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
 
-const UserDataService = require('../UserDataService').UserDataService;
+const { UserDataService } = require('../UserDataService');
 
 describe('UserDataService', () => {
   beforeEach(() => {
     resetMockPrisma();
     // Ensure accountStatusHistory and attack_log mocks exist
-    mockPrisma.accountStatusHistory = { findFirst: vi.fn().mockResolvedValue(null), create: vi.fn().mockResolvedValue({ status: 'ACTIVE' }) };
+    mockPrisma.accountStatusHistory = {
+      findFirst: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({ status: 'ACTIVE' }),
+    };
     mockPrisma.attack_log.findMany = vi.fn().mockResolvedValue([]);
     mockPrisma.attack_log.count = vi.fn().mockResolvedValue(0);
     mockPrisma.bank_history.findMany = vi.fn().mockResolvedValue([]);

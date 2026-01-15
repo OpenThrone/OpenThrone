@@ -163,8 +163,6 @@ describe('Gold Pillage Fix', () => {
     expect(battleResult.pillagedGold).toBeLessThanOrEqual(defender.gold);
 
     // Log the result for debugging
-    console.log(`Pillaged gold: ${battleResult.pillagedGold}`);
-    console.log(`Defender original gold: ${defender.gold}`);
   });
 
   it('should calculate loot correctly using calculateLoot function', () => {
@@ -209,10 +207,6 @@ describe('Gold Pillage Fix', () => {
     expect(lootTurn1).toBeLessThanOrEqual(defender.gold);
     expect(lootTurn3).toBeLessThanOrEqual(defender.gold);
     expect(lootTurn5).toBeLessThanOrEqual(defender.gold);
-
-    console.log(`Loot for turn 1: ${lootTurn1}`);
-    console.log(`Loot for turn 3: ${lootTurn3}`);
-    console.log(`Loot for turn 5: ${lootTurn5}`);
   });
 });
 

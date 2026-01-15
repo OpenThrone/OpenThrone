@@ -1,10 +1,14 @@
-import { describe, it, expect } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { normUnits } from 'test/utils/testFixtures';
+
 import { UserStatsService } from '@/services/UserStatsService';
 import { stringifyObj } from '@/utils/numberFormatting';
+
 import userData from '../../../__mocks__/userData';
 
-function clone(obj: any) { return JSON.parse(JSON.stringify(stringifyObj(obj))); }
+function clone(obj: any) {
+  return JSON.parse(JSON.stringify(stringifyObj(obj)));
+}
 
 describe('Reproduce failing Users fixtures', () => {
   it('DEFENSE battle upgrades fixture should produce 99000 total defense', () => {
@@ -19,25 +23,24 @@ describe('Reproduce failing Users fixtures', () => {
       { type: 'DEFENSE', level: 2, quantity: 6000 },
       { type: 'SENTRY', level: 1, quantity: 200 },
     ]);
-    console.log(ud)
     ud.structure_upgrades = normUnits([
-          { type: 'ARMORY', level: 1 },
-          { type: 'SPY', level: 1 },
-          { type: 'SENTRY', level: 1 },
-          { type: 'OFFENSE', level: 7 },
-        ]);
+      { type: 'ARMORY', level: 1 },
+      { type: 'SPY', level: 1 },
+      { type: 'SENTRY', level: 1 },
+      { type: 'OFFENSE', level: 7 },
+    ]);
     ud.battle_upgrades = normUnits([
-          { type: 'OFFENSE', level: 1, quantity: 1 },
-          { type: 'DEFENSE', level: 1, quantity: 1300 },
-          { type: 'SENTRY', level: 1, quantity: 0 },
-          { type: 'OFFENSE', level: 2, quantity: 1 },
-        ]);
+      { type: 'OFFENSE', level: 1, quantity: 1 },
+      { type: 'DEFENSE', level: 1, quantity: 1300 },
+      { type: 'SENTRY', level: 1, quantity: 0 },
+      { type: 'OFFENSE', level: 2, quantity: 1 },
+    ]);
 
-  // map snake_case fields from mock into the shape expected by UserStatsService
-  ud.fortLevel = ud.fort_level ?? ud.fortLevel;
-  ud.fortHitpoints = ud.fort_hitpoints ?? ud.fortHitpoints;
-  ud.bonus_points = ud.bonus_points ?? ud.bonusPoints ?? [];
-  const svc = new UserStatsService(ud as any);
+    // map snake_case fields from mock into the shape expected by UserStatsService
+    ud.fortLevel = ud.fort_level ?? ud.fortLevel;
+    ud.fortHitpoints = ud.fort_hitpoints ?? ud.fortHitpoints;
+    ud.bonus_points = ud.bonus_points ?? ud.bonusPoints ?? [];
+    const svc = new UserStatsService(ud as any);
     const res = svc.calculateArmyStat('DEFENSE');
     const combined = res.totalStats; // final applied stats
     // defense should be sum of MeleeDefPower + RangedDefPower then apply defense bonus
@@ -60,15 +63,23 @@ describe('Reproduce failing Users fixtures', () => {
       { type: 'OFFENSE', level: 3, quantity: 7759 },
     ]);
     ud.items = [];
-    ud.structure_upgrades = normUnits([ { type: 'ARMORY', level: 1 }, { type: 'SPY', level: 1 }, { type: 'SENTRY', level: 1 }, { type: 'OFFENSE', level: 1 } ]);
-    ud.battle_upgrades = normUnits([ { type: 'OFFENSE', level: 1, quantity: 15539 }, { type: 'OFFENSE', level: 2, quantity: 0 } ]);
-    ud.bonus_points = normUnits([ { type: 'OFFENSE', level: 24 } ]);
-    ud.structure_upgrades = normUnits([ { type: 'OFFENSE', level: 7 } ]);
+    ud.structure_upgrades = normUnits([
+      { type: 'ARMORY', level: 1 },
+      { type: 'SPY', level: 1 },
+      { type: 'SENTRY', level: 1 },
+      { type: 'OFFENSE', level: 1 },
+    ]);
+    ud.battle_upgrades = normUnits([
+      { type: 'OFFENSE', level: 1, quantity: 15539 },
+      { type: 'OFFENSE', level: 2, quantity: 0 },
+    ]);
+    ud.bonus_points = normUnits([{ type: 'OFFENSE', level: 24 }]);
+    ud.structure_upgrades = normUnits([{ type: 'OFFENSE', level: 7 }]);
 
-  ud.fortLevel = ud.fort_level ?? ud.fortLevel;
-  ud.fortHitpoints = ud.fort_hitpoints ?? ud.fortHitpoints;
-  ud.bonus_points = ud.bonus_points ?? ud.bonusPoints ?? [];
-  const svc = new UserStatsService(ud as any);
+    ud.fortLevel = ud.fort_level ?? ud.fortLevel;
+    ud.fortHitpoints = ud.fort_hitpoints ?? ud.fortHitpoints;
+    ud.bonus_points = ud.bonus_points ?? ud.bonusPoints ?? [];
+    const svc = new UserStatsService(ud as any);
     const res = svc.calculateArmyStat('OFFENSE');
     const total = res.totalStats.MeleeAtkPower + res.totalStats.RangedAtkPower;
     expect(total).toBe(4306895);
@@ -87,13 +98,15 @@ describe('Reproduce failing Users fixtures', () => {
       { type: 'SENTRY', level: 1, quantity: 1500 },
     ]);
     ud.items = [];
-    ud.structure_upgrades = normUnits([ { type: 'OFFENSE', level: 7 } ]);
-    ud.battle_upgrades = normUnits([ { type: 'DEFENSE', level: 1, quantity: 15539 } ]);
+    ud.structure_upgrades = normUnits([{ type: 'OFFENSE', level: 7 }]);
+    ud.battle_upgrades = normUnits([
+      { type: 'DEFENSE', level: 1, quantity: 15539 },
+    ]);
 
-  ud.fortLevel = ud.fort_level ?? ud.fortLevel;
-  ud.fortHitpoints = ud.fort_hitpoints ?? ud.fortHitpoints;
-  ud.bonus_points = ud.bonus_points ?? ud.bonusPoints ?? [];
-  const svc = new UserStatsService(ud as any);
+    ud.fortLevel = ud.fort_level ?? ud.fortLevel;
+    ud.fortHitpoints = ud.fort_hitpoints ?? ud.fortHitpoints;
+    ud.bonus_points = ud.bonus_points ?? ud.bonusPoints ?? [];
+    const svc = new UserStatsService(ud as any);
     const res = svc.calculateArmyStat('DEFENSE');
     const total = res.totalStats.MeleeDefPower + res.totalStats.RangedDefPower;
     const expected = 925162;

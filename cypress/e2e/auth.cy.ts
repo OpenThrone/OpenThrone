@@ -31,18 +31,24 @@ describe('Auth', () => {
     cy.visitApp('/account/login');
 
     cy.get('input#email', { timeout: 5000 }).clear().type(adminEmail);
-    cy.get('input#password', { timeout: 5000 }).clear().type(adminPassword, { log: false });
+    cy.get('input#password', { timeout: 5000 })
+      .clear()
+      .type(adminPassword, { log: false });
     cy.get('#submit-button').click();
 
     cy.location('pathname', { timeout: 10000 }).should('eq', '/home/overview');
-    cy.get('[data-testid="desktop-sign-out-button"]', { timeout: 4000 }).should('be.visible');
+    cy.get('[data-testid="desktop-sign-out-button"]', { timeout: 4000 }).should(
+      'be.visible',
+    );
     cy.screenshot('auth-signed-in');
   });
 
   it('signs out from the logged-in nav', () => {
     cy.loginAdmin();
 
-    cy.get('[data-testid="desktop-sign-out-button"]', { timeout: 4000 }).click();
+    cy.get('[data-testid="desktop-sign-out-button"]', {
+      timeout: 4000,
+    }).click();
     cy.location('pathname', { timeout: 10000 }).should('eq', '/');
     cy.get('nav.md\\:block').contains('a', 'Login').should('be.visible');
     cy.screenshot('auth-signed-out');

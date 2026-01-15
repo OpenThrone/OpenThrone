@@ -1,5 +1,6 @@
-import { normUnits } from "test/utils/testFixtures";
-import { describe, it, expect } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
+import { normUnits } from 'test/utils/testFixtures';
+
 const { UserStatsService } = require('../UserStatsService');
 
 describe('UserStatsService', () => {
@@ -12,7 +13,9 @@ describe('UserStatsService', () => {
   });
 
   it('getIncomeBonus includes bonus_points', () => {
-    const s = new UserStatsService({ bonus_points: normUnits([{ type: 'INCOME', level: 2 }]) });
+    const s = new UserStatsService({
+      bonus_points: normUnits([{ type: 'INCOME', level: 2 }]),
+    });
     const bonus = s.getIncomeBonus();
     expect(bonus).toBeGreaterThanOrEqual(2);
   });

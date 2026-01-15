@@ -1,9 +1,14 @@
-import { describe, it, expect, beforeEach, vi } from 'bun:test';
-import { installMockPrisma, mockPrisma, resetMockPrisma } from '../../../test/utils/mockPrisma';
+import { beforeEach, describe, expect, it, vi } from 'bun:test';
+
+import {
+  installMockPrisma,
+  mockPrisma,
+  resetMockPrisma,
+} from '../../../test/utils/mockPrisma';
 
 installMockPrisma(vi);
 
-const AccountService = require('../Account.service').AccountService;
+const { AccountService } = require('../Account.service');
 
 describe('AccountService', () => {
   beforeEach(() => {
@@ -12,20 +17,20 @@ describe('AccountService', () => {
     mockPrisma.passwordReset = {
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       create: vi.fn().mockResolvedValue({ id: 1 }),
-      findMany: vi.fn().mockResolvedValue([])
+      findMany: vi.fn().mockResolvedValue([]),
     };
     mockPrisma.accountStatusHistory = {
       count: vi.fn().mockResolvedValue(0),
-      create: vi.fn().mockResolvedValue({})
+      create: vi.fn().mockResolvedValue({}),
     };
     mockPrisma.bank_history = {
-      create: vi.fn().mockResolvedValue({})
+      create: vi.fn().mockResolvedValue({}),
     };
-    
+
     // Mock nodemailer to prevent real email sending
     const nodemailer = require('nodemailer');
     vi.spyOn(nodemailer, 'createTransport').mockReturnValue({
-      sendMail: vi.fn().mockResolvedValue({ messageId: 'test-message-id' })
+      sendMail: vi.fn().mockResolvedValue({ messageId: 'test-message-id' }),
     });
   });
 
@@ -40,13 +45,16 @@ describe('AccountService', () => {
       // Mock user with valid password hash
       mockPrisma.users.findUnique.mockResolvedValue({
         id: 1,
-        password_hash: '$argon2id$v=19$m=65536,t=3,p=4$testhash1234567890123456789012$testhash'
+        password_hash:
+          '$argon2id$v=19$m=65536,t=3,p=4$testhash1234567890123456789012$testhash',
       });
 
       // Mock argon2 verification to return true
       const argon2 = require('argon2');
       vi.spyOn(argon2, 'verify').mockResolvedValue(true);
-      vi.spyOn(argon2, 'hash').mockResolvedValue('$argon2id$v=19$m=65536,t=3,p=4$newhash1234567890123456789012$newhash');
+      vi.spyOn(argon2, 'hash').mockResolvedValue(
+        '$argon2id$v=19$m=65536,t=3,p=4$newhash1234567890123456789012$newhash',
+      );
 
       const result = await AccountService.changePassword(1, validData);
       expect(result.message).toBe('Password updated successfully.');
@@ -59,8 +67,9 @@ describe('AccountService', () => {
         confirmPassword: 'differentPassword',
       };
 
-      await expect(AccountService.changePassword(1, invalidData))
-        .rejects.toThrow();
+      await expect(
+        AccountService.changePassword(1, invalidData),
+      ).rejects.toThrow();
     });
 
     it('should reject short passwords', async () => {
@@ -70,8 +79,9 @@ describe('AccountService', () => {
         confirmPassword: 'short',
       };
 
-      await expect(AccountService.changePassword(1, invalidData))
-        .rejects.toThrow();
+      await expect(
+        AccountService.changePassword(1, invalidData),
+      ).rejects.toThrow();
     });
   });
 
@@ -94,8 +104,9 @@ describe('AccountService', () => {
         colorScheme: 'HUMAN',
       };
 
-      await expect(AccountService.updateGameOptions(1, invalidData))
-        .rejects.toThrow();
+      await expect(
+        AccountService.updateGameOptions(1, invalidData),
+      ).rejects.toThrow();
     });
 
     it('should reject invalid color scheme', async () => {
@@ -104,8 +115,9 @@ describe('AccountService', () => {
         colorScheme: 'INVALID_SCHEME',
       };
 
-      await expect(AccountService.updateGameOptions(1, invalidData))
-        .rejects.toThrow();
+      await expect(
+        AccountService.updateGameOptions(1, invalidData),
+      ).rejects.toThrow();
     });
   });
 
@@ -117,7 +129,7 @@ describe('AccountService', () => {
 
       mockPrisma.users.findUnique.mockResolvedValue({
         id: 1,
-        email: 'test@example.com'
+        email: 'test@example.com',
       });
 
       const result = await AccountService.requestEmailChange(validData);
@@ -129,8 +141,9 @@ describe('AccountService', () => {
         email: 'invalid-email',
       };
 
-      await expect(AccountService.requestEmailChange(invalidData))
-        .rejects.toThrow();
+      await expect(
+        AccountService.requestEmailChange(invalidData),
+      ).rejects.toThrow();
     });
   });
 
@@ -171,26 +184,29 @@ describe('AccountService', () => {
     it('should reject update without identifiers', async () => {
       const lastActiveData = {};
 
-      await expect(AccountService.updateLastActive(lastActiveData))
-        .rejects.toThrow('At least one identifier');
+      await expect(
+        AccountService.updateLastActive(lastActiveData),
+      ).rejects.toThrow('At least one identifier');
     });
   });
 
   describe('Vacation mode', () => {
     it('should start vacation mode successfully', async () => {
       const userId = 1;
-      
+
       mockPrisma.accountStatusHistory.count.mockResolvedValue(0); // No vacations this year
-      
+
       const result = await AccountService.startVacation(userId);
       expect(result.message).toBe('Vacation mode started');
     });
 
     it('should end vacation mode successfully', async () => {
       const userId = 1;
-      
-      mockPrisma.accountStatusHistory.updateMany = vi.fn().mockResolvedValue({ count: 1 });
-      
+
+      mockPrisma.accountStatusHistory.updateMany = vi
+        .fn()
+        .mockResolvedValue({ count: 1 });
+
       const result = await AccountService.endVacation(userId);
       expect(result.message).toBe('Vacation mode ended');
     });

@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from 'bun:test';
-import { installMockPrisma, mockPrisma, resetMockPrisma } from 'test/utils/mockPrisma';
+import { beforeEach, describe, expect, it, vi } from 'bun:test';
+import {
+  installMockPrisma,
+  mockPrisma,
+  resetMockPrisma,
+} from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
 
 // Require module under test after mocks installed
 const userService = require('../User.service');
+
 const { updateLastActive, userExists } = userService;
 
 describe('user.service', () => {

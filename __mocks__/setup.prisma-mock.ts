@@ -1,6 +1,6 @@
 // test/setup.prisma-mock.ts
-import { afterEach, mock } from "bun:test";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from '@prisma/client';
+import { afterEach, mock } from 'bun:test';
 
 /** Narrow, typed helper for only what you use. Extend as needed. */
 type ModelMocks = {
@@ -36,20 +36,22 @@ function makePrismaMock(): PrismaClientMock {
 
   // Handle both array- and callback-form transactions
   const $transaction = mock(async (...args: any[]) => {
-    if (typeof args[0] === "function") {
+    if (typeof args[0] === 'function') {
       // interactive transaction: prisma.$transaction(async (tx) => { ... })
       const cb = args[0];
       return cb(prismaMock as PrismaClient);
     }
     // array form: prisma.$transaction([op1, op2])
     const ops = args[0] ?? [];
-    return Promise.all(ops.map((op: any) => (typeof op === "function" ? op() : op)));
+    return Promise.all(
+      ops.map((op: any) => (typeof op === 'function' ? op() : op)),
+    );
   });
 
   const prismaMock: PrismaClientMock = {
     __mocks: { models },
-    $connect: mock(async () => { }),
-    $disconnect: mock(async () => { }),
+    $connect: mock(async () => {}),
+    $disconnect: mock(async () => {}),
     $transaction,
     // Attach model delegates (only those you use)
     users: {
@@ -69,13 +71,13 @@ function makePrismaMock(): PrismaClientMock {
 const prismaMock = makePrismaMock();
 
 /** Replace your real prisma module everywhere before tests load */
-mock.module("@/lib/prisma", () => ({
+mock.module('@/lib/prisma', () => ({
   default: prismaMock as unknown as PrismaClient,
   prisma: prismaMock as unknown as PrismaClient,
 }));
 
 // Optional: also block direct imports of @prisma/client (discourage in app code)
-mock.module("@prisma/client", () => {
+mock.module('@prisma/client', () => {
   class PrismaClientShim {
     // returning an existing object from a class constructor is allowed in JS
     constructor() {

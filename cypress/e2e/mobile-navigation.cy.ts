@@ -62,13 +62,24 @@ describe('Mobile navigation', () => {
     cy.get('@mobileDialog').should('be.visible');
 
     cy.get('@mobileDialog').contains('h2', 'Menu').should('be.visible');
-    cy.get('@mobileDialog').find('[data-testid="mobile-nav-segmented"]').should('be.visible');
+    cy.get('@mobileDialog')
+      .find('[data-testid="mobile-nav-segmented"]')
+      .should('be.visible');
 
-    cy.get('@mobileDialog').find('[data-testid="mobile-nav-segmented"]').contains('Sidebar').click();
-    cy.get('@mobileDialog').find('[data-testid="mobile-nav-segmented"]').contains('Sidebar').should('be.visible');
+    cy.get('@mobileDialog')
+      .find('[data-testid="mobile-nav-segmented"]')
+      .contains('Sidebar')
+      .click();
+    cy.get('@mobileDialog')
+      .find('[data-testid="mobile-nav-segmented"]')
+      .contains('Sidebar')
+      .should('be.visible');
     cy.screenshot('mobile-nav-logged-in-sidebar-tab');
 
-    cy.get('@mobileDialog').find('[data-testid="mobile-nav-segmented"]').contains('Menu').click();
+    cy.get('@mobileDialog')
+      .find('[data-testid="mobile-nav-segmented"]')
+      .contains('Menu')
+      .click();
     cy.get('@mobileDialog').within(() => {
       cy.contains('button', 'Battle').should('be.visible');
     });
@@ -84,8 +95,14 @@ describe('Mobile navigation', () => {
     cy.get('@mobileDialog').contains('h2', 'Menu').should('be.visible');
     cy.screenshot('mobile-nav-logged-in-md-open');
 
-    cy.get('@mobileDialog').find('[data-testid="mobile-nav-segmented"]').contains('Sidebar').click();
-    cy.get('@mobileDialog').find('[data-testid="mobile-nav-segmented"]').contains('Sidebar').should('be.visible');
+    cy.get('@mobileDialog')
+      .find('[data-testid="mobile-nav-segmented"]')
+      .contains('Sidebar')
+      .click();
+    cy.get('@mobileDialog')
+      .find('[data-testid="mobile-nav-segmented"]')
+      .contains('Sidebar')
+      .should('be.visible');
     cy.screenshot('mobile-nav-logged-in md-open-in-sidebar-tab');
   });
 
