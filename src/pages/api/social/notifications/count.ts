@@ -17,16 +17,8 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   }
 
   try {
-    // Get both friend requests and gold requests counts
-    const [friendRequests, goldRequests] = await Promise.all([
-      SocialService.countPendingRequests(session.user.id),
-      SocialService.countPendingGoldRequests(session.user.id),
-    ]);
-
-    // Combine the counts
-    const totalCount = (friendRequests.count || 0) + (goldRequests.count || 0);
-
-    return res.status(200).json(stringifyObj({ count: totalCount }));
+    const counts = await SocialService.getNotificationCounts(session.user.id);
+    return res.status(200).json(stringifyObj({ count: counts.totalCount }));
   } catch (error: any) {
     logError('Error fetching combined social notifications count:', error);
     return res.status(500).json({ error: error.message });

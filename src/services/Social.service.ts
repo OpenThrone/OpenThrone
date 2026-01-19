@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { parseBigInt } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 
@@ -50,7 +51,7 @@ export interface GetTopSocialData {
 
 export interface GoldRequestData {
   friendId: number;
-  amount: bigint;
+  amount: bigint | number | string;
   notes?: string;
 }
 
@@ -122,7 +123,14 @@ const GetTopSocialSchema = z.object({
 
 const GoldRequestSchema = z.object({
   friendId: z.number().int(),
-  amount: z.string().transform((val) => BigInt(val)),
+  amount: z.preprocess((val) => parseBigInt(val), z.bigint().positive()),
+  notes: z.string().optional(),
+});
+
+const TransferGoldSchema = z.object({
+  fromUserId: z.number().int().positive(),
+  toUserId: z.number().int().positive(),
+  amount: z.preprocess((val) => parseBigInt(val), z.bigint().positive()),
   notes: z.string().optional(),
 });
 
@@ -339,6 +347,21 @@ export class SocialService {
       logError('Error responding to relationship request', {
         userId,
         requestId: validatedData.requestId,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  static async getSocialRequestParticipants(requestId: number) {
+    try {
+      return await prisma.social.findUnique({
+        where: { id: requestId },
+        select: { playerId: true, friendId: true },
+      });
+    } catch (error: any) {
+      logError('Error fetching social request participants', {
+        requestId,
         error,
       });
       throw error;
@@ -617,6 +640,28 @@ export class SocialService {
   }
 
   /**
+   * Gets combined social notification counts for a user.
+   */
+  static async getNotificationCounts(userId: number) {
+    try {
+      const [friendRequests, goldRequests] = await Promise.all([
+        SocialService.countPendingRequests(userId),
+        SocialService.countPendingGoldRequests(userId),
+      ]);
+      const friendCount = friendRequests.count || 0;
+      const goldCount = goldRequests.count || 0;
+      return {
+        friendRequests: friendCount,
+        goldRequests: goldCount,
+        totalCount: friendCount + goldCount,
+      };
+    } catch (error: any) {
+      logError('Error counting social notifications', { userId, error });
+      throw error;
+    }
+  }
+
+  /**
    * Gets pending gold transfer requests for a user
    */
   static async getPendingGoldRequests(userId: number) {
@@ -653,6 +698,21 @@ export class SocialService {
       logError('Error responding to gold request', {
         userId,
         requestId: validatedData.requestId,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  static async getGoldRequestParticipants(requestId: number) {
+    try {
+      return await prisma.bank_history.findUnique({
+        where: { id: requestId },
+        select: { from_user_id: true, to_user_id: true },
+      });
+    } catch (error: any) {
+      logError('Error fetching gold request participants', {
+        requestId,
         error,
       });
       throw error;
@@ -707,20 +767,30 @@ export class SocialService {
   static async transferGoldToFriend(
     fromUserId: number,
     toUserId: number,
-    amount: bigint,
+    amount: bigint | number | string,
     notes?: string,
   ) {
+    const validatedParams = TransferGoldSchema.parse({
+      fromUserId,
+      toUserId,
+      amount,
+      notes,
+    });
     try {
-      return await transferGoldToFriend({
-        fromUserId,
-        toUserId,
-        amount,
-        notes,
+      const result = await transferGoldToFriend({
+        fromUserId: validatedParams.fromUserId,
+        toUserId: validatedParams.toUserId,
+        amount: validatedParams.amount,
+        notes: validatedParams.notes,
       });
+      return {
+        ...result,
+        amount: validatedParams.amount.toString(),
+      };
     } catch (error: any) {
       logError('Error transferring gold to friend', {
-        fromUserId,
-        toUserId,
+        fromUserId: validatedParams.fromUserId,
+        toUserId: validatedParams.toUserId,
         error,
       });
       throw error;

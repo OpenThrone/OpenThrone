@@ -1,18 +1,17 @@
 import type { NextApiResponse } from 'next';
-import { z } from 'zod';
 
+import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
-
-const RequestSchema = z.object({
-  friendId: z.number().int(),
-  amount: z.string().transform((val) => BigInt(val)),
-  notes: z.string().optional(),
-});
+import {
+  emitGoldRequestCountUpdate,
+  emitGoldRequestNotification,
+  emitSocialCountUpdate,
+} from '@/utils/socialNotifications';
 
 const requestHandler = async (
   req: AuthenticatedRequest,
@@ -27,15 +26,7 @@ const requestHandler = async (
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const parseResult = RequestSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: parseResult.error.flatten().fieldErrors,
-    });
-  }
-
-  const { friendId, amount, notes } = parseResult.data;
+  const { friendId, amount, notes } = req.body ?? {};
   const fromUserId = session.user.id;
 
   try {
@@ -44,6 +35,14 @@ const requestHandler = async (
       amount,
       notes,
     });
+
+    const io = getSocketIO();
+    await emitGoldRequestNotification(io, {
+      senderId: fromUserId,
+      recipientId: Number(friendId),
+    });
+    await emitSocialCountUpdate(io, Number(friendId));
+    await emitGoldRequestCountUpdate(io, Number(friendId));
 
     return res.status(201).json(stringifyObj(result));
   } catch (error: any) {

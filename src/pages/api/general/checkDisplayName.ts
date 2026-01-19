@@ -1,13 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 
+import { withCors } from '@/middleware/cors';
 import { GeneralService } from '@/services';
 import { logError } from '@/utils/logger';
 
-export default async function handle(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const DisplayNameSchema = z.object({ displayName: z.string().min(1) });
     const parseResult = DisplayNameSchema.safeParse(req.body);
@@ -30,3 +28,5 @@ export default async function handle(
     return res.status(405).json({ error: 'Method not allowed.' });
   }
 }
+
+export default withCors(handle, { envVar: 'OT_AUTH_CORS_ORIGINS' });

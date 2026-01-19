@@ -61,7 +61,8 @@ const transferHandler = async (
         select: { display_name: true },
       });
       const senderName = sender?.display_name || 'someone';
-      const message = `You received ${amount.toString()} gold from ${senderName}`;
+      const amountLabel = result?.amount ?? amount.toString();
+      const message = `You received ${amountLabel} gold from ${senderName}`;
       const hash = md5(message + friendIdNum + result?.transferId);
       const io = getSocketIO();
       io?.to(`user-${friendIdNum}`).emit('goldTransferReceived', {
@@ -69,7 +70,7 @@ const transferHandler = async (
         hash,
         fromUserId,
         transferId: result?.transferId,
-        amount: amount.toString(),
+        amount: amountLabel,
       });
     }
 

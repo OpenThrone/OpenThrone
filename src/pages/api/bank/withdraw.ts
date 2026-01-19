@@ -1,17 +1,9 @@
 import type { NextApiResponse } from 'next';
-import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
-import { withdraw } from '@/services/Bank.service';
+import { withdrawGold } from '@/services/Bank.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/numberFormatting';
-
-const WithdrawSchema = z.object({
-  withdrawAmount: z
-    .string()
-    .or(z.number())
-    .transform((val) => BigInt(val)),
-});
 
 const withdrawHandler = async (
   req: AuthenticatedRequest,
@@ -21,24 +13,16 @@ const withdrawHandler = async (
     return res.status(405).end();
   }
 
-  const validatedBody = WithdrawSchema.safeParse(req.body);
-  if (!validatedBody.success) {
-    return res.status(400).json({ error: 'Invalid withdraw amount' });
-  }
-
   const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { withdrawAmount } = validatedBody.data;
-
-  if (withdrawAmount === null || withdrawAmount <= 0) {
-    return res.status(400).json({ error: 'Invalid withdraw amount' });
-  }
-
   try {
-    const updatedUser = await withdraw(Number(session.user.id), withdrawAmount);
+    const updatedUser = await withdrawGold(
+      Number(session.user.id),
+      req.body?.withdrawAmount,
+    );
     return res.status(200).json({
       message: 'Withdraw successful',
       data: stringifyObj(updatedUser),

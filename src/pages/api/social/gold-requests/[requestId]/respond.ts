@@ -1,17 +1,16 @@
 import type { NextApiResponse } from 'next';
-import { z } from 'zod';
 
+import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
-
-const ResponseSchema = z.object({
-  action: z.enum(['accept', 'decline']),
-  message: z.string().optional(),
-});
+import {
+  emitGoldRequestCountUpdate,
+  emitSocialCountUpdate,
+} from '@/utils/socialNotifications';
 
 const respondHandler = async (
   req: AuthenticatedRequest,
@@ -33,23 +32,25 @@ const respondHandler = async (
     return res.status(400).json({ error: 'Invalid request ID' });
   }
 
-  const parseResult = ResponseSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: parseResult.error.flatten().fieldErrors,
-    });
-  }
-
-  const { action, message } = parseResult.data;
+  const { action, message } = req.body ?? {};
   const userId = session.user.id;
 
   try {
+    const participants =
+      await SocialService.getGoldRequestParticipants(requestIdNum);
     const result = await SocialService.respondToGoldRequest(userId, {
       requestId: requestIdNum,
       action,
       message,
     });
+
+    const io = getSocketIO();
+    await emitSocialCountUpdate(io, userId);
+    await emitGoldRequestCountUpdate(io, userId);
+    if (participants?.from_user_id) {
+      await emitSocialCountUpdate(io, participants.from_user_id);
+      await emitGoldRequestCountUpdate(io, participants.from_user_id);
+    }
 
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {

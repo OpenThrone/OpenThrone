@@ -2,6 +2,8 @@ import type { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma typ
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import UserModel from '@/models/Users';
+import { parseBigInt } from '@/utils/jsonHelpers';
 import { stringifyObj } from '@/utils/numberFormatting';
 
 // Define the type for the transaction client
@@ -19,6 +21,51 @@ const WithdrawSchema = z.object({
   userId: z.number().int().positive(),
   withdrawAmount: z.bigint().positive(),
 });
+
+const DepositRequestSchema = z.object({
+  userId: z.number().int().positive(),
+  amount: z.preprocess((val) => parseBigInt(val), z.bigint().positive()),
+});
+
+const WithdrawRequestSchema = z.object({
+  userId: z.number().int().positive(),
+  amount: z.preprocess((val) => parseBigInt(val), z.bigint().positive()),
+});
+
+export const depositGold = async (
+  userId: number,
+  amount: string | number | bigint,
+) => {
+  const parseResult = DepositRequestSchema.safeParse({ userId, amount });
+  if (!parseResult.success) {
+    throw new Error(`Invalid deposit amount: ${String(amount)}`);
+  }
+
+  const history = await getDepositHistory(parseResult.data.userId);
+  const user = await prisma.users.findUnique({
+    where: { id: parseResult.data.userId },
+  });
+
+  if (!user) throw new Error('User not found');
+
+  const uModel = new UserModel(user);
+  if (uModel.maximumBankDeposits - history.length <= 0) {
+    throw new Error('Maximum deposits reached');
+  }
+
+  return deposit(parseResult.data.userId, parseResult.data.amount);
+};
+
+export const withdrawGold = async (
+  userId: number,
+  amount: string | number | bigint,
+) => {
+  const parseResult = WithdrawRequestSchema.safeParse({ userId, amount });
+  if (!parseResult.success) {
+    throw new Error('Invalid withdraw amount');
+  }
+  return withdraw(parseResult.data.userId, parseResult.data.amount);
+};
 
 /**
  * Deposits gold from a user's hand into their bank account within a transaction.
