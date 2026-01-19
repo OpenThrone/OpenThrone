@@ -1,11 +1,21 @@
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
-import { Box, Button, Grid, Space, Text, useMantineTheme } from '@mantine/core';
+import {
+  Box,
+  Button,
+  Grid,
+  Group,
+  Space,
+  Text,
+  useMantineTheme,
+} from '@mantine/core';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState } from 'react';
 
+import { PlayerRace } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
-import { getAssetPath, getLevelFromXP } from '@/utils/utilities';
+import { getAssetPath, getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 
 import { FramedAvatar } from './FramedAvatar';
 import { GameCard } from './game/GameCard';
@@ -17,6 +27,8 @@ const AttackResults = ({ battle, viewerID }) => {
   const isViewerDefender = viewerID === defenderPlayer.id;
   const isPlayerWinner = winner === viewerID;
   const isAttackerWinner = winner === attackerPlayer.id;
+  const allowAttackerProfile = !isViewerAttacker;
+  const allowDefenderProfile = !isViewerDefender;
   const [isOpen, setIsOpen] = useState(false);
   const theme = useMantineTheme();
 
@@ -72,25 +84,78 @@ const AttackResults = ({ battle, viewerID }) => {
     visible: { opacity: 1, transition: { duration: 0.3 } },
   };
 
-  const frameSrc = getAssetPath('avatarFrame');
+  const frameSrc = getAssetPath(
+    'avatarFrame',
+    null,
+    (defenderPlayer?.race as PlayerRace) || 'ELF',
+  );
+  const attackerFrameSrc = getAssetPath(
+    'avatarFrame',
+    null,
+    (attackerPlayer?.race as PlayerRace) || 'ELF',
+  );
+  const attackerAvatarSrc = getAvatarSrc(
+    attackerPlayer?.avatar || 'SHIELD',
+    attackerPlayer?.race,
+    '150x150',
+  );
+  const defenderAvatarSrc = getAvatarSrc(
+    defenderPlayer?.avatar || 'SHIELD',
+    defenderPlayer?.race,
+    '150x150',
+  );
+  const attackerProfileHref = `/userprofile/${attackerPlayer?.id}`;
+  const defenderProfileHref = `/userprofile/${defenderPlayer?.id}`;
 
   return (
     <GameCard title="Battle Report" icon={faScroll}>
       <Grid grow gutter="lg">
         <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Text size="xl" fw={700}>
-            {attackerPlayer?.display_name}
-          </Text>
-          <Text c="dimmed">
-            Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
-          </Text>
-          <Image
-            src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
-            alt="attacker avatar"
-            width={150}
-            height={150}
-            style={{ margin: 'auto' }}
-          />
+          <Box
+            component={allowAttackerProfile ? Link : 'div'}
+            href={allowAttackerProfile ? attackerProfileHref : undefined}
+            aria-label={
+              allowAttackerProfile
+                ? `View ${attackerPlayer?.display_name} profile`
+                : undefined
+            }
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textDecoration: 'none',
+              color: 'inherit',
+              cursor: allowAttackerProfile ? 'pointer' : 'default',
+            }}
+          >
+            <Group
+              gap={8}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 8,
+                border: '1px solid #1f2b3b',
+                background: 'linear-gradient(180deg, #121a24, #0b1118)',
+                fontFamily: 'MedievalSharp, serif',
+              }}
+            >
+              <Text size="xl" fw={700} style={{ letterSpacing: 0.5 }}>
+                {attackerPlayer?.display_name}
+              </Text>
+              <Text size="xs" c="dimmed" tt="uppercase">
+                Lvl {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
+              </Text>
+            </Group>
+            <Box style={{ marginTop: -8 }}>
+              <FramedAvatar
+                frameSrc={attackerFrameSrc}
+                src={attackerAvatarSrc}
+                alt="attacker avatar"
+                size={380}
+                insetX={60}
+                insetY={90}
+              />
+            </Box>
+          </Box>
         </Grid.Col>
 
         <Grid.Col
@@ -112,27 +177,51 @@ const AttackResults = ({ battle, viewerID }) => {
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Text size="xl" fw={700}>
-            {defenderPlayer?.display_name}
-          </Text>
-          <Text c="dimmed">
-            Level: {getLevelFromXP(stats.startOfAttack.Defender.experience)}
-          </Text>
-          <Text size="xl" fw={700}>
-            {attackerPlayer?.display_name}
-          </Text>
-          <Text c="dimmed">
-            Level: {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
-          </Text>
-
-          <FramedAvatar
-            frameSrc={frameSrc}
-            src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
-            alt="defender avatar"
-            size={380} // outer size
-            insetX={60}
-            insetY={90}
-          />
+          <Box
+            component={allowDefenderProfile ? Link : 'div'}
+            href={allowDefenderProfile ? defenderProfileHref : undefined}
+            aria-label={
+              allowDefenderProfile
+                ? `View ${defenderPlayer?.display_name} profile`
+                : undefined
+            }
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textDecoration: 'none',
+              color: 'inherit',
+              cursor: allowDefenderProfile ? 'pointer' : 'default',
+            }}
+          >
+            <Group
+              gap={8}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 8,
+                border: '1px solid #1f2b3b',
+                background: 'linear-gradient(180deg, #121a24, #0b1118)',
+                fontFamily: 'MedievalSharp, serif',
+              }}
+            >
+              <Text size="xl" fw={700} style={{ letterSpacing: 0.5 }}>
+                {defenderPlayer?.display_name}
+              </Text>
+              <Text size="xs" c="dimmed" tt="uppercase">
+                Lvl {getLevelFromXP(stats.startOfAttack.Defender.experience)}
+              </Text>
+            </Group>
+            <Box style={{ marginTop: -8 }}>
+              <FramedAvatar
+                frameSrc={frameSrc}
+                src={defenderAvatarSrc}
+                alt="defender avatar"
+                size={380} // outer size
+                insetX={60}
+                insetY={90}
+              />
+            </Box>
+          </Box>
         </Grid.Col>
       </Grid>
 

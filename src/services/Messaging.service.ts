@@ -2,7 +2,7 @@ import { ChatRole, Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { logError } from '@/utils/logger';
+import { logError, logInfo } from '@/utils/logger';
 
 // Type definitions for messaging operations
 export interface CreateRoomData {
@@ -63,6 +63,10 @@ const MessageSchema = z.object({
   sharedAttackLogId: z.number().int().positive().optional(),
 });
 
+const SendMessageSchema = MessageSchema.extend({
+  roomId: z.number().int().positive(),
+});
+
 const ParticipantSchema = z.object({
   userIds: z.array(z.number().int().positive()).min(1),
 });
@@ -93,6 +97,86 @@ const ReadStatusSchema = z.object({
 });
 
 export class MessagingService {
+  private static async checkLogSharePermission(
+    userId: number,
+    log: {
+      id: number;
+      attacker_id: number;
+      defender_id: number;
+      acl: {
+        shared_with_user_id: number | null;
+        shared_with_alliance_id: number | null;
+      }[];
+    },
+  ): Promise<boolean> {
+    if (log.attacker_id === userId || log.defender_id === userId) return true;
+    if (log.acl.some((acl) => acl.shared_with_user_id === userId)) return true;
+
+    const userAllianceIds = (
+      await prisma.alliance_memberships.findMany({
+        where: { user_id: userId },
+        select: { alliance_id: true },
+      })
+    ).map((m) => m.alliance_id);
+    if (
+      log.acl.some(
+        (acl) =>
+          acl.shared_with_alliance_id &&
+          userAllianceIds.includes(acl.shared_with_alliance_id),
+      )
+    )
+      return true;
+
+    return false;
+  }
+
+  private static async grantAclToParticipants(
+    logId: number,
+    roomId: number,
+    senderId: number,
+  ) {
+    logInfo(
+      `[ACL Grant] Attempting grant for log ${logId}, room ${roomId}, sender ${senderId}`,
+    );
+    try {
+      const recipientParticipants = await prisma.chatRoomParticipant.findMany({
+        where: { roomId, userId: { not: senderId } },
+        select: { userId: true },
+      });
+      logInfo(
+        `[ACL Grant] Found recipients: ${JSON.stringify(recipientParticipants.map((p) => p.userId))}`,
+      );
+
+      if (recipientParticipants.length === 0) {
+        logInfo(
+          `[ACL Grant] No recipients found for room ${roomId} (excluding sender ${senderId}). Skipping ACL creation.`,
+        );
+        return;
+      }
+
+      const aclDataToCreate = recipientParticipants.map((p) => ({
+        attack_log_id: logId,
+        shared_with_user_id: p.userId,
+      }));
+      logInfo(
+        `[ACL Grant] Prepared ACL data: ${JSON.stringify(aclDataToCreate)}`,
+      );
+
+      const createdAcls = await prisma.attack_log_acl.createMany({
+        data: aclDataToCreate,
+        skipDuplicates: true,
+      });
+      logInfo(
+        `[ACL Grant] Successfully created ${createdAcls.count} ACL entries for shared log ${logId} in room ${roomId}`,
+      );
+    } catch (aclError) {
+      logError(
+        `[ACL Grant] FAILED to create ACL entries for shared log ${logId} in room ${roomId}:`,
+        aclError,
+      );
+    }
+  }
+
   /**
    * Gets all chat rooms for a user with unread counts
    */
@@ -843,6 +927,209 @@ export class MessagingService {
         userId,
         roomId,
         data: validatedData,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Sends a message with additional real-time validation and ACL handling.
+   */
+  static async sendMessageRealtime(
+    userId: number,
+    data: MessageData & { roomId: number },
+  ): Promise<
+    Prisma.ChatMessageGetPayload<{
+      include: {
+        sender: {
+          select: {
+            id: true;
+            display_name: true;
+            avatar: true;
+            last_active: true;
+          };
+        };
+        replyToMessage: {
+          select: {
+            id: true;
+            content: true;
+            sender: { select: { id: true; display_name: true } };
+          };
+        };
+        sharedAttackLog: {
+          select: {
+            id: true;
+            attacker_id: true;
+            defender_id: true;
+            winner: true;
+            timestamp: true;
+          };
+        };
+        reactions: {
+          select: {
+            userId: true;
+            reaction: true;
+            user: { select: { id: true; display_name: true } };
+          };
+        };
+        readBy: {
+          select: {
+            userId: true;
+            readAt: true;
+            user: { select: { id: true; display_name: true } };
+          };
+        };
+      };
+    }>
+  > {
+    const validatedData = SendMessageSchema.parse(data);
+    const {
+      roomId,
+      content,
+      replyToMessageId,
+      messageType = 'TEXT',
+      sharedAttackLogId,
+    } = validatedData;
+
+    try {
+      const participant = await prisma.chatRoomParticipant.findUnique({
+        where: { roomId_userId: { roomId, userId } },
+        include: { room: { select: { allianceId: true } } },
+      });
+
+      if (!participant || !participant.canWrite) {
+        throw new Error('Cannot send message in this room.');
+      }
+
+      if (participant.room.allianceId) {
+        const membership = await prisma.alliance_memberships.findUnique({
+          where: {
+            unique_alliance_user: {
+              alliance_id: participant.room.allianceId,
+              user_id: userId,
+            },
+          },
+        });
+        if (!membership) {
+          throw new Error('Not an alliance member.');
+        }
+      }
+
+      let validReplyToId: number | null = null;
+      if (replyToMessageId) {
+        const repliedTo = await prisma.chatMessage.findUnique({
+          where: { id: replyToMessageId, roomId },
+        });
+        if (!repliedTo) {
+          throw new Error('Cannot reply to this message.');
+        }
+        validReplyToId = repliedTo.id;
+      }
+
+      let validSharedAttackLogId: number | null = null;
+      if (messageType === 'ATTACK_LOG_SHARE' && sharedAttackLogId) {
+        const log = await prisma.attack_log.findUnique({
+          where: { id: sharedAttackLogId },
+          select: {
+            id: true,
+            attacker_id: true,
+            defender_id: true,
+            acl: {
+              select: {
+                shared_with_user_id: true,
+                shared_with_alliance_id: true,
+              },
+            },
+          },
+        });
+        if (!log) {
+          throw new Error('Attack log not found.');
+        }
+        const canShare = await MessagingService.checkLogSharePermission(
+          userId,
+          log,
+        );
+        if (!canShare) {
+          throw new Error('No permission to share this log.');
+        }
+        validSharedAttackLogId = log.id;
+      } else if (messageType !== 'TEXT') {
+        throw new Error('Unsupported message type.');
+      }
+
+      const newMessage = await prisma.chatMessage.create({
+        data: {
+          roomId,
+          senderId: userId,
+          content,
+          messageType,
+          replyToMessageId: validReplyToId,
+          sharedAttackLogId: validSharedAttackLogId,
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              display_name: true,
+              avatar: true,
+              last_active: true,
+            },
+          },
+          replyToMessage: {
+            select: {
+              id: true,
+              content: true,
+              sender: { select: { id: true, display_name: true } },
+            },
+          },
+          sharedAttackLog: {
+            select: {
+              id: true,
+              attacker_id: true,
+              defender_id: true,
+              winner: true,
+              timestamp: true,
+            },
+          },
+          reactions: {
+            select: {
+              userId: true,
+              reaction: true,
+              user: { select: { id: true, display_name: true } },
+            },
+          },
+          readBy: {
+            select: {
+              userId: true,
+              readAt: true,
+              user: { select: { id: true, display_name: true } },
+            },
+          },
+        },
+      });
+
+      await prisma.chatRoom.update({
+        where: { id: roomId },
+        data: { updatedAt: new Date() },
+      });
+
+      if (
+        newMessage.messageType === 'ATTACK_LOG_SHARE' &&
+        newMessage.sharedAttackLogId
+      ) {
+        await MessagingService.grantAclToParticipants(
+          newMessage.sharedAttackLogId,
+          roomId,
+          userId,
+        );
+      }
+
+      return newMessage;
+    } catch (error) {
+      logError('Error sending realtime message', {
+        userId,
+        roomId,
         error,
       });
       throw error;

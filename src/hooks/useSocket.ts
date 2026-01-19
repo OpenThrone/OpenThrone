@@ -5,6 +5,9 @@ import { io } from 'socket.io-client';
 import { logError, logInfo } from '@/utils/logger';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:3000';
+const RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY_MS = 1000;
+const RECONNECT_DELAY_MAX_MS = 30000;
 
 let nextClientId = 0;
 const desiredUserIds = new Map<number, number | null>();
@@ -74,7 +77,13 @@ function reconcileSocketConnection() {
   }
 
   sharedUserId = desiredUserId;
-  sharedSocket = io(SERVER_URL, { withCredentials: true });
+  sharedSocket = io(SERVER_URL, {
+    withCredentials: true,
+    reconnection: true,
+    reconnectionAttempts: RECONNECT_ATTEMPTS,
+    reconnectionDelay: RECONNECT_DELAY_MS,
+    reconnectionDelayMax: RECONNECT_DELAY_MAX_MS,
+  });
   notifySocket(sharedSocket);
 
   logInfo('Connecting to Socket.IO:', SERVER_URL);
@@ -94,6 +103,15 @@ function reconcileSocketConnection() {
     logInfo('Socket.IO reconnected, re-registering user and rooms');
     notifyConnection(true);
     sharedSocket?.emit('registerUser', { userId: desiredUserId });
+  });
+
+  sharedSocket.on('reconnect_attempt', (attempt) => {
+    logInfo(`Socket.IO reconnect attempt ${attempt}/${RECONNECT_ATTEMPTS}`);
+  });
+
+  sharedSocket.on('reconnect_failed', () => {
+    logError('Socket.IO reconnect failed; giving up');
+    notifyConnection(false);
   });
 
   sharedSocket.onAny((event, data) => {
