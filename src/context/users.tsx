@@ -1,6 +1,6 @@
 import type { users as PrismaUser } from '@prisma/client';
 import { usePathname, useRouter } from 'next/navigation';
-import { signOut, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
 import {
   createContext,
@@ -17,7 +17,6 @@ import { alertService } from '@/services/Alert.service';
 import type { UserApiResponse } from '@/types/typings';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logDebug, logError, logInfo, logWarn } from '@/utils/logger';
-import { fetchWithFallback } from '@/utils/socketFunctions';
 
 // Define UnreadMessages interface locally or import if moved to typings.d.ts
 interface UnreadMessages {
@@ -84,11 +83,9 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     () => (session?.user?.id ? Number(session.user.id) : null),
     [session],
   );
-  const { socket, isConnected, addEventListener, removeEventListener } =
-    useSocket(userId);
+  const { addEventListener, removeEventListener } = useSocket(userId);
   const [loading, setLoading] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState<UnreadMessages[]>([]);
-  const WS_ENABLED = process.env.NEXT_PUBLIC_WS_ENABLED === 'true';
 
   const processAndSetUserData = useCallback(
     (userData: UserApiResponse | PrismaUser) => {
@@ -168,61 +165,24 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   );
 
   const fetchUserData = useCallback(
-    async (uID: number) => {
-      setLoading(true); // Set loading true at the start of fetch
-      await fetchWithFallback(
-        socket,
-        isConnected,
-        'requestUserData', // WebSocket event
-        '/api/general/getUser', // Fallback API URL
-        { userId: uID },
-        (data: UserApiResponse | PrismaUser) => {
-          // Expect raw data here
-          processAndSetUserData(data);
-        },
-        () => {}, // Let processAndSetUserData handle final loading state
-      );
+    async (_uID: number) => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/general/getUser');
+        if (!response.ok) throw new Error('Failed to fetch user data');
+        const data: UserApiResponse | PrismaUser = await response.json();
+        processAndSetUserData(data);
+      } catch (error) {
+        logError('Error fetching user data:', error);
+        alertService.error('Failed to fetch user data.');
+        setUser(null);
+        setLoading(false);
+      }
     },
-    [socket, isConnected, processAndSetUserData],
+    [processAndSetUserData],
   );
 
   useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const handleUserData = (userData: UserApiResponse | PrismaUser) => {
-      // Expect raw data
-      logInfo('Socket received userData:', userData.id);
-      processAndSetUserData(userData);
-    };
-
-    const handleUserDataError = (error: any) => {
-      logError('User Data Error from Socket:', error);
-      if (
-        error?.error?.toLowerCase().includes('unauthorized') ||
-        error?.error?.includes('not found')
-      ) {
-        alertService.error(
-          error?.error || 'Session invalid. Please log in again.',
-          true,
-        );
-        signOut({ callbackUrl: '/account/login' });
-      } else {
-        alertService.error(
-          error?.error || 'Failed to fetch user data via WebSocket.',
-        );
-      }
-      setUser(null); // Clear user on significant error
-      setLoading(false);
-    };
-
-    const handleUserVacation = (userData: UserApiResponse | PrismaUser) => {
-      logInfo('Socket received userVacation:', userData.id);
-      setUser(null);
-      router.push('/account/login?vacation=1');
-      setLoading(false);
-    };
-
-    // --- Notification Handlers ---
     const handleNewMessageNotification = (data: UnreadMessages) => {
       logInfo('Received newMessageNotification:', data);
       setUnreadMessages((prev) => {
@@ -230,143 +190,20 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         return [...prev, { ...data, isRead: false }].slice(-20);
       });
     };
-    // ... other notification handlers (handleAttackNotification, etc.) remain the same ...
-    const handleAttackNotification = (data: {
-      message: string;
-      hash: string;
-    }) => {
-      if (!sessionStorage.getItem(data.hash)) {
-        alertService.error(data.message);
-        sessionStorage.setItem(data.hash, 'true');
-        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
-      }
-    };
-    const handleFriendRequestNotification = (data: {
-      message: string;
-      hash: string;
-    }) => {
-      if (!sessionStorage.getItem(data.hash)) {
-        alertService.success(data.message);
-        sessionStorage.setItem(data.hash, 'true');
-        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
-      }
-    };
-    const handleEnemyDeclarationNotification = (data: {
-      message: string;
-      hash: string;
-    }) => {
-      if (!sessionStorage.getItem(data.hash)) {
-        alertService.error(data.message);
-        sessionStorage.setItem(data.hash, 'true');
-        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
-      }
-    };
-    const handleSpyDefenseNotification = (data: {
-      message: string;
-      hash: string;
-    }) => {
-      if (!sessionStorage.getItem(data.hash)) {
-        alertService.success(data.message);
-        sessionStorage.setItem(data.hash, 'true');
-        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
-      }
-    };
-    const handleBlogPostNotification = (data: {
-      message: string;
-      hash: string;
-      postId?: number;
-    }) => {
-      if (!sessionStorage.getItem(data.hash)) {
-        alertService.success(data.message);
-        sessionStorage.setItem(data.hash, 'true');
-        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
-      }
-    };
-    const handleGoldTransferReceived = (data: {
-      message: string;
-      hash: string;
-    }) => {
-      if (!sessionStorage.getItem(data.hash)) {
-        alertService.success(data.message);
-        sessionStorage.setItem(data.hash, 'true');
-        setTimeout(() => sessionStorage.removeItem(data.hash), 60000);
-      }
-      socket?.emit('requestUserData');
-    };
-    const handlePong = () => logInfo('Pong received!');
-    const handleAlertNotification = (alertData: any) =>
-      alertService.success(alertData); // Or other types
 
-    addEventListener('userData', handleUserData);
-    addEventListener('userDataError', handleUserDataError);
-    addEventListener('userVacation', handleUserVacation);
-    addEventListener('pong', handlePong);
-    addEventListener('attackNotification', handleAttackNotification);
-    addEventListener(
-      'friendRequestNotification',
-      handleFriendRequestNotification,
-    );
-    addEventListener(
-      'enemyDeclarationNotification',
-      handleEnemyDeclarationNotification,
-    );
     addEventListener('newMessageNotification', handleNewMessageNotification);
-    addEventListener('spyDefenseNotification', handleSpyDefenseNotification);
-    addEventListener('blogPostNotification', handleBlogPostNotification);
-    addEventListener('goldTransferReceived', handleGoldTransferReceived);
-    addEventListener('alertNotification', handleAlertNotification);
-
     return () => {
-      removeEventListener('userData', handleUserData);
-      removeEventListener('userDataError', handleUserDataError);
-      removeEventListener('userVacation', handleUserVacation);
-      removeEventListener('pong', handlePong);
-      removeEventListener('attackNotification', handleAttackNotification);
-      removeEventListener(
-        'friendRequestNotification',
-        handleFriendRequestNotification,
-      );
-      removeEventListener(
-        'enemyDeclarationNotification',
-        handleEnemyDeclarationNotification,
-      );
       removeEventListener(
         'newMessageNotification',
         handleNewMessageNotification,
       );
-      removeEventListener(
-        'spyDefenseNotification',
-        handleSpyDefenseNotification,
-      );
-      removeEventListener('blogPostNotification', handleBlogPostNotification);
-      removeEventListener('goldTransferReceived', handleGoldTransferReceived);
-      removeEventListener('alertNotification', handleAlertNotification);
     };
-  }, [
-    socket,
-    isConnected,
-    addEventListener,
-    removeEventListener,
-    processAndSetUserData,
-    router,
-  ]);
+  }, [addEventListener, removeEventListener]);
 
   useEffect(() => {
-    if (status === 'authenticated' && userId && (isConnected || !WS_ENABLED)) {
-      // Check WS_ENABLED flag
-      logInfo(
-        `User authenticated. WS_ENABLED: ${WS_ENABLED}, isConnected: ${isConnected}. Requesting user data...`,
-      );
-      if (isConnected && WS_ENABLED) {
-        socket?.emit('requestUserData');
-      } else if (!WS_ENABLED) {
-        fetchUserData(userId); // Use API fallback if WS disabled
-      } else {
-        // If WS is enabled but not connected yet, wait for connection or fetch after timeout?
-        // For now, let's rely on the socket connection logic to eventually trigger the request.
-        // Or, trigger fetchUserData immediately as fallback if connection is slow:
-        // fetchUserData(userId);
-      }
+    if (status === 'authenticated' && userId) {
+      logInfo('User authenticated. Requesting user data via API...');
+      fetchUserData(userId);
     } else if (status === 'unauthenticated' && !isPublicPath(pathName)) {
       logInfo('User unauthenticated on private path, redirecting to login.');
       router.push('/account/login');
@@ -378,13 +215,10 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   }, [
     status,
     userId,
-    isConnected,
-    socket,
     pathName,
     router,
     fetchUserData,
-    WS_ENABLED,
-  ]); // Added WS_ENABLED
+  ]);
 
   // --- Functions to manage unread messages ---
   const markMessagesAsRead = useCallback((messageId: number) => {
@@ -409,14 +243,8 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         if (userId) {
           // Check if userId is valid
           logInfo('forceUpdate triggered');
-          if (socket && isConnected && WS_ENABLED) {
-            // Check WS_ENABLED flag
-            logInfo('forceUpdate: Requesting user data via WebSocket');
-            socket.emit('requestUserData');
-          } else {
-            logInfo('forceUpdate: Fetching user data via API');
-            fetchUserData(userId); // Use API if socket not ready or WS disabled
-          }
+          logInfo('forceUpdate: Fetching user data via API');
+          fetchUserData(userId);
         } else {
           logWarn('forceUpdate called without a valid userId.');
         }
@@ -432,14 +260,11 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
       loading,
       fetchUserData,
       userId,
-      socket,
-      isConnected,
       unreadMessages,
       unreadMessagesCount,
       markMessagesAsRead,
       markRoomAsRead,
-      WS_ENABLED,
-    ], // Added WS_ENABLED
+    ],
   );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

@@ -123,9 +123,10 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
 
   const updateOptions = useCallback(() => {
     let race = user?.colorScheme || user?.race || 'ELF';
-    const isTestPage = router.pathname === '/test';
+    const isPreviewPage =
+      router.pathname === '/test' || router.pathname === '/home/settings';
     if (
-      isTestPage &&
+      isPreviewPage &&
       previewScheme &&
       Object.prototype.hasOwnProperty.call(raceClasses, previewScheme)
     ) {

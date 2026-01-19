@@ -127,7 +127,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
 
           setTime(`${minutes}:${seconds}`);
           setOTTime(
-            getOTTime().toLocaleTimeString('en-us', {
+            getOTTime().toLocaleTimeString(user?.locale ?? 'en-US', {
               timeStyle: 'short',
               hour12: false,
             }),

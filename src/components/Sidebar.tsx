@@ -22,6 +22,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { useTranslation } from 'next-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { useUser } from '@/context/users'; // Provides UserModel instance
@@ -39,6 +40,7 @@ import { GoldRequestNotificationModal } from './GoldRequestNotificationModal';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 
 const Sidebar: React.FC = () => {
+  const { t } = useTranslation('common');
   const { user, forceUpdate, loading: userLoading } = useUser(); // Get user (UserModel instance) and loading state
   const [nextLevelOpened, { close, open }] = useDisclosure(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -72,8 +74,8 @@ const Sidebar: React.FC = () => {
       <div>
         <Text size="sm">{(option as any).label}</Text>
         <Text size="xs" opacity={0.5}>
-          Lvl {(option as any).experience} {(option as any).race}{' '}
-          {(option as any).class}
+          {t('sidebar.levelAbbrev')} {(option as any).experience}{' '}
+          {(option as any).race} {(option as any).class}
         </Text>
       </div>
     </Group>
@@ -117,7 +119,7 @@ const Sidebar: React.FC = () => {
 
           setTime(`${minutes}:${seconds}`);
           setOTTime(
-            getOTTime().toLocaleTimeString('en-us', {
+            getOTTime().toLocaleTimeString(user?.locale ?? 'en-US', {
               timeStyle: 'short',
               hour12: false,
             }),
@@ -136,14 +138,14 @@ const Sidebar: React.FC = () => {
       return (
         <>
           <Title order={5} className="text-center" style={medievalFontStyle}>
-            Time Until Next Turn
+            {t('sidebar.timeUntilNextTurn')}
           </Title>
           <Title order={4} ta="center" fw="bold" style={medievalFontStyle}>
             <span id="nextTurnTimestamp">{time}</span>
           </Title>
 
           <Title order={5} className="text-center" style={medievalFontStyle}>
-            OT Time:
+            {t('sidebar.otTime')}
           </Title>
           <Title order={3} ta="center" fw="bold" style={medievalFontStyle}>
             <span id="otTime">{OTTime}</span>
@@ -188,7 +190,7 @@ const Sidebar: React.FC = () => {
   return (
     <div className="block sm:block">
       {isMobile ? (
-        <CollapsibleSection title="Advisor">
+        <CollapsibleSection title={t('sidebar.advisor')}>
           <div className="card-fantasy mt-3 overflow-hidden p-4 font-semibold text-black">
             <div className="mt-2 p-4">
               <Text
@@ -205,7 +207,7 @@ const Sidebar: React.FC = () => {
                 order={2}
                 className="mt-2 text-center font-bold text-shadow text-shadow-xs"
               >
-                Stats{' '}
+                {t('sidebar.stats')}{' '}
                 <FontAwesomeIcon
                   icon={faRefresh}
                   className="cursor-pointer"
@@ -246,7 +248,7 @@ const Sidebar: React.FC = () => {
               ) : (
                 <Stack gap="xs">
                   <StatRow
-                    label="Gold"
+                    label={t('labels.gold')}
                     value={
                       <Group gap="xs">
                         <span id="gold">{sidebar.gold}</span>
@@ -257,7 +259,9 @@ const Sidebar: React.FC = () => {
                             variant="filled"
                             onClick={() => setIsNotificationModalOpen(true)}
                             style={{ cursor: 'pointer' }}
-                            title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                            title={t('sidebar.goldRequestPending', {
+                              count: goldRequestCount,
+                            })}
                           >
                             {goldRequestCount}
                           </Badge>
@@ -276,29 +280,33 @@ const Sidebar: React.FC = () => {
                               fontSize: '12px',
                             }}
                             onClick={() => setIsNotificationModalOpen(true)}
-                            title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                            title={t('sidebar.goldRequestPending', {
+                              count: goldRequestCount,
+                            })}
                           />
                         )}
                       </Group>
                     }
                   />
                   <StatRow
-                    label="Era"
-                    value={<span>{user?.currentEra?.name ?? 'Unknown'}</span>}
+                    label={t('labels.era')}
+                    value={
+                      <span>{user?.currentEra?.name ?? t('labels.unknown')}</span>
+                    }
                     icon={<RpgAwesomeIcon icon="experience" fw />}
                   />
                   <StatRow
-                    label="Citizens"
+                    label={t('labels.citizens')}
                     value={<span id="citizens">{sidebar.citizens}</span>}
                     icon={<RpgAwesomeIcon icon="player" fw />}
                   />
                   <StatRow
-                    label="Level"
+                    label={t('labels.level')}
                     value={<span id="level">{sidebar.level}</span>}
                     icon={<RpgAwesomeIcon icon="tower" fw />}
                   />
                   <StatRow
-                    label="XP"
+                    label={t('labels.xp')}
                     value={<span id="experience">{sidebar.xp}</span>}
                     icon={
                       <>
@@ -319,8 +327,9 @@ const Sidebar: React.FC = () => {
                           </Popover.Target>
                           <Popover.Dropdown style={{ pointerEvents: 'none' }}>
                             <Text size="sm">
-                              You are {sidebar.xpNextLevel} XP away from the
-                              next level
+                              {t('sidebar.xpToNextLevel', {
+                                xp: sidebar.xpNextLevel,
+                              })}
                             </Text>
                           </Popover.Dropdown>
                         </Popover>
@@ -328,7 +337,7 @@ const Sidebar: React.FC = () => {
                     }
                   />
                   <StatRow
-                    label="Turns"
+                    label={t('labels.turns')}
                     value={<span id="turns">{sidebar.turns}</span>}
                     icon={<RpgAwesomeIcon icon="clockwork" fw />}
                   />
@@ -344,7 +353,7 @@ const Sidebar: React.FC = () => {
                 order={2}
                 className="advisor-title mt-2 text-center font-bold text-shadow text-shadow-xs"
               >
-                Search
+                {t('sidebar.search')}
               </Title>
               <form onSubmit={handleSubmit}>
                 <center>
@@ -355,7 +364,7 @@ const Sidebar: React.FC = () => {
                     renderOption={renderAutocompleteOption}
                     data={usersData}
                     maxDropdownHeight={300}
-                    placeholder="Type to search..."
+                    placeholder={t('sidebar.searchPlaceholder')}
                     style={{ width: '95%' }}
                     className="mb-2"
                     comboboxProps={{ width: '250px' }}
@@ -367,7 +376,7 @@ const Sidebar: React.FC = () => {
                   <Button type="submit" color="gray" variant="filled" size="sm">
                     {' '}
                     {/* Adjusted button appearance */}
-                    Search
+                    {t('sidebar.searchUsers')}
                   </Button>
                 </center>
               </form>
@@ -386,7 +395,7 @@ const Sidebar: React.FC = () => {
                 style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }}
                 onClick={handlePrevAdvisor}
               />
-              Advisor
+              {t('sidebar.advisor')}
               <FontAwesomeIcon
                 icon={faArrowRight}
                 style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }}
@@ -407,7 +416,7 @@ const Sidebar: React.FC = () => {
               order={2}
               className="mt-2 text-center font-bold text-shadow text-shadow-xs"
             >
-              Stats{' '}
+              {t('sidebar.stats')}{' '}
               <FontAwesomeIcon
                 icon={faRefresh}
                 className="cursor-pointer"
@@ -448,7 +457,7 @@ const Sidebar: React.FC = () => {
             ) : (
               <Stack gap="xs">
                 <StatRow
-                  label="Gold"
+                  label={t('labels.gold')}
                   value={
                     <Group gap="xs">
                       <span id="gold">{sidebar.gold}</span>
@@ -459,7 +468,9 @@ const Sidebar: React.FC = () => {
                           variant="filled"
                           onClick={() => setIsNotificationModalOpen(true)}
                           style={{ cursor: 'pointer' }}
-                          title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                          title={t('sidebar.goldRequestPending', {
+                            count: goldRequestCount,
+                          })}
                         >
                           {goldRequestCount}
                         </Badge>
@@ -478,29 +489,33 @@ const Sidebar: React.FC = () => {
                             fontSize: '12px',
                           }}
                           onClick={() => setIsNotificationModalOpen(true)}
-                          title={`${goldRequestCount} gold request${goldRequestCount > 1 ? 's' : ''} pending`}
+                          title={t('sidebar.goldRequestPending', {
+                            count: goldRequestCount,
+                          })}
                         />
                       )}
                     </Group>
                   }
                 />
                 <StatRow
-                  label="Era"
-                  value={<span>{user?.currentEra?.name ?? 'Unknown'}</span>}
+                  label={t('labels.era')}
+                  value={
+                    <span>{user?.currentEra?.name ?? t('labels.unknown')}</span>
+                  }
                   icon={<RpgAwesomeIcon icon="experience" fw />}
                 />
                 <StatRow
-                  label="Citizens"
+                  label={t('labels.citizens')}
                   value={<span id="citizens">{sidebar.citizens}</span>}
                   icon={<RpgAwesomeIcon icon="player" fw />}
                 />
                 <StatRow
-                  label="Level"
+                  label={t('labels.level')}
                   value={<span id="level">{sidebar.level}</span>}
                   icon={<RpgAwesomeIcon icon="tower" fw />}
                 />
                 <StatRow
-                  label="XP"
+                  label={t('labels.xp')}
                   value={<span id="experience">{sidebar.xp}</span>}
                   icon={
                     <>
@@ -521,8 +536,9 @@ const Sidebar: React.FC = () => {
                         </Popover.Target>
                         <Popover.Dropdown style={{ pointerEvents: 'none' }}>
                           <Text size="sm">
-                            You are {sidebar.xpNextLevel} XP away from the next
-                            level
+                            {t('sidebar.xpToNextLevel', {
+                              xp: sidebar.xpNextLevel,
+                            })}
                           </Text>
                         </Popover.Dropdown>
                       </Popover>
@@ -530,7 +546,7 @@ const Sidebar: React.FC = () => {
                   }
                 />
                 <StatRow
-                  label="Turns"
+                  label={t('labels.turns')}
                   value={<span id="turns">{sidebar.turns}</span>}
                   icon={<RpgAwesomeIcon icon="clockwork" fw />}
                 />
@@ -546,7 +562,7 @@ const Sidebar: React.FC = () => {
               order={2}
               className="advisor-title mt-2 text-center font-bold text-shadow text-shadow-xs"
             >
-              Search
+              {t('sidebar.search')}
             </Title>
             <form onSubmit={handleSubmit}>
               <center>
@@ -557,7 +573,7 @@ const Sidebar: React.FC = () => {
                   renderOption={renderAutocompleteOption}
                   data={usersData}
                   maxDropdownHeight={300}
-                  placeholder="Type to search..."
+                  placeholder={t('sidebar.searchPlaceholder')}
                   style={{ width: '95%' }}
                   className="mb-2"
                   comboboxProps={{ width: '250px' }}
@@ -569,7 +585,7 @@ const Sidebar: React.FC = () => {
                 <Button type="submit" color="gray" variant="filled" size="sm">
                   {' '}
                   {/* Adjusted button appearance */}
-                  Search
+                  {t('sidebar.searchUsers')}
                 </Button>
               </center>
             </form>

@@ -15,91 +15,54 @@ import { getAssetPath } from '@/utils/utilities';
 
 import MobileNavigation from './MobileNavigation';
 
-const parentLinks = [
-  'Home',
-  'Battle',
-  'Social',
-  'Structures',
-  // 'Alliances',
-  'Community',
-  'About',
-] as const;
-
-const parentHrefs: Record<string, string> = {
-  Home: '/home/overview',
-  Battle: '/battle/users',
-  Social: '/social/friends',
-  Structures: '/structures/bank/deposit',
-  Community: '/community/news',
-  About: '/about',
+type NavItem = {
+  key: string;
+  href: string;
+  labelKey: string;
+  target?: string;
 };
 
-const subMenus: {
-  [K in (typeof parentLinks)[number]]?: {
-    text: string;
-    href: string;
-    parent: string;
-    target?: string;
-  }[];
-} = {
-  Home: [
-    { text: 'Overview', href: '/home/overview', parent: 'Home' },
-    { text: 'Levels', href: '/home/levels', parent: 'Home' },
-    { text: 'Profile', href: '/home/profile', parent: 'Home' },
-    { text: 'Settings', href: '/home/settings', parent: 'Home' },
+const parentLinks: NavItem[] = [
+  { key: 'home', href: '/home/overview', labelKey: 'main.home' },
+  { key: 'battle', href: '/battle/users', labelKey: 'main.battle' },
+  { key: 'structures', href: '/structures/bank/deposit', labelKey: 'main.structures' },
+  { key: 'community', href: '/community/news', labelKey: 'main.community' },
+  { key: 'about', href: '/about', labelKey: 'main.about' },
+];
+
+const subMenus: Record<string, NavItem[]> = {
+  home: [
+    { key: 'overview', href: '/home/overview', labelKey: 'home.overview' },
+    { key: 'levels', href: '/home/levels', labelKey: 'home.levels' },
+    { key: 'profile', href: '/home/profile', labelKey: 'home.profile' },
+    { key: 'settings', href: '/home/settings', labelKey: 'home.settings' },
   ],
-  Battle: [
-    { text: 'Attack', href: '/battle/users', parent: 'Battle' },
-    { text: 'Training', href: '/battle/training', parent: 'Battle' },
-    { text: 'Upgrades', href: '/battle/upgrades', parent: 'Battle' },
-    { text: 'War History', href: '/battle/history', parent: 'Battle' },
+  battle: [
+    { key: 'attack', href: '/battle/users', labelKey: 'battle.attack' },
+    { key: 'training', href: '/battle/training', labelKey: 'battle.training' },
+    { key: 'upgrades', href: '/battle/upgrades', labelKey: 'battle.upgrades' },
+    { key: 'warHistory', href: '/battle/history', labelKey: 'battle.warHistory' },
   ],
-  Social: [
-    { text: 'Friends', href: '/social/friends', parent: 'Social' },
-    { text: 'Enemies', href: '/social/enemies', parent: 'Social' },
-    { text: 'Requests', href: '/social/requests', parent: 'Social' },
+  structures: [
+    { key: 'bank', href: '/structures/bank/deposit', labelKey: 'structures.bank' },
+    { key: 'armory', href: '/structures/armory/offense', labelKey: 'structures.armory' },
+    { key: 'upgrades', href: '/structures/upgrades/fortifications', labelKey: 'structures.upgrades' },
+    { key: 'housing', href: '/structures/housing', labelKey: 'structures.housing' },
+    { key: 'repair', href: '/structures/repair', labelKey: 'structures.repair' },
   ],
-  Structures: [
+  community: [
+    { key: 'news', href: '/community/news', labelKey: 'community.news' },
+    { key: 'discord', href: 'https://discord.gg/j9NYxmBCjA', labelKey: 'community.discord' },
+    { key: 'autoRecruit', href: '/auto-recruit', labelKey: 'community.autoRecruit' },
+    { key: 'stats', href: '/community/stats', labelKey: 'community.stats' },
     {
-      text: 'Bank',
-      href: '/structures/bank/deposit',
-      parent: 'Structures',
-    },
-    {
-      text: 'Armory',
-      href: '/structures/armory/offense',
-      parent: 'Structures',
-    },
-    {
-      text: 'Upgrades',
-      href: '/structures/upgrades/fortifications',
-      parent: 'Structures',
-    },
-    { text: 'Housing', href: '/structures/housing', parent: 'Structures' },
-    { text: 'Repair', href: '/structures/repair', parent: 'Structures' },
-  ],
-  // Alliances: [{ text: 'Test', href: '#' }],
-  Community: [
-    {
-      text: 'News',
-      href: '/community/news',
-      parent: 'Community',
-    },
-    {
-      text: 'Discord',
-      href: 'https://discord.gg/j9NYxmBCjA',
-      parent: 'Community',
-    },
-    { text: 'Auto Recruit', href: '/auto-recruit', parent: 'Community' },
-    { text: 'Stats', href: '/community/stats', parent: 'Community' },
-    {
-      text: 'Report Issues',
+      key: 'reportIssues',
       href: 'https://github.com/uaktags/OpenThrone/issues',
-      parent: 'Community',
+      labelKey: 'community.reportIssues',
       target: '_blank',
     },
   ],
-  About: [],
+  about: [],
 };
 
 interface NavLoggedInProps {
@@ -109,17 +72,14 @@ interface NavLoggedInProps {
 export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
   const router = useRouter();
   const pathName = router.asPath?.split('?')[0] ?? '/';
-  const { t } = useTranslation('common');
-  const [activeSubMenu, setActiveSubMenu] = useState<
-    { text: string; href: string; parent: string; target?: string }[]
-  >([]);
-  const [activeParentLink, setActiveParentLink] = useState<string>('');
-  const [activeSubLink, setActiveSubLink] = useState<string>('');
+  const { t: tCommon } = useTranslation('common');
+  const { t: tNav } = useTranslation('navigation');
+  const [activeSubMenu, setActiveSubMenu] = useState<NavItem[]>([]);
+  const [activeParentKey, setActiveParentKey] = useState<string>('');
+  const [activeSubKey, setActiveSubKey] = useState<string>('');
 
-  const [defaultSubMenu, setDefaultSubMenu] = useState<
-    { text: string; href: string; parent: string }[]
-  >([]);
-  const [defaultParentLink, setDefaultParentLink] = useState<string>('');
+  const [defaultSubMenu, setDefaultSubMenu] = useState<NavItem[]>([]);
+  const [defaultParentKey, setDefaultParentKey] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [socialNotificationCount, setSocialNotificationCount] =
     useState<number>(0);
@@ -131,19 +91,25 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
     user?.permissions?.some(
       (perm) => perm.type === PermissionType.ADMINISTRATOR,
     ) &&
-    !subMenus.Home.some((subNav) => subNav.text === 'Administration')
+    !subMenus.home.some((subNav) => subNav.key === 'administration')
   ) {
-    subMenus.Home.push({
-      text: 'Administration',
+    subMenus.home.push({
+      key: 'administration',
       href: '/home/admin',
-      parent: 'Home',
+      labelKey: 'home.administration',
     });
   }
 
   useEffect(() => {
-    let currentPath = pathName?.split('/')[1]; // Extract the base path
-    let secondPath = pathName?.split('/')[2];
-    if (pathName === '/') {
+    const localePrefix = router.locale ? `/${router.locale}` : '';
+    const normalizedPath =
+      pathName.startsWith(localePrefix) && localePrefix !== '/'
+        ? pathName.slice(localePrefix.length) || '/'
+        : pathName;
+    const segments = normalizedPath.split('/').filter(Boolean);
+    let currentPath = segments[0];
+    let secondPath = segments[1];
+    if (normalizedPath === '/') {
       currentPath = 'home';
       secondPath = 'overview';
     }
@@ -152,50 +118,48 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       currentPath === 'userprofile' ||
       (currentPath === 'battle' && secondPath === 'users')
     ) {
-      setActiveParentLink('Battle');
-      const subMenu = subMenus.Battle || [];
+      setActiveParentKey('battle');
+      const subMenu = subMenus.battle || [];
       setActiveSubMenu(subMenu);
-      setActiveSubLink('Attack');
-      setDefaultParentLink('Battle');
-      setDefaultSubMenu(subMenus.Battle || []);
+      setActiveSubKey('attack');
+      setDefaultParentKey('battle');
+      setDefaultSubMenu(subMenus.battle || []);
     } else if (secondPath === 'history') {
-      setActiveParentLink('Battle');
-      const subMenu = subMenus.Battle || [];
+      setActiveParentKey('battle');
+      const subMenu = subMenus.battle || [];
       setActiveSubMenu(subMenu);
-      setActiveSubLink('War History');
-      setDefaultParentLink('Battle');
-      setDefaultSubMenu(subMenus.Battle || []);
+      setActiveSubKey('warHistory');
+      setDefaultParentKey('battle');
+      setDefaultSubMenu(subMenus.battle || []);
     } else if (currentPath === 'auto-recruit') {
-      setActiveParentLink('Community');
-      const subMenu = subMenus.Community || [];
+      setActiveParentKey('community');
+      const subMenu = subMenus.community || [];
       setActiveSubMenu(subMenu);
-      setActiveSubLink('Auto Recruit');
-      setDefaultParentLink('Community');
-      setDefaultSubMenu(subMenus.Community || []);
+      setActiveSubKey('autoRecruit');
+      setDefaultParentKey('community');
+      setDefaultSubMenu(subMenus.community || []);
     } else {
-      const activeLink = parentLinks.find(
-        (link) => link.toLowerCase() === currentPath,
-      );
+      const activeLink = parentLinks.find((link) => link.key === currentPath);
       if (activeLink) {
-        setActiveParentLink(activeLink);
-        const subMenu = subMenus[activeLink] || [];
+        setActiveParentKey(activeLink.key);
+        const subMenu = subMenus[activeLink.key] || [];
         setActiveSubMenu(subMenu);
 
         // Find the active sub link
         const activeSubLinkItem = subMenu.find(
-          (item) => item.text.toLowerCase() === secondPath,
+          (item) => item.key === secondPath,
         );
         if (activeSubLinkItem) {
-          setActiveSubLink(activeSubLinkItem.text);
+          setActiveSubKey(activeSubLinkItem.key);
         } else {
           // Reset the active sub link if no match found
-          setActiveSubLink('');
+          setActiveSubKey('');
         }
-        setDefaultParentLink(activeLink);
-        setDefaultSubMenu(subMenus[activeLink] || []);
+        setDefaultParentKey(activeLink.key);
+        setDefaultSubMenu(subMenus[activeLink.key] || []);
       }
     }
-  }, [pathName]);
+  }, [pathName, router.locale]);
 
   const [resetTimer, setResetTimer] = useState<number | null>(null);
 
@@ -242,7 +206,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
 
   const resetMenu = () => {
     const timer = window.setTimeout(() => {
-      setActiveParentLink(defaultParentLink);
+      setActiveParentKey(defaultParentKey);
       setActiveSubMenu(defaultSubMenu);
     }, 300);
     setResetTimer(timer);
@@ -267,21 +231,21 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       onClick?: () => void;
     }[];
   }[] = parentLinks.map((parent) => {
-    const children = subMenus[parent]?.map((item) => ({
-      key: item.href,
-      label: item.text,
+    const children = subMenus[parent.key]?.map((item) => ({
+      key: item.key,
+      label: tNav(item.labelKey),
       href: item.href,
     }));
     return {
-      key: parent,
-      label: parent,
+      key: parent.key,
+      label: tNav(parent.labelKey),
       children,
     };
   });
 
   allMenuItems.push({
     key: 'signout',
-    label: 'Sign Out',
+    label: tNav('actions.signOut'),
     onClick: () => signOut({ callbackUrl: '/' }),
   });
 
@@ -307,7 +271,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                 : 'text-white hover:text-gray-200'
             }`}
             onClick={() => setMobileMenuOpen(true)}
-            aria-label={t('ariaLabels.openMenu')}
+            aria-label={tNav('ariaLabels.mobileMenuButton')}
             aria-expanded={mobileMenuOpen}
             data-testid="mobile-menu-button"
           >
@@ -335,7 +299,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
               variant="filled"
               size="xs"
               className="absolute -right-1 -top-1"
-              aria-label={t('ariaLabels.unreadNotifications', {
+              aria-label={tCommon('ariaLabels.unreadNotifications', {
                 count: notificationSum,
               })}
             >
@@ -371,21 +335,21 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
             <ul className="flex flex-wrap items-center justify-center py-1 text-center text-lg md:text-xl">
               {parentLinks.map((link) => {
                 return (
-                  <li className="px-4 lg:px-6 " key={link}>
+                  <li className="px-4 lg:px-6 " key={link.key}>
                     <Link
-                      href={parentHrefs[link] || '/'}
+                      href={link.href || '/'}
                       className={`border-none ${
-                        activeParentLink === link
+                        activeParentKey === link.key
                           ? 'bg-orange-gradient text-gradient-orange'
                           : 'text-elf-link-link'
                       }  bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-xs text-uppercase-menu text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange`}
                       onMouseOver={() => {
-                        setActiveSubMenu(subMenus[link] || []);
+                        setActiveSubMenu(subMenus[link.key] || []);
                       }}
-                      data-testid={`nav-${link.toLowerCase()}-link`}
-                      aria-label={link}
+                      data-testid={`nav-${link.key}-link`}
+                      aria-label={tNav(link.labelKey)}
                     >
-                      {link}
+                      {tNav(link.labelKey)}
                     </Link>
                   </li>
                 );
@@ -395,13 +359,13 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                   type="button"
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className={`border-none ${
-                    activeParentLink === 'signout'
+                    activeParentKey === 'signout'
                       ? 'text-elf-link-current'
                       : 'text-elf-link-link'
                   } bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-sm text-uppercase-menu text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange`}
                   data-testid="desktop-sign-out-button"
                 >
-                  Sign Out
+                  {tNav('actions.signOut')}
                 </button>
               </li>
             </ul>
@@ -418,7 +382,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
           <div className="mx-auto max-w-screen-2xl justify-center lg:block">
             <ul className="flex flex-wrap items-center justify-center py-1 text-center text-xl">
               {activeSubMenu.map((item) => (
-                <li key={`${item.text}.${item.href}`} className="px-10">
+                <li key={`${item.key}.${item.href}`} className="px-10">
                   <Indicator
                     inline
                     offset={-10}
@@ -432,7 +396,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                       href={item.href}
                       className={`border-none
                       ${
-                        activeSubLink === item.text
+                        activeSubKey === item.key
                           ? 'bg-orange-gradient text-gradient-orange'
                           : 'text-elf-link-link'
                       } bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-xs text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange
@@ -440,7 +404,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                       target={item.target ? item.target : '_self'}
                       data-testid="nav-link"
                     >
-                      {item.text}
+                      {tNav(item.labelKey)}
                     </Link>
                   </Indicator>
                 </li>

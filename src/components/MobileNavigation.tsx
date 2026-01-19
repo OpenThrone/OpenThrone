@@ -26,15 +26,24 @@
  * };
  */
 
-import { faComments, faGear } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowRightFromBracket,
+  faComments,
+  faGear,
+  faIdCard,
+  faSkullCrossbones,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { SegmentedControl } from '@mantine/core';
+import { Badge, Group, Menu, ScrollArea, SegmentedControl, Text } from '@mantine/core';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { signOut } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 
 import styles from '@/components/MobileNavigation.module.css';
+import { useUser } from '@/context/users';
+import { formatLastMessageTime } from '@/utils/timefunctions';
 
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 
@@ -149,6 +158,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   className = '',
 }) => {
   const { t } = useTranslation('common');
+  const { unreadMessages, markRoomAsRead } = useUser();
   const menuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [activeSection, setActiveSection] = useState<'menu' | 'sidebar'>(
@@ -156,6 +166,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   );
   const hasSidebar = Boolean(sidebarContent);
   const touchStartX = useRef<number>(0);
+  const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
 
   useEffect(() => {
     if (!open) {
@@ -249,7 +260,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
   const renderQuickAction = (
     icon: React.ReactNode,
     badgeCount: number | undefined,
-    onClick: () => void,
+    onClick: (() => void) | undefined,
     labelKey: string,
   ) => (
     <button
@@ -266,6 +277,11 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       )}
     </button>
   );
+
+  const handleMessageItemClick = (roomId: number) => {
+    markRoomAsRead(roomId);
+    onClose();
+  };
 
   return (
     <div
@@ -337,24 +353,188 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
           <div className={styles.footer}>
             {quickActions && (
               <div className={styles.quickActions}>
-                {renderQuickAction(
-                  <FontAwesomeIcon icon={faComments} size="lg" />,
-                  quickActions.unreadMessagesCount,
-                  quickActions.onMessagesClick,
-                  'ariaLabels.quickAccessMessages',
-                )}
-                {renderQuickAction(
-                  <RpgAwesomeIcon icon="player" fw style={{ fontSize: 18 }} />,
-                  quickActions.socialNotificationCount,
-                  quickActions.onSocialClick,
-                  'ariaLabels.quickAccessSocial',
-                )}
-                {renderQuickAction(
-                  <FontAwesomeIcon icon={faGear} size="lg" />,
-                  undefined,
-                  quickActions.onSettingsClick,
-                  'ariaLabels.quickAccessSettings',
-                )}
+                <Menu
+                  width={320}
+                  position="top-end"
+                  withinPortal={false}
+                  shadow="md"
+                >
+                  <Menu.Target>
+                    {renderQuickAction(
+                      <FontAwesomeIcon icon={faComments} size="lg" />,
+                      quickActions.unreadMessagesCount,
+                      undefined,
+                      'ariaLabels.quickAccessMessages',
+                    )}
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Label>Recent Unread Messages</Menu.Label>
+                    {unreadMessages.length === 0 ? (
+                      <Menu.Item disabled>No unread messages</Menu.Item>
+                    ) : (
+                      <ScrollArea.Autosize mah={260}>
+                        {unreadMessages
+                          .sort(
+                            (a, b) =>
+                              new Date(b.timestamp).getTime() -
+                              new Date(a.timestamp).getTime(),
+                          )
+                          .slice(0, 10)
+                          .map((msg) => (
+                            <Menu.Item
+                              key={msg.id}
+                              component={Link}
+                              href={`/messaging?roomId=${msg.chatRoomId}`}
+                              onClick={() =>
+                                handleMessageItemClick(msg.chatRoomId)
+                              }
+                              style={{
+                                whiteSpace: 'normal',
+                                height: 'auto',
+                                paddingTop: '8px',
+                                paddingBottom: '8px',
+                              }}
+                            >
+                              <div>
+                                <Group justify="space-between" mb={4}>
+                                  <Text fw={500} size="sm" truncate>
+                                    {msg.senderName}
+                                  </Text>
+                                  <Text c="dimmed" size="xs">
+                                    {formatLastMessageTime(msg.timestamp)}
+                                  </Text>
+                                </Group>
+                                <Text size="xs" lineClamp={2}>
+                                  {msg.content}
+                                </Text>
+                              </div>
+                            </Menu.Item>
+                          ))}
+                      </ScrollArea.Autosize>
+                    )}
+                    <Menu.Divider />
+                    <Menu.Item component={Link} href="/messaging">
+                      See all messages
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+                <Menu
+                  width={260}
+                  position="top-end"
+                  withinPortal={false}
+                  shadow="md"
+                >
+                  <Menu.Target>
+                    {renderQuickAction(
+                      <RpgAwesomeIcon icon="double-team" fw style={{ fontSize: 18 }} />,
+                      quickActions.socialNotificationCount,
+                      undefined,
+                      'ariaLabels.quickAccessSocial',
+                    )}
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Label>Social</Menu.Label>
+                    <Menu.Item
+                      component={Link}
+                      href="/social/friends"
+                      leftSection={
+                        <FontAwesomeIcon icon={faIdCard} size="sm" stroke="1.5" />
+                      }
+                    >
+                      Friends
+                    </Menu.Item>
+                    {enableEnemies && (
+                      <Menu.Item
+                        component={Link}
+                        href="/social/enemies"
+                        leftSection={
+                          <FontAwesomeIcon
+                            icon={faSkullCrossbones}
+                            size="sm"
+                            stroke="1.5"
+                          />
+                        }
+                      >
+                        Enemies
+                      </Menu.Item>
+                    )}
+                    <Menu.Item
+                      component={Link}
+                      href="/social/requests"
+                      leftSection={
+                        <FontAwesomeIcon icon={faComments} size="sm" stroke="1.5" />
+                      }
+                      rightSection={
+                        <Badge
+                          color="red"
+                          variant="filled"
+                          size="xs"
+                          style={{
+                            display:
+                              quickActions.socialNotificationCount > 0
+                                ? 'inline-flex'
+                                : 'none',
+                          }}
+                        >
+                          {quickActions.socialNotificationCount > 9
+                            ? '9+'
+                            : quickActions.socialNotificationCount}
+                        </Badge>
+                      }
+                    >
+                      Friend Requests
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+                <Menu
+                  width={240}
+                  position="top-end"
+                  withinPortal={false}
+                  shadow="md"
+                >
+                  <Menu.Target>
+                    {renderQuickAction(
+                      <FontAwesomeIcon icon={faGear} size="lg" />,
+                      undefined,
+                      undefined,
+                      'ariaLabels.quickAccessSettings',
+                    )}
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Label>Settings</Menu.Label>
+                    <Menu.Item
+                      component={Link}
+                      href="/home/settings"
+                      leftSection={
+                        <FontAwesomeIcon icon={faGear} size="sm" stroke="1.5" />
+                      }
+                    >
+                      Account settings
+                    </Menu.Item>
+                    <Menu.Item
+                      component={Link}
+                      href="/home/profile"
+                      leftSection={
+                        <FontAwesomeIcon icon={faIdCard} size="sm" stroke="1.5" />
+                      }
+                    >
+                      Profile Settings
+                    </Menu.Item>
+                    <Menu.Item
+                      leftSection={
+                        <FontAwesomeIcon
+                          icon={faArrowRightFromBracket}
+                          size="sm"
+                          stroke="1.5"
+                          color="indianred"
+                        />
+                      }
+                      onClick={() => signOut({ callbackUrl: '/' })}
+                    >
+                      Logout
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
               </div>
             )}
             <button

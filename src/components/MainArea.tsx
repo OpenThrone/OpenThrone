@@ -23,10 +23,8 @@ import React, { forwardRef, useCallback, useEffect, useState } from 'react';
 
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
-import useSocket from '@/hooks/useSocket';
 import { formatLastMessageTime } from '@/utils/timefunctions'; // Import time formatter
 
-import { alertService } from '../services/Alert.service';
 import HeaderIconButton from './HeaderIconButton';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 
@@ -44,15 +42,11 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
   // Consume unread messages state and functions from context
   const { unreadMessages, unreadMessagesCount, markRoomAsRead, user } =
     useUser();
+  const [isMessageMenuOpened, setMessageMenuOpened] = useState(false);
+  const [isUserMenuOpened, setUserMenuOpened] = useState(false);
   const [socialNotificationCount, setSocialNotificationCount] =
     useState<number>(0);
-
   const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
-
-  // Socket integration for real-time updates
-  const { addEventListener, isConnected, removeEventListener } = useSocket(
-    user?.id || null,
-  );
 
   const fetchSocialNotificationCount = useCallback(async () => {
     try {
@@ -77,12 +71,6 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
   }, [fetchSocialNotificationCount]);
 
   useEffect(() => {
-    if (isConnected) {
-      fetchSocialNotificationCount();
-    }
-  }, [fetchSocialNotificationCount, isConnected]);
-
-  useEffect(() => {
     const handleFocus = () => fetchSocialNotificationCount();
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -97,50 +85,6 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [fetchSocialNotificationCount]);
-
-  // Socket event listeners for real-time social notification updates
-  useEffect(() => {
-    const handleSocialCountUpdate = (data: { count: number }) => {
-      setSocialNotificationCount(data.count);
-    };
-
-    const handleFriendRequestNotification = (data: any) => {
-      // Show toast notification for friend request
-      alertService.success(
-        `New friend request from ${data.senderName || 'someone'}`,
-      );
-      // Refresh count
-      fetchSocialNotificationCount();
-    };
-
-    const handleGoldRequestNotification = (data: any) => {
-      // Show toast notification for gold request
-      alertService.success(
-        `New gold request from ${data.senderName || 'someone'}`,
-      );
-      // Refresh count
-      fetchSocialNotificationCount();
-    };
-
-    addEventListener('socialCountUpdate', handleSocialCountUpdate);
-    addEventListener(
-      'friendRequestNotification',
-      handleFriendRequestNotification,
-    );
-    addEventListener('goldRequestNotification', handleGoldRequestNotification);
-
-    return () => {
-      removeEventListener('socialCountUpdate', handleSocialCountUpdate);
-      removeEventListener(
-        'friendRequestNotification',
-        handleFriendRequestNotification,
-      );
-      removeEventListener(
-        'goldRequestNotification',
-        handleGoldRequestNotification,
-      );
-    };
-  }, [addEventListener, removeEventListener, fetchSocialNotificationCount]);
 
   return (
     <div
@@ -167,13 +111,15 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
             paddingRight: '16px',
           }}
         >
-          <Title
-            order={2}
-            className="main-header-title bg-orange-gradient text-shadow text-shadow-xs text-gradient-orange"
-            data-testid="page-title"
-          >
-            {title}
-          </Title>
+          <Group gap="sm">
+            <Title
+              order={2}
+              className="main-header-title bg-orange-gradient text-shadow text-shadow-xs text-gradient-orange"
+              data-testid="page-title"
+            >
+              {title}
+            </Title>
+          </Group>
           {authorized && (
             <Group gap="lg" visibleFrom="md">
               <Menu
@@ -182,6 +128,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                 transitionProps={{ transition: 'pop-top-right' }}
                 onClose={() => setMessageMenuOpened(false)}
                 onOpen={() => setMessageMenuOpened(true)}
+                opened={isMessageMenuOpened}
                 withinPortal
                 shadow="md"
               >
@@ -258,6 +205,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                 transitionProps={{ transition: 'pop-top-right' }}
                 onClose={() => setUserMenuOpened(false)}
                 onOpen={() => setUserMenuOpened(true)}
+                opened={isUserMenuOpened}
                 withinPortal
               >
                 <Menu.Target>

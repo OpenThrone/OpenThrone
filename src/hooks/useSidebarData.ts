@@ -3,7 +3,6 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { levelXPArray } from '@/constants/XPLevels';
-import useSocket from '@/hooks/useSocket';
 import type UserModel from '@/models/Users';
 import { logError } from '@/utils/logger';
 import toLocale from '@/utils/numberFormatting';
@@ -33,8 +32,6 @@ interface SidebarStatsState {
 
 export function useSidebarData(user: UserModel | null, userLoading: boolean) {
   const router = useRouter();
-  const { addEventListener, removeEventListener } = useSocket(user?.id || null);
-
   const advisorMessages = useMemo(() => ADVISOR_MESSAGES, []);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const advisorIntervalIdRef = useRef<NodeJS.Timer | null>(null);
@@ -139,20 +136,6 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
     );
     return () => clearInterval(interval);
   }, [refreshGoldRequestCount]);
-
-  useEffect(() => {
-    const handleGoldRequestCountUpdate = (data: { count: number }) => {
-      setGoldRequestCount(Number(data?.count) || 0);
-    };
-
-    addEventListener('goldRequestCountUpdate', handleGoldRequestCountUpdate);
-    return () => {
-      removeEventListener(
-        'goldRequestCountUpdate',
-        handleGoldRequestCountUpdate,
-      );
-    };
-  }, [addEventListener, removeEventListener]);
 
   const fetchUsers = useCallback(async (searchTerm: string): Promise<any[]> => {
     if (!searchTerm.trim()) return [];

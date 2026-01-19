@@ -8,36 +8,40 @@ import { getAssetPath } from '@/utils/utilities';
 import MobileNavigation from './MobileNavigation';
 
 const parentLinks = [
-  { title: 'Home', url: '/' },
-  { title: 'Login', url: '/account/login' },
-  { title: 'Signup', url: '/account/register' },
-  { title: 'News', url: '/community/news' },
-  { title: 'About', url: '/about' },
+  { key: 'home', labelKey: 'loggedOut.home', url: '/' },
+  { key: 'login', labelKey: 'loggedOut.login', url: '/account/login' },
+  { key: 'signup', labelKey: 'loggedOut.signup', url: '/account/register' },
+  { key: 'news', labelKey: 'loggedOut.news', url: '/community/news' },
+  { key: 'about', labelKey: 'loggedOut.about', url: '/about' },
 ] as const;
 
 export const NavLoggedOut: React.FC = () => {
   const router = useRouter();
   const pathName = router.asPath?.split('?')[0] ?? '/';
-  const { t } = useTranslation('common');
+  const { t: tNav } = useTranslation('navigation');
   const [activeParentLink, setActiveParentLink] = useState<string>('');
 
   const [, setDefaultParentLink] = useState<string>('/');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const currentPath = pathName;
-    const activeLink = parentLinks.find((link) => link.url === currentPath);
+    const localePrefix = router.locale ? `/${router.locale}` : '';
+    const normalizedPath =
+      pathName.startsWith(localePrefix) && localePrefix !== '/'
+        ? pathName.slice(localePrefix.length) || '/'
+        : pathName;
+    const activeLink = parentLinks.find((link) => link.url === normalizedPath);
     if (activeLink) {
       setActiveParentLink(activeLink.url);
       setDefaultParentLink(activeLink.url);
     } else {
       setActiveParentLink('');
     }
-  }, [pathName]);
+  }, [pathName, router.locale]);
 
   const menuItems = parentLinks.map((link) => ({
-    key: link.title,
-    label: link.title,
+    key: link.key,
+    label: tNav(link.labelKey),
     href: link.url,
   }));
 
@@ -47,7 +51,7 @@ export const NavLoggedOut: React.FC = () => {
         type="button"
         className="block min-h-[48px] min-w-[48px] p-2 text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white md:hidden"
         onClick={() => setMobileMenuOpen(true)}
-        aria-label={t('ariaLabels.openMenu')}
+        aria-label={tNav('ariaLabels.mobileMenuButton')}
         data-testid="mobile-menu-button"
       >
         <svg
@@ -83,7 +87,7 @@ export const NavLoggedOut: React.FC = () => {
           <div className="mx-auto max-w-screen-2xl md:block">
             <ul className="flex flex-wrap items-center justify-evenly text-center text-xl">
               {parentLinks.map((link) => (
-                <li className="mr-6" key={link.title}>
+                <li className="mr-6" key={link.key}>
                   <Link
                     href={link.url}
                     className={`border-none ${
@@ -91,9 +95,9 @@ export const NavLoggedOut: React.FC = () => {
                         ? 'bg-orange-gradient text-gradient-orange'
                         : 'text-elf-link-link'
                     }  bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-sm text-uppercase-menu text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange`}
-                    data-testid={`nav-${link.title.toLowerCase()}-link`}
+                    data-testid={`nav-${link.key}-link`}
                   >
-                    {link.title}
+                    {tNav(link.labelKey)}
                   </Link>
                 </li>
               ))}

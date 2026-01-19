@@ -2,7 +2,6 @@ import router from 'next/router';
 import React, { useState } from 'react';
 
 import { useUser } from '@/context/users';
-import useSocket from '@/hooks/useSocket';
 
 import { useLayout } from '../context/LayoutContext';
 
@@ -27,7 +26,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
   const { user, forceUpdate } = useUser();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false); // Add loading state
-  const { socket } = useSocket(user?.id);
 
   /**
    * Handles the submission of the attack confirmation form.
@@ -58,12 +56,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
     } else {
       // No need to set error here as it's cleared at the start
       forceUpdate();
-      if (socket) {
-        socket.emit('notifyAttack', {
-          defenderId: profileID,
-          battleId: results.attack_log,
-        });
-      }
       // Close the modal immediately after successful attack submission
       toggleModal();
       router.push(`/battle/results/${results.attack_log}`);
