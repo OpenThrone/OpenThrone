@@ -7,7 +7,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
 // Define Zod enums for validation
-const LocaleEnum = z.enum(['en-US', 'es-ES']);
+const LocaleEnum = z.enum(['en-US', 'es-ES', 'de-DE']);
 const ColorSchemeEnum = z.enum(['UNDEAD', 'HUMAN', 'GOBLIN', 'ELF']);
 
 // Zod schema for password change

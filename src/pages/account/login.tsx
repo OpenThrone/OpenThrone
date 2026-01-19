@@ -23,6 +23,7 @@ const Login = () => {
   const { t } = useTranslation('account');
   const { setMeta, meta } = useLayout();
   const [showVacationModal, setShowVacationModal] = useState(false);
+  const [vacationUserId, setVacationUserId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
@@ -39,7 +40,13 @@ const Login = () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('vacation') === '1') {
       setShowVacationModal(true);
-      // Optionally set userId if you want to pass it to the modal
+      const userIdParam = params.get('userId') ?? params.get('userID');
+      const parsedUserId = userIdParam ? Number(userIdParam) : null;
+      setVacationUserId(
+        typeof parsedUserId === 'number' && Number.isFinite(parsedUserId)
+          ? parsedUserId
+          : null,
+      );
     } else if (params.get('error') === 'account_status') {
       setErrorMessage(t('accountRestricted'));
     }
@@ -146,7 +153,7 @@ const Login = () => {
       <VacationModeModal
         opened={showVacationModal}
         onClose={() => setShowVacationModal(false)}
-        userId={Number(vacationUserId)}
+        userId={vacationUserId}
         onVacationEnd={() => setShowVacationModal(false)}
       />
     </MainArea>

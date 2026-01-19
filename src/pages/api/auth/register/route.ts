@@ -2,13 +2,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ZodError } from 'zod';
 
 import { RegisterSchema } from '@/lib/validation';
+import { withCors } from '@/middleware/cors';
 import { AuthService } from '@/services';
 import { logError } from '@/utils/logger';
 
-export default async function handle(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     await handlePOST(res, req);
   } else {
@@ -17,6 +15,8 @@ export default async function handle(
     );
   }
 }
+
+export default withCors(handle, { envVar: 'OT_AUTH_CORS_ORIGINS' });
 
 export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
   try {

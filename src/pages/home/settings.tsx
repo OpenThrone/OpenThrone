@@ -14,8 +14,13 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
-import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
+import {
+  useDebouncedValue,
+  useDisclosure,
+  useLocalStorage,
+} from '@mantine/hooks';
 import Image from 'next/image';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
@@ -25,11 +30,13 @@ import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { Locales, PlayerRace } from '@/types/typings';
+import toLocale from '@/utils/numberFormatting';
 import { logError, logInfo } from '@/utils/logger';
 
 const Settings = () => {
-  const { t } = useTranslation('home');
-  const locales: Locales[] = ['en-US', 'es-ES'];
+  const { t, i18n } = useTranslation('home');
+  const router = useRouter();
+  const locales: Locales[] = ['en-US', 'es-ES', 'de-DE'];
   const colorSchemes: PlayerRace[] = ['UNDEAD', 'HUMAN', 'GOBLIN', 'ELF'];
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -60,6 +67,12 @@ const Settings = () => {
   const [showQR, setShowQR] = useState(false);
   const [qrCode, setQrCode] = useState('');
   const [totpToken, setTotpToken] = useState('');
+  const [, setPreviewScheme] = useLocalStorage<PlayerRace | ''>({
+    key: 'colorSchemePreview',
+    defaultValue: '',
+  });
+
+  const previewNumber = 1234567.89;
 
   const checkPasswordsMatch = useCallback(() => {
     setPasswordsMatch(debouncedNewPassword === debouncedConfirmPassword);
@@ -76,6 +89,32 @@ const Settings = () => {
   useEffect(() => {
     checkPasswordsMatch();
   }, [debouncedNewPassword, debouncedConfirmPassword, checkPasswordsMatch]);
+
+  useEffect(() => {
+    setPreviewScheme('');
+    return () => {
+      setPreviewScheme('');
+    };
+  }, [setPreviewScheme]);
+
+  const handleLocaleChange = (value: string | null) => {
+    if (!value) return;
+    setLocale(value as Locales);
+  };
+
+  const handleColorSchemeChange = (value: string | null) => {
+    if (!value) return;
+    const selected = value as PlayerRace;
+    setColorScheme(selected);
+    setPreviewScheme(selected);
+    updateOptions?.();
+  };
+
+  const getLanguageFromLocale = (selectedLocale: Locales) => {
+    if (selectedLocale === 'es-ES') return 'es';
+    if (selectedLocale === 'de-DE') return 'de';
+    return 'en';
+  };
 
   const updatePassword = async () => {
     checkPasswordsMatch();
@@ -139,6 +178,18 @@ const Settings = () => {
     // Handle response
     if (response.ok) {
       alertService.success(t('settings.localeUpdatedSuccessfully'));
+      const nextLanguage = getLanguageFromLocale(locale);
+      if (router.locale !== nextLanguage) {
+        await router.push(
+          { pathname: router.pathname, query: router.query },
+          router.asPath,
+          { locale: nextLanguage },
+        );
+      }
+      if (i18n?.language !== nextLanguage) {
+        await i18n?.changeLanguage(nextLanguage);
+      }
+      setPreviewScheme('');
       forceUpdate();
       updateOptions();
     } else {
@@ -337,23 +388,31 @@ const Settings = () => {
             <Text>{t('settings.localeFormatting')}</Text>
             <Select
               value={locale}
-              onChange={setLocale}
+              onChange={handleLocaleChange}
               data={locales.map((locale) => ({
                 value: locale,
                 label: locale,
               }))}
               className={raceClasses.bgClass}
             />
+            <Text size="sm" c="dimmed">
+              {t('settings.localePreview', {
+                value: toLocale(previewNumber, locale),
+              })}
+            </Text>
             <Text>{t('settings.colorScheme')}</Text>
             <Select
               value={colorScheme}
-              onChange={setColorScheme}
+              onChange={handleColorSchemeChange}
               data={colorSchemes.map((color) => ({
                 value: color,
                 label: color,
               }))}
               className={raceClasses.bgClass}
             />
+            <Text size="sm" c="dimmed">
+              {t('settings.colorSchemePreview')}
+            </Text>
             <Space h="md" />
             <Button
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"

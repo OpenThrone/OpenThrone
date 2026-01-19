@@ -39,7 +39,7 @@ export interface PasswordChangeData {
 }
 
 export interface GameOptionsData {
-  locale: 'en-US' | 'es-ES';
+  locale: 'en-US' | 'es-ES' | 'de-DE';
   colorScheme: 'UNDEAD' | 'HUMAN' | 'GOBLIN' | 'ELF';
 }
 
@@ -95,7 +95,7 @@ const PasswordChangeSchema = z
   });
 
 const GameOptionsSchema = z.object({
-  locale: z.enum(['en-US', 'es-ES']),
+  locale: z.enum(['en-US', 'es-ES', 'de-DE']),
   colorScheme: z.enum(['UNDEAD', 'HUMAN', 'GOBLIN', 'ELF']),
 });
 

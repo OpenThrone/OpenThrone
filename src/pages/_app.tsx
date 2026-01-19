@@ -83,7 +83,7 @@ const namespaceMatchers: Array<{
 
 const getNamespacesForPath = (path: string) => {
   const basePath = path.split('?')[0] || '/';
-  const namespaces = new Set(['common']);
+  const namespaces = new Set(['common', 'navigation']);
   namespaceMatchers.forEach(({ matches, namespaces: entries }) => {
     if (matches(basePath)) {
       entries.forEach((entry) => namespaces.add(entry));
@@ -111,9 +111,10 @@ const AppWithTheme = ({ Component, pageProps }: AppProps) => {
     const applyTheme = (cs: string) => setTheme(themes[cs] || themes.ELF);
     if (user?.colorScheme && user.colorScheme !== colorScheme)
       setColorScheme(user.colorScheme);
-    const isTestPage = router.pathname === '/test';
+    const isPreviewPage =
+      router.pathname === '/test' || router.pathname === '/home/settings';
     const activeScheme =
-      (isTestPage && previewScheme) || user?.colorScheme || colorScheme;
+      (isPreviewPage && previewScheme) || user?.colorScheme || colorScheme;
     applyTheme(activeScheme);
   }, [
     user?.colorScheme,
