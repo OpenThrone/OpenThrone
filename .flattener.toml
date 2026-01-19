@@ -19,10 +19,6 @@ include_globs = [
     "next.config.js",
     "tailwind.config.js",
     ".env.sample",
-    "BattleSystem.md",
-    "simulation_plan.md",
-    "UserUnits_System_Analysis_Report.md",
-    "memory-bank/*.md",
     # Key server & socket handlers and account logic
     "src/lib/socket.ts",
     "src/services/Account.service.ts",
@@ -35,7 +31,6 @@ include_globs = [
     "src/components/UserAdminEditor.tsx",
     # Type definitions and important configs
     "src/types/**/*.d.ts",
-    "AGENTS.md"
 ]
 markdown = true
 
@@ -165,15 +160,14 @@ exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "o
 include_globs = [
     # Context documents
     "AGENTS.md",
-    "memory-bank/productContext.md",
 
     # Type definitions
     "src/types/typings.d.ts",
 
     # Economic services
-    "src/services/bank.service.ts",
+    "src/services/Bank.service.ts",
     "src/services/UserEconomyService.ts",
-    "src/services/friendTransfer.service.ts",
+    "src/services/FriendTransfer.service.ts",
 
     # Banking & transfers API
     "src/pages/api/bank/*.ts",
@@ -211,12 +205,11 @@ exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "o
 include_globs = [
     # Context documents
     "AGENTS.md",
-    "memory-bank/productContext.md",
 
     # Services & validation
-    "src/services/recruitment.service.ts",
+    "src/services/Recruitment.service.ts",
     "src/services/UserSessionService.ts",
-    "src/services/user.service.ts",
+    "src/services/User.service.ts",
     "src/lib/validation.ts",
 
     # API Routes
@@ -245,7 +238,6 @@ exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "o
 include_globs = [
     # Context documents
     "AGENTS.md",
-    "memory-bank/productContext.md",
 
     # API Routes
     "src/pages/api/messages/*.ts",
@@ -291,7 +283,6 @@ exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "o
 include_globs = [
     # Context documents
     "AGENTS.md",
-    "memory-bank/productContext.md",
 
     # API Routes
     "src/pages/api/alliances/*.ts",
@@ -327,7 +318,6 @@ exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "o
 include_globs = [
     # Context documents
     "AGENTS.md",
-    "memory-bank/productContext.md",
 
     # API Routes
     "src/pages/api/structures/upgrades.ts",
@@ -404,11 +394,11 @@ include_globs = [
 
     # Services
     "src/services/UserSessionService.ts",
-    "src/services/user.service.ts",
+    "src/services/User.service.ts",
     "src/services/UserDataService.ts",
     "src/services/UserStatsService.ts",
-    "src/services/sessions.service.ts",
-    "src/services/config.service.ts",
+    "src/services/Sessions.service.ts",
+    "src/services/Config.service.ts",
 
     # UI Components & context
     "src/components/alert.tsx",
@@ -449,10 +439,10 @@ include_globs = [
     "src/pages/administration/**/*",
 
     # Services
-    "src/services/era.service.ts",
-    "src/services/alert.service.ts",
-    "src/services/config.service.ts",
-    "src/services/sessions.service.ts",
+    "src/services/Era.service.ts",
+    "src/services/Alert.service.ts",
+    "src/services/Config.service.ts",
+    "src/services/Sessions.service.ts",
     "src/services/UserDataService.ts",
 
     # UI Components
@@ -477,7 +467,6 @@ exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "o
 include_globs = [
     # Context documents
     "AGENTS.md",
-    "memory-bank/productContext.md",
 
     # API Routes
     "src/pages/api/blog/*.ts",
@@ -503,7 +492,6 @@ exclude_dirs = ["node_modules", ".next", "dist", "build", ".git", "coverage", "o
 include_globs = [
     # Context documents
     "AGENTS.md",
-    "memory-bank/systemPatterns.md",
 
     # Type definitions
     "src/types/typings.d.ts",
@@ -549,18 +537,30 @@ include_globs = [
 
     # Reusable components
     "src/components/ContentCard.tsx",
+    "src/components/themedCard.tsx",
+    "src/components/HeroBanner.tsx",
+    "src/components/HeaderIconButton.tsx",
+    "src/components/LanguageSwitcher.tsx",
+    "src/components/FramedAvatar.tsx",
     "src/components/RpgAwesomeIcon.tsx",
     "src/components/loading-dots.tsx",
+    "src/components/form.tsx",
     "src/components/CollapsibleSection.tsx",
     "src/components/TabbedContent.tsx",
     "src/components/modal.tsx",
     "src/components/AnimatedButton.tsx",
+    "src/components/PaperTable.tsx",
+    "src/components/NumericTable.tsx",
 
     # Styles
     "src/styles/global.css",
     "src/styles/themes.tsx",
     "tailwind.config.js",
-    "postcss.config.js"
+    "postcss.config.js",
+
+    # Themed game UI components
+    "src/components/game/**/*.tsx",
+    "src/components/game/**/*.css"
 ]
 markdown = true
 
@@ -579,7 +579,6 @@ include_globs = [
     # Prisma schema & migrations
     "prisma/schema.prisma",
     "prisma/migrations/**/*.sql",
-    "temp_initial_migration.sql",
 
     # Models
     "src/models/*.tsx",

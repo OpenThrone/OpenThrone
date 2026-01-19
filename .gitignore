@@ -70,3 +70,5 @@ temp/*
 
 # yarn
 yarn.lock
+
+.code-flattener/*

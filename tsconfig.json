@@ -37,6 +37,7 @@
       "@/*": ["./src/*"],
       "@/public/*": ["./public/*"]
     },
+    "ignoreDeprecations": "6.0",
     "plugins": [
       {
         "name": "next"
@@ -56,6 +57,7 @@
   "include": [
     "next-env.d.ts",
     "src/pages/api/**/*",
+    "src/middleware/**/*",
     "src/services/**/*",
     "src/utils/**/*",
     "src/models/**/*",

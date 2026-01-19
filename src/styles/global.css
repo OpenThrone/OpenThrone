@@ -492,11 +492,11 @@ body{
   background-size: 100% 100%;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: var(--ot-surface);
+  /*background-color: var(--ot-surface);
   border: 1px solid var(--ot-border);
   border-radius: var(--ot-radius);
   box-shadow: var(--ot-shadow);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);*/
   padding: 15px 18px 30px;
 }
 

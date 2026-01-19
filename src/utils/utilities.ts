@@ -144,7 +144,7 @@ const getAssetPath = (name, size?, race: PlayerRace = 'ELF') => {
       path += '/background/ELF_top_double_border.svg';
       break;
     case 'avatarFrame':
-      path += '/avatarFrame.png';
+      path += `/avatarFrame-${race || 'ELF'}.webp`;
       break;
     default:
   }
@@ -156,17 +156,21 @@ const getAssetPath = (name, size?, race: PlayerRace = 'ELF') => {
  * Returns the source for the avatar image.
  * @param avatar - The avatar string
  * @param race (optional) - the race of the user
+ * @param size (optional) - shield asset size to use when avatar is SHIELD
  * @returns The source for the avatar image.
  */
-const getAvatarSrc = (avatar: string, race?: PlayerRace) => {
+const getAvatarSrc = (
+  avatar: string,
+  race?: PlayerRace,
+  size: '25x25' | '150x150' = '25x25',
+) => {
   if (avatar.startsWith('http')) {
     return avatar;
   }
   if (avatar === 'SHIELD') {
-    if (race) {
-      return getAssetPath('shields', '25x25', race);
-    }
+    return getAssetPath('shields', size, race || 'ELF');
   }
+  return avatar;
 };
 
 const calculateOverallRank = (user) => {

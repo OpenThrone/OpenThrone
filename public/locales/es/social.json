@@ -52,6 +52,7 @@
     "actions": "Acciones",
     "pendingAcceptance": "Pendiente de aceptación",
     "accept": "Aceptar",
+    "cancel": "Cancelar",
     "decline": "Rechazar",
     "noRequestsFound": "No hay solicitudes",
     "unknownPlayer": "Jugador Desconocido",

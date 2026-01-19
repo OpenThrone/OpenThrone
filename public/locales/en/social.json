@@ -52,6 +52,7 @@
     "actions": "Actions",
     "pendingAcceptance": "Pending acceptance",
     "accept": "Accept",
+    "cancel": "Cancel",
     "decline": "Decline",
     "noRequestsFound": "No requests",
     "unknownPlayer": "Unknown Player",

@@ -34,7 +34,7 @@ export type BonusType =
   | 'INTEL'
   | 'INCOME'
   | 'PRICES';
-export type Locales = 'en-US' | 'es-ES';
+export type Locales = 'en-US' | 'es-ES' | 'de-DE';
 
 // Specific type for units stored in User.units JSON
 export type PlayerUnit = {

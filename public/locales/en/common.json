@@ -75,9 +75,12 @@
     "avatar": "Avatar",
     "level": "Level",
     "experience": "Experience",
+    "xp": "XP",
     "gold": "Gold",
     "citizens": "Citizens",
     "turns": "Turns",
+    "era": "Era",
+    "unknown": "Unknown",
     "rank": "Rank",
     "alliance": "Alliance",
     "race": "Race",
@@ -113,6 +116,10 @@
     "inactive": "Inactive",
     "online": "Online",
     "offline": "Offline"
+  },
+  "realtime": {
+    "connected": "Realtime: Connected",
+    "disconnected": "Realtime: Reconnecting"
   },
   "phrases": {
     "welcomeBack": "Welcome back",
