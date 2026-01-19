@@ -9,6 +9,15 @@ export function parseOriginList(value?: string): string[] {
     .filter(Boolean);
 }
 
+export function getCorsAllowlist(
+  envValue?: string,
+  includeDefault: boolean = true,
+): string[] {
+  const origins = [...parseOriginList(envValue)];
+  if (includeDefault) origins.push(DEFAULT_DASHBOARD_TEST_ORIGIN);
+  return Array.from(new Set(origins));
+}
+
 export function getRequestOrigin(
   req: { headers?: Record<string, any> } | undefined,
 ): string | null {
@@ -69,4 +78,24 @@ export function setCorsHeaders(
   })();
 
   res.setHeader('Vary', varyValue as any);
+}
+
+export function applyCors(
+  req: { headers?: Record<string, any>; method?: string },
+  res: {
+    setHeader: (name: string, value: string | string[]) => void;
+    getHeader?: (name: string) => unknown;
+    status: (code: number) => { end: () => void };
+  },
+  allowlist: string[],
+): boolean {
+  const origin = getRequestOrigin(req);
+  setCorsHeaders(res, origin, allowlist);
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return true;
+  }
+
+  return false;
 }

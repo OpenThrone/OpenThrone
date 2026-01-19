@@ -11,11 +11,12 @@ import type { IUserSession } from '@/types/typings';
 import { getRequestIp, logAction } from '@/utils/auditLogger';
 import { isAdmin, isModerator } from '@/utils/authorization';
 import {
+  applyCors,
   DEFAULT_DASHBOARD_TEST_ORIGIN,
+  getCorsAllowlist,
   getRequestOrigin,
   isOriginAllowed,
   parseOriginList,
-  setCorsHeaders,
 } from '@/utils/cors';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -284,15 +285,8 @@ export const authOptions: NextAuthOptions = {
 const authHandler = NextAuth(authOptions);
 
 export default function handler(req: any, res: any) {
-  const corsOrigins = [
-    ...parseOriginList(process.env.OT_AUTH_CORS_ORIGINS),
-    DEFAULT_DASHBOARD_TEST_ORIGIN,
-  ];
-  setCorsHeaders(res, getRequestOrigin(req), corsOrigins);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  const corsOrigins = getCorsAllowlist(process.env.OT_AUTH_CORS_ORIGINS);
+  if (applyCors(req, res, corsOrigins)) return;
 
   return authHandler(req, res);
 }
