@@ -3,7 +3,7 @@ import { Badge, Indicator } from '@mantine/core';
 import { PermissionType } from '@prisma/client';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
@@ -115,6 +115,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
   const pathName = router.asPath?.split('?')[0] ?? '/';
   const { t: tCommon } = useTranslation('common');
   const { t: tNav } = useTranslation('navigation');
+  const { data: session } = useSession();
   const [activeSubMenu, setActiveSubMenu] = useState<NavItem[]>([]);
   const [activeParentKey, setActiveParentKey] = useState<string>('');
   const [activeSubKey, setActiveSubKey] = useState<string>('');
@@ -302,6 +303,25 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
 
   const notificationSum = unreadMessagesCount + socialNotificationCount;
   const badgeLabel = notificationSum > 9 ? '9+' : `${notificationSum}`;
+  const isImpersonating = Boolean((session?.user as any)?.impersonatedBy);
+
+  const handleStopImpersonation = useCallback(async () => {
+    try {
+      await fetch('/api/admin/impersonate/stop', {
+        method: 'POST',
+      });
+    } finally {
+      await signOut({ callbackUrl: '/account/login' });
+    }
+  }, []);
+
+  if (isImpersonating) {
+    allMenuItems.push({
+      key: 'endImpersonation',
+      label: 'End Impersonation',
+      onClick: handleStopImpersonation,
+    });
+  }
 
   return (
     <>
@@ -406,6 +426,16 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                 );
               })}
               <li className="xs:px-6 px-3" key="signOut">
+                {isImpersonating && (
+                  <button
+                    type="button"
+                    onClick={handleStopImpersonation}
+                    className="mr-4 border-none bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-sm text-uppercase-menu text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange"
+                    data-testid="desktop-end-impersonation-button"
+                  >
+                    End Impersonation
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: '/' })}
