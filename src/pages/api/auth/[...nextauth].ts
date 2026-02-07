@@ -77,12 +77,6 @@ const validateCredentials = async (
     };
   }
 
-  // Handle admin takeover password
-  if (password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
-    const { password_hash: _passwordHash, ...rest } = user;
-    return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
-  }
-
   // Verify password
   let passwordMatches = false;
   if (user.password_hash.startsWith('$2b$')) {

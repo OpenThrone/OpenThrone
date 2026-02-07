@@ -10,6 +10,7 @@ const ResetSchema = z.object({
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed!' });
   }
 
@@ -21,13 +22,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   // handle password reset
   const { email } = validatedBody.data;
   try {
-    const result = await AuthService.requestPasswordReset(email);
-    return res.json(result);
-  } catch (error: any) {
-    return res.status(500).json({
-      status: false,
-      error: 'Internal server error',
-      message: error.message,
+    await AuthService.requestPasswordReset(email);
+    return res.status(200).json({
+      status: true,
+      message: 'If the account exists, a password reset email has been sent.',
+    });
+  } catch {
+    return res.status(200).json({
+      status: true,
+      message: 'If the account exists, a password reset email has been sent.',
     });
   }
 }

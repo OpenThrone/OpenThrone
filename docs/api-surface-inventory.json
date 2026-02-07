@@ -56,6 +56,13 @@
       "notes": "Migrated to withApiGuard for current endpoints."
     },
     {
+      "route": "/api/account/reset and /api/account/verify",
+      "methods": ["POST"],
+      "authMode": "public",
+      "risk": "high",
+      "notes": "Reset request now returns generic success to reduce account enumeration; verification failures return generic invalid/expired response."
+    },
+    {
       "route": "/api/cronJobs/*",
       "methods": ["POST"],
       "authMode": "secret-or-service-auth",

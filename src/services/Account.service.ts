@@ -1,5 +1,6 @@
 import type { BonusPointsType } from '@prisma/client';
 import argon2 from 'argon2';
+import { createHash } from 'crypto';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { z } from 'zod';
@@ -151,6 +152,9 @@ const LastActiveSchema = z
     message:
       'At least one identifier (email, userId, or displayName) must be provided',
   });
+
+const hashResetToken = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
 
 export class AccountService {
   /**
@@ -355,27 +359,32 @@ export class AccountService {
         throw new Error('User not found');
       }
 
-      const existingReset = await prisma.passwordReset.findMany({
-        where: {
-          userId: user.id,
-          verificationCode: validatedData.verificationCode,
-          status: 0,
-          createdAt: {
-            gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3), // 3 hours
-          },
-          type: 'PASSWORD',
-        },
-      });
-
-      if (existingReset.length === 0) {
-        throw new Error('Invalid verification code');
-      }
-
+      const hashedCode = hashResetToken(validatedData.verificationCode);
       const passwordHash = await argon2.hash(validatedData.newPassword);
+      await prisma.$transaction(async (tx) => {
+        const consumeResult = await tx.passwordReset.updateMany({
+          where: {
+            userId: user.id,
+            verificationCode: hashedCode,
+            status: 0,
+            createdAt: {
+              gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3), // 3 hours
+            },
+            type: 'PASSWORD',
+          },
+          data: {
+            status: 1,
+          },
+        });
 
-      await prisma.users.update({
-        where: { id: user.id },
-        data: { password_hash: passwordHash },
+        if (consumeResult.count === 0) {
+          throw new Error('Invalid verification code');
+        }
+
+        await tx.users.update({
+          where: { id: user.id },
+          data: { password_hash: passwordHash },
+        });
       });
 
       return { status: true, passwordChanged: true };

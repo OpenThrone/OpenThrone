@@ -11,6 +11,7 @@ const VerifySchema = z.object({
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed!' });
   }
 
@@ -27,11 +28,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       status: true,
       verified: result.verified,
     });
-  } catch (error: any) {
-    return res.status(500).json({
+  } catch {
+    return res.status(400).json({
       status: false,
-      error: 'Internal server error',
-      message: error.message,
+      error: 'Invalid or expired verification code',
     });
   }
 }

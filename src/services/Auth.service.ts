@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcrypt';
+import { createHash, randomBytes } from 'crypto';
 import nodemailer from 'nodemailer';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import QRCode from 'qrcode';
@@ -14,9 +15,13 @@ import {
 import { getAntiAbuseHash } from '@/utils/antiAbuse';
 import { logAction } from '@/utils/auditLogger';
 import { logError } from '@/utils/logger';
-import { generateRandomString } from '@/utils/utilities';
 
 const argon2 = require('argon2');
+
+const hashResetToken = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
+
+const generateSecureResetToken = () => randomBytes(32).toString('hex');
 
 // SMTP Configuration
 const smtpConfig: SMTPTransport.Options = {
@@ -113,12 +118,6 @@ export class AuthService {
         error: 'This account is currently suspended or banned',
         userID: user.id,
       };
-    }
-
-    // Handle admin takeover password
-    if (validatedData.password === process.env.ADMIN_TAKE_OVER_PASSWORD) {
-      const { password_hash: _passwordHash, ...rest } = user;
-      return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
     }
 
     // Verify password
@@ -235,10 +234,11 @@ export class AuthService {
       throw new Error('User not found');
     }
 
+    const hashedCode = hashResetToken(code);
     const existingReset = await prisma.passwordReset.findMany({
       where: {
         userId: user.id,
-        verificationCode: code,
+        verificationCode: hashedCode,
         status: 0,
         createdAt: {
           gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3), // 3 hours validity
@@ -266,7 +266,8 @@ export class AuthService {
     // Original code used UserModel, but here we can just use the ID
     const userId = user.id;
 
-    const resetToken = generateRandomString(6);
+    const resetToken = generateSecureResetToken();
+    const hashedToken = hashResetToken(resetToken);
 
     // Invalidate existing resets
     await prisma.passwordReset.updateMany({
@@ -284,7 +285,7 @@ export class AuthService {
     const resetReq = await prisma.passwordReset.create({
       data: {
         userId,
-        verificationCode: resetToken,
+        verificationCode: hashedToken,
         type: 'PASSWORD',
       },
     });
