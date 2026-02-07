@@ -39,14 +39,14 @@
       "methods": ["GET", "POST", "PATCH", "DELETE"],
       "authMode": "session+admin",
       "risk": "critical",
-      "notes": "Priority domain for unified guard migration."
+      "notes": "Migrated to withApiGuard for current endpoints."
     },
     {
       "route": "/api/cronJobs/*",
       "methods": ["POST"],
       "authMode": "secret-or-service-auth",
       "risk": "critical",
-      "notes": "Needs standardized scoped service token model."
+      "notes": "Now method-gated by withApiGuard and protected with TASK_SECRET checks."
     },
     {
       "route": "/api/battle/*",
