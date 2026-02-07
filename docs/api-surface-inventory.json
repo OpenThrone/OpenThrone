@@ -98,6 +98,13 @@
       "notes": "Bank mutations now enforce Idempotency-Key."
     },
     {
+      "route": "/api/v1/*",
+      "methods": ["varies"],
+      "authMode": "mirrors wrapped route",
+      "risk": "high",
+      "notes": "Compatibility wrappers added for critical attack/spy/account/bank/alliance-bank routes."
+    },
+    {
       "route": "attack_log table",
       "methods": ["schema"],
       "authMode": "n/a",
