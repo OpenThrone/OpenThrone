@@ -4,6 +4,7 @@ import type { Item, ItemType, PlayerUnit, UnitType } from '@/types/typings';
 
 import { logDebug } from './logger';
 import mtRand from './mtrand';
+import { type RandomFn, shuffleWithRandom } from './random';
 import type { SpyMissionUser } from './spy/results';
 import {
   AssassinationResult,
@@ -34,11 +35,17 @@ export function computeSpyAmpFactor(targetPop: number): number {
 }
 export { CITIZEN_WORKERS_TARGET };
 
+export type SpySimulationOptions = {
+  random?: RandomFn;
+};
+
 export function simulateIntel(
   attacker: SpyMissionUser,
   defender: SpyMissionUser,
   spies: number,
+  options?: SpySimulationOptions,
 ): any {
+  const random = options?.random ?? Math.random;
   spies = Math.max(1, Math.min(spies, 10));
 
   const fortification = Fortifications.find(
@@ -65,7 +72,7 @@ export function simulateIntel(
     const deathRiskFactor = Math.max(0, 1 - attacker.spy / defender.sentry);
     let spiesLost = 0;
     for (let i = 0; i < spies; i++) {
-      if (Math.random() < deathRiskFactor) {
+      if (random() < deathRiskFactor) {
         spiesLost++;
       }
     }
@@ -76,9 +83,10 @@ export function simulateIntel(
     const selectedKeysCount = Math.ceil(
       (intelKeys.length * intelPercentage) / 100,
     );
-    const randomizedKeys = intelKeys
-      .sort(() => 0.5 - Math.random())
-      .slice(0, selectedKeysCount);
+    const randomizedKeys = shuffleWithRandom(intelKeys, random).slice(
+      0,
+      selectedKeysCount,
+    );
 
     result.intelligenceGathered = randomizedKeys.reduce((partialIntel, key) => {
       const initPartialIntel = partialIntel ?? {
@@ -98,13 +106,15 @@ export function simulateIntel(
         const totalTypes = Array.isArray(sourceArr) ? sourceArr.length : 0;
         const typesToInclude = Math.floor((totalTypes * intelPercentage) / 100);
         if (key === 'units') {
-          initPartialIntel[key] = (sourceArr as any[])
-            .sort(() => 0.5 - Math.random())
-            .slice(0, typesToInclude) as PlayerUnit[];
+          initPartialIntel[key] = shuffleWithRandom(
+            sourceArr as any[],
+            random,
+          ).slice(0, typesToInclude) as PlayerUnit[];
         } else {
-          initPartialIntel[key] = (sourceArr as any[])
-            .sort(() => 0.5 - Math.random())
-            .slice(0, typesToInclude) as Item[];
+          initPartialIntel[key] = shuffleWithRandom(
+            sourceArr as any[],
+            random,
+          ).slice(0, typesToInclude) as Item[];
         }
       } else {
         initPartialIntel[key] = (defender as any)[key];
@@ -124,7 +134,9 @@ export const simulateAssassination = (
   defender: SpyMissionUser,
   spiesSent: number,
   targetUnit: UnitType | typeof CITIZEN_WORKERS_TARGET,
+  options?: SpySimulationOptions,
 ) => {
+  const random = options?.random ?? Math.random;
   const result = new AssassinationResult(
     attacker,
     defender,
@@ -146,7 +158,7 @@ export const simulateAssassination = (
       Math.max(0, 1 - spySentryRatio) * 0.6 + 0.4,
     );
     const spiesToRemove = Math.ceil(
-      spiesSent * mtRand(lossMultiplier * 0.9, lossMultiplier * 1.1),
+      spiesSent * mtRand(lossMultiplier * 0.9, lossMultiplier * 1.1, random),
     );
     const assassinUnits = attacker.units.filter(
       (u) => u.type === 'SPY' && u.level === 3,
@@ -346,7 +358,9 @@ export const simulateInfiltration = (
   attacker: SpyMissionUser,
   defender: SpyMissionUser,
   spies: number,
+  options?: SpySimulationOptions,
 ) => {
+  const random = options?.random ?? Math.random;
   const spySentryRatio = attacker.spy / (defender.sentry || 1); // Avoid division by zero
   let spiesLost = 0;
 
@@ -393,18 +407,19 @@ export const simulateInfiltration = (
       // Only damage with remaining spies
       if (result.defender.fortHitpoints > 0) {
         if (result.attacker.spy / (result.defender.sentry || 1) <= 0.05)
-          result.defender.fortHitpoints -= Math.floor(mtRand(0, 2));
+          result.defender.fortHitpoints -= Math.floor(mtRand(0, 2, random));
         else if (
           result.attacker.spy / (result.defender.sentry || 1) > 0.05 &&
           result.attacker.spy / (result.defender.sentry || 1) <= 0.5
         )
-          result.defender.fortHitpoints -= Math.floor(mtRand(3, 6));
+          result.defender.fortHitpoints -= Math.floor(mtRand(3, 6, random));
         else if (
           result.attacker.spy / (result.defender.sentry || 1) > 0.5 &&
           result.attacker.spy / (result.defender.sentry || 1) <= 1.3
         )
-          result.defender.fortHitpoints -= Math.floor(mtRand(6, 16));
-        else result.defender.fortHitpoints -= Math.floor(mtRand(12, 24));
+          result.defender.fortHitpoints -= Math.floor(mtRand(6, 16, random));
+        else
+          result.defender.fortHitpoints -= Math.floor(mtRand(12, 24, random));
 
         if (result.defender.fortHitpoints < 0) {
           result.defender.fortHitpoints = 0;

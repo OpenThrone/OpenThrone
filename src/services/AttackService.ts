@@ -27,6 +27,68 @@ import { logDebug, logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { deepClone } from '@/utils/utilities';
 
+function aggregatePower(stats: {
+  MeleeAtkPower: number;
+  MeleeDefPower: number;
+  RangedAtkPower: number;
+  RangedDefPower: number;
+}) {
+  return (
+    Number(stats?.MeleeAtkPower || 0) +
+    Number(stats?.MeleeDefPower || 0) +
+    Number(stats?.RangedAtkPower || 0) +
+    Number(stats?.RangedDefPower || 0)
+  );
+}
+
+function buildContributionSlice(
+  breakdown: {
+    baseStats: {
+      MeleeAtkPower: number;
+      MeleeDefPower: number;
+      RangedAtkPower: number;
+      RangedDefPower: number;
+    };
+    itemStats: {
+      MeleeAtkPower: number;
+      MeleeDefPower: number;
+      RangedAtkPower: number;
+      RangedDefPower: number;
+    };
+    upgradeStats: {
+      MeleeAtkPower: number;
+      MeleeDefPower: number;
+      RangedAtkPower: number;
+      RangedDefPower: number;
+    };
+    totalStats: {
+      MeleeAtkPower: number;
+      MeleeDefPower: number;
+      RangedAtkPower: number;
+      RangedDefPower: number;
+    };
+  },
+  bonusPercent: number,
+) {
+  return {
+    basePower: aggregatePower(breakdown.baseStats),
+    itemPower: aggregatePower(breakdown.itemStats),
+    structureContributionPower: aggregatePower(breakdown.upgradeStats),
+    bonusPercent,
+    totalPower: aggregatePower(breakdown.totalStats),
+  };
+}
+
+function computeWinProbabilityProxy(
+  attackerPower: number,
+  defenderPower: number,
+) {
+  const ratio = attackerPower / Math.max(1, defenderPower);
+  const logRatio = Math.log(Math.max(0.01, ratio));
+  const probability = 1 / (1 + Math.exp(-4 * logRatio));
+  return Number(probability.toFixed(4));
+}
+
 export const AttackService = {
   simulateBattle,
   calculateStrength,
@@ -124,7 +186,24 @@ export const AttackService = {
         'OFFENSE',
         false,
       );
+      const defenderStrengthObj = this.calculateStrength(
+        DefensePlayer,
+        'DEFENSE',
+        false,
+      );
       const attackerOffenseKS = attackerStrengthObj.totalStats.MeleeAtkPower;
+      const attackerContribution = buildContributionSlice(
+        attackerStrengthObj as any,
+        Number(AttackPlayer.attackBonus || 0),
+      );
+      const defenderContribution = buildContributionSlice(
+        defenderStrengthObj as any,
+        Number(DefensePlayer.defenseBonus || 0),
+      );
+      const winProbabilityProxy = computeWinProbabilityProxy(
+        attackerContribution.totalPower,
+        defenderContribution.totalPower,
+      );
 
       if (attackerOffenseKS <= 0) {
         return {
@@ -309,6 +388,13 @@ export const AttackService = {
                 mitigation_summary: JSON.stringify(
                   (battleResults as any).casualtySummary?.mitigation ?? null,
                 ),
+                battle_contributions: {
+                  attacker: attackerContribution,
+                  defender: defenderContribution,
+                  mitigation:
+                    (battleResults as any).casualtySummary?.mitigation ?? null,
+                },
+                win_probability_proxy: winProbabilityProxy,
                 fort_breached: !!((battleResults as any).finalFortHP <= 0),
                 defender_fort_level: DefensePlayer.fortLevel,
               },

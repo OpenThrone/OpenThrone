@@ -1,0 +1,7 @@
+group,parameter,current_value,proposed_value,stage,status,notes
+battle,mirror_win_rate_target,unset,0.48-0.52,Stage 1,baseline-recorded,Read from scripts/balance/output/latest-simulation-summary.json
+battle,loot_ev_bound_by_bracket,unset,pending,Stage 2,pending,Needs bracket matrix sampling
+battle,casualty_ratio_bound,unset,pending,Stage 2,pending,Needs bracket matrix sampling
+spy,intel_success_curve,binary_threshold,logistic_curve,Stage 3,pending,Will migrate after instrumentation baselines
+spy,infiltrate_success_curve,tiered_threshold,logistic_curve,Stage 3,pending,Will migrate after instrumentation baselines
+spy,assassinate_success_curve,binary_threshold,logistic_curve,Stage 3,pending,Will migrate after instrumentation baselines

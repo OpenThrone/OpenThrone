@@ -15,6 +15,7 @@ import type { BattleUnits, ItemType } from '@/types/typings';
 
 import { logDebug, logInfo, logWarn } from './logger';
 import mtRand from './mtrand';
+import type { RandomFn } from './random';
 
 export type BattleUserLike = {
   [key: string]: any;
@@ -189,8 +190,13 @@ interface BattleState {
   totalPillagedGold: bigint;
   totalAttackerCasualties: number;
   totalDefenderCasualties: number;
+  random: RandomFn;
 }
 const OFFENSE = 'OFFENSE';
+
+export type SimulationOptions = {
+  random?: RandomFn;
+};
 
 const BATTLE_CONSTANTS = {
   MAX_TURNS: 15,
@@ -224,6 +230,7 @@ export async function simulateBattle(
   totalTurns: number,
   debug: boolean = false,
   isDefenderProtected: boolean = (defender.level ?? 0) <= 9,
+  options?: SimulationOptions,
 ): Promise<BattleResult> {
   if (debug)
     logDebug(
@@ -240,6 +247,7 @@ export async function simulateBattle(
     initialFortHP,
     isDefenderProtected,
     debug,
+    options?.random ?? Math.random,
   );
   state.totalTurns = totalTurns;
   for (let turn = 1; turn <= totalTurns; turn++) {
@@ -268,6 +276,7 @@ function initializeBattleState(
   initialFortHP: number,
   isDefenderProtected: boolean,
   _debug: boolean,
+  random: RandomFn,
 ) {
   const battleResult = new BattleResult(attacker as any, defender as any);
   const attackerStrength = calculateStrength(attacker, 'OFFENSE');
@@ -329,6 +338,7 @@ function initializeBattleState(
     totalPillagedGold: BigInt(0),
     totalAttackerCasualties: 0,
     totalDefenderCasualties: 0,
+    random,
   };
 
   return state;
@@ -473,6 +483,7 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
     const damageToFort = calculateFortDamage(
       state.attackerMeleeAtkPower,
       totalFortDefense,
+      state.random,
     );
     fortDamageThisTurn = damageToFort;
     state.fortHP = Math.max(state.fortHP - fortDamageThisTurn, 0);
@@ -550,7 +561,12 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
       );
 
     // PillageGold if applicable
-    pillagedGoldThisTurn = calculateLoot(state.attacker, state.defender, turn);
+    pillagedGoldThisTurn = calculateLoot(
+      state.attacker,
+      state.defender,
+      turn,
+      state.random,
+    );
     // Ensure pillageThis is BigInt and clamp to defender's current gold on-hand.
     const pillageThis =
       typeof pillagedGoldThisTurn === 'bigint'
@@ -818,6 +834,7 @@ export function calculateStaminaDrop(turn: number): number {
 export function calculateFortDamage(
   attackerMeleeAtkPower: number,
   fortificationDefensePower: number, // Combined melee and ranged defense of the fort
+  random: RandomFn = Math.random,
 ): number {
   const ratio = attackerMeleeAtkPower / (fortificationDefensePower || 1);
   let damageRange: [number, number];
@@ -836,7 +853,7 @@ export function calculateFortDamage(
     damageRange = [10, 15]; // Very strong attack
   else damageRange = [15, 25]; // Overwhelming attack
 
-  const damage = Math.floor(mtRand(damageRange[0], damageRange[1]));
+  const damage = Math.floor(mtRand(damageRange[0], damageRange[1], random));
   return Math.max(damage, 0);
 }
 
@@ -1214,13 +1231,14 @@ export function calculateLoot(
   attacker: BattleUserLike,
   defender: BattleUserLike,
   turns: number,
+  random: RandomFn = Math.random,
 ): bigint {
   const UNIFORM_MIN = 90;
   const UNIFORM_MAX = 99;
-  const uniformFactor = mtRand(UNIFORM_MIN, UNIFORM_MAX) / 100;
+  const uniformFactor = mtRand(UNIFORM_MIN, UNIFORM_MAX, random) / 100;
   const turnLower = 100 + turns * 8; // Reduced impact of turns on lower bound
   const turnUpper = 100 + turns * 15; // Reduced impact of turns on upper bound
-  const turnFactor = mtRand(turnLower, turnUpper) / 350; // Adjusted divisor for overall loot scaling
+  const turnFactor = mtRand(turnLower, turnUpper, random) / 350; // Adjusted divisor for overall loot scaling
   logDebug('turns:', turns);
   logDebug(`Uniform Factor: ${uniformFactor}, Turn Factor: ${turnFactor}`);
 
@@ -1993,6 +2011,7 @@ export async function executeAttack(
   defender: BattleUserLike,
   turns: number = 15,
   isDefenderProtected: boolean = (defender.level ?? 0) <= 9,
+  options?: SimulationOptions,
 ): Promise<BattleResult> {
   const initialFortHP = Number.isFinite(defender.fortHitpoints as any)
     ? Math.max(0, Number(defender.fortHitpoints))
@@ -2005,6 +2024,7 @@ export async function executeAttack(
       turns,
       false,
       isDefenderProtected,
+      options,
     );
   } finally {
     strengthCache.clear();
