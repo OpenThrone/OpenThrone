@@ -1,6 +1,10 @@
 import { Fortifications, ItemTypes, UnitTypes } from '@/constants';
 import { SpyUserModel } from '@/models/SpyUser';
 import type { Item, ItemType, PlayerUnit, UnitType } from '@/types/typings';
+import {
+  isBalanceV2EnabledForUser,
+  resolveSpyMissionSuccess,
+} from '@/utils/balance/effectiveStats';
 
 import { logDebug } from './logger';
 import mtRand from './mtrand';
@@ -62,10 +66,21 @@ export function simulateIntel(
     attackerSpy: attacker.spy,
     defenderSentry: defender.sentry,
   });
-  const isSuccessful = attacker.spy > defender.sentry;
+  const v2Enabled = isBalanceV2EnabledForUser(attacker.id);
+  const missionResolution = v2Enabled
+    ? resolveSpyMissionSuccess({
+        attackerSpy: attacker.spy,
+        defenderSentry: defender.sentry,
+        random,
+        situationalModifier: 0.2, // Intel should be the easiest spy mission.
+      })
+    : { success: attacker.spy > defender.sentry, probability: undefined };
+  const isSuccessful = missionResolution.success;
 
   const result = new IntelResult(attacker, defender, spies);
   result.success = isSuccessful;
+  (result as any).successProbability = missionResolution.probability;
+  (result as any).probabilityModel = v2Enabled ? 'LOGISTIC_V2' : 'BINARY_V1';
   result.spiesLost = isSuccessful ? 0 : spies;
   if (isSuccessful) {
     // Proceed with gathering intelligence
@@ -145,10 +160,20 @@ export const simulateAssassination = (
   );
 
   // Step 1: Initial infiltration through sentries
-  // Spy score should be greater than sentry to win
-  const isSuccessful = attacker.spy > defender.sentry;
+  const v2Enabled = isBalanceV2EnabledForUser(attacker.id);
+  const missionResolution = v2Enabled
+    ? resolveSpyMissionSuccess({
+        attackerSpy: attacker.spy,
+        defenderSentry: defender.sentry,
+        random,
+        situationalModifier: -0.2, // Assassination should be riskiest.
+      })
+    : { success: attacker.spy > defender.sentry, probability: undefined };
+  const isSuccessful = missionResolution.success;
   const spySentryRatio = attacker.spy / (defender.sentry || 1);
   result.success = isSuccessful;
+  (result as any).successProbability = missionResolution.probability;
+  (result as any).probabilityModel = v2Enabled ? 'LOGISTIC_V2' : 'BINARY_V1';
 
   // If the mission fails at the sentry check
   // going to allow some to safely retreat, but some will die
@@ -385,7 +410,18 @@ export const simulateInfiltration = (
   spiesLost = Math.min(spiesLost, spies); // Ensure we don't lose more spies than we sent
 
   const result = new InfiltrationResult(attacker, defender, spies);
-  result.success = attacker.spy > defender.sentry; // The mission is still considered successful if attacker.spy > defender.sentry, even with spy losses
+  const v2Enabled = isBalanceV2EnabledForUser(attacker.id);
+  const missionResolution = v2Enabled
+    ? resolveSpyMissionSuccess({
+        attackerSpy: attacker.spy,
+        defenderSentry: defender.sentry,
+        random,
+        situationalModifier: 0, // Neutral difficulty mission.
+      })
+    : { success: attacker.spy > defender.sentry, probability: undefined };
+  result.success = missionResolution.success; // Mission can succeed even with some losses
+  (result as any).successProbability = missionResolution.probability;
+  (result as any).probabilityModel = v2Enabled ? 'LOGISTIC_V2' : 'BINARY_V1';
   result.spiesLost = result.success ? spiesLost : spies; // Lost, lose all spies
 
   // Remove spies lost from attacker

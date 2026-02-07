@@ -168,8 +168,17 @@ Stage 2 applied (2026-02-07):
 ## Stage 3 (formula unification)
 - Introduce unified effective-stat + logistic spy success, feature-flagged.
 
+Stage 3 applied (2026-02-07):
+- Added shared balance math module for combat power/probability primitives.
+- Migrated spy mission success checks to feature-flagged logistic resolution (`OT_ENABLE_BALANCE_V2=true`) with extreme-ratio guardrails.
+- Kept default behavior unchanged when the flag is disabled.
+
 ## Stage 4 (live validation)
 - Run staged rollout (5% -> 25% -> 100%) with kill switch.
+
+Stage 4 readiness (2026-02-07):
+- Added rollout controls: `OT_ENABLE_BALANCE_V2` (global override / kill switch) and `OT_BALANCE_V2_ROLLOUT_PERCENT` (deterministic per-user rollout bucket).
+- Operational percentage progression is pending explicit production rollout decision.
 
 ## 10) Success Metrics
 
@@ -181,5 +190,5 @@ Stage 2 applied (2026-02-07):
 ## 11) Execution Tracker
 - [x] Stage 1 complete
 - [x] Stage 2 complete
-- [ ] Stage 3 complete
+- [x] Stage 3 complete
 - [ ] Stage 4 complete

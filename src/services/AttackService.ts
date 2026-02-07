@@ -23,23 +23,13 @@ import {
   newComputeCasualties,
   simulateBattle,
 } from '@/utils/attackFunctions';
+import {
+  computeBattleWinProbabilityProxy,
+  totalCombatPower,
+} from '@/utils/balance/effectiveStats';
 import { logDebug, logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { deepClone } from '@/utils/utilities';
-
-function aggregatePower(stats: {
-  MeleeAtkPower: number;
-  MeleeDefPower: number;
-  RangedAtkPower: number;
-  RangedDefPower: number;
-}) {
-  return (
-    Number(stats?.MeleeAtkPower || 0) +
-    Number(stats?.MeleeDefPower || 0) +
-    Number(stats?.RangedAtkPower || 0) +
-    Number(stats?.RangedDefPower || 0)
-  );
-}
 
 function buildContributionSlice(
   breakdown: {
@@ -71,22 +61,12 @@ function buildContributionSlice(
   bonusPercent: number,
 ) {
   return {
-    basePower: aggregatePower(breakdown.baseStats),
-    itemPower: aggregatePower(breakdown.itemStats),
-    structureContributionPower: aggregatePower(breakdown.upgradeStats),
+    basePower: totalCombatPower(breakdown.baseStats),
+    itemPower: totalCombatPower(breakdown.itemStats),
+    structureContributionPower: totalCombatPower(breakdown.upgradeStats),
     bonusPercent,
-    totalPower: aggregatePower(breakdown.totalStats),
+    totalPower: totalCombatPower(breakdown.totalStats),
   };
-}
-
-function computeWinProbabilityProxy(
-  attackerPower: number,
-  defenderPower: number,
-) {
-  const ratio = attackerPower / Math.max(1, defenderPower);
-  const logRatio = Math.log(Math.max(0.01, ratio));
-  const probability = 1 / (1 + Math.exp(-4 * logRatio));
-  return Number(probability.toFixed(4));
 }
 
 export const AttackService = {
@@ -200,7 +180,7 @@ export const AttackService = {
         defenderStrengthObj as any,
         Number(DefensePlayer.defenseBonus || 0),
       );
-      const winProbabilityProxy = computeWinProbabilityProxy(
+      const winProbabilityProxy = computeBattleWinProbabilityProxy(
         attackerContribution.totalPower,
         defenderContribution.totalPower,
       );

@@ -2,6 +2,7 @@ group,parameter,current_value,proposed_value,stage,status,notes
 battle,mirror_win_rate_target,0.5025,0.48-0.52,Stage 2,completed,Calibrated via scripts/balance/run-simulations.ts with seeded RNG
 battle,max_pillage_share_per_attack,0.35,<=0.35,Stage 2,completed,Hard-capped in attackFunctions constants and enforced per-attack budget
 battle,casualty_ev_mirror,attacker=291.07;defender=345.68,keep bounded by bracket,Stage 2,completed,Observed from latest simulation summary output
-spy,intel_success_curve,binary_threshold,logistic_curve,Stage 3,pending,Deferred to Stage 3 formula unification
-spy,infiltrate_success_curve,tiered_threshold,logistic_curve,Stage 3,pending,Deferred to Stage 3 formula unification
-spy,assassinate_success_curve,binary_threshold,logistic_curve,Stage 3,pending,Deferred to Stage 3 formula unification
+spy,intel_success_curve,binary_threshold,logistic_curve,Stage 3,completed,Feature-flagged OT_ENABLE_BALANCE_V2; success probability now logistic with guardrails
+spy,infiltrate_success_curve,tiered_threshold,logistic_curve,Stage 3,completed,Feature-flagged OT_ENABLE_BALANCE_V2; simulated success rate 0.9875 in baseline harness
+spy,assassinate_success_curve,binary_threshold,logistic_curve,Stage 3,completed,Feature-flagged OT_ENABLE_BALANCE_V2; simulated success rate 0.9875 in baseline harness
+rollout,balance_v2_percent,unset,5->25->100,Stage 4,pending,Controls implemented via OT_BALANCE_V2_ROLLOUT_PERCENT; awaiting live rollout execution
