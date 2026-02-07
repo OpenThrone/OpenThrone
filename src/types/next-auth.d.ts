@@ -16,6 +16,7 @@ declare module 'next-auth' {
       alliance_role_name: string;
       alliance_role_id?: number;
     }[];
+    impersonatedBy?: number;
   }
 
   // Extend the session interface to include the custom user type

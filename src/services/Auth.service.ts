@@ -14,6 +14,7 @@ import {
 } from '@/services/User.service';
 import { getAntiAbuseHash } from '@/utils/antiAbuse';
 import { logAction } from '@/utils/auditLogger';
+import { isAdmin, isModerator } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 
 const argon2 = require('argon2');
@@ -142,6 +143,15 @@ export class AuthService {
 
     if (!passwordMatches) {
       return { error: 'Invalid username or password' };
+    }
+
+    const isPrivileged =
+      (await isAdmin(user.id)) || (await isModerator(user.id));
+    if (isPrivileged && !user.twoFactorSecret) {
+      return {
+        error:
+          '2FA is required for administrator and moderator accounts. Enable 2FA before signing in.',
+      };
     }
 
     // Check 2FA if enabled

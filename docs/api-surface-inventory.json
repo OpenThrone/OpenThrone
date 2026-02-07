@@ -3,7 +3,7 @@
   "version": 1,
   "summary": {
     "scope": "security-performance-api-hardening-plan-2026-02-07",
-    "status": "phase-4-in-progress"
+    "status": "phase-6-complete"
   },
   "endpoints": [
     {
@@ -74,28 +74,42 @@
       "methods": ["GET", "POST"],
       "authMode": "session",
       "risk": "high",
-      "notes": "Priority for idempotency and abuse controls; attack mutation now enforces Idempotency-Key."
+      "notes": "Attack mutation is on withApiGuard (attack profile) with Idempotency-Key replay controls."
     },
     {
       "route": "/api/spy/*",
       "methods": ["GET", "POST"],
       "authMode": "session",
       "risk": "high",
-      "notes": "Replay controls started with Idempotency-Key enforcement on spy mission mutations."
+      "notes": "Spy mutation is on withApiGuard (spy profile) with Idempotency-Key replay controls."
     },
     {
       "route": "/api/social/friends/[friendId]/transfer",
       "methods": ["POST"],
       "authMode": "session",
       "risk": "high",
-      "notes": "High-risk transfer mutation now enforces Idempotency-Key."
+      "notes": "Transfer mutation is on withApiGuard (bank profile) with Idempotency-Key replay controls."
     },
     {
       "route": "/api/bank/deposit|withdraw and /api/alliances/bank/deposit|withdraw",
       "methods": ["POST"],
       "authMode": "session",
       "risk": "high",
-      "notes": "Bank mutations now enforce Idempotency-Key."
+      "notes": "Bank and alliance-bank mutations are on withApiGuard (bank profile) and enforce Idempotency-Key."
+    },
+    {
+      "route": "/api/auth/[...nextauth]",
+      "methods": ["POST"],
+      "authMode": "public",
+      "risk": "critical",
+      "notes": "Privileged accounts (admin/mod) require 2FA; admin impersonation flow emits audit logs and session carries impersonatedBy."
+    },
+    {
+      "route": "rate-limit storage",
+      "methods": ["runtime"],
+      "authMode": "n/a",
+      "risk": "medium",
+      "notes": "In-memory limiter retained for this plan phase; Redis deferred to follow-up."
     },
     {
       "route": "/api/v1/*",

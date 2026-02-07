@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import type { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
+import { getToken } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import speakeasy from 'speakeasy';
 import { z } from 'zod';
@@ -38,6 +39,23 @@ const updatePasswordEncryption = async (email: string, password: string) => {
     where: { email },
     data: { password_hash: phash },
   });
+};
+
+const buildSessionUser = (user: any) => {
+  const { password_hash: _passwordHash, alliance_memberships, ...rest } = user;
+  const alliances = (alliance_memberships || []).map((m) => ({
+    alliance_id: m.alliance_id,
+    alliance_name: m.alliance?.name || 'Unknown',
+    alliance_role_id: m.role_id,
+    alliance_role_name: m.role?.name || 'Member',
+  }));
+
+  return {
+    ...rest,
+    alliance_id: alliances.length > 0 ? alliances[0].alliance_id : null,
+    alliances,
+    twoFactorEnabled: !!user.twoFactorSecret,
+  };
 };
 
 const validateCredentials = async (
@@ -92,6 +110,14 @@ const validateCredentials = async (
     return { error: 'Invalid username or password' };
   }
 
+  const isPrivileged = (await isAdmin(user.id)) || (await isModerator(user.id));
+  if (isPrivileged && !user.twoFactorSecret) {
+    return {
+      error:
+        '2FA is required for administrator and moderator accounts. Enable 2FA before signing in.',
+    };
+  }
+
   // Check 2FA if enabled
   if (user.twoFactorSecret && totpToken) {
     const verified = speakeasy.totp.verify({
@@ -111,31 +137,38 @@ const validateCredentials = async (
   // Update last active timestamp
   await updateLastActive(email);
 
-  const { password_hash: _passwordHash, alliance_memberships, ...rest } = user;
-
-  // Transform memberships into session-friendly structure
-  const alliances = alliance_memberships.map((m) => ({
-    alliance_id: m.alliance_id,
-    alliance_name: m.alliance?.name || 'Unknown',
-    alliance_role_id: m.role_id,
-    alliance_role_name: m.role?.name || 'Member',
-  }));
-
-  return {
-    ...rest,
-    // Maintain back-compat briefly or for primary logic if needed, but prefer array
-    alliance_id: alliances.length > 0 ? alliances[0].alliance_id : null,
-    alliances,
-    twoFactorEnabled: !!user.twoFactorSecret,
-  };
+  return buildSessionUser(user);
 };
 
-const CredentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-  turnstileToken: z.string().optional(),
-  totpToken: z.string().optional(),
-});
+const CredentialsSchema = z
+  .object({
+    email: z.string().email().optional(),
+    password: z.string().optional(),
+    turnstileToken: z.string().optional(),
+    totpToken: z.string().optional(),
+    impersonateUserId: z.coerce.number().int().positive().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const isImpersonation = typeof data.impersonateUserId === 'number';
+    if (isImpersonation) {
+      return;
+    }
+
+    if (!data.email) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Email is required',
+        path: ['email'],
+      });
+    }
+    if (!data.password) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Password is required',
+        path: ['password'],
+      });
+    }
+  });
 
 export const authOptions: NextAuthOptions = {
   // Page configuration
@@ -176,6 +209,7 @@ export const authOptions: NextAuthOptions = {
             // Pass alliance data
             alliance_id: (user as any).alliance_id,
             alliances: (user as any).alliances,
+            impersonatedBy: (user as any).impersonatedBy,
           };
         }
         return token;
@@ -202,8 +236,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid credentials');
         }
 
-        const { email, password, totpToken, turnstileToken } =
-          validatedCredentials.data;
+        const {
+          email,
+          password,
+          totpToken,
+          turnstileToken,
+          impersonateUserId,
+        } = validatedCredentials.data;
 
         const requestOrigin = getRequestOrigin(req);
         const bypassTurnstileOrigins = [
@@ -235,7 +274,7 @@ export const authOptions: NextAuthOptions = {
           (process.env.NEXT_PUBLIC_USE_CAPTCHA === 'true' ||
             turnstileConfigured);
 
-        if (enforceTurnstile) {
+        if (!impersonateUserId && enforceTurnstile) {
           if (!process.env.NEXT_PUBLIC_TURNSTILE_SECRET) {
             throw new Error(
               'Captcha is enabled but not configured on the server',
@@ -258,18 +297,54 @@ export const authOptions: NextAuthOptions = {
             throw new Error('Captcha verification failed');
           }
         }
-        if (!email || !password) {
+        if (!impersonateUserId && (!email || !password)) {
           throw new Error('Missing username or password');
         }
 
         const ip = getRequestIp(req);
 
-        const result = await validateCredentials(
-          email,
-          password,
-          totpToken,
-          ip,
-        );
+        let result;
+        if (impersonateUserId) {
+          const existingToken = await getToken({
+            req,
+            secret: process.env.JWT_SECRET,
+          });
+          const adminUserId = Number((existingToken as any)?.user?.id);
+          if (!adminUserId || !(await isAdmin(adminUserId))) {
+            throw new Error('Unauthorized impersonation request');
+          }
+
+          const targetUser = await prisma.users.findUnique({
+            where: { id: impersonateUserId },
+            include: {
+              alliance_memberships: {
+                include: {
+                  alliance: { select: { name: true } },
+                  role: { select: { name: true } },
+                },
+              },
+            },
+          });
+          if (!targetUser) {
+            throw new Error('Target user not found');
+          }
+
+          const targetStatus = await getUpdatedStatus(targetUser.id);
+          if (targetStatus === 'BANNED' || targetStatus === 'SUSPENDED') {
+            throw new Error('Target account is suspended or banned');
+          }
+
+          result = {
+            ...buildSessionUser(targetUser),
+            impersonatedBy: adminUserId,
+          };
+
+          await logAction(adminUserId, 'ADMIN_IMPERSONATE_START', ip, {
+            targetUserId: targetUser.id,
+          });
+        } else {
+          result = await validateCredentials(email, password, totpToken, ip);
+        }
 
         // Check if `validateCredentials` returned an error
         if ('error' in result) {

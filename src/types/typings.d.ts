@@ -320,6 +320,7 @@ export type IUserSession = {
   class: PlayerClass;
   race: PlayerRace;
   colorScheme: string | null; // Allow null
+  impersonatedBy?: number;
 };
 
 export interface Log {

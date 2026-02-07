@@ -28,10 +28,24 @@ const handler = async (
   try {
     const currentUser = await prisma.users.findUnique({
       where: { display_name: user },
+      include: {
+        permissions: true,
+      },
     });
 
     if (!currentUser) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (
+      (permission === PermissionType.ADMINISTRATOR ||
+        permission === PermissionType.MODERATOR) &&
+      !currentUser.twoFactorSecret
+    ) {
+      return res.status(400).json({
+        error:
+          'Cannot grant privileged permission until user enables 2FA first.',
+      });
     }
 
     const existingPermission = currentUser.permissions?.find(
