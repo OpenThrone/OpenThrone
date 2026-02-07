@@ -24,6 +24,8 @@ import { stringifyObj } from '@/utils/numberFormatting';
 
 const argon2 = require('argon2');
 
+const AUTH_SECRET = process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET;
+
 // Rely on project-wide next-auth type augmentations in `src/types/next-auth.d.ts` to avoid duplicate declaration conflicts.
 
 const updateLastActive = async (email: string) => {
@@ -182,7 +184,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 1 day
   },
 
-  secret: process.env.JWT_SECRET,
+  secret: AUTH_SECRET,
 
   callbacks: {
     async session({ session, token }) {
@@ -305,9 +307,12 @@ export const authOptions: NextAuthOptions = {
 
         let result;
         if (impersonateUserId) {
+          if (!AUTH_SECRET) {
+            throw new Error('Server auth secret is not configured');
+          }
           const existingToken = await getToken({
             req,
-            secret: process.env.JWT_SECRET,
+            secret: AUTH_SECRET,
           });
           const adminUserId = Number((existingToken as any)?.user?.id);
           if (!adminUserId || !(await isAdmin(adminUserId))) {
