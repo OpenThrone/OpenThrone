@@ -1523,7 +1523,7 @@ export async function distributeCasualties(params: {
       ...(defender.mercenaries || []),
     ];
     const defenderFightingPool = defenderAllUnits.filter(
-      (u) => u.type === 'DEFENSE' || (includeOffense && u.type === 'OFFENSE'),
+      (u) => u.type === 'DEFENSE' || (_includeOffense && u.type === 'OFFENSE'),
     );
     const defenderCollateralPool = defenderAllUnits.filter(
       (u) => u.type === 'CITIZEN' || u.type === 'WORKER',
@@ -1543,7 +1543,7 @@ export async function distributeCasualties(params: {
     totalDefenderCasualties += fightingCasualties;
 
     // If damage remains, apply to collateral units (if fort is breached)
-    if (fortHP <= 0 && includeCitz) {
+    if (fortHP <= 0 && _includeCitz) {
       const { casualties: collateralCasualties } = applyDamageToUnits(
         defenderCollateralPool,
         remainingAttackerDamage,
