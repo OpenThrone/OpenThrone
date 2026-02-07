@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-02-07",
+  "version": 1,
+  "summary": {
+    "scope": "security-performance-api-hardening-plan-2026-02-07",
+    "status": "phase-0-initial"
+  },
+  "endpoints": [
+    {
+      "route": "/api/attack/test",
+      "methods": ["POST"],
+      "authMode": "admin",
+      "risk": "critical",
+      "notes": "Simulation endpoint restricted to admin sessions."
+    },
+    {
+      "route": "/api/general/git-info",
+      "methods": ["GET"],
+      "authMode": "none",
+      "risk": "critical",
+      "notes": "Now disabled outside development."
+    },
+    {
+      "route": "/api/debug/clear-session",
+      "methods": ["POST"],
+      "authMode": "none",
+      "risk": "high",
+      "notes": "Now disabled outside development."
+    },
+    {
+      "route": "/api/utilities/getConstants",
+      "methods": ["GET"],
+      "authMode": "session-or-service-token",
+      "risk": "critical",
+      "notes": "Static bypass removed; env service token required for non-session access."
+    },
+    {
+      "route": "/api/admin/*",
+      "methods": ["GET", "POST", "PATCH", "DELETE"],
+      "authMode": "session+admin",
+      "risk": "critical",
+      "notes": "Priority domain for unified guard migration."
+    },
+    {
+      "route": "/api/cronJobs/*",
+      "methods": ["POST"],
+      "authMode": "secret-or-service-auth",
+      "risk": "critical",
+      "notes": "Needs standardized scoped service token model."
+    },
+    {
+      "route": "/api/battle/*",
+      "methods": ["GET", "POST"],
+      "authMode": "session",
+      "risk": "high",
+      "notes": "Priority for idempotency and abuse controls."
+    },
+    {
+      "route": "/api/spy/*",
+      "methods": ["GET", "POST"],
+      "authMode": "session",
+      "risk": "high",
+      "notes": "Priority for replay, rate-limit, and validation controls."
+    }
+  ]
+}

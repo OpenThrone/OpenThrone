@@ -1,11 +1,10 @@
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
+import { withApiGuard } from '@/middleware/apiGuard';
 import UserModel from '@/models/Users';
-import { withAuth } from '@/middleware/auth';
 import { BattleService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
-import { isAdmin } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 
@@ -15,33 +14,21 @@ const TestAttackSchema = z.object({
   turns: z.number().int().optional(),
 });
 
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'admin',
+  bodySchema: TestAttackSchema,
+});
+
 async function handler(
-  req: AuthenticatedRequest,
+  _req: AuthenticatedRequest,
   res: NextApiResponse,
+  context: {
+    body: z.infer<typeof TestAttackSchema>;
+  },
 ) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  if (!req.session?.user?.id) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
-  if (!(await isAdmin(req.session.user.id))) {
-    return res.status(403).json({ message: 'Forbidden' });
-  }
-
-  const validatedBody = TestAttackSchema.safeParse(req.body);
-  if (!validatedBody.success) {
-    return res.status(400).json({
-      message: 'Invalid request body',
-      details: validatedBody.error.flatten().fieldErrors,
-    });
-  }
-
   try {
-    const { attacker, defender, turns } = validatedBody.data;
+    const { attacker, defender, turns } = context.body;
     // Create mock users from the provided data
     const attackerUser = new UserModel(JSON.parse(attacker));
     const defenderUser = new UserModel(JSON.parse(defender));
@@ -72,7 +59,7 @@ async function handler(
   }
 }
 
-export default withAuth(handler);
+export default guardedHandler(handler);
 
 // Helper function to create a user object from form data
 function _createUserFromFormData(formData: any) {
