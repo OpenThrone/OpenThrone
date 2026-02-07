@@ -314,7 +314,11 @@ export const authOptions: NextAuthOptions = {
             req,
             secret: AUTH_SECRET,
           });
-          const adminUserId = Number((existingToken as any)?.user?.id);
+          const adminUserId = Number(
+            (existingToken as any)?.user?.id ??
+              (existingToken as any)?.id ??
+              (existingToken as any)?.sub,
+          );
           if (!adminUserId || !(await isAdmin(adminUserId))) {
             throw new Error('Unauthorized impersonation request');
           }
