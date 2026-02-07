@@ -7,6 +7,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
+import { enforceIdempotency } from '@/middleware/idempotency';
 import UserModel from '@/models/Users';
 import SpyService from '@/services/SpyService';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -37,6 +38,12 @@ const SpyBodySchema = z.object({
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   const { session } = req;
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res
+      .status(405)
+      .json({ status: 'failed', message: 'Method not allowed' });
+  }
 
   const validatedQuery = SpyQuerySchema.safeParse(req.query);
   if (!validatedQuery.success) {
@@ -103,6 +110,13 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
 
     const attackerId = parseInt(session.user.id);
     const defenderId = id;
+    const canProceed = await enforceIdempotency(req, res, {
+      scope: `spy:${type}:${defenderId}`,
+      actorKey: String(attackerId),
+    });
+    if (!canProceed) {
+      return;
+    }
 
     const notifySpyDefenseWin = async (
       attackLogId: number,

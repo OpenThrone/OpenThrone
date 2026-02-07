@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
+import { enforceIdempotency } from '@/middleware/idempotency';
 import { AllianceBankService } from '@/services';
 
 const WithdrawDetailsSchema = z.object({
@@ -12,7 +13,8 @@ const WithdrawDetailsSchema = z.object({
 
 const withdrawHandler = async (req: any, res: any) => {
   if (req.method !== 'POST') {
-    return res.status(405).end();
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const validatedBody = WithdrawDetailsSchema.safeParse(req.body);
@@ -25,6 +27,13 @@ const withdrawHandler = async (req: any, res: any) => {
 
   const { user } = req.session;
   const { allianceId, targetUserId, amount, notes } = validatedBody.data;
+  const canProceed = await enforceIdempotency(req, res, {
+    scope: `alliance-bank-withdraw:${allianceId}:${targetUserId}:${amount.toString()}`,
+    actorKey: String(user.id),
+  });
+  if (!canProceed) {
+    return;
+  }
 
   try {
     const result = await AllianceBankService.withdraw({

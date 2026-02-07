@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
+import { enforceIdempotency } from '@/middleware/idempotency';
 import { AllianceBankService } from '@/services';
 
 const DepositDetailsSchema = z.object({
@@ -10,7 +11,8 @@ const DepositDetailsSchema = z.object({
 
 const depositHandler = async (req: any, res: any) => {
   if (req.method !== 'POST') {
-    return res.status(405).end();
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const validatedBody = DepositDetailsSchema.safeParse(req.body);
@@ -23,6 +25,13 @@ const depositHandler = async (req: any, res: any) => {
 
   const { user } = req.session;
   const { allianceId, amount } = validatedBody.data;
+  const canProceed = await enforceIdempotency(req, res, {
+    scope: `alliance-bank-deposit:${allianceId}:${amount.toString()}`,
+    actorKey: String(user.id),
+  });
+  if (!canProceed) {
+    return;
+  }
 
   try {
     const result = await AllianceBankService.deposit({

@@ -67,14 +67,28 @@
       "methods": ["GET", "POST"],
       "authMode": "session",
       "risk": "high",
-      "notes": "Priority for idempotency and abuse controls."
+      "notes": "Priority for idempotency and abuse controls; attack mutation now enforces Idempotency-Key."
     },
     {
       "route": "/api/spy/*",
       "methods": ["GET", "POST"],
       "authMode": "session",
       "risk": "high",
-      "notes": "Priority for replay, rate-limit, and validation controls."
+      "notes": "Replay controls started with Idempotency-Key enforcement on spy mission mutations."
+    },
+    {
+      "route": "/api/social/friends/[friendId]/transfer",
+      "methods": ["POST"],
+      "authMode": "session",
+      "risk": "high",
+      "notes": "High-risk transfer mutation now enforces Idempotency-Key."
+    },
+    {
+      "route": "/api/bank/deposit|withdraw and /api/alliances/bank/deposit|withdraw",
+      "methods": ["POST"],
+      "authMode": "session",
+      "risk": "high",
+      "notes": "Bank mutations now enforce Idempotency-Key."
     }
   ]
 }

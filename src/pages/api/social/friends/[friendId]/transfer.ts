@@ -5,6 +5,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
+import { enforceIdempotency } from '@/middleware/idempotency';
 import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -21,7 +22,8 @@ const transferHandler = async (
   res: NextApiResponse,
 ) => {
   if (req.method !== 'POST') {
-    return res.status(405).end();
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { session } = req;
@@ -46,6 +48,13 @@ const transferHandler = async (
 
   const { amount, notes } = parseResult.data;
   const fromUserId = session.user.id;
+  const canProceed = await enforceIdempotency(req, res, {
+    scope: `social-transfer:${friendIdNum}:${amount.toString()}`,
+    actorKey: String(fromUserId),
+  });
+  if (!canProceed) {
+    return;
+  }
 
   try {
     const result = await SocialService.transferGoldToFriend(

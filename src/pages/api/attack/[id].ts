@@ -5,6 +5,7 @@ import { ZodError } from 'zod';
 import { getSocketIO } from '@/lib/socket';
 import { AttackSchema, IdQuerySchema } from '@/lib/validation';
 import { withAuth } from '@/middleware/auth';
+import { enforceIdempotency } from '@/middleware/idempotency';
 import { BattleService } from '@/services';
 import { getRequestIp, logAction } from '@/utils/auditLogger';
 import { logDebug, logError } from '@/utils/logger';
@@ -12,6 +13,11 @@ import { logDebug, logError } from '@/utils/logger';
 const handler = async (req, res: NextApiResponse) => {
   const { session } = req;
   if (session) {
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
     try {
       const queryData = IdQuerySchema.parse(req.query);
       const bodyData = AttackSchema.parse(req.body);
@@ -27,6 +33,14 @@ const handler = async (req, res: NextApiResponse) => {
       logDebug(
         `User ${sessionUserId} is attempting to attack user ${id} for ${turns} turns`,
       );
+
+      const canProceed = await enforceIdempotency(req, res, {
+        scope: `attack:${id}`,
+        actorKey: String(sessionUserId),
+      });
+      if (!canProceed) {
+        return;
+      }
 
       const results = await BattleService.executeAttack({
         attackerId: sessionUserId,
