@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import { BattleUpgrades } from '@/constants';
@@ -819,7 +820,7 @@ export class BattleService {
           } catch (e) {
             // Handle potential unique constraint violations
             if (
-              e instanceof prisma.PrismaClientKnownRequestError &&
+              e instanceof Prisma.PrismaClientKnownRequestError &&
               e.code === 'P2002'
             ) {
               logWarn(

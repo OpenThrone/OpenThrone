@@ -1,6 +1,15 @@
 import { execSync } from 'child_process';
 
 export default function handler(req, res) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
   try {
     // Get the latest commit hash
     const latestCommit = execSync('git rev-parse HEAD').toString().trim();

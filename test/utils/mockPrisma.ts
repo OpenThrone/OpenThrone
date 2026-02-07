@@ -11,6 +11,7 @@ export const mockPrisma: any = {
   users: {},
   bank_history: {},
   attack_log: {},
+  permissionGrant: {},
 };
 
 export function installMockPrisma(vi: any) {
@@ -39,6 +40,10 @@ export function installMockPrisma(vi: any) {
     create: vi.fn(),
   };
 
+  mockPrisma.permissionGrant = {
+    findFirst: vi.fn(),
+  };
+
   // Install the module mock so `import prisma from '@/lib/prisma'` returns our mockPrisma
   vi.mock('@/lib/prisma', () => ({ default: mockPrisma }));
 }
@@ -55,6 +60,7 @@ export function resetMockPrisma() {
     Object.values(mockPrisma.users || {}).forEach(clearFn);
     Object.values(mockPrisma.bank_history || {}).forEach(clearFn);
     Object.values(mockPrisma.attack_log || {}).forEach(clearFn);
+    Object.values(mockPrisma.permissionGrant || {}).forEach(clearFn);
   } catch (e) {
     // no-op
   }

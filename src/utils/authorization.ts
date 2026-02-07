@@ -1,3 +1,5 @@
+import prisma from '@/lib/prisma';
+
 export const isAdmin = async (userId: number): Promise<boolean> => {
   const adminUser = await prisma.permissionGrant.findFirst({
     where: {

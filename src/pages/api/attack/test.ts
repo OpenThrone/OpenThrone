@@ -1,8 +1,11 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import UserModel from '@/models/Users';
+import { withAuth } from '@/middleware/auth';
 import { BattleService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
+import { isAdmin } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 
@@ -12,12 +15,21 @@ const TestAttackSchema = z.object({
   turns: z.number().int().optional(),
 });
 
-export default async function handler(
-  req: NextApiRequest,
+async function handler(
+  req: AuthenticatedRequest,
   res: NextApiResponse,
 ) {
   if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  if (!req.session?.user?.id) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  if (!(await isAdmin(req.session.user.id))) {
+    return res.status(403).json({ message: 'Forbidden' });
   }
 
   const validatedBody = TestAttackSchema.safeParse(req.body);
@@ -56,11 +68,11 @@ export default async function handler(
     });
   } catch (error) {
     logError('Battle simulation error:', error);
-    return res
-      .status(500)
-      .json({ message: 'Error simulating battle', error: String(error) });
+    return res.status(500).json({ message: 'Error simulating battle' });
   }
 }
+
+export default withAuth(handler);
 
 // Helper function to create a user object from form data
 function _createUserFromFormData(formData: any) {

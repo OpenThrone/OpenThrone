@@ -37,8 +37,7 @@ export const canAttack = async (
 };
 
 /**
- * Checks if an attacker can assassinate a defender based on recent intel history (max 5 intel missions in 24 hours).
- * Note: This currently checks 'INTEL' type, adjust if assassination has its own type or limit.
+ * Checks if an attacker can assassinate a defender based on recent assassination history (max 5 missions in 24 hours).
  * @param attacker - The attacker user object.
  * @param defender - The defender user object.
  * @returns True if the assassination is allowed, false otherwise.
@@ -55,7 +54,7 @@ export const canAssassinate = async (
       AND: [
         { attacker_id: validatedAttacker.id },
         { defender_id: validatedDefender.id },
-        { type: 'INTEL' }, // Assuming assassination limit is tied to INTEL missions
+        { type: 'ASSASSINATE' },
         {
           timestamp: {
             gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 24),
