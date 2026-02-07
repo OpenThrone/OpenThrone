@@ -3,7 +3,7 @@ import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api';
 
 const GrantPermissionSchema = z.object({
@@ -11,42 +11,18 @@ const GrantPermissionSchema = z.object({
   permission: z.nativeEnum(PermissionType),
 });
 
-const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed!' });
-  }
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'admin',
+  bodySchema: GrantPermissionSchema,
+});
 
-  const parseResult = GrantPermissionSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: parseResult.error.flatten().fieldErrors,
-    });
-  }
-  const { user, permission } = parseResult.data;
-
-  const { session } = req;
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized', msg: session });
-  }
-
-  const adminUserId = session.user.id;
-  const adminUser = await prisma.users.findUnique({
-    where: { id: adminUserId },
-    include: { permissions: true },
-  });
-
-  if (
-    !adminUser?.permissions?.some(
-      (perm) => perm.type === PermissionType.ADMINISTRATOR,
-    )
-  ) {
-    // Logged in, but not an admin
-    return res.status(401).json({
-      error: 'Unauthorized',
-      msg: 'Current user is not an administrator.',
-    });
-  }
+const handler = async (
+  _req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: { body: z.infer<typeof GrantPermissionSchema> },
+) => {
+  const { user, permission } = context.body;
 
   try {
     const currentUser = await prisma.users.findUnique({
@@ -88,4 +64,4 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   }
 };
 
-export default withAuth(handler);
+export default guardedHandler(handler);

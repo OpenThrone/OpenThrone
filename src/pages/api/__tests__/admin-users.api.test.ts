@@ -8,8 +8,15 @@ import {
 installMockPrisma(vi);
 
 mock.module('@/middleware/auth', () => ({ withAuth: (h: any) => h }));
+mock.module('@/middleware/apiGuard', () => ({
+  withApiGuard: () => (h: any) => (req: any, res: any) =>
+    h(req, res, { query: req.query ?? {}, body: req.body ?? {} }),
+}));
 // Mock isAdmin to avoid dependency on prisma.permissionGrant in auth
-mock.module('@/utils/authorization', () => ({ isAdmin: async () => true }));
+mock.module('@/utils/authorization', () => ({
+  isAdmin: async () => true,
+  isModerator: async () => false,
+}));
 
 const adminHandler = require('../admin/users/[userId]').default;
 

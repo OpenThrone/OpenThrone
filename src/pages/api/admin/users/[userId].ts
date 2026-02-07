@@ -1,25 +1,27 @@
 import type { NextApiResponse } from 'next';
+import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
-import { isAdmin } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 
-async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
-  const { session } = req;
-  const { userId } = req.query;
+const AdminUserQuerySchema = z.object({
+  userId: z.coerce.number().int().positive(),
+});
 
-  // Check admin authorization (handle potentially undefined session/user/id)
-  if (!session?.user?.id || !(await isAdmin(session.user.id))) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+const guardedHandler = withApiGuard({
+  methods: ['GET', 'PUT'],
+  authMode: 'admin',
+  querySchema: AdminUserQuerySchema,
+});
 
-  // Parse userId to number
-  const userIdNum = parseInt(userId as string, 10);
-  if (isNaN(userIdNum)) {
-    return res.status(400).json({ error: 'Invalid user ID' });
-  }
+async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: { query: z.infer<typeof AdminUserQuerySchema> },
+) {
+  const { userId: userIdNum } = context.query;
 
   // GET - Fetch user details
   if (req.method === 'GET') {
@@ -204,9 +206,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       logError('Error updating user:', error);
       res.status(500).json({ error: 'Failed to update user' });
     }
-  } else {
-    res.status(405).json({ error: 'Method not allowed' });
   }
 }
 
-export default withAuth(handler);
+export default guardedHandler(handler);

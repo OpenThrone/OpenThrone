@@ -1,37 +1,16 @@
-import { PermissionType } from '@prisma/client';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
+import type { NextApiResponse } from 'next';
 
-import prisma from '@/lib/prisma';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { withApiGuard } from '@/middleware/apiGuard';
 import { startNewEra } from '@/services/Era.service';
+import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'admin',
+});
 
-  const session = await getServerSession(req, res, authOptions);
-  if (!session || !session.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const user = await prisma.users.findUnique({
-    where: { id: session.user.id },
-    include: { permissions: true },
-  });
-
-  if (
-    !user ||
-    !user.permissions.some((p) => p.type === PermissionType.ADMINISTRATOR)
-  ) {
-    return res.status(403).json({ error: 'Forbidden: Admin only' });
-  }
-
+async function handler(_req: AuthenticatedRequest, res: NextApiResponse) {
   try {
     const newEra = await startNewEra();
     return res.status(200).json({ success: true, newEraId: newEra.id });
@@ -40,3 +19,5 @@ export default async function handler(
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
+
+export default guardedHandler(handler);

@@ -53,7 +53,7 @@ export function withApiGuard<
     ) =>
     async (req: AuthenticatedRequest, res: NextApiResponse) => {
       const requestId =
-        (req.headers['x-request-id'] as string | undefined) ?? randomUUID();
+        (req.headers?.['x-request-id'] as string | undefined) ?? randomUUID();
       res.setHeader('X-Request-Id', requestId);
 
       if (!methodSet.has((req.method || '').toUpperCase())) {

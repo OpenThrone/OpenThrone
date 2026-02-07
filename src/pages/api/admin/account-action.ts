@@ -1,10 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { withAuth } from '@/middleware/auth';
-import { isAdmin } from '@/utils/authorization';
+import { withApiGuard } from '@/middleware/apiGuard';
+import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
 const AccountActionSchema = z.object({
@@ -14,24 +13,23 @@ const AccountActionSchema = z.object({
   reason: z.string().optional(),
 });
 
-export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  const session = await getSession({ req });
-  if (!session || !session.user || !(await isAdmin(Number(session.user.id)))) {
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'admin',
+  bodySchema: AccountActionSchema,
+});
+
+export const handler = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: { body: z.infer<typeof AccountActionSchema> },
+) => {
+  const { userId, action, duration, reason } = context.body;
+  const sessionUserId = req.session?.user?.id;
+
+  if (!sessionUserId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const parseResult = AccountActionSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: parseResult.error.flatten().fieldErrors,
-    });
-  }
-  const { userId, action, duration, reason } = parseResult.data;
 
   try {
     const now = new Date();
@@ -61,7 +59,7 @@ export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         start_date: now,
         end_date: endDate,
         reason: reason || `${action} by admin`,
-        admin_id: session.user.id,
+        admin_id: Number(sessionUserId),
       },
     });
 
@@ -72,4 +70,4 @@ export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withAuth(handler);
+export default guardedHandler(handler);

@@ -1,9 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { isAdmin } from '@/utils/authorization';
+import { withApiGuard } from '@/middleware/apiGuard';
+import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
 const AdminVacationSchema = z.object({
@@ -11,23 +11,23 @@ const AdminVacationSchema = z.object({
   action: z.enum(['start', 'end']),
 });
 
-export default async function handler(
-  req: NextApiRequest,
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'admin',
+  bodySchema: AdminVacationSchema,
+});
+
+async function handler(
+  req: AuthenticatedRequest,
   res: NextApiResponse,
+  context: { body: z.infer<typeof AdminVacationSchema> },
 ) {
-  const session = await getSession({ req });
-  if (!session || !session.user || !(await isAdmin(Number(session.user.id)))) {
+  const sessionUserId = req.session?.user?.id;
+  if (!sessionUserId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const parseResult = AdminVacationSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: parseResult.error.flatten().fieldErrors,
-    });
-  }
-  const { userId, action } = parseResult.data;
+  const { userId, action } = context.body;
 
   if (action === 'start') {
     // Admin starting vacation for a user
@@ -43,7 +43,7 @@ export default async function handler(
           start_date: now,
           end_date: vacationEndDate,
           reason: 'Admin initiated vacation mode',
-          admin_id: Number(session.user.id),
+          admin_id: Number(sessionUserId),
         },
       });
 
@@ -75,7 +75,7 @@ export default async function handler(
           status: 'ACTIVE',
           start_date: new Date(),
           reason: 'Vacation mode ended by admin',
-          admin_id: Number(session.user.id),
+          admin_id: Number(sessionUserId),
         },
       });
 
@@ -88,3 +88,5 @@ export default async function handler(
     res.status(400).json({ error: 'Invalid action' });
   }
 }
+
+export default guardedHandler(handler);

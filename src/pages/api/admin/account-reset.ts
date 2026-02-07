@@ -1,9 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import { AdminService } from '@/services';
-import { isAdmin } from '@/utils/authorization';
+import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
 
 const AccountResetSchema = z.object({
@@ -11,32 +11,26 @@ const AccountResetSchema = z.object({
   reason: z.string().optional(),
 });
 
-export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  const session = req?.session;
-  if (!session || !session.user || !(await isAdmin(session.user.id))) {
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'admin',
+  bodySchema: AccountResetSchema,
+});
+
+export const handler = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: { body: z.infer<typeof AccountResetSchema> },
+) => {
+  const { userId, reason } = context.body;
+  const sessionUserId = req.session?.user?.id;
+
+  if (!sessionUserId) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const validatedBody = AccountResetSchema.safeParse(req.body);
-  if (!validatedBody.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: validatedBody.error.flatten().fieldErrors,
-    });
-  }
-
-  const { userId, reason } = validatedBody.data;
-
-  if (!userId) {
-    return res.status(400).json({ error: 'Missing userId' });
-  }
-
   try {
-    const result = await AdminService.resetAccount(session.user.id, {
+    const result = await AdminService.resetAccount(Number(sessionUserId), {
       userId,
       reason,
     });
@@ -49,4 +43,4 @@ export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withAuth(handler);
+export default guardedHandler(handler);
