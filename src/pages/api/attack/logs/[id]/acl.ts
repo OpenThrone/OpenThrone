@@ -1,7 +1,7 @@
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import { BattleService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
@@ -16,30 +16,24 @@ const AttackLogACLSchema = z.object({
   participantIds: z.array(z.number()).optional(),
 });
 
-async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'required',
+  querySchema: IdQuerySchema,
+  bodySchema: AttackLogACLSchema,
+});
 
+async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: {
+    query: z.infer<typeof IdQuerySchema>;
+    body: z.infer<typeof AttackLogACLSchema>;
+  },
+) {
   try {
-    const queryParse = IdQuerySchema.safeParse(req.query);
-    if (!queryParse.success) {
-      return res.status(400).json({
-        message: 'Invalid log ID',
-        details: queryParse.error.flatten().fieldErrors,
-      });
-    }
-    const { id: attackLogId } = queryParse.data;
-
-    const bodyParse = AttackLogACLSchema.safeParse(req.body);
-    if (!bodyParse.success) {
-      return res.status(400).json({
-        message: 'Invalid request body',
-        details: bodyParse.error.flatten().fieldErrors,
-      });
-    }
-    const { userId, roomId, participantIds } = bodyParse.data;
+    const { id: attackLogId } = context.query;
+    const { userId, roomId, participantIds } = context.body;
 
     const result = await BattleService.manageAttackLogACL(attackLogId, {
       userId,
@@ -57,4 +51,4 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   }
 }
 
-export default withAuth(handler);
+export default guardedHandler(handler);
