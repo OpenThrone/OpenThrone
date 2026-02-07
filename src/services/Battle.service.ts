@@ -653,30 +653,36 @@ export class BattleService {
 
     const skip = page * limit;
 
-    const whereClause = {
-      OR: [{ attacker_id: userId }, { defender_id: userId }],
-      ...(player
-        ? {
-            OR: [
+    const whereClause: Prisma.attack_logWhereInput = {
+      AND: [
+        {
+          OR: [{ attacker_id: userId }, { defender_id: userId }],
+        },
+        ...(player
+          ? [
               {
-                attackerPlayer: {
-                  display_name: { contains: player, mode: 'insensitive' },
-                },
+                OR: [
+                  {
+                    attackerPlayer: {
+                      display_name: { contains: player, mode: 'insensitive' },
+                    },
+                  },
+                  {
+                    defenderPlayer: {
+                      display_name: { contains: player, mode: 'insensitive' },
+                    },
+                  },
+                ],
               },
-              {
-                defenderPlayer: {
-                  display_name: { contains: player, mode: 'insensitive' },
-                },
-              },
-            ],
-          }
-        : {}),
-      ...(minPillage
-        ? { stats: { path: ['pillagedGold'], gt: minPillage } }
-        : {}),
-      ...(maxPillage
-        ? { stats: { path: ['pillagedGold'], lt: maxPillage } }
-        : {}),
+            ]
+          : []),
+        ...(typeof minPillage === 'number'
+          ? [{ pillaged_gold: { gte: BigInt(minPillage) } }]
+          : []),
+        ...(typeof maxPillage === 'number'
+          ? [{ pillaged_gold: { lte: BigInt(maxPillage) } }]
+          : []),
+      ],
     };
 
     const orderByClause =

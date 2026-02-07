@@ -96,6 +96,13 @@
       "authMode": "session",
       "risk": "high",
       "notes": "Bank mutations now enforce Idempotency-Key."
+    },
+    {
+      "route": "attack_log table",
+      "methods": ["schema"],
+      "authMode": "n/a",
+      "risk": "medium",
+      "notes": "Added derived columns (pillaged_gold, attacker_losses_total, defender_losses_total) and type/timestamp index to reduce JSON-path filtering costs."
     }
   ]
 }

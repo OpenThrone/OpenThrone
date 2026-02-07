@@ -253,10 +253,33 @@ export const AttackService = {
           }
 
           // Create the attack log (uses the possibly-clamped pillagedGold)
+          const attackerLossesTotal = Array.isArray(
+            battleResults.Losses?.Attacker,
+          )
+            ? battleResults.Losses.Attacker.reduce(
+                (sum: number, loss: any) => sum + Number(loss?.quantity || 0),
+                0,
+              )
+            : 0;
+          const defenderLossesTotal = Array.isArray(
+            battleResults.Losses?.Defender,
+          )
+            ? battleResults.Losses.Defender.reduce(
+                (sum: number, loss: any) => sum + Number(loss?.quantity || 0),
+                0,
+              )
+            : 0;
+
           const attack_log = await createAttackLog(
             {
               timestamp: new Date().toISOString(),
               winner: isAttackerWinner ? attackerId : defenderId,
+              pillaged_gold:
+                isAttackerWinner && battleResults.pillagedGold
+                  ? BigInt(String(battleResults.pillagedGold))
+                  : BigInt(0),
+              attacker_losses_total: attackerLossesTotal,
+              defender_losses_total: defenderLossesTotal,
               stats: {
                 startOfAttack,
                 endTurns: AttackPlayer.attackTurns,

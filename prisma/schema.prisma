@@ -236,6 +236,9 @@ model attack_log {
   winner         Int
   stats          Json
   type           String           @default("attack")
+  pillaged_gold  BigInt?
+  attacker_losses_total Int?
+  defender_losses_total Int?
   attackerPlayer users            @relation("AttackLogs", fields: [attacker_id], references: [id])
   defenderPlayer users            @relation("DefenseLogs", fields: [defender_id], references: [id])
   acl            attack_log_acl[]
@@ -245,6 +248,7 @@ model attack_log {
   @@index([attacker_id])
   @@index([defender_id])
   @@index([winner])
+  @@index([type, timestamp])
 }
 
 model bank_history {

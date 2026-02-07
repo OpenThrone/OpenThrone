@@ -96,21 +96,63 @@ export const updateUserUnits = async (
 ) => {
   const validatedUserId = UserIdSchema.parse(userId);
   const validatedUnits = PlayerUnitArraySchema.parse(units);
-  // Delete existing units for the user
-  await txClient.userUnit.deleteMany({
-    where: { userId: validatedUserId },
-  });
+  const nonMercenaryUnits = validatedUnits.filter((unit) => unit.quantity >= 0);
+  const incomingUnitKeys = new Set(
+    nonMercenaryUnits.map((unit) => `${unit.type}:${unit.level}`),
+  );
 
-  // Insert new units
-  if (validatedUnits && validatedUnits.length > 0) {
-    await txClient.userUnit.createMany({
-      data: validatedUnits.map((unit) => ({
+  // Upsert delta for non-mercenary units instead of delete-and-recreate.
+  for (const unit of nonMercenaryUnits) {
+    if (unit.quantity <= 0) continue;
+
+    await txClient.userUnit.upsert({
+      where: {
+        userId_type_level_isMercenary: {
+          userId: validatedUserId,
+          type: unit.type as any,
+          level: unit.level,
+          isMercenary: false,
+        },
+      },
+      update: {
+        quantity: unit.quantity,
+      },
+      create: {
         userId: validatedUserId,
         type: unit.type as any,
         level: unit.level,
         quantity: unit.quantity,
-        isMercenary: false, // Regular units, not mercenaries
-      })),
+        isMercenary: false,
+      },
+    });
+  }
+
+  // Remove stale non-mercenary units no longer present in input.
+  const existingNonMercenaryUnits = await txClient.userUnit.findMany({
+    where: {
+      userId: validatedUserId,
+      isMercenary: false,
+    },
+    select: {
+      id: true,
+      type: true,
+      level: true,
+    },
+  });
+
+  const staleIds = existingNonMercenaryUnits
+    .filter(
+      (existing) => !incomingUnitKeys.has(`${existing.type}:${existing.level}`),
+    )
+    .map((existing) => existing.id);
+
+  if (staleIds.length > 0) {
+    await txClient.userUnit.deleteMany({
+      where: {
+        id: {
+          in: staleIds,
+        },
+      },
     });
   }
 };
