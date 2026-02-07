@@ -160,6 +160,11 @@ Deliverables
 ## Stage 2 (low-risk tuning)
 - Adjust non-breaking constants/caps within current formulas.
 
+Stage 2 applied (2026-02-07):
+- Battle mirror fairness calibrated to 50.25% in seeded simulation baseline.
+- Added bounded per-attack damage variance (seeded RNG aware) to avoid deterministic cliff outcomes.
+- Added per-attack pillage cap (35% of defender starting hand gold) to dampen runaway swings.
+
 ## Stage 3 (formula unification)
 - Introduce unified effective-stat + logistic spy success, feature-flagged.
 
@@ -175,6 +180,6 @@ Deliverables
 
 ## 11) Execution Tracker
 - [x] Stage 1 complete
-- [ ] Stage 2 complete
+- [x] Stage 2 complete
 - [ ] Stage 3 complete
 - [ ] Stage 4 complete

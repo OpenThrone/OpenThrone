@@ -1,7 +1,7 @@
 group,parameter,current_value,proposed_value,stage,status,notes
-battle,mirror_win_rate_target,unset,0.48-0.52,Stage 1,baseline-recorded,Read from scripts/balance/output/latest-simulation-summary.json
-battle,loot_ev_bound_by_bracket,unset,pending,Stage 2,pending,Needs bracket matrix sampling
-battle,casualty_ratio_bound,unset,pending,Stage 2,pending,Needs bracket matrix sampling
-spy,intel_success_curve,binary_threshold,logistic_curve,Stage 3,pending,Will migrate after instrumentation baselines
-spy,infiltrate_success_curve,tiered_threshold,logistic_curve,Stage 3,pending,Will migrate after instrumentation baselines
-spy,assassinate_success_curve,binary_threshold,logistic_curve,Stage 3,pending,Will migrate after instrumentation baselines
+battle,mirror_win_rate_target,0.5025,0.48-0.52,Stage 2,completed,Calibrated via scripts/balance/run-simulations.ts with seeded RNG
+battle,max_pillage_share_per_attack,0.35,<=0.35,Stage 2,completed,Hard-capped in attackFunctions constants and enforced per-attack budget
+battle,casualty_ev_mirror,attacker=291.07;defender=345.68,keep bounded by bracket,Stage 2,completed,Observed from latest simulation summary output
+spy,intel_success_curve,binary_threshold,logistic_curve,Stage 3,pending,Deferred to Stage 3 formula unification
+spy,infiltrate_success_curve,tiered_threshold,logistic_curve,Stage 3,pending,Deferred to Stage 3 formula unification
+spy,assassinate_success_curve,binary_threshold,logistic_curve,Stage 3,pending,Deferred to Stage 3 formula unification

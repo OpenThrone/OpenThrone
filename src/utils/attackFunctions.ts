@@ -188,6 +188,7 @@ interface BattleState {
   defenderRangedAtkPower: number;
   defenderRangedDefPower: number;
   totalPillagedGold: bigint;
+  maxPillageGold: bigint;
   totalAttackerCasualties: number;
   totalDefenderCasualties: number;
   random: RandomFn;
@@ -205,6 +206,12 @@ const BATTLE_CONSTANTS = {
   BASE_STAMINA_DROP: 0.9,
   MAX_LEVEL_DIFFERENCE: 5,
   BASE_XP: 1000,
+  ATTACKER_DAMAGE_MULTIPLIER: 1.148,
+  DEFENDER_COUNTER_DAMAGE_MULTIPLIER: 0.8,
+  DEFENDER_RANGED_ATTACK_INTERVAL: 2,
+  MAX_PILLAGE_SHARE_PER_ATTACK: 0.35,
+  DAMAGE_VARIANCE_MIN: 0.92,
+  DAMAGE_VARIANCE_MAX: 1.08,
   STAMINA_MULTIPLIERS: {
     EARLY_PHASE: 1.0, // Turns 1-5
     MID_PHASE: 0.9, // Turns 6-10
@@ -336,6 +343,12 @@ function initializeBattleState(
     defenderRangedAtkPower: 0, // Will be calculated per turn for defender
     defenderRangedDefPower: 0, // Will be calculated per turn for defender
     totalPillagedGold: BigInt(0),
+    maxPillageGold:
+      (BigInt(defender.gold ?? BigInt(0)) *
+        BigInt(
+          Math.floor(BATTLE_CONSTANTS.MAX_PILLAGE_SHARE_PER_ATTACK * 100),
+        )) /
+      BigInt(100),
     totalAttackerCasualties: 0,
     totalDefenderCasualties: 0,
     random,
@@ -418,15 +431,28 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
   let pillagedGoldThisTurn = BigInt(0);
   const fortHpStartOfTurn = state.fortHP;
 
-  // Defender's Ranged Attack (Every Turn)
-  if (state.defenderRangedAtkPower > 0) {
+  // Defender's Ranged Attack (cadence-limited to reduce excessive counter-pressure)
+  if (
+    state.defenderRangedAtkPower > 0 &&
+    turn % BATTLE_CONSTANTS.DEFENDER_RANGED_ATTACK_INTERVAL === 0
+  ) {
+    const defenderRangedRoll = mtRand(
+      BATTLE_CONSTANTS.DAMAGE_VARIANCE_MIN,
+      BATTLE_CONSTANTS.DAMAGE_VARIANCE_MAX,
+      state.random,
+    );
+    const effectiveDefenderRangedAttack =
+      state.defenderRangedAtkPower *
+      state.levelMitigation *
+      BATTLE_CONSTANTS.DEFENDER_COUNTER_DAMAGE_MULTIPLIER *
+      defenderRangedRoll;
     const rangedDamageResult = newComputeCasualties(
-      state.defenderRangedAtkPower * state.levelMitigation, // Attacker's effective attack for ranged
+      effectiveDefenderRangedAttack, // Attacker's effective attack for ranged
       state.attackerRangedDefPower, // Attacker's defense against ranged
       state.attackerOffenseRemaining, // Attacker population (will be removed later)
       0, // No defender population targeted by ranged attack (will be removed later)
       state.initialFortHP,
-      state.defenderRangedAtkPower / (state.attackerRangedDefPower || 1), // Piercing ratio for ranged
+      effectiveDefenderRangedAttack / (state.attackerRangedDefPower || 1), // Piercing ratio for ranged
       undefined,
       false,
       false,
@@ -480,8 +506,17 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
     const fortRangedDefPower = currentFortification?.RangedDefPower ?? 0;
 
     const totalFortDefense = fortMeleeDefPower + fortRangedDefPower; // Sum of fort's defense powers
+    const attackerMeleeRoll = mtRand(
+      BATTLE_CONSTANTS.DAMAGE_VARIANCE_MIN,
+      BATTLE_CONSTANTS.DAMAGE_VARIANCE_MAX,
+      state.random,
+    );
+    const effectiveAttackerMeleeAttack =
+      state.attackerMeleeAtkPower *
+      BATTLE_CONSTANTS.ATTACKER_DAMAGE_MULTIPLIER *
+      attackerMeleeRoll;
     const damageToFort = calculateFortDamage(
-      state.attackerMeleeAtkPower,
+      effectiveAttackerMeleeAttack,
       totalFortDefense,
       state.random,
     );
@@ -491,7 +526,7 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
       logDebug(`Attacker Melee Attack: ${fortDamageThisTurn} fort damage`);
 
     const meleeDamageResult = newComputeCasualties(
-      state.attackerMeleeAtkPower,
+      effectiveAttackerMeleeAttack,
       state.defenderMeleeDefPower,
       state.attackerOffenseRemaining, // Attacker population (will be removed later)
       state.defenderDefenseRemaining +
@@ -500,7 +535,7 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
           : 0) +
         (state.includeOffenseUnits ? state.defenderOffenseRemaining : 0), // Defender population (will be removed later)
       state.initialFortHP,
-      state.attackerMeleeAtkPower / (state.defenderMeleeDefPower || 1), // Piercing ratio for melee
+      effectiveAttackerMeleeAttack / (state.defenderMeleeDefPower || 1), // Piercing ratio for melee
       state.fortHP,
       state.shouldIncludeCitz,
       state.includeOffenseUnits,
@@ -573,8 +608,13 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
         ? pillagedGoldThisTurn
         : BigInt(String(pillagedGoldThisTurn || '0'));
     const currentDefGold = BigInt(state.defender.gold ?? BigInt(0));
-    const appliedPillage =
-      pillageThis > currentDefGold ? currentDefGold : pillageThis;
+    const remainingPillageBudget =
+      state.maxPillageGold - state.totalPillagedGold;
+    const clampedBudget =
+      remainingPillageBudget > BigInt(0) ? remainingPillageBudget : BigInt(0);
+    const appliedPillage = [pillageThis, currentDefGold, clampedBudget].reduce(
+      (min, value) => (value < min ? value : min),
+    );
     // Accumulate and immediately deduct from defender so subsequent turns use remaining gold.
     state.totalPillagedGold += appliedPillage;
     state.defender.gold = currentDefGold - appliedPillage;
@@ -587,8 +627,17 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
   } else {
     // Even Turn: Defender's Turn
     // Defender's Melee Attack
+    const defenderMeleeRoll = mtRand(
+      BATTLE_CONSTANTS.DAMAGE_VARIANCE_MIN,
+      BATTLE_CONSTANTS.DAMAGE_VARIANCE_MAX,
+      state.random,
+    );
+    const effectiveDefenderMeleeAttack =
+      state.defenderMeleeAtkPower *
+      BATTLE_CONSTANTS.DEFENDER_COUNTER_DAMAGE_MULTIPLIER *
+      defenderMeleeRoll;
     const meleeDamageResult = newComputeCasualties(
-      state.defenderMeleeAtkPower,
+      effectiveDefenderMeleeAttack,
       state.attackerMeleeDefPower,
       state.defenderDefenseRemaining +
         (state.shouldIncludeCitz
@@ -597,7 +646,7 @@ async function executeBattleTurn(state: any, turn: number, debug: boolean) {
         (state.includeOffenseUnits ? state.defenderOffenseRemaining : 0), // Defender population (will be removed later)
       state.attackerOffenseRemaining, // Attacker population (will be removed later)
       state.initialFortHP,
-      state.defenderMeleeAtkPower / (state.attackerMeleeDefPower || 1), // Piercing ratio for melee
+      effectiveDefenderMeleeAttack / (state.attackerMeleeDefPower || 1), // Piercing ratio for melee
       undefined,
       false, // Defender's melee doesn't target citizens/workers directly
       false,
