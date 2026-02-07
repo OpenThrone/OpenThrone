@@ -4,6 +4,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
+import { deriveAdminUserStatus } from '@/utils/adminStatus';
 import { logError } from '@/utils/logger';
 
 const AdminUsersQuerySchema = z.object({
@@ -50,15 +51,12 @@ async function handler(
       };
     if (email) whereClause.email = { contains: email, mode: 'insensitive' };
 
-    // Handle status filter if provided
-    if (status) {
-      whereClause.statusHistories = {
-        some: {
-          status,
-          end_date: null, // Current status has no end date
-        },
-      };
-    }
+    const activeEra = await prisma.era.findFirst({
+      where: { endDate: null },
+      orderBy: { startDate: 'desc' },
+      select: { id: true },
+    });
+    const activeEraId = activeEra?.id ?? null;
 
     // Define mapping for sort fields
     const sortFieldMapping: { [key: string]: string } = {
@@ -78,49 +76,56 @@ async function handler(
       orderByClause.id = 'asc';
     }
 
-    // Query the database for users and total count in parallel
-    const [users, total] = await Promise.all([
-      prisma.users.findMany({
-        where: whereClause,
+    const selectClause = {
+      id: true,
+      display_name: true,
+      email: true,
+      last_active: true,
+      currentEraId: true,
+      statusHistories: {
+        where: { end_date: null },
+        orderBy: { start_date: 'desc' as const },
+        take: 1,
         select: {
-          id: true,
-          display_name: true,
-          email: true,
-          last_active: true,
-          statusHistories: {
-            where: { end_date: null },
-            orderBy: { start_date: 'desc' },
-            take: 1,
-            select: {
-              status: true,
-            },
-          },
-          permissions: {
-            select: {
-              type: true,
-            },
-          },
+          status: true,
         },
-        orderBy: orderByClause,
-        take,
-        skip,
-      }),
-      prisma.users.count({
-        where: whereClause,
-      }),
-    ]);
+      },
+      permissions: {
+        select: {
+          type: true,
+        },
+      },
+    };
 
-    // Format the response
-    const formattedUsers = users.map((user) => ({
-      id: user.id.toString(),
-      username: user.display_name,
-      email: user.email,
-      status: user.statusHistories[0]?.status || 'ACTIVE', // Default to ACTIVE if no status history
-      lastActive: user.last_active,
-      permissions: user.permissions.map((p) => p.type),
-    }));
+    const users = await prisma.users.findMany({
+      where: whereClause,
+      select: selectClause,
+      orderBy: orderByClause,
+      ...(status ? {} : { take, skip }),
+    });
 
-    res.status(200).json({ users: formattedUsers, total });
+    const formattedUsers = users
+      .map((user) => ({
+        id: user.id.toString(),
+        username: user.display_name,
+        email: user.email,
+        status: deriveAdminUserStatus({
+          latestStatus: user.statusHistories?.[0]?.status,
+          lastActive: user.last_active,
+          currentEraId: user.currentEraId,
+          activeEraId,
+        }),
+        lastActive: user.last_active,
+        permissions: user.permissions.map((p) => p.type),
+      }))
+      .filter((user) => !status || user.status === status);
+
+    res.status(200).json({
+      users: status ? formattedUsers.slice(skip, skip + take) : formattedUsers,
+      total: status
+        ? formattedUsers.length
+        : await prisma.users.count({ where: whereClause }),
+    });
   } catch (error) {
     logError('Error fetching users in admin panel:', error);
     res.status(500).json({ error: 'Failed to fetch users' });

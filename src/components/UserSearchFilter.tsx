@@ -46,7 +46,15 @@ const UserSearchFilter: React.FC<UserSearchFilterProps> = ({ onSearch }) => {
         placeholder="Any"
         value={status}
         onChange={setStatus}
-        data={['ACTIVE', 'VACATION', 'SUSPENDED', 'BANNED', 'CLOSED']}
+        data={[
+          'ACTIVE',
+          'IDLE',
+          'INACTIVE',
+          'VACATION',
+          'SUSPENDED',
+          'BANNED',
+          'CLOSED',
+        ]}
         clearable
       />
       <Button onClick={handleSearch}>Search</Button>

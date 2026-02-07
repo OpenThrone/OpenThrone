@@ -23,7 +23,9 @@ interface UserSummary {
 interface UserListProps {
   users: UserSummary[];
   onEditUser: (userId: string) => void;
+  onImpersonateUser: (userId: string) => void;
   isLoading: boolean;
+  isImpersonating: boolean;
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -35,7 +37,9 @@ interface UserListProps {
 const UserList: React.FC<UserListProps> = ({
   users,
   onEditUser,
+  onImpersonateUser,
   isLoading,
+  isImpersonating,
   page,
   totalPages,
   onPageChange,
@@ -49,6 +53,10 @@ const UserList: React.FC<UserListProps> = ({
         return 'green';
       case 'VACATION':
         return 'blue';
+      case 'IDLE':
+        return 'orange';
+      case 'INACTIVE':
+        return 'gray';
       case 'SUSPENDED':
         return 'yellow';
       case 'BANNED':
@@ -86,9 +94,20 @@ const UserList: React.FC<UserListProps> = ({
       </Table.Td>
       <Table.Td>{formatDate(user.lastActive)}</Table.Td>
       <Table.Td>
-        <Button size="xs" onClick={() => onEditUser(user.id)}>
-          Edit
-        </Button>
+        <Group gap="xs">
+          <Button size="xs" onClick={() => onEditUser(user.id)}>
+            Edit
+          </Button>
+          <Button
+            size="xs"
+            variant="light"
+            color="violet"
+            disabled={isImpersonating}
+            onClick={() => onImpersonateUser(user.id)}
+          >
+            Impersonate
+          </Button>
+        </Group>
       </Table.Td>
     </Table.Tr>
   ));

@@ -1,6 +1,8 @@
 import { faUserPlus, faUsersCog } from '@fortawesome/free-solid-svg-icons';
-import { Grid, Modal } from '@mantine/core';
+import { Button, Grid, Group, Modal, Text } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { PermissionType } from '@prisma/client';
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
@@ -23,8 +25,10 @@ interface UserSummary {
 
 const Admin = () => {
   const { t } = useTranslation('home');
+  const { data: session } = useSession();
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isImpersonationLoading, setIsImpersonationLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -76,6 +80,60 @@ const Admin = () => {
     setSelectedUserId(null);
   }, []);
 
+  const handleImpersonateUser = useCallback(async (userId: string) => {
+    setIsImpersonationLoading(true);
+    try {
+      const response = await fetch('/api/admin/impersonate/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targetUserId: Number(userId) }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Failed to start impersonation');
+      }
+
+      const signInResult = await signIn('credentials', {
+        redirect: false,
+        impersonateUserId: payload?.target?.id ?? Number(userId),
+      });
+
+      if (signInResult?.error) {
+        throw new Error(signInResult.error);
+      }
+
+      window.location.href = `/userprofile/${userId}`;
+    } catch (error) {
+      notifications.show({
+        title: 'Impersonation failed',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Unable to start impersonation',
+        color: 'red',
+      });
+    } finally {
+      setIsImpersonationLoading(false);
+    }
+  }, []);
+
+  const handleStopImpersonation = useCallback(async () => {
+    setIsImpersonationLoading(true);
+    try {
+      await fetch('/api/admin/impersonate/stop', {
+        method: 'POST',
+      });
+      await signOut({ callbackUrl: '/account/login' });
+    } finally {
+      setIsImpersonationLoading(false);
+    }
+  }, []);
+
+  const isImpersonating = Boolean((session?.user as any)?.impersonatedBy);
+
   return (
     <PermissionCheck permission={PermissionType.ADMINISTRATOR}>
       <MainArea title={t('admin.title')}>
@@ -87,11 +145,29 @@ const Admin = () => {
           </Grid.Col>
           <Grid.Col span={12}>
             <GameCard title={t('admin.userManagement')} icon={faUsersCog}>
+              {isImpersonating && (
+                <Group justify="space-between" mb="sm">
+                  <Text c="yellow">
+                    You are currently in an impersonated session.
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    color="yellow"
+                    loading={isImpersonationLoading}
+                    onClick={handleStopImpersonation}
+                  >
+                    End Impersonation
+                  </Button>
+                </Group>
+              )}
               <UserSearchFilter onSearch={handleSearch} />
               <UserList
                 users={users}
                 onEditUser={handleEditUser}
+                onImpersonateUser={handleImpersonateUser}
                 isLoading={isLoading}
+                isImpersonating={isImpersonating || isImpersonationLoading}
                 page={page}
                 totalPages={totalPages}
                 onPageChange={setPage}

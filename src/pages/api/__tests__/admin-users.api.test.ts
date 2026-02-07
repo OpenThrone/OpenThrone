@@ -60,6 +60,9 @@ describe('API admin/users', () => {
       items: [{ type: 'SWORD', level: 1, quantity: 1, usage: 'GENERAL' }],
     };
     mockPrisma.users.findUnique = vi.fn().mockResolvedValue(mockUser);
+    (mockPrisma as any).era = {
+      findFirst: vi.fn().mockResolvedValue({ id: 1 }),
+    };
     const json = vi.fn();
     const res: any = { getHeader: () => undefined, status: () => ({ json }) };
     await adminHandler(req, res);

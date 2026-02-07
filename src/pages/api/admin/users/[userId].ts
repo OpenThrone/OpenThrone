@@ -4,6 +4,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
+import { deriveAdminUserStatus } from '@/utils/adminStatus';
 import { logError } from '@/utils/logger';
 
 const AdminUserQuerySchema = z.object({
@@ -31,6 +32,14 @@ async function handler(
       const user = await prisma.users.findUnique({
         where: { id: userIdNum },
         include: {
+          statusHistories: {
+            where: { end_date: null },
+            orderBy: { start_date: 'desc' },
+            take: 1,
+            select: {
+              status: true,
+            },
+          },
           // Get permissions if they exist in schema
           permissions: {
             select: { type: true },
@@ -42,13 +51,24 @@ async function handler(
         return res.status(404).json({ error: 'User not found' });
       }
 
+      const activeEra = await prisma.era.findFirst({
+        where: { endDate: null },
+        orderBy: { startDate: 'desc' },
+        select: { id: true },
+      });
+
       // Format the response
       const formattedResponse = {
         profile: {
           id: user.id.toString(),
           username: user.display_name,
           email: user.email,
-          status: 'ACTIVE', // Default status if not available
+          status: deriveAdminUserStatus({
+            latestStatus: user.statusHistories?.[0]?.status,
+            lastActive: user.last_active,
+            currentEraId: user.currentEraId,
+            activeEraId: activeEra?.id ?? null,
+          }),
           lastActive: user.last_active,
           joinDate: user.created_at,
         },
