@@ -21,6 +21,7 @@ import {
 } from '@/utils/cors';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { isPrivileged2FAEnforced } from '@/utils/securityPolicies';
 
 const argon2 = require('argon2');
 
@@ -118,7 +119,7 @@ const validateCredentials = async (
   }
 
   const isPrivileged = (await isAdmin(user.id)) || (await isModerator(user.id));
-  if (isPrivileged && !user.twoFactorSecret) {
+  if (isPrivileged2FAEnforced() && isPrivileged && !user.twoFactorSecret) {
     return {
       error:
         '2FA is required for administrator and moderator accounts. Enable 2FA before signing in.',

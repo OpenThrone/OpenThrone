@@ -5,6 +5,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api';
+import { isPrivileged2FAEnforced } from '@/utils/securityPolicies';
 
 const GrantPermissionSchema = z.object({
   user: z.string().min(1),
@@ -38,6 +39,7 @@ const handler = async (
     }
 
     if (
+      isPrivileged2FAEnforced() &&
       (permission === PermissionType.ADMINISTRATOR ||
         permission === PermissionType.MODERATOR) &&
       !currentUser.twoFactorSecret
