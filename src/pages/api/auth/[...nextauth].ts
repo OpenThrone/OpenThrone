@@ -24,7 +24,12 @@ import { stringifyObj } from '@/utils/numberFormatting';
 
 const argon2 = require('argon2');
 
-const AUTH_SECRET = process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET;
+const AUTH_SECRETS = Array.from(
+  new Set(
+    [process.env.NEXTAUTH_SECRET, process.env.JWT_SECRET].filter(Boolean),
+  ),
+) as string[];
+const AUTH_SECRET = AUTH_SECRETS[0];
 
 // Rely on project-wide next-auth type augmentations in `src/types/next-auth.d.ts` to avoid duplicate declaration conflicts.
 
@@ -307,15 +312,24 @@ export const authOptions: NextAuthOptions = {
 
         let result;
         if (impersonateUserId) {
-          if (!AUTH_SECRET) {
+          if (AUTH_SECRETS.length === 0) {
             throw new Error('Server auth secret is not configured');
           }
-          const existingToken = await getToken({
-            req,
-            secret: AUTH_SECRET,
-          });
+
+          let existingToken: Record<string, any> | null = null;
+          for (const secret of AUTH_SECRETS) {
+            existingToken = (await getToken({
+              req,
+              secret,
+            })) as Record<string, any> | null;
+            if (existingToken) {
+              break;
+            }
+          }
+
           const adminUserId = Number(
-            (existingToken as any)?.user?.id ??
+            (existingToken as any)?.user?.impersonatedBy ??
+              (existingToken as any)?.user?.id ??
               (existingToken as any)?.id ??
               (existingToken as any)?.sub,
           );
