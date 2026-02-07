@@ -13,6 +13,7 @@ const RevokeQuerySchema = z.object({
 const guardedHandler = withApiGuard({
   methods: ['POST'],
   authMode: 'admin',
+  rateLimitProfile: 'admin',
   querySchema: RevokeQuerySchema,
 });
 

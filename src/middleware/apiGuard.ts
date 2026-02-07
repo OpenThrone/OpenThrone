@@ -3,6 +3,7 @@ import type { NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import type { z, ZodTypeAny } from 'zod';
 
+import { rateLimiter } from '@/lib/rate-limiter';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { ApiTokenService } from '@/services/ApiToken.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -11,6 +12,25 @@ import { isAdmin } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 
 type AuthMode = 'none' | 'optional' | 'required' | 'admin';
+type RateLimitProfile =
+  | 'auth'
+  | 'password_reset'
+  | 'attack'
+  | 'spy'
+  | 'bank'
+  | 'admin';
+
+const RATE_LIMIT_PROFILES: Record<
+  RateLimitProfile,
+  { windowMs: number; max: number }
+> = {
+  auth: { windowMs: 60_000, max: 12 },
+  password_reset: { windowMs: 60_000, max: 6 },
+  attack: { windowMs: 60_000, max: 20 },
+  spy: { windowMs: 60_000, max: 20 },
+  bank: { windowMs: 60_000, max: 15 },
+  admin: { windowMs: 60_000, max: 30 },
+};
 
 type InferOrUnknown<TSchema extends ZodTypeAny | undefined> =
   TSchema extends ZodTypeAny ? z.infer<TSchema> : unknown;
@@ -23,6 +43,7 @@ interface ApiGuardOptions<
   authMode?: AuthMode;
   allowApiToken?: boolean;
   requiredScopes?: string[];
+  rateLimitProfile?: RateLimitProfile;
   querySchema?: TQuerySchema;
   bodySchema?: TBodySchema;
 }
@@ -46,7 +67,11 @@ export function withApiGuard<
   TBodySchema extends ZodTypeAny | undefined = undefined,
 >(options: ApiGuardOptions<TQuerySchema, TBodySchema>) {
   const { methods, authMode = 'required', querySchema, bodySchema } = options;
-  const { allowApiToken = false, requiredScopes = [] } = options;
+  const {
+    allowApiToken = false,
+    requiredScopes = [],
+    rateLimitProfile,
+  } = options;
   const allowHeader = methods.join(', ');
   const methodSet = new Set(methods.map((method) => method.toUpperCase()));
 
@@ -60,10 +85,29 @@ export function withApiGuard<
       const requestId =
         (req.headers?.['x-request-id'] as string | undefined) ?? randomUUID();
       res.setHeader('X-Request-Id', requestId);
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Referrer-Policy', 'same-origin');
+      res.setHeader('X-Frame-Options', 'DENY');
+      if (process.env.NODE_ENV === 'production') {
+        res.setHeader(
+          'Strict-Transport-Security',
+          'max-age=31536000; includeSubDomains; preload',
+        );
+      }
 
       if (!methodSet.has((req.method || '').toUpperCase())) {
         res.setHeader('Allow', allowHeader);
         return res.status(405).json({ message: 'Method not allowed' });
+      }
+
+      if (rateLimitProfile) {
+        const profile = RATE_LIMIT_PROFILES[rateLimitProfile];
+        const ip = getRequestIp(req) ?? 'unknown';
+        const rateKey = `${rateLimitProfile}:${req.method}:${req.url}:${ip}`;
+        const isAllowed = rateLimiter(rateKey, profile);
+        if (!isAllowed) {
+          return res.status(429).json({ message: 'Too many requests' });
+        }
       }
 
       const session = await getServerSession(req, res, authOptions);

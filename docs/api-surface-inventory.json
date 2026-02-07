@@ -3,7 +3,7 @@
   "version": 1,
   "summary": {
     "scope": "security-performance-api-hardening-plan-2026-02-07",
-    "status": "phase-0-initial"
+    "status": "phase-4-in-progress"
   },
   "endpoints": [
     {
@@ -53,7 +53,7 @@
       "methods": ["GET", "POST", "PATCH", "DELETE"],
       "authMode": "session+admin",
       "risk": "critical",
-      "notes": "Migrated to withApiGuard for current endpoints."
+      "notes": "Migrated to withApiGuard for current endpoints, with admin rate-limit profile and consistent security headers."
     },
     {
       "route": "/api/account/reset and /api/account/verify",

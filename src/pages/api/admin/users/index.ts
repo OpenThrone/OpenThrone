@@ -20,6 +20,7 @@ const AdminUsersQuerySchema = z.object({
 const guardedHandler = withApiGuard({
   methods: ['GET'],
   authMode: 'admin',
+  rateLimitProfile: 'admin',
   querySchema: AdminUsersQuerySchema,
 });
 

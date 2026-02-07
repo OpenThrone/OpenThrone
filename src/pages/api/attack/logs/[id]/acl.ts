@@ -19,6 +19,7 @@ const AttackLogACLSchema = z.object({
 const guardedHandler = withApiGuard({
   methods: ['POST'],
   authMode: 'required',
+  rateLimitProfile: 'attack',
   querySchema: IdQuerySchema,
   bodySchema: AttackLogACLSchema,
 });

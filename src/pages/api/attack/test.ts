@@ -17,6 +17,7 @@ const TestAttackSchema = z.object({
 const guardedHandler = withApiGuard({
   methods: ['POST'],
   authMode: 'admin',
+  rateLimitProfile: 'attack',
   bodySchema: TestAttackSchema,
 });
 

@@ -18,11 +18,13 @@ const IssueApiTokenSchema = z.object({
 const guardedGet = withApiGuard({
   methods: ['GET'],
   authMode: 'admin',
+  rateLimitProfile: 'admin',
 });
 
 const guardedPost = withApiGuard({
   methods: ['POST'],
   authMode: 'admin',
+  rateLimitProfile: 'admin',
   bodySchema: IssueApiTokenSchema,
 });
 

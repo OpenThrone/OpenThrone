@@ -9,6 +9,7 @@ import { logError } from '@/utils/logger';
 const guardedHandler = withApiGuard({
   methods: ['POST'],
   authMode: 'none',
+  rateLimitProfile: 'admin',
 });
 
 const isAuthorizedTaskRequest = (

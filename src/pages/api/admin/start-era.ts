@@ -8,6 +8,7 @@ import { logError } from '@/utils/logger';
 const guardedHandler = withApiGuard({
   methods: ['POST'],
   authMode: 'admin',
+  rateLimitProfile: 'admin',
 });
 
 async function handler(_req: AuthenticatedRequest, res: NextApiResponse) {

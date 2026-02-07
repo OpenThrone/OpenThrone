@@ -14,6 +14,7 @@ const AccountResetSchema = z.object({
 const guardedHandler = withApiGuard({
   methods: ['POST'],
   authMode: 'admin',
+  rateLimitProfile: 'admin',
   bodySchema: AccountResetSchema,
 });
 

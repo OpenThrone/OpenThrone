@@ -14,6 +14,7 @@ const AdminVacationSchema = z.object({
 const guardedHandler = withApiGuard({
   methods: ['POST'],
   authMode: 'admin',
+  rateLimitProfile: 'admin',
   bodySchema: AdminVacationSchema,
 });
 
