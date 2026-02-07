@@ -3,6 +3,7 @@ import {
   Button,
   Group,
   Loader,
+  Select,
   Text,
   Textarea,
   TextInput,
@@ -30,6 +31,8 @@ export default function CreateAlliance() {
       motto: '',
       comments: '',
       avatarUrl: '',
+      joinMode: 'OPEN',
+      rosterVisibility: 'PUBLIC',
     },
 
     validate: {
@@ -77,6 +80,8 @@ export default function CreateAlliance() {
     motto: string;
     comments: string;
     avatarUrl: string;
+    joinMode: string;
+    rosterVisibility: string;
   }) => {
     setSubmitting(true);
     try {
@@ -88,6 +93,8 @@ export default function CreateAlliance() {
           motto: values.motto.trim() || undefined,
           comments: values.comments.trim() || undefined,
           avatar: values.avatarUrl.trim() || undefined,
+          join_mode: values.joinMode,
+          roster_visibility: values.rosterVisibility,
         }),
       });
 
@@ -118,6 +125,34 @@ export default function CreateAlliance() {
             required
             {...form.getInputProps('allianceName')}
           />
+          <Group grow>
+            <Select
+              label={t('create.joinMode')}
+              data={[
+                { value: 'OPEN', label: t('create.joinModeOpen') },
+                {
+                  value: 'REQUEST_TO_JOIN',
+                  label: t('create.joinModeRequest'),
+                },
+                {
+                  value: 'INVITE_ONLY',
+                  label: t('create.joinModeInvite'),
+                },
+              ]}
+              {...form.getInputProps('joinMode')}
+            />
+            <Select
+              label={t('create.rosterVisibility')}
+              data={[
+                { value: 'PUBLIC', label: t('create.rosterPublic') },
+                {
+                  value: 'MEMBERS_ONLY',
+                  label: t('create.rosterMembersOnly'),
+                },
+              ]}
+              {...form.getInputProps('rosterVisibility')}
+            />
+          </Group>
           <TextInput
             label={t('create.avatar')}
             placeholder={t('create.avatarPlaceholder')}

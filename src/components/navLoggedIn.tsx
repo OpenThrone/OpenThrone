@@ -25,7 +25,12 @@ type NavItem = {
 const parentLinks: NavItem[] = [
   { key: 'home', href: '/home/overview', labelKey: 'main.home' },
   { key: 'battle', href: '/battle/users', labelKey: 'main.battle' },
-  { key: 'structures', href: '/structures/bank/deposit', labelKey: 'main.structures' },
+  {
+    key: 'structures',
+    href: '/structures/bank/deposit',
+    labelKey: 'main.structures',
+  },
+  { key: 'alliances', href: '/alliances/browse', labelKey: 'main.alliances' },
   { key: 'community', href: '/community/news', labelKey: 'main.community' },
   { key: 'about', href: '/about', labelKey: 'main.about' },
 ];
@@ -41,19 +46,51 @@ const subMenus: Record<string, NavItem[]> = {
     { key: 'attack', href: '/battle/users', labelKey: 'battle.attack' },
     { key: 'training', href: '/battle/training', labelKey: 'battle.training' },
     { key: 'upgrades', href: '/battle/upgrades', labelKey: 'battle.upgrades' },
-    { key: 'warHistory', href: '/battle/history', labelKey: 'battle.warHistory' },
+    {
+      key: 'warHistory',
+      href: '/battle/history',
+      labelKey: 'battle.warHistory',
+    },
   ],
   structures: [
-    { key: 'bank', href: '/structures/bank/deposit', labelKey: 'structures.bank' },
-    { key: 'armory', href: '/structures/armory/offense', labelKey: 'structures.armory' },
-    { key: 'upgrades', href: '/structures/upgrades/fortifications', labelKey: 'structures.upgrades' },
-    { key: 'housing', href: '/structures/housing', labelKey: 'structures.housing' },
-    { key: 'repair', href: '/structures/repair', labelKey: 'structures.repair' },
+    {
+      key: 'bank',
+      href: '/structures/bank/deposit',
+      labelKey: 'structures.bank',
+    },
+    {
+      key: 'armory',
+      href: '/structures/armory/offense',
+      labelKey: 'structures.armory',
+    },
+    {
+      key: 'upgrades',
+      href: '/structures/upgrades/fortifications',
+      labelKey: 'structures.upgrades',
+    },
+    {
+      key: 'housing',
+      href: '/structures/housing',
+      labelKey: 'structures.housing',
+    },
+    {
+      key: 'repair',
+      href: '/structures/repair',
+      labelKey: 'structures.repair',
+    },
   ],
   community: [
     { key: 'news', href: '/community/news', labelKey: 'community.news' },
-    { key: 'discord', href: 'https://discord.gg/j9NYxmBCjA', labelKey: 'community.discord' },
-    { key: 'autoRecruit', href: '/auto-recruit', labelKey: 'community.autoRecruit' },
+    {
+      key: 'discord',
+      href: 'https://discord.gg/j9NYxmBCjA',
+      labelKey: 'community.discord',
+    },
+    {
+      key: 'autoRecruit',
+      href: '/auto-recruit',
+      labelKey: 'community.autoRecruit',
+    },
     { key: 'stats', href: '/community/stats', labelKey: 'community.stats' },
     {
       key: 'reportIssues',
@@ -61,6 +98,10 @@ const subMenus: Record<string, NavItem[]> = {
       labelKey: 'community.reportIssues',
       target: '_blank',
     },
+  ],
+  alliances: [
+    { key: 'browse', href: '/alliances/browse', labelKey: 'alliances.browse' },
+    { key: 'create', href: '/alliances/create', labelKey: 'alliances.create' },
   ],
   about: [],
 };
@@ -138,6 +179,16 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       setActiveSubKey('autoRecruit');
       setDefaultParentKey('community');
       setDefaultSubMenu(subMenus.community || []);
+    } else if (currentPath === 'alliances') {
+      setActiveParentKey('alliances');
+      const subMenu = subMenus.alliances || [];
+      setActiveSubMenu(subMenu);
+      // Determine sub key based on secondPath
+      if (secondPath === 'create') setActiveSubKey('create');
+      else setActiveSubKey('browse'); // Default to browse
+
+      setDefaultParentKey('alliances');
+      setDefaultSubMenu(subMenus.alliances || []);
     } else {
       const activeLink = parentLinks.find((link) => link.key === currentPath);
       if (activeLink) {

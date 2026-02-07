@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
+import { stringifyObj } from '@/utils/numberFormatting';
 
 const CreateAllianceSchema = z.object({
   allianceName: z.string().optional(),
@@ -9,9 +10,8 @@ const CreateAllianceSchema = z.object({
   avatar: z.string().optional(),
   motto: z.string().optional(),
   comments: z.string().optional(),
-  is_public: z.boolean().optional(),
-  require_auth: z.boolean().optional(),
-  closed_enrollment: z.boolean().optional(),
+  join_mode: z.enum(['OPEN', 'REQUEST_TO_JOIN', 'INVITE_ONLY']).optional(),
+  roster_visibility: z.enum(['PUBLIC', 'MEMBERS_ONLY']).optional(),
 });
 
 const createAlliance = async (req, res) => {
@@ -34,9 +34,8 @@ const createAlliance = async (req, res) => {
     avatar,
     motto,
     comments,
-    is_public,
-    require_auth,
-    closed_enrollment,
+    join_mode,
+    roster_visibility,
   } = validatedBody.data;
 
   const resolvedName = (name ?? allianceName ?? '').toString().trim();
@@ -50,13 +49,10 @@ const createAlliance = async (req, res) => {
       avatar: avatar ? String(avatar) : undefined,
       motto: motto ? String(motto) : undefined,
       comments: comments ? String(comments) : undefined,
-      is_public: typeof is_public === 'boolean' ? is_public : undefined,
-      require_auth:
-        typeof require_auth === 'boolean' ? require_auth : undefined,
-      closed_enrollment:
-        typeof closed_enrollment === 'boolean' ? closed_enrollment : undefined,
+      join_mode,
+      roster_visibility,
     });
-    return res.status(200).json(alliance);
+    return res.status(200).json(stringifyObj(alliance));
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }

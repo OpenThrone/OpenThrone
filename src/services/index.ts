@@ -21,3 +21,5 @@ export * from './Social.service';
 export * from './Structure.service';
 export * from './Training.service';
 export * from './User.service';
+export * from './AllianceWar.service';
+export * from './AllianceBank.service';

@@ -100,6 +100,22 @@ export class GeneralService {
           UserStructureUpgrade: true,
           UserBattleUpgrade: true,
           UserBonusPoints: true,
+          alliance_memberships: {
+            include: {
+              alliance: {
+                select: { name: true },
+              },
+              role: {
+                select: { name: true },
+              },
+            },
+          },
+          ledAlliances: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       });
 
@@ -187,6 +203,22 @@ export class GeneralService {
             UserStructureUpgrade: true,
             UserBattleUpgrade: true,
             UserBonusPoints: true,
+            alliance_memberships: {
+              include: {
+                alliance: {
+                  select: { name: true },
+                },
+                role: {
+                  select: { name: true },
+                },
+              },
+            },
+            ledAlliances: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         });
 
@@ -306,6 +338,7 @@ export class GeneralService {
         goldPerTurn: user.goldPerTurn,
         depositsAvailable,
         nextDepositAvailable,
+        alliance_memberships: (user as any).alliance_memberships,
       };
 
       return responseDto;

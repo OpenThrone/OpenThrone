@@ -121,7 +121,9 @@ export const getServerSideProps = async (context) => {
     }
     // Check if it's shared with user's alliance (if applicable)
     if (aclEntry.shared_with_alliance) {
-      return aclEntry.shared_with_alliance.id === session.user.alliance_id;
+      return (session.user.alliances || []).some(
+        (a) => a.alliance_id === aclEntry.shared_with_alliance.id,
+      );
     }
     return false;
   });

@@ -224,9 +224,10 @@ export class CronJobService {
 
       await prisma.userUnit.upsert({
         where: {
-          userId_type_isMercenary: {
+          userId_type_level_isMercenary: {
             userId: currentUser.id,
             type: 'CITIZEN',
+            level: 1,
             isMercenary: false,
           },
         },

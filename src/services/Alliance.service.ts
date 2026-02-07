@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { getLevelFromXP } from '@/utils/utilities';
 
 // Type definitions for alliance operations
 export interface CreateAllianceData {
@@ -10,25 +11,34 @@ export interface CreateAllianceData {
   avatar?: string;
   motto?: string;
   comments?: string;
-  is_public?: boolean;
-  require_auth?: boolean;
-  closed_enrollment?: boolean;
+  join_mode?: 'OPEN' | 'REQUEST_TO_JOIN' | 'INVITE_ONLY';
+  roster_visibility?: 'PUBLIC' | 'MEMBERS_ONLY';
 }
+
+export interface JoinAllianceData {
+  allianceId: number;
+}
+
+const AllianceJoinMode = {
+  OPEN: 'OPEN',
+  REQUEST_TO_JOIN: 'REQUEST_TO_JOIN',
+  INVITE_ONLY: 'INVITE_ONLY',
+} as const;
+
+const AllianceRosterVisibility = {
+  PUBLIC: 'PUBLIC',
+  MEMBERS_ONLY: 'MEMBERS_ONLY',
+} as const;
 
 export interface UpdateAllianceData {
   name?: string;
   avatar?: string;
   motto?: string;
   comments?: string;
-  is_public?: boolean;
-  require_auth?: boolean;
-  closed_enrollment?: boolean;
+  join_mode?: 'OPEN' | 'REQUEST_TO_JOIN' | 'INVITE_ONLY';
+  roster_visibility?: 'PUBLIC' | 'MEMBERS_ONLY';
   bannerimg?: string;
   slug?: string;
-}
-
-export interface JoinAllianceData {
-  allianceId: number;
 }
 
 export interface LeaveAllianceData {
@@ -145,9 +155,8 @@ const CreateAllianceSchema = z.object({
   avatar: z.string().optional(),
   motto: z.string().max(255).optional(),
   comments: z.string().max(1000).optional(),
-  is_public: z.boolean().optional(),
-  require_auth: z.boolean().optional(),
-  closed_enrollment: z.boolean().optional(),
+  join_mode: z.nativeEnum(AllianceJoinMode).optional(),
+  roster_visibility: z.nativeEnum(AllianceRosterVisibility).optional(),
 });
 
 const UpdateAllianceSchema = z.object({
@@ -155,9 +164,8 @@ const UpdateAllianceSchema = z.object({
   avatar: z.string().optional(),
   motto: z.string().max(255).optional(),
   comments: z.string().max(1000).optional(),
-  is_public: z.boolean().optional(),
-  require_auth: z.boolean().optional(),
-  closed_enrollment: z.boolean().optional(),
+  join_mode: z.nativeEnum(AllianceJoinMode).optional(),
+  roster_visibility: z.nativeEnum(AllianceRosterVisibility).optional(),
   bannerimg: z.string().optional(),
   slug: z.string().optional(),
 });
@@ -232,9 +240,8 @@ export class AllianceService {
       avatar?: string;
       motto?: string;
       comments?: string;
-      is_public?: boolean;
-      require_auth?: boolean;
-      closed_enrollment?: boolean;
+      join_mode?: 'OPEN' | 'REQUEST_TO_JOIN' | 'INVITE_ONLY';
+      roster_visibility?: 'PUBLIC' | 'MEMBERS_ONLY';
     },
   ) {
     // Check if user already leads an alliance
@@ -246,13 +253,13 @@ export class AllianceService {
       throw new Error('You already lead an alliance');
     }
 
-    // Check if user is already in an alliance
-    const existingMembership = await prisma.alliance_memberships.findFirst({
+    // Check if user is already in 3 alliances
+    const membershipCount = await prisma.alliance_memberships.count({
       where: { user_id: userId },
     });
 
-    if (existingMembership) {
-      throw new Error('You are already a member of an alliance');
+    if (membershipCount >= 3) {
+      throw new Error('You can only be a member of 3 alliances');
     }
 
     // Check if alliance name is already taken
@@ -289,14 +296,16 @@ export class AllianceService {
       // Get the user to check level and gold requirements
       const user = await prisma.users.findUnique({
         where: { id: userId },
-        select: { level: true, gold: true, display_name: true },
+        select: { experience: true, gold: true, display_name: true },
       });
 
       if (!user) {
         throw new Error('User not found');
       }
 
-      if (user.level < 10) {
+      const userLevel = getLevelFromXP(user.experience);
+
+      if (userLevel < 10) {
         throw new Error('User level must be at least 10');
       }
 
@@ -314,9 +323,16 @@ export class AllianceService {
             avatar: validatedData.avatar,
             motto: validatedData.motto,
             comments: validatedData.comments,
-            is_public: validatedData.is_public ?? true,
-            require_auth: validatedData.require_auth ?? false,
-            closed_enrollment: validatedData.closed_enrollment ?? false,
+            join_mode: validatedData.join_mode ?? AllianceJoinMode.OPEN,
+            roster_visibility:
+              validatedData.roster_visibility ??
+              AllianceRosterVisibility.PUBLIC,
+            // Map legacy fields if necessary or deprecate them.
+            is_public: validatedData.join_mode !== AllianceJoinMode.INVITE_ONLY,
+            closed_enrollment:
+              validatedData.join_mode === AllianceJoinMode.INVITE_ONLY,
+            require_auth:
+              validatedData.join_mode === AllianceJoinMode.REQUEST_TO_JOIN,
           },
           include: {
             leader: {
@@ -597,7 +613,16 @@ export class AllianceService {
       });
 
       if (existingMembership) {
-        throw new Error('You are already a member of an alliance');
+        throw new Error('You are already a member of this alliance');
+      }
+
+      // Check membership limit
+      const membershipCount = await prisma.alliance_memberships.count({
+        where: { user_id: userId },
+      });
+
+      if (membershipCount >= 3) {
+        throw new Error('You can only be a member of 3 alliances');
       }
 
       // Get the alliance
@@ -618,8 +643,12 @@ export class AllianceService {
         throw new Error('Alliance not found');
       }
 
-      if (alliance.closed_enrollment) {
-        throw new Error('This alliance is not accepting new members');
+      if (alliance.join_mode === AllianceJoinMode.INVITE_ONLY) {
+        throw new Error('This alliance is invite-only');
+      }
+
+      if (alliance.join_mode === AllianceJoinMode.REQUEST_TO_JOIN) {
+        throw new Error('You must request to join this alliance');
       }
 
       if (!alliance.is_public) {
@@ -1084,6 +1113,246 @@ export class AllianceService {
       };
     } catch (error: any) {
       logError('Error getting alliance stats', { allianceId, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Creates a request to join an alliance
+   */
+  static async createJoinRequest(userId: number, allianceId: number) {
+    try {
+      // Check if user is already in 3 alliances
+      const membershipCount = await prisma.alliance_memberships.count({
+        where: { user_id: userId },
+      });
+
+      if (membershipCount >= 3) {
+        throw new Error('You can only be a member of 3 alliances');
+      }
+
+      // Check for existing pending request
+      const existingRequest = await prisma.alliance_join_requests.findFirst({
+        where: {
+          user_id: userId,
+          alliance_id: allianceId,
+          status: 'PENDING',
+        },
+      });
+
+      if (existingRequest) {
+        throw new Error('You already have a pending request for this alliance');
+      }
+
+      // Check if user is already a member
+      const isMember = await prisma.alliance_memberships.findUnique({
+        where: {
+          unique_alliance_user: {
+            alliance_id: allianceId,
+            user_id: userId,
+          },
+        },
+      });
+
+      if (isMember) {
+        throw new Error('You are already a member of this alliance');
+      }
+
+      // Create request
+      await prisma.alliance_join_requests.create({
+        data: {
+          user_id: userId,
+          alliance_id: allianceId,
+          status: 'PENDING',
+        },
+      });
+
+      return { message: 'Join request sent successfully' };
+    } catch (error: any) {
+      logError('Error creating join request', { userId, allianceId, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Accepts a join request
+   */
+  static async acceptJoinRequest(requestId: number, acceptorId: number) {
+    try {
+      // Get request
+      const request = await prisma.alliance_join_requests.findUnique({
+        where: { id: requestId },
+        include: { alliance: true },
+      });
+
+      if (!request || request.status !== 'PENDING') {
+        throw new Error('Request not found or already processed');
+      }
+
+      // Check permissions
+      const acceptorMembership = await prisma.alliance_memberships.findFirst({
+        where: {
+          alliance_id: request.alliance_id,
+          user_id: acceptorId,
+        },
+        include: { role: true, alliance: true },
+      });
+
+      if (!acceptorMembership) {
+        throw new Error('You are not a member of this alliance');
+      }
+
+      const canAccept =
+        acceptorMembership.alliance.leader_id === acceptorId ||
+        acceptorMembership.role.permissions?.invite_member;
+
+      if (!canAccept) {
+        throw new Error('You do not have permission to accept requests');
+      }
+
+      // Check limits again
+      const membershipCount = await prisma.alliance_memberships.count({
+        where: { user_id: request.user_id },
+      });
+
+      if (membershipCount >= 3) {
+        throw new Error('User is already in 3 alliances');
+      }
+
+      await prisma.$transaction(async (tx) => {
+        // Create membership
+        // Use default role "Member"
+        const defaultRole = await tx.alliance_roles.findFirst({
+          where: { alliance_id: request.alliance_id, name: 'Member' },
+        });
+
+        if (!defaultRole) throw new Error('Default role not found');
+
+        await tx.alliance_memberships.create({
+          data: {
+            alliance_id: request.alliance_id,
+            user_id: request.user_id,
+            role_id: defaultRole.id,
+          },
+        });
+
+        // Update request
+        await tx.alliance_join_requests.update({
+          where: { id: requestId },
+          data: {
+            status: 'APPROVED',
+            moderated_by: acceptorId,
+          },
+        });
+      });
+
+      return { message: 'Request accepted' };
+    } catch (error: any) {
+      logError('Error accepting join request', {
+        requestId,
+        acceptorId,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Rejects a join request
+   */
+  static async rejectJoinRequest(requestId: number, acceptorId: number) {
+    try {
+      const request = await prisma.alliance_join_requests.findUnique({
+        where: { id: requestId },
+      });
+
+      if (!request || request.status !== 'PENDING') {
+        throw new Error('Request not found or already processed');
+      }
+
+      // Check permissions (same as accept)
+      const acceptorMembership = await prisma.alliance_memberships.findFirst({
+        where: {
+          alliance_id: request.alliance_id,
+          user_id: acceptorId,
+        },
+        include: { role: true, alliance: true },
+      });
+
+      if (!acceptorMembership) {
+        throw new Error('You are not a member of this alliance');
+      }
+
+      const canReject =
+        acceptorMembership.alliance.leader_id === acceptorId ||
+        acceptorMembership.role.permissions?.invite_member; // Or specific permission
+
+      if (!canReject) {
+        throw new Error('You do not have permission to reject requests');
+      }
+
+      await prisma.alliance_join_requests.update({
+        where: { id: requestId },
+        data: {
+          status: 'REJECTED',
+          moderated_by: acceptorId,
+        },
+      });
+
+      return { message: 'Request rejected' };
+    } catch (error: any) {
+      logError('Error rejecting join request', {
+        requestId,
+        acceptorId,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Gets pending join requests for an alliance
+   */
+  static async getJoinRequests(allianceId: number, userId: number) {
+    try {
+      // Check permissions
+      const membership = await prisma.alliance_memberships.findFirst({
+        where: {
+          alliance_id: allianceId,
+          user_id: userId,
+        },
+        include: { role: true, alliance: true },
+      });
+
+      if (!membership) throw new Error('Not a member');
+
+      const canView =
+        membership.alliance.leader_id === userId ||
+        membership.role.permissions?.invite_member;
+
+      if (!canView) throw new Error('No permission');
+
+      const requests = await prisma.alliance_join_requests.findMany({
+        where: {
+          alliance_id: allianceId,
+          status: 'PENDING',
+        },
+        include: {
+          user: {
+            select: {
+              display_name: true,
+              level: true,
+              race: true,
+              class: true,
+            },
+          },
+        },
+        orderBy: { created_at: 'asc' },
+      });
+
+      return requests;
+    } catch (error: any) {
+      logError('Error getting join requests', { allianceId, error });
       throw error;
     }
   }

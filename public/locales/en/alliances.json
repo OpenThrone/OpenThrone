@@ -31,7 +31,14 @@
     "commentsTooLong": "Comments must be 1000 characters or less",
     "cost": "Cost: 100 Million Gold",
     "levelRequired": "You must be at least level {{level}} to create an alliance.",
-    "goldRequired": "Creating an alliance costs {{cost}} gold."
+    "goldRequired": "Creating an alliance costs {{cost}} gold.",
+    "joinMode": "Join Mode",
+    "joinModeOpen": "Open (Anyone can join)",
+    "joinModeRequest": "Request to Join",
+    "joinModeInvite": "Invite Only",
+    "rosterVisibility": "Roster Visibility",
+    "rosterPublic": "Public",
+    "rosterMembersOnly": "Members Only"
   },
   "index": {
     "title": "My Alliance",

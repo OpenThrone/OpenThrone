@@ -50,6 +50,14 @@ const validateCredentials = async (
     where: {
       email: email.toLowerCase(),
     },
+    include: {
+      alliance_memberships: {
+        include: {
+          alliance: { select: { name: true } },
+          role: { select: { name: true } },
+        },
+      },
+    },
   });
 
   if (!user || !user.password_hash) {
@@ -109,8 +117,23 @@ const validateCredentials = async (
   // Update last active timestamp
   await updateLastActive(email);
 
-  const { password_hash: _passwordHash, ...rest } = user;
-  return { ...rest, twoFactorEnabled: !!user.twoFactorSecret };
+  const { password_hash: _passwordHash, alliance_memberships, ...rest } = user;
+
+  // Transform memberships into session-friendly structure
+  const alliances = alliance_memberships.map((m) => ({
+    alliance_id: m.alliance_id,
+    alliance_name: m.alliance?.name || 'Unknown',
+    alliance_role_id: m.role_id,
+    alliance_role_name: m.role?.name || 'Member',
+  }));
+
+  return {
+    ...rest,
+    // Maintain back-compat briefly or for primary logic if needed, but prefer array
+    alliance_id: alliances.length > 0 ? alliances[0].alliance_id : null,
+    alliances,
+    twoFactorEnabled: !!user.twoFactorSecret,
+  };
 };
 
 const CredentialsSchema = z.object({
@@ -156,6 +179,9 @@ export const authOptions: NextAuthOptions = {
             race: userObj.race,
             colorScheme: userObj.colorScheme,
             twoFactorEnabled: (user as any).twoFactorEnabled,
+            // Pass alliance data
+            alliance_id: (user as any).alliance_id,
+            alliances: (user as any).alliances,
           };
         }
         return token;

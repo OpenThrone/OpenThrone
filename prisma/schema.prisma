@@ -27,6 +27,43 @@ enum PermissionType {
   MODERATOR
 }
 
+enum AllianceJoinMode {
+  OPEN
+  REQUEST_TO_JOIN
+  INVITE_ONLY
+}
+
+enum AllianceRosterVisibility {
+  PUBLIC
+  MEMBERS_ONLY
+}
+
+enum WarStatus {
+  WARMUP
+  ACTIVE
+  COOLDOWN
+  ENDED
+}
+
+enum AllianceCooldownType {
+  LEAVE
+  KICK
+}
+
+enum AllianceTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TAX
+  FEE
+  LOAN
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 model users {
   id                                    Int                    @id @default(autoincrement())
   email                                 String                 @unique
@@ -101,6 +138,15 @@ model users {
   UserStructureUpgrade                  UserStructureUpgrade[]
   UserBattleUpgrade                     UserBattleUpgrade[]
   UserBonusPoints                       UserBonusPoints[]
+  
+  // Alliance System Relations
+  allianceJoinRequests                  alliance_join_requests[]
+  allianceCooldowns                     alliance_cooldowns[]
+  declaredAllianceWars                  alliance_wars[]        @relation("DeclaredWars")
+  targetedInOneUserWars                 alliance_wars[]        @relation("WarTargetUser") // War where user is the specific target
+  targetedInWars                        war_targets[]          // Specific targets within a war
+  bankHistoryPerformed                  alliance_bank_history[] @relation("PerformedBy")
+  bankHistoryRelated                    alliance_bank_history[] @relation("RelatedUser")
 
   @@index([created_at])
   @@index([currentEraId])
@@ -272,6 +318,22 @@ model alliances {
   leader            users                  @relation("AllianceLeader", fields: [leader_id], references: [id])
   sharedAttackLogs  attack_log_acl[]
   chatRooms         ChatRoom[] // Added for alliance chat relation
+  
+  // New Fields
+  join_mode         AllianceJoinMode       @default(OPEN)
+  roster_visibility AllianceRosterVisibility @default(PUBLIC)
+  war_tax_mode      String                 @default("ALLIANCE") // ALLIANCE or ROLE (Keep flexible as string for now or Enum if strict)
+  war_tax_rate_default Int                 @default(0) // 0-25
+
+  // New Relations
+  join_requests     alliance_join_requests[]
+  cooldowns         alliance_cooldowns[] // Global cooldowns might not have alliance_id, but alliance-specific ones will
+  declared_wars     alliance_wars[]        @relation("AttackerAlliance")
+  defending_wars    alliance_wars[]        @relation("DefenderAlliance")
+  bank_history      alliance_bank_history[]
+  fees              alliance_fees[]
+  xp_record         alliance_xp?
+  upgrades          alliance_upgrades[]
 
   @@index([leader_id], map: "idx_alliance_leader")
 }
@@ -591,4 +653,129 @@ enum BonusPointsType {
   INCOME
   INTEL
   PRICES
+}
+
+// ---------------------------
+// Alliance System Extensions
+// ---------------------------
+
+model alliance_wars {
+  id                    Int       @id @default(autoincrement())
+  attacker_alliance_id  Int
+  defender_alliance_id  Int?      // Nullable if target is a user
+  defender_user_id      Int?      // Nullable if target is an alliance
+  status                WarStatus @default(WARMUP)
+  declared_by_user_id   Int
+  start_at              DateTime  @db.Timestamptz(3)
+  end_at                DateTime? @db.Timestamptz(3)
+  created_at            DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at            DateTime  @updatedAt @db.Timestamptz(3)
+
+  attacker_alliance     alliances @relation("AttackerAlliance", fields: [attacker_alliance_id], references: [id])
+  defender_alliance     alliances? @relation("DefenderAlliance", fields: [defender_alliance_id], references: [id])
+  defender_user         users?     @relation("WarTargetUser", fields: [defender_user_id], references: [id])
+  declared_by_user      users      @relation("DeclaredWars", fields: [declared_by_user_id], references: [id])
+  
+  targets               war_targets[]
+
+  @@index([attacker_alliance_id])
+  @@index([defender_alliance_id])
+  @@index([status])
+}
+
+model war_targets {
+  id             Int           @id @default(autoincrement())
+  war_id         Int
+  target_user_id Int
+  created_at     DateTime      @default(now()) @db.Timestamptz(3)
+
+  war            alliance_wars @relation(fields: [war_id], references: [id], onDelete: Cascade)
+  target_user    users         @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+
+  @@index([war_id])
+  @@index([target_user_id])
+}
+
+model alliance_join_requests {
+  id           Int       @id @default(autoincrement())
+  alliance_id  Int
+  user_id      Int
+  status       String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  created_at   DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime  @updatedAt @db.Timestamptz(3)
+  moderated_by Int?
+
+  alliance     alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  user         users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([alliance_id])
+  @@index([user_id])
+  @@unique([alliance_id, user_id, status]) // Prevent duplicate pending requests? Maybe just checking code is better.
+}
+
+model alliance_cooldowns {
+  id          Int                  @id @default(autoincrement())
+  user_id     Int
+  alliance_id Int?                 // Optional if global cooldown, but typically per alliance for kicks?
+  type        AllianceCooldownType
+  expires_at  DateTime             @db.Timestamptz(3)
+  created_at  DateTime             @default(now()) @db.Timestamptz(3)
+
+  user        users                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  alliance    alliances?           @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([alliance_id])
+}
+
+model alliance_xp {
+  alliance_id Int      @id
+  xp          BigInt   @default(0)
+  tier        Int      @default(1)
+  updated_at  DateTime @updatedAt @db.Timestamptz(3)
+
+  alliance    alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+}
+
+model alliance_upgrades {
+  id          Int      @id @default(autoincrement())
+  alliance_id Int
+  upgrade_key String
+  tier        Int
+  purchased_at DateTime @default(now()) @db.Timestamptz(3)
+
+  alliance    alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+
+  @@index([alliance_id])
+}
+
+model alliance_bank_history {
+  id                   Int                     @id @default(autoincrement())
+  alliance_id          Int
+  transaction_type     AllianceTransactionType
+  amount               BigInt
+  related_user_id      Int?
+  performed_by_user_id Int
+  notes                String?
+  created_at           DateTime                @default(now()) @db.Timestamptz(3)
+
+  alliance             alliances               @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  related_user         users?                  @relation("RelatedUser", fields: [related_user_id], references: [id], onDelete: SetNull)
+  performed_by_user    users                   @relation("PerformedBy", fields: [performed_by_user_id], references: [id], onDelete: Cascade)
+
+  @@index([alliance_id])
+  @@index([created_at])
+}
+
+model alliance_fees {
+  id              Int       @id @default(autoincrement())
+  alliance_id     Int
+  frequency       Frequency
+  amount          BigInt
+  exempt_role_ids Json?     @default("[]")
+  next_run_at     DateTime? @db.Timestamptz(3)
+
+  alliance        alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+
+  @@index([alliance_id])
 }

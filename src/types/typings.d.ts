@@ -384,6 +384,12 @@ export interface UserApiResponse {
   goldPerTurn: number;
   depositsAvailable: number;
   nextDepositAvailable: { hours: number; minutes: number; seconds: number } | 0;
+  alliance_memberships?: {
+    alliance_id: number;
+    role_id: number;
+    alliance: { name: string };
+    role: { name: string };
+  }[];
 }
 
 // Define the Prisma User type alias again for internal use if needed

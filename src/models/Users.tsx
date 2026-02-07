@@ -213,6 +213,27 @@ class UserModel {
     endDate?: string | Date | null;
   };
 
+  /** User's alliance memberships */
+  public alliances: {
+    id: number;
+    name: string;
+    role_id: number;
+    role_name: string;
+  }[];
+
+  public alliance_memberships: {
+    alliance_id: number;
+    role_id: number;
+    alliance: {
+      name: string;
+    };
+  }[];
+
+  public ledAlliances: {
+    id: number;
+    name: string;
+  }[];
+
   // Domain services (single responsibility)
   private statsService: UserStatsService;
 
@@ -319,7 +340,9 @@ class UserModel {
       this.spy = 0;
       this.sentry = 0;
       this.achievements = {};
+      this.achievements = {};
       this.twoFactorSecret = null;
+      this.alliances = [];
       return;
     }
 
@@ -451,6 +474,24 @@ class UserModel {
     this.twoFactorSecret = safeUserData.twoFactorSecret || null;
     if ((safeUserData as any).currentEra) {
       this.currentEra = (safeUserData as any).currentEra;
+    }
+
+    // Populate alliances
+    this.alliance_memberships =
+      (safeUserData as any).alliance_memberships || [];
+    this.ledAlliances = (safeUserData as any).ledAlliances || [];
+
+    if ((safeUserData as any).alliance_memberships) {
+      this.alliances = (safeUserData as any).alliance_memberships.map(
+        (m: any) => ({
+          id: m.alliance_id,
+          name: m.alliance?.name || 'Unknown',
+          role_id: m.role_id,
+          role_name: m.role?.name || 'Member',
+        }),
+      );
+    } else {
+      this.alliances = [];
     }
 
     if (!filtered) {

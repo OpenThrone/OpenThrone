@@ -9,7 +9,13 @@ declare module 'next-auth' {
    */
   interface User {
     id: string | number; // Add the `id` field or any other fields you need
-    alliance_id?: number | null;
+    alliance_id?: number | null; // @deprecated Use alliances array
+    alliances?: {
+      alliance_id: number;
+      alliance_name: string;
+      alliance_role_name: string;
+      alliance_role_id?: number;
+    }[];
   }
 
   // Extend the session interface to include the custom user type

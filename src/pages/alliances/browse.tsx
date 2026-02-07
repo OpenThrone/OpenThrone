@@ -8,15 +8,19 @@ import {
   Stack,
   Text,
 } from '@mantine/core';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 import toLocale from '@/utils/numberFormatting';
 
 export const UserCardImage = ({
+  id,
   name,
   members,
   description,
@@ -24,8 +28,26 @@ export const UserCardImage = ({
   joinText,
   imgsrc,
   bannerimgsrc,
+  joinMode,
+  onJoin,
+  userMembership, // Permissions or role if member
+  isLeader,
 }) => {
   const { t } = useTranslation('alliances');
+  const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
+  const handleJoinClick = async () => {
+    setLoading(true);
+    await onJoin(id);
+    setLoading(false);
+  };
+
+  const handleManageClick = () => {
+    router.push(`/alliances/${id}`);
+  };
+
+  const isInviteOnly = joinMode === 'INVITE_ONLY';
   return (
     <GameCard title={name}>
       <Stack gap="md">
@@ -75,9 +97,35 @@ export const UserCardImage = ({
             <Text fw={700}>{toLocale(members)}</Text>
           </div>
         </Group>
-        <Button fullWidth radius="sm" size="sm" color="yellow">
-          {joinText || t('browse.join')}
-        </Button>
+        <Group gap="xs">
+          {userMembership || isLeader ? (
+            <Button
+              fullWidth
+              radius="sm"
+              size="sm"
+              color="blue"
+              onClick={handleManageClick}
+            >
+              {t('browse.manage', 'View Dashboard')}
+            </Button>
+          ) : (
+            <Button
+              fullWidth
+              radius="sm"
+              size="sm"
+              color="yellow"
+              disabled={isInviteOnly}
+              loading={loading}
+              onClick={handleJoinClick}
+            >
+              {isInviteOnly
+                ? t('browse.inviteOnly')
+                : joinMode === 'REQUEST_TO_JOIN'
+                  ? t('browse.requestToJoin')
+                  : joinText || t('browse.join')}
+            </Button>
+          )}
+        </Group>
       </Stack>
     </GameCard>
   );
@@ -86,6 +134,28 @@ export const UserCardImage = ({
 const Browse = () => {
   const [alliances, setAlliances] = useState([]);
   const { t } = useTranslation('alliances');
+  const { user, forceUpdate } = useUser();
+
+  const handleJoin = async (allianceId: number) => {
+    try {
+      const response = await fetch('/api/alliances/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allianceId }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to join alliance');
+      }
+
+      alertService.success(data.message || t('browse.joinSuccess'));
+      forceUpdate(); // Update user context to reflect membership
+    } catch (error: any) {
+      logError('Error joining alliance:', error);
+      alertService.error(error.message);
+    }
+  };
 
   useEffect(() => {
     const fetchAlliances = async () => {
@@ -107,18 +177,46 @@ const Browse = () => {
   return (
     <MainArea title={t('browse.title')}>
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 3 }}>
-        {alliances.map((alliance) => (
-          <UserCardImage
-            key={alliance.id}
-            name={alliance.name}
-            description={alliance.motto}
-            members={alliance._count.members}
-            gold={0}
-            joinText={t('browse.join')}
-            imgsrc={alliance.avatar || '/path/to/default/avatar.png'}
-            bannerimgsrc={alliance.bannerimg || '/path/to/default/banner.png'}
-          />
-        ))}
+        {alliances.map((alliance) => {
+          const userMembership = user?.alliance_memberships?.find(
+            (m) => m.alliance_id === alliance.id,
+          );
+          const isLeader = user?.ledAlliances?.some(
+            (a) => a.id === alliance.id,
+          );
+
+          console.log('Browse debug:', {
+            allianceId: alliance.id,
+            userId: user?.id,
+            memberships: user?.alliance_memberships,
+            ledAlliances: user?.ledAlliances,
+            userMembership,
+            isLeader,
+          });
+
+          return (
+            <UserCardImage
+              key={alliance.id}
+              name={alliance.name}
+              description={alliance.motto}
+              members={alliance._count.members}
+              gold={
+                alliance.gold_in_bank
+                  ? alliance.gold_in_bank.toString().replace('n', '')
+                  : 0
+              }
+              joinText={t('browse.join')}
+              imgsrc={alliance.avatar || '/path/to/default/avatar.png'}
+              bannerimgsrc={alliance.bannerimg || '/path/to/default/banner.png'}
+              joinMode={alliance.join_mode}
+              id={alliance.id}
+              onJoin={handleJoin}
+              // Check if user is member/leader
+              userMembership={userMembership}
+              isLeader={isLeader}
+            />
+          );
+        })}
       </SimpleGrid>
     </MainArea>
   );

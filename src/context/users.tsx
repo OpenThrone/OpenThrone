@@ -165,8 +165,8 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   );
 
   const fetchUserData = useCallback(
-    async (_uID: number) => {
-      setLoading(true);
+    async (_uID: number, showLoading = false) => {
+      if (showLoading) setLoading(true);
       try {
         const response = await fetch('/api/general/getUser');
         if (!response.ok) throw new Error('Failed to fetch user data');
@@ -212,13 +212,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
     } else if (status !== 'loading') {
       setLoading(false);
     }
-  }, [
-    status,
-    userId,
-    pathName,
-    router,
-    fetchUserData,
-  ]);
+  }, [status, userId, pathName, router, fetchUserData]);
 
   // --- Functions to manage unread messages ---
   const markMessagesAsRead = useCallback((messageId: number) => {
@@ -244,7 +238,7 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
           // Check if userId is valid
           logInfo('forceUpdate triggered');
           logInfo('forceUpdate: Fetching user data via API');
-          fetchUserData(userId);
+          fetchUserData(userId, false);
         } else {
           logWarn('forceUpdate called without a valid userId.');
         }

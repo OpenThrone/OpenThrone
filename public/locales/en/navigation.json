@@ -5,7 +5,12 @@
     "social": "Social",
     "structures": "Structures",
     "community": "Community",
-    "about": "About"
+    "about": "About",
+    "alliances": "Alliances"
+  },
+  "alliances": {
+    "browse": "Browse",
+    "create": "Create"
   },
   "home": {
     "overview": "Overview",
