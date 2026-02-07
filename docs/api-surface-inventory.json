@@ -30,9 +30,23 @@
     {
       "route": "/api/utilities/getConstants",
       "methods": ["GET"],
-      "authMode": "session-or-service-token",
+      "authMode": "session-or-api-token(constants:read)",
       "risk": "critical",
-      "notes": "Static bypass removed; env service token required for non-session access."
+      "notes": "Static bypass removed; non-session access requires Bearer API token with constants:read scope."
+    },
+    {
+      "route": "/api/admin/api-tokens",
+      "methods": ["GET", "POST"],
+      "authMode": "session+admin",
+      "risk": "critical",
+      "notes": "Token issue/list endpoint for scoped API clients."
+    },
+    {
+      "route": "/api/admin/api-tokens/[tokenId]/revoke",
+      "methods": ["POST"],
+      "authMode": "session+admin",
+      "risk": "critical",
+      "notes": "Revokes API tokens and blocks future bearer use."
     },
     {
       "route": "/api/admin/*",

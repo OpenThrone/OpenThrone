@@ -1,5 +1,3 @@
-import { timingSafeEqual } from 'crypto';
-
 import type { NextApiResponse } from 'next';
 
 import {
@@ -15,45 +13,34 @@ import {
   SpyUpgrades,
   UnitTypes,
 } from '@/constants';
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api';
+import type { ApiAuthActor } from '@/types/api-auth';
 
-const isAuthorizedServiceToken = (token: string | undefined): boolean => {
-  const expected = process.env.CONSTANTS_SERVICE_TOKEN;
-  if (!expected || !token) {
-    return false;
-  }
+const guardedHandler = withApiGuard({
+  methods: ['GET'],
+  authMode: 'optional',
+  allowApiToken: true,
+  requiredScopes: ['constants:read'],
+});
 
-  const providedBuffer = Buffer.from(token);
-  const expectedBuffer = Buffer.from(expected);
-
-  if (providedBuffer.length !== expectedBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(providedBuffer, expectedBuffer);
-};
-
-const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ status: 'Method not allowed' });
-  }
-
+const handler = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: { actor: ApiAuthActor },
+) => {
   const { session } = req;
   const requestedId = Number(req.query.id);
-  const xtoken =
-    typeof req.query.xtoken === 'string' ? req.query.xtoken : undefined;
   const sessionUserId = session?.user?.id;
   const isAdminSession = sessionUserId === 1 || sessionUserId === 2;
   const isSelfRequest =
     !!sessionUserId &&
     (Number.isNaN(requestedId) || requestedId === Number(sessionUserId));
+  const isTokenActor =
+    context.actor.type === 'api_client' ||
+    context.actor.type === 'service_token';
 
-  if (
-    (sessionUserId && (isAdminSession || isSelfRequest)) ||
-    isAuthorizedServiceToken(xtoken)
-  ) {
+  if ((sessionUserId && (isAdminSession || isSelfRequest)) || isTokenActor) {
     if (
       sessionUserId &&
       !isAdminSession &&
@@ -91,4 +78,4 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   return res.status(401).json({ status: 'Not logged in' });
 };
 
-export default withAuth(handler, true);
+export default guardedHandler(handler);

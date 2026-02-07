@@ -9,4 +9,6 @@ export interface ApiAuthActor {
   type: ApiAuthActorType;
   userId?: number;
   clientId?: number;
+  tokenId?: number;
+  scopes?: string[];
 }

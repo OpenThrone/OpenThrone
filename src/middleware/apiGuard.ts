@@ -4,8 +4,9 @@ import { getServerSession } from 'next-auth';
 import type { z, ZodTypeAny } from 'zod';
 
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { ApiTokenService } from '@/services/ApiToken.service';
 import type { AuthenticatedRequest } from '@/types/api';
-import type { ApiAuthActorType } from '@/types/api-auth';
+import type { ApiAuthActor, ApiAuthActorType } from '@/types/api-auth';
 import { isAdmin } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 
@@ -20,12 +21,15 @@ interface ApiGuardOptions<
 > {
   methods: readonly string[];
   authMode?: AuthMode;
+  allowApiToken?: boolean;
+  requiredScopes?: string[];
   querySchema?: TQuerySchema;
   bodySchema?: TBodySchema;
 }
 
 interface ApiGuardContext<TQuery, TBody> {
   requestId: string;
+  actor: ApiAuthActor;
   actorType: ApiAuthActorType;
   query: TQuery;
   body: TBody;
@@ -42,6 +46,7 @@ export function withApiGuard<
   TBodySchema extends ZodTypeAny | undefined = undefined,
 >(options: ApiGuardOptions<TQuerySchema, TBodySchema>) {
   const { methods, authMode = 'required', querySchema, bodySchema } = options;
+  const { allowApiToken = false, requiredScopes = [] } = options;
   const allowHeader = methods.join(', ');
   const methodSet = new Set(methods.map((method) => method.toUpperCase()));
 
@@ -67,13 +72,43 @@ export function withApiGuard<
       const sessionUserId = session?.user?.id;
       const hasSession = !!sessionUserId;
 
-      if ((authMode === 'required' || authMode === 'admin') && !hasSession) {
-        return res.status(401).json({ message: 'Unauthorized' });
-      }
-
       let actorType: ApiAuthActorType = hasSession
         ? 'session_user'
         : 'anonymous';
+      let actor: ApiAuthActor = hasSession
+        ? { type: 'session_user', userId: Number(sessionUserId) }
+        : { type: 'anonymous' };
+
+      if (!hasSession && allowApiToken) {
+        const bearer = ApiTokenService.parseBearerToken(
+          req.headers.authorization,
+        );
+        if (bearer) {
+          const verification = await ApiTokenService.verifyToken({
+            bearerToken: bearer,
+            requiredScopes,
+            route: req.url ?? 'unknown',
+            method: req.method ?? 'UNKNOWN',
+            ip: getRequestIp(req),
+            userAgent: req.headers['user-agent'],
+          });
+
+          if (!verification.ok) {
+            return res.status(verification.statusCode ?? 401).json({
+              message:
+                verification.statusCode === 403 ? 'Forbidden' : 'Unauthorized',
+            });
+          }
+
+          actorType = verification.actorType ?? 'api_client';
+          actor = {
+            type: actorType,
+            clientId: verification.clientId,
+            tokenId: verification.tokenId,
+            scopes: verification.scopes,
+          };
+        }
+      }
 
       if (authMode === 'admin') {
         if (!hasSession) {
@@ -85,6 +120,13 @@ export function withApiGuard<
           return res.status(403).json({ message: 'Forbidden' });
         }
         actorType = 'session_admin';
+        actor = { type: 'session_admin', userId: adminUserId };
+      } else if (
+        authMode === 'required' &&
+        !hasSession &&
+        actor.type === 'anonymous'
+      ) {
+        return res.status(401).json({ message: 'Unauthorized' });
       }
 
       const queryParsed = querySchema?.safeParse(req.query);
@@ -106,6 +148,7 @@ export function withApiGuard<
       try {
         return await handler(req, res, {
           requestId,
+          actor,
           actorType,
           query: (queryParsed?.data ??
             (req.query as unknown)) as InferOrUnknown<TQuerySchema>,
@@ -126,3 +169,11 @@ export function withApiGuard<
       }
     };
 }
+
+const getRequestIp = (req: AuthenticatedRequest): string | undefined => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string') {
+    return forwardedFor.split(',')[0]?.trim();
+  }
+  return req.socket?.remoteAddress;
+};

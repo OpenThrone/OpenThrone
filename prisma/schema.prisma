@@ -64,6 +64,17 @@ enum Frequency {
   MONTHLY
 }
 
+enum ApiClientType {
+  USER
+  SYSTEM
+  SERVICE
+}
+
+enum ApiClientStatus {
+  ACTIVE
+  DISABLED
+}
+
 model users {
   id                                    Int                    @id @default(autoincrement())
   email                                 String                 @unique
@@ -138,6 +149,7 @@ model users {
   UserStructureUpgrade                  UserStructureUpgrade[]
   UserBattleUpgrade                     UserBattleUpgrade[]
   UserBonusPoints                       UserBonusPoints[]
+  apiClients                            ApiClient[]
   
   // Alliance System Relations
   allianceJoinRequests                  alliance_join_requests[]
@@ -495,6 +507,57 @@ model AuditLog {
   user      users    @relation("AuditLogs", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, timestamp])
+}
+
+model ApiClient {
+  id         Int             @id @default(autoincrement())
+  ownerUserId Int?
+  name       String
+  clientType ApiClientType   @default(USER)
+  status     ApiClientStatus @default(ACTIVE)
+  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime        @updatedAt @db.Timestamptz(3)
+  lastUsedAt DateTime?       @db.Timestamptz(3)
+  ownerUser  users?          @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  tokens     ApiToken[]
+
+  @@index([ownerUserId])
+  @@index([status])
+}
+
+model ApiToken {
+  id         Int            @id @default(autoincrement())
+  clientId   Int
+  tokenPrefix String        @unique
+  tokenHash  String
+  scopes     String[]
+  expiresAt  DateTime?      @db.Timestamptz(3)
+  revokedAt  DateTime?      @db.Timestamptz(3)
+  lastUsedAt DateTime?      @db.Timestamptz(3)
+  lastIpHash String?
+  createdAt  DateTime       @default(now()) @db.Timestamptz(3)
+  client     ApiClient      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  audits     ApiTokenAudit[]
+
+  @@index([clientId])
+  @@index([revokedAt])
+  @@index([expiresAt])
+}
+
+model ApiTokenAudit {
+  id         Int       @id @default(autoincrement())
+  tokenId    Int
+  action     String
+  route      String
+  method     String
+  statusCode Int
+  ipHash     String?
+  uaHash     String?
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  token      ApiToken  @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@index([tokenId, createdAt])
+  @@index([route, createdAt])
 }
 
 model Era {
