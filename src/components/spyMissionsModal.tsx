@@ -215,20 +215,30 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         ? { type, spies: intelSpies, unit: assassinateUnit }
         : { type, spies: intelSpies };
 
+    const idempotencyKey = `spy-${defenderID}-${type}-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}`;
+
     const res = await fetch(`/api/spy/${defenderID}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Idempotency-Key': idempotencyKey,
       },
       body: JSON.stringify(bodyPayload),
     });
     const results = await res.json();
 
-    if (results.status === 'failed') {
-      alertService.error(results.message);
+    if (
+      !res.ok ||
+      results.status === 'failed' ||
+      !results?.attack_log ||
+      Number.isNaN(Number(results.attack_log))
+    ) {
+      alertService.error(results?.message ?? 'Unable to run spy mission.');
       return;
     }
-    router.push(`/battle/results/${results.attack_log}`);
+    router.push(`/battle/results/${Number(results.attack_log)}`);
     toggleModal();
 
     alertService.success(

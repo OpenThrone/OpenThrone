@@ -23,9 +23,12 @@ interface ModalProps {
  */
 const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
   const [turns, setTurns] = useState(1);
-  const { user, forceUpdate } = useUser();
+  const { forceUpdate } = useUser();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false); // Add loading state
+
+  const buildIdempotencyKey = () =>
+    `attack-${profileID ?? 'unknown'}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   /**
    * Handles the submission of the attack confirmation form.
@@ -44,21 +47,27 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Idempotency-Key': buildIdempotencyKey(),
       },
       body: JSON.stringify({ turns }),
     });
 
     const results = await res.json();
 
-    if (results.status === 'failed') {
-      setError(`Failed to execute attack. ${results?.message}`);
+    if (
+      !res.ok ||
+      results.status === 'failed' ||
+      !results?.attack_log ||
+      Number.isNaN(Number(results.attack_log))
+    ) {
+      setError(`Failed to execute attack. ${results?.message ?? 'Try again.'}`);
       setIsLoading(false); // Reset loading state on failure
     } else {
       // No need to set error here as it's cleared at the start
       forceUpdate();
       // Close the modal immediately after successful attack submission
       toggleModal();
-      router.push(`/battle/results/${results.attack_log}`);
+      router.push(`/battle/results/${Number(results.attack_log)}`);
       // Reset loading state on success (though redirect might make this visually brief)
       setIsLoading(false);
     }
