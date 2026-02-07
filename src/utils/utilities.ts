@@ -227,17 +227,26 @@ const serializeDates = (obj) => {
   if (obj === null || obj === undefined) {
     return obj;
   }
-  return Object.fromEntries(
-    Object.entries(obj).map(([key, value]) => {
-      if (value instanceof Date) {
-        return [key, value.toISOString()];
-      }
-      if (typeof value === 'object' && value !== null) {
-        return [key, serializeDates(value)]; // Recursively handle nested objects
-      }
-      return [key, value];
-    }),
-  );
+
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+
+  if (typeof obj === 'bigint') {
+    return obj.toString();
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => serializeDates(item));
+  }
+
+  if (typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => [key, serializeDates(value)]),
+    );
+  }
+
+  return obj;
 };
 
 export const idleThresholdDate = (days = 60) => {
