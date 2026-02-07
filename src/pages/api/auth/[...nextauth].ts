@@ -1,11 +1,11 @@
 import * as bcrypt from 'bcrypt';
 import type { NextAuthOptions } from 'next-auth';
 import NextAuth from 'next-auth';
-import { getToken } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import speakeasy from 'speakeasy';
 import { z } from 'zod';
 
+import { consumeImpersonationTicket } from '@/lib/impersonationTickets';
 import prisma from '@/lib/prisma';
 import { getUpdatedStatus } from '@/services/User.service';
 import type { IUserSession } from '@/types/typings';
@@ -154,10 +154,18 @@ const CredentialsSchema = z
     turnstileToken: z.string().optional(),
     totpToken: z.string().optional(),
     impersonateUserId: z.coerce.number().int().positive().optional(),
+    impersonationTicket: z.string().min(1).optional(),
   })
   .superRefine((data, ctx) => {
     const isImpersonation = typeof data.impersonateUserId === 'number';
     if (isImpersonation) {
+      if (!data.impersonationTicket) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Impersonation ticket is required',
+          path: ['impersonationTicket'],
+        });
+      }
       return;
     }
 
@@ -249,6 +257,7 @@ export const authOptions: NextAuthOptions = {
           totpToken,
           turnstileToken,
           impersonateUserId,
+          impersonationTicket,
         } = validatedCredentials.data;
 
         const requestOrigin = getRequestOrigin(req);
@@ -312,30 +321,18 @@ export const authOptions: NextAuthOptions = {
 
         let result;
         if (impersonateUserId) {
-          if (AUTH_SECRETS.length === 0) {
-            throw new Error('Server auth secret is not configured');
+          if (!impersonationTicket) {
+            throw new Error('Missing impersonation ticket');
           }
-
-          let existingToken: Record<string, any> | null = null;
-          for (const secret of AUTH_SECRETS) {
-            existingToken = (await getToken({
-              req,
-              secret,
-            })) as Record<string, any> | null;
-            if (existingToken) {
-              break;
-            }
-          }
-
-          const adminUserId = Number(
-            (existingToken as any)?.user?.impersonatedBy ??
-              (existingToken as any)?.user?.id ??
-              (existingToken as any)?.id ??
-              (existingToken as any)?.sub,
-          );
-          if (!adminUserId || !(await isAdmin(adminUserId))) {
+          const ticketRecord = consumeImpersonationTicket(impersonationTicket);
+          if (
+            !ticketRecord ||
+            ticketRecord.targetUserId !== impersonateUserId ||
+            !(await isAdmin(ticketRecord.adminUserId))
+          ) {
             throw new Error('Unauthorized impersonation request');
           }
+          const { adminUserId } = ticketRecord;
 
           const targetUser = await prisma.users.findUnique({
             where: { id: impersonateUserId },

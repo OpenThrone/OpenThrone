@@ -99,6 +99,7 @@ const Admin = () => {
       const signInResult = await signIn('credentials', {
         redirect: false,
         impersonateUserId: payload?.target?.id ?? Number(userId),
+        impersonationTicket: payload?.signInPayload?.impersonationTicket,
       });
 
       if (signInResult?.error) {
