@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
 import { AllianceBankService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
 
 const WithdrawDetailsSchema = z.object({
   allianceId: z.number().int().positive(),
@@ -11,25 +12,23 @@ const WithdrawDetailsSchema = z.object({
   notes: z.string().optional(),
 });
 
-const withdrawHandler = async (req: any, res: any) => {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'required',
+  rateLimitProfile: 'bank',
+  bodySchema: WithdrawDetailsSchema,
+});
 
-  const validatedBody = WithdrawDetailsSchema.safeParse(req.body);
-  if (!validatedBody.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: validatedBody.error.flatten().fieldErrors,
-    });
-  }
-
-  const { user } = req.session;
-  const { allianceId, targetUserId, amount, notes } = validatedBody.data;
+const withdrawHandler = async (
+  req: AuthenticatedRequest,
+  res: any,
+  context: { body: z.infer<typeof WithdrawDetailsSchema> },
+) => {
+  const sessionUserId = Number(req.session?.user?.id);
+  const { allianceId, targetUserId, amount, notes } = context.body;
   const canProceed = await enforceIdempotency(req, res, {
     scope: `alliance-bank-withdraw:${allianceId}:${targetUserId}:${amount.toString()}`,
-    actorKey: String(user.id),
+    actorKey: String(sessionUserId),
   });
   if (!canProceed) {
     return;
@@ -37,7 +36,7 @@ const withdrawHandler = async (req: any, res: any) => {
 
   try {
     const result = await AllianceBankService.withdraw({
-      requesterId: user.id,
+      requesterId: sessionUserId,
       allianceId,
       targetUserId,
       amount,
@@ -49,4 +48,4 @@ const withdrawHandler = async (req: any, res: any) => {
   }
 };
 
-export default withAuth(withdrawHandler);
+export default guardedHandler(withdrawHandler);

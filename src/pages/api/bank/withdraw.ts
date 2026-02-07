@@ -1,27 +1,27 @@
 import type { NextApiResponse } from 'next';
 
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
 import { withdrawGold } from '@/services/Bank.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/numberFormatting';
 
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'required',
+  rateLimitProfile: 'bank',
+});
+
 const withdrawHandler = async (
   req: AuthenticatedRequest,
   res: NextApiResponse,
 ) => {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { session } = req;
-  if (!session) {
+  if (!req.session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   const canProceed = await enforceIdempotency(req, res, {
     scope: `bank-withdraw:${req.body?.withdrawAmount ?? 'unknown'}`,
-    actorKey: String(session.user.id),
+    actorKey: String(req.session.user.id),
   });
   if (!canProceed) {
     return;
@@ -29,7 +29,7 @@ const withdrawHandler = async (
 
   try {
     const updatedUser = await withdrawGold(
-      Number(session.user.id),
+      Number(req.session.user.id),
       req.body?.withdrawAmount,
     );
     return res.status(200).json({
@@ -41,4 +41,4 @@ const withdrawHandler = async (
   }
 };
 
-export default withAuth(withdrawHandler);
+export default guardedHandler(withdrawHandler);

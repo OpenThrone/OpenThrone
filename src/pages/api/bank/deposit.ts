@@ -1,27 +1,27 @@
 import type { NextApiResponse } from 'next';
 
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
 import { depositGold } from '@/services/Bank.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/numberFormatting';
 
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'required',
+  rateLimitProfile: 'bank',
+});
+
 const depositHandler = async (
   req: AuthenticatedRequest,
   res: NextApiResponse,
 ) => {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { session } = req;
-  if (!session) {
+  if (!req.session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   const canProceed = await enforceIdempotency(req, res, {
     scope: `bank-deposit:${req.body?.amount ?? 'unknown'}`,
-    actorKey: String(session.user.id),
+    actorKey: String(req.session.user.id),
   });
   if (!canProceed) {
     return;
@@ -29,7 +29,7 @@ const depositHandler = async (
 
   try {
     const updatedUser = await depositGold(
-      Number(session.user.id),
+      Number(req.session.user.id),
       req.body?.amount,
     );
     return res
@@ -40,4 +40,4 @@ const depositHandler = async (
   }
 };
 
-export default withAuth(depositHandler);
+export default guardedHandler(depositHandler);

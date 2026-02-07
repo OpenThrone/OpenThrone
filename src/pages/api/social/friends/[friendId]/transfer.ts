@@ -4,50 +4,41 @@ import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import { getSocketIO } from '@/lib/socket';
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
-import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
+
+const TransferQuerySchema = z.object({
+  friendId: z.coerce.number().int().positive(),
+});
 
 const TransferSchema = z.object({
   amount: z.string().transform((val) => BigInt(val)),
   notes: z.string().optional(),
 });
 
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'required',
+  rateLimitProfile: 'bank',
+  querySchema: TransferQuerySchema,
+  bodySchema: TransferSchema,
+});
+
 const transferHandler = async (
   req: AuthenticatedRequest,
   res: NextApiResponse,
+  context: {
+    query: z.infer<typeof TransferQuerySchema>;
+    body: z.infer<typeof TransferSchema>;
+  },
 ) => {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { session } = req;
-  if (!session) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const { friendId } = req.query;
-  const friendIdNum = Number(friendId);
-
-  if (isNaN(friendIdNum)) {
-    return res.status(400).json({ error: 'Invalid friend ID' });
-  }
-
-  const parseResult = TransferSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: parseResult.error.flatten().fieldErrors,
-    });
-  }
-
-  const { amount, notes } = parseResult.data;
-  const fromUserId = session.user.id;
+  const friendIdNum = context.query.friendId;
+  const { amount, notes } = context.body;
+  const fromUserId = Number(req.session?.user?.id);
   const canProceed = await enforceIdempotency(req, res, {
     scope: `social-transfer:${friendIdNum}:${amount.toString()}`,
     actorKey: String(fromUserId),
@@ -90,9 +81,4 @@ const transferHandler = async (
   }
 };
 
-const wrapped = async (req: any, res: any) => {
-  await runExpressMiddleware(req, res, highRiskLimiter);
-  return transferHandler(req, res);
-};
-
-export default withAuth(wrapped);
+export default guardedHandler(transferHandler);

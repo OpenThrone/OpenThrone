@@ -1,33 +1,32 @@
 import { z } from 'zod';
 
-import { withAuth } from '@/middleware/auth';
+import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
 import { AllianceBankService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
 
 const DepositDetailsSchema = z.object({
   allianceId: z.number().int().positive(),
   amount: z.coerce.bigint().min(BigInt(1), 'Amount must be positive'),
 });
 
-const depositHandler = async (req: any, res: any) => {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'required',
+  rateLimitProfile: 'bank',
+  bodySchema: DepositDetailsSchema,
+});
 
-  const validatedBody = DepositDetailsSchema.safeParse(req.body);
-  if (!validatedBody.success) {
-    return res.status(400).json({
-      error: 'Invalid request body',
-      details: validatedBody.error.flatten().fieldErrors,
-    });
-  }
-
-  const { user } = req.session;
-  const { allianceId, amount } = validatedBody.data;
+const depositHandler = async (
+  req: AuthenticatedRequest,
+  res: any,
+  context: { body: z.infer<typeof DepositDetailsSchema> },
+) => {
+  const sessionUserId = Number(req.session?.user?.id);
+  const { allianceId, amount } = context.body;
   const canProceed = await enforceIdempotency(req, res, {
     scope: `alliance-bank-deposit:${allianceId}:${amount.toString()}`,
-    actorKey: String(user.id),
+    actorKey: String(sessionUserId),
   });
   if (!canProceed) {
     return;
@@ -35,7 +34,7 @@ const depositHandler = async (req: any, res: any) => {
 
   try {
     const result = await AllianceBankService.deposit({
-      userId: user.id,
+      userId: sessionUserId,
       allianceId,
       amount,
     });
@@ -45,4 +44,4 @@ const depositHandler = async (req: any, res: any) => {
   }
 };
 
-export default withAuth(depositHandler);
+export default guardedHandler(depositHandler);
