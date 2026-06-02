@@ -95,14 +95,14 @@ Inclusion rules:
 ### 4) Turn Simulation (`simulateBattle`)
 
 Core constants from `BATTLE_CONSTANTS`:
-- `MAX_TURNS = 15`
+- `MAX_TURNS = 10`
 - `FORT_CRITICAL_THRESHOLD = 0.3`
 - `LOW_DEFENSE_RATIO = 0.25`
 - `MAX_LEVEL_DIFFERENCE = 5`
-- `ATTACKER_DAMAGE_MULTIPLIER = 1.148`
-- `DEFENDER_COUNTER_DAMAGE_MULTIPLIER = 0.8`
+- `ATTACKER_DAMAGE_MULTIPLIER = 1.238`
+- `DEFENDER_COUNTER_DAMAGE_MULTIPLIER = 0.83`
 - `DEFENDER_RANGED_ATTACK_INTERVAL = 2`
-- `MAX_PILLAGE_SHARE_PER_ATTACK = 0.35`
+- `MAX_PILLAGE_SHARE_PER_ATTACK = 0.22`
 - `DAMAGE_VARIANCE_MIN = 0.92`
 - `DAMAGE_VARIANCE_MAX = 1.08`
 
@@ -170,37 +170,34 @@ Actual fort damage:
 ### 7) Loot Formula and Caps
 
 `calculateLoot`:
-- `uniformFactor = mtRand(90,99)/100`
-- `turnFactor = mtRand(100 + 8*turns, 100 + 15*turns)/350`
-- `levelDifferenceFactor = 1 + min(0.7, abs(levelDiffCappedTo7)*0.07)`
+- `safeTurns = clamp(turns, 1, 10)`
+- `uniformFactor = mtRand(92,100)/100`
+- `basePillage = 0.04 + safeTurns * 0.012`
+- `rewardMultiplier = safeTurns^0.55`, plus a v5 turn-10 bonus at maximum commitment.
+- `levelDifferenceFactor = clamp(1 + levelDifference*0.05, 0.7, 1.25)`
+- Fort HP, under-defended coverage, attacker race, and defender level all modify loot.
 - `defenderLevelFactor`:
   - level < 10 scales from 0.4 to 0.7
   - 10..20 scales 0.7 to 1.0
   - >=20 is 1.0
-- `lootFactor = uniformFactor * turnFactor * levelDifferenceFactor * defenderLevelFactor`
+- `lootFactor = basePillage * rewardMultiplier * levelDifferenceFactor * fortPillageReduction * underDefendedReward * racePillageMultiplier * defenderLevelFactor * uniformFactor * turn10Bonus`
 - `calculatedLoot = defenderGold * lootFactor`
 - clamped to `[0, defenderGold]`.
 
 Per-battle cap:
-- Total pillage cannot exceed `35%` of defender starting hand gold.
+- Total pillage cannot exceed `22%` of defender starting hand gold by default.
 - Applied each turn as min(requested, current defender gold, remaining cap budget).
 
 ### 8) Battle Winner and XP
 
 Winner (`calculateAndApplyExperience`):
-- Primary: higher total casualties inflicted wins.
-- Tie-break: attacker wins if fort damage > 0 or fort destroyed.
+- Primary: attacker initial offense score must reach the configured v5 advantage over defender initial defense score.
+- Finalization can also mark attacker wins when defender defense is exhausted, initial attacker score meets/exceeds defender score, or defender losses are at least attacker losses while attacker offense remains.
 
 XP (`calculateBattleExperience`):
-- `baseXP = 1000`
-- `levelBonus = levelDifference*0.05*baseXP` when defender higher level
-- `fortBonus = 0.5*baseXP` if fort destroyed
-- `turnsMultiplier = attackTurns / 15`
-- `baseXPPerTurn = baseXP / 15`
-- `totalXP = (baseXPPerTurn*attackTurns + levelBonus + fortBonus) * turnsMultiplier`
-- Winner/loser split:
-  - winner side gets 75%
-  - loser side gets 25%
+- XP uses level-band XP per turn, turn-commitment efficiency, level difference, win/loss modifier, battle closeness, morale, and fort-destroyed bonus.
+- Low-turn attacks receive lower XP efficiency than high-commitment attacks.
+- Attacker receives the calculated XP; defender receives 25% on attacker win or 75% on attacker loss.
 
 ### 9) Battle Persistence and Side Effects
 
