@@ -31,6 +31,8 @@ export class AssassinationResult {
 
   success: boolean;
 
+  turns?: number;
+
   experienceGained: number;
 
   goldStolen: number;
@@ -70,6 +72,8 @@ export class IntelResult {
 
   success: boolean;
 
+  turns?: number;
+
   intelligenceGathered: {
     offense: number | 0;
     defense: number | 0;
@@ -106,6 +110,8 @@ export class InfiltrationResult {
   spiesLost: number;
 
   success: boolean;
+
+  turns?: number;
 
   fortDmg: number;
 

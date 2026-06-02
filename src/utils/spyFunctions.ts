@@ -5,6 +5,15 @@ import {
   isBalanceV2EnabledForUser,
   resolveSpyMissionSuccess,
 } from '@/utils/balance/effectiveStats';
+import {
+  calculateIntelQualityMultiplier,
+  calculateSpyMissionDamageFactor,
+  calculateSpyMissionPower,
+  calculateSpyPressureProtection,
+  clamp,
+  getRaceIdentity,
+  V5_COMBAT_CONSTANTS,
+} from '@/utils/balance/v5Combat';
 
 import { logDebug } from './logger';
 import mtRand from './mtrand';
@@ -41,7 +50,31 @@ export { CITIZEN_WORKERS_TARGET };
 
 export type SpySimulationOptions = {
   random?: RandomFn;
+  debug?: boolean;
+  turns?: number;
+  spyPressureToday?: number;
 };
+
+function getMissionTurns(
+  options?: SpySimulationOptions,
+  defaultTurns = 1,
+): number {
+  return clamp(
+    Math.floor(Number(options?.turns ?? defaultTurns) || defaultTurns),
+    1,
+    V5_COMBAT_CONSTANTS.MAX_SPY_MISSION_TURNS,
+  );
+}
+
+function getPressureAdjustedSentry(
+  defender: SpyMissionUser,
+  options?: SpySimulationOptions,
+): number {
+  const pressure =
+    options?.spyPressureToday ?? (defender as any)?.spyPressureToday ?? 0;
+  const protection = calculateSpyPressureProtection(pressure);
+  return Math.max(1, defender.sentry / Math.max(0.35, protection));
+}
 
 export function simulateIntel(
   attacker: SpyMissionUser,
@@ -50,6 +83,14 @@ export function simulateIntel(
   options?: SpySimulationOptions,
 ): any {
   const random = options?.random ?? Math.random;
+  const turns = clamp(
+    getMissionTurns(options),
+    1,
+    V5_COMBAT_CONSTANTS.MAX_INTEL_TURNS,
+  );
+  const missionPower = calculateSpyMissionPower(turns);
+  const effectiveAttackerSpy = attacker.spy * missionPower;
+  const effectiveDefenderSentry = getPressureAdjustedSentry(defender, options);
   spies = Math.max(1, Math.min(spies, 10));
 
   const fortification = Fortifications.find(
@@ -62,36 +103,48 @@ export function simulateIntel(
       defender: defender.fortLevel,
     };
   }
-  logDebug('simulateIntel debug', {
-    attackerSpy: attacker.spy,
-    defenderSentry: defender.sentry,
-  });
+  if (options?.debug !== false) {
+    logDebug('simulateIntel debug', {
+      attackerSpy: attacker.spy,
+      defenderSentry: defender.sentry,
+    });
+  }
   const v2Enabled = isBalanceV2EnabledForUser(attacker.id);
   const missionResolution = v2Enabled
     ? resolveSpyMissionSuccess({
-        attackerSpy: attacker.spy,
-        defenderSentry: defender.sentry,
+        attackerSpy: effectiveAttackerSpy,
+        defenderSentry: effectiveDefenderSentry,
         random,
         situationalModifier: 0.2, // Intel should be the easiest spy mission.
       })
-    : { success: attacker.spy > defender.sentry, probability: undefined };
+    : {
+        success: effectiveAttackerSpy > effectiveDefenderSentry,
+        probability: undefined,
+      };
   const isSuccessful = missionResolution.success;
 
   const result = new IntelResult(attacker, defender, spies);
+  (result as any).turns = turns;
   result.success = isSuccessful;
   (result as any).successProbability = missionResolution.probability;
   (result as any).probabilityModel = v2Enabled ? 'LOGISTIC_V2' : 'BINARY_V1';
   result.spiesLost = isSuccessful ? 0 : spies;
   if (isSuccessful) {
     // Proceed with gathering intelligence
-    const deathRiskFactor = Math.max(0, 1 - attacker.spy / defender.sentry);
+    const deathRiskFactor = Math.max(
+      0,
+      1 - effectiveAttackerSpy / effectiveDefenderSentry,
+    );
     let spiesLost = 0;
     for (let i = 0; i < spies; i++) {
       if (random() < deathRiskFactor) {
         spiesLost++;
       }
     }
-    const intelPercentage = Math.min((spies - spiesLost) * 10, 100);
+    const intelPercentage = Math.min(
+      (spies - spiesLost) * 10 * calculateIntelQualityMultiplier(turns),
+      100,
+    );
     const intelKeys = Object.keys(
       new SpyUserModel(defender as any, (spies - spiesLost) * 10),
     );
@@ -152,25 +205,38 @@ export const simulateAssassination = (
   options?: SpySimulationOptions,
 ) => {
   const random = options?.random ?? Math.random;
+  const turns = getMissionTurns(
+    options,
+    V5_COMBAT_CONSTANTS.MIN_ASSASSINATION_TURNS,
+  );
+  const missionPower = calculateSpyMissionPower(turns);
+  const assassinationCapShare =
+    0.01 + (turns / V5_COMBAT_CONSTANTS.MAX_SPY_MISSION_TURNS) ** 1.1 * 0.03;
+  const effectiveAttackerSpy = attacker.spy * missionPower;
+  const effectiveDefenderSentry = getPressureAdjustedSentry(defender, options);
   const result = new AssassinationResult(
     attacker,
     defender,
     spiesSent,
     targetUnit,
   );
+  (result as any).turns = turns;
 
   // Step 1: Initial infiltration through sentries
   const v2Enabled = isBalanceV2EnabledForUser(attacker.id);
   const missionResolution = v2Enabled
     ? resolveSpyMissionSuccess({
-        attackerSpy: attacker.spy,
-        defenderSentry: defender.sentry,
+        attackerSpy: effectiveAttackerSpy,
+        defenderSentry: effectiveDefenderSentry,
         random,
         situationalModifier: -0.2, // Assassination should be riskiest.
       })
-    : { success: attacker.spy > defender.sentry, probability: undefined };
+    : {
+        success: effectiveAttackerSpy > effectiveDefenderSentry,
+        probability: undefined,
+      };
   const isSuccessful = missionResolution.success;
-  const spySentryRatio = attacker.spy / (defender.sentry || 1);
+  const spySentryRatio = effectiveAttackerSpy / effectiveDefenderSentry;
   result.success = isSuccessful;
   (result as any).successProbability = missionResolution.probability;
   (result as any).probabilityModel = v2Enabled ? 'LOGISTIC_V2' : 'BINARY_V1';
@@ -180,7 +246,9 @@ export const simulateAssassination = (
   if (!isSuccessful) {
     const lossMultiplier = Math.min(
       1,
-      Math.max(0, 1 - spySentryRatio) * 0.6 + 0.4,
+      Math.max(0, 1 - spySentryRatio) * 0.6 +
+        0.4 +
+        (turns / V5_COMBAT_CONSTANTS.MAX_SPY_MISSION_TURNS) * 0.15,
     );
     const spiesToRemove = Math.ceil(
       spiesSent * mtRand(lossMultiplier * 0.9, lossMultiplier * 1.1, random),
@@ -203,7 +271,9 @@ export const simulateAssassination = (
   // Step 2: Combat between attacker's spies and defender's sentries
   // We'll take x% of the Level3 SPY's KS/DS based on number of spies compared to spyLevels maximum amount.
   let spiesRemaining = spiesSent;
-  let limiter = spiesRemaining / (attacker.spyLimits.assass.perMission || 1); // TODO: this should be the maximum assassins allowed per mission
+  let limiter =
+    (spiesRemaining / (attacker.spyLimits.assass.perMission || 1)) *
+    missionPower; // TODO: this should be the maximum assassins allowed per mission
   // Determine probability/severity of being caught based on ratio
 
   const { spyStrength: attackerKS, sentryStrength: attackerDS } =
@@ -267,7 +337,8 @@ export const simulateAssassination = (
   }
 
   // Step 3: Proceed to attack target units
-  limiter = spiesRemaining / (attacker.unitTotals.assassins || 1);
+  limiter =
+    (spiesRemaining / (attacker.unitTotals.assassins || 1)) * missionPower;
 
   const { spyStrength: attackerKS2, sentryStrength: _attackerDS2 } =
     calculateClandestineStrength(attacker, 'SPY', limiter);
@@ -320,8 +391,16 @@ export const simulateAssassination = (
     const effectiveAttackerKS = attackerKS2 * (killRate * limiter);
     unitsKilled = Math.floor(effectiveAttackerKS / (averageHP || 1));
 
+    const populationCap = Math.max(
+      1,
+      Math.floor(
+        ((defender.unitTotals as any)?.population ??
+          totalWorkers + totalCitizens + defender.unitTotals.defense) *
+          assassinationCapShare,
+      ),
+    );
     result.unitsKilled = Math.ceil(
-      Math.min(unitsKilled, totalWorkers + totalCitizens),
+      Math.min(unitsKilled, totalWorkers + totalCitizens, populationCap),
     );
     logDebug(
       `Assassination: ${result.unitsKilled} ${targetUnit} killed | AttackID: ${attacker.id} | DefenderID: ${defender.id}`,
@@ -347,9 +426,20 @@ export const simulateAssassination = (
     const effectiveAttackerKS = attackerKS2 * killRate;
     unitsKilled = Math.floor(effectiveAttackerKS / averageHP);
 
+    const totalPopulation = Object.values(
+      defender.unitTotals ?? {},
+    ).reduce<number>(
+      (sum, value) => sum + (typeof value === 'number' ? value : 0),
+      0,
+    );
+    const missionCap = Math.max(
+      1,
+      Math.floor(totalPopulation * assassinationCapShare),
+    );
     result.unitsKilled = Math.min(
       unitsKilled,
       defender.unitTotals[targetUnit.toLowerCase()] || 0,
+      missionCap,
     );
     logDebug(
       `Assassination: ${result.unitsKilled} ${targetUnit} killed | AttackID: ${attacker.id} | DefenderID: ${defender.id}`,
@@ -386,7 +476,14 @@ export const simulateInfiltration = (
   options?: SpySimulationOptions,
 ) => {
   const random = options?.random ?? Math.random;
-  const spySentryRatio = attacker.spy / (defender.sentry || 1); // Avoid division by zero
+  const turns = getMissionTurns(
+    options,
+    V5_COMBAT_CONSTANTS.MIN_INFILTRATION_TURNS,
+  );
+  const missionPower = calculateSpyMissionPower(turns);
+  const effectiveAttackerSpy = attacker.spy * missionPower;
+  const effectiveDefenderSentry = getPressureAdjustedSentry(defender, options);
+  const spySentryRatio = effectiveAttackerSpy / effectiveDefenderSentry;
   let spiesLost = 0;
 
   // Implement a curve for spy loss based on the spy/sentry ratio
@@ -413,12 +510,16 @@ export const simulateInfiltration = (
   const v2Enabled = isBalanceV2EnabledForUser(attacker.id);
   const missionResolution = v2Enabled
     ? resolveSpyMissionSuccess({
-        attackerSpy: attacker.spy,
-        defenderSentry: defender.sentry,
+        attackerSpy: effectiveAttackerSpy,
+        defenderSentry: effectiveDefenderSentry,
         random,
         situationalModifier: 0, // Neutral difficulty mission.
       })
-    : { success: attacker.spy > defender.sentry, probability: undefined };
+    : {
+        success: effectiveAttackerSpy > effectiveDefenderSentry,
+        probability: undefined,
+      };
+  (result as any).turns = turns;
   result.success = missionResolution.success; // Mission can succeed even with some losses
   (result as any).successProbability = missionResolution.probability;
   (result as any).probabilityModel = v2Enabled ? 'LOGISTIC_V2' : 'BINARY_V1';
@@ -439,27 +540,28 @@ export const simulateInfiltration = (
   // The rest of the function remains the same
   if (result.success) {
     const startHP = result.defender.fortHitpoints;
+    const maxFortDamage = Math.max(
+      1,
+      Math.floor(startHP * Math.min(0.12, 0.025 + turns * 0.0095)),
+    );
     for (let i = 1; i <= spies - spiesLost; i++) {
       // Only damage with remaining spies
       if (result.defender.fortHitpoints > 0) {
-        if (result.attacker.spy / (result.defender.sentry || 1) <= 0.05)
+        if (spySentryRatio <= 0.05)
           result.defender.fortHitpoints -= Math.floor(mtRand(0, 2, random));
-        else if (
-          result.attacker.spy / (result.defender.sentry || 1) > 0.05 &&
-          result.attacker.spy / (result.defender.sentry || 1) <= 0.5
-        )
+        else if (spySentryRatio > 0.05 && spySentryRatio <= 0.5)
           result.defender.fortHitpoints -= Math.floor(mtRand(3, 6, random));
-        else if (
-          result.attacker.spy / (result.defender.sentry || 1) > 0.5 &&
-          result.attacker.spy / (result.defender.sentry || 1) <= 1.3
-        )
+        else if (spySentryRatio > 0.5 && spySentryRatio <= 1.3)
           result.defender.fortHitpoints -= Math.floor(mtRand(6, 16, random));
         else
-          result.defender.fortHitpoints -= Math.floor(mtRand(12, 24, random));
+          result.defender.fortHitpoints -= Math.floor(
+            mtRand(12, 24, random) * calculateSpyMissionDamageFactor(turns),
+          );
 
-        if (result.defender.fortHitpoints < 0) {
-          result.defender.fortHitpoints = 0;
-        }
+        result.defender.fortHitpoints = Math.max(
+          0,
+          Math.max(startHP - maxFortDamage, result.defender.fortHitpoints),
+        );
       }
     }
     result.fortDmg += Number(startHP - result.defender.fortHitpoints);
@@ -494,7 +596,12 @@ export function calculateClandestineStrength(
   let totalUnits = unitType === 'SENTRY' ? totals.sentries : totals.spies;
 
   const bonusValue = unitType === 'SPY' ? user.spyBonus : user.sentryBonus;
-  const unitMultiplier = 1 + parseInt((bonusValue ?? 0).toString(), 10) / 100;
+  const raceIdentity = getRaceIdentity((user as any).race);
+  const unitMultiplier =
+    (1 + parseInt((bonusValue ?? 0).toString(), 10) / 100) *
+    (unitType === 'SPY'
+      ? raceIdentity.intelMultiplier
+      : raceIdentity.sentryMultiplier);
 
   // Include both regular units and mercenaries
   const allUnits = [...(user.units || []), ...(user.mercenaries || [])];

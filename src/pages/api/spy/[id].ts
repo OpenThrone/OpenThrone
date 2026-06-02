@@ -30,7 +30,8 @@ const SpyQuerySchema = z.object({
 
 const SpyBodySchema = z.object({
   type: z.enum(['INTEL', 'ASSASSINATE', 'INFILTRATE']),
-  spies: z.number().int(),
+  spies: z.number().int().positive(),
+  turns: z.number().int().positive().optional(),
   unit: z
     .union([z.enum(UNIT_TYPE_VALUES), z.literal(CITIZEN_WORKERS_TARGET)])
     .optional(),
@@ -53,7 +54,7 @@ const handler = async (
   },
 ) => {
   const { id } = context.query;
-  const { type, spies, unit } = context.body;
+  const { type, spies, turns, unit } = context.body;
 
   const checkParams = (body: any, spiesNeeded: number) => {
     if (!body.type) {
@@ -76,7 +77,7 @@ const handler = async (
       return false;
     }
 
-    if (body.type === 'assassinate') {
+    if (body.type === 'ASSASSINATE') {
       if (body.unit === undefined) {
         return false;
       }
@@ -88,6 +89,14 @@ const handler = async (
   const sessionUserId = Number(req.session?.user?.id);
   const myUser = await prisma?.users.findUnique({
     where: { id: sessionUserId },
+    include: {
+      UserUnit: true,
+      UserItem: true,
+      UserStructureUpgrade: true,
+      UserBattleUpgrade: true,
+      UserBonusPoints: true,
+      permissions: true,
+    },
   });
   if (!myUser) {
     return res
@@ -146,7 +155,8 @@ const handler = async (
 
       if (
         spies >
-        uModel.units.find((u) => u.type === 'SPY' && u.level === 1).quantity
+        (uModel.units.find((u) => u.type === 'SPY' && u.level === 1)
+          ?.quantity ?? 0)
       ) {
         return res.status(400).json({
           status: 'failed',
@@ -161,6 +171,8 @@ const handler = async (
             defenderId,
             spies,
             type,
+            undefined,
+            turns,
           ),
         );
         if (result?.status === 'success' && result.attack_log) {
@@ -169,7 +181,9 @@ const handler = async (
         return res.status(200).json(result);
       }
     case 'ASSASSINATE':
-      if (checkParams(context.body, 5) === false) {
+      if (
+        checkParams(context.body, uModel.spyLimits.assass.perMission) === false
+      ) {
         return res
           .status(400)
           .json({ status: 'failed', message: 'Invalid parameters' });
@@ -183,6 +197,7 @@ const handler = async (
             spies,
             type,
             unit,
+            turns,
           ),
         );
         if (result?.status === 'success' && result.attack_log) {
@@ -191,25 +206,6 @@ const handler = async (
         return res.status(200).json(result);
       }
     case 'INFILTRATE':
-      const spyLog = await prisma.attack_log.count({
-        where: {
-          attacker_id: attackerId,
-          type: 'INFILTRATE',
-          defender_id: defenderId,
-          timestamp: {
-            gte: new Date(new Date().getTime() - 86400000), // gte 24 hours ago
-          },
-        },
-      });
-      if (
-        spyLog >= uModel.spyLimits.infil.perUser ||
-        spyLog >= uModel.spyLimits.infil.perDay
-      ) {
-        return res.status(400).json({
-          status: 'failed',
-          message: 'You have infiltrated too many times today',
-        });
-      }
       if (spies <= 0) {
         return res.status(400).json({
           status: 'failed',
@@ -224,7 +220,8 @@ const handler = async (
       }
       if (
         spies >
-        myUser.units.find((u) => u.type === 'SPY' && u.level === 2).quantity
+        (uModel.units.find((u) => u.type === 'SPY' && u.level === 2)
+          ?.quantity ?? 0)
       ) {
         return res.status(400).json({
           status: 'failed',
@@ -239,6 +236,7 @@ const handler = async (
             spies,
             type,
             unit,
+            turns,
           ),
         );
         if (result?.status === 'success' && result.attack_log) {
