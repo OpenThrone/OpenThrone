@@ -1,6 +1,6 @@
 import md5 from 'md5';
 import type { NextApiResponse } from 'next';
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 
 import { getSocketIO } from '@/lib/socket';
 import { AttackSchema, IdQuerySchema } from '@/lib/validation';
@@ -23,13 +23,18 @@ const handler = async (
   req: AuthenticatedRequest,
   res: NextApiResponse,
   context: {
-    query: { id: number };
-    body: { turns: number };
+    query: z.infer<typeof IdQuerySchema>;
+    body: z.infer<typeof AttackSchema>;
   },
 ) => {
   try {
     const { id } = context.query;
     const { turns } = context.body;
+    if (typeof id !== 'number' || typeof turns !== 'number') {
+      return res
+        .status(400)
+        .json({ status: 'failed', message: 'Invalid input' });
+    }
     const sessionUserId =
       typeof req.session?.user?.id === 'string'
         ? parseInt(req.session.user.id, 10)

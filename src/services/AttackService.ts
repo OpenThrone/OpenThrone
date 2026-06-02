@@ -1,3 +1,5 @@
+import type { Prisma } from '@prisma/client';
+
 import { UnitTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import { BattleUser } from '@/models/BattleUser';
@@ -27,6 +29,7 @@ import {
   computeBattleWinProbabilityProxy,
   totalCombatPower,
 } from '@/utils/balance/effectiveStats';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logDebug, logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { deepClone } from '@/utils/utilities';
@@ -119,6 +122,18 @@ export const AttackService = {
 
       const attacker = new BattleUser(attackerUser);
       const defender = new BattleUser(defenderUser);
+      const committedTurns = Math.min(
+        Math.max(1, Math.floor(Number(attack_turns) || 0)),
+        V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS,
+      );
+
+      if (committedTurns !== attack_turns) {
+        return {
+          status: 'failed',
+          message: `Attacks must spend between 1 and ${V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS} turns.`,
+          code: 'INVALID_ATTACK_TURNS',
+        };
+      }
 
       if (process.env.NEXT_PUBLIC_ENABLE_ATTACKING === 'false') {
         return {
@@ -141,7 +156,7 @@ export const AttackService = {
         };
       }
 
-      if (attacker.attackTurns < attack_turns) {
+      if (attacker.attackTurns < committedTurns) {
         return {
           status: 'failed',
           message: 'Insufficient attack turns',
@@ -149,7 +164,7 @@ export const AttackService = {
         };
       }
 
-      if (attacker.stamina < attack_turns) {
+      if (attacker.stamina < committedTurns) {
         return {
           status: 'failed',
           message: 'Insufficient stamina',
@@ -224,7 +239,7 @@ export const AttackService = {
       const battleResults = await executeAttack(
         AttackPlayer,
         DefensePlayer,
-        attack_turns,
+        committedTurns,
         DefensePlayer.isProtected(),
       );
 
@@ -266,7 +281,14 @@ export const AttackService = {
       });
 
       // Consume stamina after successful attack initiation
-      AttackPlayer.stamina = Math.max(0, AttackPlayer.stamina - attack_turns);
+      const moraleLossMultiplier =
+        committedTurns === V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS
+          ? V5_COMBAT_CONSTANTS.TURN_10_MORALE_PENALTY_BONUS
+          : 1;
+      AttackPlayer.stamina = Math.max(
+        0,
+        AttackPlayer.stamina - Math.ceil(committedTurns * moraleLossMultiplier),
+      );
 
       const fortHpAtStart =
         Number(startOfAttack.Defender.fortHitpoints ?? 0) || 0;
@@ -289,6 +311,14 @@ export const AttackService = {
 
       AttackPlayer.experience += battleResults.experienceGained.attacker;
       DefensePlayer.experience += battleResults.experienceGained.defender;
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const pressureDateKey = DefensePlayer.defensePressureDate
+        ? new Date(DefensePlayer.defensePressureDate).toISOString().slice(0, 10)
+        : todayKey;
+      const currentDefensePressure =
+        pressureDateKey === todayKey
+          ? (DefensePlayer.defensePressureToday ?? 0)
+          : 0;
 
       try {
         const attack_log = await prisma.$transaction(async (tx) => {
@@ -313,17 +343,17 @@ export const AttackService = {
 
           // Create the attack log (uses the possibly-clamped pillagedGold)
           const attackerLossesTotal = Array.isArray(
-            battleResults.Losses?.Attacker,
+            battleResults.Losses?.Attacker?.units,
           )
-            ? battleResults.Losses.Attacker.reduce(
+            ? battleResults.Losses.Attacker.units.reduce(
                 (sum: number, loss: any) => sum + Number(loss?.quantity || 0),
                 0,
               )
             : 0;
           const defenderLossesTotal = Array.isArray(
-            battleResults.Losses?.Defender,
+            battleResults.Losses?.Defender?.units,
           )
-            ? battleResults.Losses.Defender.reduce(
+            ? battleResults.Losses.Defender.units.reduce(
                 (sum: number, loss: any) => sum + Number(loss?.quantity || 0),
                 0,
               )
@@ -357,7 +387,7 @@ export const AttackService = {
                 forthpAtEnd: fortHpAtEnd,
                 // Stringify potentially complex objects within stats
                 xpEarned: JSON.stringify(battleResults.experienceGained),
-                turns: attack_turns,
+                turns: committedTurns,
                 attacker_units: JSON.stringify(AttackPlayer.units),
                 defender_units: JSON.stringify(DefensePlayer.units),
                 attacker_losses: JSON.stringify(battleResults.Losses.Attacker),
@@ -455,14 +485,14 @@ export const AttackService = {
             attackerId,
             {
               gold: AttackPlayer.gold,
-              attack_turns: AttackPlayer.attackTurns - attack_turns,
+              attack_turns: AttackPlayer.attackTurns - committedTurns,
               stamina: AttackPlayer.stamina,
               experience: Math.ceil(AttackPlayer.experience),
               offense: newAttOffense.totalStats.MeleeAtkPower,
               defense: newAttDefense.totalStats.MeleeDefPower,
               spy: newAttSpying.totalStats.MeleeAtkPower,
               sentry: newAttSentry.totalStats.MeleeDefPower,
-            } as any,
+            } satisfies Prisma.usersUpdateInput,
             tx,
           );
 
@@ -476,7 +506,9 @@ export const AttackService = {
               defense: newDefDefense.totalStats.MeleeDefPower,
               spy: newDefSpying.totalStats.MeleeAtkPower,
               sentry: newDefSentry.totalStats.MeleeDefPower,
-            },
+              defense_pressure_today: currentDefensePressure + committedTurns,
+              defense_pressure_date: new Date(),
+            } satisfies Prisma.usersUpdateInput,
             tx,
           );
 
