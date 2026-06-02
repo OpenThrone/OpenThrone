@@ -10,7 +10,7 @@ const UserDataSchema = z.object({
   units: z.array(z.any()).optional(),
   economyLevel: z.number().int().optional(),
   houseLevel: z.number().int().optional(),
-  incomeBonus: z.number().int().optional(),
+  incomeBonus: z.number().optional(),
   fortLevel: z.number().int().optional(),
 });
 

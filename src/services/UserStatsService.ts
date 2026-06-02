@@ -17,6 +17,11 @@ import type {
   CalculatedStrength,
   DetailedCalculatedStrength,
 } from '@/utils/attackFunctions';
+import {
+  calculateBonusPointMultiplier,
+  getBonusPointLevel,
+  getRaceIdentity,
+} from '@/utils/balance/v5Combat';
 import { logDebug } from '@/utils/logger';
 import { getLevelFromXP } from '@/utils/utilities';
 
@@ -155,9 +160,12 @@ export class UserStatsService {
       .filter((bonus) => bonus.bonusType === 'INCOME')
       .reduce((sum, bonus) => sum + (bonus.bonusAmount || 0), 0);
 
-    const pointsBonus = this.bonus_points
-      .filter((bonus) => bonus.type === 'INCOME')
-      .reduce((sum, bonus) => sum + (bonus.level || 0), 0);
+    const pointsBonus =
+      (calculateBonusPointMultiplier(
+        getBonusPointLevel(this.bonus_points, 'INCOME'),
+      ) -
+        1) *
+      100;
 
     return baseBonus + pointsBonus;
   }
@@ -167,9 +175,12 @@ export class UserStatsService {
       .filter((bonus) => bonus.bonusType === 'OFFENSE')
       .reduce((sum, bonus) => sum + (bonus.bonusAmount || 0), 0);
 
-    const pointsBonus = this.bonus_points
-      .filter((bonus) => bonus.type === 'OFFENSE')
-      .reduce((sum, bonus) => sum + (bonus.level || 0), 0);
+    const pointsBonus =
+      (calculateBonusPointMultiplier(
+        getBonusPointLevel(this.bonus_points, 'OFFENSE'),
+      ) -
+        1) *
+      100;
 
     const structureBonus = this.structure_upgrades
       .filter((upgrade) => upgrade.type === 'OFFENSE')
@@ -188,9 +199,12 @@ export class UserStatsService {
       .filter((bonus) => bonus.bonusType === 'DEFENSE')
       .reduce((sum, bonus) => sum + (bonus.bonusAmount || 0), 0);
 
-    const pointsBonus = this.bonus_points
-      .filter((bonus) => bonus.type === 'DEFENSE')
-      .reduce((sum, bonus) => sum + (bonus.level || 0), 0);
+    const pointsBonus =
+      (calculateBonusPointMultiplier(
+        getBonusPointLevel(this.bonus_points, 'DEFENSE'),
+      ) -
+        1) *
+      100;
 
     const fortBonus =
       Fortifications.find((f) => f.level === this.fortLevel)
@@ -204,9 +218,12 @@ export class UserStatsService {
       .filter((bonus) => bonus.bonusType === 'INTEL')
       .reduce((sum, bonus) => sum + (bonus.bonusAmount || 0), 0);
 
-    const pointsBonus = this.bonus_points
-      .filter((bonus) => bonus.type === 'INTEL')
-      .reduce((sum, bonus) => sum + (bonus.level || 0), 0);
+    const pointsBonus =
+      (calculateBonusPointMultiplier(
+        getBonusPointLevel(this.bonus_points, 'INTEL'),
+      ) -
+        1) *
+      100;
 
     return baseBonus + pointsBonus;
   }
@@ -238,9 +255,12 @@ export class UserStatsService {
       .filter((bonus) => bonus.bonusType === 'PRICES')
       .reduce((sum, bonus) => sum + (bonus.bonusAmount || 0), 0);
 
-    const pointsBonus = this.bonus_points
-      .filter((bonus) => bonus.type === 'PRICES')
-      .reduce((sum, bonus) => sum + (bonus.level || 0), 0);
+    const pointsBonus =
+      (calculateBonusPointMultiplier(
+        getBonusPointLevel(this.bonus_points, 'PRICES'),
+      ) -
+        1) *
+      100;
 
     return baseBonus + pointsBonus;
   }
@@ -603,21 +623,28 @@ export class UserStatsService {
     currentStats: CalculatedStrength,
   ): CalculatedStrength {
     let bonusPercent = 0;
+    let raceMultiplier = 1;
     switch (type) {
       case 'OFFENSE':
         bonusPercent = this.getAttackBonus();
+        raceMultiplier = getRaceIdentity(this.race).offenseMultiplier;
         break;
       case 'DEFENSE':
         bonusPercent = this.getDefenseBonus();
+        raceMultiplier = getRaceIdentity(this.race).defenseMultiplier;
         break;
       case 'SPY':
         bonusPercent = this.getSpyBonus();
+        raceMultiplier = getRaceIdentity(this.race).intelMultiplier;
         break;
       case 'SENTRY':
         bonusPercent = this.getSentryBonus();
+        raceMultiplier =
+          getRaceIdentity(this.race).sentryMultiplier *
+          getRaceIdentity(this.race).rangedDefenseMultiplier;
         break;
     }
-    const multiplier = 1 + bonusPercent / 100;
+    const multiplier = (1 + bonusPercent / 100) * raceMultiplier;
     return {
       MeleeAtkPower: Math.ceil(currentStats.MeleeAtkPower * multiplier),
       MeleeDefPower: Math.ceil(currentStats.MeleeDefPower * multiplier),
