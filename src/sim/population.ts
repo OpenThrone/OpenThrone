@@ -10,6 +10,7 @@ import {
   TurnStrategy,
   UnitCounts,
 } from './types';
+import { getXpFloorForLevel } from './progression';
 
 const UNIT_COSTS: Record<keyof UnitCounts, number> = {
   soldier: 1500,
@@ -242,7 +243,7 @@ export function generatePopulation(
       id: `player_${i}`,
       displayName: `Player ${i}`,
       level,
-      xp: 0,
+      xp: getXpFloorForLevel(level),
       houseLevel,
       race: 'HUMAN',
       playerClass: 'FIGHTER',
@@ -316,7 +317,7 @@ export function createPlayerState(
     id: `player_${Math.random().toString(36).slice(2, 9)}`,
     displayName: `Player ${level}`,
     level,
-    xp: 0,
+    xp: getXpFloorForLevel(level),
     houseLevel,
     race: 'HUMAN',
     playerClass: 'FIGHTER',
