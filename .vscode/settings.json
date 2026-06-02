@@ -29,5 +29,12 @@
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "WillLuke.nextjs.addTypesOnSave": true,
-  "WillLuke.nextjs.hasPrompted": true // Don't run prettier for files listed in .gitignore
+  "WillLuke.nextjs.hasPrompted": true,
+  "i18n-ally.localesPaths": [
+    "public/locales",
+    "src/locales",
+    "scripts/i18n",
+    "src/pages/api/messages",
+    "coverage/lcov-report/pages/api/messages"
+  ] // Don't run prettier for files listed in .gitignore
 }
