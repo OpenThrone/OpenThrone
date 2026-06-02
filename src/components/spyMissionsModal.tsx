@@ -114,6 +114,15 @@ interface SpyMissionProps {
 /** Type definition for the keys representing different spy mission panels. */
 type MissionPanelKey = 'intelligence' | 'assassination' | 'infiltration';
 
+const MISSION_TURN_LIMITS: Record<
+  MissionPanelKey,
+  { min: number; max: number }
+> = {
+  intelligence: { min: 1, max: 5 },
+  infiltration: { min: 2, max: 10 },
+  assassination: { min: 3, max: 10 },
+};
+
 /**
  * A modal component for initiating various spy missions (Intel, Assassination, Infiltration).
  * Allows the user to select a mission type, specify the number of spies/units,
@@ -127,6 +136,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
 }) => {
   const [currentPanel, setCurrentPanel] = useState<MissionPanelKey | ''>('');
   const [intelSpies, setIntelSpies] = useState(1); // Used for spy/assassin/infiltrator count
+  const [missionTurns, setMissionTurns] = useState(1);
   const [assassinateUnit, setAssassinateUnit] = useState('CITIZEN/WORKERS'); // Target for assassination
 
   const [isAssassinateDisabled, setIsAssassinateDisabled] = useState(true);
@@ -212,8 +222,13 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     }
     const bodyPayload =
       currentPanel === 'assassination'
-        ? { type, spies: intelSpies, unit: assassinateUnit }
-        : { type, spies: intelSpies };
+        ? {
+            type,
+            spies: intelSpies,
+            turns: missionTurns,
+            unit: assassinateUnit,
+          }
+        : { type, spies: intelSpies, turns: missionTurns };
 
     const idempotencyKey = `spy-${defenderID}-${type}-${Date.now()}-${Math.random()
       .toString(36)
@@ -263,6 +278,29 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     return false;
   };
 
+  const hasEnoughTurns = (): boolean => {
+    const turnsAvailable =
+      (user as any)?.attackTurns ?? (user as any)?.attack_turns ?? 0;
+    return turnsAvailable >= missionTurns;
+  };
+
+  const selectPanel = (panel: MissionPanelKey) => {
+    setCurrentPanel(panel);
+    setMissionTurns(MISSION_TURN_LIMITS[panel].min);
+  };
+
+  const turnInput = (panel: MissionPanelKey) => (
+    <NumberInput
+      label="Turns committed"
+      description="More turns increase mission depth and risk."
+      max={MISSION_TURN_LIMITS[panel].max}
+      min={MISSION_TURN_LIMITS[panel].min}
+      value={missionTurns}
+      onChange={(value) => setMissionTurns(Number(value))}
+      mt="md"
+    />
+  );
+
   /** JSX elements for each specific mission panel within the modal. */
   const MissionPanels: Record<MissionPanelKey, JSX.Element> = {
     intelligence: (
@@ -282,24 +320,34 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             label={
               !hasEnoughUnits()
                 ? `You need at least ${intelSpies} spies`
-                : 'Send spies on an intelligence mission'
+                : !hasEnoughTurns()
+                  ? `You need at least ${missionTurns} turns`
+                  : 'Send spies on an intelligence mission'
             }
-            disabled={hasEnoughUnits()}
+            disabled={hasEnoughUnits() && hasEnoughTurns()}
           >
             {/* Tooltip requires a single direct child */}
             <span>
-              <Button onClick={handleSpyMission} disabled={!hasEnoughUnits()}>
+              <Button
+                onClick={handleSpyMission}
+                disabled={!hasEnoughUnits() || !hasEnoughTurns()}
+              >
                 Send Spies
               </Button>
             </span>
           </Tooltip>
         </Group>
+        {turnInput('intelligence')}
         <div className="mt-4">
           <Title ta="center" order={3} fw={700}>
             Intelligence Information
           </Title>
           <Text mt="md">Spies Trained: {units.SPY}</Text>
           <Text>You can send a maximum of 10 spies per mission.</Text>
+          <Text>
+            Intelligence missions use 1 to 5 attack turns. More turns improve
+            report quality.
+          </Text>
         </div>
       </div>
     ),
@@ -316,6 +364,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           onChange={(value) => setIntelSpies(Number(value))}
           mt="md"
         />
+        {turnInput('assassination')}
         <Text>What Unit Type would you like to target?</Text>
         <Select
           value={assassinateUnit}
@@ -330,14 +379,16 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           label={
             !hasEnoughUnits()
               ? `You need at least ${intelSpies} assassins`
-              : 'Send assassins on a mission'
+              : !hasEnoughTurns()
+                ? `You need at least ${missionTurns} turns`
+                : 'Send assassins on a mission'
           }
-          disabled={hasEnoughUnits()}
+          disabled={hasEnoughUnits() && hasEnoughTurns()}
         >
           <span>
             <Button
               onClick={handleSpyMission}
-              disabled={!hasEnoughUnits()}
+              disabled={!hasEnoughUnits() || !hasEnoughTurns()}
               fullWidth
               mt="md"
             >
@@ -363,6 +414,10 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             per 24 hours. To increase the number of attempts per day, upgrade
             your spy structure!
           </Text>
+          <Text>
+            Assassinations use 3 to 10 attack turns. More turns increase mission
+            depth and exposure.
+          </Text>
         </div>
       </div>
     ),
@@ -383,17 +438,23 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             label={
               !hasEnoughUnits()
                 ? `You need at least ${intelSpies} infiltrators`
-                : 'Send infiltrators on a mission'
+                : !hasEnoughTurns()
+                  ? `You need at least ${missionTurns} turns`
+                  : 'Send infiltrators on a mission'
             }
-            disabled={hasEnoughUnits()}
+            disabled={hasEnoughUnits() && hasEnoughTurns()}
           >
             <span>
-              <Button onClick={handleSpyMission} disabled={!hasEnoughUnits()}>
+              <Button
+                onClick={handleSpyMission}
+                disabled={!hasEnoughUnits() || !hasEnoughTurns()}
+              >
                 Infiltrate
               </Button>
             </span>
           </Tooltip>
         </Group>
+        {turnInput('infiltration')}
         <div className="mt-4">
           <Text ta="center" size="lg" fw={700}>
             Infiltration Information
@@ -412,6 +473,10 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             per 24 hours. To increase the number of attempts per day, upgrade
             your spy structure!
           </Text>
+          <Text>
+            Infiltrations use 2 to 10 attack turns. More turns increase sabotage
+            depth and exposure.
+          </Text>
         </div>
       </div>
     ),
@@ -422,14 +487,14 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       {!currentPanel ? (
         <div>
           <CustomButton
-            onClick={() => setCurrentPanel('intelligence')}
+            onClick={() => selectPanel('intelligence')}
             disabled={isIntelDisabled}
           >
             <span>🔍 Intelligence Gathering</span>
             <small>Send up to 10 Spies to collect Intel</small>
           </CustomButton>
           <CustomButton
-            onClick={() => setCurrentPanel('infiltration')}
+            onClick={() => selectPanel('infiltration')}
             disabled={isInfiltrationDisabled}
           >
             <span>🚧 Infiltration</span>
@@ -452,7 +517,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             )}
           </CustomButton>
           <CustomButton
-            onClick={() => setCurrentPanel('assassination')}
+            onClick={() => selectPanel('assassination')}
             disabled={isAssassinateDisabled}
           >
             <span>🗡️ Assassination</span>
