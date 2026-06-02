@@ -8,6 +8,7 @@ import { evaluateTargets } from './targeting';
 import type {
   IntelPayload,
   IntelResult,
+  ItemStats,
   PlayerState,
   TargetEvaluation,
   UnitCounts,
@@ -28,6 +29,12 @@ const TARGETING_SHAPES: CombatShape[] = [
 ];
 
 const INTEL_STATES: IntelState[] = ['fresh', 'decaying', 'expired', 'none'];
+
+const NO_VARIANCE_BATTLE = {
+  maxTurns: 10,
+  damageVarianceMin: 1,
+  damageVarianceMax: 1,
+};
 
 function seededRandom(seed: number): () => number {
   let value = Math.abs(Math.floor(seed)) || 1;
@@ -50,6 +57,8 @@ function makeBattlePlayer(params: {
   level: number;
   offense?: number;
   defense?: number;
+  items?: Partial<ItemStats>;
+  units?: Partial<UnitCounts>;
   race?: string;
   gold?: number;
 }) {
@@ -64,7 +73,9 @@ function makeBattlePlayer(params: {
     units: makeUnits({
       soldier: params.offense ?? 0,
       guard: params.defense ?? 0,
+      ...params.units,
     }),
+    items: params.items,
     fortLevel: 3,
     fortHp: 500,
     stamina: 100,
@@ -183,6 +194,444 @@ function evaluateTargetShape(
 }
 
 describe('v5 combat simulator battle envelopes', () => {
+  describe('equal population armies and equipment parity', () => {
+    it('equal men with no equipped items produces bounded casualties', async () => {
+      const result = await runSingleBattle(
+        makeBattlePlayer({ id: 'attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(101) },
+      );
+
+      expect(result.turns).toBeLessThanOrEqual(10);
+      expect(result.attackerCasualties.soldier).toBeLessThan(100);
+      expect(result.defenderCasualties.guard).toBeLessThan(100);
+      expect(result.attackerXp).toBeGreaterThan(0);
+      expect(result.defenderXp).toBeGreaterThan(0);
+    });
+
+    it('equal men with mirrored level-1 gear stays deterministic for the same seed', async () => {
+      const first = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'first-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({
+          id: 'first-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(102) },
+      );
+      const second = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'second-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({
+          id: 'second-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(102) },
+      );
+
+      expect(second.winner).toBe(first.winner);
+      expect(second.attackerCasualties.soldier).toBe(
+        first.attackerCasualties.soldier,
+      );
+      expect(second.defenderCasualties.guard).toBe(
+        first.defenderCasualties.guard,
+      );
+    });
+
+    it('equal men with attacker weapons outperforms no attacker equipment', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(103) },
+      );
+      const armed = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'armed-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'armed-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(103) },
+      );
+
+      expect(armed.defenderCasualties.guard).toBeGreaterThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+      expect(armed.attackerCasualties.soldier).toBeLessThanOrEqual(
+        baseline.attackerCasualties.soldier,
+      );
+    });
+
+    it('equal men with defender weapons makes the attack more costly', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(104) },
+      );
+      const armedDefender = await runSingleBattle(
+        makeBattlePlayer({ id: 'armed-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'armed-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(104) },
+      );
+
+      expect(armedDefender.attackerCasualties.soldier).toBeGreaterThanOrEqual(
+        baseline.attackerCasualties.soldier,
+      );
+      expect(armedDefender.defenderCasualties.guard).toBeLessThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+    });
+
+    it('equal men with attacker armor improves attacker survival', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(105) },
+      );
+      const armored = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'armored-attacker',
+          level: 10,
+          offense: 100,
+          items: { rangedAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'armored-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(105) },
+      );
+
+      expect(armored.attackerCasualties.soldier).toBeLessThanOrEqual(
+        baseline.attackerCasualties.soldier,
+      );
+    });
+
+    it('equal men with defender armor improves defender survival', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(106) },
+      );
+      const armoredDefender = await runSingleBattle(
+        makeBattlePlayer({ id: 'armored-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'armored-defender',
+          level: 10,
+          defense: 100,
+          items: { rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(106) },
+      );
+
+      expect(armoredDefender.defenderCasualties.guard).toBeLessThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+    });
+
+    it('attacker equipment quantity is capped by equal soldier count', async () => {
+      const fullyEquipped = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'full-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'full-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(107) },
+      );
+      const overEquipped = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'over-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 250, rangedAtk: 250 },
+        }),
+        makeBattlePlayer({ id: 'over-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(107) },
+      );
+
+      expect(overEquipped.attackerCasualties.soldier).toBe(
+        fullyEquipped.attackerCasualties.soldier,
+      );
+      expect(overEquipped.defenderCasualties.guard).toBe(
+        fullyEquipped.defenderCasualties.guard,
+      );
+    });
+
+    it('defender equipment quantity is capped by equal guard count', async () => {
+      const fullyEquipped = await runSingleBattle(
+        makeBattlePlayer({ id: 'full-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'full-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(108) },
+      );
+      const overEquipped = await runSingleBattle(
+        makeBattlePlayer({ id: 'over-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'over-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 250, rangedDef: 250 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(108) },
+      );
+
+      expect(overEquipped.attackerCasualties.soldier).toBe(
+        fullyEquipped.attackerCasualties.soldier,
+      );
+      expect(overEquipped.defenderCasualties.guard).toBe(
+        fullyEquipped.defenderCasualties.guard,
+      );
+    });
+
+    it('partial attacker equipment lands between no gear and full gear', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(109) },
+      );
+      const partial = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'partial-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 50 },
+        }),
+        makeBattlePlayer({ id: 'partial-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(109) },
+      );
+      const full = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'full-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'full-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(109) },
+      );
+
+      expect(partial.defenderCasualties.guard).toBeGreaterThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+      expect(partial.defenderCasualties.guard).toBeLessThanOrEqual(
+        full.defenderCasualties.guard,
+      );
+    });
+
+    it('partial defender equipment lands between no gear and full gear', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(110) },
+      );
+      const partial = await runSingleBattle(
+        makeBattlePlayer({ id: 'partial-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'partial-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 50 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(110) },
+      );
+      const full = await runSingleBattle(
+        makeBattlePlayer({ id: 'full-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'full-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(110) },
+      );
+
+      expect(partial.attackerCasualties.soldier).toBeGreaterThanOrEqual(
+        baseline.attackerCasualties.soldier,
+      );
+      expect(partial.attackerCasualties.soldier).toBeLessThanOrEqual(
+        full.attackerCasualties.soldier,
+      );
+    });
+
+    it('equal men with equal partial equipment remains stable and bounded', async () => {
+      const result = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'partial-mirror-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 50, rangedAtk: 50 },
+        }),
+        makeBattlePlayer({
+          id: 'partial-mirror-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 50, rangedDef: 50 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(111) },
+      );
+
+      expect(result.turns).toBeLessThanOrEqual(10);
+      expect(result.attackerCasualties.soldier).toBeLessThanOrEqual(100);
+      expect(result.defenderCasualties.guard).toBeLessThanOrEqual(100);
+      expect(result.attackerXp).toBeGreaterThan(0);
+      expect(result.defenderXp).toBeGreaterThan(0);
+    });
+
+    it('equal population with attacker gear improves pressure versus baseline', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'plain-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'plain-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(112) },
+      );
+      const geared = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'geared-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'plain-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(112) },
+      );
+
+      expect(geared.defenderCasualties.guard).toBeGreaterThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+      expect(geared.fortDamage).toBeGreaterThanOrEqual(baseline.fortDamage);
+    });
+
+    it('equal population with defender gear can preserve the fort longer', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(113) },
+      );
+      const gearedDefender = await runSingleBattle(
+        makeBattlePlayer({ id: 'geared-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'geared-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(113) },
+      );
+
+      expect(gearedDefender.fortDamage).toBeLessThanOrEqual(
+        baseline.fortDamage,
+      );
+    });
+
+    it('equal total population mixed across unit tiers remains bounded', async () => {
+      const result = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'mixed-attacker',
+          level: 10,
+          offense: 60,
+          units: { knight: 20, berserker: 20 },
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({
+          id: 'mixed-defender',
+          level: 10,
+          defense: 60,
+          units: { archer: 20, royalGuard: 20 },
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(114) },
+      );
+
+      expect(result.turns).toBeLessThanOrEqual(10);
+      expect(
+        result.attackerCasualties.soldier +
+          result.attackerCasualties.knight +
+          result.attackerCasualties.berserker,
+      ).toBeLessThanOrEqual(100);
+      expect(
+        result.defenderCasualties.guard +
+          result.defenderCasualties.archer +
+          result.defenderCasualties.royalGuard,
+      ).toBeLessThanOrEqual(100);
+    });
+
+    it('mixed-tier over-equipment is capped by total eligible unit counts', async () => {
+      const fullyEquipped = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'full-mixed-attacker',
+          level: 10,
+          offense: 60,
+          units: { knight: 20, berserker: 20 },
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({
+          id: 'full-mixed-defender',
+          level: 10,
+          defense: 60,
+          units: { archer: 20, royalGuard: 20 },
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(115) },
+      );
+      const overEquipped = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'over-mixed-attacker',
+          level: 10,
+          offense: 60,
+          units: { knight: 20, berserker: 20 },
+          items: { meleeAtk: 250, rangedAtk: 250 },
+        }),
+        makeBattlePlayer({
+          id: 'over-mixed-defender',
+          level: 10,
+          defense: 60,
+          units: { archer: 20, royalGuard: 20 },
+          items: { meleeDef: 250, rangedDef: 250 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(115) },
+      );
+
+      expect(overEquipped.attackerCasualties.soldier).toBe(
+        fullyEquipped.attackerCasualties.soldier,
+      );
+      expect(overEquipped.attackerCasualties.knight).toBe(
+        fullyEquipped.attackerCasualties.knight,
+      );
+      expect(overEquipped.attackerCasualties.berserker).toBe(
+        fullyEquipped.attackerCasualties.berserker,
+      );
+      expect(overEquipped.defenderCasualties.guard).toBe(
+        fullyEquipped.defenderCasualties.guard,
+      );
+      expect(overEquipped.defenderCasualties.archer).toBe(
+        fullyEquipped.defenderCasualties.archer,
+      );
+      expect(overEquipped.defenderCasualties.royalGuard).toBe(
+        fullyEquipped.defenderCasualties.royalGuard,
+      );
+    });
+  });
+
   it('same-level equal offense vs defense resolves without exceeding v5 turn cap', async () => {
     const result = await runSingleBattle(
       makeBattlePlayer({ id: 'attacker', level: 10, offense: 100 }),
@@ -313,7 +762,8 @@ describe('v5 combat simulator battle envelopes', () => {
     );
 
     expect(result.winner).toBe('defender');
-    expect(result.attackerXp).toBeGreaterThan(1000);
+    expect(result.attackerXp).toBeGreaterThan(500);
+    expect(result.attackerXp).toBeLessThan(1000);
   });
 
   it('goblin raiders earn a small pillage edge without changing the whole outcome', async () => {

@@ -11,6 +11,8 @@ const {
   calculateStaminaDrop,
   calculateStaminaModifier,
   calculateTurnScaling,
+  resetBattleConstants,
+  setBattleConstants,
   getFortBreachState,
   newComputeCasualties,
   distributeCasualties,
@@ -109,11 +111,67 @@ describe('calculateStrength', () => {
     expect(strength.totalStats.RangedAtkPower).toBe(0);
     expect(strength.totalStats.RangedDefPower).toBe(0);
   });
+
+  it('should gate battle upgrades behind siege level', () => {
+    const combatUser = {
+      id: 1001,
+      attackBonus: 0,
+      defenseBonus: 0,
+      units: normUnits([{ type: 'DEFENSE', quantity: 10, level: 2 }]),
+      mercenaries: [],
+      items: [],
+      battle_upgrades: normUnits([{ type: 'DEFENSE', level: 1, quantity: 2 }]),
+      structure_upgrades: normUnits([{ type: 'OFFENSE', level: 5 }]),
+    };
+
+    const strength = calculateStrength(combatUser, 'DEFENSE');
+
+    expect(strength.upgradeStats.MeleeDefPower).toBe(0);
+    expect(strength.upgradeStats.RangedAtkPower).toBe(0);
+    expect(strength.upgradeStats.RangedDefPower).toBe(0);
+  });
+
+  it('should apply battle upgrades only to covered eligible units', () => {
+    const combatUser = {
+      id: 1002,
+      attackBonus: 0,
+      defenseBonus: 0,
+      units: normUnits([{ type: 'DEFENSE', quantity: 9, level: 2 }]),
+      mercenaries: [],
+      items: [],
+      battle_upgrades: normUnits([{ type: 'DEFENSE', level: 1, quantity: 2 }]),
+      structure_upgrades: normUnits([{ type: 'OFFENSE', level: 6 }]),
+    };
+
+    const strength = calculateStrength(combatUser, 'DEFENSE');
+
+    expect(strength.upgradeStats.MeleeDefPower).toBe(270);
+    expect(strength.upgradeStats.RangedAtkPower).toBe(90);
+    expect(strength.upgradeStats.RangedDefPower).toBe(180);
+  });
+
+  it('should not apply battle upgrades to units below the minimum level', () => {
+    const combatUser = {
+      id: 1003,
+      attackBonus: 0,
+      defenseBonus: 0,
+      units: normUnits([{ type: 'DEFENSE', quantity: 10, level: 1 }]),
+      mercenaries: [],
+      items: [],
+      battle_upgrades: normUnits([{ type: 'DEFENSE', level: 1, quantity: 2 }]),
+      structure_upgrades: normUnits([{ type: 'OFFENSE', level: 6 }]),
+    };
+
+    const strength = calculateStrength(combatUser, 'DEFENSE');
+
+    expect(strength.upgradeStats.MeleeDefPower).toBe(0);
+    expect(strength.upgradeStats.RangedAtkPower).toBe(0);
+    expect(strength.upgradeStats.RangedDefPower).toBe(0);
+  });
 });
 
 describe('Gold Pillage Fix', () => {
   it('should ensure pillaged gold is always positive and only calculated on attacker turns', async () => {
-    // Create attacker with some offense units
     const attackerUser = new MockUserGenerator();
     attackerUser.setBasicInfo({
       email: 'attacker@example.com',
@@ -129,7 +187,6 @@ describe('Gold Pillage Fix', () => {
       attackerUser.getUser().units,
     );
 
-    // Create defender with some gold
     const defenderUser = new MockUserGenerator();
     defenderUser.setBasicInfo({
       email: 'defender@example.com',
@@ -146,7 +203,6 @@ describe('Gold Pillage Fix', () => {
       defenderUser.getUser().units,
     );
 
-    // Simulate a short battle
     const battleResult = await simulateBattle(
       attacker,
       defender,
@@ -155,18 +211,13 @@ describe('Gold Pillage Fix', () => {
       false, // No debug logging
     );
 
-    // Verify that pillaged gold is non-negative (may be zero in some edge cases)
     expect(typeof battleResult.pillagedGold).toBe('bigint');
     expect(battleResult.pillagedGold).toBeGreaterThanOrEqual(BigInt(0));
 
-    // Verify that pillaged gold does not exceed defender's gold
     expect(battleResult.pillagedGold).toBeLessThanOrEqual(defender.gold);
-
-    // Log the result for debugging
   });
 
   it('should calculate loot correctly using calculateLoot function', () => {
-    // Create attacker
     const attackerUser = new MockUserGenerator();
     attackerUser.setBasicInfo({
       email: 'attacker@example.com',
@@ -179,7 +230,6 @@ describe('Gold Pillage Fix', () => {
       attackerUser.getUser().units,
     );
 
-    // Create defender with gold
     const defenderUser = new MockUserGenerator();
     defenderUser.setBasicInfo({
       email: 'defender@example.com',
@@ -193,20 +243,41 @@ describe('Gold Pillage Fix', () => {
       defenderUser.getUser().units,
     );
 
-    // Test loot calculation for different turns
     const lootTurn1 = calculateLoot(attacker, defender, 1);
     const lootTurn3 = calculateLoot(attacker, defender, 3);
     const lootTurn5 = calculateLoot(attacker, defender, 5);
 
-    // Verify loot is non-negative
     expect(lootTurn1).toBeGreaterThanOrEqual(BigInt(0));
     expect(lootTurn3).toBeGreaterThanOrEqual(BigInt(0));
     expect(lootTurn5).toBeGreaterThanOrEqual(BigInt(0));
 
-    // Verify loot does not exceed defender's gold
     expect(lootTurn1).toBeLessThanOrEqual(defender.gold);
     expect(lootTurn3).toBeLessThanOrEqual(defender.gold);
     expect(lootTurn5).toBeLessThanOrEqual(defender.gold);
+  });
+
+  it('should respect battle-constant pillage cap overrides', () => {
+    const attacker = {
+      level: 20,
+      race: 'HUMAN',
+    };
+    const defender = {
+      level: 20,
+      fortLevel: 0,
+      fortHitpoints: 0,
+      gold: BigInt(1000000),
+      units: normUnits([{ type: 'DEFENSE', quantity: 1, level: 1 }]),
+      mercenaries: [],
+    };
+
+    try {
+      setBattleConstants({ MAX_PILLAGE_SHARE_PER_ATTACK: 0.005 });
+      const loot = calculateLoot(attacker, defender, 10, () => 1);
+
+      expect(loot).toBe(BigInt(5000));
+    } finally {
+      resetBattleConstants();
+    }
   });
 });
 
@@ -432,7 +503,7 @@ describe('Casualties', () => {
     expect(maxArmory.damageDealt).toBeLessThan(noArmory.damageDealt);
   });
 
-  it('should only apply remaining damage to collateral units', async () => {
+  it('should expose collateral to remaining breach casualty budget', async () => {
     const BattleResult = require('../models/BattleResult').default;
 
     const attackerGen = new MockUserGenerator();
@@ -450,8 +521,8 @@ describe('Casualties', () => {
     defenderGen.clearUnits();
     defenderGen.addUnits(
       normUnits([
-        { type: 'DEFENSE', quantity: 2, level: 1 },
-        { type: 'CITIZEN', quantity: 5, level: 1 },
+        { type: 'DEFENSE', quantity: 1, level: 1 },
+        { type: 'CITIZEN', quantity: 1000, level: 1 },
       ]),
     );
     const defender = new UserModel(
@@ -459,13 +530,14 @@ describe('Casualties', () => {
       defenderGen.getUser().units,
     );
     defender.mercenaries = [];
+    defender.houseLevel = 6;
 
     const battleResult = new BattleResult(attacker, defender);
     await distributeCasualties({
       result: battleResult,
       attacker,
       defender,
-      attackerDamageDealt: 15,
+      attackerDamageDealt: 100000,
       defenderDamageDealt: 0,
       fortHP: 0,
       initialFortHP: 100,
@@ -476,7 +548,7 @@ describe('Casualties', () => {
 
     expect(
       battleResult.Losses.Defender.units.find((u: any) => u.type === 'CITIZEN'),
-    ).toBeUndefined();
+    ).toBeDefined();
     expect(
       battleResult.Losses.Defender.units.find((u: any) => u.type === 'DEFENSE')
         ?.quantity,

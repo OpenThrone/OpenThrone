@@ -1,3 +1,5 @@
+import type { ItemType, ItemUsage, PlayerItem } from '@/types/typings';
+
 import {
   getBattleConstants,
   setBattleConstants,
@@ -56,6 +58,30 @@ export function createBattleConfigFromBalance(
     damageVarianceMin: balance.damageVarianceMin,
     damageVarianceMax: balance.damageVarianceMax,
   };
+}
+
+function createBattleItems(player: SimPlayer): PlayerItem[] {
+  const itemConfigs: Array<{
+    usage: ItemUsage;
+    type: ItemType;
+    quantity: number;
+  }> = [
+    { usage: 'OFFENSE', type: 'WEAPON', quantity: player.items.meleeAtk },
+    { usage: 'OFFENSE', type: 'ARMOR', quantity: player.items.rangedAtk },
+    { usage: 'DEFENSE', type: 'WEAPON', quantity: player.items.meleeDef },
+    { usage: 'DEFENSE', type: 'ARMOR', quantity: player.items.rangedDef },
+  ];
+
+  return itemConfigs
+    .filter((item) => item.quantity > 0)
+    .map((item, index) => ({
+      id: index + 1,
+      userId: 0,
+      usage: item.usage,
+      type: item.type,
+      level: 1,
+      quantity: item.quantity,
+    }));
 }
 
 function simPlayerToBattleUser(player: SimPlayer, isAttacker: boolean): any {
@@ -126,7 +152,7 @@ function simPlayerToBattleUser(player: SimPlayer, isAttacker: boolean): any {
     });
   }
 
-  const items: any[] = [];
+  const items = createBattleItems(player);
 
   return {
     id: player.id as any as number,
@@ -245,7 +271,7 @@ function battleResultToMetrics(
 
   return {
     winner,
-    turns: result.turnsTaken ?? 15,
+    turns: result.turnsTaken ?? 10,
     attackerCasualties,
     defenderCasualties,
     fortDamage,

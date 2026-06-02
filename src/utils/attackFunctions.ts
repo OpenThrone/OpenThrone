@@ -4,6 +4,7 @@ import {
   Fortifications,
   HouseUpgrades,
   ItemTypes,
+  levelXPArray,
   UnitTypes,
 } from '@/constants';
 import BattleResult from '@/models/BattleResult';
@@ -236,7 +237,7 @@ const DEFAULT_BATTLE_CONSTANTS = {
   STAMINA_MULTIPLIERS: {
     EARLY_PHASE: 1.0, // Turns 1-5
     MID_PHASE: 0.9, // Turns 6-10
-    LATE_PHASE: 0.75, // Turns 11-15
+    LATE_PHASE: 0.75, // Reserved for simulations that override MAX_TURNS above 10
     CRITICAL_PHASE: 0.5,
     REINFORCEMENT_PHASE: 0.6,
   },
@@ -378,9 +379,9 @@ function initializeBattleState(
     maxPillageGold:
       (BigInt(defender.gold ?? BigInt(0)) *
         BigInt(
-          Math.floor(BATTLE_CONSTANTS.MAX_PILLAGE_SHARE_PER_ATTACK * 100),
+          Math.floor(BATTLE_CONSTANTS.MAX_PILLAGE_SHARE_PER_ATTACK * 10000),
         )) /
-      BigInt(100),
+      BigInt(10000),
     totalAttackerCasualties: 0,
     totalDefenderCasualties: 0,
     random,
@@ -913,18 +914,21 @@ export function calculateBattleExperience(
   fortDestroyed: boolean,
   winRatio: number = 1,
   attackerMorale: number = 100,
+  attackerLevel: number = 1,
 ): { attackerXP: number; defenderXP: number } {
-  const baseXP = BATTLE_CONSTANTS.BASE_XP;
   const turns = clamp(attackTurns, 1, BATTLE_CONSTANTS.MAX_TURNS);
-  const turnXP = calculateTurnXp(turns);
-  const xpLevelModifier = calculateXpLevelModifier(levelDifference);
-  const winModifier = isAttackerWinner ? 1 : 0.35;
-  const closeness = calculateBattleCloseness(winRatio);
+  const safeAttackerLevel = Math.max(1, Math.floor(Number(attackerLevel) || 1));
+  const xpPerTurn = calculateProgressionXpPerTurn(safeAttackerLevel);
+  const commitmentEfficiency = calculateTurnCommitmentXpEfficiency(turns);
+  const xpLevelModifier = clamp(1 + levelDifference * 0.08, 0.35, 1.45);
+  const winModifier = isAttackerWinner ? 1 : 0.22;
+  const closeness = clamp(calculateBattleCloseness(winRatio), 0.75, 1.18);
   const moraleFactor = calculateMoraleXpFactor(attackerMorale, turns);
   const fortBonus = fortDestroyed ? 1.1 : 1;
   const totalXP =
-    baseXP *
-    turnXP *
+    turns *
+    xpPerTurn *
+    commitmentEfficiency *
     xpLevelModifier *
     winModifier *
     closeness *
@@ -938,6 +942,25 @@ export function calculateBattleExperience(
     attackerXP,
     defenderXP,
   };
+}
+
+function calculateProgressionXpPerTurn(level: number): number {
+  if (level <= 10) return 360;
+  if (level <= 25) return 240;
+  if (level <= 50) return 150;
+  if (level <= 75) return 100;
+  return 75;
+}
+
+function calculateTurnCommitmentXpEfficiency(turns: number): number {
+  const normalizedTurns = clamp(turns, 1, BATTLE_CONSTANTS.MAX_TURNS) /
+    BATTLE_CONSTANTS.MAX_TURNS;
+  return clamp(0.22 + 0.78 * normalizedTurns ** 0.85, 0.25, 1);
+}
+
+export function getXpRequiredForLevel(level: number): number {
+  if (level <= 1) return 0;
+  return levelXPArray.find((entry) => entry.level === level)?.xp ?? Infinity;
 }
 
 // calculates bonus multiplier based on the user’s bonus percentage.
@@ -1000,7 +1023,11 @@ export function calculateStrength(
   const itemString = JSON.stringify(
     user.items?.filter((i) => i.usage === unitType),
   );
-  const cacheKey = `${user.id ?? '0'}-${unitType}-${includeCitz}-${includeOffense}-${unitString}-${itemString}`;
+  const battleUpgradeString = JSON.stringify(
+    user.battle_upgrades?.filter((upgrade) => upgrade.type === unitType),
+  );
+  const structureUpgradeString = JSON.stringify(user.structure_upgrades ?? []);
+  const cacheKey = `${user.id ?? '0'}-${unitType}-${includeCitz}-${includeOffense}-${unitString}-${itemString}-${battleUpgradeString}-${structureUpgradeString}`;
   if (!user || !user.units || !user.items) {
     logWarn(`User or user units/items not found for type: ${unitType}`);
     const zeroStrength: CalculatedStrength = {
@@ -1052,7 +1079,6 @@ export function calculateStrength(
 
   const multiplier = getUnitMultiplier(user, unitType);
 
-  // Process Primary Units (OFFENSE or DEFENSE) - include both regular units and mercenaries
   const allCombatUnits = [...(user?.units || []), ...(user?.mercenaries || [])];
   allCombatUnits
     .filter((u) => u.type === unitType)
@@ -1125,7 +1151,6 @@ export function calculateStrength(
       });
     });
 
-  // Process support units (CITIZEN, WORKER, OFFENSE) based on flags - include both regular units and mercenaries
   if (
     includeCitz ||
     includeOffense ||
@@ -1167,24 +1192,43 @@ export function calculateStrength(
       });
   }
 
-  // Process Battle Upgrades
+  // Process Battle Upgrades using the same coverage gates as UserStatsService:
+  // siege unlock, minimum unit level, and total units covered by owned upgrades.
+  const siegeLevel =
+    user.structure_upgrades?.find((upgrade) => upgrade?.type === 'OFFENSE')
+      ?.level ?? 0;
   user.battle_upgrades
-    ?.filter((up) => up.type === unitType)
+    ?.filter((upgrade) => upgrade.type === unitType)
     .forEach((upgrade) => {
       const upgradeInfo = BattleUpgrades.find(
-        (bu) => bu.type === upgrade.type && bu.level === upgrade.level,
+        (battleUpgrade) =>
+          battleUpgrade.type === upgrade.type && battleUpgrade.level === upgrade.level,
       );
-      if (upgradeInfo) {
-        // Assuming battle upgrades directly add to stats
-        upgradeStats.MeleeAtkPower +=
-          (upgradeInfo.MeleeAtkPower || 0) * upgrade.quantity;
-        upgradeStats.MeleeDefPower +=
-          (upgradeInfo.MeleeDefPower || 0) * upgrade.quantity;
-        upgradeStats.RangedAtkPower +=
-          (upgradeInfo.RangedAtkPower || 0) * upgrade.quantity;
-        upgradeStats.RangedDefPower +=
-          (upgradeInfo.RangedDefPower || 0) * upgrade.quantity;
+      const upgradeQuantity = Math.max(0, Number(upgrade.quantity ?? 0));
+      if (!upgradeInfo || upgradeQuantity <= 0) return;
+      if (upgradeInfo.SiegeUpgradeLevel && siegeLevel < upgradeInfo.SiegeUpgradeLevel) {
+        return;
       }
+
+      const coveragePerUpgrade = upgradeInfo.unitsCovered || 1;
+      const totalUpgradeUnitCapacity = upgradeQuantity * coveragePerUpgrade;
+      const totalMatchingUnits = allCombatUnits
+        .filter(
+          (unit) =>
+            unit.type === unitType && unit.level >= (upgradeInfo.minUnitLevel || 0),
+        )
+        .reduce((sum, unit) => sum + Math.max(0, Number(unit.quantity ?? 0)), 0);
+      const unitsCovered = Math.min(totalMatchingUnits, totalUpgradeUnitCapacity);
+      if (unitsCovered <= 0) return;
+
+      upgradeStats.MeleeAtkPower +=
+        ((upgradeInfo.MeleeAtkPower || 0) / coveragePerUpgrade) * unitsCovered;
+      upgradeStats.MeleeDefPower +=
+        ((upgradeInfo.MeleeDefPower || 0) / coveragePerUpgrade) * unitsCovered;
+      upgradeStats.RangedAtkPower +=
+        ((upgradeInfo.RangedAtkPower || 0) / coveragePerUpgrade) * unitsCovered;
+      upgradeStats.RangedDefPower +=
+        ((upgradeInfo.RangedDefPower || 0) / coveragePerUpgrade) * unitsCovered;
     });
 
   const totalStats: CalculatedStrength = {
@@ -1304,8 +1348,8 @@ export function calculateLoot(
   const loot = BigInt(Math.floor(calculatedLoot));
   const cap =
     (defenderGold *
-      BigInt(Math.floor(V5_COMBAT_CONSTANTS.MAX_GOLD_PILLAGE_SHARE * 100))) /
-    BigInt(100);
+      BigInt(Math.floor(BATTLE_CONSTANTS.MAX_PILLAGE_SHARE_PER_ATTACK * 10000))) /
+    BigInt(10000);
   return loot < BigInt(0) ? BigInt(0) : loot > cap ? cap : loot;
 }
 
@@ -1567,7 +1611,6 @@ export async function distributeCasualties(params: {
     return Math.min(damage, finalCasualtyCap * estimateAverageHp(defenderPool));
   };
 
-  // Helper to apply damage to a unit pool and track casualties
   const applyDamageToUnits = (
     unitPool: BattleUnits[],
     damage: number,
@@ -1597,21 +1640,18 @@ export async function distributeCasualties(params: {
 
       while (unitsRemaining > 0 && remainingDamage > 0) {
         if (unitHP <= remainingDamage) {
-          // Unit is destroyed
           remainingDamage -= unitHP;
           unitsRemaining--;
           casualtiesCount++;
-          // Record loss in BattleResult
           const existingLoss = result.Losses[
             isDefender ? 'Defender' : 'Attacker'
           ].units.find((u) => u.type === unit.type && u.level === unit.level);
           if (existingLoss) {
             existingLoss.quantity++;
           } else {
-            // Provide placeholder values for id, userId, isMercenary for lost units
             result.Losses[isDefender ? 'Defender' : 'Attacker'].units.push({
-              id: (unit as any).id ?? 0, // Placeholder ID
-              userId: isDefender ? defender.id : attacker.id, // Assign to the respective user
+              id: unit.id ?? 0,
+              userId: isDefender ? defender.id : attacker.id,
               type: unit.type,
               level: unit.level,
               quantity: 1,
@@ -1620,7 +1660,6 @@ export async function distributeCasualties(params: {
           }
           unitHP = unitInfo.hp; // Reset HP for the next unit of the same type
         } else {
-          // Unit takes partial damage
           unitHP -= remainingDamage;
           remainingDamage = 0;
         }
@@ -1645,13 +1684,18 @@ export async function distributeCasualties(params: {
       (u) => u.type === 'CITIZEN' || u.type === 'WORKER',
     );
 
-    // Prioritize damage to fighting units first
+    // Prioritize damage to fighting units first, then let breached forts expose
+    // collateral to any remaining casualty budget for the whole defender pool.
+    const cappedDefenderDamage = capDefenderDamageToV5Budget(
+      attackerDamageDealt,
+      [...defenderFightingPool, ...defenderCollateralPool],
+    );
     const {
       casualties: fightingCasualties,
       remainingDamage: remainingAttackerDamage,
     } = applyDamageToUnits(
       defenderFightingPool,
-      capDefenderDamageToV5Budget(attackerDamageDealt, defenderFightingPool),
+      cappedDefenderDamage,
       true,
       false,
     );
@@ -1742,6 +1786,7 @@ export function calculateAndApplyExperience(
     fortDestroyed,
     winRatio,
     attacker.stamina ?? 100,
+    attacker.level ?? 1,
   );
 
   result.experienceGained = {
