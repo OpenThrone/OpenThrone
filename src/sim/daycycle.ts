@@ -323,6 +323,7 @@ function createDayResult(day: number): DayResult {
     highTurnAttacks: 0,
     attackTurnsGenerated: 0,
     attackTurnsSpent: 0,
+    totalXpAwarded: 0,
     totalTurnIncome: 0,
     totalBankDeposits: 0,
     fortBreaches: 0,
@@ -512,6 +513,7 @@ async function processTurnTick(
         Object.assign(target, gainXp(target, result.defenderXp, false));
         attackLosses++;
       }
+      dayResult.totalXpAwarded += result.attackerXp + result.defenderXp;
       if (currentPlayer.level > attackerLevelBefore) {
         dayResult.levelUps += currentPlayer.level - attackerLevelBefore;
       }

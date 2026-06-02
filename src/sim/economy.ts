@@ -1,6 +1,10 @@
 import { Fortifications } from '../constants';
-import { EconomyUpgrades } from '../constants/Structure_Upgrades';
+import {
+  EconomyUpgrades,
+  HouseUpgrades,
+} from '../constants/Structure_Upgrades';
 import { DAILY_CITIZEN_GRANT, UNIT_COSTS } from './population';
+import { getLevelFromSimXp } from './progression';
 import { PlayerState, UnitCounts } from './types';
 
 export function calculateDailyIncome(player: PlayerState): number {
@@ -243,22 +247,42 @@ export function applyDailyCitizenGrant(player: PlayerState): PlayerState {
 }
 
 export function applyLevelUp(player: PlayerState): PlayerState {
-  const xpNeeded = player.level * 1000;
+  const nextLevel = getLevelFromSimXp(player.xp);
 
-  if (player.xp >= xpNeeded) {
+  if (nextLevel > player.level) {
+    const maxFortLevel = Math.max(...Fortifications.map((fort) => fort.level));
+    const nextFortLevel = Math.min(
+      maxFortLevel,
+      Math.max(1, Math.floor(nextLevel / 3)),
+    );
+    const nextFort =
+      Fortifications.find((fort) => fort.level === nextFortLevel) ??
+      Fortifications[0];
+    const previousMaxHp = Math.max(1, player.fortMaxHp);
+    const fortHealthRatio = Math.max(
+      0,
+      Math.min(1, player.fortHp / previousMaxHp),
+    );
+    const nextHouse = Object.values(HouseUpgrades)
+      .filter((house) => house.fortLevel <= nextFortLevel)
+      .sort((a, b) => b.level - a.level)[0];
+
     return {
       ...player,
-      level: player.level + 1,
-      xp: player.xp - xpNeeded,
-      fortLevel: Math.max(1, Math.floor((player.level + 1) / 3)),
-      spyLevel: Math.min(22, Math.max(1, Math.floor((player.level + 1) / 3))),
+      level: nextLevel,
+      fortLevel: nextFortLevel,
+      houseLevel: nextHouse?.level ?? player.houseLevel,
+      recruitBonus: nextHouse?.citizensDaily ?? player.recruitBonus,
+      fortHp: Math.ceil(nextFort.hitpoints * fortHealthRatio),
+      fortMaxHp: nextFort.hitpoints,
+      spyLevel: Math.min(22, Math.max(1, Math.floor(nextLevel / 3))),
       sentryLevel: Math.min(
         22,
-        Math.max(1, Math.floor((player.level + 1) / 3)),
+        Math.max(1, Math.floor(nextLevel / 3)),
       ),
       economyLevel: Math.min(
         7,
-        Math.max(1, Math.floor((player.level + 1) / 3)),
+        Math.max(1, Math.floor(nextLevel / 3)),
       ),
     };
   }
@@ -277,11 +301,7 @@ export function gainXp(
     xp: player.xp + finalXp,
   };
 
-  let levelUps = 0;
-  while (newPlayer.xp >= newPlayer.level * 1000) {
-    newPlayer = applyLevelUp(newPlayer);
-    levelUps++;
-  }
+  newPlayer = applyLevelUp(newPlayer);
 
   return newPlayer;
 }

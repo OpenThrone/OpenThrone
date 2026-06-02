@@ -45,6 +45,8 @@ const SCORE_WEIGHTS: Record<keyof ClosedLoopMetrics, number> = {
   highTurnAttackShare: 1.6,
   attackerWinRate: 2.2,
   avgTurnsPerAttack: 0,
+  avgXpPerDay: 0,
+  avgXpPerTurn: 0,
   lootToProductionRatio: 1.7,
   fortBreachRate: 1.2,
   avgLootPerAttack: 0,
@@ -173,6 +175,10 @@ function calculateMetrics(
     (sum, day) => sum + day.attackTurnsSpent,
     0,
   );
+  const totalXpAwarded = daily.reduce(
+    (sum, day) => sum + day.totalXpAwarded,
+    0,
+  );
   const totalBankDeposits = daily.reduce(
     (sum, day) => sum + day.totalBankDeposits,
     0,
@@ -193,6 +199,8 @@ function calculateMetrics(
     highTurnAttackShare: highTurnAttacks / Math.max(1, totalAttacks),
     attackerWinRate,
     avgTurnsPerAttack: totalSpentTurns / Math.max(1, totalAttacks),
+    avgXpPerDay: totalXpAwarded / daysSimulated,
+    avgXpPerTurn: totalXpAwarded / Math.max(1, totalSpentTurns),
     lootToProductionRatio: totalLoot / Math.max(1, totalProduction),
     fortBreachRate: totalFortBreaches / Math.max(1, totalAttacks),
     avgLootPerAttack: totalLoot / Math.max(1, totalAttacks),

@@ -296,6 +296,7 @@ export interface DayResult {
   highTurnAttacks: number;
   attackTurnsGenerated: number;
   attackTurnsSpent: number;
+  totalXpAwarded: number;
   totalTurnIncome: number;
   totalBankDeposits: number;
   fortBreaches: number;
@@ -414,6 +415,8 @@ export interface ClosedLoopMetrics {
   highTurnAttackShare: number;
   attackerWinRate: number;
   avgTurnsPerAttack: number;
+  avgXpPerDay: number;
+  avgXpPerTurn: number;
   lootToProductionRatio: number;
   fortBreachRate: number;
   avgLootPerAttack: number;
