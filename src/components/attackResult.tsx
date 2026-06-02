@@ -3,13 +3,12 @@ import {
   Box,
   Button,
   Grid,
-  Group,
-  Space,
+  SimpleGrid,
+  Stack,
   Text,
   useMantineTheme,
 } from '@mantine/core';
 import { AnimatePresence, motion } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -17,6 +16,9 @@ import { PlayerRace } from '@/types/typings';
 import toLocale from '@/utils/numberFormatting';
 import { getAssetPath, getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 
+import { BattleLedger } from './BattleLedger';
+import { BattleResultBanner } from './BattleResultBanner';
+import { BattleStatStrip } from './BattleStatStrip';
 import { FramedAvatar } from './FramedAvatar';
 import { GameCard } from './game/GameCard';
 import Modal from './modal';
@@ -34,13 +36,11 @@ const AttackResults = ({ battle, viewerID }) => {
 
   const toggleModal = () => setIsOpen(!isOpen);
 
-  const totalLosses = (losses: string): number => {
+  const totalLosses = (losses: string | { total?: number }): number => {
     try {
-      const parsedLosses = JSON.parse(losses);
-      return Object.values(parsedLosses.units || {}).reduce(
-        (acc: number, curr: any) => acc + curr,
-        0,
-      ) as number;
+      const parsedLosses =
+        typeof losses === 'string' ? JSON.parse(losses) : losses;
+      return parsedLosses.total ?? 0;
     } catch {
       return 0;
     }
@@ -109,155 +109,469 @@ const AttackResults = ({ battle, viewerID }) => {
 
   return (
     <GameCard title="Battle Report" icon={faScroll}>
-      <Grid grow gutter="lg">
-        <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Box
-            component={allowAttackerProfile ? Link : 'div'}
-            href={allowAttackerProfile ? attackerProfileHref : undefined}
-            aria-label={
-              allowAttackerProfile
-                ? `View ${attackerPlayer?.display_name} profile`
-                : undefined
-            }
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textDecoration: 'none',
-              color: 'inherit',
-              cursor: allowAttackerProfile ? 'pointer' : 'default',
-            }}
-          >
-            <Group
-              gap={8}
-              style={{
-                padding: '4px 10px',
-                borderRadius: 8,
-                border: '1px solid #1f2b3b',
-                background: 'linear-gradient(180deg, #121a24, #0b1118)',
-                fontFamily: 'MedievalSharp, serif',
-              }}
-            >
-              <Text size="xl" fw={700} style={{ letterSpacing: 0.5 }}>
-                {attackerPlayer?.display_name}
-              </Text>
-              <Text size="xs" c="dimmed" tt="uppercase">
-                Lvl {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
-              </Text>
-            </Group>
-            <Box style={{ marginTop: -8 }}>
-              <FramedAvatar
-                frameSrc={attackerFrameSrc}
-                src={attackerAvatarSrc}
-                alt="attacker avatar"
-                size={380}
-                insetX={60}
-                insetY={90}
-              />
-            </Box>
-          </Box>
-        </Grid.Col>
+      <Box
+        className="battle-report-page"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0,
+        }}
+      >
+        <BattleResultBanner
+          tone={isAttackerWinner ? 'green' : 'red'}
+          title={isAttackerWinner ? 'Victory' : 'Defeat'}
+          subtitle={
+            isAttackerWinner
+              ? 'Your forces broke through the enemy defenses.'
+              : 'Your forces were driven from the field.'
+          }
+        />
 
-        <Grid.Col
-          span={{ base: 12, md: 2 }}
-          style={{ textAlign: 'center', alignSelf: 'center' }}
-        >
-          <Text size="lg" fw="bold" color={isAttackerWinner ? 'green' : 'red'}>
-            {isAttackerWinner ? 'Victory' : 'Defeat'}
-          </Text>
-          <Space h="md" />
-          <Button onClick={toggleModal}>
-            {isViewerAttacker ? 'Attack Again' : 'Attack Back'}
-          </Button>
-          <Modal
-            isOpen={isOpen}
-            toggleModal={toggleModal}
-            profileID={isViewerAttacker ? defenderPlayer.id : attackerPlayer.id}
-          />
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Box
-            component={allowDefenderProfile ? Link : 'div'}
-            href={allowDefenderProfile ? defenderProfileHref : undefined}
-            aria-label={
-              allowDefenderProfile
-                ? `View ${defenderPlayer?.display_name} profile`
-                : undefined
-            }
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              textDecoration: 'none',
-              color: 'inherit',
-              cursor: allowDefenderProfile ? 'pointer' : 'default',
-            }}
-          >
-            <Group
-              gap={8}
-              style={{
-                padding: '4px 10px',
-                borderRadius: 8,
-                border: '1px solid #1f2b3b',
-                background: 'linear-gradient(180deg, #121a24, #0b1118)',
-                fontFamily: 'MedievalSharp, serif',
-              }}
-            >
-              <Text size="xl" fw={700} style={{ letterSpacing: 0.5 }}>
-                {defenderPlayer?.display_name}
-              </Text>
-              <Text size="xs" c="dimmed" tt="uppercase">
-                Lvl {getLevelFromXP(stats.startOfAttack.Defender.experience)}
-              </Text>
-            </Group>
-            <Box style={{ marginTop: -8 }}>
-              <FramedAvatar
-                frameSrc={frameSrc}
-                src={defenderAvatarSrc}
-                alt="defender avatar"
-                size={380} // outer size
-                insetX={60}
-                insetY={90}
-              />
-            </Box>
-          </Box>
-        </Grid.Col>
-      </Grid>
-
-      <GameCard title="Battle Log" goldAccent={false}>
         <Box
           style={{
-            backgroundColor: '#0f141a',
-            borderRadius: '6px',
-            border: '1px solid #1f2b3b',
-            boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-            padding: '12px',
-            textAlign: 'center',
-            fontFamily: 'MedievalSharp, serif',
-            color: theme.colors.gray[4],
+            position: 'relative',
+            padding: '8px 28px 18px',
+            minHeight: 286,
+            display: 'flex',
+            alignItems: 'center',
+            marginTop: -26,
           }}
         >
-          <AnimatePresence>
-            {summaryLines.map((line, i) => (
-              <motion.p
-                variants={sentence}
-                initial="hidden"
-                animate="visible"
-                exit={{ opacity: 0 }}
-                key={`${i}-log-line`}
-                style={{ margin: 0 }}
+          <Box
+            aria-hidden
+            style={{
+              position: 'absolute',
+              left: '8%',
+              right: '8%',
+              top: '52%',
+              height: 1,
+              background:
+                'linear-gradient(90deg, transparent, rgba(201,166,89,0.24), transparent)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          <Grid align="center" gutter="xl" style={{ width: '100%' }}>
+            <Grid.Col span={{ base: 12, md: 5 }}>
+              <Box
+                component={allowAttackerProfile ? Link : 'div'}
+                href={allowAttackerProfile ? attackerProfileHref : undefined}
+                aria-label={
+                  allowAttackerProfile
+                    ? `View ${attackerPlayer?.display_name} profile`
+                    : undefined
+                }
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '240px minmax(0, 1fr)',
+                  alignItems: 'center',
+                  gap: 22,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  cursor: allowAttackerProfile ? 'pointer' : 'default',
+                }}
               >
-                {line.split('').map((char, index) => (
-                  <motion.span key={`${char}-${index}`} variants={letter}>
-                    {char}
-                  </motion.span>
-                ))}
-              </motion.p>
-            ))}
-          </AnimatePresence>
+                <FramedAvatar
+                  frameSrc={attackerFrameSrc}
+                  src={attackerAvatarSrc}
+                  alt="attacker avatar"
+                  size={240}
+                  insetX={40}
+                  insetY={58}
+                  objectFit="cover"
+                />
+
+                <Box>
+                  <Text
+                    style={{
+                      fontFamily: 'MedievalSharp, serif',
+                      fontSize: 'clamp(1.0rem, 1.8vw, 1.6rem)',
+                      lineHeight: 1.05,
+                      color: '#f7d98b',
+                      textShadow: '0 2px 3px rgba(0,0,0,0.8)',
+                    }}
+                  >
+                    {attackerPlayer?.display_name}
+                  </Text>
+
+                  <Text size="sm" c="dimmed" tt="uppercase" mt={6}>
+                    Lvl{' '}
+                    {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
+                  </Text>
+
+                  <Box
+                    mt="md"
+                    style={{
+                      height: 1,
+                      width: '100%',
+                      background:
+                        'linear-gradient(90deg, rgba(201,166,89,0.55), transparent)',
+                    }}
+                  />
+
+                  <Text
+                    mt="sm"
+                    size="sm"
+                    style={{
+                      fontFamily: 'MedievalSharp, serif',
+                      color: 'rgba(236,229,211,0.78)',
+                    }}
+                  >
+                    Attacker
+                  </Text>
+                </Box>
+              </Box>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, md: 2 }}>
+              <Stack
+                align="center"
+                gap={8}
+                style={{
+                  minWidth: 180,
+                  padding: '16px 10px',
+                  background:
+                    'radial-gradient(circle at center, rgba(201,166,89,0.09), transparent 68%)',
+                  borderTop: '1px solid rgba(201,166,89,0.22)',
+                  borderBottom: '1px solid rgba(201,166,89,0.22)',
+                }}
+              >
+                <Text
+                  size="xs"
+                  tt="uppercase"
+                  c="dimmed"
+                  style={{ letterSpacing: '0.12em' }}
+                >
+                  Battle ID
+                </Text>
+
+                <Text
+                  size="xl"
+                  fw={700}
+                  style={{
+                    fontFamily: 'MedievalSharp, serif',
+                    color: '#e8d39a',
+                    lineHeight: 1,
+                  }}
+                >
+                  {battle.id}
+                </Text>
+
+                <Button
+                  onClick={toggleModal}
+                  variant="filled"
+                  size="md"
+                  style={{
+                    minWidth: 170,
+                    marginTop: 8,
+                    background:
+                      'linear-gradient(180deg, rgba(37,85,124,1), rgba(12,36,59,1))',
+                    border: '1px solid rgba(201,166,89,0.42)',
+                    boxShadow:
+                      'inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 18px rgba(0,0,0,0.35)',
+                    fontFamily: 'MedievalSharp, serif',
+                  }}
+                >
+                  {isViewerAttacker ? 'Attack Again' : 'Attack Back'}
+                </Button>
+
+                <Modal
+                  isOpen={isOpen}
+                  toggleModal={toggleModal}
+                  profileID={
+                    isViewerAttacker ? defenderPlayer.id : attackerPlayer.id
+                  }
+                />
+              </Stack>
+            </Grid.Col>
+
+            <Grid.Col span={{ base: 12, md: 5 }}>
+              <Box
+                component={allowDefenderProfile ? Link : 'div'}
+                href={allowDefenderProfile ? defenderProfileHref : undefined}
+                aria-label={
+                  allowDefenderProfile
+                    ? `View ${defenderPlayer?.display_name} profile`
+                    : undefined
+                }
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0, 1fr) 240px',
+                  alignItems: 'center',
+                  gap: 22,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  cursor: allowDefenderProfile ? 'pointer' : 'default',
+                  textAlign: 'right',
+                }}
+              >
+                <Box>
+                  <Text
+                    style={{
+                      fontFamily: 'MedievalSharp, serif',
+                      fontSize: 'clamp(1.6rem, 2.4vw, 2.2rem)',
+                      lineHeight: 1.05,
+                      color: '#f7d98b',
+                      textShadow: '0 2px 3px rgba(0,0,0,0.8)',
+                    }}
+                  >
+                    {defenderPlayer?.display_name}
+                  </Text>
+
+                  <Text size="sm" c="dimmed" tt="uppercase" mt={6}>
+                    Lvl{' '}
+                    {getLevelFromXP(stats.startOfAttack.Defender.experience)}
+                  </Text>
+
+                  <Box
+                    mt="md"
+                    style={{
+                      height: 1,
+                      width: '100%',
+                      background:
+                        'linear-gradient(270deg, rgba(201,166,89,0.55), transparent)',
+                    }}
+                  />
+
+                  <Text
+                    mt="sm"
+                    size="sm"
+                    style={{
+                      fontFamily: 'MedievalSharp, serif',
+                      color: 'rgba(236,229,211,0.78)',
+                    }}
+                  >
+                    Defender
+                  </Text>
+                </Box>
+
+                <FramedAvatar
+                  frameSrc={frameSrc}
+                  src={defenderAvatarSrc}
+                  alt="defender avatar"
+                  size={240}
+                  insetX={40}
+                  insetY={58}
+                  objectFit="cover"
+                />
+              </Box>
+            </Grid.Col>
+          </Grid>
         </Box>
-      </GameCard>
+
+        <BattleStatStrip
+          stats={[
+            {
+              label: 'Damage Dealt',
+              value: toLocale(stats.attackerDamageDealt),
+              tone: 'normal',
+            },
+            {
+              label: 'Counter Damage',
+              value: toLocale(stats.defenderDamageDealt),
+              tone: 'normal',
+            },
+            {
+              label: 'Gold Pillaged',
+              value: isAttackerWinner ? toLocale(stats.pillagedGold) : '0',
+              tone: 'gold',
+            },
+            {
+              label: 'Fort Damage',
+              value: toLocale(stats.forthpAtStart - stats.forthpAtEnd),
+              tone: 'bad',
+            },
+            {
+              label: 'Attacker Losses',
+              value: attackerTotalLosses,
+              tone: isAttackerWinner ? 'good' : 'bad',
+            },
+            {
+              label: 'Defender Losses',
+              value: defenderTotalLosses,
+              tone: isAttackerWinner ? 'bad' : 'good',
+            },
+          ]}
+        />
+
+        <Box style={{ marginTop: 18 }}>
+          <BattleLedger>
+            <Grid gutter="xl">
+              <Grid.Col span={{ base: 12, md: 7 }}>
+                <Stack gap="sm">
+                  <Text
+                    style={{
+                      fontFamily: 'Cinzel, MedievalSharp, serif',
+                      color: '#e8d39a',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Battle Timeline
+                  </Text>
+
+                  <AnimatePresence>
+                    {summaryLines.map((line, i) => (
+                      <motion.div
+                        variants={sentence}
+                        initial="hidden"
+                        animate="visible"
+                        exit={{ opacity: 0 }}
+                        key={`${i}-log-line`}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '34px 1fr',
+                          gap: 12,
+                          alignItems: 'start',
+                          padding: '7px 0',
+                          borderTop:
+                            i === 0
+                              ? undefined
+                              : '1px solid rgba(201,166,89,0.12)',
+                        }}
+                      >
+                        <Text
+                          size="xs"
+                          style={{
+                            fontFamily: 'Cinzel, serif',
+                            color: 'rgba(201,166,89,0.8)',
+                            paddingTop: 2,
+                          }}
+                        >
+                          {String(i + 1).padStart(2, '0')}
+                        </Text>
+
+                        <Text
+                          component="p"
+                          style={{
+                            margin: 0,
+                            fontFamily: 'MedievalSharp, serif',
+                            color: theme.colors.gray[4],
+                            lineHeight: 1.45,
+                          }}
+                        >
+                          {line.split('').map((char, index) => (
+                            <motion.span
+                              key={`${char}-${index}`}
+                              variants={letter}
+                            >
+                              {char}
+                            </motion.span>
+                          ))}
+                        </Text>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </Stack>
+              </Grid.Col>
+
+              <Grid.Col span={{ base: 12, md: 5 }}>
+                <Stack gap="md">
+                  <Box>
+                    <Text
+                      style={{
+                        fontFamily: 'Cinzel, MedievalSharp, serif',
+                        color: '#e8d39a',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Spoils of War
+                    </Text>
+
+                    <SimpleGrid cols={2} spacing="xs" mt="sm">
+                      <Box>
+                        <Text size="xs" c="dimmed" tt="uppercase">
+                          Gold
+                        </Text>
+                        <Text fw={700} c="#f7d98b">
+                          {isAttackerWinner
+                            ? toLocale(stats.pillagedGold)
+                            : '0'}
+                        </Text>
+                      </Box>
+
+                      <Box>
+                        <Text size="xs" c="dimmed" tt="uppercase">
+                          Fort Damage
+                        </Text>
+                        <Text fw={700} c="red.4">
+                          {toLocale(stats.forthpAtStart - stats.forthpAtEnd)}
+                        </Text>
+                      </Box>
+
+                      <Box>
+                        <Text size="xs" c="dimmed" tt="uppercase">
+                          Attacker XP
+                        </Text>
+                        <Text fw={700}>
+                          {toLocale(JSON.parse(stats.xpEarned).attacker)}
+                        </Text>
+                      </Box>
+
+                      <Box>
+                        <Text size="xs" c="dimmed" tt="uppercase">
+                          Defender XP
+                        </Text>
+                        <Text fw={700}>
+                          {toLocale(JSON.parse(stats.xpEarned).defender)}
+                        </Text>
+                      </Box>
+                    </SimpleGrid>
+                  </Box>
+
+                  <Box
+                    style={{
+                      height: 1,
+                      background:
+                        'linear-gradient(90deg, transparent, rgba(201,166,89,0.45), transparent)',
+                    }}
+                  />
+
+                  <Box>
+                    <Text
+                      style={{
+                        fontFamily: 'Cinzel, MedievalSharp, serif',
+                        color: '#e8d39a',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Casualties
+                    </Text>
+
+                    <SimpleGrid cols={2} spacing="xs" mt="sm">
+                      <Box>
+                        <Text size="xs" c="dimmed" tt="uppercase">
+                          Attacker Lost
+                        </Text>
+                        <Text
+                          fw={700}
+                          c={isAttackerWinner ? 'green.4' : 'red.4'}
+                        >
+                          {attackerTotalLosses}
+                        </Text>
+                      </Box>
+
+                      <Box>
+                        <Text size="xs" c="dimmed" tt="uppercase">
+                          Defender Lost
+                        </Text>
+                        <Text
+                          fw={700}
+                          c={isAttackerWinner ? 'red.4' : 'green.4'}
+                        >
+                          {defenderTotalLosses}
+                        </Text>
+                      </Box>
+                    </SimpleGrid>
+                  </Box>
+                </Stack>
+              </Grid.Col>
+            </Grid>
+          </BattleLedger>
+        </Box>
+      </Box>
     </GameCard>
   );
 };

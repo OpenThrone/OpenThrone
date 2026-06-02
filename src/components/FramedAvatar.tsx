@@ -1,5 +1,6 @@
 import { Box } from '@mantine/core';
 import Image from 'next/image';
+import type { CSSProperties } from 'react';
 
 type FramedAvatarProps = {
   src: string;
@@ -10,6 +11,7 @@ type FramedAvatarProps = {
   insetY?: number;
   cornerRadius?: number;
   frameSrc: string;
+  objectFit?: CSSProperties['objectFit'];
 };
 
 export function FramedAvatar({
@@ -21,6 +23,7 @@ export function FramedAvatar({
   insetY,
   cornerRadius = Math.round(inset * 0.35),
   frameSrc,
+  objectFit = 'contain',
 }: FramedAvatarProps) {
   const resolvedInsetX = insetX ?? inset;
   const resolvedInsetY = insetY ?? inset;
@@ -52,7 +55,7 @@ export function FramedAvatar({
             alt={alt}
             fill
             style={{
-              objectFit: 'contain',
+              objectFit,
             }}
           />
         </Box>

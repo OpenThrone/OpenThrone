@@ -916,3 +916,9 @@ body,
   outline: 2px solid rgba(229,197,90,0.65);
   outline-offset: 2px;
 }
+
+.battle-report-page .game-card [data-testid='card-content'] {
+  background:
+    radial-gradient(circle at top center, rgba(75, 120, 160, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(13,17,23,0.86), rgba(3,6,8,0.96));
+}
