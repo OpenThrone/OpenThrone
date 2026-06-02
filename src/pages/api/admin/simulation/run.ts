@@ -3,6 +3,7 @@ import type { NextApiResponse } from 'next';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { generatePopulation, simulateDay } from '@/sim';
 import { getPlayerPower } from '@/sim/economy';
+import { calculateProgressionPacing } from '@/sim/progression';
 import type {
   BalanceParameters,
   DayResult,
@@ -72,6 +73,13 @@ interface SimulationSummary {
   maxLevel: number;
   avgLevel: number;
   avgAttackTurnsHeld: number;
+  totalXpAwarded: number;
+  avgXpPerDay: number;
+  avgXpPerSpentTurn: number;
+  pacingPlayerId: string | null;
+  pacingPlayerName: string | null;
+  projectedDaysToLevel100: number | null;
+  projectedMonthsToLevel100: number | null;
 }
 
 interface SimulationTiming {
@@ -231,12 +239,12 @@ function snapshotPlayerProgress(
 }
 
 function validateConfig(body: any): SimulationRequest {
+  const minLevel = clamp(Number(body.levelRange?.[0]) || 5, 1, 100);
+  const maxLevel = clamp(Number(body.levelRange?.[1]) || 20, 1, 100);
+
   return {
     populationSize: clamp(Number(body.populationSize) || 100, 2, 500),
-    levelRange: [
-      clamp(Number(body.levelRange?.[0]) || 5, 1, 100),
-      clamp(Number(body.levelRange?.[1]) || 20, 1, 100),
-    ],
+    levelRange: [Math.min(minLevel, maxLevel), Math.max(minLevel, maxLevel)],
     days: clamp(Number(body.days) || 30, 1, 365),
     turnIntervalMinutes: clamp(Number(body.turnIntervalMinutes) || 30, 5, 240),
     newPlayerIntervalDays: clamp(
@@ -271,6 +279,7 @@ function buildSummary(
   dailyResults: DayResult[],
   players: Map<string, PlayerState>,
   state: SimulationState,
+  playerProgress: PlayerProgressReport[],
 ): SimulationSummary {
   const totalAttacks = dailyResults.reduce(
     (sum, day) => sum + day.totalAttacks,
@@ -292,6 +301,14 @@ function buildSummary(
     (sum, day) => sum + day.fortBreaches,
     0,
   );
+  const totalXpAwarded = dailyResults.reduce(
+    (sum, day) => sum + day.totalXpAwarded,
+    0,
+  );
+  const totalTurnsSpent = dailyResults.reduce(
+    (sum, day) => sum + day.attackTurnsSpent,
+    0,
+  );
   const avgAttackerWinRate =
     dailyResults.length > 0
       ? dailyResults.reduce((sum, day) => sum + day.attackerWinRate, 0) /
@@ -309,6 +326,8 @@ function buildSummary(
   const avgAttackTurnsHeld =
     state.metrics.attackTurnsHeldPerDay.reduce((sum, value) => sum + value, 0) /
     Math.max(state.metrics.attackTurnsHeldPerDay.length, 1);
+  const avgXpPerSpentTurn = totalXpAwarded / Math.max(1, totalTurnsSpent);
+  const progressionPacing = calculateProgressionPacing(playerProgress);
 
   let maxLevel = 0;
   let totalLevel = 0;
@@ -336,6 +355,13 @@ function buildSummary(
     maxLevel,
     avgLevel: players.size > 0 ? Math.round(totalLevel / players.size) : 0,
     avgAttackTurnsHeld,
+    totalXpAwarded,
+    avgXpPerDay: progressionPacing.avgXpPerDay,
+    avgXpPerSpentTurn,
+    pacingPlayerId: progressionPacing.pacingPlayerId,
+    pacingPlayerName: progressionPacing.pacingPlayerName,
+    projectedDaysToLevel100: progressionPacing.projectedDaysToLevel100,
+    projectedMonthsToLevel100: progressionPacing.projectedMonthsToLevel100,
   };
 }
 
@@ -589,13 +615,15 @@ async function runSimulation(
   const finishedAtMs = Date.now();
   const elapsedMs = finishedAtMs - startedAtMs;
 
+  const playerProgress = buildPlayerProgress(topPlayers, progressByPlayer);
+
   return {
     config: { ...config, effectiveBalance },
-    summary: buildSummary(dailyResults, state.players, state),
+    summary: buildSummary(dailyResults, state.players, state, playerProgress),
     dailyResults,
     charts: buildCharts(dailyResults, state),
     topPlayers,
-    playerProgress: buildPlayerProgress(topPlayers, progressByPlayer),
+    playerProgress,
     timing: {
       elapsedMs,
       elapsedSeconds: Number((elapsedMs / 1000).toFixed(2)),

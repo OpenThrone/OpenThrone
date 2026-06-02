@@ -147,6 +147,13 @@ interface SimResult {
     maxLevel: number;
     avgLevel: number;
     avgAttackTurnsHeld: number;
+    totalXpAwarded: number;
+    avgXpPerDay: number;
+    avgXpPerSpentTurn: number;
+    pacingPlayerId: string | null;
+    pacingPlayerName: string | null;
+    projectedDaysToLevel100: number | null;
+    projectedMonthsToLevel100: number | null;
   };
   dailyResults: any[];
   charts: {
@@ -276,6 +283,12 @@ function formatCompact(value: number): string {
   if (Math.abs(value) >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
   if (Math.abs(value) >= 1000) return `${(value / 1000).toFixed(0)}K`;
   return `${Math.round(value)}`;
+}
+
+function formatDuration(months: number | null): string {
+  if (months === null || !Number.isFinite(months)) return 'n/a';
+  if (months >= 24) return `${(months / 12).toFixed(1)}y`;
+  return `${months.toFixed(1)}mo`;
 }
 
 function getOffenseUnits(units: UnitCounts): number {
@@ -482,7 +495,7 @@ function ConfigPanel({
         value={
           config.balance.maxPillageSharePerAttack ??
           balancePreset.maxPillageSharePerAttack ??
-          0.52
+          0.22
         }
         onChange={(v) =>
           onChange({
@@ -492,8 +505,8 @@ function ConfigPanel({
         }
         marks={[
           { value: 0.1, label: '10%' },
-          { value: 0.35, label: '35%' },
-          { value: 0.52, label: '52%' },
+          { value: 0.22, label: '22%' },
+          { value: 0.4, label: '40%' },
           { value: 0.6, label: '60%' },
         ]}
       />
@@ -556,6 +569,34 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           icon={faChartLine}
         />
         <StatCard
+          label="Pace XP/Day"
+          value={formatCompact(summary.avgXpPerDay)}
+          icon={faChartLine}
+          color={
+            summary.projectedMonthsToLevel100 !== null &&
+            summary.projectedMonthsToLevel100 < 30
+              ? 'red'
+              : summary.projectedMonthsToLevel100 !== null &&
+                  summary.projectedMonthsToLevel100 <= 42
+                ? 'green'
+                : 'yellow'
+          }
+        />
+        <StatCard
+          label="L100 Pace"
+          value={formatDuration(summary.projectedMonthsToLevel100)}
+          icon={faChartLine}
+          color={
+            summary.projectedMonthsToLevel100 !== null &&
+            summary.projectedMonthsToLevel100 < 30
+              ? 'red'
+              : summary.projectedMonthsToLevel100 !== null &&
+                  summary.projectedMonthsToLevel100 <= 42
+                ? 'green'
+                : 'yellow'
+          }
+        />
+        <StatCard
           label="Total Loot"
           value={`${(summary.totalLoot / 1000000).toFixed(1)}M`}
           icon={faCoins}
@@ -590,6 +631,8 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           {(config.effectiveBalance.maxPillageSharePerAttack * 100).toFixed(0)}%{' '}
           | Tick: {config.turnIntervalMinutes}m | Max Level: {summary.maxLevel}{' '}
           | Avg Held Turns: {summary.avgAttackTurnsHeld.toFixed(1)} | Avg{' '}
+          World XP/Turn: {summary.avgXpPerSpentTurn.toFixed(1)} | Pace Player:{' '}
+          {summary.pacingPlayerName ?? 'n/a'} | Avg{' '}
           {timing.avgMsPerDay.toFixed(0)}ms/day
         </Text>
       </Paper>
