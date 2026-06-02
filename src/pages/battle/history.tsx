@@ -110,11 +110,13 @@ export const getServerSideProps = async (context: any) => {
     props: {
       attackLogs: attackLogs.map((log) => ({
         ...log,
-        timestamp: log.timestamp.toISOString(),
+        timestamp: log.timestamp?.toISOString() ?? null,
+        pillaged_gold: log.pillaged_gold?.toString() ?? null,
       })),
       defenseLogs: defenseLogs.map((log) => ({
         ...log,
-        timestamp: log.timestamp.toISOString(),
+        timestamp: log.timestamp?.toISOString() ?? null,
+        pillaged_gold: log.pillaged_gold?.toString() ?? null,
       })),
     },
   };

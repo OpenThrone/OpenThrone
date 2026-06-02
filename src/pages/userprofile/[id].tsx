@@ -1034,6 +1034,13 @@ export const getServerSideProps = async ({ query }) => {
     serializedBio = await serialize('');
   }
 
+  const defensePressureDate = user.defense_pressure_date
+    ? new Date(user.defense_pressure_date) : null;
+  const defensePressureDateStr =
+    defensePressureDate && !isNaN(defensePressureDate.getTime())
+      ? defensePressureDate.toISOString()
+      : null;
+
   const userData = {
     ...userWithoutPassword,
     bionew: serializedBio,
@@ -1042,6 +1049,7 @@ export const getServerSideProps = async ({ query }) => {
     last_active: lastActiveStr,
     created_at: createdAtStr,
     updated_at: updatedAtStr,
+    defense_pressure_date: defensePressureDateStr,
     status: await getUpdatedStatus(user.id),
     currentEra: serializeDates(user.currentEra),
     latestUserEra: serializeDates(
