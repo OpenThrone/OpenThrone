@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma';
 import { BattleUser } from '@/models/BattleUser';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { simulateBattle } from '@/utils/attackFunctions';
 import { logDebug, logError, logWarn } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
@@ -78,13 +79,13 @@ const BattleUpgradesSchema = z.object({
 const AttackExecutionSchema = z.object({
   attackerId: z.number().int(),
   defenderId: z.number().int(),
-  attackTurns: z.number().int().positive().max(15),
+  attackTurns: z.number().int().positive().max(V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS),
 });
 
 const BattleTestSchema = z.object({
   attackerId: z.number().int().optional(),
   defenderId: z.number().int(),
-  turns: z.number().int().positive().max(15).optional(),
+  turns: z.number().int().positive().max(V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS).optional(),
 });
 
 const AttackLogQuerySchema = z.object({
@@ -652,37 +653,49 @@ export class BattleService {
     } = validatedQuery;
 
     const skip = page * limit;
+    const attackLogFilters: Prisma.attack_logWhereInput[] = [
+      {
+        OR: [{ attacker_id: userId }, { defender_id: userId }],
+      },
+    ];
+
+    if (player) {
+      attackLogFilters.push({
+        OR: [
+          {
+            attackerPlayer: {
+              is: {
+                display_name: {
+                  contains: player,
+                  mode: Prisma.QueryMode.insensitive,
+                },
+              },
+            },
+          },
+          {
+            defenderPlayer: {
+              is: {
+                display_name: {
+                  contains: player,
+                  mode: Prisma.QueryMode.insensitive,
+                },
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    if (typeof minPillage === 'number') {
+      attackLogFilters.push({ pillaged_gold: { gte: BigInt(minPillage) } });
+    }
+
+    if (typeof maxPillage === 'number') {
+      attackLogFilters.push({ pillaged_gold: { lte: BigInt(maxPillage) } });
+    }
 
     const whereClause: Prisma.attack_logWhereInput = {
-      AND: [
-        {
-          OR: [{ attacker_id: userId }, { defender_id: userId }],
-        },
-        ...(player
-          ? [
-              {
-                OR: [
-                  {
-                    attackerPlayer: {
-                      display_name: { contains: player, mode: 'insensitive' },
-                    },
-                  },
-                  {
-                    defenderPlayer: {
-                      display_name: { contains: player, mode: 'insensitive' },
-                    },
-                  },
-                ],
-              },
-            ]
-          : []),
-        ...(typeof minPillage === 'number'
-          ? [{ pillaged_gold: { gte: BigInt(minPillage) } }]
-          : []),
-        ...(typeof maxPillage === 'number'
-          ? [{ pillaged_gold: { lte: BigInt(maxPillage) } }]
-          : []),
-      ],
+      AND: attackLogFilters,
     };
 
     const orderByClause =

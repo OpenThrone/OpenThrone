@@ -283,6 +283,7 @@ export class CronJobService {
       const updateData = {
         gold: updatedGold,
         attack_turns: currentUser.attackTurns + 1,
+        stamina: Math.min(currentUser.maxStamina, currentUser.stamina + 1),
         rank,
         offense: currentUser.offense,
         defense: currentUser.defense,
