@@ -15,6 +15,15 @@ export type BaseUserRelations = {
   bonus_points?: UserBonusPoints[];
 };
 
+type BaseUserData = PrismaUser &
+  Partial<{
+    UserUnit: UserUnit[];
+    UserItem: UserItem[];
+    UserStructureUpgrade: UserStructureUpgrade[];
+    UserBattleUpgrade: UserBattleUpgrade[];
+    UserBonusPoints: UserBonusPoints[];
+  }>;
+
 export const safeBigInt = (value: unknown): bigint => {
   if (value === null || value === undefined) return BigInt(0);
   if (typeof value === 'bigint') return value;
@@ -62,13 +71,23 @@ export class BaseUser {
 
   public stamina: number;
 
-  constructor(userData?: PrismaUser | null, relations: BaseUserRelations = {}) {
+  public defensePressureToday: number;
+
+  public defensePressureDate: Date | string | null;
+
+  public spyPressureToday: number;
+
+  public spyPressureDate: Date | string | null;
+
+  public woundedUnits: unknown[];
+
+  constructor(userData?: BaseUserData | null, relations: BaseUserRelations = {}) {
     const safeUser = userData ?? null;
 
     this.id = safeUser?.id ?? 0;
     this.displayName = safeUser?.display_name ?? '';
-    this.race = (safeUser?.race as any) ?? 'ELF';
-    this.class = (safeUser?.class as any) ?? 'ASSASSIN';
+    this.race = safeUser?.race ?? 'ELF';
+    this.class = safeUser?.class ?? 'ASSASSIN';
 
     this.experience = safeUser?.experience ?? 0;
     this.fortLevel = safeUser?.fort_level ?? 0;
@@ -76,12 +95,19 @@ export class BaseUser {
     this.gold = safeBigInt(safeUser?.gold);
 
     this.attackTurns = safeUser?.attack_turns ?? 0;
-    this.stamina = (safeUser as any)?.stamina ?? 100;
+    this.stamina = safeUser?.stamina ?? 100;
+    this.defensePressureToday = safeUser?.defense_pressure_today ?? 0;
+    this.defensePressureDate = safeUser?.defense_pressure_date ?? null;
+    this.spyPressureToday = safeUser?.spy_pressure_today ?? 0;
+    this.spyPressureDate = safeUser?.spy_pressure_date ?? null;
+    this.woundedUnits = Array.isArray(safeUser?.wounded_units)
+      ? safeUser.wounded_units
+      : [];
 
     const units = Array.isArray(relations.units)
       ? relations.units
-      : Array.isArray((safeUser as any)?.UserUnit)
-        ? ((safeUser as any).UserUnit as UserUnit[])
+      : Array.isArray(safeUser?.UserUnit)
+        ? safeUser.UserUnit
         : [];
 
     this.units = units.filter((u) => !u.isMercenary);
@@ -89,26 +115,26 @@ export class BaseUser {
 
     this.items = Array.isArray(relations.items)
       ? relations.items
-      : Array.isArray((safeUser as any)?.UserItem)
-        ? ((safeUser as any).UserItem as UserItem[])
+      : Array.isArray(safeUser?.UserItem)
+        ? safeUser.UserItem
         : [];
 
     this.structure_upgrades = Array.isArray(relations.structure_upgrades)
       ? relations.structure_upgrades
-      : Array.isArray((safeUser as any)?.UserStructureUpgrade)
-        ? ((safeUser as any).UserStructureUpgrade as UserStructureUpgrade[])
+      : Array.isArray(safeUser?.UserStructureUpgrade)
+        ? safeUser.UserStructureUpgrade
         : [];
 
     this.battle_upgrades = Array.isArray(relations.battle_upgrades)
       ? relations.battle_upgrades
-      : Array.isArray((safeUser as any)?.UserBattleUpgrade)
-        ? ((safeUser as any).UserBattleUpgrade as UserBattleUpgrade[])
+      : Array.isArray(safeUser?.UserBattleUpgrade)
+        ? safeUser.UserBattleUpgrade
         : [];
 
     this.bonus_points = Array.isArray(relations.bonus_points)
       ? relations.bonus_points
-      : Array.isArray((safeUser as any)?.UserBonusPoints)
-        ? ((safeUser as any).UserBonusPoints as UserBonusPoints[])
+      : Array.isArray(safeUser?.UserBonusPoints)
+        ? safeUser.UserBonusPoints
         : [];
   }
 
@@ -124,6 +150,11 @@ export class BaseUser {
       gold: this.gold,
       attackTurns: this.attackTurns,
       stamina: this.stamina,
+      defensePressureToday: this.defensePressureToday,
+      defensePressureDate: this.defensePressureDate,
+      spyPressureToday: this.spyPressureToday,
+      spyPressureDate: this.spyPressureDate,
+      woundedUnits: this.woundedUnits,
       units: this.units,
       mercenaries: this.mercenaries,
       items: this.items,
