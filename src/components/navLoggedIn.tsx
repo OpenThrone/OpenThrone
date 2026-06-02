@@ -140,6 +140,11 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       href: '/home/admin',
       labelKey: 'home.administration',
     });
+    subMenus.home.push({
+      key: 'balance-sim',
+      href: '/home/admin/balance-sim',
+      labelKey: 'Balance Simulator',
+    });
   }
 
   useEffect(() => {
