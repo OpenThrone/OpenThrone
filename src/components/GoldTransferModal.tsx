@@ -71,7 +71,10 @@ export function GoldTransferModal({
         `/api/social/friends/${targetUserId}/transfer`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': `transfer-${targetUserId}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          },
           body: JSON.stringify({
             amount: data.amount,
             notes: data.notes,

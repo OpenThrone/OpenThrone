@@ -31,7 +31,10 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
     try {
       const response = await fetch(`/api/bank/${type}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': `bank-${type}-${amount}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        },
         body: JSON.stringify({ amount: amount.toString() }),
       });
       const data = await response.json();

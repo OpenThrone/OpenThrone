@@ -20,7 +20,7 @@ const withdrawHandler = async (
     return res.status(401).json({ error: 'Unauthorized' });
   }
   const canProceed = await enforceIdempotency(req, res, {
-    scope: `bank-withdraw:${req.body?.withdrawAmount ?? 'unknown'}`,
+    scope: `bank-withdraw:${req.body?.amount ?? 'unknown'}`,
     actorKey: String(req.session.user.id),
   });
   if (!canProceed) {
@@ -30,7 +30,7 @@ const withdrawHandler = async (
   try {
     const updatedUser = await withdrawGold(
       Number(req.session.user.id),
-      req.body?.withdrawAmount,
+      req.body?.amount,
     );
     return res.status(200).json({
       message: 'Withdraw successful',

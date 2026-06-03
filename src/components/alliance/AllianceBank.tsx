@@ -49,7 +49,10 @@ export const AllianceBank = ({
     try {
       const res = await fetch('/api/alliances/bank/deposit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': `alliance-deposit-${alliance.id}-${depositAmount}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        },
         body: JSON.stringify({
           allianceId: alliance.id,
           amount: depositAmount.toString(),
@@ -78,7 +81,10 @@ export const AllianceBank = ({
     try {
       const res = await fetch('/api/alliances/bank/withdraw', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': `alliance-withdraw-${alliance.id}-${withdrawAmount}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        },
         body: JSON.stringify({
           allianceId: alliance.id,
           targetUserId: user.id, // Direct withdraw to self for now
