@@ -154,7 +154,6 @@ export class ArmoryService {
           );
         }
 
-        // Use a Map for efficient updates of existing items
         const currentItemsMap = new Map<string, ArmoryItem>();
         (currentUser.UserItem as ArmoryItem[]).forEach((item) => {
           const key = `${item.type}-${item.usage}-${item.level}`;

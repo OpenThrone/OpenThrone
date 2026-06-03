@@ -226,7 +226,6 @@ export const incrementUserStats = async (
   if (Array.isArray(user.stats)) {
     // Assume the array elements *should* conform to PlayerStat,
     // but treat as 'any' temporarily for manipulation.
-    // More robust validation could be added here if needed.
     userStats = user.stats as any[];
   }
 
@@ -850,7 +849,6 @@ export async function getTopWealth() {
       },
     });
 
-    // Helper function to calculate the total value of items based on their cost
     const calculateItemsValue = (items: any[]): bigint => {
       return items.reduce((total, item) => {
         const itemTypeInfo = ItemTypes.find(
@@ -868,7 +866,6 @@ export async function getTopWealth() {
       }, BigInt(0));
     };
 
-    // Helper function to calculate the total value of battle upgrades based on their cost
     const calculateBattleUpgradeValue = (upgrades: any[]): bigint => {
       return upgrades.reduce((total, upgrade) => {
         const battleUpgradeInfo = BattleUpgrades.find(

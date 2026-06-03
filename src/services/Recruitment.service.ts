@@ -597,7 +597,6 @@ export async function getRandomAutoRecruitUser() {
   return randomUser;
 }
 
-// Utility to increase citizen count in a legacy units JSON array
 export function increaseCitizens(units: any[]) {
   if (!Array.isArray(units)) return units;
   const citizen = units.find((u) => u.type === 'CITIZEN');

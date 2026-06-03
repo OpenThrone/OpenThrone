@@ -58,7 +58,6 @@ export class UserUnitsService {
       infiltrators: 0,
     };
 
-    // Helper function to process units (both regular and mercenaries)
     const processUnits = (units: UserUnit[]) => {
       units.forEach((unit) => {
         const quantity = unit.quantity || 0;
