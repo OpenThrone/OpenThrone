@@ -26,7 +26,6 @@ const joinAlliance = async (req: any, res: any) => {
   const { allianceId } = validatedBody.data;
 
   try {
-    // We need to check the join mode first
     const alliance = await prisma.alliances.findUnique({
       where: { id: allianceId },
       select: { join_mode: true },

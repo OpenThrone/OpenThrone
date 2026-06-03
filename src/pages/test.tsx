@@ -19,7 +19,6 @@ import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import { StyledContent } from '@/components/game/StyledContent';
 import { StyledLosses } from '@/components/game/StyledLosses';
-// --- IMPORT THE NEW WRAPPERS (Make sure you create these files first) ---
 import { StyledNews } from '@/components/game/StyledNews';
 import { UnitTrainingPanel } from '@/components/game/UnitTrainingPanel';
 import { type PlayerData, WarlordTable } from '@/components/game/WarlordTable';

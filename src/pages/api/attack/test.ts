@@ -62,7 +62,6 @@ async function handler(
 
 export default guardedHandler(handler);
 
-// Helper function to create a user object from form data
 function _createUserFromFormData(formData: any) {
   const user = {
     id: formData.id || Math.floor(Math.random() * 10000),

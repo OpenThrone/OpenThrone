@@ -188,9 +188,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       // We can check memberships from session if available, or just check the alliance members usage
       // Since allianceData.members is fetched, we can check there
       // Note: getAllianceById includes members but might limit them? No, the code says includes members.
-      // Wait, getAllianceById implementation in AllianceService.ts includes 'members'.
-
-      // Better to check robustly
       isMember =
         alliance.members?.some((m) => m.user_id === Number(user.id)) ?? false;
       isLeader = alliance.leader_id === Number(user.id);
