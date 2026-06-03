@@ -293,7 +293,7 @@ const Sidebar: React.FC = () => {
                     value={
                       <span>{user?.currentEra?.name ?? t('labels.unknown')}</span>
                     }
-                    icon={<RpgAwesomeIcon icon="experience" fw />}
+                    icon={<RpgAwesomeIcon icon="hourglass" fw />}
                   />
                   <StatRow
                     label={t('labels.citizens')}
@@ -502,7 +502,7 @@ const Sidebar: React.FC = () => {
                   value={
                     <span>{user?.currentEra?.name ?? t('labels.unknown')}</span>
                   }
-                  icon={<RpgAwesomeIcon icon="experience" fw />}
+                  icon={<RpgAwesomeIcon icon="hourglass" fw />}
                 />
                 <StatRow
                   label={t('labels.citizens')}
