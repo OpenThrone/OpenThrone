@@ -91,7 +91,6 @@ const handleConnection = (socket: Socket) => {
   socket.on('disconnect', (reason) => handleDisconnect(socket, userId, reason));
 };
 
-// Helper to serialize potentially complex message objects including BigInts and Dates
 const serializeData = (data: unknown): unknown => {
   return JSON.parse(
     JSON.stringify(data, (key, value) => {
@@ -794,9 +793,6 @@ const handleDisconnect = (socket: Socket, userId: number, reason: string) => {
   }
 };
 
-// --- Helper Functions ---
-
-// Helper to send notifications
 async function sendNotifications(
   roomId: number,
   senderId: number,
@@ -829,7 +825,6 @@ async function sendNotifications(
   });
 }
 
-// Helper function to find userId from socketId using the userSockets map
 const findUserIdBySocketId = (socketId: string): number | string => {
   let foundUserId: number | string = 'Unknown';
   userSockets.forEach((socketIdSet, uid) => {
