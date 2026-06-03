@@ -3,8 +3,6 @@ import React from 'react';
 
 import { GameCard } from './GameCard';
 
-// Assuming LossesList is the component you have, or we render the raw data logic here
-// For this demo, I'll recreate the visual logic to match the theme.
 interface StyledLossesProps {
   losses: string; // JSON string
 }

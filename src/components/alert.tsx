@@ -139,7 +139,7 @@ const AlertComponent: React.FC = () => {
           shadow="lg"
           withBorder
           radius="md"
-          bodyPadding={0} // We'll handle padding in the content
+          bodyPadding={0}
           title={alert.type.toUpperCase()}
           titleSize="md"
           titlePosition="left"

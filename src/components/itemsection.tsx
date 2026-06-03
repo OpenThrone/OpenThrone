@@ -9,7 +9,6 @@ import toLocale from '@/utils/numberFormatting';
 import { useUser } from '../context/users';
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 
-// Utility function outside the component
 const getIconClass = (heading: string) => {
   const iconMap: { [key: string]: string } = {
     WEAPON: 'sword',

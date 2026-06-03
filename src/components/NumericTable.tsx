@@ -4,7 +4,6 @@ interface NeumorphicTableProps {
   tone?: 'light' | 'themed';
 }
 
-// Helper to generate the "soft" shadow style
 const neumorphicStyle = {
   backgroundColor: '#e0e5ec',
   boxShadow:

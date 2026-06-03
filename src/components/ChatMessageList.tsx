@@ -345,9 +345,6 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
     return message.content;
   }, []); // No dependencies, this function is stable
 
-  // Memoizes the rendering of the entire message list area.
-  // This prevents re-rendering the list unnecessarily when parent state changes,
-  // optimizing performance, especially for long conversations.
   const renderedMessageArea = useMemo(() => {
     if (isLoading) {
       return (
