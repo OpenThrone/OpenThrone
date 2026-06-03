@@ -94,6 +94,14 @@ export class GeneralService {
           stats: true,
           achievements: true,
           currentEraId: true,
+          currentEra: {
+            select: {
+              id: true,
+              name: true,
+              startDate: true,
+              endDate: true,
+            },
+          },
           permissions: { select: { type: true } },
           UserUnit: true,
           UserItem: true,
@@ -197,6 +205,14 @@ export class GeneralService {
             stats: true,
             achievements: true,
             currentEraId: true,
+            currentEra: {
+              select: {
+                id: true,
+                name: true,
+                startDate: true,
+                endDate: true,
+              },
+            },
             permissions: { select: { type: true } },
             UserUnit: true,
             UserItem: true,
@@ -328,6 +344,14 @@ export class GeneralService {
             ? JSON.parse(user.stats)
             : (user.stats ?? []),
         permissions: user.permissions,
+        currentEra: user.currentEra
+          ? {
+              id: user.currentEra.id,
+              name: user.currentEra.name,
+              startDate: user.currentEra.startDate.toISOString(),
+              endDate: user.currentEra.endDate?.toISOString() ?? null,
+            }
+          : undefined,
         beenAttacked,
         detectedSpy,
         won_attacks: wonAttacks,

@@ -391,6 +391,12 @@ export interface UserApiResponse {
     alliance: { name: string };
     role: { name: string };
   }[];
+  currentEra?: {
+    id: number;
+    name: string;
+    startDate: string;
+    endDate: string | null;
+  };
 }
 
 // Define the Prisma User type alias again for internal use if needed
