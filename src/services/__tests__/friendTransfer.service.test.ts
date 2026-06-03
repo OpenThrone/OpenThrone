@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'bun:test';
 // Use shared mock helpers
 import { installMockMtRand } from '../../../test/utils/mockMtRand';
 import { installMockPrisma, mockPrisma } from '../../../test/utils/mockPrisma';
-// We'll require the service and config modules after we set up vi.mock so the mocks take effect.
 let transferGoldToFriend: any;
 let createGoldRequest: any;
 let respondToGoldRequest: any;

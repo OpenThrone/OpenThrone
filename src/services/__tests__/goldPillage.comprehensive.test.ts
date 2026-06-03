@@ -45,9 +45,6 @@ vi.mock('@/services/AttackValidationService', () => ({
   canAttack: vi.fn(async () => true),
 }));
 
-// Mock attackFunctions.simulateBattle (we'll override implementation in tests)
-// We'll use a spy on the real attackFunctions.simulateBattle below instead of mocking the whole module.
-
 const AttackService = require('@/services/AttackService').default;
 const attackFunctions = require('@/utils/attackFunctions');
 // Spy on simulateBattle so tests can override its implementation safely
@@ -70,7 +67,6 @@ let inMemoryUsers: Record<number, UserRow>;
 let nextAttackLogId = 1000;
 let createdBankHistory: any[] = [];
 
-// Utility to reset in-memory DB
 function resetInMemoryDB() {
   inMemoryUsers = {};
   nextAttackLogId = 1000;
@@ -151,7 +147,6 @@ beforeEach(() => {
   resetInMemoryDB();
 });
 
-// Helper to create mock user rows in the in-memory DB
 function createMockUser(opts?: Partial<UserRow>): UserRow {
   const id = opts?.id ?? Object.keys(inMemoryUsers).length + 1;
   const user: UserRow = {
