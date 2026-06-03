@@ -9,7 +9,12 @@ import {
 } from '@/constants';
 import BattleResult from '@/models/BattleResult';
 import type {
+  BattleArmyState,
+  BattleFormation,
   BreachState,
+  CombatRole,
+  FormationStrength,
+  PerUnitCombatStats,
   StaminaModifiers,
   StaminaState,
 } from '@/types/combat';
@@ -214,6 +219,8 @@ interface BattleState {
   random: RandomFn;
   initialAttackerScore: number;
   initialDefenderScore: number;
+  attackerArmy?: BattleArmyState;
+  defenderArmy?: BattleArmyState;
 }
 const OFFENSE = 'OFFENSE';
 
@@ -391,6 +398,8 @@ function initializeBattleState(
     initialDefenderScore:
       defenderStrength.totalStats.MeleeDefPower +
       defenderStrength.totalStats.RangedDefPower,
+    attackerArmy: buildBattleArmyState(attacker, 'OFFENSE'),
+    defenderArmy: buildBattleArmyState(defender, 'DEFENSE'),
   };
 
   return state;
@@ -743,20 +752,25 @@ async function executeBattleTurn(state: any, turn: number) {
 function calculateAttackerStrength(state, turn) {
   const staminaDrop = calculateStaminaDrop(turn);
   const staminaImpact = state.attackerStamina * staminaDrop;
-  const attackerStrength = calculateStrength(state.attacker, 'OFFENSE');
+
+  const attackerStrength = state.attackerArmy
+    ? { totalStats: (() => {
+        const rebuilt = buildBattleArmyState(state.attacker, 'OFFENSE');
+        const s = calculateArmyStrengthFromFormations(rebuilt);
+        return {
+          MeleeAtkPower: s.meleeAtkPower,
+          MeleeDefPower: s.meleeDefPower,
+          RangedAtkPower: s.rangedAtkPower,
+          RangedDefPower: s.rangedDefPower,
+        } as CalculatedStrength;
+      })() }
+    : calculateStrength(state.attacker, 'OFFENSE');
+
   return {
-    MeleeAtkPower: Math.ceil(
-      attackerStrength.totalStats.MeleeAtkPower * staminaImpact,
-    ),
-    MeleeDefPower: Math.ceil(
-      attackerStrength.totalStats.MeleeDefPower * staminaImpact,
-    ),
-    RangedAtkPower: Math.ceil(
-      attackerStrength.totalStats.RangedAtkPower * staminaImpact,
-    ),
-    RangedDefPower: Math.ceil(
-      attackerStrength.totalStats.RangedDefPower * staminaImpact,
-    ),
+    MeleeAtkPower: Math.ceil(attackerStrength.totalStats.MeleeAtkPower * staminaImpact),
+    MeleeDefPower: Math.ceil(attackerStrength.totalStats.MeleeDefPower * staminaImpact),
+    RangedAtkPower: Math.ceil(attackerStrength.totalStats.RangedAtkPower * staminaImpact),
+    RangedDefPower: Math.ceil(attackerStrength.totalStats.RangedDefPower * staminaImpact),
   };
 }
 
@@ -784,12 +798,38 @@ function calculateDefenderStrength(state, turn) {
   state.shouldIncludeCitz = shouldIncludeCitz;
   state.includeOffenseUnits = includeOffenseUnits;
 
-  const currentDefenderStrength = calculateStrength(
-    state.defender,
-    'DEFENSE',
-    shouldIncludeCitz,
-    includeOffenseUnits,
-  );
+  const currentDefenderStrength = state.defenderArmy
+    ? { totalStats: (() => {
+        const rebuilt = buildBattleArmyState(state.defender, 'DEFENSE');
+        const s = calculateArmyStrengthFromFormations(rebuilt);
+        if (shouldIncludeCitz && rebuilt.collateral) {
+          const collateralStr = calculateArmyStrengthFromFormations({ formations: rebuilt.collateral, collateral: [] });
+          s.meleeAtkPower += collateralStr.meleeAtkPower;
+          s.meleeDefPower += collateralStr.meleeDefPower;
+          s.rangedAtkPower += collateralStr.rangedAtkPower;
+          s.rangedDefPower += collateralStr.rangedDefPower;
+        }
+        if (includeOffenseUnits && rebuilt.formations) {
+          const offenseFormations = rebuilt.formations.filter((f: any) => f.type === 'OFFENSE');
+          const offenseStr = calculateArmyStrengthFromFormations({ formations: offenseFormations, collateral: [] });
+          s.meleeAtkPower += offenseStr.meleeAtkPower;
+          s.meleeDefPower += offenseStr.meleeDefPower;
+          s.rangedAtkPower += offenseStr.rangedAtkPower;
+          s.rangedDefPower += offenseStr.rangedDefPower;
+        }
+        return {
+          MeleeAtkPower: s.meleeAtkPower,
+          MeleeDefPower: s.meleeDefPower,
+          RangedAtkPower: s.rangedAtkPower,
+          RangedDefPower: s.rangedDefPower,
+        } as CalculatedStrength;
+      })() }
+    : calculateStrength(
+        state.defender,
+        'DEFENSE',
+        shouldIncludeCitz,
+        includeOffenseUnits,
+      );
 
   let {
     MeleeAtkPower: defenderMeleeAtkPower,
@@ -1684,8 +1724,6 @@ export async function distributeCasualties(params: {
       (u) => u.type === 'CITIZEN' || u.type === 'WORKER',
     );
 
-    // Prioritize damage to fighting units first, then let breached forts expose
-    // collateral to any remaining casualty budget for the whole defender pool.
     const cappedDefenderDamage = capDefenderDamageToV5Budget(
       attackerDamageDealt,
       [...defenderFightingPool, ...defenderCollateralPool],
@@ -1701,7 +1739,6 @@ export async function distributeCasualties(params: {
     );
     totalDefenderCasualties += fightingCasualties;
 
-    // If damage remains, apply to collateral units (if fort is breached)
     if (fortHP <= 0 && _includeCitz) {
       const { casualties: collateralCasualties } = applyDamageToUnits(
         defenderCollateralPool,
@@ -2089,6 +2126,374 @@ export function calculateRangedAdvantage(
   const defenderRangedDef = calculateStrength(defender, 'DEFENSE').totalStats
     .RangedDefPower;
   return attackerRanged / (defenderRangedDef || 1);
+}
+
+// ============================================================
+// Formation-based Combat System (Melee/Ranged Split)
+// ============================================================
+
+function isRangedWeapon(itemInfo: { RangedAtkPower?: number }): boolean {
+  return (itemInfo.RangedAtkPower ?? 0) > 0;
+}
+
+function computePerUnitStats(
+  unitInfo: { MeleeAtkPower?: number; MeleeDefPower?: number; RangedAtkPower?: number; RangedDefPower?: number },
+  rangedWeaponItemInfo: { MeleeAtkPower?: number; MeleeDefPower?: number; RangedAtkPower?: number; RangedDefPower?: number } | null,
+  meleeWeaponItemInfo: { MeleeAtkPower?: number; MeleeDefPower?: number; RangedAtkPower?: number; RangedDefPower?: number } | null,
+  nonWeaponItemContributions: PerUnitCombatStats,
+  upgradeContribution: PerUnitCombatStats,
+  bonus: number,
+): PerUnitCombatStats {
+  const weapon = rangedWeaponItemInfo ?? meleeWeaponItemInfo;
+  const mult = 1 + bonus / 100;
+  return {
+    MeleeAtkPower: Math.ceil(((unitInfo.MeleeAtkPower ?? 0) + (weapon?.MeleeAtkPower ?? 0) + nonWeaponItemContributions.MeleeAtkPower + upgradeContribution.MeleeAtkPower) * mult),
+    MeleeDefPower: Math.ceil(((unitInfo.MeleeDefPower ?? 0) + (weapon?.MeleeDefPower ?? 0) + nonWeaponItemContributions.MeleeDefPower + upgradeContribution.MeleeDefPower) * mult),
+    RangedAtkPower: Math.ceil(((unitInfo.RangedAtkPower ?? 0) + (weapon?.RangedAtkPower ?? 0) + nonWeaponItemContributions.RangedAtkPower + upgradeContribution.RangedAtkPower) * mult),
+    RangedDefPower: Math.ceil(((unitInfo.RangedDefPower ?? 0) + (weapon?.RangedDefPower ?? 0) + nonWeaponItemContributions.RangedDefPower + upgradeContribution.RangedDefPower) * mult),
+  };
+}
+
+function computeNonWeaponItemStats(
+  userItems: any[],
+  unitType: string,
+  unitLevel: number,
+  quantity: number,
+): PerUnitCombatStats {
+  const stats: PerUnitCombatStats = { MeleeAtkPower: 0, MeleeDefPower: 0, RangedAtkPower: 0, RangedDefPower: 0 };
+  const nonWeaponItems = userItems
+    .filter((item: any) => item.usage === unitType && item.level <= unitLevel && item.type !== 'WEAPON')
+    .sort((a: any, b: any) => {
+      const infoA = itemTypeLookup[unitType]?.find((i: any) => i.type === a.type && i.level === a.level);
+      const infoB = itemTypeLookup[unitType]?.find((i: any) => i.type === b.type && i.level === b.level);
+      return ((infoB?.MeleeAtkPower ?? 0) + (infoB?.MeleeDefPower ?? 0)) - ((infoA?.MeleeAtkPower ?? 0) + (infoA?.MeleeDefPower ?? 0));
+    });
+
+  const slotCounts: Record<string, number> = {};
+  for (const item of nonWeaponItems) {
+    const currentCount = slotCounts[item.type] ?? 0;
+    const usable = Math.min(item.quantity, quantity - currentCount);
+    if (usable <= 0) continue;
+    const itemInfo = itemTypeLookup[unitType]?.find((i: any) => i.type === item.type && i.level === item.level);
+    if (!itemInfo) continue;
+    stats.MeleeAtkPower += (itemInfo.MeleeAtkPower ?? 0) * usable;
+    stats.MeleeDefPower += (itemInfo.MeleeDefPower ?? 0) * usable;
+    stats.RangedAtkPower += (itemInfo.RangedAtkPower ?? 0) * usable;
+    stats.RangedDefPower += (itemInfo.RangedDefPower ?? 0) * usable;
+    slotCounts[item.type] = currentCount + usable;
+  }
+  return stats;
+}
+
+function computeUpgradeContribution(
+  battleUpgrades: any[],
+  unitType: string,
+  unitLevel: number,
+  siegeLevel: number,
+  totalMatchingUnits: number,
+): PerUnitCombatStats {
+  const stats: PerUnitCombatStats = { MeleeAtkPower: 0, MeleeDefPower: 0, RangedAtkPower: 0, RangedDefPower: 0 };
+  for (const upgrade of battleUpgrades) {
+    if (upgrade.type !== unitType) continue;
+    const upgradeInfo = BattleUpgrades.find((bu: any) => bu.type === upgrade.type && bu.level === upgrade.level);
+    const upgradeQuantity = Math.max(0, Number(upgrade.quantity ?? 0));
+    if (!upgradeInfo || upgradeQuantity <= 0) continue;
+    if (upgradeInfo.SiegeUpgradeLevel && siegeLevel < upgradeInfo.SiegeUpgradeLevel) continue;
+    if (unitLevel < (upgradeInfo.minUnitLevel ?? 0)) continue;
+    const coveragePerUpgrade = upgradeInfo.unitsCovered || 1;
+    const capacity = upgradeQuantity * coveragePerUpgrade;
+    const covered = Math.min(totalMatchingUnits, capacity);
+    if (covered <= 0) continue;
+    stats.MeleeAtkPower += ((upgradeInfo.MeleeAtkPower ?? 0) / coveragePerUpgrade) * covered;
+    stats.MeleeDefPower += ((upgradeInfo.MeleeDefPower ?? 0) / coveragePerUpgrade) * covered;
+    stats.RangedAtkPower += ((upgradeInfo.RangedAtkPower ?? 0) / coveragePerUpgrade) * covered;
+    stats.RangedDefPower += ((upgradeInfo.RangedDefPower ?? 0) / coveragePerUpgrade) * covered;
+  }
+  return stats;
+}
+
+export function buildUnitFormations(
+  unit: BattleUnits,
+  user: BattleUserLike,
+  usage: 'OFFENSE' | 'DEFENSE',
+): BattleFormation[] {
+  const unitInfo = UnitTypes.find((u: any) => u.type === unit.type && u.level === unit.level);
+  if (!unitInfo) return [];
+
+  const quantity = unit.quantity ?? 0;
+  if (quantity <= 0) return [];
+
+  const maxHP = unitInfo.hp ?? 1;
+  const currentHP = unit.currentHP ?? maxHP;
+  const isMercenary = unit.isMercenary ?? false;
+
+  if (unit.type === 'CITIZEN' || unit.type === 'WORKER') {
+    const bonus = usage === 'OFFENSE' ? (user.attackBonus ?? 0) : (user.defenseBonus ?? 0);
+    const mult = 1 + Number(bonus) / 100;
+    return [{
+      type: unit.type,
+      level: unit.level,
+      combatRole: 'COLLATERAL' as CombatRole,
+      quantity,
+      currentHP,
+      maxHP,
+      perUnitStats: {
+        MeleeAtkPower: Math.ceil((unitInfo.MeleeAtkPower ?? 0) * mult),
+        MeleeDefPower: Math.ceil((unitInfo.MeleeDefPower ?? 0) * mult),
+        RangedAtkPower: Math.ceil((unitInfo.RangedAtkPower ?? 0) * mult),
+        RangedDefPower: Math.ceil((unitInfo.RangedDefPower ?? 0) * mult),
+      },
+      isMercenary,
+    }];
+  }
+
+  const bonus = usage === 'OFFENSE' ? (user.attackBonus ?? 0) : (user.defenseBonus ?? 0);
+  const siegeLevel = user.structure_upgrades?.find((u: any) => u?.type === 'OFFENSE')?.level ?? 0;
+
+  const usableWeapons = (user.items ?? [])
+    .filter((item: any) => item.usage === usage && item.level <= unit.level && item.type === 'WEAPON')
+    .sort((a: any, b: any) => {
+      const infoA = itemTypeLookup[usage]?.find((i: any) => i.type === a.type && i.level === a.level);
+      const infoB = itemTypeLookup[usage]?.find((i: any) => i.type === b.type && i.level === b.level);
+      const rangedA = isRangedWeapon(infoA ?? {}) ? 1 : 0;
+      const rangedB = isRangedWeapon(infoB ?? {}) ? 1 : 0;
+      if (rangedA !== rangedB) return rangedB - rangedA;
+      return ((infoB?.MeleeAtkPower ?? 0) + (infoB?.RangedAtkPower ?? 0)) - ((infoA?.MeleeAtkPower ?? 0) + (infoA?.RangedAtkPower ?? 0));
+    });
+
+  let rangedCount = 0;
+  let rangedWeaponInfo: { MeleeAtkPower?: number; MeleeDefPower?: number; RangedAtkPower?: number; RangedDefPower?: number } | null = null;
+  let remainingQuantity = quantity;
+
+  for (const weapon of usableWeapons) {
+    const weaponInfo = itemTypeLookup[usage]?.find((i: any) => i.type === weapon.type && i.level === weapon.level);
+    if (!weaponInfo) continue;
+    const assignable = Math.min(weapon.quantity ?? 0, remainingQuantity);
+    if (assignable <= 0) continue;
+
+    if (isRangedWeapon(weaponInfo)) {
+      rangedCount += assignable;
+      rangedWeaponInfo = weaponInfo;
+      remainingQuantity -= assignable;
+    }
+  }
+  const meleeCount = quantity - rangedCount;
+
+  const meleeWeaponInfo = (() => {
+    for (const weapon of usableWeapons) {
+      const info = itemTypeLookup[usage]?.find((i: any) => i.type === weapon.type && i.level === weapon.level);
+      if (info && !isRangedWeapon(info)) return info;
+    }
+    return null;
+  })();
+
+  const nonWeaponStats = computeNonWeaponItemStats(user.items ?? [], usage, unit.level, quantity);
+
+  const upgradeStats = computeUpgradeContribution(
+    user.battle_upgrades ?? [],
+    usage,
+    unit.level,
+    siegeLevel,
+    quantity,
+  );
+
+  const formations: BattleFormation[] = [];
+
+  if (rangedCount > 0) {
+    formations.push({
+      type: unit.type,
+      level: unit.level,
+      combatRole: 'RANGED',
+      quantity: rangedCount,
+      currentHP: maxHP,
+      maxHP,
+      perUnitStats: computePerUnitStats(unitInfo, rangedWeaponInfo, meleeWeaponInfo, nonWeaponStats, upgradeStats, bonus),
+      isMercenary,
+    });
+  }
+
+  if (meleeCount > 0) {
+    formations.push({
+      type: unit.type,
+      level: unit.level,
+      combatRole: 'MELEE',
+      quantity: meleeCount,
+      currentHP: maxHP,
+      maxHP,
+      perUnitStats: computePerUnitStats(unitInfo, null, meleeWeaponInfo, nonWeaponStats, upgradeStats, bonus),
+      isMercenary,
+    });
+  }
+
+  return formations;
+}
+
+export function buildBattleArmyState(
+  user: BattleUserLike,
+  usage: 'OFFENSE' | 'DEFENSE',
+): BattleArmyState {
+  const allUnits = [...(user.units ?? []), ...(user.mercenaries ?? [])];
+  const combatTypes = usage === 'OFFENSE'
+    ? ['OFFENSE']
+    : ['DEFENSE'];
+
+  const formations: BattleFormation[] = [];
+  const collateral: BattleFormation[] = [];
+
+  for (const unit of allUnits) {
+    const qty = unit.quantity ?? 0;
+    if (qty <= 0) continue;
+
+    if (unit.type === 'CITIZEN' || unit.type === 'WORKER') {
+      collateral.push(...buildUnitFormations(unit, user, usage));
+    } else if (combatTypes.includes(unit.type)) {
+      formations.push(...buildUnitFormations(unit, user, usage));
+    }
+  }
+
+  return { formations, collateral };
+}
+
+export function sumPhaseAttackPower(army: BattleArmyState, phase: 'melee' | 'ranged'): number {
+  const role: CombatRole = phase === 'melee' ? 'MELEE' : 'RANGED';
+  let total = 0;
+  for (const f of army.formations) {
+    if (f.combatRole !== role) continue;
+    const stat = phase === 'melee' ? f.perUnitStats.MeleeAtkPower : f.perUnitStats.RangedAtkPower;
+    total += stat * f.quantity;
+  }
+  return total;
+}
+
+export function sumPhaseDefensePower(army: BattleArmyState, stat: 'MeleeDefPower' | 'RangedDefPower'): number {
+  let total = 0;
+  for (const f of army.formations) {
+    total += f.perUnitStats[stat] * f.quantity;
+  }
+  return total;
+}
+
+export function calculateArmyStrengthFromFormations(
+  army: BattleArmyState,
+  roleFilter?: CombatRole,
+): FormationStrength {
+  const result: FormationStrength = { meleeAtkPower: 0, meleeDefPower: 0, rangedAtkPower: 0, rangedDefPower: 0 };
+  for (const f of army.formations) {
+    if (roleFilter && f.combatRole !== roleFilter) continue;
+    result.meleeAtkPower += f.perUnitStats.MeleeAtkPower * f.quantity;
+    result.meleeDefPower += f.perUnitStats.MeleeDefPower * f.quantity;
+    result.rangedAtkPower += f.perUnitStats.RangedAtkPower * f.quantity;
+    result.rangedDefPower += f.perUnitStats.RangedDefPower * f.quantity;
+  }
+  return result;
+}
+
+export function applyDamageToFormations(
+  formations: BattleFormation[],
+  damage: number,
+  priorityRole: CombatRole,
+  result: BattleResult,
+  isDefender: boolean,
+): { casualties: number; remainingDamage: number } {
+  let remainingDamage = damage;
+  let casualties = 0;
+
+  const sorted = [...formations]
+    .filter((f) => f.quantity > 0)
+    .sort((a, b) => {
+      if (a.combatRole === priorityRole && b.combatRole !== priorityRole) return -1;
+      if (b.combatRole === priorityRole && a.combatRole !== priorityRole) return 1;
+      return (a.level ?? 0) - (b.level ?? 0);
+    });
+
+  for (const formation of sorted) {
+    if (remainingDamage <= 0) break;
+
+    let hp = formation.currentHP;
+    let qty = formation.quantity;
+
+    while (qty > 0 && remainingDamage > 0) {
+      if (hp <= remainingDamage) {
+        remainingDamage -= hp;
+        qty--;
+        casualties++;
+        const side = isDefender ? 'Defender' : 'Attacker';
+        const existing = result.Losses[side].units.find(
+          (u: any) => u.type === formation.type && u.level === formation.level,
+        );
+        if (existing) {
+          existing.quantity++;
+        } else {
+          result.Losses[side].units.push({
+            id: 0,
+            userId: 0,
+            type: formation.type,
+            level: formation.level,
+            quantity: 1,
+            isMercenary: formation.isMercenary,
+          });
+        }
+        hp = formation.maxHP;
+      } else {
+        hp -= remainingDamage;
+        remainingDamage = 0;
+      }
+    }
+
+    formation.quantity = qty;
+    formation.currentHP = qty > 0 ? hp : formation.maxHP;
+  }
+
+  return { casualties, remainingDamage };
+}
+
+export function syncFormationsToUserUnits(
+  army: BattleArmyState,
+  user: BattleUserLike,
+): void {
+  const allFormations = [...(army.formations ?? []), ...(army.collateral ?? [])];
+  const byKey = new Map<string, { type: string; level: number; quantity: number; isMercenary: boolean }>();
+
+  for (const f of allFormations) {
+    const key = `${f.type}_${f.level}_${f.isMercenary}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.quantity += f.quantity;
+    } else {
+      byKey.set(key, { type: f.type, level: f.level, quantity: f.quantity, isMercenary: f.isMercenary });
+    }
+  }
+
+  const updatePool = (pool: BattleUnits[]): BattleUnits[] => {
+    return pool.map((unit) => {
+      const key = `${unit.type}_${unit.level}_${unit.isMercenary ?? false}`;
+      const synced = byKey.get(key);
+      if (synced) {
+        byKey.delete(key);
+        return { ...unit, quantity: synced.quantity };
+      }
+      return unit;
+    }).filter((u) => (u.quantity ?? 0) > 0);
+  };
+
+  user.units = updatePool(user.units ?? []);
+  user.mercenaries = updatePool(user.mercenaries ?? []);
+}
+
+function getFormationTotalQuantity(army: BattleArmyState, ...types: string[]): number {
+  let total = 0;
+  for (const f of army.formations) {
+    if (types.includes(f.type)) total += f.quantity;
+  }
+  return total;
+}
+
+function getCollateralTotalQuantity(army: BattleArmyState, ...types: string[]): number {
+  let total = 0;
+  for (const f of army.collateral) {
+    if (types.includes(f.type)) total += f.quantity;
+  }
+  return total;
 }
 
 /**
