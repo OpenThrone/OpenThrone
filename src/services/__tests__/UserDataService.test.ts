@@ -20,6 +20,11 @@ describe('UserDataService', () => {
     mockPrisma.attack_log.findMany = vi.fn().mockResolvedValue([]);
     mockPrisma.attack_log.count = vi.fn().mockResolvedValue(0);
     mockPrisma.bank_history.findMany = vi.fn().mockResolvedValue([]);
+    mockPrisma.era = {
+      findFirst: vi.fn().mockResolvedValue({ id: 1, name: 'Era 1', startDate: new Date(), endDate: null }),
+      create: vi.fn().mockResolvedValue({ id: 1, name: 'Era 1', startDate: new Date() }),
+    };
+    mockPrisma.users.update = vi.fn().mockResolvedValue({});
   });
 
   it('returns null when user not found', async () => {

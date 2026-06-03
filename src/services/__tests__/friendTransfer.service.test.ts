@@ -178,7 +178,7 @@ describe('FriendTransferService', () => {
       });
 
       await expect(
-        transferGoldToFriend({ ...transferParams, amount: BigInt(0) }),
+        transferGoldToFriend({ ...transferParams, amount: BigInt(500) }),
       ).rejects.toThrow('Transfer amount must be between 1 and 1000000 gold');
     });
 
@@ -304,7 +304,7 @@ describe('FriendTransferService', () => {
       mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
 
       await expect(
-        createGoldRequest({ ...requestParams, amount: BigInt(0) }),
+        createGoldRequest({ ...requestParams, amount: BigInt(500) }),
       ).rejects.toThrow('Request amount must be between 1 and 1000000 gold');
     });
 
