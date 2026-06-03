@@ -48,7 +48,6 @@ describe('WebSocket Real-time Features', () => {
         });
       });
 
-      cy.captureScreenshot('ws-connection-established');
     });
 
     it('should handle WebSocket connection errors gracefully', () => {
@@ -79,7 +78,6 @@ describe('WebSocket Real-time Features', () => {
       });
 
       cy.wait(500);
-      cy.captureScreenshot('ws-connection-error');
 
       // App should still be functional
       cy.get('[data-testid="page-title"]').should('be.visible');
@@ -89,7 +87,6 @@ describe('WebSocket Real-time Features', () => {
       cy.visitApp('/home/overview');
 
       cy.get('[data-testid="connection-status"]').should('be.visible');
-      cy.captureScreenshot('ws-connection-status');
     });
   });
 
@@ -110,7 +107,6 @@ describe('WebSocket Real-time Features', () => {
       cy.get('[data-testid="chat-send-button"]').click();
 
       cy.wait(300);
-      cy.captureScreenshot('ws-chat-sent');
 
       // Message should appear in chat
       cy.get('[data-testid="chat-message"]').should('contain', testMessage);
@@ -120,7 +116,6 @@ describe('WebSocket Real-time Features', () => {
       cy.visitApp('/community/chat');
 
       cy.get('[data-testid="chat-messages"]').should('be.visible');
-      cy.captureScreenshot('ws-chat-receive');
 
       // In a real test, we would mock incoming messages
       // For now, just verify chat container is ready
@@ -135,7 +130,6 @@ describe('WebSocket Real-time Features', () => {
         .within(() => {
           cy.get('[data-testid="message-timestamp"]').should('be.visible');
         });
-      cy.captureScreenshot('ws-chat-timestamps');
     });
 
     it('should handle empty chat messages', () => {
@@ -146,7 +140,6 @@ describe('WebSocket Real-time Features', () => {
 
       // Should not send empty message
       cy.get('[data-testid="chat-message"]').should('have.length', 0);
-      cy.captureScreenshot('ws-chat-empty');
     });
 
     it('should limit chat message length', () => {
@@ -156,7 +149,6 @@ describe('WebSocket Real-time Features', () => {
 
       cy.get('[data-testid="chat-input"]').type(longMessage);
       cy.get('[data-testid="chat-input"]').should('have.attr', 'maxlength');
-      cy.captureScreenshot('ws-chat-length-limit');
     });
   });
 
@@ -169,7 +161,6 @@ describe('WebSocket Real-time Features', () => {
       cy.visitApp('/home/overview');
 
       cy.get('[data-testid="notification-area"]').should('be.visible');
-      cy.captureScreenshot('ws-notification-area');
 
       // Trigger a notification (e.g., train a unit)
       cy.visitApp('/battle/training');
@@ -178,7 +169,6 @@ describe('WebSocket Real-time Features', () => {
 
       cy.visitApp('/home/overview');
       cy.get('[data-testid="notification-badge"]').should('be.visible');
-      cy.captureScreenshot('ws-notification-badge');
     });
 
     it('should dismiss notifications on click', () => {
@@ -188,13 +178,11 @@ describe('WebSocket Real-time Features', () => {
       cy.wait(300);
 
       cy.get('[data-testid="notification-panel"]').should('be.visible');
-      cy.captureScreenshot('ws-notification-panel');
 
       cy.get('[data-testid="dismiss-notification"]').first().click();
       cy.wait(300);
 
       cy.get('[data-testid="notification-badge"]').should('not.exist');
-      cy.captureScreenshot('ws-notification-dismissed');
     });
 
     it('should show notification count', () => {
@@ -206,7 +194,6 @@ describe('WebSocket Real-time Features', () => {
           expect(count).to.be.at.least(0);
         }
       });
-      cy.captureScreenshot('ws-notification-count');
     });
 
     it('should handle notification types (info, warning, error)', () => {
@@ -226,7 +213,6 @@ describe('WebSocket Real-time Features', () => {
         cy.wait(100);
       });
 
-      cy.captureScreenshot('ws-notification-types');
     });
   });
 
@@ -241,7 +227,6 @@ describe('WebSocket Real-time Features', () => {
       });
 
       cy.wait(1000);
-      cy.captureScreenshot('ws-disconnected');
 
       // Connection should recover
       cy.window().then((win) => {
@@ -254,7 +239,6 @@ describe('WebSocket Real-time Features', () => {
         'contain',
         'connected',
       );
-      cy.captureScreenshot('ws-reconnected');
     });
 
     it('should queue messages during disconnect', () => {
@@ -271,7 +255,6 @@ describe('WebSocket Real-time Features', () => {
       cy.get('[data-testid="chat-send-button"]').click();
 
       cy.wait(500);
-      cy.captureScreenshot('ws-message-queued');
 
       // Connection should recover
       cy.window().then((win) => {
@@ -280,7 +263,6 @@ describe('WebSocket Real-time Features', () => {
       });
 
       cy.wait(1000);
-      cy.captureScreenshot('ws-message-sent-after-reconnect');
     });
 
     it('should show offline indicator when disconnected', () => {
@@ -294,7 +276,6 @@ describe('WebSocket Real-time Features', () => {
 
       cy.wait(500);
       cy.get('[data-testid="offline-indicator"]').should('be.visible');
-      cy.captureScreenshot('ws-offline-indicator');
     });
   });
 
@@ -329,7 +310,6 @@ describe('WebSocket Real-time Features', () => {
 
       // App should still work with REST polling
       cy.get('[data-testid="page-title"]').should('be.visible');
-      cy.captureScreenshot('ws-rest-fallback');
     });
 
     it('should periodically poll for updates via REST', () => {
@@ -364,7 +344,6 @@ describe('WebSocket Real-time Features', () => {
 
       // Wait for polling
       cy.wait('@getUserPoll', { timeout: 10000 });
-      cy.captureScreenshot('ws-rest-polling');
     });
 
     it('should switch back to WebSocket when available', () => {
@@ -381,7 +360,6 @@ describe('WebSocket Real-time Features', () => {
         'contain',
         'connected',
       );
-      cy.captureScreenshot('ws-ws-recovery');
     });
   });
 
@@ -401,7 +379,6 @@ describe('WebSocket Real-time Features', () => {
       cy.wait(500);
 
       cy.visitApp('/home/overview');
-      cy.captureScreenshot('ws-gold-update');
 
       // Gold should be updated
       cy.get('[data-testid="gold-display"]').should('be.visible');
@@ -422,7 +399,6 @@ describe('WebSocket Real-time Features', () => {
       cy.wait(500);
 
       cy.visitApp('/home/overview');
-      cy.captureScreenshot('ws-unit-update');
 
       // Unit count should be updated
       cy.get('[data-testid="unit-count"]').should('be.visible');
@@ -432,13 +408,11 @@ describe('WebSocket Real-time Features', () => {
       cy.visitApp('/battle/users');
 
       cy.get('[data-testid="warlord-table"]').should('be.visible');
-      cy.captureScreenshot('ws-rankings-initial');
 
       // Wait for potential updates
       cy.wait(2000);
 
       cy.get('[data-testid="warlord-table"]').should('be.visible');
-      cy.captureScreenshot('ws-rankings-updated');
     });
   });
 
@@ -453,7 +427,6 @@ describe('WebSocket Real-time Features', () => {
           // In production, WebSocket should use wss://
         }
       });
-      cy.captureScreenshot('ws-security-protocol');
     });
 
     it('should authenticate WebSocket connections', () => {
@@ -465,7 +438,6 @@ describe('WebSocket Real-time Features', () => {
         const token = win.localStorage.getItem('next-auth.session-token');
         expect(token).to.exist;
       });
-      cy.captureScreenshot('ws-authentication');
     });
   });
 
@@ -481,7 +453,6 @@ describe('WebSocket Real-time Features', () => {
         cy.wait(100);
       });
 
-      cy.captureScreenshot('ws-rapid-messages');
 
       // All messages should be visible
       cy.get('[data-testid="chat-message"]').should(
@@ -499,7 +470,6 @@ describe('WebSocket Real-time Features', () => {
       cy.get('[data-testid="chat-send-button"]').click();
       cy.wait(300);
 
-      cy.captureScreenshot('ws-large-message');
 
       // Message should be sent
       cy.get('[data-testid="chat-message"]').should('contain', 'A');
@@ -529,7 +499,6 @@ describe('WebSocket Real-time Features', () => {
         'connected',
       );
 
-      cy.captureScreenshot('ws-navigation-persistence');
     });
   });
 
@@ -548,7 +517,6 @@ describe('WebSocket Real-time Features', () => {
       });
 
       cy.wait(300);
-      cy.captureScreenshot('ws-malformed-message');
 
       // App should still be functional
       cy.get('[data-testid="chat-input"]').should('be.visible');
@@ -565,7 +533,6 @@ describe('WebSocket Real-time Features', () => {
 
       cy.wait(500);
       cy.get('[data-testid="offline-indicator"]').should('be.visible');
-      cy.captureScreenshot('ws-network-offline');
 
       // Simulate network coming back online
       cy.window().then((win) => {
@@ -578,7 +545,6 @@ describe('WebSocket Real-time Features', () => {
         'contain',
         'connected',
       );
-      cy.captureScreenshot('ws-network-recovery');
     });
   });
 });

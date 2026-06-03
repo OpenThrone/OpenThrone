@@ -38,7 +38,6 @@ describe('Accessibility Compliance', () => {
             }
           });
       });
-      cy.captureScreenshot('contrast-normal-text');
     });
 
     it('should meet WCAG AA contrast for large text (3:1)', () => {
@@ -51,7 +50,6 @@ describe('Accessibility Compliance', () => {
             cy.validateContrast('[data-testid="large-heading"]', 3);
           }
         });
-      cy.captureScreenshot('contrast-large-text');
     });
 
     it('should meet WCAG AA contrast for UI components', () => {
@@ -72,7 +70,6 @@ describe('Accessibility Compliance', () => {
             }
           });
       });
-      cy.captureScreenshot('contrast-ui-components');
     });
 
     it('should validate contrast for form inputs', () => {
@@ -80,7 +77,6 @@ describe('Accessibility Compliance', () => {
 
       cy.validateContrast('[data-testid="email-input"]', 4.5);
       cy.validateContrast('[data-testid="password-input"]', 4.5);
-      cy.captureScreenshot('contrast-form-inputs');
     });
 
     it('should validate contrast for error messages', () => {
@@ -96,7 +92,6 @@ describe('Accessibility Compliance', () => {
             cy.validateContrast('[data-testid="error-message"]', 4.5);
           }
         });
-      cy.captureScreenshot('contrast-error-messages');
     });
 
     it('should validate contrast for all race themes', () => {
@@ -115,7 +110,6 @@ describe('Accessibility Compliance', () => {
         cy.reload();
 
         cy.validateContrast('[data-testid="page-title"]', 4.5);
-        cy.captureScreenshot(`contrast-${race}-theme`);
       });
     });
   });
@@ -139,7 +133,6 @@ describe('Accessibility Compliance', () => {
           selector.replace(/\[data-testid="|"\]/g, ''),
         );
       });
-      cy.captureScreenshot('keyboard-nav-links');
     });
 
     it('should navigate through form fields with Tab key', () => {
@@ -153,7 +146,6 @@ describe('Accessibility Compliance', () => {
 
       cy.get('[data-testid="submit-button"]').focus();
       cy.focused().should('have.attr', 'data-testid', 'submit-button');
-      cy.captureScreenshot('keyboard-form-navigation');
     });
 
     it('should navigate through interactive elements in correct order', () => {
@@ -169,7 +161,6 @@ describe('Accessibility Compliance', () => {
 
       cy.get('[data-testid="train-button"]').eq(2).focus();
       cy.focused().should('be.visible');
-      cy.captureScreenshot('keyboard-tab-order');
     });
 
     it('should support Shift+Tab for reverse navigation', () => {
@@ -179,7 +170,6 @@ describe('Accessibility Compliance', () => {
 
       cy.get('[data-testid="train-button"]').eq(0).focus();
       cy.focused().should('be.visible');
-      cy.captureScreenshot('keyboard-reverse-navigation');
     });
 
     it('should activate buttons with Enter key', () => {
@@ -189,7 +179,6 @@ describe('Accessibility Compliance', () => {
       cy.focused().type('{enter}');
 
       // Button should trigger action
-      cy.captureScreenshot('keyboard-enter-activation');
     });
 
     it('should activate buttons with Space key', () => {
@@ -199,7 +188,6 @@ describe('Accessibility Compliance', () => {
       cy.focused().type(' ');
 
       // Button should trigger action
-      cy.captureScreenshot('keyboard-space-activation');
     });
 
     it('should handle keyboard navigation on mobile viewport', () => {
@@ -211,7 +199,6 @@ describe('Accessibility Compliance', () => {
       cy.focused().type('{enter}');
 
       cy.wait(300);
-      cy.captureScreenshot('keyboard-mobile-navigation');
     });
   });
 
@@ -226,7 +213,6 @@ describe('Accessibility Compliance', () => {
           expect(hasAriaLabel).to.exist;
         });
       });
-      cy.captureScreenshot('aria-button-labels');
     });
 
     it('should have ARIA labels on form inputs', () => {
@@ -243,7 +229,6 @@ describe('Accessibility Compliance', () => {
           $el.attr('aria-label') || $el.attr('aria-labelledby');
         expect(hasAriaLabel).to.exist;
       });
-      cy.captureScreenshot('aria-input-labels');
     });
 
     it('should have ARIA labels on navigation links', () => {
@@ -255,7 +240,6 @@ describe('Accessibility Compliance', () => {
           expect(hasAriaLabel).to.exist;
         });
       });
-      cy.captureScreenshot('aria-nav-labels');
     });
 
     it('should have proper ARIA roles for interactive elements', () => {
@@ -267,7 +251,6 @@ describe('Accessibility Compliance', () => {
         'button',
       );
       cy.get('[data-testid="tab-button"]').should('have.attr', 'role', 'tab');
-      cy.captureScreenshot('aria-roles');
     });
 
     it('should have ARIA labels for icon-only buttons', () => {
@@ -276,7 +259,6 @@ describe('Accessibility Compliance', () => {
       cy.get('[data-testid="icon-button"]').each(($btn) => {
         cy.wrap($btn).should('have.attr', 'aria-label');
       });
-      cy.captureScreenshot('aria-icon-buttons');
     });
 
     it('should update ARIA labels for dynamic content', () => {
@@ -288,7 +270,6 @@ describe('Accessibility Compliance', () => {
       cy.get('[data-testid="train-button"]')
         .first()
         .should('have.attr', 'aria-label');
-      cy.captureScreenshot('aria-dynamic-labels');
     });
   });
 
@@ -305,7 +286,6 @@ describe('Accessibility Compliance', () => {
         cy.get(selector).first().focus();
         cy.focused().should('have.css', 'outline').and('not.equal', 'none');
       });
-      cy.captureScreenshot('focus-indicators');
     });
 
     it('should maintain focus during page navigation', () => {
@@ -316,7 +296,6 @@ describe('Accessibility Compliance', () => {
 
       // Focus should move to the new page
       cy.focused().should('be.visible');
-      cy.captureScreenshot('focus-navigation');
     });
 
     it('should trap focus within modals', () => {
@@ -330,7 +309,6 @@ describe('Accessibility Compliance', () => {
 
           cy.get('[data-testid="modal"]').should('be.visible');
           cy.focused().should('be.within', '[data-testid="modal"]');
-          cy.captureScreenshot('focus-modal-trap');
         }
       });
     });
@@ -349,7 +327,6 @@ describe('Accessibility Compliance', () => {
           cy.wait(300);
 
           cy.focused().should('have.attr', 'data-testid', 'modal-trigger');
-          cy.captureScreenshot('focus-modal-return');
         }
       });
     });
@@ -364,7 +341,6 @@ describe('Accessibility Compliance', () => {
         const $error = $body.find('[data-testid="error-message"]');
         if ($error.length > 0) {
           cy.focused().should('have.attr', 'data-testid', 'email-input');
-          cy.captureScreenshot('focus-validation');
         }
       });
     });
@@ -374,7 +350,6 @@ describe('Accessibility Compliance', () => {
 
       cy.get('[data-testid="nav-link"]').first().focus();
       cy.focused().should('have.css', 'outline').and('not.equal', 'none');
-      cy.captureScreenshot('focus-visible-styles');
     });
   });
 
@@ -384,7 +359,6 @@ describe('Accessibility Compliance', () => {
 
       cy.get('h1').should('have.length', 1); // One h1 per page
       cy.get('h2').should('have.length.greaterThan', 0);
-      cy.captureScreenshot('sr-heading-hierarchy');
     });
 
     it('should have alt text for all images', () => {
@@ -393,7 +367,6 @@ describe('Accessibility Compliance', () => {
       cy.get('img').each(($img) => {
         cy.wrap($img).should('have.attr', 'alt').and('not.be.empty');
       });
-      cy.captureScreenshot('sr-image-alt');
     });
 
     it('should have aria-live regions for dynamic content', () => {
@@ -404,7 +377,6 @@ describe('Accessibility Compliance', () => {
         'aria-live',
         'polite',
       );
-      cy.captureScreenshot('sr-live-regions');
     });
 
     it('should have aria-describedby for form field descriptions', () => {
@@ -414,7 +386,6 @@ describe('Accessibility Compliance', () => {
         'have.attr',
         'aria-describedby',
       );
-      cy.captureScreenshot('sr-form-descriptions');
     });
 
     it('should have aria-hidden for decorative elements', () => {
@@ -425,7 +396,6 @@ describe('Accessibility Compliance', () => {
         'aria-hidden',
         'true',
       );
-      cy.captureScreenshot('sr-decorative-hidden');
     });
 
     it('should have proper landmark roles', () => {
@@ -433,7 +403,6 @@ describe('Accessibility Compliance', () => {
 
       cy.get('[role="navigation"]').should('be.visible');
       cy.get('[role="main"]').should('be.visible');
-      cy.captureScreenshot('sr-landmarks');
     });
   });
 
@@ -457,7 +426,6 @@ describe('Accessibility Compliance', () => {
             }
           });
       });
-      cy.captureScreenshot('touch-targets-mobile');
     });
 
     it('should have minimum 48px touch targets for form inputs', () => {
@@ -467,7 +435,6 @@ describe('Accessibility Compliance', () => {
       cy.validateTouchTarget('[data-testid="email-input"]', 48);
       cy.validateTouchTarget('[data-testid="password-input"]', 48);
       cy.validateTouchTarget('[data-testid="submit-button"]', 48);
-      cy.captureScreenshot('touch-targets-form');
     });
 
     it('should have adequate spacing between touch targets', () => {
@@ -489,7 +456,6 @@ describe('Accessibility Compliance', () => {
           });
         }
       });
-      cy.captureScreenshot('touch-targets-spacing');
     });
   });
 
@@ -498,7 +464,6 @@ describe('Accessibility Compliance', () => {
       cy.visitApp('/home/overview');
 
       cy.get('[data-testid="skip-link"]').should('be.visible');
-      cy.captureScreenshot('skip-link-visible');
     });
 
     it('should focus on main content when skip link is activated', () => {
@@ -508,7 +473,6 @@ describe('Accessibility Compliance', () => {
       cy.focused().type('{enter}');
 
       cy.focused().should('have.attr', 'id', 'main-content');
-      cy.captureScreenshot('skip-link-activation');
     });
   });
 
@@ -524,7 +488,6 @@ describe('Accessibility Compliance', () => {
         'role',
         'alert',
       );
-      cy.captureScreenshot('error-aria-live');
     });
 
     it('should associate error messages with form fields', () => {
@@ -537,7 +500,6 @@ describe('Accessibility Compliance', () => {
         'have.attr',
         'aria-describedby',
       );
-      cy.captureScreenshot('error-association');
     });
   });
 
@@ -551,7 +513,6 @@ describe('Accessibility Compliance', () => {
         'aria-label',
       );
       cy.validateTouchTarget('[data-testid="mobile-menu-button"]', 48);
-      cy.captureScreenshot('accessibility-mobile');
     });
 
     it('should maintain accessibility on desktop', () => {
@@ -564,7 +525,6 @@ describe('Accessibility Compliance', () => {
           expect(hasAriaLabel).to.exist;
         });
       });
-      cy.captureScreenshot('accessibility-desktop');
     });
 
     it('should maintain accessibility during viewport resize', () => {
@@ -579,7 +539,6 @@ describe('Accessibility Compliance', () => {
 
       cy.get('[data-testid="mobile-menu-button"]').should('be.visible').focus();
       cy.focused().should('be.visible');
-      cy.captureScreenshot('accessibility-resize');
     });
   });
 });

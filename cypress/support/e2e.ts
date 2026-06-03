@@ -1,5 +1,82 @@
 /// <reference types="cypress" />
 
+import { addCompareSnapshotCommand } from 'cypress-visual-regression/dist/command';
+
+addCompareSnapshotCommand({
+  errorThreshold: 0.01,
+  pixelmatchOptions: {
+    threshold: 0.1,
+  },
+});
+
+// ---------------------------------------------------------------------------
+// WCAG contrast-ratio helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse an rgb/rgba CSS colour string into [r, g, b].
+ */
+function parseRgb(css: string): [number, number, number] | null {
+  const m = css.match(
+    /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/,
+  );
+  if (!m) return null;
+  return [parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3], 10)];
+}
+
+/**
+ * Relative luminance per WCAG 2.1
+ * https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
+ */
+function relativeLuminance(r: number, g: number, b: number): number {
+  const [rs, gs, bs] = [r, g, b].map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+/**
+ * Contrast ratio between two RGB tuples.
+ * Returns a value >= 1 (1 = identical, 21 = max contrast).
+ */
+function contrastRatio(
+  fg: [number, number, number],
+  bg: [number, number, number],
+): number {
+  const l1 = relativeLuminance(...fg);
+  const l2 = relativeLuminance(...bg);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * Walk up the DOM to find the first ancestor with a non-transparent
+ * background colour. Falls back to white (255,255,255).
+ */
+function effectiveBg($el: JQuery<HTMLElement>): [number, number, number] {
+  let current = $el;
+  while (current.length) {
+    const bg = current.css('background-color');
+    const rgb = parseRgb(bg);
+    if (rgb) {
+      // Check alpha channel for rgba
+      const alphaMatch = bg.match(
+        /rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d.]+)\)/,
+      );
+      const alpha = alphaMatch ? parseFloat(alphaMatch[1]) : 1;
+      if (alpha > 0) return rgb;
+    }
+    current = current.parent();
+  }
+  return [255, 255, 255];
+}
+
+// ---------------------------------------------------------------------------
+// Custom commands
+// ---------------------------------------------------------------------------
+
 const normalizePath = (path: string) => {
   if (path.startsWith('http')) return path;
   if (path.startsWith('/')) return path;
@@ -52,9 +129,24 @@ Cypress.Commands.add('loginAdmin', () => {
   cy.visitApp('/home/overview');
 });
 
-// Vision MCP screenshot command
+/**
+ * Visual regression screenshot — compares against a baseline snapshot.
+ * On first run (no baseline) the snapshot is created automatically.
+ * Subsequent runs diff against the baseline and fail if pixel difference
+ * exceeds the configured errorThreshold.
+ */
 Cypress.Commands.add('captureScreenshot', (name: string) => {
-  cy.screenshot(name, { capture: 'viewport' });
+  // @ts-ignore — compareSnapshot injected by cypress-visual-regression
+  cy.compareSnapshot(name, 0.01);
+});
+
+/**
+ * Full-page visual regression capture — use for page-level layout checks
+ * where viewport-level capture is sufficient.
+ */
+Cypress.Commands.add('capturePageScreenshot', (name: string) => {
+  // @ts-ignore — compareSnapshot injected by cypress-visual-regression
+  cy.compareSnapshot(name, 0.02);
 });
 
 // Touch target validation (WCAG 2.5.5: minimum 48px)
@@ -79,20 +171,37 @@ Cypress.Commands.add(
   },
 );
 
-// Color contrast validation (WCAG AA: minimum 4.5:1 for normal text)
+/**
+ * WCAG contrast validation — computes actual luminance-based contrast ratio.
+ * Uses the WCAG 2.1 relative luminance formula and compares against minRatio
+ * (4.5:1 for normal text, 3:1 for large text).
+ */
 Cypress.Commands.add(
   'validateContrast',
   (selector: string, minRatio: number = 4.5) => {
     cy.get(selector).then(($el) => {
-      const fgColor = $el.css('color');
-      const bgColor = $el.parent().css('background-color');
-      // Use Vision MCP to validate contrast ratio
-      cy.captureScreenshot(
-        `contrast-${selector.replace(/[^a-zA-Z0-9]/g, '-')}`,
+      if (!$el.length || !$el.is(':visible')) return;
+
+      const fg = parseRgb($el.css('color'));
+      if (!fg) {
+        assert.fail(
+          `Could not parse foreground colour for ${selector}: ${$el.css('color')}`,
+        );
+      }
+
+      const bg = effectiveBg($el);
+
+      const ratio = contrastRatio(fg, bg);
+      const ratioStr = ratio.toFixed(2);
+
+      cy.log(
+        `Contrast ${selector}: ${ratioStr}:1 (fg: rgb(${fg}), bg: rgb(${bg}), minimum: ${minRatio})`,
       );
-      // Log colors for visual inspection
-      cy.log(`Foreground: ${fgColor}, Background: ${bgColor}`);
-      // In production, integrate with Vision MCP for actual contrast calculation
+
+      expect(
+        ratio,
+        `Contrast ratio ${ratioStr}:1 for ${selector} must be >= ${minRatio}:1`,
+      ).to.be.at.least(minRatio);
     });
   },
 );
@@ -168,7 +277,6 @@ Cypress.Commands.add(
   (selector: string, duration: number = 500) => {
     cy.get(selector).should('be.visible');
     cy.wait(duration); // Wait for animation to complete
-    cy.captureScreenshot(`animation-${selector.replace(/[^a-zA-Z0-9]/g, '-')}`);
   },
 );
 
@@ -177,7 +285,6 @@ Cypress.Commands.add('validateGradient', (selector: string) => {
   cy.get(selector)
     .should('have.css', 'background-image')
     .and('match', /gradient/);
-  cy.captureScreenshot(`gradient-${selector.replace(/[^a-zA-Z0-9]/g, '-')}`);
 });
 
 // Validate shadow depth
@@ -196,7 +303,6 @@ Cypress.Commands.add('validateGoldText', (selector: string) => {
       'match',
       /rgb\(255,\s*215,\s*0\)|rgb\(255,\s*193,\s*7\)|#ffd700|#ffc107/,
     );
-  cy.captureScreenshot(`gold-text-${selector.replace(/[^a-zA-Z0-9]/g, '-')}`);
 });
 
 declare global {
@@ -206,6 +312,7 @@ declare global {
       stubLayoutRequests(): Chainable<void>;
       loginAdmin(): Chainable<void>;
       captureScreenshot(name: string): Chainable<void>;
+      capturePageScreenshot(name: string): Chainable<void>;
       validateTouchTarget(selector: string, minSize?: number): Chainable<void>;
       validateContrast(selector: string, minRatio?: number): Chainable<void>;
       switchRace(race: 'ELF' | 'GOBLIN' | 'HUMAN' | 'UNDEAD'): Chainable<void>;

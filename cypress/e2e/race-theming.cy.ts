@@ -104,7 +104,6 @@ describe('Race-Specific Theming', () => {
       cy.reload();
       cy.wait(500);
 
-      cy.captureScreenshot('elf-theme-initial');
 
       // Validate primary green colors
       cy.get('[data-testid="race-header"]')
@@ -113,7 +112,6 @@ describe('Race-Specific Theming', () => {
 
       // Validate gold accents
       cy.validateGoldText('[data-testid="gold-accent"]');
-      cy.captureScreenshot('elf-theme-gold-accent');
     });
 
     it('should display ELF-specific shield icon', () => {
@@ -126,7 +124,6 @@ describe('Race-Specific Theming', () => {
       cy.get('[data-testid="race-shield"] img')
         .should('have.attr', 'src')
         .and('include', 'ELF');
-      cy.captureScreenshot('elf-shield-icon');
     });
 
     it('should maintain ELF theme across navigation', () => {
@@ -146,7 +143,6 @@ describe('Race-Specific Theming', () => {
         cy.get('[data-testid="race-header"]')
           .should('have.css', 'background-color')
           .and('match', /rgb\(34,\s*139,\s*34\)|rgb\(0,\s*128,\s*0\)/);
-        cy.captureScreenshot(`elf-theme-${page.replace(/\//g, '-')}`);
       });
     });
 
@@ -161,7 +157,6 @@ describe('Race-Specific Theming', () => {
       cy.validateContrast('[data-testid="page-title"]', 4.5);
       cy.validateContrast('[data-testid="nav-link"]', 4.5);
       cy.validateContrast('[data-testid="content-text"]', 4.5);
-      cy.captureScreenshot('elf-theme-contrast');
     });
   });
 
@@ -174,7 +169,6 @@ describe('Race-Specific Theming', () => {
       cy.reload();
       cy.wait(500);
 
-      cy.captureScreenshot('goblin-theme-initial');
 
       // Validate primary brown colors
       cy.get('[data-testid="race-header"]')
@@ -185,7 +179,6 @@ describe('Race-Specific Theming', () => {
       cy.get('[data-testid="accent-element"]')
         .should('have.css', 'color')
         .and('match', /rgb\(205,\s*92,\s*92\)|rgb\(178,\s*34,\s*34\)/);
-      cy.captureScreenshot('goblin-theme-accent');
     });
 
     it('should display GOBLIN-specific shield icon', () => {
@@ -198,7 +191,6 @@ describe('Race-Specific Theming', () => {
       cy.get('[data-testid="race-shield"] img')
         .should('have.attr', 'src')
         .and('include', 'GOBLIN');
-      cy.captureScreenshot('goblin-shield-icon');
     });
 
     it('should maintain GOBLIN theme across navigation', () => {
@@ -217,7 +209,6 @@ describe('Race-Specific Theming', () => {
         cy.get('[data-testid="race-header"]')
           .should('have.css', 'background-color')
           .and('match', /rgb\(139,\s*69,\s*19\)|rgb\(160,\s*82,\s*45\)/);
-        cy.captureScreenshot(`goblin-theme-${page.replace(/\//g, '-')}`);
       });
     });
 
@@ -231,7 +222,6 @@ describe('Race-Specific Theming', () => {
       cy.validateContrast('[data-testid="page-title"]', 4.5);
       cy.validateContrast('[data-testid="nav-link"]', 4.5);
       cy.validateContrast('[data-testid="content-text"]', 4.5);
-      cy.captureScreenshot('goblin-theme-contrast');
     });
   });
 
@@ -244,7 +234,6 @@ describe('Race-Specific Theming', () => {
       cy.reload();
       cy.wait(500);
 
-      cy.captureScreenshot('human-theme-initial');
 
       // Validate primary blue colors
       cy.get('[data-testid="race-header"]')
@@ -255,7 +244,6 @@ describe('Race-Specific Theming', () => {
       cy.get('[data-testid="accent-element"]')
         .should('have.css', 'color')
         .and('match', /rgb\(192,\s*192,\s*192\)|rgb\(169,\s*169,\s*169\)/);
-      cy.captureScreenshot('human-theme-accent');
     });
 
     it('should display HUMAN-specific shield icon', () => {
@@ -268,7 +256,6 @@ describe('Race-Specific Theming', () => {
       cy.get('[data-testid="race-shield"] img')
         .should('have.attr', 'src')
         .and('include', 'HUMAN');
-      cy.captureScreenshot('human-shield-icon');
     });
 
     it('should maintain HUMAN theme across navigation', () => {
@@ -287,7 +274,6 @@ describe('Race-Specific Theming', () => {
         cy.get('[data-testid="race-header"]')
           .should('have.css', 'background-color')
           .and('match', /rgb\(70,\s*130,\s*180\)|rgb\(100,\s*149,\s*237\)/);
-        cy.captureScreenshot(`human-theme-${page.replace(/\//g, '-')}`);
       });
     });
 
@@ -301,7 +287,6 @@ describe('Race-Specific Theming', () => {
       cy.validateContrast('[data-testid="page-title"]', 4.5);
       cy.validateContrast('[data-testid="nav-link"]', 4.5);
       cy.validateContrast('[data-testid="content-text"]', 4.5);
-      cy.captureScreenshot('human-theme-contrast');
     });
   });
 
@@ -314,7 +299,6 @@ describe('Race-Specific Theming', () => {
       cy.reload();
       cy.wait(500);
 
-      cy.captureScreenshot('undead-theme-initial');
 
       // Validate primary dark gray colors
       cy.get('[data-testid="race-header"]')
@@ -325,7 +309,6 @@ describe('Race-Specific Theming', () => {
       cy.get('[data-testid="accent-element"]')
         .should('have.css', 'color')
         .and('match', /rgb\(128,\s*128,\s*128\)|rgb\(169,\s*169,\s*169\)/);
-      cy.captureScreenshot('undead-theme-accent');
     });
 
     it('should display UNDEAD-specific shield icon', () => {
@@ -338,7 +321,6 @@ describe('Race-Specific Theming', () => {
       cy.get('[data-testid="race-shield"] img')
         .should('have.attr', 'src')
         .and('include', 'UNDEAD');
-      cy.captureScreenshot('undead-shield-icon');
     });
 
     it('should maintain UNDEAD theme across navigation', () => {
@@ -357,7 +339,6 @@ describe('Race-Specific Theming', () => {
         cy.get('[data-testid="race-header"]')
           .should('have.css', 'background-color')
           .and('match', /rgb\(64,\s*64,\s*64\)|rgb\(32,\s*32,\s*32\)/);
-        cy.captureScreenshot(`undead-theme-${page.replace(/\//g, '-')}`);
       });
     });
 
@@ -371,7 +352,6 @@ describe('Race-Specific Theming', () => {
       cy.validateContrast('[data-testid="page-title"]', 4.5);
       cy.validateContrast('[data-testid="nav-link"]', 4.5);
       cy.validateContrast('[data-testid="content-text"]', 4.5);
-      cy.captureScreenshot('undead-theme-contrast');
     });
   });
 
@@ -397,7 +377,7 @@ describe('Race-Specific Theming', () => {
           'have.css',
           'background-color',
         );
-        cy.captureScreenshot(`theme-switch-${race}`);
+        cy.captureScreenshot(`theme-${race}`);
       });
     });
 
@@ -416,7 +396,6 @@ describe('Race-Specific Theming', () => {
       cy.get('[data-testid="race-header"]')
         .should('have.css', 'background-color')
         .and('match', /rgb\(34,\s*139,\s*34\)|rgb\(0,\s*128,\s*0\)/);
-      cy.captureScreenshot('theme-persistence');
     });
   });
 
@@ -439,7 +418,6 @@ describe('Race-Specific Theming', () => {
         cy.get('[data-testid="gold-accent"]').then(($el) => {
           if ($el.length > 0) {
             cy.validateGoldText('[data-testid="gold-accent"]');
-            cy.captureScreenshot(`gold-accent-${race}`);
           }
         });
       });
@@ -455,7 +433,6 @@ describe('Race-Specific Theming', () => {
       cy.get('[data-testid="gold-gradient-text"]')
         .should('have.css', 'background-clip')
         .and('equal', 'text');
-      cy.captureScreenshot('gold-gradient-text');
     });
   });
 
@@ -490,7 +467,6 @@ describe('Race-Specific Theming', () => {
             }
           });
         });
-        cy.captureScreenshot(`wcag-contrast-${race}`);
       });
     });
 
@@ -506,7 +482,6 @@ describe('Race-Specific Theming', () => {
           cy.validateContrast('[data-testid="large-heading"]', 3);
         }
       });
-      cy.captureScreenshot('large-text-contrast');
     });
   });
 
@@ -533,7 +508,6 @@ describe('Race-Specific Theming', () => {
       // Cards
       cy.get('[data-testid="game-card"]').should('have.css', 'border-color');
 
-      cy.captureScreenshot('theme-consistency');
     });
 
     it('should apply theme-specific textures and patterns', () => {
@@ -555,7 +529,6 @@ describe('Race-Specific Theming', () => {
           'have.css',
           'background-image',
         );
-        cy.captureScreenshot(`texture-${race}`);
       });
     });
   });

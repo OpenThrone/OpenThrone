@@ -1,16 +1,5 @@
 /// <reference types="cypress" />
 
-/**
- * E2E Tests for Visual Depth and Game Feel
- *
- * Tests visual depth and aesthetic elements:
- * - Texture rendering (noise, stone patterns)
- * - Shadow and inset effects
- * - Gold gradient text
- * - Button 3D effects (translateY on active)
- * - Scrollbar styling
- */
-
 describe('Visual Depth and Game Feel', () => {
   beforeEach(() => {
     cy.stubLayoutRequests();
@@ -26,7 +15,6 @@ describe('Visual Depth and Game Feel', () => {
         'have.css',
         'background-image',
       );
-      cy.captureScreenshot('texture-noise');
     });
 
     it('should render stone pattern textures', () => {
@@ -36,7 +24,6 @@ describe('Visual Depth and Game Feel', () => {
         'have.css',
         'background-image',
       );
-      cy.captureScreenshot('texture-stone');
     });
 
     it('should apply texture overlays correctly', () => {
@@ -45,7 +32,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="texture-overlay"]')
         .should('have.css', 'opacity')
         .and('not.equal', '0');
-      cy.captureScreenshot('texture-overlay');
     });
 
     it('should maintain texture visibility across themes', () => {
@@ -67,16 +53,15 @@ describe('Visual Depth and Game Feel', () => {
           'have.css',
           'background-image',
         );
-        cy.captureScreenshot(`texture-${race}-theme`);
       });
+
+      cy.captureScreenshot('texture-all-themes');
     });
 
     it('should handle texture loading gracefully', () => {
       cy.visitApp('/home/overview');
 
-      // Texture should be visible after loading
       cy.get('[data-testid="textured-background"]').should('be.visible');
-      cy.captureScreenshot('texture-loaded');
     });
   });
 
@@ -87,7 +72,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="game-card"]')
         .should('have.css', 'box-shadow')
         .and('not.equal', 'none');
-      cy.captureScreenshot('shadow-card');
     });
 
     it('should apply inset shadow to pressed buttons', () => {
@@ -99,7 +83,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="train-button"]')
         .first()
         .should('have.css', 'box-shadow');
-      cy.captureScreenshot('shadow-button-pressed');
     });
 
     it('should have consistent shadow depth across components', () => {
@@ -114,7 +97,6 @@ describe('Visual Depth and Game Feel', () => {
       shadowElements.forEach((selector) => {
         cy.get(selector).first().should('have.css', 'box-shadow');
       });
-      cy.captureScreenshot('shadow-consistency');
     });
 
     it('should apply text-shadow for depth', () => {
@@ -126,7 +108,6 @@ describe('Visual Depth and Game Feel', () => {
             'have.css',
             'text-shadow',
           );
-          cy.captureScreenshot('shadow-text');
         }
       });
     });
@@ -137,13 +118,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="game-card"]')
         .first()
         .should('have.css', 'box-shadow');
-      const boxShadow = cy
-        .get('[data-testid="game-card"]')
-        .first()
-        .invoke('css', 'box-shadow');
-
-      cy.log('Box shadow:', boxShadow);
-      cy.captureScreenshot('shadow-layers');
     });
   });
 
@@ -152,7 +126,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.visitApp('/home/overview');
 
       cy.validateGoldText('[data-testid="gold-text"]');
-      cy.captureScreenshot('gold-gradient-text');
     });
 
     it('should apply background-clip: text for gradient', () => {
@@ -163,7 +136,6 @@ describe('Visual Depth and Game Feel', () => {
         'background-clip',
         'text',
       );
-      cy.captureScreenshot('gold-background-clip');
     });
 
     it('should use -webkit-background-clip for Safari', () => {
@@ -174,14 +146,12 @@ describe('Visual Depth and Game Feel', () => {
         '-webkit-background-clip',
         'text',
       );
-      cy.captureScreenshot('gold-webkit-clip');
     });
 
     it('should maintain gold text contrast', () => {
       cy.visitApp('/home/overview');
 
       cy.validateContrast('[data-testid="gold-text"]', 3);
-      cy.captureScreenshot('gold-contrast');
     });
 
     it('should render gold text across all race themes', () => {
@@ -200,8 +170,9 @@ describe('Visual Depth and Game Feel', () => {
         cy.reload();
 
         cy.validateGoldText('[data-testid="gold-text"]');
-        cy.captureScreenshot(`gold-text-${race}-theme`);
       });
+
+      cy.captureScreenshot('gold-text-all-themes');
     });
   });
 
@@ -215,7 +186,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="train-button"]')
         .first()
         .should('have.css', 'transform');
-      cy.captureScreenshot('button-hover-3d');
     });
 
     it('should apply translateY on button active state', () => {
@@ -227,6 +197,7 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="train-button"]')
         .first()
         .should('have.css', 'transform');
+
       cy.captureScreenshot('button-active-3d');
     });
 
@@ -241,7 +212,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="train-button"]')
         .first()
         .should('have.css', 'transform');
-      cy.captureScreenshot('button-reset-3d');
     });
 
     it('should use GPU-accelerated transforms', () => {
@@ -250,12 +220,9 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="train-button"]').first().trigger('mouseover');
       cy.wait(200);
 
-      const transform = cy
-        .get('[data-testid="train-button"]')
+      cy.get('[data-testid="train-button"]')
         .first()
-        .invoke('css', 'transform');
-      cy.log('Transform:', transform);
-      cy.captureScreenshot('button-gpu-transform');
+        .should('have.css', 'transform');
     });
 
     it('should have smooth transition for 3D effects', () => {
@@ -264,7 +231,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="train-button"]')
         .first()
         .should('have.css', 'transition');
-      cy.captureScreenshot('button-transition');
     });
   });
 
@@ -272,7 +238,6 @@ describe('Visual Depth and Game Feel', () => {
     it('should apply custom scrollbar styling', () => {
       cy.visitApp('/battle/users');
 
-      // Scroll down to trigger scrollbar
       cy.get('[data-testid="warlord-table"]').scrollTo('bottom');
       cy.wait(300);
 
@@ -284,8 +249,6 @@ describe('Visual Depth and Game Feel', () => {
 
       cy.get('[data-testid="scrollable-content"]').scrollTo('bottom');
       cy.wait(300);
-
-      cy.captureScreenshot('scrollbar-track');
     });
 
     it('should style scrollbar thumb', () => {
@@ -293,8 +256,6 @@ describe('Visual Depth and Game Feel', () => {
 
       cy.get('[data-testid="scrollable-content"]').scrollTo('bottom');
       cy.wait(300);
-
-      cy.captureScreenshot('scrollbar-thumb');
     });
 
     it('should maintain scrollbar styling across themes', () => {
@@ -314,15 +275,15 @@ describe('Visual Depth and Game Feel', () => {
 
         cy.get('[data-testid="scrollable-content"]').scrollTo('bottom');
         cy.wait(300);
-        cy.captureScreenshot(`scrollbar-${race}-theme`);
       });
+
+      cy.captureScreenshot('scrollbar-all-themes');
     });
 
     it('should hide scrollbar when not needed', () => {
       cy.visitApp('/home/overview');
 
       cy.get('body').should('have.css', 'overflow-y');
-      cy.captureScreenshot('scrollbar-hidden');
     });
   });
 
@@ -331,7 +292,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.visitApp('/home/overview');
 
       cy.validateGradient('[data-testid="game-card-header"]');
-      cy.captureScreenshot('gradient-card-header');
     });
 
     it('should apply gradient to buttons', () => {
@@ -341,7 +301,6 @@ describe('Visual Depth and Game Feel', () => {
         .first()
         .should('have.css', 'background-image')
         .and('match', /gradient/);
-      cy.captureScreenshot('gradient-button');
     });
 
     it('should use race-specific gradient colors', () => {
@@ -362,8 +321,9 @@ describe('Visual Depth and Game Feel', () => {
         cy.get('[data-testid="game-card-header"]')
           .should('have.css', 'background-image')
           .and('match', /gradient/);
-        cy.captureScreenshot(`gradient-${race}-theme`);
       });
+
+      cy.captureScreenshot('gradient-all-themes');
     });
 
     it('should apply gradient to progress bars', () => {
@@ -374,7 +334,6 @@ describe('Visual Depth and Game Feel', () => {
           cy.get('[data-testid="progress-bar"]')
             .should('have.css', 'background-image')
             .and('match', /gradient/);
-          cy.captureScreenshot('gradient-progress');
         }
       });
     });
@@ -387,7 +346,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="game-card"]')
         .should('have.css', 'border')
         .and('not.equal', 'none');
-      cy.captureScreenshot('border-card');
     });
 
     it('should apply double borders for depth', () => {
@@ -399,7 +357,6 @@ describe('Visual Depth and Game Feel', () => {
             'have.css',
             'border-style',
           );
-          cy.captureScreenshot('border-double');
         }
       });
     });
@@ -410,7 +367,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="game-card"]')
         .should('have.css', 'border-radius')
         .and('not.equal', '0px');
-      cy.captureScreenshot('border-radius');
     });
 
     it('should maintain border consistency across viewports', () => {
@@ -424,8 +380,9 @@ describe('Visual Depth and Game Feel', () => {
         cy.visitApp('/home/overview');
 
         cy.get('[data-testid="game-card"]').should('have.css', 'border');
-        cy.captureScreenshot(`border-${vp.width}px`);
       });
+
+      cy.captureScreenshot('border-cross-viewport');
     });
   });
 
@@ -436,30 +393,25 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="game-card"]')
         .first()
         .should('have.css', 'animation-name');
-      cy.captureScreenshot('animation-entry');
     });
 
     it('should use staggered animation delays', () => {
       cy.visitApp('/home/overview');
 
-      cy.get('[data-testid="game-card"]').each(($card, index) => {
+      cy.get('[data-testid="game-card"]').each(($card) => {
         cy.wrap($card).should('have.css', 'animation-delay');
-        cy.log(`Card ${index} animation delay:`, $card.css('animation-delay'));
       });
-      cy.captureScreenshot('animation-staggered');
     });
 
     it('should respect reduced motion preference', () => {
       cy.visitApp('/home/overview');
 
-      // Add reduced motion class
       cy.get('body').invoke('addClass', 'reduced-motion');
 
       cy.get('[data-testid="game-card"]')
         .first()
         .should('have.css', 'animation')
         .and('equal', 'none');
-      cy.captureScreenshot('animation-reduced-motion');
     });
 
     it('should have smooth transitions for hover effects', () => {
@@ -471,7 +423,6 @@ describe('Visual Depth and Game Feel', () => {
       cy.get('[data-testid="train-button"]')
         .first()
         .should('have.css', 'transition');
-      cy.captureScreenshot('animation-hover-transition');
     });
   });
 
@@ -487,24 +438,18 @@ describe('Visual Depth and Game Feel', () => {
             const nextCard = $cards.eq(index + 1);
             const nextMargin = cy.wrap(nextCard).invoke('css', 'margin-bottom');
 
-            // Margins should be consistent
             expect(currentMargin).to.equal(nextMargin);
           }
         });
       });
-      cy.captureScreenshot('consistency-spacing');
     });
 
     it('should maintain consistent color usage', () => {
       cy.visitApp('/home/overview');
 
-      const primaryColor = cy
-        .get('[data-testid="game-card-header"]')
+      cy.get('[data-testid="game-card-header"]')
         .first()
-        .invoke('css', 'background-color');
-      cy.log('Primary color:', primaryColor);
-
-      cy.captureScreenshot('consistency-color');
+        .should('have.css', 'background-color');
     });
 
     it('should maintain consistent typography', () => {
@@ -523,7 +468,6 @@ describe('Visual Depth and Game Feel', () => {
         'font-family',
         fontFamily,
       );
-      cy.captureScreenshot('consistency-typography');
     });
   });
 
@@ -535,7 +479,6 @@ describe('Visual Depth and Game Feel', () => {
         'have.css',
         'box-shadow',
       );
-      cy.captureScreenshot('depth-navigation');
     });
 
     it('should apply depth to stat grid', () => {
@@ -545,7 +488,6 @@ describe('Visual Depth and Game Feel', () => {
         'have.css',
         'background-color',
       );
-      cy.captureScreenshot('depth-stat-grid');
     });
 
     it('should apply depth to training panel', () => {
@@ -555,14 +497,12 @@ describe('Visual Depth and Game Feel', () => {
         'have.css',
         'box-shadow',
       );
-      cy.captureScreenshot('depth-training-panel');
     });
 
     it('should apply depth to warlord table', () => {
       cy.visitApp('/battle/users');
 
       cy.get('[data-testid="warlord-table"]').should('have.css', 'border');
-      cy.captureScreenshot('depth-warlord-table');
     });
   });
 
@@ -587,23 +527,16 @@ describe('Visual Depth and Game Feel', () => {
       cy.viewport(1920, 1080);
       cy.visitApp('/home/overview');
 
-      const desktopShadow = cy
-        .get('[data-testid="game-card"]')
+      cy.get('[data-testid="game-card"]')
         .first()
-        .invoke('css', 'box-shadow');
+        .should('have.css', 'box-shadow');
 
       cy.viewport(375, 667);
       cy.wait(300);
 
-      const mobileShadow = cy
-        .get('[data-testid="game-card"]')
+      cy.get('[data-testid="game-card"]')
         .first()
-        .invoke('css', 'box-shadow');
-
-      // Shadows may differ between viewports
-      cy.log('Desktop shadow:', desktopShadow);
-      cy.log('Mobile shadow:', mobileShadow);
-      cy.captureScreenshot('depth-viewport-adjustment');
+        .should('have.css', 'box-shadow');
     });
   });
 });

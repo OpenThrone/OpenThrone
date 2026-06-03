@@ -26,7 +26,6 @@ describe('Game UI Components', () => {
       cy.get('[data-testid="game-card-header"]')
         .should('have.css', 'background-image')
         .and('match', /gradient/);
-      cy.captureScreenshot('gamecard-gradient-header');
     });
 
     it('should display GameCard content correctly', () => {
@@ -38,7 +37,6 @@ describe('Game UI Components', () => {
           cy.get('[data-testid="card-title"]').should('be.visible');
           cy.get('[data-testid="card-content"]').should('be.visible');
         });
-      cy.captureScreenshot('gamecard-content');
     });
 
     it('should apply race-specific gradient to GameCard header', () => {
@@ -54,7 +52,6 @@ describe('Game UI Components', () => {
       cy.get('[data-testid="game-card-header"]')
         .should('have.css', 'background-image')
         .and('include', 'rgb(34, 139, 34)');
-      cy.captureScreenshot('gamecard-elf-gradient');
     });
 
     it('should handle GameCard hover states', () => {
@@ -62,7 +59,6 @@ describe('Game UI Components', () => {
 
       cy.get('[data-testid="game-card"]').first().trigger('mouseover');
       cy.wait(200);
-      cy.captureScreenshot('gamecard-hover');
 
       cy.get('[data-testid="game-card"]')
         .first()
@@ -76,7 +72,6 @@ describe('Game UI Components', () => {
       cy.get('[data-testid="game-card"]')
         .should('have.css', 'box-shadow')
         .and('not.equal', 'none');
-      cy.captureScreenshot('gamecard-shadow');
     });
   });
 
@@ -86,7 +81,6 @@ describe('Game UI Components', () => {
 
       cy.get('[data-testid="stat-grid"]').should('be.visible');
       cy.get('[data-testid="stat-slot"]').should('have.length.greaterThan', 0);
-      cy.captureScreenshot('statgrid-layout');
     });
 
     it('should display stat values correctly in slots', () => {
@@ -98,7 +92,6 @@ describe('Game UI Components', () => {
           cy.get('[data-testid="stat-label"]').should('be.visible');
           cy.get('[data-testid="stat-value"]').should('be.visible');
         });
-      cy.captureScreenshot('statgrid-values');
     });
 
     it('should handle StatGrid responsive layout', () => {
@@ -106,13 +99,11 @@ describe('Game UI Components', () => {
       cy.viewport(1920, 1080);
       cy.visitApp('/home/overview');
       cy.get('[data-testid="stat-grid"]').should('be.visible');
-      cy.captureScreenshot('statgrid-desktop');
 
       // Mobile
       cy.viewport(375, 667);
       cy.get('[data-testid="stat-grid"]').should('be.visible');
       cy.get('[data-testid="stat-slot"]').should('have.length.greaterThan', 0);
-      cy.captureScreenshot('statgrid-mobile');
     });
 
     it('should apply gold accent to stat values', () => {
@@ -122,7 +113,6 @@ describe('Game UI Components', () => {
         .first()
         .should('have.css', 'color')
         .and('match', /rgb\(255,\s*215,\s*0\)|rgb\(255,\s*193,\s*7\)/);
-      cy.captureScreenshot('statgrid-gold');
     });
 
     it('should handle empty stat slots gracefully', () => {
@@ -131,7 +121,6 @@ describe('Game UI Components', () => {
       cy.get('[data-testid="stat-slot"]').each(($el) => {
         cy.wrap($el).should('be.visible');
       });
-      cy.captureScreenshot('statgrid-empty-handling');
     });
   });
 
@@ -142,7 +131,6 @@ describe('Game UI Components', () => {
       cy.get('[data-testid="training-progress"]').then(($el) => {
         if ($el.length > 0) {
           cy.get('[data-testid="training-progress"]').should('be.visible');
-          cy.captureScreenshot('unittraining-progress');
         }
       });
     });
@@ -167,7 +155,6 @@ describe('Game UI Components', () => {
         cy.get('[data-testid="header-race"]').should('be.visible');
         cy.get('[data-testid="header-networth"]').should('be.visible');
       });
-      cy.captureScreenshot('warlord-table-columns');
     });
 
     it('should handle WarlordTable responsive behavior', () => {
@@ -175,14 +162,12 @@ describe('Game UI Components', () => {
       cy.viewport(1920, 1080);
       cy.visitApp('/battle/users');
       cy.get('[data-testid="warlord-table"]').should('be.visible');
-      cy.captureScreenshot('warlord-table-desktop');
 
       // Mobile - should be horizontally scrollable
       cy.viewport(375, 667);
       cy.get('[data-testid="table-container"]')
         .should('have.css', 'overflow-x')
         .and('match', /auto|scroll/);
-      cy.captureScreenshot('warlord-table-mobile');
     });
 
     it('should display race icons in WarlordTable', () => {
@@ -193,7 +178,6 @@ describe('Game UI Components', () => {
         .within(() => {
           cy.get('[data-testid="race-icon"] img').should('be.visible');
         });
-      cy.captureScreenshot('warlord-table-race-icons');
     });
 
     it('should handle WarlordTable row hover states', () => {
@@ -201,7 +185,6 @@ describe('Game UI Components', () => {
 
       cy.get('[data-testid="table-row"]').first().trigger('mouseover');
       cy.wait(200);
-      cy.captureScreenshot('warlord-table-hover');
 
       cy.get('[data-testid="table-row"]')
         .first()
@@ -218,7 +201,6 @@ describe('Game UI Components', () => {
       cy.wait('@getUsers');
 
       cy.get('[data-testid="empty-state"]').should('be.visible');
-      cy.captureScreenshot('warlord-table-empty');
     });
   });
 
@@ -230,7 +212,6 @@ describe('Game UI Components', () => {
       cy.get('[data-testid="styled-table"]')
         .should('have.css', 'border-collapse')
         .and('equal', 'collapse');
-      cy.captureScreenshot('styled-table');
     });
 
     it('should handle StyledTable mobile view', () => {
@@ -241,7 +222,6 @@ describe('Game UI Components', () => {
       cy.get('[data-testid="table-wrapper"]')
         .should('have.css', 'overflow-x')
         .and('match', /auto|scroll/);
-      cy.captureScreenshot('styled-table-mobile');
     });
 
     it('should display StyledTable with alternating row colors', () => {
@@ -253,7 +233,6 @@ describe('Game UI Components', () => {
       cy.get('[data-testid="table-row"]')
         .eq(1)
         .should('have.css', 'background-color');
-      cy.captureScreenshot('styled-table-rows');
     });
 
     it('should handle StyledTable sorting', () => {
@@ -261,7 +240,6 @@ describe('Game UI Components', () => {
 
       cy.get('[data-testid="sort-header"]').first().click();
       cy.wait(300);
-      cy.captureScreenshot('styled-table-sorted');
 
       cy.get('[data-testid="sort-indicator"]').first().should('be.visible');
     });
@@ -275,7 +253,6 @@ describe('Game UI Components', () => {
         .first()
         .should('have.css', 'animation-name')
         .and('equal', 'public-rise');
-      cy.captureScreenshot('animation-public-rise');
     });
 
     it('should stagger entry animations for multiple elements', () => {
@@ -284,7 +261,6 @@ describe('Game UI Components', () => {
       cy.get('[data-testid="game-card"]').each(($card, index) => {
         cy.wrap($card).should('have.css', 'animation-delay');
       });
-      cy.captureScreenshot('animation-staggered');
     });
 
     it('should handle animation completion', () => {
@@ -292,7 +268,6 @@ describe('Game UI Components', () => {
 
       cy.waitForAnimation('[data-testid="game-card"]', 500);
       cy.get('[data-testid="game-card"]').first().should('be.visible');
-      cy.captureScreenshot('animation-complete');
     });
 
     it('should respect reduced motion preference', () => {
@@ -305,7 +280,6 @@ describe('Game UI Components', () => {
         .first()
         .should('have.css', 'animation-name')
         .and('equal', 'none');
-      cy.captureScreenshot('animation-reduced-motion');
     });
   });
 
@@ -315,7 +289,7 @@ describe('Game UI Components', () => {
 
       cy.get('[data-testid="game-card"]').should('have.length.greaterThan', 0);
       cy.get('[data-testid="stat-grid"]').should('be.visible');
-      cy.captureScreenshot('integration-overview');
+      cy.captureScreenshot('overview-page');
     });
 
     it('should maintain consistent styling across components', () => {
@@ -329,7 +303,6 @@ describe('Game UI Components', () => {
       components.forEach((selector) => {
         cy.get(selector).should('be.visible');
       });
-      cy.captureScreenshot('integration-consistency');
     });
 
     it('should handle component loading states', () => {
@@ -342,7 +315,6 @@ describe('Game UI Components', () => {
       });
 
       cy.get('[data-testid="game-card"]').should('be.visible');
-      cy.captureScreenshot('integration-loading');
     });
   });
 
@@ -357,7 +329,6 @@ describe('Game UI Components', () => {
       cy.wait('@getUsersError');
 
       cy.get('[data-testid="error-message"]').should('be.visible');
-      cy.captureScreenshot('component-error');
     });
 
     it('should provide retry option on error', () => {
@@ -369,7 +340,6 @@ describe('Game UI Components', () => {
       cy.wait('@getUsersError');
 
       cy.get('[data-testid="retry-button"]').should('be.visible');
-      cy.captureScreenshot('component-retry');
     });
   });
 });
