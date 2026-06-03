@@ -54,6 +54,35 @@ mockPrisma.$transaction.mockImplementation(async (cb: any) => {
 const AttackService =
   require('../AttackService').default ?? require('../AttackService');
 
+type LoggedUnit = {
+  type: string;
+  level: number;
+  quantity: number;
+};
+
+type LoggedLosses = {
+  total: number;
+  units: LoggedUnit[];
+};
+
+type AttackLogStats = {
+  startOfAttack: {
+    Attacker: { units: LoggedUnit[] };
+    Defender: { units: LoggedUnit[] };
+  };
+  attacker_units: string;
+  defender_units: string;
+  attacker_losses: string;
+  defender_losses: string;
+};
+
+function quantityFor(units: LoggedUnit[], loss: LoggedUnit): number {
+  return (
+    units.find((unit) => unit.type === loss.type && unit.level === loss.level)
+      ?.quantity ?? 0
+  );
+}
+
 describe('AttackService', () => {
   let attackerGenerator: MockUserGenerator;
   let defenderGenerator: MockUserGenerator;
@@ -424,6 +453,155 @@ describe('AttackService', () => {
       expect('mitigation_summary' in createdAttackLogPayload.stats).toBe(true);
       expect('fort_breached' in createdAttackLogPayload.stats).toBe(true);
       expect(createdAttackLogPayload.stats.defender_fort_level).toBeDefined();
+    });
+
+    it('logs and persists simulator casualty counts without subtracting losses twice', async () => {
+      const attackerId = 1;
+      const defenderId = 2;
+
+      const attackerGen = new MockUserGenerator();
+      attackerGen.getPrismaUser().id = attackerId;
+      attackerGen.setBasicInfo({
+        display_name: 'Attacker',
+        race: 'HUMAN',
+        class: 'FIGHTER',
+      });
+      attackerGen.setLevel(42);
+      attackerGen.clearUnits();
+      attackerGen.addUnits(
+        normUnits([
+          {
+            id: 1,
+            userId: attackerId,
+            type: 'OFFENSE' as const,
+            level: 1,
+            quantity: 50,
+            isMercenary: false,
+          },
+          {
+            id: 2,
+            userId: attackerId,
+            type: 'OFFENSE' as const,
+            level: 2,
+            quantity: 1396,
+            isMercenary: false,
+          },
+        ]),
+      );
+      attackerGen.getPrismaUser().attack_turns = 50;
+      attackerGen.setStamina(50);
+      attackerGen.setMaxStamina(50);
+
+      const defenderGen = new MockUserGenerator();
+      defenderGen.getPrismaUser().id = defenderId;
+      defenderGen.setBasicInfo({
+        display_name: 'Defender',
+        race: 'HUMAN',
+        class: 'FIGHTER',
+      });
+      defenderGen.setLevel(42);
+      defenderGen.clearUnits();
+      defenderGen.addUnits(
+        normUnits([
+          {
+            id: 3,
+            userId: defenderId,
+            type: 'DEFENSE' as const,
+            level: 2,
+            quantity: 700,
+            isMercenary: false,
+          },
+          {
+            id: 4,
+            userId: defenderId,
+            type: 'DEFENSE' as const,
+            level: 3,
+            quantity: 117,
+            isMercenary: false,
+          },
+        ]),
+      );
+      defenderGen.setFortLevel(9);
+      defenderGen.setFortHitpoints(1106);
+
+      mockAttackDataService.getUserById.mockImplementation(
+        async (id: number) => {
+          if (id === attackerId) {
+            const u = attackerGen.getUser();
+            u.id = attackerId;
+            u.gold = BigInt(100000);
+            u.permissions = [];
+            return u;
+          }
+          if (id === defenderId) {
+            const u = defenderGen.getUser();
+            u.id = defenderId;
+            u.gold = BigInt(100000);
+            u.permissions = [];
+            return u;
+          }
+          return null;
+        },
+      );
+
+      mockAttackDataService.updateUser.mockResolvedValue({});
+      mockAttackDataService.updateUserUnits.mockResolvedValue({});
+      mockAttackDataService.createBankHistory.mockResolvedValue({});
+      mockAttackDataService.incrementUserStats.mockResolvedValue({});
+
+      const createdAttackLog = {
+        payload: undefined as Record<string, unknown> | undefined,
+      };
+      mockAttackDataService.createAttackLog.mockImplementation(
+        async (payload: Record<string, unknown>) => {
+          createdAttackLog.payload = payload;
+          return { ...payload, id: 456 };
+        },
+      );
+
+      const res = await AttackService.executeAttack(attackerId, defenderId, 10);
+      expect(res.status).toBe('success');
+      if (!createdAttackLog.payload) {
+        throw new Error('Expected attack log payload to be created');
+      }
+
+      const stats = createdAttackLog.payload.stats as AttackLogStats | undefined;
+      expect(stats).toBeTruthy();
+
+      const attackerUnits: LoggedUnit[] = JSON.parse(
+        stats?.attacker_units ?? '[]',
+      );
+      const defenderUnits: LoggedUnit[] = JSON.parse(
+        stats?.defender_units ?? '[]',
+      );
+      const attackerLosses: LoggedLosses = JSON.parse(
+        stats?.attacker_losses ?? '{"total":0,"units":[]}',
+      );
+      const defenderLosses: LoggedLosses = JSON.parse(
+        stats?.defender_losses ?? '{"total":0,"units":[]}',
+      );
+
+      expect(attackerLosses.total + defenderLosses.total).toBeGreaterThan(0);
+
+      for (const loss of attackerLosses.units) {
+        const startingQuantity = quantityFor(
+          stats?.startOfAttack.Attacker.units ?? [],
+          loss,
+        );
+        expect(quantityFor(attackerUnits, loss)).toBe(
+          Math.max(0, startingQuantity - loss.quantity),
+        );
+      }
+
+      for (const loss of defenderLosses.units) {
+        const startingQuantity = quantityFor(
+          stats?.startOfAttack.Defender.units ?? [],
+          loss,
+        );
+        expect(quantityFor(defenderUnits, loss)).toBe(
+          Math.max(0, startingQuantity - loss.quantity),
+        );
+      }
     });
   });
 });

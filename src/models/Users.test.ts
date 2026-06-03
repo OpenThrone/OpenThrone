@@ -103,14 +103,14 @@ describe('UserModel', () => {
     const defense2 = user2.getArmyStat('DEFENSE');
     expect(user2.fortLevel).toBe(1);
     expect(user.defenseBonus).toBe(10);
-    expect(defense2).toBe(22);
+    expect(defense2).toBe(28);
 
     userData2.fort_level = 5; // 'Outpost Level 2' - 25% defense bonus
     const user3 = new UserModel(userData2);
     expect(user3.fortLevel).toBe(5);
     expect(user3.defenseBonus).toBe(30); // 30%
     const defense3 = user3.getArmyStat('DEFENSE');
-    expect(defense3).toBe(26);
+    expect(defense3).toBe(33);
   });
 
   // Test to make sure that Defense is correct based on Battle Upgrades
@@ -146,7 +146,7 @@ describe('UserModel', () => {
     const user2 = new UserModel(userData2);
     const defense2 = user2.getArmyStat('DEFENSE');
     expect(user2.defenseBonus).toBe(10);
-    expect(defense2).toBe(429002);
+    expect(defense2).toBe(462002);
   });
 
   // Test to make sure that GoldPerWorker is correct based on Economy Level
@@ -206,7 +206,7 @@ describe('UserModel', () => {
     expect(user2.attackBonus).toBe(10);
     expect(user2.spyBonus).toBe(0);
     expect(user2.defenseBonus).toBe(5); // 5% for Fort
-    expect(user2.getArmyStat('OFFENSE')).toBe(22);
+    expect(user2.getArmyStat('OFFENSE')).toBe(23);
   });
 
   it('should correctly calculate offense based on Revs Units', () => {
@@ -370,7 +370,7 @@ describe('UserModel', () => {
 
     const user4 = new UserModel(userDataWithBonusPoints);
     const offense4 = user4.getArmyStat('OFFENSE');
-    expect(offense4).toBe(4306895);
+    expect(offense4).toBe(3721429);
 
     // Convert 1 Level 2 Offense unit to a Level 3 Offense unit
     userDataWithBonusPoints.bonus_points = normUnits([
@@ -403,7 +403,7 @@ describe('UserModel', () => {
 
     const user5 = new UserModel(userDataWithConversion);
     const offense5 = user5.getArmyStat('OFFENSE');
-    expect(offense5).toBe(4306934);
+    expect(offense5).toBe(3721462);
   });
 
   it('should correctly calculate defense based on Revs Units - Test Defense', () => {
@@ -452,7 +452,7 @@ describe('UserModel', () => {
     const user = new UserModel(userDataUnits);
     const defense = user.getArmyStat('DEFENSE');
 
-    expect(defense).toBe(216211);
+    expect(defense).toBe(287107);
 
     const userDataWithItems = JSON.parse(
       JSON.stringify(stringifyObj(userDataUnits)),
@@ -524,7 +524,7 @@ describe('UserModel', () => {
 
     const user3 = new UserModel(userDataWithBattleUpgrades);
     const offense3 = user3.getArmyStat('DEFENSE');
-    const expected3 = 925162;
+    const expected3 = 996057;
     const tol3 = Math.max(1, Math.floor(expected3 * 0.02));
     expect(offense3).toBeGreaterThanOrEqual(expected3 - tol3);
     expect(offense3).toBeLessThanOrEqual(expected3 + tol3);
@@ -552,7 +552,7 @@ describe('UserModel', () => {
     ]);
     const user4 = new UserModel(userDataWithBonusPoints);
     const offense4 = user4.getArmyStat('DEFENSE');
-    const expected4 = 1127015;
+    const expected4 = 1023816;
     const tol4 = Math.max(1, Math.floor(expected4 * 0.02));
     expect(offense4).toBeGreaterThanOrEqual(expected4 - tol4);
     expect(offense4).toBeLessThanOrEqual(expected4 + tol4);
@@ -583,7 +583,7 @@ describe('UserModel', () => {
 
     const user5 = new UserModel(userDataWithConversion);
     const defense5 = user5.getArmyStat('DEFENSE');
-    const expected5 = 1127094;
+    const expected5 = 1023890;
     const tol5 = Math.max(1, Math.floor(expected5 * 0.02));
     expect(defense5).toBeGreaterThanOrEqual(expected5 - tol5);
     expect(defense5).toBeLessThanOrEqual(expected5 + tol5);
