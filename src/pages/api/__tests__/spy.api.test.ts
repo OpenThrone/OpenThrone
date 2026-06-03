@@ -7,8 +7,26 @@ import {
 
 installMockPrisma(vi);
 
+// Mock Prisma client to avoid Bun import issues with @prisma/client
+mock.module('@prisma/client', () => ({
+  Prisma: {},
+  PrismaClient: function () {},
+}));
+
 // Bypass authentication by mocking the withAuth middleware to return the handler directly
 mock.module('@/middleware/auth', () => ({ withAuth: (h: any) => h }));
+
+// Bypass apiGuard and idempotency middleware
+mock.module('@/middleware/apiGuard', () => ({
+  withApiGuard: () => (h: any) => (req: any, res: any) =>
+    h(req, res, { query: req.query ?? {}, body: req.body ?? {} }),
+}));
+mock.module('@/middleware/idempotency', () => ({
+  enforceIdempotency: () => (h: any) => h,
+}));
+mock.module('@/lib/socket', () => ({
+  getSocketIO: () => ({ to: () => ({ emit: () => {} }) }),
+}));
 
 const spyHandler = require('../spy/[id]').default;
 

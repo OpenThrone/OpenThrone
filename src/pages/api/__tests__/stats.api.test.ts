@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'bun:test';
+import { beforeEach, describe, expect, it, mock, vi } from 'bun:test';
 import {
   installMockPrisma,
   mockPrisma,
@@ -6,6 +6,12 @@ import {
 } from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
+
+// Mock Prisma client to avoid Bun import issues
+mock.module('@prisma/client', () => ({
+  Prisma: {},
+  PrismaClient: function () {},
+}));
 
 // stats.ts is default export
 const handler = require('../stats').default;
@@ -26,15 +32,22 @@ describe('API stats', () => {
 
     const mockStartDate = new Date('2024-01-01');
 
-    // Setup mocks
-    mockPrisma.era.findFirst = vi.fn().mockResolvedValue({
-      id: 1,
-      name: 'Era Test',
-      startDate: mockStartDate,
-    });
+    // Setup mocks - era must be set on mockPrisma before handler runs
+    mockPrisma.era = {
+      findFirst: vi.fn().mockResolvedValue({
+        id: 1,
+        name: 'Era Test',
+        startDate: mockStartDate,
+      }),
+      create: vi.fn().mockResolvedValue({
+        id: 1,
+        name: 'Era Test',
+        startDate: mockStartDate,
+      }),
+    };
     mockPrisma.users.count = vi.fn().mockResolvedValue(1234);
     mockPrisma.attack_log.count = vi.fn().mockResolvedValue(5678);
-    mockPrisma.alliances.count = vi.fn().mockResolvedValue(90);
+    mockPrisma.alliances = { count: vi.fn().mockResolvedValue(90) };
 
     await handler(req, res);
 
@@ -65,6 +78,13 @@ describe('API stats', () => {
     };
 
     mockPrisma.users.count = vi.fn().mockRejectedValue(new Error('DB Error'));
+    mockPrisma.era = {
+      findFirst: vi.fn().mockResolvedValue({
+        id: 1,
+        name: 'Era Test',
+        startDate: new Date(),
+      }),
+    };
 
     await handler(req, res);
 
