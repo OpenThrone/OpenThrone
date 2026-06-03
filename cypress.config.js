@@ -1,5 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 const { defineConfig } = require('cypress');
+const getCompareSnapshotsPlugin = require('cypress-visual-regression/dist/plugin');
 
 try {
   require('dotenv').config();
@@ -15,10 +16,14 @@ module.exports = defineConfig({
     APP_URL: defaultAppUrl,
   },
   video: false,
+  screenshotsFolder: './cypress/snapshots/base',
+  trashAssetsBeforeRuns: true,
   e2e: {
     baseUrl: defaultAppUrl,
     specPattern: 'cypress/e2e/**/*.{cy,spec}.{js,jsx,ts,tsx}',
-    setupNodeEvents(on) {
+    setupNodeEvents(on, config) {
+      getCompareSnapshotsPlugin(on, config);
+
       on('before:browser:launch', (browser = {}, launchOptions) => {
         if (browser.family === 'chromium' || browser.name === 'electron') {
           launchOptions.args.push('--no-sandbox');
