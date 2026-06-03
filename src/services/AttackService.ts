@@ -261,24 +261,8 @@ export const AttackService = {
         battleResults.Losses.Attacker,
       );
 
-      // Apply casualties to player units
-      battleResults.Losses.Attacker.units.forEach((loss) => {
-        const unit = AttackPlayer.units.find(
-          (u) => u.type === loss.type && u.level === loss.level,
-        );
-        if (unit) {
-          unit.quantity = Math.max(0, unit.quantity - loss.quantity);
-        }
-      });
-
-      battleResults.Losses.Defender.units.forEach((loss) => {
-        const unit = DefensePlayer.units.find(
-          (u) => u.type === loss.type && u.level === loss.level,
-        );
-        if (unit) {
-          unit.quantity = Math.max(0, unit.quantity - loss.quantity);
-        }
-      });
+      // executeAttack mutates BattleUser unit quantities while recording Losses.
+      // Do not subtract Losses again here, or persisted/logged units lose twice.
 
       // Consume stamina after successful attack initiation
       const moraleLossMultiplier =
