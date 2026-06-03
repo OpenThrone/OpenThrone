@@ -269,7 +269,6 @@ export const simulateAssassination = (
   }
 
   // Step 2: Combat between attacker's spies and defender's sentries
-  // We'll take x% of the Level3 SPY's KS/DS based on number of spies compared to spyLevels maximum amount.
   let spiesRemaining = spiesSent;
   let limiter =
     (spiesRemaining / (attacker.spyLimits.assass.perMission || 1)) *

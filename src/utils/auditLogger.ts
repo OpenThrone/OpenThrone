@@ -11,7 +11,6 @@ export async function logAction(
   await GeneralService.logAuditAction(userId, action, ip, details);
 }
 
-// Helper to get IP from request
 export function getRequestIp(req: any) {
   return getIpAddress(req);
 }

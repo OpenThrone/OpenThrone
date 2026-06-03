@@ -29,7 +29,6 @@ if (typeof window === 'undefined') {
   // console.log(`[Logger Setup - Client] Log level set to: ${Object.keys(LogLevel).find(key => LogLevel[key as LogLevelKey] === currentLogLevel)} (${currentLogLevel})`);
 }
 
-// Helper to format messages (optional, but nice)
 const formatMessage = (
   level: LogLevelKey,
   message: any,

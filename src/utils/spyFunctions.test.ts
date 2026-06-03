@@ -161,8 +161,7 @@ describe('computeSpyAmpFactor', () => {
         // Check if a good amount of info was gathered (e.g., > 70% based on spies * 10)
         const intelPercent = (spiesSent - result.spiesLost) * 10;
         expect(intelPercent).toBeGreaterThan(70);
-        // Optional: Check accuracy if implemented - reported numbers should be close to original
-        // e.g., expect(result.intelligenceGathered.units.find(u=>u.type==='DEFENSE').quantity).toBeCloseTo(1000, -2); // Within ~10%
+        // e.g., expect(result.intelligenceGathered.units.find(u=>u.type==='DEFENSE').quantity).toBeCloseTo(1000, -2);
       });
 
       it('should fail with high spy losses when attacker spy << defender sentry', () => {
