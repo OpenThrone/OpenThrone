@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma';
 import type { PlayerStat, PlayerUnit } from '@/types/typings'; // Import custom types
 import { getOTStartDate } from '@/utils/timefunctions';
 
-import { getActiveEra } from './Era.service';
+import { ensureActiveEra } from './Era.service';
 
 // Define the type for the transaction client
 type TransactionClient = Omit<
@@ -297,10 +297,7 @@ export const createBankHistory = async (
 export const getTop10AttacksByTotalCasualties = async (timeFrame: number) => {
   try {
     const validatedTimeFrame = TimeFrameSchema.parse(timeFrame);
-    const activeEra = await getActiveEra();
-    if (!activeEra) {
-      return [];
-    }
+    const activeEra = await ensureActiveEra();
 
     const relations = await prisma.attack_log.findMany({
       where: {
@@ -355,10 +352,8 @@ export const getTop10AttacksByTotalCasualties = async (timeFrame: number) => {
 export const getTop10TotalAttackerCasualties = async (timeFrame: number) => {
   try {
     const validatedTimeFrame = TimeFrameSchema.parse(timeFrame);
-    const activeEra = await getActiveEra();
-    if (!activeEra) {
-      return [];
-    }
+    const activeEra = await ensureActiveEra();
+
 
     const relations = await prisma.attack_log.findMany({
       where: {
@@ -412,10 +407,8 @@ export const getTop10TotalAttackerCasualties = async (timeFrame: number) => {
 export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
   try {
     const validatedTimeFrame = TimeFrameSchema.parse(timeFrame);
-    const activeEra = await getActiveEra();
-    if (!activeEra) {
-      return [];
-    }
+    const activeEra = await ensureActiveEra();
+
 
     const relations = await prisma.attack_log.findMany({
       where: {
@@ -536,10 +529,8 @@ export async function getRecruitmentCounts(days: number = 7) {
  */
 export async function getTopRecruitsWithDisplayNames() {
   try {
-    const activeEra = await getActiveEra();
-    if (!activeEra) {
-      return [];
-    }
+    const activeEra = await ensureActiveEra();
+
 
     const recruitmentCounts = await getRecruitmentCounts(1); // Get counts for the last day
 
@@ -603,10 +594,8 @@ export async function getTopRecruitsWithDisplayNames() {
  */
 export async function getTopSuccessfulAttacks() {
   try {
-    const activeEra = await getActiveEra();
-    if (!activeEra) {
-      return [];
-    }
+    const activeEra = await ensureActiveEra();
+
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -700,10 +689,8 @@ export async function getTopSuccessfulAttacks() {
  */
 export async function getTopPopulations() {
   try {
-    const activeEra = await getActiveEra();
-    if (!activeEra) {
-      return [];
-    }
+    const activeEra = await ensureActiveEra();
+
 
     // Fetch users and their units
     const usersWithUnits = await prisma.users.findMany({
@@ -747,10 +734,8 @@ export async function getTopPopulations() {
  */
 export async function getTopGoldOnHand() {
   try {
-    const activeEra = await getActiveEra();
-    if (!activeEra) {
-      return [];
-    }
+    const activeEra = await ensureActiveEra();
+
 
     const users = await prisma.users.findMany({
       select: {
@@ -787,10 +772,8 @@ export async function getTopGoldOnHand() {
  */
 export async function getTopGoldInBank() {
   try {
-    const activeEra = await getActiveEra();
-    if (!activeEra) {
-      return [];
-    }
+    const activeEra = await ensureActiveEra();
+
 
     const users = await prisma.users.findMany({
       select: {
@@ -829,10 +812,8 @@ export async function getTopGoldInBank() {
 // Wealth is calculated by the amount of gold a user has in bank + the amount of gold a user has in hand + the value (cost) of all the items they hold
 export async function getTopWealth() {
   try {
-    const activeEra = await getActiveEra();
-    if (!activeEra) {
-      return [];
-    }
+    const activeEra = await ensureActiveEra();
+
 
     const users = await prisma.users.findMany({
       select: {

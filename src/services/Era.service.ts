@@ -90,11 +90,24 @@ export const getActiveEra = async (tx: Tx | typeof prisma = prisma) => {
   });
 };
 
+export const getLatestEra = async (tx: Tx | typeof prisma = prisma) => {
+  return tx.era.findFirst({
+    orderBy: { startDate: 'desc' },
+  });
+};
+
 export const ensureActiveEra = async (tx: Tx | typeof prisma = prisma) => {
   const current = await getActiveEra(tx);
   if (current) return current;
+
+  const latest = await tx.era.findFirst({
+    orderBy: { id: 'desc' },
+    select: { id: true },
+  });
+  const nextId = (latest?.id ?? 0) + 1;
+
   return tx.era.create({
-    data: { name: 'Era 1', startDate: new Date() },
+    data: { name: `Era ${nextId}`, startDate: new Date() },
   });
 };
 

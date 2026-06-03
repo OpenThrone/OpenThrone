@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import prisma from '@/lib/prisma';
+import { ensureActiveEra } from '@/services/Era.service';
 import { logError } from '@/utils/logger';
 
 export default async function handler(
@@ -13,17 +14,14 @@ export default async function handler(
   }
 
   try {
-    const currentEra = await prisma.era.findFirst({
-      where: { endDate: null },
-      orderBy: { startDate: 'desc' },
-    });
+    const currentEra = await ensureActiveEra();
 
     const [players, battles, alliances] = await Promise.all([
       prisma.users.count({
-        where: currentEra ? { currentEraId: currentEra.id } : {},
+        where: { currentEraId: currentEra.id },
       }),
       prisma.attack_log.count({
-        where: currentEra ? { timestamp: { gte: currentEra.startDate } } : {},
+        where: { timestamp: { gte: currentEra.startDate } },
       }),
       prisma.alliances.count(),
     ]);
@@ -32,7 +30,7 @@ export default async function handler(
       players,
       battles,
       alliances,
-      epoch: currentEra?.name || 'Era VIII',
+      epoch: currentEra.name,
     };
     return res.status(200).json(stats);
   } catch (error) {
