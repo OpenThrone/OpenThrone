@@ -84,5 +84,15 @@
     "desktopMenu": "Main navigation menu",
     "subMenu": "Sub-menu for {{section}}",
     "signOut": "Sign out of your account"
+  },
+  "adminCategories": {
+    "overview": "Overview",
+    "users": "Users",
+    "moderation": "Moderation",
+    "gameManagement": "Game Management",
+    "content": "Content",
+    "analytics": "Analytics",
+    "system": "System",
+    "audit": "Audit"
   }
 }
