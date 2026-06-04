@@ -1035,7 +1035,8 @@ export const getServerSideProps = async ({ query }) => {
   }
 
   const defensePressureDate = user.defense_pressure_date
-    ? new Date(user.defense_pressure_date) : null;
+    ? new Date(user.defense_pressure_date)
+    : null;
   const defensePressureDateStr =
     defensePressureDate && !isNaN(defensePressureDate.getTime())
       ? defensePressureDate.toISOString()

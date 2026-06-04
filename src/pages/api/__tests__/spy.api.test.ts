@@ -10,7 +10,7 @@ installMockPrisma(vi);
 // Mock Prisma client to avoid Bun import issues with @prisma/client
 mock.module('@prisma/client', () => ({
   Prisma: {},
-  PrismaClient: function () {},
+  PrismaClient() {},
 }));
 
 // Bypass authentication by mocking the withAuth middleware to return the handler directly

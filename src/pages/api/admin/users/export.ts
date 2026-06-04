@@ -23,20 +23,29 @@ async function handler(
   context: { query: z.infer<typeof Schema> },
 ) {
   try {
-    const userId = context.query.userId;
-    const [user, attacks, defense, status, messages, reports] = await Promise.all([
-      prisma.users.findUnique({ where: { id: userId } }),
-      prisma.attack_log.findMany({ where: { attacker_id: userId }, take: 100 }),
-      prisma.attack_log.findMany({ where: { defender_id: userId }, take: 100 }),
-      prisma.accountStatusHistory.findMany({ where: { user_id: userId } }),
-      prisma.messages.findMany({
-        where: { OR: [{ from_user_id: userId }, { to_user_id: userId }] },
-        take: 50,
-      }),
-      prisma.report.findMany({
-        where: { OR: [{ reporterUserId: userId }, { reportedUserId: userId }] },
-      }),
-    ]);
+    const { userId } = context.query;
+    const [user, attacks, defense, status, messages, reports] =
+      await Promise.all([
+        prisma.users.findUnique({ where: { id: userId } }),
+        prisma.attack_log.findMany({
+          where: { attacker_id: userId },
+          take: 100,
+        }),
+        prisma.attack_log.findMany({
+          where: { defender_id: userId },
+          take: 100,
+        }),
+        prisma.accountStatusHistory.findMany({ where: { user_id: userId } }),
+        prisma.messages.findMany({
+          where: { OR: [{ from_user_id: userId }, { to_user_id: userId }] },
+          take: 50,
+        }),
+        prisma.report.findMany({
+          where: {
+            OR: [{ reporterUserId: userId }, { reportedUserId: userId }],
+          },
+        }),
+      ]);
 
     const exportData = {
       exportedAt: new Date().toISOString(),

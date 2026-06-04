@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import {
   Avatar,
   Badge,
@@ -10,6 +9,7 @@ import {
   Text,
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
+import React, { useEffect, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
@@ -86,7 +86,9 @@ const Requests = () => {
   );
 
   const removeRequest = (requestId: number) => {
-    setRequests((current) => current.filter((request) => request.id !== requestId));
+    setRequests((current) =>
+      current.filter((request) => request.id !== requestId),
+    );
   };
 
   const handleRespond = async (requestId: number, action: RequestAction) => {
@@ -186,9 +188,7 @@ const Requests = () => {
           <Table.Td style={{ borderColor: '#1f2b3b' }}>
             {formatDate(request.requestDate)}
           </Table.Td>
-          <Table.Td style={{ borderColor: '#1f2b3b' }}>
-            {statusLabel}
-          </Table.Td>
+          <Table.Td style={{ borderColor: '#1f2b3b' }}>{statusLabel}</Table.Td>
           <Table.Td style={{ borderColor: '#1f2b3b' }}>
             {requestType === 'incoming' ? (
               <Group gap="xs">

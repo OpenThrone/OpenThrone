@@ -27,11 +27,20 @@ async function handler(
   const action = (req.url || '').split('/').pop();
   let result;
   if (action === 'acknowledge') {
-    result = await CheatDetectionService.acknowledge(Number(staffUserId), context.body.signalId);
+    result = await CheatDetectionService.acknowledge(
+      Number(staffUserId),
+      context.body.signalId,
+    );
   } else if (action === 'dismiss') {
-    result = await CheatDetectionService.dismiss(Number(staffUserId), context.body.signalId);
+    result = await CheatDetectionService.dismiss(
+      Number(staffUserId),
+      context.body.signalId,
+    );
   } else if (action === 'takeAction') {
-    result = await CheatDetectionService.takeAction(Number(staffUserId), context.body.signalId);
+    result = await CheatDetectionService.takeAction(
+      Number(staffUserId),
+      context.body.signalId,
+    );
   } else {
     return res.status(400).json({ error: 'Unknown action' });
   }

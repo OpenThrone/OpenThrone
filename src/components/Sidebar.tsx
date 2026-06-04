@@ -291,7 +291,9 @@ const Sidebar: React.FC = () => {
                   <StatRow
                     label={t('labels.era')}
                     value={
-                      <span>{user?.currentEra?.name ?? t('labels.unknown')}</span>
+                      <span>
+                        {user?.currentEra?.name ?? t('labels.unknown')}
+                      </span>
                     }
                     icon={<RpgAwesomeIcon icon="hourglass" fw />}
                   />

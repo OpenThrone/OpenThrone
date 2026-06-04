@@ -1,4 +1,3 @@
-import { PermissionType } from '@prisma/client';
 import type { NextApiResponse } from 'next';
 
 import { AnnouncementService } from '@/services/Announcement.service';

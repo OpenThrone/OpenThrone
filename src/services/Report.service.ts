@@ -1,6 +1,4 @@
 import {
-  Report,
-  ReportAction,
   ReportCategory,
   ReportPriority,
   ReportResolution,
@@ -9,11 +7,13 @@ import {
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
-import { logError } from '@/utils/logger';
 
 const CreateReportSchema = z.object({
   reportedUserId: z.number().int().positive(),
-  category: z.nativeEnum(ReportCategory).or(z.string().min(1)).transform((v) => v as ReportCategory),
+  category: z
+    .nativeEnum(ReportCategory)
+    .or(z.string().min(1))
+    .transform((v) => v as ReportCategory),
   description: z.string().min(10).max(2000),
   subject: z.string().max(200).optional(),
   chatMessageId: z.number().int().positive().optional(),

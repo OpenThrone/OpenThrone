@@ -322,9 +322,7 @@ export class GeneralService {
 
       // Expand staff roles into permission grants for the client.
       const roles = (user.staffRoleAssignments ?? []).map((r) => r.role);
-      const individualPermissions = (user.permissions ?? []).map(
-        (p) => p.type,
-      );
+      const individualPermissions = (user.permissions ?? []).map((p) => p.type);
       const expandedFromRoles = expandPermissions(roles, individualPermissions);
       const permissions = expandedFromRoles.map((type) => ({ type }));
 

@@ -9,7 +9,7 @@ const getAllianceHandler = async (req: any, res: any) => {
   const { id } = req.query;
 
   if (!id || Array.isArray(id)) {
-      return res.status(400).json({ error: 'Invalid alliance ID' });
+    return res.status(400).json({ error: 'Invalid alliance ID' });
   }
 
   try {
@@ -18,7 +18,7 @@ const getAllianceHandler = async (req: any, res: any) => {
   } catch (error: any) {
     // If it's a 404-like error
     if (error.message.includes('not found')) {
-         return res.status(404).json({ error: 'Alliance not found' });
+      return res.status(404).json({ error: 'Alliance not found' });
     }
     return res.status(400).json({ error: error.message });
   }

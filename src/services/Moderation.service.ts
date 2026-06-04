@@ -18,7 +18,12 @@ export class ModerationService {
       },
       include: {
         user: {
-          select: { id: true, display_name: true, email: true, last_active: true },
+          select: {
+            id: true,
+            display_name: true,
+            email: true,
+            last_active: true,
+          },
         },
         admin: {
           select: { id: true, display_name: true },
@@ -52,7 +57,12 @@ export class ModerationService {
   static async addModeratorNote(
     authorUserId: number,
     targetUserId: number,
-    data: { note: string; visibility?: string; relatedReportId?: number; isPinned?: boolean },
+    data: {
+      note: string;
+      visibility?: string;
+      relatedReportId?: number;
+      isPinned?: boolean;
+    },
   ) {
     return prisma.moderatorNote.create({
       data: {
@@ -73,7 +83,10 @@ export class ModerationService {
     });
   }
 
-  static async createBanAppeal(userId: number, data: z.infer<typeof CreateAppealSchema>) {
+  static async createBanAppeal(
+    userId: number,
+    data: z.infer<typeof CreateAppealSchema>,
+  ) {
     const validated = CreateAppealSchema.parse(data);
     return prisma.banAppeal.create({
       data: {
@@ -127,7 +140,8 @@ export class ModerationService {
     offset?: number;
   }) {
     const where: Record<string, unknown> = {};
-    if (filters.action) where.action = { contains: filters.action, mode: 'insensitive' };
+    if (filters.action)
+      where.action = { contains: filters.action, mode: 'insensitive' };
     if (filters.userId) where.userId = filters.userId;
     if (filters.targetUserId) where.targetUserId = filters.targetUserId;
 

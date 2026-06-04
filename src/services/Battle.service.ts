@@ -6,8 +6,8 @@ import prisma from '@/lib/prisma';
 import { BattleUser } from '@/models/BattleUser';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
-import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { simulateBattle } from '@/utils/attackFunctions';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logDebug, logError, logWarn } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 
@@ -79,13 +79,22 @@ const BattleUpgradesSchema = z.object({
 const AttackExecutionSchema = z.object({
   attackerId: z.number().int(),
   defenderId: z.number().int(),
-  attackTurns: z.number().int().positive().max(V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS),
+  attackTurns: z
+    .number()
+    .int()
+    .positive()
+    .max(V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS),
 });
 
 const BattleTestSchema = z.object({
   attackerId: z.number().int().optional(),
   defenderId: z.number().int(),
-  turns: z.number().int().positive().max(V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS).optional(),
+  turns: z
+    .number()
+    .int()
+    .positive()
+    .max(V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS)
+    .optional(),
 });
 
 const AttackLogQuerySchema = z.object({

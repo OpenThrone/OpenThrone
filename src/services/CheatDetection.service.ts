@@ -67,7 +67,9 @@ export class CheatDetectionService {
 
   static async getMultiAccountClusters(limit = 50) {
     const recentLogins = await prisma.loginEvent.findMany({
-      where: { occurredAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+      where: {
+        occurredAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
       select: { userId: true, ipHash: true, deviceHash: true },
       take: 5000,
       orderBy: { occurredAt: 'desc' },
@@ -78,11 +80,13 @@ export class CheatDetectionService {
 
     for (const login of recentLogins) {
       if (login.ipHash) {
-        if (!ipToUsers.has(login.ipHash)) ipToUsers.set(login.ipHash, new Set());
+        if (!ipToUsers.has(login.ipHash))
+          ipToUsers.set(login.ipHash, new Set());
         ipToUsers.get(login.ipHash)!.add(login.userId);
       }
       if (login.deviceHash) {
-        if (!deviceToUsers.has(login.deviceHash)) deviceToUsers.set(login.deviceHash, new Set());
+        if (!deviceToUsers.has(login.deviceHash))
+          deviceToUsers.set(login.deviceHash, new Set());
         deviceToUsers.get(login.deviceHash)!.add(login.userId);
       }
     }
@@ -96,13 +100,23 @@ export class CheatDetectionService {
 
     for (const [ip, users] of ipToUsers) {
       if (users.size >= 2) {
-        clusters.push({ type: 'IP', hash: ip, userIds: Array.from(users), userNames: new Map() });
+        clusters.push({
+          type: 'IP',
+          hash: ip,
+          userIds: Array.from(users),
+          userNames: new Map(),
+        });
       }
     }
 
     for (const [device, users] of deviceToUsers) {
       if (users.size >= 2) {
-        clusters.push({ type: 'DEVICE', hash: device, userIds: Array.from(users), userNames: new Map() });
+        clusters.push({
+          type: 'DEVICE',
+          hash: device,
+          userIds: Array.from(users),
+          userNames: new Map(),
+        });
       }
     }
 

@@ -43,8 +43,10 @@ async function handler(_req: AuthenticatedRequest, res: NextApiResponse) {
     return res.status(200).json({
       totalLiquidGold: goldAgg._sum.gold?.toString() ?? '0',
       totalBankGold: goldAgg._sum.gold_in_bank?.toString() ?? '0',
-      totalGold:
-        ((goldAgg._sum.gold ?? BigInt(0)) + (goldAgg._sum.gold_in_bank ?? BigInt(0))).toString(),
+      totalGold: (
+        (goldAgg._sum.gold ?? BigInt(0)) +
+        (goldAgg._sum.gold_in_bank ?? BigInt(0))
+      ).toString(),
       avgLiquidGold: Math.round(Number(goldAgg._avg.gold ?? 0)),
       avgBankGold: Math.round(Number(goldAgg._avg.gold_in_bank ?? 0)),
       topHolders: topHolders.map((u) => ({

@@ -32,10 +32,14 @@ async function handler(
     return res.status(400).json({ error: 'Invalid appeal ID' });
   }
 
-  const appeal = await ModerationService.reviewBanAppeal(Number(userId), appealId, {
-    status: context.body.status,
-    decisionSummary: context.body.decisionSummary,
-  });
+  const appeal = await ModerationService.reviewBanAppeal(
+    Number(userId),
+    appealId,
+    {
+      status: context.body.status,
+      decisionSummary: context.body.decisionSummary,
+    },
+  );
   return res.status(200).json(appeal);
 }
 

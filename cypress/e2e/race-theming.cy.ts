@@ -104,7 +104,6 @@ describe('Race-Specific Theming', () => {
       cy.reload();
       cy.wait(500);
 
-
       // Validate primary green colors
       cy.get('[data-testid="race-header"]')
         .should('have.css', 'background-color')
@@ -168,7 +167,6 @@ describe('Race-Specific Theming', () => {
       });
       cy.reload();
       cy.wait(500);
-
 
       // Validate primary brown colors
       cy.get('[data-testid="race-header"]')
@@ -234,7 +232,6 @@ describe('Race-Specific Theming', () => {
       cy.reload();
       cy.wait(500);
 
-
       // Validate primary blue colors
       cy.get('[data-testid="race-header"]')
         .should('have.css', 'background-color')
@@ -298,7 +295,6 @@ describe('Race-Specific Theming', () => {
       });
       cy.reload();
       cy.wait(500);
-
 
       // Validate primary dark gray colors
       cy.get('[data-testid="race-header"]')
@@ -507,7 +503,6 @@ describe('Race-Specific Theming', () => {
 
       // Cards
       cy.get('[data-testid="game-card"]').should('have.css', 'border-color');
-
     });
 
     it('should apply theme-specific textures and patterns', () => {

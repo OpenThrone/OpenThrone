@@ -38,7 +38,9 @@ async function handler(
   if (req.method === 'PUT') {
     const updated = await AnnouncementService.update(Number(userId), id, {
       ...(context.body as Record<string, unknown>),
-      startsAt: context.body.startsAt ? new Date(context.body.startsAt) : undefined,
+      startsAt: context.body.startsAt
+        ? new Date(context.body.startsAt)
+        : undefined,
       endsAt: context.body.endsAt ? new Date(context.body.endsAt) : undefined,
     } as any);
     return res.status(200).json(updated);

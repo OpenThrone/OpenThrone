@@ -47,7 +47,6 @@ describe('WebSocket Real-time Features', () => {
           }, 5000);
         });
       });
-
     });
 
     it('should handle WebSocket connection errors gracefully', () => {
@@ -212,7 +211,6 @@ describe('WebSocket Real-time Features', () => {
 
         cy.wait(100);
       });
-
     });
   });
 
@@ -453,7 +451,6 @@ describe('WebSocket Real-time Features', () => {
         cy.wait(100);
       });
 
-
       // All messages should be visible
       cy.get('[data-testid="chat-message"]').should(
         'have.length.greaterThan',
@@ -469,7 +466,6 @@ describe('WebSocket Real-time Features', () => {
       cy.get('[data-testid="chat-input"]').type(largeMessage);
       cy.get('[data-testid="chat-send-button"]').click();
       cy.wait(300);
-
 
       // Message should be sent
       cy.get('[data-testid="chat-message"]').should('contain', 'A');
@@ -498,7 +494,6 @@ describe('WebSocket Real-time Features', () => {
         'contain',
         'connected',
       );
-
     });
   });
 

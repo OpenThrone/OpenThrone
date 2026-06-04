@@ -2,7 +2,6 @@ import { PermissionType } from '@prisma/client';
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import prisma from '@/lib/prisma';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { ServerSettingService } from '@/services/ServerSetting.service';
 import type { AuthenticatedRequest } from '@/types/api';
@@ -53,7 +52,7 @@ async function handler(
   }
 
   if (req.method === 'DELETE') {
-    const key = context.query.key;
+    const { key } = context.query;
     if (!key) return res.status(400).json({ error: 'Key required' });
     await ServerSettingService.delete(key);
     return res.status(200).json({ success: true });

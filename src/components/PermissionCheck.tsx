@@ -1,5 +1,5 @@
-import { PermissionType } from '@prisma/client';
 import { Text } from '@mantine/core';
+import { PermissionType } from '@prisma/client';
 
 import { useUser } from '@/context/users';
 

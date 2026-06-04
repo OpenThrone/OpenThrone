@@ -34,7 +34,14 @@ import {
   faSkullCrossbones,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Badge, Group, Menu, ScrollArea, SegmentedControl, Text } from '@mantine/core';
+import {
+  Badge,
+  Group,
+  Menu,
+  ScrollArea,
+  SegmentedControl,
+  Text,
+} from '@mantine/core';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { signOut } from 'next-auth/react';
@@ -426,7 +433,11 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                 >
                   <Menu.Target>
                     {renderQuickAction(
-                      <RpgAwesomeIcon icon="double-team" fw style={{ fontSize: 18 }} />,
+                      <RpgAwesomeIcon
+                        icon="double-team"
+                        fw
+                        style={{ fontSize: 18 }}
+                      />,
                       quickActions.socialNotificationCount,
                       undefined,
                       'ariaLabels.quickAccessSocial',
@@ -438,7 +449,11 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       component={Link}
                       href="/social/friends"
                       leftSection={
-                        <FontAwesomeIcon icon={faIdCard} size="sm" stroke="1.5" />
+                        <FontAwesomeIcon
+                          icon={faIdCard}
+                          size="sm"
+                          stroke="1.5"
+                        />
                       }
                     >
                       Friends
@@ -462,7 +477,11 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       component={Link}
                       href="/social/requests"
                       leftSection={
-                        <FontAwesomeIcon icon={faComments} size="sm" stroke="1.5" />
+                        <FontAwesomeIcon
+                          icon={faComments}
+                          size="sm"
+                          stroke="1.5"
+                        />
                       }
                       rightSection={
                         <Badge
@@ -515,7 +534,11 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
                       component={Link}
                       href="/home/profile"
                       leftSection={
-                        <FontAwesomeIcon icon={faIdCard} size="sm" stroke="1.5" />
+                        <FontAwesomeIcon
+                          icon={faIdCard}
+                          size="sm"
+                          stroke="1.5"
+                        />
                       }
                     >
                       Profile Settings

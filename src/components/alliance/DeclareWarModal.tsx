@@ -1,4 +1,4 @@
-import { Button, Modal, NumberInput, Stack, TextInput } from '@mantine/core';
+import { Button, Modal, NumberInput, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
@@ -11,7 +11,11 @@ interface DeclareWarModalProps {
   allianceId: number;
 }
 
-export const DeclareWarModal = ({ opened, onClose, allianceId }: DeclareWarModalProps) => {
+export const DeclareWarModal = ({
+  opened,
+  onClose,
+  allianceId,
+}: DeclareWarModalProps) => {
   const { t } = useTranslation('alliances');
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +25,8 @@ export const DeclareWarModal = ({ opened, onClose, allianceId }: DeclareWarModal
       targetAllianceId: '',
     },
     validate: {
-      targetAllianceId: (value) => (value ? null : 'Target Alliance ID is required'),
+      targetAllianceId: (value) =>
+        value ? null : 'Target Alliance ID is required',
     },
   });
 
@@ -36,11 +41,13 @@ export const DeclareWarModal = ({ opened, onClose, allianceId }: DeclareWarModal
           defenderAllianceId: Number(values.targetAllianceId),
         }),
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      alertService.success(t('war.declareSuccess', 'War declared successfully!'));
+      alertService.success(
+        t('war.declareSuccess', 'War declared successfully!'),
+      );
       onClose();
       form.reset();
     } catch (error: any) {
@@ -51,7 +58,11 @@ export const DeclareWarModal = ({ opened, onClose, allianceId }: DeclareWarModal
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} title={t('war.declareTitle', 'Declare War')}>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={t('war.declareTitle', 'Declare War')}
+    >
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack>
           <NumberInput
@@ -62,7 +73,7 @@ export const DeclareWarModal = ({ opened, onClose, allianceId }: DeclareWarModal
             {...form.getInputProps('targetAllianceId')}
           />
           {/* TODO: Add User Search / Alliance Search later */}
-          
+
           <Button type="submit" color="red" loading={loading}>
             {t('war.declareButton', 'Declare War')}
           </Button>

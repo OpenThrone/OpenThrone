@@ -8,6 +8,7 @@ import {
 installMockPrisma(vi);
 
 const { isAdmin, isModerator } = require('./authorization');
+
 const ADMINISTRATOR_ROLE = 'ADMINISTRATOR';
 const MODERATOR_ROLE = 'MODERATOR';
 

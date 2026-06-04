@@ -1,4 +1,5 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir } from 'node:fs/promises';
+
 import {
   artifactDailyResultsToCsv,
   artifactFinalPopulationToCsv,
@@ -7,10 +8,10 @@ import {
   comparisonToCsv,
   printAutonomousRun,
   runAllBalancePersonas,
-} from "../src/sim";
+} from '../src/sim';
 
 async function main() {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const outputDir = `temp/balance-reports/${timestamp}`;
   await mkdir(outputDir, { recursive: true });
 
@@ -46,7 +47,7 @@ async function main() {
     })),
     comparison,
     reportsByPersona: Object.fromEntries(
-      results.map((result) => [result.persona ?? "unknown", result.reports]),
+      results.map((result) => [result.persona ?? 'unknown', result.reports]),
     ),
   };
 

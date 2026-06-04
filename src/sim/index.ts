@@ -51,13 +51,6 @@ export {
   UNIT_COSTS,
 } from './population';
 export {
-  calculateProgressionPacing,
-  getLevelFromSimXp,
-  getXpFloorForLevel,
-  getXpRemainingToLevel100,
-  getXpRequiredForNextLevel,
-} from './progression';
-export {
   computeArmyCost,
   createBalancedPlayer,
   createSimPlayer,
@@ -65,6 +58,13 @@ export {
   getTotalOffense,
   PRESETS,
 } from './presets';
+export {
+  calculateProgressionPacing,
+  getLevelFromSimXp,
+  getXpFloorForLevel,
+  getXpRemainingToLevel100,
+  getXpRequiredForNextLevel,
+} from './progression';
 export {
   evaluateTargets,
   selectAttackStrategy,

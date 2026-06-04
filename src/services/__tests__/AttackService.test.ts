@@ -565,7 +565,9 @@ describe('AttackService', () => {
         throw new Error('Expected attack log payload to be created');
       }
 
-      const stats = createdAttackLog.payload.stats as AttackLogStats | undefined;
+      const stats = createdAttackLog.payload.stats as
+        | AttackLogStats
+        | undefined;
       expect(stats).toBeTruthy();
 
       const attackerUnits: LoggedUnit[] = JSON.parse(

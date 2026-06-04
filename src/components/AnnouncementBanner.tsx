@@ -1,4 +1,4 @@
-import { Alert, CloseButton, Group } from '@mantine/core';
+import { Alert } from '@mantine/core';
 import { useEffect, useState } from 'react';
 
 import { logError } from '@/utils/logger';

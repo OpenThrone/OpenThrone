@@ -37,8 +37,12 @@ async function handler(_req: AuthenticatedRequest, res: NextApiResponse) {
         where: { status: 'BANNED', end_date: null },
       }),
       prisma.alliances.count(),
-      prisma.report.count({ where: { status: { in: ['OPEN', 'TRIAGED', 'IN_REVIEW'] } } }),
-      prisma.banAppeal.count({ where: { status: { in: ['OPEN', 'IN_REVIEW'] } } }),
+      prisma.report.count({
+        where: { status: { in: ['OPEN', 'TRIAGED', 'IN_REVIEW'] } },
+      }),
+      prisma.banAppeal.count({
+        where: { status: { in: ['OPEN', 'IN_REVIEW'] } },
+      }),
       prisma.cheatSignal.count({ where: { status: 'OPEN' } }),
       prisma.attack_log.count({ where: { timestamp: { gte: oneDayAgo } } }),
     ]);

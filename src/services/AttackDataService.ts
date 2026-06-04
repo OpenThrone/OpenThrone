@@ -354,7 +354,6 @@ export const getTop10TotalAttackerCasualties = async (timeFrame: number) => {
     const validatedTimeFrame = TimeFrameSchema.parse(timeFrame);
     const activeEra = await ensureActiveEra();
 
-
     const relations = await prisma.attack_log.findMany({
       where: {
         timestamp: {
@@ -408,7 +407,6 @@ export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
   try {
     const validatedTimeFrame = TimeFrameSchema.parse(timeFrame);
     const activeEra = await ensureActiveEra();
-
 
     const relations = await prisma.attack_log.findMany({
       where: {
@@ -531,7 +529,6 @@ export async function getTopRecruitsWithDisplayNames() {
   try {
     const activeEra = await ensureActiveEra();
 
-
     const recruitmentCounts = await getRecruitmentCounts(1); // Get counts for the last day
 
     // Filter out entries with no valid recruitments
@@ -595,7 +592,6 @@ export async function getTopRecruitsWithDisplayNames() {
 export async function getTopSuccessfulAttacks() {
   try {
     const activeEra = await ensureActiveEra();
-
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -691,7 +687,6 @@ export async function getTopPopulations() {
   try {
     const activeEra = await ensureActiveEra();
 
-
     // Fetch users and their units
     const usersWithUnits = await prisma.users.findMany({
       select: {
@@ -736,7 +731,6 @@ export async function getTopGoldOnHand() {
   try {
     const activeEra = await ensureActiveEra();
 
-
     const users = await prisma.users.findMany({
       select: {
         id: true,
@@ -773,7 +767,6 @@ export async function getTopGoldOnHand() {
 export async function getTopGoldInBank() {
   try {
     const activeEra = await ensureActiveEra();
-
 
     const users = await prisma.users.findMany({
       select: {
@@ -813,7 +806,6 @@ export async function getTopGoldInBank() {
 export async function getTopWealth() {
   try {
     const activeEra = await ensureActiveEra();
-
 
     const users = await prisma.users.findMany({
       select: {

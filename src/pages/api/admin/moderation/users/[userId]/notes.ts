@@ -26,7 +26,8 @@ async function handler(
   context: { query: unknown; body: z.infer<typeof Schema> },
 ) {
   const userId = Number((context.query as { userId: string }).userId);
-  if (Number.isNaN(userId)) return res.status(400).json({ error: 'Invalid user ID' });
+  if (Number.isNaN(userId))
+    return res.status(400).json({ error: 'Invalid user ID' });
 
   if (req.method === 'GET') {
     const notes = await ModerationService.getModeratorNotes(userId);
@@ -36,12 +37,17 @@ async function handler(
   if (req.method === 'POST') {
     const staffUserId = req.session?.user?.id;
     if (!staffUserId) return res.status(401).json({ error: 'Unauthorized' });
-    if (!context.body?.note) return res.status(400).json({ error: 'Note is required' });
+    if (!context.body?.note)
+      return res.status(400).json({ error: 'Note is required' });
 
-    const note = await ModerationService.addModeratorNote(Number(staffUserId), userId, {
-      note: context.body.note,
-      visibility: context.body.visibility,
-    });
+    const note = await ModerationService.addModeratorNote(
+      Number(staffUserId),
+      userId,
+      {
+        note: context.body.note,
+        visibility: context.body.visibility,
+      },
+    );
     return res.status(201).json(note);
   }
 

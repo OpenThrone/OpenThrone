@@ -1,6 +1,9 @@
+import { runSimulation as runPopulationSimulation } from './daycycle';
+import { getPlayerPower } from './economy';
+import { generatePopulation } from './population';
 import {
-  AutonomousRunResult,
   AutonomousRunArtifact,
+  AutonomousRunResult,
   BalanceIterationReport,
   BalanceParameters,
   PersonaComparisonResult,
@@ -8,10 +11,7 @@ import {
   SimulationConfig,
   TopPlayerSnapshot,
   TopPlayerTimelinePoint,
-} from "./types";
-import { getPlayerPower } from "./economy";
-import { generatePopulation } from "./population";
-import { runSimulation as runPopulationSimulation } from "./daycycle";
+} from './types';
 
 export interface AutonomousRunnerConfig {
   personaName?: string;
@@ -160,7 +160,7 @@ function proposeAdjustments(
     );
     adjustments.attackerDamageMultiplier = next.attackerDamageMultiplier;
     adjustments.maxPillageSharePerAttack = next.maxPillageSharePerAttack;
-    notes.push("Low attack volume, nudged attacker damage and loot upward.");
+    notes.push('Low attack volume, nudged attacker damage and loot upward.');
   }
 
   if (report.avgIntelSuccessRate < 0.15) {
@@ -171,7 +171,7 @@ function proposeAdjustments(
     adjustments.defenderCounterDamageMultiplier =
       next.defenderCounterDamageMultiplier;
     notes.push(
-      "Intel conversion is poor, reduced defender counter pressure slightly.",
+      'Intel conversion is poor, reduced defender counter pressure slightly.',
     );
   }
 
@@ -181,7 +181,7 @@ function proposeAdjustments(
       next.attackerDamageMultiplier + 0.04,
     );
     adjustments.attackerDamageMultiplier = next.attackerDamageMultiplier;
-    notes.push("Attackers underperform target, increased attacker damage.");
+    notes.push('Attackers underperform target, increased attacker damage.');
   } else if (report.avgAttackerWinRate > targetAttackerWinRate + 0.08) {
     next.attackerDamageMultiplier = Math.max(
       0.9,
@@ -195,7 +195,7 @@ function proposeAdjustments(
     adjustments.defenderCounterDamageMultiplier =
       next.defenderCounterDamageMultiplier;
     notes.push(
-      "Attackers overperform target, shifted power back to defenders.",
+      'Attackers overperform target, shifted power back to defenders.',
     );
   }
 
@@ -205,12 +205,12 @@ function proposeAdjustments(
       next.maxPillageSharePerAttack + 0.02,
     );
     adjustments.maxPillageSharePerAttack = next.maxPillageSharePerAttack;
-    notes.push("Loot economy is too quiet, increased pillage share.");
+    notes.push('Loot economy is too quiet, increased pillage share.');
   }
 
   if (notes.length === 0) {
     notes.push(
-      "Metrics were close enough to target; no change this iteration.",
+      'Metrics were close enough to target; no change this iteration.',
     );
   }
 
@@ -239,8 +239,8 @@ function tunePopulationBehaviors(
       next.behavior.aggression = Math.min(1, next.behavior.aggression + 0.08);
       aggressionRaised++;
       next.behavior.spyPreference = Math.max(0.35, next.behavior.spyPreference);
-      if (next.behavior.turnStrategy === "conservative") {
-        next.behavior.turnStrategy = "balanced";
+      if (next.behavior.turnStrategy === 'conservative') {
+        next.behavior.turnStrategy = 'balanced';
         conservativeToBalanced++;
       }
     }
@@ -265,15 +265,15 @@ function tunePopulationBehaviors(
       );
     }
 
-    if (personaName === "aggression" && report.avgAttacksPerDay < 2) {
-      if (next.behavior.turnStrategy === "balanced") {
-        next.behavior.turnStrategy = "aggressive";
+    if (personaName === 'aggression' && report.avgAttacksPerDay < 2) {
+      if (next.behavior.turnStrategy === 'balanced') {
+        next.behavior.turnStrategy = 'aggressive';
         balancedToAggressive++;
       }
       next.behavior.aggression = Math.min(1, next.behavior.aggression + 0.04);
     }
 
-    if (personaName === "fortress" && report.avgAttackerWinRate > 0.5) {
+    if (personaName === 'fortress' && report.avgAttackerWinRate > 0.5) {
       next.behavior.riskTolerance = Math.max(
         0.15,
         next.behavior.riskTolerance - 0.05,
@@ -284,7 +284,7 @@ function tunePopulationBehaviors(
       );
     }
 
-    if (personaName === "progression" && report.maxLevelReached < 40) {
+    if (personaName === 'progression' && report.maxLevelReached < 40) {
       next.behavior.wealthPreference = Math.max(
         0.2,
         next.behavior.wealthPreference - 0.05,
@@ -323,7 +323,7 @@ function tunePopulationBehaviors(
     );
   }
   if (changes.length === 0) {
-    changes.push("No heuristic rewrite required this iteration.");
+    changes.push('No heuristic rewrite required this iteration.');
   }
 
   return { players: rewrittenPlayers, changes };
@@ -348,7 +348,7 @@ function isMetaStale(
 export async function runAutonomousBalanceLoop(
   config: AutonomousRunnerConfig = {},
 ): Promise<AutonomousRunResult> {
-  const personaName = config.personaName ?? "equilibrium";
+  const personaName = config.personaName ?? 'equilibrium';
   const populationSize = config.populationSize ?? 100;
   const levelRange = config.levelRange ?? [5, 20];
   const daysPerIteration = config.daysPerIteration ?? 14;
@@ -442,12 +442,12 @@ export async function runAutonomousBalanceLoop(
         state,
         balance,
         topPlayerTimelines,
-        "level_100",
+        'level_100',
       );
       return {
         finalState: state,
         reports,
-        stopReason: "level_100",
+        stopReason: 'level_100',
         finalBalance: balance,
         persona: personaName,
         artifact,
@@ -461,12 +461,12 @@ export async function runAutonomousBalanceLoop(
         state,
         balance,
         topPlayerTimelines,
-        "stale_meta",
+        'stale_meta',
       );
       return {
         finalState: state,
         reports,
-        stopReason: "stale_meta",
+        stopReason: 'stale_meta',
         finalBalance: balance,
         persona: personaName,
         artifact,
@@ -480,12 +480,12 @@ export async function runAutonomousBalanceLoop(
     finalState,
     balance,
     topPlayerTimelines,
-    "iteration_limit",
+    'iteration_limit',
   );
   return {
     finalState,
     reports,
-    stopReason: "iteration_limit",
+    stopReason: 'iteration_limit',
     finalBalance: balance,
     persona: personaName,
     artifact,
@@ -498,7 +498,7 @@ function buildArtifact(
   state: Awaited<ReturnType<typeof runPopulationSimulation>>,
   finalBalance: Partial<BalanceParameters>,
   topPlayerTimelines: Record<string, TopPlayerTimelinePoint[]>,
-  stopReason: AutonomousRunResult["stopReason"],
+  stopReason: AutonomousRunResult['stopReason'],
 ): AutonomousRunArtifact {
   return {
     generatedAt: new Date().toISOString(),
@@ -514,10 +514,10 @@ function buildArtifact(
 
 export const BALANCE_PERSONAS: BalancePersona[] = [
   {
-    name: "equilibrium",
-    description: "Targets stable 50/50-ish combat with moderate activity.",
+    name: 'equilibrium',
+    description: 'Targets stable 50/50-ish combat with moderate activity.',
     config: {
-      personaName: "equilibrium",
+      personaName: 'equilibrium',
       populationSize: 100,
       levelRange: [5, 20],
       daysPerIteration: 14,
@@ -526,15 +526,15 @@ export const BALANCE_PERSONAS: BalancePersona[] = [
       staleAttackThreshold: 0.75,
       targetAttackerWinRate: 0.5,
       seed: 42,
-      simulation: { logLevel: "info" },
+      simulation: { logLevel: 'info' },
     },
   },
   {
-    name: "aggression",
+    name: 'aggression',
     description:
-      "Prefers higher attack volume and slightly attacker-favored outcomes.",
+      'Prefers higher attack volume and slightly attacker-favored outcomes.',
     config: {
-      personaName: "aggression",
+      personaName: 'aggression',
       populationSize: 100,
       levelRange: [5, 20],
       daysPerIteration: 14,
@@ -543,14 +543,14 @@ export const BALANCE_PERSONAS: BalancePersona[] = [
       staleAttackThreshold: 1.5,
       targetAttackerWinRate: 0.58,
       seed: 43,
-      simulation: { logLevel: "info" },
+      simulation: { logLevel: 'info' },
     },
   },
   {
-    name: "fortress",
-    description: "Prefers defender resilience and slower economic bleed.",
+    name: 'fortress',
+    description: 'Prefers defender resilience and slower economic bleed.',
     config: {
-      personaName: "fortress",
+      personaName: 'fortress',
       populationSize: 100,
       levelRange: [5, 20],
       daysPerIteration: 14,
@@ -559,15 +559,15 @@ export const BALANCE_PERSONAS: BalancePersona[] = [
       staleAttackThreshold: 0.6,
       targetAttackerWinRate: 0.42,
       seed: 44,
-      simulation: { logLevel: "info" },
+      simulation: { logLevel: 'info' },
     },
   },
   {
-    name: "progression",
+    name: 'progression',
     description:
-      "Optimizes for reaching late levels without the world going stale too early.",
+      'Optimizes for reaching late levels without the world going stale too early.',
     config: {
-      personaName: "progression",
+      personaName: 'progression',
       populationSize: 120,
       levelRange: [8, 24],
       daysPerIteration: 21,
@@ -576,7 +576,7 @@ export const BALANCE_PERSONAS: BalancePersona[] = [
       staleAttackThreshold: 0.5,
       targetAttackerWinRate: 0.52,
       seed: 45,
-      simulation: { logLevel: "info" },
+      simulation: { logLevel: 'info' },
     },
   },
 ];
@@ -595,7 +595,7 @@ export async function runAllBalancePersonas(
   }
 
   const comparison = results.map((result) => {
-    const reports = result.reports;
+    const { reports } = result;
     const avgAttacksPerDay =
       reports.reduce((sum, report) => sum + report.avgAttacksPerDay, 0) /
       Math.max(reports.length, 1);
@@ -608,7 +608,7 @@ export async function runAllBalancePersonas(
     const finalMaxLevel = reports[reports.length - 1]?.maxLevelReached ?? 0;
 
     return {
-      persona: result.persona ?? "unknown",
+      persona: result.persona ?? 'unknown',
       stopReason: result.stopReason,
       finalBalance: result.finalBalance,
       finalMaxLevel,
@@ -622,7 +622,7 @@ export async function runAllBalancePersonas(
 }
 
 export function printAutonomousRun(result: AutonomousRunResult): void {
-  console.log("\n=== Autonomous Balance Run ===");
+  console.log('\n=== Autonomous Balance Run ===');
   console.log(`Stop reason: ${result.stopReason}`);
   console.log(`Iterations: ${result.reports.length}`);
   const last = result.reports[result.reports.length - 1];
@@ -636,6 +636,6 @@ export function printAutonomousRun(result: AutonomousRunResult): void {
       `Last intel success: ${(last.avgIntelSuccessRate * 100).toFixed(1)}%`,
     );
   }
-  console.log("Final balance:", JSON.stringify(result.finalBalance, null, 2));
-  console.log("================================\n");
+  console.log('Final balance:', JSON.stringify(result.finalBalance, null, 2));
+  console.log('================================\n');
 }

@@ -19,8 +19,8 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { PermissionType } from '@prisma/client';
 import type { StaffRole } from '@prisma/client';
+import { PermissionType } from '@prisma/client';
 import React, { useEffect, useState } from 'react';
 
 import { logError } from '@/utils/logger';

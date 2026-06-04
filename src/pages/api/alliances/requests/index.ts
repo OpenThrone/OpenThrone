@@ -15,7 +15,10 @@ const listRequestsHandler = async (req: any, res: any) => {
   const { user } = req.session;
 
   try {
-    const requests = await AllianceService.getJoinRequests(Number(allianceId), user.id);
+    const requests = await AllianceService.getJoinRequests(
+      Number(allianceId),
+      user.id,
+    );
     return res.status(200).json(requests);
   } catch (error: any) {
     return res.status(400).json({ error: error.message });

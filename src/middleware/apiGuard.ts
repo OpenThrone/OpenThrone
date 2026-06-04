@@ -1,5 +1,5 @@
-import { randomUUID } from 'crypto';
 import { PermissionType } from '@prisma/client';
+import { randomUUID } from 'crypto';
 import type { NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import type { z, ZodTypeAny } from 'zod';
@@ -9,7 +9,11 @@ import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { ApiTokenService } from '@/services/ApiToken.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import type { ApiAuthActor, ApiAuthActorType } from '@/types/api-auth';
-import { hasAnyPermission as checkAnyPermission, hasAllPermissions as checkAllPermissions, isAdmin } from '@/utils/authorization';
+import {
+  hasAllPermissions as checkAllPermissions,
+  hasAnyPermission as checkAnyPermission,
+  isAdmin,
+} from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 
 type AuthMode = 'none' | 'optional' | 'required' | 'admin' | 'permission';
@@ -170,7 +174,11 @@ export function withApiGuard<
         }
         actorType = 'session_admin';
         actor = { type: 'session_admin', userId: adminUserId };
-      } else if (authMode === 'permission' || requiredAnyPermissions || requiredAllPermissions) {
+      } else if (
+        authMode === 'permission' ||
+        requiredAnyPermissions ||
+        requiredAllPermissions
+      ) {
         if (!hasSession) {
           return res.status(401).json({ message: 'Unauthorized' });
         }
@@ -178,11 +186,18 @@ export function withApiGuard<
         const staffUserId = Number(sessionUserId);
 
         if (requiredAllPermissions && requiredAllPermissions.length > 0) {
-          if (!(await checkAllPermissions(staffUserId, requiredAllPermissions))) {
+          if (
+            !(await checkAllPermissions(staffUserId, requiredAllPermissions))
+          ) {
             return res.status(403).json({ message: 'Forbidden' });
           }
-        } else if (requiredAnyPermissions && requiredAnyPermissions.length > 0) {
-          if (!(await checkAnyPermission(staffUserId, requiredAnyPermissions))) {
+        } else if (
+          requiredAnyPermissions &&
+          requiredAnyPermissions.length > 0
+        ) {
+          if (
+            !(await checkAnyPermission(staffUserId, requiredAnyPermissions))
+          ) {
             return res.status(403).json({ message: 'Forbidden' });
           }
         }

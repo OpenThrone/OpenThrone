@@ -3,6 +3,7 @@ import {
   EconomyUpgrades,
   HouseUpgrades,
 } from '../constants/Structure_Upgrades';
+import { getXpFloorForLevel } from './progression';
 import {
   BehaviorParams,
   PlayerState,
@@ -10,7 +11,6 @@ import {
   TurnStrategy,
   UnitCounts,
 } from './types';
-import { getXpFloorForLevel } from './progression';
 
 const UNIT_COSTS: Record<keyof UnitCounts, number> = {
   soldier: 1500,

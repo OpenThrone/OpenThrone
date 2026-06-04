@@ -1,5 +1,5 @@
-import { PermissionType } from '@prisma/client';
 import type { StaffRole } from '@prisma/client';
+import { PermissionType } from '@prisma/client';
 
 const ADMINISTRATOR_ROLE: StaffRole = 'ADMINISTRATOR';
 const MODERATOR_ROLE: StaffRole = 'MODERATOR';

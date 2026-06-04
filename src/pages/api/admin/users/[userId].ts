@@ -131,9 +131,28 @@ async function handler(
     try {
       const updateData = req.body as {
         profile: { username: string; email: string };
-        stats: { gold: string | number | bigint; experience: number; level: number };
-        army: { units: Array<{ id?: string; type?: string; quantity: number; level: number }> };
-        items: { items: Array<{ id?: string; type?: string; quantity: number; level?: number; usage?: string }> };
+        stats: {
+          gold: string | number | bigint;
+          experience: number;
+          level: number;
+        };
+        army: {
+          units: Array<{
+            id?: string;
+            type?: string;
+            quantity: number;
+            level: number;
+          }>;
+        };
+        items: {
+          items: Array<{
+            id?: string;
+            type?: string;
+            quantity: number;
+            level?: number;
+            usage?: string;
+          }>;
+        };
         permissions: { permissions: PermissionType[] };
         staffRoles?: { roles: StaffRole[] };
       };

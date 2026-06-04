@@ -28,8 +28,16 @@ export class ServerSettingService {
     const validated = SettingSchema.parse(data);
     return prisma.serverSetting.upsert({
       where: { key: validated.key },
-      create: { ...validated, value: validated.value as object, updatedByUserId: userId },
-      update: { ...validated, value: validated.value as object, updatedByUserId: userId },
+      create: {
+        ...validated,
+        value: validated.value as object,
+        updatedByUserId: userId,
+      },
+      update: {
+        ...validated,
+        value: validated.value as object,
+        updatedByUserId: userId,
+      },
     });
   }
 

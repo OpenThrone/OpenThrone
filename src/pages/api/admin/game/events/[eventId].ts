@@ -24,7 +24,8 @@ async function handler(
   const userId = req.session?.user?.id;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   const eventId = Number((context.query as { eventId: string }).eventId);
-  if (Number.isNaN(eventId)) return res.status(400).json({ error: 'Invalid event ID' });
+  if (Number.isNaN(eventId))
+    return res.status(400).json({ error: 'Invalid event ID' });
 
   if (req.method === 'PUT' && req.body?.action === 'activate') {
     const event = await GameEventService.activate(Number(userId), eventId);

@@ -1,4 +1,3 @@
-import { PermissionType } from '@prisma/client';
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
@@ -32,7 +31,10 @@ async function handler(
   if (req.method === 'POST') {
     const userId = req.session?.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    const appeal = await ModerationService.createBanAppeal(Number(userId), context.body!);
+    const appeal = await ModerationService.createBanAppeal(
+      Number(userId),
+      context.body!,
+    );
     return res.status(201).json(appeal);
   }
 

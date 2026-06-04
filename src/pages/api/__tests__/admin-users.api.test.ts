@@ -9,7 +9,7 @@ installMockPrisma(vi);
 
 mock.module('@prisma/client', () => ({
   Prisma: {},
-  PrismaClient: function () {},
+  PrismaClient() {},
 }));
 
 mock.module('@/middleware/auth', () => ({ withAuth: (h: any) => h }));

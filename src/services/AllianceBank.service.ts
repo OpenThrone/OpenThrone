@@ -43,9 +43,9 @@ export class AllianceBankService {
       // Check membership
       const membership = await prisma.alliance_memberships.count({
         where: {
-            alliance_id: validatedData.allianceId,
-            user_id: validatedData.userId
-        }
+          alliance_id: validatedData.allianceId,
+          user_id: validatedData.userId,
+        },
       });
       if (membership === 0) {
         throw new Error('You are not a member of this alliance');
@@ -78,7 +78,10 @@ export class AllianceBankService {
 
       return { message: 'Deposit successful' };
     } catch (error: any) {
-      logError('Error depositing to alliance bank', { ...validatedData, error });
+      logError('Error depositing to alliance bank', {
+        ...validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -97,7 +100,7 @@ export class AllianceBankService {
 
     try {
       // Check permissions
-       const requesterMembership = await prisma.alliance_memberships.findFirst({
+      const requesterMembership = await prisma.alliance_memberships.findFirst({
         where: {
           alliance_id: validatedData.allianceId,
           user_id: validatedData.requesterId,
@@ -111,13 +114,17 @@ export class AllianceBankService {
 
       // TODO: Add refined permissions like 'can_withdraw' or 'manage_bank'
       // For now, only Leader or potentially logic for roles needed
-      const isLeader = requesterMembership.alliance.leader_id === validatedData.requesterId;
+      const isLeader =
+        requesterMembership.alliance.leader_id === validatedData.requesterId;
       if (!isLeader) {
         throw new Error('Only the alliance leader can withdraw funds');
       }
 
       // Check alliance balance
-      if (requesterMembership.alliance.gold_in_bank === null || BigInt(requesterMembership.alliance.gold_in_bank) < validatedData.amount) {
+      if (
+        requesterMembership.alliance.gold_in_bank === null ||
+        BigInt(requesterMembership.alliance.gold_in_bank) < validatedData.amount
+      ) {
         throw new Error('Insufficient alliance funds');
       }
 
@@ -149,7 +156,10 @@ export class AllianceBankService {
 
       return { message: 'Withdrawal successful' };
     } catch (error: any) {
-      logError('Error withdrawing from alliance bank', { ...validatedData, error });
+      logError('Error withdrawing from alliance bank', {
+        ...validatedData,
+        error,
+      });
       throw error;
     }
   }
@@ -158,14 +168,14 @@ export class AllianceBankService {
    * Get bank history
    */
   static async getHistory(allianceId: number) {
-      return await prisma.alliance_bank_history.findMany({
-          where: { alliance_id: allianceId },
-          orderBy: { created_at: 'desc' },
-          take: 50,
-          include: {
-              performed_by_user: { select: { display_name: true } },
-              related_user: { select: { display_name: true } }
-          }
-      });
+    return await prisma.alliance_bank_history.findMany({
+      where: { alliance_id: allianceId },
+      orderBy: { created_at: 'desc' },
+      take: 50,
+      include: {
+        performed_by_user: { select: { display_name: true } },
+        related_user: { select: { display_name: true } },
+      },
+    });
   }
 }

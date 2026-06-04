@@ -27,7 +27,8 @@ async function handler(
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   const reportId = Number((context.query as { reportId: string }).reportId);
-  if (Number.isNaN(reportId)) return res.status(400).json({ error: 'Invalid report ID' });
+  if (Number.isNaN(reportId))
+    return res.status(400).json({ error: 'Invalid report ID' });
 
   try {
     const report = await ReportService.assignReport(Number(userId), {

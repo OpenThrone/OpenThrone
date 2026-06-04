@@ -276,14 +276,8 @@ export function applyLevelUp(player: PlayerState): PlayerState {
       fortHp: Math.ceil(nextFort.hitpoints * fortHealthRatio),
       fortMaxHp: nextFort.hitpoints,
       spyLevel: Math.min(22, Math.max(1, Math.floor(nextLevel / 3))),
-      sentryLevel: Math.min(
-        22,
-        Math.max(1, Math.floor(nextLevel / 3)),
-      ),
-      economyLevel: Math.min(
-        7,
-        Math.max(1, Math.floor(nextLevel / 3)),
-      ),
+      sentryLevel: Math.min(22, Math.max(1, Math.floor(nextLevel / 3))),
+      economyLevel: Math.min(7, Math.max(1, Math.floor(nextLevel / 3))),
     };
   }
 

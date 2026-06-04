@@ -28,9 +28,7 @@ import {
   calculateGoldLevelModifier,
   calculateGoldRewardMultiplier,
   calculateMoraleXpFactor,
-  calculateTurnXp,
   calculateUnderDefendedMultipliers,
-  calculateXpLevelModifier,
   getRaceIdentity,
   softCapCasualties,
   V5_COMBAT_CONSTANTS,
@@ -754,23 +752,33 @@ function calculateAttackerStrength(state, turn) {
   const staminaImpact = state.attackerStamina * staminaDrop;
 
   const attackerStrength = state.attackerArmy
-    ? { totalStats: (() => {
-        const rebuilt = buildBattleArmyState(state.attacker, 'OFFENSE');
-        const s = calculateArmyStrengthFromFormations(rebuilt);
-        return {
-          MeleeAtkPower: s.meleeAtkPower,
-          MeleeDefPower: s.meleeDefPower,
-          RangedAtkPower: s.rangedAtkPower,
-          RangedDefPower: s.rangedDefPower,
-        } as CalculatedStrength;
-      })() }
+    ? {
+        totalStats: (() => {
+          const rebuilt = buildBattleArmyState(state.attacker, 'OFFENSE');
+          const s = calculateArmyStrengthFromFormations(rebuilt);
+          return {
+            MeleeAtkPower: s.meleeAtkPower,
+            MeleeDefPower: s.meleeDefPower,
+            RangedAtkPower: s.rangedAtkPower,
+            RangedDefPower: s.rangedDefPower,
+          } as CalculatedStrength;
+        })(),
+      }
     : calculateStrength(state.attacker, 'OFFENSE');
 
   return {
-    MeleeAtkPower: Math.ceil(attackerStrength.totalStats.MeleeAtkPower * staminaImpact),
-    MeleeDefPower: Math.ceil(attackerStrength.totalStats.MeleeDefPower * staminaImpact),
-    RangedAtkPower: Math.ceil(attackerStrength.totalStats.RangedAtkPower * staminaImpact),
-    RangedDefPower: Math.ceil(attackerStrength.totalStats.RangedDefPower * staminaImpact),
+    MeleeAtkPower: Math.ceil(
+      attackerStrength.totalStats.MeleeAtkPower * staminaImpact,
+    ),
+    MeleeDefPower: Math.ceil(
+      attackerStrength.totalStats.MeleeDefPower * staminaImpact,
+    ),
+    RangedAtkPower: Math.ceil(
+      attackerStrength.totalStats.RangedAtkPower * staminaImpact,
+    ),
+    RangedDefPower: Math.ceil(
+      attackerStrength.totalStats.RangedDefPower * staminaImpact,
+    ),
   };
 }
 
@@ -799,31 +807,41 @@ function calculateDefenderStrength(state, turn) {
   state.includeOffenseUnits = includeOffenseUnits;
 
   const currentDefenderStrength = state.defenderArmy
-    ? { totalStats: (() => {
-        const rebuilt = buildBattleArmyState(state.defender, 'DEFENSE');
-        const s = calculateArmyStrengthFromFormations(rebuilt);
-        if (shouldIncludeCitz && rebuilt.collateral) {
-          const collateralStr = calculateArmyStrengthFromFormations({ formations: rebuilt.collateral, collateral: [] });
-          s.meleeAtkPower += collateralStr.meleeAtkPower;
-          s.meleeDefPower += collateralStr.meleeDefPower;
-          s.rangedAtkPower += collateralStr.rangedAtkPower;
-          s.rangedDefPower += collateralStr.rangedDefPower;
-        }
-        if (includeOffenseUnits && rebuilt.formations) {
-          const offenseFormations = rebuilt.formations.filter((f: any) => f.type === 'OFFENSE');
-          const offenseStr = calculateArmyStrengthFromFormations({ formations: offenseFormations, collateral: [] });
-          s.meleeAtkPower += offenseStr.meleeAtkPower;
-          s.meleeDefPower += offenseStr.meleeDefPower;
-          s.rangedAtkPower += offenseStr.rangedAtkPower;
-          s.rangedDefPower += offenseStr.rangedDefPower;
-        }
-        return {
-          MeleeAtkPower: s.meleeAtkPower,
-          MeleeDefPower: s.meleeDefPower,
-          RangedAtkPower: s.rangedAtkPower,
-          RangedDefPower: s.rangedDefPower,
-        } as CalculatedStrength;
-      })() }
+    ? {
+        totalStats: (() => {
+          const rebuilt = buildBattleArmyState(state.defender, 'DEFENSE');
+          const s = calculateArmyStrengthFromFormations(rebuilt);
+          if (shouldIncludeCitz && rebuilt.collateral) {
+            const collateralStr = calculateArmyStrengthFromFormations({
+              formations: rebuilt.collateral,
+              collateral: [],
+            });
+            s.meleeAtkPower += collateralStr.meleeAtkPower;
+            s.meleeDefPower += collateralStr.meleeDefPower;
+            s.rangedAtkPower += collateralStr.rangedAtkPower;
+            s.rangedDefPower += collateralStr.rangedDefPower;
+          }
+          if (includeOffenseUnits && rebuilt.formations) {
+            const offenseFormations = rebuilt.formations.filter(
+              (f: any) => f.type === 'OFFENSE',
+            );
+            const offenseStr = calculateArmyStrengthFromFormations({
+              formations: offenseFormations,
+              collateral: [],
+            });
+            s.meleeAtkPower += offenseStr.meleeAtkPower;
+            s.meleeDefPower += offenseStr.meleeDefPower;
+            s.rangedAtkPower += offenseStr.rangedAtkPower;
+            s.rangedDefPower += offenseStr.rangedDefPower;
+          }
+          return {
+            MeleeAtkPower: s.meleeAtkPower,
+            MeleeDefPower: s.meleeDefPower,
+            RangedAtkPower: s.rangedAtkPower,
+            RangedDefPower: s.rangedDefPower,
+          } as CalculatedStrength;
+        })(),
+      }
     : calculateStrength(
         state.defender,
         'DEFENSE',
@@ -993,8 +1011,8 @@ function calculateProgressionXpPerTurn(level: number): number {
 }
 
 function calculateTurnCommitmentXpEfficiency(turns: number): number {
-  const normalizedTurns = clamp(turns, 1, BATTLE_CONSTANTS.MAX_TURNS) /
-    BATTLE_CONSTANTS.MAX_TURNS;
+  const normalizedTurns =
+    clamp(turns, 1, BATTLE_CONSTANTS.MAX_TURNS) / BATTLE_CONSTANTS.MAX_TURNS;
   return clamp(0.22 + 0.78 * normalizedTurns ** 0.85, 0.25, 1);
 }
 
@@ -1242,11 +1260,15 @@ export function calculateStrength(
     .forEach((upgrade) => {
       const upgradeInfo = BattleUpgrades.find(
         (battleUpgrade) =>
-          battleUpgrade.type === upgrade.type && battleUpgrade.level === upgrade.level,
+          battleUpgrade.type === upgrade.type &&
+          battleUpgrade.level === upgrade.level,
       );
       const upgradeQuantity = Math.max(0, Number(upgrade.quantity ?? 0));
       if (!upgradeInfo || upgradeQuantity <= 0) return;
-      if (upgradeInfo.SiegeUpgradeLevel && siegeLevel < upgradeInfo.SiegeUpgradeLevel) {
+      if (
+        upgradeInfo.SiegeUpgradeLevel &&
+        siegeLevel < upgradeInfo.SiegeUpgradeLevel
+      ) {
         return;
       }
 
@@ -1255,10 +1277,17 @@ export function calculateStrength(
       const totalMatchingUnits = allCombatUnits
         .filter(
           (unit) =>
-            unit.type === unitType && unit.level >= (upgradeInfo.minUnitLevel || 0),
+            unit.type === unitType &&
+            unit.level >= (upgradeInfo.minUnitLevel || 0),
         )
-        .reduce((sum, unit) => sum + Math.max(0, Number(unit.quantity ?? 0)), 0);
-      const unitsCovered = Math.min(totalMatchingUnits, totalUpgradeUnitCapacity);
+        .reduce(
+          (sum, unit) => sum + Math.max(0, Number(unit.quantity ?? 0)),
+          0,
+        );
+      const unitsCovered = Math.min(
+        totalMatchingUnits,
+        totalUpgradeUnitCapacity,
+      );
       if (unitsCovered <= 0) return;
 
       upgradeStats.MeleeAtkPower +=
@@ -1388,7 +1417,9 @@ export function calculateLoot(
   const loot = BigInt(Math.floor(calculatedLoot));
   const cap =
     (defenderGold *
-      BigInt(Math.floor(BATTLE_CONSTANTS.MAX_PILLAGE_SHARE_PER_ATTACK * 10000))) /
+      BigInt(
+        Math.floor(BATTLE_CONSTANTS.MAX_PILLAGE_SHARE_PER_ATTACK * 10000),
+      )) /
     BigInt(10000);
   return loot < BigInt(0) ? BigInt(0) : loot > cap ? cap : loot;
 }
@@ -2137,9 +2168,24 @@ function isRangedWeapon(itemInfo: { RangedAtkPower?: number }): boolean {
 }
 
 function computePerUnitStats(
-  unitInfo: { MeleeAtkPower?: number; MeleeDefPower?: number; RangedAtkPower?: number; RangedDefPower?: number },
-  rangedWeaponItemInfo: { MeleeAtkPower?: number; MeleeDefPower?: number; RangedAtkPower?: number; RangedDefPower?: number } | null,
-  meleeWeaponItemInfo: { MeleeAtkPower?: number; MeleeDefPower?: number; RangedAtkPower?: number; RangedDefPower?: number } | null,
+  unitInfo: {
+    MeleeAtkPower?: number;
+    MeleeDefPower?: number;
+    RangedAtkPower?: number;
+    RangedDefPower?: number;
+  },
+  rangedWeaponItemInfo: {
+    MeleeAtkPower?: number;
+    MeleeDefPower?: number;
+    RangedAtkPower?: number;
+    RangedDefPower?: number;
+  } | null,
+  meleeWeaponItemInfo: {
+    MeleeAtkPower?: number;
+    MeleeDefPower?: number;
+    RangedAtkPower?: number;
+    RangedDefPower?: number;
+  } | null,
   nonWeaponItemContributions: PerUnitCombatStats,
   upgradeContribution: PerUnitCombatStats,
   bonus: number,
@@ -2147,10 +2193,34 @@ function computePerUnitStats(
   const weapon = rangedWeaponItemInfo ?? meleeWeaponItemInfo;
   const mult = 1 + bonus / 100;
   return {
-    MeleeAtkPower: Math.ceil(((unitInfo.MeleeAtkPower ?? 0) + (weapon?.MeleeAtkPower ?? 0) + nonWeaponItemContributions.MeleeAtkPower + upgradeContribution.MeleeAtkPower) * mult),
-    MeleeDefPower: Math.ceil(((unitInfo.MeleeDefPower ?? 0) + (weapon?.MeleeDefPower ?? 0) + nonWeaponItemContributions.MeleeDefPower + upgradeContribution.MeleeDefPower) * mult),
-    RangedAtkPower: Math.ceil(((unitInfo.RangedAtkPower ?? 0) + (weapon?.RangedAtkPower ?? 0) + nonWeaponItemContributions.RangedAtkPower + upgradeContribution.RangedAtkPower) * mult),
-    RangedDefPower: Math.ceil(((unitInfo.RangedDefPower ?? 0) + (weapon?.RangedDefPower ?? 0) + nonWeaponItemContributions.RangedDefPower + upgradeContribution.RangedDefPower) * mult),
+    MeleeAtkPower: Math.ceil(
+      ((unitInfo.MeleeAtkPower ?? 0) +
+        (weapon?.MeleeAtkPower ?? 0) +
+        nonWeaponItemContributions.MeleeAtkPower +
+        upgradeContribution.MeleeAtkPower) *
+        mult,
+    ),
+    MeleeDefPower: Math.ceil(
+      ((unitInfo.MeleeDefPower ?? 0) +
+        (weapon?.MeleeDefPower ?? 0) +
+        nonWeaponItemContributions.MeleeDefPower +
+        upgradeContribution.MeleeDefPower) *
+        mult,
+    ),
+    RangedAtkPower: Math.ceil(
+      ((unitInfo.RangedAtkPower ?? 0) +
+        (weapon?.RangedAtkPower ?? 0) +
+        nonWeaponItemContributions.RangedAtkPower +
+        upgradeContribution.RangedAtkPower) *
+        mult,
+    ),
+    RangedDefPower: Math.ceil(
+      ((unitInfo.RangedDefPower ?? 0) +
+        (weapon?.RangedDefPower ?? 0) +
+        nonWeaponItemContributions.RangedDefPower +
+        upgradeContribution.RangedDefPower) *
+        mult,
+    ),
   };
 }
 
@@ -2160,13 +2230,31 @@ function computeNonWeaponItemStats(
   unitLevel: number,
   quantity: number,
 ): PerUnitCombatStats {
-  const stats: PerUnitCombatStats = { MeleeAtkPower: 0, MeleeDefPower: 0, RangedAtkPower: 0, RangedDefPower: 0 };
+  const stats: PerUnitCombatStats = {
+    MeleeAtkPower: 0,
+    MeleeDefPower: 0,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
+  };
   const nonWeaponItems = userItems
-    .filter((item: any) => item.usage === unitType && item.level <= unitLevel && item.type !== 'WEAPON')
+    .filter(
+      (item: any) =>
+        item.usage === unitType &&
+        item.level <= unitLevel &&
+        item.type !== 'WEAPON',
+    )
     .sort((a: any, b: any) => {
-      const infoA = itemTypeLookup[unitType]?.find((i: any) => i.type === a.type && i.level === a.level);
-      const infoB = itemTypeLookup[unitType]?.find((i: any) => i.type === b.type && i.level === b.level);
-      return ((infoB?.MeleeAtkPower ?? 0) + (infoB?.MeleeDefPower ?? 0)) - ((infoA?.MeleeAtkPower ?? 0) + (infoA?.MeleeDefPower ?? 0));
+      const infoA = itemTypeLookup[unitType]?.find(
+        (i: any) => i.type === a.type && i.level === a.level,
+      );
+      const infoB = itemTypeLookup[unitType]?.find(
+        (i: any) => i.type === b.type && i.level === b.level,
+      );
+      return (
+        (infoB?.MeleeAtkPower ?? 0) +
+        (infoB?.MeleeDefPower ?? 0) -
+        ((infoA?.MeleeAtkPower ?? 0) + (infoA?.MeleeDefPower ?? 0))
+      );
     });
 
   const slotCounts: Record<string, number> = {};
@@ -2174,7 +2262,9 @@ function computeNonWeaponItemStats(
     const currentCount = slotCounts[item.type] ?? 0;
     const usable = Math.min(item.quantity, quantity - currentCount);
     if (usable <= 0) continue;
-    const itemInfo = itemTypeLookup[unitType]?.find((i: any) => i.type === item.type && i.level === item.level);
+    const itemInfo = itemTypeLookup[unitType]?.find(
+      (i: any) => i.type === item.type && i.level === item.level,
+    );
     if (!itemInfo) continue;
     stats.MeleeAtkPower += (itemInfo.MeleeAtkPower ?? 0) * usable;
     stats.MeleeDefPower += (itemInfo.MeleeDefPower ?? 0) * usable;
@@ -2192,22 +2282,37 @@ function computeUpgradeContribution(
   siegeLevel: number,
   totalMatchingUnits: number,
 ): PerUnitCombatStats {
-  const stats: PerUnitCombatStats = { MeleeAtkPower: 0, MeleeDefPower: 0, RangedAtkPower: 0, RangedDefPower: 0 };
+  const stats: PerUnitCombatStats = {
+    MeleeAtkPower: 0,
+    MeleeDefPower: 0,
+    RangedAtkPower: 0,
+    RangedDefPower: 0,
+  };
   for (const upgrade of battleUpgrades) {
     if (upgrade.type !== unitType) continue;
-    const upgradeInfo = BattleUpgrades.find((bu: any) => bu.type === upgrade.type && bu.level === upgrade.level);
+    const upgradeInfo = BattleUpgrades.find(
+      (bu: any) => bu.type === upgrade.type && bu.level === upgrade.level,
+    );
     const upgradeQuantity = Math.max(0, Number(upgrade.quantity ?? 0));
     if (!upgradeInfo || upgradeQuantity <= 0) continue;
-    if (upgradeInfo.SiegeUpgradeLevel && siegeLevel < upgradeInfo.SiegeUpgradeLevel) continue;
+    if (
+      upgradeInfo.SiegeUpgradeLevel &&
+      siegeLevel < upgradeInfo.SiegeUpgradeLevel
+    )
+      continue;
     if (unitLevel < (upgradeInfo.minUnitLevel ?? 0)) continue;
     const coveragePerUpgrade = upgradeInfo.unitsCovered || 1;
     const capacity = upgradeQuantity * coveragePerUpgrade;
     const covered = Math.min(totalMatchingUnits, capacity);
     if (covered <= 0) continue;
-    stats.MeleeAtkPower += ((upgradeInfo.MeleeAtkPower ?? 0) / coveragePerUpgrade) * covered;
-    stats.MeleeDefPower += ((upgradeInfo.MeleeDefPower ?? 0) / coveragePerUpgrade) * covered;
-    stats.RangedAtkPower += ((upgradeInfo.RangedAtkPower ?? 0) / coveragePerUpgrade) * covered;
-    stats.RangedDefPower += ((upgradeInfo.RangedDefPower ?? 0) / coveragePerUpgrade) * covered;
+    stats.MeleeAtkPower +=
+      ((upgradeInfo.MeleeAtkPower ?? 0) / coveragePerUpgrade) * covered;
+    stats.MeleeDefPower +=
+      ((upgradeInfo.MeleeDefPower ?? 0) / coveragePerUpgrade) * covered;
+    stats.RangedAtkPower +=
+      ((upgradeInfo.RangedAtkPower ?? 0) / coveragePerUpgrade) * covered;
+    stats.RangedDefPower +=
+      ((upgradeInfo.RangedDefPower ?? 0) / coveragePerUpgrade) * covered;
   }
   return stats;
 }
@@ -2217,7 +2322,9 @@ export function buildUnitFormations(
   user: BattleUserLike,
   usage: 'OFFENSE' | 'DEFENSE',
 ): BattleFormation[] {
-  const unitInfo = UnitTypes.find((u: any) => u.type === unit.type && u.level === unit.level);
+  const unitInfo = UnitTypes.find(
+    (u: any) => u.type === unit.type && u.level === unit.level,
+  );
   if (!unitInfo) return [];
 
   const quantity = unit.quantity ?? 0;
@@ -2228,45 +2335,71 @@ export function buildUnitFormations(
   const isMercenary = unit.isMercenary ?? false;
 
   if (unit.type === 'CITIZEN' || unit.type === 'WORKER') {
-    const bonus = usage === 'OFFENSE' ? (user.attackBonus ?? 0) : (user.defenseBonus ?? 0);
+    const bonus =
+      usage === 'OFFENSE' ? (user.attackBonus ?? 0) : (user.defenseBonus ?? 0);
     const mult = 1 + Number(bonus) / 100;
-    return [{
-      type: unit.type,
-      level: unit.level,
-      combatRole: 'COLLATERAL' as CombatRole,
-      quantity,
-      currentHP,
-      maxHP,
-      perUnitStats: {
-        MeleeAtkPower: Math.ceil((unitInfo.MeleeAtkPower ?? 0) * mult),
-        MeleeDefPower: Math.ceil((unitInfo.MeleeDefPower ?? 0) * mult),
-        RangedAtkPower: Math.ceil((unitInfo.RangedAtkPower ?? 0) * mult),
-        RangedDefPower: Math.ceil((unitInfo.RangedDefPower ?? 0) * mult),
+    return [
+      {
+        type: unit.type,
+        level: unit.level,
+        combatRole: 'COLLATERAL' as CombatRole,
+        quantity,
+        currentHP,
+        maxHP,
+        perUnitStats: {
+          MeleeAtkPower: Math.ceil((unitInfo.MeleeAtkPower ?? 0) * mult),
+          MeleeDefPower: Math.ceil((unitInfo.MeleeDefPower ?? 0) * mult),
+          RangedAtkPower: Math.ceil((unitInfo.RangedAtkPower ?? 0) * mult),
+          RangedDefPower: Math.ceil((unitInfo.RangedDefPower ?? 0) * mult),
+        },
+        isMercenary,
       },
-      isMercenary,
-    }];
+    ];
   }
 
-  const bonus = usage === 'OFFENSE' ? (user.attackBonus ?? 0) : (user.defenseBonus ?? 0);
-  const siegeLevel = user.structure_upgrades?.find((u: any) => u?.type === 'OFFENSE')?.level ?? 0;
+  const bonus =
+    usage === 'OFFENSE' ? (user.attackBonus ?? 0) : (user.defenseBonus ?? 0);
+  const siegeLevel =
+    user.structure_upgrades?.find((u: any) => u?.type === 'OFFENSE')?.level ??
+    0;
 
   const usableWeapons = (user.items ?? [])
-    .filter((item: any) => item.usage === usage && item.level <= unit.level && item.type === 'WEAPON')
+    .filter(
+      (item: any) =>
+        item.usage === usage &&
+        item.level <= unit.level &&
+        item.type === 'WEAPON',
+    )
     .sort((a: any, b: any) => {
-      const infoA = itemTypeLookup[usage]?.find((i: any) => i.type === a.type && i.level === a.level);
-      const infoB = itemTypeLookup[usage]?.find((i: any) => i.type === b.type && i.level === b.level);
+      const infoA = itemTypeLookup[usage]?.find(
+        (i: any) => i.type === a.type && i.level === a.level,
+      );
+      const infoB = itemTypeLookup[usage]?.find(
+        (i: any) => i.type === b.type && i.level === b.level,
+      );
       const rangedA = isRangedWeapon(infoA ?? {}) ? 1 : 0;
       const rangedB = isRangedWeapon(infoB ?? {}) ? 1 : 0;
       if (rangedA !== rangedB) return rangedB - rangedA;
-      return ((infoB?.MeleeAtkPower ?? 0) + (infoB?.RangedAtkPower ?? 0)) - ((infoA?.MeleeAtkPower ?? 0) + (infoA?.RangedAtkPower ?? 0));
+      return (
+        (infoB?.MeleeAtkPower ?? 0) +
+        (infoB?.RangedAtkPower ?? 0) -
+        ((infoA?.MeleeAtkPower ?? 0) + (infoA?.RangedAtkPower ?? 0))
+      );
     });
 
   let rangedCount = 0;
-  let rangedWeaponInfo: { MeleeAtkPower?: number; MeleeDefPower?: number; RangedAtkPower?: number; RangedDefPower?: number } | null = null;
+  let rangedWeaponInfo: {
+    MeleeAtkPower?: number;
+    MeleeDefPower?: number;
+    RangedAtkPower?: number;
+    RangedDefPower?: number;
+  } | null = null;
   let remainingQuantity = quantity;
 
   for (const weapon of usableWeapons) {
-    const weaponInfo = itemTypeLookup[usage]?.find((i: any) => i.type === weapon.type && i.level === weapon.level);
+    const weaponInfo = itemTypeLookup[usage]?.find(
+      (i: any) => i.type === weapon.type && i.level === weapon.level,
+    );
     if (!weaponInfo) continue;
     const assignable = Math.min(weapon.quantity ?? 0, remainingQuantity);
     if (assignable <= 0) continue;
@@ -2281,13 +2414,20 @@ export function buildUnitFormations(
 
   const meleeWeaponInfo = (() => {
     for (const weapon of usableWeapons) {
-      const info = itemTypeLookup[usage]?.find((i: any) => i.type === weapon.type && i.level === weapon.level);
+      const info = itemTypeLookup[usage]?.find(
+        (i: any) => i.type === weapon.type && i.level === weapon.level,
+      );
       if (info && !isRangedWeapon(info)) return info;
     }
     return null;
   })();
 
-  const nonWeaponStats = computeNonWeaponItemStats(user.items ?? [], usage, unit.level, quantity);
+  const nonWeaponStats = computeNonWeaponItemStats(
+    user.items ?? [],
+    usage,
+    unit.level,
+    quantity,
+  );
 
   const upgradeStats = computeUpgradeContribution(
     user.battle_upgrades ?? [],
@@ -2307,7 +2447,14 @@ export function buildUnitFormations(
       quantity: rangedCount,
       currentHP: maxHP,
       maxHP,
-      perUnitStats: computePerUnitStats(unitInfo, rangedWeaponInfo, meleeWeaponInfo, nonWeaponStats, upgradeStats, bonus),
+      perUnitStats: computePerUnitStats(
+        unitInfo,
+        rangedWeaponInfo,
+        meleeWeaponInfo,
+        nonWeaponStats,
+        upgradeStats,
+        bonus,
+      ),
       isMercenary,
     });
   }
@@ -2320,7 +2467,14 @@ export function buildUnitFormations(
       quantity: meleeCount,
       currentHP: maxHP,
       maxHP,
-      perUnitStats: computePerUnitStats(unitInfo, null, meleeWeaponInfo, nonWeaponStats, upgradeStats, bonus),
+      perUnitStats: computePerUnitStats(
+        unitInfo,
+        null,
+        meleeWeaponInfo,
+        nonWeaponStats,
+        upgradeStats,
+        bonus,
+      ),
       isMercenary,
     });
   }
@@ -2333,9 +2487,7 @@ export function buildBattleArmyState(
   usage: 'OFFENSE' | 'DEFENSE',
 ): BattleArmyState {
   const allUnits = [...(user.units ?? []), ...(user.mercenaries ?? [])];
-  const combatTypes = usage === 'OFFENSE'
-    ? ['OFFENSE']
-    : ['DEFENSE'];
+  const combatTypes = usage === 'OFFENSE' ? ['OFFENSE'] : ['DEFENSE'];
 
   const formations: BattleFormation[] = [];
   const collateral: BattleFormation[] = [];
@@ -2354,18 +2506,27 @@ export function buildBattleArmyState(
   return { formations, collateral };
 }
 
-export function sumPhaseAttackPower(army: BattleArmyState, phase: 'melee' | 'ranged'): number {
+export function sumPhaseAttackPower(
+  army: BattleArmyState,
+  phase: 'melee' | 'ranged',
+): number {
   const role: CombatRole = phase === 'melee' ? 'MELEE' : 'RANGED';
   let total = 0;
   for (const f of army.formations) {
     if (f.combatRole !== role) continue;
-    const stat = phase === 'melee' ? f.perUnitStats.MeleeAtkPower : f.perUnitStats.RangedAtkPower;
+    const stat =
+      phase === 'melee'
+        ? f.perUnitStats.MeleeAtkPower
+        : f.perUnitStats.RangedAtkPower;
     total += stat * f.quantity;
   }
   return total;
 }
 
-export function sumPhaseDefensePower(army: BattleArmyState, stat: 'MeleeDefPower' | 'RangedDefPower'): number {
+export function sumPhaseDefensePower(
+  army: BattleArmyState,
+  stat: 'MeleeDefPower' | 'RangedDefPower',
+): number {
   let total = 0;
   for (const f of army.formations) {
     total += f.perUnitStats[stat] * f.quantity;
@@ -2377,7 +2538,12 @@ export function calculateArmyStrengthFromFormations(
   army: BattleArmyState,
   roleFilter?: CombatRole,
 ): FormationStrength {
-  const result: FormationStrength = { meleeAtkPower: 0, meleeDefPower: 0, rangedAtkPower: 0, rangedDefPower: 0 };
+  const result: FormationStrength = {
+    meleeAtkPower: 0,
+    meleeDefPower: 0,
+    rangedAtkPower: 0,
+    rangedDefPower: 0,
+  };
   for (const f of army.formations) {
     if (roleFilter && f.combatRole !== roleFilter) continue;
     result.meleeAtkPower += f.perUnitStats.MeleeAtkPower * f.quantity;
@@ -2401,8 +2567,10 @@ export function applyDamageToFormations(
   const sorted = [...formations]
     .filter((f) => f.quantity > 0)
     .sort((a, b) => {
-      if (a.combatRole === priorityRole && b.combatRole !== priorityRole) return -1;
-      if (b.combatRole === priorityRole && a.combatRole !== priorityRole) return 1;
+      if (a.combatRole === priorityRole && b.combatRole !== priorityRole)
+        return -1;
+      if (b.combatRole === priorityRole && a.combatRole !== priorityRole)
+        return 1;
       return (a.level ?? 0) - (b.level ?? 0);
     });
 
@@ -2451,8 +2619,14 @@ export function syncFormationsToUserUnits(
   army: BattleArmyState,
   user: BattleUserLike,
 ): void {
-  const allFormations = [...(army.formations ?? []), ...(army.collateral ?? [])];
-  const byKey = new Map<string, { type: string; level: number; quantity: number; isMercenary: boolean }>();
+  const allFormations = [
+    ...(army.formations ?? []),
+    ...(army.collateral ?? []),
+  ];
+  const byKey = new Map<
+    string,
+    { type: string; level: number; quantity: number; isMercenary: boolean }
+  >();
 
   for (const f of allFormations) {
     const key = `${f.type}_${f.level}_${f.isMercenary}`;
@@ -2460,27 +2634,37 @@ export function syncFormationsToUserUnits(
     if (existing) {
       existing.quantity += f.quantity;
     } else {
-      byKey.set(key, { type: f.type, level: f.level, quantity: f.quantity, isMercenary: f.isMercenary });
+      byKey.set(key, {
+        type: f.type,
+        level: f.level,
+        quantity: f.quantity,
+        isMercenary: f.isMercenary,
+      });
     }
   }
 
   const updatePool = (pool: BattleUnits[]): BattleUnits[] => {
-    return pool.map((unit) => {
-      const key = `${unit.type}_${unit.level}_${unit.isMercenary ?? false}`;
-      const synced = byKey.get(key);
-      if (synced) {
-        byKey.delete(key);
-        return { ...unit, quantity: synced.quantity };
-      }
-      return unit;
-    }).filter((u) => (u.quantity ?? 0) > 0);
+    return pool
+      .map((unit) => {
+        const key = `${unit.type}_${unit.level}_${unit.isMercenary ?? false}`;
+        const synced = byKey.get(key);
+        if (synced) {
+          byKey.delete(key);
+          return { ...unit, quantity: synced.quantity };
+        }
+        return unit;
+      })
+      .filter((u) => (u.quantity ?? 0) > 0);
   };
 
   user.units = updatePool(user.units ?? []);
   user.mercenaries = updatePool(user.mercenaries ?? []);
 }
 
-function getFormationTotalQuantity(army: BattleArmyState, ...types: string[]): number {
+function getFormationTotalQuantity(
+  army: BattleArmyState,
+  ...types: string[]
+): number {
   let total = 0;
   for (const f of army.formations) {
     if (types.includes(f.type)) total += f.quantity;
@@ -2488,7 +2672,10 @@ function getFormationTotalQuantity(army: BattleArmyState, ...types: string[]): n
   return total;
 }
 
-function getCollateralTotalQuantity(army: BattleArmyState, ...types: string[]): number {
+function getCollateralTotalQuantity(
+  army: BattleArmyState,
+  ...types: string[]
+): number {
   let total = 0;
   for (const f of army.collateral) {
     if (types.includes(f.type)) total += f.quantity;

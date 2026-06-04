@@ -34,7 +34,10 @@ async function handler(
   if (context.body.sendToAll) {
     const all = await prisma.users.findMany({ select: { id: true } });
     recipients = all.map((u) => u.id);
-  } else if (context.body.recipientUserIds && context.body.recipientUserIds.length > 0) {
+  } else if (
+    context.body.recipientUserIds &&
+    context.body.recipientUserIds.length > 0
+  ) {
     recipients = context.body.recipientUserIds;
   } else {
     return res.status(400).json({ error: 'No recipients specified' });

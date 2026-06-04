@@ -38,7 +38,6 @@ const SocketTestPage = () => {
       >
         {t('socketTest.triggerAlert')}
       </button>
-
     </MainArea>
   );
 };

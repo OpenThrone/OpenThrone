@@ -81,7 +81,10 @@ export class BaseUser {
 
   public woundedUnits: unknown[];
 
-  constructor(userData?: BaseUserData | null, relations: BaseUserRelations = {}) {
+  constructor(
+    userData?: BaseUserData | null,
+    relations: BaseUserRelations = {},
+  ) {
     const safeUser = userData ?? null;
 
     this.id = safeUser?.id ?? 0;

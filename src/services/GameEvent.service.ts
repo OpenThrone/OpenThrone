@@ -36,7 +36,11 @@ export class GameEventService {
     });
   }
 
-  static async update(userId: number, id: number, data: Record<string, unknown>) {
+  static async update(
+    userId: number,
+    id: number,
+    data: Record<string, unknown>,
+  ) {
     return prisma.gameEvent.update({
       where: { id },
       data: { ...data, updatedByUserId: userId },

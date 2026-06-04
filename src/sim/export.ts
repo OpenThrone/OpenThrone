@@ -2,7 +2,7 @@ import {
   AutonomousRunArtifact,
   PersonaComparisonResult,
   TopPlayerTimelinePoint,
-} from "./types";
+} from './types';
 
 function escapeCsv(value: string | number): string {
   const stringValue = String(value);
@@ -14,24 +14,24 @@ function escapeCsv(value: string | number): string {
 
 function rowsToCsv(rows: Array<Array<string | number>>): string {
   return rows
-    .map((row) => row.map((cell) => escapeCsv(cell)).join(","))
-    .join("\n");
+    .map((row) => row.map((cell) => escapeCsv(cell)).join(','))
+    .join('\n');
 }
 
 export function comparisonToCsv(comparison: PersonaComparisonResult[]): string {
   const rows: Array<Array<string | number>> = [
     [
-      "persona",
-      "stopReason",
-      "finalMaxLevel",
-      "avgAttacksPerDay",
-      "avgAttackerWinRate",
-      "avgIntelSuccessRate",
-      "attackerDamageMultiplier",
-      "defenderCounterDamageMultiplier",
-      "maxPillageSharePerAttack",
-      "damageVarianceMin",
-      "damageVarianceMax",
+      'persona',
+      'stopReason',
+      'finalMaxLevel',
+      'avgAttacksPerDay',
+      'avgAttackerWinRate',
+      'avgIntelSuccessRate',
+      'attackerDamageMultiplier',
+      'defenderCounterDamageMultiplier',
+      'maxPillageSharePerAttack',
+      'damageVarianceMin',
+      'damageVarianceMax',
     ],
   ];
 
@@ -43,11 +43,11 @@ export function comparisonToCsv(comparison: PersonaComparisonResult[]): string {
       item.avgAttacksPerDay,
       item.avgAttackerWinRate,
       item.avgIntelSuccessRate,
-      item.finalBalance.attackerDamageMultiplier ?? "",
-      item.finalBalance.defenderCounterDamageMultiplier ?? "",
-      item.finalBalance.maxPillageSharePerAttack ?? "",
-      item.finalBalance.damageVarianceMin ?? "",
-      item.finalBalance.damageVarianceMax ?? "",
+      item.finalBalance.attackerDamageMultiplier ?? '',
+      item.finalBalance.defenderCounterDamageMultiplier ?? '',
+      item.finalBalance.maxPillageSharePerAttack ?? '',
+      item.finalBalance.damageVarianceMin ?? '',
+      item.finalBalance.damageVarianceMax ?? '',
     ]);
   }
 
@@ -59,20 +59,20 @@ export function artifactDailyResultsToCsv(
 ): string {
   const rows: Array<Array<string | number>> = [
     [
-      "persona",
-      "day",
-      "totalAttacks",
-      "intelSuccessRate",
-      "attackerWinRate",
-      "defenderWinRate",
-      "avgTurnsPerAttack",
-      "totalLootTransferred",
-      "totalAttackerCasualties",
-      "totalDefenderCasualties",
-      "playersDefeated",
-      "avgFortDamage",
-      "lowTurnAttacks",
-      "highTurnAttacks",
+      'persona',
+      'day',
+      'totalAttacks',
+      'intelSuccessRate',
+      'attackerWinRate',
+      'defenderWinRate',
+      'avgTurnsPerAttack',
+      'totalLootTransferred',
+      'totalAttackerCasualties',
+      'totalDefenderCasualties',
+      'playersDefeated',
+      'avgFortDamage',
+      'lowTurnAttacks',
+      'highTurnAttacks',
     ],
   ];
 
@@ -103,14 +103,14 @@ export function artifactTopPlayerTimelinesToCsv(
 ): string {
   const rows: Array<Array<string | number>> = [
     [
-      "persona",
-      "playerId",
-      "iteration",
-      "level",
-      "gold",
-      "goldInBank",
-      "status",
-      "power",
+      'persona',
+      'playerId',
+      'iteration',
+      'level',
+      'gold',
+      'goldInBank',
+      'status',
+      'power',
     ],
   ];
 
@@ -139,14 +139,14 @@ export function artifactFinalPopulationToCsv(
 ): string {
   const rows: Array<Array<string | number>> = [
     [
-      "persona",
-      "id",
-      "displayName",
-      "level",
-      "gold",
-      "goldInBank",
-      "status",
-      "power",
+      'persona',
+      'id',
+      'displayName',
+      'level',
+      'gold',
+      'goldInBank',
+      'status',
+      'power',
     ],
   ];
 

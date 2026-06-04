@@ -42,7 +42,9 @@ async function handler(
 
     const announcement = await AnnouncementService.create(Number(userId), {
       ...context.body!,
-      startsAt: context.body!.startsAt ? new Date(context.body!.startsAt) : undefined,
+      startsAt: context.body!.startsAt
+        ? new Date(context.body!.startsAt)
+        : undefined,
       endsAt: context.body!.endsAt ? new Date(context.body!.endsAt) : undefined,
     });
     return res.status(201).json(announcement);

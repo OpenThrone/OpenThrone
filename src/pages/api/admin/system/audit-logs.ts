@@ -16,7 +16,9 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   const logs = await ModerationService.getAuditLogs({
     action: req.query.action as string,
     userId: req.query.userId ? Number(req.query.userId) : undefined,
-    targetUserId: req.query.targetUserId ? Number(req.query.targetUserId) : undefined,
+    targetUserId: req.query.targetUserId
+      ? Number(req.query.targetUserId)
+      : undefined,
     limit: Number(req.query.limit) || 50,
     offset: Number(req.query.offset) || 0,
   });

@@ -1,4 +1,9 @@
-import { PermissionType, ReportCategory, ReportPriority, ReportStatus } from '@prisma/client';
+import {
+  PermissionType,
+  ReportCategory,
+  ReportPriority,
+  ReportStatus,
+} from '@prisma/client';
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 

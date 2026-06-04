@@ -10,7 +10,7 @@ installMockPrisma(vi);
 // Mock Prisma client to avoid Bun import issues
 mock.module('@prisma/client', () => ({
   Prisma: {},
-  PrismaClient: function () {},
+  PrismaClient() {},
 }));
 
 // stats.ts is default export
