@@ -1,4 +1,8 @@
-import { faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
+import {
+  faBuildingColumns,
+  faCoins,
+  faShield,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Group,
@@ -10,7 +14,6 @@ import {
 } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
-import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 
 import BattleUpgradesSection from '@/components/battle-upgrade';
 import { GameCard } from '@/components/game/GameCard';
@@ -102,12 +105,12 @@ const Upgrades = () => {
               {
                 label: t('upgrades.goldOnHand'),
                 value: toLocale(user?.gold) ?? 0,
-                icon: <BiCoinStack size={18} />,
+                icon: <FontAwesomeIcon icon={faCoins} />,
               },
               {
                 label: t('upgrades.bankedGold'),
                 value: toLocale(user?.goldInBank) ?? 0,
-                icon: <BiSolidBank size={18} />,
+                icon: <FontAwesomeIcon icon={faBuildingColumns} />,
               },
             ].map((stat) => (
               <Group

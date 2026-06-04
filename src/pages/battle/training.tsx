@@ -1,4 +1,9 @@
-import { faPeopleGroup, faShield } from '@fortawesome/free-solid-svg-icons';
+import {
+  faBuildingColumns,
+  faCoins,
+  faPeopleGroup,
+  faShield,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Box,
@@ -19,7 +24,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
 
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
@@ -457,12 +461,22 @@ const Training: React.FC = () => {
             {
               label: t('training.goldOnHand'),
               value: toLocale(user.gold) ?? 0,
-              icon: <BiCoinStack style={{ width: rem(15), height: rem(15) }} />,
+              icon: (
+                <FontAwesomeIcon
+                  icon={faCoins}
+                  style={{ width: rem(15), height: rem(15) }}
+                />
+              ),
             },
             {
               label: t('training.bankedGold'),
               value: toLocale(user.goldInBank) ?? 0,
-              icon: <BiSolidBank style={{ width: rem(15), height: rem(15) }} />,
+              icon: (
+                <FontAwesomeIcon
+                  icon={faBuildingColumns}
+                  style={{ width: rem(15), height: rem(15) }}
+                />
+              ),
             },
             {
               label: t('training.defenseRatio'),

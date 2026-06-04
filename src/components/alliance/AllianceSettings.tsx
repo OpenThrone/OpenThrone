@@ -1,3 +1,5 @@
+import { faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   ActionIcon,
   Badge,
@@ -16,7 +18,6 @@ import {
 import { useForm } from '@mantine/form';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
-import { TbCheck, TbX } from 'react-icons/tb';
 import useSWR from 'swr';
 
 import { alertService } from '@/services/Alert.service';
@@ -154,7 +155,7 @@ export const AllianceSettings = ({
                         onClick={() => handleRequest(req.id, 'accept')}
                         title={t('settings.accept', 'Accept')}
                       >
-                        <TbCheck size={18} />
+                        <FontAwesomeIcon icon={faCheck} />
                       </ActionIcon>
                       <ActionIcon
                         color="red"
@@ -162,7 +163,7 @@ export const AllianceSettings = ({
                         onClick={() => handleRequest(req.id, 'reject')}
                         title={t('settings.reject', 'Reject')}
                       >
-                        <TbX size={18} />
+                        <FontAwesomeIcon icon={faXmark} />
                       </ActionIcon>
                     </Group>
                   </Table.Td>

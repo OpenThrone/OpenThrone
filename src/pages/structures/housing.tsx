@@ -1,4 +1,11 @@
 import {
+  faArrowUp,
+  faBuildingColumns,
+  faCoins,
+  faHome,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
   Box,
   Button,
   Group,
@@ -9,7 +16,6 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { type ReactNode, useEffect, useState } from 'react';
-import { BiCoinStack, BiHome, BiSolidBank, BiUpArrowAlt } from 'react-icons/bi';
 
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
@@ -102,17 +108,17 @@ const Housing: React.FC = () => {
     {
       label: 'Gold In Hand',
       value: toLocale(user.gold ?? 0, user.locale),
-      icon: <BiCoinStack size={18} />,
+      icon: <FontAwesomeIcon icon={faCoins} />,
     },
     {
       label: 'Banked Gold',
       value: toLocale(user.goldInBank ?? 0, user.locale),
-      icon: <BiSolidBank size={18} />,
+      icon: <FontAwesomeIcon icon={faBuildingColumns} />,
     },
     {
       label: 'Citizens',
       value: `${toLocale(user?.citizens ?? 0, user.locale)} (+${citizensDaily}/day)`,
-      icon: <BiHome size={18} />,
+      icon: <FontAwesomeIcon icon={faHome} />,
     },
   ];
 
@@ -146,7 +152,10 @@ const Housing: React.FC = () => {
       <Space h="md" />
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
-        <GameCard title="Current Housing" icon={<BiHome size={16} />}>
+        <GameCard
+          title="Current Housing"
+          icon={<FontAwesomeIcon icon={faHome} />}
+        >
           <Stack gap="md">
             <Text fw={700} size="xl" className="text-center font-medieval">
               {houseUpgrade?.name ?? 'N/A'}
@@ -170,7 +179,7 @@ const Housing: React.FC = () => {
         {nextUpgrade ? (
           <GameCard
             title="Next Upgrade"
-            icon={<BiUpArrowAlt size={16} />}
+            icon={<FontAwesomeIcon icon={faArrowUp} />}
             goldAccent={canUpgrade}
           >
             <Stack gap="md">
@@ -216,7 +225,10 @@ const Housing: React.FC = () => {
             </Stack>
           </GameCard>
         ) : (
-          <GameCard title="Max Level Reached" icon={<BiHome size={16} />}>
+          <GameCard
+            title="Max Level Reached"
+            icon={<FontAwesomeIcon icon={faHome} />}
+          >
             <Text ta="center" p="md">
               You have reached the maximum housing level.
             </Text>

@@ -1,6 +1,7 @@
+import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Text, Tooltip } from '@mantine/core';
 import React, { useMemo } from 'react';
-import { BiInfoCircle } from 'react-icons/bi';
 
 import toLocale from '@/utils/numberFormatting';
 
@@ -102,7 +103,7 @@ const DiscountSummary: React.FC<Props> = ({
           variant="light"
           aria-label="Show discount details"
         >
-          <BiInfoCircle />
+          <FontAwesomeIcon icon={faCircleInfo} />
         </ActionIcon>
       </div>
     </Tooltip>

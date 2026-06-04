@@ -1,4 +1,10 @@
-import { faArrowRight, faUniversity } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowRight,
+  faClockRotateLeft,
+  faCoins,
+  faScrewdriverWrench,
+  faUniversity,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Badge,
@@ -14,7 +20,6 @@ import {
   Text,
 } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { BiCoinStack, BiHistory, BiWrench } from 'react-icons/bi';
 
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
@@ -87,7 +92,7 @@ const Repair = () => {
     {
       label: 'Gold In Hand',
       value: toLocale(user.gold, user.locale),
-      icon: <BiCoinStack size={18} />,
+      icon: <FontAwesomeIcon icon={faCoins} />,
     },
     {
       label: 'Banked Gold',
@@ -146,7 +151,10 @@ const Repair = () => {
             {fortification.hitpoints.toLocaleString()}
           </Text>
         </GameCard>
-        <GameCard title="Repair" icon={<BiWrench size={16} />}>
+        <GameCard
+          title="Repair"
+          icon={<FontAwesomeIcon icon={faScrewdriverWrench} />}
+        >
           <NumberInput
             label="Amount to Repair"
             value={repairPoints}
@@ -181,7 +189,10 @@ const Repair = () => {
         </GameCard>
       </SimpleGrid>
       <Space h="md" />
-      <GameCard title="Repair History" icon={<BiHistory size={16} />}>
+      <GameCard
+        title="Repair History"
+        icon={<FontAwesomeIcon icon={faClockRotateLeft} />}
+      >
         <StyledTable headers={['Date', 'HP Repaired', 'HP Change', 'Cost']}>
           {historyRows}
         </StyledTable>

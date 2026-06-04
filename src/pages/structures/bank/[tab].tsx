@@ -1,15 +1,16 @@
+import {
+  faBuildingColumns,
+  faChartLine,
+  faCoins,
+  faMoneyBillWave,
+  faUserCircle,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { SimpleGrid, Space, Tabs } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
-import {
-  BiCoinStack,
-  BiLineChart,
-  BiMoney,
-  BiSolidBank,
-  BiUserCircle,
-} from 'react-icons/bi';
 
 import BankDepositWithdraw from '@/components/BankDepositWithdraw';
 import BankHistoryFilters from '@/components/BankHistoryFilters';
@@ -77,17 +78,17 @@ export default function Bank() {
     {
       label: t('bank.goldOnHand'),
       value: toLocale(user?.gold, user?.locale),
-      icon: <BiCoinStack size={18} />,
+      icon: <FontAwesomeIcon icon={faCoins} />,
     },
     {
       label: t('bank.bankedGold'),
       value: toLocale(user?.goldInBank, user?.locale),
-      icon: <BiSolidBank size={18} />,
+      icon: <FontAwesomeIcon icon={faBuildingColumns} />,
     },
     {
       label: t('bank.dailyDeposits'),
       value: user?.maximumBankDeposits ?? 0,
-      icon: <BiMoney size={18} />,
+      icon: <FontAwesomeIcon icon={faMoneyBillWave} />,
     },
     {
       label: t('bank.depositsAvailable'),
@@ -95,7 +96,7 @@ export default function Bank() {
         user?.depositsAvailable < (user?.maximumBankDeposits ?? 0)
           ? `${user?.depositsAvailable ?? 0} ${t('bank.nextDepositIn', { hours: user?.nextDepositAvailable?.hours ?? 0, minutes: user?.nextDepositAvailable?.minutes ?? 0 })}`
           : (user?.depositsAvailable ?? 0),
-      icon: <BiMoney size={18} />,
+      icon: <FontAwesomeIcon icon={faMoneyBillWave} />,
     },
   ];
 
@@ -128,7 +129,7 @@ export default function Bank() {
       {tab === 'history' && (
         <GameCard
           title={t('bank.transactionHistory')}
-          icon={<BiSolidBank size={16} />}
+          icon={<FontAwesomeIcon icon={faBuildingColumns} />}
         >
           <BankHistoryFilters
             colorScheme={user?.colorScheme}
@@ -149,7 +150,10 @@ export default function Bank() {
 
       {tab === 'economy' && (
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-          <GameCard title={t('bank.workers')} icon={<BiUserCircle size={16} />}>
+          <GameCard
+            title={t('bank.workers')}
+            icon={<FontAwesomeIcon icon={faUserCircle} />}
+          >
             <p>
               {t('bank.workersTotal')}{' '}
               {user?.units.find((u) => u.type === 'WORKER')?.quantity || 0}
@@ -175,7 +179,7 @@ export default function Bank() {
           </GameCard>
           <GameCard
             title={t('bank.operations')}
-            icon={<BiLineChart size={16} />}
+            icon={<FontAwesomeIcon icon={faChartLine} />}
           >
             <p>
               {t('bank.currentUpgrade')}{' '}

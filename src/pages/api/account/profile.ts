@@ -1,4 +1,4 @@
-import AWS from 'aws-sdk';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import formidable from 'formidable';
 import fs from 'fs';
 import imageSize from 'image-size';
@@ -39,32 +39,37 @@ const saveToLocal = async (
 };
 
 // AWS S3 upload function
-const uploadToS3 = (
+const uploadToS3 = async (
   file: formidable.File,
   uId: number,
-): Promise<AWS.S3.ManagedUpload.SendData> => {
-  // Configure AWS S3
-  const s3 = new AWS.S3({
+): Promise<{ Key: string }> => {
+  const s3 = new S3Client({
     endpoint: process.env.AWS_S3_ENDPOINT,
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    signatureVersion: 'v4',
+    region: process.env.AWS_REGION ?? 'auto',
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? '',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
+    },
+    forcePathStyle: true,
   });
 
   const fileStream = fs.createReadStream(file.filepath);
   const contentType =
     mime.lookup(file.originalFilename) || 'application/octet-stream'; // Fallback to application/octet-stream if the MIME type is unknown
 
-  const params = {
-    Bucket: process.env.AWS_BUCKET_NAME,
-    Key: `users/${uId}/avatar/${file.originalFilename}`,
-    Body: fileStream,
-    ACL: 'public-read',
-    ContentType: contentType,
-  };
+  const key = `users/${uId}/avatar/${file.originalFilename}`;
 
-  // Return a promise of the upload
-  return s3.upload(params).promise();
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME ?? '',
+      Key: key,
+      Body: fileStream,
+      ACL: 'public-read',
+      ContentType: contentType,
+    }),
+  );
+
+  return { Key: key };
 };
 
 export const config = {
