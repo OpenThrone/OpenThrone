@@ -40,8 +40,8 @@ const handler = async (
 
     if (
       isPrivileged2FAEnforced() &&
-      (permission === PermissionType.ADMINISTRATOR ||
-        permission === PermissionType.MODERATOR) &&
+      (permission === PermissionType.MANAGE_USERS ||
+        permission === PermissionType.MANAGE_ACCOUNT_STATUS) &&
       !currentUser.twoFactorSecret
     ) {
       return res.status(400).json({
@@ -61,7 +61,7 @@ const handler = async (
         .json({ status: 'User already has that permission' });
     }
 
-    await prisma.PermissionGrant.create({
+    await prisma.permissionGrant.create({
       data: {
         user_id: currentUser.id,
         type: permission,
