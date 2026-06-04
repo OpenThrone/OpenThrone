@@ -136,7 +136,7 @@ const Admin = () => {
   const isImpersonating = Boolean((session?.user as any)?.impersonatedBy);
 
   return (
-    <PermissionCheck permission={PermissionType.ADMINISTRATOR}>
+    <PermissionCheck permissions={[PermissionType.MANAGE_USERS, PermissionType.VIEW_STAFF_DASHBOARD]}>
       <MainArea title={t('admin.title')}>
         <Grid>
           <Grid.Col span={12}>

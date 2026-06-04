@@ -1107,7 +1107,7 @@ const BalanceSimPage = () => {
   }, [config]);
 
   return (
-    <PermissionCheck permission={PermissionType.ADMINISTRATOR}>
+    <PermissionCheck permissions={[PermissionType.MANAGE_EVENTS, PermissionType.VIEW_STAFF_DASHBOARD]}>
       <MainArea title="Balance Simulator">
         <Grid>
           <Grid.Col span={{ base: 12, lg: 4 }}>
