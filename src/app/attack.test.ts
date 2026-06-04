@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'bun:test';
-import { installMockMtRand } from 'test/utils/mockMtRand';
+import { installMockMtRand, mtRandImpl } from 'test/utils/mockMtRand';
 import { normUnits } from 'test/utils/testFixtures';
 
 import type {
@@ -32,6 +32,8 @@ describe('setup Attack test', () => {
   let attackerGenerator: MockUserGenerator;
   let defenderGenerator: MockUserGenerator;
   beforeEach(() => {
+    mtRandImpl.fn = (min = 0, max = 1) => min + 0.5 * (max - min);
+
     defenderGenerator = new MockUserGenerator();
     defenderGenerator.setBasicInfo({
       email: 'testDefender@test.com',
