@@ -1,3 +1,4 @@
+import { PermissionType } from '@prisma/client';
 import type { InferGetServerSidePropsType } from 'next';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
@@ -9,6 +10,7 @@ import IntelResult from '@/components/IntelResult';
 import MainArea from '@/components/MainArea';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { hasAnyPermission } from '@/utils/authorization';
 import { serializeDates } from '@/utils/utilities';
 
 const ResultsPage = ({
@@ -97,27 +99,25 @@ export const getServerSideProps = async (context) => {
     };
   }
 
-  // Get current user's permissions
-  const userPermissions = await prisma.permissionGrant.findMany({
-    where: {
-      user_id: session.user.id,
-    },
-  });
+  const viewerUserId =
+    typeof session.user.id === 'string'
+      ? parseInt(session.user.id, 10)
+      : session.user.id;
 
-  // Check if user has "MODERATOR" or "ADMINISTRATOR" permission
-  const isModeratorOrAdmin = userPermissions.some(
-    (perm) => perm.type === 'MODERATOR' || perm.type === 'ADMINISTRATOR',
-  );
+  const canModerateBattleResults = await hasAnyPermission(viewerUserId, [
+    PermissionType.REVIEW_REPORTS,
+    PermissionType.MANAGE_USERS,
+  ]);
 
   // Check if user is attacker or defender
-  const isAttacker = battle.attackerPlayer.id === session.user.id;
-  const isDefender = battle.defenderPlayer.id === session.user.id;
+  const isAttacker = battle.attackerPlayer.id === viewerUserId;
+  const isDefender = battle.defenderPlayer.id === viewerUserId;
 
   // Check if user is part of ACL (Access Control List)
   const isInACL = (battle.acl ?? []).some((aclEntry) => {
     // Check if it's shared with user
     if (aclEntry.shared_with_user) {
-      return aclEntry.shared_with_user.id === session.user.id;
+      return aclEntry.shared_with_user.id === viewerUserId;
     }
     // Check if it's shared with user's alliance (if applicable)
     if (aclEntry.shared_with_alliance) {
@@ -130,7 +130,7 @@ export const getServerSideProps = async (context) => {
 
   // Combine all permission checks
   const hasPermission =
-    isModeratorOrAdmin || isAttacker || isDefender || isInACL;
+    canModerateBattleResults || isAttacker || isDefender || isInACL;
 
   if (!hasPermission) {
     return {
@@ -146,7 +146,7 @@ export const getServerSideProps = async (context) => {
     props: {
       battle: serializeDates(battle),
       lastGenerated: new Date().toISOString(),
-      viewerID: session.user.id,
+      viewerID: viewerUserId,
     },
   };
 };
