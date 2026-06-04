@@ -95,6 +95,10 @@ async function handler(
           type: true,
         },
       },
+      staffRoleAssignments: {
+        where: { revokedAt: null },
+        select: { role: true },
+      },
     };
 
     const users = await prisma.users.findMany({
@@ -117,6 +121,7 @@ async function handler(
         }),
         lastActive: user.last_active,
         permissions: user.permissions.map((p) => p.type),
+        staffRoles: user.staffRoleAssignments.map((a) => a.role),
       }))
       .filter((user) => !status || user.status === status);
 

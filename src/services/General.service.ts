@@ -1,4 +1,4 @@
-import type { AccountStatus } from '@prisma/client';
+import type { AccountStatus, PermissionType } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
@@ -13,6 +13,7 @@ import type {
   UserApiResponse,
 } from '@/types/typings';
 import { logError } from '@/utils/logger';
+import { expandPermissions } from '@/utils/permissions';
 
 import {
   buildDefaultUserUpdate,
@@ -28,7 +29,7 @@ export interface SearchUsersResult {
   race: string;
   avatar?: string;
   experience: number;
-  permissions: { type: string }[];
+  permissions: { type: PermissionType }[];
 }
 
 export interface OnlinePlayersStats {
@@ -103,6 +104,10 @@ export class GeneralService {
             },
           },
           permissions: { select: { type: true } },
+          staffRoleAssignments: {
+            where: { revokedAt: null },
+            select: { role: true },
+          },
           UserUnit: true,
           UserItem: true,
           UserStructureUpgrade: true,
@@ -315,6 +320,14 @@ export class GeneralService {
           ? getCountdown(depositHistory[0].date_time.toString())
           : 0;
 
+      // Expand staff roles into permission grants for the client.
+      const roles = (user.staffRoleAssignments ?? []).map((r) => r.role);
+      const individualPermissions = (user.permissions ?? []).map(
+        (p) => p.type,
+      );
+      const expandedFromRoles = expandPermissions(roles, individualPermissions);
+      const permissions = expandedFromRoles.map((type) => ({ type }));
+
       // Construct the DTO
       const responseDto: UserApiResponse = {
         id: user.id,
@@ -343,7 +356,7 @@ export class GeneralService {
           typeof user.stats === 'string'
             ? JSON.parse(user.stats)
             : (user.stats ?? []),
-        permissions: user.permissions,
+        permissions,
         currentEra: user.currentEra
           ? {
               id: user.currentEra.id,

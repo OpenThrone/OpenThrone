@@ -1,3 +1,4 @@
+import type { PermissionType, StaffRole } from '@prisma/client';
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
@@ -10,6 +11,13 @@ import { logError } from '@/utils/logger';
 const AdminUserQuerySchema = z.object({
   userId: z.coerce.number().int().positive(),
 });
+
+const STAFF_ROLES: StaffRole[] = [
+  'ADMINISTRATOR',
+  'MODERATOR',
+  'COMMUNITY_MANAGER',
+  'GAME_MASTER',
+];
 
 const guardedHandler = withApiGuard({
   methods: ['GET', 'PUT'],
@@ -43,6 +51,10 @@ async function handler(
           // Get permissions if they exist in schema
           permissions: {
             select: { type: true },
+          },
+          staffRoleAssignments: {
+            where: { revokedAt: null },
+            select: { role: true },
           },
         },
       });
@@ -103,6 +115,9 @@ async function handler(
         permissions: {
           permissions: user.permissions?.map((p) => p.type) || [],
         },
+        staffRoles: {
+          roles: user.staffRoleAssignments?.map((a) => a.role) || [],
+        },
       };
 
       res.status(200).json(formattedResponse);
@@ -114,7 +129,15 @@ async function handler(
   // PUT - Update user
   else if (req.method === 'PUT') {
     try {
-      const updateData = req.body;
+      const updateData = req.body as {
+        profile: { username: string; email: string };
+        stats: { gold: string | number | bigint; experience: number; level: number };
+        army: { units: Array<{ id?: string; type?: string; quantity: number; level: number }> };
+        items: { items: Array<{ id?: string; type?: string; quantity: number; level?: number; usage?: string }> };
+        permissions: { permissions: PermissionType[] };
+        staffRoles?: { roles: StaffRole[] };
+      };
+      const adminUserId = Number(req.session?.user?.id);
 
       // Start a transaction for updating multiple tables
       await prisma.$transaction(async (tx) => {
@@ -219,6 +242,40 @@ async function handler(
               type: permission,
             },
           });
+        }
+
+        if (updateData.staffRoles) {
+          const requestedRoles = updateData.staffRoles.roles.filter((role) =>
+            STAFF_ROLES.includes(role),
+          );
+
+          await tx.staffRoleAssignment.updateMany({
+            where: {
+              userId: userIdNum,
+              revokedAt: null,
+              role: { notIn: requestedRoles },
+            },
+            data: { revokedAt: new Date() },
+          });
+
+          for (const role of requestedRoles) {
+            const existingAssignment = await tx.staffRoleAssignment.findFirst({
+              where: { userId: userIdNum, role, revokedAt: null },
+              select: { id: true },
+            });
+
+            if (!existingAssignment) {
+              await tx.staffRoleAssignment.create({
+                data: {
+                  userId: userIdNum,
+                  role,
+                  grantedByUserId: Number.isFinite(adminUserId)
+                    ? adminUserId
+                    : undefined,
+                },
+              });
+            }
+          }
         }
       });
 
