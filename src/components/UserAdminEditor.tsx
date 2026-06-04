@@ -2,26 +2,38 @@ import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   ActionIcon,
+  Badge,
   Button,
   Grid,
   Group,
   Loader,
   NumberInput,
+  Paper,
   Select,
   Stack,
   Tabs,
   Text,
+  Textarea,
   TextInput,
   Title,
   useMantineTheme,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { PermissionType } from '@prisma/client';
+import type { StaffRole } from '@prisma/client';
 import React, { useEffect, useState } from 'react';
 
 import { logError } from '@/utils/logger';
+import { STAFF_ROLE_LABELS } from '@/utils/permissions';
 
 import { GameCard } from './game/GameCard';
+
+const STAFF_ROLES: StaffRole[] = [
+  'ADMINISTRATOR',
+  'MODERATOR',
+  'COMMUNITY_MANAGER',
+  'GAME_MASTER',
+];
 
 // Define interfaces for the different sections of user data
 interface UserProfile {
@@ -69,6 +81,7 @@ interface UserData {
   army: UserArmy;
   items: UserItems;
   permissions: UserPermissions;
+  staffRoles?: { roles: StaffRole[] };
 }
 
 interface UserAdminEditorProps {
@@ -86,9 +99,87 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notes, setNotes] = useState<any[]>([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [newNote, setNewNote] = useState<string>('');
+  const [addingNote, setAddingNote] = useState<boolean>(false);
   const theme = useMantineTheme();
   const coerceNumber = (value: number | string | null) =>
     typeof value === 'number' ? value : Number(value || 0);
+
+  const fetchNotes = async () => {
+    if (!userId) return;
+    setNotesLoading(true);
+    try {
+      const res = await fetch(`/api/admin/moderation/users/${userId}/notes`);
+      if (res.ok) {
+        const data = await res.json();
+        setNotes(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      setNotes([]);
+    } finally {
+      setNotesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotes();
+  }, [userId]);
+
+  const handleAddNote = async () => {
+    if (!newNote.trim() || !userId) return;
+    setAddingNote(true);
+    try {
+      const res = await fetch(`/api/admin/moderation/users/${userId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: newNote, visibility: 'STAFF' }),
+      });
+      if (res.ok) {
+        setNewNote('');
+        fetchNotes();
+        notifications.show({
+          title: 'Note Added',
+          message: 'Moderator note added successfully.',
+          color: 'green',
+        });
+      }
+    } catch {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to add note.',
+        color: 'red',
+      });
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: number) => {
+    if (!userId) return;
+    try {
+      const res = await fetch(`/api/admin/moderation/users/${userId}/notes`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ noteId }),
+      });
+      if (res.ok) {
+        fetchNotes();
+        notifications.show({
+          title: 'Note Removed',
+          message: 'Moderator note deleted.',
+          color: 'green',
+        });
+      }
+    } catch {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to delete note.',
+        color: 'red',
+      });
+    }
+  };
 
   // Fetch user data when userId changes
   useEffect(() => {
@@ -219,6 +310,18 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
     });
   };
 
+  const toggleStaffRole = (role: StaffRole) => {
+    if (!userData) return;
+    const currentRoles = userData.staffRoles?.roles ?? [];
+    const newRoles = currentRoles.includes(role)
+      ? currentRoles.filter((r) => r !== role)
+      : [...currentRoles, role];
+    setUserData({
+      ...userData,
+      staffRoles: { roles: newRoles },
+    });
+  };
+
   if (loading) return <Loader />;
   if (error) return <Text color="red">{error}</Text>;
   if (!userData) return <Text>No user data available.</Text>;
@@ -258,7 +361,9 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
           <Tabs.Tab value="stats">Stats & Resources</Tabs.Tab>
           <Tabs.Tab value="army">Army</Tabs.Tab>
           <Tabs.Tab value="items">Items</Tabs.Tab>
+          <Tabs.Tab value="staffRoles">Staff Roles</Tabs.Tab>
           <Tabs.Tab value="permissions">Permissions</Tabs.Tab>
+          <Tabs.Tab value="notes">Notes</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="profile" pt="md">
@@ -405,6 +510,25 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
             ))}
           </GameCard>
         </Tabs.Panel>
+        <Tabs.Panel value="staffRoles" pt="md">
+          <GameCard title="Staff Roles">
+            <Group>
+              {STAFF_ROLES.map((role) => (
+                <Button
+                  key={role}
+                  onClick={() => toggleStaffRole(role)}
+                  variant={
+                    userData.staffRoles?.roles.includes(role)
+                      ? 'filled'
+                      : 'outline'
+                  }
+                >
+                  {STAFF_ROLE_LABELS[role]}
+                </Button>
+              ))}
+            </Group>
+          </GameCard>
+        </Tabs.Panel>
         <Tabs.Panel value="permissions" pt="md">
           <GameCard title="Permissions">
             <Group>
@@ -422,6 +546,71 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                 </Button>
               ))}
             </Group>
+          </GameCard>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="notes" pt="md">
+          <GameCard title="Add Note">
+            <Stack gap="sm">
+              <Textarea
+                placeholder="Add internal note about this user..."
+                value={newNote}
+                onChange={(e) => setNewNote(e.currentTarget.value)}
+                minRows={3}
+              />
+              <Group justify="flex-end">
+                <Button
+                  size="xs"
+                  onClick={handleAddNote}
+                  loading={addingNote}
+                  disabled={!newNote.trim()}
+                >
+                  Add Note
+                </Button>
+              </Group>
+            </Stack>
+          </GameCard>
+
+          <GameCard title={`Notes (${notes.length})`} mt="md">
+            {notesLoading ? (
+              <Group justify="center" py="md">
+                <Loader size="sm" />
+              </Group>
+            ) : notes.length === 0 ? (
+              <Text c="dimmed" ta="center" py="md">
+                No moderator notes for this user.
+              </Text>
+            ) : (
+              <Stack gap="sm">
+                {notes.map((note) => (
+                  <Paper key={note.id} withBorder p="sm">
+                    <Group justify="space-between" mb="xs">
+                      <div>
+                        <Text size="sm" fw={700}>
+                          {note.author?.display_name || 'Unknown'}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {new Date(note.createdAt).toLocaleString()}
+                          {note.isPinned && (
+                            <Badge ml="xs" size="xs" color="yellow">
+                              Pinned
+                            </Badge>
+                          )}
+                        </Text>
+                      </div>
+                      <ActionIcon
+                        color="red"
+                        variant="subtle"
+                        onClick={() => handleDeleteNote(note.id)}
+                      >
+                        <FontAwesomeIcon icon={faMinus} />
+                      </ActionIcon>
+                    </Group>
+                    <Text style={{ whiteSpace: 'pre-wrap' }}>{note.note}</Text>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
           </GameCard>
         </Tabs.Panel>
       </Tabs>
