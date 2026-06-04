@@ -18,6 +18,7 @@ import { AppConfig } from '@/utils/AppConfig';
 import { logError } from '@/utils/logger';
 import { getAssetPath } from '@/utils/utilities';
 
+import AnnouncementBanner from './AnnouncementBanner';
 import MainAreaSkeleton from './MainAreaSkeleton';
 import NavSkeleton from './NavSkeleton';
 import NewsBulletin from './news-bulletin';
@@ -193,6 +194,7 @@ const Layout = (props: IMainProps) => {
                   <div
                     className={`w-full ${raceClasses.borderClass} ${authorized ? 'lg:flex-1' : 'lg:w-full'} mainArea-bg`}
                   >
+                    <AnnouncementBanner />
                     <NewsBulletin />
                     {layoutLoading ? <MainAreaSkeleton /> : props.children}
                   </div>
