@@ -14,6 +14,7 @@ storybook-static
 # cypress
 cypress/screenshots
 cypress/videos
+cypress/e2e/*-results.md
 cypress/snapshots/diff
 cypress/snapshots/actual
 .cypress-cache
@@ -42,12 +43,14 @@ public/sitemap-*.xml
 .vscode/
 plans/
 cypress-run.log
+ChatGPT Image*.png
 
 # production
 /build
 
 # misc
 .DS_Store
+*.swp
 *.pem
 Thumbs.db
 
@@ -60,8 +63,8 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
-yarn.lock
 bun.lockb
+yarn.lock
 
 # local folder
 local
@@ -69,8 +72,5 @@ local
 # vercel
 .vercel
 temp/*
-
-# yarn
-yarn.lock
 
 .code-flattener/*
