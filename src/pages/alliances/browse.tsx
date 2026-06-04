@@ -185,15 +185,6 @@ const Browse = () => {
             (a) => a.id === alliance.id,
           );
 
-          console.log('Browse debug:', {
-            allianceId: alliance.id,
-            userId: user?.id,
-            memberships: user?.alliance_memberships,
-            ledAlliances: user?.ledAlliances,
-            userMembership,
-            isLeader,
-          });
-
           return (
             <UserCardImage
               key={alliance.id}
