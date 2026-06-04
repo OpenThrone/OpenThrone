@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 
+import type { BattleArmyState, CombatRole } from '@/types/combat';
+import type { BattleUnits } from '@/types/typings';
+
+import type { BattleUserLike } from './attackFunctions';
 import {
   buildBattleArmyState,
   buildUnitFormations,
@@ -7,8 +11,29 @@ import {
   sumPhaseAttackPower,
   sumPhaseDefensePower,
 } from './attackFunctions';
-import type { BattleUserLike, BattleUnits } from '@/types/typings';
-import type { BattleArmyState, CombatRole } from '@/types/combat';
+
+let nextUnitId = 1;
+
+function makeUnit(
+  type: BattleUnits['type'],
+  level: number,
+  quantity: number,
+  currentHP: number,
+  isMercenary: boolean,
+): BattleUnits {
+  const id = nextUnitId;
+  nextUnitId += 1;
+
+  return {
+    id,
+    userId: 1,
+    type,
+    level,
+    quantity,
+    currentHP,
+    isMercenary,
+  };
+}
 
 function makeUser(
   overrides: Partial<{
@@ -43,7 +68,7 @@ describe('buildUnitFormations', () => {
   it('returns empty array for zero-quantity unit', () => {
     const user = makeUser();
     const result = buildUnitFormations(
-      { type: 'OFFENSE', level: 1, quantity: 0, currentHP: 10, isMercenary: false },
+      makeUnit('OFFENSE', 1, 0, 10, false),
       user,
       'OFFENSE',
     );
@@ -52,10 +77,10 @@ describe('buildUnitFormations', () => {
 
   it('returns single MELEE formation when no weapons equipped', () => {
     const user = makeUser({
-      units: [{ type: 'OFFENSE', level: 1, quantity: 50, currentHP: 10, isMercenary: false }],
+      units: [makeUnit('OFFENSE', 1, 50, 10, false)],
     });
     const result = buildUnitFormations(
-      { type: 'OFFENSE', level: 1, quantity: 50, currentHP: 10, isMercenary: false },
+      makeUnit('OFFENSE', 1, 50, 10, false),
       user,
       'OFFENSE',
     );
@@ -68,12 +93,10 @@ describe('buildUnitFormations', () => {
 
   it('splits into MELEE and RANGED when ranged weapons partially cover units', () => {
     const user = makeUser({
-      items: [
-        { usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 30 },
-      ],
+      items: [{ usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 30 }],
     });
     const result = buildUnitFormations(
-      { type: 'DEFENSE', level: 1, quantity: 100, currentHP: 10, isMercenary: false },
+      makeUnit('DEFENSE', 1, 100, 10, false),
       user,
       'DEFENSE',
     );
@@ -90,12 +113,10 @@ describe('buildUnitFormations', () => {
 
   it('produces only RANGED formation when all units get ranged weapons', () => {
     const user = makeUser({
-      items: [
-        { usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 100 },
-      ],
+      items: [{ usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 100 }],
     });
     const result = buildUnitFormations(
-      { type: 'DEFENSE', level: 1, quantity: 100, currentHP: 10, isMercenary: false },
+      makeUnit('DEFENSE', 1, 100, 10, false),
       user,
       'DEFENSE',
     );
@@ -107,7 +128,7 @@ describe('buildUnitFormations', () => {
   it('creates COLLATERAL role for citizen units', () => {
     const user = makeUser();
     const result = buildUnitFormations(
-      { type: 'CITIZEN', level: 1, quantity: 500, currentHP: 10, isMercenary: false },
+      makeUnit('CITIZEN', 1, 500, 10, false),
       user,
       'DEFENSE',
     );
@@ -119,7 +140,7 @@ describe('buildUnitFormations', () => {
   it('creates COLLATERAL role for worker units', () => {
     const user = makeUser();
     const result = buildUnitFormations(
-      { type: 'WORKER', level: 1, quantity: 200, currentHP: 10, isMercenary: false },
+      makeUnit('WORKER', 1, 200, 10, false),
       user,
       'DEFENSE',
     );
@@ -130,12 +151,10 @@ describe('buildUnitFormations', () => {
 
   it('ignores items for wrong usage slot', () => {
     const user = makeUser({
-      items: [
-        { usage: 'OFFENSE', type: 'WEAPON', level: 1, quantity: 100 },
-      ],
+      items: [{ usage: 'OFFENSE', type: 'WEAPON', level: 1, quantity: 100 }],
     });
     const result = buildUnitFormations(
-      { type: 'DEFENSE', level: 1, quantity: 100, currentHP: 10, isMercenary: false },
+      makeUnit('DEFENSE', 1, 100, 10, false),
       user,
       'DEFENSE',
     );
@@ -147,7 +166,7 @@ describe('buildUnitFormations', () => {
   it('preserves isMercenary flag', () => {
     const user = makeUser();
     const result = buildUnitFormations(
-      { type: 'OFFENSE', level: 1, quantity: 10, currentHP: 10, isMercenary: true },
+      makeUnit('OFFENSE', 1, 10, 10, true),
       user,
       'OFFENSE',
     );
@@ -157,7 +176,7 @@ describe('buildUnitFormations', () => {
   it('sets maxHP from unit definition', () => {
     const user = makeUser();
     const result = buildUnitFormations(
-      { type: 'OFFENSE', level: 1, quantity: 10, currentHP: 99, isMercenary: false },
+      makeUnit('OFFENSE', 1, 10, 99, false),
       user,
       'OFFENSE',
     );
@@ -176,8 +195,8 @@ describe('buildBattleArmyState', () => {
   it('builds offense formations from OFFENSE units only', () => {
     const user = makeUser({
       units: [
-        { type: 'OFFENSE', level: 1, quantity: 50, currentHP: 10, isMercenary: false },
-        { type: 'DEFENSE', level: 1, quantity: 30, currentHP: 10, isMercenary: false },
+        makeUnit('OFFENSE', 1, 50, 10, false),
+        makeUnit('DEFENSE', 1, 30, 10, false),
       ],
     });
     const army = buildBattleArmyState(user, 'OFFENSE');
@@ -189,8 +208,8 @@ describe('buildBattleArmyState', () => {
   it('builds defense formations from DEFENSE units only', () => {
     const user = makeUser({
       units: [
-        { type: 'OFFENSE', level: 1, quantity: 50, currentHP: 10, isMercenary: false },
-        { type: 'DEFENSE', level: 1, quantity: 30, currentHP: 10, isMercenary: false },
+        makeUnit('OFFENSE', 1, 50, 10, false),
+        makeUnit('DEFENSE', 1, 30, 10, false),
       ],
     });
     const army = buildBattleArmyState(user, 'DEFENSE');
@@ -202,26 +221,25 @@ describe('buildBattleArmyState', () => {
   it('separates citizens and workers into collateral', () => {
     const user = makeUser({
       units: [
-        { type: 'DEFENSE', level: 1, quantity: 100, currentHP: 10, isMercenary: false },
-        { type: 'CITIZEN', level: 1, quantity: 500, currentHP: 10, isMercenary: false },
-        { type: 'WORKER', level: 1, quantity: 200, currentHP: 10, isMercenary: false },
+        makeUnit('DEFENSE', 1, 100, 10, false),
+        makeUnit('CITIZEN', 1, 500, 10, false),
+        makeUnit('WORKER', 1, 200, 10, false),
       ],
     });
     const army = buildBattleArmyState(user, 'DEFENSE');
     expect(army.formations).toHaveLength(1);
     expect(army.formations[0].type).toBe('DEFENSE');
     expect(army.collateral).toHaveLength(2);
-    expect(army.collateral.map((c) => c.type).sort()).toEqual(['CITIZEN', 'WORKER']);
+    expect(army.collateral.map((c) => c.type).sort()).toEqual([
+      'CITIZEN',
+      'WORKER',
+    ]);
   });
 
   it('includes mercenaries alongside regular units', () => {
     const user = makeUser({
-      units: [
-        { type: 'OFFENSE', level: 1, quantity: 50, currentHP: 10, isMercenary: false },
-      ],
-      mercenaries: [
-        { type: 'OFFENSE', level: 1, quantity: 20, currentHP: 10, isMercenary: true },
-      ],
+      units: [makeUnit('OFFENSE', 1, 50, 10, false)],
+      mercenaries: [makeUnit('OFFENSE', 1, 20, 10, true)],
     });
     const army = buildBattleArmyState(user, 'OFFENSE');
     expect(army.formations).toHaveLength(2);
@@ -231,12 +249,8 @@ describe('buildBattleArmyState', () => {
 
   it('splits defense units into melee and ranged when ranged weapons exist', () => {
     const user = makeUser({
-      units: [
-        { type: 'DEFENSE', level: 1, quantity: 100, currentHP: 10, isMercenary: false },
-      ],
-      items: [
-        { usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 40 },
-      ],
+      units: [makeUnit('DEFENSE', 1, 100, 10, false)],
+      items: [{ usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 40 }],
     });
     const army = buildBattleArmyState(user, 'DEFENSE');
     expect(army.formations).toHaveLength(2);
@@ -249,8 +263,8 @@ describe('buildBattleArmyState', () => {
   it('skips zero-quantity units', () => {
     const user = makeUser({
       units: [
-        { type: 'OFFENSE', level: 1, quantity: 0, currentHP: 10, isMercenary: false },
-        { type: 'OFFENSE', level: 1, quantity: 50, currentHP: 10, isMercenary: false },
+        makeUnit('OFFENSE', 1, 0, 10, false),
+        makeUnit('OFFENSE', 1, 50, 10, false),
       ],
     });
     const army = buildBattleArmyState(user, 'OFFENSE');
@@ -261,8 +275,8 @@ describe('buildBattleArmyState', () => {
   it('handles multi-level units as separate formations', () => {
     const user = makeUser({
       units: [
-        { type: 'DEFENSE', level: 1, quantity: 50, currentHP: 10, isMercenary: false },
-        { type: 'DEFENSE', level: 2, quantity: 30, currentHP: 20, isMercenary: false },
+        makeUnit('DEFENSE', 1, 50, 10, false),
+        makeUnit('DEFENSE', 2, 30, 20, false),
       ],
     });
     const army = buildBattleArmyState(user, 'DEFENSE');
@@ -275,9 +289,7 @@ describe('buildBattleArmyState', () => {
 describe('no-rescramble invariant', () => {
   it('total formation quantity equals total unit quantity for offense', () => {
     const user = makeUser({
-      units: [
-        { type: 'OFFENSE', level: 1, quantity: 100, currentHP: 10, isMercenary: false },
-      ],
+      units: [makeUnit('OFFENSE', 1, 100, 10, false)],
     });
     const army = buildBattleArmyState(user, 'OFFENSE');
     const totalQty = army.formations.reduce((s, f) => s + f.quantity, 0);
@@ -287,9 +299,9 @@ describe('no-rescramble invariant', () => {
   it('total formation + collateral quantity equals all units', () => {
     const user = makeUser({
       units: [
-        { type: 'OFFENSE', level: 1, quantity: 100, currentHP: 10, isMercenary: false },
-        { type: 'CITIZEN', level: 1, quantity: 500, currentHP: 10, isMercenary: false },
-        { type: 'WORKER', level: 1, quantity: 200, currentHP: 10, isMercenary: false },
+        makeUnit('OFFENSE', 1, 100, 10, false),
+        makeUnit('CITIZEN', 1, 500, 10, false),
+        makeUnit('WORKER', 1, 200, 10, false),
       ],
     });
     const army = buildBattleArmyState(user, 'OFFENSE');
@@ -302,12 +314,8 @@ describe('no-rescramble invariant', () => {
 
   it('ranged + melee quantities sum to original unit quantity after split', () => {
     const user = makeUser({
-      units: [
-        { type: 'DEFENSE', level: 1, quantity: 100, currentHP: 10, isMercenary: false },
-      ],
-      items: [
-        { usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 30 },
-      ],
+      units: [makeUnit('DEFENSE', 1, 100, 10, false)],
+      items: [{ usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 30 }],
     });
     const army = buildBattleArmyState(user, 'DEFENSE');
     const totalQty = army.formations.reduce((s, f) => s + f.quantity, 0);
@@ -317,20 +325,20 @@ describe('no-rescramble invariant', () => {
 
   it('rebuilding army state from same user data produces identical results', () => {
     const user = makeUser({
-      units: [
-        { type: 'DEFENSE', level: 1, quantity: 100, currentHP: 10, isMercenary: false },
-      ],
-      items: [
-        { usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 40 },
-      ],
+      units: [makeUnit('DEFENSE', 1, 100, 10, false)],
+      items: [{ usage: 'DEFENSE', type: 'WEAPON', level: 1, quantity: 40 }],
     });
     const army1 = buildBattleArmyState(user, 'DEFENSE');
     const army2 = buildBattleArmyState(user, 'DEFENSE');
     expect(army1.formations).toHaveLength(army2.formations.length);
     for (let i = 0; i < army1.formations.length; i++) {
       expect(army1.formations[i].quantity).toBe(army2.formations[i].quantity);
-      expect(army1.formations[i].combatRole).toBe(army2.formations[i].combatRole);
-      expect(army1.formations[i].perUnitStats).toEqual(army2.formations[i].perUnitStats);
+      expect(army1.formations[i].combatRole).toBe(
+        army2.formations[i].combatRole,
+      );
+      expect(army1.formations[i].perUnitStats).toEqual(
+        army2.formations[i].perUnitStats,
+      );
     }
   });
 });
@@ -349,14 +357,34 @@ describe('calculateArmyStrengthFromFormations', () => {
     const army: BattleArmyState = {
       formations: [
         {
-          type: 'DEFENSE', level: 1, combatRole: 'MELEE' as CombatRole, quantity: 50,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 3, MeleeDefPower: 5, RangedAtkPower: 0, RangedDefPower: 0 },
+          type: 'DEFENSE',
+          level: 1,
+          combatRole: 'MELEE' as CombatRole,
+          quantity: 50,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 3,
+            MeleeDefPower: 5,
+            RangedAtkPower: 0,
+            RangedDefPower: 0,
+          },
         },
         {
-          type: 'DEFENSE', level: 2, combatRole: 'MELEE' as CombatRole, quantity: 30,
-          currentHP: 20, maxHP: 20, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 5, MeleeDefPower: 10, RangedAtkPower: 0, RangedDefPower: 5 },
+          type: 'DEFENSE',
+          level: 2,
+          combatRole: 'MELEE' as CombatRole,
+          quantity: 30,
+          currentHP: 20,
+          maxHP: 20,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 5,
+            MeleeDefPower: 10,
+            RangedAtkPower: 0,
+            RangedDefPower: 5,
+          },
         },
       ],
       collateral: [],
@@ -371,14 +399,34 @@ describe('calculateArmyStrengthFromFormations', () => {
     const army: BattleArmyState = {
       formations: [
         {
-          type: 'DEFENSE', level: 1, combatRole: 'MELEE' as CombatRole, quantity: 50,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 3, MeleeDefPower: 5, RangedAtkPower: 0, RangedDefPower: 0 },
+          type: 'DEFENSE',
+          level: 1,
+          combatRole: 'MELEE' as CombatRole,
+          quantity: 50,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 3,
+            MeleeDefPower: 5,
+            RangedAtkPower: 0,
+            RangedDefPower: 0,
+          },
         },
         {
-          type: 'DEFENSE', level: 1, combatRole: 'RANGED' as CombatRole, quantity: 40,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 1, MeleeDefPower: 2, RangedAtkPower: 8, RangedDefPower: 3 },
+          type: 'DEFENSE',
+          level: 1,
+          combatRole: 'RANGED' as CombatRole,
+          quantity: 40,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 1,
+            MeleeDefPower: 2,
+            RangedAtkPower: 8,
+            RangedDefPower: 3,
+          },
         },
       ],
       collateral: [],
@@ -398,9 +446,19 @@ describe('sumPhaseAttackPower', () => {
     const army: BattleArmyState = {
       formations: [
         {
-          type: 'OFFENSE', level: 1, combatRole: 'MELEE' as CombatRole, quantity: 100,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 5, MeleeDefPower: 2, RangedAtkPower: 0, RangedDefPower: 1 },
+          type: 'OFFENSE',
+          level: 1,
+          combatRole: 'MELEE' as CombatRole,
+          quantity: 100,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 5,
+            MeleeDefPower: 2,
+            RangedAtkPower: 0,
+            RangedDefPower: 1,
+          },
         },
       ],
       collateral: [],
@@ -413,9 +471,19 @@ describe('sumPhaseAttackPower', () => {
     const army: BattleArmyState = {
       formations: [
         {
-          type: 'DEFENSE', level: 1, combatRole: 'RANGED' as CombatRole, quantity: 30,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 1, MeleeDefPower: 2, RangedAtkPower: 8, RangedDefPower: 3 },
+          type: 'DEFENSE',
+          level: 1,
+          combatRole: 'RANGED' as CombatRole,
+          quantity: 30,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 1,
+            MeleeDefPower: 2,
+            RangedAtkPower: 8,
+            RangedDefPower: 3,
+          },
         },
       ],
       collateral: [],
@@ -430,14 +498,34 @@ describe('sumPhaseDefensePower', () => {
     const army: BattleArmyState = {
       formations: [
         {
-          type: 'DEFENSE', level: 1, combatRole: 'MELEE' as CombatRole, quantity: 80,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 3, MeleeDefPower: 5, RangedAtkPower: 0, RangedDefPower: 0 },
+          type: 'DEFENSE',
+          level: 1,
+          combatRole: 'MELEE' as CombatRole,
+          quantity: 80,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 3,
+            MeleeDefPower: 5,
+            RangedAtkPower: 0,
+            RangedDefPower: 0,
+          },
         },
         {
-          type: 'DEFENSE', level: 1, combatRole: 'RANGED' as CombatRole, quantity: 30,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 1, MeleeDefPower: 2, RangedAtkPower: 8, RangedDefPower: 3 },
+          type: 'DEFENSE',
+          level: 1,
+          combatRole: 'RANGED' as CombatRole,
+          quantity: 30,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 1,
+            MeleeDefPower: 2,
+            RangedAtkPower: 8,
+            RangedDefPower: 3,
+          },
         },
       ],
       collateral: [],
@@ -457,40 +545,92 @@ describe('formation quantity invariants', () => {
     const army: BattleArmyState = {
       formations: [
         {
-          type: 'OFFENSE', level: 1, combatRole: 'MELEE' as CombatRole, quantity: 80,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 5, MeleeDefPower: 2, RangedAtkPower: 0, RangedDefPower: 1 },
+          type: 'OFFENSE',
+          level: 1,
+          combatRole: 'MELEE' as CombatRole,
+          quantity: 80,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 5,
+            MeleeDefPower: 2,
+            RangedAtkPower: 0,
+            RangedDefPower: 1,
+          },
         },
         {
-          type: 'DEFENSE', level: 1, combatRole: 'MELEE' as CombatRole, quantity: 50,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 3, MeleeDefPower: 5, RangedAtkPower: 0, RangedDefPower: 0 },
+          type: 'DEFENSE',
+          level: 1,
+          combatRole: 'MELEE' as CombatRole,
+          quantity: 50,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 3,
+            MeleeDefPower: 5,
+            RangedAtkPower: 0,
+            RangedDefPower: 0,
+          },
         },
       ],
       collateral: [
         {
-          type: 'CITIZEN', level: 1, combatRole: 'COLLATERAL' as CombatRole, quantity: 200,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 1, MeleeDefPower: 1, RangedAtkPower: 0, RangedDefPower: 0 },
+          type: 'CITIZEN',
+          level: 1,
+          combatRole: 'COLLATERAL' as CombatRole,
+          quantity: 200,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 1,
+            MeleeDefPower: 1,
+            RangedAtkPower: 0,
+            RangedDefPower: 0,
+          },
         },
         {
-          type: 'WORKER', level: 1, combatRole: 'COLLATERAL' as CombatRole, quantity: 100,
-          currentHP: 10, maxHP: 10, isMercenary: false,
-          perUnitStats: { MeleeAtkPower: 1, MeleeDefPower: 1, RangedAtkPower: 0, RangedDefPower: 0 },
+          type: 'WORKER',
+          level: 1,
+          combatRole: 'COLLATERAL' as CombatRole,
+          quantity: 100,
+          currentHP: 10,
+          maxHP: 10,
+          isMercenary: false,
+          perUnitStats: {
+            MeleeAtkPower: 1,
+            MeleeDefPower: 1,
+            RangedAtkPower: 0,
+            RangedDefPower: 0,
+          },
         },
       ],
     };
 
-    const offenseQty = army.formations.filter((f) => f.type === 'OFFENSE').reduce((s, f) => s + f.quantity, 0);
-    const defenseQty = army.formations.filter((f) => f.type === 'DEFENSE').reduce((s, f) => s + f.quantity, 0);
-    const citizenQty = army.collateral.filter((f) => f.type === 'CITIZEN').reduce((s, f) => s + f.quantity, 0);
-    const workerQty = army.collateral.filter((f) => f.type === 'WORKER').reduce((s, f) => s + f.quantity, 0);
+    const offenseQty = army.formations
+      .filter((f) => f.type === 'OFFENSE')
+      .reduce((s, f) => s + f.quantity, 0);
+    const defenseQty = army.formations
+      .filter((f) => f.type === 'DEFENSE')
+      .reduce((s, f) => s + f.quantity, 0);
+    const citizenQty = army.collateral
+      .filter((f) => f.type === 'CITIZEN')
+      .reduce((s, f) => s + f.quantity, 0);
+    const workerQty = army.collateral
+      .filter((f) => f.type === 'WORKER')
+      .reduce((s, f) => s + f.quantity, 0);
 
     expect(offenseQty).toBe(80);
     expect(defenseQty).toBe(50);
     expect(citizenQty).toBe(200);
     expect(workerQty).toBe(100);
-    expect(offenseQty + defenseQty).toBe(army.formations.reduce((s, f) => s + f.quantity, 0));
-    expect(citizenQty + workerQty).toBe(army.collateral.reduce((s, f) => s + f.quantity, 0));
+    expect(offenseQty + defenseQty).toBe(
+      army.formations.reduce((s, f) => s + f.quantity, 0),
+    );
+    expect(citizenQty + workerQty).toBe(
+      army.collateral.reduce((s, f) => s + f.quantity, 0),
+    );
   });
 });
