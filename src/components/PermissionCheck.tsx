@@ -1,11 +1,39 @@
+import { PermissionType } from '@prisma/client';
 import { Text } from '@mantine/core';
 
 import { useUser } from '@/context/users';
 
-const PermissionCheck = ({ children, permission }) => {
+interface PermissionCheckProps {
+  children: React.ReactNode;
+  permission?: PermissionType;
+  permissions?: PermissionType[];
+  requireAll?: boolean;
+}
+
+const PermissionCheck = ({
+  children,
+  permission,
+  permissions,
+  requireAll = false,
+}: PermissionCheckProps) => {
   const { user } = useUser();
 
-  if (!user?.permissions?.some((perm) => perm.type === permission)) {
+  const userPerms =
+    user?.permissions?.map((p) => p.type as PermissionType) ?? [];
+
+  let hasAccess = false;
+
+  if (permission) {
+    hasAccess = userPerms.includes(permission);
+  } else if (permissions && permissions.length > 0) {
+    hasAccess = requireAll
+      ? permissions.every((p) => userPerms.includes(p))
+      : permissions.some((p) => userPerms.includes(p));
+  } else {
+    hasAccess = userPerms.length > 0;
+  }
+
+  if (!hasAccess) {
     return (
       <div>
         <Text
