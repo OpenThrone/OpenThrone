@@ -128,23 +128,163 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
   const layoutCont = useLayout();
   const { user, unreadMessagesCount } = useUser();
 
-  // Add the administration link only if the user has admin privileges
-  if (
-    user?.permissions?.some(
-      (perm) => perm.type === PermissionType.ADMINISTRATOR,
-    ) &&
-    !subMenus.home.some((subNav) => subNav.key === 'administration')
-  ) {
-    subMenus.home.push({
-      key: 'administration',
-      href: '/home/admin',
-      labelKey: 'home.administration',
-    });
-    subMenus.home.push({
-      key: 'balance-sim',
-      href: '/home/admin/balance-sim',
-      labelKey: 'Balance Simulator',
-    });
+  const hasAnyStaffAccess = user?.permissions && user.permissions.length > 0;
+
+  if (hasAnyStaffAccess) {
+    if (!subMenus.home.some((subNav) => subNav.key === 'administration')) {
+      subMenus.home.push({
+        key: 'administration',
+        href: '/home/admin/overview',
+        labelKey: 'home.administration',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-users')) {
+      subMenus.home.push({
+        key: 'staff-users',
+        href: '/home/admin',
+        labelKey: 'home.staffUsers',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-balance-sim')) {
+      subMenus.home.push({
+        key: 'staff-balance-sim',
+        href: '/home/admin/balance-sim',
+        labelKey: 'home.balanceSim',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-reports')) {
+      subMenus.home.push({
+        key: 'staff-reports',
+        href: '/home/moderation/reports',
+        labelKey: 'home.staffReports',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-bans')) {
+      subMenus.home.push({
+        key: 'staff-bans',
+        href: '/home/moderation/bans',
+        labelKey: 'home.staffBans',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-chat')) {
+      subMenus.home.push({
+        key: 'staff-chat',
+        href: '/home/moderation/chat',
+        labelKey: 'home.staffChat',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-audit')) {
+      subMenus.home.push({
+        key: 'staff-audit',
+        href: '/home/admin/audit-logs',
+        labelKey: 'home.staffAudit',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-appeals')) {
+      subMenus.home.push({
+        key: 'staff-appeals',
+        href: '/home/moderation/appeals',
+        labelKey: 'home.staffAppeals',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-content')) {
+      subMenus.home.push({
+        key: 'staff-content',
+        href: '/home/admin/content',
+        labelKey: 'home.staffContent',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-announcements')) {
+      subMenus.home.push({
+        key: 'staff-announcements',
+        href: '/home/admin/announcements',
+        labelKey: 'home.staffAnnouncements',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-mass-messaging')) {
+      subMenus.home.push({
+        key: 'staff-mass-messaging',
+        href: '/home/admin/mass-messaging',
+        labelKey: 'home.staffMassMessaging',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-events')) {
+      subMenus.home.push({
+        key: 'staff-events',
+        href: '/home/admin/events',
+        labelKey: 'home.staffEvents',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-eras')) {
+      subMenus.home.push({
+        key: 'staff-eras',
+        href: '/home/admin/eras',
+        labelKey: 'home.staffEras',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-alliances')) {
+      subMenus.home.push({
+        key: 'staff-alliances',
+        href: '/home/admin/alliances',
+        labelKey: 'home.staffAlliances',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-economy')) {
+      subMenus.home.push({
+        key: 'staff-economy',
+        href: '/home/admin/economy',
+        labelKey: 'home.staffEconomy',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-analytics')) {
+      subMenus.home.push({
+        key: 'staff-analytics',
+        href: '/home/admin/analytics',
+        labelKey: 'home.staffAnalytics',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-multi-accounts')) {
+      subMenus.home.push({
+        key: 'staff-multi-accounts',
+        href: '/home/admin/multi-accounts',
+        labelKey: 'home.staffMultiAccounts',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-cheat-signals')) {
+      subMenus.home.push({
+        key: 'staff-cheat-signals',
+        href: '/home/admin/cheat-signals',
+        labelKey: 'home.staffCheatSignals',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-settings')) {
+      subMenus.home.push({
+        key: 'staff-settings',
+        href: '/home/admin/settings',
+        labelKey: 'home.staffSettings',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-feature-flags')) {
+      subMenus.home.push({
+        key: 'staff-feature-flags',
+        href: '/home/admin/feature-flags',
+        labelKey: 'home.staffFeatureFlags',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-api-tokens')) {
+      subMenus.home.push({
+        key: 'staff-api-tokens',
+        href: '/home/admin/api-tokens',
+        labelKey: 'home.staffApiTokens',
+      });
+    }
+    if (!subMenus.home.some((subNav) => subNav.key === 'staff-maintenance')) {
+      subMenus.home.push({
+        key: 'staff-maintenance',
+        href: '/home/admin/maintenance',
+        labelKey: 'home.staffMaintenance',
+      });
+    }
   }
 
   useEffect(() => {
