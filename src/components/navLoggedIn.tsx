@@ -1,12 +1,11 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import { Badge, Indicator } from '@mantine/core';
-import { PermissionType } from '@prisma/client';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { signOut, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
@@ -130,162 +129,24 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
 
   const hasAnyStaffAccess = user?.permissions && user.permissions.length > 0;
 
-  if (hasAnyStaffAccess) {
-    if (!subMenus.home.some((subNav) => subNav.key === 'administration')) {
-      subMenus.home.push({
+  const staffSubMenus = useMemo(() => {
+    if (!hasAnyStaffAccess) return [];
+    return [
+      {
         key: 'administration',
         href: '/home/admin/overview',
         labelKey: 'home.administration',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-users')) {
-      subMenus.home.push({
-        key: 'staff-users',
-        href: '/home/admin',
-        labelKey: 'home.staffUsers',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-balance-sim')) {
-      subMenus.home.push({
-        key: 'staff-balance-sim',
-        href: '/home/admin/balance-sim',
-        labelKey: 'home.balanceSim',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-reports')) {
-      subMenus.home.push({
-        key: 'staff-reports',
-        href: '/home/moderation/reports',
-        labelKey: 'home.staffReports',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-bans')) {
-      subMenus.home.push({
-        key: 'staff-bans',
-        href: '/home/moderation/bans',
-        labelKey: 'home.staffBans',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-chat')) {
-      subMenus.home.push({
-        key: 'staff-chat',
-        href: '/home/moderation/chat',
-        labelKey: 'home.staffChat',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-audit')) {
-      subMenus.home.push({
-        key: 'staff-audit',
-        href: '/home/admin/audit-logs',
-        labelKey: 'home.staffAudit',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-appeals')) {
-      subMenus.home.push({
-        key: 'staff-appeals',
-        href: '/home/moderation/appeals',
-        labelKey: 'home.staffAppeals',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-content')) {
-      subMenus.home.push({
-        key: 'staff-content',
-        href: '/home/admin/content',
-        labelKey: 'home.staffContent',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-announcements')) {
-      subMenus.home.push({
-        key: 'staff-announcements',
-        href: '/home/admin/announcements',
-        labelKey: 'home.staffAnnouncements',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-mass-messaging')) {
-      subMenus.home.push({
-        key: 'staff-mass-messaging',
-        href: '/home/admin/mass-messaging',
-        labelKey: 'home.staffMassMessaging',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-events')) {
-      subMenus.home.push({
-        key: 'staff-events',
-        href: '/home/admin/events',
-        labelKey: 'home.staffEvents',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-eras')) {
-      subMenus.home.push({
-        key: 'staff-eras',
-        href: '/home/admin/eras',
-        labelKey: 'home.staffEras',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-alliances')) {
-      subMenus.home.push({
-        key: 'staff-alliances',
-        href: '/home/admin/alliances',
-        labelKey: 'home.staffAlliances',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-economy')) {
-      subMenus.home.push({
-        key: 'staff-economy',
-        href: '/home/admin/economy',
-        labelKey: 'home.staffEconomy',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-analytics')) {
-      subMenus.home.push({
-        key: 'staff-analytics',
-        href: '/home/admin/analytics',
-        labelKey: 'home.staffAnalytics',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-multi-accounts')) {
-      subMenus.home.push({
-        key: 'staff-multi-accounts',
-        href: '/home/admin/multi-accounts',
-        labelKey: 'home.staffMultiAccounts',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-cheat-signals')) {
-      subMenus.home.push({
-        key: 'staff-cheat-signals',
-        href: '/home/admin/cheat-signals',
-        labelKey: 'home.staffCheatSignals',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-settings')) {
-      subMenus.home.push({
-        key: 'staff-settings',
-        href: '/home/admin/settings',
-        labelKey: 'home.staffSettings',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-feature-flags')) {
-      subMenus.home.push({
-        key: 'staff-feature-flags',
-        href: '/home/admin/feature-flags',
-        labelKey: 'home.staffFeatureFlags',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-api-tokens')) {
-      subMenus.home.push({
-        key: 'staff-api-tokens',
-        href: '/home/admin/api-tokens',
-        labelKey: 'home.staffApiTokens',
-      });
-    }
-    if (!subMenus.home.some((subNav) => subNav.key === 'staff-maintenance')) {
-      subMenus.home.push({
-        key: 'staff-maintenance',
-        href: '/home/admin/maintenance',
-        labelKey: 'home.staffMaintenance',
-      });
-    }
-  }
+      },
+    ];
+  }, [hasAnyStaffAccess]);
+
+  const resolvedSubMenus: Record<string, NavItem[]> = useMemo(() => {
+    if (staffSubMenus.length === 0) return subMenus;
+    return {
+      ...subMenus,
+      home: [...subMenus.home, ...staffSubMenus],
+    };
+  }, [staffSubMenus]);
 
   useEffect(() => {
     const localePrefix = router.locale ? `/${router.locale}` : '';
@@ -306,57 +167,54 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       (currentPath === 'battle' && secondPath === 'users')
     ) {
       setActiveParentKey('battle');
-      const subMenu = subMenus.battle || [];
+      const subMenu = resolvedSubMenus.battle || [];
       setActiveSubMenu(subMenu);
       setActiveSubKey('attack');
       setDefaultParentKey('battle');
-      setDefaultSubMenu(subMenus.battle || []);
+      setDefaultSubMenu(resolvedSubMenus.battle || []);
     } else if (secondPath === 'history') {
       setActiveParentKey('battle');
-      const subMenu = subMenus.battle || [];
+      const subMenu = resolvedSubMenus.battle || [];
       setActiveSubMenu(subMenu);
       setActiveSubKey('warHistory');
       setDefaultParentKey('battle');
-      setDefaultSubMenu(subMenus.battle || []);
+      setDefaultSubMenu(resolvedSubMenus.battle || []);
     } else if (currentPath === 'auto-recruit') {
       setActiveParentKey('community');
-      const subMenu = subMenus.community || [];
+      const subMenu = resolvedSubMenus.community || [];
       setActiveSubMenu(subMenu);
       setActiveSubKey('autoRecruit');
       setDefaultParentKey('community');
-      setDefaultSubMenu(subMenus.community || []);
+      setDefaultSubMenu(resolvedSubMenus.community || []);
     } else if (currentPath === 'alliances') {
       setActiveParentKey('alliances');
-      const subMenu = subMenus.alliances || [];
+      const subMenu = resolvedSubMenus.alliances || [];
       setActiveSubMenu(subMenu);
-      // Determine sub key based on secondPath
       if (secondPath === 'create') setActiveSubKey('create');
-      else setActiveSubKey('browse'); // Default to browse
+      else setActiveSubKey('browse');
 
       setDefaultParentKey('alliances');
-      setDefaultSubMenu(subMenus.alliances || []);
+      setDefaultSubMenu(resolvedSubMenus.alliances || []);
     } else {
       const activeLink = parentLinks.find((link) => link.key === currentPath);
       if (activeLink) {
         setActiveParentKey(activeLink.key);
-        const subMenu = subMenus[activeLink.key] || [];
+        const subMenu = resolvedSubMenus[activeLink.key] || [];
         setActiveSubMenu(subMenu);
 
-        // Find the active sub link
         const activeSubLinkItem = subMenu.find(
           (item) => item.key === secondPath,
         );
         if (activeSubLinkItem) {
           setActiveSubKey(activeSubLinkItem.key);
         } else {
-          // Reset the active sub link if no match found
           setActiveSubKey('');
         }
         setDefaultParentKey(activeLink.key);
-        setDefaultSubMenu(subMenus[activeLink.key] || []);
+        setDefaultSubMenu(resolvedSubMenus[activeLink.key] || []);
       }
     }
-  }, [pathName, router.locale]);
+  }, [pathName, router.locale, resolvedSubMenus]);
 
   const [resetTimer, setResetTimer] = useState<number | null>(null);
 
@@ -428,7 +286,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       onClick?: () => void;
     }[];
   }[] = parentLinks.map((parent) => {
-    const children = subMenus[parent.key]?.map((item) => ({
+    const children = resolvedSubMenus[parent.key]?.map((item) => ({
       key: item.key,
       label: tNav(item.labelKey),
       href: item.href,
@@ -560,7 +418,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                           : 'text-elf-link-link'
                       }  bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-xs text-uppercase-menu text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange`}
                       onMouseOver={() => {
-                        setActiveSubMenu(subMenus[link.key] || []);
+                        setActiveSubMenu(resolvedSubMenus[link.key] || []);
                       }}
                       data-testid={`nav-${link.key}-link`}
                       aria-label={tNav(link.labelKey)}
