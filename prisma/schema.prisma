@@ -22,9 +22,173 @@ enum AccountStatus {
   SUSPENDED
 }
 
-enum PermissionType {
+enum StaffRole {
   ADMINISTRATOR
   MODERATOR
+  COMMUNITY_MANAGER
+  GAME_MASTER
+}
+
+enum PermissionType {
+  // Dashboard & Audit
+  VIEW_STAFF_DASHBOARD
+  VIEW_AUDIT_LOGS
+
+  // User Management
+  MANAGE_USERS
+  MANAGE_ACCOUNT_STATUS
+  MANAGE_MODERATOR_NOTES
+  MANAGE_BAN_APPEALS
+
+  // Moderation
+  REVIEW_REPORTS
+  ASSIGN_REPORTS
+  MODERATE_CHAT
+  VIEW_CHAT_LOGS
+
+  // Content
+  MANAGE_ANNOUNCEMENTS
+  MANAGE_CONTENT
+  SEND_MASS_MESSAGES
+
+  // Game
+  MANAGE_EVENTS
+  MANAGE_ERAS
+  MANAGE_ALLIANCES
+
+  // Analytics & Abuse
+  VIEW_ECONOMY
+  VIEW_ANALYTICS
+  VIEW_MULTI_ACCOUNTS
+  VIEW_CHEAT_SIGNALS
+
+  // System
+  MANAGE_FEATURE_FLAGS
+  MANAGE_SERVER_SETTINGS
+  MANAGE_API_TOKENS
+  USE_IMPERSONATION
+}
+
+enum ReportCategory {
+  HARASSMENT
+  SPAM
+  CHEATING
+  MULTI_ACCOUNT
+  BUG_EXPLOIT
+  INAPPROPRIATE_NAME
+  CHAT_ABUSE
+  ALLIANCE_ABUSE
+  OTHER
+}
+
+enum ReportPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ReportStatus {
+  OPEN
+  TRIAGED
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+  ESCALATED
+}
+
+enum ReportResolution {
+  NO_ACTION
+  WARNING
+  CHAT_MUTE
+  SUSPENSION
+  BAN
+  APPEAL_REFERRED
+  OTHER
+}
+
+enum ReportActionType {
+  CREATED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  ASSIGNED
+  NOTE_ADDED
+  EVIDENCE_ADDED
+  USER_WARNED
+  USER_MUTED
+  USER_SUSPENDED
+  USER_BANNED
+  RESOLVED
+  DISMISSED
+}
+
+enum ModeratorNoteVisibility {
+  STAFF
+  ADMINS_ONLY
+}
+
+enum AnnouncementSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  CRITICAL
+}
+
+enum GameEventType {
+  GOLD_MODIFIER
+  TURN_MODIFIER
+  UNIT_COST_MODIFIER
+  BUILD_SPEED_MODIFIER
+  PVP_MODIFIER
+  CUSTOM
+}
+
+enum GameEventStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum BanAppealStatus {
+  OPEN
+  IN_REVIEW
+  ACCEPTED
+  DENIED
+  WITHDRAWN
+}
+
+enum ServerSettingType {
+  STRING
+  NUMBER
+  BOOLEAN
+  JSON
+}
+
+enum SignalSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum InvestigationStatus {
+  OPEN
+  ACKNOWLEDGED
+  DISMISSED
+  ACTION_TAKEN
+}
+
+enum CheatSignalType {
+  IMPOSSIBLE_ACTION
+  GOLD_SPIKE
+  SELF_FARMING
+  TRANSFER_RING
+  LINKED_ACCOUNT_ACTIVITY
+  CHAT_SPAM
+  ALLIANCE_BANK_ABUSE
 }
 
 enum AllianceJoinMode {
@@ -165,6 +329,36 @@ model users {
   bankHistoryPerformed                  alliance_bank_history[] @relation("PerformedBy")
   bankHistoryRelated                    alliance_bank_history[] @relation("RelatedUser")
 
+  // Staff & Moderation Relations
+  staffRoleAssignments                  StaffRoleAssignment[]   @relation("StaffRoleAssignments")
+  staffRoleGrantedBy                    StaffRoleAssignment[]   @relation("StaffRoleGrantedBy")
+  permissionGrantedBy                   PermissionGrant[]       @relation("PermissionGrantedBy")
+  reportsFiled                          Report[]                @relation("ReportsFiled")
+  reportsAgainst                        Report[]                @relation("ReportsAgainst")
+  reportsAssigned                       Report[]                @relation("ReportsAssigned")
+  reportsResolved                       Report[]                @relation("ReportsResolved")
+  reportActions                         ReportAction[]          @relation("ReportActions")
+  moderatorNotesOnUser                  ModeratorNote[]         @relation("ModeratorNotesOnUser")
+  moderatorNotesByUser                  ModeratorNote[]         @relation("ModeratorNotesByUser")
+  banAppealsFiled                       BanAppeal[]             @relation("BanAppealsFiled")
+  banAppealsAssigned                    BanAppeal[]             @relation("BanAppealsAssigned")
+  banAppealsDecided                     BanAppeal[]             @relation("BanAppealsDecided")
+  announcementsCreated                  Announcement[]          @relation("AnnouncementsCreated")
+  announcementsUpdated                  Announcement[]          @relation("AnnouncementsUpdated")
+  gameEventsCreated                     GameEvent[]             @relation("GameEventsCreated")
+  gameEventsUpdated                     GameEvent[]             @relation("GameEventsUpdated")
+  chatMutesOnUser                       ChatMute[]              @relation("ChatMutesOnUser")
+  chatMutesCreatedBy                    ChatMute[]              @relation("ChatMutesCreatedBy")
+  chatMutesRevokedBy                    ChatMute[]              @relation("ChatMutesRevokedBy")
+  loginEvents                           LoginEvent[]            @relation("LoginEventsOnUser")
+  cheatSignalsOnUser                    CheatSignal[]           @relation("CheatSignalsOnUser")
+  cheatSignalsRelatedUser               CheatSignal[]           @relation("CheatSignalsRelatedUser")
+  cheatSignalsAssigned                  CheatSignal[]           @relation("CheatSignalsAssigned")
+  cheatSignalsResolved                  CheatSignal[]           @relation("CheatSignalsResolved")
+  featureFlagsCreated                   FeatureFlag[]           @relation("FeatureFlagsCreated")
+  featureFlagsUpdated                   FeatureFlag[]           @relation("FeatureFlagsUpdated")
+  serverSettingsUpdated                 ServerSetting[]         @relation("ServerSettingsUpdated")
+
   @@index([created_at])
   @@index([currentEraId])
 }
@@ -181,6 +375,7 @@ model AccountStatusHistory {
   updated_at DateTime      @default(now()) @updatedAt @db.Timestamp(6)
   admin      users?        @relation("AccountStatusAdmin", fields: [admin_id], references: [id])
   user       users         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  appeals    BanAppeal[]
 
   @@index([user_id, start_date])
 }
@@ -291,9 +486,17 @@ model blog_posts {
   updated_timestamp DateTime           @updatedAt @db.Timestamptz(3)
   postedby_id       Int
   content           String
+  slug              String?            @unique
+  status            String             @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  kind              String             @default("BLOG") // BLOG, NEWS, CHANGELOG
+  excerpt           String?
+  publishedAt       DateTime?          @db.Timestamptz(3)
+  isPinned          Boolean            @default(false)
   postedBy          users              @relation(fields: [postedby_id], references: [id])
   postReadStatus    post_read_status[]
 
+  @@index([status, publishedAt])
+  @@index([kind, status])
 }
 
 model post_read_status {
@@ -390,11 +593,20 @@ model alliance_roles {
 }
 
 model PermissionGrant {
-  id         Int            @id @default(autoincrement())
-  type       PermissionType
-  user_id    Int
-  created_at DateTime       @default(now())
-  user       users          @relation("PermissionGrants", fields: [user_id], references: [id])
+  id              Int            @id @default(autoincrement())
+  user_id         Int
+  type            PermissionType
+  grantedByUserId Int?
+  sourceRole      StaffRole?
+  note            String?
+  created_at      DateTime       @default(now()) @db.Timestamptz(3)
+  revokedAt       DateTime?      @db.Timestamptz(3)
+
+  user            users          @relation("PermissionGrants", fields: [user_id], references: [id], onDelete: Cascade)
+  grantedBy       users?         @relation("PermissionGrantedBy", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([user_id, revokedAt])
+  @@index([type, revokedAt])
 }
 
 model AutoRecruitSession {
@@ -433,6 +645,8 @@ model ChatRoom {
   creator      users                 @relation(fields: [createdById], references: [id])
   allianceId   Int? // Added for alliance specific rooms
   alliance     alliances? @relation(fields: [allianceId], references: [id], onDelete: Cascade) // Added for alliance specific rooms
+  reports      Report[]
+  chatMutes    ChatMute[]
 
   @@index([createdById])
 }
@@ -460,6 +674,13 @@ model ChatMessage {
   replyToMessageId  Int?                      // Added for replies
   sharedAttackLogId Int?                      // Added for sharing attack logs
 
+  // Moderation fields
+  deletedAt        DateTime? @db.Timestamptz(3)
+  deletedByUserId  Int?
+  moderatedByUserId Int?
+  editReason       String?
+  originalContent  String?
+
   room              ChatRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade) // Added onDelete Cascade
   sender            users         @relation(fields: [senderId], references: [id], onDelete: Cascade) // Added onDelete Cascade
   replyToMessage    ChatMessage?  @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction) // Added for replies
@@ -468,6 +689,7 @@ model ChatMessage {
   replies           ChatMessage[] @relation("MessageReplies") // Added for replies
   reactions         ChatMessageReaction[]   // Added for reactions
   readBy            ChatMessageReadStatus[] // Added for read receipts
+  reports           Report[]
 
   @@index([roomId, sentAt])
   @@index([replyToMessageId]) // Added index
@@ -507,15 +729,22 @@ enum ChatRole {
 }
 
 model AuditLog {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  action    String
-  ip        String
-  timestamp DateTime @default(now()) @db.Timestamptz(3)
-  details   Json?
-  user      users    @relation("AuditLogs", fields: [userId], references: [id], onDelete: Cascade)
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  action       String
+  ip           String
+  ipHash       String?
+  timestamp    DateTime @default(now()) @db.Timestamptz(3)
+  details      Json?
+  targetUserId Int?
+  entityType   String?
+  entityId     Int?
+  requestId    String?
+  user         users    @relation("AuditLogs", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, timestamp])
+  @@index([targetUserId, timestamp])
+  @@index([action, timestamp])
 }
 
 model ApiClient {
@@ -850,4 +1079,263 @@ model alliance_fees {
   alliance        alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
 
   @@index([alliance_id])
+}
+
+// ============================================================
+// Staff Role & Moderation System
+// ============================================================
+
+model StaffRoleAssignment {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  role            StaffRole
+  grantedByUserId Int?
+  note            String?
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  revokedAt       DateTime? @db.Timestamptz(3)
+
+  user            users     @relation("StaffRoleAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy       users?    @relation("StaffRoleGrantedBy", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, revokedAt])
+  @@index([role, revokedAt])
+}
+
+model Report {
+  id                Int              @id @default(autoincrement())
+  reporterUserId    Int
+  reportedUserId    Int
+  category          ReportCategory
+  priority          ReportPriority   @default(NORMAL)
+  status            ReportStatus     @default(OPEN)
+  subject           String?
+  description       String
+  roomId            Int?
+  chatMessageId     Int?
+  assignedToUserId  Int?
+  resolution        ReportResolution?
+  resolutionSummary String?
+  resolvedByUserId  Int?
+  resolvedAt        DateTime?        @db.Timestamptz(3)
+  metadata          Json?
+  createdAt         DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime         @updatedAt @db.Timestamptz(3)
+
+  reporter          users            @relation("ReportsFiled", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  reportedUser      users            @relation("ReportsAgainst", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  assignedTo        users?           @relation("ReportsAssigned", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  resolvedBy        users?           @relation("ReportsResolved", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+  room              ChatRoom?        @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  chatMessage       ChatMessage?     @relation(fields: [chatMessageId], references: [id], onDelete: SetNull)
+  actions           ReportAction[]
+  banAppeals        BanAppeal[]
+  moderatorNotes    ModeratorNote[]
+
+  @@index([status, priority, createdAt])
+  @@index([assignedToUserId, status])
+  @@index([reportedUserId, createdAt])
+  @@index([reporterUserId, createdAt])
+}
+
+model ReportAction {
+  id          Int              @id @default(autoincrement())
+  reportId    Int
+  actorUserId Int
+  type        ReportActionType
+  body        String?
+  fromStatus  ReportStatus?
+  toStatus    ReportStatus?
+  metadata    Json?
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+
+  report      Report           @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  actor       users            @relation("ReportActions", fields: [actorUserId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt])
+}
+
+model ModeratorNote {
+  id              Int                    @id @default(autoincrement())
+  userId          Int
+  authorUserId    Int
+  relatedReportId Int?
+  visibility      ModeratorNoteVisibility @default(STAFF)
+  note            String
+  isPinned        Boolean                @default(false)
+  createdAt       DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime               @updatedAt @db.Timestamptz(3)
+  deletedAt       DateTime?              @db.Timestamptz(3)
+
+  user            users                  @relation("ModeratorNotesOnUser", fields: [userId], references: [id], onDelete: Cascade)
+  author          users                  @relation("ModeratorNotesByUser", fields: [authorUserId], references: [id], onDelete: Cascade)
+  relatedReport   Report?                @relation(fields: [relatedReportId], references: [id], onDelete: SetNull)
+
+  @@index([userId, deletedAt, createdAt])
+  @@index([authorUserId, createdAt])
+}
+
+model Announcement {
+  id              Int                  @id @default(autoincrement())
+  title           String
+  body            String
+  severity        AnnouncementSeverity @default(INFO)
+  isBanner        Boolean              @default(true)
+  isActive        Boolean              @default(false)
+  dismissible     Boolean              @default(true)
+  startsAt        DateTime?            @db.Timestamptz(3)
+  endsAt          DateTime?            @db.Timestamptz(3)
+  linkUrl         String?
+  createdByUserId Int
+  updatedByUserId Int?
+  createdAt       DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime             @updatedAt @db.Timestamptz(3)
+
+  createdBy       users                @relation("AnnouncementsCreated", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  updatedBy       users?               @relation("AnnouncementsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([isActive, startsAt, endsAt])
+}
+
+model GameEvent {
+  id              Int             @id @default(autoincrement())
+  key             String          @unique
+  name            String
+  description     String?
+  type            GameEventType
+  status          GameEventStatus @default(DRAFT)
+  startsAt        DateTime        @db.Timestamptz(3)
+  endsAt          DateTime        @db.Timestamptz(3)
+  config          Json
+  createdByUserId Int
+  updatedByUserId Int?
+  activatedAt     DateTime?       @db.Timestamptz(3)
+  deactivatedAt   DateTime?       @db.Timestamptz(3)
+  createdAt       DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime        @updatedAt @db.Timestamptz(3)
+
+  createdBy       users           @relation("GameEventsCreated", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  updatedBy       users?          @relation("GameEventsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, startsAt, endsAt])
+}
+
+model BanAppeal {
+  id                     Int              @id @default(autoincrement())
+  userId                 Int
+  accountStatusHistoryId Int
+  reportId               Int?
+  status                 BanAppealStatus  @default(OPEN)
+  subject                String?
+  body                   String
+  assignedToUserId       Int?
+  decisionSummary        String?
+  decidedByUserId        Int?
+  decidedAt              DateTime?        @db.Timestamptz(3)
+  createdAt              DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime         @updatedAt @db.Timestamptz(3)
+
+  user                   users               @relation("BanAppealsFiled", fields: [userId], references: [id], onDelete: Cascade)
+  accountStatusHistory   AccountStatusHistory @relation(fields: [accountStatusHistoryId], references: [id], onDelete: Cascade)
+  report                 Report?              @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  assignedTo             users?               @relation("BanAppealsAssigned", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  decidedBy              users?               @relation("BanAppealsDecided", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+}
+
+model FeatureFlag {
+  id              Int      @id @default(autoincrement())
+  key             String   @unique
+  description     String?
+  enabled         Boolean  @default(false)
+  rules           Json?
+  createdByUserId Int?
+  updatedByUserId Int?
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  createdBy       users?   @relation("FeatureFlagsCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedBy       users?   @relation("FeatureFlagsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+}
+
+model ServerSetting {
+  id                Int               @id @default(autoincrement())
+  key               String            @unique
+  label             String
+  description       String?
+  type              ServerSettingType
+  value             Json
+  validation        Json?
+  isPublic          Boolean           @default(false)
+  isRuntimeEditable Boolean           @default(true)
+  updatedByUserId   Int?
+  createdAt         DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime          @updatedAt @db.Timestamptz(3)
+
+  updatedBy         users?            @relation("ServerSettingsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+}
+
+model ChatMute {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  roomId          Int?
+  createdByUserId Int
+  reason          String?
+  startsAt        DateTime  @default(now()) @db.Timestamptz(3)
+  endsAt          DateTime? @db.Timestamptz(3)
+  revokedAt       DateTime? @db.Timestamptz(3)
+  revokedByUserId Int?
+
+  user            users     @relation("ChatMutesOnUser", fields: [userId], references: [id], onDelete: Cascade)
+  room            ChatRoom? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  createdBy       users     @relation("ChatMutesCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  revokedBy       users?    @relation("ChatMutesRevokedBy", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, endsAt, revokedAt])
+  @@index([roomId, endsAt, revokedAt])
+}
+
+model LoginEvent {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  ipHash        String
+  ipPrefixHash  String?
+  deviceHash    String?
+  userAgentHash String?
+  occurredAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  user          users    @relation("LoginEventsOnUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+  @@index([ipHash, occurredAt])
+  @@index([ipPrefixHash, occurredAt])
+  @@index([deviceHash, occurredAt])
+}
+
+model CheatSignal {
+  id               Int                 @id @default(autoincrement())
+  userId           Int
+  relatedUserId    Int?
+  type             CheatSignalType
+  severity         SignalSeverity
+  score            Int
+  status           InvestigationStatus @default(OPEN)
+  summary          String
+  evidence         Json
+  assignedToUserId Int?
+  resolvedByUserId Int?
+  resolvedAt       DateTime?           @db.Timestamptz(3)
+  firstSeenAt      DateTime            @default(now()) @db.Timestamptz(3)
+  lastSeenAt       DateTime            @default(now()) @db.Timestamptz(3)
+  createdAt        DateTime            @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime            @updatedAt @db.Timestamptz(3)
+
+  user             users               @relation("CheatSignalsOnUser", fields: [userId], references: [id], onDelete: Cascade)
+  relatedUser      users?              @relation("CheatSignalsRelatedUser", fields: [relatedUserId], references: [id], onDelete: SetNull)
+  assignedTo       users?              @relation("CheatSignalsAssigned", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  resolvedBy       users?              @relation("CheatSignalsResolved", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, severity, createdAt])
+  @@index([userId, status])
 }
