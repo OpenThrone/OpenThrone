@@ -1,6 +1,6 @@
-import type { Server as HttpServer } from 'http';
 import { Prisma } from '@prisma/client';
 import cookie from 'cookie';
+import type { Server as HttpServer } from 'http';
 import { getToken } from 'next-auth/jwt';
 import type { Socket } from 'socket.io';
 import { Server } from 'socket.io';
@@ -101,6 +101,23 @@ const serializeData = (data: unknown): unknown => {
       return value;
     }),
   );
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+type SocketAuthToken = {
+  user?: {
+    id?: string | number;
+  };
+};
+
+const hasTokenUserId = (token: unknown): token is SocketAuthToken => {
+  if (!isRecord(token) || !isRecord(token.user)) {
+    return false;
+  }
+
+  return typeof token.user.id === 'string' || typeof token.user.id === 'number';
 };
 
 // Define the payload type for messages including relations
@@ -219,13 +236,12 @@ export const initializeSocket = (httpServer: HttpServer) => {
         (minimalReq.headers as { authorization?: string }).authorization =
           `Bearer ${tokenFromClient}`;
 
-        const token: { user?: { id?: string | number } } | null =
-          await getToken({
-            req: minimalReq as unknown as Parameters<typeof getToken>[0]['req'],
-            secret: process.env.JWT_SECRET,
-          });
+        const token = await getToken({
+          req: minimalReq as unknown as Parameters<typeof getToken>[0]['req'],
+          secret: process.env.JWT_SECRET,
+        });
 
-        if (!token || !(token.user && token.user.id)) {
+        if (!hasTokenUserId(token)) {
           logInfo('Socket Auth: Invalid or missing token/user ID');
           return callback('Invalid token', false);
         }
@@ -297,8 +313,14 @@ const handleSendMessage = async (
       sharedAttackLogId,
     });
 
+    const serializedMessage = serializeData(newMessage);
+
+    if (!isRecord(serializedMessage)) {
+      throw new Error('Unable to serialize message payload');
+    }
+
     const messagePayload = {
-      ...serializeData(newMessage),
+      ...serializedMessage,
       tempId: data.tempId,
     };
     const roomChannel = `room-${roomId}`;
@@ -307,7 +329,9 @@ const handleSendMessage = async (
     const senderInRoom = socketsInRoom?.some((s) => s.id === socket.id);
     logInfo(
       `<<< SERVER >>> Sockets currently in ${roomChannel} before emit:`,
-      socketsInRoom?.map((s) => `${s.id} (User: ${findUserIdBySocketId(s.id)})`),
+      socketsInRoom?.map(
+        (s) => `${s.id} (User: ${findUserIdBySocketId(s.id)})`,
+      ),
     );
 
     io?.to(roomChannel).emit('receiveMessage', messagePayload);
@@ -327,7 +351,11 @@ const handleSendMessage = async (
   }
 };
 
-const handleJoinRoom = async (socket: Socket, userId: number, roomId: unknown) => {
+const handleJoinRoom = async (
+  socket: Socket,
+  userId: number,
+  roomId: unknown,
+) => {
   const numericRoomId = Number(roomId);
   if (isNaN(numericRoomId)) {
     logError(
