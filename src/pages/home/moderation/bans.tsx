@@ -13,9 +13,8 @@ import { PermissionType } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
-import MainArea from '@/components/MainArea';
-import PermissionCheck from '@/components/PermissionCheck';
 import { logError } from '@/utils/logger';
 
 const BansDashboardPage = () => {
@@ -34,7 +33,9 @@ const BansDashboardPage = () => {
         limit: limit.toString(),
         offset: ((page - 1) * limit).toString(),
       });
-      const response = await fetch(`/api/admin/moderation/bans?${params.toString()}`);
+      const response = await fetch(
+        `/api/admin/moderation/bans?${params.toString()}`,
+      );
       if (!response.ok) throw new Error('Failed to fetch banned users');
       const data = await response.json();
       setBans(data.bans || []);
@@ -86,85 +87,96 @@ const BansDashboardPage = () => {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <PermissionCheck permission={PermissionType.MANAGE_ACCOUNT_STATUS}>
-      <MainArea title="Moderation: Ban Management">
-        <Stack gap="md">
-          <GameCard title={`Active Penalties (${total})`}>
-            {loading ? (
-              <Group justify="center" py="xl">
-                <Loader />
-              </Group>
-            ) : bans.length === 0 ? (
-              <Text py="xl" ta="center" c="dimmed">
-                No currently banned or suspended users.
-              </Text>
-            ) : (
-              <Stack gap="md">
-                <Table.ScrollContainer minWidth={800}>
-                  <Table striped highlightOnHover>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th>User ID</Table.Th>
-                        <Table.Th>User Name</Table.Th>
-                        <Table.Th>Email</Table.Th>
-                        <Table.Th>Penalty</Table.Th>
-                        <Table.Th>Reason</Table.Th>
-                        <Table.Th>Banned By</Table.Th>
-                        <Table.Th>Starts At</Table.Th>
-                        <Table.Th>Ends At</Table.Th>
-                        <Table.Th>Action</Table.Th>
+    <AdminLayout
+      title="Moderation: Ban Management"
+      permission={PermissionType.MANAGE_ACCOUNT_STATUS}
+    >
+      <Stack gap="md">
+        <GameCard title={`Active Penalties (${total})`}>
+          {loading ? (
+            <Group justify="center" py="xl">
+              <Loader />
+            </Group>
+          ) : bans.length === 0 ? (
+            <Text py="xl" ta="center" c="dimmed">
+              No currently banned or suspended users.
+            </Text>
+          ) : (
+            <Stack gap="md">
+              <Table.ScrollContainer minWidth={800}>
+                <Table striped highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>User ID</Table.Th>
+                      <Table.Th>User Name</Table.Th>
+                      <Table.Th>Email</Table.Th>
+                      <Table.Th>Penalty</Table.Th>
+                      <Table.Th>Reason</Table.Th>
+                      <Table.Th>Banned By</Table.Th>
+                      <Table.Th>Starts At</Table.Th>
+                      <Table.Th>Ends At</Table.Th>
+                      <Table.Th>Action</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {bans.map((ban) => (
+                      <Table.Tr key={ban.id}>
+                        <Table.Td>{ban.user_id}</Table.Td>
+                        <Table.Td fw={700}>
+                          {ban.user?.display_name || 'Deleted User'}
+                        </Table.Td>
+                        <Table.Td>{ban.user?.email || 'N/A'}</Table.Td>
+                        <Table.Td>
+                          <Badge
+                            color={ban.status === 'BANNED' ? 'red' : 'orange'}
+                          >
+                            {ban.status}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          {ban.reason || 'No reason provided'}
+                        </Table.Td>
+                        <Table.Td>
+                          {ban.admin?.display_name || 'System'}
+                        </Table.Td>
+                        <Table.Td>
+                          {new Date(ban.start_date).toLocaleString()}
+                        </Table.Td>
+                        <Table.Td>
+                          {ban.end_date
+                            ? new Date(ban.end_date).toLocaleString()
+                            : 'Permanent'}
+                        </Table.Td>
+                        <Table.Td>
+                          <Button
+                            size="xs"
+                            color="green"
+                            onClick={() => handleUnban(ban.user_id)}
+                            loading={unbanningId === ban.user_id}
+                          >
+                            Lift Penalty
+                          </Button>
+                        </Table.Td>
                       </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {bans.map((ban) => (
-                        <Table.Tr key={ban.id}>
-                          <Table.Td>{ban.user_id}</Table.Td>
-                          <Table.Td fw={700}>
-                            {ban.user?.display_name || 'Deleted User'}
-                          </Table.Td>
-                          <Table.Td>{ban.user?.email || 'N/A'}</Table.Td>
-                          <Table.Td>
-                            <Badge color={ban.status === 'BANNED' ? 'red' : 'orange'}>
-                              {ban.status}
-                            </Badge>
-                          </Table.Td>
-                          <Table.Td>{ban.reason || 'No reason provided'}</Table.Td>
-                          <Table.Td>{ban.admin?.display_name || 'System'}</Table.Td>
-                          <Table.Td>{new Date(ban.start_date).toLocaleString()}</Table.Td>
-                          <Table.Td>
-                            {ban.end_date ? new Date(ban.end_date).toLocaleString() : 'Permanent'}
-                          </Table.Td>
-                          <Table.Td>
-                            <Button
-                              size="xs"
-                              color="green"
-                              onClick={() => handleUnban(ban.user_id)}
-                              loading={unbanningId === ban.user_id}
-                            >
-                              Lift Penalty
-                            </Button>
-                          </Table.Td>
-                        </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </Table.ScrollContainer>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
 
-                {totalPages > 1 && (
-                  <Group justify="center" mt="md">
-                    <Pagination
-                      value={page}
-                      onChange={setPage}
-                      total={totalPages}
-                    />
-                  </Group>
-                )}
-              </Stack>
-            )}
-          </GameCard>
-        </Stack>
-      </MainArea>
-    </PermissionCheck>
+              {totalPages > 1 && (
+                <Group justify="center" mt="md">
+                  <Pagination
+                    value={page}
+                    onChange={setPage}
+                    total={totalPages}
+                  />
+                </Group>
+              )}
+            </Stack>
+          )}
+        </GameCard>
+      </Stack>
+    </AdminLayout>
   );
 };
 

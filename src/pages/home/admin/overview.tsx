@@ -15,9 +15,8 @@ import { PermissionType } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
-import MainArea from '@/components/MainArea';
-import PermissionCheck from '@/components/PermissionCheck';
 import { logError } from '@/utils/logger';
 
 interface OverviewStats {
@@ -46,7 +45,11 @@ const StatCard = ({
   <Paper p="md" radius="md" withBorder>
     <Grid align="center">
       <Grid.Col span={3}>
-        <FontAwesomeIcon icon={icon} size="2x" style={{ opacity: 0.6, color }} />
+        <FontAwesomeIcon
+          icon={icon}
+          size="2x"
+          style={{ opacity: 0.6, color }}
+        />
       </Grid.Col>
       <Grid.Col span={9}>
         <Text size="xs" tt="uppercase" c="dimmed" fw={700}>
@@ -82,112 +85,113 @@ const OverviewDashboardPage = () => {
 
   if (loading || !stats) {
     return (
-      <MainArea title="Admin Overview">
+      <AdminLayout title="Admin Overview">
         <Stack align="center" py="xl">
           <Loader />
         </Stack>
-      </MainArea>
+      </AdminLayout>
     );
   }
 
   return (
-    <PermissionCheck permission={PermissionType.VIEW_STAFF_DASHBOARD}>
-      <MainArea title="Staff Dashboard">
-        <Stack gap="md">
-          <Text size="sm" c="dimmed">
-            High-level game & moderation health. Use the sidebar to drill into
-            any area.
-          </Text>
+    <AdminLayout
+      title="Staff Dashboard"
+      permission={PermissionType.VIEW_STAFF_DASHBOARD}
+    >
+      <Stack gap="md">
+        <Text size="sm" c="dimmed">
+          High-level game & moderation health. Use the sidebar to drill into any
+          area.
+        </Text>
 
-          <GameCard title="Player Base">
-            <Grid>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <StatCard
-                  label="Total Players"
-                  value={stats.totalUsers}
-                  icon={faUsers}
-                  color="#22c55e"
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <StatCard
-                  label="Active (24h)"
-                  value={stats.activeUsers24h}
-                  icon={faBolt}
-                  color="#3b82f6"
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <StatCard
-                  label="New (7d)"
-                  value={stats.newUsers7d}
-                  icon={faUserPlus}
-                  color="#eab308"
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <StatCard
-                  label="Banned"
-                  value={stats.bannedUsers}
-                  icon={faBan}
-                  color="#ef4444"
-                />
-              </Grid.Col>
-            </Grid>
-          </GameCard>
+        <GameCard title="Player Base">
+          <Grid>
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <StatCard
+                label="Total Players"
+                value={stats.totalUsers}
+                icon={faUsers}
+                color="#22c55e"
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <StatCard
+                label="Active (24h)"
+                value={stats.activeUsers24h}
+                icon={faBolt}
+                color="#3b82f6"
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <StatCard
+                label="New (7d)"
+                value={stats.newUsers7d}
+                icon={faUserPlus}
+                color="#eab308"
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <StatCard
+                label="Banned"
+                value={stats.bannedUsers}
+                icon={faBan}
+                color="#ef4444"
+              />
+            </Grid.Col>
+          </Grid>
+        </GameCard>
 
-          <GameCard title="Moderation Queue">
-            <Grid>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <StatCard
-                  label="Open Reports"
-                  value={stats.openReports}
-                  icon={faExclamationTriangle}
-                  color="#f59e0b"
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <StatCard
-                  label="Open Appeals"
-                  value={stats.openAppeals}
-                  icon={faGavel}
-                  color="#a855f7"
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <StatCard
-                  label="Cheat Signals"
-                  value={stats.openCheatSignals}
-                  icon={faShieldAlt}
-                  color="#dc2626"
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-                <StatCard
-                  label="Attacks (24h)"
-                  value={stats.recentAttacks}
-                  icon={faCrosshairs}
-                  color="#6366f1"
-                />
-              </Grid.Col>
-            </Grid>
-          </GameCard>
+        <GameCard title="Moderation Queue">
+          <Grid>
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <StatCard
+                label="Open Reports"
+                value={stats.openReports}
+                icon={faExclamationTriangle}
+                color="#f59e0b"
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <StatCard
+                label="Open Appeals"
+                value={stats.openAppeals}
+                icon={faGavel}
+                color="#a855f7"
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <StatCard
+                label="Cheat Signals"
+                value={stats.openCheatSignals}
+                icon={faShieldAlt}
+                color="#dc2626"
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+              <StatCard
+                label="Attacks (24h)"
+                value={stats.recentAttacks}
+                icon={faCrosshairs}
+                color="#6366f1"
+              />
+            </Grid.Col>
+          </Grid>
+        </GameCard>
 
-          <GameCard title="Game World">
-            <Grid>
-              <Grid.Col span={{ base: 12, sm: 6 }}>
-                <StatCard
-                  label="Alliances"
-                  value={stats.totalAlliances}
-                  icon={faScroll}
-                  color="#a855f7"
-                />
-              </Grid.Col>
-            </Grid>
-          </GameCard>
-        </Stack>
-      </MainArea>
-    </PermissionCheck>
+        <GameCard title="Game World">
+          <Grid>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <StatCard
+                label="Alliances"
+                value={stats.totalAlliances}
+                icon={faScroll}
+                color="#a855f7"
+              />
+            </Grid.Col>
+          </Grid>
+        </GameCard>
+      </Stack>
+    </AdminLayout>
   );
 };
 

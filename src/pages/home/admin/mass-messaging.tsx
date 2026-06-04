@@ -5,17 +5,15 @@ import {
   Stack,
   Switch,
   Text,
-  TextInput,
   Textarea,
+  TextInput,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { PermissionType } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useState } from 'react';
 
+import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
-import MainArea from '@/components/MainArea';
-import PermissionCheck from '@/components/PermissionCheck';
 import { logError } from '@/utils/logger';
 
 const MassMessagingPage = () => {
@@ -74,57 +72,58 @@ const MassMessagingPage = () => {
   };
 
   return (
-    <PermissionCheck permissions={['SEND_MASS_MESSAGES']}>
-      <MainArea title="Content: Mass Messaging">
-        <Stack gap="md">
-          <Paper p="md" withBorder>
-            <Text size="sm" c="dimmed" mb="md">
-              Send direct in-game messages to all users or a specific list. Use
-              sparingly — players receive these immediately.
-            </Text>
-          </Paper>
+    <AdminLayout
+      title="Content: Mass Messaging"
+      permissions={['SEND_MASS_MESSAGES']}
+    >
+      <Stack gap="md">
+        <Paper p="md" withBorder>
+          <Text size="sm" c="dimmed" mb="md">
+            Send direct in-game messages to all users or a specific list. Use
+            sparingly — players receive these immediately.
+          </Text>
+        </Paper>
 
-          <GameCard title="Compose">
-            <Stack>
-              <Switch
-                label="Send to ALL active users"
-                checked={sendToAll}
-                onChange={(e) => setSendToAll(e.currentTarget.checked)}
-              />
-              {!sendToAll && (
-                <TextInput
-                  label="Recipient User IDs (comma separated)"
-                  value={recipientIds}
-                  onChange={(e) => setRecipientIds(e.currentTarget.value)}
-                  placeholder="123, 456, 789"
-                />
-              )}
+        <GameCard title="Compose">
+          <Stack>
+            <Switch
+              label="Send to ALL active users"
+              checked={sendToAll}
+              onChange={(e) => setSendToAll(e.currentTarget.checked)}
+            />
+            {!sendToAll && (
               <TextInput
-                label="Subject"
-                value={subject}
-                onChange={(e) => setSubject(e.currentTarget.value)}
+                label="Recipient User IDs (comma separated)"
+                value={recipientIds}
+                onChange={(e) => setRecipientIds(e.currentTarget.value)}
+                placeholder="123, 456, 789"
               />
-              <Textarea
-                label="Message"
-                minRows={6}
-                value={body}
-                onChange={(e) => setBody(e.currentTarget.value)}
-              />
-              <Group justify="flex-end">
-                <Button
-                  color="orange"
-                  loading={sending}
-                  onClick={handleSend}
-                  disabled={!subject.trim() || !body.trim()}
-                >
-                  {sendToAll ? 'Broadcast to All' : 'Send'}
-                </Button>
-              </Group>
-            </Stack>
-          </GameCard>
-        </Stack>
-      </MainArea>
-    </PermissionCheck>
+            )}
+            <TextInput
+              label="Subject"
+              value={subject}
+              onChange={(e) => setSubject(e.currentTarget.value)}
+            />
+            <Textarea
+              label="Message"
+              minRows={6}
+              value={body}
+              onChange={(e) => setBody(e.currentTarget.value)}
+            />
+            <Group justify="flex-end">
+              <Button
+                color="orange"
+                loading={sending}
+                onClick={handleSend}
+                disabled={!subject.trim() || !body.trim()}
+              >
+                {sendToAll ? 'Broadcast to All' : 'Send'}
+              </Button>
+            </Group>
+          </Stack>
+        </GameCard>
+      </Stack>
+    </AdminLayout>
   );
 };
 

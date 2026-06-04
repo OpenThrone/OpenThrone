@@ -6,10 +6,9 @@ import { signIn, signOut, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
+import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
 import GrantUserForm from '@/components/GrantUserForm';
-import MainArea from '@/components/MainArea';
-import PermissionCheck from '@/components/PermissionCheck';
 import UserAdminEditor from '@/components/UserAdminEditor';
 import UserList from '@/components/UserList';
 import UserSearchFilter from '@/components/UserSearchFilter';
@@ -136,65 +135,69 @@ const Admin = () => {
   const isImpersonating = Boolean((session?.user as any)?.impersonatedBy);
 
   return (
-    <PermissionCheck permissions={[PermissionType.MANAGE_USERS, PermissionType.VIEW_STAFF_DASHBOARD]}>
-      <MainArea title={t('admin.title')}>
-        <Grid>
-          <Grid.Col span={12}>
-            <GameCard title={t('admin.grantPermissions')} icon={faUserPlus}>
-              <GrantUserForm />
-            </GameCard>
-          </Grid.Col>
-          <Grid.Col span={12}>
-            <GameCard title={t('admin.userManagement')} icon={faUsersCog}>
-              {isImpersonating && (
-                <Group justify="space-between" mb="sm">
-                  <Text c="yellow">
-                    You are currently in an impersonated session.
-                  </Text>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    color="yellow"
-                    loading={isImpersonationLoading}
-                    onClick={handleStopImpersonation}
-                  >
-                    End Impersonation
-                  </Button>
-                </Group>
-              )}
-              <UserSearchFilter onSearch={handleSearch} />
-              <UserList
-                users={users}
-                onEditUser={handleEditUser}
-                onImpersonateUser={handleImpersonateUser}
-                isLoading={isLoading}
-                isImpersonating={isImpersonating || isImpersonationLoading}
-                page={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                onSortChange={handleSortChange}
-              />
-            </GameCard>
-          </Grid.Col>
-        </Grid>
-        <Modal
-          opened={editModalOpen}
-          onClose={handleCloseModal}
-          size="xl"
-          title={t('admin.editUser')}
-        >
-          {selectedUserId && (
-            <UserAdminEditor
-              userId={selectedUserId}
-              onClose={handleCloseModal}
-              onSaved={handleSearch}
+    <AdminLayout
+      title={t('admin.title')}
+      permissions={[
+        PermissionType.MANAGE_USERS,
+        PermissionType.VIEW_STAFF_DASHBOARD,
+      ]}
+    >
+      <Grid>
+        <Grid.Col span={12}>
+          <GameCard title={t('admin.grantPermissions')} icon={faUserPlus}>
+            <GrantUserForm />
+          </GameCard>
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <GameCard title={t('admin.userManagement')} icon={faUsersCog}>
+            {isImpersonating && (
+              <Group justify="space-between" mb="sm">
+                <Text c="yellow">
+                  You are currently in an impersonated session.
+                </Text>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  color="yellow"
+                  loading={isImpersonationLoading}
+                  onClick={handleStopImpersonation}
+                >
+                  End Impersonation
+                </Button>
+              </Group>
+            )}
+            <UserSearchFilter onSearch={handleSearch} />
+            <UserList
+              users={users}
+              onEditUser={handleEditUser}
+              onImpersonateUser={handleImpersonateUser}
+              isLoading={isLoading}
+              isImpersonating={isImpersonating || isImpersonationLoading}
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortChange={handleSortChange}
             />
-          )}
-        </Modal>
-      </MainArea>
-    </PermissionCheck>
+          </GameCard>
+        </Grid.Col>
+      </Grid>
+      <Modal
+        opened={editModalOpen}
+        onClose={handleCloseModal}
+        size="xl"
+        title={t('admin.editUser')}
+      >
+        {selectedUserId && (
+          <UserAdminEditor
+            userId={selectedUserId}
+            onClose={handleCloseModal}
+            onSaved={handleSearch}
+          />
+        )}
+      </Modal>
+    </AdminLayout>
   );
 };
 

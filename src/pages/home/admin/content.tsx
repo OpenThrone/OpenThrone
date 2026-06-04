@@ -8,18 +8,15 @@ import {
   Switch,
   Table,
   Text,
-  TextInput,
   Textarea,
+  TextInput,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { PermissionType } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
-import { GameCard } from '@/components/game/GameCard';
-import MainArea from '@/components/MainArea';
-import PermissionCheck from '@/components/PermissionCheck';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { logError } from '@/utils/logger';
 
 const ContentManagementPage = () => {
@@ -96,96 +93,94 @@ const ContentManagementPage = () => {
   };
 
   return (
-    <PermissionCheck permissions={['MANAGE_CONTENT']}>
-      <MainArea title="Content Management">
-        <Stack gap="md">
-          <Group justify="space-between">
-            <Text size="sm" c="dimmed">
-              Manage blog posts, news, and changelog entries.
-            </Text>
-            <Button onClick={open}>+ New Post</Button>
-          </Group>
+    <AdminLayout title="Content Management" permissions={['MANAGE_CONTENT']}>
+      <Stack gap="md">
+        <Group justify="space-between">
+          <Text size="sm" c="dimmed">
+            Manage blog posts, news, and changelog entries.
+          </Text>
+          <Button onClick={open}>+ New Post</Button>
+        </Group>
 
-          <Paper withBorder>
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Title</Table.Th>
-                  <Table.Th>Kind</Table.Th>
-                  <Table.Th>Status</Table.Th>
-                  <Table.Th>Author</Table.Th>
-                  <Table.Th>Published</Table.Th>
+        <Paper withBorder>
+          <Table>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Title</Table.Th>
+                <Table.Th>Kind</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th>Author</Table.Th>
+                <Table.Th>Published</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {posts.map((p) => (
+                <Table.Tr key={p.id}>
+                  <Table.Td fw={700}>{p.title}</Table.Td>
+                  <Table.Td>{p.kind}</Table.Td>
+                  <Table.Td>{p.status}</Table.Td>
+                  <Table.Td>{p.postedBy?.display_name || '—'}</Table.Td>
+                  <Table.Td>
+                    {p.publishedAt
+                      ? new Date(p.publishedAt).toLocaleDateString()
+                      : '—'}
+                  </Table.Td>
                 </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {posts.map((p) => (
-                  <Table.Tr key={p.id}>
-                    <Table.Td fw={700}>{p.title}</Table.Td>
-                    <Table.Td>{p.kind}</Table.Td>
-                    <Table.Td>{p.status}</Table.Td>
-                    <Table.Td>{p.postedBy?.display_name || '—'}</Table.Td>
-                    <Table.Td>
-                      {p.publishedAt
-                        ? new Date(p.publishedAt).toLocaleDateString()
-                        : '—'}
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Paper>
-        </Stack>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Paper>
+      </Stack>
 
-        <Modal opened={opened} onClose={close} title="New Post" size="lg">
-          <Stack>
-            <TextInput
-              label="Title"
-              value={title}
-              onChange={(e) => setTitle(e.currentTarget.value)}
-            />
-            <TextInput
-              label="Slug (optional)"
-              value={slug}
-              onChange={(e) => setSlug(e.currentTarget.value)}
-            />
-            <Textarea
-              label="Excerpt"
-              value={excerpt}
-              onChange={(e) => setExcerpt(e.currentTarget.value)}
-            />
-            <Textarea
-              label="Content (Markdown supported)"
-              minRows={8}
-              value={content}
-              onChange={(e) => setContent(e.currentTarget.value)}
-            />
-            <Select
-              label="Kind"
-              data={['BLOG', 'NEWS', 'CHANGELOG']}
-              value={kind}
-              onChange={(v) => v && setKind(v)}
-            />
-            <Select
-              label="Status"
-              data={['DRAFT', 'PUBLISHED', 'ARCHIVED']}
-              value={status}
-              onChange={(v) => v && setStatus(v)}
-            />
-            <Switch
-              label="Pin to top"
-              checked={isPinned}
-              onChange={(e) => setIsPinned(e.currentTarget.checked)}
-            />
-            <Group justify="flex-end">
-              <Button variant="outline" onClick={close}>
-                Cancel
-              </Button>
-              <Button onClick={handleSubmit}>Publish</Button>
-            </Group>
-          </Stack>
-        </Modal>
-      </MainArea>
-    </PermissionCheck>
+      <Modal opened={opened} onClose={close} title="New Post" size="lg">
+        <Stack>
+          <TextInput
+            label="Title"
+            value={title}
+            onChange={(e) => setTitle(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Slug (optional)"
+            value={slug}
+            onChange={(e) => setSlug(e.currentTarget.value)}
+          />
+          <Textarea
+            label="Excerpt"
+            value={excerpt}
+            onChange={(e) => setExcerpt(e.currentTarget.value)}
+          />
+          <Textarea
+            label="Content (Markdown supported)"
+            minRows={8}
+            value={content}
+            onChange={(e) => setContent(e.currentTarget.value)}
+          />
+          <Select
+            label="Kind"
+            data={['BLOG', 'NEWS', 'CHANGELOG']}
+            value={kind}
+            onChange={(v) => v && setKind(v)}
+          />
+          <Select
+            label="Status"
+            data={['DRAFT', 'PUBLISHED', 'ARCHIVED']}
+            value={status}
+            onChange={(v) => v && setStatus(v)}
+          />
+          <Switch
+            label="Pin to top"
+            checked={isPinned}
+            onChange={(e) => setIsPinned(e.currentTarget.checked)}
+          />
+          <Group justify="flex-end">
+            <Button variant="outline" onClick={close}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>Publish</Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </AdminLayout>
   );
 };
 

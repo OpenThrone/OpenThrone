@@ -9,15 +9,19 @@ import {
   Table,
   Text,
 } from '@mantine/core';
-import { PermissionType, ReportCategory, ReportPriority, ReportStatus } from '@prisma/client';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import {
+  PermissionType,
+  ReportCategory,
+  ReportPriority,
+  ReportStatus,
+} from '@prisma/client';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
-import MainArea from '@/components/MainArea';
-import PermissionCheck from '@/components/PermissionCheck';
 import { logError } from '@/utils/logger';
 
 const ReportsQueuePage = () => {
@@ -96,138 +100,143 @@ const ReportsQueuePage = () => {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <PermissionCheck permission={PermissionType.REVIEW_REPORTS}>
-      <MainArea title="Moderation: Report Queue">
-        <Stack gap="md">
-          <GameCard title="Filters">
-            <Group grow>
-              <Select
-                label="Status"
-                placeholder="All Statuses"
-                data={[
-                  { value: '', label: 'All' },
-                  ...Object.values(ReportStatus).map((status) => ({
-                    value: status,
-                    label: status,
-                  })),
-                ]}
-                value={statusFilter}
-                onChange={setStatusFilter}
-                clearable
-              />
+    <AdminLayout
+      title="Moderation: Report Queue"
+      permission={PermissionType.REVIEW_REPORTS}
+    >
+      <Stack gap="md">
+        <GameCard title="Filters">
+          <Group grow>
+            <Select
+              label="Status"
+              placeholder="All Statuses"
+              data={[
+                { value: '', label: 'All' },
+                ...Object.values(ReportStatus).map((status) => ({
+                  value: status,
+                  label: status,
+                })),
+              ]}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              clearable
+            />
 
-              <Select
-                label="Category"
-                placeholder="All Categories"
-                data={[
-                  { value: '', label: 'All' },
-                  ...Object.values(ReportCategory).map((cat) => ({
-                    value: cat,
-                    label: cat.replace('_', ' '),
-                  })),
-                ]}
-                value={categoryFilter}
-                onChange={setCategoryFilter}
-                clearable
-              />
+            <Select
+              label="Category"
+              placeholder="All Categories"
+              data={[
+                { value: '', label: 'All' },
+                ...Object.values(ReportCategory).map((cat) => ({
+                  value: cat,
+                  label: cat.replace('_', ' '),
+                })),
+              ]}
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              clearable
+            />
 
-              <Select
-                label="Priority"
-                placeholder="All Priorities"
-                data={[
-                  { value: '', label: 'All' },
-                  ...Object.values(ReportPriority).map((prio) => ({
-                    value: prio,
-                    label: prio,
-                  })),
-                ]}
-                value={priorityFilter}
-                onChange={setPriorityFilter}
-                clearable
-              />
+            <Select
+              label="Priority"
+              placeholder="All Priorities"
+              data={[
+                { value: '', label: 'All' },
+                ...Object.values(ReportPriority).map((prio) => ({
+                  value: prio,
+                  label: prio,
+                })),
+              ]}
+              value={priorityFilter}
+              onChange={setPriorityFilter}
+              clearable
+            />
+          </Group>
+        </GameCard>
+
+        <GameCard title={`Reports (${total})`}>
+          {loading ? (
+            <Group justify="center" py="xl">
+              <Loader />
             </Group>
-          </GameCard>
-
-          <GameCard title={`Reports (${total})`}>
-            {loading ? (
-              <Group justify="center" py="xl">
-                <Loader />
-              </Group>
-            ) : reports.length === 0 ? (
-              <Text py="xl" ta="center" c="dimmed">
-                No reports found matching your criteria.
-              </Text>
-            ) : (
-              <Stack gap="md">
-                <Table.ScrollContainer minWidth={800}>
-                  <Table striped highlightOnHover>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th>ID</Table.Th>
-                        <Table.Th>Reporter</Table.Th>
-                        <Table.Th>Reported User</Table.Th>
-                        <Table.Th>Category</Table.Th>
-                        <Table.Th>Priority</Table.Th>
-                        <Table.Th>Status</Table.Th>
-                        <Table.Th>Assigned To</Table.Th>
-                        <Table.Th>Created At</Table.Th>
-                        <Table.Th>Action</Table.Th>
+          ) : reports.length === 0 ? (
+            <Text py="xl" ta="center" c="dimmed">
+              No reports found matching your criteria.
+            </Text>
+          ) : (
+            <Stack gap="md">
+              <Table.ScrollContainer minWidth={800}>
+                <Table striped highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>ID</Table.Th>
+                      <Table.Th>Reporter</Table.Th>
+                      <Table.Th>Reported User</Table.Th>
+                      <Table.Th>Category</Table.Th>
+                      <Table.Th>Priority</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th>Assigned To</Table.Th>
+                      <Table.Th>Created At</Table.Th>
+                      <Table.Th>Action</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {reports.map((report) => (
+                      <Table.Tr key={report.id}>
+                        <Table.Td>{report.id}</Table.Td>
+                        <Table.Td>
+                          {report.reporter?.display_name || 'System'}
+                        </Table.Td>
+                        <Table.Td>
+                          {report.reportedUser?.display_name || 'N/A'}
+                        </Table.Td>
+                        <Table.Td>{report.category.replace('_', ' ')}</Table.Td>
+                        <Table.Td>
+                          <Badge color={getPriorityColor(report.priority)}>
+                            {report.priority}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge color={getStatusColor(report.status)}>
+                            {report.status}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          {report.assignedTo?.display_name || 'Unassigned'}
+                        </Table.Td>
+                        <Table.Td>
+                          {new Date(report.createdAt).toLocaleString()}
+                        </Table.Td>
+                        <Table.Td>
+                          <Button
+                            component={Link}
+                            href={`/home/moderation/reports/${report.id}`}
+                            size="xs"
+                            variant="outline"
+                          >
+                            View
+                          </Button>
+                        </Table.Td>
                       </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {reports.map((report) => (
-                        <Table.Tr key={report.id}>
-                          <Table.Td>{report.id}</Table.Td>
-                          <Table.Td>{report.reporter?.display_name || 'System'}</Table.Td>
-                          <Table.Td>{report.reportedUser?.display_name || 'N/A'}</Table.Td>
-                          <Table.Td>{report.category.replace('_', ' ')}</Table.Td>
-                          <Table.Td>
-                            <Badge color={getPriorityColor(report.priority)}>
-                              {report.priority}
-                            </Badge>
-                          </Table.Td>
-                          <Table.Td>
-                            <Badge color={getStatusColor(report.status)}>
-                              {report.status}
-                            </Badge>
-                          </Table.Td>
-                          <Table.Td>
-                            {report.assignedTo?.display_name || 'Unassigned'}
-                          </Table.Td>
-                          <Table.Td>
-                            {new Date(report.createdAt).toLocaleString()}
-                          </Table.Td>
-                          <Table.Td>
-                            <Button
-                              component={Link}
-                              href={`/home/moderation/reports/${report.id}`}
-                              size="xs"
-                              variant="outline"
-                            >
-                              View
-                            </Button>
-                          </Table.Td>
-                        </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </Table.ScrollContainer>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
 
-                {totalPages > 1 && (
-                  <Group justify="center" mt="md">
-                    <Pagination
-                      value={page}
-                      onChange={setPage}
-                      total={totalPages}
-                    />
-                  </Group>
-                )}
-              </Stack>
-            )}
-          </GameCard>
-        </Stack>
-      </MainArea>
-    </PermissionCheck>
+              {totalPages > 1 && (
+                <Group justify="center" mt="md">
+                  <Pagination
+                    value={page}
+                    onChange={setPage}
+                    total={totalPages}
+                  />
+                </Group>
+              )}
+            </Stack>
+          )}
+        </GameCard>
+      </Stack>
+    </AdminLayout>
   );
 };
 

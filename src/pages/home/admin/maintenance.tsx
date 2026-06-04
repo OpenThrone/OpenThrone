@@ -1,12 +1,10 @@
 import { Button, Group, Paper, Stack, Switch, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { PermissionType } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
+import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
-import MainArea from '@/components/MainArea';
-import PermissionCheck from '@/components/PermissionCheck';
 import { logError } from '@/utils/logger';
 
 const MaintenancePage = () => {
@@ -21,9 +19,7 @@ const MaintenancePage = () => {
         const res = await fetch('/api/admin/system/server-settings');
         if (res.ok) {
           const settings = await res.json();
-          const flag = settings.find(
-            (s: any) => s.key === 'MAINTENANCE_MODE',
-          );
+          const flag = settings.find((s: any) => s.key === 'MAINTENANCE_MODE');
           if (flag) {
             setEnabled(Boolean(flag.value));
             if (typeof flag.value === 'object' && flag.value.message) {
@@ -73,40 +69,41 @@ const MaintenancePage = () => {
 
   if (loading) {
     return (
-      <MainArea title="Maintenance">
+      <AdminLayout title="Maintenance">
         <Text>Loading...</Text>
-      </MainArea>
+      </AdminLayout>
     );
   }
 
   return (
-    <PermissionCheck permissions={['MANAGE_SERVER_SETTINGS']}>
-      <MainArea title="System: Maintenance Mode">
-        <Stack gap="md">
-          <Paper p="md" withBorder>
-            <Text size="sm" c="dimmed">
-              When enabled, non-staff users will see a maintenance page. Use for
-              planned downtime.
-            </Text>
-          </Paper>
+    <AdminLayout
+      title="System: Maintenance Mode"
+      permissions={['MANAGE_SERVER_SETTINGS']}
+    >
+      <Stack gap="md">
+        <Paper p="md" withBorder>
+          <Text size="sm" c="dimmed">
+            When enabled, non-staff users will see a maintenance page. Use for
+            planned downtime.
+          </Text>
+        </Paper>
 
-          <GameCard title="Settings">
-            <Stack>
-              <Switch
-                label="Maintenance mode active"
-                checked={enabled}
-                onChange={(e) => setEnabled(e.currentTarget.checked)}
-              />
-              <Group justify="flex-end">
-                <Button onClick={save} loading={saving}>
-                  Save
-                </Button>
-              </Group>
-            </Stack>
-          </GameCard>
-        </Stack>
-      </MainArea>
-    </PermissionCheck>
+        <GameCard title="Settings">
+          <Stack>
+            <Switch
+              label="Maintenance mode active"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.currentTarget.checked)}
+            />
+            <Group justify="flex-end">
+              <Button onClick={save} loading={saving}>
+                Save
+              </Button>
+            </Group>
+          </Stack>
+        </GameCard>
+      </Stack>
+    </AdminLayout>
   );
 };
 

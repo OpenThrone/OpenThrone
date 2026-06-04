@@ -21,6 +21,13 @@ describe('NavLoggedIn', () => {
     cy.screenshot('nav-logged-in-admin-submenu');
   });
 
+  it('renders the admin sidebar on admin pages', () => {
+    cy.visitApp('/home/admin/overview');
+    cy.get('[data-testid="admin-sidebar"]').should('be.visible');
+    cy.get('[data-testid="admin-sidebar"]').contains('a', 'Dashboard');
+    cy.screenshot('nav-logged-in-admin-sidebar');
+  });
+
   it('updates the submenu on hover', () => {
     cy.contains('a', 'Battle').trigger('mouseover');
     cy.contains('a', 'Attack').should('be.visible');

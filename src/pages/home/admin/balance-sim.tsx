@@ -40,9 +40,8 @@ import {
   YAxis,
 } from 'recharts';
 
+import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
-import MainArea from '@/components/MainArea';
-import PermissionCheck from '@/components/PermissionCheck';
 
 interface SimConfig {
   populationSize: number;
@@ -630,8 +629,8 @@ function ResultsDashboard({ result }: { result: SimResult }) {
           Pillage{' '}
           {(config.effectiveBalance.maxPillageSharePerAttack * 100).toFixed(0)}%{' '}
           | Tick: {config.turnIntervalMinutes}m | Max Level: {summary.maxLevel}{' '}
-          | Avg Held Turns: {summary.avgAttackTurnsHeld.toFixed(1)} | Avg{' '}
-          World XP/Turn: {summary.avgXpPerSpentTurn.toFixed(1)} | Pace Player:{' '}
+          | Avg Held Turns: {summary.avgAttackTurnsHeld.toFixed(1)} | Avg World
+          XP/Turn: {summary.avgXpPerSpentTurn.toFixed(1)} | Pace Player:{' '}
           {summary.pacingPlayerName ?? 'n/a'} | Avg{' '}
           {timing.avgMsPerDay.toFixed(0)}ms/day
         </Text>
@@ -1107,47 +1106,51 @@ const BalanceSimPage = () => {
   }, [config]);
 
   return (
-    <PermissionCheck permissions={[PermissionType.MANAGE_EVENTS, PermissionType.VIEW_STAFF_DASHBOARD]}>
-      <MainArea title="Balance Simulator">
-        <Grid>
-          <Grid.Col span={{ base: 12, lg: 4 }}>
-            <GameCard title="Configuration" icon={faBalanceScale}>
-              <ConfigPanel
-                config={config}
-                onChange={setConfig}
-                onRun={runSimulation}
-                loading={loading}
-              />
-            </GameCard>
-          </Grid.Col>
+    <AdminLayout
+      title="Balance Simulator"
+      permissions={[
+        PermissionType.MANAGE_EVENTS,
+        PermissionType.VIEW_STAFF_DASHBOARD,
+      ]}
+    >
+      <Grid>
+        <Grid.Col span={{ base: 12, lg: 4 }}>
+          <GameCard title="Configuration" icon={faBalanceScale}>
+            <ConfigPanel
+              config={config}
+              onChange={setConfig}
+              onRun={runSimulation}
+              loading={loading}
+            />
+          </GameCard>
+        </Grid.Col>
 
-          <Grid.Col span={{ base: 12, lg: 8 }}>
-            {result ? (
-              <ResultsDashboard result={result} />
-            ) : (
-              <Paper p="xl" radius="md" withBorder ta="center">
-                <Stack align="center" gap="md">
-                  <FontAwesomeIcon
-                    icon={faBalanceScale}
-                    size="3x"
-                    style={{ opacity: 0.3 }}
-                  />
-                  <Text c="dimmed" size="lg">
-                    Configure parameters and run a simulation to see balance
-                    metrics.
-                  </Text>
-                  <Text c="dimmed" size="sm">
-                    The simulation will generate an AI-driven population that
-                    attacks, spies, and grows economy over the configured
-                    duration.
-                  </Text>
-                </Stack>
-              </Paper>
-            )}
-          </Grid.Col>
-        </Grid>
-      </MainArea>
-    </PermissionCheck>
+        <Grid.Col span={{ base: 12, lg: 8 }}>
+          {result ? (
+            <ResultsDashboard result={result} />
+          ) : (
+            <Paper p="xl" radius="md" withBorder ta="center">
+              <Stack align="center" gap="md">
+                <FontAwesomeIcon
+                  icon={faBalanceScale}
+                  size="3x"
+                  style={{ opacity: 0.3 }}
+                />
+                <Text c="dimmed" size="lg">
+                  Configure parameters and run a simulation to see balance
+                  metrics.
+                </Text>
+                <Text c="dimmed" size="sm">
+                  The simulation will generate an AI-driven population that
+                  attacks, spies, and grows economy over the configured
+                  duration.
+                </Text>
+              </Stack>
+            </Paper>
+          )}
+        </Grid.Col>
+      </Grid>
+    </AdminLayout>
   );
 };
 
