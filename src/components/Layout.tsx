@@ -1,10 +1,10 @@
 import { useMediaQuery } from '@mantine/hooks';
 import Image from 'next/image';
-import router from 'next/router';
+import router, { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import SidebarScroll from '@/components/game/SidebarScroll';
 import { SidebarDark as SidebarTablet } from '@/components/game/SidebarTablet';
@@ -32,6 +32,13 @@ const Layout = (props: IMainProps) => {
   const { t } = useTranslation('common');
   const { status } = useSession();
   const { raceClasses, authorized, userLoading: layoutLoading } = useLayout();
+  const nextRouter = useRouter();
+  const isAdminRoute = useMemo(
+    () =>
+      nextRouter.pathname.startsWith('/home/admin') ||
+      nextRouter.pathname.startsWith('/home/moderation'),
+    [nextRouter.pathname],
+  );
   const isMobileSidebar = useMediaQuery('(max-width: 767px)', false, {
     getInitialValueInEffect: true,
   });
@@ -172,8 +179,7 @@ const Layout = (props: IMainProps) => {
             <div className="flex h-full flex-wrap lg:flex-nowrap">
               {structureReady ? (
                 <>
-                  {/* Conditionally render Sidebar based on authentication status */}
-                  {authorized && (
+                  {authorized && !isAdminRoute && (
                     <div
                       className="hidden w-full lg:block lg:w-[260px] lg:pr-4 xl:w-1/5"
                       style={{ backgroundColor: 'var(--ot-surface-2)' }}
