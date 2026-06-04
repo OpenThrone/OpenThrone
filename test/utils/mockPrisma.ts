@@ -12,6 +12,7 @@ export const mockPrisma: any = {
   bank_history: {},
   attack_log: {},
   permissionGrant: {},
+  staffRoleAssignment: {},
   antiAbuseShadow: {},
 };
 
@@ -45,6 +46,11 @@ export function installMockPrisma(vi: any) {
     findFirst: vi.fn(),
   };
 
+  mockPrisma.staffRoleAssignment = {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+  };
+
   mockPrisma.antiAbuseShadow = {
     create: vi.fn(),
   };
@@ -66,6 +72,7 @@ export function resetMockPrisma() {
     Object.values(mockPrisma.bank_history || {}).forEach(clearFn);
     Object.values(mockPrisma.attack_log || {}).forEach(clearFn);
     Object.values(mockPrisma.permissionGrant || {}).forEach(clearFn);
+    Object.values(mockPrisma.staffRoleAssignment || {}).forEach(clearFn);
     Object.values(mockPrisma.antiAbuseShadow || {}).forEach(clearFn);
   } catch (e) {
     // no-op
