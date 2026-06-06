@@ -84,7 +84,7 @@ const Levels = () => {
       justSavedRef.current = false;
       return;
     }
-    setLevels(user.bonus_points);
+    setLevels(user.bonus_points ?? DefaultLevelBonus);
     if (!isSaving) setProficiencyPoints(user.availableProficiencyPoints);
     if (!initialized) {
       setChangeQueue({
