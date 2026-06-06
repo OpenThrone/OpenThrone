@@ -1,4 +1,4 @@
-import type { BonusPointsType } from '@prisma/client';
+import type { BonusPointsType } from '@/lib/prisma-exports';
 import argon2 from 'argon2';
 import { createHash } from 'crypto';
 import nodemailer from 'nodemailer';
@@ -230,7 +230,10 @@ export class AccountService {
     try {
       const updateData: any = {};
 
-      // Avatar handling would be done in the API route, but we can handle the database update here
+      if (typeof data.bio === 'string') {
+        updateData.bio = data.bio;
+      }
+
       if (data.avatarFile && typeof data.avatarFile === 'string') {
         updateData.avatar = data.avatarFile;
       }

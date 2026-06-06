@@ -97,7 +97,12 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         return res.status(500).json({ error: err.message });
       }
 
-      const validatedFields = ProfileSchema.safeParse(fields);
+      const normalizedFields: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(fields)) {
+        normalizedFields[key] = Array.isArray(value) ? value[0] : value;
+      }
+
+      const validatedFields = ProfileSchema.safeParse(normalizedFields);
       if (!validatedFields.success) {
         return res.status(400).json({
           error: 'Invalid fields',
@@ -105,15 +110,10 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         });
       }
 
-      // Ensure bio is a string
       const { bio } = validatedFields.data;
       const file = Array.isArray(files.avatar) ? files.avatar[0] : files.avatar;
 
-      const updateData: any = {};
-
-      if (bio) {
-        updateData.bio = bio;
-      }
+      let avatarPath: string | undefined;
 
       if (file) {
         // Check MIME type
@@ -153,7 +153,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
                 ? parseInt(req.session.user.id, 10)
                 : Number(req.session?.user?.id ?? 0);
             const result = await uploadToS3(file, userId);
-            updateData.avatar = `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/${result.Key}`;
+            avatarPath = `${process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT}/${result.Key}`;
           } else {
             // Save the file to the local file system
             const userId =
@@ -162,7 +162,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
                 : Number(req.session?.user?.id ?? 0);
             const filePath = await saveToLocal(file, userId);
             logInfo('File uploaded to:', filePath);
-            updateData.avatar = filePath;
+            avatarPath = filePath;
           }
         } catch (uploadError) {
           logError('Error uploading avatar:', uploadError);
@@ -170,7 +170,10 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         }
       }
 
-      if (Object.keys(updateData).length === 0) {
+      const hasBio = typeof bio === 'string';
+      const hasAvatar = !!file;
+
+      if (!hasBio && !hasAvatar) {
         return res.status(400).json({ error: 'No data to update' });
       }
 
@@ -181,8 +184,8 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
             : Number(req.session?.user?.id ?? 0);
 
         const result = await AccountService.updateProfile(userId, {
-          bio: bio || undefined,
-          avatarFile: updateData.avatar, // Pass the avatar path
+          bio: hasBio ? bio : undefined,
+          avatarFile: avatarPath,
         });
 
         return res
