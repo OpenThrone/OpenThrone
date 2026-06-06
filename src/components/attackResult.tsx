@@ -62,7 +62,7 @@ const AttackResults = ({ battle, viewerID }) => {
     `Battle ID: ${battle.id}`,
     `${isViewerAttacker ? 'You' : attackerPlayer.display_name} attacked ${isViewerDefender ? 'You' : defenderPlayer.display_name}`,
     `${isViewerAttacker ? 'Your' : `${attackerPlayer.display_name}'s`} ${countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE')} soldiers did ${toLocale(stats.attackerDamageDealt)} damage`,
-    `${isViewerDefender ? 'Your' : `${defenderPlayer.display_name}'s`} countered with ${toLocale(stats.defenderDamageDealt)} damage`,
+    `${isViewerDefender ? 'Your' : `${defenderPlayer.display_name}'s`} counter killed ${toLocale(stats.defenderDamageDealt)} attackers`,
     `${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} won the battle`,
     `${attackerPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).attacker)} XP`,
     `${defenderPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).defender)} XP`,
@@ -362,12 +362,12 @@ const AttackResults = ({ battle, viewerID }) => {
         <BattleStatStrip
           stats={[
             {
-              label: 'Damage Dealt',
+              label: 'Attack Damage',
               value: toLocale(stats.attackerDamageDealt),
               tone: 'normal',
             },
             {
-              label: 'Counter Damage',
+              label: 'Counter Kills',
               value: toLocale(stats.defenderDamageDealt),
               tone: 'normal',
             },
