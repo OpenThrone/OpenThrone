@@ -1,12 +1,13 @@
 import { useMediaQuery } from '@mantine/hooks';
 import Image from 'next/image';
+import Link from 'next/link';
 import router, { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 
-import SidebarScroll from '@/components/game/SidebarScroll';
+import { ScrollSidebar as SidebarScroll } from '@/components/game/SidebarScroll';
 import { SidebarDark as SidebarTablet } from '@/components/game/SidebarTablet';
 import MobileSidebarContent from '@/components/MobileSidebarContent'; // Import MobileSidebarContent
 import { NavLoggedIn } from '@/components/navLoggedIn';
@@ -24,12 +25,33 @@ import NavSkeleton from './NavSkeleton';
 import NewsBulletin from './news-bulletin';
 import SidebarSkeleton from './SidebarSkeleton';
 
+const publicFooterLinks = [
+  { key: 'home', labelKey: 'loggedOut.home', url: '/' },
+  { key: 'howToPlay', labelKey: 'loggedOut.howToPlay', url: '/how-to-play' },
+  { key: 'news', labelKey: 'loggedOut.news', url: '/community/news' },
+  { key: 'stats', labelKey: 'loggedOut.stats', url: '/community/stats' },
+  { key: 'about', labelKey: 'loggedOut.about', url: '/about' },
+  {
+    key: 'discord',
+    labelKey: 'loggedOut.discord',
+    url: 'https://discord.gg/j9NYxmBCjA',
+    external: true,
+  },
+  {
+    key: 'github',
+    labelKey: 'loggedOut.github',
+    url: 'https://github.com/OpenThrone/OpenThrone',
+    external: true,
+  },
+] as const;
+
 interface IMainProps {
   children: ReactNode;
 }
 
 const Layout = (props: IMainProps) => {
   const { t } = useTranslation('common');
+  const { t: tNav } = useTranslation('navigation');
   const { status } = useSession();
   const { raceClasses, authorized, userLoading: layoutLoading } = useLayout();
   const nextRouter = useRouter();
@@ -221,6 +243,38 @@ const Layout = (props: IMainProps) => {
       </div>{' '}
       {/* Closing div for the w-full grow div */}
       <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-[var(--ot-text)]">
+        {!authorized && (
+          <nav
+            className="mb-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs"
+            aria-label="Footer navigation"
+          >
+            {publicFooterLinks.map((link) => {
+              const label = tNav(link.labelKey);
+              if ('external' in link && link.external) {
+                return (
+                  <a
+                    key={link.key}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ot-text)] opacity-70 transition-opacity hover:opacity-100"
+                  >
+                    {label}
+                  </a>
+                );
+              }
+              return (
+                <Link
+                  key={link.key}
+                  href={link.url}
+                  className="text-[var(--ot-text)] opacity-70 transition-opacity hover:opacity-100"
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
         {t('app.copyright', {
           year: new Date().getFullYear(),
           title: AppConfig.title,

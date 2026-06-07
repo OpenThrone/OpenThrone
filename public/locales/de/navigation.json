@@ -42,10 +42,14 @@
   },
   "loggedOut": {
     "home": "Startseite",
+    "howToPlay": "Spielanleitung",
     "login": "Anmelden",
     "signup": "Registrieren",
     "news": "Neuigkeiten",
-    "about": "Über"
+    "about": "Über",
+    "stats": "Ranglisten",
+    "discord": "Discord",
+    "github": "GitHub"
   },
   "actions": {
     "signIn": "Anmelden",

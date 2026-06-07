@@ -28,6 +28,7 @@
     "staffContent": "Blog & News",
     "staffAnnouncements": "Announcements",
     "staffMassMessaging": "Mass Messaging",
+    "staffAdvisorMessages": "Advisor Messages",
     "staffEvents": "Game Events",
     "staffEras": "Era Management",
     "staffAlliances": "Alliance Admin",
@@ -68,10 +69,14 @@
   },
   "loggedOut": {
     "home": "Home",
+    "howToPlay": "How to Play",
     "login": "Login",
     "signup": "Signup",
     "news": "News",
-    "about": "About"
+    "about": "About",
+    "stats": "Leaderboards",
+    "discord": "Discord",
+    "github": "GitHub"
   },
   "actions": {
     "signIn": "Sign In",

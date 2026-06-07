@@ -9,9 +9,11 @@ import MobileNavigation from './MobileNavigation';
 
 const parentLinks = [
   { key: 'home', labelKey: 'loggedOut.home', url: '/' },
+  { key: 'howToPlay', labelKey: 'loggedOut.howToPlay', url: '/how-to-play' },
   { key: 'login', labelKey: 'loggedOut.login', url: '/account/login' },
   { key: 'signup', labelKey: 'loggedOut.signup', url: '/account/register' },
   { key: 'news', labelKey: 'loggedOut.news', url: '/community/news' },
+  { key: 'stats', labelKey: 'loggedOut.stats', url: '/community/stats' },
   { key: 'about', labelKey: 'loggedOut.about', url: '/about' },
 ] as const;
 
