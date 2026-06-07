@@ -18,15 +18,19 @@ import {
   Text,
   ThemeIcon,
 } from '@mantine/core';
+import Image from 'next/image';
 import Link from 'next/link';
 import router from 'next/router';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
+import type { GetStaticProps } from 'next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import React, { useEffect, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
+import SeoHead from '@/components/SeoHead';
 import { useLayout } from '@/context/LayoutContext';
 import { logError, logInfo } from '@/utils/logger';
 
@@ -102,18 +106,23 @@ const Index = () => {
 
   if (status === 'loading' || (status === 'authenticated' && isRedirecting)) {
     return (
-      <MainArea title={t('title')}>
+      <>
+        <SeoHead title={t('title')} description={t('metaDescription')} />
+        <MainArea title={t('title')}>
         <Center style={{ height: '50vh' }}>
           {' '}
           {/* Adjust height as needed */}
           <Loader />
         </Center>
-      </MainArea>
+        </MainArea>
+      </>
     );
   }
 
   return (
-    <MainArea title={t('title')}>
+    <>
+      <SeoHead title={t('title')} description={t('metaDescription')} />
+      <MainArea title={t('title')}>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <Box
           className="public-rise"
@@ -241,6 +250,76 @@ const Index = () => {
           </SimpleGrid>
         </Box>
 
+        <Box
+          className="public-rise public-rise-delay-1"
+          mt="xl"
+          style={{
+            border: '1px solid #2f3e52',
+            borderRadius: '12px',
+            padding: '24px',
+            background: 'linear-gradient(180deg, rgba(13,17,23,0.85), rgba(3,6,8,0.95))',
+            boxShadow: '0 10px 20px rgba(0,0,0,0.3)',
+          }}
+        >
+          <Text
+            ta="center"
+            size="xs"
+            fw={700}
+            tt="uppercase"
+            c="gray.4"
+            style={{ letterSpacing: '0.4em' }}
+          >
+            {t('races.title')}
+          </Text>
+          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md" mt="md">
+            {[
+              { src: '/assets/shields/ELF.webp', key: 'elf' },
+              { src: '/assets/shields/HUMAN.webp', key: 'human' },
+              { src: '/assets/shields/GOBLIN.webp', key: 'goblin' },
+              { src: '/assets/shields/UNDEAD.webp', key: 'undead' },
+            ].map((race) => (
+              <Box
+                key={race.key}
+                style={{
+                  textAlign: 'center',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  background: 'rgba(0,0,0,0.25)',
+                  border: '1px solid #1f2b3b',
+                }}
+              >
+                <Image
+                  src={race.src}
+                  alt={t(`races.${race.key}`)}
+                  width={56}
+                  height={56}
+                  style={{ margin: '0 auto' }}
+                />
+                <Text
+                  size="xs"
+                  fw={600}
+                  c="gray.3"
+                  mt={8}
+                  style={{ fontFamily: 'MedievalSharp, serif' }}
+                >
+                  {t(`races.${race.key}`)}
+                </Text>
+              </Box>
+            ))}
+          </SimpleGrid>
+          <Box mt="md" style={{ textAlign: 'center' }}>
+            <Button
+              component={Link}
+              href="/how-to-play"
+              size="xs"
+              variant="subtle"
+              color="yellow"
+            >
+              {t('races.learnMore')}
+            </Button>
+          </Box>
+        </Box>
+
         <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg" mt="xl">
           {[
             {
@@ -356,7 +435,18 @@ const Index = () => {
         </Box>
       </div>
     </MainArea>
+    </>
   );
 };
+
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? 'en', [
+      'common',
+      'navigation',
+      'landing',
+    ])),
+  },
+});
 
 export default Index;
