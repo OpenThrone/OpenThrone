@@ -10,14 +10,17 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import type { InferGetServerSidePropsType } from 'next';
+import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import { getSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useState } from 'react';
 
 import BlogPost from '@/components/blogPost';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
+import SeoHead from '@/components/SeoHead';
+import type { BlogPostDTO } from '@/services/Blog.service';
 import { BlogService } from '@/services/Blog.service';
 import { logError } from '@/utils/logger';
 
@@ -31,44 +34,29 @@ const News = ({
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '' });
 
-  const handleReadChange = async (postId) => {
-    setPosts(
-      posts.map((post) => {
-        if (post.id === postId) {
-          return { ...post, isRead: !post.isRead };
-        }
-        return post;
-      }),
-    );
+  const handleReadChange = async (postId: number) => {
+    const postToUpdate = posts.find((p) => p.id === postId);
+    if (!postToUpdate) return;
+    const newReadStatus = !postToUpdate.isRead;
 
-    const postToUpdate = posts.find((post) => post.id === postId);
-    const newReadStatus = postToUpdate ? !postToUpdate.isRead : false;
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, isRead: newReadStatus } : p)),
+    );
 
     try {
       const response = await fetch('/api/blog/updateReadStatus', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId, isRead: newReadStatus }),
       });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
+      if (!response.ok) throw new Error('Network response was not ok');
       await response.json();
     } catch (error) {
       logError('Error updating read status:', error);
-
-      // Revert UI in case of error
-      setPosts(
-        posts.map((post) => {
-          if (post.id === postId) {
-            return { ...post, isRead: !post.isRead }; // Revert isRead status
-          }
-          return post;
-        }),
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, isRead: !newReadStatus } : p,
+        ),
       );
     }
   };
@@ -97,7 +85,12 @@ const News = ({
   };
 
   return (
-    <MainArea title={t('news.title')}>
+    <>
+      <SeoHead
+        title={t('news.title')}
+        description="Stay current on realm updates, balance patches, and seasonal campaigns. Read the latest dispatches from the OpenThrone war council."
+      />
+      <MainArea title={t('news.title')}>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
           <div className="public-rise">
@@ -182,14 +175,20 @@ const News = ({
               </Group>
             </GameCard>
           ) : (
-            posts.map((post) => (
-              <BlogPost
-                post={post}
-                loggedIn={loggedIn}
-                handleReadChange={handleReadChange}
-                key={`Post_${post.id}`}
-              />
-            ))
+            [...posts]
+              .sort((a, b) => {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+                return 0;
+              })
+              .map((post) => (
+                <BlogPost
+                  post={post}
+                  loggedIn={loggedIn}
+                  handleReadChange={handleReadChange}
+                  key={`Post_${post.id}`}
+                />
+              ))
           )}
         </SimpleGrid>
 
@@ -235,10 +234,19 @@ const News = ({
         </Modal>
       </div>
     </MainArea>
+    </>
   );
 };
 
-export const getServerSideProps = async (context) => {
+type NewsPageProps = {
+  posts: BlogPostDTO[];
+  loggedIn: boolean;
+  userId: number;
+};
+
+export const getServerSideProps: GetServerSideProps<NewsPageProps> = async (
+  context,
+) => {
   const session = await getSession(context);
   try {
     if (session) {
@@ -247,14 +255,47 @@ export const getServerSideProps = async (context) => {
           ? parseInt(session.user.id)
           : session.user.id;
       const result = await BlogService.getPosts(userId);
-      return { props: { posts: result.posts, loggedIn: true, userId } };
+      return {
+        props: {
+          posts: result.posts,
+          loggedIn: true,
+          userId,
+          ...(await serverSideTranslations(context.locale ?? 'en', [
+            'common',
+            'navigation',
+            'community',
+          ])),
+        },
+      };
     }
 
     const result = await BlogService.getPosts();
-    return { props: { posts: result.posts, loggedIn: false, userId: 0 } };
+    return {
+      props: {
+        posts: result.posts,
+        loggedIn: false,
+        userId: 0,
+        ...(await serverSideTranslations(context.locale ?? 'en', [
+          'common',
+          'navigation',
+          'community',
+        ])),
+      },
+    };
   } catch (error) {
     logError('Error fetching posts for server-side props', error);
-    return { props: { posts: [], loggedIn: false, userId: 0 } };
+    return {
+      props: {
+        posts: [],
+        loggedIn: false,
+        userId: 0,
+        ...(await serverSideTranslations(context.locale ?? 'en', [
+          'common',
+          'navigation',
+          'community',
+        ])),
+      },
+    };
   }
 };
 
