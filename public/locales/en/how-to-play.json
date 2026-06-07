@@ -1,0 +1,58 @@
+{
+  "metaTitle": "How to Play - OpenThrone",
+  "metaDescription": "Learn the core mechanics of OpenThrone: races, turns, combat, economy, and alliances. Your guide to dominating the realm.",
+  "hero": {
+    "badge": "Commander's Briefing",
+    "title": "How to Play",
+    "subtitle": "Master the core loop. Turns generate over time. Spend them wisely to attack, plunder, and climb the ranks."
+  },
+  "coreLoop": {
+    "title": "The Core Loop",
+    "description": "OpenThrone runs on a persistent cycle. Every 30 minutes you earn attack turns. Spend turns to raid other players for gold and experience. Use gold to grow your army and fortify your kingdom. Rise through the ranks until your name is whispered across the realm.",
+    "steps": {
+      "earn": { "title": "Earn Turns", "text": "Attack turns regenerate every 30 minutes, even while offline." },
+      "attack": { "title": "Attack & Plunder", "text": "Spend turns to raid other commanders. Steal gold and earn experience." },
+      "build": { "title": "Build & Equip", "text": "Invest gold in soldiers, weapons, armor, and fortifications." },
+      "dominate": { "title": "Dominate", "text": "Climb the leaderboards. Form alliances. Control the realm." }
+    }
+  },
+  "races": {
+    "title": "Choose Your Race",
+    "description": "Four distinct races, each with unique strengths. Your choice shapes your strategy from day one.",
+    "elf": { "name": "Elf", "description": "Masters of precision and espionage. Superior spy operations and ranged combat." },
+    "human": { "name": "Human", "description": "Balanced and adaptable. Strong economy with versatile military options." },
+    "goblin": { "name": "Goblin", "description": "Aggressive raiders with overwhelming numbers. Brute-force offense at scale." },
+    "undead": { "name": "Undead", "description": "Relentless and resilient. Superior defense and attrition warfare." }
+  },
+  "army": {
+    "title": "Build Your Army",
+    "description": "Citizens arrive daily. Decide how to train each one — your army composition defines your strategy.",
+    "workers": { "title": "Workers", "text": "Generate gold passively. The backbone of your economy." },
+    "attack": { "title": "Attack Soldiers", "text": "Your offensive force. Equip with weapons to maximize plunder." },
+    "defense": { "title": "Defense Soldiers", "text": "Protect your kingdom from raids. Equip with armor to survive sieges." },
+    "spies": { "title": "Spies", "text": "Scout enemy defenses before attacking. Sabotage from the shadows." }
+  },
+  "economy": {
+    "title": "Economy & Structures",
+    "description": "Gold is the lifeblood of your empire. Manage it wisely — what you don't protect, someone will take.",
+    "bank": { "title": "Bank", "text": "Safely store gold away from raiders. Upgrade for higher capacity." },
+    "armory": { "title": "Armory", "text": "Purchase weapons and armor for your troops. Upgrade to unlock better equipment." },
+    "fortifications": { "title": "Fortifications", "text": "Strengthen your defenses. Higher walls mean fewer casualties when attacked." },
+    "mines": { "title": "Mines", "text": "Increase passive gold generation. Essential for long-term growth." }
+  },
+  "combat": {
+    "title": "Combat & Espionage",
+    "description": "Victory isn't just about numbers. Scout your targets, exploit weaknesses, and time your strikes.",
+    "attack": { "title": "Attacking", "text": "Choose a target, commit attack turns, and plunder gold. Stronger armies deal more damage." },
+    "defense": { "title": "Defending", "text": "When attacked, your defense soldiers and fortifications determine your losses." },
+    "spy": { "title": "Spy Operations", "text": "Send spies to scout enemy troop counts before committing to an attack." }
+  },
+  "alliances": {
+    "title": "Alliances",
+    "description": "No commander rules alone. Join or create an alliance for mutual protection, coordinated attacks, and shared glory."
+  },
+  "cta": {
+    "createCommander": "Create a Commander",
+    "returnToBattle": "Return to Battle"
+  }
+}

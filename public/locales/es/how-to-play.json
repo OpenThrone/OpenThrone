@@ -1,0 +1,58 @@
+{
+  "metaTitle": "Cómo Jugar - OpenThrone",
+  "metaDescription": "Aprende las mecánicas principales de OpenThrone: razas, turnos, combate, economía y alianzas. Tu guía para dominar el reino.",
+  "hero": {
+    "badge": "Informe del Comandante",
+    "title": "Cómo Jugar",
+    "subtitle": "Domina el ciclo principal. Los turnos se generan con el tiempo. Gástalos sabiamente para atacar, saquear y escalar posiciones."
+  },
+  "coreLoop": {
+    "title": "El Ciclo Principal",
+    "description": "OpenThrone funciona en un ciclo persistente. Cada 30 minutos ganas turnos de ataque. Gasta turnos para saquear otros jugadores y obtener oro y experiencia. Usa el oro para hacer crecer tu ejército y fortificar tu reino.",
+    "steps": {
+      "earn": { "title": "Gana Turnos", "text": "Los turnos de ataque se regeneran cada 30 minutos, incluso sin conexión." },
+      "attack": { "title": "Ataca y Saquea", "text": "Gasta turnos para asaltar a otros comandantes. Roba oro y gana experiencia." },
+      "build": { "title": "Construye y Equipa", "text": "Invierte oro en soldados, armas, armaduras y fortificaciones." },
+      "dominate": { "title": "Domina", "text": "Escala en las clasificaciones. Forma alianzas. Controla el reino." }
+    }
+  },
+  "races": {
+    "title": "Elige tu Raza",
+    "description": "Cuatro razas distintas, cada una con fortalezas únicas. Tu elección define tu estrategia desde el primer día.",
+    "elf": { "name": "Elfo", "description": "Maestros de precisión y espionaje. Operaciones de espionaje superiores y combate a distancia." },
+    "human": { "name": "Humano", "description": "Equilibrados y adaptables. Economía fuerte con opciones militares versátiles." },
+    "goblin": { "name": "Goblin", "description": "Asaltantes agresivos con números abrumadores. Ofensiva bruta a gran escala." },
+    "undead": { "name": "No Muerto", "description": "Implacables y resistentes. Defensa superior y guerra de desgaste." }
+  },
+  "army": {
+    "title": "Construye tu Ejército",
+    "description": "Los ciudadanos llegan diariamente. Decide cómo entrenar a cada uno — tu composición militar define tu estrategia.",
+    "workers": { "title": "Trabajadores", "text": "Generan oro pasivamente. La columna vertebral de tu economía." },
+    "attack": { "title": "Soldados de Ataque", "text": "Tu fuerza ofensiva. Equípalos con armas para maximizar el botín." },
+    "defense": { "title": "Soldados de Defensa", "text": "Protege tu reino de los saqueos. Equípalos con armadura para sobrevivir." },
+    "spies": { "title": "Espías", "text": "Explora las defensas enemigas antes de atacar. Sabotea desde las sombras." }
+  },
+  "economy": {
+    "title": "Economía y Estructuras",
+    "description": "El oro es la sangre de tu imperio. Manéjalo con sabiduría — lo que no protejas, alguien lo tomará.",
+    "bank": { "title": "Banco", "text": "Almacena oro de forma segura lejos de los saqueadores. Mejora para mayor capacidad." },
+    "armory": { "title": "Armería", "text": "Compra armas y armaduras para tus tropas. Mejora para desbloquear mejor equipo." },
+    "fortifications": { "title": "Fortificaciones", "text": "Fortalece tus defensas. Muros más altos significan menos bajas al ser atacado." },
+    "mines": { "title": "Minas", "text": "Aumenta la generación pasiva de oro. Esencial para el crecimiento a largo plazo." }
+  },
+  "combat": {
+    "title": "Combate y Espionaje",
+    "description": "La victoria no es solo cuestión de números. Explora tus objetivos, explota sus debilidades y cronometra tus golpes.",
+    "attack": { "title": "Atacar", "text": "Elige un objetivo, gasta turnos de ataque y saquea oro. Ejércitos más fuertes causan más daño." },
+    "defense": { "title": "Defender", "text": "Cuando te atacan, tus soldados de defensa y fortificaciones determinan tus pérdidas." },
+    "spy": { "title": "Operaciones de Espionaje", "text": "Envía espías para explorar las tropas enemigas antes de comprometerte en un ataque." }
+  },
+  "alliances": {
+    "title": "Alianzas",
+    "description": "Ningún comandante gobierna solo. Únete o crea una alianza para protección mutua, ataques coordinados y gloria compartida."
+  },
+  "cta": {
+    "createCommander": "Crear un Comandante",
+    "returnToBattle": "Volver a la Batalla"
+  }
+}

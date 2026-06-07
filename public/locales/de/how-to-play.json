@@ -1,0 +1,58 @@
+{
+  "metaTitle": "Spielanleitung - OpenThrone",
+  "metaDescription": "Lerne die Kernmechaniken von OpenThrone: Rassen, Züge, Kampf, Wirtschaft und Allianzen. Dein Leitfaden zur Beherrschung des Reiches.",
+  "hero": {
+    "badge": "Kommandanten-Briefing",
+    "title": "Spielanleitung",
+    "subtitle": "Meistere den Kernzyklus. Züge werden im Laufe der Zeit generiert. Setze sie klug ein, um anzugreifen, zu plündern und aufzusteigen."
+  },
+  "coreLoop": {
+    "title": "Der Kernzyklus",
+    "description": "OpenThrone läuft in einem dauerhaften Zyklus. Alle 30 Minuten erhältst du Angriffszüge. Gib Züge aus, um andere Spieler zu überfallen für Gold und Erfahrung. Nutze Gold, um deine Armee zu vergrößern und dein Königreich zu befestigen.",
+    "steps": {
+      "earn": { "title": "Züge verdienen", "text": "Angriffszüge regenerieren sich alle 30 Minuten, auch offline." },
+      "attack": { "title": "Angreifen & Plündern", "text": "Gib Züge aus, um andere Kommandanten zu überfallen. Stehle Gold und verdiene Erfahrung." },
+      "build": { "title": "Aufbauen & Ausrüsten", "text": "Investiere Gold in Soldaten, Waffen, Rüstung und Befestigungen." },
+      "dominate": { "title": "Dominieren", "text": "Steige in den Ranglisten auf. Bilde Allianzen. Beherrsche das Reich." }
+    }
+  },
+  "races": {
+    "title": "Wähle deine Rasse",
+    "description": "Vier unterschiedliche Rassen mit jeweils einzigartigen Stärken. Deine Wahl bestimmt deine Strategie von Tag eins an.",
+    "elf": { "name": "Elf", "description": "Meister der Präzision und Spionage. Überlegene Spionageoperationen und Fernkampf." },
+    "human": { "name": "Mensch", "description": "Ausgeglichen und anpassungsfähig. Starke Wirtschaft mit vielseitigen militärischen Optionen." },
+    "goblin": { "name": "Goblin", "description": "Aggressive Plünderer mit überwältigenden Zahlen. Brutale Offensive in Massen." },
+    "undead": { "name": "Untot", "description": "Unerbittlich und widerstandsfähig. Überlegene Verteidigung und Zermürbungskrieg." }
+  },
+  "army": {
+    "title": "Baue deine Armee auf",
+    "description": "Bürger kommen täglich an. Entscheide, wie du jeden ausbildest — deine Armezusammensetzung definiert deine Strategie.",
+    "workers": { "title": "Arbeiter", "text": "Generieren passiv Gold. Das Rückgrat deiner Wirtschaft." },
+    "attack": { "title": "Angriffssoldaten", "text": "Deine offensive Streitmacht. Rüste sie mit Waffen aus, um Beute zu maximieren." },
+    "defense": { "title": "Verteidigungssoldaten", "text": "Schütze dein Königreich vor Überfällen. Rüste sie mit Rüstung aus." },
+    "spies": { "title": "Spione", "text": "Spähe feindliche Verteidigung aus, bevor du angreifst. Sabotiere aus den Schatten." }
+  },
+  "economy": {
+    "title": "Wirtschaft & Gebäude",
+    "description": "Gold ist das Lebensblut deines Imperiums. Verwalte es klug — was du nicht schützt, wird jemand anderes nehmen.",
+    "bank": { "title": "Bank", "text": "Bewahre Gold sicher vor Plünderern auf. Upgrade für höhere Kapazität." },
+    "armory": { "title": "Waffenkammer", "text": "Kaufe Waffen und Rüstung für deine Truppen. Upgrade für bessere Ausrüstung." },
+    "fortifications": { "title": "Befestigungen", "text": "Stärke deine Verteidigung. Höhere Mauern bedeuten weniger Verluste bei Angriffen." },
+    "mines": { "title": "Minen", "text": "Erhöhe passive Goldgenerierung. Unverzichtbar für langfristiges Wachstum." }
+  },
+  "combat": {
+    "title": "Kampf & Spionage",
+    "description": "Sieg ist nicht nur eine Frage der Zahlen. Spähe deine Ziele aus, nutze Schwächen aus und tim deine Schläge.",
+    "attack": { "title": "Angreifen", "text": "Wähle ein Ziel, setze Angriffszüge ein und plündere Gold. Stärkere Armeen verursachen mehr Schaden." },
+    "defense": { "title": "Verteidigen", "text": "Wenn du angegriffen wirst, bestimmen deine Verteidigungssoldaten und Befestigungen deine Verluste." },
+    "spy": { "title": "Spionageoperationen", "text": "Sende Spione, um feindliche Truppenstärken vor einem Angriff auszukundschaften." }
+  },
+  "alliances": {
+    "title": "Allianzen",
+    "description": "Kein Kommandant herrscht allein. Tritt einer Allianz bei oder gründe eine für gegenseitigen Schutz, koordinierte Angriffe und geteilten Ruhm."
+  },
+  "cta": {
+    "createCommander": "Kommandant erstellen",
+    "returnToBattle": "Zurück zur Schlacht"
+  }
+}

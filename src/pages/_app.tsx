@@ -58,6 +58,10 @@ const namespaceMatchers: Array<{
     namespaces: ['community'],
   },
   {
+    matches: (path) => path.startsWith('/how-to-play'),
+    namespaces: ['how-to-play'],
+  },
+  {
     matches: (path) => path.startsWith('/auto-recruit'),
     namespaces: ['community'],
   },
