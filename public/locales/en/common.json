@@ -30,6 +30,7 @@
     "faqIsGameStillBeingDeveloped": "Is game still being developed?",
     "faqActive": "Yes, a small group of volunteers have been working to get a working version of the game up and running. Please join the Discord or submit PRs/Issues for discussion and enhancement.",
     "faqHelp": "If you have experience with art, NextJS, or Figma, please reach out to the team via Discord.",
+    "howCanIHelp": "How can I help?",
     "faqIdeas": "Currently we are hyper-focused on getting the basic mechanics functioning. If you have ideas, please share them on our GitHub issues page so that we can centralize the discussion and come up with the best possible implementation. Unfortunately not all ideas will be implemented, but we encourage ideas and appreciate any PR contributions.",
     "canSuggestIdeas": "Can I suggest ideas?",
     "shareIdeasGitHub": "Currently we are hyper-focused on getting basic mechanics functioning. If you have ideas, please share them on our GitHub issues page so that we can centralize discussion and come up with the best possible implementation. Unfortunately not all ideas will be implemented, but we encourage ideas and appreciate any PR contributions.",
