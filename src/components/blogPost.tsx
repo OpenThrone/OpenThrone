@@ -48,7 +48,7 @@ const estimateReadTime = (markdown = '') => {
 type BlogPostProps = {
   post: any;
   loggedIn: boolean;
-  handleReadChange: (id: string) => void;
+  handleReadChange: (id: number) => void;
 };
 
 const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
@@ -79,7 +79,32 @@ const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
           goldAccent
           action={
             <div className="flex flex-col items-end gap-1">
+              <Group gap={6} wrap="nowrap">
+                {post.kind && (
+                  <Badge
+                    size="xs"
+                    variant="light"
+                    color={
+                      post.kind === 'NEWS'
+                        ? 'yellow'
+                        : post.kind === 'CHANGELOG'
+                          ? 'green'
+                          : 'blue'
+                    }
+                  >
+                    {post.kind}
+                  </Badge>
+                )}
+                {post.isPinned && (
+                  <Badge size="xs" variant="filled" color="yellow">
+                    PINNED
+                  </Badge>
+                )}
+              </Group>
               <Text size="xs" c="dimmed" className="opacity-70">
+                {post.authorName
+                  ? `${post.authorName} • `
+                  : ''}
                 {formatDate(post.created_timestamp)} • {readTime}
               </Text>
 

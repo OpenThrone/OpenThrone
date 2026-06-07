@@ -21,9 +21,13 @@ export interface BlogPostDTO {
   title: string;
   content: string;
   postedby_id: number;
+  authorName?: string;
   created_timestamp: string; // ISO
   isRead: boolean;
   lastReadAt?: string | null;
+  kind?: string;
+  status?: string;
+  isPinned?: boolean;
 }
 
 export interface CreatePostData {
@@ -57,7 +61,7 @@ export interface BlogOperationResult {
 }
 
 export interface BlogPostsResult {
-  posts: BlogPost[] | BlogPostDTO[];
+  posts: BlogPostDTO[];
 }
 
 export class BlogService {
@@ -74,6 +78,9 @@ export class BlogService {
           title,
           content,
           postedby_id: userId,
+          status: 'PUBLISHED',
+          kind: 'NEWS',
+          publishedAt: new Date(),
         },
       });
 
@@ -91,11 +98,16 @@ export class BlogService {
   /**
    * Gets all blog posts with read status for a user if provided
    */
-  static async getPosts(userId?: number): Promise<BlogPostsResult> {
+  static async getPosts(
+    userId?: number,
+    filters?: { status?: string },
+  ): Promise<BlogPostsResult> {
+    const where = filters?.status ? { status: filters.status } : {};
     try {
       let posts = [] as any[];
       if (userId) {
         posts = await prisma.blog_posts.findMany({
+          where,
           include: {
             postReadStatus: {
               where: {
@@ -112,6 +124,7 @@ export class BlogService {
         });
       } else {
         posts = await prisma.blog_posts.findMany({
+          where,
           orderBy: {
             created_timestamp: 'desc',
           },
@@ -137,8 +150,28 @@ export class BlogService {
                 ? p.postReadStatus[0].last_read_at.toISOString()
                 : String(p.postReadStatus[0].last_read_at)
               : null,
+          kind: p.kind ?? 'NEWS',
+          status: p.status ?? 'PUBLISHED',
+          isPinned: p.isPinned ?? false,
         };
       });
+
+      const authorIds = [...new Set(posts.map((p: any) => p.postedby_id))];
+      if (authorIds.length > 0) {
+        const authors = await prisma.users.findMany({
+          where: { id: { in: authorIds } },
+          select: { id: true, display_name: true },
+        });
+        const authorMap = new Map(
+          authors.map((a: { id: number; display_name: string | null }) => [
+            a.id,
+            a.display_name,
+          ]),
+        );
+        for (const dto of dtos) {
+          dto.authorName = authorMap.get(dto.postedby_id) ?? undefined;
+        }
+      }
 
       return { posts: dtos };
     } catch (error: any) {
@@ -151,7 +184,7 @@ export class BlogService {
    * Gets recent blog posts (alias for getPosts)
    */
   static async getRecentPosts(userId?: number): Promise<BlogPostsResult> {
-    return this.getPosts(userId);
+    return this.getPosts(userId, { status: 'PUBLISHED' });
   }
 
   /**
@@ -203,6 +236,14 @@ export class BlogService {
               : String(post.postReadStatus[0].last_read_at)
             : null,
       };
+
+      if (post.postedby_id) {
+        const author = await prisma.users.findUnique({
+          where: { id: post.postedby_id },
+          select: { display_name: true },
+        });
+        dto.authorName = author?.display_name ?? undefined;
+      }
 
       return { post: dto as any };
     } catch (error: any) {
@@ -301,5 +342,3 @@ export class BlogService {
     }
   }
 }
-
-export default BlogService;
