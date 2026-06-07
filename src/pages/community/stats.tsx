@@ -1,8 +1,10 @@
 import { Grid, Text } from '@mantine/core';
 import type { InferGetStaticPropsType } from 'next';
 import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 import MainArea from '@/components/MainArea';
+import SeoHead from '@/components/SeoHead';
 import StatsTable from '@/components/statsTable';
 import {
   getTop10AttacksByTotalCasualties,
@@ -31,13 +33,18 @@ const Stats = ({
 }: InferGetStaticPropsType<typeof getStaticProps>) => {
   const { t } = useTranslation('community');
   return (
-    <MainArea title={t('stats.title')}>
+    <>
+      <SeoHead
+        title={t('stats.title')}
+        description={t('stats.description')}
+      />
+      <MainArea title={t('stats.title')}>
       <Grid>
         <Grid.Col span={{ base: 12, md: 6 }}>
           <StatsTable
-            title="Top 10 Population"
+            title={t('stats.top10Population')}
             data={population}
-            description="The top 10 population is a list of the ten user accounts with the highest total population over a span."
+            description={t('stats.top10PopulationDescription')}
           />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
@@ -50,7 +57,7 @@ const Stats = ({
           />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <StatsTable title="Top 10 Gold on Hand" data={goldOnHand} />
+          <StatsTable title={t('stats.top10GoldOnHand')} data={goldOnHand} />
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
           <StatsTable
@@ -85,10 +92,16 @@ const Stats = ({
         {t('stats.lastGenerated')} {new Date(lastGenerated).toLocaleString()}
       </Text>
     </MainArea>
+    </>
   );
 };
 
-export const getStaticProps = async (_context: any) => {
+export const getStaticProps = async (context: any) => {
+  const i18nProps = await serverSideTranslations(context.locale ?? 'en', [
+    'common',
+    'navigation',
+    'community',
+  ]);
   try {
     const totalWealth = (await getTopWealth()).map((entry) => ({
       ...entry,
@@ -127,6 +140,7 @@ export const getStaticProps = async (_context: any) => {
           24 * 60 * 60 * 1000 * 7,
         ),
         lastGenerated: new Date().toISOString(),
+        ...i18nProps,
       },
       revalidate: 60 * 60 * 24 + 60 * 10, // 24 hours + 10 minutes, a cron should revalidate it instead
     };
@@ -147,6 +161,7 @@ export const getStaticProps = async (_context: any) => {
         attackerCas: [],
         defenderCas: [],
         lastGenerated: new Date().toISOString(),
+        ...i18nProps,
       },
       revalidate: 60 * 5,
     };

@@ -72,6 +72,9 @@
     "top10TotalAttackerCasualties": "Top 10 Gesamte Angreiferververluste",
     "top10TotalDefenderCasualties": "Top 10 Gesamte Verteidigerverluste",
     "top10AttacksByTotalCasualties": "Top 10 Angriffe mit den meisten Verlusten",
+    "top10Population": "Top 10 Bevölkerung",
+    "top10PopulationDescription": "Die Top-10-Bevölkerung listet die zehn Spielerkonten mit der höchsten Gesamtbevölkerung auf.",
+    "top10GoldOnHand": "Top 10 Gold auf Hand",
     "lastGenerated": "Zuletzt Generiert"
   },
   "autoRecruit": {
