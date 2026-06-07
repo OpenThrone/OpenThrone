@@ -1,6 +1,7 @@
 {
   "login": {
     "title": "Iniciar Sesión",
+    "metaDescription": "Inicia sesión en tu cuenta de OpenThrone para comandar tu reino, liderar tu ejército y dominar el reino.",
     "description": "Inicia sesión en tu cuenta para continuar tu aventura.",
     "email": "Dirección de Correo Electrónico",
     "password": "Contraseña",
@@ -28,6 +29,7 @@
   },
   "register": {
     "title": "Crear Cuenta",
+    "metaDescription": "Crea tu comandante y únete a la lucha. Elige una raza, entrena tu ejército y asciende al poder en OpenThrone.",
     "description": "Crea una nueva cuenta para comenzar tu viaje.",
     "latestNews": "Últimas Noticias",
     "displayName": "Nombre para Mostrar",
@@ -49,6 +51,14 @@
     "starterAdvantages": "Ventajas para Principiantes",
     "protectedTurns": "Turnos Protegidos",
     "gold": "Oro",
+    "dailyCitizens": "Ciudadanos Diarios",
+    "fourRaces": "Cuatro Razas Únicas",
+    "earlyGamePreview": "Tu Primer Día",
+    "earlyGameDesc": "Entrena a tus primeros soldados, equípalos desde la armería y explora objetivos cercanos. Tu reino crece incluso mientras estás desconectado.",
+    "raceElf": "Precisión y Espionaje",
+    "raceHuman": "Equilibrado y Versátil",
+    "raceGoblin": "Números Abrumadores",
+    "raceUndead": "Resiliente y Defensivo",
     "alreadyEnlisted": "¿Ya estás alistado?",
     "createCommanderTitle": "Crea Tu Comandante",
     "registrationFailed": "Registro Fallido",

@@ -1,6 +1,7 @@
 {
   "login": {
     "title": "Anmelden",
+    "metaDescription": "Melden Sie sich bei Ihrem OpenThrone-Konto an, um Ihr Königreich zu befehligen, Ihre Armee zu führen und das Reich zu dominieren.",
     "description": "Melden Sie sich in Ihrem Konto an, um Ihr Abenteuer fortzusetzen.",
     "email": "E-Mail-Adresse",
     "password": "Passwort",
@@ -28,6 +29,7 @@
   },
   "register": {
     "title": "Konto erstellen",
+    "metaDescription": "Erstellen Sie Ihren Kommandanten und treten Sie dem Kampf bei. Wählen Sie eine Rasse, bilden Sie Ihre Armee aus und steigen Sie zur Macht in OpenThrone auf.",
     "description": "Erstellen Sie ein neues Konto, um Ihre Reise zu beginnen.",
     "latestNews": "Neueste Nachrichten",
     "displayName": "Anzeigename",
@@ -49,6 +51,14 @@
     "starterAdvantages": "Anfängervorteile",
     "protectedTurns": "Geschützte Züge",
     "gold": "Gold",
+    "dailyCitizens": "Tägliche Bürger",
+    "fourRaces": "Vier einzigartige Rassen",
+    "earlyGamePreview": "Dein erster Tag",
+    "earlyGameDesc": "Bilde deine ersten Soldaten aus, rüste sie in der Waffenkammer aus und spähe nahegelegene Ziele aus. Dein Königreich wächst sogar, während du offline bist.",
+    "raceElf": "Präzision & Spionage",
+    "raceHuman": "Ausgeglichen & Vielseitig",
+    "raceGoblin": "Überwältigende Zahlen",
+    "raceUndead": "Widerstandsfähig & Defensiv",
     "alreadyEnlisted": "Bereits eingezogen?",
     "createCommanderTitle": "Erstellen Sie Ihren Kommandanten",
     "registrationFailed": "Registrierung fehlgeschlagen",

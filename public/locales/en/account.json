@@ -1,6 +1,7 @@
 {
   "login": {
     "title": "Sign In",
+    "metaDescription": "Sign in to your OpenThrone account to command your kingdom, lead your army, and dominate the realm.",
     "description": "Sign in to your account to continue your adventure.",
     "email": "Email Address",
     "password": "Password",
@@ -28,6 +29,7 @@
   },
   "register": {
     "title": "Create Account",
+    "metaDescription": "Create your commander and join the fight. Choose a race, train your army, and rise to power in OpenThrone.",
     "description": "Create a new account to begin your journey.",
     "latestNews": "Latest News",
     "displayName": "Display Name",
@@ -49,6 +51,14 @@
     "starterAdvantages": "Starter Advantages",
     "protectedTurns": "Protected Turns",
     "gold": "Gold",
+    "dailyCitizens": "Daily Citizens",
+    "fourRaces": "Four Unique Races",
+    "earlyGamePreview": "Your First Day",
+    "earlyGameDesc": "Train your first soldiers, equip them from the armory, and scout nearby targets. Your kingdom grows even while you're offline.",
+    "raceElf": "Precision & Espionage",
+    "raceHuman": "Balanced & Versatile",
+    "raceGoblin": "Overwhelming Numbers",
+    "raceUndead": "Resilient & Defensive",
     "alreadyEnlisted": "Already Enlisted?",
     "createCommanderTitle": "Create Your Commander",
     "registrationFailed": "Registration Failed",

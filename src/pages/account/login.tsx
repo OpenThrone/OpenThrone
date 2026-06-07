@@ -11,11 +11,14 @@ import {
 } from '@mantine/core';
 import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
+import type { GetStaticProps } from 'next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import React, { useEffect, useState } from 'react';
 
 import Form from '@/components/form';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
+import SeoHead from '@/components/SeoHead';
 import VacationModeModal from '@/components/VacationModeModal';
 import { useLayout } from '@/context/LayoutContext';
 
@@ -30,7 +33,7 @@ const Login = () => {
     if (setMeta && meta && meta.title !== 'OpenThrone - Login') {
       setMeta({
         title: 'OpenThrone - Login',
-        description: 'Meta Description',
+        description: t('login.metaDescription'),
       });
     }
   }, [meta, setMeta]);
@@ -53,7 +56,12 @@ const Login = () => {
   }, [t]);
 
   return (
-    <MainArea title={t('login.title')}>
+    <>
+      <SeoHead
+        title="OpenThrone - Login"
+        description={t('login.metaDescription')}
+      />
+      <MainArea title={t('login.title')}>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
           <div className="public-rise">
@@ -157,7 +165,18 @@ const Login = () => {
         onVacationEnd={() => setShowVacationModal(false)}
       />
     </MainArea>
+    </>
   );
 };
+
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? 'en', [
+      'common',
+      'navigation',
+      'account',
+    ])),
+  },
+});
 
 export default Login;
