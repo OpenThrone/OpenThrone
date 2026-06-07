@@ -1,12 +1,20 @@
 {
   "title": "OpenThrone",
-  "metaDescription": "Descripción Meta",
+  "metaDescription": "Elige una raza, forja tu clase y comanda un imperio en ascenso en un mundo de estrategia persistente. Gratis para jugar sin barreras de pago.",
   "worldStats": {
     "title": "Estadísticas del Mundo",
     "totalPlayers": "Total de Jugadores",
     "battlesFought": "Batallas Luchadas",
     "alliances": "Alianzas",
     "epoch": "Época"
+  },
+  "races": {
+    "title": "Elige tu Bando",
+    "elf": "Elfo — Precisión y Espionaje",
+    "human": "Humano — Equilibrado y Adaptable",
+    "goblin": "Goblin — Fuerza Abrumadora",
+    "undead": "No Muerto — Defensa Implacable",
+    "learnMore": "Aprende a Jugar"
   },
   "highlights": {
     "strategicCombat": {

@@ -1,12 +1,20 @@
 {
   "title": "OpenThrone",
-  "metaDescription": "Meta-Beschreibung",
+  "metaDescription": "Wähle eine Rasse, schmiede deine Klasse und befehlige ein aufstrebendes Imperium in einer persistenten Strategiewelt. Kostenlos spielbar ohne Paywalls.",
   "worldStats": {
     "title": "Weltstatistiken",
     "totalPlayers": "Gesamtspieler",
     "battlesFought": "Kämpfe geführt",
     "alliances": "Allianzen",
     "epoch": "Epoche"
+  },
+  "races": {
+    "title": "Wähle deine Seite",
+    "elf": "Elf — Präzision & Spionage",
+    "human": "Mensch — Ausgeglichen & Anpassungsfähig",
+    "goblin": "Goblin — Überwältigende Gewalt",
+    "undead": "Untot — Unerbittliche Verteidigung",
+    "learnMore": "Spielanleitung lesen"
   },
   "highlights": {
     "strategicCombat": {
