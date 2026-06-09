@@ -1,8 +1,8 @@
-import { PermissionType } from '@prisma/client';
 import md5 from 'md5';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { PermissionType } from '@/lib/prisma-exports';
 import { isAdmin, isModerator } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
 
@@ -14,11 +14,13 @@ import {
 } from './UserDefaults.service';
 
 // Type definitions for admin operations
+/** Describes the grant permission data contract. */
 export interface GrantPermissionData {
   userIdentifier: string; // Can be username or email
   permission: PermissionType;
 }
 
+/** Describes the account action data contract. */
 export interface AccountActionData {
   userId: number;
   action: 'SUSPENDED' | 'BANNED' | 'CLOSED' | 'ACTIVE';
@@ -26,16 +28,19 @@ export interface AccountActionData {
   reason?: string;
 }
 
+/** Describes the admin account reset data contract. */
 export interface AdminAccountResetData {
   userId: number;
   reason?: string;
 }
 
+/** Describes the vacation action data contract. */
 export interface VacationActionData {
   userId: number;
   action: 'start' | 'end';
 }
 
+/** Describes the user list filter data contract. */
 export interface UserListFilter {
   id?: number;
   username?: string;
@@ -47,6 +52,7 @@ export interface UserListFilter {
   order?: 'asc' | 'desc';
 }
 
+/** Describes the user update data contract. */
 export interface UserUpdateData {
   profile: {
     username: string;
@@ -149,6 +155,7 @@ const UserUpdateDataSchema = z.object({
   }),
 });
 
+/** Encapsulates admin data access and domain operations. */
 export class AdminService {
   /**
    * Checks if the current user has admin privileges

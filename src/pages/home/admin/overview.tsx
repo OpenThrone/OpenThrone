@@ -11,12 +11,12 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Grid, Loader, Paper, Stack, Text } from '@mantine/core';
-import { PermissionType } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
+import { PermissionType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
 interface OverviewStats {
@@ -195,6 +195,7 @@ const OverviewDashboardPage = () => {
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context: any) => {
   return {
     props: {

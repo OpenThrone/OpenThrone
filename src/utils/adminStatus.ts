@@ -10,6 +10,7 @@ const HARD_BLOCKED_STATUSES = new Set([
   'INACTIVE',
 ]);
 
+/** Derive admin user status. */
 export const deriveAdminUserStatus = ({
   latestStatus,
   lastActive,

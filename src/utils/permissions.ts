@@ -1,5 +1,5 @@
-import type { StaffRole } from '@prisma/client';
-import { PermissionType } from '@prisma/client';
+import { PermissionType } from '@/lib/prisma-browser-exports';
+import type { StaffRole } from '@/lib/prisma-exports';
 
 const ADMINISTRATOR_ROLE: StaffRole = 'ADMINISTRATOR';
 const MODERATOR_ROLE: StaffRole = 'MODERATOR';
@@ -10,7 +10,7 @@ const GAME_MASTER_ROLE: StaffRole = 'GAME_MASTER';
  * Role presets: each role maps to a set of capabilities.
  * ADMINISTRATOR gets everything. Other roles get subsets.
  */
-export const ROLE_PERMISSIONS: Record<StaffRole, PermissionType[]> = {
+const ROLE_PERMISSIONS: Record<StaffRole, PermissionType[]> = {
   [ADMINISTRATOR_ROLE]: Object.values(PermissionType),
   [MODERATOR_ROLE]: [
     PermissionType.VIEW_STAFF_DASHBOARD,
@@ -75,7 +75,7 @@ export function expandPermissions(
 /**
  * Check if a set of permissions satisfies ALL required permissions.
  */
-export function hasAllPermissions(
+function hasAllPermissions(
   userPermissions: PermissionType[],
   required: PermissionType[],
 ): boolean {
@@ -86,7 +86,7 @@ export function hasAllPermissions(
 /**
  * Check if a set of permissions satisfies ANY of the required permissions.
  */
-export function hasAnyPermission(
+function hasAnyPermission(
   userPermissions: PermissionType[],
   required: PermissionType[],
 ): boolean {
@@ -107,7 +107,7 @@ export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
 /**
  * Human-readable labels for PermissionType (used in UI).
  */
-export const PERMISSION_LABELS: Record<PermissionType, string> = {
+const PERMISSION_LABELS: Record<PermissionType, string> = {
   [PermissionType.VIEW_STAFF_DASHBOARD]: 'View Staff Dashboard',
   [PermissionType.VIEW_AUDIT_LOGS]: 'View Audit Logs',
   [PermissionType.MANAGE_USERS]: 'Manage Users',

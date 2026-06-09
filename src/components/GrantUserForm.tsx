@@ -9,9 +9,9 @@ import {
   Text,
 } from '@mantine/core';
 import { useDebouncedCallback } from '@mantine/hooks';
-import { PermissionType } from '@prisma/client';
 import { useEffect, useState } from 'react';
 
+import { PermissionType } from '@/lib/prisma-browser-exports';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 

@@ -1,8 +1,8 @@
 import { Container, Space, Title } from '@mantine/core';
-import { PermissionType } from '@prisma/client';
 import { forwardRef, type ReactNode } from 'react';
 
 import { useUser } from '@/context/users';
+import { PermissionType } from '@/lib/prisma-browser-exports';
 
 import AdminSidebar from './AdminSidebar';
 

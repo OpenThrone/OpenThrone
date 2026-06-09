@@ -1,8 +1,8 @@
-import type { PermissionType, StaffRole } from '@prisma/client';
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { PermissionType, StaffRole } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
 import { deriveAdminUserStatus } from '@/utils/adminStatus';

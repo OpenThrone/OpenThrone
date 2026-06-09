@@ -24,7 +24,6 @@ import {
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { PermissionType } from '@prisma/client';
 import React, { useCallback, useState } from 'react';
 import {
   Area,
@@ -42,6 +41,7 @@ import {
 
 import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
+import { PermissionType } from '@/lib/prisma-browser-exports';
 
 interface SimConfig {
   populationSize: number;

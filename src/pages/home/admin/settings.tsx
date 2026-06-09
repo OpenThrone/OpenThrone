@@ -15,11 +15,11 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { ServerSettingType } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import { ServerSettingType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
 const ServerSettingsPage = () => {
@@ -268,6 +268,7 @@ const ServerSettingsPage = () => {
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context: any) => {
   return {
     props: {

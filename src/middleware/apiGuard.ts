@@ -1,9 +1,9 @@
-import { PermissionType } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import type { NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import type { z, ZodTypeAny } from 'zod';
 
+import { PermissionType } from '@/lib/prisma-exports';
 import { rateLimiter } from '@/lib/rate-limiter';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { ApiTokenService } from '@/services/ApiToken.service';
@@ -69,6 +69,7 @@ type ApiGuardHandler<TQuery, TBody> = (
   context: ApiGuardContext<TQuery, TBody>,
 ) => Promise<unknown> | unknown;
 
+/** With API guard. */
 export function withApiGuard<
   TQuerySchema extends ZodTypeAny | undefined = undefined,
   TBodySchema extends ZodTypeAny | undefined = undefined,
@@ -220,7 +221,10 @@ export function withApiGuard<
         });
       }
 
-      const bodyParsed = bodySchema?.safeParse(req.body);
+      const hasBody = ['POST', 'PUT', 'PATCH'].includes(
+        (req.method ?? '').toUpperCase(),
+      );
+      const bodyParsed = hasBody ? bodySchema?.safeParse(req.body) : undefined;
       if (bodyParsed && !bodyParsed.success) {
         return res.status(422).json({
           message: 'Invalid request body',

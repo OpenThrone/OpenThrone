@@ -1,7 +1,6 @@
 import { faUserPlus, faUsersCog } from '@fortawesome/free-solid-svg-icons';
 import { Button, Grid, Group, Modal, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { PermissionType } from '@prisma/client';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -12,6 +11,7 @@ import GrantUserForm from '@/components/GrantUserForm';
 import UserAdminEditor from '@/components/UserAdminEditor';
 import UserList from '@/components/UserList';
 import UserSearchFilter from '@/components/UserSearchFilter';
+import { PermissionType } from '@/lib/prisma-browser-exports';
 
 interface UserSummary {
   id: string;

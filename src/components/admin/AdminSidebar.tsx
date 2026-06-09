@@ -1,11 +1,11 @@
 import { Anchor, NavLink, ScrollArea, Text } from '@mantine/core';
-import { PermissionType } from '@prisma/client';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 
 import { useUser } from '@/context/users';
+import { PermissionType } from '@/lib/prisma-browser-exports';
 
 import { adminNavCategories, type AdminNavItem } from './adminNavConfig';
 
@@ -37,7 +37,7 @@ const AdminSidebar = () => {
 
   return (
     <nav aria-label="Admin navigation" data-testid="admin-sidebar">
-      <ScrollArea.Autosize mah="calc(100vh - 180px)" type="auto">
+      <ScrollArea.Autosize mah="calc(100% - 180px)" h="100%" type="auto">
         {visibleCategories.map((cat) => (
           <div key={cat.key}>
             <Text

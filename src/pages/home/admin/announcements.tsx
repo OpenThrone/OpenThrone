@@ -15,11 +15,11 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { AnnouncementSeverity } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import { AnnouncementSeverity } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
 const severityColor = (s: string) => {
@@ -100,6 +100,13 @@ const AnnouncementsPage = () => {
         setBody('');
         close();
         fetchAnnouncements();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        notifications.show({
+          title: 'Error',
+          message: errData.error ?? errData.message ?? `Failed (${res.status})`,
+          color: 'red',
+        });
       }
     } catch (err) {
       logError('Failed to create:', err);
@@ -281,6 +288,7 @@ const AnnouncementsPage = () => {
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context: any) => {
   return {
     props: {

@@ -1,7 +1,7 @@
-import type { AccountStatus, PermissionType } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { AccountStatus, PermissionType } from '@/lib/prisma-exports';
 import { getDepositHistory } from '@/services/Bank.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getUpdatedStatus } from '@/services/User.service';
@@ -22,6 +22,7 @@ import {
 } from './UserDefaults.service';
 
 // Type definitions for general operations
+/** Describes the search users result data contract. */
 export interface SearchUsersResult {
   id: number;
   display_name: string;
@@ -32,6 +33,7 @@ export interface SearchUsersResult {
   permissions: { type: PermissionType }[];
 }
 
+/** Describes the online players stats data contract. */
 export interface OnlinePlayersStats {
   allUsersCounted: number;
   onlineUsers: number;
@@ -39,11 +41,13 @@ export interface OnlinePlayersStats {
   newestUser: string | null;
 }
 
+/** Describes the display name check result data contract. */
 export interface DisplayNameCheckResult {
   exists: boolean;
   possibleMatches: string[];
 }
 
+/** Describes the rank breakdown data contract. */
 export interface RankBreakdown {
   // Define based on what getRankBreakdown returns
   [key: string]: any;
@@ -59,12 +63,14 @@ const CheckDisplayNameSchema = z.object({
 });
 
 // Result interfaces
+/** Describes the general operation result data contract. */
 export interface GeneralOperationResult {
   success: boolean;
   message: string;
   data?: any;
 }
 
+/** Encapsulates general data access and domain operations. */
 export class GeneralService {
   /**
    * Gets comprehensive user data for the current user
@@ -644,5 +650,3 @@ export class GeneralService {
     }
   }
 }
-
-export default GeneralService;
