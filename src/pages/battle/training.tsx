@@ -33,7 +33,7 @@ import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
 import { logDebug, logError, logWarn } from '@/utils/logger'; // Added logError
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 /**
  * Represents data structure for a unit displayed in training section.

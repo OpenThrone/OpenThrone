@@ -167,7 +167,7 @@ const userToFormFields = (user: User | Partial<User>): any => {
 };
 
 // Predefined army presets using proper User structure
-export const presets = {
+const presets = {
   basic: {
     name: 'Basic Army',
     data: {
