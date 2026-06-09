@@ -19,6 +19,7 @@ type HeroBannerProps = {
   iconFill?: string;
 };
 
+/** Hero banner. */
 export default function HeroBanner({
   title,
   subtitle,

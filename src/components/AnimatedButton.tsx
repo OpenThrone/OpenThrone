@@ -28,6 +28,7 @@ interface AnimatedButtonsProps {
   spacing?: number | string;
 }
 
+/** Animated buttons. */
 export default function AnimatedButtons({
   buttons,
   orientation = 'horizontal',

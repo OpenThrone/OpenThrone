@@ -1,3 +1,9 @@
+/**
+ * @deprecated Use Mantine <Tabs> component instead — 6 pages already use it
+ * as the standard (bank, armory, upgrades, alliances, admin). Custom styling
+ * can be achieved via Mantine theme overrides.
+ */
+
 import React, { useState } from 'react';
 
 type Tab = {

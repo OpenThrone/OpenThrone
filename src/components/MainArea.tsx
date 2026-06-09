@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import React, { forwardRef, useCallback, useEffect, useState } from 'react';
 
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
 import { formatLastMessageTime } from '@/utils/timefunctions'; // Import time formatter
@@ -43,7 +44,8 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
   const { unreadMessages, unreadMessagesCount, markRoomAsRead, user } =
     useUser();
   const [isMessageMenuOpened, setMessageMenuOpened] = useState(false);
-  const [isUserMenuOpened, setUserMenuOpened] = useState(false);
+  const [isSocialMenuOpened, setSocialMenuOpened] = useState(false);
+  const [isSettingsMenuOpened, setSettingsMenuOpened] = useState(false);
   const [socialNotificationCount, setSocialNotificationCount] =
     useState<number>(0);
   const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
@@ -203,9 +205,9 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                 width={260}
                 position="bottom-end"
                 transitionProps={{ transition: 'pop-top-right' }}
-                onClose={() => setUserMenuOpened(false)}
-                onOpen={() => setUserMenuOpened(true)}
-                opened={isUserMenuOpened}
+                onClose={() => setSocialMenuOpened(false)}
+                onOpen={() => setSocialMenuOpened(true)}
+                opened={isSocialMenuOpened}
                 withinPortal
               >
                 <Menu.Target>
@@ -280,8 +282,9 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                 width={260}
                 position="bottom-end"
                 transitionProps={{ transition: 'pop-top-right' }}
-                onClose={() => setUserMenuOpened(false)}
-                onOpen={() => setUserMenuOpened(true)}
+                onClose={() => setSettingsMenuOpened(false)}
+                onOpen={() => setSettingsMenuOpened(true)}
+                opened={isSettingsMenuOpened}
                 withinPortal
               >
                 <Menu.Target>
@@ -333,6 +336,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
+              <LanguageSwitcher />
             </Group>
           )}
         </Container>

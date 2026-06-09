@@ -1,3 +1,4 @@
+/** Themed card. */
 export default function ThemedCard() {
   return (
     <div className="relative min-h-[220px] w-full max-w-md bg-[#2b3444] p-8 text-white">

@@ -11,7 +11,6 @@ export * from './AttackDataService';
 export * from './AttackValidationService';
 export * from './Auth.service';
 export * from './Bank.service';
-export * from './Banking.service';
 export * from './Battle.service';
 export * from './Blog.service';
 export * from './CheatDetection.service';

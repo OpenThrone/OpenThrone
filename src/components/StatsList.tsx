@@ -1,7 +1,7 @@
 import { Chip, Group, Stack } from '@mantine/core';
 
 import type { Loss } from '@/types/typings';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 import RpgAwesomeIcon from './RpgAwesomeIcon';
 

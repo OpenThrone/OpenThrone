@@ -17,6 +17,7 @@ const parentLinks = [
   { key: 'about', labelKey: 'loggedOut.about', url: '/about' },
 ] as const;
 
+/** Nav logged out. */
 export const NavLoggedOut: React.FC = () => {
   const router = useRouter();
   const pathName = router.asPath?.split('?')[0] ?? '/';

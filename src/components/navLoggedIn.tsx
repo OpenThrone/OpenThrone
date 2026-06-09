@@ -109,6 +109,7 @@ interface NavLoggedInProps {
   sidebarContent?: ReactNode;
 }
 
+/** Nav logged in. */
 export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
   const router = useRouter();
   const pathName = router.asPath?.split('?')[0] ?? '/';
@@ -428,6 +429,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
                   </li>
                 );
               })}
+
               <li className="xs:px-6 px-3" key="signOut">
                 {isImpersonating && (
                   <button

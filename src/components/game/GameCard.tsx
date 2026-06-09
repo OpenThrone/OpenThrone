@@ -36,6 +36,7 @@ interface GameCardProps extends PaperProps {
   goldAccent?: boolean; // If true, adds the gold glow/border
 }
 
+/** Game card. */
 export const GameCard: React.FC<GameCardProps> = ({
   title,
   icon,

@@ -2,6 +2,7 @@ import { Button, Menu } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 
+/** Language switcher. */
 export const LanguageSwitcher = () => {
   const router = useRouter();
   const { i18n, t } = useTranslation('common');

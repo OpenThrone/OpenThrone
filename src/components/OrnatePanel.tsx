@@ -7,6 +7,7 @@ type OrnatePanelProps = {
   minHeight?: number;
 };
 
+/** Ornate panel. */
 export function OrnatePanel({ children, minHeight = 280 }: OrnatePanelProps) {
   return (
     <Box

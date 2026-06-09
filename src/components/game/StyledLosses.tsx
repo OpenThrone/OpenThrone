@@ -7,6 +7,7 @@ interface StyledLossesProps {
   losses: string; // JSON string
 }
 
+/** Styled losses. */
 export const StyledLosses: React.FC<StyledLossesProps> = ({ losses }) => {
   const data = JSON.parse(losses);
 
