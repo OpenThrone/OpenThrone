@@ -12,18 +12,18 @@ import {
   Timeline,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import {
-  PermissionType,
-  ReportPriority,
-  ReportResolution,
-  ReportStatus,
-} from '@prisma/client';
 import { useRouter } from 'next/router';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
+import {
+  PermissionType,
+  ReportPriority,
+  ReportResolution,
+  ReportStatus,
+} from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
 const ReportDetailsPage = () => {
@@ -408,6 +408,7 @@ const ReportDetailsPage = () => {
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context: any) => {
   return {
     props: {

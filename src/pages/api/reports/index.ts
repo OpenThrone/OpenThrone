@@ -1,12 +1,12 @@
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
+
 import {
   PermissionType,
   ReportCategory,
   ReportPriority,
   ReportStatus,
-} from '@prisma/client';
-import type { NextApiResponse } from 'next';
-import { z } from 'zod';
-
+} from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { ReportService } from '@/services/Report.service';
 import type { AuthenticatedRequest } from '@/types/api';
