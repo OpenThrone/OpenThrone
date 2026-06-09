@@ -1,6 +1,7 @@
 import { Chip, Group } from '@mantine/core';
 import React from 'react';
 
+/** Bank history filters. */
 export default function BankHistoryFilters({
   colorScheme,
   filters,

@@ -1,16 +1,12 @@
-import type { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 import { parseBigInt } from '@/utils/jsonHelpers';
 import { stringifyObj } from '@/utils/numberFormatting';
 
-// Define the type for the transaction client
-type TransactionClient = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+type TransactionClient = Prisma.TransactionClient;
 
 const DepositSchema = z.object({
   userId: z.number().int().positive(),
@@ -32,6 +28,7 @@ const WithdrawRequestSchema = z.object({
   amount: z.preprocess((val) => parseBigInt(val), z.bigint().positive()),
 });
 
+/** Deposit gold. */
 export const depositGold = async (
   userId: number,
   amount: string | number | bigint,
@@ -56,6 +53,7 @@ export const depositGold = async (
   return deposit(parseResult.data.userId, parseResult.data.amount);
 };
 
+/** Withdraw gold. */
 export const withdrawGold = async (
   userId: number,
   amount: string | number | bigint,
@@ -75,7 +73,7 @@ export const withdrawGold = async (
  * @returns The updated user object with stringified BigInt fields.
  * @throws Error if user not found or insufficient gold.
  */
-export const deposit = async (userId: number, depositAmount: bigint) => {
+const deposit = async (userId: number, depositAmount: bigint) => {
   const validatedData = DepositSchema.parse({ userId, depositAmount });
 
   return await prisma.$transaction(async (tx: TransactionClient) => {
@@ -122,7 +120,7 @@ export const deposit = async (userId: number, depositAmount: bigint) => {
  * @returns The updated user object.
  * @throws Error if user not found or insufficient gold in bank.
  */
-export const withdraw = async (userId: number, withdrawAmount: bigint) => {
+const withdraw = async (userId: number, withdrawAmount: bigint) => {
   const validatedData = WithdrawSchema.parse({ userId, withdrawAmount });
 
   return await prisma.$transaction(async (tx: TransactionClient) => {
