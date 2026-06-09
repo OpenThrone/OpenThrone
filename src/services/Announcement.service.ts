@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 
+/** Encapsulates announcement data access and domain operations. */
 export class AnnouncementService {
   static async list(filters?: { isActive?: boolean }) {
     return prisma.announcement.findMany({

@@ -1,5 +1,8 @@
 const FALSE_VALUES = new Set(['0', 'false', 'no', 'off']);
 
+/**
+ * Returns whether privileged permission grants require the target user to have 2FA enabled.
+ */
 export const isPrivileged2FAEnforced = () => {
   const raw = process.env.OT_ENFORCE_PRIVILEGED_2FA;
   if (!raw) {

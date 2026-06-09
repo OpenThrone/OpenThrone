@@ -9,6 +9,7 @@ import { logError } from '@/utils/logger';
 import { calculateUserStats } from '@/utils/utilities';
 
 // Type definitions for armory operations
+/** Describes the armory item data contract. */
 export interface ArmoryItem {
   type: string;
   usage: string;
@@ -16,14 +17,14 @@ export interface ArmoryItem {
   quantity: number;
 }
 
-export interface MercenaryData {
+interface MercenaryData {
   type: string;
   level: number;
   quantity: number;
   expiresAt: Date;
 }
 
-export interface ConvertItemData {
+interface ConvertItemData {
   fromItem: string;
   toItem: string;
   conversionAmount: number;
@@ -76,12 +77,14 @@ const ConvertItemsSchema = z.object({
 });
 
 // Result interfaces
+/** Describes the armory operation result data contract. */
 export interface ArmoryOperationResult {
   message: string;
   data: any;
   cost?: number;
 }
 
+/** Describes the mercenary operation result data contract. */
 export interface MercenaryOperationResult {
   message: string;
   mercenaries: MercenaryData[];
@@ -91,6 +94,7 @@ export interface MercenaryOperationResult {
   expiresAt?: Date;
 }
 
+/** Encapsulates armory data access and domain operations. */
 export class ArmoryService {
   /**
    * Equips items for a user
@@ -739,5 +743,3 @@ export class ArmoryService {
     }
   }
 }
-
-export default ArmoryService;

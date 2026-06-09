@@ -1,4 +1,3 @@
-import type { users as PrismaUser } from '@prisma/client';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
@@ -12,6 +11,7 @@ import {
 } from 'react';
 
 import useSocket from '@/hooks/useSocket';
+import type { users as PrismaUser } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users'; // Import UserModel
 import { alertService } from '@/services/Alert.service';
 import type { UserApiResponse } from '@/types/typings';
@@ -49,6 +49,7 @@ const UserContext = createContext<UserContextType>({
   markRoomAsRead: (_roomId: number) => {},
 });
 
+/** Provides user state and actions for React consumers. */
 export const useUser = () => useContext(UserContext);
 
 const isPublicPath = (path: string | null) => {
@@ -74,6 +75,7 @@ interface UsersProviderProps {
   children: ReactNode;
 }
 
+/** User provider. */
 export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const router = useRouter();
   const pathName = usePathname();

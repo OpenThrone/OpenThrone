@@ -12,6 +12,7 @@ const SettingSchema = z.object({
   isRuntimeEditable: z.boolean().default(true),
 });
 
+/** Encapsulates server setting data access and domain operations. */
 export class ServerSettingService {
   static async list(publicOnly = false) {
     return prisma.serverSetting.findMany({

@@ -37,6 +37,7 @@ const smtpConfig: SMTPTransport.Options = {
   tls: { rejectUnauthorized: false },
 };
 
+/** Describes the register data contract. */
 export interface RegisterData {
   email: string;
   password: string;
@@ -62,6 +63,7 @@ const LoginSchema = z.object({
   ip: z.string().optional(),
 });
 
+/** Encapsulates auth data access and domain operations. */
 export class AuthService {
   /**
    * Updates the password encryption for a user to the latest algorithm (Argon2).

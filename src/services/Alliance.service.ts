@@ -6,6 +6,7 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import { getLevelFromXP } from '@/utils/utilities';
 
 // Type definitions for alliance operations
+/** Describes the create alliance data contract. */
 export interface CreateAllianceData {
   name: string;
   avatar?: string;
@@ -15,6 +16,7 @@ export interface CreateAllianceData {
   roster_visibility?: 'PUBLIC' | 'MEMBERS_ONLY';
 }
 
+/** Describes the join alliance data contract. */
 export interface JoinAllianceData {
   allianceId: number;
 }
@@ -30,6 +32,7 @@ const AllianceRosterVisibility = {
   MEMBERS_ONLY: 'MEMBERS_ONLY',
 } as const;
 
+/** Describes the update alliance data contract. */
 export interface UpdateAllianceData {
   name?: string;
   avatar?: string;
@@ -41,20 +44,24 @@ export interface UpdateAllianceData {
   slug?: string;
 }
 
+/** Describes the leave alliance data contract. */
 export interface LeaveAllianceData {
   allianceId: number;
 }
 
+/** Describes the kick member data contract. */
 export interface KickMemberData {
   allianceId: number;
   memberId: number;
 }
 
+/** Describes the transfer leadership data contract. */
 export interface TransferLeadershipData {
   allianceId: number;
   newLeaderId: number;
 }
 
+/** Describes the create role data contract. */
 export interface CreateRoleData {
   allianceId: number;
   name: string;
@@ -71,6 +78,7 @@ export interface CreateRoleData {
   };
 }
 
+/** Describes the update role data contract. */
 export interface UpdateRoleData {
   name?: string;
   permissions?: {
@@ -86,6 +94,7 @@ export interface UpdateRoleData {
   };
 }
 
+/** Describes the alliance info data contract. */
 export interface AllianceInfo {
   id: number;
   name: string;
@@ -110,7 +119,7 @@ export interface AllianceInfo {
   members?: AllianceMember[];
 }
 
-export interface AllianceMember {
+interface AllianceMember {
   id: number;
   alliance_id: number;
   user_id: number;
@@ -132,7 +141,7 @@ export interface AllianceMember {
   };
 }
 
-export interface AllianceRole {
+interface AllianceRole {
   id: number;
   name: string;
   alliance_id: number;
@@ -141,6 +150,7 @@ export interface AllianceRole {
   permissions: any;
 }
 
+/** Describes the alliance search filters data contract. */
 export interface AllianceSearchFilters {
   search?: string;
   is_public?: boolean;
@@ -229,6 +239,7 @@ const AllianceSearchSchema = z.object({
   offset: z.coerce.number().int().nonnegative().optional(),
 });
 
+/** Encapsulates alliance data access and domain operations. */
 export class AllianceService {
   /**
    * Validates that a user can create an alliance

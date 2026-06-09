@@ -42,7 +42,7 @@ export const canAttack = async (
  * @param defender - The defender user object.
  * @returns True if the assassination is allowed, false otherwise.
  */
-export const canAssassinate = async (
+const canAssassinate = async (
   attacker: { id: number },
   defender: { id: number },
 ) => {
@@ -72,7 +72,7 @@ export const canAssassinate = async (
  * @param defender - The defender user object.
  * @returns True if the infiltration is allowed, false otherwise.
  */
-export const canInfiltrate = async (
+const canInfiltrate = async (
   attacker: { id: number },
   defender: { id: number },
 ) => {

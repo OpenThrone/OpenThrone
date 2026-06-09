@@ -1,4 +1,5 @@
 // Small helper to safely convert various date-like values to ISO strings.
+/** Safe to isostring. */
 export const safeToISOString = (val: any): string | null => {
   if (val === null || typeof val === 'undefined') return null;
   if (val instanceof Date)
@@ -15,5 +16,3 @@ export const safeToISOString = (val: any): string | null => {
   }
   return null;
 };
-
-export default safeToISOString;

@@ -1,6 +1,5 @@
-import type { users as PrismaUser, UserUnit } from '@prisma/client';
-
 import { UnitTypes } from '@/constants';
+import type { users as PrismaUser, UserUnit } from '@/lib/prisma-exports';
 import { UserStatsService } from '@/services/UserStatsService';
 import type { FortHealth } from '@/types/typings';
 import type { DetailedCalculatedStrength } from '@/utils/attackFunctions';
@@ -8,6 +7,7 @@ import { getLevelFromXP } from '@/utils/utilities';
 
 import { BaseUser, type BaseUserRelations } from './BaseUser';
 
+/** Models battle user behavior and derived game data. */
 export class BattleUser extends BaseUser {
   private statsService: UserStatsService;
 

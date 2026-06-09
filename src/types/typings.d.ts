@@ -3,7 +3,7 @@ import type {
   PermissionType,
   PrismaClient,
   User as PrismaUser,
-} from '@prisma/client'; // Import PrismaUser alias
+} from '@/lib/prisma-exports'; // Import PrismaUser alias
 
 declare global {
   var prisma: PrismaClient | undefined;

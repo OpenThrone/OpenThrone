@@ -14,6 +14,7 @@ import { getUserById } from '@/services';
 import { logError } from '@/utils/logger';
 
 // Type definitions for structure operations
+/** Describes the structure upgrade data contract. */
 export interface StructureUpgradeData {
   upgradeType:
     | 'fortifications'
@@ -25,6 +26,7 @@ export interface StructureUpgradeData {
   index: number;
 }
 
+/** Describes the structure upgrade result data contract. */
 export interface StructureUpgradeResult {
   message: string;
   data: {
@@ -50,6 +52,7 @@ const StructureUpgradeSchema = z.object({
     .nonnegative({ message: 'Index must be a non-negative integer.' }),
 });
 
+/** Encapsulates structure data access and domain operations. */
 export class StructureService {
   /**
    * Upgrades a structure for a user
@@ -258,5 +261,3 @@ export class StructureService {
     }
   }
 }
-
-export default StructureService;

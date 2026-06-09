@@ -2,6 +2,7 @@ import type { Item, PlayerUnit, UnitType } from '@/types/typings';
 
 export const CITIZEN_WORKERS_TARGET = 'CITIZEN_WORKERS';
 
+/** Defines the spy mission user shape used by related workflows. */
 export type SpyMissionUser = {
   [key: string]: any;
   id?: number;
@@ -20,6 +21,7 @@ export type SpyMissionUser = {
   getLevelForUnit?: (type: UnitType | string) => number;
 };
 
+/** Models assassination result behavior and derived game data. */
 export class AssassinationResult {
   spiesSent: number;
 
@@ -61,6 +63,7 @@ export class AssassinationResult {
   }
 }
 
+/** Models intel result behavior and derived game data. */
 export class IntelResult {
   attacker: SpyMissionUser;
 
@@ -100,6 +103,7 @@ export class IntelResult {
   }
 }
 
+/** Models infiltration result behavior and derived game data. */
 export class InfiltrationResult {
   attacker: SpyMissionUser;
 

@@ -1,7 +1,7 @@
-import { GameEventStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { GameEventStatus } from '@/lib/prisma-exports';
 
 const CreateEventSchema = z.object({
   key: z.string().min(1).max(100),
@@ -13,6 +13,7 @@ const CreateEventSchema = z.object({
   config: z.record(z.unknown()).default({}),
 });
 
+/** Encapsulates game event data access and domain operations. */
 export class GameEventService {
   static async list(filters?: { status?: GameEventStatus }) {
     return prisma.gameEvent.findMany({

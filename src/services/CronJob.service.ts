@@ -11,6 +11,7 @@ import { calculateOverallRank } from '@/utils/utilities';
 const _RankSchema = z.number().int().positive();
 
 // Type definitions for cron job operations
+/** Describes the cron job result data contract. */
 export interface CronJobResult {
   success: boolean;
   message: string;
@@ -18,6 +19,7 @@ export interface CronJobResult {
   failed?: number;
 }
 
+/** Encapsulates cron job data access and domain operations. */
 export class CronJobService {
   /**
    * Processes daily updates for all users
@@ -363,5 +365,3 @@ export class CronJobService {
     await Promise.all(cleanupPromises);
   }
 }
-
-export default CronJobService;

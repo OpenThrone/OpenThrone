@@ -1,3 +1,4 @@
+/** Defines the random fn shape used by related workflows. */
 export type RandomFn = () => number;
 
 function hashSeed(seed: number | string): number {
@@ -9,6 +10,7 @@ function hashSeed(seed: number | string): number {
   return h <= 0 ? h + 2147483646 : h;
 }
 
+/** Create seeded random. */
 export function createSeededRandom(seed: number | string): RandomFn {
   let state = hashSeed(seed);
   return () => {
@@ -17,6 +19,7 @@ export function createSeededRandom(seed: number | string): RandomFn {
   };
 }
 
+/** Shuffle with random. */
 export function shuffleWithRandom<T>(values: T[], random: RandomFn): T[] {
   const next = [...values];
   for (let i = next.length - 1; i > 0; i -= 1) {

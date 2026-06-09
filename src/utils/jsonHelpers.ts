@@ -23,7 +23,7 @@ const bigIntReviver = (key: string, value: any): any => {
  * @param obj - The object to stringify.
  * @returns JSON string with BigInts as 'numbern' strings.
  */
-export const safeStringify = (obj: any): string => {
+const safeStringify = (obj: any): string => {
   // Ensure primitive BigInt inputs and nested BigInts are converted by running
   // the recursive helper first, then stringify with the replacer as a fallback.
   try {
@@ -40,7 +40,7 @@ export const safeStringify = (obj: any): string => {
  * @param json - The JSON string.
  * @returns Parsed object with 'numbern' strings as BigInts.
  */
-export const safeParse = (json: string): any => {
+const safeParse = (json: string): any => {
   return JSON.parse(json, bigIntReviver);
 };
 

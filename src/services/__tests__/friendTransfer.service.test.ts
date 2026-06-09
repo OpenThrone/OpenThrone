@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'bun:test';
 
+import type { Prisma } from '@/lib/prisma-exports';
+
 // Use shared mock helpers
 import { installMockMtRand } from '../../../test/utils/mockMtRand';
 import { installMockPrisma, mockPrisma } from '../../../test/utils/mockPrisma';
@@ -16,10 +18,7 @@ let isValidTransferAmount: any;
 let canMakeTransfer: any;
 
 // Define the type for the transaction client (copied from the service)
-type TransactionClient = Omit<
-  any,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+type TransactionClient = Prisma.TransactionClient;
 
 // Install mocks before requiring modules under test
 installMockPrisma(vi);

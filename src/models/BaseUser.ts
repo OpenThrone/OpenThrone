@@ -5,8 +5,9 @@ import type {
   users as PrismaUser,
   UserStructureUpgrade,
   UserUnit,
-} from '@prisma/client';
+} from '@/lib/prisma-exports';
 
+/** Defines the base user relations shape used by related workflows. */
 export type BaseUserRelations = {
   units?: UserUnit[];
   items?: UserItem[];
@@ -24,7 +25,7 @@ type BaseUserData = PrismaUser &
     UserBonusPoints: UserBonusPoints[];
   }>;
 
-export const safeBigInt = (value: unknown): bigint => {
+const safeBigInt = (value: unknown): bigint => {
   if (value === null || value === undefined) return BigInt(0);
   if (typeof value === 'bigint') return value;
 
@@ -38,6 +39,7 @@ export const safeBigInt = (value: unknown): bigint => {
   }
 };
 
+/** Models base user behavior and derived game data. */
 export class BaseUser {
   public id: number;
 

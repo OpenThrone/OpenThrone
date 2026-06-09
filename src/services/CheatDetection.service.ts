@@ -1,7 +1,7 @@
-import { InvestigationStatus, SignalSeverity } from '@prisma/client';
-
 import prisma from '@/lib/prisma';
+import { InvestigationStatus, SignalSeverity } from '@/lib/prisma-exports';
 
+/** Encapsulates cheat detection data access and domain operations. */
 export class CheatDetectionService {
   static async listSignals(filters?: {
     status?: InvestigationStatus;

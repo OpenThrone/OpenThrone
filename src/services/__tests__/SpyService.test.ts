@@ -9,7 +9,7 @@ import MockUserGenerator from '@/utils/MockUserGenerator';
 import { CITIZEN_WORKERS_TARGET } from '@/utils/spy/results';
 
 // Now import the service under test (after the mock is in place)
-import SpyService from '../SpyService';
+import { SpyService } from '../SpyService';
 
 // Install the module mock BEFORE importing SpyService so the module under test
 // gets the mocked implementation at load time.

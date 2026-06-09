@@ -15,53 +15,62 @@ import {
 } from './FriendTransfer.service';
 
 // Type definitions for social operations
+/** Describes the add social data contract. */
 export interface AddSocialData {
   friendId: number;
   relationshipType: 'FRIEND' | 'ENEMY';
 }
 
+/** Describes the remove social data contract. */
 export interface RemoveSocialData {
   friendId: number;
   relationshipType: 'FRIEND' | 'ENEMY';
 }
 
+/** Describes the end relationship data contract. */
 export interface EndRelationshipData {
   friendId: number;
 }
 
+/** Describes the respond to request data contract. */
 export interface RespondToRequestData {
   requestId: number;
   action: 'accept' | 'decline';
 }
 
+/** Describes the get relationship data contract. */
 export interface GetRelationshipData {
   userId: number;
   targetUserId: number;
 }
 
+/** Describes the list social data contract. */
 export interface ListSocialData {
   type: 'FRIEND' | 'ENEMY' | 'REQUESTS';
   limit?: number;
   playerId?: number;
 }
 
+/** Describes the get top social data contract. */
 export interface GetTopSocialData {
   type: 'FRIEND' | 'ENEMY';
 }
 
+/** Describes the gold request data contract. */
 export interface GoldRequestData {
   friendId: number;
   amount: bigint | number | string;
   notes?: string;
 }
 
+/** Describes the gold request response data contract. */
 export interface GoldRequestResponseData {
   requestId: number;
   action: 'accept' | 'decline';
   message?: string;
 }
 
-export interface SocialConnection {
+interface SocialConnection {
   id: number;
   playerId: number;
   friendId: number;
@@ -80,7 +89,7 @@ export interface SocialConnection {
   };
 }
 
-export interface RelationshipInfo {
+interface RelationshipInfo {
   relationship: any;
   canInteract: boolean;
   availableActions: string[];
@@ -140,6 +149,7 @@ const GoldRequestResponseSchema = z.object({
   message: z.string().optional(),
 });
 
+/** Encapsulates social data access and domain operations. */
 export class SocialService {
   /**
    * Validates that a user can add a relationship with another user

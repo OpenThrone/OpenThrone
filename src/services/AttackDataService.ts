@@ -1,19 +1,14 @@
-import type { Prisma, PrismaClient } from '@prisma/client'; // Import Prisma types
-import type { Omit } from '@prisma/client/runtime/library';
 import { z } from 'zod';
 
 import { BattleUpgrades, ItemTypes } from '@/constants';
 import prisma from '@/lib/prisma';
-import type { PlayerStat, PlayerUnit } from '@/types/typings'; // Import custom types
+import type { Prisma } from '@/lib/prisma-exports';
+import type { PlayerStat, PlayerUnit } from '@/types/typings';
 import { getOTStartDate } from '@/utils/timefunctions';
 
 import { ensureActiveEra } from './Era.service';
 
-// Define the type for the transaction client
-type TransactionClient = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+type TransactionClient = Prisma.TransactionClient;
 
 // Zod schemas for validation
 const UserIdSchema = z.number().int().positive();
@@ -77,7 +72,7 @@ export const getAllUsers = async () => {
  * Retrieves the IDs of all users.
  * @returns An array of objects containing user IDs.
  */
-export const getAllUserIds = async () => {
+const getAllUserIds = async () => {
   return await prisma.users.findMany({
     select: { id: true },
   });
@@ -163,7 +158,7 @@ export const updateUserUnits = async (
  * @param hitpoints - The new hitpoint value.
  * @param txClient - The Prisma transaction client.
  */
-export const updateFortHitpoints = async (
+const updateFortHitpoints = async (
   userId: number,
   hitpoints: number,
   txClient: TransactionClient,
@@ -458,7 +453,7 @@ export const getTop10TotalDefenderCasualties = async (timeFrame: number) => {
  * @param days - The number of past days to include in the history (default: 7).
  * @returns An array of recruitment counts with associated valid recruitment records.
  */
-export async function getRecruitmentCounts(days: number = 7) {
+async function getRecruitmentCounts(days: number = 7) {
   const validatedDays = DaysSchema.parse(days);
   const startDate = new Date(
     Number(getOTStartDate()) - validatedDays * 24 * 60 * 60 * 1000,

@@ -16,7 +16,7 @@ import {
 } from '@/utils/balance/v5Combat';
 
 import { logDebug } from './logger';
-import mtRand from './mtrand';
+import { mtRand } from './mtrand';
 import { type RandomFn, shuffleWithRandom } from './random';
 import type { SpyMissionUser } from './spy/results';
 import {
@@ -27,6 +27,7 @@ import {
 } from './spy/results';
 import { getAverageLevelAndHP } from './units';
 
+/** Compute spy amp factor. */
 export function computeSpyAmpFactor(targetPop: number): number {
   let ampFactor = 0.4;
 
@@ -48,6 +49,7 @@ export function computeSpyAmpFactor(targetPop: number): number {
 }
 export { CITIZEN_WORKERS_TARGET };
 
+/** Defines the spy simulation options shape used by related workflows. */
 export type SpySimulationOptions = {
   random?: RandomFn;
   debug?: boolean;
@@ -76,6 +78,7 @@ function getPressureAdjustedSentry(
   return Math.max(1, defender.sentry / Math.max(0.35, protection));
 }
 
+/** Simulates an intelligence spy mission and returns a structured mission result. */
 export function simulateIntel(
   attacker: SpyMissionUser,
   defender: SpyMissionUser,
@@ -197,6 +200,7 @@ export function simulateIntel(
   return result;
 }
 
+/** Simulates an assassination spy mission against defender units. */
 export const simulateAssassination = (
   attacker: SpyMissionUser,
   defender: SpyMissionUser,
@@ -468,6 +472,7 @@ export const simulateAssassination = (
   return result;
 };
 
+/** Simulates an infiltration spy mission and resulting fort damage. */
 export const simulateInfiltration = (
   attacker: SpyMissionUser,
   defender: SpyMissionUser,
@@ -674,6 +679,7 @@ export function calculateClandestineStrength(
   };
 }
 
+/** Calculates defense against assassination used by combat, economy, or presentation logic. */
 export function calculateDefenseAgainstAssassination(
   user: SpyMissionUser,
   unitType: UnitType,
@@ -771,6 +777,7 @@ function calculateAverageStrength(Units, targetType) {
   };
 }
 
+/** Compute spy casualties. */
 export function computeSpyCasualties({
   attackerKS: _attackerKS,
   defenderDS: _defenderDS,

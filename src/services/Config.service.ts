@@ -12,12 +12,10 @@ const friendTransferConfigSchema = z.object({
 });
 
 // Friend transfer configuration type
-export type FriendTransferConfig = z.infer<typeof friendTransferConfigSchema>;
+type FriendTransferConfig = z.infer<typeof friendTransferConfigSchema>;
 
 // Friend transfer configuration with validation
-export const friendTransferConfig = friendTransferConfigSchema.parse(
-  process.env,
-);
+const friendTransferConfig = friendTransferConfigSchema.parse(process.env);
 
 /**
  * Gets friend transfer configuration settings
@@ -36,7 +34,7 @@ export const getFriendTransferConfig = () => {
  * Checks if friend transfer feature is enabled
  * @returns True if friend transfer is enabled, false otherwise
  */
-export const isFriendTransferEnabled = () => {
+const isFriendTransferEnabled = () => {
   return friendTransferConfig.NEXT_PUBLIC_ENABLE_FRIEND_TRANSFER;
 };
 
@@ -44,7 +42,7 @@ export const isFriendTransferEnabled = () => {
  * Gets the maximum transfer amount allowed
  * @returns Maximum transfer amount as bigint
  */
-export const getMaxTransferAmount = () => {
+const getMaxTransferAmount = () => {
   return friendTransferConfig.FRIEND_TRANSFER_MAX_AMOUNT;
 };
 
@@ -52,7 +50,7 @@ export const getMaxTransferAmount = () => {
  * Gets the cooldown period in hours between transfers
  * @returns Cooldown period in hours
  */
-export const getTransferCooldownHours = () => {
+const getTransferCooldownHours = () => {
   return friendTransferConfig.FRIEND_TRANSFER_COOLDOWN_HOURS;
 };
 
@@ -60,7 +58,7 @@ export const getTransferCooldownHours = () => {
  * Gets the fee percentage applied to friend transfers
  * @returns Fee percentage as number
  */
-export const getTransferFeePercentage = () => {
+const getTransferFeePercentage = () => {
   return friendTransferConfig.FRIEND_TRANSFER_FEE_PERCENTAGE;
 };
 
@@ -88,7 +86,7 @@ export const isValidTransferAmount = (amount: bigint) => {
  * Gets the minimum time (in milliseconds) that must pass between transfers
  * @returns Minimum time between transfers in milliseconds
  */
-export const getTransferCooldownMs = () => {
+const getTransferCooldownMs = () => {
   const cooldownHours = getTransferCooldownHours();
   return cooldownHours * 60 * 60 * 1000; // Convert hours to milliseconds
 };
@@ -122,4 +120,5 @@ export const getCompleteFriendTransferConfig = () => {
 };
 
 // Export the complete config object for direct use
+/** Friend transfer complete config. */
 export const friendTransferCompleteConfig = getCompleteFriendTransferConfig();

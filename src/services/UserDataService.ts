@@ -1,7 +1,7 @@
-import type { AccountStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { AccountStatus } from '@/lib/prisma-exports';
 import { getDepositHistory } from '@/services/Bank.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getUpdatedStatus } from '@/services/User.service';
@@ -18,6 +18,7 @@ import { UserEconomyService } from './UserEconomyService';
 import { UserStatsService } from './UserStatsService';
 import { UserUnitsService } from './UserUnitsService';
 
+/** Describes the full user data contract. */
 export interface FullUserData {
   id: number;
   display_name: string;
@@ -68,6 +69,7 @@ export interface FullUserData {
 
 const UserIdSchema = z.number().int().positive();
 
+/** Encapsulates user data data access and domain operations. */
 export class UserDataService {
   /**
    * Fetches and processes all user data, returning a unified DTO.

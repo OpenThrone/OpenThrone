@@ -4,6 +4,7 @@ const UserDataSchema = z.object({
   last_active: z.union([z.date(), z.string(), z.null()]).optional(),
 });
 
+/** Encapsulates user session data access and domain operations. */
 export class UserSessionService {
   private lastActive: Date | null;
 

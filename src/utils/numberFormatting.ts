@@ -1,6 +1,7 @@
 import type { Locales } from '@/types/typings';
 import { stringifyObj as stringifyBigInts } from '@/utils/jsonHelpers';
 
+/** Formats numeric values using the current locale-friendly grouping style. */
 export const toLocale = (num: number | string | bigint, locale?: Locales) => {
   if (typeof num === 'number') {
     return num.toLocaleString(locale || undefined);
@@ -80,6 +81,4 @@ const convertToHumanReadable = (num: bigint, locale?: Locales) => {
 // Re-export the canonical bigint-aware stringify function from jsonHelpers.
 export const stringifyObj = stringifyBigInts;
 
-export const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-
-export default toLocale;
+const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
