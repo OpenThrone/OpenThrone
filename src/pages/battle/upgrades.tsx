@@ -21,7 +21,7 @@ import MainArea from '@/components/MainArea';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 const useItems = (user) => {
   const [items, setItems] = useState({
@@ -55,6 +55,7 @@ const useItems = (user) => {
 };
 
 const itemMapFunction = (item, itemType, user, siegeLevel) => {
+  const discountedCost = item.cost - (user?.priceBonus / 100) * item.cost;
   return {
     id: `${itemType}_${item.level}`,
     name: item.name,
@@ -63,10 +64,9 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
       user?.battle_upgrades.find(
         (i) => i.type === item.type && i.level === item.level,
       )?.quantity || 0,
-    cost: toLocale(
-      item.cost - (user?.priceBonus / 100) * item.cost,
-      user?.locale,
-    ),
+    cost: toLocale(discountedCost, user?.locale),
+    baseCost: item.cost,
+    discountedCost,
     enabled: item.SiegeUpgradeLevel <= siegeLevel,
     level: item.level,
     type: item.type,

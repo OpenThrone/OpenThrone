@@ -3,6 +3,7 @@ import { stringifyObj } from '@/utils/numberFormatting';
 
 import type UserModel from './Users';
 
+/** Models battle result behavior and derived game data. */
 class BattleResult {
   attacker: UserModel;
 

@@ -1,5 +1,6 @@
 import type { RandomFn } from '@/utils/random';
 
+/** Defines the combat stats like shape used by related workflows. */
 export type CombatStatsLike = {
   MeleeAtkPower?: number;
   MeleeDefPower?: number;
@@ -7,6 +8,7 @@ export type CombatStatsLike = {
   RangedDefPower?: number;
 };
 
+/** Total combat power. */
 export function totalCombatPower(stats: CombatStatsLike): number {
   return (
     Number(stats?.MeleeAtkPower || 0) +
@@ -16,10 +18,11 @@ export function totalCombatPower(stats: CombatStatsLike): number {
   );
 }
 
-export function sigmoid(x: number): number {
+function sigmoid(x: number): number {
   return 1 / (1 + Math.exp(-x));
 }
 
+/** Compute battle win probability proxy. */
 export function computeBattleWinProbabilityProxy(
   attackerPower: number,
   defenderPower: number,
@@ -29,7 +32,7 @@ export function computeBattleWinProbabilityProxy(
   return Number(sigmoid(4 * logRatio).toFixed(4));
 }
 
-export function computeSpySuccessProbability(params: {
+function computeSpySuccessProbability(params: {
   attackerSpy: number;
   defenderSentry: number;
   k?: number;
@@ -50,6 +53,7 @@ export function computeSpySuccessProbability(params: {
   return Math.max(0.01, Math.min(0.99, p));
 }
 
+/** Resolve spy mission success. */
 export function resolveSpyMissionSuccess(params: {
   attackerSpy: number;
   defenderSentry: number;
@@ -71,7 +75,7 @@ export function resolveSpyMissionSuccess(params: {
   };
 }
 
-export function isBalanceV2Enabled(): boolean {
+function isBalanceV2Enabled(): boolean {
   return process.env.OT_ENABLE_BALANCE_V2 === 'true';
 }
 
@@ -89,6 +93,7 @@ function toRolloutBucket(seed: string): number {
   return hash % 100;
 }
 
+/** Is balance v2 enabled for user. */
 export function isBalanceV2EnabledForUser(userId?: number | string): boolean {
   const globalToggle = process.env.OT_ENABLE_BALANCE_V2;
   if (globalToggle === 'true') return true;

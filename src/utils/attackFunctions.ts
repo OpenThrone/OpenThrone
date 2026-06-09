@@ -34,9 +34,10 @@ import {
   V5_COMBAT_CONSTANTS,
 } from './balance/v5Combat';
 import { logWarn } from './logger';
-import mtRand from './mtrand';
+import { mtRand } from './mtrand';
 import type { RandomFn } from './random';
 
+/** Defines the battle user like shape used by related workflows. */
 export type BattleUserLike = {
   [key: string]: any;
   id?: number;
@@ -222,6 +223,7 @@ interface BattleState {
 }
 const OFFENSE = 'OFFENSE';
 
+/** Defines the simulation options shape used by related workflows. */
 export type SimulationOptions = {
   random?: RandomFn;
 };
@@ -250,12 +252,15 @@ const DEFAULT_BATTLE_CONSTANTS = {
 
 let BATTLE_CONSTANTS = { ...DEFAULT_BATTLE_CONSTANTS };
 
+/** Defines the battle constants shape used by related workflows. */
 export type BattleConstants = typeof DEFAULT_BATTLE_CONSTANTS;
 
+/** Returns battle constants for callers that need normalized game data. */
 export function getBattleConstants(): BattleConstants {
   return { ...BATTLE_CONSTANTS };
 }
 
+/** Set battle constants. */
 export function setBattleConstants(overrides: Partial<BattleConstants>): void {
   BATTLE_CONSTANTS = {
     ...BATTLE_CONSTANTS,
@@ -267,6 +272,7 @@ export function setBattleConstants(overrides: Partial<BattleConstants>): void {
   };
 }
 
+/** Reset battle constants. */
 export function resetBattleConstants(): void {
   BATTLE_CONSTANTS = { ...DEFAULT_BATTLE_CONSTANTS };
 }
@@ -922,7 +928,7 @@ function shouldBattleEndEarly(state) {
   return false;
 }
 
-export function calculateDefenseNerfFactor(
+function calculateDefenseNerfFactor(
   turn: number,
   currentFortHP: number,
   initialFortHP: number,
@@ -933,12 +939,14 @@ export function calculateDefenseNerfFactor(
   return Math.max(0.5, baseFactor * turnMultiplier);
 }
 
+/** Calculates stamina drop used by combat, economy, or presentation logic. */
 export function calculateStaminaDrop(turn: number): number {
   if (turn <= 5) return BATTLE_CONSTANTS.STAMINA_MULTIPLIERS.EARLY_PHASE;
   if (turn <= 10) return BATTLE_CONSTANTS.STAMINA_MULTIPLIERS.MID_PHASE;
   return BATTLE_CONSTANTS.STAMINA_MULTIPLIERS.LATE_PHASE;
 }
 
+/** Calculates fort damage used by combat, economy, or presentation logic. */
 export function calculateFortDamage(
   attackerMeleeAtkPower: number,
   fortificationDefensePower: number, // Combined melee and ranged defense of the fort
@@ -965,6 +973,7 @@ export function calculateFortDamage(
   return Math.max(damage, 0);
 }
 
+/** Calculates battle experience used by combat, economy, or presentation logic. */
 export function calculateBattleExperience(
   isAttackerWinner: boolean,
   levelDifference: number,
@@ -1016,7 +1025,7 @@ function calculateTurnCommitmentXpEfficiency(turns: number): number {
   return clamp(0.22 + 0.78 * normalizedTurns ** 0.85, 0.25, 1);
 }
 
-export function getXpRequiredForLevel(level: number): number {
+function getXpRequiredForLevel(level: number): number {
   if (level <= 1) return 0;
   return levelXPArray.find((entry) => entry.level === level)?.xp ?? Infinity;
 }
@@ -1039,6 +1048,7 @@ ItemTypes.forEach((item) => {
 });
 
 const strengthCache = new Map();
+/** Describes the calculated strength data contract. */
 export interface CalculatedStrength {
   MeleeAtkPower: number;
   MeleeDefPower: number;
@@ -1046,6 +1056,7 @@ export interface CalculatedStrength {
   RangedDefPower: number;
 }
 
+/** Describes the detailed calculated strength data contract. */
 export interface DetailedCalculatedStrength {
   baseStats: CalculatedStrength;
   itemStats: CalculatedStrength;
@@ -1053,6 +1064,7 @@ export interface DetailedCalculatedStrength {
   totalStats: CalculatedStrength;
 }
 
+/** Calculates strength used by combat, economy, or presentation logic. */
 export function calculateStrength(
   user: BattleUserLike,
   unitType: 'OFFENSE' | 'DEFENSE',
@@ -1338,7 +1350,7 @@ export function calculateStrength(
   return result;
 }
 
-export function computeAmpFactor(targetPop: number): number {
+function computeAmpFactor(targetPop: number): number {
   const baseFactor = 0.4;
   if (targetPop <= 1000) return baseFactor * 1.6;
   if (targetPop <= 5000) return baseFactor * 1.5;
@@ -1361,6 +1373,7 @@ function calculateDefenderLevelFactor(defenderLevel: number): number {
   return 0.7 + (defenderLevel - 10) * ((1 - 0.7) / 10);
 }
 
+/** Calculates loot used by combat, economy, or presentation logic. */
 export function calculateLoot(
   attacker: BattleUserLike,
   defender: BattleUserLike,
@@ -1436,7 +1449,7 @@ export function calculateLoot(
  * @param minimumDamageRatio - Minimum chip damage as a share of attack power.
  * @returns Mitigated damage before casualty budgeting.
  */
-export function computeMitigatedDamage(
+function computeMitigatedDamage(
   attackPower: number,
   defensePower: number,
   minimumDamageRatio = 0.05,
@@ -1452,6 +1465,7 @@ export function computeMitigatedDamage(
   return Math.max(subtractiveDamage, chipDamage);
 }
 
+/** New compute casualties. */
 export function newComputeCasualties(
   attackerAtk: number,
   defenderDef: number,
@@ -1572,6 +1586,7 @@ export function newComputeCasualties(
   };
 }
 
+/** Calculates stamina modifier used by combat, economy, or presentation logic. */
 export function calculateStaminaModifier(turn: number): number {
   if (turn <= 5) return 1.0; // Early phase - full stamina
   if (turn <= 10) return 0.85; // Mid phase - slight fatigue
@@ -1579,16 +1594,19 @@ export function calculateStaminaModifier(turn: number): number {
   return 0.55; // Late phase - significant fatigue
 }
 
+/** Calculates reinforcement modifier used by combat, economy, or presentation logic. */
 export function calculateReinforcementModifier(turn: number): number {
   if (turn <= 7) return 0; // No reinforcements in early phase
   return Math.min((turn - 7) * 0.1, 0.4); // Up to 40% reinforcement bonus, starting later
 }
 
+/** Calculates recovery factor used by combat, economy, or presentation logic. */
 export function calculateRecoveryFactor(turn: number): number {
   const baseRecovery = 0.7; // Slightly lower base recovery
   const recoveryPerTurn = 0.04; // Slightly lower recovery per turn
   return Math.min(baseRecovery + (turn - 7) * recoveryPerTurn, 1.0);
 }
+/** Distribute casualties. */
 export async function distributeCasualties(params: {
   result: BattleResult;
   attacker: BattleUserLike;
@@ -1810,16 +1828,13 @@ export async function distributeCasualties(params: {
   };
 }
 
-export function filterUnitsByType(
-  units: BattleUnits[],
-  type: string,
-): BattleUnits[] {
+function filterUnitsByType(units: BattleUnits[], type: string): BattleUnits[] {
   return units
     .filter((unit) => unit.type === type)
     .map((unit) => ({ ...unit }));
 }
 
-export function calculateAndApplyExperience(
+function calculateAndApplyExperience(
   result: BattleResult,
   params: {
     attacker: BattleUserLike;
@@ -1864,7 +1879,7 @@ export function calculateAndApplyExperience(
 
   result.result = isAttackerWinner ? 'WIN' : 'LOSS';
 }
-export function finalizeBattleResult(state: BattleState): void {
+function finalizeBattleResult(state: BattleState): void {
   /* 0|OTDev  |   attackerOffenseRemaining: 351,
 0|OTDev  |   defenderDefenseRemaining: 0,
 0|OTDev  |   defenderCitizensRemaining: 0,
@@ -2033,7 +2048,7 @@ export function finalizeBattleResult(state: BattleState): void {
  * @param user - The user model.
  * @returns StaminaState
  */
-export function calculateStamina(_user: BattleUserLike): StaminaState {
+function calculateStamina(_user: BattleUserLike): StaminaState {
   const maxStamina = 100; // Base max stamina
   const currentStamina = maxStamina; // Default to max, as user model doesn't have stamina field
   const regenerationRate = 1; // Per turn or unit
@@ -2049,7 +2064,7 @@ export function calculateStamina(_user: BattleUserLike): StaminaState {
  * @param user - The user model.
  * @returns StaminaModifiers
  */
-export function getStaminaModifiers(user: BattleUserLike): StaminaModifiers {
+function getStaminaModifiers(user: BattleUserLike): StaminaModifiers {
   const baseRegeneration = 1;
   const bonuses: { [key: string]: number } = {
     attackBonus: (user.attackBonus || 0) / 100,
@@ -2079,7 +2094,7 @@ export function calculateTurnScaling(turn: number): number {
  * @param fortLevel - Fort level.
  * @returns Bonus value.
  */
-export function calculateFortBonus(fortLevel: number): number {
+function calculateFortBonus(fortLevel: number): number {
   return fortLevel * 10; // Example: bonus increases with level
 }
 
@@ -2115,7 +2130,7 @@ export function getFortBreachState(
  * @param stats - Stats to modify.
  * @returns Modified stats.
  */
-export function applyMercenaryModifiers(
+function applyMercenaryModifiers(
   user: BattleUserLike,
   stats: DetailedCalculatedStrength,
 ): DetailedCalculatedStrength {
@@ -2148,7 +2163,7 @@ export function applyMercenaryModifiers(
  * @param defender - Defender user.
  * @returns Advantage factor.
  */
-export function calculateRangedAdvantage(
+function calculateRangedAdvantage(
   attacker: BattleUserLike,
   defender: BattleUserLike,
 ): number {
@@ -2317,6 +2332,7 @@ function computeUpgradeContribution(
   return stats;
 }
 
+/** Build unit formations. */
 export function buildUnitFormations(
   unit: BattleUnits,
   user: BattleUserLike,
@@ -2482,6 +2498,7 @@ export function buildUnitFormations(
   return formations;
 }
 
+/** Build battle army state. */
 export function buildBattleArmyState(
   user: BattleUserLike,
   usage: 'OFFENSE' | 'DEFENSE',
@@ -2506,6 +2523,7 @@ export function buildBattleArmyState(
   return { formations, collateral };
 }
 
+/** Sum phase attack power. */
 export function sumPhaseAttackPower(
   army: BattleArmyState,
   phase: 'melee' | 'ranged',
@@ -2523,6 +2541,7 @@ export function sumPhaseAttackPower(
   return total;
 }
 
+/** Sum phase defense power. */
 export function sumPhaseDefensePower(
   army: BattleArmyState,
   stat: 'MeleeDefPower' | 'RangedDefPower',
@@ -2534,6 +2553,7 @@ export function sumPhaseDefensePower(
   return total;
 }
 
+/** Calculates army strength from formations used by combat, economy, or presentation logic. */
 export function calculateArmyStrengthFromFormations(
   army: BattleArmyState,
   roleFilter?: CombatRole,
@@ -2554,7 +2574,7 @@ export function calculateArmyStrengthFromFormations(
   return result;
 }
 
-export function applyDamageToFormations(
+function applyDamageToFormations(
   formations: BattleFormation[],
   damage: number,
   priorityRole: CombatRole,
@@ -2615,7 +2635,7 @@ export function applyDamageToFormations(
   return { casualties, remainingDamage };
 }
 
-export function syncFormationsToUserUnits(
+function syncFormationsToUserUnits(
   army: BattleArmyState,
   user: BattleUserLike,
 ): void {

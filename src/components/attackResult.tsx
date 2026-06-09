@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 import { PlayerRace } from '@/types/typings';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 import { getAssetPath, getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 
 import { BattleLedger } from './BattleLedger';

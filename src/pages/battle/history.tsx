@@ -69,6 +69,7 @@ const WarHistory = ({
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context: any) => {
   const session = await getSession(context);
   const userId = Number(session?.user?.id);

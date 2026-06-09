@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ActionIcon, Text, Tooltip } from '@mantine/core';
 import React, { useMemo } from 'react';
 
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 interface DiscountEntry {
   label: string;

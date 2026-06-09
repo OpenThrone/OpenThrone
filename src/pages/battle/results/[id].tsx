@@ -1,4 +1,3 @@
-import { PermissionType } from '@prisma/client';
 import type { InferGetServerSidePropsType } from 'next';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
@@ -8,7 +7,9 @@ import AttackResult from '@/components/attackResult';
 import InfiltrationResult from '@/components/InfiltrationResult';
 import IntelResult from '@/components/IntelResult';
 import MainArea from '@/components/MainArea';
+import { OrnatePanel } from '@/components/OrnatePanel';
 import prisma from '@/lib/prisma';
+import { PermissionType } from '@/lib/prisma-browser-exports';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { hasAnyPermission } from '@/utils/authorization';
 import { serializeDates } from '@/utils/utilities';
@@ -29,28 +30,31 @@ const ResultsPage = ({
 
   return (
     <MainArea title={t('results.title')}>
-      {battle.type === 'attack' ? (
-        <AttackResult battle={battle} viewerID={Number(viewerID)} />
-      ) : battle.type === 'ASSASSINATE' ? (
-        <AssassinateResult battle={battle} viewerID={Number(viewerID)} />
-      ) : battle.type === 'INFILTRATE' ? (
-        <InfiltrationResult
-          battle={battle}
-          lastGenerated={lastGenerated}
-          viewerID={Number(viewerID)}
-        />
-      ) : (
-        <IntelResult
-          battle={battle}
-          lastGenerated={lastGenerated}
-          viewerID={Number(viewerID)}
-        />
-      )}
+      <OrnatePanel minHeight={300}>
+        {battle.type === 'attack' ? (
+          <AttackResult battle={battle} viewerID={Number(viewerID)} />
+        ) : battle.type === 'ASSASSINATE' ? (
+          <AssassinateResult battle={battle} viewerID={Number(viewerID)} />
+        ) : battle.type === 'INFILTRATE' ? (
+          <InfiltrationResult
+            battle={battle}
+            lastGenerated={lastGenerated}
+            viewerID={Number(viewerID)}
+          />
+        ) : (
+          <IntelResult
+            battle={battle}
+            lastGenerated={lastGenerated}
+            viewerID={Number(viewerID)}
+          />
+        )}
+      </OrnatePanel>
     </MainArea>
   );
 };
 
 // Server-Side Rendering with session and permission check
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context) => {
   const session = await getServerSession(context.req, context.res, authOptions);
 

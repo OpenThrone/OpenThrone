@@ -1,5 +1,4 @@
 import { HoverCard, List } from '@mantine/core';
-import type { Record } from '@prisma/client/runtime/library';
 
 import type { BattleUnits } from '@/types/typings';
 

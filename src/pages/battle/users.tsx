@@ -36,7 +36,7 @@ import { useUser } from '@/context/users';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { logError, logInfo } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 import { getLevelFromXP } from '@/utils/utilities';
 
 const Users = ({
@@ -1037,6 +1037,7 @@ const Users = ({
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (_context: any) => {
   try {
     const allUsers = await prisma.users.findMany({

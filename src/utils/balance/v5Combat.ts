@@ -25,6 +25,7 @@ export const V5_COMBAT_CONSTANTS = {
   MIN_ASSASSINATION_TURNS: 3,
 } as const;
 
+/** Defines the race identity modifiers shape used by related workflows. */
 export type RaceIdentityModifiers = {
   offenseMultiplier: number;
   defenseMultiplier: number;
@@ -60,7 +61,7 @@ const DEFAULT_RACE_IDENTITY: RaceIdentityModifiers = {
   breachSpySentryCasualtyMultiplier: 1,
 };
 
-export const RACE_IDENTITY: Record<PlayerRace, RaceIdentityModifiers> = {
+const RACE_IDENTITY: Record<PlayerRace, RaceIdentityModifiers> = {
   ALL: DEFAULT_RACE_IDENTITY,
   HUMAN: {
     ...DEFAULT_RACE_IDENTITY,
@@ -98,16 +99,19 @@ export const RACE_IDENTITY: Record<PlayerRace, RaceIdentityModifiers> = {
 
 const KNOWN_RACES = new Set(['HUMAN', 'ELF', 'GOBLIN', 'UNDEAD', 'ALL']);
 
+/**
+ * Restricts a numeric value to the inclusive minimum and maximum combat bounds.
+ */
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function normalizeRace(race: unknown): PlayerRace {
+function normalizeRace(race: unknown): PlayerRace {
   const normalized = String(race ?? '').toUpperCase();
   return KNOWN_RACES.has(normalized) ? (normalized as PlayerRace) : 'HUMAN';
 }
 
-export function normalizeClass(playerClass: unknown): PlayerClass {
+function normalizeClass(playerClass: unknown): PlayerClass {
   const normalized = String(playerClass ?? '').toUpperCase();
   if (
     normalized === 'FIGHTER' ||
@@ -121,15 +125,24 @@ export function normalizeClass(playerClass: unknown): PlayerClass {
   return 'FIGHTER';
 }
 
+/**
+ * Resolves combat identity multipliers for a known race, falling back to human defaults.
+ */
 export function getRaceIdentity(race: unknown): RaceIdentityModifiers {
   return RACE_IDENTITY[normalizeRace(race)] ?? DEFAULT_RACE_IDENTITY;
 }
 
+/**
+ * Calculates the diminishing-return multiplier granted by invested bonus-point levels.
+ */
 export function calculateBonusPointMultiplier(level: number): number {
   const safeLevel = Math.max(0, Number(level) || 0);
   return 1 + 0.35 * (safeLevel / (safeLevel + 250));
 }
 
+/**
+ * Sums all bonus-point levels matching the requested bonus type.
+ */
 export function getBonusPointLevel(
   bonusPoints: Array<{ type?: string; level?: number }> | undefined,
   type: BonusType,
@@ -140,30 +153,30 @@ export function getBonusPointLevel(
     .reduce((sum, bonus) => sum + Math.max(0, Number(bonus?.level ?? 0)), 0);
 }
 
-export function calculateLevelMultiplier(level: number): number {
+function calculateLevelMultiplier(level: number): number {
   return Math.max(1, Math.max(1, Number(level) || 1) ** 0.12);
 }
 
-export function calculateTurnPower(turns: number): number {
+function calculateTurnPower(turns: number): number {
   return clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS) ** 0.35;
 }
 
-export function calculateTurnXp(turns: number): number {
+function calculateTurnXp(turns: number): number {
   return 1 + Math.log(clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS));
 }
 
+/**
+ * Calculates the gold reward scaling applied for the number of attack turns spent.
+ */
 export function calculateGoldRewardMultiplier(turns: number): number {
   return clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS) ** 0.55;
 }
 
-export function calculateFortDamageMultiplier(turns: number): number {
+function calculateFortDamageMultiplier(turns: number): number {
   return clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS) ** 0.7;
 }
 
-export function calculateEffectiveMorale(
-  morale: number,
-  turns: number,
-): number {
+function calculateEffectiveMorale(morale: number, turns: number): number {
   const current = clamp((Number(morale) || 0) / 100, 0, 1);
   return clamp(
     current - V5_COMBAT_CONSTANTS.MORALE_EXHAUSTION_PER_TURN * turns,
@@ -172,26 +185,38 @@ export function calculateEffectiveMorale(
   );
 }
 
+/**
+ * Calculates the XP factor after morale exhaustion from committed attack turns.
+ */
 export function calculateMoraleXpFactor(morale: number, turns: number): number {
   return clamp(calculateEffectiveMorale(morale, turns), 0.25, 1);
 }
 
-export function calculateXpLevelModifier(levelDifference: number): number {
+function calculateXpLevelModifier(levelDifference: number): number {
   return clamp(1 + levelDifference * 0.18, 0.2, 2);
 }
 
+/**
+ * Calculates the gold modifier caused by the attacker/defender level gap.
+ */
 export function calculateGoldLevelModifier(levelDifference: number): number {
   return clamp(1 + levelDifference * 0.05, 0.7, 1.25);
 }
 
-export function calculateLevelDamageFactor(levelDifference: number): number {
+function calculateLevelDamageFactor(levelDifference: number): number {
   return clamp(1 - levelDifference * 0.08, 0.75, 1.5);
 }
 
+/**
+ * Rewards closer battles by converting the final win ratio into a bounded multiplier.
+ */
 export function calculateBattleCloseness(winRatio: number): number {
   return clamp(1.25 - Math.abs(1 - winRatio), 0.5, 1.25);
 }
 
+/**
+ * Calculates how much of the defender population is covered by defensive units.
+ */
 export function calculateDefenseCoverage(params: {
   defenseUnits: number;
   totalPopulation: number;
@@ -199,6 +224,9 @@ export function calculateDefenseCoverage(params: {
   return clamp(params.defenseUnits / Math.max(1, params.totalPopulation), 0, 1);
 }
 
+/**
+ * Increases fort damage and rewards when a defender is below the coverage threshold.
+ */
 export function calculateUnderDefendedMultipliers(defenseCoverage: number): {
   fortDamageMultiplier: number;
   rewardMultiplier: number;
@@ -214,18 +242,20 @@ export function calculateUnderDefendedMultipliers(defenseCoverage: number): {
   };
 }
 
-export function calculatePressureProtection(
-  defensePressureToday: number,
-): number {
+function calculatePressureProtection(defensePressureToday: number): number {
   return 1 / (1 + Math.max(0, Number(defensePressureToday) || 0) / 20);
 }
 
+/**
+ * Converts recent defensive spy pressure into protection against repeated spy missions.
+ */
 export function calculateSpyPressureProtection(
   spyPressureToday: number,
 ): number {
   return 1 / (1 + Math.max(0, Number(spyPressureToday) || 0) / 16);
 }
 
+/** Calculates effective daily recovery used by combat, economy, or presentation logic. */
 export function calculateEffectiveDailyRecovery(params: {
   houseCitizens: number;
   dailyClicks?: number;
@@ -256,9 +286,7 @@ export function calculateEffectiveDailyRecovery(params: {
   );
 }
 
-export function calculateActivityRecoveryModifier(
-  dailyClicks?: number,
-): number {
+function calculateActivityRecoveryModifier(dailyClicks?: number): number {
   const completion =
     clamp(
       Number(dailyClicks ?? 0),
@@ -268,24 +296,28 @@ export function calculateActivityRecoveryModifier(
   return 0.75 + 0.25 * completion;
 }
 
-export function calculateTurnDamageFactor(turns: number): number {
+function calculateTurnDamageFactor(turns: number): number {
   return 0.08 * clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS) ** 1.15;
 }
 
+/** Calculates spy mission power used by combat, economy, or presentation logic. */
 export function calculateSpyMissionPower(turns: number): number {
   return clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_SPY_MISSION_TURNS) ** 0.35;
 }
 
+/** Calculates intel quality multiplier used by combat, economy, or presentation logic. */
 export function calculateIntelQualityMultiplier(turns: number): number {
   return clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_INTEL_TURNS) ** 0.45;
 }
 
+/** Calculates spy mission damage factor used by combat, economy, or presentation logic. */
 export function calculateSpyMissionDamageFactor(turns: number): number {
   return (
     0.04 * clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_SPY_MISSION_TURNS) ** 1.1
   );
 }
 
+/** Calculates casualty budget used by combat, economy, or presentation logic. */
 export function calculateCasualtyBudget(params: {
   effectiveDailyRecovery: number;
   dailyClicks?: number;
@@ -309,6 +341,7 @@ export function calculateCasualtyBudget(params: {
   );
 }
 
+/** Soft cap casualties. */
 export function softCapCasualties(
   rawCasualties: number,
   budget: number,

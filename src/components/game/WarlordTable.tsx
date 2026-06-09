@@ -13,6 +13,7 @@ import {
 import React from 'react';
 
 // --- Types ---
+/** Describes the player data contract. */
 export interface PlayerData {
   rank: number;
   name: string;
@@ -76,6 +77,7 @@ const DEFAULT_PLAYERS: PlayerData[] = [
   },
 ];
 
+/** Warlord table. */
 export const WarlordTable: React.FC<WarlordTableProps> = ({
   players = DEFAULT_PLAYERS,
 }) => {
@@ -245,5 +247,3 @@ export const WarlordTable: React.FC<WarlordTableProps> = ({
     </Paper>
   );
 };
-
-export default WarlordTable;
