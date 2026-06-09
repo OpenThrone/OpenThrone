@@ -52,7 +52,7 @@ async function handler(
       });
       return res.status(200).json({ tokens });
     } catch (error) {
-      logError('Failed listing api tokens', { error });
+      logError('Failed listing API tokens', { error });
       return res.status(500).json({ message: 'Internal server error' });
     }
   }
@@ -69,7 +69,7 @@ async function handler(
       });
       return res.status(201).json(issued);
     } catch (error) {
-      logError('Failed issuing api token', { error });
+      logError('Failed issuing API token', { error });
       return res.status(500).json({ message: 'Internal server error' });
     }
   }
@@ -78,6 +78,7 @@ async function handler(
   return res.status(405).json({ message: 'Method not allowed' });
 }
 
+/** Routes admin API tokens API requests by HTTP method. */
 export default async function routed(
   req: AuthenticatedRequest,
   res: NextApiResponse,
