@@ -1,5 +1,6 @@
-import { PermissionType } from '@prisma/client';
+import { PermissionType } from '@/lib/prisma-browser-exports';
 
+/** Describes the admin nav item data contract. */
 export interface AdminNavItem {
   key: string;
   labelKey: string;
@@ -7,6 +8,7 @@ export interface AdminNavItem {
   permissions?: PermissionType[];
 }
 
+/** Describes the admin nav category data contract. */
 export interface AdminNavCategory {
   key: string;
   labelKey: string;
@@ -139,6 +141,12 @@ export const adminNavCategories: AdminNavCategory[] = [
         labelKey: 'navigation.home.staffMassMessaging',
         href: '/home/admin/mass-messaging',
         permissions: [PermissionType.SEND_MASS_MESSAGES],
+      },
+      {
+        key: 'advisor-messages',
+        labelKey: 'navigation.home.staffAdvisorMessages',
+        href: '/home/admin/advisor-messages',
+        permissions: [PermissionType.MANAGE_CONTENT],
       },
     ],
   },

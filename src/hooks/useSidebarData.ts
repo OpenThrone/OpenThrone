@@ -1,23 +1,24 @@
 import { useDebouncedCallback } from '@mantine/hooks';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { levelXPArray } from '@/constants/XPLevels';
 import type UserModel from '@/models/Users';
 import { logError } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 import { getLevelFromXP } from '@/utils/utilities';
 
 const GOLD_REQUEST_FALLBACK_POLL_MS = 15 * 60 * 1000;
 const ADVISOR_ROTATE_MS = 15_000;
+const ADVISOR_REFRESH_MS = 5 * 60 * 1000;
 
-const ADVISOR_MESSAGES = [
+const ADVISOR_FALLBACK_MESSAGES = [
   'It is better to buy a few stronger weapons than many weaker ones.',
   'The more attack turns you use in an attack, the more experience and gold you will gain.',
-  `The more workers you have, the more gold you'll earn per turn.`,
-  `Recruiting your max amount every day will ensure your kingdom continues to grow.`,
-  `A unit is only as strong as the equipment they wield. Make sure your army is well equipped.`,
-  `If your defense is less than 25% of your non-combatant population, you may lose citizens and workers in an attack. Keep your fort repaired.`,
+  "The more workers you have, the more gold you'll earn per turn.",
+  'Recruiting your max amount every day will ensure your kingdom continues to grow.',
+  'A unit is only as strong as the equipment they wield. Make sure your army is well equipped.',
+  'If your defense is less than 25% of your non-combatant population, you may lose citizens and workers in an attack. Keep your fort repaired.',
 ];
 
 interface SidebarStatsState {
@@ -30,11 +31,16 @@ interface SidebarStatsState {
   progress: string;
 }
 
+/** Provides sidebar data state and actions for React consumers. */
 export function useSidebarData(user: UserModel | null, userLoading: boolean) {
   const router = useRouter();
-  const advisorMessages = useMemo(() => ADVISOR_MESSAGES, []);
+  const [advisorMessages, setAdvisorMessages] = useState<string[]>(
+    ADVISOR_FALLBACK_MESSAGES,
+  );
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const advisorIntervalIdRef = useRef<NodeJS.Timer | null>(null);
+  const advisorIntervalIdRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
 
   const [sidebar, setSidebar] = useState<SidebarStatsState>({
     gold: '0',
@@ -65,6 +71,28 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
       logError('Failed to fetch gold request count:', error);
     }
   }, [user, userLoading]);
+
+  const refreshAdvisorMessages = useCallback(async () => {
+    try {
+      const response = await fetch('/api/advisor-messages');
+      if (response.ok) {
+        const data = await response.json();
+        const msgs = data.messages?.map((m: { message: string }) => m.message);
+        if (msgs && msgs.length > 0) {
+          setAdvisorMessages(msgs);
+          setCurrentMessageIndex((prev) => Math.min(prev, msgs.length - 1));
+        }
+      }
+    } catch (error) {
+      logError('Failed to fetch advisor messages:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshAdvisorMessages();
+    const interval = setInterval(refreshAdvisorMessages, ADVISOR_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [refreshAdvisorMessages]);
 
   const resetAdvisorInterval = useCallback(() => {
     if (advisorIntervalIdRef.current) {

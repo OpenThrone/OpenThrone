@@ -26,7 +26,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 
-import SidebarScroll from '@/components/game/SidebarScroll';
+import { ScrollSidebar as SidebarScroll } from '@/components/game/SidebarScroll';
 import { useUser } from '@/context/users'; // Provides UserModel instance
 import { useSidebarData } from '@/hooks/useSidebarData';
 import type UserModel from '@/models/Users';
