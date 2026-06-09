@@ -11,6 +11,7 @@ interface DeclareWarModalProps {
   allianceId: number;
 }
 
+/** Declare war modal. */
 export const DeclareWarModal = ({
   opened,
   onClose,

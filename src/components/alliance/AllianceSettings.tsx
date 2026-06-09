@@ -30,6 +30,7 @@ interface AllianceSettingsProps {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+/** Alliance settings. */
 export const AllianceSettings = ({
   alliance,
   onUpdate,

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { alertService } from '@/services/Alert.service';
 import type { UnitProps } from '@/types/typings';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 import { useUser } from '../context/users';
 import { GameCard } from './game/GameCard';

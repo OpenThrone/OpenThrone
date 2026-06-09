@@ -6,9 +6,9 @@ import type { AllianceInfo } from '@/services/Alliance.service';
 
 interface AllianceMembersProps {
   alliance: AllianceInfo;
-  currentUserIds?: number[]; // To highlight current user if needed
 }
 
+/** Alliance members. */
 export const AllianceMembers = ({ alliance }: AllianceMembersProps) => {
   const { t } = useTranslation('alliances');
 

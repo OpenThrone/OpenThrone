@@ -16,7 +16,7 @@ import NewItemSection from '@/components/newItemSection';
 import { useUser } from '@/context/users';
 import type UserModel from '@/models/Users';
 import { alertService } from '@/services/Alert.service';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 const useItems = (user: UserModel | null, armoryLevel: number) => {
   const [items, setItems] = useState<{

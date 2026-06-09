@@ -31,6 +31,7 @@ interface GoldRequestNotificationModalProps {
   onRequestComplete: () => void;
 }
 
+/** Gold request notification modal. */
 export function GoldRequestNotificationModal({
   isOpen,
   onClose,
@@ -139,7 +140,7 @@ export function GoldRequestNotificationModal({
       forceUpdate();
       await fetchRequests();
       onRequestComplete();
-    } catch {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Response failed');
     } finally {
       setLoading(false);

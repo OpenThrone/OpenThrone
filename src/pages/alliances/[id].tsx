@@ -169,6 +169,7 @@ const AlliancePage = ({
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getServerSession(context.req, context.res, authOptions);
   const { id } = context.params as { id: string };

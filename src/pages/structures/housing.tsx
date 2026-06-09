@@ -24,7 +24,7 @@ import { Fortifications, HouseUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { logError } from '@/utils/logger'; // Import logError
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 /**
  * Page component for viewing and upgrading housing structures.

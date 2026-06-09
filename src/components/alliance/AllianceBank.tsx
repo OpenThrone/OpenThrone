@@ -17,7 +17,7 @@ import { GameCard } from '@/components/game/GameCard';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 interface AllianceBankProps {
   alliance: AllianceInfo;
@@ -27,6 +27,7 @@ interface AllianceBankProps {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+/** Alliance bank. */
 export const AllianceBank = ({
   alliance,
   isLeader,

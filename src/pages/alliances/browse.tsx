@@ -17,8 +17,9 @@ import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
+/** User card image. */
 export const UserCardImage = ({
   id,
   name,

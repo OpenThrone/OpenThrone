@@ -2,12 +2,13 @@ import { Card, Grid, Group, Text, Title } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 
 import type { AllianceInfo } from '@/services/Alliance.service';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 interface AllianceOverviewProps {
   alliance: AllianceInfo;
 }
 
+/** Alliance overview. */
 export const AllianceOverview = ({ alliance }: AllianceOverviewProps) => {
   const { t } = useTranslation('alliances');
 
