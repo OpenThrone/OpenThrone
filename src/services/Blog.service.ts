@@ -4,6 +4,9 @@ import prisma from '@/lib/prisma';
 import { logError } from '@/utils/logger';
 
 // Type definitions for blog operations
+/**
+ * Represents a persisted blog post with optional per-user read status rows.
+ */
 export interface BlogPost {
   id: number;
   title: string;
@@ -16,6 +19,9 @@ export interface BlogPost {
 }
 
 // DTO returned to clients/pages (dates are ISO strings)
+/**
+ * Represents a blog post payload returned to pages and API consumers.
+ */
 export interface BlogPostDTO {
   id: number;
   title: string;
@@ -30,12 +36,18 @@ export interface BlogPostDTO {
   isPinned?: boolean;
 }
 
+/**
+ * Payload required to create a published blog post.
+ */
 export interface CreatePostData {
   userId: number;
   title: string;
   content: string;
 }
 
+/**
+ * Payload required to mark a blog post as read for a user.
+ */
 export interface UpdateReadStatusData {
   userId: number;
   postId: number;
@@ -54,16 +66,25 @@ const UpdateReadStatusSchema = z.object({
 });
 
 // Result interfaces
+/**
+ * Standard response returned by blog write operations.
+ */
 export interface BlogOperationResult {
   success: boolean;
   message: string;
   data?: any;
 }
 
+/**
+ * Collection response containing blog post DTOs.
+ */
 export interface BlogPostsResult {
   posts: BlogPostDTO[];
 }
 
+/**
+ * Provides blog post publishing, read-state, and retrieval operations.
+ */
 export class BlogService {
   /**
    * Creates a new blog post
@@ -162,10 +183,10 @@ export class BlogService {
           where: { id: { in: authorIds } },
           select: { id: true, display_name: true },
         });
-        const authorMap = new Map(
+        const authorMap: Map<number, string | undefined> = new Map(
           authors.map((a: { id: number; display_name: string | null }) => [
             a.id,
-            a.display_name,
+            a.display_name ?? undefined,
           ]),
         );
         for (const dto of dtos) {

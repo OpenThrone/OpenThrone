@@ -244,6 +244,7 @@ type NewsPageProps = {
   userId: number;
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps: GetServerSideProps<NewsPageProps> = async (
   context,
 ) => {

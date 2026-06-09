@@ -12,6 +12,7 @@ const PostSchema = z.object({
   content: z.string(),
 });
 
+/** Handles blog post API requests. */
 export async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { session } = req;
 
