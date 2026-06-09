@@ -1,4 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+import { PrismaClient } from '../../prisma/generated/prisma/client';
 
 // Recursive function to convert BigInt to string in query results.
 // Preserve Date objects and non-plain objects to avoid turning them into {}.
@@ -28,18 +30,25 @@ const _convertBigIntToString = (obj: any): any => {
   return obj;
 };
 
+function createPrismaClient() {
+  const adapter = new PrismaPg({
+    connectionString: process.env.POSTGRES_PRISMA_URL,
+  });
+
+  return new PrismaClient({
+    adapter,
+    log: [
+      // 'query', // TODO: let's move this to .env instead or disable it in production
+      'info',
+      'warn',
+      'error',
+    ],
+  });
+}
+
 const prisma =
   (globalThis as any).prisma ||
-  (typeof window === 'undefined'
-    ? new PrismaClient({
-        log: [
-          // 'query', // TODO: let's move this to .env instead or disable it in production
-          'info',
-          'warn',
-          'error',
-        ],
-      })
-    : undefined);
+  (typeof window === 'undefined' ? createPrismaClient() : undefined);
 
 if (prisma && typeof window === 'undefined') {
   // Add middleware to handle BigInt in all queries

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": [],
+  "ignoreBinaries": ["npm-check-updates"],
+  "ignoreDependencies": ["pg"],
+  "entry": [
+    "src/pages/**/*.{ts,tsx}",
+    "scripts/**/*.{ts,tsx,js,cjs,mjs}",
+    "src/styles/**/*",
+    "ecosystem.config.js",
+    "lint-staged.config.js",
+    "next-i18next.config.js",
+    "next-sitemap.config.js"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "scripts/**/*.{ts,tsx,js,cjs,mjs}",
+    "!src/**/dist/**",
+    "!src/**/*.test.{ts,tsx}",
+    "!src/**/__tests__/**"
+  ]
+}

@@ -1,8 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
+import { PrismaClient } from '../prisma/generated/prisma/client';
 import { logError, logInfo } from '../src/utils/logger';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.POSTGRES_PRISMA_URL }),
+});
 
 async function checkUserUnitConstraint() {
   try {
