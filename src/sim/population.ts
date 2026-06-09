@@ -209,6 +209,7 @@ function getGoldForLevel(level: number): number {
   return goldByLevel[level] ?? goldByLevel[20];
 }
 
+/** Generate population. */
 export function generatePopulation(
   size: number,
   levelRange: [number, number],
@@ -300,6 +301,7 @@ export function generatePopulation(
   return players;
 }
 
+/** Create player state. */
 export function createPlayerState(
   level: number,
   playStyle: PlayStyle = 'balanced',
@@ -369,6 +371,7 @@ export function createPlayerState(
   };
 }
 
+/** Returns spy mission limits for callers that need normalized game data. */
 export function getSpyMissionLimits(spyLevel: number): {
   maxPerDay: number;
   maxPerUser: number;
@@ -390,7 +393,7 @@ export function getSpyMissionLimits(spyLevel: number): {
   };
 }
 
-export function getAssassinationLimits(spyLevel: number): {
+function getAssassinationLimits(spyLevel: number): {
   maxPerDay: number;
   maxPerUser: number;
   maxPerMission: number;
@@ -407,7 +410,7 @@ export function getAssassinationLimits(spyLevel: number): {
   return { maxPerDay: 40, maxPerUser: 4, maxPerMission: 70 };
 }
 
-export function getInfiltrationLimits(spyLevel: number): {
+function getInfiltrationLimits(spyLevel: number): {
   maxPerDay: number;
   maxPerUser: number;
   maxPerMission: number;
@@ -432,4 +435,4 @@ export function getInfiltrationLimits(spyLevel: number): {
   };
 }
 
-export { DEFAULT_UNITS, UNIT_COSTS };
+export { UNIT_COSTS };

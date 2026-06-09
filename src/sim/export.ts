@@ -18,6 +18,7 @@ function rowsToCsv(rows: Array<Array<string | number>>): string {
     .join('\n');
 }
 
+/** Comparison to csv. */
 export function comparisonToCsv(comparison: PersonaComparisonResult[]): string {
   const rows: Array<Array<string | number>> = [
     [
@@ -54,6 +55,7 @@ export function comparisonToCsv(comparison: PersonaComparisonResult[]): string {
   return rowsToCsv(rows);
 }
 
+/** Artifact daily results to csv. */
 export function artifactDailyResultsToCsv(
   artifact: AutonomousRunArtifact,
 ): string {
@@ -98,6 +100,7 @@ export function artifactDailyResultsToCsv(
   return rowsToCsv(rows);
 }
 
+/** Artifact top player timelines to csv. */
 export function artifactTopPlayerTimelinesToCsv(
   artifact: AutonomousRunArtifact,
 ): string {
@@ -134,6 +137,7 @@ export function artifactTopPlayerTimelinesToCsv(
   return rowsToCsv(rows);
 }
 
+/** Artifact final population to csv. */
 export function artifactFinalPopulationToCsv(
   artifact: AutonomousRunArtifact,
 ): string {

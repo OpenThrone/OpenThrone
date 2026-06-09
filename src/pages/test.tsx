@@ -104,6 +104,7 @@ const LOSS_SAMPLE = JSON.stringify({
 });
 
 // Default export renders the Warlord table, with the Inventory one below for preview
+/** Game table demo. */
 export default function GameTableDemo() {
   const [previewScheme, setPreviewScheme] = useLocalStorage<PlayerRace | ''>({
     key: 'colorSchemePreview',

@@ -35,6 +35,7 @@ const DEFAULT_UPGRADES = {
   defense: 0,
 };
 
+/** Create sim player. */
 export function createSimPlayer(config: PlayerConfig): SimPlayer {
   const fortLevel =
     config.fortLevel ?? Math.max(1, Math.floor(config.level / 3));
@@ -78,6 +79,7 @@ export function createSimPlayer(config: PlayerConfig): SimPlayer {
   };
 }
 
+/** Compute army cost. */
 export function computeArmyCost(player: SimPlayer): number {
   let cost = 0;
   const { units } = player;
@@ -99,15 +101,17 @@ export function computeArmyCost(player: SimPlayer): number {
   return cost;
 }
 
+/** Returns total offense for callers that need normalized game data. */
 export function getTotalOffense(units: UnitCounts): number {
   return units.soldier + units.knight * 2 + units.berserker * 3;
 }
 
+/** Returns total defense for callers that need normalized game data. */
 export function getTotalDefense(units: UnitCounts): number {
   return units.guard + units.archer * 2 + units.royalGuard * 3;
 }
 
-export function getTotalUnits(units: UnitCounts): number {
+function getTotalUnits(units: UnitCounts): number {
   return (
     units.soldier +
     units.knight +
@@ -126,7 +130,7 @@ export function getTotalUnits(units: UnitCounts): number {
   );
 }
 
-export function getUnitCountForLevel(
+function getUnitCountForLevel(
   level: number,
   unitType: keyof UnitCounts,
 ): number {
@@ -157,7 +161,7 @@ export function getUnitCountForLevel(
   return (levelData as Record<keyof UnitCounts, number>)[unitType] ?? 0;
 }
 
-export function getDefenseUnitsForLevel(level: number): Partial<UnitCounts> {
+function getDefenseUnitsForLevel(level: number): Partial<UnitCounts> {
   const baseDefense: Record<number, Partial<UnitCounts>> = {
     1: { guard: 10 },
     2: { guard: 15, archer: 2 },
@@ -184,7 +188,7 @@ export function getDefenseUnitsForLevel(level: number): Partial<UnitCounts> {
   return baseDefense[level] ?? baseDefense[20];
 }
 
-export function getGoldForLevel(level: number): number {
+function getGoldForLevel(level: number): number {
   const goldByLevel: Record<number, number> = {
     1: 10000,
     2: 25000,
@@ -211,6 +215,7 @@ export function getGoldForLevel(level: number): number {
   return goldByLevel[level] ?? goldByLevel[20];
 }
 
+/** Create balanced player. */
 export function createBalancedPlayer(
   level: number,
   role: 'offense' | 'defense' | 'balanced' = 'balanced',
@@ -242,7 +247,7 @@ export function createBalancedPlayer(
   });
 }
 
-export const PRESETS = {
+const PRESETS = {
   equalLevel5: createBalancedPlayer(5, 'balanced'),
   equalLevel10: createBalancedPlayer(10, 'balanced'),
   equalLevel15: createBalancedPlayer(15, 'balanced'),
@@ -279,5 +284,3 @@ export const PRESETS = {
     return createBalancedPlayer(baseLevel, 'balanced');
   },
 };
-
-export { UNIT_COSTS };

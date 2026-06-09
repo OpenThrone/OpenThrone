@@ -8,6 +8,7 @@ import {
   TurnStrategy,
 } from './types';
 
+/** Evaluate targets. */
 export function evaluateTargets(
   attacker: PlayerState,
   population: PlayerState[],
@@ -362,6 +363,7 @@ function shouldScoutTarget(params: {
   return params.riskLevel === 'unknown' && params.estimatedWinRate >= 0.25;
 }
 
+/** Select attack strategy. */
 export function selectAttackStrategy(
   evaluation: TargetEvaluation,
   turnStrategy: TurnStrategy,
@@ -427,6 +429,7 @@ export function selectAttackStrategy(
   return { shouldAttack: false, turns: 0 };
 }
 
+/** Should send intel. */
 export function shouldSendIntel(
   attacker: PlayerState,
   target: TargetEvaluation,

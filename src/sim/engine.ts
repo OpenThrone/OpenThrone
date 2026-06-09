@@ -46,6 +46,7 @@ function battleConfigToOverrides(
   };
 }
 
+/** Create battle config from balance. */
 export function createBattleConfigFromBalance(
   balance?: Partial<BalanceParameters>,
 ): BattleConfig | undefined {
@@ -284,6 +285,7 @@ function battleResultToMetrics(
   };
 }
 
+/** Run single battle. */
 export async function runSingleBattle(
   attacker: SimPlayer,
   defender: SimPlayer,
@@ -321,6 +323,7 @@ export async function runSingleBattle(
   return battleResultToMetrics(result, attacker, defender, armyCost);
 }
 
+/** Run simulation. */
 export async function runSimulation(
   attackerConfig: SimPlayer,
   defenderConfig: SimPlayer,
@@ -340,7 +343,7 @@ export async function runSimulation(
   return aggregateMetrics(results);
 }
 
-export function aggregateMetrics(results: BattleMetrics[]): SimulationResults {
+function aggregateMetrics(results: BattleMetrics[]): SimulationResults {
   if (results.length === 0) {
     return {
       gamesPlayed: 0,
@@ -416,6 +419,7 @@ export function aggregateMetrics(results: BattleMetrics[]): SimulationResults {
   };
 }
 
+/** Print results. */
 export function printResults(results: SimulationResults): void {
   console.log('\n=== Battle Simulation Results ===');
   console.log(`Games Played: ${results.gamesPlayed}`);
@@ -441,7 +445,7 @@ export function printResults(results: SimulationResults): void {
   console.log('=================================\n');
 }
 
-export function computeEffectivePower(player: SimPlayer): number {
+function computeEffectivePower(player: SimPlayer): number {
   const offense = getTotalOffense(player.units);
   const defense = getTotalDefense(player.units);
 
@@ -454,10 +458,7 @@ export function computeEffectivePower(player: SimPlayer): number {
   return Math.sqrt(offensePower * defensePower);
 }
 
-export function getPowerRatio(
-  attacker: SimPlayer,
-  defender: SimPlayer,
-): number {
+function getPowerRatio(attacker: SimPlayer, defender: SimPlayer): number {
   const attackerPower = computeEffectivePower(attacker);
   const defenderPower = computeEffectivePower(defender);
   return attackerPower / Math.max(1, defenderPower);
@@ -624,6 +625,7 @@ function playerStateToSpyUser(player: PlayerState): any {
   };
 }
 
+/** Simulate spy intel. */
 export async function simulateSpyIntel(
   attacker: PlayerState,
   defender: PlayerState,
@@ -674,7 +676,7 @@ export async function simulateSpyIntel(
   }
 }
 
-export async function simulateSpyAssassination(
+async function simulateSpyAssassination(
   attacker: PlayerState,
   defender: PlayerState,
   spyCount: number = 5,
@@ -719,7 +721,7 @@ export async function simulateSpyAssassination(
   }
 }
 
-export async function simulateSpyInfiltration(
+async function simulateSpyInfiltration(
   attacker: PlayerState,
   defender: PlayerState,
   spyCount: number = 5,

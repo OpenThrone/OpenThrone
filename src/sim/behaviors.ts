@@ -13,6 +13,7 @@ import { AgentDecision, PlayerState, TargetEvaluation } from './types';
 
 const MAX_ATTACK_TURNS = 10;
 
+/** Make daily decisions. */
 export function makeDailyDecisions(
   player: PlayerState,
   population: PlayerState[],
@@ -419,6 +420,7 @@ function calculateUpgradePriorities(
   return result;
 }
 
+/** Apply decision. */
 export function applyDecision(
   player: PlayerState,
   decision: AgentDecision,

@@ -11,5 +11,3 @@ export const mtRand = (
 ): number => {
   return min + random() * (max - min);
 };
-
-export default mtRand;
