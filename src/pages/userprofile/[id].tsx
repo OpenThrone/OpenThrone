@@ -29,7 +29,7 @@ import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { alertService } from '@/services/Alert.service';
 import { logDebug, logError } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 import { serializeDates } from '@/utils/utilities';
 
 const Index = ({
@@ -965,6 +965,7 @@ const Index = ({
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async ({ query }) => {
   let recruitLink = '';
   let id;

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import UserModel from '@/models/Users';
 import { GeneralService } from '@/services';
 
+/** Handles general get user info by recruit link API requests. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,

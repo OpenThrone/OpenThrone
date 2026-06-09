@@ -2,6 +2,7 @@ import type { NextApiResponse } from 'next';
 
 import { AnnouncementService } from '@/services/Announcement.service';
 
+/** Handles announcements API requests. */
 async function handler(_req: any, res: NextApiResponse) {
   try {
     const banners = await AnnouncementService.getActiveBanners();

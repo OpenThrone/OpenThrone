@@ -8,7 +8,7 @@ const highRiskStore = new MemoryStore();
 
 // TODO: Consider moving to .env configuration
 
-export const globalLimiter = rateLimit({
+const globalLimiter = rateLimit({
   store: globalStore,
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
@@ -29,7 +29,7 @@ export const globalLimiter = rateLimit({
   },
 });
 
-export const registerLimiter = rateLimit({
+const registerLimiter = rateLimit({
   store: registerStore,
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 10,
@@ -67,6 +67,7 @@ export const highRiskLimiter = rateLimit({
   },
 });
 
+/** Run express middleware. */
 export const runExpressMiddleware = (req: any, res: any, fn: any) => {
   return new Promise<void>((resolve, reject) => {
     try {

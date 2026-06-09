@@ -24,8 +24,9 @@ const DEFAULT_MAX_SNACKS = 6;
 const DEFAULT_DURATION = 6000;
 const BASE_Z_INDEX = 1000;
 
+/** Defines the snack shape used by related workflows. */
 export type SnackType = 'success' | 'warning' | 'error' | 'info' | 'default';
-export type Position =
+type Position =
   | 'bottom-left'
   | 'bottom-center'
   | 'bottom-right'
@@ -92,6 +93,7 @@ interface SnackbarProviderProps {
   position?: Position;
 }
 
+/** Snackbar provider. */
 export const SnackbarProvider = ({
   children,
   maxSnacks = DEFAULT_MAX_SNACKS,
@@ -248,6 +250,7 @@ export const SnackbarProvider = ({
   );
 };
 
+/** Provides snackbar state and actions for React consumers. */
 export const useSnackbar = (): SnackbarContextType => {
   const context = useContext(SnackbarContext);
   if (!context) {

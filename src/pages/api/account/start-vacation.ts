@@ -4,6 +4,7 @@ import { withAuth } from '@/middleware/auth';
 import { AccountService } from '@/services';
 import { logError } from '@/utils/logger';
 
+/** Handles account start vacation API requests. */
 export const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
     const { session } = req;

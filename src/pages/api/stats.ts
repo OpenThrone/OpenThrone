@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { ensureActiveEra } from '@/services/Era.service';
 import { logError } from '@/utils/logger';
 
+/** Handles stats API requests. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,

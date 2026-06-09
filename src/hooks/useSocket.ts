@@ -119,6 +119,7 @@ function reconcileSocketConnection() {
   });
 }
 
+/** Provides socket state and actions for React consumers. */
 export default function useSocket(userId: number | null) {
   const clientIdRef = useRef<number | null>(null);
   if (clientIdRef.current === null) {

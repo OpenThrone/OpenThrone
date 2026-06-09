@@ -6,6 +6,7 @@ import { logError } from '@/utils/logger';
 
 import { authOptions } from '../auth/[...nextauth]';
 
+/** Handles account enable 2FA API requests. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,

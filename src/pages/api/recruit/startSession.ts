@@ -1,7 +1,6 @@
 // pages/api/recruit/startSession.ts
-import type { Prisma } from '@prisma/client';
-
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 import { withAuth } from '@/middleware/auth';
 import type { AuthenticatedRequest } from '@/types/api';
 

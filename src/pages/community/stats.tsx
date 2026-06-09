@@ -96,6 +96,7 @@ const Stats = ({
   );
 };
 
+/** Returns static props for callers that need normalized game data. */
 export const getStaticProps = async (context: any) => {
   const i18nProps = await serverSideTranslations(context.locale ?? 'en', [
     'common',

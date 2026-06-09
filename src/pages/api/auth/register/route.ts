@@ -18,6 +18,7 @@ async function handle(req: NextApiRequest, res: NextApiResponse) {
 
 export default withCors(handle, { envVar: 'OT_AUTH_CORS_ORIGINS' });
 
+/** Handles Auth register POST requests. */
 export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
   try {
     if (process.env.NEXT_PUBLIC_DISABLE_REGISTRATION === 'true') {

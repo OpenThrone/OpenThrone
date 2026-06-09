@@ -90,6 +90,7 @@ const LayoutContext = createContext<LayoutContextProps>(
 );
 
 // Hook to use context
+/** Provides layout state and actions for React consumers. */
 export const useLayout = () => useContext(LayoutContext);
 
 interface LayoutProviderProps {
@@ -97,6 +98,7 @@ interface LayoutProviderProps {
 }
 
 // LayoutProvider Component
+/** Layout provider. */
 export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
   const [meta, setMetaState] = useState({ title: '', description: '' });
   const { user, loading: userLoading } = useUser(); // Access user and loading state from useUser
@@ -216,5 +218,3 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = ({ children }) => {
     </LayoutContext.Provider>
   );
 };
-
-export { raceClasses };

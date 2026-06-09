@@ -374,6 +374,7 @@ const HowToPlay = () => {
   );
 };
 
+/** Returns static props for callers that need normalized game data. */
 export const getStaticProps: GetStaticProps = async ({ locale }) => ({
   props: {
     ...(await serverSideTranslations(locale ?? 'en', [

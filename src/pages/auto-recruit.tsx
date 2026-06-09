@@ -40,6 +40,7 @@ export default function AutoRecruiter() {
   const [isResumingSession, setIsResumingSession] = useState(false);
   const [isCountdown, setIsCountdown] = useState(false);
   const [recruitStatus, setRecruitStatus] = useState('');
+  const [lastSuccess, setLastSuccess] = useState(false);
 
   useEffect(() => {
     sessionIdRef.current = sessionId;

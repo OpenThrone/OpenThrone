@@ -18,6 +18,7 @@ const purgeExpired = () => {
   }
 };
 
+/** Create impersonation ticket. */
 export const createImpersonationTicket = (
   adminUserId: number,
   targetUserId: number,
@@ -32,6 +33,7 @@ export const createImpersonationTicket = (
   return ticket;
 };
 
+/** Consume impersonation ticket. */
 export const consumeImpersonationTicket = (ticket: string) => {
   purgeExpired();
   const record = tickets.get(ticket);

@@ -10,6 +10,7 @@ const verifyEndpoint =
   'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const secret = process.env.NEXT_PUBLIC_TURNSTILE_SECRET;
 
+/** Handles captcha verify API requests. */
 export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {

@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { getRandomAutoRecruitUser } from '@/services/Recruitment.service';
 
+/** Handles automated recruitment API requests. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,

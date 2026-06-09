@@ -12,6 +12,7 @@ const Verify2faSchema = z.object({
   token: z.string().min(6).max(6),
 });
 
+/** Handles account verify 2FA API requests. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,

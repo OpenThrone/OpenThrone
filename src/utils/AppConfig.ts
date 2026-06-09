@@ -1,5 +1,6 @@
 // FIXME: Update this configuration file based on your project information
 
+/** Defines static application metadata and locale configuration. */
 export const AppConfig = {
   site_name: 'Starter',
   title: 'OpenThrone',
