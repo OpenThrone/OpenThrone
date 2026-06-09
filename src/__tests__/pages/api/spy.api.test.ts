@@ -28,7 +28,7 @@ mock.module('@/lib/socket', () => ({
   getSocketIO: () => ({ to: () => ({ emit: () => {} }) }),
 }));
 
-const spyHandler = require('../spy/[id]').default;
+const spyHandler = require('../../../pages/api/spy/[id]').default;
 
 describe('API spy/[id]', () => {
   beforeEach(() => resetMockPrisma());

@@ -23,7 +23,7 @@ mock.module('@/utils/authorization', () => ({
   isModerator: async () => false,
 }));
 
-const adminHandler = require('../admin/users/[userId]').default;
+const adminHandler = require('../../../pages/api/admin/users/[userId]').default;
 
 describe('API admin/users', () => {
   beforeEach(() => resetMockPrisma());
