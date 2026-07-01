@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { BattleUpgrades } from '@/constants';
 import prisma from '@/lib/prisma';
-import { Prisma } from '@/lib/prisma-exports';
+import { Prisma, BattleUpgradeType } from '@/lib/prisma-exports';
 import { BattleUser } from '@/models/BattleUser';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
@@ -225,7 +225,10 @@ export class BattleService {
     operation: 'buy' | 'sell',
     userId: number,
   ) {
-    const user = await prisma.users.findUnique({ where: { id: userId } });
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      include: { UserBattleUpgrade: true },
+    });
     if (!user) {
       throw new Error('User not found');
     }
@@ -233,11 +236,9 @@ export class BattleService {
     const uModel = new UserModel(user);
     let totalCost = 0;
 
-    // Cast battle_upgrades to BattleUpgradeEquipment[] and ensure quantities are numbers
-    const userBattleUpgrades = (
-      user.battle_upgrades as unknown as BattleUpgradeEquipment[]
-    ).map((item) => ({
-      ...item,
+    const userBattleUpgrades = (user.UserBattleUpgrade || []).map((item) => ({
+      type: item.type as string,
+      level: item.level,
       quantity:
         typeof item.quantity === 'string'
           ? parseInt(item.quantity, 10)
@@ -344,11 +345,23 @@ export class BattleService {
           data: {
             gold:
               operation === 'buy'
-                ? user.gold - totalCost
-                : user.gold + Math.abs(totalCost),
-            battle_upgrades: updatedItems,
+                ? BigInt(user.gold as bigint) - BigInt(Math.ceil(totalCost))
+                : BigInt(user.gold as bigint) + BigInt(Math.ceil(Math.abs(totalCost))),
           },
         });
+
+        for (const item of updatedItems) {
+          await tx.userBattleUpgrade.upsert({
+            where: { userId_type: { userId, type: item.type as BattleUpgradeType } },
+            create: {
+              userId,
+              type: item.type as BattleUpgradeType,
+              level: item.level,
+              quantity: item.quantity,
+            },
+            update: { level: item.level, quantity: item.quantity },
+          });
+        }
 
         // Create bank history for the transaction
         await tx.bank_history.create({
