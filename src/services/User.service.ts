@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { sanitizeUserForResponse } from '@/utils/sanitizeUser';
 import { idleThresholdDate } from '@/utils/utilities';
 
 import { ensureActiveEra } from './Era.service';
@@ -104,11 +105,10 @@ export const createUser = async (
       })),
     });
 
-    return user;
+    return sanitizeUserForResponse(user);
   });
 };
 
-/** User exists. */
 export const userExists = async (email: string) => {
   return await prisma.users.count({
     where: {

@@ -5,6 +5,7 @@ import type { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 import { parseBigInt } from '@/utils/jsonHelpers';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { sanitizeUserForResponse } from '@/utils/sanitizeUser';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -108,7 +109,7 @@ const deposit = async (userId: number, depositAmount: bigint) => {
     });
 
     // Stringify BigInts before returning for API compatibility if needed
-    return stringifyObj(updatedUser);
+    return stringifyObj(sanitizeUserForResponse(updatedUser));
   });
 };
 
@@ -154,7 +155,7 @@ const withdraw = async (userId: number, withdrawAmount: bigint) => {
       },
     });
 
-    return updatedUser; // Return raw user object, stringify in API route if needed
+    return sanitizeUserForResponse(updatedUser);
   });
 };
 

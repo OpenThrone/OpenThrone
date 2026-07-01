@@ -12,6 +12,7 @@ import UserModel from '@/models/Users';
 import { getAntiAbuseExpiry, getAntiAbuseHash } from '@/utils/antiAbuse';
 import { logError } from '@/utils/logger';
 import { generateRandomString } from '@/utils/utilities';
+import { sanitizeUserForResponse } from '@/utils/sanitizeUser';
 
 import {
   buildDefaultUserUpdate,
@@ -257,7 +258,7 @@ export class AccountService {
         data: updateData,
       });
 
-      return { message: 'Profile updated successfully.', user: updated };
+      return { message: 'Profile updated successfully.', user: sanitizeUserForResponse(updated) };
     } catch (error: any) {
       logError(error, { userId }, 'Error updating profile');
       throw error;
@@ -274,7 +275,7 @@ export class AccountService {
         data: { bio },
       });
 
-      return { message: 'Bio updated successfully.', user: updated };
+      return { message: 'Bio updated successfully.', user: sanitizeUserForResponse(updated) };
     } catch (error: any) {
       logError(error, { userId }, 'Error updating bio');
       throw error;
