@@ -134,7 +134,8 @@ export const startNewEra = async () => {
       },
     });
 
-    const users = await getUsersWithRelations({}, tx);
+    const allUsers = await getUsersWithRelations({}, tx);
+    const users = allUsers.filter((u) => u.id > 0);
 
     for (const u of users) {
       const userModel = new UserModel(
