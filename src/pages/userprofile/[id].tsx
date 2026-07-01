@@ -1002,6 +1002,7 @@ export const getServerSideProps = async ({ query }) => {
   const {
     password_hash: _passwordHash,
     email: _email,
+    userEras: _userEras,
     ...userWithoutPassword
   } = user;
 
