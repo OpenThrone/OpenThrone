@@ -23,16 +23,10 @@ import {
 } from '@mantine/core';
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
-import React, { useEffect, useRef, useState } from 'react';
 
-import { useUser } from '@/context/users'; // Provides UserModel instance
+import { SidebarTimeInfo, StatRow } from '@/components/sidebar/SidebarShared';
+import { useUser } from '@/context/users';
 import { useSidebarData } from '@/hooks/useSidebarData';
-import type UserModel from '@/models/Users';
-import {
-  getOTTime,
-  getTimeRemaining,
-  getTimeToNextTurn,
-} from '@/utils/timefunctions';
 import { getAvatarSrc } from '@/utils/utilities';
 
 import CollapsibleSection from './CollapsibleSection';
@@ -41,7 +35,7 @@ import RpgAwesomeIcon from './RpgAwesomeIcon';
 
 const Sidebar: React.FC = () => {
   const { t } = useTranslation('common');
-  const { user, forceUpdate, loading: userLoading } = useUser(); // Get user (UserModel instance) and loading state
+  const { user, forceUpdate, loading: userLoading } = useUser();
   const [nextLevelOpened, { close, open }] = useDisclosure(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -81,112 +75,6 @@ const Sidebar: React.FC = () => {
     </Group>
   );
 
-  const messages = advisorMessages;
-
-  const SidebarTimeInfo = React.memo(
-    ({
-      user,
-      userLoading,
-    }: {
-      user: UserModel | null;
-      userLoading: boolean;
-    }) => {
-      const [time, setTime] = useState('--:--');
-      const [OTTime, setOTTime] = useState('--:--');
-      const hasInitializedRef = useRef(false);
-
-      // Define the medieval font style to be used with Mantine components
-      const medievalFontStyle = { fontFamily: 'MedievalSharp, cursive' };
-
-      useEffect(() => {
-        // Only show '--:--' on initial load before we have user data
-        if ((!user || userLoading) && !hasInitializedRef.current) {
-          return;
-        }
-
-        // Once we have user data, we'll start the timer and never go back to '--:--'
-        if (user && !hasInitializedRef.current) {
-          hasInitializedRef.current = true;
-        }
-
-        const updateTimes = () => {
-          const nextTurnTime = getTimeToNextTurn();
-          const remaining = getTimeRemaining(nextTurnTime);
-
-          // Format the time
-          const minutes = String(remaining.minutes).padStart(2, '0');
-          const seconds = String(remaining.seconds).padStart(2, '0');
-
-          setTime(`${minutes}:${seconds}`);
-          setOTTime(
-            getOTTime().toLocaleTimeString(user?.locale ?? 'en-US', {
-              timeStyle: 'short',
-              hour12: false,
-            }),
-          );
-        };
-
-        // Update immediately
-        updateTimes();
-
-        // Then set interval for updates
-        const interval = setInterval(updateTimes, 1000);
-
-        return () => clearInterval(interval);
-      }, [user, userLoading]);
-
-      return (
-        <>
-          <Title order={5} className="text-center" style={medievalFontStyle}>
-            {t('sidebar.timeUntilNextTurn')}
-          </Title>
-          <Title order={4} ta="center" fw="bold" style={medievalFontStyle}>
-            <span id="nextTurnTimestamp">{time}</span>
-          </Title>
-
-          <Title order={5} className="text-center" style={medievalFontStyle}>
-            {t('sidebar.otTime')}
-          </Title>
-          <Title order={3} ta="center" fw="bold" style={medievalFontStyle}>
-            <span id="otTime">{OTTime}</span>
-          </Title>
-        </>
-      );
-    },
-  );
-
-  SidebarTimeInfo.displayName = 'SidebarTimeInfo';
-
-  // Stat Row Component for consistent styling and layout
-  const StatRow: React.FC<{
-    label: string;
-    value: string | React.ReactNode;
-    icon?: React.ReactNode;
-  }> = ({ label, value, icon }) => (
-    <Group justify="space-between" wrap="nowrap" gap="xs">
-      <Group gap="xs" wrap="nowrap">
-        {icon && (
-          <span className="w-4 text-center" style={{ paddingLeft: '5px' }}>
-            {icon}
-          </span>
-        )}{' '}
-        {/* Icon wrapper */}
-        <Text size="md" c="black" fw="bold" lh="xs">
-          {label}
-        </Text>
-      </Group>
-      {React.isValidElement(value) ? (
-        <div className="flex items-end" style={{ paddingRight: '10px' }}>
-          {value}
-        </div>
-      ) : (
-        <Text size="md" fw="bold" ta="right" pr="10px">
-          {value}
-        </Text>
-      )}
-    </Group>
-  );
-
   return (
     <div className="block sm:block">
       {isMobile ? (
@@ -199,10 +87,9 @@ const Sidebar: React.FC = () => {
                 className="text-center text-[var(--ot-text)]"
                 style={{ minHeight: '105px', lineHeight: 1.5 }}
               >
-                {messages[currentMessageIndex]}
+                {advisorMessages[currentMessageIndex]}
               </Text>
 
-              {/* Stats Section */}
               <Title
                 order={2}
                 className="mt-2 text-center font-bold text-shadow text-shadow-xs"
@@ -232,8 +119,7 @@ const Sidebar: React.FC = () => {
                   </List.Item>
                   <List.Item>
                     <Skeleton height={16} width="90%" radius="sm" mt={6} />
-                    <Skeleton height={8} width="100%" radius="sm" mt={4} />{' '}
-                    {/* Skeleton for progress bar */}
+                    <Skeleton height={8} width="100%" radius="sm" mt={4} />
                   </List.Item>
                   <List.Item>
                     <Skeleton height={16} width="75%" radius="sm" mt={6} />
@@ -362,7 +248,7 @@ const Sidebar: React.FC = () => {
                   <Autocomplete
                     value={searchValue}
                     onChange={setSearchValue}
-                    onOptionSubmit={handleItemSubmit} // Use onOptionSubmit for selection
+                    onOptionSubmit={handleItemSubmit}
                     renderOption={renderAutocompleteOption}
                     data={usersData}
                     maxDropdownHeight={300}
@@ -370,14 +256,12 @@ const Sidebar: React.FC = () => {
                     style={{ width: '95%' }}
                     className="mb-2"
                     comboboxProps={{ width: '250px' }}
-                    color="brand" // Consider theme variable if needed
+                    color="brand"
                     variant="filled"
                   />
                 </center>
                 <center>
                   <Button type="submit" color="gray" variant="filled" size="sm">
-                    {' '}
-                    {/* Adjusted button appearance */}
                     {t('sidebar.searchUsers')}
                   </Button>
                 </center>
@@ -409,12 +293,11 @@ const Sidebar: React.FC = () => {
               fw="bold"
               className="text-center text-[var(--ot-text)]"
               style={{ minHeight: '105px', lineHeight: 1.5 }}
-            >
-              {messages[currentMessageIndex]}
-            </Text>
+              >
+                {advisorMessages[currentMessageIndex]}
+              </Text>
 
-            {/* Stats Section */}
-            <Title
+              <Title
               order={2}
               className="mt-2 text-center font-bold text-shadow text-shadow-xs"
             >
@@ -441,11 +324,10 @@ const Sidebar: React.FC = () => {
                 <List.Item>
                   <Skeleton height={16} width="60%" radius="sm" mt={6} />
                 </List.Item>
-                <List.Item>
-                  <Skeleton height={16} width="90%" radius="sm" mt={6} />
-                  <Skeleton height={8} width="100%" radius="sm" mt={4} />{' '}
-                  {/* Skeleton for progress bar */}
-                </List.Item>
+                  <List.Item>
+                    <Skeleton height={16} width="90%" radius="sm" mt={6} />
+                    <Skeleton height={8} width="100%" radius="sm" mt={4} />
+                  </List.Item>
                 <List.Item>
                   <Skeleton height={16} width="75%" radius="sm" mt={6} />
                 </List.Item>
@@ -568,28 +450,26 @@ const Sidebar: React.FC = () => {
             </Title>
             <form onSubmit={handleSubmit}>
               <center>
-                <Autocomplete
-                  value={searchValue}
-                  onChange={setSearchValue}
-                  onOptionSubmit={handleItemSubmit} // Use onOptionSubmit for selection
-                  renderOption={renderAutocompleteOption}
+                  <Autocomplete
+                    value={searchValue}
+                    onChange={setSearchValue}
+                    onOptionSubmit={handleItemSubmit}
+                    renderOption={renderAutocompleteOption}
                   data={usersData}
                   maxDropdownHeight={300}
                   placeholder={t('sidebar.searchPlaceholder')}
                   style={{ width: '95%' }}
-                  className="mb-2"
-                  comboboxProps={{ width: '250px' }}
-                  color="brand" // Consider theme variable if needed
-                  variant="filled"
+                    className="mb-2"
+                    comboboxProps={{ width: '250px' }}
+                    color="brand"
+                    variant="filled"
                 />
               </center>
-              <center>
-                <Button type="submit" color="gray" variant="filled" size="sm">
-                  {' '}
-                  {/* Adjusted button appearance */}
-                  {t('sidebar.searchUsers')}
-                </Button>
-              </center>
+                <center>
+                  <Button type="submit" color="gray" variant="filled" size="sm">
+                    {t('sidebar.searchUsers')}
+                  </Button>
+                </center>
             </form>
           </div>
         </div>

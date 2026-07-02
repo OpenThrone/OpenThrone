@@ -2,6 +2,8 @@
 import clsx from 'clsx';
 import React from 'react';
 
+const EMPTY_STYLE: React.CSSProperties = {};
+
 interface RpgAwesomeIconProps {
   icon: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | '1x' | '2x' | '3x' | '4x' | '5x';
@@ -27,7 +29,7 @@ const RpgAwesomeIcon: React.FC<RpgAwesomeIconProps> = ({
   icon,
   size,
   className = '',
-  style = {},
+  style = EMPTY_STYLE,
   color,
   fw = false,
   spin = false,

@@ -88,7 +88,7 @@ const MenuItemComponent: React.FC<{
 
   const handleToggle = () => {
     if (hasChildren) {
-      setIsOpen(!isOpen);
+      setIsOpen((v) => !v);
     }
   };
 
