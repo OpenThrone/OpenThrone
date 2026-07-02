@@ -75,7 +75,17 @@
     "top10Population": "Top 10 Población",
     "top10PopulationDescription": "Las 10 cuentas de jugador con la población total más alta.",
     "top10GoldOnHand": "Top 10 Oro en Mano",
-    "lastGenerated": "Última Generación"
+    "lastGenerated": "Última Generación",
+    "currentEra": "Era actual",
+    "pastEras": "Eras pasadas",
+    "loadingEraStats": "Cargando estadísticas de era...",
+    "failedEraStats": "Error al cargar las estadísticas de era.",
+    "historicalStatsNotice": "Las estadísticas históricas de era usan instantáneas de fin de era y registros de combate reconstruidos.",
+    "finalStanding": "Clasificación final",
+    "top10Offense": "Top 10 Ataque",
+    "top10Defense": "Top 10 Defensa",
+    "top10Spy": "Top 10 Espionaje",
+    "top10Sentry": "Top 10 Centinela"
   },
   "autoRecruit": {
     "title": "Reclutador automático",
