@@ -114,7 +114,7 @@ export function withApiGuard<
         const profile = RATE_LIMIT_PROFILES[rateLimitProfile];
         const ip = getRequestIp(req) ?? 'unknown';
         const rateKey = `${rateLimitProfile}:${req.method}:${req.url}:${ip}`;
-        const isAllowed = rateLimiter(rateKey, profile);
+        const isAllowed = await rateLimiter(rateKey, profile);
         if (!isAllowed) {
           return res.status(429).json({ message: 'Too many requests' });
         }
