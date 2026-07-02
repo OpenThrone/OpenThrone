@@ -21,7 +21,7 @@ const NewsBulletin: React.FC = () => {
         setDismissed(true);
       }
     } catch {
-      // ignore storage errors
+      // ignore storage errors (e.g., privacy mode, quota exceeded)
     }
   }, []);
 
@@ -36,7 +36,7 @@ const NewsBulletin: React.FC = () => {
       if (typeof window !== 'undefined')
         localStorage.setItem(STORAGE_KEY, 'true');
     } catch {
-      // ignore
+      // ignore storage errors (e.g., privacy mode, quota exceeded)
     }
     setVisible(false);
     setDismissed(true);

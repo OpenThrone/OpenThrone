@@ -1,16 +1,21 @@
 import { HoverCard, List } from '@mantine/core';
+import { useMemo } from 'react';
 
 import type { BattleUnits } from '@/types/typings';
 
+const EMPTY_UNITS: BattleUnits[] = [];
+
 interface LossesListProps {
-  losses: string; // JSON string containing total and units
+  losses: string;
 }
 const LossesList: React.FC<LossesListProps> = ({ losses }) => {
-  const parsed: { total: number; units: BattleUnits[] } =
-    typeof losses === 'string'
-      ? (JSON.parse(losses) as { total: number; units: BattleUnits[] })
-      : (losses as { total: number; units: BattleUnits[] });
-  const { total, units = [] } = parsed;
+  const parsed = useMemo<{ total: number; units: BattleUnits[] }>(() => {
+    if (typeof losses !== 'string') {
+      return losses;
+    }
+    return JSON.parse(losses);
+  }, [losses]);
+  const { total, units = EMPTY_UNITS } = parsed;
 
   if (total === 0 || units.length === 0) {
     return <span>0 Units</span>;

@@ -1,4 +1,5 @@
 import { Chip, Group, Stack } from '@mantine/core';
+import { useMemo } from 'react';
 
 import type { Loss } from '@/types/typings';
 import { toLocale } from '@/utils/numberFormatting';
@@ -28,16 +29,18 @@ const StatsList: React.FC<StatsListProps> = ({
   subType,
   collapsed,
 }) => {
-  if (subType !== 'attack') return null;
-
-  const xp =
-    type === 'defense'
-      ? typeof stats.xpEarned === 'object'
+  const xp = useMemo(() => {
+    if (type === 'defense') {
+      return typeof stats.xpEarned === 'object'
         ? stats.xpEarned.defender
-        : JSON.parse(stats.xpEarned).defender
-      : typeof stats.xpEarned === 'object'
-        ? stats.xpEarned.attacker
-        : JSON.parse(stats.xpEarned).attacker;
+        : JSON.parse(stats.xpEarned).defender;
+    }
+    return typeof stats.xpEarned === 'object'
+      ? stats.xpEarned.attacker
+      : JSON.parse(stats.xpEarned).attacker;
+  }, [stats.xpEarned, type]);
+
+  if (subType !== 'attack') return null;
 
   return collapsed ? (
     <Group align="center" justify="center">
