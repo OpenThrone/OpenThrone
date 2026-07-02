@@ -14,6 +14,7 @@ const UserDataSchema = z.object({
   fortLevel: z.number().int().optional(),
 });
 
+/** Encapsulates user economy data access and domain operations. */
 export class UserEconomyService {
   private gold: bigint;
 

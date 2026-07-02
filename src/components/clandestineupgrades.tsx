@@ -5,7 +5,7 @@ import { Fortifications, SpyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import type { BattleUpgradeProps, SpyUpgradeType } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 import { StyledTable } from './game/StyledTable';
 

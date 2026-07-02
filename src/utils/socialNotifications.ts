@@ -13,6 +13,7 @@ const resolveSenderName = async (senderId: number) => {
   return sender?.display_name || 'someone';
 };
 
+/** Emit social count update. */
 export const emitSocialCountUpdate = async (
   io: Server | null,
   userId: number,
@@ -28,6 +29,7 @@ export const emitSocialCountUpdate = async (
   }
 };
 
+/** Emit gold request count update. */
 export const emitGoldRequestCountUpdate = async (
   io: Server | null,
   userId: number,
@@ -43,6 +45,7 @@ export const emitGoldRequestCountUpdate = async (
   }
 };
 
+/** Emit friend request notification. */
 export const emitFriendRequestNotification = async (
   io: Server | null,
   {
@@ -69,6 +72,7 @@ export const emitFriendRequestNotification = async (
   }
 };
 
+/** Emit gold request notification. */
 export const emitGoldRequestNotification = async (
   io: Server | null,
   {

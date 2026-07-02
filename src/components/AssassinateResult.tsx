@@ -26,8 +26,8 @@ const AssassinateResult = ({ battle, viewerID }) => {
   const isAttackerWinner = winner === attackerPlayer.id;
   const theme = useMantineTheme();
 
-  const toggleSpyModal = () => setIsSpyModalOpen(!isSpyModalOpen);
-  const toggleAttackModal = () => setIsAttackModalOpen(!isAttackModalOpen);
+  const toggleSpyModal = () => setIsSpyModalOpen((v) => !v);
+  const toggleAttackModal = () => setIsAttackModalOpen((v) => !v);
 
   const unitToAttack = () => {
     switch (stats.spyResults.unit) {

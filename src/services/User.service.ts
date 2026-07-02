@@ -1,8 +1,9 @@
-import type { Prisma } from '@prisma/client';
 import md5 from 'md5';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
+import { sanitizeUserForResponse } from '@/utils/sanitizeUser';
 import { idleThresholdDate } from '@/utils/utilities';
 
 import { ensureActiveEra } from './Era.service';
@@ -36,6 +37,7 @@ const UpdateLastActiveSchema = z
       'At least one identifier (email, userId, or displayName) must be provided',
   });
 
+/** Create user. */
 export const createUser = async (
   email: string,
   password_hash: string,
@@ -103,7 +105,7 @@ export const createUser = async (
       })),
     });
 
-    return user;
+    return sanitizeUserForResponse(user);
   });
 };
 
@@ -125,6 +127,7 @@ export const userExists = async (email: string) => {
   });
 };
 
+/** Update user and bank history. */
 export const updateUserAndBankHistory = async (
   prismaInstance: Prisma.TransactionClient,
   userId: number,
@@ -248,6 +251,7 @@ export const updateUserAndBankHistory = async (
   });
 };
 
+/** Returns updated status for callers that need normalized game data. */
 export const getUpdatedStatus = async (userId: number) => {
   const now = new Date();
 
@@ -349,7 +353,7 @@ export const getUpdatedStatus = async (userId: number) => {
   return statusHistory.status;
 };
 
-export const updateLastActive = async ({
+const updateLastActive = async ({
   email,
   userId,
   displayName,

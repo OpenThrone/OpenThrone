@@ -1,7 +1,7 @@
-import { BanAppealStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { BanAppealStatus } from '@/lib/prisma-exports';
 
 const CreateAppealSchema = z.object({
   accountStatusHistoryId: z.number().int().positive(),
@@ -9,6 +9,7 @@ const CreateAppealSchema = z.object({
   body: z.string().min(10).max(5000),
 });
 
+/** Encapsulates moderation data access and domain operations. */
 export class ModerationService {
   static async getBannedUsers(limit = 50, offset = 0) {
     const bannedStatuses = await prisma.accountStatusHistory.findMany({

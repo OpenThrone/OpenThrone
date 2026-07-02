@@ -5,7 +5,7 @@ import { Fortifications, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 import { StyledTable } from './game/StyledTable';
 

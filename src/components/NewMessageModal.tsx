@@ -16,6 +16,8 @@ import {
 import { useDebouncedValue } from '@mantine/hooks';
 import { useCallback, useEffect, useState } from 'react';
 
+const EMPTY_EXISTING_USERS: number[] = [];
+
 interface NewMessageModalProps {
   opened: boolean;
   onClose: () => void;
@@ -37,7 +39,7 @@ const NewMessageModal = ({
   onClose,
   onRoomCreated,
   existingChatId,
-  existingUsers = [],
+  existingUsers = EMPTY_EXISTING_USERS,
   isDirectMessage = false,
   prefillRecipient = null,
 }: NewMessageModalProps) => {

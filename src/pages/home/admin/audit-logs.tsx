@@ -8,13 +8,13 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { PermissionType } from '@prisma/client';
 import { useRouter } from 'next/router';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
+import { PermissionType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
 const AuditLogsPage = () => {
@@ -170,6 +170,7 @@ const AuditLogsPage = () => {
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context: any) => {
   return {
     props: {

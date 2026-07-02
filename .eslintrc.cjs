@@ -4,7 +4,6 @@ module.exports = {
     'airbnb-base',
     'next/core-web-vitals',
     'plugin:prettier/recommended',
-    'plugin:@next/next/recommended',
   ],
   rules: {
     'prettier/prettier': ['error', { singleQuote: true, endOfLine: 'auto' }],

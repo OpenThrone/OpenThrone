@@ -4,6 +4,7 @@ import { UnitTypes } from '@/constants';
 import type UserModel from '@/models/Users';
 import type { PlayerUnit, UnitType } from '@/types/typings';
 
+/** Calculates total cost used by combat, economy, or presentation logic. */
 export const calculateTotalCost = (
   units: PlayerUnit[],
   uModel: UserModel,
@@ -22,6 +23,7 @@ export const calculateTotalCost = (
   return Math.ceil(totalCost); // Always return an integer
 };
 
+/** Update units map. */
 export const updateUnitsMap = (
   unitsMap: Map<string, PlayerUnit>,
   units: PlayerUnit[],
@@ -80,7 +82,7 @@ export const updateUnitsMap = (
   return unitsMap;
 };
 
-export const validateUnits = (units: PlayerUnit[]): boolean => {
+const validateUnits = (units: PlayerUnit[]): boolean => {
   return units.every((unitData) => {
     const unitType = UnitTypes.find(
       (u) => u.type === unitData.type && u.level === unitData.level,
@@ -89,6 +91,7 @@ export const validateUnits = (units: PlayerUnit[]): boolean => {
   });
 };
 
+/** Returns average level and hp for callers that need normalized game data. */
 export const getAverageLevelAndHP = (
   units: PlayerUnit[],
   unitType: UnitType,

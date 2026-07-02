@@ -2,6 +2,7 @@ import { Button, Menu } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 
+/** Language switcher. */
 export const LanguageSwitcher = () => {
   const router = useRouter();
   const { i18n, t } = useTranslation('common');
@@ -35,7 +36,7 @@ export const LanguageSwitcher = () => {
           aria-haspopup="menu"
           aria-expanded={false}
         >
-          {currentLanguage?.flag} {i18n.language.toUpperCase()}
+          {i18n.language.toUpperCase()}
         </Button>
       </Menu.Target>
       <Menu.Dropdown aria-label={t('ariaLabels.selectLanguage')}>

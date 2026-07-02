@@ -75,7 +75,17 @@
     "top10Population": "Top 10 Population",
     "top10PopulationDescription": "The top 10 population is a list of the ten user accounts with the highest total population over a span.",
     "top10GoldOnHand": "Top 10 Gold on Hand",
-    "lastGenerated": "Last Generated"
+    "lastGenerated": "Last Generated",
+    "currentEra": "Current Era",
+    "pastEras": "Past Eras",
+    "loadingEraStats": "Loading era stats...",
+    "failedEraStats": "Failed to load era stats.",
+    "historicalStatsNotice": "Historical era stats use end-of-era snapshots and reconstructed combat records.",
+    "finalStanding": "Final Standing",
+    "top10Offense": "Top 10 Offense",
+    "top10Defense": "Top 10 Defense",
+    "top10Spy": "Top 10 Spy",
+    "top10Sentry": "Top 10 Sentry"
   },
   "autoRecruit": {
     "title": "Auto Recruiter",

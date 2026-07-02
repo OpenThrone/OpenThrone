@@ -1,12 +1,12 @@
+import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
 import {
   ReportCategory,
   ReportPriority,
   ReportResolution,
   ReportStatus,
-} from '@prisma/client';
-import { z } from 'zod';
-
-import prisma from '@/lib/prisma';
+} from '@/lib/prisma-exports';
 
 const CreateReportSchema = z.object({
   reportedUserId: z.number().int().positive(),
@@ -49,6 +49,7 @@ const AddReportActionSchema = z.object({
   toPriority: z.nativeEnum(ReportPriority).optional(),
 });
 
+/** Encapsulates report data access and domain operations. */
 export class ReportService {
   static async createReport(
     reporterUserId: number,
@@ -230,12 +231,19 @@ export class ReportService {
       });
     }
 
+    const body =
+      validated.type === 'PRIORITY_CHANGED' && validated.toPriority
+        ? [validated.body, `Priority changed to ${validated.toPriority}`]
+            .filter(Boolean)
+            .join('\n')
+        : validated.body;
+
     return prisma.reportAction.create({
       data: {
         reportId: validated.reportId,
         actorUserId: staffUserId,
         type: validated.type,
-        body: validated.body,
+        body,
         toStatus: validated.toStatus,
       },
     });

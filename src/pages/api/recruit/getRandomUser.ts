@@ -7,7 +7,7 @@ import { getValidUsersForRecruitment } from '@/services/Recruitment.service';
 import { getSession, updateSessionActivity } from '@/services/Sessions.service';
 import { getIpAddress } from '@/utils/ipUtils';
 import { logError } from '@/utils/logger'; // Import logger at the top
-import mtrand from '@/utils/mtrand';
+import { mtRand as mtrand } from '@/utils/mtrand';
 
 const GetRandomUserSchema = z.object({
   sessionId: z.number().int().optional(),

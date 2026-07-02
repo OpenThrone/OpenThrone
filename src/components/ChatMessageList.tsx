@@ -66,6 +66,11 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
   isLoading,
 }) => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
+  const [prevMessages, setPrevMessages] = useState(messages);
+  if (messages !== prevMessages) {
+    setPrevMessages(messages);
+    setChatMessages(messages);
+  }
   const bottomRef = useRef<HTMLDivElement>(null);
   const { user, markRoomAsRead } = useUser();
   const currentUserId = user?.id;
@@ -91,11 +96,6 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const messageElementRefs = useRef<Map<number, HTMLElement>>(new Map());
   const messagesMarkedAsRead = useRef<Set<number>>(new Set());
-
-  // Effect to synchronize the local chatMessages state when the messages prop changes
-  useEffect(() => {
-    setChatMessages(messages);
-  }, [messages]);
 
   // Effect to scroll to the bottom when new messages are added
   useEffect(() => {

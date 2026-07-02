@@ -638,6 +638,7 @@ function buildArtifact(params: {
   };
 }
 
+/** Run closed loop balance. */
 export async function runClosedLoopBalance(
   config: ClosedLoopBalanceConfig = {},
 ): Promise<ClosedLoopBalanceResult> {

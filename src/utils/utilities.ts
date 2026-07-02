@@ -249,6 +249,7 @@ const serializeDates = (obj) => {
   return obj;
 };
 
+/** Idle threshold date. */
 export const idleThresholdDate = (days = 60) => {
   // 60days is default
   const now = new Date();
@@ -261,15 +262,15 @@ export const idleThresholdDate = (days = 60) => {
  * @param {number} value - The input number to check.
  * @returns {number} - The input value if it's 0 or greater, otherwise 0.
  */
-export const atLeastZero = (value: number): number => {
+const atLeastZero = (value: number): number => {
   return Math.max(0, value);
 };
 
-export const getSHA256Key = (secret: string) => {
+const getSHA256Key = (secret: string) => {
   return createHash('sha256').update(secret).digest();
 };
 
-export async function importKey(rawKey: Buffer) {
+async function importKey(rawKey: Buffer) {
   return webcrypto.subtle.importKey(
     'raw',
     rawKey,
@@ -279,6 +280,7 @@ export async function importKey(rawKey: Buffer) {
   );
 }
 
+/** Creates a JSON-safe deep clone of serializable input. */
 export const deepClone = (obj) => {
   const replacer = (key, value) => {
     if (typeof value === 'bigint') {
@@ -297,7 +299,7 @@ export const deepClone = (obj) => {
   return JSON.parse(JSON.stringify(obj, replacer), reviver);
 };
 
-export const determineHour = (race: PlayerRace = 'ELF') => {
+const determineHour = (race: PlayerRace = 'ELF') => {
   const hour = new Date().getUTCHours();
   let boost = 1.0;
 
@@ -310,6 +312,7 @@ export const determineHour = (race: PlayerRace = 'ELF') => {
   return boost;
 };
 
+/** Returns transaction type for callers that need normalized game data. */
 export const getTransactionType = (entry) => {
   const {
     from_user_id,
@@ -348,6 +351,7 @@ export const getTransactionType = (entry) => {
   return 'UNKNOWN';
 };
 
+/** Returns gold tx symbol for callers that need normalized game data. */
 export const getGoldTxSymbol = (entry, user) => {
   const transactionType = getTransactionType(entry);
   if (transactionType === 'Recruitment' || transactionType === 'Income')
@@ -366,6 +370,5 @@ export {
   getAssetPath,
   getAvatarSrc,
   getLevelFromXP,
-  getUnitName,
   serializeDates,
 };

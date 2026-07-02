@@ -7,6 +7,7 @@ import type { AuthenticatedRequest } from '@/types/api'; // Import the shared ty
 
 import { authOptions } from '../pages/api/auth/[...nextauth]';
 
+/** With auth. */
 export const withAuth =
   (handler: NextApiHandler, override: boolean = false) =>
   async (req: NextApiRequest, res: NextApiResponse) => {

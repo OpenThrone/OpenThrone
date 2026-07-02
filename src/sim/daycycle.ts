@@ -648,6 +648,7 @@ function finalizeDayMetrics(
   return dayResult;
 }
 
+/** Simulate day. */
 export async function simulateDay(state: SimulationState): Promise<DayResult> {
   const day = state.day + 1;
   const dayResult = createDayResult(day);
@@ -673,6 +674,7 @@ export async function simulateDay(state: SimulationState): Promise<DayResult> {
   return dayResult;
 }
 
+/** Run simulation. */
 export async function runSimulation(
   population: PlayerState[],
   days: number,
@@ -752,6 +754,7 @@ export async function runSimulation(
   return state;
 }
 
+/** Print simulation summary. */
 export function printSimulationSummary(state: SimulationState): void {
   console.log('\n=== Simulation Summary ===');
   console.log(`Days: ${state.totalDays}`);

@@ -1,4 +1,4 @@
-export class ApiError extends Error {
+class ApiError extends Error {
   statusCode?: number;
 
   details?: any;
@@ -13,10 +13,9 @@ export class ApiError extends Error {
   }
 }
 
+/** Create API error. */
 export const createApiError = (
   message: string,
   statusCode?: number,
   details?: any,
 ) => new ApiError(message, statusCode, details);
-
-export default ApiError;

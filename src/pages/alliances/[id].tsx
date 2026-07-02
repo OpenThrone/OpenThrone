@@ -31,7 +31,7 @@ import type { AllianceInfo } from '@/services/Alliance.service';
 import { stringifyObj } from '@/utils/numberFormatting';
 
 interface AlliancePageProps {
-  initialAlliance: string; // JSON string
+  initialAlliance: string;
   isMember: boolean;
   isLeader: boolean;
 }
@@ -72,7 +72,6 @@ const AlliancePage = ({
   return (
     <MainArea title={alliance.name}>
       <Stack gap="lg">
-        {/* Header Section */}
         <Paper
           shadow="md"
           radius="md"
@@ -113,7 +112,6 @@ const AlliancePage = ({
           </Box>
         </Paper>
 
-        {/* Tabs Section */}
         <Tabs value={activeTab} onChange={setActiveTab} variant="outline">
           <Tabs.List>
             <Tabs.Tab value="overview">
@@ -170,11 +168,19 @@ const AlliancePage = ({
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const session = await getServerSession(context.req, context.res, authOptions);
   const { id } = context.params as { id: string };
 
   try {
-    const allianceData = await AllianceService.getAllianceById(Number(id));
+    const [session, allianceData, i18nProps] = await Promise.all([
+      getServerSession(context.req, context.res, authOptions),
+      AllianceService.getAllianceById(Number(id)),
+      serverSideTranslations(context.locale ?? 'en', [
+        'common',
+        'alliances',
+        'navigation',
+      ]),
+    ]);
+
     if (!allianceData) {
       return { notFound: true };
     }
@@ -185,9 +191,6 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     let isLeader = false;
 
     if (user) {
-      // We can check memberships from session if available, or just check the alliance members usage
-      // Since allianceData.members is fetched, we can check there
-      // Note: getAllianceById includes members but might limit them? No, the code says includes members.
       isMember =
         alliance.members?.some((m) => m.user_id === Number(user.id)) ?? false;
       isLeader = alliance.leader_id === Number(user.id);
@@ -195,17 +198,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
     return {
       props: {
-        ...(await serverSideTranslations(context.locale ?? 'en', [
-          'common',
-          'alliances',
-          'navigation',
-        ])),
+        ...i18nProps,
         initialAlliance: JSON.stringify(alliance),
         isMember,
         isLeader,
       },
     };
-  } catch (error) {
+  } catch {
     return {
       notFound: true,
     };

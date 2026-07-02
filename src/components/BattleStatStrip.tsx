@@ -37,6 +37,7 @@ const toneStyles: Record<
   },
 };
 
+/** Battle stat strip. */
 export function BattleStatStrip({ stats }: BattleStatStripProps) {
   return (
     <Box

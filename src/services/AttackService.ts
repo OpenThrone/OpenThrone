@@ -1,7 +1,6 @@
-import type { Prisma } from '@prisma/client';
-
 import { UnitTypes } from '@/constants';
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 import { BattleUser } from '@/models/BattleUser';
 import {
   createAttackLog,
@@ -72,6 +71,7 @@ function buildContributionSlice(
   };
 }
 
+/** Provides attack service operations. */
 export const AttackService = {
   simulateBattle,
   calculateStrength,
@@ -526,5 +526,3 @@ export const AttackService = {
     }
   },
 };
-
-export default AttackService;

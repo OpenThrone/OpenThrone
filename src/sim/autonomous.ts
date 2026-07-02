@@ -13,7 +13,7 @@ import {
   TopPlayerTimelinePoint,
 } from './types';
 
-export interface AutonomousRunnerConfig {
+interface AutonomousRunnerConfig {
   personaName?: string;
   populationSize?: number;
   levelRange?: [number, number];
@@ -26,7 +26,7 @@ export interface AutonomousRunnerConfig {
   simulation?: SimulationConfig;
 }
 
-export interface BalancePersona {
+interface BalancePersona {
   name: string;
   description: string;
   config: AutonomousRunnerConfig;
@@ -345,7 +345,7 @@ function isMetaStale(
   return progressionGain <= 1 && avgRecentAttacks <= threshold;
 }
 
-export async function runAutonomousBalanceLoop(
+async function runAutonomousBalanceLoop(
   config: AutonomousRunnerConfig = {},
 ): Promise<AutonomousRunResult> {
   const personaName = config.personaName ?? 'equilibrium';
@@ -581,6 +581,7 @@ export const BALANCE_PERSONAS: BalancePersona[] = [
   },
 ];
 
+/** Run all balance personas. */
 export async function runAllBalancePersonas(
   personas: BalancePersona[] = BALANCE_PERSONAS,
 ): Promise<{
@@ -621,6 +622,7 @@ export async function runAllBalancePersonas(
   return { results, comparison };
 }
 
+/** Print autonomous run. */
 export function printAutonomousRun(result: AutonomousRunResult): void {
   console.log('\n=== Autonomous Balance Run ===');
   console.log(`Stop reason: ${result.stopReason}`);

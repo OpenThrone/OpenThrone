@@ -1,9 +1,8 @@
 import { Button, Group, NumberInput, Table, Text } from '@mantine/core';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 
 import { alertService } from '@/services/Alert.service';
-import type { UnitProps } from '@/types/typings';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 import { useUser } from '../context/users';
 import { GameCard } from './game/GameCard';
@@ -12,11 +11,6 @@ import { StyledTable } from './game/StyledTable';
 const NewItemSection: React.FC<any> = React.memo(
   ({ heading, items, itemCosts, setItemCosts, units: _units }) => {
     const { user, forceUpdate } = useUser();
-    const [currentItems, setCurrentItems] = useState<UnitProps[]>(items);
-
-    useEffect(() => {
-      if (items) setCurrentItems(items);
-    }, [items]);
 
     const handleInputChange = useCallback(
       (unitId: string, value: number | string | undefined) => {
@@ -30,7 +24,7 @@ const NewItemSection: React.FC<any> = React.memo(
     );
 
     const handleEquip = async (operation: 'buy' | 'sell') => {
-      const itemsToProcess = currentItems
+      const itemsToProcess = (items ?? [])
         .filter((item) => item.enabled && (itemCosts[item.id] || 0) > 0)
         .map((item) => ({
           ...item,
@@ -68,7 +62,7 @@ const NewItemSection: React.FC<any> = React.memo(
     return (
       <GameCard title={heading}>
         <StyledTable headers={['Item', 'Details', 'Owned', 'Quantity']}>
-          {currentItems.map((unit) => (
+          {(items ?? []).map((unit) => (
             <Table.Tr key={unit.id}>
               <Table.Td>{unit.name}</Table.Td>
               <Table.Td>
@@ -91,7 +85,7 @@ const NewItemSection: React.FC<any> = React.memo(
             Total Cost:{' '}
             {toLocale(
               Object.entries(itemCosts).reduce((acc, [id, qty]) => {
-                const item = currentItems.find((i) => i.id === id);
+                const item = (items ?? []).find((i) => i.id === id);
                 return acc + (item ? Number(qty) * Number(item.cost) : 0);
               }, 0),
               user?.locale,

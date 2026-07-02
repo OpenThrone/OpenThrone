@@ -1,5 +1,4 @@
-import type { users as PrismaUser } from '@prisma/client';
-
+import type { users as PrismaUser } from '@/lib/prisma-exports';
 import type {
   BattleUpgradeType,
   ItemType,
@@ -10,6 +9,7 @@ import type {
   UnitType,
 } from '@/types/typings';
 
+/** Models mock user generator behavior and derived game data. */
 export default class MockUserGenerator {
   private prismaUser: PrismaUser;
 

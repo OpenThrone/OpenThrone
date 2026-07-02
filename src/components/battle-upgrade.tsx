@@ -13,19 +13,25 @@ import React, { useEffect, useState } from 'react';
 import { alertService } from '@/services/Alert.service';
 import type { UnitProps, UnitSectionProps } from '@/types/typings';
 import { logError } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 import { useUser } from '../context/users';
+import DiscountSummary from './DiscountSummary';
 import { GameCard } from './game/GameCard';
+
+type UpgradeSlotItem = UnitProps & {
+  baseCost?: number;
+  discountedCost?: number;
+};
 
 const UpgradeSlot = ({
   item,
   heading,
   itemsToEquip,
   handleInputChange,
-  user: _user,
+  user,
 }: {
-  item: UnitProps;
+  item: UpgradeSlotItem;
   heading: string;
   itemsToEquip: { [key: string]: number };
   handleInputChange: (unitId: string, value: number | undefined) => void;
@@ -34,6 +40,11 @@ const UpgradeSlot = ({
   const theme = useMantineTheme();
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
   const accent = secondary[4] ?? '#e5c55a';
+  const showDiscountSummary =
+    user &&
+    item.baseCost !== item.discountedCost &&
+    item.baseCost &&
+    item.discountedCost;
 
   if (!item.enabled) {
     return (
@@ -87,6 +98,13 @@ const UpgradeSlot = ({
             Cost:{' '}
             <span style={{ color: accent }}>{toLocale(item.cost)} Gold</span>
           </Text>
+          {showDiscountSummary && (
+            <DiscountSummary
+              user={user}
+              baseCost={item.baseCost}
+              discountedCost={item.discountedCost}
+            />
+          )}
           <Text size="xs" c="dimmed">
             |
           </Text>
@@ -135,7 +153,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   items,
 }) => {
   const { user, forceUpdate } = useUser();
-  const [getItems, setItems] = useState<UnitProps[]>(items || []);
+  const [getItems, setItems] = useState<UpgradeSlotItem[]>(items || []);
   const [sectionEnabled, setSectionEnabled] = useState(false);
   const [itemsToEquip, setItemsToEquip] = useState<{ [key: string]: number }>(
     {},
@@ -266,7 +284,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   return (
     <GameCard title={heading} icon={faHammer}>
       <Grid gutter="md">
-        {getItems.map((item: UnitProps) => (
+        {getItems.map((item: UpgradeSlotItem) => (
           <Grid.Col span={{ base: 12 }} key={item.id}>
             <UpgradeSlot
               item={item}

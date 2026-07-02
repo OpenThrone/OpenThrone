@@ -1,11 +1,10 @@
 'use client';
 
-// Only required in Next.js projects
-
 /**
  * Whisper
  *
- * A lightweight and customizable React Snackbar (toast) component built with framer-motion and tailwindcss.
+ * A lightweight and customizable React Snackbar (toast) component built with
+ * framer-motion and tailwindcss.
  *
  * Github: https://github.com/farzany/whisper
  */
@@ -16,6 +15,7 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -25,7 +25,7 @@ const DEFAULT_DURATION = 6000;
 const BASE_Z_INDEX = 1000;
 
 export type SnackType = 'success' | 'warning' | 'error' | 'info' | 'default';
-export type Position =
+type Position =
   | 'bottom-left'
   | 'bottom-center'
   | 'bottom-right'
@@ -111,7 +111,7 @@ export const SnackbarProvider = ({
     }, duration);
   }, []);
 
-  const getIcon = (type?: SnackType) => {
+  const getIcon = useCallback((type?: SnackType) => {
     switch (type) {
       case 'success':
         return <SuccessIcon />;
@@ -124,7 +124,7 @@ export const SnackbarProvider = ({
       default:
         return <InfoIcon />;
     }
-  };
+  }, []);
 
   const createSnack = useCallback(
     (
@@ -134,7 +134,7 @@ export const SnackbarProvider = ({
     ) => {
       const {
         duration = DEFAULT_DURATION,
-        icon = null,
+        icon,
         description,
         dismissable = false,
         action,
@@ -163,75 +163,79 @@ export const SnackbarProvider = ({
     [position, resetTimeout],
   );
 
-  const snackbar = Object.assign(
-    (message: string, options?: SnackOptions) =>
-      createSnack(message, 'default', options),
-    {
-      info: (message: string, options?: SnackOptions) =>
-        createSnack(message, 'info', options),
-      success: (message: string, options?: SnackOptions) =>
-        createSnack(message, 'success', options),
-      warning: (message: string, options?: SnackOptions) =>
-        createSnack(message, 'warning', options),
-      error: (message: string, options?: SnackOptions) =>
-        createSnack(message, 'error', options),
-      async promise<T>(
-        promise: Promise<T>,
-        options: PromiseSnackOptions,
-      ): Promise<T> {
-        const { loading, success, error } = options;
-        const id = createSnack(loading.message, loading.type ?? 'default', {
-          icon: <Spinner />,
-          ...loading.options,
-          duration: 999999,
-        });
-        try {
-          const result = await promise;
-          const type = success.type ?? 'success';
-          setSnacks((prev) =>
-            prev.map((snack) =>
-              snack.id === id
-                ? {
-                    ...snack,
-                    message: success.message,
-                    type,
-                    icon: getIcon(type),
-                    duration: DEFAULT_DURATION,
-                    ...success.options,
-                  }
-                : snack,
-            ),
-          );
-          resetTimeout(id, success.options?.duration ?? DEFAULT_DURATION);
-          return result;
-        } catch (err) {
-          const type = error?.type ?? 'error';
-          setSnacks((prev) =>
-            prev.map((snack) =>
-              snack.id === id
-                ? {
-                    ...snack,
-                    message:
-                      error?.message ??
-                      'Something went wrong. Please try again.',
-                    type,
-                    icon: getIcon(type),
-                    duration: DEFAULT_DURATION,
-                    ...error?.options,
-                  }
-                : snack,
-            ),
-          );
-          resetTimeout(id, error?.options?.duration ?? DEFAULT_DURATION);
-          throw err;
-        }
-      },
-      dismiss: (ids?: string[]) => {
-        setSnacks((prev) =>
-          ids ? prev.filter((snack) => !ids.includes(snack.id)) : [],
-        );
-      },
-    },
+  const snackbar = useMemo(
+    () =>
+      Object.assign(
+        (message: string, options?: SnackOptions) =>
+          createSnack(message, 'default', options),
+        {
+          info: (message: string, options?: SnackOptions) =>
+            createSnack(message, 'info', options),
+          success: (message: string, options?: SnackOptions) =>
+            createSnack(message, 'success', options),
+          warning: (message: string, options?: SnackOptions) =>
+            createSnack(message, 'warning', options),
+          error: (message: string, options?: SnackOptions) =>
+            createSnack(message, 'error', options),
+          async promise<T>(
+            promise: Promise<T>,
+            options: PromiseSnackOptions,
+          ): Promise<T> {
+            const { loading, success, error } = options;
+            const id = createSnack(loading.message, loading.type ?? 'default', {
+              icon: <Spinner />,
+              ...loading.options,
+              duration: 999999,
+            });
+            try {
+              const result = await promise;
+              const type = success.type ?? 'success';
+              setSnacks((prev) =>
+                prev.map((snack) =>
+                  snack.id === id
+                    ? {
+                        ...snack,
+                        message: success.message,
+                        type,
+                        icon: getIcon(type),
+                        duration: DEFAULT_DURATION,
+                        ...success.options,
+                      }
+                    : snack,
+                ),
+              );
+              resetTimeout(id, success.options?.duration ?? DEFAULT_DURATION);
+              return result;
+            } catch (err) {
+              const type = error?.type ?? 'error';
+              setSnacks((prev) =>
+                prev.map((snack) =>
+                  snack.id === id
+                    ? {
+                        ...snack,
+                        message:
+                          error?.message ??
+                          'Something went wrong. Please try again.',
+                        type,
+                        icon: getIcon(type),
+                        duration: DEFAULT_DURATION,
+                        ...error?.options,
+                      }
+                    : snack,
+                ),
+              );
+              resetTimeout(id, error?.options?.duration ?? DEFAULT_DURATION);
+              throw err;
+            }
+          },
+          dismiss: (ids?: string[]) => {
+            setSnacks((prev) =>
+              ids ? prev.filter((snack) => !ids.includes(snack.id)) : [],
+            );
+          },
+        },
+      ),
+    [createSnack, resetTimeout, getIcon],
   );
 
   return (

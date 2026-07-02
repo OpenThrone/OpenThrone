@@ -1,7 +1,7 @@
-import { AllianceTransactionType } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { AllianceTransactionType } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
 
 const DepositSchema = z.object({
@@ -18,6 +18,7 @@ const WithdrawSchema = z.object({
   notes: z.string().optional(),
 });
 
+/** Encapsulates alliance bank data access and domain operations. */
 export class AllianceBankService {
   /**
    * Deposit gold from user's hand to alliance bank

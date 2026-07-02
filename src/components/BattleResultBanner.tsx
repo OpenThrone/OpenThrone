@@ -18,6 +18,7 @@ const bannerByTone: Record<BattleBannerTone, string> = {
   gray: '/assets/images/ui/battle-report/banners/banner-undead-gray.webp',
 };
 
+/** Battle result banner. */
 export function BattleResultBanner({
   tone,
   title,

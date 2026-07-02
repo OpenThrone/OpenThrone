@@ -1,6 +1,10 @@
-import type { UserItem, UserStructureUpgrade, UserUnit } from '@prisma/client';
 import { z } from 'zod';
 
+import type {
+  UserItem,
+  UserStructureUpgrade,
+  UserUnit,
+} from '@/lib/prisma-exports';
 import type {
   Item,
   Unit,
@@ -18,6 +22,7 @@ const UserDataSchema = z.object({
   mercenaries: z.array(z.any()).optional(),
 });
 
+/** Encapsulates user units data access and domain operations. */
 export class UserUnitsService {
   private units: UserUnit[];
 

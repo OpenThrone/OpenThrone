@@ -75,7 +75,17 @@
     "top10Population": "Top 10 Bevölkerung",
     "top10PopulationDescription": "Die Top-10-Bevölkerung listet die zehn Spielerkonten mit der höchsten Gesamtbevölkerung auf.",
     "top10GoldOnHand": "Top 10 Gold auf Hand",
-    "lastGenerated": "Zuletzt Generiert"
+    "lastGenerated": "Zuletzt Generiert",
+    "currentEra": "Aktuelle Ära",
+    "pastEras": "Vergangene Ären",
+    "loadingEraStats": "Lade Ära-Statistiken...",
+    "failedEraStats": "Fehler beim Laden der Ära-Statistiken.",
+    "historicalStatsNotice": "Historische Ära-Statistiken verwenden End-of-Ära-Schnappschüsse und rekonstruierte Kampfdaten.",
+    "finalStanding": "Endplatzierung",
+    "top10Offense": "Top 10 Angriff",
+    "top10Defense": "Top 10 Verteidigung",
+    "top10Spy": "Top 10 Spionage",
+    "top10Sentry": "Top 10 Wache"
   },
   "autoRecruit": {
     "title": "Auto Recruiter",

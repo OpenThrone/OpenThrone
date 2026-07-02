@@ -1,10 +1,10 @@
-import { Prisma } from '@prisma/client';
 import cookie from 'cookie';
 import type { Server as HttpServer } from 'http';
 import { getToken } from 'next-auth/jwt';
 import type { Socket } from 'socket.io';
 import { Server } from 'socket.io';
 
+import { Prisma } from '@/lib/prisma-exports';
 import { MessagingService } from '@/services/Messaging.service';
 import {
   DEFAULT_DASHBOARD_TEST_ORIGIN,
@@ -160,6 +160,7 @@ type MessageWithRelationsPayload = Prisma.ChatMessageGetPayload<{
   };
 }>;
 
+/** Initialize socket. */
 export const initializeSocket = (httpServer: HttpServer) => {
   if (io) {
     logInfo('Socket.IO already initialized');
@@ -276,7 +277,7 @@ const handleSendMessage = async (
     sharedAttackLogId?: number;
   },
 ) => {
-  if (!rateLimiter(`sendMessage-${userId}`, { windowMs: 10000, max: 10 })) {
+  if (!(await rateLimiter(`sendMessage-${userId}`, { windowMs: 10000, max: 10 }))) {
     socket.emit('messageError', {
       tempId: data.tempId,
       error: 'You are sending messages too quickly.',
@@ -449,7 +450,7 @@ const handleAddReaction = async (
   userId: number,
   data: { messageId: number; reaction: string; roomId: number },
 ) => {
-  if (!rateLimiter(`addReaction-${userId}`, { windowMs: 10000, max: 20 })) {
+  if (!(await rateLimiter(`addReaction-${userId}`, { windowMs: 10000, max: 20 }))) {
     socket.emit('reactionError', {
       messageId: data.messageId,
       error: 'You are reacting too quickly.',
@@ -863,6 +864,7 @@ const findUserIdBySocketId = (socketId: string): number | string => {
   return foundUserId;
 };
 
+/** Returns socket io for callers that need normalized game data. */
 export const getSocketIO = (): Server | null => {
   if (!io) {
     const globalSocket = (globalThis as GlobalSocketState).__OT_SOCKET_IO__;

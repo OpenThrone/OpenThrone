@@ -14,55 +14,29 @@ interface ContentCardProps extends Omit<PaperProps, 'className' | 'children'> {
   fullHeight?: boolean;
   titleSize?: 'sm' | 'md' | 'lg' | 'xl';
   actions?: ReactNode;
-  /** Optional close handler — when provided a close button will be shown in the header */
   onClose?: () => void;
   footer?: ReactNode;
   titlePosition?: 'left' | 'right' | 'center';
   bodyPadding?: string;
-  /** Minimum width (px or CSS value) applied to the card root */
   minWidth?: number | string;
-  /** Minimum height (px or CSS value) applied to the card root */
   minHeight?: number | string;
+  style?: React.CSSProperties;
 }
 
-const ContentCard: React.FC<ContentCardProps> = ({
-  title,
-  icon,
-  variant = 'default',
-  children,
-  className = '',
-  iconPosition = 'right',
-  iconVariant = 'outline',
-  fullHeight = false,
-  titleSize = 'lg',
-  actions,
-  footer = null,
-  titlePosition = 'left',
-  bodyPadding = 'p-4',
-  minWidth = 320,
-  minHeight = 160,
-  // Spread the remaining Mantine PaperProps
-  shadow = 'md',
-  radius = 'md',
-  withBorder = true,
-  onClose,
-  ...otherProps
-}) => {
-  // extract any style passed by caller so we can merge
-  const { style: otherStyle, ...restPaperProps } = otherProps as any;
-  // Create class string based on variant
-  const getCardClasses = () => {
-    const base = `bg-[#071014] border border-gray-800 overflow-hidden transition-shadow duration-200 ${fullHeight ? 'h-full flex flex-col' : ''} ${className}`;
-    if (variant === 'highlight')
-      return `${base} ring-2 ring-yellow-500/30 border-yellow-500`;
-    if (variant === 'secondary') return `${base} border-gray-700 bg-[#0b0b0b]`;
-    if (variant === 'news')
-      return `${base} bg-gradient-to-b from-[#071018] to-[#071016] shadow-lg rounded-xl border-transparent`;
-    return base;
-  };
+interface TitleWithIconProps {
+  icon: ReactNode;
+  iconVariant: 'default' | 'outline' | 'subtle' | 'transparent';
+  title: string;
+  titleSize: 'sm' | 'md' | 'lg' | 'xl';
+}
 
-  // Component for title with icon (for title-left position)
-  const TitleWithIcon = () => (
+function TitleWithIcon({
+  icon,
+  iconVariant,
+  title,
+  titleSize,
+}: TitleWithIconProps) {
+  return (
     <div className="flex items-center gap-2">
       <ThemeIcon
         c="white"
@@ -81,19 +55,58 @@ const ContentCard: React.FC<ContentCardProps> = ({
       </Text>
     </div>
   );
+}
+
+function ContentCard({
+  title,
+  icon,
+  variant = 'default',
+  children,
+  className = '',
+  iconPosition = 'right',
+  iconVariant = 'outline',
+  fullHeight = false,
+  titleSize = 'lg',
+  actions,
+  footer = null,
+  titlePosition = 'left',
+  bodyPadding = 'p-4',
+  minWidth = 320,
+  minHeight = 160,
+  shadow = 'md',
+  radius = 'md',
+  withBorder = true,
+  onClose,
+  ...otherProps
+}: ContentCardProps) {
+  const { style: rawStyle, ...restPaperProps } = otherProps;
+  const otherStyle = rawStyle as React.CSSProperties | undefined;
+
+  // Create class string based on variant
+  const getCardClasses = () => {
+    const base = `bg-[#071014] border border-gray-800 overflow-hidden transition-shadow duration-200 ${fullHeight ? 'h-full flex flex-col' : ''} ${className}`;
+    if (variant === 'highlight')
+      return `${base} ring-2 ring-yellow-500/30 border-yellow-500`;
+    if (variant === 'secondary') return `${base} border-gray-700 bg-[#0b0b0b]`;
+    if (variant === 'news')
+      return `${base} bg-gradient-to-b from-[#071018] to-[#071016] shadow-lg rounded-xl border-transparent`;
+    return base;
+  };
 
   // Get header justification class based on titlePosition
   const getHeaderJustifyClass = () =>
     titlePosition === 'right' ? 'justify-end' : 'justify-between';
 
-  // compute min size styles (allow number => pixels or raw string)
-  const sizeStyle: React.CSSProperties = {};
-  if (minWidth !== undefined)
-    sizeStyle.minWidth =
-      typeof minWidth === 'number' ? `${minWidth}px` : minWidth;
-  if (minHeight !== undefined)
-    sizeStyle.minHeight =
-      typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
+  const mergedStyle = React.useMemo<React.CSSProperties>(() => {
+    const sizeStyle: React.CSSProperties = {};
+    if (minWidth !== undefined)
+      sizeStyle.minWidth =
+        typeof minWidth === 'number' ? `${minWidth}px` : minWidth;
+    if (minHeight !== undefined)
+      sizeStyle.minHeight =
+        typeof minHeight === 'number' ? `${minHeight}px` : minHeight;
+    return { ...sizeStyle, ...otherStyle };
+  }, [minWidth, minHeight, otherStyle]);
 
   return (
     <Paper
@@ -102,7 +115,7 @@ const ContentCard: React.FC<ContentCardProps> = ({
       shadow={shadow}
       p={0}
       className={getCardClasses()}
-      style={{ ...sizeStyle, ...(otherStyle || {}) }}
+      style={mergedStyle}
       {...restPaperProps}
     >
       {/* Header: render if there is a title or actions */}
@@ -128,7 +141,12 @@ const ContentCard: React.FC<ContentCardProps> = ({
             {title &&
               titlePosition !== 'center' &&
               (iconPosition === 'title-left' ? (
-                <TitleWithIcon />
+                <TitleWithIcon
+                  icon={icon}
+                  iconVariant={iconVariant}
+                  title={title}
+                  titleSize={titleSize}
+                />
               ) : (
                 <Text
                   size={titleSize}
@@ -217,6 +235,6 @@ const ContentCard: React.FC<ContentCardProps> = ({
       )}
     </Paper>
   );
-};
+}
 
-export default ContentCard;
+export default React.memo(ContentCard);

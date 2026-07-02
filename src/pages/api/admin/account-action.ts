@@ -20,6 +20,7 @@ const guardedHandler = withApiGuard({
   bodySchema: AccountActionSchema,
 });
 
+/** Handles admin account action API requests. */
 export const handler = async (
   req: AuthenticatedRequest,
   res: NextApiResponse,

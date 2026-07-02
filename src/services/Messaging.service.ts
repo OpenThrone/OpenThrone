@@ -1,10 +1,11 @@
-import { ChatRole, Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { ChatRole, Prisma } from '@/lib/prisma-exports';
 import { logError, logInfo } from '@/utils/logger';
 
 // Type definitions for messaging operations
+/** Describes the create room data contract. */
 export interface CreateRoomData {
   name?: string;
   recipients: number[];
@@ -12,6 +13,7 @@ export interface CreateRoomData {
   isPrivate?: boolean;
 }
 
+/** Describes the message data contract. */
 export interface MessageData {
   content: string;
   messageType?: string;
@@ -19,15 +21,18 @@ export interface MessageData {
   sharedAttackLogId?: number;
 }
 
+/** Describes the participant data contract. */
 export interface ParticipantData {
   userIds: number[];
 }
 
+/** Describes the participant update data contract. */
 export interface ParticipantUpdateData {
   action: 'promote' | 'demote' | 'updatePermissions';
   canWrite?: boolean;
 }
 
+/** Describes the message search query data contract. */
 export interface MessageSearchQuery {
   roomId: number;
   searchTerm?: string;
@@ -39,11 +44,13 @@ export interface MessageSearchQuery {
   endDate?: Date;
 }
 
+/** Describes the reaction data contract. */
 export interface ReactionData {
   messageId: number;
   reaction: string;
 }
 
+/** Describes the read status data contract. */
 export interface ReadStatusData {
   messageIds: number[];
 }
@@ -96,6 +103,7 @@ const ReadStatusSchema = z.object({
   messageIds: z.array(z.number().int().positive()).min(1),
 });
 
+/** Encapsulates messaging data access and domain operations. */
 export class MessagingService {
   private static async checkLogSharePermission(
     userId: number,

@@ -1,12 +1,12 @@
+import { z } from 'zod';
+
 import type {
   UserBattleUpgrade,
   UserBonusPoints,
   UserItem,
   UserStructureUpgrade,
   UserUnit,
-} from '@prisma/client';
-import { z } from 'zod';
-
+} from '@/lib/prisma-exports';
 import type {
   FortHealth,
   ItemType,
@@ -79,6 +79,7 @@ const UserDataSchema = z.object({
   class: z.string().optional(),
 });
 
+/** Encapsulates user stats data access and domain operations. */
 export class UserStatsService {
   private experience: number;
 

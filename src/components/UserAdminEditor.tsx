@@ -19,10 +19,10 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import type { StaffRole } from '@prisma/client';
-import { PermissionType } from '@prisma/client';
 import React, { useEffect, useState } from 'react';
 
+import { PermissionType } from '@/lib/prisma-browser-exports';
+import type { StaffRole } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
 import { STAFF_ROLE_LABELS } from '@/utils/permissions';
 

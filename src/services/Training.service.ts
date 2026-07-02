@@ -1,8 +1,8 @@
-import type { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 
 import { UnitTypes } from '@/constants';
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
 import { updateUserAndBankHistory } from '@/services/User.service';
@@ -11,24 +11,22 @@ import { logDebug, logError } from '@/utils/logger';
 import { calculateTotalCost, updateUnitsMap } from '@/utils/units';
 import { calculateUserStats } from '@/utils/utilities';
 
-// Define the type for the transaction client
-type TransactionClient = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+type TransactionClient = Prisma.TransactionClient;
 
 // Define TypeScript interfaces for training data structures
-export interface TrainingUnit {
+interface TrainingUnit {
   type: string;
   level: number;
   quantity: number;
 }
 
+/** Describes the training request data contract. */
 export interface TrainingRequest {
   userId: number;
   units: TrainingUnit[];
 }
 
+/** Describes the conversion request data contract. */
 export interface ConversionRequest {
   userId: number;
   fromUnit: {
@@ -42,6 +40,7 @@ export interface ConversionRequest {
   conversionAmount: number;
 }
 
+/** Describes the training result data contract. */
 export interface TrainingResult {
   units: PlayerUnit[];
   totalCost?: number;
@@ -615,7 +614,7 @@ export const convertUnits = async (
  * @returns Object containing validation results and cost breakdown
  * @throws Error if validation fails
  */
-export const validateTrainingRequest = async (request: TrainingRequest) => {
+const validateTrainingRequest = async (request: TrainingRequest) => {
   const parseResult = TrainRequestSchema.safeParse(request);
   if (!parseResult.success) {
     throw new Error(`Invalid training request: ${parseResult.error.message}`);
@@ -690,10 +689,7 @@ export const validateTrainingRequest = async (request: TrainingRequest) => {
  * @param limit - Maximum number of records to return (default: 50)
  * @returns Array of training history records
  */
-export const getTrainingHistory = async (
-  userId: number,
-  limit: number = 50,
-) => {
+const getTrainingHistory = async (userId: number, limit: number = 50) => {
   try {
     const history = await prisma.bank_history.findMany({
       where: {

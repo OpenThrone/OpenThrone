@@ -1,6 +1,7 @@
 import { Box, Paper, Table } from '@mantine/core';
 import React from 'react';
 
+/** Styled table. */
 export const StyledTable = ({ headers, children }) => {
   return (
     <Paper

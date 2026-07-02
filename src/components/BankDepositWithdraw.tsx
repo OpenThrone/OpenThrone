@@ -3,12 +3,13 @@ import React, { useEffect, useState } from 'react';
 
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 import { getGoldTxSymbol, getTransactionType } from '@/utils/utilities';
 
 import { GameCard } from './game/GameCard';
 import { StyledTable } from './game/StyledTable';
 
+/** Bank deposit withdraw. */
 export default function BankDepositWithdraw({ user, forceUpdate }) {
   const [depositAmount, setDepositAmount] = useState(BigInt(0));
   const [withdrawAmount, setWithdrawAmount] = useState(BigInt(0));

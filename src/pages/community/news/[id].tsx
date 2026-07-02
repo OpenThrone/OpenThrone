@@ -74,6 +74,7 @@ const News = ({
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context) => {
   const session = await getSession(context);
   const userId = session

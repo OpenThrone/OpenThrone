@@ -81,30 +81,31 @@ export const getServerSideProps = async (context: any) => {
     };
   }
 
-  const attackLogs = await prisma.attack_log.findMany({
-    where: { attacker_id: userId, type: 'attack' },
-    include: {
-      attackerPlayer: {
-        select: { id: true, display_name: true, avatar: true },
+  const [attackLogs, defenseLogs] = await Promise.all([
+    prisma.attack_log.findMany({
+      where: { attacker_id: userId, type: 'attack' },
+      include: {
+        attackerPlayer: {
+          select: { id: true, display_name: true, avatar: true },
+        },
+        defenderPlayer: {
+          select: { id: true, display_name: true, avatar: true },
+        },
       },
-      defenderPlayer: {
-        select: { id: true, display_name: true, avatar: true },
+      orderBy: { timestamp: 'desc' },
+    }),
+    prisma.attack_log.findMany({
+      where: {
+        defender_id: userId,
+        OR: [{ type: 'attack' }, { winner: userId }],
       },
-    },
-    orderBy: { timestamp: 'desc' },
-  });
-
-  const defenseLogs = await prisma.attack_log.findMany({
-    where: {
-      defender_id: userId,
-      OR: [{ type: 'attack' }, { winner: userId }],
-    },
-    include: {
-      attackerPlayer: { select: { id: true, display_name: true } },
-      defenderPlayer: { select: { id: true, display_name: true } },
-    },
-    orderBy: { timestamp: 'desc' },
-  });
+      include: {
+        attackerPlayer: { select: { id: true, display_name: true } },
+        defenderPlayer: { select: { id: true, display_name: true } },
+      },
+      orderBy: { timestamp: 'desc' },
+    }),
+  ]);
 
   return {
     props: {

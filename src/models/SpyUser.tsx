@@ -1,6 +1,5 @@
-import type { users as PrismaUser, UserUnit } from '@prisma/client';
-
 import type { SpyUpgrades } from '@/constants';
+import type { users as PrismaUser, UserUnit } from '@/lib/prisma-exports';
 import { UserStatsService } from '@/services/UserStatsService';
 import { UserUnitsService } from '@/services/UserUnitsService';
 import type { Item, PlayerUnit, UnitTotalsType } from '@/types/typings';
@@ -8,6 +7,7 @@ import { getLevelFromXP } from '@/utils/utilities';
 
 import { BaseUser, type BaseUserRelations } from './BaseUser';
 
+/** Models spy user behavior and derived game data. */
 export class SpyUser extends BaseUser {
   private statsService: UserStatsService;
 
@@ -97,6 +97,7 @@ export class SpyUser extends BaseUser {
   }
 }
 
+/** Models spy user model behavior and derived game data. */
 export class SpyUserModel {
   units: PlayerUnit[] | null;
 

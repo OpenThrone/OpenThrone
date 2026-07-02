@@ -60,24 +60,28 @@ const formatMessage = (
 };
 
 // Logger functions
+/** Logs error details with optional structured context. */
 export const logError = (message: any, ...optionalParams: any[]) => {
   if (currentLogLevel >= LogLevel.ERROR) {
     console.error(formatMessage('ERROR', message, ...optionalParams));
   }
 };
 
+/** Logs warning details with optional structured context. */
 export const logWarn = (message: any, ...optionalParams: any[]) => {
   if (currentLogLevel >= LogLevel.WARN) {
     console.warn(formatMessage('WARN', message, ...optionalParams));
   }
 };
 
+/** Logs informational details with optional structured context. */
 export const logInfo = (message: any, ...optionalParams: any[]) => {
   if (currentLogLevel >= LogLevel.INFO) {
     console.info(formatMessage('INFO', message, ...optionalParams));
   }
 };
 
+/** Logs debug details with optional structured context. */
 export const logDebug = (message: any, ...optionalParams: any[]) => {
   if (currentLogLevel >= LogLevel.DEBUG) {
     // console.debug uses verbose output in some browsers, use console.log for consistency
@@ -85,7 +89,7 @@ export const logDebug = (message: any, ...optionalParams: any[]) => {
   }
 };
 
-export const logTrace = (message: any, ...optionalParams: any[]) => {
+const logTrace = (message: any, ...optionalParams: any[]) => {
   if (currentLogLevel >= LogLevel.TRACE) {
     console.trace(formatMessage('TRACE', message, ...optionalParams)); // Use console.log for TRACE as well
   }

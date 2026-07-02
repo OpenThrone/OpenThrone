@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { AccountService } from '@/services';
 
+/** Handles account email change API requests. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,

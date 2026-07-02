@@ -7,7 +7,7 @@ import { DAILY_CITIZEN_GRANT, UNIT_COSTS } from './population';
 import { getLevelFromSimXp } from './progression';
 import { PlayerState, UnitCounts } from './types';
 
-export function calculateDailyIncome(player: PlayerState): number {
+function calculateDailyIncome(player: PlayerState): number {
   const economy =
     EconomyUpgrades.find((e) => e.level === player.economyLevel) ??
     EconomyUpgrades[0];
@@ -19,6 +19,7 @@ export function calculateDailyIncome(player: PlayerState): number {
   return baseGoldPerWorker * workerCount * depositsPerDay;
 }
 
+/** Calculates turn income used by combat, economy, or presentation logic. */
 export function calculateTurnIncome(player: PlayerState): number {
   const economy =
     EconomyUpgrades.find((e) => e.level === player.economyLevel) ??
@@ -32,10 +33,12 @@ export function calculateTurnIncome(player: PlayerState): number {
   return Math.ceil(workerIncome + fortIncome);
 }
 
+/** Calculates recruit bonus used by combat, economy, or presentation logic. */
 export function calculateRecruitBonus(player: PlayerState): number {
   return Math.max(1, Math.floor(player.recruitBonus || DAILY_CITIZEN_GRANT));
 }
 
+/** Calculates maximum bank deposits used by combat, economy, or presentation logic. */
 export function calculateMaximumBankDeposits(player: PlayerState): number {
   const economy =
     EconomyUpgrades.find((e) => e.level === player.economyLevel) ??
@@ -43,10 +46,11 @@ export function calculateMaximumBankDeposits(player: PlayerState): number {
   return economy?.depositsPerDay ?? player.maximumBankDeposits ?? 3;
 }
 
-export function calculateUnitCost(type: keyof UnitCounts): number {
+function calculateUnitCost(type: keyof UnitCounts): number {
   return UNIT_COSTS[type] ?? 0;
 }
 
+/** Calculates total unit cost used by combat, economy, or presentation logic. */
 export function calculateTotalUnitCost(units: Partial<UnitCounts>): number {
   let total = 0;
   if (units.soldier) total += units.soldier * UNIT_COSTS.soldier;
@@ -65,6 +69,7 @@ export function calculateTotalUnitCost(units: Partial<UnitCounts>): number {
   return total;
 }
 
+/** Calculates upgrade cost used by combat, economy, or presentation logic. */
 export function calculateUpgradeCost(
   currentLevel: number,
   upgradeType: 'offense' | 'defense' | 'spy' | 'sentry' | 'economy',
@@ -85,6 +90,7 @@ export function calculateUpgradeCost(
   return costs[currentLevel + 1] ?? costs[costs.length - 1] ?? 1000000;
 }
 
+/** Calculates repair cost used by combat, economy, or presentation logic. */
 export function calculateRepairCost(
   currentHp: number,
   maxHp: number,
@@ -104,11 +110,11 @@ export function calculateRepairCost(
   return hpToRepair * repairData.costPerHp;
 }
 
-export function canAfford(player: PlayerState, cost: number): boolean {
+function canAfford(player: PlayerState, cost: number): boolean {
   return player.gold >= cost;
 }
 
-export function trainUnits(
+function trainUnits(
   player: PlayerState,
   targetUnits: Partial<UnitCounts>,
   maxBudget?: number,
@@ -166,7 +172,7 @@ export function trainUnits(
   return { actual, goldSpent };
 }
 
-export function recruitUnits(
+function recruitUnits(
   player: PlayerState,
   targetUnits: Partial<UnitCounts>,
 ): {
@@ -225,7 +231,7 @@ export function recruitUnits(
   };
 }
 
-export function applyDailyIncome(player: PlayerState): PlayerState {
+function applyDailyIncome(player: PlayerState): PlayerState {
   const income = calculateDailyIncome(player);
   return {
     ...player,
@@ -234,7 +240,7 @@ export function applyDailyIncome(player: PlayerState): PlayerState {
   };
 }
 
-export function applyDailyCitizenGrant(player: PlayerState): PlayerState {
+function applyDailyCitizenGrant(player: PlayerState): PlayerState {
   if (player.status !== 'active') return player;
 
   return {
@@ -246,7 +252,7 @@ export function applyDailyCitizenGrant(player: PlayerState): PlayerState {
   };
 }
 
-export function applyLevelUp(player: PlayerState): PlayerState {
+function applyLevelUp(player: PlayerState): PlayerState {
   const nextLevel = getLevelFromSimXp(player.xp);
 
   if (nextLevel > player.level) {
@@ -284,6 +290,7 @@ export function applyLevelUp(player: PlayerState): PlayerState {
   return player;
 }
 
+/** Gain xp. */
 export function gainXp(
   player: PlayerState,
   xp: number,
@@ -300,6 +307,7 @@ export function gainXp(
   return newPlayer;
 }
 
+/** Returns player power for callers that need normalized game data. */
 export function getPlayerPower(player: PlayerState): number {
   const offense =
     player.units.soldier * 5 +
@@ -333,6 +341,7 @@ export function getPlayerPower(player: PlayerState): number {
   );
 }
 
+/** Returns wealth gini coefficient for callers that need normalized game data. */
 export function getWealthGiniCoefficient(players: PlayerState[]): number {
   if (players.length === 0) return 0;
 

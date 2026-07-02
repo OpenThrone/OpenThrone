@@ -18,6 +18,7 @@ const guardedHandler = withApiGuard({
   bodySchema: AccountResetSchema,
 });
 
+/** Handles admin account reset API requests. */
 export const handler = async (
   req: AuthenticatedRequest,
   res: NextApiResponse,

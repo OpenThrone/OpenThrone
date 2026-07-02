@@ -160,7 +160,9 @@ const Form: React.FC<FormProps> = ({
     },
   };
 
-  const handleInvalid = (invalidErrors: FormErrors) => {
+  const handleInvalid = (
+    invalidErrors: Record<string, { message?: string }>,
+  ) => {
     const message =
       invalidErrors.email?.message ||
       invalidErrors.password?.message ||
@@ -351,7 +353,6 @@ const Form: React.FC<FormProps> = ({
                 {...register('email')}
                 error={formErrors.email?.message}
                 data-testid="email-input"
-                inputProps={{ 'aria-label': 'Email address' }}
               />
               <PasswordInput
                 id="password"
@@ -363,10 +364,6 @@ const Form: React.FC<FormProps> = ({
                 {...register('password')}
                 error={formErrors.password?.message}
                 data-testid="password-input"
-                inputProps={{
-                  'aria-label': 'Password',
-                  'aria-describedby': 'login-password-help',
-                }}
               />
               <Text id="login-password-help" className="sr-only">
                 Enter your password to sign in.
@@ -384,7 +381,6 @@ const Form: React.FC<FormProps> = ({
                 styles={inputStyles}
                 {...register('display_name')}
                 error={formErrors.display_name?.message}
-                inputProps={{ 'aria-label': 'User name' }}
               />
               <TextInput
                 id="email"
@@ -397,7 +393,6 @@ const Form: React.FC<FormProps> = ({
                 styles={inputStyles}
                 {...register('email')}
                 error={formErrors.email?.message}
-                inputProps={{ 'aria-label': 'Email address' }}
               />
               <PasswordInput
                 id="password"
@@ -408,10 +403,6 @@ const Form: React.FC<FormProps> = ({
                 styles={inputStyles}
                 {...register('password')}
                 error={formErrors.password?.message}
-                inputProps={{
-                  'aria-label': 'Password',
-                  'aria-describedby': 'register-password-help',
-                }}
               />
               <Text id="register-password-help" className="sr-only">
                 Use at least 8 characters for your password.
@@ -425,10 +416,6 @@ const Form: React.FC<FormProps> = ({
                 styles={inputStyles}
                 {...register('password_confirm')}
                 error={formErrors.password_confirm?.message}
-                inputProps={{
-                  'aria-label': 'Confirm password',
-                  'aria-describedby': 'register-password-confirm-help',
-                }}
               />
               <Text id="register-password-confirm-help" className="sr-only">
                 Repeat your password to confirm it.

@@ -20,6 +20,7 @@ const UNITS = [
   { id: 'u3', name: 'Spy', icon: 'hood', cost: 300, owned: 15 },
 ];
 
+/** Unit training panel. */
 export const UnitTrainingPanel = () => {
   const theme = useMantineTheme();
   const secondary = theme.colors.secondary ?? theme.colors.yellow;

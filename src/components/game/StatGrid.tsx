@@ -18,6 +18,7 @@ interface StatGridProps {
   columns?: number;
 }
 
+/** Stat grid. */
 export const StatGrid: React.FC<StatGridProps> = ({
   title,
   stats,
@@ -119,5 +120,3 @@ export const StatGrid: React.FC<StatGridProps> = ({
     </GameCard>
   );
 };
-
-export default StatGrid;

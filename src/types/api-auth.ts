@@ -1,3 +1,4 @@
+/** Defines the API auth actor shape used by related workflows. */
 export type ApiAuthActorType =
   | 'anonymous'
   | 'session_user'
@@ -5,6 +6,7 @@ export type ApiAuthActorType =
   | 'api_client'
   | 'service_token';
 
+/** Describes the API auth actor data contract. */
 export interface ApiAuthActor {
   type: ApiAuthActorType;
   userId?: number;

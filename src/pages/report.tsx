@@ -12,13 +12,13 @@ import {
 } from '@mantine/core';
 import { useDebouncedCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { ReportCategory } from '@prisma/client';
 import { useRouter } from 'next/router';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
+import { ReportCategory } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
 const ReportPage = () => {
@@ -227,6 +227,7 @@ const ReportPage = () => {
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context: any) => {
   return {
     props: {

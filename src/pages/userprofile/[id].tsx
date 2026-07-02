@@ -12,7 +12,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import ConfirmationModal from '@/components/ConfirmationModal';
 import FriendCard from '@/components/friendCard';
@@ -29,14 +29,15 @@ import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { alertService } from '@/services/Alert.service';
 import { logDebug, logError } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 import { serializeDates } from '@/utils/utilities';
 
 const Index = ({
   users,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const [hideSidebar, setHideSidebar] = useState(true);
   const { user, forceUpdate } = useUser();
+  const hideSidebar = !user;
+  const userStatus = users.status;
   const [isPlayer, setIsPlayer] = useState(false);
 
   const [profile, setUser] = useState<UserModel>(
@@ -48,38 +49,16 @@ const Index = ({
   const [lastActive, setLastActive] = useState('Never logged in');
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [userStatus, setUserStatus] = useState('OFFLINE');
   const [socialEnabled, setSocialEnabled] = useState(false);
-  // State to control the Spy Missions Modal
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
-
-  // Friend request states
   const [friendRelationship, setFriendRelationship] = useState(null);
   const [isFriendLoading, setIsFriendLoading] = useState(false);
-
-  // Gold transfer modal states
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-
-  // Enemy relationship states
   const [enemyRelationship, setEnemyRelationship] = useState(null);
   const [isEnemyLoading, setIsEnemyLoading] = useState(false);
-
-  // Confirmation modal states
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-
-  // Feature flags
   const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
-
-  useEffect(() => {
-    if (user) {
-      setHideSidebar(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    setUserStatus(users.status);
-  }, [users]);
 
   useEffect(() => {
     fetch(`/api/social/listAll?type=FRIEND&limit=5&playerId=${profile.id}`)
@@ -119,7 +98,6 @@ const Index = ({
       );
       if (response.ok) {
         const data = await response.json();
-        // Filter for enemy relationship only
         if (
           data.relationship &&
           data.relationship.relationshipType === 'ENEMY'
@@ -136,24 +114,20 @@ const Index = ({
     }
   }, [enableEnemies, profile.id, user]);
 
-  // Fetch friend relationship status
   useEffect(() => {
     fetchFriendRelationship();
   }, [fetchFriendRelationship]);
 
-  // Force refresh friend relationship when friends list changes
   useEffect(() => {
     if (friends.length > 0) {
       fetchFriendRelationship();
     }
   }, [fetchFriendRelationship, friends.length]);
 
-  // Fetch enemy relationship status
   useEffect(() => {
     fetchEnemyRelationship();
   }, [fetchEnemyRelationship]);
 
-  // Force refresh enemy relationship when needed
   useEffect(() => {
     if (friends.length > 0) {
       fetchEnemyRelationship();
@@ -165,21 +139,17 @@ const Index = ({
   };
 
   useEffect(() => {
-    if (profile.id !== users.id) setUser(new UserModel(users, true, false)); // you're looking at someone else
-    if (user?.id === profile.id) setIsPlayer(true); // you're looking at yourself
+    if (profile.id !== users.id) setUser(new UserModel(users, true, false));
+    if (user?.id === profile.id) setIsPlayer(true);
     if (!isPlayer && user) setCanAttack(user.canAttack(profile.level));
 
-    // Prefer the canonical server-provided value when available (users.last_active).
-    // Fallback to the model's last_active when the server prop is absent.
     if (profile) {
       const nowdate = new Date();
 
-      // Resolve last-active safely without calling toISOString() on an invalid Date object.
       let rawLastActive: string | null = null;
       if (users && users.last_active) {
         rawLastActive = users.last_active;
       } else if (user && user.last_active) {
-        // user (from context) stores last_active as a Date | null on the UserModel
         if (
           user.last_active instanceof Date &&
           !isNaN(user.last_active.getTime())
@@ -193,20 +163,17 @@ const Index = ({
         if (p instanceof Date) {
           if (!isNaN(p.getTime())) rawLastActive = p.toISOString();
         } else {
-          // attempt to parse non-Date values defensively
           const parsed = new Date(p);
           if (!isNaN(parsed.getTime())) rawLastActive = parsed.toISOString();
         }
       }
 
-      // Debugging info for last_active propagation
       logDebug('userprofile last_active check ->', {
         users_last_active: users?.last_active,
         profile_last_active: profile?.last_active,
         rawLastActive,
       });
 
-      // Handle missing/null/invalid last_active safely
       if (!rawLastActive) {
         setIsOnline(false);
         setLastActive('Never logged in');
@@ -221,7 +188,6 @@ const Index = ({
         setIsOnline((nowTimestamp - lastActiveTimestamp) / (1000 * 60) <= 15);
         setLastActive(lastActiveDate.toDateString());
       } else {
-        // Defensive fallback for malformed dates
         setIsOnline(false);
         setLastActive('Never logged in');
       }
@@ -235,8 +201,7 @@ const Index = ({
   if (loading) return <Loader />;
   if (!profile) return <p>User not found</p>;
 
-  // Show status message for blocked statuses
-  const blockedStatuses = ['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT']; // "IDLE",
+  const blockedStatuses = ['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT'];
   if (blockedStatuses.includes(userStatus)) {
     let statusMessage = '';
     switch (userStatus) {
@@ -356,13 +321,10 @@ const Index = ({
     }
   };
 
-  // Get friend relationship status
   const getFriendStatus = () => {
-    logDebug('Evaluating friend relationship:', friendRelationship);
     if (!friendRelationship) return 'neutral';
 
     if (friendRelationship.status === 'requested') {
-      // Check if this is an outgoing or incoming request
       if (friendRelationship.playerId === user.id) {
         return 'pending_outgoing';
       }
@@ -376,10 +338,8 @@ const Index = ({
     return 'neutral';
   };
 
-  // Get friend status display
   const getFriendStatusDisplay = () => {
     const status = getFriendStatus();
-    logDebug('Friend status:', status);
     switch (status) {
       case 'pending_outgoing':
         return {
@@ -392,7 +352,7 @@ const Index = ({
         return {
           text: `Friend Request from ${profile.displayName}`,
           button: 'Accept',
-          action: () => {}, // Will be handled by accept button
+          action: () => {},
           type: 'accept',
         };
       case 'friend':
@@ -412,12 +372,10 @@ const Index = ({
     }
   };
 
-  // Function to toggle the Spy Missions Modal
   const toggleSpyModal = () => {
     setIsSpyModalOpen(!isSpyModalOpen);
   };
 
-  // Don't show friend buttons on own profile, and only show Add/Remove appropriately
   const isOwnProfile = user?.id === profile.id;
   const friendStatus = getFriendStatus();
   const friendStatusDisplay = getFriendStatusDisplay();
@@ -425,7 +383,6 @@ const Index = ({
   const friendsList =
     friends.length > 0 ? (
       friends.map((friend) => {
-        logDebug('Received friend info:', friend);
         const player = new UserModel(friend.friend, true, false);
         return <FriendCard key={player.id} player={player} />;
       })
@@ -920,7 +877,6 @@ const Index = ({
         </div>
       </div>
 
-      {/* Confirmation Modal for removing friend */}
       <ConfirmationModal
         isOpen={showConfirmationModal}
         onClose={() => setShowConfirmationModal(false)}
@@ -933,7 +889,6 @@ const Index = ({
         type="remove"
       />
 
-      {/* Gold Transfer Modal */}
       {friendStatus === 'friend' && (
         <GoldTransferModal
           isOpen={isTransferModalOpen}
@@ -948,7 +903,6 @@ const Index = ({
         />
       )}
 
-      {/* Gold Request Modal */}
       {friendStatus === 'friend' && (
         <GoldRequestModal
           isOpen={isRequestModalOpen}
@@ -967,7 +921,7 @@ const Index = ({
 
 export const getServerSideProps = async ({ query }) => {
   let recruitLink = '';
-  let id;
+  let id: number | null = null;
 
   if (Number.isNaN(Number(query.id))) {
     recruitLink = query.id;
@@ -981,31 +935,33 @@ export const getServerSideProps = async ({ query }) => {
   }
 
   const whereCondition = id ? { id } : { recruit_link: recruitLink };
-  const user = await prisma.users.findFirst({
-    where: whereCondition,
-    include: {
-      currentEra: true,
-      userEras: {
-        take: 1,
-        orderBy: { createdAt: 'desc' },
+  const [user, userService] = await Promise.all([
+    prisma.users.findFirst({
+      where: whereCondition,
+      include: {
+        currentEra: true,
+        userEras: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+        },
       },
-    },
-  });
+    }),
+    import('@/services/User.service'),
+  ]);
 
   if (!user) {
     return { notFound: true };
   }
 
-  const { getUpdatedStatus } = await import('@/services/User.service');
+  const { getUpdatedStatus } = userService;
 
   const {
     password_hash: _passwordHash,
     email: _email,
+    userEras: _userEras,
     ...userWithoutPassword
   } = user;
 
-  // Safely serialize dates coming from the database. Some callers (or mocks) may supply
-  // non-Date values, so validate before calling toISOString().
   const lastActiveDate = user.last_active ? new Date(user.last_active) : null;
   const lastActiveStr =
     lastActiveDate && !isNaN(lastActiveDate.getTime())
@@ -1024,15 +980,21 @@ export const getServerSideProps = async ({ query }) => {
       ? updatedAtDate.toISOString()
       : null;
 
-  let serializedBio;
   const bioContent = user.bio ?? '';
 
-  try {
-    serializedBio = await serialize(bioContent);
-  } catch (error) {
-    logError('Error serializing user bio', error, { userId: user.id });
-    serializedBio = await serialize('');
-  }
+  const serializeBioSafe = async () => {
+    try {
+      return await serialize(bioContent);
+    } catch (error) {
+      logError('Error serializing user bio', error, { userId: user.id });
+      return await serialize('');
+    }
+  };
+
+  const [status, serializedBio] = await Promise.all([
+    getUpdatedStatus(user.id),
+    serializeBioSafe(),
+  ]);
 
   const defensePressureDate = user.defense_pressure_date
     ? new Date(user.defense_pressure_date)
@@ -1051,7 +1013,7 @@ export const getServerSideProps = async ({ query }) => {
     created_at: createdAtStr,
     updated_at: updatedAtStr,
     defense_pressure_date: defensePressureDateStr,
-    status: await getUpdatedStatus(user.id),
+    status,
     currentEra: serializeDates(user.currentEra),
     latestUserEra: serializeDates(
       user.userEras && user.userEras.length > 0 ? user.userEras[0] : null,

@@ -1,3 +1,5 @@
+import md5 from 'md5';
+
 import type {
   AccountStatus,
   PermissionType,
@@ -6,9 +8,7 @@ import type {
   users as PrismaUser,
   UserStructureUpgrade,
   UserUnit,
-} from '@prisma/client';
-import md5 from 'md5';
-
+} from '@/lib/prisma-exports';
 import { UserEconomyService } from '@/services/UserEconomyService';
 import { UserStatsService } from '@/services/UserStatsService';
 import { UserUnitsService } from '@/services/UserUnitsService';
@@ -242,7 +242,6 @@ class UserModel {
    *
    * @private
    * @type {UserUnitsService}
-   * @memberof UserModel
    */
   private unitsService: UserUnitsService;
 

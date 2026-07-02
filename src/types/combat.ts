@@ -1,9 +1,7 @@
-import type { BattleUnits, PlayerUnit, UnitType } from './typings';
-
-// Re-export existing types for convenience
-export type { BattleUnits, PlayerUnit, UnitType };
+import type { BattleUnits } from './typings';
 
 // StaminaState: Represents the current stamina state of a user
+/** Describes the stamina state data contract. */
 export interface StaminaState {
   current: number;
   max: number;
@@ -11,7 +9,7 @@ export interface StaminaState {
 }
 
 // AttackRecord: Represents a record of an attack based on attack_log
-export interface AttackRecord {
+interface AttackRecord {
   id: number;
   attackerId: number;
   defenderId: number;
@@ -22,6 +20,7 @@ export interface AttackRecord {
 }
 
 // StaminaModifiers: Represents factors that modify stamina regeneration or consumption
+/** Describes the stamina modifiers data contract. */
 export interface StaminaModifiers {
   baseRegeneration: number; // Base regeneration rate
   bonuses: Record<string, number>; // Key-value pairs for various bonuses (e.g., 'upgrade': 5)
@@ -29,7 +28,7 @@ export interface StaminaModifiers {
 }
 
 // BattleResult: Interface for the BattleResult class properties
-export interface BattleResultInterface {
+interface BattleResultInterface {
   attacker: any; // UserModel, but using any for simplicity
   defender: any; // UserModel
   fortHitpoints: number;
@@ -69,6 +68,7 @@ export interface BattleResultInterface {
 }
 
 // BreachState: Represents the state of breaching a fort or defense
+/** Describes the breach state data contract. */
 export interface BreachState {
   breached: boolean; // Whether the breach has been successful
   turnsToBreach: number; // Number of turns required to breach
@@ -77,14 +77,14 @@ export interface BreachState {
 }
 
 // Additional types for completeness
-export interface CombatStats {
+interface CombatStats {
   offense: number;
   defense: number;
   spy: number;
   sentry: number;
 }
 
-export interface FortState {
+interface FortState {
   level: number;
   hitpoints: number;
   maxHitpoints: number;

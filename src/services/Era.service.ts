@@ -1,7 +1,7 @@
-import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 
 import {
@@ -83,19 +83,20 @@ const resetUserState = async (
   });
 };
 
-export const getActiveEra = async (tx: Tx | typeof prisma = prisma) => {
+const getActiveEra = async (tx: Tx | typeof prisma = prisma) => {
   return tx.era.findFirst({
     where: { endDate: null },
     orderBy: { startDate: 'desc' },
   });
 };
 
-export const getLatestEra = async (tx: Tx | typeof prisma = prisma) => {
+const getLatestEra = async (tx: Tx | typeof prisma = prisma) => {
   return tx.era.findFirst({
     orderBy: { startDate: 'desc' },
   });
 };
 
+/** Ensure active era. */
 export const ensureActiveEra = async (tx: Tx | typeof prisma = prisma) => {
   const current = await getActiveEra(tx);
   if (current) return current;
@@ -111,6 +112,7 @@ export const ensureActiveEra = async (tx: Tx | typeof prisma = prisma) => {
   });
 };
 
+/** Start new era. */
 export const startNewEra = async () => {
   return prisma.$transaction(async (tx) => {
     const currentEra = await getActiveEra(tx);
@@ -132,7 +134,8 @@ export const startNewEra = async () => {
       },
     });
 
-    const users = await getUsersWithRelations({}, tx);
+    const allUsers = await getUsersWithRelations({}, tx);
+    const users = allUsers.filter((u) => u.id > 0);
 
     for (const u of users) {
       const userModel = new UserModel(

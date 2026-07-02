@@ -1,9 +1,10 @@
-import { WarStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import { WarStatus } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
 
+/** Describes the declare war data contract. */
 export interface DeclareWarData {
   allianceId: number;
   defenderAllianceId?: number;
@@ -22,6 +23,7 @@ const DeclareWarSchema = z
     message: 'Must provide either defenderAllianceId or defenderUserId',
   });
 
+/** Encapsulates alliance war data access and domain operations. */
 export class AllianceWarService {
   /**
    * Declares a war against an alliance or user

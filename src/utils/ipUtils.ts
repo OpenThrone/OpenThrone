@@ -1,5 +1,6 @@
 import type { NextApiRequest } from 'next';
 
+/** Returns ip address for callers that need normalized game data. */
 export function getIpAddress(req: NextApiRequest): string {
   return (
     (req.headers['cf-connecting-ip'] as string) ||
@@ -8,7 +9,7 @@ export function getIpAddress(req: NextApiRequest): string {
   );
 }
 
-export function isIP(address) {
+function isIP(address) {
   const ipv4Regex =
     /^(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\.){2}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$/;
   const ipv6Regex =

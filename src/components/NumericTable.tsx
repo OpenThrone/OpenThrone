@@ -12,6 +12,7 @@ const neumorphicStyle = {
   border: '1px solid rgba(255,255,255,0.2)',
 };
 
+/** Neumorphic table. */
 export function NeumorphicTable({ tone = 'light' }: NeumorphicTableProps) {
   const elements = [
     { position: 6, mass: 12.011, symbol: 'C', name: 'Carbon' },

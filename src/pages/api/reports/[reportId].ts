@@ -1,6 +1,6 @@
-import { PermissionType } from '@prisma/client';
 import type { NextApiResponse } from 'next';
 
+import { PermissionType } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { ReportService } from '@/services/Report.service';
 import type { AuthenticatedRequest } from '@/types/api';

@@ -257,5 +257,13 @@
     "errorVerifyingSession": "Fehler beim Überprüfen der Sitzung.",
     "errorStartingSession": "Fehler beim Starten der Rekrutierungssitzung.",
     "sessionInvalid": "Ungültige Sitzung. Bitte starte eine neue Sitzung."
+  },
+  "connection": {
+    "banner": {
+      "title": "Echtzeitverbindung verloren",
+      "body": "Live-Updates sind pausiert. Verbinde dich erneut, um Sofortnachrichten und Benachrichtigungen fortzusetzen.",
+      "retry": "Erneut versuchen",
+      "dismiss": "Schließen"
+    }
   }
 }

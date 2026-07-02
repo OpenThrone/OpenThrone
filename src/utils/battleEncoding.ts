@@ -5,6 +5,7 @@ import type { ShareableArmyData } from '@/types/typings';
 import { logError } from './logger';
 
 // Encoding Function
+/** Encode battle data. */
 export function encodeBattleData(
   attacker: ShareableArmyData,
   defender: ShareableArmyData,
@@ -21,6 +22,7 @@ export function encodeBattleData(
 }
 
 // Decoding Function
+/** Decode battle data. */
 export function decodeBattleData(encoded: string): {
   attacker: ShareableArmyData;
   defender: ShareableArmyData;

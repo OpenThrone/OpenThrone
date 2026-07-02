@@ -31,6 +31,7 @@ const BATTLES = [
   },
 ];
 
+/** War room log. */
 export const WarRoomLog = () => {
   const theme = useMantineTheme();
   const brand = theme.colors.brand ?? theme.colors.blue;
@@ -158,5 +159,3 @@ export const WarRoomLog = () => {
     </GameCard>
   );
 };
-
-export default WarRoomLog;

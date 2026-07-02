@@ -13,11 +13,11 @@ import {
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
-import { GameEventType } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import { GameEventType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
 const statusColor = (s: string) => {
@@ -257,6 +257,7 @@ const GameEventsPage = () => {
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context: any) => {
   return {
     props: {

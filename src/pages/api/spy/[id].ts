@@ -9,7 +9,7 @@ import { getSocketIO } from '@/lib/socket';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
 import UserModel from '@/models/Users';
-import SpyService from '@/services/SpyService';
+import { SpyService } from '@/services/SpyService';
 import type { AuthenticatedRequest } from '@/types/api';
 import type { UnitType } from '@/types/typings';
 import { stringifyObj } from '@/utils/numberFormatting';

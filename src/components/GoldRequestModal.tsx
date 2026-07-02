@@ -24,6 +24,7 @@ interface GoldRequestModalProps {
   onRequestComplete: () => void;
 }
 
+/** Gold request modal. */
 export function GoldRequestModal({
   isOpen,
   onClose,

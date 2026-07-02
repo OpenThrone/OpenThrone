@@ -23,7 +23,7 @@ import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { UnitProps, UnitType } from '@/types/typings';
 import { logError } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 import { GameCard } from './game/GameCard';
 import ImageWithFallback from './ImagWithFallback';

@@ -1,4 +1,3 @@
-// src/pages/auto-recruit.tsx
 import { Button, Center, Flex, Space, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -13,11 +12,6 @@ import { logError, logInfo } from '@/utils/logger';
 
 import Recruiter from '../components/recruiter';
 
-/**
- * Page component for Auto Recruiter feature.
- * Allows users to start, pause, resume, and stop automated recruitment sessions.
- * Fetches random users, handles recruitment attempts, and manages session state.
- */
 export default function AutoRecruiter() {
   const { t } = useTranslation('community');
   const [consecutiveSuccesses, setConsecutiveSuccesses] = useState(0);
@@ -40,6 +34,16 @@ export default function AutoRecruiter() {
   const [isResumingSession, setIsResumingSession] = useState(false);
   const [isCountdown, setIsCountdown] = useState(false);
   const [recruitStatus, setRecruitStatus] = useState('');
+  const [lastSuccess, setLastSuccess] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -137,7 +141,6 @@ export default function AutoRecruiter() {
           stopRecruiting(true);
         }
       } else {
-        // Check for specific error codes first
         if (data.error === 'Invalid session ID') {
           handleInvalidSession();
         } else if (data.error === 'NO_RECRUITABLE_USERS_FOUND') {
@@ -305,10 +308,10 @@ export default function AutoRecruiter() {
     }
   }, [
     isResumingSession,
+    isFetchingUser,
     handleInvalidSession,
     startCountdown,
     fetchRandomUser,
-    isFetchingUser,
     t,
   ]);
 
@@ -342,7 +345,6 @@ export default function AutoRecruiter() {
     }
   }, [isStartingSession, viewer, t, fetchRandomUser]);
 
-  // Initial state: Not recruiting
   if (!isRecruiting) {
     return (
       <MainArea title={t('autoRecruit.title')}>
@@ -375,7 +377,6 @@ export default function AutoRecruiter() {
     );
   }
 
-  // Recruiting state: Waiting for user or countdown
   if (!user && !hasEnded) {
     return (
       <MainArea title={t('autoRecruit.title')}>
@@ -394,7 +395,6 @@ export default function AutoRecruiter() {
     );
   }
 
-  // Recruiting ended state: Session complete
   if (hasEnded) {
     return (
       <MainArea title={t('autoRecruit.title')}>
@@ -420,7 +420,6 @@ export default function AutoRecruiter() {
     );
   }
 
-  // Active recruiting state: Display user and controls
   return (
     <MainArea title={t('autoRecruit.title')}>
       <GameCard title={t('autoRecruit.recruitmentStatus')} goldAccent={false}>

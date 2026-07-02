@@ -7,6 +7,7 @@ import { logError } from '@/utils/logger';
 const TOKEN_PREFIX_LENGTH = 8;
 const TOKEN_SECRET_LENGTH = 32;
 
+/** Describes the issue API token input data contract. */
 export interface IssueApiTokenInput {
   name: string;
   ownerUserId?: number;
@@ -15,6 +16,7 @@ export interface IssueApiTokenInput {
   expiresAt?: Date;
 }
 
+/** Describes the verify API token input data contract. */
 export interface VerifyApiTokenInput {
   bearerToken: string;
   requiredScopes?: string[];
@@ -24,6 +26,7 @@ export interface VerifyApiTokenInput {
   userAgent?: string;
 }
 
+/** Describes the verify API token result data contract. */
 export interface VerifyApiTokenResult {
   ok: boolean;
   reason?: string;
@@ -63,6 +66,7 @@ const toBearerToken = (authorizationHeader?: string): string | null => {
   return token.trim();
 };
 
+/** Encapsulates API token data access and domain operations. */
 export class ApiTokenService {
   static parseBearerToken(authorizationHeader?: string): string | null {
     return toBearerToken(authorizationHeader);
@@ -219,7 +223,7 @@ export class ApiTokenService {
         },
       });
     } catch (error) {
-      logError('Failed to write api token audit', { tokenId, action, error });
+      logError('Failed to write API token audit', { tokenId, action, error });
     }
   }
 }

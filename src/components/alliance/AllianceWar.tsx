@@ -17,6 +17,7 @@ import { DeclareWarModal } from './DeclareWarModal';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+/** Alliance war. */
 export const AllianceWar = ({ alliance }: { alliance: AllianceInfo }) => {
   const { t } = useTranslation('alliances');
   const [opened, { open, close }] = useDisclosure(false);

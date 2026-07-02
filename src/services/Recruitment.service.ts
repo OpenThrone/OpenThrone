@@ -1,7 +1,7 @@
-import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 import { getUserById } from '@/services/AttackDataService';
 import { getOTStartDate } from '@/utils/timefunctions';
 
@@ -26,7 +26,7 @@ const CreateBankHistoryRecordSchema = z.object({
   userId: z.number().int().positive(),
 });
 
-export async function createRecruitmentRecord({
+async function createRecruitmentRecord({
   fromUser,
   toUser,
   ipAddress,
@@ -50,7 +50,7 @@ export async function createRecruitmentRecord({
   });
 }
 
-export async function hasExceededRecruitmentLimit({
+async function hasExceededRecruitmentLimit({
   fromUser,
   toUser,
   ipAddress,
@@ -80,7 +80,7 @@ export async function hasExceededRecruitmentLimit({
   return recruitments.length >= 5;
 }
 
-export async function updateUserAfterRecruitment(userId: number) {
+async function updateUserAfterRecruitment(userId: number) {
   const validatedData = UpdateUserAfterRecruitmentSchema.parse({ userId });
   // Add 250 gold to the user
   await prisma.users.update({
@@ -91,7 +91,7 @@ export async function updateUserAfterRecruitment(userId: number) {
   });
 }
 
-export async function createBankHistoryRecord(userId: number) {
+async function createBankHistoryRecord(userId: number) {
   const validatedData = CreateBankHistoryRecordSchema.parse({ userId });
   await prisma.bank_history.create({
     data: {
@@ -111,6 +111,7 @@ type PrismaClientOrTx = Prisma.TransactionClient | typeof prisma;
 
 const resolveDb = (db?: PrismaClientOrTx) => db ?? prisma;
 
+/** Count recruitments. */
 export const countRecruitments = async ({
   db,
   fromUser,
@@ -137,6 +138,7 @@ export const countRecruitments = async ({
   });
 };
 
+/** Count recruitments for target. */
 export const countRecruitmentsForTarget = async ({
   db,
   fromUser,
@@ -158,7 +160,7 @@ export const countRecruitmentsForTarget = async ({
   });
 };
 
-export const ensureRecruitmentLimit = async ({
+const ensureRecruitmentLimit = async ({
   tx,
   fromUser,
   toUser,
@@ -218,6 +220,7 @@ export const ensureRecruitmentLimit = async ({
   }
 };
 
+/** Perform recruitment. */
 export const performRecruitment = async ({
   tx,
   fromUser,
@@ -323,6 +326,7 @@ export const performRecruitment = async ({
   return { success: true };
 };
 
+/** Perform recruitment with session validation. */
 export const performRecruitmentWithSessionValidation = async ({
   tx,
   fromUser,
@@ -378,6 +382,7 @@ export const performRecruitmentWithSessionValidation = async ({
   });
 };
 
+/** Returns valid users for recruitment for callers that need normalized game data. */
 export async function getValidUsersForRecruitment(
   recruiterID: number,
   ipAddress: string,
@@ -460,6 +465,7 @@ export async function getValidUsersForRecruitment(
   return { usersLeft: validUsers || 0, activeUsers };
 }
 
+/** Returns recruitment records for callers that need normalized game data. */
 export async function getRecruitmentRecords(
   recruiterID: number,
   startDate: Date,
@@ -519,6 +525,7 @@ export async function getRecruitmentRecords(
   return usersWithRecruitCount;
 }
 
+/** Returns user by recruit link for callers that need normalized game data. */
 export async function getUserByRecruitLink(recruitLink: string) {
   return prisma.users.findUnique({
     where: {
@@ -527,6 +534,7 @@ export async function getUserByRecruitLink(recruitLink: string) {
   });
 }
 
+/** Returns random auto recruit user for callers that need normalized game data. */
 export async function getRandomAutoRecruitUser() {
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -597,7 +605,7 @@ export async function getRandomAutoRecruitUser() {
   return randomUser;
 }
 
-export function increaseCitizens(units: any[]) {
+function increaseCitizens(units: any[]) {
   if (!Array.isArray(units)) return units;
   const citizen = units.find((u) => u.type === 'CITIZEN');
   if (citizen) {

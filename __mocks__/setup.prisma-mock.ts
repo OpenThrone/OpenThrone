@@ -1,6 +1,7 @@
 // test/setup.prisma-mock.ts
-import type { PrismaClient } from '@prisma/client';
 import { afterEach, mock } from 'bun:test';
+
+import type { PrismaClient } from '@/lib/prisma-exports';
 
 /** Narrow, typed helper for only what you use. Extend as needed. */
 type ModelMocks = {

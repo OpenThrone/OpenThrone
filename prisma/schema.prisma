@@ -1,13 +1,11 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["jsonProtocol"]
-  binaryTargets   = ["native", "debian-openssl-3.0.x"]
+  provider      = "prisma-client"
+  output        = "./generated/prisma"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  provider = "postgresql"
 }
 
 enum AccountStatus {
@@ -293,6 +291,7 @@ model users {
   attacksDefended                       attack_log[]           @relation("DefenseLogs")
   sharedAttackLogs                      attack_log_acl[]       @relation("SharedAttackLogs")
   blogPosts                             blog_posts[]
+  advisorMessages                       advisor_messages[]
   messages_messages_from_user_idTousers messages[]             @relation("messages_from_user_idTousers")
   messages_messages_to_user_idTousers   messages[]             @relation("messages_to_user_idTousers")
   postReadStatuses                      post_read_status[]
@@ -358,6 +357,13 @@ model users {
   featureFlagsCreated                   FeatureFlag[]           @relation("FeatureFlagsCreated")
   featureFlagsUpdated                   FeatureFlag[]           @relation("FeatureFlagsUpdated")
   serverSettingsUpdated                 ServerSetting[]         @relation("ServerSettingsUpdated")
+
+  //Migration step
+  units              Json? // Don't delete yet
+  items              Json? // Don't delete yet
+  battle_upgrades    Json? // Don't delete yet
+  structure_upgrades Json? // Don't delete yet
+  bonus_points       Json? // Don't delete yet
 
   @@index([created_at])
   @@index([currentEraId])
@@ -507,6 +513,19 @@ model post_read_status {
   user         users      @relation(fields: [user_id], references: [id])
 
   @@id([post_id, user_id])
+}
+
+model advisor_messages {
+  id          Int      @id @default(autoincrement())
+  message     String
+  is_active   Boolean  @default(true)
+  sort_order  Int      @default(0)
+  created_at  DateTime @default(now()) @db.Timestamptz(3)
+  updated_at  DateTime @updatedAt @db.Timestamptz(3)
+  created_by  Int
+  createdBy   users    @relation(fields: [created_by], references: [id])
+
+  @@index([is_active, sort_order])
 }
 
 model attack_log_acl {
@@ -1338,4 +1357,27 @@ model CheatSignal {
 
   @@index([status, severity, createdAt])
   @@index([userId, status])
+}
+
+model RateLimitBucket {
+  id        BigInt   @id @default(autoincrement())
+  key       String
+  bucket    BigInt
+  count     Int      @default(1)
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([key, bucket])
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
+}
+
+model ResponseCache {
+  key       String   @id
+  payload   Json
+  expiresAt DateTime @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("response_cache")
 }

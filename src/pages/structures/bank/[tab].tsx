@@ -21,7 +21,7 @@ import MainArea from '@/components/MainArea';
 import { EconomyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 import { getGoldTxSymbol, getTransactionType } from '@/utils/utilities';
 
 const defaultFilters = {
@@ -37,6 +37,7 @@ const defaultFilters = {
   daily: true,
 };
 
+/** Bank. */
 export default function Bank() {
   const { t } = useTranslation('structures');
   const router = useRouter();

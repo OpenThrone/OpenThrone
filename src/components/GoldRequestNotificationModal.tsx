@@ -8,7 +8,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useUser } from '@/context/users';
 
@@ -31,6 +31,22 @@ interface GoldRequestNotificationModalProps {
   onRequestComplete: () => void;
 }
 
+const formatExpiry = (expiresAt: string): string => {
+  const expiry = new Date(expiresAt);
+  const now = new Date();
+  const diff = expiry.getTime() - now.getTime();
+
+  if (diff <= 0) return 'Expired';
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (days > 0) return `${days}d ${hours}h left`;
+  if (hours > 0) return `${hours}h ${minutes}m left`;
+  return `${minutes}m left`;
+};
+
 export function GoldRequestNotificationModal({
   isOpen,
   onClose,
@@ -45,38 +61,18 @@ export function GoldRequestNotificationModal({
     outgoing: [],
   });
   const [error, setError] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState<{ [key: number]: string }>({});
+  const [tick, setTick] = useState(0);
   const { forceUpdate } = useUser();
 
-  const formatExpiry = (expiresAt: string): string => {
-    const expiry = new Date(expiresAt);
-    const now = new Date();
-    const diff = expiry.getTime() - now.getTime();
-
-    if (diff <= 0) return 'Expired';
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (days > 0) return `${days}d ${hours}h left`;
-    if (hours > 0) return `${hours}h ${minutes}m left`;
-    return `${minutes}m left`;
-  };
-
-  const buildTimeLeft = useCallback((incoming: GoldRequest[]) => {
-    const updatedTimeLeft: { [key: number]: string } = {};
-    incoming.forEach((request) => {
-      if (request.stats.expiresAt) {
-        updatedTimeLeft[request.id] = formatExpiry(request.stats.expiresAt);
-      }
-    });
-    return updatedTimeLeft;
-  }, []);
-
-  const updateTimeLeft = useCallback(() => {
-    setTimeLeft(buildTimeLeft(requests.incoming));
-  }, [buildTimeLeft, requests.incoming]);
+  const timeLeft = useMemo(
+    () =>
+      Object.fromEntries(
+        requests.incoming
+          .filter((r) => r.stats.expiresAt)
+          .map((r) => [r.id, formatExpiry(r.stats.expiresAt)]),
+      ),
+    [requests.incoming, tick],
+  );
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -89,11 +85,10 @@ export function GoldRequestNotificationModal({
       const outgoing = outgoingRes.ok ? await outgoingRes.json() : [];
 
       setRequests({ incoming, outgoing });
-      setTimeLeft(buildTimeLeft(incoming));
     } catch {
       setError('Failed to load requests');
     }
-  }, [buildTimeLeft]);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -104,51 +99,48 @@ export function GoldRequestNotificationModal({
   useEffect(() => {
     if (isOpen && requests.incoming.length > 0) {
       const timer = setInterval(() => {
-        updateTimeLeft();
-      }, 60000); // Update every minute
-
-      updateTimeLeft(); // Initial update
+        setTick((t) => t + 1);
+      }, 60000);
 
       return () => clearInterval(timer);
     }
-  }, [isOpen, requests.incoming.length, updateTimeLeft]);
+  }, [isOpen, requests.incoming.length]);
 
-  const respondToRequest = async (
-    requestId: number,
-    action: 'accept' | 'decline',
-    message?: string,
-  ) => {
-    setLoading(true);
-    setError(null);
+  const respondToRequest = useCallback(
+    async (
+      requestId: number,
+      action: 'accept' | 'decline',
+      message?: string,
+    ) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch(
-        `/api/social/gold-requests/${requestId}/respond`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, message }),
-        },
-      );
+      try {
+        const response = await fetch(
+          `/api/social/gold-requests/${requestId}/respond`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, message }),
+          },
+        );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Response failed');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Response failed');
+        }
+
+        forceUpdate();
+        await fetchRequests();
+        onRequestComplete();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Response failed');
+      } finally {
+        setLoading(false);
       }
-
-      forceUpdate();
-      await fetchRequests();
-      onRequestComplete();
-    } catch {
-      setError(err instanceof Error ? err.message : 'Response failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatNumber = (num: bigint): string => {
-    return num.toLocaleString();
-  };
+    },
+    [fetchRequests, forceUpdate, onRequestComplete],
+  );
 
   return (
     <Modal opened={isOpen} onClose={onClose} title="Gold Requests" size="lg">
@@ -159,7 +151,6 @@ export function GoldRequestNotificationModal({
       )}
 
       <Stack gap="md">
-        {/* Incoming Requests */}
         {requests.incoming.length > 0 && (
           <div>
             <Text size="lg" mb="md">
@@ -178,7 +169,7 @@ export function GoldRequestNotificationModal({
                         {request.from_user.display_name}
                       </Text>
                       <Badge color="blue" variant="light">
-                        {formatNumber(request.gold_amount)} gold
+                        {request.gold_amount.toLocaleString()} gold
                       </Badge>
                     </Group>
 
@@ -227,7 +218,6 @@ export function GoldRequestNotificationModal({
           </div>
         )}
 
-        {/* Outgoing Requests */}
         {requests.outgoing.length > 0 && (
           <div>
             <Text size="lg" mb="md">
@@ -246,7 +236,7 @@ export function GoldRequestNotificationModal({
                         {request.to_user.display_name}
                       </Text>
                       <Badge color="blue" variant="light">
-                        {formatNumber(request.gold_amount)} gold
+                        {request.gold_amount.toLocaleString()} gold
                       </Badge>
                     </Group>
 

@@ -5,6 +5,7 @@ type BattleLedgerProps = {
   children: ReactNode;
 };
 
+/** Battle ledger. */
 export function BattleLedger({ children }: BattleLedgerProps) {
   return (
     <Box

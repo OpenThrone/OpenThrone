@@ -1,5 +1,6 @@
 'use server';
 
+import { getCached, setCached } from '@/lib/postgres-rate-limiter';
 import prisma from '@/lib/prisma';
 import { rateLimiter } from '@/lib/rate-limiter';
 import { withAuth } from '@/middleware/auth';
@@ -13,8 +14,6 @@ const CACHE_TTL_MS = 30_000;
 const MAX_CANDIDATES = 500;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 10;
-
-let cachedResponse: { expiresAt: number; payload: any } | null = null;
 
 const calculateUserScore = (
   user: any,
@@ -49,7 +48,7 @@ const handler = async (req, res) => {
   const userId = Number(req?.session?.user?.id || 0) || 0;
   const ip = getIpAddress(req);
   const rateLimitKey = `compareTop:${userId || 'anon'}:${ip}`;
-  const allowed = rateLimiter(rateLimitKey, {
+  const allowed = await rateLimiter(rateLimitKey, {
     windowMs: RATE_LIMIT_WINDOW_MS,
     max: RATE_LIMIT_MAX,
   });
@@ -57,9 +56,9 @@ const handler = async (req, res) => {
     return res.status(429).json({ error: 'Rate limit exceeded' });
   }
 
-  const now = Date.now();
-  if (cachedResponse && cachedResponse.expiresAt > now) {
-    return res.status(200).json(cachedResponse.payload);
+  const cached = await getCached('compareTop');
+  if (cached) {
+    return res.status(200).json(cached);
   }
 
   const candidates = await prisma.users.findMany({
@@ -102,7 +101,7 @@ const handler = async (req, res) => {
     }))
     .slice(0, 30);
 
-  cachedResponse = { expiresAt: now + CACHE_TTL_MS, payload };
+  await setCached('compareTop', payload, CACHE_TTL_MS);
   return res.status(200).json(payload);
 };
 

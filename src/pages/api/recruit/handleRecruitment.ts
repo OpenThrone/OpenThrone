@@ -12,7 +12,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { logAction } from '@/utils/auditLogger';
 import { getIpAddress } from '@/utils/ipUtils';
 import { logError } from '@/utils/logger';
-import mtrand from '@/utils/mtrand';
+import { mtRand as mtrand } from '@/utils/mtrand';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {

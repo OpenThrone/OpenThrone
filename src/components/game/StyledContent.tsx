@@ -9,6 +9,7 @@ interface StyledContentProps {
   badgeText?: string;
 }
 
+/** Styled content. */
 export const StyledContent: React.FC<StyledContentProps> = ({
   title,
   content,

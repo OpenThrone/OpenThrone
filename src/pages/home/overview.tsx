@@ -37,9 +37,15 @@ import { StyledTable } from '@/components/game/StyledTable';
 import HeroBanner from '@/components/HeroBanner';
 import MainArea from '@/components/MainArea';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
+import StatCard from '@/components/StatCard';
 import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
+
+const EMPTY_UNITS: readonly unknown[] = [];
+const EMPTY_ITEMS: readonly unknown[] = [];
+const EMPTY_BATTLE_UPGRADES: readonly unknown[] = [];
+const EMPTY_BONUSES: readonly unknown[] = [];
 
 const Overview = () => {
   const { t } = useTranslation('home');
@@ -74,6 +80,8 @@ const Overview = () => {
             content: item.content,
             created_timestamp: item.created_timestamp,
             read: Boolean(item.isRead),
+            kind: item.kind ?? undefined,
+            isPinned: item.isPinned ?? false,
           }))
         : [],
     [getNews],
@@ -206,6 +214,25 @@ const Overview = () => {
           <Space h="md" />
         </>
       )}
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md" mb="lg">
+        <StatCard
+          title={t('overview.gold')}
+          value={toLocale(user.gold, user.locale)}
+          icon={<FontAwesomeIcon icon={faCoins} />}
+          variant="highlight"
+        />
+        <StatCard
+          title={t('overview.armySize')}
+          value={toLocale(user.armySize, user.locale)}
+          icon={<FontAwesomeIcon icon={faUsers} />}
+        />
+        <StatCard
+          title={t('overview.level')}
+          value={toLocale(user.level, user.locale)}
+          icon={<FontAwesomeIcon icon={faLevelUpAlt} />}
+          subtext={`${t('overview.xpToNextLevel')}: ${toLocale(user.xpToNextLevel, user.locale)}`}
+        />
+      </SimpleGrid>
       <GameCard title={t('overview.kingdomStats')} icon={faCrown}>
         <SimpleGrid
           cols={{ base: 1, md: 2 }}
@@ -367,10 +394,10 @@ const Overview = () => {
                               <Text>{t('overview.noBreakdownAvailable')}</Text>
                             );
                           const {
-                            units = [],
-                            items = [],
-                            battleUpgrades = [],
-                            bonuses = [],
+                            units = EMPTY_UNITS,
+                            items = EMPTY_ITEMS,
+                            battleUpgrades = EMPTY_BATTLE_UPGRADES,
+                            bonuses = EMPTY_BONUSES,
                             finalTotal,
                           } = breakdown;
                           const unitsTotal = units.reduce(

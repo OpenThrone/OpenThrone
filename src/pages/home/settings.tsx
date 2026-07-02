@@ -31,7 +31,7 @@ import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { Locales, PlayerRace } from '@/types/typings';
 import { logError, logInfo } from '@/utils/logger';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 const Settings = () => {
   const { t, i18n } = useTranslation('home');

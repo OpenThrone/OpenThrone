@@ -4,6 +4,7 @@ interface PaperTableProps {
   tone?: 'light' | 'themed';
 }
 
+/** Paper table. */
 export function PaperTable({ tone = 'light' }: PaperTableProps) {
   const elements = [
     { position: 6, mass: 12.011, symbol: 'C', name: 'Carbon' },

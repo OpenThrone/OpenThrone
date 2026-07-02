@@ -26,7 +26,7 @@ async function handler(
     await ApiTokenService.revokeToken(context.query.tokenId);
     return res.status(200).json({ message: 'Token revoked' });
   } catch (error) {
-    logError('Failed revoking api token', { error });
+    logError('Failed revoking API token', { error });
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

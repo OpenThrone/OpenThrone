@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { AccountService } from '@/services';
 import { logError } from '@/utils/logger';
 
+/** Handles account end vacation API requests. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,

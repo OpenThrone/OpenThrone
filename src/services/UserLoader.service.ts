@@ -1,7 +1,7 @@
-import type { Prisma, users as PrismaUser } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { Prisma, users as PrismaUser } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 
 const UserIdSchema = z.number().int().positive();
@@ -14,7 +14,7 @@ const _UserSchema = z.object({
  * Use this helper whenever creating a UserModel from DB state to avoid
  * missing relation includes and subtle bugs.
  */
-export const getUserWithAllRelations = async (userId: number) => {
+const getUserWithAllRelations = async (userId: number) => {
   const validatedUserId = UserIdSchema.parse(userId);
   return prisma.users.findUnique({
     where: { id: validatedUserId },
@@ -29,6 +29,7 @@ export const getUserWithAllRelations = async (userId: number) => {
   });
 };
 
+/** Returns users with relations for callers that need normalized game data. */
 export const getUsersWithRelations = async (
   where = {},
   db: Prisma.TransactionClient | typeof prisma = prisma,
@@ -50,7 +51,7 @@ export const getUsersWithRelations = async (
  * Build a UserModel instance from either a user id or a partial/full Prisma user row.
  * If the provided row is missing relation arrays, we'll fetch them from the DB.
  */
-export const buildUserModel = async (
+const buildUserModel = async (
   userOrId: number | Partial<PrismaUser> | null,
   filtered = true,
   checkStats = true,

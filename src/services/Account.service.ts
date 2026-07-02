@@ -1,4 +1,3 @@
-import type { BonusPointsType } from '@/lib/prisma-exports';
 import argon2 from 'argon2';
 import { createHash } from 'crypto';
 import nodemailer from 'nodemailer';
@@ -8,10 +7,12 @@ import { z } from 'zod';
 import { Fortifications } from '@/constants';
 import { DefaultLevelBonus } from '@/constants/Bonuses';
 import prisma from '@/lib/prisma';
+import type { BonusPointsType } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 import { getAntiAbuseExpiry, getAntiAbuseHash } from '@/utils/antiAbuse';
 import { logError } from '@/utils/logger';
 import { generateRandomString } from '@/utils/utilities';
+import { sanitizeUserForResponse } from '@/utils/sanitizeUser';
 
 import {
   buildDefaultUserUpdate,
@@ -33,48 +34,57 @@ const smtpConfig: SMTPTransport.Options = {
 };
 
 // Type definitions
+/** Describes the password change data contract. */
 export interface PasswordChangeData {
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
 
+/** Describes the game options data contract. */
 export interface GameOptionsData {
   locale: 'en-US' | 'es-ES' | 'de-DE';
   colorScheme: 'UNDEAD' | 'HUMAN' | 'GOBLIN' | 'ELF';
 }
 
+/** Describes the profile update data contract. */
 export interface ProfileUpdateData {
   bio?: string;
   avatarFile?: any; // Formidable file
 }
 
+/** Describes the email change data contract. */
 export interface EmailChangeData {
   email: string;
 }
 
+/** Describes the password reset data contract. */
 export interface PasswordResetData {
   email: string;
   verificationCode: string;
   newPassword: string;
 }
 
-export interface VacationData {
+interface VacationData {
   userId: number;
 }
 
+/** Describes the repair data contract. */
 export interface RepairData {
   repairPoints: number;
 }
 
+/** Describes the account reset data contract. */
 export interface AccountResetData {
   password: string;
 }
 
+/** Describes the bonus points data contract. */
 export interface BonusPointsData {
   changeQueue: Record<string, { change: number }>;
 }
 
+/** Describes the last active data contract. */
 export interface LastActiveData {
   email?: string;
   userId?: number;
@@ -156,6 +166,7 @@ const LastActiveSchema = z
 const hashResetToken = (token: string) =>
   createHash('sha256').update(token).digest('hex');
 
+/** Encapsulates account data access and domain operations. */
 export class AccountService {
   /**
    * Changes user password with current password verification
@@ -247,7 +258,7 @@ export class AccountService {
         data: updateData,
       });
 
-      return { message: 'Profile updated successfully.', user: updated };
+      return { message: 'Profile updated successfully.', user: sanitizeUserForResponse(updated) };
     } catch (error: any) {
       logError(error, { userId }, 'Error updating profile');
       throw error;
@@ -264,7 +275,7 @@ export class AccountService {
         data: { bio },
       });
 
-      return { message: 'Bio updated successfully.', user: updated };
+      return { message: 'Bio updated successfully.', user: sanitizeUserForResponse(updated) };
     } catch (error: any) {
       logError(error, { userId }, 'Error updating bio');
       throw error;

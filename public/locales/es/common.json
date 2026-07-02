@@ -257,5 +257,13 @@
     "errorVerifyingSession": "Error al verificar la sesión.",
     "errorStartingSession": "Error al iniciar la sesión de reclutamiento.",
     "sessionInvalid": "Sesión inválida. Por favor inicia una nueva sesión."
+  },
+  "connection": {
+    "banner": {
+      "title": "Conexión en tiempo real perdida",
+      "body": "Las actualizaciones en vivo están pausadas. Reconéctate para reanudar mensajería instantánea y notificaciones.",
+      "retry": "Reintentar ahora",
+      "dismiss": "Cerrar"
+    }
   }
 }

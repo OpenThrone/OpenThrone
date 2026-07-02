@@ -7,6 +7,7 @@ type CorsOptions = {
   envVar?: string;
 };
 
+/** With cors. */
 export const withCors = (
   handler: NextApiHandler,
   options: CorsOptions = {},

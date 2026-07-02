@@ -70,6 +70,7 @@ const ScrollRoller = () => {
   );
 };
 
+/** Scroll sidebar. */
 export const ScrollSidebar: React.FC<ScrollSidebarProps> = ({
   children,
   raceColor = '#f3e5ab',
@@ -258,5 +259,3 @@ export const ScrollSidebar: React.FC<ScrollSidebarProps> = ({
     </div>
   );
 };
-
-export default ScrollSidebar;

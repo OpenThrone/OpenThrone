@@ -14,6 +14,7 @@ const AlertSchema = z.object({
   timeout: z.number().optional().nullable(),
 });
 
+/** Defines the alert shape used by related workflows. */
 export type AlertType = z.infer<typeof AlertSchema>;
 
 const alertSubject = new BehaviorSubject<AlertType | null>(null);
@@ -69,6 +70,7 @@ function clear(): void {
   }
 }
 
+/** Provides alert service operations. */
 export const alertService = {
   alert: alertSubject.asObservable(),
   success: (

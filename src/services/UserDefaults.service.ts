@@ -1,3 +1,4 @@
+import { Fortifications } from '@/constants';
 import type {
   BattleUpgradeType,
   BonusPointsType,
@@ -5,9 +6,7 @@ import type {
   ItemUsage,
   Prisma,
   StructureUpgradeType,
-} from '@prisma/client';
-
-import { Fortifications } from '@/constants';
+} from '@/lib/prisma-exports';
 import type { UnitType } from '@/types/typings';
 
 type Tx = Prisma.TransactionClient;
@@ -80,6 +79,7 @@ export const DEFAULT_USER_SCALARS = {
   sentry: 0,
 };
 
+/** Resolve color scheme. */
 export const resolveColorScheme = (
   colorScheme: string | null | undefined,
   race: string | null | undefined,
@@ -87,6 +87,7 @@ export const resolveColorScheme = (
   return colorScheme ?? race ?? 'ELF';
 };
 
+/** Build default user update. */
 export const buildDefaultUserUpdate = (
   overrides: Partial<typeof DEFAULT_USER_SCALARS> = {},
 ) => ({
@@ -94,6 +95,7 @@ export const buildDefaultUserUpdate = (
   ...overrides,
 });
 
+/** Reset user relations. */
 export const resetUserRelations = async (tx: Tx, userId: number) => {
   await Promise.all([
     tx.userUnit.deleteMany({ where: { userId } }),

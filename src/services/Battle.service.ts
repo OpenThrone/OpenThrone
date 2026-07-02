@@ -1,8 +1,8 @@
-import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import { BattleUpgrades } from '@/constants';
 import prisma from '@/lib/prisma';
+import { Prisma, BattleUpgradeType } from '@/lib/prisma-exports';
 import { BattleUser } from '@/models/BattleUser';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
@@ -14,30 +14,35 @@ import { stringifyObj } from '@/utils/numberFormatting';
 import { AttackService } from './AttackService';
 
 // Type definitions for battle operations
+/** Describes the battle upgrade item data contract. */
 export interface BattleUpgradeItem {
   type?: string;
   level?: number;
   quantity?: number;
 }
 
+/** Describes the battle upgrade data contract. */
 export interface BattleUpgradeData {
   userId: number;
   items: BattleUpgradeItem[];
   operation?: 'buy' | 'sell';
 }
 
+/** Describes the attack execution data contract. */
 export interface AttackExecutionData {
   attackerId: number;
   defenderId: number;
   attackTurns: number;
 }
 
+/** Describes the battle test data contract. */
 export interface BattleTestData {
   attackerId?: number;
   defenderId: number;
   turns?: number;
 }
 
+/** Describes the attack log query data contract. */
 export interface AttackLogQuery {
   page?: number;
   limit?: number;
@@ -48,12 +53,14 @@ export interface AttackLogQuery {
   sortOrder?: 'asc' | 'desc';
 }
 
+/** Describes the attack log acldata contract. */
 export interface AttackLogACLData {
   userId: number;
   roomId: number;
   participantIds?: number[];
 }
 
+/** Describes the recent attack query data contract. */
 export interface RecentAttackQuery {
   timeWindow?: number; // days, defaults to 7
 }
@@ -117,12 +124,14 @@ const RecentAttackQuerySchema = z.object({
   timeWindow: z.coerce.number().int().positive().max(30).optional(),
 });
 
+/** Describes the battle upgrade result data contract. */
 export interface BattleUpgradeResult {
   message: string;
   data: any;
   totalCost?: number;
 }
 
+/** Describes the attack execution result data contract. */
 export interface AttackExecutionResult {
   status: 'success' | 'failed';
   message?: string;
@@ -132,6 +141,7 @@ export interface AttackExecutionResult {
   extra_variables?: any;
 }
 
+/** Describes the battle test result data contract. */
 export interface BattleTestResult {
   attacker: string;
   defender: string;
@@ -149,7 +159,7 @@ export interface BattleTestResult {
   };
 }
 
-export interface AttackLogEntry {
+interface AttackLogEntry {
   id: number;
   timestamp: string;
   attacker_id: number;
@@ -168,6 +178,7 @@ export interface AttackLogEntry {
   };
 }
 
+/** Describes the attack logs result data contract. */
 export interface AttackLogsResult {
   data: AttackLogEntry[];
   page: number;
@@ -177,6 +188,7 @@ export interface AttackLogsResult {
   timestamp: string;
 }
 
+/** Describes the attack log aclresult data contract. */
 export interface AttackLogACLResult {
   success: boolean;
   message: string;
@@ -186,6 +198,7 @@ export interface AttackLogACLResult {
   sharedWithExisting: number[];
 }
 
+/** Describes the recent attack result data contract. */
 export interface RecentAttackResult {
   id: number;
   timestamp: string;
@@ -196,12 +209,13 @@ export interface RecentAttackResult {
   fortHPAtEnd?: number;
 }
 
-export interface BattleUpgradeEquipment {
+interface BattleUpgradeEquipment {
   type: string;
   level: number;
   quantity: number | string;
 }
 
+/** Encapsulates battle data access and domain operations. */
 export class BattleService {
   /**
    * Validates battle upgrade items and calculates total cost
@@ -211,7 +225,10 @@ export class BattleService {
     operation: 'buy' | 'sell',
     userId: number,
   ) {
-    const user = await prisma.users.findUnique({ where: { id: userId } });
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      include: { UserBattleUpgrade: true },
+    });
     if (!user) {
       throw new Error('User not found');
     }
@@ -219,11 +236,9 @@ export class BattleService {
     const uModel = new UserModel(user);
     let totalCost = 0;
 
-    // Cast battle_upgrades to BattleUpgradeEquipment[] and ensure quantities are numbers
-    const userBattleUpgrades = (
-      user.battle_upgrades as unknown as BattleUpgradeEquipment[]
-    ).map((item) => ({
-      ...item,
+    const userBattleUpgrades = (user.UserBattleUpgrade || []).map((item) => ({
+      type: item.type as string,
+      level: item.level,
       quantity:
         typeof item.quantity === 'string'
           ? parseInt(item.quantity, 10)
@@ -330,11 +345,23 @@ export class BattleService {
           data: {
             gold:
               operation === 'buy'
-                ? user.gold - totalCost
-                : user.gold + Math.abs(totalCost),
-            battle_upgrades: updatedItems,
+                ? BigInt(user.gold as bigint) - BigInt(Math.ceil(totalCost))
+                : BigInt(user.gold as bigint) + BigInt(Math.ceil(Math.abs(totalCost))),
           },
         });
+
+        for (const item of updatedItems) {
+          await tx.userBattleUpgrade.upsert({
+            where: { userId_type: { userId, type: item.type as BattleUpgradeType } },
+            create: {
+              userId,
+              type: item.type as BattleUpgradeType,
+              level: item.level,
+              quantity: item.quantity,
+            },
+            update: { level: item.level, quantity: item.quantity },
+          });
+        }
 
         // Create bank history for the transaction
         await tx.bank_history.create({
@@ -1187,5 +1214,3 @@ export class BattleService {
     }
   }
 }
-
-export default BattleService;

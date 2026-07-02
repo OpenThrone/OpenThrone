@@ -1,13 +1,13 @@
-import { PermissionType } from '@prisma/client';
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
+import { PermissionType, ReportResolution } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { ReportService } from '@/services/Report.service';
 import type { AuthenticatedRequest } from '@/types/api';
 
 const Schema = z.object({
-  resolution: z.string(),
+  resolution: z.nativeEnum(ReportResolution),
   resolutionSummary: z.string().max(2000).optional(),
 });
 
@@ -34,11 +34,11 @@ async function handler(
   try {
     const report = await ReportService.resolveReport(Number(userId), {
       reportId,
-      resolution: context.body.resolution as any,
+      resolution: context.body.resolution,
       resolutionSummary: context.body.resolutionSummary,
     });
     return res.status(200).json(report);
-  } catch (error) {
+  } catch {
     return res.status(400).json({ error: 'Failed to resolve report' });
   }
 }

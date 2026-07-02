@@ -1,6 +1,7 @@
 export const DEFAULT_DASHBOARD_TEST_ORIGIN =
   'https://dashboard-test.openthrone.dev';
 
+/** Parse origin list. */
 export function parseOriginList(value?: string): string[] {
   if (!value) return [];
   return value
@@ -9,6 +10,7 @@ export function parseOriginList(value?: string): string[] {
     .filter(Boolean);
 }
 
+/** Returns cors allowlist for callers that need normalized game data. */
 export function getCorsAllowlist(
   envValue?: string,
   includeDefault: boolean = true,
@@ -18,6 +20,7 @@ export function getCorsAllowlist(
   return Array.from(new Set(origins));
 }
 
+/** Returns request origin for callers that need normalized game data. */
 export function getRequestOrigin(
   req: { headers?: Record<string, any> } | undefined,
 ): string | null {
@@ -37,6 +40,7 @@ export function getRequestOrigin(
   return null;
 }
 
+/** Is origin allowed. */
 export function isOriginAllowed(
   origin: string | null | undefined,
   allowlist: string[],
@@ -46,6 +50,7 @@ export function isOriginAllowed(
   return allowlist.includes(origin);
 }
 
+/** Set cors headers. */
 export function setCorsHeaders(
   res: {
     setHeader: (name: string, value: string | string[]) => void;
@@ -80,6 +85,7 @@ export function setCorsHeaders(
   res.setHeader('Vary', varyValue as any);
 }
 
+/** Applies configured CORS headers and handles preflight responses. */
 export function applyCors(
   req: { headers?: Record<string, any>; method?: string },
   res: {

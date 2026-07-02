@@ -16,6 +16,7 @@ interface SidebarDarkProps {
   sidebarData: any; // Pass your sidebar data here
 }
 
+/** Sidebar dark. */
 export const SidebarDark: React.FC<SidebarDarkProps> = ({
   sidebarData: _sidebarData,
 }) => {
@@ -146,5 +147,3 @@ export const SidebarDark: React.FC<SidebarDarkProps> = ({
     </Paper>
   );
 };
-
-export default SidebarDark;

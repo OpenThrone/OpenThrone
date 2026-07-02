@@ -48,6 +48,17 @@ ChatGPT Image*.png
 # production
 /build
 
+# generated documentation
+/docs/api
+/docs/api.json
+
+# generated Prisma client
+/prisma/generated/
+
+# generated AI/codebase maps
+/.ai/dependency-map.json
+/.ai/madge-map.json
+
 # misc
 .DS_Store
 *.swp

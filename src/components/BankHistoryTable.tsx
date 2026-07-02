@@ -1,9 +1,11 @@
 import { Group, Pagination, Table, Text } from '@mantine/core';
 import React from 'react';
 
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 
 import { StyledTable } from './game/StyledTable';
+
+const EMPTY_BANK_HISTORY: any[] = [];
 
 interface BankHistoryTableProps {
   bankHistory?: any[];
@@ -16,8 +18,9 @@ interface BankHistoryTableProps {
   onPageChange: (page: number) => void;
 }
 
+/** Bank history table. */
 export default function BankHistoryTable({
-  bankHistory = [],
+  bankHistory = EMPTY_BANK_HISTORY,
   user,
   message,
   getTransactionType,

@@ -186,6 +186,7 @@ const CredentialsSchema = z
     }
   });
 
+/** Handles the Auth options API request. */
 export const authOptions: NextAuthOptions = {
   // Page configuration
   pages: {
@@ -400,6 +401,7 @@ export const authOptions: NextAuthOptions = {
 
 const authHandler = NextAuth(authOptions);
 
+/** Handles NextAuth API requests. */
 export default function handler(req: any, res: any) {
   const corsOrigins = getCorsAllowlist(process.env.OT_AUTH_CORS_ORIGINS);
   if (applyCors(req, res, corsOrigins)) return;

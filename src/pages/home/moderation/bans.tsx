@@ -9,12 +9,12 @@ import {
   Text,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { PermissionType } from '@prisma/client';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
 import { GameCard } from '@/components/game/GameCard';
+import { PermissionType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
 const BansDashboardPage = () => {
@@ -180,6 +180,7 @@ const BansDashboardPage = () => {
   );
 };
 
+/** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context: any) => {
   return {
     props: {

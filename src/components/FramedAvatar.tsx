@@ -14,6 +14,7 @@ type FramedAvatarProps = {
   objectFit?: CSSProperties['objectFit'];
 };
 
+/** Framed avatar. */
 export function FramedAvatar({
   src,
   alt,

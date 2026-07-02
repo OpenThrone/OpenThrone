@@ -4,6 +4,7 @@ const RevalidateSchema = z.object({
   secret: z.string(),
 });
 
+/** Handles general revalidate API requests. */
 export default async function handler(req, res) {
   const validatedQuery = RevalidateSchema.safeParse(req.query);
   if (!validatedQuery.success) {

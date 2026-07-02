@@ -1,9 +1,11 @@
 import { z } from 'zod';
 
+/** Id query schema. */
 export const IdQuerySchema = z.object({
   id: z.string().pipe(z.coerce.number()),
 });
 
+/** Register schema. */
 export const RegisterSchema = z.object({
   email: z.string().email({ message: 'Invalid email format' }),
   password: z
@@ -23,11 +25,12 @@ export const RegisterSchema = z.object({
     .optional(),
 });
 
+/** Attack schema. */
 export const AttackSchema = z.object({
   turns: z.number().int().positive().max(10, { message: 'Turns must be 1-10' }),
 });
 
-export const SpySchema = z.object({
+const SpySchema = z.object({
   type: z.enum(['INTEL', 'ASSASSINATE', 'INFILTRATE'], {
     message: 'Invalid spy type',
   }),
@@ -35,6 +38,7 @@ export const SpySchema = z.object({
   unit: z.string().optional(),
 });
 
+/** Recruit schema. */
 export const RecruitSchema = z.object({
   recruitedUserId: z
     .union([z.number().int().positive(), z.string()])
@@ -48,7 +52,7 @@ export const RecruitSchema = z.object({
     ),
 });
 
-export const WithdrawSchema = z.object({
+const WithdrawSchema = z.object({
   withdrawAmount: z
     .string()
     .pipe(z.coerce.bigint({ required_error: 'Invalid amount' }))
@@ -57,12 +61,13 @@ export const WithdrawSchema = z.object({
     }),
 });
 
-export const UserUpdateSchema = z.object({
+const UserUpdateSchema = z.object({
   displayName: z.string().min(1).max(50).optional(),
   email: z.string().email().optional(),
   // TODO: Add other common fields
 });
 
+/** Gold transfer schema. */
 export const GoldTransferSchema = z.object({
   amount: z
     .string()
@@ -80,6 +85,7 @@ export const GoldTransferSchema = z.object({
     .optional(),
 });
 
+/** Gold request schema. */
 export const GoldRequestSchema = z.object({
   amount: z
     .string()
@@ -98,7 +104,7 @@ export const GoldRequestSchema = z.object({
     .optional(),
 });
 
-export const GoldRequestResponseSchema = z.object({
+const GoldRequestResponseSchema = z.object({
   action: z.enum(['accept', 'decline']),
   message: z
     .string()

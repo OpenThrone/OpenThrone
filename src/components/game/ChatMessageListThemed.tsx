@@ -62,6 +62,11 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
   isLoading,
 }) => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
+  const [prevMessages, setPrevMessages] = useState(messages);
+  if (messages !== prevMessages) {
+    setPrevMessages(messages);
+    setChatMessages(messages);
+  }
   const bottomRef = useRef<HTMLDivElement>(null);
   const { user, markRoomAsRead } = useUser();
   const currentUserId = user?.id;
@@ -86,10 +91,6 @@ const ChatMessageListThemed: React.FC<ChatMessageListThemedProps> = ({
   const scrollViewportRef = useRef<HTMLDivElement>(null);
   const messageElementRefs = useRef<Map<number, HTMLElement>>(new Map());
   const messagesMarkedAsRead = useRef<Set<number>>(new Set());
-
-  useEffect(() => {
-    setChatMessages(messages);
-  }, [messages]);
 
   useEffect(() => {
     if (bottomRef.current) {

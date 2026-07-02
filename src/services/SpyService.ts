@@ -1,7 +1,7 @@
-import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 import { SpyUser } from '@/models/SpyUser';
 import {
   createAttackLog,
@@ -92,6 +92,7 @@ function getTodayPressure(
   return pressureDateKey === todayKey ? (currentPressure ?? 0) : 0;
 }
 
+/** Provides spy service operations. */
 export const SpyService = {
   computeSpyAmpFactor,
   simulateIntel,
@@ -447,5 +448,3 @@ export const SpyService = {
     }
   },
 };
-
-export default SpyService;

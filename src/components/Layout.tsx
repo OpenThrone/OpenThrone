@@ -9,17 +9,17 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { ScrollSidebar as SidebarScroll } from '@/components/game/SidebarScroll';
 import { SidebarDark as SidebarTablet } from '@/components/game/SidebarTablet';
-import MobileSidebarContent from '@/components/MobileSidebarContent'; // Import MobileSidebarContent
+import MobileSidebarContent from '@/components/MobileSidebarContent';
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
 import Sidebar from '@/components/Sidebar';
 import { useLayout } from '@/context/LayoutContext';
-// Renamed import to avoid conflict
 import { AppConfig } from '@/utils/AppConfig';
 import { logError } from '@/utils/logger';
 import { getAssetPath } from '@/utils/utilities';
 
 import AnnouncementBanner from './AnnouncementBanner';
+import ConnectionStatusBanner from './ConnectionStatusBanner';
 import MainAreaSkeleton from './MainAreaSkeleton';
 import NavSkeleton from './NavSkeleton';
 import NewsBulletin from './news-bulletin';
@@ -74,11 +74,9 @@ const Layout = (props: IMainProps) => {
     newestPlayer: '',
     newPlayers: 0,
   });
-  const [isDevelopment, setIsDevelopment] = useState(false);
-
-  useEffect(() => {
-    setIsDevelopment(process.env.NODE_ENV === 'development');
-  }, []);
+  const [isDevelopment] = useState(
+    () => process.env.NODE_ENV === 'development',
+  );
 
   useEffect(() => {
     if (isDevelopment) {
@@ -117,13 +115,8 @@ const Layout = (props: IMainProps) => {
     }
   }, [isDevelopment]);
 
-  const [structureReady, setStructureReady] = useState(false);
-
-  useEffect(() => {
-    if (status === 'authenticated' || status === 'unauthenticated') {
-      setStructureReady(true); // Structure is ready as soon as authentication state is known
-    }
-  }, [status]);
+  const structureReady =
+    status === 'authenticated' || status === 'unauthenticated';
 
   return (
     <div
@@ -142,8 +135,6 @@ const Layout = (props: IMainProps) => {
           authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
         } px-1 text-yellow-400 antialiased`}
       >
-        {' '}
-        {/* Added missing closing div tag here */}
         <div className="mx-auto w-full max-w-screen-2xl">
           <header className={`${raceClasses.borderBottomClass}`}>
             <div
@@ -158,20 +149,19 @@ const Layout = (props: IMainProps) => {
               } pb-10 pt-2`}
             >
               <h1 className="title text-center text-4xl font-medium sm:text-5xl md:text-6xl">
-                <center>
-                  <Image
-                    src={`${getAssetPath('OpenThrone')}`}
-                    alt={t('app.title')}
-                    priority
-                    style={{
-                      height: '100px',
-                      width: '200px',
-                      filter: 'drop-shadow(0px 3px 0px #000000)',
-                    }}
-                    width="200"
-                    height="100"
-                  />
-                </center>
+                <Image
+                  src={`${getAssetPath('OpenThrone')}`}
+                  alt={t('app.title')}
+                  priority
+                  className="mx-auto"
+                  style={{
+                    height: '100px',
+                    width: '200px',
+                    filter: 'drop-shadow(0px 3px 0px #000000)',
+                  }}
+                  width="200"
+                  height="100"
+                />
               </h1>
               <h2
                 className="text-center text-base sm:text-lg md:text-xl"
@@ -217,31 +207,28 @@ const Layout = (props: IMainProps) => {
                         <Sidebar />
                       )}
                     </div>
-                  )}
-                  {/* Adjust main content width based on authentication status */}
+                      )}
                   <div
                     className={`w-full ${raceClasses.borderClass} ${authorized ? 'lg:flex-1' : 'lg:w-full'} mainArea-bg`}
                   >
+                    <ConnectionStatusBanner />
                     <AnnouncementBanner />
                     <NewsBulletin />
                     {layoutLoading ? <MainAreaSkeleton /> : props.children}
                   </div>
                 </>
-              ) : (
-                // Show a minimal placeholder while structure is deciding
+               ) : (
                 <div
                   className="w-full"
                   style={{ backgroundColor: 'var(--ot-surface)' }}
                 >
-                  <MainAreaSkeleton />{' '}
-                  {/* Or a very minimal, full-width placeholder */}
+                  <MainAreaSkeleton />
                 </div>
               )}
             </div>
           </main>
         </div>
-      </div>{' '}
-      {/* Closing div for the w-full grow div */}
+      </div>
       <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-[var(--ot-text)]">
         {!authorized && (
           <nav

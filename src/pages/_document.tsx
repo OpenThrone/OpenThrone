@@ -4,6 +4,7 @@ import Script from 'next/script';
 
 import { AppConfig } from '@/utils/AppConfig';
 
+/** Document. */
 export default function Document(props) {
   const { locale } = props.__NEXT_DATA__?.pageProps || {
     locale: AppConfig.locale,

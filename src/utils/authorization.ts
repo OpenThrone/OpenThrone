@@ -1,10 +1,12 @@
-import type { PermissionType, StaffRole } from '@prisma/client';
-
 import prisma from '@/lib/prisma';
+import type { PermissionType, StaffRole } from '@/lib/prisma-exports';
 
 const ADMINISTRATOR_ROLE: StaffRole = 'ADMINISTRATOR';
 const MODERATOR_ROLE: StaffRole = 'MODERATOR';
 
+/**
+ * Checks whether a user currently has an active administrator staff role assignment.
+ */
 export const isAdmin = async (userId: number): Promise<boolean> => {
   const assignment = await prisma.staffRoleAssignment.findFirst({
     where: {
@@ -16,6 +18,9 @@ export const isAdmin = async (userId: number): Promise<boolean> => {
   return !!assignment;
 };
 
+/**
+ * Checks whether a user currently has an active moderator staff role assignment.
+ */
 export const isModerator = async (userId: number): Promise<boolean> => {
   const assignment = await prisma.staffRoleAssignment.findFirst({
     where: {
@@ -27,7 +32,7 @@ export const isModerator = async (userId: number): Promise<boolean> => {
   return !!assignment;
 };
 
-export const hasStaffRole = async (
+const hasStaffRole = async (
   userId: number,
   role: StaffRole,
 ): Promise<boolean> => {
@@ -37,9 +42,7 @@ export const hasStaffRole = async (
   return !!assignment;
 };
 
-export const getActiveStaffRoles = async (
-  userId: number,
-): Promise<StaffRole[]> => {
+const getActiveStaffRoles = async (userId: number): Promise<StaffRole[]> => {
   const assignments = await prisma.staffRoleAssignment.findMany({
     where: { userId, revokedAt: null },
     select: { role: true },
@@ -47,7 +50,7 @@ export const getActiveStaffRoles = async (
   return assignments.map((a) => a.role);
 };
 
-export const getActivePermissions = async (
+const getActivePermissions = async (
   userId: number,
 ): Promise<PermissionType[]> => {
   const [roles, grants] = await Promise.all([
@@ -65,7 +68,7 @@ export const getActivePermissions = async (
   );
 };
 
-export const hasPermission = async (
+const hasPermission = async (
   userId: number,
   permission: PermissionType,
 ): Promise<boolean> => {
@@ -73,6 +76,9 @@ export const hasPermission = async (
   return permissions.includes(permission);
 };
 
+/**
+ * Checks whether a user has at least one of the requested expanded permissions.
+ */
 export const hasAnyPermission = async (
   userId: number,
   permissions: PermissionType[],
@@ -82,6 +88,9 @@ export const hasAnyPermission = async (
   return permissions.some((p) => userSet.has(p));
 };
 
+/**
+ * Checks whether a user has every requested expanded permission.
+ */
 export const hasAllPermissions = async (
   userId: number,
   permissions: PermissionType[],

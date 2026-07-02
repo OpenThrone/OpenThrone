@@ -21,6 +21,7 @@ interface RecruitProps {
   race: string;
 }
 
+/** Recruit. */
 export default function Recruit() {
   const router = useRouter();
   const [error, setError] = useState(null);

@@ -1,8 +1,7 @@
-import type { PrismaClient } from '@prisma/client';
-import type { Omit } from '@prisma/client/runtime/library';
 import { z } from 'zod';
 
 import prisma from '@/lib/prisma';
+import type { Prisma } from '@/lib/prisma-exports';
 import { createApiError } from '@/utils/api-error';
 
 import {
@@ -13,14 +12,10 @@ import {
   isValidTransferAmount,
 } from './Config.service';
 
-// Define the type for the transaction client
-type TransactionClient = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->;
+type TransactionClient = Prisma.TransactionClient;
 
 // Extended bank history type for friend transfers
-export interface FriendTransferRecord {
+interface FriendTransferRecord {
   id: number;
   from_user_id: number;
   to_user_id: number;
@@ -33,7 +28,7 @@ export interface FriendTransferRecord {
 }
 
 // Extended bank history type for friend transfer requests
-export interface FriendTransferRequest {
+interface FriendTransferRequest {
   id: number;
   from_user_id: number;
   to_user_id: number;
@@ -213,6 +208,7 @@ const validateGoldRequest = async (
 
   return { valid: true };
 };
+/** Transfer gold to friend. */
 export const transferGoldToFriend = async (params: {
   fromUserId: number;
   toUserId: number;

@@ -1,4 +1,3 @@
-import type { users as PrismaUser } from '@prisma/client';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import type { ReactNode } from 'react';
@@ -12,6 +11,7 @@ import {
 } from 'react';
 
 import useSocket from '@/hooks/useSocket';
+import type { users as PrismaUser } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users'; // Import UserModel
 import { alertService } from '@/services/Alert.service';
 import type { UserApiResponse } from '@/types/typings';
@@ -49,31 +49,34 @@ const UserContext = createContext<UserContextType>({
   markRoomAsRead: (_roomId: number) => {},
 });
 
+/** Provides user state and actions for React consumers. */
 export const useUser = () => useContext(UserContext);
 
+const PUBLIC_PATH_PATTERNS = [
+  /^\/account\/login$/,
+  /^\/account\/register$/,
+  /^\/account\/password-reset$/,
+  /^\/account\/password-reset\/result$/,
+  /^\/account\/password-reset\/verify$/,
+  /^\/community\/news$/,
+  /^\/$/,
+  /^\/userprofile\/[a-z0-9]+$/i,
+  /^\/recruit\/[a-z0-9]+$/i,
+  /^\/auto-recruit$/,
+  /^\/battle\/battleSimulator$/,
+  /^\/about$/,
+] as const;
+
 const isPublicPath = (path: string | null) => {
-  const publicPathsRegex = [
-    /^\/account\/login$/,
-    /^\/account\/register$/,
-    /^\/account\/password-reset$/,
-    /^\/account\/password-reset\/result$/,
-    /^\/account\/password-reset\/verify$/,
-    /^\/community\/news$/,
-    /^\/$/,
-    /^\/userprofile\/[a-z0-9]+$/i,
-    /^\/recruit\/[a-z0-9]+$/i,
-    /^\/auto-recruit$/,
-    /^\/battle\/battleSimulator$/,
-    /^\/about$/,
-  ];
   if (path === null) return false;
-  return publicPathsRegex.some((regex) => regex.test(path));
+  return PUBLIC_PATH_PATTERNS.some((regex) => regex.test(path));
 };
 
 interface UsersProviderProps {
   children: ReactNode;
 }
 
+/** User provider. */
 export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const router = useRouter();
   const pathName = usePathname();

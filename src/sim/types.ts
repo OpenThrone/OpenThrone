@@ -1,3 +1,4 @@
+/** Describes the unit counts data contract. */
 export interface UnitCounts {
   soldier: number;
   knight: number;
@@ -15,6 +16,7 @@ export interface UnitCounts {
   worker: number;
 }
 
+/** Describes the item stats data contract. */
 export interface ItemStats {
   meleeAtk: number;
   meleeDef: number;
@@ -22,11 +24,12 @@ export interface ItemStats {
   rangedDef: number;
 }
 
-export interface UpgradeLevels {
+interface UpgradeLevels {
   offense: number;
   defense: number;
 }
 
+/** Describes the sim player data contract. */
 export interface SimPlayer {
   id: string;
   displayName: string;
@@ -49,6 +52,7 @@ export interface SimPlayer {
   };
 }
 
+/** Describes the battle config data contract. */
 export interface BattleConfig {
   attackerMultiplier?: number;
   defenderCounterMultiplier?: number;
@@ -60,6 +64,7 @@ export interface BattleConfig {
   random?: () => number;
 }
 
+/** Describes the balance parameters data contract. */
 export interface BalanceParameters {
   attackerDamageMultiplier: number;
   defenderCounterDamageMultiplier: number;
@@ -68,6 +73,7 @@ export interface BalanceParameters {
   damageVarianceMax: number;
 }
 
+/** Describes the battle metrics data contract. */
 export interface BattleMetrics {
   winner: 'attacker' | 'defender' | 'draw';
   turns: number;
@@ -82,6 +88,7 @@ export interface BattleMetrics {
   defenderUnitsRemaining: UnitCounts;
 }
 
+/** Describes the simulation results data contract. */
 export interface SimulationResults {
   gamesPlayed: number;
   attackerWinRate: number;
@@ -96,6 +103,7 @@ export interface SimulationResults {
   avgTurns: number;
 }
 
+/** Describes the player config data contract. */
 export interface PlayerConfig {
   id?: string;
   displayName?: string;
@@ -119,6 +127,7 @@ export interface PlayerConfig {
 // Population Simulation Types
 // ============================================================
 
+/** Defines the play style shape used by related workflows. */
 export type PlayStyle =
   | 'aggressive'
   | 'defensive'
@@ -126,7 +135,9 @@ export type PlayStyle =
   | 'economist'
   | 'spy-focused';
 
+/** Defines the turn strategy shape used by related workflows. */
 export type TurnStrategy = 'conservative' | 'balanced' | 'aggressive';
+/** Defines the strategic goal shape used by related workflows. */
 export type StrategicGoal =
   | 'wealth'
   | 'dominance'
@@ -134,6 +145,7 @@ export type StrategicGoal =
   | 'defense'
   | 'retaliation';
 
+/** Defines the target motivation shape used by related workflows. */
 export type TargetMotivation =
   | 'loot'
   | 'retaliation'
@@ -142,6 +154,7 @@ export type TargetMotivation =
   | 'xp'
   | 'opportunistic';
 
+/** Describes the behavior params data contract. */
 export interface BehaviorParams {
   aggression: number;
   riskTolerance: number;
@@ -153,13 +166,14 @@ export interface BehaviorParams {
   primaryGoal: StrategicGoal;
 }
 
-export interface DailyLimits {
+interface DailyLimits {
   attacksUsed: number;
   intelUsed: number;
   assassinationUsed: number;
   infiltrationUsed: number;
 }
 
+/** Describes the intel payload data contract. */
 export interface IntelPayload {
   units: UnitCounts;
   fortLevel: number;
@@ -171,6 +185,7 @@ export interface IntelPayload {
   sentryLevel: number;
 }
 
+/** Describes the intel result data contract. */
 export interface IntelResult {
   success: boolean;
   day: number;
@@ -179,6 +194,7 @@ export interface IntelResult {
   spiesSent: number;
 }
 
+/** Describes the spy result data contract. */
 export interface SpyResult {
   mission: 'intel' | 'assassination' | 'infiltration';
   success: boolean;
@@ -190,6 +206,7 @@ export interface SpyResult {
   spiesSent: number;
 }
 
+/** Describes the target evaluation data contract. */
 export interface TargetEvaluation {
   playerId: string;
   gold: number;
@@ -208,12 +225,13 @@ export interface TargetEvaluation {
   previouslyAttackedTarget: boolean;
 }
 
-export interface AttackDecision {
+interface AttackDecision {
   target: string;
   turns: number;
   reason: string;
 }
 
+/** Describes the agent decision data contract. */
 export interface AgentDecision {
   intelMissions: { target: string; spyCount: number }[];
   attacks: AttackDecision[];
@@ -225,6 +243,7 @@ export interface AgentDecision {
   bankGold?: number;
 }
 
+/** Describes the player state data contract. */
 export interface PlayerState {
   id: string;
   displayName: string;
@@ -275,6 +294,7 @@ export interface PlayerState {
   status: 'active' | 'inactive' | 'defeated';
 }
 
+/** Describes the day result data contract. */
 export interface DayResult {
   day: number;
   totalAttacks: number;
@@ -303,6 +323,7 @@ export interface DayResult {
   breachedPlayersEndOfDay: number;
 }
 
+/** Describes the population metrics data contract. */
 export interface PopulationMetrics {
   dailyResults: DayResult[];
   attackerWinRateOverTime: number[];
@@ -323,6 +344,7 @@ export interface PopulationMetrics {
   attackTurnsHeldPerDay: number[];
 }
 
+/** Describes the simulation config data contract. */
 export interface SimulationConfig {
   seed?: number;
   logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'none';
@@ -333,6 +355,7 @@ export interface SimulationConfig {
   attackLevelRange?: number;
 }
 
+/** Describes the balance iteration report data contract. */
 export interface BalanceIterationReport {
   iteration: number;
   daysSimulated: number;
@@ -348,6 +371,7 @@ export interface BalanceIterationReport {
   topPlayers?: TopPlayerSnapshot[];
 }
 
+/** Describes the top player snapshot data contract. */
 export interface TopPlayerSnapshot {
   id: string;
   displayName: string;
@@ -358,6 +382,7 @@ export interface TopPlayerSnapshot {
   power: number;
 }
 
+/** Describes the top player timeline point data contract. */
 export interface TopPlayerTimelinePoint {
   iteration: number;
   level: number;
@@ -367,6 +392,7 @@ export interface TopPlayerTimelinePoint {
   power: number;
 }
 
+/** Describes the persona comparison result data contract. */
 export interface PersonaComparisonResult {
   persona: string;
   stopReason: AutonomousRunResult['stopReason'];
@@ -377,6 +403,7 @@ export interface PersonaComparisonResult {
   avgIntelSuccessRate: number;
 }
 
+/** Describes the autonomous run artifact data contract. */
 export interface AutonomousRunArtifact {
   generatedAt: string;
   persona: string;
@@ -388,6 +415,7 @@ export interface AutonomousRunArtifact {
   topPlayerTimelines: Record<string, TopPlayerTimelinePoint[]>;
 }
 
+/** Describes the autonomous run result data contract. */
 export interface AutonomousRunResult {
   finalState: SimulationState;
   reports: BalanceIterationReport[];
@@ -397,6 +425,7 @@ export interface AutonomousRunResult {
   artifact?: AutonomousRunArtifact;
 }
 
+/** Describes the balance objective targets data contract. */
 export interface BalanceObjectiveTargets {
   attacksPerActivePlayerDay: [number, number];
   highTurnAttackShare: [number, number];
@@ -407,6 +436,7 @@ export interface BalanceObjectiveTargets {
   averageHeldTurns: [number, number];
 }
 
+/** Describes the closed loop metrics data contract. */
 export interface ClosedLoopMetrics {
   daysSimulated: number;
   activePlayers: number;
@@ -428,6 +458,7 @@ export interface ClosedLoopMetrics {
   avgLevel: number;
 }
 
+/** Describes the closed loop score component data contract. */
 export interface ClosedLoopScoreComponent {
   metric: keyof ClosedLoopMetrics;
   value: number;
@@ -436,12 +467,14 @@ export interface ClosedLoopScoreComponent {
   penalty: number;
 }
 
+/** Describes the closed loop diagnosis data contract. */
 export interface ClosedLoopDiagnosis {
   severity: 'info' | 'warn' | 'critical';
   code: string;
   message: string;
 }
 
+/** Describes the closed loop candidate result data contract. */
 export interface ClosedLoopCandidateResult {
   label: string;
   balance: BalanceParameters;
@@ -451,6 +484,7 @@ export interface ClosedLoopCandidateResult {
   diagnoses: ClosedLoopDiagnosis[];
 }
 
+/** Describes the closed loop iteration report data contract. */
 export interface ClosedLoopIterationReport {
   iteration: number;
   accepted: boolean;
@@ -460,6 +494,7 @@ export interface ClosedLoopIterationReport {
   notes: string[];
 }
 
+/** Describes the closed loop balance config data contract. */
 export interface ClosedLoopBalanceConfig {
   populationSize?: number;
   levelRange?: [number, number];
@@ -472,6 +507,7 @@ export interface ClosedLoopBalanceConfig {
   onProgress?: (event: ClosedLoopProgressEvent) => void;
 }
 
+/** Defines the closed loop progress event shape used by related workflows. */
 export type ClosedLoopProgressEvent =
   | {
       type: 'start';
@@ -534,6 +570,7 @@ export type ClosedLoopProgressEvent =
       timestamp: string;
     };
 
+/** Defines the closed loop progress payload shape used by related workflows. */
 export type ClosedLoopProgressPayload =
   ClosedLoopProgressEvent extends infer Event
     ? Event extends unknown
@@ -541,6 +578,7 @@ export type ClosedLoopProgressPayload =
       : never
     : never;
 
+/** Describes the closed loop balance artifact data contract. */
 export interface ClosedLoopBalanceArtifact {
   generatedAt: string;
   config: Required<
@@ -560,6 +598,7 @@ export interface ClosedLoopBalanceArtifact {
   finalPopulation: TopPlayerSnapshot[];
 }
 
+/** Describes the closed loop balance result data contract. */
 export interface ClosedLoopBalanceResult {
   finalState: SimulationState;
   finalBalance: BalanceParameters;
@@ -569,6 +608,7 @@ export interface ClosedLoopBalanceResult {
   artifact: ClosedLoopBalanceArtifact;
 }
 
+/** Describes the simulation state data contract. */
 export interface SimulationState {
   players: Map<string, PlayerState>;
   day: number;

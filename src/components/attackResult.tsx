@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 import { PlayerRace } from '@/types/typings';
-import toLocale from '@/utils/numberFormatting';
+import { toLocale } from '@/utils/numberFormatting';
 import { getAssetPath, getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
 
 import { BattleLedger } from './BattleLedger';
@@ -34,7 +34,7 @@ const AttackResults = ({ battle, viewerID }) => {
   const [isOpen, setIsOpen] = useState(false);
   const theme = useMantineTheme();
 
-  const toggleModal = () => setIsOpen(!isOpen);
+  const toggleModal = () => setIsOpen((v) => !v);
 
   const totalLosses = (losses: string | { total?: number }): number => {
     try {

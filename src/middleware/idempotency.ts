@@ -20,6 +20,7 @@ const readIdempotencyKey = (req: AuthenticatedRequest): string | null => {
   return typeof headerValue === 'string' ? headerValue.trim() : null;
 };
 
+/** Enforce idempotency. */
 export const enforceIdempotency = async (
   req: AuthenticatedRequest,
   res: NextApiResponse,

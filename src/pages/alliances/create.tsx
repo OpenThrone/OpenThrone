@@ -19,6 +19,7 @@ import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
 
+/** Create alliance. */
 export default function CreateAlliance() {
   const { user } = useUser();
   const router = useRouter();

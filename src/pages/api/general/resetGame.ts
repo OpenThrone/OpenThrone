@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { GeneralService } from '@/services';
 
+/** Handles general reset game API requests. */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,

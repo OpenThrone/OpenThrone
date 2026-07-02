@@ -28,6 +28,7 @@ interface GoldTransferModalProps {
   onTransferComplete: () => void;
 }
 
+/** Gold transfer modal. */
 export function GoldTransferModal({
   isOpen,
   onClose,

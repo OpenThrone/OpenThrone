@@ -20,21 +20,14 @@ import {
   Skeleton,
   Stack,
   Text,
-  Title,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
-import React, { useEffect, useRef, useState } from 'react';
 
-import SidebarScroll from '@/components/game/SidebarScroll';
+import { ScrollSidebar as SidebarScroll } from '@/components/game/SidebarScroll';
+import { SidebarTimeInfo, StatRow } from '@/components/sidebar/SidebarShared';
 import { useUser } from '@/context/users'; // Provides UserModel instance
 import { useSidebarData } from '@/hooks/useSidebarData';
-import type UserModel from '@/models/Users';
-import {
-  getOTTime,
-  getTimeRemaining,
-  getTimeToNextTurn,
-} from '@/utils/timefunctions';
 import { getAvatarSrc } from '@/utils/utilities';
 
 import { GoldRequestNotificationModal } from './GoldRequestNotificationModal';
@@ -48,7 +41,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
   isMobile,
 }) => {
   const { t } = useTranslation('common');
-  const { user, forceUpdate, loading: userLoading } = useUser(); // Get user (UserModel instance) and loading state
+  const { user, forceUpdate, loading: userLoading } = useUser();
   const [nextLevelOpened, { close, open }] = useDisclosure(false);
 
   const {
@@ -87,148 +80,8 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
     </Group>
   );
 
-  const messages = advisorMessages;
   const inkColor = 'var(--scroll-ink)';
   const accentColor = 'var(--scroll-accent)';
-
-  const SidebarTimeInfo = React.memo(
-    ({
-      user,
-      userLoading,
-    }: {
-      user: UserModel | null;
-      userLoading: boolean;
-    }) => {
-      const [time, setTime] = useState('--:--');
-      const [OTTime, setOTTime] = useState('--:--');
-      const hasInitializedRef = useRef(false);
-
-      // Define the medieval font style to be used with Mantine components
-      const medievalFontStyle = { fontFamily: 'MedievalSharp, cursive' };
-
-      useEffect(() => {
-        // Only show '--:--' on initial load before we have user data
-        if ((!user || userLoading) && !hasInitializedRef.current) {
-          return;
-        }
-
-        // Once we have user data, we'll start the timer and never go back to '--:--'
-        if (user && !hasInitializedRef.current) {
-          hasInitializedRef.current = true;
-        }
-
-        const updateTimes = () => {
-          const nextTurnTime = getTimeToNextTurn();
-          const remaining = getTimeRemaining(nextTurnTime);
-
-          // Format the time
-          const minutes = String(remaining.minutes).padStart(2, '0');
-          const seconds = String(remaining.seconds).padStart(2, '0');
-
-          setTime(`${minutes}:${seconds}`);
-          setOTTime(
-            getOTTime().toLocaleTimeString(user?.locale ?? 'en-US', {
-              timeStyle: 'short',
-              hour12: false,
-            }),
-          );
-        };
-
-        // Update immediately
-        updateTimes();
-
-        // Then set interval for updates
-        const interval = setInterval(updateTimes, 1000);
-
-        return () => clearInterval(interval);
-      }, [user, userLoading]);
-
-      const labelOrder = isMobile ? 6 : 5;
-      const valueOrder = isMobile ? 5 : 4;
-      const otValueOrder = isMobile ? 4 : 3;
-
-      return (
-        <>
-          <Title
-            order={labelOrder}
-            className="text-center"
-            style={{ ...medievalFontStyle, color: inkColor }}
-          >
-            {t('sidebar.timeUntilNextTurn')}
-          </Title>
-          <Title
-            order={valueOrder}
-            ta="center"
-            fw="bold"
-            style={{ ...medievalFontStyle, color: inkColor }}
-          >
-            <span id="nextTurnTimestamp">{time}</span>
-          </Title>
-
-          <Title
-            order={labelOrder}
-            className="text-center"
-            style={{ ...medievalFontStyle, color: inkColor }}
-          >
-            {t('sidebar.otTime')}
-          </Title>
-          <Title
-            order={otValueOrder}
-            ta="center"
-            fw="bold"
-            style={{ ...medievalFontStyle, color: inkColor }}
-          >
-            <span id="otTime">{OTTime}</span>
-          </Title>
-        </>
-      );
-    },
-  );
-
-  SidebarTimeInfo.displayName = 'SidebarTimeInfo';
-
-  // Stat Row Component for consistent styling and layout
-  const statTextColor = inkColor;
-  const StatRow: React.FC<{
-    label: string;
-    value: string | React.ReactNode;
-    icon?: React.ReactNode;
-  }> = ({ label, value, icon }) => (
-    <Group justify="space-between" wrap="nowrap" gap={isMobile ? 'xs' : 'sm'}>
-      <Group gap="xs" wrap="nowrap">
-        {icon && (
-          <span className="w-4 text-center" style={{ paddingLeft: '4px' }}>
-            {icon}
-          </span>
-        )}{' '}
-        {/* Icon wrapper */}
-        <Text size={isMobile ? 'sm' : 'md'} c={statTextColor} fw="bold" lh="xs">
-          {label}
-        </Text>
-      </Group>
-      {React.isValidElement(value) ? (
-        <div
-          className="flex items-end"
-          style={{
-            paddingRight: isMobile ? '6px' : '10px',
-            color: statTextColor,
-          }}
-        >
-          {value}
-        </div>
-      ) : (
-        <Text
-          size={isMobile ? 'sm' : 'md'}
-          c={statTextColor}
-          fw="bold"
-          ta="right"
-          pr={isMobile ? '6px' : '10px'}
-        >
-          {value}
-        </Text>
-      )}
-    </Group>
-  );
 
   return (
     <SidebarScroll maxWidth="100%">
@@ -276,7 +129,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
             fs="italic"
             style={{ color: inkColor }}
           >
-            {messages[currentMessageIndex]}
+            {advisorMessages[currentMessageIndex]}
           </Text>
         </div>
 
@@ -322,8 +175,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
             </List.Item>
             <List.Item>
               <Skeleton height={16} width="90%" radius="sm" mt={6} />
-              <Skeleton height={8} width="100%" radius="sm" mt={4} />{' '}
-              {/* Skeleton for progress bar */}
+              <Skeleton height={8} width="100%" radius="sm" mt={4} />
             </List.Item>
             <List.Item>
               <Skeleton height={16} width="75%" radius="sm" mt={6} />
@@ -338,6 +190,9 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
         ) : (
           <Stack gap="xs">
             <StatRow
+              variant="scroll"
+              isMobile={isMobile}
+              inkColor={inkColor}
               label={t('labels.gold')}
               value={
                 <Group gap="xs">
@@ -381,6 +236,9 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
               }
             />
             <StatRow
+              variant="scroll"
+              isMobile={isMobile}
+              inkColor={inkColor}
               label={t('labels.citizens')}
               value={<span id="citizens">{sidebar.citizens}</span>}
               icon={
@@ -390,6 +248,9 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
               }
             />
             <StatRow
+              variant="scroll"
+              isMobile={isMobile}
+              inkColor={inkColor}
               label={t('labels.level')}
               value={<span id="level">{sidebar.level}</span>}
               icon={
@@ -399,6 +260,9 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
               }
             />
             <StatRow
+              variant="scroll"
+              isMobile={isMobile}
+              inkColor={inkColor}
               label={t('labels.experience')}
               value={<span id="experience">{sidebar.xp}</span>}
               icon={
@@ -432,6 +296,9 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
               }
             />
             <StatRow
+              variant="scroll"
+              isMobile={isMobile}
+              inkColor={inkColor}
               label={t('labels.turns')}
               value={<span id="turns">{sidebar.turns}</span>}
               icon={
@@ -446,7 +313,12 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
               style={{ opacity: 0.35 }}
             />
             {!userLoading && (
-              <SidebarTimeInfo user={user} userLoading={userLoading} />
+              <SidebarTimeInfo
+                user={user}
+                userLoading={userLoading}
+                isMobile={isMobile}
+                inkColor={inkColor}
+              />
             )}
           </Stack>
         )}
@@ -477,7 +349,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
             <Autocomplete
               value={searchValue}
               onChange={setSearchValue}
-              onOptionSubmit={handleItemSubmit} // Use onOptionSubmit for selection
+              onOptionSubmit={handleItemSubmit}
               renderOption={renderAutocompleteOption}
               data={usersData}
               maxDropdownHeight={300}
@@ -507,7 +379,6 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
         </form>
       </div>
 
-      {/* Gold Request Notification Modal */}
       <GoldRequestNotificationModal
         isOpen={isNotificationModalOpen}
         onClose={() => setIsNotificationModalOpen(false)}
