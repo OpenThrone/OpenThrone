@@ -72,13 +72,16 @@ module.exports = withBundleAnalyzer({
   trailingSlash: false,
 
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: process.env.NEXT_PUBLIC_ASSETS_HOSTNAME,
-        pathname: '/**',
-      },
-    ],
+    // Guard against undefined hostname — Next.js 16 rejects it in strict config validation
+    remotePatterns: process.env.NEXT_PUBLIC_ASSETS_HOSTNAME
+      ? [
+          {
+            protocol: 'https',
+            hostname: process.env.NEXT_PUBLIC_ASSETS_HOSTNAME,
+            pathname: '/**',
+          },
+        ]
+      : [],
   },
 
   reactStrictMode: true,

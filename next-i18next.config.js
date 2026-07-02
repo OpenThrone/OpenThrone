@@ -7,7 +7,6 @@ module.exports = {
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'es', 'de'],
-    localeDetection: true,
   },
   // Hybrid approach: server uses ./public/locales, client loads from /locales via HTTP
   localePath: isBrowser ? '/locales' : path.resolve('./public/locales'),
