@@ -14,7 +14,7 @@ import {
   Text,
 } from '@mantine/core';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type { PlayerItem, PlayerUnit } from '@/types/typings';
 import { getAssetPath, getLevelFromXP } from '@/utils/utilities';
@@ -23,29 +23,39 @@ import { GameCard } from './game/GameCard';
 import Modal from './modal';
 import SpyMissionsModal from './spyMissionsModal';
 
+const itemColors = {
+  HELM: 'grey',
+  ARMOR: 'yellow',
+  BOOTS: 'red',
+  BRACERS: 'blue',
+  SHIELD: 'green',
+  WEAPON: 'purple',
+};
+
 const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
   const [isAttackModalOpen, setIsAttackModalOpen] = useState(false);
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
   const isViewerAttacker = viewerID === attackerPlayer.id;
   const isAttackerWinner = winner === attackerPlayer.id;
-  const [unitSegments, setUnitSegments] = useState([]);
-  const [itemsByCategory, setItemsByCategory] = useState([]);
-  const [totalPopulation, setTotalPopulation] = useState(0);
+  const toggleSpyModal = useCallback(() => setIsSpyModalOpen((v) => !v), []);
+  const toggleAttackModal = useCallback(
+    () => setIsAttackModalOpen((v) => !v),
+    [],
+  );
 
-  const itemColors = {
-    HELM: 'grey',
-    ARMOR: 'yellow',
-    BOOTS: 'red',
-    BRACERS: 'blue',
-    SHIELD: 'green',
-    WEAPON: 'purple',
-  };
+  const totalPopulation = useMemo(() => {
+    return (
+      Number(
+        Object.values(stats.spyResults.defender.units).reduce(
+          (acc: number, unit: PlayerUnit) => acc + unit.quantity,
+          0,
+        ),
+      ) || 0
+    );
+  }, [stats]);
 
-  const toggleSpyModal = () => setIsSpyModalOpen(!isSpyModalOpen);
-  const toggleAttackModal = () => setIsAttackModalOpen(!isAttackModalOpen);
-
-  useEffect(() => {
+  const unitSegments = useMemo(() => {
     const units = stats.spyResults.intelligenceGathered?.units;
     const filteredUnits =
       Array.isArray(units) && units.length > 0
@@ -55,15 +65,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
       (acc, unit) => Number(acc) + Number(unit.quantity),
       0,
     );
-    const totalPop =
-      Number(
-        Object.values(stats.spyResults.defender.units).reduce(
-          (acc: number, unit: PlayerUnit) => acc + unit.quantity,
-          0,
-        ),
-      ) || 0;
-    setTotalPopulation(totalPop);
-    const unknownUnits = totalPop - totalUnits;
+    const unknownUnits = totalPopulation - totalUnits;
     const unitColors = {
       CITIZEN: 'grey',
       WORKER: 'yellow',
@@ -74,7 +76,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
       UNKNOWN: 'white',
     };
 
-    const newUnitSegments = [
+    return [
       ...filteredUnits.map((unit) => ({
         label: `${unit.type}`,
         quantity: unit.quantity,
@@ -88,12 +90,17 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
         color: unitColors.UNKNOWN,
       },
     ];
-    setUnitSegments(newUnitSegments);
+  }, [stats, totalPopulation]);
 
+  const itemsByCategory = useMemo(() => {
     if (stats.spyResults.intelligenceGathered?.items?.length === 0) {
-      setItemsByCategory([]);
-      return;
+      return [];
     }
+    const units = stats.spyResults.intelligenceGathered?.units;
+    const filteredUnits =
+      Array.isArray(units) && units.length > 0
+        ? units.filter((unit) => unit.quantity > 0)
+        : [];
     const itemCategories = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
     const itemTypes = ['HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD', 'WEAPON'];
 
@@ -101,7 +108,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
       ?.items
       ? Object.values(stats.spyResults.intelligenceGathered.items)
       : [];
-    const newItemsByCategory = itemCategories.map((category) => {
+    return itemCategories.map((category) => {
       const categoryUnits = filteredUnits
         .filter((unit) => unit.type === category)
         .reduce((acc, unit) => acc + unit.quantity, 0);
@@ -141,9 +148,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                 : 'purple',
       };
     });
-
-    setItemsByCategory(newItemsByCategory);
-  }, [stats, defenderPlayer, totalPopulation]);
+  }, [stats, defenderPlayer]);
 
   return (
     <GameCard title="Intelligence Report" icon={faBinoculars}>

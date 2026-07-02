@@ -25,8 +25,8 @@ const InfiltrationResult = ({ battle, lastGenerated, viewerID }) => {
   const isAttackerWinner = winner === attackerPlayer?.id;
   const theme = useMantineTheme();
 
-  const toggleSpyModal = () => setIsSpyModalOpen(!isSpyModalOpen);
-  const toggleAttackModal = () => setIsAttackModalOpen(!isAttackModalOpen);
+  const toggleSpyModal = () => setIsSpyModalOpen((v) => !v);
+  const toggleAttackModal = () => setIsAttackModalOpen((v) => !v);
 
   const summaryLines = [
     `You sent ${stats.spyResults.spiesSent} ${stats.spyResults.spiesSent > 1 ? 'Infiltrators' : 'Infiltrator'} to attack ${defenderPlayer.display_name}'s Fort.`,

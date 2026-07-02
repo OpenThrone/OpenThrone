@@ -41,9 +41,6 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
       setLoading(true);
       setError(null);
 
-      // Debug user
-      logDebug('Current user:', user);
-
       // Fetch user's attack logs
       fetch(`/api/attack/logs?limit=${ROWS_PER_PAGE}&page=${activePage - 1}`)
         .then((res) => {
@@ -77,17 +74,12 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
       setPage(1);
       setTotalPages(0);
     }
-  }, [opened, user?.id, activePage, user]); // Re-fetch when page changes
+  }, [opened, user?.id, activePage]); // Re-fetch when page changes
 
   const handleShareClick = (logId: number) => {
     onShare(logId);
     onClose();
   };
-
-  // Debug attackLogs
-  useEffect(() => {
-    logDebug('Attack logs state:', attackLogs);
-  }, [attackLogs]);
 
   const rows = attackLogs.map((log) => {
     const isAttacker = Number(log.attacker_id) === Number(user?.id);

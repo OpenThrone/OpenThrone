@@ -1,5 +1,5 @@
 import { Box, Group, Progress, Table, Text } from '@mantine/core';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { GameCard } from './GameCard';
 
@@ -9,7 +9,7 @@ interface StyledLossesProps {
 
 /** Styled losses. */
 export const StyledLosses: React.FC<StyledLossesProps> = ({ losses }) => {
-  const data = JSON.parse(losses);
+  const data = useMemo(() => JSON.parse(losses), [losses]);
 
   return (
     <GameCard title="Battle Casualties">

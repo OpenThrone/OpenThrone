@@ -34,7 +34,7 @@ const AttackResults = ({ battle, viewerID }) => {
   const [isOpen, setIsOpen] = useState(false);
   const theme = useMantineTheme();
 
-  const toggleModal = () => setIsOpen(!isOpen);
+  const toggleModal = () => setIsOpen((v) => !v);
 
   const totalLosses = (losses: string | { total?: number }): number => {
     try {
