@@ -56,7 +56,32 @@ const ResultsPage = ({
 // Server-Side Rendering with session and permission check
 /** Returns server side props for callers that need normalized game data. */
 export const getServerSideProps = async (context) => {
-  const session = await getServerSession(context.req, context.res, authOptions);
+  const { params } = context;
+  const battleId = Number(params.id);
+
+  const [session, battle] = await Promise.all([
+    getServerSession(context.req, context.res, authOptions),
+    prisma.attack_log.findFirst({
+      where: { id: battleId },
+      include: {
+        attackerPlayer: {
+          select: {
+            id: true,
+            display_name: true,
+            avatar: true,
+          },
+        },
+        defenderPlayer: {
+          select: {
+            id: true,
+            display_name: true,
+            avatar: true,
+            race: true,
+          },
+        },
+      },
+    }),
+  ]);
 
   if (!session) {
     return {
@@ -66,31 +91,6 @@ export const getServerSideProps = async (context) => {
       },
     };
   }
-
-  const { params } = context;
-  const battleId = Number(params.id);
-
-  // Fetch battle details first
-  const battle = await prisma.attack_log.findFirst({
-    where: { id: battleId },
-    include: {
-      attackerPlayer: {
-        select: {
-          id: true,
-          display_name: true,
-          avatar: true,
-        },
-      },
-      defenderPlayer: {
-        select: {
-          id: true,
-          display_name: true,
-          avatar: true,
-          race: true,
-        },
-      },
-    },
-  });
 
   // If no battle found, return early (prevents accessing properties of null)
   if (!battle) {

@@ -2,9 +2,10 @@ import type { NextApiResponse } from 'next';
 
 import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
-import { highRiskLimiter, runExpressMiddleware } from '@/middleware/rateLimit';
+import { highRiskLimiter } from '@/middleware/rateLimit';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
+import { getIpAddress } from '@/utils/ipUtils';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
 import {
@@ -60,7 +61,13 @@ const respondHandler = async (
 };
 
 const wrapped = async (req: any, res: any) => {
-  await runExpressMiddleware(req, res, highRiskLimiter);
+  const ip = getIpAddress(req);
+  const allowed = await highRiskLimiter(ip);
+  if (!allowed) {
+    return res
+      .status(429)
+      .json({ error: 'Too many requests. Please slow down.' });
+  }
   return respondHandler(req, res);
 };
 

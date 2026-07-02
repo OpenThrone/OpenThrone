@@ -42,6 +42,11 @@ import { useUser } from '@/context/users';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
 
+const EMPTY_UNITS: readonly unknown[] = [];
+const EMPTY_ITEMS: readonly unknown[] = [];
+const EMPTY_BATTLE_UPGRADES: readonly unknown[] = [];
+const EMPTY_BONUSES: readonly unknown[] = [];
+
 const Overview = () => {
   const { t } = useTranslation('home');
   const [getNews, setNews] = useState([]);
@@ -389,10 +394,10 @@ const Overview = () => {
                               <Text>{t('overview.noBreakdownAvailable')}</Text>
                             );
                           const {
-                            units = [],
-                            items = [],
-                            battleUpgrades = [],
-                            bonuses = [],
+                            units = EMPTY_UNITS,
+                            items = EMPTY_ITEMS,
+                            battleUpgrades = EMPTY_BATTLE_UPGRADES,
+                            bonuses = EMPTY_BONUSES,
                             finalTotal,
                           } = breakdown;
                           const unitsTotal = units.reduce(

@@ -1,12 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+import { withAuth } from '@/middleware/auth';
 import { getRandomAutoRecruitUser } from '@/services/Recruitment.service';
 
 /** Handles automated recruitment API requests. */
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).end(); // Method not allowed
   }
@@ -21,3 +19,5 @@ export default async function handler(
 
   return res.status(200).json({ recruit_link: randomUser.recruit_link });
 }
+
+export default withAuth(handler, true);

@@ -12,9 +12,9 @@ import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
 import { SessionProvider, useSession } from 'next-auth/react';
 import { appWithTranslation, useTranslation } from 'next-i18next';
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useMemo } from 'react';
 
-import Layout from '@/components/Layout'; // Import the Layout component
+import Layout from '@/components/Layout';
 import LoadingDots from '@/components/loading-dots';
 import SnackbarBridge from '@/components/SnackbarBridge';
 import { LayoutProvider } from '@/context/LayoutContext';
@@ -109,24 +109,19 @@ const AppWithTheme = ({ Component, pageProps }: AppProps) => {
     key: 'colorSchemePreview',
     defaultValue: '',
   });
-  const [theme, setTheme] = useState(themes.ELF);
 
   useEffect(() => {
-    const applyTheme = (cs: string) => setTheme(themes[cs] || themes.ELF);
     if (user?.colorScheme && user.colorScheme !== colorScheme)
       setColorScheme(user.colorScheme);
+  }, [user?.colorScheme, colorScheme, setColorScheme]);
+
+  const theme = useMemo(() => {
     const isPreviewPage =
       router.pathname === '/test' || router.pathname === '/home/settings';
     const activeScheme =
       (isPreviewPage && previewScheme) || user?.colorScheme || colorScheme;
-    applyTheme(activeScheme);
-  }, [
-    user?.colorScheme,
-    colorScheme,
-    setColorScheme,
-    previewScheme,
-    router.pathname,
-  ]);
+    return themes[activeScheme] ?? themes.ELF;
+  }, [router.pathname, previewScheme, user?.colorScheme, colorScheme]);
 
   useEffect(() => {
     if (!router.isReady || !i18n?.loadNamespaces) {
