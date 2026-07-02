@@ -358,6 +358,13 @@ model users {
   featureFlagsUpdated                   FeatureFlag[]           @relation("FeatureFlagsUpdated")
   serverSettingsUpdated                 ServerSetting[]         @relation("ServerSettingsUpdated")
 
+  //Migration step
+  units              Json? // Don't delete yet
+  items              Json? // Don't delete yet
+  battle_upgrades    Json? // Don't delete yet
+  structure_upgrades Json? // Don't delete yet
+  bonus_points       Json? // Don't delete yet
+
   @@index([created_at])
   @@index([currentEraId])
 }
@@ -1350,4 +1357,27 @@ model CheatSignal {
 
   @@index([status, severity, createdAt])
   @@index([userId, status])
+}
+
+model RateLimitBucket {
+  id        BigInt   @id @default(autoincrement())
+  key       String
+  bucket    BigInt
+  count     Int      @default(1)
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([key, bucket])
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
+}
+
+model ResponseCache {
+  key       String   @id
+  payload   Json
+  expiresAt DateTime @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("response_cache")
 }
