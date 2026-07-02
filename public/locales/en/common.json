@@ -257,5 +257,13 @@
     "errorVerifyingSession": "Error verifying session.",
     "errorStartingSession": "Error starting recruitment session.",
     "sessionInvalid": "Invalid session. Please start a new session."
+  },
+  "connection": {
+    "banner": {
+      "title": "Real-time connection lost",
+      "body": "Live updates are paused. Reconnect to resume instant messaging and notifications.",
+      "retry": "Retry now",
+      "dismiss": "Dismiss"
+    }
   }
 }

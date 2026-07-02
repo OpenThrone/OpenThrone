@@ -15,14 +15,21 @@ const desiredUserIds = new Map<number, number | null>();
 let sharedSocket: Socket | null = null;
 let sharedUserId: number | null = null;
 let sharedIsConnected = false;
+let sharedConnectionFailed = false;
 
 const connectionSubscribers = new Set<(connected: boolean) => void>();
+const connectionFailedSubscribers = new Set<(failed: boolean) => void>();
 const socketSubscribers = new Set<(socket: Socket | null) => void>();
 const eventListeners: Record<string, Set<Function>> = {};
 
 function notifyConnection(connected: boolean) {
   sharedIsConnected = connected;
   connectionSubscribers.forEach((subscriber) => subscriber(connected));
+}
+
+function notifyConnectionFailed(failed: boolean) {
+  sharedConnectionFailed = failed;
+  connectionFailedSubscribers.forEach((subscriber) => subscriber(failed));
 }
 
 function notifySocket(socket: Socket | null) {
@@ -52,6 +59,7 @@ function reconcileSocketConnection() {
     }
     sharedUserId = null;
     notifyConnection(false);
+    notifyConnectionFailed(false);
     notifySocket(sharedSocket);
     return;
   }
@@ -85,12 +93,14 @@ function reconcileSocketConnection() {
     reconnectionDelayMax: RECONNECT_DELAY_MAX_MS,
   });
   notifySocket(sharedSocket);
+  notifyConnectionFailed(false);
 
   logInfo('Connecting to Socket.IO:', SERVER_URL);
 
   sharedSocket.on('connect', () => {
     logInfo('Socket.IO connected');
     notifyConnection(true);
+    notifyConnectionFailed(false);
     sharedSocket?.emit('registerUser', { userId: desiredUserId });
   });
 
@@ -102,6 +112,7 @@ function reconcileSocketConnection() {
   sharedSocket.on('reconnect', () => {
     logInfo('Socket.IO reconnected, re-registering user and rooms');
     notifyConnection(true);
+    notifyConnectionFailed(false);
     sharedSocket?.emit('registerUser', { userId: desiredUserId });
   });
 
@@ -112,6 +123,7 @@ function reconcileSocketConnection() {
   sharedSocket.on('reconnect_failed', () => {
     logError('Socket.IO reconnect failed; giving up');
     notifyConnection(false);
+    notifyConnectionFailed(true);
   });
 
   sharedSocket.onAny((event, data) => {
@@ -129,17 +141,18 @@ export default function useSocket(userId: number | null) {
 
   const [socket, setSocket] = useState<Socket | null>(sharedSocket);
   const [isConnected, setIsConnected] = useState(sharedIsConnected);
+  const [connectionFailed, setConnectionFailed] = useState(
+    sharedConnectionFailed,
+  );
 
-  // Memoize addEventListener to ensure stable reference
   const addEventListener = useCallback((event: string, listener: Function) => {
     if (!eventListeners[event]) {
       eventListeners[event] = new Set();
     }
     eventListeners[event].add(listener);
     logInfo(`Added listener for event: ${event}`);
-  }, []); // Empty dependency array means this function reference never changes
+  }, []);
 
-  // Memoize removeEventListener
   const removeEventListener = useCallback(
     (event: string, listener: Function) => {
       if (eventListeners[event]) {
@@ -148,11 +161,10 @@ export default function useSocket(userId: number | null) {
       }
     },
     [],
-  ); // Empty dependency array
+  );
 
   useEffect(() => {
     const clientId = clientIdRef.current;
-    if (!clientId) return;
     desiredUserIds.set(clientId, userId);
     reconcileSocketConnection();
     return () => {
@@ -164,49 +176,51 @@ export default function useSocket(userId: number | null) {
   useEffect(() => {
     const handleConnectionUpdate = (connected: boolean) =>
       setIsConnected(connected);
+    const handleConnectionFailedUpdate = (failed: boolean) =>
+      setConnectionFailed(failed);
     const handleSocketUpdate = (nextSocket: Socket | null) =>
       setSocket(nextSocket);
     connectionSubscribers.add(handleConnectionUpdate);
+    connectionFailedSubscribers.add(handleConnectionFailedUpdate);
     socketSubscribers.add(handleSocketUpdate);
     return () => {
       connectionSubscribers.delete(handleConnectionUpdate);
+      connectionFailedSubscribers.delete(handleConnectionFailedUpdate);
       socketSubscribers.delete(handleSocketUpdate);
     };
   }, []);
 
-  // --- Emitter Functions ---
-  const emitAddReaction = (data: {
-    messageId: number;
-    reaction: string;
-    roomId: number;
-  }) => {
-    sharedSocket?.emit('addReaction', data);
-  };
+  const emitAddReaction = useCallback(
+    (data: { messageId: number; reaction: string; roomId: number }) => {
+      sharedSocket?.emit('addReaction', data);
+    },
+    [],
+  );
 
-  const emitRemoveReaction = (data: {
-    messageId: number;
-    reaction: string;
-    roomId: number;
-  }) => {
-    sharedSocket?.emit('removeReaction', data);
-  };
+  const emitRemoveReaction = useCallback(
+    (data: { messageId: number; reaction: string; roomId: number }) => {
+      sharedSocket?.emit('removeReaction', data);
+    },
+    [],
+  );
 
-  const emitMarkAsRead = (
-    data:
-      | { messageId: number; roomId: number }
-      | { messageIds: number[]; roomId: number },
-  ) => {
-    sharedSocket?.emit('markAsRead', data);
-  };
-
-  // Add other emitters here if needed (e.g., for typing indicators)
+  const emitMarkAsRead = useCallback(
+    (
+      data:
+        | { messageId: number; roomId: number }
+        | { messageIds: number[]; roomId: number },
+    ) => {
+      sharedSocket?.emit('markAsRead', data);
+    },
+    [],
+  );
 
   return {
     socket,
     isConnected,
+    connectionFailed,
     addEventListener,
     removeEventListener,
-    // Expose emitter functions
     emitAddReaction,
     emitRemoveReaction,
     emitMarkAsRead,

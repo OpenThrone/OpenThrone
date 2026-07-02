@@ -277,7 +277,7 @@ const handleSendMessage = async (
     sharedAttackLogId?: number;
   },
 ) => {
-  if (!rateLimiter(`sendMessage-${userId}`, { windowMs: 10000, max: 10 })) {
+  if (!(await rateLimiter(`sendMessage-${userId}`, { windowMs: 10000, max: 10 }))) {
     socket.emit('messageError', {
       tempId: data.tempId,
       error: 'You are sending messages too quickly.',
@@ -450,7 +450,7 @@ const handleAddReaction = async (
   userId: number,
   data: { messageId: number; reaction: string; roomId: number },
 ) => {
-  if (!rateLimiter(`addReaction-${userId}`, { windowMs: 10000, max: 20 })) {
+  if (!(await rateLimiter(`addReaction-${userId}`, { windowMs: 10000, max: 20 }))) {
     socket.emit('reactionError', {
       messageId: data.messageId,
       error: 'You are reacting too quickly.',
