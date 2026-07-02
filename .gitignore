@@ -17,7 +17,8 @@ cypress/videos
 cypress/e2e/*-results.md
 cypress/snapshots/diff
 cypress/snapshots/actual
-.cypress-cache
+.cypress-cache/
+cypress-run.log
 
 # next.js
 /.next
@@ -42,8 +43,11 @@ public/sitemap-*.xml
 # local workspace
 .vscode/
 plans/
+skills/
 cypress-run.log
 ChatGPT Image*.png
+.sisyphus
+.omo
 
 # production
 /build
