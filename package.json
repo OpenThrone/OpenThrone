@@ -72,7 +72,7 @@
     "cypress": "^13.17.0",
     "express-rate-limit": "^8.2.1",
     "formidable": "^3.5.4",
-    "framer-motion": "^10.18.0",
+    "framer-motion": "^11.18.0",
     "i18next": "^25.8.4",
     "i18next-http-backend": "^3.0.2",
     "image-size": "^1.2.1",

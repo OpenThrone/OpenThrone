@@ -18,18 +18,6 @@ export function OrnatePanel({ children, minHeight = 280 }: OrnatePanelProps) {
         isolation: 'isolate',
       }}
     >
-      <Image
-        src="/assets/images/ui/battle-report/frames/panel-frame-blue.webp"
-        alt=""
-        fill
-        sizes="100vw"
-        style={{
-          objectFit: 'fill',
-          zIndex: 0,
-          pointerEvents: 'none',
-        }}
-      />
-
       <Box
         style={{
           position: 'relative',
