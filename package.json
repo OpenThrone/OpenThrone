@@ -15,6 +15,7 @@
     "test": "jest",
     "commit": "cz",
     "prepare": "husky install",
+    "postinstall": "prisma generate",
     "postbuild": "next-sitemap",
     "bun-dev": "npx next",
     "migrate-user-json": "bunx ts-node scripts/migrate-user-json.ts",
