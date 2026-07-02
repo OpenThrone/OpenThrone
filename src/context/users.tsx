@@ -52,23 +52,24 @@ const UserContext = createContext<UserContextType>({
 /** Provides user state and actions for React consumers. */
 export const useUser = () => useContext(UserContext);
 
+const PUBLIC_PATH_PATTERNS = [
+  /^\/account\/login$/,
+  /^\/account\/register$/,
+  /^\/account\/password-reset$/,
+  /^\/account\/password-reset\/result$/,
+  /^\/account\/password-reset\/verify$/,
+  /^\/community\/news$/,
+  /^\/$/,
+  /^\/userprofile\/[a-z0-9]+$/i,
+  /^\/recruit\/[a-z0-9]+$/i,
+  /^\/auto-recruit$/,
+  /^\/battle\/battleSimulator$/,
+  /^\/about$/,
+] as const;
+
 const isPublicPath = (path: string | null) => {
-  const publicPathsRegex = [
-    /^\/account\/login$/,
-    /^\/account\/register$/,
-    /^\/account\/password-reset$/,
-    /^\/account\/password-reset\/result$/,
-    /^\/account\/password-reset\/verify$/,
-    /^\/community\/news$/,
-    /^\/$/,
-    /^\/userprofile\/[a-z0-9]+$/i,
-    /^\/recruit\/[a-z0-9]+$/i,
-    /^\/auto-recruit$/,
-    /^\/battle\/battleSimulator$/,
-    /^\/about$/,
-  ];
   if (path === null) return false;
-  return publicPathsRegex.some((regex) => regex.test(path));
+  return PUBLIC_PATH_PATTERNS.some((regex) => regex.test(path));
 };
 
 interface UsersProviderProps {

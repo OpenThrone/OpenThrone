@@ -1,6 +1,6 @@
 import { useDebouncedCallback } from '@mantine/hooks';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { levelXPArray } from '@/constants/XPLevels';
 import type UserModel from '@/models/Users';
@@ -31,7 +31,6 @@ interface SidebarStatsState {
   progress: string;
 }
 
-/** Provides sidebar data state and actions for React consumers. */
 export function useSidebarData(user: UserModel | null, userLoading: boolean) {
   const router = useRouter();
   const [advisorMessages, setAdvisorMessages] = useState<string[]>(
@@ -42,15 +41,43 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
     null,
   );
 
-  const [sidebar, setSidebar] = useState<SidebarStatsState>({
-    gold: '0',
-    citizens: '0',
-    level: '0',
-    xp: '0',
-    turns: '0',
-    xpNextLevel: '0',
-    progress: '0',
-  });
+  const sidebar = useMemo<SidebarStatsState>(() => {
+    if (!user || userLoading) {
+      return {
+        gold: '0',
+        citizens: '0',
+        level: '0',
+        xp: '0',
+        turns: '0',
+        xpNextLevel: '0',
+        progress: '0',
+      };
+    }
+
+    const currentLevelInfo = levelXPArray.find((l) => l.level === user.level);
+    const nextLevelInfo = levelXPArray.find((l) => l.level === user.level + 1);
+
+    const xpForCurrentLevel = currentLevelInfo?.xp ?? 0;
+    const xpForNextLevel = nextLevelInfo?.xp ?? xpForCurrentLevel;
+
+    const xpNeededForNextLevel = xpForNextLevel - xpForCurrentLevel;
+    const xpGainedThisLevel = user.experience - xpForCurrentLevel;
+
+    const progressPercentage =
+      xpNeededForNextLevel > 0
+        ? (xpGainedThisLevel / xpNeededForNextLevel) * 100
+        : 100;
+
+    return {
+      gold: toLocale(user.gold, user?.locale),
+      citizens: toLocale(user.citizens, user?.locale),
+      level: toLocale(user.level, user?.locale),
+      xp: toLocale(user.experience, user?.locale),
+      xpNextLevel: toLocale(user.xpToNextLevel, user?.locale),
+      progress: progressPercentage.toString(),
+      turns: toLocale(user.attackTurns, user?.locale),
+    };
+  }, [user, userLoading]);
 
   const [goldRequestCount, setGoldRequestCount] = useState(0);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
@@ -127,34 +154,6 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
         clearInterval(advisorIntervalIdRef.current);
     };
   }, [resetAdvisorInterval]);
-
-  useEffect(() => {
-    if (!user || userLoading) return;
-
-    const currentLevelInfo = levelXPArray.find((l) => l.level === user.level);
-    const nextLevelInfo = levelXPArray.find((l) => l.level === user.level + 1);
-
-    const xpForCurrentLevel = currentLevelInfo?.xp ?? 0;
-    const xpForNextLevel = nextLevelInfo?.xp ?? xpForCurrentLevel;
-
-    const xpNeededForNextLevel = xpForNextLevel - xpForCurrentLevel;
-    const xpGainedThisLevel = user.experience - xpForCurrentLevel;
-
-    const progressPercentage =
-      xpNeededForNextLevel > 0
-        ? (xpGainedThisLevel / xpNeededForNextLevel) * 100
-        : 100;
-
-    setSidebar({
-      gold: toLocale(user.gold, user?.locale),
-      citizens: toLocale(user.citizens, user?.locale),
-      level: toLocale(user.level, user?.locale),
-      xp: toLocale(user.experience, user?.locale),
-      xpNextLevel: toLocale(user.xpToNextLevel, user?.locale),
-      progress: progressPercentage.toString(),
-      turns: toLocale(user.attackTurns, user?.locale),
-    });
-  }, [user, userLoading]);
 
   useEffect(() => {
     refreshGoldRequestCount();
