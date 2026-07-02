@@ -36,7 +36,7 @@ export const LanguageSwitcher = () => {
           aria-haspopup="menu"
           aria-expanded={false}
         >
-          {currentLanguage?.flag} {i18n.language.toUpperCase()}
+          {i18n.language.toUpperCase()}
         </Button>
       </Menu.Target>
       <Menu.Dropdown aria-label={t('ariaLabels.selectLanguage')}>
