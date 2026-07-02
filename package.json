@@ -160,7 +160,8 @@
   },
   "overrides": {
     "@typescript-eslint/parser": "$@typescript-eslint/parser",
-    "@typescript-eslint/eslint-plugin": "$@typescript-eslint/eslint-plugin"
+    "@typescript-eslint/eslint-plugin": "$@typescript-eslint/eslint-plugin",
+    "node-sass": "npm:sass@^1.101.0"
   },
   "release": {
     "branches": [
