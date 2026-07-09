@@ -24,6 +24,25 @@ describe('user.service', () => {
     expect(mockPrisma.users.count).toHaveBeenCalled();
   });
 
+  it('userExists checks a separate display name when provided', async () => {
+    mockPrisma.users.count = vi.fn().mockResolvedValue(1);
+    await userExists('test@example.com', 'Commander');
+
+    expect(mockPrisma.users.count).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { email: 'test@example.com' },
+          {
+            display_name: {
+              equals: 'Commander',
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+    });
+  });
+
   it('updateLastActive throws when no identifiers provided', async () => {
     await expect(updateLastActive({})).rejects.toThrow();
   });

@@ -107,10 +107,14 @@ const subMenus: Record<string, NavItem[]> = {
 
 interface NavLoggedInProps {
   sidebarContent?: ReactNode;
+  'data-tour-id'?: string;
 }
 
 /** Nav logged in. */
-export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
+export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
+  sidebarContent,
+  'data-tour-id': tourId,
+}) => {
   const router = useRouter();
   const pathName = router.asPath?.split('?')[0] ?? '/';
   const { t: tCommon } = useTranslation('common');
@@ -400,6 +404,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({ sidebarContent }) => {
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
         <nav
           className={`hidden h-10 ${layoutCont.raceClasses.menuPrimaryClass} lg:block`}
+          data-tour-id={tourId}
           style={{
             backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme as PlayerRace)}')`,
           }}

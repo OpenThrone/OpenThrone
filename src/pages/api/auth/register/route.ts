@@ -4,6 +4,7 @@ import { ZodError } from 'zod';
 import { RegisterSchema } from '@/lib/validation';
 import { withCors } from '@/middleware/cors';
 import { AuthService } from '@/services';
+import { stringifyObj } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
 
 async function handle(req: NextApiRequest, res: NextApiResponse) {
@@ -17,6 +18,44 @@ async function handle(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default withCors(handle, { envVar: 'OT_AUTH_CORS_ORIGINS' });
+
+type RegistrationErrorResponse = {
+  readonly status: number;
+  readonly error: string;
+};
+
+const isErrorWithCode = (error: unknown): error is { readonly code: unknown } =>
+  typeof error === 'object' && error !== null && 'code' in error;
+
+const getRegistrationErrorResponse = (
+  error: unknown,
+): RegistrationErrorResponse | null => {
+  if (error instanceof ZodError) {
+    return { status: 400, error: 'Invalid input' };
+  }
+
+  if (error instanceof Error) {
+    if (error.message === 'User already exists') {
+      return {
+        status: 409,
+        error: 'An account with that email or commander name already exists.',
+      };
+    }
+
+    if (error.message === 'Account creation is temporarily restricted.') {
+      return { status: 403, error: error.message };
+    }
+  }
+
+  if (isErrorWithCode(error) && error.code === 'P2002') {
+    return {
+      status: 409,
+      error: 'An account with that email or commander name already exists.',
+    };
+  }
+
+  return null;
+};
 
 /** Handles Auth register POST requests. */
 export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
@@ -68,8 +107,10 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
     try {
       const data = RegisterSchema.parse(req.body);
       const { email, password, race, display_name, class: userClass } = data;
-
-      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const forwardedFor = req.headers['x-forwarded-for'];
+      const ip =
+        (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor) ??
+        req.socket.remoteAddress;
 
       const user = await AuthService.registerUser({
         email,
@@ -77,15 +118,16 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
         display_name,
         race,
         class: userClass,
-        ip: ip as string,
+        ip,
       });
 
-      return res.json(user);
+      return res.status(200).json(stringifyObj(user));
     } catch (error) {
-      if (error instanceof ZodError) {
+      const registrationError = getRegistrationErrorResponse(error);
+      if (registrationError) {
         return res
-          .status(400)
-          .json({ error: 'Invalid input', details: error.format() });
+          .status(registrationError.status)
+          .json({ error: registrationError.error });
       }
       throw error;
     }

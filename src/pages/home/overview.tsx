@@ -214,7 +214,12 @@ const Overview = () => {
           <Space h="md" />
         </>
       )}
-      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md" mb="lg">
+      <SimpleGrid
+        cols={{ base: 1, sm: 3 }}
+        spacing="md"
+        mb="lg"
+        data-tour-id="overview-stats"
+      >
         <StatCard
           title={t('overview.gold')}
           value={toLocale(user.gold, user.locale)}

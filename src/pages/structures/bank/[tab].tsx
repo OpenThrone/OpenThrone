@@ -124,7 +124,9 @@ export default function Bank() {
       <Space h="md" />
 
       {tab === 'deposit' && (
-        <BankDepositWithdraw user={user} forceUpdate={forceUpdate} />
+        <div data-tour-id="bank-panel">
+          <BankDepositWithdraw user={user} forceUpdate={forceUpdate} />
+        </div>
       )}
 
       {tab === 'history' && (

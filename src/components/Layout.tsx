@@ -22,6 +22,7 @@ import AnnouncementBanner from './AnnouncementBanner';
 import ConnectionStatusBanner from './ConnectionStatusBanner';
 import MainAreaSkeleton from './MainAreaSkeleton';
 import NavSkeleton from './NavSkeleton';
+import NewPlayerWalkthrough from './NewPlayerWalkthrough';
 import NewsBulletin from './news-bulletin';
 import SidebarSkeleton from './SidebarSkeleton';
 
@@ -177,6 +178,7 @@ const Layout = (props: IMainProps) => {
                 sidebarContent={
                   <MobileSidebarContent isMobile={isMobileSidebar} />
                 }
+                data-tour-id="primary-nav"
               />
             ) : (
               <NavLoggedOut />
@@ -193,6 +195,7 @@ const Layout = (props: IMainProps) => {
                 <>
                   {authorized && !isAdminRoute && (
                     <div
+                      data-tour-id="sidebar"
                       className="hidden w-full lg:block lg:w-[260px] lg:pr-4 xl:w-1/5"
                       style={{ backgroundColor: 'var(--ot-surface-2)' }}
                     >
@@ -207,8 +210,9 @@ const Layout = (props: IMainProps) => {
                         <Sidebar />
                       )}
                     </div>
-                      )}
+                  )}
                   <div
+                    data-tour-id="main-area"
                     className={`w-full ${raceClasses.borderClass} ${authorized ? 'lg:flex-1' : 'lg:w-full'} mainArea-bg`}
                   >
                     <ConnectionStatusBanner />
@@ -217,7 +221,7 @@ const Layout = (props: IMainProps) => {
                     {layoutLoading ? <MainAreaSkeleton /> : props.children}
                   </div>
                 </>
-               ) : (
+              ) : (
                 <div
                   className="w-full"
                   style={{ backgroundColor: 'var(--ot-surface)' }}
@@ -298,6 +302,7 @@ const Layout = (props: IMainProps) => {
           )}
         </div>
       </footer>
+      {authorized && <NewPlayerWalkthrough />}
     </div>
   );
 };

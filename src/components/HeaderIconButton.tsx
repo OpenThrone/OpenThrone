@@ -1,7 +1,12 @@
-import { ActionIcon, Indicator, Tooltip } from '@mantine/core';
+import {
+  ActionIcon,
+  type ActionIconProps,
+  Indicator,
+  Tooltip,
+} from '@mantine/core';
 import React, { forwardRef } from 'react';
 
-type HeaderIconButtonProps = {
+type HeaderIconButtonProps = ActionIconProps & {
   label: string;
   count?: number;
   children: React.ReactNode;
@@ -9,12 +14,16 @@ type HeaderIconButtonProps = {
 };
 
 const HeaderIconButton = forwardRef<HTMLButtonElement, HeaderIconButtonProps>(
-  ({ label, count = 0, children, 'data-testid': testId }, ref) => {
+  (
+    { label, count = 0, children, 'data-testid': testId, ...actionIconProps },
+    ref,
+  ) => {
     const show = count > 0;
     const badge = count > 99 ? '99+' : count > 9 ? '9+' : String(count);
 
     const button = (
       <ActionIcon
+        {...actionIconProps}
         size={34}
         radius={10}
         variant="subtle"

@@ -201,7 +201,7 @@ export class AuthService {
       ip,
     } = validatedData;
 
-    const exists = await userExists(email);
+    const exists = await userExists(email, display_name);
     if (exists) {
       throw new Error('User already exists');
     }

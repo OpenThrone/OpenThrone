@@ -7,7 +7,7 @@ import {
 import { Box, Button, Group, Space, Tabs, Text } from '@mantine/core';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
@@ -196,13 +196,12 @@ const ArmoryTab = () => {
         </Tabs>
       </Box>
       <Space h="md" />
-      <Box style={{ paddingBottom: '100px' }}>
+      <Box style={{ paddingBottom: '100px' }} data-tour-id="armory-panel">
         {Object.entries(items[tab.toUpperCase()] || {}).map(
           ([category, categoryItems]) =>
             categoryItems.length > 0 && (
-              <>
+              <Fragment key={category}>
                 <NewItemSection
-                  key={category}
                   heading={`${tab} ${category}`}
                   items={categoryItems}
                   itemCosts={itemCosts}
@@ -216,7 +215,7 @@ const ArmoryTab = () => {
                   )}
                 />
                 <Space h="md" />
-              </>
+              </Fragment>
             ),
         )}
       </Box>

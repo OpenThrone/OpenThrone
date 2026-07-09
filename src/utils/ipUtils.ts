@@ -2,9 +2,16 @@ import type { NextApiRequest } from 'next';
 
 /** Returns ip address for callers that need normalized game data. */
 export function getIpAddress(req: NextApiRequest): string {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  const forwardedIp = Array.isArray(forwardedFor)
+    ? forwardedFor[0]
+    : forwardedFor;
+
   return (
     (req.headers['cf-connecting-ip'] as string) ||
-    req.connection.remoteAddress ||
+    forwardedIp ||
+    req.connection?.remoteAddress ||
+    req.socket?.remoteAddress ||
     'No IP address detected.'
   );
 }

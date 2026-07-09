@@ -109,7 +109,7 @@ export const createUser = async (
   });
 };
 
-export const userExists = async (email: string) => {
+export const userExists = async (email: string, displayName?: string) => {
   return await prisma.users.count({
     where: {
       OR: [
@@ -118,7 +118,7 @@ export const userExists = async (email: string) => {
         },
         {
           display_name: {
-            equals: email,
+            equals: displayName ?? email,
             mode: 'insensitive',
           },
         },

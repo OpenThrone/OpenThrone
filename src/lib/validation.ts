@@ -18,7 +18,9 @@ export const RegisterSchema = z.object({
   race: z.enum(['ELF', 'HUMAN', 'GOBLIN', 'UNDEAD'], {
     message: 'Invalid race',
   }),
-  class: z.string().optional(),
+  class: z.enum(['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF'], {
+    message: 'Invalid class',
+  }),
   turnstileToken: z
     .string()
     .min(1, { message: 'Turnstile token required' })

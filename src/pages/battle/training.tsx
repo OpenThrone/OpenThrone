@@ -527,6 +527,7 @@ const Training: React.FC = () => {
       <Box
         style={{ paddingBottom: hasOrder ? '160px' : 0 }}
         data-testid="unit-training-panel"
+        data-tour-id="training-panel"
       >
         {unitTypesIndex
           .filter((unitType) => unitType.unitData !== null)
