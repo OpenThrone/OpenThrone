@@ -18,6 +18,7 @@ import {
   calculateTransferFee,
   getCompleteFriendTransferConfig,
 } from '@/services/Config.service';
+import { toBigIntSafe } from '@/utils/jsonHelpers';
 
 interface GoldTransferModalProps {
   isOpen: boolean;
@@ -56,7 +57,9 @@ export function GoldTransferModal({
   });
 
   const watchedAmount = watch('amount');
-  const transferAmount = watchedAmount ? BigInt(watchedAmount) : BigInt(0);
+  const transferAmount = watchedAmount
+    ? toBigIntSafe(watchedAmount)
+    : BigInt(0);
   const feeAmount =
     transferAmount > BigInt(0)
       ? calculateTransferFee(transferAmount)
@@ -212,7 +215,7 @@ export function GoldTransferModal({
               loading={loading}
               disabled={
                 !watchedAmount ||
-                BigInt(watchedAmount) <= BigInt(0) ||
+                toBigIntSafe(watchedAmount) <= BigInt(0) ||
                 totalCost > userGold ||
                 !config.enabled
               }

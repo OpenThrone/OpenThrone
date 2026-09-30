@@ -57,7 +57,9 @@
     "noRequestsFound": "No hay solicitudes",
     "unknownPlayer": "Jugador Desconocido",
     "errorFetchingRequests": "Error al obtener solicitudes:",
-    "errorRespondingToRequest": "Error al responder a la solicitud:"
+    "errorRespondingToRequest": "Error al responder a la solicitud:",
+    "declineConfirmTitle": "Rechazar solicitud",
+    "declineConfirmMessage": "¿Seguro que quieres rechazar esta solicitud?"
   },
   "goldRequests": {
     "title": "Solicitudes de Oro",

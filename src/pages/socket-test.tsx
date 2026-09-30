@@ -1,3 +1,4 @@
+import { getSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import { useEffect } from 'react';
 
@@ -40,6 +41,14 @@ const SocketTestPage = () => {
       </button>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  const session = await getSession(context);
+  if (!session?.user) {
+    return { redirect: { destination: '/account/login', permanent: false } };
+  }
+  return { props: {} };
 };
 
 export default SocketTestPage;

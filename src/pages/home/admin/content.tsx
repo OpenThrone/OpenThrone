@@ -34,6 +34,7 @@ import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
@@ -67,6 +68,7 @@ const ContentManagementPage = () => {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [kindFilter, setKindFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
@@ -421,7 +423,7 @@ const ContentManagementPage = () => {
                             size="sm"
                             variant="subtle"
                             color="red"
-                            onClick={() => handleDelete(p.id)}
+                            onClick={() => setDeleteTarget(p.id)}
                             aria-label="Delete"
                           >
                             <FontAwesomeIcon icon={faTrash} size="xs" />
@@ -564,6 +566,19 @@ const ContentManagementPage = () => {
           </Tabs.Panel>
         </Tabs>
       </Modal>
+      <ConfirmationModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget !== null) handleDelete(deleteTarget);
+          setDeleteTarget(null);
+        }}
+        title="Confirm deletion"
+        message="Are you sure you want to permanently delete this post?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="remove"
+      />
     </AdminLayout>
   );
 };

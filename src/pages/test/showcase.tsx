@@ -1,6 +1,7 @@
 import { faShieldHalved } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Box, Divider, SimpleGrid, Space, Text, Title } from '@mantine/core';
+import { getSession } from 'next-auth/react';
 
 import { NeumorphicTable } from '@/components/NumericTable';
 import { OrnatePanel } from '@/components/OrnatePanel';
@@ -44,6 +45,15 @@ const SECTIONS = [
 ];
 
 /** Component showcase. */
+
+export const getServerSideProps = async (context: any) => {
+  const session = await getSession(context);
+  if (!session?.user) {
+    return { redirect: { destination: '/account/login', permanent: false } };
+  }
+  return { props: {} };
+};
+
 export default function ComponentShowcase() {
   return (
     <MainArea title="Component Showcase">

@@ -265,5 +265,9 @@
       "retry": "Retry now",
       "dismiss": "Dismiss"
     }
-  }
+  },
+  "skipToContent": "Skip to main content",
+  "logout": "Logout",
+  "dismissNotification": "Dismiss notification",
+  "saved": "Saved successfully"
 }

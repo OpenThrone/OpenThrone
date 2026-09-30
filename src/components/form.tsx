@@ -18,6 +18,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { signIn } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
 import type { FieldErrorsImpl, Merge } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
@@ -33,13 +34,11 @@ import { logError } from '@/utils/logger';
 const registerSchema = z
   .object({
     /** User's chosen display name (min 3 characters). */
-    display_name: z
-      .string()
-      .min(3, 'Display name must be at least 3 characters long.'),
+    display_name: z.string().min(3, 'auth.displayNameMin'),
     /** User's email address. */
-    email: z.string().email('Invalid email address.'),
+    email: z.string().email('auth.invalidEmail'),
     /** User's password (min 8 characters). */
-    password: z.string().min(8, 'Password must be at least 8 characters long.'),
+    password: z.string().min(8, 'auth.passwordMin'),
     /** Password confirmation field. */
     password_confirm: z.string(),
     /** Selected player race. */
@@ -48,7 +47,7 @@ const registerSchema = z
     class: z.enum(['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF']),
   })
   .refine((data) => data.password === data.password_confirm, {
-    message: "Passwords don't match",
+    message: 'auth.passwordsDontMatch',
     path: ['password_confirm'], // Specify the field for the error message
   });
 
@@ -57,10 +56,18 @@ const registerSchema = z
  */
 const loginSchema = z.object({
   /** User's email address. */
-  email: z.string().email('Invalid email address.'),
+  email: z.string().email('auth.invalidEmail'),
   /** User's password. */
-  password: z.string().min(1, 'Password is required.'),
+  password: z.string().min(1, 'auth.passwordRequired'),
 });
+
+/** Maps stable server error codes from /api/auth/register to locale keys. */
+const AUTH_ERROR_KEYS: Record<string, string> = {
+  email_taken: 'auth.errorEmailTaken',
+  registrations_disabled: 'auth.errorRegistrationsDisabled',
+  captcha_failed: 'auth.errorCaptcha',
+  invalid_input: 'auth.errorInvalidInput',
+};
 
 /** Type inferred from the registerSchema. */
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -97,6 +104,7 @@ const Form: React.FC<FormProps> = ({
   layout = 'paper',
 }) => {
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation('account');
   const [showVacationModal, setShowVacationModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
@@ -136,6 +144,10 @@ const Form: React.FC<FormProps> = ({
     formState: { errors, isSubmitting },
   } = form;
 
+  // Zod messages are locale keys; resolve them for display
+  const fieldError = (err?: { message?: string }) =>
+    err?.message ? t(err.message) : undefined;
+
   /**
    * Callback function executed when Turnstile verification is successful.
    * @param token - The verification token provided by Turnstile.
@@ -146,17 +158,24 @@ const Form: React.FC<FormProps> = ({
 
   const inputStyles = {
     label: {
-      color: 'darkgray',
+      color: 'var(--mantine-color-dimmed)',
       fontWeight: 'bolder',
-      shadow: 'md',
     },
     input: {
       minHeight: 48,
       height: 48,
+      '&:focus': {
+        borderColor: 'var(--ot-accent)',
+        boxShadow: '0 0 0 2px var(--ot-accent)',
+      },
     },
     innerInput: {
       minHeight: 48,
       height: 48,
+      '&:focus': {
+        borderColor: 'var(--ot-accent)',
+        boxShadow: '0 0 0 2px var(--ot-accent)',
+      },
     },
   };
 
@@ -172,7 +191,22 @@ const Form: React.FC<FormProps> = ({
       invalidErrors.class?.message;
 
     if (message) {
-      setErrorMessage(message);
+      setErrorMessage(t(message));
+    }
+
+    const firstErrorField = (
+      [
+        'email',
+        'password',
+        'display_name',
+        'password_confirm',
+        'race',
+        'class',
+      ] as const
+    ).find((field) => invalidErrors[field]);
+    if (firstErrorField) {
+      // setFocus is typed per form; the field is a validated key of either schema
+      form.setFocus(firstErrorField as 'email');
     }
   };
 
@@ -191,7 +225,7 @@ const Form: React.FC<FormProps> = ({
       });
       if (res.ok) {
         setShowVacationModal(false);
-        toast.success('Vacation mode ended. Logging in...');
+        toast.success(t('auth.vacationEnded'));
         const loginValues = form.getValues() as LoginFormData;
         await handleLogin(loginValues.email, loginValues.password);
       } else {
@@ -199,7 +233,7 @@ const Form: React.FC<FormProps> = ({
       }
     } catch (error) {
       logError(error);
-      setErrorMessage('Could not end vacation mode');
+      setErrorMessage(t('auth.vacationEndFailed'));
     }
   };
 
@@ -228,17 +262,15 @@ const Form: React.FC<FormProps> = ({
             setShowVacationModal(true);
             setUserId(errorObj.userID);
           } else {
-            setErrorMessage(
-              errorObj.message || 'Invalid credentials or server error.',
-            );
+            setErrorMessage(errorObj.message || t('auth.invalidCredentials'));
           }
         } catch {
-          setErrorMessage(error || 'Invalid credentials or server error.');
+          setErrorMessage(error || t('auth.invalidCredentials'));
         }
       }
     } catch (error) {
       logError(error);
-      setErrorMessage('Something went wrong during login!');
+      setErrorMessage(t('auth.loginFailedGeneric'));
     } finally {
       turnsTileRef.current?.reset();
       setLoading(false); // Ensure loading is set to false after login attempt
@@ -276,14 +308,19 @@ const Form: React.FC<FormProps> = ({
           setRegistrationSuccess(true);
         } else {
           const message = await res.json();
-          setErrorMessage(message.error || 'Registration failed.');
+          const code: string = message.error;
+          setErrorMessage(
+            code in AUTH_ERROR_KEYS
+              ? t(AUTH_ERROR_KEYS[code])
+              : code || t('auth.registrationFailedGeneric'),
+          );
           turnsTileRef.current?.reset(); // Reset turnstile on registration failure
         }
         setLoading(false); // Set loading false after registration attempt
       }
     } catch (error) {
       logError(error);
-      setErrorMessage('Something went wrong!');
+      setErrorMessage(t('auth.somethingWentWrong'));
       setLoading(false); // Ensure loading is false on catch
       turnsTileRef.current?.reset(); // Reset turnstile on error
     }
@@ -291,14 +328,13 @@ const Form: React.FC<FormProps> = ({
 
   // Cast errors to the helper type for safe access
   const formErrors = errors as FormErrors;
-  const errorHelpId = `${type}-form-error-help`;
   const validationMessage =
-    formErrors.email?.message ||
-    formErrors.password?.message ||
-    formErrors.display_name?.message ||
-    formErrors.password_confirm?.message ||
-    formErrors.race?.message ||
-    formErrors.class?.message;
+    fieldError(formErrors.email) ||
+    fieldError(formErrors.password) ||
+    fieldError(formErrors.display_name) ||
+    fieldError(formErrors.password_confirm) ||
+    fieldError(formErrors.race) ||
+    fieldError(formErrors.class);
 
   const titleColor = layout === 'bare' ? theme.colors.gray[1] : 'gray';
   const bodyColor = layout === 'bare' ? theme.colors.gray[3] : 'gray';
@@ -306,13 +342,13 @@ const Form: React.FC<FormProps> = ({
   const formBody = registrationSuccess ? (
     <>
       <Title order={2} ta="center" mb="md" c={titleColor}>
-        Registration Successful!
+        {t('auth.registrationSuccess')}
       </Title>
       <Text ta="center" size="sm" c={bodyColor}>
-        Your account has been created. You can now{' '}
+        {t('auth.accountCreated')}{' '}
         <Link href="/account/login">
           <Text component="span" color="blue" inherit>
-            sign in
+            {t('auth.signInHere')}
           </Text>
         </Link>
         .
@@ -321,113 +357,105 @@ const Form: React.FC<FormProps> = ({
   ) : (
     <>
       <Title order={2} ta="center" mb="md" c={titleColor}>
-        {type === 'login' ? 'Sign In' : 'Sign Up'}
+        {type === 'login' ? t('auth.signIn') : t('auth.signUp')}
       </Title>
       <form onSubmit={handleSubmit(onSubmit, handleInvalid)}>
         <Flex direction="column" gap="md">
           {validationMessage ? (
             <Text
               role="alert"
-              aria-describedby={errorHelpId}
               data-testid="error-message"
               c="red.5"
               size="sm"
               ta="center"
             >
               {validationMessage}
-              <span id={errorHelpId} className="sr-only">
-                Review the highlighted fields for details.
-              </span>
+              <span className="sr-only">{t('auth.reviewFields')}</span>
             </Text>
           ) : null}
           {type === 'login' ? (
             <>
               <TextInput
                 id="email"
-                label="Email Address"
-                placeholder="username@email.com"
+                type="email"
+                label={t('auth.emailLabel')}
+                placeholder={t('auth.emailPlaceholder')}
                 autoComplete="email"
                 required
                 size="md"
                 styles={inputStyles}
                 {...register('email')}
-                error={formErrors.email?.message}
+                error={fieldError(formErrors.email)}
                 data-testid="email-input"
               />
               <PasswordInput
                 id="password"
-                label="Password"
-                placeholder="Password"
+                label={t('auth.passwordLabel')}
+                placeholder={t('auth.passwordPlaceholder')}
+                autoComplete="current-password"
                 required
                 size="md"
                 styles={inputStyles}
                 {...register('password')}
-                error={formErrors.password?.message}
+                error={fieldError(formErrors.password)}
                 data-testid="password-input"
               />
-              <Text id="login-password-help" className="sr-only">
-                Enter your password to sign in.
-              </Text>
             </>
           ) : (
             <>
               <TextInput
                 id="display_name"
-                label="User Name"
-                placeholder="DisplayName"
+                label={t('auth.userNameLabel')}
+                placeholder={t('auth.userNamePlaceholder')}
                 autoComplete="username"
                 required
                 size="md"
                 styles={inputStyles}
                 {...register('display_name')}
-                error={formErrors.display_name?.message}
+                error={fieldError(formErrors.display_name)}
               />
               <TextInput
                 id="email"
                 type="email"
-                label="Email Address"
-                placeholder="username@email.com"
+                label={t('auth.emailLabel')}
+                placeholder={t('auth.emailPlaceholder')}
                 autoComplete="email"
                 required
                 size="md"
                 styles={inputStyles}
                 {...register('email')}
-                error={formErrors.email?.message}
+                error={fieldError(formErrors.email)}
               />
               <PasswordInput
                 id="password"
-                label="Password"
-                placeholder="Password"
+                label={t('auth.passwordLabel')}
+                placeholder={t('auth.passwordPlaceholder')}
+                autoComplete="new-password"
                 required
                 size="md"
                 styles={inputStyles}
                 {...register('password')}
-                error={formErrors.password?.message}
+                error={fieldError(formErrors.password)}
               />
-              <Text id="register-password-help" className="sr-only">
-                Use at least 8 characters for your password.
-              </Text>
               <PasswordInput
                 id="password_confirm"
-                label="Confirm Password"
-                placeholder="Confirm Password"
+                label={t('auth.confirmPasswordLabel')}
+                placeholder={t('auth.confirmPasswordPlaceholder')}
+                autoComplete="new-password"
                 required
                 size="md"
                 styles={inputStyles}
                 {...register('password_confirm')}
-                error={formErrors.password_confirm?.message}
+                error={fieldError(formErrors.password_confirm)}
               />
-              <Text id="register-password-confirm-help" className="sr-only">
-                Repeat your password to confirm it.
-              </Text>
               <Controller
                 name="race"
                 control={control}
                 render={({ field, fieldState }) => (
                   <Select
                     id="race-select"
-                    label="Race"
-                    placeholder="Pick one"
+                    label={t('auth.raceLabel')}
+                    placeholder={t('auth.pickOne')}
                     required
                     data={[
                       { value: 'HUMAN', label: 'HUMAN' },
@@ -438,7 +466,7 @@ const Form: React.FC<FormProps> = ({
                     size="md"
                     styles={inputStyles}
                     {...field}
-                    error={fieldState.error?.message}
+                    error={fieldError(fieldState.error)}
                   />
                 )}
               />
@@ -448,8 +476,8 @@ const Form: React.FC<FormProps> = ({
                 render={({ field, fieldState }) => (
                   <Select
                     id="class-select"
-                    label="Class"
-                    placeholder="Pick one"
+                    label={t('auth.classLabel')}
+                    placeholder={t('auth.pickOne')}
                     required
                     data={[
                       { value: 'FIGHTER', label: 'FIGHTER' },
@@ -460,7 +488,7 @@ const Form: React.FC<FormProps> = ({
                     size="md"
                     styles={inputStyles}
                     {...field}
-                    error={fieldState.error?.message}
+                    error={fieldError(fieldState.error)}
                   />
                 )}
               />
@@ -474,7 +502,7 @@ const Form: React.FC<FormProps> = ({
                 className="text-[1.05rem] font-bold text-gray-400"
                 data-size="md"
               >
-                Captcha
+                {t('auth.captcha')}
               </label>
               <Turnstile
                 siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_ID || ''}
@@ -498,29 +526,31 @@ const Form: React.FC<FormProps> = ({
             {loading || isSubmitting ? (
               <LoadingDots color="#808080" />
             ) : (
-              <Text>{type === 'login' ? 'Sign In' : 'Sign Up'}</Text>
+              <Text>
+                {type === 'login' ? t('auth.signIn') : t('auth.signUp')}
+              </Text>
             )}
           </Button>
           <Space h="md" />
           {type === 'login' ? (
             <Text ta="center" size="sm" c={bodyColor}>
-              Don&apos;t have an account?{' '}
+              {t('auth.noAccountPrompt')}{' '}
               <Link href="/account/register">
                 <Text component="span" color="blue" inherit>
-                  Sign up
+                  {t('auth.signUpFree')}
                 </Text>
               </Link>{' '}
-              for free.
+              {t('auth.forFree')}
             </Text>
           ) : (
             <Text ta="center" size="sm" c={bodyColor}>
-              Already have an account?{' '}
+              {t('auth.haveAccountPrompt')}{' '}
               <Link href="/account/login">
                 <Text component="span" color="blue" inherit>
-                  Sign in
+                  {t('auth.signInInstead')}
                 </Text>
               </Link>{' '}
-              instead.
+              {t('auth.instead')}
             </Text>
           )}
         </Flex>
@@ -547,14 +577,11 @@ const Form: React.FC<FormProps> = ({
       <Modal
         opened={showVacationModal}
         onClose={() => setShowVacationModal(false)}
-        title="Vacation Mode Active"
+        title={t('auth.vacationTitle')}
       >
-        <Text>
-          Your account is currently in vacation mode. Do you want to end
-          vacation mode and log in?
-        </Text>
+        <Text>{t('auth.vacationBody')}</Text>
         <Button onClick={handleVacationOverride} mt="md" fullWidth>
-          End Vacation Mode
+          {t('auth.endVacation')}
         </Button>
       </Modal>
     </Center>

@@ -12,7 +12,14 @@
     "cannotAttackSelf": "No puedes atacarte a ti mismo.",
     "cannotAttackProtected": "Este jugador está bajo protección.",
     "cannotAttackTooStrong": "Este jugador es demasiado fuerte para que lo ataques.",
-    "cannotAttackTooWeak": "Este jugador es demasiado débil para que lo ataques."
+    "cannotAttackTooWeak": "Este jugador es demasiado débil para que lo ataques.",
+    "turnsQuestion": "¿Cuántos turnos?",
+    "turnsDescription": "Elige cuántos turnos de ataque gastarás.",
+    "submitting": "Enviando…",
+    "invalidTurns": "Introduce al menos 1 turno.",
+    "untrainTitle": "Confirmar desentrenamiento",
+    "untrainMessage": "El desentrenamiento solo reembolsa el 75% del oro gastado; perderás {{gold}} de oro. No se puede deshacer.",
+    "confirm": "Confirmar"
   },
   "users": {
     "title": "Atacar Usuarios",
@@ -167,7 +174,9 @@
     "failedToTrain": "Error al {{action}} unidades. Por favor, inténtalo de nuevo.",
     "trainingSuccessful": "¡{{action}} exitoso!",
     "loadingUserData": "Cargando datos de usuario...",
-    "userNotFound": "Usuario no encontrado. Por favor, inténtalo de nuevo."
+    "userNotFound": "Usuario no encontrado. Por favor, inténtalo de nuevo.",
+    "untrainWarning": "El desentrenamiento solo reembolsa el 75% del oro gastado.",
+    "cancel": "Cancelar"
   },
   "upgrades": {
     "title": "Mejoras de Batalla",

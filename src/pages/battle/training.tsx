@@ -25,6 +25,7 @@ import React, {
   useState,
 } from 'react';
 
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import NewUnitSection from '@/components/newUnitSection';
@@ -71,6 +72,7 @@ const Training: React.FC = () => {
   const { t } = useTranslation('battle');
   const { user, forceUpdate } = useUser();
   const [totalCost, setTotalCost] = useState(0);
+  const [showUntrainConfirm, setShowUntrainConfirm] = useState(false);
   const [unitCosts, setUnitCosts] = useState<{ [key: string]: number }>({}); // Maps unitId to quantity input
   const [isSummaryDocked, setIsSummaryDocked] = useState(false);
   const summarySentinelRef = useRef<HTMLDivElement | null>(null);
@@ -406,6 +408,10 @@ const Training: React.FC = () => {
 
   const handleTrainAll = () => handleFormSubmit('train');
   const handleUntrainAll = () => handleFormSubmit('untrain');
+  const confirmUntrain = () => {
+    setShowUntrainConfirm(false);
+    handleUntrainAll();
+  };
 
   const hasOrder = totalCost > 0;
 
@@ -612,7 +618,7 @@ const Training: React.FC = () => {
                   </Button>
                   <Button
                     color="gray"
-                    onClick={handleUntrainAll}
+                    onClick={() => setShowUntrainConfirm(true)}
                     disabled={totalCost <= 0}
                     style={{
                       backgroundColor: '#1f2b3b',
@@ -624,11 +630,26 @@ const Training: React.FC = () => {
                     {t('training.untrain')}
                   </Button>
                 </Group>
+                <Text size="xs" c="dimmed">
+                  {t('training.untrainWarning')}
+                </Text>
               </Flex>
             </GameCard>
           </Box>
         </Box>
       )}
+      <ConfirmationModal
+        isOpen={showUntrainConfirm}
+        onClose={() => setShowUntrainConfirm(false)}
+        onConfirm={confirmUntrain}
+        title={t('attack.untrainTitle')}
+        message={t('attack.untrainMessage', {
+          gold: toLocale(Math.ceil(totalCost * 0.25), user.locale),
+        })}
+        confirmText={t('attack.confirm')}
+        cancelText={t('training.cancel')}
+        type="remove"
+      />
     </MainArea>
   );
 };

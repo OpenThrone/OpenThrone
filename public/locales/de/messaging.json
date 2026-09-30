@@ -12,5 +12,6 @@
   "errorFetchingMessages": "Fehler beim Abrufen von Nachrichten",
   "errorRefetchingRooms": "Fehler beim erneuten Abrufen von Räumen nach dem Modal",
   "unknown": "Unbekannt",
-  "reader": "Leser"
+  "reader": "Leser",
+  "errorGeneric": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
 }

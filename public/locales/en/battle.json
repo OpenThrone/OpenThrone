@@ -12,7 +12,14 @@
     "cannotAttackSelf": "You cannot attack yourself.",
     "cannotAttackProtected": "This player is under protection.",
     "cannotAttackTooStrong": "This player is too strong for you to attack.",
-    "cannotAttackTooWeak": "This player is too weak for you to attack."
+    "cannotAttackTooWeak": "This player is too weak for you to attack.",
+    "turnsQuestion": "How many turns?",
+    "turnsDescription": "Choose how many attack turns to spend.",
+    "submitting": "Submitting…",
+    "invalidTurns": "Enter at least 1 turn.",
+    "untrainTitle": "Confirm Untrain",
+    "untrainMessage": "Untraining refunds only 75% of the gold spent — you will lose {{gold}} gold. This cannot be undone.",
+    "confirm": "Confirm"
   },
   "users": {
     "title": "Attack Users",
@@ -46,7 +53,6 @@
     "youBeatRecently": "You beat recently",
     "theyBeatYouRecently": "They beat you recently",
     "username": "Username",
-    "alliance": "Alliance",
     "gold": "Gold",
     "population": "Population",
     "level": "Level",
@@ -91,13 +97,16 @@
   "battleSimulator": {
     "title": "Battle Simulator",
     "description": "Simulate battles to test your strategies.",
-    "simulate": "Simulate",
-    "results": "Results",
+    "copyLink": "Copy Shareable Link",
+    "linkCopied": "Copied Link!",
     "attacker": "Attacker",
     "defender": "Defender",
-    "winner": "Winner",
-    "casualties": "Casualties",
-    "goldStolen": "Gold Stolen"
+    "controls": "Controls",
+    "turns": "Turns",
+    "runSimulation": "Run Simulation",
+    "reset": "Reset",
+    "loading": "Loading...",
+    "error": "An error occurred"
   },
   "results": {
     "title": "Battle Results",
@@ -165,7 +174,9 @@
     "failedToTrain": "Failed to {{action}} units. Please try again.",
     "trainingSuccessful": "{{action}} successful!",
     "loadingUserData": "Loading user data...",
-    "userNotFound": "User not found. Please try again."
+    "userNotFound": "User not found. Please try again.",
+    "untrainWarning": "Untraining refunds only 75% of spent gold.",
+    "cancel": "Cancel"
   },
   "upgrades": {
     "title": "Battle Upgrades",
@@ -181,19 +192,5 @@
     "defensiveUnits": "Defensive Units",
     "onlyLevel2Units": "Only Level 2+ Units",
     "battleUpgradeInformation": "Battle Upgrade Information"
-  },
-  "battleSimulator": {
-    "title": "Battle Simulator",
-    "description": "Simulate battles to test your strategies.",
-    "copyLink": "Copy Shareable Link",
-    "linkCopied": "Copied Link!",
-    "attacker": "Attacker",
-    "defender": "Defender",
-    "controls": "Controls",
-    "turns": "Turns",
-    "runSimulation": "Run Simulation",
-    "reset": "Reset",
-    "loading": "Loading...",
-    "error": "An error occurred"
   }
 }

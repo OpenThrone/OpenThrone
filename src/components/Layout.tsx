@@ -130,6 +130,9 @@ const Layout = (props: IMainProps) => {
         '--ot-border': 'rgba(255,204,102,0.35)',
       }}
     >
+      <a href="#main-content" className="skip-link">
+        {t('skipToContent')}
+      </a>
       <div
         className={`w-full grow ${
           authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
@@ -148,7 +151,7 @@ const Layout = (props: IMainProps) => {
                 authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
               } pb-10 pt-2`}
             >
-              <h1 className="title text-center text-4xl font-medium sm:text-5xl md:text-6xl">
+              <div className="title text-center text-4xl font-medium sm:text-5xl md:text-6xl">
                 <Image
                   src={`${getAssetPath('OpenThrone')}`}
                   alt={t('app.title')}
@@ -162,7 +165,7 @@ const Layout = (props: IMainProps) => {
                   width="200"
                   height="100"
                 />
-              </h1>
+              </div>
               <h2
                 className="text-center text-base sm:text-lg md:text-xl"
                 style={{ textShadow: '0 -1px' }}
@@ -186,7 +189,6 @@ const Layout = (props: IMainProps) => {
           <main
             className="h-full grow overflow-y-auto px-3 pb-8"
             id="main-content"
-            role="main"
             tabIndex={-1}
           >
             <div className="flex h-full flex-wrap lg:flex-nowrap">

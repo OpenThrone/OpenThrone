@@ -10,6 +10,7 @@
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslation } from 'next-i18next';
 import type { MouseEventHandler, ReactNode } from 'react';
 import React, {
   createContext,
@@ -316,6 +317,7 @@ const SnackbarContainer = ({
   position: Position;
   maxSnacks: number;
 }) => {
+  const { t } = useTranslation('common');
   const positionIsTop = position.startsWith('top');
   const y = positionIsTop ? -50 : 50;
 
@@ -345,6 +347,8 @@ const SnackbarContainer = ({
   return (
     <motion.div
       layout
+      role="status"
+      aria-live="polite"
       className={`fixed inset-x-0 mx-auto flex w-[calc(100vw-3rem)] flex-col-reverse space-y-4 space-y-reverse sm:w-[22.25rem] ${POSITION_CLASSES[position]}`}
       style={{ zIndex: 1200 }}
     >
@@ -414,7 +418,10 @@ const SnackbarContainer = ({
                     </button>
                   )}
                   {dismissable && (
-                    <button onClick={() => handleDismiss(id)}>
+                    <button
+                      onClick={() => handleDismiss(id)}
+                      aria-label={t('dismissNotification')}
+                    >
                       <XIcon className="size-4" />
                     </button>
                   )}

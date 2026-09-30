@@ -12,5 +12,6 @@
   "errorFetchingMessages": "Failed to fetch messages",
   "errorRefetchingRooms": "Error refetching rooms after modal",
   "unknown": "Unknown",
-  "reader": "Reader"
+  "reader": "Reader",
+  "errorGeneric": "Something went wrong. Please try again."
 }

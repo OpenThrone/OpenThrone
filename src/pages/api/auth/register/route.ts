@@ -31,26 +31,26 @@ const getRegistrationErrorResponse = (
   error: unknown,
 ): RegistrationErrorResponse | null => {
   if (error instanceof ZodError) {
-    return { status: 400, error: 'Invalid input' };
+    return { status: 400, error: 'invalid_input' };
   }
 
   if (error instanceof Error) {
     if (error.message === 'User already exists') {
       return {
         status: 409,
-        error: 'An account with that email or commander name already exists.',
+        error: 'email_taken',
       };
     }
 
     if (error.message === 'Account creation is temporarily restricted.') {
-      return { status: 403, error: error.message };
+      return { status: 403, error: 'registrations_disabled' };
     }
   }
 
   if (isErrorWithCode(error) && error.code === 'P2002') {
     return {
       status: 409,
-      error: 'An account with that email or commander name already exists.',
+      error: 'email_taken',
     };
   }
 
@@ -61,7 +61,7 @@ const getRegistrationErrorResponse = (
 export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
   try {
     if (process.env.NEXT_PUBLIC_DISABLE_REGISTRATION === 'true') {
-      return res.status(403).json({ error: 'Registrations are disabled' });
+      return res.status(403).json({ error: 'registrations_disabled' });
     }
 
     const disableTurnstile =
@@ -81,13 +81,13 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
           'Registration captcha enabled but NEXT_PUBLIC_TURNSTILE_SECRET is not set',
         );
         return res.status(500).json({
-          error: 'Captcha is enabled but not configured on the server',
+          error: 'captcha_failed',
         });
       }
 
       const { turnstileToken } = req.body as { turnstileToken?: string };
       if (!turnstileToken) {
-        return res.status(400).json({ error: 'Captcha token required' });
+        return res.status(400).json({ error: 'captcha_failed' });
       }
 
       const captchaRes = await fetch(
@@ -100,7 +100,7 @@ export async function handlePOST(res: NextApiResponse, req: NextApiRequest) {
       );
       const captchaData = await captchaRes.json();
       if (!captchaData.success) {
-        return res.status(400).json({ error: 'Captcha verification failed' });
+        return res.status(400).json({ error: 'captcha_failed' });
       }
     }
 

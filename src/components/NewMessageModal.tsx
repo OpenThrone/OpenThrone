@@ -14,7 +14,10 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
+import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useState } from 'react';
+
+import { logError } from '@/utils/logger';
 
 const EMPTY_EXISTING_USERS: number[] = [];
 
@@ -43,6 +46,8 @@ const NewMessageModal = ({
   isDirectMessage = false,
   prefillRecipient = null,
 }: NewMessageModalProps) => {
+  const { t } = useTranslation('messaging');
+  const [error, setError] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [message, setMessage] = useState('');
   const [groupName, setGroupName] = useState('');
@@ -96,6 +101,7 @@ const NewMessageModal = ({
         }
       } catch (error) {
         logError('Failed to fetch users:', error);
+        setError(t('errorGeneric'));
       } finally {
         setLoading(false);
       }
@@ -205,9 +211,12 @@ const NewMessageModal = ({
       }
     } catch (error) {
       logError('Error creating or modifying chat:', error);
+      setError(t('errorGeneric'));
     } finally {
       setSubmitting(false);
-      onClose();
+      if (!error) {
+        onClose();
+      }
     }
   };
 
@@ -217,6 +226,7 @@ const NewMessageModal = ({
     setGroupName('');
     setSearchValue('');
     setAvailableUsers([]);
+    setError('');
   };
 
   // Custom item renderer for MultiSelect
@@ -251,6 +261,11 @@ const NewMessageModal = ({
       size="md"
     >
       <Stack gap="md">
+        {error ? (
+          <Text c="red" role="alert">
+            {error}
+          </Text>
+        ) : null}
         <MultiSelect
           data={availableUsers}
           value={selectedUsers}

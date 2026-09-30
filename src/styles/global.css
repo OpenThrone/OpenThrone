@@ -538,6 +538,10 @@ body{
 }
 
 .skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
   display: inline-block;
   padding: 8px 12px;
   background: #111;
@@ -546,6 +550,20 @@ body{
   text-decoration: none;
   border-radius: 4px;
   margin: 8px;
+}
+
+.skip-link:focus {
+  left: 8px;
+  top: 8px;
+  outline: 2px solid var(--ot-accent);
+}
+
+/* Visible focus ring for auth form inputs (login/register).
+   rpgComponentOverrides (themes.tsx) apply border/box-shadow as inline styles,
+   which only !important can override; inline styles cannot express :focus. */
+input.mantine-Input-input.mantine-Input-input:focus {
+  border-color: var(--ot-accent) !important;
+  box-shadow: 0 0 0 2px var(--ot-accent) !important;
 }
 
 [data-testid="nav-link"]:focus-visible,

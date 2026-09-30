@@ -224,6 +224,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
   const [resetTimer, setResetTimer] = useState<number | null>(null);
 
   const fetchSocialNotifications = useCallback(async () => {
+    if (!user) return;
     try {
       const response = await fetch('/api/social/notifications/count');
       if (!response.ok) return;
@@ -232,7 +233,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
     } catch {
       // keep existing count on failure
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchSocialNotifications();
@@ -424,6 +425,12 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
                           : 'text-elf-link-link'
                       }  bg-link-gradient font-bold transition duration-200 text-shadow text-shadow-xs text-uppercase-menu text-gradient-link hover:bg-orange-gradient hover:text-gradient-orange`}
                       onMouseOver={() => {
+                        setActiveSubMenu(resolvedSubMenus[link.key] || []);
+                      }}
+                      onFocus={() => {
+                        setActiveSubMenu(resolvedSubMenus[link.key] || []);
+                      }}
+                      onClick={() => {
                         setActiveSubMenu(resolvedSubMenus[link.key] || []);
                       }}
                       data-testid={`nav-${link.key}-link`}

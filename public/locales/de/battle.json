@@ -12,7 +12,14 @@
     "cannotAttackSelf": "Sie können sich nicht selbst angreifen.",
     "cannotAttackProtected": "Dieser Spieler steht unter Schutz.",
     "cannotAttackTooStrong": "Dieser Spieler ist zu stark, um ihn anzugreifen.",
-    "cannotAttackTooWeak": "Dieser Spieler ist zu schwach, um ihn anzugreifen."
+    "cannotAttackTooWeak": "Dieser Spieler ist zu schwach, um ihn anzugreifen.",
+    "turnsQuestion": "Wie viele Runden?",
+    "turnsDescription": "Lege fest, wie viele Angriffsrunden du ausgeben willst.",
+    "submitting": "Senden…",
+    "invalidTurns": "Gib mindestens 1 Runde ein.",
+    "untrainTitle": "Abtraining bestätigen",
+    "untrainMessage": "Beim Abtraining werden nur 75% des ausgegebenen Goldes erstattet – du verlierst {{gold}} Gold. Dies kann nicht rückgängig gemacht werden.",
+    "confirm": "Bestätigen"
   },
   "users": {
     "title": "Benutzer angreifen",
@@ -167,7 +174,9 @@
     "failedToTrain": "{{action}} der Einheiten fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "trainingSuccessful": "{{action}} erfolgreich!",
     "loadingUserData": "Benutzerdaten werden geladen...",
-    "userNotFound": "Benutzer nicht gefunden. Bitte versuchen Sie es erneut."
+    "userNotFound": "Benutzer nicht gefunden. Bitte versuchen Sie es erneut.",
+    "untrainWarning": "Beim Abtraining werden nur 75% des ausgegebenen Goldes erstattet.",
+    "cancel": "Abbrechen"
   },
   "upgrades": {
     "title": "Kampfverbesserungen",

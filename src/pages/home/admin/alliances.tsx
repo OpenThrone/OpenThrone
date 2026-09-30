@@ -12,6 +12,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { logError } from '@/utils/logger';
 
@@ -22,6 +23,7 @@ const AllianceAdminPage = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [dissolvingId, setDissolvingId] = useState<number | null>(null);
+  const [dissolveTarget, setDissolveTarget] = useState<number | null>(null);
 
   const limit = 20;
 
@@ -56,8 +58,6 @@ const AllianceAdminPage = () => {
   };
 
   const handleDissolve = async (id: number) => {
-    if (!confirm('Are you sure? This will permanently delete the alliance.'))
-      return;
     setDissolvingId(id);
     try {
       const res = await fetch(`/api/admin/game/alliances?allianceId=${id}`, {
@@ -139,7 +139,7 @@ const AllianceAdminPage = () => {
                           size="xs"
                           color="red"
                           variant="outline"
-                          onClick={() => handleDissolve(a.id)}
+                          onClick={() => setDissolveTarget(a.id)}
                           loading={dissolvingId === a.id}
                         >
                           Dissolve
@@ -162,6 +162,20 @@ const AllianceAdminPage = () => {
           )}
         </GameCard>
       </Stack>
+      <ConfirmationModal
+        isOpen={dissolveTarget !== null}
+        onClose={() => setDissolveTarget(null)}
+        onConfirm={() => {
+          if (dissolveTarget !== null) handleDissolve(dissolveTarget);
+          setDissolveTarget(null);
+        }}
+        title="Dissolve alliance"
+        message="Are you sure? This will permanently delete the alliance."
+        confirmText="Dissolve"
+        cancelText="Cancel"
+        isLoading={dissolvingId !== null}
+        type="remove"
+      />
     </AdminLayout>
   );
 };

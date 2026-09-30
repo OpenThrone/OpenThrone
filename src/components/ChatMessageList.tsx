@@ -457,12 +457,6 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                   </Menu.Item>
                 </>
               )}
-              <Menu.Item>Search</Menu.Item>
-              {roomInfo?.isDirect ? (
-                <Menu.Item color="red">Delete conversation</Menu.Item>
-              ) : (
-                <Menu.Item color="red">Leave group</Menu.Item>
-              )}
             </Menu.Dropdown>
           </Menu>
         </Group>

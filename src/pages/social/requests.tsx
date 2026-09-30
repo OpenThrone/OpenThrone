@@ -11,6 +11,7 @@ import {
 import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
 
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
@@ -47,6 +48,7 @@ const Requests = () => {
     id: number;
     action: RequestAction;
   } | null>(null);
+  const [declineTarget, setDeclineTarget] = useState<number | null>(null);
   const { user } = useUser();
 
   useEffect(() => {
@@ -205,7 +207,7 @@ const Requests = () => {
                   color="red"
                   variant="outline"
                   loading={isLoading('decline')}
-                  onClick={() => handleRespond(request.id, 'decline')}
+                  onClick={() => setDeclineTarget(request.id)}
                 >
                   {t('requests.decline')}
                 </Button>
@@ -256,6 +258,20 @@ const Requests = () => {
           {renderRows(outgoingRequests, 'outgoing')}
         </StyledTable>
       </GameCard>
+      <ConfirmationModal
+        isOpen={declineTarget !== null}
+        onClose={() => setDeclineTarget(null)}
+        onConfirm={() => {
+          if (declineTarget !== null) handleRespond(declineTarget, 'decline');
+          setDeclineTarget(null);
+        }}
+        title={t('requests.declineConfirmTitle')}
+        message={t('requests.declineConfirmMessage')}
+        confirmText={t('requests.decline')}
+        cancelText={t('requests.cancel')}
+        isLoading={Boolean(actionState)}
+        type="remove"
+      />
     </MainArea>
   );
 };

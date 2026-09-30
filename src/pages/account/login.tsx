@@ -9,9 +9,10 @@ import {
   Space,
   Text,
 } from '@mantine/core';
+import type { GetServerSideProps } from 'next';
 import Link from 'next/link';
+import { getSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
-import type { GetStaticProps } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import React, { useEffect, useState } from 'react';
 
@@ -62,122 +63,132 @@ const Login = () => {
         description={t('login.metaDescription')}
       />
       <MainArea title={t('login.title')}>
-      <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-          <div className="public-rise">
-            <GameCard
-              title={t('login.returnToWarRoom')}
-              icon={faKey}
-              goldAccent={false}
-            >
-              <Text size="sm" c="gray.3" lh={1.7}>
-                {t('login.kingdomWaiting')}
-              </Text>
-              <Box mt="md">
-                <Text
-                  size="xs"
-                  c="dimmed"
-                  tt="uppercase"
-                  fw={700}
-                  style={{ letterSpacing: '0.3em' }}
-                >
-                  {t('login.beforeYouEnter')}
+        <div className="mx-auto w-full max-w-6xl px-4 py-8">
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+            <div className="public-rise">
+              <GameCard
+                title={t('login.returnToWarRoom')}
+                icon={faKey}
+                goldAccent={false}
+              >
+                <Text size="sm" c="gray.3" lh={1.7}>
+                  {t('login.kingdomWaiting')}
                 </Text>
-                <Text size="sm" c="gray.4" mt="xs">
-                  {t('login.newToOpenThrone')}
-                </Text>
-              </Box>
-              <Group mt="md">
-                <Button
-                  component={Link}
-                  href="/account/register"
-                  size="sm"
-                  color="yellow"
-                >
-                  {t('login.createCommander')}
-                </Button>
-                <Button
-                  component={Link}
-                  href="/community/news"
-                  size="sm"
-                  variant="outline"
-                  color="gray"
-                >
-                  {t('login.latestNews')}
-                </Button>
-              </Group>
-            </GameCard>
-          </div>
+                <Box mt="md">
+                  <Text
+                    size="xs"
+                    c="dimmed"
+                    tt="uppercase"
+                    fw={700}
+                    style={{ letterSpacing: '0.1em' }}
+                  >
+                    {t('login.beforeYouEnter')}
+                  </Text>
+                  <Text size="sm" c="gray.4" mt="xs">
+                    {t('login.newToOpenThrone')}
+                  </Text>
+                </Box>
+                <Group mt="md">
+                  <Button
+                    component={Link}
+                    href="/account/register"
+                    size="sm"
+                    color="yellow"
+                  >
+                    {t('login.createCommander')}
+                  </Button>
+                  <Button
+                    component={Link}
+                    href="/community/news"
+                    size="sm"
+                    variant="outline"
+                    color="gray"
+                  >
+                    {t('login.latestNews')}
+                  </Button>
+                </Group>
+              </GameCard>
+            </div>
 
-          <div className="public-rise public-rise-delay-1">
-            <GameCard title={t('login.commanderAccess')} icon={faShieldHalved}>
-              {errorMessage && (
-                <>
-                  <Alert
-                    variant="filled"
-                    color="red"
-                    title={t('login.accessDenied')}
-                    data-testid="error-message"
-                    role="alert"
-                    aria-describedby="login-error-text"
+            <div className="public-rise public-rise-delay-1">
+              <GameCard
+                title={t('login.commanderAccess')}
+                icon={faShieldHalved}
+              >
+                {errorMessage && (
+                  <>
+                    <Alert
+                      variant="filled"
+                      color="red"
+                      title={t('login.accessDenied')}
+                      data-testid="error-message"
+                      role="alert"
+                    >
+                      {errorMessage}
+                    </Alert>
+                    <Space h="md" />
+                  </>
+                )}
+                {process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && (
+                  <>
+                    <Alert
+                      variant="filled"
+                      color="red"
+                      title={t('login.loginDisabled')}
+                    >
+                      {t('login.checkDiscordNews')}
+                    </Alert>
+                    <Space h="md" />
+                  </>
+                )}
+                <Form
+                  type="login"
+                  setErrorMessage={setErrorMessage}
+                  layout="bare"
+                />
+                <Group mt="md" justify="center">
+                  <Button
+                    component={Link}
+                    href="/account/password-reset"
+                    variant="subtle"
+                    size="xs"
+                    color="gray"
                   >
-                    <span id="login-error-text">{errorMessage}</span>
-                  </Alert>
-                  <Space h="md" />
-                </>
-              )}
-              {process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true' && (
-                <>
-                  <Alert
-                    variant="filled"
-                    color="red"
-                    title={t('login.loginDisabled')}
-                  >
-                    {t('login.checkDiscordNews')}
-                  </Alert>
-                  <Space h="md" />
-                </>
-              )}
-              <Form
-                type="login"
-                setErrorMessage={setErrorMessage}
-                layout="bare"
-              />
-              <Group mt="md" justify="center">
-                <Button
-                  component={Link}
-                  href="/account/password-reset"
-                  variant="subtle"
-                  size="xs"
-                  color="gray"
-                >
-                  {t('login.recoverLostAccount')}
-                </Button>
-              </Group>
-            </GameCard>
-          </div>
-        </SimpleGrid>
-      </div>
-      <VacationModeModal
-        opened={showVacationModal}
-        onClose={() => setShowVacationModal(false)}
-        userId={vacationUserId}
-        onVacationEnd={() => setShowVacationModal(false)}
-      />
-    </MainArea>
+                    {t('login.recoverLostAccount')}
+                  </Button>
+                </Group>
+              </GameCard>
+            </div>
+          </SimpleGrid>
+        </div>
+        <VacationModeModal
+          opened={showVacationModal}
+          onClose={() => setShowVacationModal(false)}
+          userId={vacationUserId}
+          onVacationEnd={() => setShowVacationModal(false)}
+        />
+      </MainArea>
     </>
   );
 };
 
-/** Returns static props for callers that need normalized game data. */
-export const getStaticProps: GetStaticProps = async ({ locale }) => ({
-  props: {
-    ...(await serverSideTranslations(locale ?? 'en', [
-      'common',
-      'navigation',
-      'account',
-    ])),
-  },
-});
+/** Redirects authenticated users to the game; others get the auth funnel. */
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await getSession(context);
+  if (session?.user) {
+    return {
+      redirect: { destination: '/home/overview', permanent: false },
+    };
+  }
+  return {
+    props: {
+      ...(await serverSideTranslations(context.locale ?? 'en', [
+        'common',
+        'navigation',
+        'account',
+      ])),
+    },
+  };
+};
 
 export default Login;

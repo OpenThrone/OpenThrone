@@ -57,9 +57,20 @@ export const UserCardImage = ({
             borderRadius: '8px',
             overflow: 'hidden',
             border: '1px solid #2f3e52',
+            height: 140,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(180deg, #1f2b3b 0%, #0f141a 100%)',
           }}
         >
-          <Image src={bannerimgsrc} alt={name} fit="cover" h={140} />
+          {bannerimgsrc ? (
+            <Image src={bannerimgsrc} alt={name} fit="cover" h={140} />
+          ) : (
+            <Text size="xl" fw={700} c="dimmed" ta="center">
+              {name}
+            </Text>
+          )}
         </Box>
         <Group justify="center" mt={-40}>
           <Avatar
@@ -198,8 +209,8 @@ const Browse = () => {
                   : 0
               }
               joinText={t('browse.join')}
-              imgsrc={alliance.avatar || '/path/to/default/avatar.png'}
-              bannerimgsrc={alliance.bannerimg || '/path/to/default/banner.png'}
+              imgsrc={alliance.avatar || null}
+              bannerimgsrc={alliance.bannerimg || null}
               joinMode={alliance.join_mode}
               id={alliance.id}
               onJoin={handleJoin}

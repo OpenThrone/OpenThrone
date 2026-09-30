@@ -175,7 +175,8 @@
     "failedToDisable2FA": "Error al desactivar 2FA",
     "failedToGenerate2FASecret": "Error al generar secreto de 2FA",
     "invalidToken": "Token inválido",
-    "2FAEnabled": "2FA activada"
+    "2FAEnabled": "2FA activada",
+    "requiredField": "Este campo es obligatorio"
   },
   "admin": {
     "title": "Administración",

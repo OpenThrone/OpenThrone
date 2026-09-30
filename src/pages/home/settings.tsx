@@ -21,6 +21,7 @@ import {
 } from '@mantine/hooks';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 
@@ -33,6 +34,12 @@ import type { Locales, PlayerRace } from '@/types/typings';
 import { logError, logInfo } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
 
+interface PasswordErrors {
+  current?: string;
+  new?: string;
+  confirm?: string;
+}
+
 const Settings = () => {
   const { t, i18n } = useTranslation('home');
   const router = useRouter();
@@ -42,6 +49,9 @@ const Settings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { user, forceUpdate } = useUser();
+  const { data: sessionData } = useSession();
+  // /api/general/getUser strips email; the auth session carries it instead
+  const sessionEmail = (sessionData?.user?.email as string) ?? '';
   const { updateOptions, raceClasses } = useLayout();
 
   // Add logging for debugging
@@ -52,6 +62,11 @@ const Settings = () => {
   const [locale, setLocale] = useState(user?.locale || 'en-US');
   const [userEmail, setUserEmail] = useState(user?.email || '');
   const [passwordsMatch, setPasswordsMatch] = useState(true);
+  const [savingForm, setSavingForm] = useState<
+    'password' | 'email' | 'options' | null
+  >(null);
+  const [passwordErrors, setPasswordErrors] = useState<PasswordErrors>({});
+  const [emailError, setEmailError] = useState('');
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
   const [isForgetModalOpen, setIsForgetModalOpen] = useState(false);
@@ -118,82 +133,109 @@ const Settings = () => {
 
   const updatePassword = async () => {
     checkPasswordsMatch();
-    if (!passwordsMatch) return;
-    const response = await fetch('/api/account/settings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'password',
-        password: newPassword,
-        password_confirm: confirmPassword,
-        currentPassword,
-      }),
-    });
-    const data = await response.json();
-    if (response.ok) {
-      alertService.success(t('settings.passwordUpdatedSuccessfully'));
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } else {
-      alertService.error(data.error);
+    const nextErrors: PasswordErrors = {};
+    if (!currentPassword) nextErrors.current = t('settings.requiredField');
+    if (!newPassword) nextErrors.new = t('settings.requiredField');
+    if (!confirmPassword) nextErrors.confirm = t('settings.requiredField');
+    else if (newPassword !== confirmPassword)
+      nextErrors.confirm = t('settings.passwordsDontMatch');
+    setPasswordErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+    setSavingForm('password');
+    try {
+      const response = await fetch('/api/account/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'password',
+          password: newPassword,
+          password_confirm: confirmPassword,
+          currentPassword,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alertService.success(t('settings.passwordUpdatedSuccessfully'));
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        alertService.error(data.error);
+      }
+    } finally {
+      setSavingForm(null);
     }
   };
 
   const updateEmail = async () => {
-    const response = await fetch('/api/account/emailChange', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ newEmail, userEmail }),
-    });
+    if (!newEmail.trim()) {
+      setEmailError(t('settings.requiredField'));
+      return;
+    }
+    setEmailError('');
+    setSavingForm('email');
+    try {
+      const response = await fetch('/api/account/emailChange', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ newEmail, userEmail }),
+      });
 
-    const data = await response.json();
-    // Handle response
-    if (response.ok) {
-      alertService.success(t('settings.emailRequestSent'));
-      // forceUpdate();
-      updateOptions();
-    } else {
-      alertService.error(data.error);
+      const data = await response.json();
+      // Handle response
+      if (response.ok) {
+        alertService.success(t('settings.emailRequestSent'));
+        // forceUpdate();
+        updateOptions();
+      } else {
+        alertService.error(data.error);
+      }
+    } finally {
+      setSavingForm(null);
     }
   };
 
   const updateLocale = async () => {
-    const response = await fetch('/api/account/settings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'gameoptions',
-        locale,
-        colorScheme,
-      }),
-    });
-    const data = await response.json();
-    // Handle response
-    if (response.ok) {
-      alertService.success(t('settings.localeUpdatedSuccessfully'));
-      const nextLanguage = getLanguageFromLocale(locale);
-      if (router.locale !== nextLanguage) {
-        await router.push(
-          { pathname: router.pathname, query: router.query },
-          router.asPath,
-          { locale: nextLanguage },
-        );
+    setSavingForm('options');
+    try {
+      const response = await fetch('/api/account/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'gameoptions',
+          locale,
+          colorScheme,
+        }),
+      });
+      const data = await response.json();
+      // Handle response
+      if (response.ok) {
+        alertService.success(t('settings.localeUpdatedSuccessfully'));
+        const nextLanguage = getLanguageFromLocale(locale);
+        if (router.locale !== nextLanguage) {
+          await router.push(
+            { pathname: router.pathname, query: router.query },
+            router.asPath,
+            { locale: nextLanguage },
+          );
+        }
+        if (i18n?.language !== nextLanguage) {
+          await i18n?.changeLanguage(nextLanguage);
+        }
+        setPreviewScheme('');
+        forceUpdate();
+        updateOptions();
+      } else {
+        alertService.error(data.error);
       }
-      if (i18n?.language !== nextLanguage) {
-        await i18n?.changeLanguage(nextLanguage);
-      }
-      setPreviewScheme('');
-      forceUpdate();
-      updateOptions();
-    } else {
-      alertService.error(data.error);
+    } finally {
+      setSavingForm(null);
     }
   };
 
@@ -348,24 +390,30 @@ const Settings = () => {
   return (
     <MainArea title={t('settings.title')}>
       <Grid gutter="lg">
-        <Grid.Col span={6}>
+        <Grid.Col span={{ base: 12, sm: 6 }}>
           <GameCard title={t('settings.changePassword')}>
-            <Text>{t('settings.enterCurrentPassword')}</Text>
             <PasswordInput
+              label={t('settings.enterCurrentPassword')}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
+              autoComplete="current-password"
+              error={passwordErrors.current}
               className={raceClasses.bgClass}
             />
-            <Text>{t('settings.newPassword')}</Text>
             <PasswordInput
+              label={t('settings.newPassword')}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              autoComplete="new-password"
+              error={passwordErrors.new}
               className={raceClasses.bgClass}
             />
-            <Text>{t('settings.verifyPassword')}</Text>
             <PasswordInput
+              label={t('settings.verifyPassword')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              error={passwordErrors.confirm}
               className={!passwordsMatch ? 'bg-red-700' : raceClasses.bgClass}
             />
             {!passwordsMatch && (
@@ -377,13 +425,15 @@ const Settings = () => {
             <Button
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
               onClick={updatePassword}
+              loading={savingForm === 'password'}
+              disabled={savingForm !== null}
             >
               {t('settings.save')}
             </Button>
           </GameCard>
         </Grid.Col>
 
-        <Grid.Col span={6}>
+        <Grid.Col span={{ base: 12, sm: 6 }}>
           <GameCard title={t('settings.gameOptions')}>
             <Text>{t('settings.localeFormatting')}</Text>
             <Select
@@ -417,22 +467,27 @@ const Settings = () => {
             <Button
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
               onClick={updateLocale}
+              loading={savingForm === 'options'}
+              disabled={savingForm !== null}
             >
               {t('settings.save')}
             </Button>
           </GameCard>
         </Grid.Col>
 
-        <Grid.Col span={6}>
+        <Grid.Col span={{ base: 12, sm: 6 }}>
           <GameCard title={t('settings.changeEmail')}>
             <Text>{t('settings.currentEmail')}</Text>
             <Text c="dimmed" size="md">
-              {userEmail}
+              {userEmail || sessionEmail}
             </Text>
             <Text>{t('settings.newEmail')}</Text>
             <TextInput
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
+              type="email"
+              autoComplete="email"
+              error={emailError}
               className={raceClasses.bgClass}
             />
             <Text size="sm" c="dimmed">
@@ -442,12 +497,14 @@ const Settings = () => {
             <Button
               className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
               onClick={updateEmail}
+              loading={savingForm === 'email'}
+              disabled={savingForm !== null}
             >
               {t('settings.save')}
             </Button>
           </GameCard>
         </Grid.Col>
-        <Grid.Col span={6}>
+        <Grid.Col span={{ base: 12, sm: 6 }}>
           <GameCard title={t('settings.vacationMode')}>
             <Text c="dimmed">{t('settings.vacationDescription')}</Text>
             <Text c="dimmed">{t('settings.vacationProtected')}</Text>
@@ -462,7 +519,7 @@ const Settings = () => {
             </Button>
           </GameCard>
         </Grid.Col>
-        <Grid.Col span={6}>
+        <Grid.Col span={{ base: 12, sm: 6 }}>
           <GameCard title={t('settings.twoFactorAuthentication')}>
             <Space h="md" />
             <Button
@@ -496,7 +553,7 @@ const Settings = () => {
             )}
           </GameCard>
         </Grid.Col>
-        <Grid.Col span={6}>
+        <Grid.Col span={{ base: 12, sm: 6 }}>
           <GameCard
             title={t('settings.accountActions')}
             action={

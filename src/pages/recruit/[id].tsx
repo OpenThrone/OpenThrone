@@ -1,4 +1,4 @@
-import { Button, Divider, Space, Text } from '@mantine/core';
+import { Button, Divider, Group, Space, Text } from '@mantine/core';
 import { Turnstile } from '@marsidev/react-turnstile';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
@@ -150,11 +150,9 @@ export default function Recruit() {
               {t('recruit.youAreBeingRecruited')}{' '}
               <span className="text-white">{userInfo.display_name}</span>
             </Text>
-            <span className="text-white">{userInfo.display_name}</span>{' '}
             {t('recruit.level', { level: userInfo.level })}{' '}
-            <span className="text-white">{userInfo.race}</span>{' '}
             {t('recruit.race', { race: userInfo.race, class: userInfo.class })}.
-            <center>
+            <Group justify="center" mt="md">
               <Image
                 src={getAssetPath(
                   'shields',
@@ -165,7 +163,7 @@ export default function Recruit() {
                 height="150"
                 alt=""
               />
-            </center>
+            </Group>
             <Text size="md">{t('recruit.pleaseWaitCaptcha')}</Text>
           </p>
         </div>

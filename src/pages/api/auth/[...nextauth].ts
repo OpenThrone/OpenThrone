@@ -219,6 +219,7 @@ export const authOptions: NextAuthOptions = {
           token.user = {
             id: userObj.id,
             display_name: userObj.display_name,
+            email: userObj.email,
             class: userObj.class,
             race: userObj.race,
             colorScheme: userObj.colorScheme,

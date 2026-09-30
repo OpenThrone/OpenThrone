@@ -268,7 +268,7 @@ const Overview = () => {
                   fw={700}
                   c="dimmed"
                   tt="uppercase"
-                  style={{ letterSpacing: '0.4em' }}
+                  style={{ letterSpacing: '0.1em' }}
                   data-testid="stat-label"
                 >
                   {stat.label}
@@ -362,7 +362,7 @@ const Overview = () => {
                   fw={700}
                   c="dimmed"
                   tt="uppercase"
-                  style={{ letterSpacing: '0.4em' }}
+                  style={{ letterSpacing: '0.1em' }}
                   data-testid="stat-label"
                 >
                   {stat.label}

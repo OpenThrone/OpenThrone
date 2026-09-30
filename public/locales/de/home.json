@@ -175,7 +175,8 @@
     "failedToDisable2FA": "Deaktivierung von 2FA fehlgeschlagen",
     "failedToGenerate2FASecret": "Generierung des 2FA-Geheimnisses fehlgeschlagen",
     "invalidToken": "Ungültiges Token",
-    "2FAEnabled": "2FA aktiviert"
+    "2FAEnabled": "2FA aktiviert",
+    "requiredField": "Dieses Feld ist erforderlich"
   },
   "admin": {
     "title": "Verwaltung",

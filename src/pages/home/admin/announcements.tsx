@@ -19,6 +19,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { AnnouncementSeverity } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
@@ -40,6 +41,7 @@ const AnnouncementsPage = () => {
   const [loading, setLoading] = useState(true);
   const [opened, { open, close }] = useDisclosure(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -224,7 +226,7 @@ const AnnouncementsPage = () => {
                         size="xs"
                         color="red"
                         variant="subtle"
-                        onClick={() => handleDelete(a.id)}
+                        onClick={() => setDeleteTarget(a.id)}
                       >
                         Delete
                       </Button>
@@ -284,6 +286,19 @@ const AnnouncementsPage = () => {
           </Group>
         </Stack>
       </Modal>
+      <ConfirmationModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget !== null) handleDelete(deleteTarget);
+          setDeleteTarget(null);
+        }}
+        title="Confirm deletion"
+        message="Are you sure you want to permanently delete this announcement?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="remove"
+      />
     </AdminLayout>
   );
 };

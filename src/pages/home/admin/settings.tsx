@@ -19,11 +19,13 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { ServerSettingType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
 const ServerSettingsPage = () => {
   const [settings, setSettings] = useState<any[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [opened, { open, close }] = useDisclosure(false);
   const [editing, setEditing] = useState<any>(null);
@@ -202,7 +204,7 @@ const ServerSettingsPage = () => {
                         size="xs"
                         color="red"
                         variant="subtle"
-                        onClick={() => remove(s.key)}
+                        onClick={() => setDeleteTarget(s.key)}
                       >
                         Delete
                       </Button>
@@ -264,6 +266,19 @@ const ServerSettingsPage = () => {
           </Group>
         </Stack>
       </Modal>
+      <ConfirmationModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget !== null) remove(deleteTarget);
+          setDeleteTarget(null);
+        }}
+        title="Confirm deletion"
+        message="Are you sure you want to permanently delete this server setting?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="remove"
+      />
     </AdminLayout>
   );
 };

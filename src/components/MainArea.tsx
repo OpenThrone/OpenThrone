@@ -19,6 +19,7 @@ import {
 } from '@mantine/core';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
 import React, {
   forwardRef,
   memo,
@@ -46,6 +47,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
   ref,
 ) {
   const { authorized } = useLayout();
+  const { t } = useTranslation('common');
   const { unreadMessages, unreadMessagesCount, markRoomAsRead, user } =
     useUser();
   const [isMessageMenuOpened, setMessageMenuOpened] = useState(false);
@@ -55,6 +57,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
   const enableEnemies = process.env.NEXT_PUBLIC_ENABLE_ENEMIES === 'true';
 
   const fetchSocialNotificationCount = useCallback(async () => {
+    if (!authorized) return;
     try {
       const res = await fetch('/api/social/notifications/count');
       if (!res.ok) return;
@@ -63,7 +66,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
     } catch {
       // Intentionally silent - fetchSocialNotificationCount errors are non-critical
     }
-  }, []);
+  }, [authorized]);
 
   const handleMessageItemClick = useCallback(
     (roomId: number) => {
@@ -121,7 +124,8 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
         >
           <Group gap="sm">
             <Title
-              order={2}
+              order={1}
+              size="h2"
               className="main-header-title bg-orange-gradient text-shadow text-shadow-xs text-gradient-orange"
               data-testid="page-title"
             >
@@ -160,10 +164,10 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                         .sort(
                           (a, b) =>
                             new Date(b.timestamp).getTime() -
-                             new Date(a.timestamp).getTime(),
-                         )
-                         .slice(0, 10)
-                         .map((msg) => (
+                            new Date(a.timestamp).getTime(),
+                        )
+                        .slice(0, 10)
+                        .map((msg) => (
                           <Menu.Item
                             key={msg.id}
                             component={Link}
@@ -257,11 +261,7 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                         />
                       }
                       rightSection={
-                        <Badge
-                          color="red"
-                          variant="filled"
-                          size="xs"
-                        >
+                        <Badge color="red" variant="filled" size="xs">
                           {socialNotificationCount > 9
                             ? '9+'
                             : socialNotificationCount}
@@ -322,10 +322,9 @@ const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
                         color="indianred"
                       />
                     }
+                    onClick={() => signOut({ callbackUrl: '/' })}
                   >
-                    <span onClick={() => signOut({ callbackUrl: '/' })}>
-                      Logout
-                    </span>
+                    {t('logout')}
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>

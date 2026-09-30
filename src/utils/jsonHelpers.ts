@@ -100,3 +100,9 @@ export const parseBigInt = (v: any): bigint | null => {
   }
   return null;
 };
+
+/**
+ * Parse a value into a bigint, falling back to 0n for unparseable input
+ * (e.g. empty string or exponent-form numbers from user input).
+ */
+export const toBigIntSafe = (v: unknown): bigint => parseBigInt(v) ?? BigInt(0);

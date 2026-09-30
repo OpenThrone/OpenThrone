@@ -57,7 +57,9 @@
     "noRequestsFound": "Keine Anfragen",
     "unknownPlayer": "Unbekannter Spieler",
     "errorFetchingRequests": "Fehler beim Abrufen von Anfragen:",
-    "errorRespondingToRequest": "Fehler beim Antworten auf Anfrage:"
+    "errorRespondingToRequest": "Fehler beim Antworten auf Anfrage:",
+    "declineConfirmTitle": "Anfrage ablehnen",
+    "declineConfirmMessage": "Möchtest du diese Anfrage wirklich ablehnen?"
   },
   "goldRequests": {
     "title": "Goldanfragen",

@@ -22,11 +22,6 @@ const UNITS = [
 
 /** Unit training panel. */
 export const UnitTrainingPanel = () => {
-  const theme = useMantineTheme();
-  const secondary = theme.colors.secondary ?? theme.colors.yellow;
-  const accent = secondary[4] ?? '#e5c55a';
-  const accentDark = secondary[6] ?? accent;
-
   return (
     <Box data-testid="unit-training-panel">
       <GameCard title="Training Grounds" icon={faHammer}>
@@ -37,28 +32,6 @@ export const UnitTrainingPanel = () => {
             </Grid.Col>
           ))}
         </Grid>
-
-        {/* Total Footer */}
-        <Box
-          mt="lg"
-          style={{ borderTop: '1px dashed #2f3e52', paddingTop: '16px' }}
-        >
-          <Group justify="flex-end">
-            <Button
-              variant="filled"
-              color="yellow"
-              size="md"
-              style={{
-                background: `linear-gradient(180deg, ${accent} 0%, ${accentDark} 100%)`,
-                color: '#000',
-                border: `1px solid ${accent}`,
-                boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-              }}
-            >
-              TRAIN ALL UNITS
-            </Button>
-          </Group>
-        </Box>
       </GameCard>
     </Box>
   );
@@ -157,6 +130,7 @@ const TrainingSlot = ({ unit }: { unit: any }) => {
           data-testid="train-button"
           aria-label={`Set max ${unit.name}`}
           role="button"
+          onClick={() => setValue(unit.owned)}
           style={{
             backgroundImage:
               'linear-gradient(180deg, #2b3747 0%, #1f2b3b 100%)',

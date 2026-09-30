@@ -114,8 +114,8 @@
     "languageSettings": "Language Settings",
     "changePassword": "Change Password",
     "changeEmail": "Change Email",
-    "enable2FA": "Enable Two-Factor Authentication",
-    "disable2FA": "Disable Two-Factor Authentication",
+    "enable2FA": "Enable 2FA",
+    "disable2FA": "Disable 2FA",
     "deleteAccount": "Delete Account",
     "settingsSaved": "Settings saved successfully",
     "settingsSaveFailed": "Failed to save settings",
@@ -141,8 +141,6 @@
     "vacationEndEarly": "You can end your vacation early by logging in.",
     "startVacation": "Start Vacation",
     "twoFactorAuthentication": "Two-Factor Authentication",
-    "enable2FA": "Enable 2FA",
-    "disable2FA": "Disable 2FA",
     "enter6DigitCode": "Enter 6-digit code",
     "verify": "Verify",
     "accountActions": "Account Actions",
@@ -177,7 +175,8 @@
     "failedToDisable2FA": "Failed to disable 2FA",
     "failedToGenerate2FASecret": "Failed to generate 2FA secret",
     "invalidToken": "Invalid token",
-    "2FAEnabled": "2FA enabled"
+    "2FAEnabled": "2FA enabled",
+    "requiredField": "This field is required"
   },
   "admin": {
     "title": "Admin",

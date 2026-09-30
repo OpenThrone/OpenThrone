@@ -26,6 +26,7 @@ import type { StaffRole } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
 import { STAFF_ROLE_LABELS } from '@/utils/permissions';
 
+import ConfirmationModal from './ConfirmationModal';
 import { GameCard } from './game/GameCard';
 
 const STAFF_ROLES: StaffRole[] = [
@@ -103,6 +104,7 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
   const [notesLoading, setNotesLoading] = useState(false);
   const [newNote, setNewNote] = useState<string>('');
   const [addingNote, setAddingNote] = useState<boolean>(false);
+  const [noteDeleteTarget, setNoteDeleteTarget] = useState<number | null>(null);
   const theme = useMantineTheme();
   const coerceNumber = (value: number | string | null) =>
     typeof value === 'number' ? value : Number(value || 0);
@@ -601,7 +603,7 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
                       <ActionIcon
                         color="red"
                         variant="subtle"
-                        onClick={() => handleDeleteNote(note.id)}
+                        onClick={() => setNoteDeleteTarget(note.id)}
                       >
                         <FontAwesomeIcon icon={faMinus} />
                       </ActionIcon>
@@ -614,6 +616,19 @@ const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
           </GameCard>
         </Tabs.Panel>
       </Tabs>
+      <ConfirmationModal
+        isOpen={noteDeleteTarget !== null}
+        onClose={() => setNoteDeleteTarget(null)}
+        onConfirm={() => {
+          if (noteDeleteTarget !== null) handleDeleteNote(noteDeleteTarget);
+          setNoteDeleteTarget(null);
+        }}
+        title="Delete note"
+        message="Are you sure you want to permanently delete this note?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="remove"
+      />
     </Stack>
   );
 };

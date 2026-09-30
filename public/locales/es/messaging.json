@@ -12,5 +12,6 @@
   "errorFetchingMessages": "Error al obtener mensajes",
   "errorRefetchingRooms": "Error al volver a obtener salas después del modal",
   "unknown": "Desconocido",
-  "reader": "Lector"
+  "reader": "Lector",
+  "errorGeneric": "Algo salió mal. Inténtalo de nuevo."
 }

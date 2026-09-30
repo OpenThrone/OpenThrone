@@ -2,6 +2,7 @@ import { Button, Group, NumberInput, Space, Table } from '@mantine/core';
 import React, { useEffect, useState } from 'react';
 
 import { alertService } from '@/services/Alert.service';
+import { toBigIntSafe } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
 import { getGoldTxSymbol, getTransactionType } from '@/utils/utilities';
@@ -67,7 +68,7 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
           <NumberInput
             label="Amount"
             value={depositAmount.toString()}
-            onChange={(val) => setDepositAmount(BigInt(val))}
+            onChange={(val) => setDepositAmount(toBigIntSafe(val))}
             min={0}
           />
           <Button
@@ -81,7 +82,7 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
           <NumberInput
             label="Amount"
             value={withdrawAmount.toString()}
-            onChange={(val) => setWithdrawAmount(BigInt(val))}
+            onChange={(val) => setWithdrawAmount(toBigIntSafe(val))}
             min={0}
           />
           <Button

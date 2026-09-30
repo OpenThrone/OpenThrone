@@ -57,7 +57,9 @@
     "noRequestsFound": "No requests",
     "unknownPlayer": "Unknown Player",
     "errorFetchingRequests": "Error fetching requests:",
-    "errorRespondingToRequest": "Error responding to request:"
+    "errorRespondingToRequest": "Error responding to request:",
+    "declineConfirmTitle": "Decline request",
+    "declineConfirmMessage": "Are you sure you want to decline this request?"
   },
   "goldRequests": {
     "title": "Gold Requests",

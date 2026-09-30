@@ -20,6 +20,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
 import AdminLayout from '@/components/admin/AdminLayout';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { GameCard } from '@/components/game/GameCard';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
@@ -29,6 +30,7 @@ const AdvisorMessagesPage = () => {
   const [loading, setLoading] = useState(true);
   const [opened, { open, close }] = useDisclosure(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
 
   const [messageText, setMessageText] = useState('');
@@ -232,7 +234,7 @@ const AdvisorMessagesPage = () => {
                             size="xs"
                             color="red"
                             variant="subtle"
-                            onClick={() => handleDelete(msg.id)}
+                            onClick={() => setDeleteTarget(msg.id)}
                           >
                             Delete
                           </Button>
@@ -283,6 +285,19 @@ const AdvisorMessagesPage = () => {
           </Group>
         </Stack>
       </Modal>
+      <ConfirmationModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget !== null) handleDelete(deleteTarget);
+          setDeleteTarget(null);
+        }}
+        title="Confirm deletion"
+        message="Are you sure you want to permanently delete this message?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="remove"
+      />
     </AdminLayout>
   );
 };
