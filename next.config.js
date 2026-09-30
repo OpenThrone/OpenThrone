@@ -9,11 +9,15 @@ const { i18n } = require('./next-i18next.config');
 
 module.exports = withBundleAnalyzer({
   i18n,
+  allowedDevOrigins: ['alpha.openthrone.dev', '192.168.4.103'],
   /** Stop file-tracing from walking your home dir */
   outputFileTracingRoot: path.join(__dirname),
 
   /** Optional: smaller deploys; good with Bun + Docker */
   output: 'standalone',
+
+  /** Keep Prisma's generated client available to the Cloudflare workerd bundle. */
+  serverExternalPackages: ['@prisma/client', '.prisma/client'],
 
   reactCompiler: true,
 

@@ -10,8 +10,27 @@ import {
   runSingleBattle,
   simulateSpyIntel,
 } from './engine';
+import {
+  assertPlayerGold,
+  type InvariantContext,
+  SimulationConfigError,
+} from './invariants';
 import { createSimPlayer } from './presets';
 import {
+  createDefaultRandom,
+  createRng,
+  createValidatedRandom,
+  DEFAULT_SIM_SEED,
+  shuffleWithRandom,
+} from './random';
+import {
+  applyDefenderDailyCap,
+  type DailyCasualtyCapUsage,
+  getRuleset,
+  type RebuildShieldState,
+} from './rulesets';
+import type { RulesetId } from './scenarioTypes';
+import type {
   DayResult,
   PlayerState,
   PopulationMetrics,
@@ -26,12 +45,14 @@ const DEFAULT_ATTACK_LEVEL_RANGE = Number(
 );
 const MAX_SIM_ATTACK_TURNS = 10;
 
-function createSeededRandom(seed: number): () => number {
-  let value = Math.abs(Math.floor(seed)) || 1;
-  return () => {
-    value = (value * 48271) % 2147483647;
-    return value / 2147483647;
-  };
+export interface EraDayOptions {
+  readonly rulesetId: RulesetId;
+  readonly dailyCasualtyCapUsage: Map<string, DailyCasualtyCapUsage>;
+  readonly rebuildShields: ReadonlyMap<string, RebuildShieldState>;
+  /** Persona-managed ERA runs retain legacy target selection but never let
+   * legacy per-tick recruitment, upgrades, repairs, or banking compete with
+   * the single daily persona economic decision. */
+  readonly personaManagedEconomy?: boolean;
 }
 
 function sanitizeNumber(value: number, fallback = 0): number {
@@ -68,8 +89,8 @@ function sanitizePlayerState(player: PlayerState): void {
     Math.floor(sanitizeNumber(player.fortLevel, 1)),
   );
   player.houseLevel = Math.max(
-    1,
-    Math.floor(sanitizeNumber(player.houseLevel, 1)),
+    0,
+    Math.floor(sanitizeNumber(player.houseLevel, 0)),
   );
   player.spyLevel = Math.max(1, Math.floor(sanitizeNumber(player.spyLevel, 1)));
   player.sentryLevel = Math.max(
@@ -77,8 +98,8 @@ function sanitizePlayerState(player: PlayerState): void {
     Math.floor(sanitizeNumber(player.sentryLevel, 1)),
   );
   player.economyLevel = Math.max(
-    1,
-    Math.floor(sanitizeNumber(player.economyLevel, 1)),
+    0,
+    Math.floor(sanitizeNumber(player.economyLevel, 0)),
   );
   player.recruitBonus = Math.max(
     1,
@@ -282,6 +303,7 @@ function tryBankDeposit(
   amount: number,
   currentTick: number,
   windowTicks: number,
+  context: InvariantContext,
 ): number {
   player.bankDepositHistory = trimTickHistory(
     player.bankDepositHistory,
@@ -297,6 +319,7 @@ function tryBankDeposit(
 
   player.gold -= depositAmount;
   player.goldInBank += depositAmount;
+  assertPlayerGold(player, context);
   player.bankDepositHistory.push(currentTick);
   return depositAmount;
 }
@@ -354,8 +377,11 @@ function createPopulationMetrics(): PopulationMetrics {
 }
 
 function processDailyReset(state: SimulationState): void {
+  const ctx = { day: state.day + 1, playerId: '' };
   for (const player of state.players.values()) {
     if (player.status !== 'active') continue;
+    ctx.playerId = player.id;
+    assertPlayerGold(player, ctx);
     sanitizePlayerState(player);
     player.dailyLimits.attacksUsed = 0;
     player.dailyLimits.intelUsed = 0;
@@ -372,10 +398,14 @@ async function processTurnTick(
   state: SimulationState,
   dayResult: DayResult,
   currentTick: number,
+  eraOptions?: EraDayOptions,
 ): Promise<{ intelAttempts: number; intelSuccesses: number }> {
   const windowTicks = getWindowTicks(state.config);
   const attackLevelRange = getAttackLevelRange(state.config);
-  const random = state.config.random ?? Math.random;
+  const random = createValidatedRandom(
+    state.config.random ?? createDefaultRandom(),
+  );
+  const invariantContext = { day: state.day + 1, playerId: '' };
   const players = Array.from(state.players.values()).filter(
     (player) => player.status === 'active',
   );
@@ -383,6 +413,8 @@ async function processTurnTick(
   for (const player of players) {
     const turnIncome = calculateTurnIncome(player);
     player.gold += turnIncome;
+    invariantContext.playerId = player.id;
+    assertPlayerGold(player, invariantContext);
     player.attackTurns += 1;
     player.stamina = Math.min(player.maxStamina, player.stamina + 1);
     dayResult.totalTurnIncome += turnIncome;
@@ -410,7 +442,7 @@ async function processTurnTick(
     }
   }
 
-  const shuffled = [...players].sort(() => random() - 0.5);
+  const shuffled = shuffleWithRandom(random, players);
   let intelSuccesses = 0;
   let intelAttempts = 0;
   let attackWins = 0;
@@ -420,11 +452,22 @@ async function processTurnTick(
 
   for (const currentPlayer of shuffled) {
     const population = Array.from(state.players.values());
-    const decision = makeDailyDecisions(currentPlayer, population, {
+    const legacyDecision = makeDailyDecisions(currentPlayer, population, {
       attackLevelRange,
       currentDay: state.day,
       random,
     });
+    const decision = eraOptions?.personaManagedEconomy
+      ? {
+          ...legacyDecision,
+          recruitment: {},
+          upgradeSpy: undefined,
+          upgradeSentry: undefined,
+          upgradeEconomy: undefined,
+          repairFort: undefined,
+          bankGold: undefined,
+        }
+      : legacyDecision;
 
     for (const intel of decision.intelMissions) {
       const target = state.players.get(intel.target);
@@ -452,6 +495,8 @@ async function processTurnTick(
     for (const attack of decision.attacks) {
       const target = state.players.get(attack.target);
       if (!target || target.status !== 'active') continue;
+      const shield = eraOptions?.rebuildShields.get(target.id);
+      if (shield && !shield.expired) continue;
       if (!canAttackByLevel(currentPlayer, target, attackLevelRange)) continue;
       if (currentPlayer.attackTurns < attack.turns) continue;
       if (currentPlayer.stamina < attack.turns) continue;
@@ -466,6 +511,10 @@ async function processTurnTick(
         continue;
       }
 
+      invariantContext.playerId = currentPlayer.id;
+      assertPlayerGold(currentPlayer, invariantContext);
+      invariantContext.playerId = target.id;
+      assertPlayerGold(target, invariantContext);
       sanitizePlayerState(currentPlayer);
       sanitizePlayerState(target);
       const attackerSim = convertPlayerToSim(currentPlayer);
@@ -474,7 +523,28 @@ async function processTurnTick(
         ...createBattleConfigFromBalance(state.config.balance),
         maxTurns: Math.min(attack.turns, MAX_SIM_ATTACK_TURNS),
         random,
+        rulesetId: eraOptions?.rulesetId,
+        dailyCasualtyCapUsage: eraOptions?.dailyCasualtyCapUsage.get(target.id),
+        defenderStartOfDayPopulation: eraOptions?.dailyCasualtyCapUsage.get(
+          target.id,
+        )?.startOfDayPopulation,
       });
+
+      if (eraOptions?.dailyCasualtyCapUsage.has(target.id)) {
+        const usage = eraOptions.dailyCasualtyCapUsage.get(target.id);
+        if (usage) {
+          const pending = Object.values(result.defenderCasualties).reduce(
+            (sum, casualties) => sum + casualties,
+            0,
+          );
+          const next = applyDefenderDailyCap({
+            manifest: getRuleset(eraOptions.rulesetId),
+            usage,
+            pendingCasualties: pending,
+          });
+          eraOptions.dailyCasualtyCapUsage.set(target.id, next.usage);
+        }
+      }
 
       currentPlayer.attackTurns = Math.max(
         0,
@@ -499,6 +569,10 @@ async function processTurnTick(
       if (result.winner === 'attacker') {
         currentPlayer.gold += result.loot;
         target.gold = Math.max(0, target.gold - result.loot);
+        invariantContext.playerId = currentPlayer.id;
+        assertPlayerGold(currentPlayer, invariantContext);
+        invariantContext.playerId = target.id;
+        assertPlayerGold(target, invariantContext);
         Object.assign(
           currentPlayer,
           gainXp(currentPlayer, result.attackerXp, false),
@@ -593,7 +667,12 @@ async function processTurnTick(
       else dayResult.highTurnAttacks++;
     }
 
-    const updatedPlayer = applyDecision(currentPlayer, decision);
+    invariantContext.playerId = currentPlayer.id;
+    const updatedPlayer = applyDecision(
+      currentPlayer,
+      decision,
+      invariantContext,
+    );
     Object.assign(currentPlayer, updatedPlayer);
 
     if (
@@ -608,10 +687,14 @@ async function processTurnTick(
         decision.bankGold,
         currentTick,
         windowTicks,
+        invariantContext,
       );
     }
 
+    invariantContext.playerId = currentPlayer.id;
+    assertPlayerGold(currentPlayer, invariantContext);
     sanitizePlayerState(currentPlayer);
+    assertPlayerGold(currentPlayer, invariantContext);
   }
 
   dayResult.attackTurnsSpent += attackTurnsSpentThisTick;
@@ -649,7 +732,10 @@ function finalizeDayMetrics(
 }
 
 /** Simulate day. */
-export async function simulateDay(state: SimulationState): Promise<DayResult> {
+export async function simulateDay(
+  state: SimulationState,
+  eraOptions?: EraDayOptions,
+): Promise<DayResult> {
   const day = state.day + 1;
   const dayResult = createDayResult(day);
   const ticksPerDay = getTicksPerDay(state.config);
@@ -660,7 +746,12 @@ export async function simulateDay(state: SimulationState): Promise<DayResult> {
 
   for (let tick = 0; tick < ticksPerDay; tick++) {
     const currentTick = state.day * ticksPerDay + tick;
-    const tickResult = await processTurnTick(state, dayResult, currentTick);
+    const tickResult = await processTurnTick(
+      state,
+      dayResult,
+      currentTick,
+      eraOptions,
+    );
     totalIntelAttempts += tickResult.intelAttempts;
     totalIntelSuccesses += tickResult.intelSuccesses;
   }
@@ -680,14 +771,24 @@ export async function runSimulation(
   days: number,
   config: SimulationConfig = {},
 ): Promise<SimulationState> {
+  const seed = config.seed ?? DEFAULT_SIM_SEED;
   const simulationConfig: SimulationConfig = {
     ...config,
-    random:
-      config.random ??
-      (config.seed != null ? createSeededRandom(config.seed) : undefined),
+    seed,
+    random: createValidatedRandom(config.random ?? createRng(seed).next),
   };
+  const initialContext = { day: 0, playerId: '' };
   const players = new Map<string, PlayerState>();
   for (const player of population) {
+    initialContext.playerId = player.id;
+    assertPlayerGold(player, initialContext);
+    if (players.has(player.id)) {
+      throw new SimulationConfigError(
+        `Duplicate player ID "${player.id}" in simulation population`,
+        'duplicate-player-id',
+        player.id,
+      );
+    }
     const clone = clonePlayer(player);
     players.set(clone.id, clone);
   }

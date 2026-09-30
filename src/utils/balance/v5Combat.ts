@@ -6,12 +6,31 @@ export const V5_COMBAT_CONSTANTS = {
   BASE_XP: 1000,
   MORALE_EXHAUSTION_PER_TURN: 0.025,
   MAX_GOLD_PILLAGE_SHARE: 0.22,
+  /** Attacker must break at least this share of the defender's defense-line headcount (killed + wounded) to claim a win by exchange. */
+  WIN_DENT_SHARE_OF_DEFENSE_LINE: 0.1,
+  /** Wounded units count toward the win exchange at this share of their gold value. */
+  WOUNDED_VALUE_SHARE: 0.5,
+  /** All attackers combined may take at most this share of a defender's on-hand gold per day. */
+  DAILY_GOLD_PILLAGE_SHARE_CAP: 0.5,
+  /** A standing fort shields the treasury: the loot cap scales from this floor up to the full cap once breached. */
+  FORT_LOOT_CAP_FLOOR_SHARE: 0.25,
   DEFENSE_COVERAGE_THRESHOLD: 0.25,
   SINGLE_ATTACK_POPULATION_LOSS_CAP: 0.08,
-  DAILY_POPULATION_LOSS_CAP: 0.2,
+  /** No single battle may destroy more than this many days of rebuild throughput. */
+  CASUALTY_BUDGET_RECOVERY_DAYS: 5,
+  /** All attackers combined may not destroy more than this many days of throughput per day. */
+  DAILY_CASUALTY_RECOVERY_DAYS: 7,
+  /** No single unit stack loses more than this share of its size in one battle. */
+  PER_STACK_CASUALTY_CAP: 0.4,
+  /** Share of battle casualties that are wounded (recoverable) instead of killed. */
+  WOUNDED_SHARE: 0.3,
+  /** Fraction of the wounded pool that returns to active duty each day. */
+  WOUNDED_HEAL_RATE_DAILY: 0.35,
   BASE_DAILY_SELF_CLICKS: 225,
   BASE_DAILY_RECEIVED_CLICKS: 25,
   SUBSCRIBER_CITIZENS_PER_DAY: 300,
+  /** Subscriber growth counts toward casualty budgets only up to this cap. */
+  SUBSCRIBER_BUDGET_CITIZENS_PER_DAY_CAP: 60,
   TURN_10_COMBAT_PRESSURE_MULTIPLIER: 1.25,
   TURN_10_FORT_DAMAGE_BONUS: 1.35,
   TURN_10_GOLD_BONUS: 1.2,
@@ -203,10 +222,6 @@ export function calculateGoldLevelModifier(levelDifference: number): number {
   return clamp(1 + levelDifference * 0.05, 0.7, 1.25);
 }
 
-function calculateLevelDamageFactor(levelDifference: number): number {
-  return clamp(1 - levelDifference * 0.08, 0.75, 1.5);
-}
-
 /**
  * Rewards closer battles by converting the final win ratio into a bounded multiplier.
  */
@@ -286,18 +301,34 @@ export function calculateEffectiveDailyRecovery(params: {
   );
 }
 
-function calculateActivityRecoveryModifier(dailyClicks?: number): number {
-  const completion =
-    clamp(
-      Number(dailyClicks ?? 0),
-      0,
-      V5_COMBAT_CONSTANTS.BASE_DAILY_SELF_CLICKS,
-    ) / V5_COMBAT_CONSTANTS.BASE_DAILY_SELF_CLICKS;
-  return 0.75 + 0.25 * completion;
-}
-
 function calculateTurnDamageFactor(turns: number): number {
   return 0.08 * clamp(turns, 1, V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS) ** 1.15;
+}
+
+/**
+ * Capacity-based daily unit replacement throughput: full click capacity plus
+ * housing output (and a bounded subscriber contribution). Anchors casualty
+ * budgets so losses stay proportional to what a player can actually rebuild.
+ */
+export function calculateDailyReplacementThroughput(params: {
+  houseCitizens: number;
+  isSubscriber?: boolean;
+  race?: unknown;
+}): number {
+  const subscriberBudgetCitizens = params.isSubscriber
+    ? Math.min(
+        V5_COMBAT_CONSTANTS.SUBSCRIBER_BUDGET_CITIZENS_PER_DAY_CAP,
+        V5_COMBAT_CONSTANTS.SUBSCRIBER_CITIZENS_PER_DAY * 0.6,
+      )
+    : 0;
+
+  return (
+    (V5_COMBAT_CONSTANTS.BASE_DAILY_SELF_CLICKS +
+      V5_COMBAT_CONSTANTS.BASE_DAILY_RECEIVED_CLICKS +
+      Math.max(0, Number(params.houseCitizens) || 0) +
+      subscriberBudgetCitizens) *
+    getRaceIdentity(params.race).citizenRecoveryMultiplier
+  );
 }
 
 /** Calculates spy mission power used by combat, economy, or presentation logic. */
@@ -317,26 +348,39 @@ export function calculateSpyMissionDamageFactor(turns: number): number {
   );
 }
 
-/** Calculates casualty budget used by combat, economy, or presentation logic. */
+/**
+ * Calculates the casualty budget for one side of a battle.
+ *
+ * The ceiling is replacement-anchored: no battle destroys more than
+ * min(CASUALTY_BUDGET_RECOVERY_DAYS days of throughput, 8% of the population
+ * at risk). Every modifier below can only reduce the budget — they express how
+ * hard the battle pressed and how well the target was protected, never amplify
+ * past the rebuild guarantee.
+ */
 export function calculateCasualtyBudget(params: {
-  effectiveDailyRecovery: number;
-  dailyClicks?: number;
+  dailyThroughput: number;
+  population: number;
   turns: number;
   levelDifference: number;
   winQuality: number;
   fortHpPercent: number;
   defensePressureToday: number;
 }): number {
-  const fortProtection = 1 - 0.3 * clamp(params.fortHpPercent, 0, 1);
-  const fortExposure = 1 + (1 - clamp(params.fortHpPercent, 0, 1)) * 0.75;
+  const ceiling = Math.min(
+    Math.max(1, Number(params.dailyThroughput) || 1) *
+      V5_COMBAT_CONSTANTS.CASUALTY_BUDGET_RECOVERY_DAYS,
+    Math.max(1, Number(params.population) || 1) *
+      V5_COMBAT_CONSTANTS.SINGLE_ATTACK_POPULATION_LOSS_CAP,
+  );
+  const fortHp = clamp(params.fortHpPercent, 0, 1);
+  const fortProtection = (1 - 0.3 * fortHp) * (1 - 0.25 * fortHp);
+
   return (
-    Math.max(1, params.effectiveDailyRecovery) *
-    calculateActivityRecoveryModifier(params.dailyClicks) *
-    calculateTurnDamageFactor(params.turns) *
-    calculateLevelDamageFactor(params.levelDifference) *
-    clamp(params.winQuality, 0.25, 2) *
+    ceiling *
+    Math.min(1, calculateTurnDamageFactor(params.turns)) *
+    clamp(1 - params.levelDifference * 0.08, 0.8, 1) *
+    clamp(params.winQuality, 0.3, 1) *
     fortProtection *
-    fortExposure *
     calculatePressureProtection(params.defensePressureToday)
   );
 }

@@ -1,3 +1,5 @@
+import type { RulesetId } from './scenarioTypes';
+
 /** Describes the unit counts data contract. */
 export interface UnitCounts {
   soldier: number;
@@ -62,6 +64,23 @@ export interface BattleConfig {
   maxTurns?: number;
   isDefenderProtected?: boolean;
   random?: () => number;
+  /**
+   * Comparative ruleset id. When set, `runSingleBattle` maps the ruleset
+   * onto the appropriate primitives (notably `isDefenderProtected` for
+   * low-level mitigation).
+   */
+  rulesetId?: RulesetId;
+  /**
+   * Optional per-defender daily casualty usage tracker. Applied only when
+   * the active ruleset has a non-null `dailyPopulationCap`. When omitted,
+   * no daily cap is enforced even under `candidateSafety`.
+   */
+  dailyCasualtyCapUsage?: import('./rulesets').DailyCasualtyCapUsage;
+  /**
+   * Optional defender start-of-day population. Used as the baseline for
+   * the daily cap when `dailyCasualtyCapUsage` is supplied.
+   */
+  defenderStartOfDayPopulation?: number;
 }
 
 /** Describes the balance parameters data contract. */

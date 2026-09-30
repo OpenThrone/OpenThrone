@@ -86,6 +86,7 @@ local
 
 # vercel
 .vercel
+.open-next
 temp/*
 
 .code-flattener/*

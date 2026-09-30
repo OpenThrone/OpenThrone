@@ -731,7 +731,7 @@ export const HouseUpgrades = {
   1: {
     name: 'Housing Level 1',
     fortLevel: 2,
-    citizensDaily: 10,
+    citizensDaily: 20,
     cost: 500000,
     index: 1,
     level: 2,
@@ -741,7 +741,7 @@ export const HouseUpgrades = {
   2: {
     name: 'Housing Level 2',
     fortLevel: 6, // Outpost Level 3
-    citizensDaily: 20,
+    citizensDaily: 40,
     cost: 1000000,
     index: 2,
     level: 3,
@@ -751,7 +751,7 @@ export const HouseUpgrades = {
   3: {
     name: 'Housing Level 3',
     fortLevel: 10, // Fortress
-    citizensDaily: 30,
+    citizensDaily: 60,
     cost: 1500000,
     index: 3,
     level: 4,
@@ -761,7 +761,7 @@ export const HouseUpgrades = {
   4: {
     name: 'Housing Level 4',
     fortLevel: 14, // Citadel Level 2
-    citizensDaily: 40,
+    citizensDaily: 80,
     cost: 2500000,
     index: 4,
     level: 5,
@@ -771,7 +771,7 @@ export const HouseUpgrades = {
   5: {
     name: 'Housing Level 5',
     fortLevel: 18, // Castle Level 3
-    citizensDaily: 50,
+    citizensDaily: 100,
     cost: 3500000,
     index: 5,
     level: 6,
@@ -781,7 +781,7 @@ export const HouseUpgrades = {
   6: {
     name: 'Housing Level 6',
     fortLevel: 22, // Empire
-    citizensDaily: 60,
+    citizensDaily: 120,
     cost: 5000000,
     index: 6,
     level: 7,

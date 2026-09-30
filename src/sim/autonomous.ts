@@ -358,6 +358,10 @@ async function runAutonomousBalanceLoop(
   const targetAttackerWinRate = config.targetAttackerWinRate ?? 0.5;
 
   let balance = { ...DEFAULT_BALANCE, ...(config.simulation?.balance ?? {}) };
+  const simulationConfig: SimulationConfig = {
+    ...config.simulation,
+    seed: config.simulation?.seed ?? config.seed,
+  };
   let baselinePopulation = generatePopulation(
     populationSize,
     levelRange,
@@ -368,7 +372,7 @@ async function runAutonomousBalanceLoop(
   let finalState = await runPopulationSimulation(
     clonePopulation(baselinePopulation),
     1,
-    config.simulation ?? {},
+    simulationConfig,
   );
 
   for (let iteration = 1; iteration <= maxIterations; iteration++) {
@@ -376,7 +380,7 @@ async function runAutonomousBalanceLoop(
       clonePopulation(baselinePopulation),
       daysPerIteration,
       {
-        ...(config.simulation ?? {}),
+        ...simulationConfig,
         balance,
       },
     );

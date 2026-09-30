@@ -1,5 +1,6 @@
 import { getPlayerPower } from './economy';
-import {
+import { createDefaultRandom, validateRandomDraw } from './random';
+import type {
   IntelResult,
   PlayerState,
   StrategicGoal,
@@ -434,7 +435,7 @@ export function shouldSendIntel(
   attacker: PlayerState,
   target: TargetEvaluation,
   intelCache: Map<string, IntelResult>,
-  random: () => number = Math.random,
+  random: () => number = createDefaultRandom(),
 ): boolean {
   if (attacker.behavior.spyPreference < 0.2) return false;
 
@@ -451,7 +452,10 @@ export function shouldSendIntel(
     target.motivation === 'retaliation' || target.motivation === 'repeat-farm'
       ? 0.25
       : 0;
-  return attacker.behavior.spyPreference * 0.65 + motiveBoost > random();
+  return (
+    attacker.behavior.spyPreference * 0.65 + motiveBoost >
+    validateRandomDraw(random())
+  );
 }
 
 function getSpyMissionLimits(spyLevel: number): {

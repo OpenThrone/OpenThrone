@@ -1,6 +1,6 @@
 import { Group, Text, Title } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import type UserModel from '@/models/Users';
 import {
@@ -26,9 +26,9 @@ export const SidebarTimeInfo = React.memo(function SidebarTimeInfo({
   inkColor,
 }: SidebarTimeInfoProps) {
   const { t } = useTranslation('common');
-  const [time, setTime] = useState('--:--');
-  const [OTTime, setOTTime] = useState('--:--');
   const hasInitializedRef = useRef(false);
+  const nextTurnTimestampRef = useRef<HTMLSpanElement>(null);
+  const otTimeRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     // Only show '--:--' on initial load before we have user data
@@ -49,13 +49,18 @@ export const SidebarTimeInfo = React.memo(function SidebarTimeInfo({
       const minutes = String(remaining.minutes).padStart(2, '0');
       const seconds = String(remaining.seconds).padStart(2, '0');
 
-      setTime(`${minutes}:${seconds}`);
-      setOTTime(
-        getOTTime().toLocaleTimeString(user?.locale ?? 'en-US', {
-          timeStyle: 'short',
-          hour12: false,
-        }),
-      );
+      if (nextTurnTimestampRef.current) {
+        nextTurnTimestampRef.current.textContent = `${minutes}:${seconds}`;
+      }
+      if (otTimeRef.current) {
+        otTimeRef.current.textContent = getOTTime().toLocaleTimeString(
+          user?.locale ?? 'en-US',
+          {
+            timeStyle: 'short',
+            hour12: false,
+          },
+        );
+      }
     };
 
     // Update immediately
@@ -81,14 +86,18 @@ export const SidebarTimeInfo = React.memo(function SidebarTimeInfo({
         {t('sidebar.timeUntilNextTurn')}
       </Title>
       <Title order={valueOrder} ta="center" fw="bold" style={timeStyle}>
-        <span id="nextTurnTimestamp">{time}</span>
+        <span id="nextTurnTimestamp" ref={nextTurnTimestampRef}>
+          --:--
+        </span>
       </Title>
 
       <Title order={labelOrder} className="text-center" style={timeStyle}>
         {t('sidebar.otTime')}
       </Title>
       <Title order={otValueOrder} ta="center" fw="bold" style={timeStyle}>
-        <span id="otTime">{OTTime}</span>
+        <span id="otTime" ref={otTimeRef}>
+          --:--
+        </span>
       </Title>
     </>
   );

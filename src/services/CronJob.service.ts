@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { getAllUsers } from '@/services';
 import { getUpdatedStatus } from '@/services/User.service';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logError } from '@/utils/logger';
 import { calculateOverallRank } from '@/utils/utilities';
 
@@ -220,6 +221,8 @@ export class CronJobService {
     currentUser: UserModel,
   ): Promise<boolean> {
     try {
+      await this.healWoundedUnits(currentUser);
+
       const originalCitizens = Number(currentUser.citizens ?? 0);
       const recruitingBonus = Number(currentUser.recruitBonus ?? 0) || 0;
       const newCitizens = originalCitizens + recruitingBonus;
@@ -268,6 +271,78 @@ export class CronJobService {
     } catch (error) {
       logError(`Error updating user ${currentUser.id} for daily`, { error });
       return false;
+    }
+  }
+
+  /**
+   * Heals a share of the wounded pool daily, returning recovered units to
+   * active duty and persisting the remaining wounded counts.
+   */
+  private static async healWoundedUnits(user: UserModel): Promise<void> {
+    const woundedGroups = Array.isArray(user.woundedUnits)
+      ? (user.woundedUnits as Array<{
+          type?: string;
+          level?: number;
+          quantity?: number;
+          isMercenary?: boolean;
+          woundedAt?: string;
+        }>)
+      : [];
+    if (!woundedGroups.length) return;
+
+    try {
+      const remaining: typeof woundedGroups = [];
+
+      for (const group of woundedGroups) {
+        const quantity = Math.max(0, Math.floor(Number(group?.quantity ?? 0)));
+        const type = String(group?.type ?? 'CITIZEN');
+        const level = Math.max(1, Math.floor(Number(group?.level ?? 1)));
+        const isMercenary = !!group?.isMercenary;
+        if (quantity <= 0) continue;
+
+        const healed = Math.min(
+          quantity,
+          Math.max(
+            1,
+            Math.floor(
+              quantity * V5_COMBAT_CONSTANTS.WOUNDED_HEAL_RATE_DAILY,
+            ),
+          ),
+        );
+        const unhealed = quantity - healed;
+
+        if (healed > 0) {
+          await prisma.userUnit.upsert({
+            where: {
+              userId_type_level_isMercenary: {
+                userId: user.id,
+                type,
+                level,
+                isMercenary,
+              },
+            },
+            update: { quantity: { increment: healed } },
+            create: {
+              userId: user.id,
+              type,
+              level,
+              quantity: healed,
+              isMercenary,
+            },
+          });
+        }
+
+        if (unhealed > 0) {
+          remaining.push({ ...group, quantity: unhealed });
+        }
+      }
+
+      await prisma.users.update({
+        where: { id: user.id },
+        data: { wounded_units: remaining },
+      });
+    } catch (error) {
+      logError(`Error healing wounded units for user ${user.id}`, { error });
     }
   }
 

@@ -10,10 +10,10 @@ const hostname = process.env.HOSTNAME || 'localhost';
 const port = parseInt(process.env.PORT, 10) || 3000;
 
 // Initialize Next.js with hostname and port
+const useTurbopack = process.env.USE_TURBOPACK === 'true';
 const app = next({
   dev,
-  turbo: true,
-  turbopack: true,
+  ...(useTurbopack ? { turbo: true } : { webpack: true }),
   hostname,
   port,
 });

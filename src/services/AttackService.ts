@@ -1,4 +1,4 @@
-import { UnitTypes } from '@/constants';
+import { HouseUpgrades, UnitTypes } from '@/constants';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { BattleUser } from '@/models/BattleUser';
@@ -28,7 +28,10 @@ import {
   computeBattleWinProbabilityProxy,
   totalCombatPower,
 } from '@/utils/balance/effectiveStats';
-import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
+import {
+  calculateDailyReplacementThroughput,
+  V5_COMBAT_CONSTANTS,
+} from '@/utils/balance/v5Combat';
 import { logDebug, logError } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
 import { deepClone } from '@/utils/utilities';
@@ -228,6 +231,57 @@ export const AttackService = {
         };
       }
 
+      // Dogpile protection: the defender can only lose DAILY_CASUALTY_RECOVERY
+      // days of rebuild throughput across ALL attackers today. Reduce that
+      // allowance by what earlier attackers already took.
+      const allowanceTodayKey = new Date().toISOString().slice(0, 10);
+      const startOfToday = new Date(`${allowanceTodayKey}T00:00:00.000Z`);
+      const todayLossesAgg = await prisma.attack_log.aggregate({
+        where: {
+          defender_id: defenderId,
+          type: 'attack',
+          timestamp: { gte: startOfToday },
+        },
+        _sum: { defender_losses_total: true, pillaged_gold: true },
+      });
+      const todayDefenderLosses = Number(
+        todayLossesAgg._sum.defender_losses_total ?? 0,
+      );
+      const defenderHouseUpgrade =
+        HouseUpgrades[
+          Math.max(0, Number(defenderUser.house_level ?? 1)) as keyof typeof HouseUpgrades
+        ] ?? HouseUpgrades[0];
+      const defenderDailyThroughput = calculateDailyReplacementThroughput({
+        houseCitizens: Number(defenderHouseUpgrade?.citizensDaily ?? 1),
+        race: DefensePlayer.race,
+      });
+      const defenderDailyAllowanceRemaining = Math.max(
+        0,
+        Math.floor(
+          defenderDailyThroughput *
+            V5_COMBAT_CONSTANTS.DAILY_CASUALTY_RECOVERY_DAYS,
+        ) - todayDefenderLosses,
+      );
+      (DefensePlayer as any).dailyCasualtyAllowanceRemaining =
+        defenderDailyAllowanceRemaining;
+
+      // Treasury dogpile protection: all attackers combined may take at most
+      // DAILY_GOLD_PILLAGE_SHARE_CAP of the defender's on-hand gold per day.
+      const todayGoldTaken = BigInt(todayLossesAgg._sum.pillaged_gold ?? 0);
+      const dailyGoldCeiling =
+        (BigInt(DefensePlayer.gold) *
+          BigInt(
+            Math.floor(
+              V5_COMBAT_CONSTANTS.DAILY_GOLD_PILLAGE_SHARE_CAP * 100,
+            ),
+          )) /
+        BigInt(100);
+      const defenderDailyGoldRemaining = BigInt(
+        dailyGoldCeiling > todayGoldTaken
+          ? dailyGoldCeiling - todayGoldTaken
+          : 0,
+      );
+
       const startOfAttack = {
         Attacker: stringifyObj(deepClone(AttackPlayer)),
         Defender: stringifyObj(deepClone(DefensePlayer)),
@@ -241,6 +295,10 @@ export const AttackService = {
         DefensePlayer,
         committedTurns,
         DefensePlayer.isProtected(),
+        {
+          defenderDailyCasualtyRemaining: defenderDailyAllowanceRemaining,
+          defenderDailyGoldRemaining,
+        },
       );
 
       const getUnitHp = (type: string, level: number) =>
@@ -306,8 +364,11 @@ export const AttackService = {
 
       try {
         const attack_log = await prisma.$transaction(async (tx) => {
-          // Clamp and apply pillage inside the transaction to guarantee we never persist negative balances.
-          if (isAttackerWinner) {
+          // The raider always carries off what they grabbed during their
+          // committed turns — the verdict grades the raid, it does not gate
+          // the loot. Clamp and apply inside the transaction so balances can
+          // never go negative.
+          {
             const pillageRaw =
               typeof battleResults.pillagedGold === 'bigint'
                 ? battleResults.pillagedGold
@@ -347,10 +408,9 @@ export const AttackService = {
             {
               timestamp: new Date().toISOString(),
               winner: isAttackerWinner ? attackerId : defenderId,
-              pillaged_gold:
-                isAttackerWinner && battleResults.pillagedGold
-                  ? BigInt(String(battleResults.pillagedGold))
-                  : BigInt(0),
+              pillaged_gold: battleResults.pillagedGold
+                ? BigInt(String(battleResults.pillagedGold))
+                : BigInt(0),
               attacker_losses_total: attackerLossesTotal,
               defender_losses_total: defenderLossesTotal,
               stats: {
@@ -364,9 +424,7 @@ export const AttackService = {
                 defenderUnitDamageDealt,
                 defensePointsAtEnd: DefensePlayer.defense,
                 // Convert BigInt to string for JSON compatibility
-                pillagedGold: isAttackerWinner
-                  ? battleResults.pillagedGold.toString()
-                  : '0',
+                pillagedGold: battleResults.pillagedGold.toString(),
                 forthpAtStart: fortHpAtStart,
                 forthpAtEnd: fortHpAtEnd,
                 // Stringify potentially complex objects within stats
@@ -376,6 +434,15 @@ export const AttackService = {
                 defender_units: JSON.stringify(DefensePlayer.units),
                 attacker_losses: JSON.stringify(battleResults.Losses.Attacker),
                 defender_losses: JSON.stringify(battleResults.Losses.Defender),
+                wounded: JSON.stringify(
+                  (battleResults as any).wounded ?? { attacker: [], defender: [] },
+                ),
+                routed_stacks: JSON.stringify(
+                  (battleResults as any).routedStacks ?? [],
+                ),
+                defender_daily_allowance_remaining: defenderDailyAllowanceRemaining,
+                canonical_outcome: (battleResults as any).canonicalOutcome ?? null,
+                defender_daily_gold_remaining: defenderDailyGoldRemaining.toString(),
                 mitigation_log: JSON.stringify(
                   (battleResults as any).mitigationLog ?? [],
                 ),
@@ -399,26 +466,28 @@ export const AttackService = {
             tx,
           );
 
-          // If attacker won, record bank history for the actual applied pillage amount
-          if (isAttackerWinner) {
+          // Record bank history for the actual carried-off pillage amount
+          {
             const goldAmount =
               typeof battleResults.pillagedGold === 'bigint'
                 ? battleResults.pillagedGold
                 : BigInt(String(battleResults.pillagedGold || '0'));
 
-            await createBankHistory(
-              {
-                gold_amount: goldAmount,
-                from_user_id: defenderId,
-                from_user_account_type: 'HAND',
-                to_user_id: attackerId,
-                to_user_account_type: 'HAND',
-                date_time: new Date().toISOString(),
-                history_type: 'WAR_SPOILS',
-                stats: { type: 'ATTACK', attackID: attack_log.id },
-              },
-              tx,
-            );
+            if (goldAmount > BigInt(0)) {
+              await createBankHistory(
+                {
+                  gold_amount: goldAmount,
+                  from_user_id: defenderId,
+                  from_user_account_type: 'HAND',
+                  to_user_id: attackerId,
+                  to_user_account_type: 'HAND',
+                  date_time: new Date().toISOString(),
+                  history_type: 'WAR_SPOILS',
+                  stats: { type: 'ATTACK', attackID: attack_log.id },
+                },
+                tx,
+              );
+            }
           }
 
           // Persist updated unit counts for both players
@@ -431,6 +500,64 @@ export const AttackService = {
             defenderId,
             DefensePlayer.getUnitsForDbUpdate(),
             tx,
+          );
+
+          // Move wounded units (removed from rosters by the battle) into the
+          // recovering pool; daily cron healing returns them to active duty.
+          const persistWounded = async (
+            userId: number,
+            wounded:
+              | Array<{
+                  type: string;
+                  level: number;
+                  quantity: number;
+                  isMercenary: boolean;
+                }>
+              | undefined,
+          ): Promise<void> => {
+            if (!wounded?.length) return;
+            const existingUser = await tx.users.findUnique({
+              where: { id: userId },
+              select: { wounded_units: true },
+            });
+            const existing = Array.isArray(existingUser?.wounded_units)
+              ? (existingUser?.wounded_units as Array<{
+                  type?: string;
+                  level?: number;
+                  quantity?: number;
+                  isMercenary?: boolean;
+                  woundedAt?: string;
+                }>)
+              : [];
+            const merged = [...existing];
+            for (const group of wounded) {
+              const match = merged.find(
+                (m) =>
+                  m?.type === group.type &&
+                  m?.level === group.level &&
+                  !!m?.isMercenary === !!group.isMercenary,
+              );
+              if (match) {
+                match.quantity = Number(match.quantity ?? 0) + group.quantity;
+              } else {
+                merged.push({
+                  ...group,
+                  woundedAt: new Date().toISOString(),
+                });
+              }
+            }
+            await tx.users.update({
+              where: { id: userId },
+              data: { wounded_units: merged },
+            });
+          };
+          await persistWounded(
+            attackerId,
+            (battleResults as any).wounded?.attacker,
+          );
+          await persistWounded(
+            defenderId,
+            (battleResults as any).wounded?.defender,
           );
 
           // Increment stats for both users

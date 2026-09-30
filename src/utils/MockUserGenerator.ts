@@ -78,6 +78,11 @@ export default class MockUserGenerator {
       created_at: new Date(),
       updated_at: new Date(),
       stats: '{}', // From schema
+      units: [],
+      items: [],
+      battle_upgrades: [],
+      structure_upgrades: [],
+      bonus_points: [],
       killing_str: 1, // From schema
       defense_str: 1, // From schema
       spying_str: 1, // From schema
@@ -88,6 +93,12 @@ export default class MockUserGenerator {
       sentry: 0, // From schema
       currentEraId: null, // From schema
       achievements: '{}', // From schema
+      isBot: false,
+      botPersona: null,
+      botConfig: null,
+      botCreatedAt: null,
+      botLastRunAt: null,
+      botStats: null,
     };
   }
 

@@ -107,6 +107,20 @@ To facilitate the job of providing a set of scheduled jobs, such as providing tu
 ```*/5 * * * * /usr/bin/curl -X POST -H "Authorization: SECRET_KEY_FROM_ENV" https://<url>/api/cronJobs/turns```
 - .env value to enable: ```DO_TURN_UPDATES=true```
 
+### Bot Daily Tick
+Drives bot user activity (recruiting, training) so a small beta cohort shares the world with a populated game. Bots are real rows in the `users` table (flagged `isBot=true`), so they exercise the same code paths as humans.
+- Provision bots once via `bun run scripts/seed-bots.ts` (see `config/bots/manifests/default.json`).
+- crontab entry (run once per day, e.g. 30 minutes after the daily cron so bots get their daily citizens first):
+```30 0 * * * /usr/bin/curl -X POST -H "Authorization: SECRET_KEY_FROM_ENV" https://<url>/api/cronJobs/bots```
+- Override the schedule via query string: `?schedule=<name>` (defaults to `config/bots/schedules/default.json`).
+- .env values to enable:
+```DO_BOT_UPDATES=true
+BOT_DEFAULT_PASSWORD="<secure-password>"```
+- Admin endpoints (require admin session):
+  - `POST /api/admin/bots/provision` — body `{ manifest?: string, dryRun?: boolean }`
+  - `GET /api/admin/bots/status` — returns bot roster + last-run summary
+  - `POST /api/admin/bots/run-now` — body `{ schedule?: string }` — manual tick trigger
+
 ### .ENV Secrets
 Make sure you update your secret in your .env file
 ```TASK_SECRET="TESTING"```

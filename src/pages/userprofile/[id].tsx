@@ -1020,7 +1020,7 @@ export const getServerSideProps = async ({ query }) => {
     ),
   };
 
-  return { props: { users: userData } };
+  return { props: { users: serializeDates(userData) } };
 };
 
 export default Index;

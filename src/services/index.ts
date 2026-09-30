@@ -13,6 +13,7 @@ export * from './Auth.service';
 export * from './Bank.service';
 export * from './Battle.service';
 export * from './Blog.service';
+export * from './Bot.service';
 export * from './CheatDetection.service';
 export * from './Config.service';
 export * from './CronJob.service';

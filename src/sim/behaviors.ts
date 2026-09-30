@@ -3,13 +3,16 @@ import {
   calculateTotalUnitCost,
   calculateUpgradeCost,
 } from './economy';
+import type { InvariantContext } from './invariants';
+import { assertPlayerGold } from './invariants';
 import { getSpyMissionLimits } from './population';
+import { createDefaultRandom, createValidatedRandom } from './random';
 import {
   evaluateTargets,
   selectAttackStrategy,
   shouldSendIntel,
 } from './targeting';
-import { AgentDecision, PlayerState, TargetEvaluation } from './types';
+import type { AgentDecision, PlayerState, TargetEvaluation } from './types';
 
 const MAX_ATTACK_TURNS = 10;
 
@@ -23,7 +26,7 @@ export function makeDailyDecisions(
     random?: () => number;
   } = {},
 ): AgentDecision {
-  const random = options.random ?? Math.random;
+  const random = createValidatedRandom(options.random ?? createDefaultRandom());
   const decision: AgentDecision = {
     intelMissions: [],
     attacks: [],
@@ -155,7 +158,7 @@ export function makeDailyDecisions(
 
 function shouldActThisTick(
   player: PlayerState,
-  random: () => number = Math.random,
+  random: () => number = createDefaultRandom(),
 ): boolean {
   const readyToSpendTurns = player.attackTurns >= 3 && player.stamina >= 3;
   const hoardedTurns = player.attackTurns >= 12;
@@ -424,7 +427,9 @@ function calculateUpgradePriorities(
 export function applyDecision(
   player: PlayerState,
   decision: AgentDecision,
+  context: InvariantContext,
 ): PlayerState {
+  assertPlayerGold(player, context);
   let newPlayer = { ...player };
   let goldSpent = 0;
 
@@ -537,6 +542,7 @@ export function applyDecision(
     }
   }
 
+  assertPlayerGold(newPlayer, context);
   newPlayer.gold = Math.max(0, Math.floor(newPlayer.gold));
   newPlayer.goldInBank = Math.max(0, Math.floor(newPlayer.goldInBank));
 

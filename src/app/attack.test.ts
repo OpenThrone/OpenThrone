@@ -350,6 +350,10 @@ describe('setup Attack test', () => {
     // Log the quantities for verification
     logInfo(weakAttacker.unitTotals);
     logInfo(strongDefender.unitTotals);
+    const defenderPopulation = [...strongDefender.units, ...strongDefender.mercenaries].reduce(
+      (sum, unit) => sum + (unit.quantity ?? 0),
+      0,
+    );
     const battle = await simulateBattle(
       weakAttacker,
       strongDefender,
@@ -358,9 +362,20 @@ describe('setup Attack test', () => {
     );
     expect(battle.Losses.Attacker.total).toBeGreaterThan(0);
     expect(battle.Losses.Defender.total).toBeGreaterThanOrEqual(0);
-    expect(battle.Losses.Attacker.total).toBeGreaterThan(
-      battle.Losses.Defender.total,
-    );
+    // Punishment for a hopeless attack is relative, not absolute: losses are
+    // capped by replacement throughput on both sides, so the weak attacker
+    // must lose a far larger share of his committed force than the defender.
+    const woundedOf = (side: 'attacker' | 'defender') =>
+      ((battle as any).wounded?.[side] as Array<{ quantity: number }> | undefined)?.reduce(
+        (sum, group) => sum + group.quantity,
+        0,
+      ) ?? 0;
+    const attackerLossShare =
+      (battle.Losses.Attacker.total + woundedOf('attacker')) / 100;
+    const defenderLossShare =
+      (battle.Losses.Defender.total + woundedOf('defender')) /
+      Math.max(1, defenderPopulation);
+    expect(attackerLossShare).toBeGreaterThan(defenderLossShare * 5);
   });
 
   it('should simulate a battle with low fortHP (fort breached, extra casualties applied)', async () => {
@@ -419,8 +434,9 @@ describe('setup Attack test', () => {
   });
 
   it('should simulate a battle with high fortHP (fort remains mostly intact)', async () => {
-    // Create a defender with full fortHP (e.g., 500)
-    defenderGenerator.setFortHitpoints(500);
+    // Create a defender with a properly scaled strong fort (level 10, full HP)
+    defenderGenerator.setFortLevel(10);
+    defenderGenerator.setFortHitpoints(2500);
     const highFortDefender = new UserModel(
       defenderGenerator.getPrismaUser(),
       defenderGenerator.getUnits(),
@@ -942,7 +958,8 @@ describe('setup Attack test', () => {
       ]),
     );
     defender.addExperience(10000);
-    defender.setFortHitpoints(500);
+    defender.setFortLevel(10);
+    defender.setFortHitpoints(2500);
 
     const attackerModel = new UserModel(
       attacker.getPrismaUser(),

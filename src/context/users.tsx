@@ -82,9 +82,10 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
   const pathName = usePathname();
   const { data: session, status } = useSession();
   const [user, setUser] = useState<UserModel | null>(null); // State holds UserModel instance
+  const sessionUserId = session?.user?.id;
   const userId = useMemo(
-    () => (session?.user?.id ? Number(session.user.id) : null),
-    [session],
+    () => (sessionUserId ? Number(sessionUserId) : null),
+    [sessionUserId],
   );
   const { addEventListener, removeEventListener } = useSocket(userId);
   const [loading, setLoading] = useState(true);

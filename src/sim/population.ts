@@ -4,6 +4,7 @@ import {
   HouseUpgrades,
 } from '../constants/Structure_Upgrades';
 import { getXpFloorForLevel } from './progression';
+import { createRng, deterministicId, normalizeRngSeed } from './random';
 import {
   BehaviorParams,
   PlayerState,
@@ -56,12 +57,10 @@ function getEconomyByLevel(level: number) {
   return EconomyUpgrades.find((e) => e.level === level) ?? EconomyUpgrades[0];
 }
 
-function seededRandom(seed: number): () => number {
-  let state = Math.abs(Math.floor(seed)) || 1;
-  return () => {
-    state = (state * 48271) % 2147483647;
-    return state / 2147483647;
-  };
+const POPULATION_DEFAULT_SEED = 1;
+
+function getPopulationRandom(seed?: number): () => number {
+  return createRng(normalizeRngSeed(seed ?? POPULATION_DEFAULT_SEED)).next;
 }
 
 function generateBehaviorForStyle(
@@ -215,7 +214,7 @@ export function generatePopulation(
   levelRange: [number, number],
   seed?: number,
 ): PlayerState[] {
-  const random = seededRandom(seed ?? Date.now());
+  const random = getPopulationRandom(seed);
   const [minLevel, maxLevel] = levelRange;
   const players: PlayerState[] = [];
 
@@ -306,8 +305,9 @@ export function createPlayerState(
   level: number,
   playStyle: PlayStyle = 'balanced',
   seed?: number,
+  id?: string,
 ): PlayerState {
-  const random = seededRandom(seed ?? Date.now());
+  const random = getPopulationRandom(seed);
   const behavior = generateBehaviorForStyle(playStyle, random);
   const fortLevel = Math.max(1, Math.floor(level / 3));
   const houseLevel = getHouseLevelForPlayerLevel(level);
@@ -315,8 +315,15 @@ export function createPlayerState(
   const fortification = getFortificationByLevel(fortLevel);
   const units = getUnitsForLevel(level);
 
+  const resolvedId =
+    id ??
+    deterministicId(
+      `player_l${level}`,
+      normalizeRngSeed(seed ?? POPULATION_DEFAULT_SEED),
+    );
+
   return {
-    id: `player_${Math.random().toString(36).slice(2, 9)}`,
+    id: resolvedId,
     displayName: `Player ${level}`,
     level,
     xp: getXpFloorForLevel(level),

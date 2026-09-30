@@ -5,13 +5,20 @@ import {
   setBattleConstants,
   simulateBattle,
 } from '../utils/attackFunctions';
+import { assertGoldQuantity } from './invariants';
 import {
   computeArmyCost,
   createSimPlayer,
   getTotalDefense,
   getTotalOffense,
 } from './presets';
+import { createDefaultRandom, createValidatedRandom } from './random';
 import {
+  applyDefenderDailyCap,
+  getRuleset,
+  isProtectedByLowLevelRule,
+} from './rulesets';
+import type {
   BalanceParameters,
   BattleConfig,
   BattleMetrics,
@@ -86,6 +93,10 @@ function createBattleItems(player: SimPlayer): PlayerItem[] {
 }
 
 function simPlayerToBattleUser(player: SimPlayer, isAttacker: boolean): any {
+  assertGoldQuantity(player.gold, 'gold', {
+    day: 0,
+    playerId: player.id,
+  });
   const units: any[] = [];
 
   if (player.units.soldier > 0) {
@@ -285,6 +296,17 @@ function battleResultToMetrics(
   };
 }
 
+/**
+ * Process-global lock that forbids overlapping same-process battle
+ * overrides. When true, a `runSingleBattle` call has installed overrides
+ * via `setBattleConstants` and not yet restored them; any concurrent
+ * `runSingleBattle` invocation would observe corrupted constants.
+ *
+ * Matrix concurrency MUST use child-process isolation (one Bun process
+ * per scenario) so this lock never needs to be cross-process aware.
+ */
+let battleOverrideActive = false;
+
 /** Run single battle. */
 export async function runSingleBattle(
   attacker: SimPlayer,
@@ -294,33 +316,111 @@ export async function runSingleBattle(
   const attackerUser = simPlayerToBattleUser(attacker, true);
   const defenderUser = simPlayerToBattleUser(defender, false);
 
+  const ruleset = config?.rulesetId ? getRuleset(config.rulesetId) : undefined;
   const maxTurns = config?.maxTurns ?? 10;
-  const isDefenderProtected =
-    config?.isDefenderProtected ?? defender.level <= 9;
-  const random = config?.random ?? Math.random;
+  const isDefenderProtected = resolveDefenderProtection(
+    config,
+    defender,
+    ruleset,
+  );
+  const random = createValidatedRandom(config?.random ?? createDefaultRandom());
   const originalConstants = getBattleConstants();
   const overrides = battleConfigToOverrides(config);
+  const hasOverrides = Object.keys(overrides).length > 0;
 
-  if (Object.keys(overrides).length > 0) {
+  if (hasOverrides && battleOverrideActive) {
+    throw new Error(
+      'runSingleBattle cannot install battle-constant overrides while another override is active in this process. ' +
+        'Run scenarios in isolated child processes for matrix concurrency.',
+    );
+  }
+
+  if (hasOverrides) {
+    battleOverrideActive = true;
     setBattleConstants(overrides as any);
   }
 
-  const result = await simulateBattle(
-    attackerUser,
-    defenderUser,
-    defender.fortHp,
-    maxTurns,
-    false,
-    isDefenderProtected,
-    { random },
-  );
-
-  if (Object.keys(overrides).length > 0) {
-    setBattleConstants(originalConstants as any);
+  let result: Awaited<ReturnType<typeof simulateBattle>>;
+  try {
+    result = await simulateBattle(
+      attackerUser,
+      defenderUser,
+      defender.fortHp,
+      maxTurns,
+      false,
+      isDefenderProtected,
+      { random },
+    );
+  } finally {
+    if (hasOverrides) {
+      setBattleConstants(originalConstants as any);
+      battleOverrideActive = false;
+    }
   }
 
   const armyCost = computeArmyCost(attacker);
-  return battleResultToMetrics(result, attacker, defender, armyCost);
+  const metrics = battleResultToMetrics(result, attacker, defender, armyCost);
+  return applyCandidateDailyCapIfConfigured(metrics, defender, config, ruleset);
+}
+
+function resolveDefenderProtection(
+  config: BattleConfig | undefined,
+  defender: SimPlayer,
+  ruleset: ReturnType<typeof getRuleset> | undefined,
+): boolean {
+  if (config?.isDefenderProtected !== undefined) {
+    return config.isDefenderProtected;
+  }
+  if (ruleset) {
+    return isProtectedByLowLevelRule(ruleset, defender.level);
+  }
+  return defender.level <= 9;
+}
+
+/**
+ * When the active ruleset has a defender-wide daily casualty cap and the
+ * caller has supplied a daily usage tracker, clip the post-battle
+ * defender casualties to respect the remaining daily allowance.
+ *
+ * The function reads but does NOT mutate `dailyCasualtyCapUsage`; the
+ * scenario runner is responsible for accumulating the returned
+ * casualties into its own usage state. Reduction is applied
+ * proportionally across lost unit types so no single unit absorbs the
+ * entire clip.
+ */
+function applyCandidateDailyCapIfConfigured(
+  metrics: BattleMetrics,
+  defender: SimPlayer,
+  config: BattleConfig | undefined,
+  ruleset: ReturnType<typeof getRuleset> | undefined,
+): BattleMetrics {
+  if (!ruleset || ruleset.dailyPopulationCap == null) return metrics;
+  if (!config?.dailyCasualtyCapUsage) return metrics;
+
+  const pendingTotal = sumDefenderCasualties(metrics.defenderCasualties);
+  if (pendingTotal <= 0) return metrics;
+
+  const { allowed } = applyDefenderDailyCap({
+    manifest: ruleset,
+    usage: config.dailyCasualtyCapUsage,
+    pendingCasualties: pendingTotal,
+  });
+
+  if (allowed >= pendingTotal) return metrics;
+  const scale = pendingTotal > 0 ? allowed / pendingTotal : 0;
+  const scaled: UnitCounts = { ...metrics.defenderCasualties };
+  (Object.keys(scaled) as (keyof UnitCounts)[]).forEach((key) => {
+    scaled[key] = Math.floor(scaled[key] * scale);
+  });
+  return { ...metrics, defenderCasualties: scaled };
+}
+
+function sumDefenderCasualties(casualties: UnitCounts): number {
+  let total = 0;
+  (Object.keys(casualties) as (keyof UnitCounts)[]).forEach((key) => {
+    total += casualties[key];
+  });
+  return total;
 }
 
 /** Run simulation. */
@@ -331,12 +431,15 @@ export async function runSimulation(
   config?: BattleConfig,
 ): Promise<SimulationResults> {
   const results: BattleMetrics[] = [];
+  const ownedRandom = config?.random ?? createDefaultRandom();
+  const battleConfig: BattleConfig | undefined =
+    config?.random != null ? config : { ...config, random: ownedRandom };
 
   for (let i = 0; i < iterations; i++) {
     const attacker = createSimPlayer({ ...attackerConfig, id: `att_${i}` });
     const defender = createSimPlayer({ ...defenderConfig, id: `def_${i}` });
 
-    const result = await runSingleBattle(attacker, defender, config);
+    const result = await runSingleBattle(attacker, defender, battleConfig);
     results.push(result);
   }
 
@@ -469,6 +572,10 @@ function getPowerRatio(attacker: SimPlayer, defender: SimPlayer): number {
 // ============================================================
 
 function playerStateToSpyUser(player: PlayerState): any {
+  assertGoldQuantity(player.gold, 'gold', {
+    day: 0,
+    playerId: player.id,
+  });
   const units: any[] = [];
 
   if (player.units.soldier > 0) {
@@ -610,6 +717,8 @@ function playerStateToSpyUser(player: PlayerState): any {
         player.units.sentry + player.units.sentinel + player.units.inquisitor,
       citizens: player.units.citizen,
       workers: player.units.worker,
+      defense:
+        player.units.guard + player.units.archer + player.units.royalGuard,
     },
     spyLimits: {
       all: { perMission: 10, perUser: 10 },
@@ -630,9 +739,10 @@ export async function simulateSpyIntel(
   attacker: PlayerState,
   defender: PlayerState,
   spyCount: number = 5,
-  random: () => number = Math.random,
+  random: () => number = createDefaultRandom(),
   turns: number = 1,
 ): Promise<IntelResult> {
+  const validatedRandom = createValidatedRandom(random);
   const attackerUser = playerStateToSpyUser(attacker);
   const defenderUser = playerStateToSpyUser(defender);
 
@@ -640,7 +750,7 @@ export async function simulateSpyIntel(
     const result = await (
       await import('../utils/spyFunctions')
     ).simulateIntel(attackerUser as any, defenderUser as any, spyCount, {
-      random,
+      random: validatedRandom,
       debug: false,
       turns,
       spyPressureToday: defender.spyPressureToday,
@@ -676,14 +786,20 @@ export async function simulateSpyIntel(
   }
 }
 
-async function simulateSpyAssassination(
+/**
+ * Typed assassination wrapper exposed for `src/sim/spyBehavior.ts` (plan
+ * Todo 8). Production assassination never awards battle XP; this wrapper
+ * preserves that invariant by omitting XP from the returned payload.
+ */
+export async function simulateSpyAssassination(
   attacker: PlayerState,
   defender: PlayerState,
   spyCount: number = 5,
   targetUnit?: string,
-  random: () => number = Math.random,
+  random: () => number = createDefaultRandom(),
   turns: number = 3,
 ): Promise<SpyResult> {
+  const validatedRandom = createValidatedRandom(random);
   const attackerUser = playerStateToSpyUser(attacker);
   const defenderUser = playerStateToSpyUser(defender);
 
@@ -696,7 +812,7 @@ async function simulateSpyAssassination(
       spyCount,
       targetUnit as any,
       {
-        random,
+        random: validatedRandom,
         turns,
         spyPressureToday: defender.spyPressureToday,
       },
@@ -721,13 +837,19 @@ async function simulateSpyAssassination(
   }
 }
 
-async function simulateSpyInfiltration(
+/**
+ * Typed infiltration wrapper exposed for `src/sim/spyBehavior.ts` (plan
+ * Todo 8). Production infiltration never awards battle XP; this wrapper
+ * preserves that invariant by omitting XP from the returned payload.
+ */
+export async function simulateSpyInfiltration(
   attacker: PlayerState,
   defender: PlayerState,
   spyCount: number = 5,
-  random: () => number = Math.random,
+  random: () => number = createDefaultRandom(),
   turns: number = 2,
 ): Promise<SpyResult> {
+  const validatedRandom = createValidatedRandom(random);
   const attackerUser = playerStateToSpyUser(attacker);
   const defenderUser = playerStateToSpyUser(defender);
 
@@ -735,7 +857,7 @@ async function simulateSpyInfiltration(
     const result = await (
       await import('../utils/spyFunctions')
     ).simulateInfiltration(attackerUser as any, defenderUser as any, spyCount, {
-      random,
+      random: validatedRandom,
       turns,
       spyPressureToday: defender.spyPressureToday,
     });

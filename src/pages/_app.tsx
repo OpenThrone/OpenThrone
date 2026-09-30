@@ -6,11 +6,11 @@ import '@mantine/core/styles.css';
 import '@mantine/tiptap/styles.css';
 
 import { config } from '@fortawesome/fontawesome-svg-core';
-import { Center, Loader, MantineProvider } from '@mantine/core';
+import { MantineProvider } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
 import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
-import { SessionProvider, useSession } from 'next-auth/react';
+import { SessionProvider } from 'next-auth/react';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import React, { Suspense, useEffect, useMemo } from 'react';
 
@@ -28,17 +28,17 @@ config.autoAddCss = false;
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const nextI18NextConfig = require('../../next-i18next.config');
 
-const MyApp = ({ Component, pageProps: { session, ...pageProps }, router }) => (
+const MyApp = ({ Component, pageProps: { session, ...pageProps } }) => (
   <Suspense fallback={<LoadingDots />}>
-    <SessionProvider session={session}>
+    <SessionProvider
+      session={session}
+      refetchInterval={0}
+      refetchOnWindowFocus={false}
+    >
       <SnackbarProvider>
         <UserProvider>
           <SnackbarBridge />
-          <AppWithTheme
-            Component={Component}
-            pageProps={pageProps}
-            router={router}
-          />
+          <AppWithTheme Component={Component} pageProps={pageProps} />
         </UserProvider>
       </SnackbarProvider>
     </SessionProvider>
@@ -96,8 +96,9 @@ const getNamespacesForPath = (path: string) => {
   return Array.from(namespaces);
 };
 
-const AppWithTheme = ({ Component, pageProps }: AppProps) => {
-  const { status } = useSession();
+type AppWithThemeProps = Pick<AppProps, 'Component' | 'pageProps'>;
+
+export const AppWithTheme = ({ Component, pageProps }: AppWithThemeProps) => {
   const { i18n } = useTranslation('common');
   const { user } = useUser();
   const router = useRouter();
@@ -147,17 +148,11 @@ const AppWithTheme = ({ Component, pageProps }: AppProps) => {
 
   return (
     <MantineProvider defaultColorScheme="dark" theme={theme}>
-      {status === 'loading' ? (
-        <Center mih="100vh">
-          <Loader size="xl" />
-        </Center>
-      ) : (
-        <LayoutProvider>
-          <Layout>
-            <Component {...pageProps} />
-          </Layout>
-        </LayoutProvider>
-      )}
+      <LayoutProvider>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      </LayoutProvider>
     </MantineProvider>
   );
 };

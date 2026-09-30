@@ -55,6 +55,8 @@ export class BaseUser {
 
   public fortHitpoints: number;
 
+  public houseLevel: number;
+
   public gold: bigint;
 
   public units: UserUnit[];
@@ -97,6 +99,7 @@ export class BaseUser {
     this.experience = safeUser?.experience ?? 0;
     this.fortLevel = safeUser?.fort_level ?? 0;
     this.fortHitpoints = safeUser?.fort_hitpoints ?? 0;
+    this.houseLevel = safeUser?.house_level ?? 1;
     this.gold = safeBigInt(safeUser?.gold);
 
     this.attackTurns = safeUser?.attack_turns ?? 0;

@@ -180,6 +180,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
 
   logInfo('Initializing Socket.IO...');
   io = new Server(httpServer, {
+    destroyUpgrade: false,
     cors: {
       origin: (origin, callback) => {
         if (!origin) return callback(null, true);

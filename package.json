@@ -4,6 +4,11 @@
   "scripts": {
     "dev": "bun run src/server/index.ts",
     "build": "next build",
+    "cloudflare:build": "opennextjs-cloudflare build",
+    "cloudflare:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cloudflare:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cloudflare:upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start -p 3001",
     "build-stats": "cross-env ANALYZE=true npm run build",
     "export": "next export",
@@ -68,6 +73,7 @@
     "argon2": "^0.44.0",
     "babel-plugin-react-compiler": "^19.1.0-rc.1-rc-af1b7da-20250421",
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "cookie": "^0.7.2",
     "cypress": "^13.17.0",
@@ -110,6 +116,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "latest",
+    "@opennextjs/cloudflare": "^1.20.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -154,7 +161,8 @@
     "semantic-release": "^24.2.9",
     "ts-morph": "^27.0.2",
     "typedoc": "^0.28.19",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.106.0"
   },
   "resolutions": {
     "@typescript-eslint/parser": "8.50.1",

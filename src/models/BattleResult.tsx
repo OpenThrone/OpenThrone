@@ -3,6 +3,14 @@ import { stringifyObj } from '@/utils/numberFormatting';
 
 import type UserModel from './Users';
 
+/** A group of recovering units of one type/level. */
+export interface WoundedUnitGroup {
+  type: string;
+  level: number;
+  quantity: number;
+  isMercenary: boolean;
+}
+
 /** Models battle result behavior and derived game data. */
 class BattleResult {
   attacker: UserModel;
@@ -47,6 +55,11 @@ class BattleResult {
     };
     fortBreached?: boolean;
     battleStats?: { attacker: any; defender: any };
+    wounded?: {
+      attacker: WoundedUnitGroup[];
+      defender: WoundedUnitGroup[];
+    };
+    routedStacks?: BattleResult['routedStacks'];
   };
 
   mitigationLog: Array<{
@@ -81,6 +94,39 @@ class BattleResult {
     };
   };
 
+  /** Units removed from rosters but recovering: return via daily healing. */
+  wounded: {
+    attacker: WoundedUnitGroup[];
+    defender: WoundedUnitGroup[];
+  };
+
+  /** Stacks that hit the per-battle casualty cap and were forced to withdraw. */
+  routedStacks: Array<{
+    side: 'Attacker' | 'Defender';
+    type: string;
+    level: number;
+    lost: number;
+    initialQuantity: number;
+  }>;
+
+  /** Single source of truth for the raid verdict; result/XP/logs derive from it. */
+  canonicalOutcome?: {
+    winner: 'ATTACKER' | 'DEFENDER';
+    reason:
+      | 'DEFENSE_WIPED'
+      | 'FORT_BREACHED'
+      | 'PROFITABLE_RAID'
+      | 'ATTACKER_REPELLED'
+      | 'DEFENDER_HELD';
+    attackerValueLost: number;
+    defenderValueLost: number;
+    fortValueDamage: number;
+    pillagedGoldValue: number;
+    netGainValue: number;
+    defenseUnitsBroken: number;
+    dentRequiredUnits: number;
+  };
+
   defenderStats: {
     defenseRemaining: number;
     meleeAtkPower: number;
@@ -108,6 +154,8 @@ class BattleResult {
     this.fortDamaged = false;
     this.result = 'UNDECIDED'; // Default value, will be set by calculateAndApplyExperience
     this.mitigationLog = [];
+    this.wounded = { attacker: [], defender: [] };
+    this.routedStacks = [];
     this.Losses = {
       Attacker: {
         total: 0,

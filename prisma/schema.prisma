@@ -365,8 +365,18 @@ model users {
   structure_upgrades Json? // Don't delete yet
   bonus_points       Json? // Don't delete yet
 
+  // Bot user system fields (see .sisyphus/plans/bot-users-system.md)
+  // isBot is non-null with default false so scheduler queries can use WHERE isBot = true efficiently.
+  isBot              Boolean    @default(false)
+  botPersona         String?
+  botConfig          Json?
+  botCreatedAt       DateTime?  @db.Timestamptz(3)
+  botLastRunAt       DateTime?  @db.Timestamptz(3)
+  botStats           Json?
+
   @@index([created_at])
   @@index([currentEraId])
+  @@index([isBot])
 }
 
 model AccountStatusHistory {

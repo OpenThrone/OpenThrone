@@ -4,7 +4,7 @@ import path from 'node:path';
 import { Fortifications } from '@/constants';
 import UserModel from '@/models/Users';
 import { simulateBattle } from '@/utils/attackFunctions';
-import { logInfo } from '@/utils/logger';
+import { captureLogs, logInfo } from '@/utils/logger';
 import MockUserGenerator from '@/utils/MockUserGenerator';
 import { createSeededRandom } from '@/utils/random';
 import {
@@ -13,6 +13,8 @@ import {
   simulateInfiltration,
   simulateIntel,
 } from '@/utils/spyFunctions';
+
+import { aggregateLogEntries } from './lib/report';
 
 type BattleProfile = {
   level: number;
@@ -316,14 +318,24 @@ function runSpySimulation() {
 }
 
 async function main() {
-  const battle = await runBattleMirrorSimulation();
-  const spy = runSpySimulation();
+  // Capture library debug logs instead of printing them, then include a
+  // collapsed summary in the report artifact.
+  const { result, logs } = await captureLogs(async () => {
+    const battle = await runBattleMirrorSimulation();
+    const spy = runSpySimulation();
+    return { battle, spy };
+  });
+  const { battle, spy } = result;
 
   const report = {
     generatedAt: new Date().toISOString(),
     seedScheme: 'createSeededRandom(label-index)',
     battle,
     spy,
+    logSummary: {
+      totalEntries: logs.length,
+      groups: aggregateLogEntries(logs),
+    },
   };
 
   const outputDir = path.resolve(process.cwd(), 'scripts/balance/output');

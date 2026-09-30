@@ -1,5 +1,5 @@
 import { Fortifications } from '../constants';
-import { PlayerConfig, SimPlayer, UnitCounts } from './types';
+import type { PlayerConfig, SimPlayer, UnitCounts } from './types';
 
 const UNIT_COSTS: Record<keyof UnitCounts, number> = {
   soldier: 1500,
@@ -60,7 +60,7 @@ export function createSimPlayer(config: PlayerConfig): SimPlayer {
   };
 
   return {
-    id: config.id ?? `player_${Math.random().toString(36).slice(2, 9)}`,
+    id: config.id ?? `sim_l${config.level}`,
     displayName: config.displayName ?? `Player ${config.level}`,
     level: config.level,
     xp: config.xp,
@@ -241,6 +241,7 @@ export function createBalancedPlayer(
   const units = { ...offenseUnits, ...defenseUnits } as UnitCounts;
 
   return createSimPlayer({
+    id: `${role}_${level}`,
     level,
     gold,
     units,

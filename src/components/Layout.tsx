@@ -116,8 +116,7 @@ const Layout = (props: IMainProps) => {
     }
   }, [isDevelopment]);
 
-  const structureReady =
-    status === 'authenticated' || status === 'unauthenticated';
+  const structureReady = authorized || status !== 'loading';
 
   return (
     <div
