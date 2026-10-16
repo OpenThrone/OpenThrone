@@ -1,0 +1,107 @@
+{
+  "main": {
+    "home": "Home",
+    "battle": "Battle",
+    "social": "Social",
+    "structures": "Structures",
+    "community": "Community",
+    "about": "About",
+    "alliances": "Alliances"
+  },
+  "alliances": {
+    "browse": "Browse",
+    "create": "Create"
+  },
+  "home": {
+    "overview": "Overview",
+    "levels": "Levels",
+    "profile": "Profile",
+    "settings": "Settings",
+    "administration": "Administration",
+    "staffUsers": "User Management",
+    "balanceSim": "Balance Simulator",
+    "staffReports": "Report Queue",
+    "staffBans": "Ban Management",
+    "staffChat": "Chat Moderation",
+    "staffAudit": "Audit Logs",
+    "staffAppeals": "Ban Appeals",
+    "staffContent": "Blog & News",
+    "staffAnnouncements": "Announcements",
+    "staffMassMessaging": "Mass Messaging",
+    "staffAdvisorMessages": "Advisor Messages",
+    "staffEvents": "Game Events",
+    "staffEras": "Era Management",
+    "staffAlliances": "Alliance Admin",
+    "staffEconomy": "Economy",
+    "staffAnalytics": "Player Analytics",
+    "staffMultiAccounts": "Multi-Account Detection",
+    "staffCheatSignals": "Cheat Signals",
+    "staffSettings": "Server Settings",
+    "staffFeatureFlags": "Feature Flags",
+    "staffApiTokens": "API Tokens",
+    "staffMaintenance": "Maintenance Mode",
+    "staffInactiveUsers": "Inactive users"
+  },
+  "battle": {
+    "attack": "Attack",
+    "training": "Training",
+    "upgrades": "Upgrades",
+    "warHistory": "War History",
+    "battleSimulator": "Battle Simulator"
+  },
+  "social": {
+    "friends": "Friends",
+    "enemies": "Enemies",
+    "requests": "Requests"
+  },
+  "structures": {
+    "bank": "Bank",
+    "armory": "Armory",
+    "upgrades": "Upgrades",
+    "housing": "Housing",
+    "repair": "Repair"
+  },
+  "community": {
+    "news": "News",
+    "discord": "Discord",
+    "autoRecruit": "Auto Recruit",
+    "stats": "Stats",
+    "reportIssues": "Report Issues"
+  },
+  "loggedOut": {
+    "home": "Home",
+    "howToPlay": "How to Play",
+    "login": "Login",
+    "signup": "Signup",
+    "news": "News",
+    "about": "About",
+    "stats": "Leaderboards",
+    "discord": "Discord",
+    "github": "GitHub",
+    "faq": "FAQ"
+  },
+  "actions": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "ariaLabels": {
+    "mobileMenuButton": "Open navigation menu",
+    "desktopMenu": "Main navigation menu",
+    "subMenu": "Sub-menu for {{section}}",
+    "signOut": "Sign out of your account",
+    "mainNavigation": "Main navigation",
+    "subNavigation": "Section navigation"
+  },
+  "adminCategories": {
+    "overview": "Overview",
+    "users": "Users",
+    "moderation": "Moderation",
+    "gameManagement": "Game Management",
+    "content": "Content",
+    "analytics": "Analytics",
+    "system": "System",
+    "audit": "Audit"
+  }
+}

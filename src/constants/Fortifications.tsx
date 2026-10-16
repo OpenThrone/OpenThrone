@@ -10,6 +10,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 1000,
     defenseBonusPercentage: 5,
     cost: 0,
+    casualtyMitigation: 0,
+    MeleeDefPower: 10,
+    RangedDefPower: 5,
   },
   {
     name: 'Village',
@@ -20,6 +23,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 2000,
     defenseBonusPercentage: 10,
     cost: 100000,
+    casualtyMitigation: 1,
+    MeleeDefPower: 20,
+    RangedDefPower: 10,
   },
   {
     name: 'Town',
@@ -30,6 +36,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 3000,
     defenseBonusPercentage: 15,
     cost: 250000,
+    casualtyMitigation: 2,
+    MeleeDefPower: 40,
+    RangedDefPower: 20,
   },
   {
     name: 'Outpost',
@@ -40,6 +49,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 4000,
     defenseBonusPercentage: 20,
     cost: 500000,
+    casualtyMitigation: 3,
+    MeleeDefPower: 60,
+    RangedDefPower: 30,
   },
   {
     name: 'Outpost Level 2',
@@ -50,6 +62,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 5000,
     defenseBonusPercentage: 25,
     cost: 1000000,
+    casualtyMitigation: 4,
+    MeleeDefPower: 100,
+    RangedDefPower: 50,
   },
   {
     name: 'Outpost Level 3',
@@ -60,6 +75,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 6000,
     defenseBonusPercentage: 30,
     cost: 2000000,
+    casualtyMitigation: 5,
+    MeleeDefPower: 150,
+    RangedDefPower: 75,
   },
   {
     name: 'Stronghold',
@@ -70,6 +88,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 7000,
     defenseBonusPercentage: 35,
     cost: 3000000,
+    casualtyMitigation: 6,
+    MeleeDefPower: 200,
+    RangedDefPower: 100,
   },
   {
     name: 'Stronghold Level 2',
@@ -80,6 +101,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 8000,
     defenseBonusPercentage: 40,
     cost: 4000000,
+    casualtyMitigation: 7,
+    MeleeDefPower: 300,
+    RangedDefPower: 150,
   },
   {
     name: 'Stronghold Level 3',
@@ -90,6 +114,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 9000,
     defenseBonusPercentage: 45,
     cost: 5000000,
+    casualtyMitigation: 8,
+    MeleeDefPower: 400,
+    RangedDefPower: 200,
   },
   {
     name: 'Fortress',
@@ -100,6 +127,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 10000,
     defenseBonusPercentage: 50,
     cost: 7500000,
+    casualtyMitigation: 9,
+    MeleeDefPower: 500,
+    RangedDefPower: 250,
   },
   {
     name: 'Fortress Level 2',
@@ -110,6 +140,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 11000,
     defenseBonusPercentage: 55,
     cost: 10000000,
+    casualtyMitigation: 10,
+    MeleeDefPower: 600,
+    RangedDefPower: 300,
   },
   {
     name: 'Fortress Level 3',
@@ -120,6 +153,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 12000,
     defenseBonusPercentage: 60,
     cost: 15000000,
+    casualtyMitigation: 11,
+    MeleeDefPower: 700,
+    RangedDefPower: 350,
   },
   {
     name: 'Citadel',
@@ -130,6 +166,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 13000,
     defenseBonusPercentage: 65,
     cost: 20000000,
+    casualtyMitigation: 12,
+    MeleeDefPower: 800,
+    RangedDefPower: 400,
   },
   {
     name: 'Citadel Level 2',
@@ -140,6 +179,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 14000,
     defenseBonusPercentage: 70,
     cost: 30000000,
+    casualtyMitigation: 13,
+    MeleeDefPower: 900,
+    RangedDefPower: 450,
   },
   {
     name: 'Citadel Level 3',
@@ -150,6 +192,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 15000,
     defenseBonusPercentage: 75,
     cost: 40000000,
+    casualtyMitigation: 14,
+    MeleeDefPower: 1000,
+    RangedDefPower: 500,
   },
   {
     name: 'Castle',
@@ -160,6 +205,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 16000,
     defenseBonusPercentage: 80,
     cost: 50000000,
+    casualtyMitigation: 15,
+    MeleeDefPower: 1100,
+    RangedDefPower: 550,
   },
   {
     name: 'Castle Level 2',
@@ -170,6 +218,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 17000,
     defenseBonusPercentage: 85,
     cost: 75000000,
+    casualtyMitigation: 16,
+    MeleeDefPower: 1200,
+    RangedDefPower: 600,
   },
   {
     name: 'Castle Level 3',
@@ -180,6 +231,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 18000,
     defenseBonusPercentage: 90,
     cost: 100000000,
+    casualtyMitigation: 17,
+    MeleeDefPower: 1300,
+    RangedDefPower: 650,
   },
   {
     name: 'Kingdom',
@@ -190,6 +244,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 19000,
     defenseBonusPercentage: 95,
     cost: 150000000,
+    casualtyMitigation: 18,
+    MeleeDefPower: 1400,
+    RangedDefPower: 700,
   },
   {
     name: 'Kingdom Level 2',
@@ -200,6 +257,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 20000,
     defenseBonusPercentage: 100,
     cost: 200000000,
+    casualtyMitigation: 19,
+    MeleeDefPower: 1500,
+    RangedDefPower: 750,
   },
   {
     name: 'Kingdom Level 3',
@@ -210,6 +270,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 21000,
     defenseBonusPercentage: 105,
     cost: 250000000,
+    casualtyMitigation: 20,
+    MeleeDefPower: 1600,
+    RangedDefPower: 800,
   },
   {
     name: 'Empire',
@@ -220,6 +283,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 22000,
     defenseBonusPercentage: 110,
     cost: 300000000,
+    casualtyMitigation: 21,
+    MeleeDefPower: 1700,
+    RangedDefPower: 850,
   },
   {
     name: 'Empire Level 2',
@@ -230,6 +296,9 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 23000,
     defenseBonusPercentage: 115,
     cost: 350000000,
+    casualtyMitigation: 22,
+    MeleeDefPower: 1800,
+    RangedDefPower: 900,
   },
   {
     name: 'Empire Level 3',
@@ -240,5 +309,8 @@ export const Fortifications: Fortification[] = [
     goldPerTurn: 24000,
     defenseBonusPercentage: 120,
     cost: 400000000,
+    casualtyMitigation: 23,
+    MeleeDefPower: 1900,
+    RangedDefPower: 950,
   },
 ];

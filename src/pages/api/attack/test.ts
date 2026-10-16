@@ -1,30 +1,158 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { simulateBattle } from '@/utils/attackFunctions';
-import UserModel from '@/models/Users';
-import { stringifyObj } from '@/utils/numberFormatting';
-import { logError } from '@/utils/logger';
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+import { withApiGuard } from '@/middleware/apiGuard';
+import UserModel from '@/models/Users';
+import type { AuthenticatedRequest } from '@/types/api';
+import { simulateBattle } from '@/utils/attackFunctions';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
+import { logError } from '@/utils/logger';
+import { stringifyObj } from '@/utils/numberFormatting';
+import { createSeededRandom } from '@/utils/random';
+
+const MAX_QUANTITY = 1_000_000_000;
+const MAX_ARRAY_SIZE = 128;
+
+const UnitSchema = z.object({
+  id: z.coerce.number().int().min(0).default(0),
+  userId: z.coerce.number().int().min(0).default(0),
+  type: z.enum(['CITIZEN', 'WORKER', 'OFFENSE', 'DEFENSE', 'SPY', 'SENTRY']),
+  level: z.coerce.number().int().min(1).max(10),
+  quantity: z.coerce.number().int().min(0).max(MAX_QUANTITY),
+  isMercenary: z.boolean().default(false),
+});
+
+const ItemSchema = z.object({
+  id: z.coerce.number().int().min(0).default(0),
+  userId: z.coerce.number().int().min(0).default(0),
+  usage: z.enum(['OFFENSE', 'DEFENSE']),
+  type: z.enum(['WEAPON', 'HELM', 'ARMOR', 'BOOTS', 'BRACERS', 'SHIELD']),
+  level: z.coerce.number().int().min(1).max(30),
+  quantity: z.coerce.number().int().min(0).max(MAX_QUANTITY),
+});
+
+const BattleUpgradeSchema = z.object({
+  id: z.coerce.number().int().min(0).default(0),
+  userId: z.coerce.number().int().min(0).default(0),
+  type: z.enum(['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY']),
+  level: z.coerce.number().int().min(1).max(10),
+  quantity: z.coerce.number().int().min(0).max(MAX_QUANTITY),
+});
+
+const StructureUpgradeSchema = z.object({
+  id: z.coerce.number().int().min(0).default(0),
+  userId: z.coerce.number().int().min(0).default(0),
+  type: z.enum(['OFFENSE', 'SPY', 'SENTRY', 'ARMORY']),
+  level: z.coerce.number().int().min(1).max(30),
+});
+
+const SimulatorUserSchema = z
+  .object({
+    id: z.coerce.number().int().min(0).default(0),
+    display_name: z.string().max(64).optional(),
+    race: z.enum(['HUMAN', 'ELF', 'GOBLIN', 'UNDEAD']).optional(),
+    class: z.enum(['FIGHTER', 'CLERIC', 'ASSASSIN', 'THIEF']).optional(),
+    experience: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(Number.MAX_SAFE_INTEGER)
+      .optional(),
+    fort_level: z.coerce.number().int().min(1).max(30).optional(),
+    fort_hitpoints: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(Number.MAX_SAFE_INTEGER)
+      .optional(),
+    attack_turns: z.coerce.number().int().min(0).max(50).optional(),
+    UserUnit: z.array(UnitSchema).max(MAX_ARRAY_SIZE).optional(),
+    UserItem: z.array(ItemSchema).max(MAX_ARRAY_SIZE).optional(),
+    UserBattleUpgrade: z
+      .array(BattleUpgradeSchema)
+      .max(MAX_ARRAY_SIZE)
+      .optional(),
+    UserStructureUpgrade: z
+      .array(StructureUpgradeSchema)
+      .max(MAX_ARRAY_SIZE)
+      .optional(),
+  })
+  .passthrough();
+
+const TestAttackSchema = z.object({
+  attacker: z.string(),
+  defender: z.string(),
+  turns: z
+    .number()
+    .int()
+    .min(1)
+    .max(V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS)
+    .optional(),
+  seed: z.string().min(1).max(128).default('attack-sandbox'),
+});
+
+const parseSimulatorUser = (value: string) => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return { success: false as const, message: 'Invalid army JSON' };
   }
 
+  const validated = SimulatorUserSchema.safeParse(parsed);
+  if (!validated.success) {
+    return {
+      success: false as const,
+      message: 'Invalid army payload',
+      details: validated.error.flatten().fieldErrors,
+    };
+  }
+
+  return { success: true as const, data: validated.data };
+};
+
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'none',
+  rateLimitProfile: 'attack',
+  bodySchema: TestAttackSchema,
+});
+
+async function handler(
+  _req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: {
+    body: z.infer<typeof TestAttackSchema>;
+  },
+) {
   try {
-    const { attacker, defender, turns } = req.body;
-    // Create mock users from the provided data
-    const attackerUser = new UserModel(JSON.parse(attacker));
-    const defenderUser = new UserModel(JSON.parse(defender));
-    // Run the simulation
-    const results = await simulateBattle(
+    const { attacker, defender, turns, seed } = context.body;
+    const parsedAttacker = parseSimulatorUser(attacker);
+    const parsedDefender = parseSimulatorUser(defender);
+
+    if (!parsedAttacker.success || !parsedDefender.success) {
+      return res.status(400).json({
+        message: 'Invalid simulator payload',
+        attacker: parsedAttacker.success ? undefined : parsedAttacker,
+        defender: parsedDefender.success ? undefined : parsedDefender,
+      });
+    }
+
+    const attackerUser = new UserModel(parsedAttacker.data);
+    const defenderUser = new UserModel(parsedDefender.data);
+
+    const result = await simulateBattle(
       attackerUser,
       defenderUser,
       defenderUser.fortHitpoints,
-      turns || 10,
-      true // enable Debug messages
+      turns ?? 10,
+      true,
+      defenderUser.level <= 9,
+      { random: createSeededRandom(seed) },
     );
 
     return res.status(200).json({
-      results: stringifyObj(results),
+      results: stringifyObj(result),
       attackerStats: {
         unitTotals: attackerUser.unitTotals,
         attackPower: attackerUser.offense,
@@ -34,61 +162,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         unitTotals: defenderUser.unitTotals,
         attackPower: defenderUser.offense,
         defensePower: defenderUser.defense,
-      }
+      },
     });
   } catch (error) {
     logError('Battle simulation error:', error);
-    return res.status(500).json({ message: 'Error simulating battle', error: String(error) });
+    return res.status(500).json({ message: 'Error simulating battle' });
   }
 }
 
-// Helper function to create a user object from form data
-function createUserFromFormData(formData: any) {
-
-  const user = {
-    id: formData.id || Math.floor(Math.random() * 10000),
-    display_name: formData.display_name || 'Simulator User',
-    race: formData.race || 'HUMAN',
-    class: formData.class || 'FIGHTER',
-    level: formData.level || 1,
-    experience: formData.experience || 0,
-    gold: 0,
-    units: [],
-    items: [],
-    structure_upgrades: formData.structure_upgrades || [],
-    battle_upgrades: formData.battle_upgrades || [],
-    fortLevel: formData.fortLevel || 1,
-    fortHitpoints: formData.fortHitpoints || 100,
-    bonus_points: formData.bonus_points || [],
-  };
-
-  // Add units from the form data
-  ['OFFENSE', 'DEFENSE', 'CITIZEN', 'WORKER'].forEach(unitType => {
-    for (let level = 1; level <= 5; level++) {
-      const quantity = formData[`${unitType.toLowerCase()}${level}`] || 0;
-      if (quantity > 0) {
-        user.units[unitType][level] = quantity;
-      }
-    }
-  });
-
-  // Process item entries
-  const itemEntries = Object.entries(formData).filter(([key]) => key.startsWith('item_'));
-  itemEntries.forEach(([key, value]) => {
-    if (typeof value === 'number' && value > 0) {
-      const parts = key.split('_');
-      const type = parts[1].toUpperCase();
-      const level = parseInt(parts[2], 10);
-      const usage = parts[3] ? parts[3].toUpperCase() : 'OFFENSE';
-
-      user.items.push({
-        type,
-        level,
-        quantity: value,
-        usage,
-      });
-    }
-  });
-
-  return user;
-}
+export default guardedHandler(handler);

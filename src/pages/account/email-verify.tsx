@@ -1,13 +1,15 @@
-import MainArea from "@/components/MainArea";
-import { useUser } from "@/context/users";
-import { alertService } from "@/services";
-import { Button, Grid, Space, Text, TextInput, Modal } from "@mantine/core";
-import { useSearchParams } from "next/navigation";
-import router from "next/router";
-import { useState, useEffect } from "react";
+import { Button, Grid, Modal, Space, Text, TextInput } from '@mantine/core';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import { useEffect, useState } from 'react';
 
-const EmailVerify = (props) => {
-  const searchParams = useSearchParams();
+import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
+
+const EmailVerify = () => {
+  const { t } = useTranslation('account');
+  const router = useRouter();
   const [input, setInput] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,10 +17,13 @@ const EmailVerify = (props) => {
   const [opened, setOpened] = useState(false);
 
   useEffect(() => {
-    if (searchParams.has('code')) {
-      setInput(searchParams.get('code'));
+    const codeParam = Array.isArray(router.query.code)
+      ? router.query.code[0]
+      : router.query.code;
+    if (codeParam) {
+      setInput(codeParam);
     }
-  }, [searchParams]);
+  }, [router.query.code]);
 
   const onChange = (event) => {
     const { name, value } = event.currentTarget;
@@ -48,14 +53,16 @@ const EmailVerify = (props) => {
       // Open confirmation modal
       setOpened(true);
     } else {
-      alertService.error("Verification failed: " + data.error);
+      alertService.error(
+        `${t('emailVerify.verificationFailedError')} ${data.error}`,
+      );
     }
   };
 
   const handleEmailUpdate = async () => {
-    if(!user) return;
+    if (!user) return;
     setOpened(false); // Close the modal after confirming
-    // Send the request to update the email
+    // Send request to update the email
     const updateResponse = await fetch('/api/account/update-email', {
       method: 'POST',
       headers: {
@@ -69,57 +76,53 @@ const EmailVerify = (props) => {
     });
 
     if (updateResponse.ok) {
-      alertService.success("Email updated successfully", true);
-      return router.push('/home/settings'); 
-    } else {
-      const data = await updateResponse.json();
-      return alertService.error("Failed to update email: " + data.error);
+      alertService.success(t('emailVerify.emailUpdatedSuccessfully'), true);
+      return router.push('/home/settings');
     }
+    const data = await updateResponse.json();
+    return alertService.error(
+      `${t('emailVerify.failedToUpdateEmail')}: ${data.error}`,
+    );
   };
 
   return (
-    <MainArea
-      title="Email Verify - Enter Verification Code">
+    <MainArea title={t('emailVerify.pageTitle')}>
       <form onSubmit={handleSubmit}>
         <Grid gutter="lg">
           <Grid.Col span={6}>
-            <Text>Verification Code</Text>
+            <Text>{t('emailVerify.verificationCode')}</Text>
             <TextInput
               id="code"
-              placeholder="Enter Verification Code"
+              placeholder={t('emailVerify.enterVerificationCode')}
               required
               name="code"
               value={input}
               onChange={onChange}
             />
-            <Space h='xs' />
-            <Text>New Email</Text>
+            <Space h="xs" />
+            <Text>{t('emailVerify.newEmail')}</Text>
             <TextInput
               id="email"
-              placeholder="Enter New Email"
+              placeholder={t('emailVerify.enterNewEmail')}
               required
               name="email"
               value={email}
               onChange={onChange}
             />
-            <Space h='xs' />
-            <Text>Current Password</Text>
+            <Space h="xs" />
+            <Text>{t('emailVerify.currentPassword')}</Text>
             <TextInput
               id="password"
-              placeholder="Enter Current Password"
+              placeholder={t('emailVerify.enterCurrentPassword')}
               required
               name="password"
               type="password"
               value={password}
               onChange={onChange}
             />
-            <Space h='xs' />
-            <Button
-              type="submit"
-              size="lg"
-              fullWidth
-            >
-              Verify and Change Email
+            <Space h="xs" />
+            <Button type="submit" size="lg" fullWidth>
+              {t('emailVerify.verifyAndChangeEmail')}
             </Button>
           </Grid.Col>
         </Grid>
@@ -128,16 +131,21 @@ const EmailVerify = (props) => {
       <Modal
         opened={opened}
         onClose={() => setOpened(false)}
-        title="Confirm Email Change"
+        title={t('emailVerify.confirmEmailChange')}
       >
-        <Text>You&apos;re changing your email from {user?.email} to {email}. Are you sure?</Text>
+        <Text>
+          {t('emailVerify.changingEmailConfirm', {
+            oldEmail: user?.email,
+            newEmail: email,
+          })}
+        </Text>
         <Space h="md" />
         <Button onClick={handleEmailUpdate} fullWidth>
-          Confirm
+          {t('emailVerify.confirm')}
         </Button>
         <Space h="md" />
         <Button onClick={() => setOpened(false)} fullWidth color="red">
-          Cancel
+          {t('emailVerify.cancel')}
         </Button>
       </Modal>
     </MainArea>

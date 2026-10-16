@@ -1,14 +1,61 @@
 'use server';
-import prisma from "@/lib/prisma";
-import { spyHandler } from '@/app/actions';
-import { stringifyObj } from '@/utils/numberFormatting';
-import { withAuth } from "@/middleware/auth";
-import UserModel from "@/models/Users";
-import { AuthenticatedRequest } from "@/types/api";
-import type { NextApiResponse } from 'next';
 
-const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
-  const session = req.session;
+import md5 from 'md5';
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
+
+import prisma from '@/lib/prisma';
+import { getSocketIO } from '@/lib/socket';
+import { withApiGuard } from '@/middleware/apiGuard';
+import { enforceIdempotency } from '@/middleware/idempotency';
+import UserModel from '@/models/Users';
+import { markGameplayActivity } from '@/services/GameplayActivity.service';
+import { SpyService } from '@/services/SpyService';
+import type { AuthenticatedRequest } from '@/types/api';
+import type { UnitType } from '@/types/typings';
+import { stringifyObj } from '@/utils/numberFormatting';
+import { CITIZEN_WORKERS_TARGET } from '@/utils/spy/results';
+
+const UNIT_TYPE_VALUES = [
+  'CITIZEN',
+  'WORKER',
+  'OFFENSE',
+  'DEFENSE',
+  'SPY',
+  'SENTRY',
+] as const satisfies readonly UnitType[];
+
+const SpyQuerySchema = z.object({
+  id: z.coerce.number().int(),
+});
+
+const SpyBodySchema = z.object({
+  type: z.enum(['INTEL', 'ASSASSINATE', 'INFILTRATE']),
+  spies: z.number().int().positive(),
+  turns: z.number().int().positive().optional(),
+  unit: z
+    .union([z.enum(UNIT_TYPE_VALUES), z.literal(CITIZEN_WORKERS_TARGET)])
+    .optional(),
+});
+
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'required',
+  rateLimitProfile: 'spy',
+  querySchema: SpyQuerySchema,
+  bodySchema: SpyBodySchema,
+});
+
+const handler = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: {
+    query: z.infer<typeof SpyQuerySchema>;
+    body: z.infer<typeof SpyBodySchema>;
+  },
+) => {
+  const { id } = context.query;
+  const { type, spies, turns, unit } = context.body;
 
   const checkParams = (body: any, spiesNeeded: number) => {
     if (!body.type) {
@@ -31,102 +78,183 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       return false;
     }
 
-    if (body.type === 'assassinate') {
+    if (body.type === 'ASSASSINATE') {
       if (body.unit === undefined) {
         return false;
       }
     }
 
     return true;
+  };
+
+  const sessionUserId = Number(req.session?.user?.id);
+  const myUser = await prisma?.users.findUnique({
+    where: { id: sessionUserId },
+    include: {
+      UserUnit: true,
+      UserItem: true,
+      UserStructureUpgrade: true,
+      UserBattleUpgrade: true,
+      UserBonusPoints: true,
+      permissions: { where: { revokedAt: null } },
+    },
+  });
+  if (!myUser) {
+    return res
+      .status(400)
+      .json({ status: 'failed', message: 'User not found' });
   }
 
-  if (session) {
-    const myUser = await prisma?.users.findUnique({
-      where: { id: session.user.id },
+  const uModel = new UserModel(myUser);
+
+  const attackerId = sessionUserId;
+  const defenderId = id;
+  const canProceed = await enforceIdempotency(req, res, {
+    scope: `spy:${type}:${defenderId}`,
+    actorKey: String(attackerId),
+  });
+  if (!canProceed) {
+    return;
+  }
+
+  const notifySpyDefenseWin = async (
+    attackLogId: number,
+    missionType: string,
+  ) => {
+    const log = await prisma.attack_log.findUnique({
+      where: { id: attackLogId },
+      select: { winner: true },
     });
-    if (!myUser) {
-      return res.status(400).json({ status: 'failed', message: 'User not found' });
-    }
 
-    const uModel = new UserModel(myUser);
+    if (log?.winner !== defenderId) return;
 
-    switch (req.body.type) {
-      case 'INTEL':
-        if (req.body.spies <= 0) {
-          return res.status(400).json({ status: 'failed', message: 'You need to send at least 1 spy' });
+    const message = `You successfully defended against a spy mission (${missionType}).`;
+    const hash = md5(message + defenderId + attackLogId);
+    getSocketIO()?.to(`user-${defenderId}`).emit('spyDefenseNotification', {
+      message,
+      hash,
+      attackLogId,
+      missionType,
+    });
+  };
+
+  switch (type) {
+    case 'INTEL':
+      if (spies <= 0) {
+        return res.status(400).json({
+          status: 'failed',
+          message: 'You need to send at least 1 spy',
+        });
+      }
+
+      if (spies > 10) {
+        return res.status(400).json({
+          status: 'failed',
+          message: 'You can only send up to 10 spies',
+        });
+      }
+
+      if (
+        spies >
+        (uModel.units.find((u) => u.type === 'SPY' && u.level === 1)
+          ?.quantity ?? 0)
+      ) {
+        return res.status(400).json({
+          status: 'failed',
+          message: 'You do not have enough spies',
+        });
+      }
+
+      {
+        const result = stringifyObj(
+          await SpyService.executeSpyMission(
+            attackerId,
+            defenderId,
+            spies,
+            type,
+            undefined,
+            turns,
+          ),
+        );
+        if (result?.status === 'success') {
+          await markGameplayActivity(attackerId);
         }
-
-        if (req.body.spies > 10) {
-          return res.status(400).json({ status: 'failed', message: 'You can only send up to 10 spies'});
+        if (result?.status === 'success' && result.attack_log) {
+          await notifySpyDefenseWin(Number(result.attack_log), 'INTEL');
         }
-
-        if (req.body.spies > uModel.units.find((u) => u.type === 'SPY' && u.level === 1).quantity) {
-          return res.status(400).json({ status: 'failed', message: 'You do not have enough spies' });
-        }
-
+        return res.status(200).json(result);
+      }
+    case 'ASSASSINATE':
+      if (
+        checkParams(context.body, uModel.spyLimits.assass.perMission) === false
+      ) {
         return res
-          .status(200)
-          .json(
-            stringifyObj(await spyHandler(
-              parseInt(session.user.id),
-              parseInt(req.query.id.toString()),
-              parseInt(req.body.spies),
-              req.body.type
-            ))
-          );
-      case 'ASSASSINATE':
-        if (checkParams(req.body, 5) === false) {
-          return res.status(400).json({ status: 'failed' , message: 'Invalid parameters' });
-        }
+          .status(400)
+          .json({ status: 'failed', message: 'Invalid parameters' });
+      }
 
-        return res
-          .status(200)
-          .json(
-            stringifyObj(await spyHandler(
-              parseInt(session.user.id),
-              parseInt(req.query.id.toString()),
-              parseInt(req.body.spies),
-              req.body.type,
-              req.body.unit
-            ))
-          );
-      case 'INFILTRATE':
-        const spyLog = await prisma.attack_log.count({
-          where: {
-            attacker_id: parseInt(session.user.id),
-            type: 'INFILTRATE',
-            defender_id: parseInt(req.query.id.toString()),
-            timestamp: {
-              gte: new Date(new Date().getTime() - 86400000), //gte 24 hours ago
-            },
-          },
-        })
-        if (spyLog >= uModel.spyLimits.infil.perUser || spyLog >= uModel.spyLimits.infil.perDay) {
-          return res.status(400).json({ status: 'failed', message: 'You have infiltrated too many times today' });
+      {
+        const result = stringifyObj(
+          await SpyService.executeSpyMission(
+            attackerId,
+            defenderId,
+            spies,
+            type,
+            unit,
+            turns,
+          ),
+        );
+        if (result?.status === 'success') {
+          await markGameplayActivity(attackerId);
         }
-        if (req.body.spies <= 0) {
-          return res.status(400).json({ status: 'failed', message: 'You need to send at least 1 infiltrator' });
+        if (result?.status === 'success' && result.attack_log) {
+          await notifySpyDefenseWin(Number(result.attack_log), 'ASSASSINATE');
         }
-        if (req.body.spies > uModel.spyLimits.infil.perMission) {
-          return res.status(400).json({ status: 'failed', message: `You can only send up to ${uModel.spyLimits.infil.perMission} infiltrators per mission` });
+        return res.status(200).json(result);
+      }
+    case 'INFILTRATE':
+      if (spies <= 0) {
+        return res.status(400).json({
+          status: 'failed',
+          message: 'You need to send at least 1 infiltrator',
+        });
+      }
+      if (spies > uModel.spyLimits.infil.perMission) {
+        return res.status(400).json({
+          status: 'failed',
+          message: `You can only send up to ${uModel.spyLimits.infil.perMission} infiltrators per mission`,
+        });
+      }
+      if (
+        spies >
+        (uModel.units.find((u) => u.type === 'SPY' && u.level === 2)
+          ?.quantity ?? 0)
+      ) {
+        return res.status(400).json({
+          status: 'failed',
+          message: 'You do not have enough infiltrators',
+        });
+      }
+      {
+        const result = stringifyObj(
+          await SpyService.executeSpyMission(
+            attackerId,
+            defenderId,
+            spies,
+            type,
+            unit,
+            turns,
+          ),
+        );
+        if (result?.status === 'success') {
+          await markGameplayActivity(attackerId);
         }
-        if (req.body.spies > myUser.units.find((u) => u.type === 'SPY' && u.level === 2).quantity) {
-          return res.status(400).json({ status: 'failed', message: 'You do not have enough infiltrators' });
+        if (result?.status === 'success' && result.attack_log) {
+          await notifySpyDefenseWin(Number(result.attack_log), 'INFILTRATE');
         }
-        return res
-          .status(200)
-          .json(
-            stringifyObj(await spyHandler(
-              parseInt(session.user.id),
-              parseInt(req.query.id.toString()),
-              parseInt(req.body.spies),
-              req.body.type,
-              req.body.unit
-            ))
-          );
-    }
+        return res.status(200).json(result);
+      }
   }
-  return res.status(401).json({ status: 'failed', message: 'Unauthorized'});
-}
+};
 
-export default withAuth(handler);
+export default guardedHandler(handler);

@@ -1,0 +1,56 @@
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
+
+import { AUTO_RECRUIT_ENABLED } from '@/constants/AutoRecruit';
+import { withAuth } from '@/middleware/auth';
+import { validateSession } from '@/services/Sessions.service';
+import type { AuthenticatedRequest } from '@/types/api';
+
+const BodySchema = z.object({
+  sessionId: z.union([z.string(), z.number()]).optional(),
+});
+
+const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
+  if (!AUTO_RECRUIT_ENABLED)
+    return res.status(503).json({
+      error: 'Auto-Recruit is currently disabled.',
+      code: 'AUTO_RECRUIT_DISABLED',
+    });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { session } = req;
+  const userId = session ? session.user.id : 0;
+
+  try {
+    const data = BodySchema.parse(req.body || {});
+    const sessionIdRaw = data.sessionId;
+    if (!sessionIdRaw) {
+      return res.status(400).json({ error: 'Session ID required' });
+    }
+    const sessionId =
+      typeof sessionIdRaw === 'string'
+        ? parseInt(sessionIdRaw, 10)
+        : Number(sessionIdRaw);
+    if (!Number.isInteger(sessionId) || sessionId <= 0) {
+      return res.status(400).json({ error: 'Invalid session ID' });
+    }
+
+    const valid = await validateSession(userId, sessionId);
+    if (!valid) {
+      return res.status(400).json({ error: 'Invalid recruitment link.' });
+    }
+
+    return res.status(200).json({ valid: true });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid input', details: err.format() });
+    }
+    return res.status(500).json({ error: 'Internal error' });
+  }
+};
+
+export default withAuth(handler, true);

@@ -1,0 +1,56 @@
+{
+  "metaTitle": "Player FAQ - OpenThrone",
+  "metaDescription": "Answers about starting a kingdom, army training, banking, combat, account access, and getting help in OpenThrone.",
+  "title": "Player FAQ",
+  "intro": "A practical companion for your first decisions in the kingdom, and a place to turn when you need help.",
+  "sections": {
+    "starting": "Getting started",
+    "strategy": "Kingdom decisions",
+    "help": "Account access and help"
+  },
+  "links": {
+    "guide": "Read How to Play",
+    "news": "Read the news",
+    "password": "Reset your password",
+    "discord": "Get help on Discord",
+    "about": "About OpenThrone"
+  },
+  "questions": {
+    "game": {
+      "title": "What kind of game is OpenThrone?",
+      "answer": "OpenThrone is a browser-based, text strategy MMORPG inspired by DarkThrone. You manage a kingdom, invest in an army and economy, and interact with other commanders. It is an independent project and is not affiliated with the original DarkThrone."
+    },
+    "race": {
+      "title": "What should I know before choosing a race?",
+      "answer": "The four races are Elf, Human, Goblin, and Undead. Each has different bonuses, so compare their descriptions in How to Play before choosing. No race automatically wins a matchup: army composition and equipment also matter."
+    },
+    "firstSteps": {
+      "title": "What should I look at before my first investment?",
+      "answer": "Start with your kingdom overview and check your gold, citizens, and army. Read the training cost before assigning citizens to a role, then compare equipment and structure upgrades. Keep enough gold for the next action you want to take; buying one upgrade can delay another."
+    },
+    "training": {
+      "title": "How are training and equipment different?",
+      "answer": "Training assigns citizens to army or economic roles. Workers contribute to your economy, attack soldiers support raids, defense soldiers guard your kingdom, and spies gather intelligence. Equipment is a separate investment through the Armory. Review quantities and total costs before submitting either purchase."
+    },
+    "bank": {
+      "title": "Why can I not deposit all my gold at once?",
+      "answer": "Bank deposits have limits. A single deposit is limited to 80% of the gold you currently have on hand, and your account also has a limit on the number of deposits. The Bank shows deposit information and transaction history. Check those before planning a sequence of purchases or deposits."
+    },
+    "combat": {
+      "title": "What should I check before attacking?",
+      "answer": "Review the target, your offensive strength, and the attack turns you plan to commit. Spy information can help you assess a target, but combat carries a risk of losses. After the battle, inspect the report and War History to understand the result before committing more resources."
+    },
+    "access": {
+      "title": "Why might I be unable to sign in?",
+      "answer": "Read the message shown on the login page. Access may be restricted while login is disabled; a registered account does not guarantee that play is currently available. Check the public news for announcements. If the message does not explain your problem, ask for help without sharing your password or sign-in codes."
+    },
+    "password": {
+      "title": "How do I recover a forgotten password?",
+      "answer": "Use the password-reset page and follow its email instructions. Check your spam folder if the message does not arrive. Never post a reset link, password, or two-factor code in a public channel. If recovery still fails, describe the problem to support without including those secrets."
+    },
+    "report": {
+      "title": "What information helps when reporting a bug?",
+      "answer": "Include the page you were using, the action you took, what you expected, and what happened instead. Add the approximate time and a screenshot if it helps, after removing private messages, email addresses, and other sensitive details. The community Discord and the repository issue tracker are the support channels listed by the project."
+    }
+  }
+}

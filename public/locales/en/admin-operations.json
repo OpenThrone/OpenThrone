@@ -1,0 +1,89 @@
+{
+  "user": {
+    "title": "Account operations",
+    "description": "Staff actions for this account. Consequential changes require a second confirmation.",
+    "passwordAction": "Send password reset",
+    "accountResetAction": "Reset account",
+    "vacationStartAction": "Start vacation",
+    "vacationEndAction": "End vacation",
+    "reasonLabel": "Reason",
+    "reasonOptional": "Optional; recorded in the staff audit log.",
+    "vacationDuration": "Vacation mode lasts 14 days. The reason is recorded as an administrator-initiated vacation.",
+    "cancel": "Cancel",
+    "confirmAction": "Confirm action",
+    "actionComplete": "Action complete",
+    "passwordResult": "A password reset email was requested. No password is shown here.",
+    "accountResetResult": "Account reset completed. New account ID: {{newUserId}}.",
+    "vacationStarted": "Vacation mode started for 14 days.",
+    "vacationEnded": "Vacation mode ended.",
+    "unknown": "unavailable",
+    "invalidTarget": "The account ID is invalid. Close this panel and reload the user record.",
+    "requestFailed": "The request failed. Check your access and try again.",
+    "errorTitle": "Action could not be completed",
+    "confirm": {
+      "password": {
+        "title": "Send password reset email?",
+        "message": "The account owner will receive a password reset email. No password will be generated or displayed to staff."
+      },
+      "reset": {
+        "title": "Reset this account?",
+        "message": "This is a destructive administrator action. Account progress may be removed. Add an audit reason if useful, then confirm only if this reset is intended."
+      },
+      "vacation-start": {
+        "title": "Start 14-day vacation mode?",
+        "message": "The account will be unable to log in during vacation mode. The current API records a fixed 14-day duration."
+      },
+      "vacation-end": {
+        "title": "End vacation mode?",
+        "message": "Vacation mode will end immediately for this account."
+      }
+    }
+  },
+  "export": {
+    "action": "Download user export (JSON)",
+    "invalidTarget": "The account ID is invalid.",
+    "failed": "The export could not be downloaded. Check your access and try again.",
+    "invalidResponse": "The server returned an invalid export. No file was downloaded."
+  },
+  "bots": {
+    "title": "Bot operations",
+    "description": "Inspect the registered bot roster, preview provisioning, and run a scheduled bot tick.",
+    "accessDenied": "Administrator access required",
+    "accessDeniedDescription": "Bot status and operations are available to administrators only.",
+    "refresh": "Refresh status",
+    "retry": "Try again",
+    "loading": "Loading bot status…",
+    "loadFailed": "Bot status could not be loaded. Check your access and try again.",
+    "errorTitle": "Operation could not be completed",
+    "total": "{{count}} bot(s) registered",
+    "rosterTitle": "Registered bots",
+    "empty": "No bots are registered. Select a manifest below to preview or provision bots.",
+    "neverRun": "Never",
+    "columns": {
+      "id": "ID",
+      "name": "Name",
+      "raceClass": "Race / class",
+      "persona": "Persona",
+      "lastRun": "Last run",
+      "gold": "Gold"
+    },
+    "controlsTitle": "Bot controls",
+    "manifestLabel": "Provisioning manifest",
+    "manifestDescription": "Choices come from registered manifest files on this server.",
+    "noManifests": "No registered manifests found",
+    "dryRun": "Preview only",
+    "provision": "Provision bots",
+    "scheduleLabel": "Run schedule",
+    "scheduleDescription": "Choices come from registered schedule files on this server.",
+    "noSchedules": "No registered schedules found",
+    "runNow": "Run bot tick now",
+    "confirmProvisionTitle": "Provision bots?",
+    "confirmProvisionMessage": "Create the bots listed in the {{manifest}} manifest? This changes account data.",
+    "confirmRunTitle": "Run bot tick now?",
+    "confirmRunMessage": "Run the {{schedule}} schedule against the registered bot accounts now?",
+    "actionFailed": "The operation failed. Check your access and try again.",
+    "actionComplete": "Bot operation complete",
+    "saved": "The operation completed.",
+    "resultTitle": "Operation result"
+  }
+}

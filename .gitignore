@@ -14,11 +14,24 @@ storybook-static
 # cypress
 cypress/screenshots
 cypress/videos
+cypress/e2e/*-results.md
+cypress/snapshots/diff
+cypress/snapshots/actual
+.cypress-cache/
+cypress-run.log
+
+# visual audit screenshots
+.ui-audit/screenshots/
+.ui-audit/eval-crops/
+.ui-audit/*.png
 
 # next.js
 /.next
 /out
+/src/.next
 
+/src/analyze
+/analyze
 # next-sitemap
 public/robots.txt
 public/sitemap.xml
@@ -27,11 +40,40 @@ public/sitemap-*.xml
 # cache
 .swc/
 
+# local tooling
+.agent/
+.gemini/
+.opencode/
+
+# local workspace
+.vscode/
+/plans/*
+!/plans/README.md
+!/plans/morale-fatigue-spec.md
+!/plans/morale-fatigue-impl-plan-final.md
+skills/
+cypress-run.log
+ChatGPT Image*.png
+.sisyphus
+.omo
+
 # production
 /build
 
+# generated documentation
+/docs/api
+/docs/api.json
+
+# generated Prisma client
+/prisma/generated/
+
+# generated AI/codebase maps
+/.ai/dependency-map.json
+/.ai/madge-map.json
+
 # misc
 .DS_Store
+*.swp
 *.pem
 Thumbs.db
 
@@ -42,17 +84,31 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
-.env
-yarn.lock
+.env*
+!.env.sample
+!.env.example
 bun.lockb
+yarn.lock
 
 # local folder
 local
 
+# Custom artwork lives in R2; only code-authored base visuals ship.
+/public/assets/header/
+/public/assets/shields/
+/public/assets/images/
+/public/assets/news/*.webp
+
 # vercel
 .vercel
+.open-next
 temp/*
 
-# yarn
-yarn.lock
+.code-flattener/*
+
+# Local QA screenshots and browser artifacts; never commit
+dogfood-output/
+
+# Project skills are tracked
+!.claude/
+!.claude/skills/

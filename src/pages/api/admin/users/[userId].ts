@@ -1,26 +1,106 @@
-import { NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
+
 import prisma from '@/lib/prisma';
-import { withAuth } from '@/middleware/auth';
-import { isAdmin } from '@/utils/authorization';
-import { logDebug, logError } from '@/utils/logger';
-import { PermissionType } from '@prisma/client';
-import { stringifyObj } from '@/utils/numberFormatting';
+import {
+  ItemType,
+  ItemUsage,
+  PermissionType,
+  UnitType,
+} from '@/lib/prisma-exports';
+import { withApiGuard } from '@/middleware/apiGuard';
+import { AdminService } from '@/services/Admin.service';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
+import { deriveAdminUserStatus } from '@/utils/adminStatus';
+import { getRequestIp, logAction, logActionStrict } from '@/utils/auditLogger';
+import { countOtherAdministrators } from '@/utils/authorization';
+import { logError } from '@/utils/logger';
+import { getLevelFromXP } from '@/utils/utilities';
 
-async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
-  const session = req.session;
-  const { userId } = req.query;
+const AdminUserQuerySchema = z.object({
+  userId: z.coerce.number().int().positive(),
+});
 
-  // Check admin authorization (handle potentially undefined session/user/id)
-  if (!session?.user?.id || !(await isAdmin(session.user.id))) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+const MONEY_MAX = 9223372036854775807n;
+const MoneySchema = z
+  .union([z.string().regex(/^\d+$/), z.number().int().nonnegative().safe()])
+  .transform((value) => BigInt(value))
+  .refine((value) => value <= MONEY_MAX, 'Amount is too large');
+const QuantitySchema = z.number().int().min(0).max(2147483647);
+const AdminUserUpdateSchema = z.object({
+  profile: z.object({
+    username: z.string().trim().min(3).max(100),
+    email: z.string().trim().email(),
+  }),
+  stats: z.object({
+    gold: MoneySchema,
+    goldInBank: MoneySchema.optional(),
+    experience: QuantitySchema,
+  }),
+  army: z.object({
+    units: z
+      .array(
+        z.object({
+          id: z.string(),
+          type: z.nativeEnum(UnitType),
+          level: z.number().int().min(1).max(100),
+          isMercenary: z.boolean().default(false),
+          quantity: QuantitySchema,
+        }),
+      )
+      .max(1000),
+  }),
+  items: z.object({
+    items: z
+      .array(
+        z.object({
+          id: z.string(),
+          type: z.nativeEnum(ItemType),
+          usage: z.nativeEnum(ItemUsage),
+          level: z.number().int().min(1).max(100),
+          quantity: QuantitySchema,
+        }),
+      )
+      .max(1000),
+  }),
+  permissions: z.object({
+    permissions: z.array(z.nativeEnum(PermissionType)).max(100),
+  }),
+  staffRoles: z
+    .object({
+      roles: z
+        .array(
+          z.enum([
+            'ADMINISTRATOR',
+            'MODERATOR',
+            'COMMUNITY_MANAGER',
+            'GAME_MASTER',
+          ]),
+        )
+        .max(4),
+    })
+    .optional(),
+});
+const guardedRead = withApiGuard({
+  methods: ['GET'],
+  authMode: 'permission',
+  requiredAnyPermissions: [PermissionType.MANAGE_USERS],
+  rateLimitProfile: 'admin',
+  querySchema: AdminUserQuerySchema,
+});
+const guardedUpdate = withApiGuard({
+  methods: ['PUT'],
+  authMode: 'admin',
+  rateLimitProfile: 'admin',
+  querySchema: AdminUserQuerySchema,
+});
 
-  // Parse userId to number
-  const userIdNum = parseInt(userId as string, 10);
-  if (isNaN(userIdNum)) {
-    return res.status(400).json({ error: 'Invalid user ID' });
-  }
+async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: { query: z.infer<typeof AdminUserQuerySchema> },
+) {
+  const { userId: userIdNum } = context.query;
 
   // GET - Fetch user details
   if (req.method === 'GET') {
@@ -29,16 +109,36 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       const user = await prisma.users.findUnique({
         where: { id: userIdNum },
         include: {
-          // Get permissions if they exist in schema
+          UserUnit: true,
+          UserItem: true,
+          statusHistories: {
+            where: { end_date: null },
+            orderBy: { start_date: 'desc' },
+            take: 1,
+            select: {
+              status: true,
+            },
+          },
           permissions: {
-            select: { type: true }
-          }
-        }
+            where: { revokedAt: null },
+            select: { type: true },
+          },
+          staffRoleAssignments: {
+            where: { revokedAt: null },
+            select: { role: true },
+          },
+        },
       });
 
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
+
+      const activeEra = await prisma.era.findFirst({
+        where: { endDate: null },
+        orderBy: { startDate: 'desc' },
+        select: { id: true },
+      });
 
       // Format the response
       const formattedResponse = {
@@ -46,7 +146,12 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           id: user.id.toString(),
           username: user.display_name,
           email: user.email,
-          status: 'ACTIVE', // Default status if not available
+          status: deriveAdminUserStatus({
+            latestStatus: user.statusHistories?.[0]?.status,
+            lastActive: user.last_active,
+            currentEraId: user.currentEraId,
+            activeEraId: activeEra?.id ?? null,
+          }),
           lastActive: user.last_active,
           joinDate: user.created_at,
         },
@@ -54,29 +159,34 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           gold: user?.gold.toString() || 0,
           experience: user?.experience || 0,
           goldInBank: user?.gold_in_bank.toString() || 0,
+          level: getLevelFromXP(user.experience ?? 0),
         },
         army: {
-          units: user.units ? JSON.parse(JSON.stringify(user.units)).map(unit => ({
-            id: unit.type,
+          units: (user.UserUnit ?? []).map((unit) => ({
+            id: `${unit.type}:${unit.level}:${unit.isMercenary}`,
             name: unit.type,
-            quantity: unit.quantity || 0,
-            level: unit.level || 1,
-            type: unit.type, // Preserve type field
-          })) : []
+            type: unit.type,
+            quantity: unit.quantity,
+            level: unit.level,
+            isMercenary: unit.isMercenary,
+          })),
         },
         items: {
-          items: user.items ? JSON.parse(JSON.stringify(user.items)).map(item => ({
-            id: item.type,
+          items: (user.UserItem ?? []).map((item) => ({
+            id: `${item.type}:${item.usage}:${item.level}`,
             name: item.type,
-            quantity: item.quantity || 0,
-            level: item.level || undefined,
-            type: item.type, // Preserve type field
-            usage: item.usage, // Preserve usage field
-          })) : []
+            type: item.type,
+            usage: item.usage,
+            quantity: item.quantity,
+            level: item.level,
+          })),
         },
         permissions: {
-          permissions: user.permissions?.map(p => p.type) || []
-        }
+          permissions: user.permissions?.map((p) => p.type) || [],
+        },
+        staffRoles: {
+          roles: user.staffRoleAssignments?.map((a) => a.role) || [],
+        },
       };
 
       res.status(200).json(formattedResponse);
@@ -87,118 +197,237 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   }
   // PUT - Update user
   else if (req.method === 'PUT') {
-    try {
-      const updateData = req.body;
-      
-      // Start a transaction for updating multiple tables
-      await prisma.$transaction(async (tx) => {
-        // Fetch current user data to update JSON fields
-        const user = await tx.users.findUnique({
-          where: { id: userIdNum }
-        });
-        
-        if (!user) {
-          throw new Error('User not found');
-        }
+    const adminUserId = Number(req.session?.user?.id);
+    const ip = getRequestIp(req);
+    const auditDetails: Record<string, unknown> = { targetUserId: userIdNum };
+    let auditAction = 'ADMIN_USER_UPDATE_FAILED';
+    let status = 500;
+    let body: { message?: string; error?: string } = {
+      error: 'Failed to update user',
+    };
 
-        // Update profile
-        await tx.users.update({
-          where: { id: userIdNum },
-          data: {
-            display_name: updateData.profile.username,
-            email: updateData.profile.email,
-          }
+    try {
+      const parsed = AdminUserUpdateSchema.safeParse(req.body);
+      if (!parsed.success)
+        return res.status(422).json({
+          error: 'Invalid user update',
+          details: parsed.error.flatten().fieldErrors,
         });
-        
-        // Parse current units and items
-        const currentUnits = user.units ? JSON.parse(JSON.stringify(user.units)) : [];
-        const currentItems = user.items ? JSON.parse(JSON.stringify(user.items)) : [];
-        
-        // Update units
-        // Process each unit from the update data
-        for (const unit of updateData.army.units) {
-          // Parse the unit id to extract type and level
-          // Expected format: "CITIZEN", "WORKER", etc.
-          const type = unit.type || unit.id;
-          
-          // Find the unit in current units array
-          const unitIndex = currentUnits.findIndex(u => u.type === type);
-          
-          if (unitIndex >= 0) {
-            // Update existing unit
-            currentUnits[unitIndex].quantity = unit.quantity;
-            currentUnits[unitIndex].level = unit.level;
-          } else {
-            // Add new unit
-            currentUnits.push({
-              type: type,
-              level: unit.level,
-              quantity: unit.quantity
-            });
-          }
-        }
-        
-        // Update items
-        for (const item of updateData.items.items) {
-          // Parse the item id to extract type, usage, and level
-          // Expected format: "WEAPON", "ARMOR", etc.
-          const type = item.type || item.id;
-          const usage = item.usage || 'GENERAL';
-          
-          // Find the item in current items array
-          const itemIndex = currentItems.findIndex(i => i.type === type);
-          
-          if (itemIndex >= 0) {
-            // Update existing item
-            currentItems[itemIndex].quantity = item.quantity;
-            if (item.level !== undefined) currentItems[itemIndex].level = item.level;
-          } else {
-            // Add new item
-            currentItems.push({
-              type: type,
-              level: item.level,
-              quantity: item.quantity,
-              usage: usage
-            });
-          }
-        }
-        
-        // Update the user with the modified JSON fields
-        await tx.users.update({
-          where: { id: userIdNum },
-          data: {
-            units: currentUnits,
-            items: currentItems,
-            gold: BigInt(updateData.stats.gold),
-            experience: updateData.stats.experience,
-            rank: updateData.stats.level
-          }
-        });
-        
-        // Update permissions - first delete all existing ones
-        await tx.permissionGrant.deleteMany({
-          where: { user_id: userIdNum }
-        });
-        
-        // Then add the current ones
-        for (const permission of updateData.permissions.permissions) {
-          await tx.permissionGrant.create({
-            data: {
-              user_id: userIdNum,
-              type: permission
-            }
+      const updateData = parsed.data;
+      const unitIds = updateData.army.units.map((unit) => unit.id);
+      const itemIds = updateData.items.items.map((item) => item.id);
+      if (
+        new Set(unitIds).size !== unitIds.length ||
+        new Set(itemIds).size !== itemIds.length
+      ) {
+        return res
+          .status(422)
+          .json({ error: 'Duplicate inventory identities' });
+      }
+      const denial = await prisma.$transaction(
+        async (tx) => {
+          await tx.$queryRaw`SELECT id FROM users WHERE id = ${userIdNum} FOR UPDATE`;
+          // Fetch current user data to update JSON fields
+          const user = await tx.users.findUnique({
+            where: { id: userIdNum },
           });
-        }
-      });
-      
-      res.status(200).json({ message: 'User updated successfully' });
+
+          if (!user) {
+            throw new Error('User not found');
+          }
+
+          // Deliberately unfiltered by revokedAt: an account that has ever held
+          // a role or grant stays locked, so revoke-then-edit cannot bypass it.
+          const staffRows = await tx.staffRoleAssignment.findMany({
+            where: { userId: userIdNum },
+            select: { role: true, revokedAt: true },
+          });
+          const grantCount = await tx.permissionGrant.count({
+            where: { user_id: userIdNum },
+          });
+
+          const isSelf = adminUserId === userIdNum;
+          const targetIsAdmin = staffRows.some(
+            (row) => row.role === 'ADMINISTRATOR' && row.revokedAt === null,
+          );
+          const emailChanged =
+            updateData.profile.email.trim().toLowerCase() !==
+            (user.email ?? '').trim().toLowerCase();
+          const holdsStaffOrGrant = staffRows.length > 0 || grantCount > 0;
+
+          auditDetails.emailChanged = emailChanged;
+          auditDetails.targetIsStaff = holdsStaffOrGrant;
+
+          // Administrators may not edit other administrators at all.
+          if (!isSelf && targetIsAdmin) {
+            auditDetails.reason = 'admin_on_admin';
+            return {
+              status: 403,
+              error: 'Administrators cannot edit other administrators',
+            };
+          }
+
+          // Dropping your own ADMINISTRATOR role must not leave nobody in charge.
+          const dropsOwnAdmin =
+            isSelf &&
+            targetIsAdmin &&
+            !!updateData.staffRoles &&
+            !updateData.staffRoles.roles.includes('ADMINISTRATOR');
+          if (
+            dropsOwnAdmin &&
+            (await countOtherAdministrators(userIdNum, tx)) === 0
+          ) {
+            auditDetails.reason = 'last_administrator';
+            return {
+              status: 409,
+              error: 'The last administrator cannot remove their own role',
+            };
+          }
+
+          // Email changes on staff accounts enable takeover via password reset.
+          if (emailChanged && holdsStaffOrGrant) {
+            auditDetails.reason = 'staff_email_change';
+            return {
+              status: 403,
+              error:
+                'Email cannot be changed on staff or permissioned accounts',
+            };
+          }
+
+          // Update profile
+          await tx.users.update({
+            where: { id: userIdNum },
+            data: {
+              display_name: updateData.profile.username,
+              email: updateData.profile.email,
+            },
+          });
+
+          // Quantity edits target exact normalized rows; unrelated levels/usages are preserved.
+          for (const unit of updateData.army.units) {
+            if (unit.id !== `${unit.type}:${unit.level}:${unit.isMercenary}`)
+              throw new Error('Invalid unit identity');
+            const result = await tx.userUnit.updateMany({
+              where: {
+                userId: userIdNum,
+                type: unit.type,
+                level: unit.level,
+                isMercenary: unit.isMercenary,
+              },
+              data: { quantity: unit.quantity },
+            });
+            if (result.count !== 1) throw new Error('Unit no longer exists');
+          }
+          for (const item of updateData.items.items) {
+            if (item.id !== `${item.type}:${item.usage}:${item.level}`)
+              throw new Error('Invalid item identity');
+            const result = await tx.userItem.updateMany({
+              where: {
+                userId: userIdNum,
+                type: item.type,
+                usage: item.usage,
+                level: item.level,
+              },
+              data: { quantity: item.quantity },
+            });
+            if (result.count !== 1) throw new Error('Item no longer exists');
+          }
+          await tx.users.update({
+            where: { id: userIdNum },
+            data: {
+              gold: updateData.stats.gold,
+              ...(updateData.stats.goldInBank !== undefined
+                ? { gold_in_bank: updateData.stats.goldInBank }
+                : {}),
+              experience: updateData.stats.experience,
+            },
+          });
+
+          // Removed grants are soft-revoked so the staff history is kept.
+          await AdminService.syncPermissionGrants(
+            tx,
+            userIdNum,
+            updateData.permissions.permissions,
+            adminUserId,
+          );
+
+          if (updateData.staffRoles) {
+            const requestedRoles = updateData.staffRoles.roles;
+
+            await tx.staffRoleAssignment.updateMany({
+              where: {
+                userId: userIdNum,
+                revokedAt: null,
+                role: { notIn: requestedRoles },
+              },
+              data: { revokedAt: new Date() },
+            });
+
+            for (const role of requestedRoles) {
+              const existingAssignment = await tx.staffRoleAssignment.findFirst(
+                {
+                  where: { userId: userIdNum, role, revokedAt: null },
+                  select: { id: true },
+                },
+              );
+
+              if (!existingAssignment) {
+                await tx.staffRoleAssignment.create({
+                  data: {
+                    userId: userIdNum,
+                    role,
+                    grantedByUserId: Number.isFinite(adminUserId)
+                      ? adminUserId
+                      : undefined,
+                  },
+                });
+              }
+            }
+          }
+
+          // Commits with the edit; a failed write rolls the edit back.
+          await logActionStrict(
+            {
+              userId: adminUserId,
+              action: 'ADMIN_USER_UPDATE',
+              ip,
+              targetUserId: userIdNum,
+              details: auditDetails,
+            },
+            tx,
+          );
+          return null;
+        },
+        { isolationLevel: 'Serializable' },
+      );
+
+      if (denial) {
+        auditAction = 'ADMIN_USER_UPDATE_DENIED';
+        status = denial.status;
+        body = { error: denial.error };
+      } else {
+        auditAction = 'ADMIN_USER_UPDATE';
+        status = 200;
+        body = { message: 'User updated successfully' };
+      }
     } catch (error) {
       logError('Error updating user:', error);
-      res.status(500).json({ error: 'Failed to update user' });
     }
-  } else {
-    res.status(405).json({ error: 'Method not allowed' });
+
+    // Successful updates are already audited inside the transaction.
+    if (auditAction !== 'ADMIN_USER_UPDATE') {
+      await logAction(adminUserId, auditAction, ip, auditDetails);
+    }
+    res.status(status).json(body);
   }
 }
 
-export default withAuth(handler);
+export default async function routed(
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) {
+  if (req.method === 'GET') return guardedRead(handler)(req, res);
+  if (req.method === 'PUT') return guardedUpdate(handler)(req, res);
+  res.setHeader('Allow', 'GET, PUT');
+  return res.status(405).json({ error: 'Method not allowed' });
+}

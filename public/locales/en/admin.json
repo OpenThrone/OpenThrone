@@ -1,0 +1,10 @@
+{
+  "blog": {
+    "title": "Blog Administration",
+    "postEditor": "Post Editor",
+    "livePreview": "Live Preview",
+    "markdownContent": "Markdown Content",
+    "submitPost": "Submit Post",
+    "initialContent": "# Welcome to the Mantine rich text editor\n\nThis is a sample post. You can format your text, add headings, lists, and more."
+  }
+}

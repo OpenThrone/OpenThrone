@@ -1,0 +1,62 @@
+{
+  "loading": "Cargando…",
+  "saved": "Guardado",
+  "error": "Error",
+  "save": "Guardar",
+  "delete": "Eliminar",
+  "key": "Ajuste",
+  "value": "Valor",
+  "status": "Origen",
+  "actions": "Acciones",
+  "description": "Descripción",
+  "enabled": "Activo",
+  "settings": {
+    "title": "Sistema: Ajustes de ejecución",
+    "intro": "Los cambios se aplican a la configuración y se propagan entre procesos en un máximo de cinco segundos.",
+    "saved": "Ajuste actualizado.",
+    "saveError": "No se pudo guardar el ajuste. Comprueba el valor e inténtalo de nuevo.",
+    "loadError": "No se pudieron cargar los ajustes.",
+    "history": "Historial",
+    "historyError": "No se pudo cargar el historial.",
+    "revertLatest": "Revertir el último",
+    "reverted": "Se restauró el valor anterior.",
+    "revertError": "No se pudo restaurar el valor anterior.",
+    "databaseValue": "Valor de base de datos",
+    "environmentDefault": "Valor predeterminado del entorno",
+    "unknownReadOnly": "Ajuste desconocido · solo lectura",
+    "labels": {
+      "ENABLE_ATTACKING": "Ataques",
+      "ATTACK_LEVEL_RANGE": "Rango de nivel de ataque",
+      "ENABLE_INFILTRATIONS": "Infiltraciones",
+      "ENABLE_ASSASSINATIONS": "Asesinatos",
+      "ENABLE_INTEL": "Inteligencia",
+      "ENABLE_SOCIAL": "Funciones sociales",
+      "ENABLE_ENEMIES": "Enemigos",
+      "DISABLE_LOGIN": "Desactivar inicio de sesión",
+      "DISABLE_REGISTRATION": "Desactivar registro",
+      "MAINTENANCE_MODE": "Modo de mantenimiento",
+      "email.outbox.enabled": "Cola de correo activada",
+      "email.outbox.ratePerMinute": "Correos por minuto",
+      "account.inactivity.remindersEnabled": "Recordatorios de inactividad",
+      "account.inactivity.autoAnonymizeEnabled": "Anonimización automática por inactividad",
+      "era.dailyCitizenBonus": "Bono diario de ciudadanos (ciudadanos extra que recibe cada cuenta en la actualización diaria)",
+      "era.dailyCitizenBonusActivityHours": "Ventana de actividad del bono diario de ciudadanos en horas (solo las cuentas que depositaron, entrenaron, comerciaron en la armería, atacaron, espiaron o repararon dentro de esta ventana reciben el bono; 0 = todos)"
+    },
+    "resetBeforeLogin": "Reiniciar la era actual antes de habilitar los inicios de sesión"
+  },
+  "flags": {
+    "title": "Sistema: Indicadores de funciones",
+    "intro": "Administra los interruptores de ejecución permitidos. Las reglas aún no son compatibles.",
+    "saved": "Indicador actualizado.",
+    "saveError": "No se pudo guardar el indicador.",
+    "loadError": "No se pudieron cargar los indicadores.",
+    "deleteError": "No se pudo borrar el indicador."
+  },
+  "maintenance": {
+    "title": "Sistema: Modo de mantenimiento",
+    "intro": "Al activarlo, las personas que no son del personal verán la página de mantenimiento. Úsalo para interrupciones planificadas.",
+    "enabled": "Modo de mantenimiento activo",
+    "message": "Mensaje de mantenimiento",
+    "messageHelp": "Se muestra durante el mantenimiento. Hasta 1000 caracteres."
+  }
+}

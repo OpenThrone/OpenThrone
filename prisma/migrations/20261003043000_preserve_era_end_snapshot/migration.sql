@@ -1,0 +1,3 @@
+ALTER TABLE "UserEra"
+ADD COLUMN "levelAtEnd" INTEGER,
+ADD COLUMN "snapshotAtEnd" JSONB;

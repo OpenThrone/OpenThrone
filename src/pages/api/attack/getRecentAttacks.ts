@@ -1,55 +1,28 @@
-// pages/api/social/getTop.ts
-import prisma from "@/lib/prisma";
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
+
 import { withAuth } from '@/middleware/auth';
-import { logError } from "@/utils/logger";
+import { BattleService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const getRecentAttacks = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
   }
 
-  const session = req.session;
-  if (!session) {
+  const viewerId = Number(req.session?.user?.id);
+  if (!Number.isSafeInteger(viewerId) || viewerId <= 0) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
-    const relations = await prisma.attack_log.findMany({
-      where: {
-        timestamp: {
-          gt: new Date(Date.now() - 24 * 60 * 60 * 1000 * 7)
-        
-        }
-      }
+    // Only logs the viewer may read, with loss totals (fort HP for the defender).
+    const result = await BattleService.getRecentAttacks(viewerId, {
+      timeWindow: 7,
     });
-    const badAttacks = relations.filter((attack) => {
-      if (!attack.stats.attacker_units || !attack.stats.defender_units) {
-        return false;
-      }
-      const attackerPop = attack.stats.attacker_units.filter((unit)=>unit.type === 'OFFENSE').reduce((total, unit) => total + unit.quantity, 0);
-      const defenderPop = attack.stats.defender_units.filter((unit)=>unit.type === 'DEFENSE' || unit.type === 'WORKER' || unit.type === 'CITIZEN').reduce((total, unit) => total + unit.quantity, 0);
-      
-      const attackerLosses = Number(attack.stats.attacker_losses?.total || 0);
-      const defenderLosses = Number(attack.stats.defender_losses?.total || 0);
-
-      const attackerLossPercent = attackerLosses / attackerPop;
-      const defenderLossPercent = defenderLosses / defenderPop;
-      return (
-        attackerLossPercent > 0.2 && defenderLossPercent < 0.7 ||
-        attackerLosses > defenderLosses || 
-        defenderLossPercent > .5
-      );
-    });
-
-    res.status(200).json(badAttacks.map((attack) => (
-      { id: attack.id, timestamp: attack.timestamp, attacker_id: attack.attacker_id, defender_id: attack.defender_id, attackerLosses: attack.stats.attacker_losses?.total, defenderLosses: attack.stats.defender_losses?.total, 'fortHPAtEnd': attack.stats.forthpAtEnd }
-    )));
-
+    res.status(200).json(result);
   } catch (error) {
-
     logError('Error fetching recent attacks:', error);
-    res.status(500).json({ error  });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 

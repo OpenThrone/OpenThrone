@@ -1,0 +1,8 @@
+.button {
+  color: var(--ot-brand-text);
+  background: var(--ot-inset);
+  border: 1px solid var(--ot-border);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .08), 0 3px 5px rgba(0, 0, 0, .25);
+}
+.button:hover { color: var(--ot-heading); background: var(--ot-surface-2); }
+.button:focus-visible { outline: 2px solid var(--ot-accent); outline-offset: 2px; }

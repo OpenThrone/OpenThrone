@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-08-27T04:10:57.111Z",
+  "seedScheme": "createSeededRandom(label-index)",
+  "battle": {
+    "repeats": 400,
+    "attackerWinRate": 1,
+    "avgPillageGold": 110000,
+    "avgAttackerLosses": 47,
+    "avgDefenderLosses": 69.3
+  },
+  "spy": {
+    "repeats": 400,
+    "intelSuccessRate": 1,
+    "infiltrateSuccessRate": 1,
+    "assassinateSuccessRate": 1,
+    "avgIntelSpyLosses": 0,
+    "avgInfiltrationFortDamage": 5.26,
+    "avgAssassinationKills": 0
+  },
+  "logSummary": {
+    "totalEntries": 800,
+    "groups": [
+      {
+        "level": "DEBUG",
+        "template": "simulateIntel debug",
+        "count": 400,
+        "sample": "simulateIntel debug {\"attackerSpy\":250665,\"defenderSentry\":22500}"
+      },
+      {
+        "level": "DEBUG",
+        "template": "Assassination: # CITIZEN_WORKERS killed | AttackID: # | DefenderID: #",
+        "count": 400,
+        "sample": "Assassination: 0 CITIZEN_WORKERS killed | AttackID: 1 | DefenderID: 1"
+      }
+    ]
+  }
+}

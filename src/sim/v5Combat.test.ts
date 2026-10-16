@@ -1,0 +1,1180 @@
+import { describe, expect, it } from 'bun:test';
+
+import { calculateLoot } from '@/utils/attackFunctions';
+
+import { makeDailyDecisions } from './behaviors';
+import { runSingleBattle } from './engine';
+import { createPlayerState } from './population';
+import { createSimPlayer } from './presets';
+import { evaluateTargets } from './targeting';
+import type {
+  IntelPayload,
+  IntelResult,
+  ItemStats,
+  PlayerState,
+  TargetEvaluation,
+  UnitCounts,
+} from './types';
+
+type CombatShape = {
+  name: string;
+  attackerOffense: number;
+  defenderDefense: number;
+};
+
+type IntelState = 'fresh' | 'decaying' | 'expired' | 'none';
+
+const TARGETING_SHAPES: CombatShape[] = [
+  { name: 'equal power', attackerOffense: 120, defenderDefense: 100 },
+  { name: 'attacker edge', attackerOffense: 140, defenderDefense: 90 },
+  { name: 'defender edge', attackerOffense: 100, defenderDefense: 130 },
+];
+
+const INTEL_STATES: IntelState[] = ['fresh', 'decaying', 'expired', 'none'];
+
+const NO_VARIANCE_BATTLE = {
+  maxTurns: 10,
+  damageVarianceMin: 1,
+  damageVarianceMax: 1,
+};
+
+function seededRandom(seed: number): () => number {
+  let value = Math.abs(Math.floor(seed)) || 1;
+  return () => {
+    value = (value * 48271) % 2147483647;
+    return value / 2147483647;
+  };
+}
+
+function makeUnits(overrides: Partial<UnitCounts>): Partial<UnitCounts> {
+  return {
+    citizen: 1000,
+    worker: 300,
+    ...overrides,
+  };
+}
+
+function makeBattlePlayer(params: {
+  id: string;
+  level: number;
+  offense?: number;
+  defense?: number;
+  items?: Partial<ItemStats>;
+  units?: Partial<UnitCounts>;
+  race?: string;
+  gold?: number;
+}) {
+  return createSimPlayer({
+    id: params.id,
+    displayName: params.id,
+    level: params.level,
+    race: params.race ?? 'HUMAN',
+    playerClass: 'FIGHTER',
+    houseLevel: 2,
+    gold: params.gold ?? 500000,
+    units: makeUnits({
+      soldier: params.offense ?? 0,
+      guard: params.defense ?? 0,
+      ...params.units,
+    }),
+    items: params.items,
+    fortLevel: 3,
+    fortHp: 500,
+    stamina: 100,
+    defensePressureToday: 0,
+    bonuses: { attack: 0, defense: 0 },
+  });
+}
+
+function makePopulationPlayer(params: {
+  id: string;
+  level: number;
+  offense?: number;
+  defense?: number;
+  spies?: number;
+  gold?: number;
+  attackTurns?: number;
+  stamina?: number;
+}): PlayerState {
+  const player = createPlayerState(params.level, 'aggressive', 42);
+  player.id = params.id;
+  player.displayName = params.id;
+  player.gold = params.gold ?? 500000;
+  player.attackTurns = params.attackTurns ?? 20;
+  player.stamina = params.stamina ?? 20;
+  player.behavior = {
+    aggression: 0.9,
+    riskTolerance: 0.8,
+    activityLevel: 1,
+    wealthPreference: 0.25,
+    spyPreference: 0.7,
+    turnStrategy: 'aggressive',
+    playStyle: 'aggressive',
+    primaryGoal: 'dominance',
+  };
+  player.units = {
+    ...player.units,
+    soldier: params.offense ?? 100,
+    knight: 0,
+    berserker: 0,
+    guard: params.defense ?? 100,
+    archer: 0,
+    royalGuard: 0,
+    spy: params.spies ?? 25,
+    infiltrator: 0,
+    assassin: 0,
+    sentry: 10,
+    sentinel: 0,
+    inquisitor: 0,
+    citizen: 1000,
+    worker: 300,
+  };
+  return player;
+}
+
+function intelFor(
+  defender: PlayerState,
+  day: number,
+  overrides: Partial<IntelPayload> = {},
+): IntelResult {
+  return {
+    success: true,
+    day,
+    spiesSent: 10,
+    spyCasualties: 0,
+    defenderInfo: {
+      units: { ...defender.units },
+      fortLevel: defender.fortLevel,
+      fortHp: defender.fortHp,
+      fortMaxHp: defender.fortMaxHp,
+      gold: defender.gold,
+      defenseBonus: defender.bonuses.defense,
+      spyLevel: defender.spyLevel,
+      sentryLevel: defender.sentryLevel,
+      ...overrides,
+    },
+  };
+}
+
+function intelDayForState(state: IntelState): number | undefined {
+  if (state === 'fresh') return 9;
+  if (state === 'decaying') return 7;
+  if (state === 'expired') return 6;
+  return undefined;
+}
+
+function evaluateTargetShape(
+  shape: CombatShape,
+  intelState: IntelState,
+): TargetEvaluation {
+  const attacker = makePopulationPlayer({
+    id: 'attacker',
+    level: 10,
+    offense: shape.attackerOffense,
+    spies: 25,
+  });
+  const defender = makePopulationPlayer({
+    id: 'defender',
+    level: 10,
+    defense: shape.defenderDefense,
+    gold: 750000,
+  });
+  const intelDay = intelDayForState(intelState);
+  if (intelDay != null) {
+    attacker.intelCache.set(defender.id, intelFor(defender, intelDay));
+  }
+
+  const [target] = evaluateTargets(
+    attacker,
+    [attacker, defender],
+    attacker.intelCache,
+    5,
+    10,
+  );
+
+  return target;
+}
+
+describe('v5 combat simulator battle envelopes', () => {
+  describe('equal population armies and equipment parity', () => {
+    it('equal men with no equipped items produces bounded casualties', async () => {
+      const result = await runSingleBattle(
+        makeBattlePlayer({ id: 'attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(101) },
+      );
+
+      expect(result.turns).toBeLessThanOrEqual(10);
+      expect(result.attackerCasualties.soldier).toBeLessThan(100);
+      expect(result.defenderCasualties.guard).toBeLessThan(100);
+      expect(result.attackerXp).toBeGreaterThan(0);
+      expect(result.defenderXp).toBeGreaterThan(0);
+    });
+
+    it('equal men with mirrored level-1 gear stays deterministic for the same seed', async () => {
+      const first = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'first-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({
+          id: 'first-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(102) },
+      );
+      const second = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'second-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({
+          id: 'second-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(102) },
+      );
+
+      expect(second.winner).toBe(first.winner);
+      expect(second.attackerCasualties.soldier).toBe(
+        first.attackerCasualties.soldier,
+      );
+      expect(second.defenderCasualties.guard).toBe(
+        first.defenderCasualties.guard,
+      );
+    });
+
+    it('equal men with attacker weapons outperforms no attacker equipment', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(103) },
+      );
+      const armed = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'armed-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'armed-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(103) },
+      );
+
+      expect(armed.defenderCasualties.guard).toBeGreaterThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+      expect(armed.attackerCasualties.soldier).toBeLessThanOrEqual(
+        baseline.attackerCasualties.soldier,
+      );
+    });
+
+    it('equal men with defender weapons makes the attack more costly', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(104) },
+      );
+      const armedDefender = await runSingleBattle(
+        makeBattlePlayer({ id: 'armed-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'armed-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(104) },
+      );
+
+      expect(armedDefender.attackerCasualties.soldier).toBeGreaterThanOrEqual(
+        baseline.attackerCasualties.soldier,
+      );
+      expect(armedDefender.defenderCasualties.guard).toBeLessThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+    });
+
+    it('equal men with attacker armor improves attacker survival', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(105) },
+      );
+      const armored = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'armored-attacker',
+          level: 10,
+          offense: 100,
+          items: { rangedAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'armored-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(105) },
+      );
+
+      expect(armored.attackerCasualties.soldier).toBeLessThanOrEqual(
+        baseline.attackerCasualties.soldier,
+      );
+    });
+
+    it('equal men with defender armor improves defender survival', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(106) },
+      );
+      const armoredDefender = await runSingleBattle(
+        makeBattlePlayer({ id: 'armored-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'armored-defender',
+          level: 10,
+          defense: 100,
+          items: { rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(106) },
+      );
+
+      expect(armoredDefender.defenderCasualties.guard).toBeLessThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+    });
+
+    it('attacker equipment quantity is capped by equal soldier count', async () => {
+      const fullyEquipped = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'full-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'full-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(107) },
+      );
+      const overEquipped = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'over-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 250, rangedAtk: 250 },
+        }),
+        makeBattlePlayer({ id: 'over-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(107) },
+      );
+
+      expect(overEquipped.attackerCasualties.soldier).toBe(
+        fullyEquipped.attackerCasualties.soldier,
+      );
+      expect(overEquipped.defenderCasualties.guard).toBe(
+        fullyEquipped.defenderCasualties.guard,
+      );
+    });
+
+    it('defender equipment quantity is capped by equal guard count', async () => {
+      const fullyEquipped = await runSingleBattle(
+        makeBattlePlayer({ id: 'full-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'full-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(108) },
+      );
+      const overEquipped = await runSingleBattle(
+        makeBattlePlayer({ id: 'over-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'over-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 250, rangedDef: 250 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(108) },
+      );
+
+      expect(overEquipped.attackerCasualties.soldier).toBe(
+        fullyEquipped.attackerCasualties.soldier,
+      );
+      expect(overEquipped.defenderCasualties.guard).toBe(
+        fullyEquipped.defenderCasualties.guard,
+      );
+    });
+
+    it('partial attacker equipment lands between no gear and full gear', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(109) },
+      );
+      const partial = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'partial-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 50 },
+        }),
+        makeBattlePlayer({ id: 'partial-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(109) },
+      );
+      const full = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'full-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'full-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(109) },
+      );
+
+      expect(partial.defenderCasualties.guard).toBeGreaterThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+      expect(partial.defenderCasualties.guard).toBeLessThanOrEqual(
+        full.defenderCasualties.guard,
+      );
+    });
+
+    it('partial defender equipment lands between no gear and full gear', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(110) },
+      );
+      const partial = await runSingleBattle(
+        makeBattlePlayer({ id: 'partial-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'partial-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 50 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(110) },
+      );
+      const full = await runSingleBattle(
+        makeBattlePlayer({ id: 'full-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'full-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(110) },
+      );
+
+      expect(partial.attackerCasualties.soldier).toBeGreaterThanOrEqual(
+        baseline.attackerCasualties.soldier,
+      );
+      expect(partial.attackerCasualties.soldier).toBeLessThanOrEqual(
+        full.attackerCasualties.soldier,
+      );
+    });
+
+    it('equal men with equal partial equipment remains stable and bounded', async () => {
+      const result = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'partial-mirror-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 50, rangedAtk: 50 },
+        }),
+        makeBattlePlayer({
+          id: 'partial-mirror-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 50, rangedDef: 50 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(111) },
+      );
+
+      expect(result.turns).toBeLessThanOrEqual(10);
+      expect(result.attackerCasualties.soldier).toBeLessThanOrEqual(100);
+      expect(result.defenderCasualties.guard).toBeLessThanOrEqual(100);
+      expect(result.attackerXp).toBeGreaterThan(0);
+      expect(result.defenderXp).toBeGreaterThan(0);
+    });
+
+    it('equal population with attacker gear improves pressure versus baseline', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'plain-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'plain-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(112) },
+      );
+      const geared = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'geared-attacker',
+          level: 10,
+          offense: 100,
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({ id: 'plain-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(112) },
+      );
+
+      expect(geared.defenderCasualties.guard).toBeGreaterThanOrEqual(
+        baseline.defenderCasualties.guard,
+      );
+      expect(geared.fortDamage).toBeGreaterThanOrEqual(baseline.fortDamage);
+    });
+
+    it('equal population with defender gear can preserve the fort longer', async () => {
+      const baseline = await runSingleBattle(
+        makeBattlePlayer({ id: 'base-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'base-defender', level: 10, defense: 100 }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(113) },
+      );
+      const gearedDefender = await runSingleBattle(
+        makeBattlePlayer({ id: 'geared-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'geared-defender',
+          level: 10,
+          defense: 100,
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(113) },
+      );
+
+      expect(gearedDefender.fortDamage).toBeLessThanOrEqual(
+        baseline.fortDamage,
+      );
+    });
+
+    it('equal total population mixed across unit tiers remains bounded', async () => {
+      const result = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'mixed-attacker',
+          level: 10,
+          offense: 60,
+          units: { knight: 20, berserker: 20 },
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({
+          id: 'mixed-defender',
+          level: 10,
+          defense: 60,
+          units: { archer: 20, royalGuard: 20 },
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(114) },
+      );
+
+      expect(result.turns).toBeLessThanOrEqual(10);
+      expect(
+        result.attackerCasualties.soldier +
+          result.attackerCasualties.knight +
+          result.attackerCasualties.berserker,
+      ).toBeLessThanOrEqual(100);
+      expect(
+        result.defenderCasualties.guard +
+          result.defenderCasualties.archer +
+          result.defenderCasualties.royalGuard,
+      ).toBeLessThanOrEqual(100);
+    });
+
+    it('mixed-tier over-equipment is capped by total eligible unit counts', async () => {
+      const fullyEquipped = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'full-mixed-attacker',
+          level: 10,
+          offense: 60,
+          units: { knight: 20, berserker: 20 },
+          items: { meleeAtk: 100, rangedAtk: 100 },
+        }),
+        makeBattlePlayer({
+          id: 'full-mixed-defender',
+          level: 10,
+          defense: 60,
+          units: { archer: 20, royalGuard: 20 },
+          items: { meleeDef: 100, rangedDef: 100 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(115) },
+      );
+      const overEquipped = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'over-mixed-attacker',
+          level: 10,
+          offense: 60,
+          units: { knight: 20, berserker: 20 },
+          items: { meleeAtk: 250, rangedAtk: 250 },
+        }),
+        makeBattlePlayer({
+          id: 'over-mixed-defender',
+          level: 10,
+          defense: 60,
+          units: { archer: 20, royalGuard: 20 },
+          items: { meleeDef: 250, rangedDef: 250 },
+        }),
+        { ...NO_VARIANCE_BATTLE, random: seededRandom(115) },
+      );
+
+      expect(overEquipped.attackerCasualties.soldier).toBe(
+        fullyEquipped.attackerCasualties.soldier,
+      );
+      expect(overEquipped.attackerCasualties.knight).toBe(
+        fullyEquipped.attackerCasualties.knight,
+      );
+      expect(overEquipped.attackerCasualties.berserker).toBe(
+        fullyEquipped.attackerCasualties.berserker,
+      );
+      expect(overEquipped.defenderCasualties.guard).toBe(
+        fullyEquipped.defenderCasualties.guard,
+      );
+      expect(overEquipped.defenderCasualties.archer).toBe(
+        fullyEquipped.defenderCasualties.archer,
+      );
+      expect(overEquipped.defenderCasualties.royalGuard).toBe(
+        fullyEquipped.defenderCasualties.royalGuard,
+      );
+    });
+  });
+
+  it('same-level equal offense vs defense lets the defense hold without exceeding v5 turn cap', async () => {
+    const result = await runSingleBattle(
+      makeBattlePlayer({ id: 'attacker', level: 10, offense: 100 }),
+      makeBattlePlayer({ id: 'defender', level: 10, defense: 100 }),
+      { maxTurns: 10, random: seededRandom(42) },
+    );
+
+    // Without an attacker edge the raid is repelled: no breach, no loot.
+    expect(result.winner).toBe('defender');
+    expect(result.turns).toBeLessThanOrEqual(10);
+    expect(result.attackerXp).toBeGreaterThan(0);
+    expect(result.defenderXp).toBeGreaterThan(0);
+    expect(result.attackerCasualties.soldier).toBeLessThan(100);
+    expect(result.defenderCasualties.guard).toBeLessThan(100);
+    expect(result.loot).toBe(0);
+  });
+
+  it('same-level slight attacker advantage produces a cleaner attack win', async () => {
+    const equal = await runSingleBattle(
+      makeBattlePlayer({ id: 'equal-attacker', level: 10, offense: 100 }),
+      makeBattlePlayer({ id: 'equal-defender', level: 10, defense: 100 }),
+      { maxTurns: 10, random: seededRandom(42) },
+    );
+    const advantaged = await runSingleBattle(
+      makeBattlePlayer({ id: 'adv-attacker', level: 10, offense: 112 }),
+      makeBattlePlayer({ id: 'adv-defender', level: 10, defense: 100 }),
+      { maxTurns: 10, random: seededRandom(42) },
+    );
+
+    expect(advantaged.winner).toBe('attacker');
+    expect(advantaged.defenderCasualties.guard).toBeGreaterThan(
+      equal.defenderCasualties.guard,
+    );
+    expect(advantaged.loot).toBeGreaterThan(0);
+    expect(equal.loot).toBe(0);
+  });
+
+  it('same-level slight defender advantage can stop the attack', async () => {
+    const result = await runSingleBattle(
+      makeBattlePlayer({ id: 'attacker', level: 10, offense: 100 }),
+      makeBattlePlayer({ id: 'defender', level: 10, defense: 120 }),
+      { maxTurns: 10, random: seededRandom(42) },
+    );
+
+    expect(result.winner).toBe('defender');
+    // Per-stack casualty caps bound the repelled assault far below a wipe.
+    expect(result.attackerCasualties.soldier).toBeLessThan(50);
+    expect(result.defenderCasualties.guard).toBeLessThan(10);
+    expect(result.loot).toBe(0);
+  });
+
+  it('attacking 2 levels down is repelled but pays poor XP compared with same-level combat', async () => {
+    const sameLevel = await runSingleBattle(
+      makeBattlePlayer({ id: 'same-attacker', level: 10, offense: 100 }),
+      makeBattlePlayer({ id: 'same-defender', level: 10, defense: 100 }),
+      { maxTurns: 10, random: seededRandom(42) },
+    );
+    const punchingDown = await runSingleBattle(
+      makeBattlePlayer({ id: 'down-attacker', level: 12, offense: 100 }),
+      makeBattlePlayer({ id: 'down-defender', level: 10, defense: 100 }),
+      { maxTurns: 10, random: seededRandom(42) },
+    );
+
+    expect(punchingDown.winner).toBe('defender');
+    expect(punchingDown.attackerXp).toBeLessThan(sameLevel.attackerXp);
+  });
+
+  it('attacking 2 levels up pays better XP than punching down even when repelled', async () => {
+    const punchingDown = await runSingleBattle(
+      makeBattlePlayer({ id: 'down-attacker', level: 12, offense: 100 }),
+      makeBattlePlayer({ id: 'down-defender', level: 10, defense: 100 }),
+      { maxTurns: 10, random: seededRandom(42) },
+    );
+    const punchingUp = await runSingleBattle(
+      makeBattlePlayer({ id: 'up-attacker', level: 10, offense: 100 }),
+      makeBattlePlayer({ id: 'up-defender', level: 12, defense: 100 }),
+      { maxTurns: 10, random: seededRandom(42) },
+    );
+
+    expect(punchingUp.winner).toBe('defender');
+    expect(punchingUp.attackerXp).toBeGreaterThan(punchingDown.attackerXp);
+  });
+
+  for (const levelDelta of [1, 3]) {
+    it(`attacking ${levelDelta} level(s) down suppresses XP compared with same-level combat`, async () => {
+      const sameLevel = await runSingleBattle(
+        makeBattlePlayer({ id: 'same-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'same-defender', level: 10, defense: 100 }),
+        { maxTurns: 10, random: seededRandom(42) },
+      );
+      const punchingDown = await runSingleBattle(
+        makeBattlePlayer({
+          id: 'down-attacker',
+          level: 10 + levelDelta,
+          offense: 100,
+        }),
+        makeBattlePlayer({ id: 'down-defender', level: 10, defense: 100 }),
+        { maxTurns: 10, random: seededRandom(42) },
+      );
+
+      expect(punchingDown.winner).toBe('defender');
+      expect(punchingDown.attackerXp).toBeLessThan(sameLevel.attackerXp);
+    });
+
+    it(`attacking ${levelDelta} level(s) up improves XP compared with same-level combat`, async () => {
+      const sameLevel = await runSingleBattle(
+        makeBattlePlayer({ id: 'same-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({ id: 'same-defender', level: 10, defense: 100 }),
+        { maxTurns: 10, random: seededRandom(42) },
+      );
+      const punchingUp = await runSingleBattle(
+        makeBattlePlayer({ id: 'up-attacker', level: 10, offense: 100 }),
+        makeBattlePlayer({
+          id: 'up-defender',
+          level: 10 + levelDelta,
+          defense: 100,
+        }),
+        { maxTurns: 10, random: seededRandom(42) },
+      );
+
+      expect(punchingUp.winner).toBe('defender');
+      expect(punchingUp.attackerXp).toBeGreaterThan(sameLevel.attackerXp);
+    });
+  }
+
+  it('slight defender advantage still matters when defender is 2 levels higher', async () => {
+    const result = await runSingleBattle(
+      makeBattlePlayer({ id: 'attacker', level: 10, offense: 100 }),
+      makeBattlePlayer({ id: 'defender', level: 12, defense: 120 }),
+      { maxTurns: 10, random: seededRandom(42) },
+    );
+
+    expect(result.winner).toBe('defender');
+    expect(result.attackerXp).toBeGreaterThan(500);
+    expect(result.attackerXp).toBeLessThan(1000);
+  });
+
+  it('goblin raiders earn a small pillage edge without changing the whole outcome', () => {
+    const raid = {
+      fortHpPercent: 0,
+      isDefenderProtected: false,
+      assaultSucceeded: true,
+      attackPressure: 5000,
+      defensePressure: 1000,
+    };
+    const lootFor = (race: string) =>
+      calculateLoot(
+        { level: 10, race, units: [], mercenaries: [], gold: 0n },
+        {
+          level: 10,
+          race: 'HUMAN',
+          gold: 250000n,
+          units: [
+            {
+              id: 1,
+              userId: 1,
+              type: 'DEFENSE',
+              level: 1,
+              quantity: 100,
+              isMercenary: false,
+            },
+          ],
+          mercenaries: [],
+        },
+        3,
+        seededRandom(42),
+        raid,
+      );
+    const human = lootFor('HUMAN');
+    const goblin = lootFor('GOBLIN');
+
+    expect(goblin).toBeGreaterThan(human);
+    expect(Number(goblin) / Number(human)).toBeGreaterThanOrEqual(1.02);
+    expect(Number(goblin) / Number(human)).toBeLessThanOrEqual(1.04);
+  });
+});
+
+describe('v5 intel freshness and target behavior', () => {
+  for (const shape of TARGETING_SHAPES) {
+    for (const intelState of INTEL_STATES) {
+      it(`${intelState} intel influences ${shape.name} target evaluation`, () => {
+        const target = evaluateTargetShape(shape, intelState);
+
+        expect(target.playerId).toBe('defender');
+        expect(target.intelFreshness).toBe(intelState);
+
+        if (intelState === 'fresh' || intelState === 'decaying') {
+          expect(target.intelAvailable).toBe(true);
+          expect(target.shouldScout).toBe(false);
+          expect(target.riskLevel).toBe('medium');
+          expect(target.recommendedTurns).toBeGreaterThanOrEqual(7);
+        } else {
+          expect(target.intelAvailable).toBe(false);
+          expect(target.shouldScout).toBe(true);
+          expect(target.riskLevel).toBe('unknown');
+          expect(target.recommendedTurns).toBe(3);
+        }
+      });
+    }
+
+    it(`decaying intel reduces confidence for ${shape.name} compared with fresh intel`, () => {
+      const fresh = evaluateTargetShape(shape, 'fresh');
+      const decaying = evaluateTargetShape(shape, 'decaying');
+
+      expect(decaying.estimatedWinRate).toBeLessThan(fresh.estimatedWinRate);
+      expect(decaying.priority).toBeLessThan(fresh.priority);
+    });
+
+    it(`expired intel falls back to the same estimate as no intel for ${shape.name}`, () => {
+      const expired = evaluateTargetShape(shape, 'expired');
+      const none = evaluateTargetShape(shape, 'none');
+
+      expect(expired.intelAvailable).toBe(false);
+      expect(expired.estimatedWinRate).toBe(none.estimatedWinRate);
+      expect(expired.recommendedTurns).toBe(none.recommendedTurns);
+    });
+  }
+
+  it('uses fresh intel as actionable target knowledge', () => {
+    const attacker = makePopulationPlayer({
+      id: 'attacker',
+      level: 10,
+      offense: 120,
+      spies: 25,
+    });
+    const defender = makePopulationPlayer({
+      id: 'defender',
+      level: 10,
+      defense: 100,
+      gold: 750000,
+    });
+    attacker.intelCache.set(defender.id, intelFor(defender, 9));
+
+    const [target] = evaluateTargets(
+      attacker,
+      [attacker, defender],
+      attacker.intelCache,
+      5,
+      10,
+    );
+
+    expect(target.playerId).toBe(defender.id);
+    expect(target.intelAvailable).toBe(true);
+    expect(target.intelFreshness).toBe('fresh');
+    expect(target.intelAge).toBe(1);
+    expect(target.recommendedTurns).toBeGreaterThanOrEqual(7);
+  });
+
+  it('keeps decaying intel usable but less confident than fresh intel', () => {
+    const attacker = makePopulationPlayer({
+      id: 'attacker',
+      level: 10,
+      offense: 120,
+      spies: 25,
+    });
+    const defender = makePopulationPlayer({
+      id: 'defender',
+      level: 10,
+      defense: 100,
+      gold: 750000,
+    });
+
+    const freshCache = new Map([[defender.id, intelFor(defender, 9)]]);
+    const decayingCache = new Map([[defender.id, intelFor(defender, 7)]]);
+    const [fresh] = evaluateTargets(
+      attacker,
+      [attacker, defender],
+      freshCache,
+      5,
+      10,
+    );
+    const [decaying] = evaluateTargets(
+      attacker,
+      [attacker, defender],
+      decayingCache,
+      5,
+      10,
+    );
+
+    expect(decaying.intelAvailable).toBe(true);
+    expect(decaying.intelFreshness).toBe('decaying');
+    expect(decaying.intelAge).toBe(3);
+    expect(decaying.estimatedWinRate).toBeLessThan(fresh.estimatedWinRate);
+  });
+
+  it('expires old intel and asks the agent to scout again', () => {
+    const attacker = makePopulationPlayer({
+      id: 'attacker',
+      level: 10,
+      offense: 120,
+      spies: 25,
+    });
+    const defender = makePopulationPlayer({
+      id: 'defender',
+      level: 10,
+      defense: 100,
+      gold: 750000,
+    });
+    attacker.intelCache.set(defender.id, intelFor(defender, 6));
+
+    const [target] = evaluateTargets(
+      attacker,
+      [attacker, defender],
+      attacker.intelCache,
+      5,
+      10,
+    );
+
+    expect(target.intelAvailable).toBe(false);
+    expect(target.intelFreshness).toBe('expired');
+    expect(target.shouldScout).toBe(true);
+  });
+
+  it('treats non-existent intel as unknown and scoutable for valuable targets', () => {
+    const attacker = makePopulationPlayer({
+      id: 'attacker',
+      level: 10,
+      offense: 120,
+      spies: 25,
+    });
+    const defender = makePopulationPlayer({
+      id: 'defender',
+      level: 10,
+      defense: 100,
+      gold: 750000,
+    });
+
+    const [target] = evaluateTargets(
+      attacker,
+      [attacker, defender],
+      attacker.intelCache,
+      5,
+      10,
+    );
+
+    expect(target.intelAvailable).toBe(false);
+    expect(target.intelFreshness).toBe('none');
+    expect(target.riskLevel).toBe('unknown');
+    expect(target.shouldScout).toBe(true);
+  });
+});
+
+describe('v5 follow-up attack behavior', () => {
+  for (const shape of TARGETING_SHAPES) {
+    it(`follow-up attack is planned after a profitable ${shape.name} win`, () => {
+      const attacker = makePopulationPlayer({
+        id: 'attacker',
+        level: 10,
+        offense: shape.attackerOffense,
+        attackTurns: 20,
+        stamina: 20,
+      });
+      const defender = makePopulationPlayer({
+        id: 'defender',
+        level: 10,
+        defense: shape.defenderDefense,
+        gold: 900000,
+      });
+      attacker.targetMemory.set(defender.id, {
+        attacks: 1,
+        wins: 1,
+        lastLoot: 100000,
+        lastAttackTick: 1,
+      });
+
+      const decision = makeDailyDecisions(attacker, [attacker, defender], {
+        attackLevelRange: 5,
+        currentDay: 2,
+        random: () => 0,
+      });
+
+      expect(decision.attacks.length).toBeGreaterThan(0);
+      expect(decision.attacks[0].target).toBe(defender.id);
+      expect(decision.attacks[0].turns).toBeGreaterThan(1);
+      expect(decision.attacks[0].turns).toBeLessThanOrEqual(10);
+      expect(decision.attacks[0].reason).toContain('repeat-farm');
+    });
+  }
+
+  for (const shape of TARGETING_SHAPES) {
+    it(`fresh intel supports a committed follow-up for ${shape.name}`, () => {
+      const attacker = makePopulationPlayer({
+        id: 'attacker',
+        level: 10,
+        offense: shape.attackerOffense,
+        attackTurns: 20,
+        stamina: 20,
+      });
+      const defender = makePopulationPlayer({
+        id: 'defender',
+        level: 10,
+        defense: shape.defenderDefense,
+        gold: 900000,
+      });
+      attacker.intelCache.set(defender.id, intelFor(defender, 1));
+      attacker.targetMemory.set(defender.id, {
+        attacks: 1,
+        wins: 1,
+        lastLoot: 100000,
+        lastAttackTick: 1,
+      });
+
+      const decision = makeDailyDecisions(attacker, [attacker, defender], {
+        attackLevelRange: 5,
+        currentDay: 2,
+        random: () => 0,
+      });
+
+      expect(decision.attacks.length).toBeGreaterThan(0);
+      expect(decision.attacks[0].turns).toBeGreaterThanOrEqual(7);
+      expect(decision.attacks[0].turns).toBeLessThanOrEqual(10);
+    });
+  }
+
+  for (const shape of TARGETING_SHAPES) {
+    it(`expired intel does not block repeat-farm follow-up for ${shape.name}`, () => {
+      const attacker = makePopulationPlayer({
+        id: 'attacker',
+        level: 10,
+        offense: shape.attackerOffense,
+        attackTurns: 20,
+        stamina: 20,
+      });
+      const defender = makePopulationPlayer({
+        id: 'defender',
+        level: 10,
+        defense: shape.defenderDefense,
+        gold: 900000,
+      });
+      attacker.intelCache.set(defender.id, intelFor(defender, 1));
+      attacker.targetMemory.set(defender.id, {
+        attacks: 1,
+        wins: 1,
+        lastLoot: 100000,
+        lastAttackTick: 1,
+      });
+
+      const decision = makeDailyDecisions(attacker, [attacker, defender], {
+        attackLevelRange: 5,
+        currentDay: 6,
+        random: () => 0,
+      });
+
+      expect(decision.attacks.length).toBeGreaterThan(0);
+      expect(decision.attacks[0].reason).toContain('repeat-farm');
+    });
+  }
+
+  it('prioritizes profitable follow-up attacks against a previously farmed target', () => {
+    const attacker = makePopulationPlayer({
+      id: 'attacker',
+      level: 10,
+      offense: 140,
+      attackTurns: 20,
+      stamina: 20,
+    });
+    const defender = makePopulationPlayer({
+      id: 'defender',
+      level: 10,
+      defense: 90,
+      gold: 900000,
+    });
+    attacker.targetMemory.set(defender.id, {
+      attacks: 1,
+      wins: 1,
+      lastLoot: 100000,
+      lastAttackTick: 1,
+    });
+
+    const decision = makeDailyDecisions(attacker, [attacker, defender], {
+      attackLevelRange: 5,
+      currentDay: 2,
+      random: () => 0,
+    });
+
+    expect(decision.attacks.length).toBeGreaterThan(0);
+    expect(decision.attacks[0].target).toBe(defender.id);
+    expect(decision.attacks[0].turns).toBeGreaterThan(1);
+    expect(decision.attacks[0].turns).toBeLessThanOrEqual(10);
+  });
+
+  it('escalates after a successful 1-turn probe when the target remains valuable', async () => {
+    const probe = await runSingleBattle(
+      makeBattlePlayer({ id: 'probe-attacker', level: 10, offense: 160 }),
+      makeBattlePlayer({
+        id: 'probe-defender',
+        level: 10,
+        defense: 80,
+        gold: 900000,
+      }),
+      { maxTurns: 1, random: seededRandom(99) },
+    );
+    expect(probe.winner).toBe('attacker');
+
+    const attacker = makePopulationPlayer({
+      id: 'attacker',
+      level: 10,
+      offense: 160,
+      attackTurns: 20,
+      stamina: 20,
+    });
+    const defender = makePopulationPlayer({
+      id: 'defender',
+      level: 10,
+      defense: 80,
+      gold: 900000,
+    });
+    attacker.targetMemory.set(defender.id, {
+      attacks: 1,
+      wins: 1,
+      lastLoot: Math.max(50000, probe.loot),
+      lastAttackTick: 1,
+    });
+
+    const decision = makeDailyDecisions(attacker, [attacker, defender], {
+      attackLevelRange: 5,
+      currentDay: 2,
+      random: () => 0,
+    });
+
+    expect(decision.attacks.length).toBeGreaterThan(0);
+    expect(decision.attacks[0].turns).toBeGreaterThan(1);
+    expect(decision.attacks[0].reason).toContain('repeat-farm');
+  });
+
+  it('does not target players outside the v5 level attack range', () => {
+    const attacker = makePopulationPlayer({ id: 'attacker', level: 10 });
+    const defender = makePopulationPlayer({
+      id: 'defender',
+      level: 16,
+      gold: 1000000,
+    });
+
+    const targets = evaluateTargets(
+      attacker,
+      [attacker, defender],
+      attacker.intelCache,
+      5,
+      1,
+    );
+
+    expect(targets).toHaveLength(0);
+  });
+});

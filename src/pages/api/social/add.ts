@@ -1,65 +1,50 @@
-import prisma from "@/lib/prisma";
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
+
+import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
-import { z } from 'zod';
+import { SocialService } from '@/services/Social.service';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
+import {
+  emitFriendRequestNotification,
+  emitSocialCountUpdate,
+} from '@/utils/socialNotifications';
 
-const AddSocialSchema = z.object({
-  friendId: z.number().int(),
-  relationshipType: z.enum(['FRIEND', 'ENEMY'])
-});
-
-const addSocialRelation = async (req: NextApiRequest, res: NextApiResponse) => {
+const addSocialRelation = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const parseResult = AddSocialSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
-  }
-
-  const { friendId, relationshipType } = parseResult.data;
+  const { friendId, relationshipType } = req.body ?? {};
   const playerId = session.user.id;
-  console.log(req.body);
-  console.log(relationshipType);
 
   try {
-    const social = await prisma.social.findFirst({
-      where: {
-        OR: [
-          { AND: [
-            { playerId },
-            { friendId },
-            { relationshipType },
-          ] },
-          { AND: [
-            { playerId: friendId },
-            { friendId: playerId },
-            { relationshipType },
-          ] }
-        ]
-      },
+    const result = await SocialService.addRelationship(playerId, {
+      friendId,
+      relationshipType,
     });
 
-    if (social) {
-      return res.status(400).json({ error: 'Relationship already exists or is pending a request.' });
+    if (relationshipType === 'FRIEND') {
+      const io = getSocketIO();
+      await emitFriendRequestNotification(io, {
+        senderId: playerId,
+        recipientId: Number(friendId),
+      });
+      await emitSocialCountUpdate(io, Number(friendId));
     }
 
-    await prisma.social.create({
-      data: {
-        playerId,
-        friendId,
-        relationshipType,
-      },
-    });
-    res.status(200).json({ message: 'Relationship added successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to add relationship' });
+    res.status(200).json(result);
+  } catch (error: any) {
+    logError('Error adding relationship:', error);
+    res.status(400).json({ error: error.message });
   }
 };
 

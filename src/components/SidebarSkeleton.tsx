@@ -1,12 +1,20 @@
 // src/components/SidebarSkeleton.tsx
-import { List, Paper, Skeleton, Stack, Text, Title } from '@mantine/core';
+import { List, Paper, Skeleton, Stack } from '@mantine/core';
 import React from 'react';
 
 const SidebarSkeleton: React.FC = () => {
   return (
     <div className="block sm:block">
       {/* Mimic the scroll/background container */}
-      <Paper p="md" mt="sm" withBorder style={{ backgroundColor: 'rgba(181, 165, 101, 0.8)' /* Approx advisor color */ }}>
+      <Paper
+        p="md"
+        mt="sm"
+        withBorder
+        style={{
+          backgroundColor:
+            'rgba(181, 165, 101, 0.8)' /* Approx advisor color */,
+        }}
+      >
         <Stack gap="md">
           {/* Advisor Title Skeleton */}
           <Skeleton height={20} width="50%" mx="auto" mb="xs" />
@@ -18,10 +26,14 @@ const SidebarSkeleton: React.FC = () => {
           {/* Stats Title Skeleton */}
           <Skeleton height={16} width="40%" mx="auto" mb="xs" />
           {/* Stats List Skeleton */}
-          <List gap="xs" size="sm">
+          <List>
             {[...Array(7)].map((_, index) => (
               <List.Item key={`stat-${index}`}>
-                <Skeleton height={10} width={`${Math.random() * 30 + 60}%`} radius="sm" />
+                <Skeleton
+                  height={10}
+                  width={`${Math.random() * 30 + 60}%`}
+                  radius="sm"
+                />
               </List.Item>
             ))}
           </List>

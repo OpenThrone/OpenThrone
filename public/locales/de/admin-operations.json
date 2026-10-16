@@ -1,0 +1,89 @@
+{
+  "user": {
+    "title": "Kontomaßnahmen",
+    "description": "Mitarbeiteraktionen für dieses Konto. Folgenreiche Änderungen benötigen eine zweite Bestätigung.",
+    "passwordAction": "Passwort zurücksetzen",
+    "accountResetAction": "Konto zurücksetzen",
+    "vacationStartAction": "Urlaub starten",
+    "vacationEndAction": "Urlaub beenden",
+    "reasonLabel": "Grund",
+    "reasonOptional": "Optional; wird im Mitarbeiter-Auditprotokoll gespeichert.",
+    "vacationDuration": "Der Urlaubsmodus dauert 14 Tage. Als Grund wird ein vom Administrator gestarteter Urlaub gespeichert.",
+    "cancel": "Abbrechen",
+    "confirmAction": "Aktion bestätigen",
+    "actionComplete": "Aktion abgeschlossen",
+    "passwordResult": "Eine E-Mail zum Zurücksetzen des Passworts wurde angefordert. Hier wird kein Passwort angezeigt.",
+    "accountResetResult": "Konto zurückgesetzt. Neue Konto-ID: {{newUserId}}.",
+    "vacationStarted": "Der Urlaubsmodus wurde für 14 Tage gestartet.",
+    "vacationEnded": "Der Urlaubsmodus wurde beendet.",
+    "unknown": "nicht verfügbar",
+    "invalidTarget": "Die Konto-ID ist ungültig. Schließe diesen Bereich und lade den Benutzerdatensatz neu.",
+    "requestFailed": "Die Anfrage ist fehlgeschlagen. Prüfe deine Berechtigung und versuche es erneut.",
+    "errorTitle": "Aktion konnte nicht abgeschlossen werden",
+    "confirm": {
+      "password": {
+        "title": "E-Mail zum Zurücksetzen senden?",
+        "message": "Der Kontoinhaber erhält eine E-Mail zum Zurücksetzen des Passworts. Für Mitarbeiter wird kein Passwort erstellt oder angezeigt."
+      },
+      "reset": {
+        "title": "Dieses Konto zurücksetzen?",
+        "message": "Dies ist eine folgenreiche Administratoraktion. Kontofortschritt kann entfernt werden. Füge bei Bedarf einen Auditgrund hinzu und bestätige nur, wenn das Zurücksetzen beabsichtigt ist."
+      },
+      "vacation-start": {
+        "title": "14-tägigen Urlaubsmodus starten?",
+        "message": "Während des Urlaubsmodus kann sich das Konto nicht anmelden. Die aktuelle API setzt eine feste Dauer von 14 Tagen."
+      },
+      "vacation-end": {
+        "title": "Urlaubsmodus beenden?",
+        "message": "Der Urlaubsmodus dieses Kontos wird sofort beendet."
+      }
+    }
+  },
+  "export": {
+    "action": "Benutzerexport herunterladen (JSON)",
+    "invalidTarget": "Die Konto-ID ist ungültig.",
+    "failed": "Der Export konnte nicht heruntergeladen werden. Prüfe deine Berechtigung und versuche es erneut.",
+    "invalidResponse": "Der Server hat einen ungültigen Export zurückgegeben. Es wurde keine Datei heruntergeladen."
+  },
+  "bots": {
+    "title": "Bot-Verwaltung",
+    "description": "Botbestand prüfen, Bereitstellung vorab ansehen und einen geplanten Botlauf starten.",
+    "accessDenied": "Administratorzugriff erforderlich",
+    "accessDeniedDescription": "Botstatus und Botaktionen sind nur für Administratoren verfügbar.",
+    "refresh": "Status aktualisieren",
+    "retry": "Erneut versuchen",
+    "loading": "Botstatus wird geladen…",
+    "loadFailed": "Der Botstatus konnte nicht geladen werden. Prüfe deine Berechtigung und versuche es erneut.",
+    "errorTitle": "Aktion konnte nicht abgeschlossen werden",
+    "total": "{{count}} Bot(s) registriert",
+    "rosterTitle": "Registrierte Bots",
+    "empty": "Es sind keine Bots registriert. Wähle unten ein Manifest zur Vorschau oder Bereitstellung aus.",
+    "neverRun": "Nie",
+    "columns": {
+      "id": "ID",
+      "name": "Name",
+      "raceClass": "Volk / Klasse",
+      "persona": "Persönlichkeit",
+      "lastRun": "Letzter Lauf",
+      "gold": "Gold"
+    },
+    "controlsTitle": "Botaktionen",
+    "manifestLabel": "Bereitstellungsmanifest",
+    "manifestDescription": "Die Auswahl stammt aus den registrierten Manifestdateien dieses Servers.",
+    "noManifests": "Keine registrierten Manifeste gefunden",
+    "dryRun": "Nur Vorschau",
+    "provision": "Bots bereitstellen",
+    "scheduleLabel": "Laufplan",
+    "scheduleDescription": "Die Auswahl stammt aus den registrierten Laufplandateien dieses Servers.",
+    "noSchedules": "Keine registrierten Laufpläne gefunden",
+    "runNow": "Botlauf jetzt starten",
+    "confirmProvisionTitle": "Bots bereitstellen?",
+    "confirmProvisionMessage": "Die im Manifest {{manifest}} aufgeführten Bots erstellen? Dadurch werden Kontodaten geändert.",
+    "confirmRunTitle": "Botlauf jetzt starten?",
+    "confirmRunMessage": "Den Laufplan {{schedule}} jetzt für die registrierten Botkonten ausführen?",
+    "actionFailed": "Die Aktion ist fehlgeschlagen. Prüfe deine Berechtigung und versuche es erneut.",
+    "actionComplete": "Botaktion abgeschlossen",
+    "saved": "Die Aktion wurde abgeschlossen.",
+    "resultTitle": "Aktionsergebnis"
+  }
+}

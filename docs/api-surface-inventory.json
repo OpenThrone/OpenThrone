@@ -1,0 +1,131 @@
+{
+  "generatedAt": "2026-02-07",
+  "version": 1,
+  "summary": {
+    "scope": "security-performance-api-hardening-plan-2026-02-07",
+    "status": "complete",
+    "completedAt": "2026-02-07",
+    "followUpPlan": "redis-rate-limit-implementation-plan-2026-02-07"
+  },
+  "endpoints": [
+    {
+      "route": "/api/attack/test",
+      "methods": ["POST"],
+      "authMode": "admin",
+      "risk": "critical",
+      "notes": "Simulation endpoint restricted to admin sessions."
+    },
+    {
+      "route": "/api/general/git-info",
+      "methods": ["GET"],
+      "authMode": "none",
+      "risk": "critical",
+      "notes": "Now disabled outside development."
+    },
+    {
+      "route": "/api/debug/clear-session",
+      "methods": ["POST"],
+      "authMode": "none",
+      "risk": "high",
+      "notes": "Now disabled outside development."
+    },
+    {
+      "route": "/api/utilities/getConstants",
+      "methods": ["GET"],
+      "authMode": "session-or-api-token(constants:read)",
+      "risk": "critical",
+      "notes": "Static bypass removed; non-session access requires Bearer API token with constants:read scope."
+    },
+    {
+      "route": "/api/admin/api-tokens",
+      "methods": ["GET", "POST"],
+      "authMode": "session+admin",
+      "risk": "critical",
+      "notes": "Token issue/list endpoint for scoped API clients."
+    },
+    {
+      "route": "/api/admin/api-tokens/[tokenId]/revoke",
+      "methods": ["POST"],
+      "authMode": "session+admin",
+      "risk": "critical",
+      "notes": "Revokes API tokens and blocks future bearer use."
+    },
+    {
+      "route": "/api/admin/*",
+      "methods": ["GET", "POST", "PATCH", "DELETE"],
+      "authMode": "session+admin",
+      "risk": "critical",
+      "notes": "Migrated to withApiGuard for current endpoints, with admin rate-limit profile and consistent security headers."
+    },
+    {
+      "route": "/api/account/reset and /api/account/verify",
+      "methods": ["POST"],
+      "authMode": "public",
+      "risk": "high",
+      "notes": "Reset request now returns generic success to reduce account enumeration; verification failures return generic invalid/expired response."
+    },
+    {
+      "route": "/api/cronJobs/*",
+      "methods": ["POST"],
+      "authMode": "secret-or-service-auth",
+      "risk": "critical",
+      "notes": "Now method-gated by withApiGuard and protected with TASK_SECRET checks."
+    },
+    {
+      "route": "/api/battle/*",
+      "methods": ["GET", "POST"],
+      "authMode": "session",
+      "risk": "high",
+      "notes": "Attack mutation is on withApiGuard (attack profile) with Idempotency-Key replay controls."
+    },
+    {
+      "route": "/api/spy/*",
+      "methods": ["GET", "POST"],
+      "authMode": "session",
+      "risk": "high",
+      "notes": "Spy mutation is on withApiGuard (spy profile) with Idempotency-Key replay controls."
+    },
+    {
+      "route": "/api/social/friends/[friendId]/transfer",
+      "methods": ["POST"],
+      "authMode": "session",
+      "risk": "high",
+      "notes": "Transfer mutation is on withApiGuard (bank profile) with Idempotency-Key replay controls."
+    },
+    {
+      "route": "/api/bank/deposit|withdraw and /api/alliances/bank/deposit|withdraw",
+      "methods": ["POST"],
+      "authMode": "session",
+      "risk": "high",
+      "notes": "Bank and alliance-bank mutations are on withApiGuard (bank profile) and enforce Idempotency-Key."
+    },
+    {
+      "route": "/api/auth/[...nextauth]",
+      "methods": ["POST"],
+      "authMode": "public",
+      "risk": "critical",
+      "notes": "Privileged accounts (admin/mod) require 2FA; admin impersonation flow emits audit logs and session carries impersonatedBy."
+    },
+    {
+      "route": "rate-limit storage",
+      "methods": ["runtime"],
+      "authMode": "n/a",
+      "risk": "medium",
+      "notes": "In-memory limiter retained for this plan phase; Redis deferred to follow-up."
+    },
+    {
+      "route": "/api/v1/*",
+      "methods": ["varies"],
+      "authMode": "mirrors wrapped route",
+      "risk": "high",
+      "notes": "Compatibility wrappers added for critical attack/spy/account/bank/alliance-bank routes."
+    },
+    {
+      "route": "attack_log table",
+      "methods": ["schema"],
+      "authMode": "n/a",
+      "risk": "medium",
+      "notes": "Added derived columns (pillaged_gold, attacker_losses_total, defender_losses_total) and type/timestamp index to reduce JSON-path filtering costs."
+    }
+  ]
+}

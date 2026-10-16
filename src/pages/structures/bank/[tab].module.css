@@ -1,4 +1,5 @@
 .card {
+  min-width: 0;
   position: relative;
   overflow: visible;
   padding: var(--mantine-spacing-xl);
@@ -13,10 +14,30 @@
 
 .title {
   font-family:
-    Greycliff CF,
-    var(--mantine-font-family);
-  line-height: 1;
+    'MedievalSharp',
+    serif;
+  line-height: 1.3;
 }
 .text-gold-glow {
   text-shadow: 0 0 4px #facc15, 0 0 6px #f59e0b;
+}
+
+.economyRow,
+.dailyTotal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
+  align-items: baseline;
+  gap: var(--mantine-spacing-xs);
+}
+
+.economyValue {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.dailyTotal {
+  border-top: 1px solid var(--ot-line);
+  padding-top: var(--mantine-spacing-sm);
+  margin-top: var(--mantine-spacing-xs);
 }

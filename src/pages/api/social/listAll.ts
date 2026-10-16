@@ -1,76 +1,53 @@
-import prisma from "@/lib/prisma";
-import { NextApiResponse } from 'next';
-import { withAuth } from '@/middleware/auth';
-import { stringifyObj } from '@/utils/numberFormatting';
-import { AuthenticatedRequest } from "@/types/api";
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
 
-const getTopSocialRelations = async (req: AuthenticatedRequest, res: NextApiResponse) => {
+import { withAuth } from '@/middleware/auth';
+import { SocialService } from '@/services/Social.service';
+import type { AuthenticatedRequest } from '@/types/api';
+
+// Only the signed-in player's own relationships are listed. Unknown fields such
+// as playerId are rejected rather than stripped, so a caller asking for another
+// player's list gets an error instead of silently receiving its own.
+const ListSocialSchema = z
+  .object({
+    type: z.enum(['FRIEND', 'ENEMY', 'REQUESTS']),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+  })
+  .strict();
+
+const getTopSocialRelations = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) => {
   if (req.method !== 'GET') {
     return res.status(405).end();
   }
 
-  const session = req.session;
-
-  let { type, limit, playerId } = req.query;
-  if (!playerId) {
-    if (!session)
-      return res.status(401).json({ error: 'Unauthorized' });
-    playerId = session.user.id;
+  const userId = Number(req.session?.user?.id);
+  if (!req.session || !Number.isSafeInteger(userId) || userId <= 0) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const typeStr = Array.isArray(type) ? type[0] : type;
-  if (!['FRIEND', 'ENEMY', 'REQUESTS'].includes(typeStr)) {
-    return res.status(400).json({ error: 'Invalid relationship type' });
+  const parseResult = ListSocialSchema.safeParse(req.query);
+  if (!parseResult.success) {
+    return res.status(400).json({
+      error: 'Invalid query parameters',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
+
+  const { type, limit } = parseResult.data;
 
   try {
-    const whereCondition: any = {
-      AND: [
-        {
-          OR: [
-            { playerId: parseInt(playerId.toString()) },
-            { friendId: parseInt(playerId.toString()) }
-          ]
-        }
-      ]
-    };
-
-    if (type === 'REQUESTS') {
-      whereCondition.AND.push({ status: 'requested' });
-    } else {
-      whereCondition.AND.push({
-        relationshipType: type,
-        status: 'accepted'
-      });
-    }
-
-    const relations = await prisma.social.findMany({
-      where: whereCondition,
-      include: {
-        player: {
-          select: { id: true, display_name: true, race: true, class: true, avatar: true, last_active: true }
-        },
-        friend: {
-          select: { id: true, display_name: true, race: true, class: true, avatar: true, last_active: true }
-        }
-      }
+    const result = await SocialService.listRelationships(userId, {
+      type,
+      limit,
     });
 
-    // Filter out the current player details and keep only the friend's details
-    const modifiedRelations = relations.map(relation => {
-      const { player, friend, ...restRelation } = relation;
-      const contact = parseInt(playerId.toString()) === player.id ? friend : player;
-
-      return {
-        ...restRelation,
-        friend: contact
-      };
-    });
-
-    res.status(200).json(stringifyObj(modifiedRelations));
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get relationships', message: error.message });
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 };
 
-export default withAuth(getTopSocialRelations, true);
+export default withAuth(getTopSocialRelations);

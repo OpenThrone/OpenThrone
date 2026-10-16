@@ -1,0 +1,56 @@
+{
+  "metaTitle": "Preguntas de jugadores - OpenThrone",
+  "metaDescription": "Respuestas sobre reinos, entrenamiento, banco, combate, acceso a la cuenta y ayuda en OpenThrone.",
+  "title": "Preguntas de jugadores",
+  "intro": "Una guía práctica para tus primeras decisiones en el reino y un lugar donde encontrar ayuda.",
+  "sections": {
+    "starting": "Primeros pasos",
+    "strategy": "Decisiones del reino",
+    "help": "Acceso a la cuenta y ayuda"
+  },
+  "links": {
+    "guide": "Leer cómo jugar",
+    "news": "Leer las noticias",
+    "password": "Restablecer contraseña",
+    "discord": "Ayuda en Discord",
+    "about": "Acerca de OpenThrone"
+  },
+  "questions": {
+    "game": {
+      "title": "¿Qué tipo de juego es OpenThrone?",
+      "answer": "OpenThrone es un MMORPG de estrategia basado en texto para el navegador, inspirado en DarkThrone. Administras un reino, inviertes en un ejército y una economía e interactúas con otros comandantes. Es un proyecto independiente sin afiliación con el DarkThrone original."
+    },
+    "race": {
+      "title": "¿Qué debo saber antes de elegir una raza?",
+      "answer": "Las cuatro razas son Elfo, Humano, Goblin y No Muerto. Sus bonificaciones son diferentes; compara sus descripciones en Cómo jugar antes de elegir. Ninguna raza gana automáticamente: la composición y el equipo del ejército también importan."
+    },
+    "firstSteps": {
+      "title": "¿Qué reviso antes de mi primera inversión?",
+      "answer": "Empieza por el resumen del reino y revisa tu oro, ciudadanos y ejército. Lee los costes de entrenamiento antes de asignar ciudadanos a una función y compara el equipo y las mejoras de estructuras. Reserva suficiente oro para tu próxima acción; comprar una mejora puede retrasar otra."
+    },
+    "training": {
+      "title": "¿Cuál es la diferencia entre entrenamiento y equipo?",
+      "answer": "El entrenamiento asigna ciudadanos a funciones militares o económicas. Los trabajadores apoyan la economía, los soldados de ataque realizan incursiones, los defensores protegen el reino y los espías reúnen información. El equipo se compra por separado en la Armería. Revisa las cantidades y el coste total antes de comprar."
+    },
+    "bank": {
+      "title": "¿Por qué no puedo depositar todo mi oro de una vez?",
+      "answer": "Los depósitos tienen límites. Un depósito individual no puede superar el 80 % del oro que tienes en mano. Tu cuenta también tiene un límite de cantidad de depósitos. El Banco muestra la información de depósitos y el historial de transacciones. Revísalos antes de planificar varias compras o depósitos."
+    },
+    "combat": {
+      "title": "¿Qué debo revisar antes de atacar?",
+      "answer": "Revisa el objetivo, tu fuerza ofensiva y los turnos de ataque que vas a usar. La información de espionaje puede ayudarte a evaluar al objetivo, pero el combate puede causar pérdidas. Después, consulta el informe y el Historial de Guerra antes de comprometer más recursos."
+    },
+    "access": {
+      "title": "¿Por qué podría no poder iniciar sesión?",
+      "answer": "Lee el mensaje de la página de acceso. Cuando el inicio de sesión está deshabilitado, el acceso puede estar restringido; tener una cuenta registrada no garantiza que se pueda jugar en ese momento. Consulta las noticias públicas. Si el mensaje no explica tu problema, pide ayuda sin compartir tu contraseña ni códigos de acceso."
+    },
+    "password": {
+      "title": "¿Cómo recupero una contraseña olvidada?",
+      "answer": "Usa la página de restablecimiento de contraseña y sigue las instrucciones del correo. Revisa la carpeta de spam si no llega. Nunca publiques un enlace de restablecimiento, una contraseña ni un código de doble factor. Si la recuperación sigue fallando, describe el problema al soporte sin incluir esos secretos."
+    },
+    "report": {
+      "title": "¿Qué información ayuda a reportar un error?",
+      "answer": "Incluye la página que usabas, la acción realizada, lo que esperabas y lo que ocurrió. Añade la hora aproximada y una captura si resulta útil, después de quitar mensajes privados, correos y otros datos sensibles. El Discord de la comunidad y el registro de incidencias del repositorio son los canales de soporte indicados por el proyecto."
+    }
+  }
+}

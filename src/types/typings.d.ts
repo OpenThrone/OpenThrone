@@ -1,4 +1,10 @@
-import { PrismaClient, PermissionType, AccountStatus, User as PrismaUser } from '@prisma/client'; // Import PrismaUser alias
+import type {
+  AccountStatus,
+  PermissionType,
+  PrismaClient,
+  StaffRole,
+  User as PrismaUser,
+} from '@/lib/prisma-exports'; // Import PrismaUser alias
 
 declare global {
   var prisma: PrismaClient | undefined;
@@ -19,6 +25,8 @@ export type ItemType =
   | 'BOOTS'
   | 'BRACERS'
   | 'SHIELD';
+export type ItemUsage = 'OFFENSE' | 'DEFENSE';
+export type BattleUpgradeType = 'OFFENSE' | 'DEFENSE' | 'SPY' | 'SENTRY';
 export type BonusType =
   | 'OFFENSE'
   | 'DEFENSE'
@@ -27,32 +35,41 @@ export type BonusType =
   | 'INTEL'
   | 'INCOME'
   | 'PRICES';
-export type Locales = 'en-US' | 'es-ES';
+export type Locales = 'en-US' | 'es-ES' | 'de-DE';
 
 // Specific type for units stored in User.units JSON
 export type PlayerUnit = {
+  id: number;
+  userId: number;
   level: number;
   type: UnitType;
   quantity: number;
+  isMercenary: boolean;
 };
 
 // Specific type for items stored in User.items JSON
 export type PlayerItem = {
-  usage: UnitType | string;
+  id: number;
+  userId: number;
+  usage: ItemUsage;
   type: ItemType;
   level: number;
   quantity: number;
-}
+};
 
 // Specific type for battle upgrades stored in User.battle_upgrades JSON
 export type PlayerBattleUpgrade = {
-  type: UnitType | string;
+  id: number;
+  userId: number;
+  type: BattleUpgradeType;
   level: number;
   quantity: number;
-}
+};
 
 // Specific type for structure upgrades stored in User.structure_upgrades JSON
 export type StructureUpgrade = {
+  id: number;
+  userId: number;
   type: 'OFFENSE' | 'SPY' | 'SENTRY' | 'ARMORY';
   level: number;
 };
@@ -70,9 +87,18 @@ export interface PlayerStat {
 }
 
 export type BattleUnits = {
+  id: number; // From UserUnit
+  userId: number; // From UserUnit
   type: UnitType | string;
+  level: number; // Required for PlayerUnit, so make it required here
   quantity: number;
-  level?: number;
+  isMercenary: boolean; // From UserUnit
+  currentHP?: number; // Add current HP for tracking during battle
+};
+
+export type Loss = {
+  total: number;
+  units: BattleUnits[];
 };
 
 export interface PageAlert {
@@ -106,7 +132,6 @@ export type AttackPlayerUnit = {
   casualties: number; // Assuming this is part of the structure, otherwise remove
 };
 
-
 export type FortHealth = {
   current: number;
   max: number;
@@ -120,14 +145,18 @@ export type Unit = {
   cost: number;
   fortLevel: number;
   hp: number;
-  killingStrength?: number;
-  defenseStrength?: number;
+  MeleeAtkPower?: number;
+  MeleeDefPower?: number;
+  RangedAtkPower?: number;
+  RangedDefPower?: number;
+  closeCombatPercentage?: number;
+  rangedPercentage?: number;
 };
 export interface ItemCounts {
   [key: string]: number;
 }
 export type Item = {
-  id: string;
+  id: string; // Now includes usage prefix (e.g., 'OFFENSE_DAGGER')
   name: string;
   usage: UnitType | string; // Allow string for flexibility
   type: ItemType;
@@ -135,25 +164,30 @@ export type Item = {
   bonus: number;
   cost: number;
   race: PlayerRace;
-  quantity: number; // Note: This might be redundant if PlayerItem is used in User model
   armoryLevel: number;
-  killingStrength?: number;
-  defenseStrength?: number;
+  MeleeAtkPower?: number;
+  MeleeDefPower?: number;
+  RangedAtkPower?: number;
+  RangedDefPower?: number;
 };
-
 
 export type UnitUpgradeType = {
   type: UnitType | string;
   name: string;
   SiegeUpgradeLevel: number;
   level: number;
-  bonus: number;
   cost: number;
   minUnitLevel: number;
   unitsCovered: number;
   quantity?: number;
   killingStrength?: number;
   defenseStrength?: number;
+  closeCombatPercentage?: number;
+  rangedPercentage?: number;
+  MeleeAtkPower?: number;
+  MeleeDefPower?: number;
+  RangedAtkPower?: number;
+  RangedDefPower?: number;
 };
 export type Fortification = {
   name: string;
@@ -164,6 +198,9 @@ export type Fortification = {
   goldPerTurn: number;
   defenseBonusPercentage: number;
   cost: number;
+  casualtyMitigation: number;
+  MeleeDefPower?: number; // Forts have defense power
+  RangedDefPower?: number; // Forts have ranged defense power
 };
 export type OffensiveUpgradeType = {
   name: string;
@@ -201,7 +238,6 @@ export type SentryUpgradeType = {
   level?: number;
 };
 
-
 export type PlayerBonus = {
   race: PlayerRace | PlayerClass;
   bonusType: BonusType;
@@ -232,7 +268,9 @@ export type BankTransferHistoryType =
   | 'SALE'
   | 'RECRUITMENT'
   | 'FORT_REPAIR'
-  | 'DAILY_RECRUIT';
+  | 'DAILY_RECRUIT'
+  | 'FRIEND_TRANSFER'
+  | 'FRIEND_REQUEST';
 
 export type UnitProps = {
   requirement?: string;
@@ -250,7 +288,8 @@ export type UnitProps = {
   usage?: UnitType | string;
   minUnitLevel?: number;
   unitsCovered?: number;
-  quantity?: number; // 
+  quantity?: number; //
+  SiegeUpgrade?: string;
 };
 
 export type UnitSectionProps = {
@@ -260,7 +299,9 @@ export type UnitSectionProps = {
   type?: string;
   units?: any;
   itemCosts?: { [key: string]: number };
-  setItemCosts?: React.Dispatch<React.SetStateAction<{ [key: string]: number }>>; // 
+  setItemCosts?: React.Dispatch<
+    React.SetStateAction<{ [key: string]: number }>
+  >; //
   locale?: Locales;
 };
 
@@ -280,15 +321,16 @@ export type IUserSession = {
   class: PlayerClass;
   race: PlayerRace;
   colorScheme: string | null; // Allow null
-}
+  impersonatedBy?: number;
+};
 
 export interface Log {
   id: number; // Changed to number based on Prisma schema
   winner: number; // Changed to number
   attacker_id: number; // Changed to number
   defender_id: number; // Changed to number
-  attackerPlayer?: { display_name: string, id: number, race?: string }; // Added optional race
-  defenderPlayer?: { display_name: string, id: number, race?: string }; // Added optional race
+  attackerPlayer?: { display_name: string; id: number; race?: string }; // Added optional race
+  defenderPlayer?: { display_name: string; id: number; race?: string }; // Added optional race
   timestamp: string; // Keep as string after serialization
   stats: any; // Keep as any for now, complex structure
   type: string;
@@ -304,12 +346,14 @@ export interface ShareableArmyData {
   structure_upgrades: StructureUpgrade[]; // Use specific type
   fort_level?: number;
   fort_hitpoints?: number;
-};
+}
 
 // DTO for /api/general/getUser response
 // Matches Prisma select + calculated fields
 export interface UserApiResponse {
   id: number;
+  twoFactorEnabled?: boolean;
+  staffRoles?: StaffRole[];
   display_name: string;
   race: PlayerRace;
   class: PlayerClass;
@@ -320,16 +364,16 @@ export interface UserApiResponse {
   fort_hitpoints: number;
   house_level: number;
   attack_turns: number;
-  units: PlayerUnit[]; // Use specific type
-  items: PlayerItem[]; // Use specific type
+  UserUnit: any[]; // Temporarily any to allow UserUnit[]
+  UserItem: any[]; // Temporarily any to allow UserItem[]
   last_active: string; // Serialized Date
   bio: string;
   colorScheme: string | null;
   economy_level: number;
   avatar: string | null;
-  structure_upgrades: StructureUpgrade[]; // Use specific type
-  battle_upgrades: PlayerBattleUpgrade[]; // Use specific type
-  bonus_points: BonusPointsItem[]; // Use specific type
+  UserStructureUpgrade: any[]; // Temporarily any to allow UserStructureUpgrade[]
+  UserBattleUpgrade: any[]; // Temporarily any to allow UserBattleUpgrade[]
+  UserBonusPoints: any[]; // Temporarily any to allow UserBonusPoints[]
   locale: Locales;
   stats: PlayerStat[]; // Use specific type
   permissions: { type: PermissionType }[];
@@ -341,6 +385,21 @@ export interface UserApiResponse {
   totalAttacks: number;
   totalDefends: number;
   currentStatus: AccountStatus | string; // Use AccountStatus enum
+  goldPerTurn: number;
+  depositsAvailable: number;
+  nextDepositAvailable: { hours: number; minutes: number; seconds: number } | 0;
+  alliance_memberships?: {
+    alliance_id: number;
+    role_id: number;
+    alliance: { name: string };
+    role: { name: string };
+  }[];
+  currentEra?: {
+    id: number;
+    name: string;
+    startDate: string;
+    endDate: string | null;
+  };
 }
 
 // Define the Prisma User type alias again for internal use if needed
@@ -399,7 +458,7 @@ export interface FrontendRoom {
   isAdmin: boolean;
   participants: {
     id: number;
-    role: "ADMIN" | "MEMBER";
+    role: 'ADMIN' | 'MEMBER';
     canWrite: boolean;
     display_name: string;
     avatar: string | null;

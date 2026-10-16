@@ -1,0 +1,11 @@
+{
+  "config": {
+    "unavailable": "Registration is unavailable while server settings cannot be reached. Please try again later."
+  },
+  "maintenance": {
+    "title": "The realm is under maintenance",
+    "message": "The realm is temporarily unavailable while we make improvements. Please check back soon.",
+    "signIn": "Staff sign in",
+    "retry": "Check again"
+  }
+}

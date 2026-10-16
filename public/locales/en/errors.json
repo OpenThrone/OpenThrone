@@ -1,0 +1,114 @@
+{
+  "authentication": {
+    "unauthorized": "You are not authorized to perform this action.",
+    "forbidden": "You do not have permission to access this resource.",
+    "invalidCredentials": "Invalid email or password.",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "accountDisabled": "Your account has been disabled. Please contact support.",
+    "accountLocked": "Your account has been locked due to too many failed attempts.",
+    "emailNotVerified": "Please verify your email address before continuing.",
+    "twoFactorRequired": "Two-factor authentication is required.",
+    "invalidTwoFactorCode": "Invalid two-factor authentication code."
+  },
+  "validation": {
+    "requiredField": "This field is required.",
+    "invalidEmail": "Please enter a valid email address.",
+    "invalidPassword": "Password must be at least 8 characters.",
+    "passwordMismatch": "Passwords do not match.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "passwordTooLong": "Password must be no more than 128 characters.",
+    "displayNameTooShort": "Display name must be at least 3 characters.",
+    "displayNameTooLong": "Display name must be no more than 32 characters.",
+    "displayNameTaken": "This display name is already taken.",
+    "bioTooLong": "Bio must be no more than 500 characters.",
+    "invalidUrl": "Please enter a valid URL.",
+    "invalidNumber": "Please enter a valid number.",
+    "invalidDate": "Please enter a valid date.",
+    "valueTooLow": "Value must be at least {{min}}.",
+    "valueTooHigh": "Value must be no more than {{max}}."
+  },
+  "network": {
+    "networkError": "Network error. Please check your connection.",
+    "timeoutError": "Request timed out. Please try again.",
+    "serverError": "Server error. Please try again later.",
+    "serviceUnavailable": "Service is temporarily unavailable. Please try again later.",
+    "rateLimitExceeded": "Too many requests. Please wait before trying again.",
+    "maintenance": "The server is currently under maintenance. Please try again later."
+  },
+  "api": {
+    "requestFailed": "Request failed. Please try again.",
+    "invalidResponse": "Invalid response from server.",
+    "missingData": "Required data is missing.",
+    "invalidData": "Invalid data provided.",
+    "resourceNotFound": "The requested resource was not found.",
+    "resourceAlreadyExists": "This resource already exists.",
+    "operationFailed": "Operation failed. Please try again."
+  },
+  "game": {
+    "insufficientGold": "You don't have enough gold.",
+    "insufficientTurns": "You don't have enough turns.",
+    "insufficientCitizens": "You don't have enough citizens.",
+    "insufficientUnits": "You don't have enough units.",
+    "insufficientItems": "You don't have enough items.",
+    "cannotAttackSelf": "You cannot attack yourself.",
+    "cannotAttackProtected": "This player is under protection.",
+    "cannotAttackTooStrong": "This player is too strong for you to attack.",
+    "cannotAttackTooWeak": "This player is too weak for you to attack.",
+    "cannotAttackSameAlliance": "You cannot attack members of your alliance.",
+    "fortDestroyed": "Your fort has been destroyed!",
+    "fortDamaged": "Your fort has been damaged!",
+    "unitLost": "You lost your units!",
+    "itemLost": "You lost your items!",
+    "goldStolen": "Your gold was stolen!",
+    "spyDetected": "Your spy was detected!",
+    "spyFailed": "Spy operation failed!",
+    "infiltrationFailed": "Infiltration failed!",
+    "assassinationFailed": "Assassination failed!"
+  },
+  "social": {
+    "friendRequestFailed": "Failed to send friend request.",
+    "friendRequestAlreadySent": "You have already sent a friend request to this player.",
+    "alreadyFriends": "You are already friends with this player.",
+    "cannotAddSelf": "You cannot add yourself as a friend.",
+    "goldTransferFailed": "Failed to transfer gold.",
+    "insufficientGold": "You don't have enough gold to transfer.",
+    "goldRequestFailed": "Failed to send gold request.",
+    "goldRequestAlreadySent": "You have already sent a gold request to this player.",
+    "cannotRequestSelf": "You cannot request gold from yourself."
+  },
+  "structures": {
+    "upgradeFailed": "Failed to upgrade structure.",
+    "alreadyMaxLevel": "This structure is already at maximum level.",
+    "insufficientLevel": "You need to be at least level {{level}} to upgrade this structure.",
+    "repairFailed": "Failed to repair fort.",
+    "fortAtMaxHealth": "Your fort is already at maximum health.",
+    "buildFailed": "Failed to build structure.",
+    "insufficientSpace": "You don't have enough space to build this structure."
+  },
+  "alliance": {
+    "notInAlliance": "You are not in an alliance.",
+    "alreadyInAlliance": "You are already in an alliance.",
+    "allianceNotFound": "Alliance not found.",
+    "allianceFull": "This alliance is full.",
+    "notAllianceLeader": "You are not the leader of this alliance.",
+    "cannotLeaveAlliance": "You cannot leave the alliance at this time.",
+    "inviteFailed": "Failed to send alliance invitation.",
+    "kickFailed": "Failed to kick member from alliance."
+  },
+  "messaging": {
+    "messageFailed": "Failed to send message.",
+    "messageTooLong": "Message is too long. Maximum 1000 characters.",
+    "cannotMessageSelf": "You cannot send messages to yourself.",
+    "chatRoomNotFound": "Chat room not found.",
+    "notInChatRoom": "You are not in this chat room.",
+    "cannotSendToChatRoom": "You cannot send messages to this chat room."
+  },
+  "recruitment": {
+    "sessionAlreadyActive": "You already have an active recruitment session.",
+    "noActiveSession": "You don't have an active recruitment session.",
+    "sessionExpired": "Your recruitment session has expired.",
+    "invalidRecruitLink": "Invalid recruitment link.",
+    "alreadyRecruited": "You have already been recruited.",
+    "recruitLimitReached": "You have reached your recruitment limit."
+  }
+}

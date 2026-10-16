@@ -1,17 +1,60 @@
-import NewsAccordion from '@/components/newsAccordion';
-import { useUser } from '@/context/users';
-import { toLocale } from '@/utils/numberFormatting';
-import { useEffect, useState } from 'react';
-import { Text, Card, Space, Table, Group, Center, Flex, ThemeIcon, Paper, Popover } from '@mantine/core';
+import {
+  faCoins,
+  faCrown,
+  faEye,
+  faLevelUpAlt,
+  faMedal,
+  faMoneyBills,
+  faPiggyBank,
+  faShieldAlt,
+  faShieldVirus,
+  faStar,
+  faSyncAlt,
+  faTrophy,
+  faUsers,
+  faUserSecret,
+  faUserShield,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faShieldAlt, faUserShield, faCoins, faLevelUpAlt, faSyncAlt, faStar, faPiggyBank, faTrophy, faMedal, faUserSecret, faCrown, faEye, faShieldVirus, faMoneyBills } from '@fortawesome/free-solid-svg-icons';
-import MainArea from '@/components/MainArea';
-import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
-import ContentCard from '@/components/ContentCard';
-import { logError } from '@/utils/logger';
+import {
+  Anchor,
+  Center,
+  Group,
+  Loader,
+  Popover,
+  SimpleGrid,
+  Space,
+  Table,
+  Text,
+  ThemeIcon,
+} from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
+import Link from 'next/link';
+import { useTranslation } from 'next-i18next';
+import { useEffect, useMemo, useState } from 'react';
 
-const Overview = (props) => {
-  const [getNews, setNews] = useState(['no news']);
+import { GameCard } from '@/components/game/GameCard';
+import { StyledNews } from '@/components/game/StyledNews';
+import { StyledTable } from '@/components/game/StyledTable';
+import HeroBanner from '@/components/HeroBanner';
+import MainArea from '@/components/MainArea';
+import { FortHealthStatSlot } from '@/components/overview/FortHealthStatSlot';
+import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
+import StatCard from '@/components/StatCard';
+import { useUser } from '@/context/users';
+import { usePlayerIdentity } from '@/hooks/usePlayerIdentity';
+import { logError } from '@/utils/logger';
+import { toLocale } from '@/utils/numberFormatting';
+
+const EMPTY_UNITS: readonly unknown[] = [];
+const EMPTY_ITEMS: readonly unknown[] = [];
+const EMPTY_BATTLE_UPGRADES: readonly unknown[] = [];
+const EMPTY_BONUSES: readonly unknown[] = [];
+
+const Overview = () => {
+  const { t } = useTranslation('home');
+  const { raceName, className } = usePlayerIdentity();
+  const [getNews, setNews] = useState([]);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -30,414 +73,628 @@ const Overview = (props) => {
     fetchNews();
   }, []);
 
-  const { user } = useUser();
+  const { user, forceUpdate } = useUser();
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
+  const newsItems = useMemo(
+    () =>
+      Array.isArray(getNews)
+        ? getNews.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            content: item.content,
+            created_timestamp: item.created_timestamp,
+            read: Boolean(item.isRead),
+            kind: item.kind ?? undefined,
+            isPinned: item.isPinned ?? false,
+          }))
+        : [],
+    [getNews],
+  );
+
+  if (!user) {
+    return (
+      <MainArea title={t('overview.title')}>
+        <Center style={{ height: '50vh' }}>
+          <Loader data-testid="loading-spinner" />
+        </Center>
+      </MainArea>
+    );
+  }
+
+  const recruitLink = user.recruitingLink
+    ? `${process.env.NEXT_PUBLIC_URL_ROOT}/recruit/${user.recruitingLink}`
+    : '';
+
+  const kingdomStats = [
+    {
+      icon: faUsers,
+      label: t('overview.population'),
+      value: toLocale(user.population, user.locale),
+      href: '/battle/training',
+    },
+    {
+      key: 'fortHealth',
+      icon: faShieldAlt,
+      label: t('overview.fortHealth'),
+      value: user.fortHealth
+        ? `${user.fortHealth.current}/${user.fortHealth.max} (${user.fortHealth.percentage}%)`
+        : 'N/A',
+      href: '/structures/repair',
+    },
+    {
+      icon: faUserShield,
+      label: t('overview.armySize'),
+      value: toLocale(user.armySize, user.locale),
+      href: '/battle/training',
+    },
+    {
+      icon: faCoins,
+      label: t('overview.gold'),
+      value: toLocale(user.gold, user.locale),
+      href: '/structures/bank',
+    },
+    {
+      icon: faLevelUpAlt,
+      label: t('overview.level'),
+      value: toLocale(user.level, user.locale),
+      href: '/community/stats',
+    },
+    {
+      icon: faSyncAlt,
+      label: t('overview.goldPerTurn'),
+      value: toLocale(user.goldPerTurn, user.locale),
+      href: '/structures/bank',
+    },
+    {
+      icon: faStar,
+      label: t('overview.xpToNextLevel'),
+      value: toLocale(user.xpToNextLevel, user.locale),
+    },
+    {
+      icon: faPiggyBank,
+      label: t('overview.goldInBank'),
+      value: toLocale(user.goldInBank, user.locale),
+      href: '/structures/bank',
+    },
+    {
+      icon: faMoneyBills,
+      label: t('overview.netWorth'),
+      value: toLocale(user.netWorth, user.locale),
+      href: '/community/stats',
+    },
+  ];
   return (
-    <MainArea
-      title="Overview">
-      <Center>
-        <ContentCard className="my-4" titlePosition='center' w={{ sm: '100%', md: '80%' }} variant='highlight'>
-          <Center>
-            <div className='hidden md:block'>
-              <Text size="lg" ta="center">
-                <span className="text-white">{user?.displayName}</span> is a{user?.race === 'ELF' || user?.race === 'UNDEAD' ? 'n ' : ' '}
-                {user?.race} {user?.class}
-              </Text>
-            </div>
-            <div className='block md:hidden'>
-              <Text size="lg" ta="center">
-                <span className="text-white">{user?.displayName}</span></Text>
-              <Text size='md' ta='center'>
-                {user?.race === 'ELF' || user?.race === 'UNDEAD' ? 'n ' : ' '}
-                {user?.race} {user?.class}
-              </Text>
-            </div>
-          </Center>
-          <Space h="md" />
-          <Center>
-            <Text size="lg" ta="center">
-              Share this link to gain up to 25 citizens per day: {' '}
-              <a
-                href={`${process.env.NEXT_PUBLIC_URL_ROOT}/recruit/${user?.recruitingLink}`}
-                style={{ color: '#1E90FF' }}
-              >
-                {user?.recruitingLink}
-              </a>
-            </Text>
-          </Center>
-        </ContentCard>
+    <MainArea title={t('overview.title')}>
+      <Center display={isMobile ? 'none' : 'block'}>
+        <HeroBanner
+          race={user.race}
+          maxWidth={isMobile ? '100%' : '80%'}
+          height={isMobile ? 120 : 140}
+          leftPadding={isMobile ? 130 : 170}
+          title={
+            <>
+              <span className="text-white">{user.displayName}</span>{' '}
+              {t(
+                user.race === 'ELF' || user.race === 'UNDEAD'
+                  ? 'overview.isAn'
+                  : 'overview.isA',
+              )}{' '}
+              <span style={{ color: 'var(--ot-heading)' }}>
+                {raceName(user.race)} {className(user.class)}
+              </span>
+            </>
+          }
+          subtitle={
+            recruitLink ? (
+              <>
+                {t('overview.shareRecruitLink')}{' '}
+                <Anchor href={recruitLink} inherit underline="hover">
+                  {user.recruitingLink}
+                </Anchor>
+              </>
+            ) : undefined
+          }
+        />
       </Center>
-      <Space h="md" />
-      <Flex
-        direction={{ base: 'column', sm: 'row' }}
-        gap="md"
-        className="my-4"
+      <Text
+        size="sm"
+        c="var(--ot-muted)"
+        ta="center"
+        data-testid="content-text"
       >
-        <ContentCard className="w-full" title="Kingdom Stats" titleSize="lg" titlePosition='center'>
-          <Table striped highlightOnHover verticalSpacing="sm" className="text-white">
+        {t('overview.kingdomOverview')}
+      </Text>
+      <Space h="md" />
+      {isMobile && (
+        <>
+          <GameCard
+            title={t('overview.commanderBriefing')}
+            icon={faCrown}
+            goldAccent={false}
+          >
+            <Text size="md" c="var(--ot-body)" fw={700}>
+              {user.displayName}
+            </Text>
+            <Text size="sm" c="var(--ot-muted)">
+              {t(
+                user.race === 'ELF' || user.race === 'UNDEAD'
+                  ? 'overview.an'
+                  : 'overview.a',
+              )}{' '}
+              {raceName(user.race)} {className(user.class)}
+            </Text>
+            {recruitLink ? (
+              <Text size="sm" c="var(--ot-muted)" mt="sm">
+                {t('overview.shareRecruitLink')}{' '}
+                <Anchor href={recruitLink} inherit underline="hover">
+                  {user.recruitingLink}
+                </Anchor>
+              </Text>
+            ) : null}
+          </GameCard>
+          <Space h="md" />
+        </>
+      )}
+      <SimpleGrid
+        cols={{ base: 1, sm: 3 }}
+        spacing="md"
+        mb="lg"
+        data-tour-id="overview-stats"
+      >
+        <StatCard
+          title={t('overview.gold')}
+          value={toLocale(user.gold, user.locale)}
+          icon={<FontAwesomeIcon icon={faCoins} />}
+          variant="highlight"
+          href="/structures/bank"
+        />
+        <StatCard
+          title={t('overview.armySize')}
+          value={toLocale(user.armySize, user.locale)}
+          icon={<FontAwesomeIcon icon={faUsers} />}
+          href="/battle/training"
+        />
+        <StatCard
+          title={t('overview.level')}
+          value={toLocale(user.level, user.locale)}
+          icon={<FontAwesomeIcon icon={faLevelUpAlt} />}
+          subtext={`${t('overview.xpToNextLevel')}: ${toLocale(user.xpToNextLevel, user.locale)}`}
+          href="/community/stats"
+        />
+      </SimpleGrid>
+      <GameCard title={t('overview.kingdomStats')} icon={faCrown}>
+        <SimpleGrid
+          cols={{ base: 1, md: 2 }}
+          spacing="sm"
+          data-testid="stat-grid"
+        >
+          {kingdomStats.map((stat) => {
+            if (stat.key === 'fortHealth') {
+              return (
+                <FortHealthStatSlot
+                  key="fortHealth"
+                  user={user}
+                  onRepaired={forceUpdate}
+                />
+              );
+            }
+            const cardSlot = (
+              <Group
+                key={stat.label}
+                gap="sm"
+                wrap="nowrap"
+                data-testid="stat-slot"
+                style={{
+                  backgroundColor: 'var(--ot-inset)',
+                  borderRadius: '6px',
+                  border: '1px solid var(--ot-line)',
+                  boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                  padding: '12px',
+                  alignItems: 'center',
+                  cursor: stat.href ? 'pointer' : 'default',
+                  transition: stat.href ? 'border-color 0.15s ease' : undefined,
+                }}
+              >
+                <ThemeIcon c="white" variant="light">
+                  <FontAwesomeIcon icon={stat.icon} />
+                </ThemeIcon>
+                <div>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    c="dimmed"
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.1em' }}
+                    data-testid="stat-label"
+                  >
+                    {stat.label}
+                  </Text>
+                  <Text
+                    size="sm"
+                    fw={700}
+                    style={{ color: 'var(--ot-accent)' }}
+                    data-testid="stat-value"
+                  >
+                    {stat.value}
+                  </Text>
+                </div>
+              </Group>
+            );
 
-            <Table.Tbody>
-              <Table.Tr>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faUsers} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Population</Text>
-                      <Text>{toLocale(user?.population, user?.locale)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faShieldAlt} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Fort Health</Text>
-                      <Text>{user?.fortHealth.current}/{user?.fortHealth.max}({user?.fortHealth.percentage}%)</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faUserShield} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Army Size</Text>
-                      <Text>{toLocale(user?.armySize, user?.locale)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faCoins} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Gold</Text>
-                      <Text>{toLocale(user?.gold, user?.locale)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faLevelUpAlt} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Level</Text>
-                      <Text>{toLocale(user?.level, user?.locale)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faSyncAlt} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Gold Per Turn</Text>
-                      <Text>{toLocale(user?.goldPerTurn, user?.locale)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faStar} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">XP to Next Level</Text>
-                      <Text>{toLocale(user?.xpToNextLevel, user?.locale)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faPiggyBank} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Gold in Bank</Text>
-                      <Text>{toLocale(user?.goldInBank, user?.locale)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faMoneyBills} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Net Worth</Text>
-                      <Text>{toLocale(user?.netWorth, user?.locale)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-            </Table.Tbody>
-          </Table>
-        </ContentCard>
-        <ContentCard className="w-full" title="Military Stats" titleSize="lg" titlePosition='center'>
-          <Table striped highlightOnHover verticalSpacing="sm" className="text-white">
-            <Table.Tbody>
-              <Table.Tr>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <RpgAwesomeIcon icon="crossed-swords" fw />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Offense</Text>
-                      <Popover width={400} position="bottom" withArrow shadow="md" opened={undefined}>
-                        <Popover.Target>
-                          <Text style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}>
-                            {user ? toLocale(user.getArmyStat('OFFENSE', 2)) : '0'}
-                          </Text>
-                        </Popover.Target>
-                        <Popover.Dropdown>
-                          {user && user.getArmyStatBreakdown ? (() => {
-                            const breakdown = user.getArmyStatBreakdown('OFFENSE');
-                            if (!breakdown) return <Text>No breakdown available</Text>;
-                            const { units = [], items = [], battleUpgrades = [], bonuses = [], total, finalTotal } = breakdown;
-                            const unitsTotal = units.reduce((sum, u) => sum + (u.subtotal || 0), 0);
-                            const upgradesTotal = battleUpgrades.reduce((sum, u) => sum + (u.subtotal || 0), 0);
-                            const bonusesTotal = bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0);
-                            // Group items by type
-                            const itemsByType = items.reduce((acc, item) => {
-                              if (!acc[item.type]) acc[item.type] = [];
-                              acc[item.type].push(item);
-                              return acc;
-                            }, {});
-                            const itemsTotal = items.reduce((sum, i) => sum + (i.subtotal || 0), 0);
+            return stat.href ? (
+              <Link
+                key={stat.label}
+                href={stat.href}
+                style={{
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  display: 'block',
+                }}
+              >
+                {cardSlot}
+              </Link>
+            ) : (
+              cardSlot
+            );
+          })}
+        </SimpleGrid>
+      </GameCard>
+
+      <Space h="md" />
+
+      <GameCard title={t('overview.militaryStats')} icon={faShieldAlt}>
+        <SimpleGrid
+          cols={{ base: 1, md: 2 }}
+          spacing="sm"
+          data-testid="stat-grid"
+        >
+          {[
+            {
+              icon: <RpgAwesomeIcon icon="crossed-swords" fw />,
+              label: t('overview.offense'),
+              value: toLocale(user.getArmyStat('OFFENSE')),
+              detail: t('overview.viewBreakdown'),
+              withPopover: true,
+            },
+            {
+              icon: <FontAwesomeIcon icon={faTrophy} />,
+              label: t('overview.attacksWon'),
+              value: `${toLocale(user.statistics('OFFENSE', 'WON'))} / ${toLocale(user.statistics('OFFENSE', 'WON') + user.statistics('OFFENSE', 'LOST'))}`,
+              href: '/battle/history',
+            },
+            {
+              icon: <FontAwesomeIcon icon={faShieldAlt} />,
+              label: t('overview.defense'),
+              value: toLocale(user.defense),
+            },
+            {
+              icon: <FontAwesomeIcon icon={faMedal} />,
+              label: t('overview.defendsWon'),
+              value: toLocale(user.statistics('DEFENSE', 'WON')),
+              href: '/battle/history',
+            },
+            {
+              icon: <FontAwesomeIcon icon={faUserSecret} />,
+              label: t('overview.spyOffense'),
+              value: toLocale(user.spy),
+            },
+            {
+              icon: <FontAwesomeIcon icon={faCrown} />,
+              label: t('overview.spyVictories'),
+              value: `${toLocale(user.statistics('SPY', 'WON'))} / ${toLocale(user.statistics('SPY', 'WON') + user.statistics('SPY', 'LOST'))}`,
+              href: '/battle/history',
+            },
+            {
+              icon: <FontAwesomeIcon icon={faEye} />,
+              label: t('overview.spyDefense'),
+              value: toLocale(user.sentry),
+            },
+            {
+              icon: <FontAwesomeIcon icon={faShieldVirus} />,
+              label: t('overview.sentryVictories'),
+              value: toLocale(user.statistics('SENTRY', 'WON')),
+              href: '/battle/history',
+            },
+          ].map((stat) => {
+            const cardSlot = (
+              <Group
+                key={stat.label}
+                gap="sm"
+                wrap="nowrap"
+                data-testid="stat-slot"
+                style={{
+                  backgroundColor: 'var(--ot-inset)',
+                  borderRadius: '6px',
+                  border: '1px solid var(--ot-line)',
+                  boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+                  padding: '12px',
+                  alignItems: 'center',
+                  cursor: (stat as any).href ? 'pointer' : 'default',
+                  transition: (stat as any).href
+                    ? 'border-color 0.15s ease'
+                    : undefined,
+                }}
+              >
+                <ThemeIcon c="white" variant="light">
+                  {stat.icon}
+                </ThemeIcon>
+                <div>
+                  <Text
+                    size="xs"
+                    fw={700}
+                    c="dimmed"
+                    tt="uppercase"
+                    style={{ letterSpacing: '0.1em' }}
+                    data-testid="stat-label"
+                  >
+                    {stat.label}
+                  </Text>
+                  {stat.withPopover ? (
+                    <Popover
+                      width={400}
+                      position="bottom"
+                      withArrow
+                      shadow="md"
+                      opened={undefined}
+                    >
+                      <Popover.Target>
+                        <Text
+                          size="sm"
+                          fw={700}
+                          style={{
+                            color: 'var(--ot-accent)',
+                            cursor: 'pointer',
+                            textDecoration: 'underline dotted',
+                          }}
+                          data-testid="stat-value"
+                        >
+                          {stat.value}
+                        </Text>
+                      </Popover.Target>
+                      <Popover.Dropdown>
+                        {user.getArmyStatBreakdown ? (
+                          (() => {
+                            const breakdown =
+                              user.getArmyStatBreakdown('OFFENSE');
+                            if (!breakdown)
+                              return (
+                                <Text>
+                                  {t('overview.noBreakdownAvailable')}
+                                </Text>
+                              );
+                            const {
+                              units = EMPTY_UNITS,
+                              items = EMPTY_ITEMS,
+                              battleUpgrades = EMPTY_BATTLE_UPGRADES,
+                              bonuses = EMPTY_BONUSES,
+                              finalTotal,
+                            } = breakdown;
+                            const unitsTotal = units.reduce(
+                              (sum, u) => sum + (u.subtotal || 0),
+                              0,
+                            );
+                            const upgradesTotal = battleUpgrades.reduce(
+                              (sum, u) => sum + (u.subtotal || 0),
+                              0,
+                            );
+                            const bonusesTotal = bonuses.reduce(
+                              (sum, b) => sum + (b.bonusAmount || 0),
+                              0,
+                            );
+                            const itemsByType = items.reduce(
+                              (acc, item) => {
+                                const type = item.type || 'Unknown';
+                                if (!acc[type]) acc[type] = [];
+                                acc[type].push(item);
+                                return acc;
+                              },
+                              {} as Record<string, typeof items>,
+                            );
+                            const itemsTotal = items.reduce(
+                              (sum, i) => sum + (i.subtotal || 0),
+                              0,
+                            );
                             return (
-                              <div style={{ maxHeight: 350, overflowY: 'auto' }}>
-                                <strong>Offense Breakdown</strong>
-                                {/* Units Table */}
-                                {units.length > 0 && <>
-                                  <Text mt="xs" mb={2} fw={700}>Units</Text>
-                                  <Table withColumnBorders striped highlightOnHover verticalSpacing="xs" mb="xs">
-                                    <Table.Thead>
-                                      <Table.Tr>
-                                        <Table.Th>Name</Table.Th>
-                                        <Table.Th>Quantity</Table.Th>
-                                        <Table.Th>Bonus/ea</Table.Th>
-                                        <Table.Th>Subtotal</Table.Th>
-                                      </Table.Tr>
-                                    </Table.Thead>
-                                    <Table.Tbody>
+                              <div
+                                style={{ maxHeight: 350, overflowY: 'auto' }}
+                              >
+                                <strong>
+                                  {t('overview.offenseBreakdown')}
+                                </strong>
+                                {units.length > 0 && (
+                                  <>
+                                    <Text mt="xs" mb={2} fw={700}>
+                                      {t('overview.units')}
+                                    </Text>
+                                    <StyledTable
+                                      headers={[
+                                        t('overview.name'),
+                                        t('overview.quantity'),
+                                        t('overview.bonusPerItem'),
+                                        t('overview.subtotal'),
+                                      ]}
+                                    >
                                       {units.map((u, i) => (
                                         <Table.Tr key={`unit-${i}`}>
                                           <Table.Td>{u.name}</Table.Td>
                                           <Table.Td>{u.quantity}</Table.Td>
                                           <Table.Td>{u.bonus}</Table.Td>
-                                          <Table.Td>{toLocale(u.subtotal)}</Table.Td>
+                                          <Table.Td>
+                                            {toLocale(u.subtotal)}
+                                          </Table.Td>
                                         </Table.Tr>
                                       ))}
-                                    </Table.Tbody>
-                                  </Table>
-                                </>}
-                                {/* Items Tables by Type */}
-                                {Object.keys(itemsByType).length > 0 && <>
-                                  <Text mt="xs" mb={2} fw={700}>Items</Text>
-                                  {Object.entries(itemsByType).map(([type, itemsArr]) => (
-                                    <div key={type} style={{ marginBottom: 8 }}>
-                                      <Text size="sm" fw={600} mb={2}>{type}</Text>
-                                      <Table withColumnBorders striped highlightOnHover verticalSpacing="xs" mb="xs">
-                                        <Table.Thead>
-                                          <Table.Tr>
-                                            <Table.Th>Name</Table.Th>
-                                            <Table.Th>Quantity</Table.Th>
-                                            <Table.Th>Bonus/ea</Table.Th>
-                                            <Table.Th>Subtotal</Table.Th>
-                                          </Table.Tr>
-                                        </Table.Thead>
-                                        <Table.Tbody>
-                                          {itemsArr.map((it, i) => (
-                                            <Table.Tr key={`item-${type}-${i}`}>
-                                              <Table.Td>{it.name}</Table.Td>
-                                              <Table.Td>{it.quantity}</Table.Td>
-                                              <Table.Td>{it.bonus}</Table.Td>
-                                              <Table.Td>{toLocale(it.subtotal)}</Table.Td>
-                                            </Table.Tr>
-                                          ))}
-                                        </Table.Tbody>
-                                      </Table>
-                                    </div>
-                                  ))}
-                                </>}
-                                {/* Upgrades Table */}
-                                {battleUpgrades.length > 0 && <>
-                                  <Text mt="xs" mb={2} fw={700}>Upgrades</Text>
-                                  <Table withColumnBorders striped highlightOnHover verticalSpacing="xs" mb="xs">
-                                    <Table.Thead>
-                                      <Table.Tr>
-                                        <Table.Th>Name</Table.Th>
-                                        <Table.Th>Bonus</Table.Th>
-                                        <Table.Th>Subtotal</Table.Th>
-                                      </Table.Tr>
-                                    </Table.Thead>
-                                    <Table.Tbody>
+                                    </StyledTable>
+                                  </>
+                                )}
+                                {Object.keys(itemsByType).length > 0 && (
+                                  <>
+                                    <Text mt="xs" mb={2} fw={700}>
+                                      {t('overview.items')}
+                                    </Text>
+                                    {Object.entries(itemsByType).map(
+                                      ([type, itemsArr]) => (
+                                        <div
+                                          key={type}
+                                          style={{ marginBottom: 8 }}
+                                        >
+                                          <Text size="sm" fw={600} mb={2}>
+                                            {type}
+                                          </Text>
+                                          <StyledTable
+                                            headers={[
+                                              t('overview.name'),
+                                              t('overview.quantity'),
+                                              t('overview.bonusPerItem'),
+                                              t('overview.subtotal'),
+                                            ]}
+                                          >
+                                            {(itemsArr as any[]).map(
+                                              (it, i) => (
+                                                <Table.Tr
+                                                  key={`item-${type}-${i}`}
+                                                >
+                                                  <Table.Td>{it.name}</Table.Td>
+                                                  <Table.Td>
+                                                    {it.quantity}
+                                                  </Table.Td>
+                                                  <Table.Td>
+                                                    {it.bonus}
+                                                  </Table.Td>
+                                                  <Table.Td>
+                                                    {toLocale(it.subtotal)}
+                                                  </Table.Td>
+                                                </Table.Tr>
+                                              ),
+                                            )}
+                                          </StyledTable>
+                                        </div>
+                                      ),
+                                    )}
+                                  </>
+                                )}
+                                {battleUpgrades.length > 0 && (
+                                  <>
+                                    <Text mt="xs" mb={2} fw={700}>
+                                      {t('overview.upgrades')}
+                                    </Text>
+                                    <StyledTable
+                                      headers={[
+                                        t('overview.name'),
+                                        t('overview.bonus'),
+                                        t('overview.subtotal'),
+                                      ]}
+                                    >
                                       {battleUpgrades.map((up, i) => (
                                         <Table.Tr key={`upgrade-${i}`}>
                                           <Table.Td>{up.name}</Table.Td>
                                           <Table.Td>{up.bonus}</Table.Td>
-                                          <Table.Td>{toLocale(up.subtotal)}</Table.Td>
+                                          <Table.Td>
+                                            {toLocale(up.subtotal)}
+                                          </Table.Td>
                                         </Table.Tr>
                                       ))}
-                                    </Table.Tbody>
-                                  </Table>
-                                </>}
-                                {/* Bonuses Table */}
-                                {bonuses.length > 0 && <>
-                                  <Text mt="xs" mb={2} fw={700}>Bonuses</Text>
-                                  <Table withColumnBorders striped highlightOnHover verticalSpacing="xs" mb="xs">
-                                    <Table.Thead>
-                                      <Table.Tr>
-                                        <Table.Th>Name</Table.Th>
-                                        <Table.Th>Percent</Table.Th>
-                                        <Table.Th>Applied To</Table.Th>
-                                        <Table.Th>Bonus Amount</Table.Th>
-                                      </Table.Tr>
-                                    </Table.Thead>
-                                    <Table.Tbody>
+                                    </StyledTable>
+                                  </>
+                                )}
+                                {bonuses.length > 0 && (
+                                  <>
+                                    <Text mt="xs" mb={2} fw={700}>
+                                      {t('overview.bonuses')}
+                                    </Text>
+                                    <StyledTable
+                                      headers={[
+                                        t('overview.name'),
+                                        t('overview.percent'),
+                                        t('overview.appliedTo'),
+                                        t('overview.bonusAmount'),
+                                      ]}
+                                    >
                                       {bonuses.map((b, i) => (
                                         <Table.Tr key={`bonus-${i}`}>
                                           <Table.Td>{b.name}</Table.Td>
-                                          <Table.Td>{b.percent ? `+${b.percent}%` : ''}</Table.Td>
-                                          <Table.Td>{b.appliedTo ? toLocale(b.appliedTo) : ''}</Table.Td>
-                                          <Table.Td>{toLocale(b.bonusAmount)}</Table.Td>
+                                          <Table.Td>
+                                            {b.percent ? `+${b.percent}%` : ''}
+                                          </Table.Td>
+                                          <Table.Td>
+                                            {b.appliedTo
+                                              ? toLocale(b.appliedTo)
+                                              : ''}
+                                          </Table.Td>
+                                          <Table.Td>
+                                            {toLocale(b.bonusAmount)}
+                                          </Table.Td>
                                         </Table.Tr>
                                       ))}
-                                    </Table.Tbody>
-                                  </Table>
-                                </>}
-                                {/* Equation */}
+                                    </StyledTable>
+                                  </>
+                                )}
                                 <div style={{ fontSize: 13, marginTop: 8 }}>
-                                  <strong>Equation:</strong><br />
-                                  ({toLocale(unitsTotal)} units
-                                  {itemsTotal ? ` + ${toLocale(itemsTotal)} items` : ''}
-                                  {upgradesTotal ? ` + ${toLocale(upgradesTotal)} upgrades` : ''}
+                                  <strong>{t('overview.equation')}:</strong>
+                                  <br />({toLocale(unitsTotal)}{' '}
+                                  {t('overview.units')}
+                                  {itemsTotal
+                                    ? ` + ${toLocale(itemsTotal)} ${t('overview.items')}`
+                                    : ''}
+                                  {upgradesTotal
+                                    ? ` + ${toLocale(upgradesTotal)} ${t('overview.upgrades')}`
+                                    : ''}
                                   )
-                                  {bonusesTotal ? ` + ${toLocale(bonusesTotal)} bonuses` : ''}
+                                  {bonusesTotal
+                                    ? ` + ${toLocale(bonusesTotal)} ${t('overview.bonuses')}`
+                                    : ''}
                                   = <strong>{toLocale(finalTotal)}</strong>
                                 </div>
                               </div>
                             );
-                          })() : (
-                            <Text>No breakdown available</Text>
-                          )}
-                        </Popover.Dropdown>
-                      </Popover>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faTrophy} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Attacks Won</Text>
-                      
-                        <Text>{user ? toLocale(user?.statistics('OFFENSE', 'WON')) : '0'}
-                        {' '}/ {user ? user?.statistics('OFFENSE', 'WON') + user?.statistics('OFFENSE', 'LOST') : '0'}
-                        </Text>
-                      
-                    </div>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faShieldAlt} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Defense</Text>
-                      <Text>{toLocale(user?.defense)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faMedal} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Defends Won</Text>
-                      <Text>{toLocale(user?.statistics('DEFENSE', 'WON'))}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faUserSecret} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Spy Offense</Text>
-                      <Text>{toLocale(user?.spy)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faCrown} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Spy Victories</Text>
-                      <Text>{toLocale(user?.statistics('SPY', 'WON'))}{' '}/ {user ? user.statistics('SPY', 'WON') + user.statistics('SPY', 'LOST') : '0'}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-              <Table.Tr>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faEye} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Spy Defense</Text>
-                      <Text>{toLocale(user?.sentry)}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-                <Table.Td>
-                  <Group wrap='nowrap'>
-                    <ThemeIcon c='white'>
-                      <FontAwesomeIcon icon={faShieldVirus} />
-                    </ThemeIcon>
-                    <div>
-                      <Text size="md" fw={700} color="dimmed">Sentry Victories</Text>
-                      <Text>{toLocale(user?.statistics('SENTRY', 'WON'))}</Text>
-                    </div>
-                  </Group>
-                </Table.Td>
-              </Table.Tr>
-            </Table.Tbody>
-          </Table>
-        </ContentCard>
-      </Flex>
-      <ContentCard className="my-4" title="Kingdom News" titleSize="lg" titlePosition='center'>
-        <NewsAccordion news={getNews} />
-      </ContentCard>
+                          })()
+                        ) : (
+                          <Text>{t('overview.noBreakdownAvailable')}</Text>
+                        )}
+                      </Popover.Dropdown>
+                    </Popover>
+                  ) : (
+                    <Text
+                      size="sm"
+                      fw={700}
+                      style={{ color: 'var(--ot-accent)' }}
+                      data-testid="stat-value"
+                    >
+                      {stat.value}
+                    </Text>
+                  )}
+                  {stat.detail ? (
+                    <Text size="xs" c="dimmed">
+                      {stat.detail}
+                    </Text>
+                  ) : null}
+                </div>
+              </Group>
+            );
+
+            return (stat as any).href ? (
+              <Link
+                key={stat.label}
+                href={(stat as any).href}
+                style={{
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  display: 'block',
+                }}
+              >
+                {cardSlot}
+              </Link>
+            ) : (
+              cardSlot
+            );
+          })}
+        </SimpleGrid>
+      </GameCard>
+
+      <Space h="md" />
+
+      <StyledNews news={newsItems} />
     </MainArea>
   );
 };

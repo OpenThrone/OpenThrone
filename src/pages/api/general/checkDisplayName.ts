@@ -1,15 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import prisma from '@/lib/prisma';
+import { withApiGuard } from '@/middleware/apiGuard';
+import { withCors } from '@/middleware/cors';
+import { GeneralService } from '@/services';
 import { logError } from '@/utils/logger';
 
-export default async function handle(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+async function handle(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
-    const DisplayNameSchema = z.object({ displayName: z.string().min(1) });
+    const DisplayNameSchema = z.object({
+      displayName: z.string().trim().min(1).max(100),
+    });
     const parseResult = DisplayNameSchema.safeParse(req.body);
     if (!parseResult.success) {
       return res.status(400).json({
@@ -20,24 +21,8 @@ export default async function handle(
     const { displayName } = parseResult.data;
 
     try {
-      // Search for users with a displayName that contains the substring provided
-      const users = await prisma.users.findMany({
-        where: {
-          display_name: {
-            contains: displayName,
-            mode: 'insensitive', // Case-insensitive search
-          },
-        },
-        select: {
-          display_name: true,
-        },
-      });
-
-      const displayNames = users.map((user) => user.display_name);
-      return res.status(200).json({
-        exists: displayNames.length > 0,
-        possibleMatches: displayNames,
-      });
+      const result = await GeneralService.checkDisplayName(displayName);
+      return res.status(200).json(result);
     } catch (error) {
       logError('Error checking display name:', error);
       return res.status(500).json({ error: 'Failed to check display name.' });
@@ -46,3 +31,12 @@ export default async function handle(
     return res.status(405).json({ error: 'Method not allowed.' });
   }
 }
+
+export default withCors(
+  withApiGuard({
+    methods: ['POST'],
+    authMode: 'none',
+    rateLimitProfile: 'auth',
+  })(handle),
+  { envVar: 'OT_AUTH_CORS_ORIGINS' },
+);

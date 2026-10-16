@@ -1,0 +1,34 @@
+:where(.fallback) {
+  /* Image dimensions are defaults; responsive surface classes take priority. */
+  width: var(--artwork-width, auto);
+  height: var(--artwork-height, auto);
+}
+
+.fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ot-accent);
+  font-size: 1.25rem;
+}
+
+.fallback[data-crest] {
+  background: color-mix(in srgb, var(--ot-brand) 45%, var(--ot-inset));
+  border: 1px solid color-mix(in srgb, var(--ot-accent) 65%, var(--ot-inset));
+  border-radius: 4px 4px 40% 40%;
+  font-size: clamp(24px, 5vw, 52px);
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 6%;
+  color: var(--ot-accent);
+  font-size: clamp(100px, 22vw, 280px);
+  opacity: .18;
+  pointer-events: none;
+}

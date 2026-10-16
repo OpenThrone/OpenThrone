@@ -2,10 +2,15 @@
 
 // Originally from https://stackoverflow.com/a/70544058
 
-import React, { useState, useEffect, SyntheticEvent } from 'react';
-import Image, { ImageProps } from 'next/image'; // Import ImageProps for better typing
+import type { ImageProps } from 'next/image';
+import Image from 'next/image'; // Import ImageProps for better typing
+import type { SyntheticEvent } from 'react';
+import React, { useEffect, useState } from 'react';
 
-interface ImageWithFallbackProps extends Omit<ImageProps, 'src' | 'onError' | 'onLoad' | 'alt'> {
+interface ImageWithFallbackProps extends Omit<
+  ImageProps,
+  'src' | 'onError' | 'onLoad' | 'alt'
+> {
   src: string;
   fallbackSrc: string;
   alt?: string;
@@ -46,7 +51,8 @@ const ImageWithFallback = (props: ImageWithFallbackProps) => {
           handleError(); // Trigger fallback
         }
         // Call original onLoad if it was provided via props
-        if (props.onLoad) { // Check props.onLoad directly
+        if (props.onLoad) {
+          // Check props.onLoad directly
           props.onLoad(event);
         }
       }}

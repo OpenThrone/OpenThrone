@@ -1,0 +1,114 @@
+{
+  "authentication": {
+    "unauthorized": "Sie sind nicht berechtigt, diese Aktion durchzuführen.",
+    "forbidden": "Sie haben keine Berechtigung, auf diese Ressource zuzugreifen.",
+    "invalidCredentials": "Ungültige E-Mail oder Passwort.",
+    "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+    "accountDisabled": "Ihr Konto wurde deaktiviert. Bitte wenden Sie sich an den Support.",
+    "accountLocked": "Ihr Konto wurde aufgrund zu vieler fehlgeschlagener Versuche gesperrt.",
+    "emailNotVerified": "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie fortfahren.",
+    "twoFactorRequired": "Zwei-Faktor-Authentifizierung ist erforderlich.",
+    "invalidTwoFactorCode": "Ungültiger Zwei-Faktor-Authentifizierungscode."
+  },
+  "validation": {
+    "requiredField": "Dieses Feld ist erforderlich.",
+    "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+    "invalidPassword": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+    "passwordMismatch": "Passwörter stimmen nicht überein.",
+    "passwordTooShort": "Das Passwort muss mindestens 8 Zeichen lang sein.",
+    "passwordTooLong": "Das Passwort darf nicht mehr als 128 Zeichen lang sein.",
+    "displayNameTooShort": "Der Anzeigename muss mindestens 3 Zeichen lang sein.",
+    "displayNameTooLong": "Der Anzeigename darf nicht mehr als 32 Zeichen lang sein.",
+    "displayNameTaken": "Dieser Anzeigename wird bereits verwendet.",
+    "bioTooLong": "Die Biografie darf nicht mehr als 500 Zeichen lang sein.",
+    "invalidUrl": "Bitte geben Sie eine gültige URL ein.",
+    "invalidNumber": "Bitte geben Sie eine gültige Nummer ein.",
+    "invalidDate": "Bitte geben Sie ein gültiges Datum ein.",
+    "valueTooLow": "Der Wert muss mindestens {{min}} sein.",
+    "valueTooHigh": "Der Wert darf nicht mehr als {{max}} sein."
+  },
+  "network": {
+    "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+    "timeoutError": "Anfrage ist abgelaufen. Bitte versuchen Sie es erneut.",
+    "serverError": "Serverfehler. Bitte versuchen Sie es später erneut.",
+    "serviceUnavailable": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.",
+    "rateLimitExceeded": "Zu viele Anfragen. Bitte warten Sie, bevor Sie es erneut versuchen.",
+    "maintenance": "Der Server befindet sich derzeit in Wartung. Bitte versuchen Sie es später erneut."
+  },
+  "api": {
+    "requestFailed": "Anfrage fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "invalidResponse": "Ungültige Antwort vom Server.",
+    "missingData": "Erforderliche Daten fehlen.",
+    "invalidData": "Ungültige Daten bereitgestellt.",
+    "resourceNotFound": "Die angeforderte Ressource wurde nicht gefunden.",
+    "resourceAlreadyExists": "Diese Ressource existiert bereits.",
+    "operationFailed": "Vorgang fehlgeschlagen. Bitte versuchen Sie es erneut."
+  },
+  "game": {
+    "insufficientGold": "Sie haben nicht genügend Gold.",
+    "insufficientTurns": "Sie haben nicht genügend Züge.",
+    "insufficientCitizens": "Sie haben nicht genügend Bürger.",
+    "insufficientUnits": "Sie haben nicht genügend Einheiten.",
+    "insufficientItems": "Sie haben nicht genügend Gegenstände.",
+    "cannotAttackSelf": "Sie können sich nicht selbst angreifen.",
+    "cannotAttackProtected": "Dieser Spieler steht unter Schutz.",
+    "cannotAttackTooStrong": "Dieser Spieler ist zu stark, um ihn anzugreifen.",
+    "cannotAttackTooWeak": "Dieser Spieler ist zu schwach, um ihn anzugreifen.",
+    "cannotAttackSameAlliance": "Sie können keine Mitglieder Ihrer Allianz angreifen.",
+    "fortDestroyed": "Ihre Festung wurde zerstört!",
+    "fortDamaged": "Ihre Festung wurde beschädigt!",
+    "unitLost": "Sie haben Ihre Einheiten verloren!",
+    "itemLost": "Sie haben Ihre Gegenstände verloren!",
+    "goldStolen": "Ihr Gold wurde gestohlen!",
+    "spyDetected": "Ihr Spion wurde entdeckt!",
+    "spyFailed": "Spionageoperation fehlgeschlagen!",
+    "infiltrationFailed": "Infiltration fehlgeschlagen!",
+    "assassinationFailed": "Attentat fehlgeschlagen!"
+  },
+  "social": {
+    "friendRequestFailed": "Senden der Freundschaftsanfrage fehlgeschlagen.",
+    "friendRequestAlreadySent": "Sie haben bereits eine Freundschaftsanfrage an diesen Spieler gesendet.",
+    "alreadyFriends": "Sie sind bereits mit diesem Spieler befreundet.",
+    "cannotAddSelf": "Sie können sich nicht selbst als Freund hinzufügen.",
+    "goldTransferFailed": "Goldübertragung fehlgeschlagen.",
+    "insufficientGold": "Sie haben nicht genügend Gold zum Übertragen.",
+    "goldRequestFailed": "Senden der Goldanfrage fehlgeschlagen.",
+    "goldRequestAlreadySent": "Sie haben bereits eine Goldanfrage an diesen Spieler gesendet.",
+    "cannotRequestSelf": "Sie können nicht sich selbst Gold anfragen."
+  },
+  "structures": {
+    "upgradeFailed": "Verbesserung der Struktur fehlgeschlagen.",
+    "alreadyMaxLevel": "Diese Struktur ist bereits auf der maximalen Stufe.",
+    "insufficientLevel": "Sie müssen mindestens Stufe {{level}} sein, um diese Struktur zu verbessern.",
+    "repairFailed": "Reparatur der Festung fehlgeschlagen.",
+    "fortAtMaxHealth": "Ihre Festung ist bereits auf maximaler Gesundheit.",
+    "buildFailed": "Bau der Struktur fehlgeschlagen.",
+    "insufficientSpace": "Sie haben nicht genügend Platz, um diese Struktur zu bauen."
+  },
+  "alliance": {
+    "notInAlliance": "Sie sind nicht in einer Allianz.",
+    "alreadyInAlliance": "Sie sind bereits in einer Allianz.",
+    "allianceNotFound": "Allianz nicht gefunden.",
+    "allianceFull": "Diese Allianz ist voll.",
+    "notAllianceLeader": "Sie sind nicht der Führer dieser Allianz.",
+    "cannotLeaveAlliance": "Sie können die Allianz derzeit nicht verlassen.",
+    "inviteFailed": "Senden der Allianzeinladung fehlgeschlagen.",
+    "kickFailed": "Entfernen des Mitglieds aus der Allianz fehlgeschlagen."
+  },
+  "messaging": {
+    "messageFailed": "Senden der Nachricht fehlgeschlagen.",
+    "messageTooLong": "Die Nachricht ist zu lang. Maximum 1000 Zeichen.",
+    "cannotMessageSelf": "Sie können sich selbst keine Nachrichten senden.",
+    "chatRoomNotFound": "Chatraum nicht gefunden.",
+    "notInChatRoom": "Sie sind nicht in diesem Chatraum.",
+    "cannotSendToChatRoom": "Sie können keine Nachrichten an diesen Chatraum senden."
+  },
+  "recruitment": {
+    "sessionAlreadyActive": "Sie haben bereits eine aktive Rekrutierungssitzung.",
+    "noActiveSession": "Sie haben keine aktive Rekrutierungssitzung.",
+    "sessionExpired": "Ihre Rekrutierungssitzung ist abgelaufen.",
+    "invalidRecruitLink": "Ungültiger Rekrutierungslink.",
+    "alreadyRecruited": "Sie wurden bereits rekrutiert.",
+    "recruitLimitReached": "Sie haben Ihr Rekrutierungslimit erreicht."
+  }
+}

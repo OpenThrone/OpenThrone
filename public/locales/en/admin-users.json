@@ -1,0 +1,139 @@
+{
+  "page": { "title": "User management" },
+  "nav": { "bots": "Bot operations" },
+  "sections": {
+    "grantPermissions": "Grant permissions",
+    "userManagement": "User directory",
+    "profile": "Profile",
+    "account": "Account",
+    "resources": "Resources",
+    "progress": "Progress",
+    "army": "Army",
+    "items": "Items",
+    "staffRoles": "Staff roles",
+    "permissions": "Permissions",
+    "addNote": "Add staff note",
+    "notes": "Staff notes",
+    "export": "Export user data"
+  },
+  "columns": {
+    "id": "ID",
+    "username": "Username",
+    "email": "Email",
+    "status": "Status",
+    "lastActive": "Last active",
+    "actions": "Actions"
+  },
+  "filters": {
+    "userId": "User ID",
+    "userIdPlaceholder": "Enter an ID",
+    "username": "Username",
+    "usernamePlaceholder": "Enter a username",
+    "email": "Email",
+    "emailPlaceholder": "Enter an email",
+    "status": "Status",
+    "anyStatus": "Any status",
+    "search": "Search users",
+    "statuses": {
+      "ACTIVE": "Active",
+      "IDLE": "Idle",
+      "INACTIVE": "Inactive",
+      "VACATION": "Vacation",
+      "SUSPENDED": "Suspended",
+      "BANNED": "Banned",
+      "CLOSED": "Closed"
+    }
+  },
+  "tabs": {
+    "profile": "Profile",
+    "stats": "Resources and progress",
+    "army": "Army",
+    "items": "Items",
+    "staffRoles": "Staff roles",
+    "permissions": "Permissions",
+    "notes": "Notes",
+    "operations": "Operations"
+  },
+  "editor": {
+    "title": "{{username}}",
+    "id": "Account ID: {{id}}",
+    "tabs": "User details sections",
+    "modalTitle": "User details"
+  },
+  "notes": {
+    "deleteTitle": "Delete staff note?",
+    "deleteConfirm": "This removes the note from the account’s staff history. Continue?"
+  },
+  "fields": {
+    "username": "Username",
+    "email": "Email",
+    "status": "Account status",
+    "statusHelp": "Status is read-only here. Use the account penalty controls for status changes.",
+    "accountId": "Account ID",
+    "gold": "Gold on hand",
+    "goldInBank": "Gold in bank",
+    "experience": "Experience",
+    "level": "Level",
+    "levelHelp": "Level is calculated from experience.",
+    "quantityFor": "{{name}} quantity",
+    "quantity": "Quantity",
+    "mercenary": "Mercenary",
+    "note": "Internal staff note",
+    "unknownAuthor": "Unknown staff member",
+    "pinned": "Pinned",
+    "unknown": "Unknown",
+    "noteHelp": "Visible to authorized staff only."
+  },
+  "actions": {
+    "edit": "Edit",
+    "inspect": "Inspect",
+    "impersonate": "Impersonate",
+    "save": "Save changes",
+    "close": "Close",
+    "retry": "Try again",
+    "addNote": "Add note",
+    "deleteNote": "Delete note",
+    "increaseQuantity": "Increase {{name}} quantity",
+    "decreaseQuantity": "Decrease {{name}} quantity",
+    "sortBy": "Sort by {{field}}",
+    "endImpersonation": "End impersonation",
+    "savePermissions": "Save permissions"
+  },
+  "grant": {
+    "userSearch": "Find a player",
+    "searchPlaceholder": "Type a username",
+    "permissions": "Permissions to grant",
+    "permissionsHelp": "Existing grants are shown. Saving adds selected permissions.",
+    "permissionsPlaceholder": "Choose permissions"
+  },
+  "pagination": { "label": "User pages" },
+  "messages": {
+    "savedTitle": "Changes saved",
+    "saved": "User details were updated.",
+    "impersonating": "You are viewing an impersonated account.",
+    "moderatorReadOnly": "Moderators can inspect user accounts and add staff notes. Editing, permission grants, and impersonation are administrator-only.",
+    "permissionsSaved": "Permissions updated for {{username}}."
+  },
+  "states": {
+    "loading": "Loading user information…",
+    "unavailable": "User information is unavailable.",
+    "noUsers": "No users match these filters.",
+    "noUnits": "This account has no units.",
+    "noItems": "This account has no items.",
+    "noNotes": "No staff notes have been added."
+  },
+  "errors": {
+    "title": "Request failed",
+    "list": "Could not load users.",
+    "load": "Could not load this user's details.",
+    "save": "Could not save user changes.",
+    "notesLoad": "Could not load staff notes.",
+    "noteSave": "Could not add the staff note.",
+    "noteDelete": "Could not delete the staff note.",
+    "search": "Could not search for users.",
+    "grant": "Could not update permissions.",
+    "impersonationTitle": "Impersonation failed",
+    "impersonation": "Could not start impersonation.",
+    "stopImpersonation": "Could not end impersonation."
+  }
+}

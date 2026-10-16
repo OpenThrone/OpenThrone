@@ -1,0 +1,84 @@
+.hero {
+  position: relative;
+  isolation: isolate;
+  padding: 8px 0 40px;
+  overflow: hidden;
+}
+
+.wall { object-fit: cover; object-position: center; z-index: -1; }
+.wordmark {
+  margin: 0;
+  color: var(--ot-heading);
+  font-family: Chomsky, MedievalSharp, serif;
+  font-size: clamp(32px, 5vw, 60px);
+  line-height: 1.1;
+  font-weight: 400;
+  text-shadow: 0 3px 3px rgba(0, 0, 0, .6);
+}
+.brand { text-align: center; min-width: 0; margin: 20px auto; }
+
+.logo {
+  display: block;
+  width: 140px;
+  height: auto;
+  margin-inline: auto;
+  filter: drop-shadow(0 3px 0 #000);
+}
+
+/* FINDING-38: keep the mobile first-screen budget near 96px. */
+@media (max-width: 640px) {
+  .hero { padding: 4px 0 12px; }
+  .brand { margin: 4px auto 0; }
+  .logo { width: 108px; }
+  .subtitle { margin-top: 2px; padding: 0 12px 6px; font-size: 0.8rem; }
+  .subtitle::after { display: none; }
+}
+
+@media (min-width: 640px) {
+  .logo { width: 280px; }
+}
+
+.subtitle {
+  position: relative;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  margin: 8px auto 0;
+  padding: 0 18px 10px;
+  color: #ffe18a;
+  font-family: MedievalSharp, serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .035em;
+  line-height: 1.35;
+}
+
+@media (min-width: 640px) { .subtitle { font-size: 1.125rem; } }
+@media (min-width: 768px) { .subtitle { font-size: 1.25rem; } }
+
+.subtitleText {
+  display: inline-block;
+  background: linear-gradient(
+    180deg,
+    #fff4c2 0%,
+    #ffe49a 45%,
+    #e7b955 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter:
+    drop-shadow(0 1px 0 #765019)
+    drop-shadow(0 2px 0 #302008)
+    drop-shadow(0 3px 3px rgba(0, 0, 0, .85));
+}
+
+.subtitle::after {
+  position: absolute;
+  right: 12%;
+  bottom: 2px;
+  left: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #b88027 18%, #ffe29a 50%, #b88027 82%, transparent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .9);
+  content: '';
+}

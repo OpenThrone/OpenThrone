@@ -1,0 +1,58 @@
+.participantColumn {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.participant {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  text-align: center;
+}
+
+.identity {
+  min-width: 0;
+}
+
+.name {
+  font-family: MedievalSharp, serif;
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  line-height: 1.25;
+  color: var(--ot-heading);
+  overflow-wrap: anywhere;
+}
+
+.defenderAvatar {
+  order: -1;
+}
+
+@container (min-width: 440px) {
+  .attacker { grid-template-columns: 240px minmax(0, 1fr); text-align: left; }
+  .defender { grid-template-columns: minmax(0, 1fr) 240px; text-align: right; }
+  .defenderAvatar { order: 0; }
+}
+
+.battleHeader {
+  container: battleHeader / inline-size;
+  min-width: 0;
+}
+
+.portrait {
+  min-width: 0;
+}
+
+.portrait > div {
+  max-width: 100%;
+  aspect-ratio: 1;
+  height: auto !important;
+}
+
+@container battleHeader (max-width: 760px) {
+  .participantColumn,
+  .battleId {
+    flex-basis: 100%;
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,106 @@
+.link {
+  position: relative;
+  min-height: 40px;
+  border-radius: 6px;
+  color: var(--ot-body);
+  transition: background-color 120ms ease;
+}
+
+.link:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: -2px;
+}
+
+.link[data-active] {
+  background-color: rgba(234, 174, 43, 0.12);
+  color: var(--ot-heading);
+  font-weight: 600;
+}
+
+.link[data-active]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background-color: var(--ot-accent);
+}
+
+.icon {
+  width: 18px;
+  text-align: center;
+  color: var(--ot-muted);
+}
+
+.link[data-active] .icon {
+  color: var(--ot-accent);
+}
+
+.groupControl {
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.groupControl:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.groupControl:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: -2px;
+}
+
+.groupLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ot-muted);
+}
+
+.groupHasActive .groupLabel {
+  color: var(--ot-heading);
+}
+
+.groupContent {
+  padding: 0 0 4px 0;
+}
+
+.groupContent :global(.mantine-Accordion-content) {
+  padding: 0 0 0 8px;
+}
+
+.mobileBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--ot-surface-2);
+  border-bottom: 1px solid var(--ot-border);
+}
+
+.mobileTrigger {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  color: var(--ot-body);
+}
+
+.mobileTrigger:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
+}

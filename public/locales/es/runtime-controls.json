@@ -1,0 +1,11 @@
+{
+  "config": {
+    "unavailable": "El registro no está disponible mientras no se pueda acceder a la configuración del servidor. Inténtalo de nuevo más tarde."
+  },
+  "maintenance": {
+    "title": "El reino está en mantenimiento",
+    "message": "El reino no está disponible temporalmente mientras realizamos mejoras. Vuelve pronto.",
+    "signIn": "Acceso del personal",
+    "retry": "Comprobar de nuevo"
+  }
+}

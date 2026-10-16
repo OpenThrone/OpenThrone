@@ -1,0 +1,62 @@
+{
+  "loading": "Wird geladen …",
+  "saved": "Gespeichert",
+  "error": "Fehler",
+  "save": "Speichern",
+  "delete": "Löschen",
+  "key": "Einstellung",
+  "value": "Wert",
+  "status": "Quelle",
+  "actions": "Aktionen",
+  "description": "Beschreibung",
+  "enabled": "Aktiv",
+  "settings": {
+    "title": "System: Laufzeiteinstellungen",
+    "intro": "Änderungen gelten für die Laufzeitkonfiguration und werden innerhalb von fünf Sekunden auf Prozesse übertragen.",
+    "saved": "Laufzeiteinstellung aktualisiert.",
+    "saveError": "Einstellung konnte nicht gespeichert werden. Prüfe den Wert und versuche es erneut.",
+    "loadError": "Laufzeiteinstellungen konnten nicht geladen werden.",
+    "history": "Verlauf",
+    "historyError": "Einstellungsverlauf konnte nicht geladen werden.",
+    "revertLatest": "Letzte Änderung zurücksetzen",
+    "reverted": "Vorheriger Wert wiederhergestellt.",
+    "revertError": "Vorheriger Wert konnte nicht wiederhergestellt werden.",
+    "databaseValue": "Datenbanküberschreibung",
+    "environmentDefault": "Umgebungsstandard",
+    "unknownReadOnly": "Unbekannte Einstellung · schreibgeschützt",
+    "labels": {
+      "ENABLE_ATTACKING": "Angriffe",
+      "ATTACK_LEVEL_RANGE": "Angriffs-Levelbereich",
+      "ENABLE_INFILTRATIONS": "Infiltrationen",
+      "ENABLE_ASSASSINATIONS": "Attentate",
+      "ENABLE_INTEL": "Informationen",
+      "ENABLE_SOCIAL": "Soziale Funktionen",
+      "ENABLE_ENEMIES": "Feinde",
+      "DISABLE_LOGIN": "Anmeldung deaktivieren",
+      "DISABLE_REGISTRATION": "Registrierung deaktivieren",
+      "MAINTENANCE_MODE": "Wartungsmodus",
+      "email.outbox.enabled": "E-Mail-Warteschlange aktiv",
+      "email.outbox.ratePerMinute": "E-Mails pro Minute",
+      "account.inactivity.remindersEnabled": "Inaktivitätserinnerungen",
+      "account.inactivity.autoAnonymizeEnabled": "Automatische Anonymisierung inaktiver Konten",
+      "era.dailyCitizenBonus": "Täglicher Bürgerbonus (zusätzliche Bürger, die jedes Konto beim täglichen Update erhält)",
+      "era.dailyCitizenBonusActivityHours": "Aktivitätsfenster für den täglichen Bürgerbonus in Stunden (nur Konten, die innerhalb dieses Fensters eingezahlt, ausgebildet, Rüstkammer gehandelt, angegriffen, spioniert oder repariert haben, erhalten den Bonus; 0 = alle)"
+    },
+    "resetBeforeLogin": "Aktuelle Ära vor Freigabe der Anmeldung zurücksetzen"
+  },
+  "flags": {
+    "title": "System: Funktionsschalter",
+    "intro": "Verwalte die freigegebenen Laufzeit-Funktionsschalter. Regel-Ausdrücke werden derzeit nicht unterstützt.",
+    "saved": "Funktionsschalter aktualisiert.",
+    "saveError": "Funktionsschalter konnte nicht gespeichert werden.",
+    "loadError": "Funktionsschalter konnten nicht geladen werden.",
+    "deleteError": "Funktionsschalter konnte nicht entfernt werden."
+  },
+  "maintenance": {
+    "title": "System: Wartungsmodus",
+    "intro": "Bei Aktivierung sehen Besucher ohne Mitarbeiterrechte die Wartungsseite. Für geplante Ausfälle verwenden.",
+    "enabled": "Wartungsmodus aktiv",
+    "message": "Wartungshinweis",
+    "messageHelp": "Wird während des Wartungsmodus angezeigt. Maximal 1000 Zeichen."
+  }
+}

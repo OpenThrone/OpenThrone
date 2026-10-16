@@ -1,23 +1,32 @@
-import React, { ReactNode } from 'react';
-import { Divider, Paper, Text, ThemeIcon, PaperProps } from '@mantine/core';
+import type { PaperProps } from '@mantine/core';
+import { Box, CloseButton, Group, Paper, Text, ThemeIcon } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
+import type React from 'react';
+import { memo } from 'react';
+
+import classes from '@/components/game/Panels.module.css';
 
 interface ContentCardProps extends Omit<PaperProps, 'className' | 'children'> {
   title?: string;
-  icon?: ReactNode;
-  variant?: 'default' | 'highlight' | 'secondary';
-  children: ReactNode;
+  icon?: React.ReactNode;
+  variant?: 'default' | 'highlight' | 'secondary' | 'news';
+  children: React.ReactNode;
   className?: string;
   iconPosition?: 'left' | 'right' | 'title-left';
   iconVariant?: 'default' | 'outline' | 'subtle' | 'transparent';
   fullHeight?: boolean;
   titleSize?: 'sm' | 'md' | 'lg' | 'xl';
-  actions?: ReactNode;
-  footer?: ReactNode;
+  actions?: React.ReactNode;
+  onClose?: () => void;
+  footer?: React.ReactNode;
   titlePosition?: 'left' | 'right' | 'center';
-  bodyPadding?: number | string;
+  bodyPadding?: string;
+  minWidth?: number | string;
+  minHeight?: number | string;
+  style?: React.CSSProperties;
 }
 
-const ContentCard: React.FC<ContentCardProps> = ({
+function ContentCard({
   title,
   icon,
   variant = 'default',
@@ -28,171 +37,88 @@ const ContentCard: React.FC<ContentCardProps> = ({
   fullHeight = false,
   titleSize = 'lg',
   actions,
-  footer = null,
+  footer,
   titlePosition = 'left',
-  bodyPadding = '1rem',
-  // Spread the remaining Mantine PaperProps
-  shadow = 'md',
-  radius = 'md',
+  bodyPadding = 'p-4',
+  minWidth = 0,
+  minHeight = 160,
+  radius = 'sm',
   withBorder = true,
-  ...otherProps
-}) => {
-  // Create class string based on variant
-  const getCardClasses = () => {
-    const baseClasses = `
-      bg-[#0b0c0c] 
-      border border-[#554813] 
-      overflow-hidden
-      hover:shadow-lg 
-      transition-all duration-300 ease-in-out
-      ${fullHeight ? 'h-full flex flex-col' : ''}
-      ${className}
-    `;
-
-    switch (variant) {
-      case 'highlight':
-        return `
-          ${baseClasses}
-          border-2 border-yellow-600
-          ring-2 ring-yellow-500/40
-        `;
-      case 'secondary':
-        return `
-          ${baseClasses}
-          border-gray-700
-        `;
-      default:
-        return baseClasses;
-    }
-  };
-
-  // Component for title with icon (for title-left position)
-  const TitleWithIcon = () => (
-    <div className="flex items-center gap-2">
-      <ThemeIcon
-        c="white"
-        variant={iconVariant}
-        className="hover:rotate-12 transition-transform duration-300"
-      >
-        {icon}
-      </ThemeIcon>
-      <Text
-        size={titleSize}
-        fw="bold"
-        c="dimmed"
-        className="font-medieval tracking-wide"
-      >
-        {title}
-      </Text>
-    </div>
-  );
-
-  // Get header justification class based on titlePosition
-  const getHeaderJustifyClass = () => {
-    switch (titlePosition) {
-      case 'left':
-        return 'justify-between';
-      case 'center':
-        return 'justify-center';
-      case 'right':
-        return 'justify-end';
-      default:
-        return 'justify-between';
-    }
-  };
-
-  return (
-    <Paper 
-      withBorder={withBorder} 
-      radius={radius} 
-      shadow={shadow}
-      p={0} 
-      className={getCardClasses()}
-      {...otherProps}
+  onClose,
+  style,
+  ...others
+}: ContentCardProps) {
+  const { t } = useTranslation('common');
+  const iconNode = icon && (
+    <ThemeIcon
+      c="var(--ot-brand-text)"
+      variant={iconVariant}
+      aria-hidden="true"
     >
-      {/* Header */}
-      {title && (
-        <div className={`bg-[#10100f] flex items-center px-4 py-2 border-b border-[#554813] ${getHeaderJustifyClass()}`}>
-          {/* Left side content or centered content */}
-          {(titlePosition === 'left' || titlePosition === 'center') && (
-            <div className={`flex items-center ${titlePosition === 'center' ? 'mx-auto' : ''}`}>
-              {icon && iconPosition === 'left' && (
-                <ThemeIcon
-                  c="white"
-                  variant={iconVariant}
-                  className="hover:rotate-12 transition-transform duration-300 mr-2"
-                >
-                  {icon}
-                </ThemeIcon>
-              )}
-              
-              {iconPosition === 'title-left' ? (
-                <TitleWithIcon />
-              ) : (
-                <Text
-                  size={titleSize}
-                  fw="bold"
-                  c="dimmed"
-                  className={`font-medieval tracking-wide ${titlePosition === 'center' ? 'text-center' : ''}`}
-                >
-                  {title}
-                </Text>
-              )}
-            </div>
-          )}
-          
-          {/* Right side content */}
-          {title && (titlePosition === 'left' || titlePosition === 'right') && (
-            <div className="flex items-center gap-2">
-              {/* When title is right-aligned, show it here */}
-              {titlePosition === 'right' && (
-                <div className="flex items-center">
-                  {iconPosition === 'title-left' ? (
-                    <TitleWithIcon />
-                  ) : (
-                    <Text
-                      size={titleSize}
-                      fw="bold"
-                      c="dimmed"
-                      className="font-medieval tracking-wide"
-                    >
-                      {title}
-                    </Text>
-                  )}
-                </div>
-              )}
-              
-              {actions && <div>{actions}</div>}
-              {icon && iconPosition === 'right' && (
-                <ThemeIcon
-                  c="white"
-                  variant={iconVariant}
-                  className="hover:rotate-12 transition-transform duration-300"
-                >
-                  {icon}
-                </ThemeIcon>
-              )}
-            </div>
-          )}
-        </div>
+      {icon}
+    </ThemeIcon>
+  );
+  return (
+    <Paper
+      radius={radius}
+      withBorder={withBorder}
+      p={0}
+      className={[
+        classes.card,
+        variant === 'highlight' ? classes.highlight : '',
+        variant === 'secondary' ? classes.secondary : '',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={{
+        minWidth,
+        minHeight,
+        height: fullHeight ? '100%' : 'auto',
+        borderColor: variant === 'highlight' ? 'var(--ot-accent)' : undefined,
+        ...style,
+      }}
+      {...others}
+    >
+      {(title || actions || onClose) && (
+        <Box className={classes.header}>
+          <Group
+            gap="xs"
+            wrap="nowrap"
+            style={{
+              minWidth: 0,
+              flex: 1,
+              justifyContent:
+                titlePosition === 'center'
+                  ? 'center'
+                  : titlePosition === 'right'
+                    ? 'flex-end'
+                    : 'flex-start',
+            }}
+          >
+            {iconPosition !== 'right' && iconNode}
+            {title && (
+              <Text component="h2" size={titleSize} className={classes.title}>
+                {title}
+              </Text>
+            )}
+          </Group>
+          <Group gap="xs">
+            {actions}
+            {onClose && !actions && (
+              <CloseButton
+                onClick={onClose}
+                aria-label={`${t('actions.close')} ${title ?? ''}`.trim()}
+              />
+            )}
+            {iconPosition === 'right' && iconNode}
+          </Group>
+        </Box>
       )}
-
-      {/* Body */}
-      <div style={{ padding: bodyPadding }} className="flex-grow">
-        {children}
-      </div>
-
-      {/* Footer Section */}
-      {footer && (
-        <>
-          <Divider color="#554813" />
-          <div className="px-4 py-3 bg-[#10100f]/60">
-            {footer}
-          </div>
-        </>
-      )}
+      <Box className={`${bodyPadding} min-w-0 grow`}>{children}</Box>
+      {footer && <Box className={classes.footer}>{footer}</Box>}
     </Paper>
   );
-};
+}
 
-export default ContentCard;
+export default memo(ContentCard);

@@ -1,173 +1,143 @@
-import router from 'next/router';
+import { Alert, Button, Group, PasswordInput, TextInput } from '@mantine/core';
+import type { GetStaticProps } from 'next';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import type { FormEvent } from 'react';
 import { useState } from 'react';
-import { showNotification } from '@mantine/notifications';
-import { alertService } from '@/services';
-import { Space, TextInput, Button, Container, Title, Paper } from '@mantine/core';
-import classes from './floatinginput.module.css';
-import MainArea from '@/components/MainArea';
 
-const Index = (props) => {
+import MainArea from '@/components/MainArea';
+import PublicAuthLayout from '@/components/public/PublicAuthLayout';
+import classes from '@/components/public/PublicPages.module.css';
+import SeoHead from '@/components/SeoHead';
+import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
+
+const Index = () => {
+  const { t } = useTranslation('account');
+  const router = useRouter();
   const [verify, setVerify] = useState('');
   const [verified, setVerified] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [email, setEmail] = useState('');
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [verifyFocused, setVerifyFocused] = useState(false);
-  const emailFloating = email.trim().length !== 0 || emailFocused || undefined;
-  const verifyFloating = verify.trim().length !== 0 || verifyFocused || undefined;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleVerifySubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submit action
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setErrorMessage('');
     try {
-      const response = await fetch('/api/account/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        verified ? '/api/account/passChange' : '/api/account/verify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            verified ? { newPassword, verify, email } : { verify, email },
+          ),
         },
-        body: JSON.stringify({ verify, email }),
-      });
-
+      );
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
-      }
-
-      // Handle successful verification
-      showNotification({
-        title: 'Success',
-        message: 'Verification successful!',
-        color: 'green',
-      });
-      setVerified(true); // Update the verified status to show the new password form
+      if (
+        !response.ok ||
+        data?.status === false ||
+        (!verified && data?.verified !== true)
+      )
+        throw new Error('Password verification or reset failed');
+      if (verified) await router.push('/account/login');
+      else setVerified(true);
     } catch (error) {
-      logError('Error:', error);
-      showNotification({
-        title: 'Error',
-        message: error.message,
-        color: 'red',
-      });
+      logError('Password recovery failed', error);
+      setErrorMessage(t('passwordReset.resetFailed'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  const handlePasswordReset = async (e) => {
-    e.preventDefault(); // Prevent the default form submit action for password reset
-    try {
-      const response = await fetch('/api/account/passChange', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ newPassword, verify, email }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
-      }
-
-      // Handle successful password reset
-      alertService.success('Password updated! Login with it now');
-      setTimeout(() => {
-        router.push('/account/login');
-      }, 2000);
-    } catch (error) {
-      logError('Error:', error);
-      showNotification({
-        title: 'Error',
-        message: error.message,
-        color: 'red',
-      });
-    }
-  };
-
-  if (!verified) {
-    // Verification form
-    return (
-      <MainArea title="Password Reset">
-        <Container size='lg' className="py-2 md:col-span-9">
-          <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565' }}>
-            <form onSubmit={handleVerifySubmit}>
-              <TextInput
-                label="Email Address"
-                placeholder="Enter your email address"
+  return (
+    <>
+      <SeoHead
+        title={t('passwordReset.title')}
+        description={t('passwordReset.description')}
+      />
+      <MainArea title={t('passwordReset.title')}>
+        <PublicAuthLayout
+          title={t('passwordReset.title')}
+          description={t('passwordReset.description')}
+          formTitle={t(
+            verified
+              ? 'passwordReset.setNewPasswordTitle'
+              : 'passwordReset.verificationCode',
+          )}
+        >
+          {errorMessage && (
+            <Alert color="red" role="alert" mb="md">
+              {errorMessage}
+            </Alert>
+          )}
+          <form onSubmit={handleSubmit}>
+            {verified ? (
+              <PasswordInput
+                label={t('passwordReset.newPassword')}
                 required
-                value={email}
-                id="email"
-                name="email"
-                onChange={(event) => setEmail(event.currentTarget.value)}
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-                classNames={classes}
-                mt="md"
-                autoComplete="nope"
-                data-floating={emailFloating}
-                labelProps={{ 'data-floating': emailFloating }}
-                className="w-full rounded border border-gray-300"
-              />
-              <Space h="md" />
-              <TextInput
-                label="Verification code"
-                placeholder="Enter your verification code"
-                required
-                value={verify}
-                onChange={(event) => setVerify(event.currentTarget.value)}
-                onFocus={() => setVerifyFocused(true)}
-                onBlur={() => setVerifyFocused(false)}
-                classNames={classes}
-                mt="md"
-                id="verify"
-                name="verify"
-                autoComplete="nope"
-                data-floating={verifyFloating}
-                labelProps={{ 'data-floating': verifyFloating }}
-                className="w-full rounded border border-gray-300"
-              />
-              <div className="flex justify-end mt-4">
-                <Button
-                  type="submit"
-                  variant="filled"
-                  color="blue"
-                  className="inline-flex justify-center py-2 px-4 shadow-sm text-sm font-medium rounded-md text-white"
-                >
-                  Verify
-                </Button>
-              </div>
-            </form>
-          </Paper>
-        </Container>
-      </MainArea>
-    );
-  } else {
-    return (
-      <MainArea title="Set New Password">
-        <Container size="xs" className="py-2 md:col-span-9">
-          <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565' }}>
-            <form onSubmit={handlePasswordReset}>
-              <TextInput
-                label="New Password"
-                placeholder="Enter your new password"
-                type="password"
-                required
+                minLength={8}
+                autoComplete="new-password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full rounded border border-gray-300 px-3 py-2"
+                onChange={(event) => setNewPassword(event.currentTarget.value)}
               />
-              <div className="flex justify-end mt-4">
-                <Button
-                  type="submit"
-                  variant="filled"
-                  color="blue"
-                  className="inline-flex justify-center py-2 px-4 shadow-sm text-sm font-medium rounded-md text-white"
-                >
-                  Set New Password
-                </Button>
-              </div>
-            </form>
-          </Paper>
-        </Container>
+            ) : (
+              <>
+                <TextInput
+                  label={t('passwordReset.email')}
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.currentTarget.value)}
+                />
+                <TextInput
+                  label={t('passwordReset.verificationCode')}
+                  required
+                  autoComplete="one-time-code"
+                  value={verify}
+                  onChange={(event) => setVerify(event.currentTarget.value)}
+                  mt="md"
+                />
+              </>
+            )}
+            <Group className={classes.actions}>
+              <Button
+                component={Link}
+                href="/account/password-reset"
+                variant="outline"
+              >
+                {t('passwordReset.sendResetLink')}
+              </Button>
+              <Button type="submit" loading={isSubmitting}>
+                {t(
+                  verified
+                    ? 'passwordReset.setNewPassword'
+                    : 'passwordReset.verify',
+                )}
+              </Button>
+              <Button component={Link} href="/account/login" variant="outline">
+                {t('login.title')}
+              </Button>
+            </Group>
+          </form>
+        </PublicAuthLayout>
       </MainArea>
-    );
-  }
+    </>
+  );
 };
-
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? 'en', [
+      'common',
+      'navigation',
+      'account',
+    ])),
+  },
+});
 export default Index;

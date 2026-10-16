@@ -1,70 +1,88 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Loader, Group, Paper, Avatar, Badge, Text, Indicator } from '@mantine/core';
-import UserModel from '@/models/Users';
+import {
+  Avatar,
+  Badge,
+  Group,
+  Indicator,
+  Loader,
+  Table,
+  Text,
+} from '@mantine/core';
 import Link from 'next/link';
-import MainArea from '@/components/MainArea';
+import { useTranslation } from 'next-i18next';
+import React, { useEffect, useState } from 'react';
 
-const Friends = (props) => {
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
+import MainArea from '@/components/MainArea';
+import UserModel from '@/models/Users';
+
+const Friends = () => {
+  const { t } = useTranslation('social');
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/social/listAll?type=FRIEND')
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         setFriends(data);
         setLoading(false);
       });
   }, []);
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <MainArea title={t('friends.title')}>
+        <GameCard title={t('friends.title')}>
+          <Loader />
+        </GameCard>
+      </MainArea>
+    );
+  }
 
-  const rows = friends.map(friend => {
+  const rows = friends.map((friend) => {
     const player = new UserModel(friend.friend, true, false);
     return (
-      <Table.Tr key={player.id}>
-        <Table.Td>
-          <Group
-            gap={'sm'}
-            className='text-justify'
-          >
-            <Indicator color={player.is_online ? 'teal' : 'red'} >
+      <Table.Tr key={player.id} style={{ background: '#0f141a' }}>
+        <Table.Td style={{ borderColor: '#1f2b3b' }}>
+          <Group gap="sm" className="text-justify">
+            <Indicator color={player.is_online ? 'teal' : 'red'}>
               <Avatar src={player?.avatar} size={40} radius={40} />
             </Indicator>
             <div>
-              <Text fz='med' fw={500}>
+              <Text fz="md" fw={500}>
                 <Link
                   href={`/userprofile/${player.id}`}
-                  className='text-blue-500 hover:text-blue-700 font-bold'
+                  className="font-bold text-blue-500 hover:text-blue-700"
                 >
                   {player.displayName}
                 </Link>
-                {player.is_player && <Badge color='blue' ml={5}>You</Badge>}
+                {player.is_player && (
+                  <Badge color="blue" ml={5}>
+                    {t('friends.you')}
+                  </Badge>
+                )}
               </Text>
-              <Text fz='xs' c='dimmed'>
+              <Text fz="xs" c="dimmed">
                 {player.race} {player.class}
               </Text>
             </div>
           </Group>
         </Table.Td>
-        <Table.Td>{friend.acceptanceDate}</Table.Td>
+        <Table.Td style={{ borderColor: '#1f2b3b' }}>
+          {friend.acceptanceDate}
+        </Table.Td>
       </Table.Tr>
-    )
+    );
   });
 
   return (
-    <MainArea title="Friends">
-      <Paper shadow="xs" p="md">
-        <Table className="min-w-full" striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Username</Table.Th>
-              <Table.Th>Since</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </Paper>
+    <MainArea title={t('friends.title')}>
+      <GameCard title={t('friends.friendsList')}>
+        <StyledTable headers={[t('friends.username'), t('friends.since')]}>
+          {rows}
+        </StyledTable>
+      </GameCard>
     </MainArea>
   );
 };

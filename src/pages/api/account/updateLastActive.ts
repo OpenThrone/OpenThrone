@@ -1,29 +1,62 @@
-import { NextApiResponse } from 'next';
-import prisma from '@/lib/prisma'; // Adjust based on your Prisma setup
-import { getSession } from 'next-auth/react';
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
-import { logError } from '@/utils/logger';
+import { AccountService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
+import { canAccessGame } from '@/utils/loginPolicy';
+
+const UpdateLastActiveSchema = z
+  .object({
+    email: z.string().email().optional(),
+    userId: z.number().int().positive().optional(),
+    displayName: z.string().optional(),
+  })
+  .refine((data) => data.email || data.userId || data.displayName, {
+    message:
+      'At least one identifier (email, userId, or displayName) must be provided',
+  });
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  try {
-    const { email, userId, displayName } = req.body;
-    const session = req.session;
+  const validatedBody = UpdateLastActiveSchema.safeParse(req.body);
+  if (!validatedBody.success) {
+    return res.status(400).json({
+      error: 'Invalid request body',
+      details: validatedBody.error.flatten().fieldErrors,
+    });
+  }
 
-    if (!session || (!email && !userId && !displayName)) {
-      return res.status(401).json({ error: 'Unauthorized or missing parameters' });
+  try {
+    const { email, userId, displayName } = validatedBody.data;
+    const { session } = req;
+
+    if (!session) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const updatedUser = await prisma.users.update({
-      where: email ? { email } : userId ? { id: userId } : { display_name: displayName },
-      data: { last_active: new Date() },
+    if (
+      (email && email.toLowerCase() !== session.user.email?.toLowerCase()) ||
+      (userId && userId !== Number(session.user.id)) ||
+      (displayName && displayName !== session.user.display_name)
+    ) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const sessionUserId = Number(session.user.id);
+    if (!(await canAccessGame(sessionUserId))) {
+      return res.status(403).json({ error: 'Login is disabled' });
+    }
+
+    const result = await AccountService.updateLastActive({
+      userId: sessionUserId,
     });
 
-    return res.status(200).json({ message: 'Last active timestamp updated', user: updatedUser.id });
+    return res.status(200).json(result);
   } catch (error) {
     logError('Error updating last active:', error);
     return res.status(500).json({ error: 'Internal Server Error' });

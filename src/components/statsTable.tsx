@@ -1,70 +1,123 @@
-import toLocale from '@/utils/numberFormatting';
-import { Table, Button, Text, Popover, Paper } from '@mantine/core';
+import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon, Button, Popover, Table, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import Link from 'next/link';
-import React from 'react';
+import { useTranslation } from 'next-i18next';
 
-const StatsTable = ({ title, data, description = "description", displayButton = true }) => {
-  const [opened, { close, open }] = useDisclosure(false);
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
+import { toLocale } from '@/utils/numberFormatting';
+
+interface StatsTableProps {
+  title: string;
+  data: {
+    id?: number | string;
+    display_name: string;
+    stat: number | string | bigint;
+  }[];
+  description?: string;
+  displayButton?: boolean;
+}
+
+const StatsTable = ({
+  title,
+  data,
+  description,
+  displayButton = true,
+}: StatsTableProps) => {
+  const { t } = useTranslation(['community', 'common']);
+  const [opened, { close, open, toggle }] = useDisclosure(false);
+  const headers = [
+    t('stats.rankColumn'),
+    t('stats.playerColumn'),
+    t('stats.statColumn'),
+    ...(displayButton ? [t('stats.actionColumn')] : []),
+  ];
   return (
-    <>
-      <center>
-        <Popover withArrow shadow="md" width={250} opened={opened} position="bottom">
-          <Popover.Target>
-            <h2 className="text-xl font-semibold mb-2 bg-link-gradient text-gradient-link text-shadow text-shadow-color-slate-800 text-shadow-md " onMouseEnter={open} onMouseLeave={close}>{title}</h2>
-          </Popover.Target>
-          <Popover.Dropdown style={{ pointerEvents: 'none' }}>
-            <Text>{description}</Text>
-          </Popover.Dropdown>
-        </Popover>
-      </center>
-    
-    <Paper withBorder shadow='md'>
-      <Table className="min-w-full table-auto" color='dark' striped highlightOnHover> 
-        <Table.Thead className="border-b">
-          <Table.Tr className="bg-table-odd">
-            <Table.Th className="text-sm font-medium px-6 py-4 text-left">
-              Rank
-            </Table.Th>
-            <Table.Th className="text-sm font-medium px-6 py-4 text-left">
-              Player
-            </Table.Th>
-            <Table.Th className="text-sm font-medium px-6 py-4 text-left">
-              Stat
-              </Table.Th>
-              {displayButton &&
-                <th className="text-sm font-medium px-6 py-4 text-center content-center">
-                  <Text>Action</Text>
-                </th>
-              }
+    <GameCard
+      title={title}
+      action={
+        description ? (
+          <Popover
+            withArrow
+            width={260}
+            opened={opened}
+            onChange={(value) => (value ? open() : close())}
+            position="bottom"
+          >
+            <Popover.Target>
+              <ActionIcon
+                variant="subtle"
+                onClick={toggle}
+                onMouseEnter={open}
+                onMouseLeave={close}
+                aria-label={t('stats.tableDescription', { title })}
+                aria-expanded={opened}
+              >
+                <FontAwesomeIcon icon={faCircleInfo} />
+              </ActionIcon>
+            </Popover.Target>
+            <Popover.Dropdown>
+              <Text size="sm">{description}</Text>
+            </Popover.Dropdown>
+          </Popover>
+        ) : null
+      }
+    >
+      <StyledTable headers={headers}>
+        {data.length === 0 && (
+          <Table.Tr>
+            <Table.Td colSpan={headers.length}>
+              <Text size="sm" c="var(--ot-muted)" py="md">
+                {t('phrases.noResults', { ns: 'common' })}
+              </Text>
+            </Table.Td>
           </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {data.map((player, index) => (
-            <Table.Tr key={index} className="border-b odd:bg-table-even even:bg-table-odd">
-              <Table.Td className="px-6 py-4 whitespace-nowrap text-sm">
+        )}
+        {data.map((player, index) => (
+          <Table.Tr
+            key={player.id ?? index}
+            style={{ background: 'var(--ot-inset)' }}
+          >
+            <Table.Td>
+              <Text size="sm" c="var(--ot-muted)">
                 {index + 1}
-              </Table.Td>
-              <Table.Td className="px-6 py-4 whitespace-nowrap text-sm">
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Text size="sm" fw={600}>
                 {player.display_name}
-              </Table.Td>
-              <Table.Td className="px-6 py-4 whitespace-nowrap text-sm">
+              </Text>
+            </Table.Td>
+            <Table.Td>
+              <Text
+                size="sm"
+                fw={700}
+                c="var(--ot-heading)"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
                 {toLocale(player.stat) || 0}
+              </Text>
+            </Table.Td>
+            {displayButton && (
+              <Table.Td>
+                {player.id !== undefined && (
+                  <Button
+                    component={Link}
+                    href={`/userprofile/${player.id}`}
+                    size="xs"
+                    variant="subtle"
+                  >
+                    {t('stats.viewProfile')}
+                  </Button>
+                )}
               </Table.Td>
-              {displayButton &&
-                <Table.Td className="px-6 py-4 whitespace-nowrap text-sm text-center content-center">
-                  <Link href={'/userprofile/' + player.id}><Button color='dark' className=" text-white font-bold py-2 px-4 rounded">
-                    View Profile
-                  </Button></Link>
-                </Table.Td>
-              }
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
-      </Paper>
-    </>
+            )}
+          </Table.Tr>
+        ))}
+      </StyledTable>
+    </GameCard>
   );
 };
-
 export default StatsTable;

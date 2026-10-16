@@ -1,42 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Loader, Group, Paper } from '@mantine/core';
+import { Loader, Table } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
+import React, { useEffect, useState } from 'react';
+
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
 
-const Enemies = (props) => {
+const Enemies = () => {
+  const { t } = useTranslation('social');
   const [enemies, setEnemies] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/social/listAll?type=ENEMY')
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         setEnemies(data);
         setLoading(false);
       });
   }, []);
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return (
+      <MainArea title={t('enemies.title')}>
+        <GameCard title={t('enemies.title')}>
+          <Loader />
+        </GameCard>
+      </MainArea>
+    );
+  }
 
-  const rows = enemies.map(enemy => (
-    <Table.Tr key={enemy.id}>
-      <Table.Td>{enemy.playerId}</Table.Td>
-      <Table.Td>{enemy.status}</Table.Td>
+  const rows = enemies.map((enemy) => (
+    <Table.Tr key={enemy.id} style={{ background: '#0f141a' }}>
+      <Table.Td style={{ borderColor: '#1f2b3b' }}>{enemy.playerId}</Table.Td>
+      <Table.Td style={{ borderColor: '#1f2b3b' }}>{enemy.status}</Table.Td>
     </Table.Tr>
   ));
 
   return (
-    <MainArea title="Enemies">
-      <Paper shadow="xs" p="md">
-        <Table className="min-w-full" striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Player ID</Table.Th>
-              <Table.Th>Status</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{rows}</Table.Tbody>
-        </Table>
-      </Paper>
+    <MainArea title={t('enemies.title')}>
+      <GameCard title={t('enemies.enemiesList')}>
+        <StyledTable headers={[t('enemies.playerId'), t('enemies.status')]}>
+          {rows}
+        </StyledTable>
+      </GameCard>
     </MainArea>
   );
 };

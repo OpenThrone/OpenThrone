@@ -1,146 +1,45 @@
-// pages/api/tasks.ts
-import md5 from 'md5';
+import { timingSafeEqual } from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import prisma from "@/lib/prisma";
-import UserModel from '@/models/Users';
 
+import { GeneralService } from '@/services/General.service';
 
+/** Compares the Authorization header to TASK_SECRET without leaking timing. */
+const isAuthorizedResetRequest = (
+  authorization: string | undefined,
+): boolean => {
+  const taskSecret = process.env.TASK_SECRET;
+  if (!taskSecret || !authorization) {
+    return false;
+  }
+
+  const provided = Buffer.from(authorization);
+  const expected = Buffer.from(taskSecret);
+  if (provided.length !== expected.length) {
+    return false;
+  }
+
+  return timingSafeEqual(provided, expected);
+};
+
+/** Handles general reset game API requests. */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
-  const token = req.headers.authorization;
-  if (token !== process.env.TASK_SECRET) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  if (!isAuthorizedResetRequest(req.headers.authorization)) {
     return res.status(403).json({
       message: `Unauthorized: Token Invalid`,
     });
   }
 
-  const allUsers = await prisma.users.findMany();
-
-  const updatePromises = allUsers.map((user) => {
-    try {
-      const newUser = new UserModel(user);
-      const updateData = {
-        gold: 25000,
-        attack_turns: 50,
-        experience: 0,
-        rank: 0,
-        gold_in_bank: 0,
-        fort_level: 1,
-        fort_hitpoints: 50,
-        items: [
-          {
-            type: 'WEAPON',
-            level: 1,
-            quantity: 0,
-            usage: 'DEFENSE'
-          },
-          {
-            type: 'WEAPON',
-            level: 1,
-            quantity: 0,
-            usage: 'OFFENSE'
-          }
-        ],
-        structure_upgrades: [
-          {
-            "type": "ARMORY",
-            "level": 0
-          },
-          {
-            "type": "SPY",
-            "level": 0
-          },
-          {
-            "type": "SENTRY",
-            "level": 0
-          },
-          {
-            "type": "OFFENSE",
-            "level": 0
-          }
-        ],
-        battle_upgrades: [
-          {
-            "type": "OFFENSE",
-            "level": 1,
-            "quantity": 0
-          },
-          {
-            "type": "DEFENSE",
-            "level": 1,
-            "quantity": 0
-          },
-        ],
-        colorScheme: newUser.colorScheme,
-        economy_level: 0,
-        house_level: 0,
-        bonus_points: [
-          {
-            "type": "OFFENSE",
-            "level": 0
-          },
-          {
-            "type": "DEFENSE",
-            "level": 0
-          },
-          {
-            "type": "INCOME",
-            "level": 0
-          },
-          {
-            "type": "INTEL",
-            "level": 0
-          },
-          {
-            "type": "PRICES",
-            "level": 0
-          }
-        ],
-        units: [
-          {
-          type: 'CITIZEN',
-          level: 1,
-          quantity: 100
-          },
-          {
-            type: 'OFFENSE',
-            level: 1,
-            quantity: 0
-          },
-          {
-            type: 'DEFENSE',
-            level: 1,
-            quantity: 0
-          }
-        ],
-        defense: 0,
-        offense: 0,
-        killing_str: 0,
-        defense_str: 0,
-        sentry: 0,
-        spy: 0,
-        stats: []
-
-      }
-
-      return prisma.users.update({
-        where: { id: user.id },
-        data: updateData,
-      });
-    } catch (error) {
-      console.log(`Error updating user ${user.id}: ${error.message}`)
-    }
-
-  });
   try {
-    await Promise.all(updatePromises);
-
-    return res.status(200).json({ message: 'Tasks executed successfully' });
+    const result = await GeneralService.resetGame();
+    return res.status(200).json(result);
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: `Error executing tasks: ${error.message}` });
+    return res.status(500).json({ message: `Error: ${error.message}` });
   }
 }

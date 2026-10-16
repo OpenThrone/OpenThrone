@@ -1,18 +1,17 @@
-import { ActionIcon, Group, Tooltip, useMantineTheme } from "@mantine/core";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ActionIcon, Flex, Tooltip } from '@mantine/core';
 
 type ButtonColor =
-  | "blue"
-  | "red"
-  | "green"
-  | "yellow"
-  | "teal"
-  | "violet"
-  | "gray"
-  | "dark";
-
-interface AnimatedButton {
+  | 'blue'
+  | 'red'
+  | 'green'
+  | 'yellow'
+  | 'teal'
+  | 'violet'
+  | 'gray'
+  | 'dark';
+interface AnimatedButtonItem {
   icon: IconDefinition;
   label: string;
   onClick?: () => void;
@@ -21,103 +20,50 @@ interface AnimatedButton {
   ariaLabel?: string;
   disabled?: boolean;
 }
-
 interface AnimatedButtonsProps {
-  buttons: AnimatedButton[];
-  orientation?: "horizontal" | "vertical";
+  buttons: AnimatedButtonItem[];
+  orientation?: 'horizontal' | 'vertical';
   spacing?: number | string;
 }
 
+/** Shared action controls with one keyboard focus stop per action. */
 export default function AnimatedButtons({
   buttons,
-  orientation = "horizontal",
-  spacing = "md",
+  orientation = 'horizontal',
+  spacing = 'md',
 }: AnimatedButtonsProps) {
-  const theme = useMantineTheme();
-  const groupProps =
-    orientation === "vertical"
-      ? { direction: "column", spacing }
-      : { spacing };
-
   return (
-    <Group {...groupProps}>
+    <Flex
+      direction={orientation === 'vertical' ? 'column' : 'row'}
+      gap={spacing}
+      wrap="wrap"
+    >
       {buttons.map(
         (
-          {
-            icon,
-            label,
-            onClick,
-            color = "blue",
-            tooltip,
-            ariaLabel,
-            disabled = false,
-          },
-          idx
+          { icon, label, onClick, color, tooltip, ariaLabel, disabled = false },
+          index,
         ) => (
           <Tooltip
-            key={label + idx}
+            key={`${label}-${index}`}
             label={tooltip || label}
             withArrow
-            position="bottom"
-            disabled={!tooltip}
+            openDelay={250}
+            events={{ hover: true, focus: true, touch: false }}
           >
-            <button
+            <ActionIcon
               type="button"
-              className={`
-                group relative flex items-center justify-center
-                bg-transparent
-                px-3 py-2 rounded-md
-                transition
-                hover:bg-gray-800
-                focus:outline-none
-                disabled:opacity-50 disabled:cursor-not-allowed
-              `}
+              variant="subtle"
+              color={color}
+              size={44}
               onClick={onClick}
               aria-label={ariaLabel || label}
               disabled={disabled}
-              style={{
-                border: "1px solid transparent",
-                width: 48,
-                height: 48,
-              }}
             >
-              <ActionIcon
-                variant="subtle"
-                color={color}
-                size="lg"
-                className="pointer-events-none"
-                aria-hidden="true"
-                radius="md"
-              >
-                <FontAwesomeIcon icon={icon} size="lg" />
-              </ActionIcon>
-              <span
-                className={`
-                  pointer-events-none
-                  absolute left-1/2 top-0
-                  -translate-x-1/2 -translate-y-full
-                  px-2 py-1 rounded
-                  bg-gray-900 bg-opacity-90
-                  text-sm
-                  ${theme.colorScheme === "dark"
-                    ? "text-blue-200"
-                    : "text-blue-700"
-                  }
-                  font-medium
-                  opacity-0
-                  group-hover:opacity-100
-                  transition-opacity duration-200
-                  z-20
-                  shadow-lg
-                  whitespace-nowrap
-                `}
-              >
-                {label}
-              </span>
-            </button>
+              <FontAwesomeIcon icon={icon} />
+            </ActionIcon>
           </Tooltip>
-        )
+        ),
       )}
-    </Group>
+    </Flex>
   );
 }

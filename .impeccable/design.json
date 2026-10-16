@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-30",
+  "title": "Design System: OpenThrone",
+  "extensions": {
+    "colorMeta": {
+      "throne-gold": { "role": "primary", "displayName": "Throne Gold", "canonical": "#EAAE2B", "tonalRamp": ["#2A1F05", "#4A380A", "#6B510F", "#8C6A14", "#AD8319", "#CE9C1F", "#EAAE2B", "#F7CE6A"] },
+      "candle-flame": { "role": "primary", "displayName": "Candle Flame", "canonical": "#FFE87A" },
+      "herald-gold": { "role": "primary", "displayName": "Herald Gold", "canonical": "#FDE265" },
+      "beacon-amber": { "role": "primary", "displayName": "Beacon Amber", "canonical": "#EC9B00" },
+      "royal-amber": { "role": "primary", "displayName": "Royal Amber", "canonical": "#DD953F" },
+      "court-yellow": { "role": "primary", "displayName": "Court Yellow", "canonical": "#FFFF5C" },
+      "header-parchment": { "role": "primary", "displayName": "Header Parchment", "canonical": "#F4E7B3" },
+      "advisor-parchment": { "role": "primary", "displayName": "Advisor Parchment", "canonical": "#B5A565" },
+      "elf-brand-deep": { "role": "secondary", "displayName": "Elf Brand Deep", "canonical": "#004D26", "tonalRamp": ["#001A0D", "#004D26", "#008040", "#00B35A", "#00E673", "#1AFF80", "#4DFF99", "#80FFB3", "#B3FFCC", "#E0FFE5"] },
+      "human-brand-deep": { "role": "secondary", "displayName": "Human Brand Deep", "canonical": "#002F4D", "tonalRamp": ["#00121A", "#002F4D", "#004D80", "#006BB3", "#0088E6", "#1AA3FF", "#4DB8FF", "#80CCFF", "#B3E0FF", "#E0F4FF"] },
+      "undead-brand-deep": { "role": "secondary", "displayName": "Undead Brand Deep", "canonical": "#0D0D0D", "tonalRamp": ["#000000", "#0D0D0D", "#262626", "#404040", "#595959", "#737373", "#8C8C8C", "#A6A6A6", "#BFBFBF", "#D9D9D9"] },
+      "goblin-brand-deep": { "role": "secondary", "displayName": "Goblin Brand Deep", "canonical": "#4D0000", "tonalRamp": ["#1A0000", "#4D0000", "#800000", "#B30000", "#E60000", "#FF1A1A", "#FF4D4D", "#FF8080", "#FFB3B3", "#FFE0E0"] },
+      "stone-void": { "role": "neutral", "displayName": "Stone Void", "canonical": "#05070A" },
+      "stone-deep": { "role": "neutral", "displayName": "Stone Deep", "canonical": "#0B1016" },
+      "stone-raised-top": { "role": "neutral", "displayName": "Stone Raised Top", "canonical": "#171F29" },
+      "stone-raised-bottom": { "role": "neutral", "displayName": "Stone Raised Bottom", "canonical": "#0D1117" },
+      "stone-edge": { "role": "neutral", "displayName": "Stone Edge", "canonical": "#1F2937" },
+      "stone-chrome": { "role": "neutral", "displayName": "Stone Chrome", "canonical": "#374151" },
+      "table-stripe-odd": { "role": "neutral", "displayName": "Table Stripe Odd", "canonical": "#2C3034" },
+      "table-stripe-even": { "role": "neutral", "displayName": "Table Stripe Even", "canonical": "#212529" },
+      "alert-error-bg": { "role": "tertiary", "displayName": "Alert Error Ground", "canonical": "#74261E" },
+      "alert-error-text": { "role": "tertiary", "displayName": "Alert Error Text", "canonical": "#EE8277" },
+      "alert-success-bg": { "role": "tertiary", "displayName": "Alert Success Ground", "canonical": "#005E46" },
+      "alert-success-text": { "role": "tertiary", "displayName": "Alert Success Text", "canonical": "#4DD0AF" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (Chomsky)", "purpose": "Masthead and one proclamation per screen. Never body, data, or buttons." },
+      "headline": { "displayName": "Headline (Chomsky via Mantine Title)", "purpose": "Section titles; h1 34/1.3, h2 26/1.35, h3 22/1.4. Raw h1-h3 render Inter bold as a legacy track." },
+      "body": { "displayName": "Body (Inter)", "purpose": "Reading text and UI copy; 16px/1.5. Candle-flame or #E5E7EB on stone; court yellow in the main area." },
+      "label": { "displayName": "Functional (MedievalSharp)", "purpose": "Input text and in-world labels; nav sets 24px." }
+    },
+    "shadows": [
+      { "name": "carved-panel", "value": "inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -2px 4px rgba(0,0,0,0.8), 0 12px 24px -10px rgba(0,0,0,0.9)", "purpose": "Mantine Paper root: lit top edge, recessed body, grounded base." },
+      { "name": "raised-panel", "value": "inset 0 1px 0 rgba(255,255,255,0.1), 0 10px 25px -5px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.8)", "purpose": ".bg-rpg-panel — the canonical new-work surface." },
+      { "name": "forged-button", "value": "inset 0 1px 0 rgba(255,255,255,0.25), 0 6px 0 rgba(0,0,0,0.35)", "purpose": "Filled buttons: metal keycap standing proud of the panel; collapses on :active." },
+      { "name": "carved-well", "value": "inset 0 2px 6px rgba(0,0,0,0.6)", "purpose": "Input fields; focus adds 0 0 0 1px rgba(255,255,255,0.15)." },
+      { "name": "inset-slot", "value": "inset 0 2px 4px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.05)", "purpose": ".rpg-inset stat slots." },
+      { "name": "vignette", "value": "inset 0 0 40px rgba(0,0,0,0.75)", "purpose": "FramedAvatar interior." },
+      { "name": "hover-lift", "value": "0 2px 4px rgba(0,0,0,0.2) → 0 10px 18px rgba(0,0,0,0.35)", "purpose": "Interaction feedback only; gradient buttons glow in their own hue." },
+      { "name": "title-bar", "value": "0 14px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06)", "purpose": ".main-header-titleBar with etched gold 2px gradient line at its bottom edge." }
+    ],
+    "motion": [
+      { "name": "public-rise", "value": "650ms ease-out both, translateY(14px) → 0", "purpose": "The entrance grammar; staggered 120/220/320ms via -delay-1/2/3." },
+      { "name": "hover-lift", "value": "120ms ease, translateY(-1px to -2px)", "purpose": "Icons, cards, toolbar buttons." },
+      { "name": "press", "value": "100ms ease, translateY(2px)", "purpose": "Filled buttons physically press; shadow collapses." },
+      { "name": "pulse-slow", "value": "3s infinite, gold glow rgba(234,179,8,0.3→0.5)", "purpose": "Attention pulse on highlighted elements." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1536px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Stone Panel",
+      "kind": "card",
+      "refersTo": "panel-stone",
+      "description": "Canonical raised surface: stone gradient, lit top edge, carved shadow.",
+      "html": "<div class=\"ds-panel\"><strong>War Council</strong><p>Raised stone surface for any content block.</p></div>",
+      "css": ".ds-panel { background: linear-gradient(180deg, rgba(23,31,41,0.95) 0%, rgba(13,17,23,0.98) 100%); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 16px 18px; color: #FFE87A; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -2px 4px rgba(0,0,0,0.8), 0 12px 24px -10px rgba(0,0,0,0.9); font-family: Inter, system-ui, sans-serif; } .ds-panel strong { display: block; margin-bottom: 6px; font-family: 'MedievalSharp', serif; font-size: 18px; } .ds-panel p { margin: 0; color: #E5E7EB; font-size: 14px; }"
+    },
+    {
+      "name": "Game Card",
+      "kind": "card",
+      "refersTo": "panel-stone",
+      "description": "Stone panel with the −2px interaction lift.",
+      "html": "<div class=\"ds-game-card\"><strong>Armory</strong><p>Hover: the card lifts.</p></div>",
+      "css": ".ds-game-card { background: linear-gradient(180deg, rgba(23,31,41,0.95) 0%, rgba(13,17,23,0.98) 100%); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 16px 18px; color: #FFE87A; transform: translateY(0); transition: transform 0.2s ease, box-shadow 0.2s ease; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 10px 25px -5px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.8); font-family: Inter, system-ui, sans-serif; } .ds-game-card:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 14px 28px -6px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.8); } .ds-game-card strong { display: block; margin-bottom: 6px; font-family: 'MedievalSharp', serif; } .ds-game-card p { margin: 0; color: #E5E7EB; font-size: 14px; }"
+    },
+    {
+      "name": "Filled Button",
+      "kind": "button",
+      "refersTo": "panel-stone",
+      "description": "Forged race-primary button (ELF world shown); presses down 2px on click.",
+      "html": "<button class=\"ds-btn-primary\">TRAIN UNITS</button>",
+      "css": ".ds-btn-primary { background: #004D26; color: #FFE87A; border: 1px solid rgba(0,0,0,0.35); border-radius: 4px; padding: 8px 18px; font-family: Inter, system-ui, sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 0.02em; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 6px 0 rgba(0,0,0,0.35); transform: translateY(0); transition: transform 0.1s ease, box-shadow 0.1s ease; } .ds-btn-primary:hover { filter: brightness(1.15); } .ds-btn-primary:focus-visible { outline: 2px solid #EAAE2B; outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.1); filter: none; }"
+    },
+    {
+      "name": "Toolbar Icon",
+      "kind": "button",
+      "refersTo": "panel-stone",
+      "description": "Recessed square icon button from the sidebar; gold bloom on hover.",
+      "html": "<button class=\"ds-toolbar-icon\" aria-label=\"Messages\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"#EAAE2B\"><path d=\"M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-4zm0 4.2 4 2v3.8c0 3-1.7 5.4-4 6.6-2.3-1.2-4-3.6-4-6.6V8.2l4-2z\"/></svg></button>",
+      "css": ".ds-toolbar-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); cursor: pointer; transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease; } .ds-toolbar-icon:hover { transform: translateY(-1px); background: rgba(229,197,90,0.08); box-shadow: 0 10px 18px rgba(0,0,0,0.35); } .ds-toolbar-icon:focus-visible { outline: 2px solid rgba(229,197,90,0.65); outline-offset: 2px; }"
+    },
+    {
+      "name": "Carved Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "In-world input: carved well, MedievalSharp text, throne-gold focus ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"Recruit name\" />",
+      "css": ".ds-input { width: 100%; box-sizing: border-box; background-color: #05070A; border: 1px solid #1F2937; border-radius: 4px; padding: 9px 12px; color: #E5E7EB; font-family: 'MedievalSharp', serif; font-size: 15px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.6); transition: border 0.2s ease, box-shadow 0.2s ease; } .ds-input::placeholder { color: #6B7280; } .ds-input:hover { border-color: #374151; } .ds-input:focus { outline: none; border-color: #EAAE2B; box-shadow: inset 0 2px 6px rgba(0,0,0,0.7), 0 0 0 2px #EAAE2B; }"
+    },
+    {
+      "name": "Herald Nav Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Gilded navigation lettering; amber when current.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link\" href=\"#\">Overview</a><a class=\"ds-nav-link is-current\" href=\"#\" aria-current=\"page\">Battle</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 20px; background: #0A3D1F; padding: 10px 16px; } .ds-nav-link { font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 600; text-decoration: none; color: #FDE265; text-shadow: 1px 1px 1px rgba(0,0,0,0.5); transition: color 120ms ease; } .ds-nav-link:hover { color: #EC9B00; } .ds-nav-link:focus-visible { outline: 2px solid #EAAE2B; outline-offset: 2px; } .ds-nav-link.is-current { color: #EC9B00; }"
+    },
+    {
+      "name": "Advisor Note",
+      "kind": "custom",
+      "refersTo": "advisor-note",
+      "description": "The game's voice: bold black text on aged parchment.",
+      "html": "<div class=\"ds-advisor\">My liege, your scouts report movement on the eastern border.</div>",
+      "css": ".ds-advisor { background-color: #B5A565; color: #000; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 700; line-height: 1.5; text-align: center; padding: 14px 12px; min-height: 105px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }"
+    },
+    {
+      "name": "Inset Stat Slot",
+      "kind": "custom",
+      "refersTo": "input-field",
+      "description": "Carved readout for stats and ledgers.",
+      "html": "<div class=\"ds-inset\"><span class=\"ds-inset-label\">Gold</span><span class=\"ds-inset-value\">42,890</span></div>",
+      "css": ".ds-inset { background-color: #05070A; border: 1px solid #1F2937; border-radius: 4px; padding: 10px 14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8), inset 0 0 10px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: baseline; font-family: Inter, system-ui, sans-serif; } .ds-inset-label { color: #9CA3AF; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; } .ds-inset-value { color: #FFE87A; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Gold Gradient Text",
+      "kind": "custom",
+      "refersTo": "display-title",
+      "description": "Coin-metal gradient for hero numerals and titles.",
+      "html": "<span class=\"ds-gold-text\">1,250,000</span>",
+      "css": ".ds-gold-text { font-family: Inter, system-ui, sans-serif; font-size: 32px; font-weight: 700; background: linear-gradient(180deg, #FFD700 0%, #B8860B 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; filter: drop-shadow(0 0 1px rgba(184,134,11,0.5)); }"
+    },
+    {
+      "name": "Alert (Error)",
+      "kind": "custom",
+      "refersTo": "panel-stone",
+      "description": "Deep-tinted danger surface with bright text; success uses #005E46/#4DD0AF the same way.",
+      "html": "<div class=\"ds-alert-error\" role=\"alert\">Not enough gold in the treasury.</div>",
+      "css": ".ds-alert-error { padding: 16px; border: 1px solid #8B2E24; border-radius: 4px; background-color: #74261E; color: #EE8277; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Living Chronicle",
+    "overview": "OpenThrone's interface is a chronicle being written by its community: a continuation of DarkThrone after twenty years, told in four race-tinted chapters over one shared dark-stone chassis. Every screen is a ledger page — dense, data-forward, readable at a glance by veterans who know the numbers by heart, yet hierarchically legible to a newcomer who has never seen the genre. Expression is concentrated where it earns its place: blackletter display type, etched gold lines, race-tinted worlds, and framed artifacts. Everything else is disciplined stone. The system is race-adaptive by architecture, not by page. One chassis — near-black stone surfaces, gold illumination, carved depth — is retinted per race (ELF forest green, HUMAN deep navy, UNDEAD ash gray, GOBLIN dark maroon) through raceClasses (Tailwind) and Mantine createTheme palettes, with shared runtime CSS variables. Features never own color; worlds do. Depth is physical, not atmospheric: surfaces are carved (inset wells, inset top highlights) or forged (hard offset shadows, pressed buttons). Soft shadow appears only as a response to interaction. The interface has three strata: the canonical stone chassis, a frozen legacy DarkThrone substrate, and isolated newer touches. New work extends the stone chassis only.",
+    "keyCharacteristics": [
+      "Four race worlds (forest / navy / ash / maroon) over one shared stone chassis",
+      "Gold illumination system: throne-gold accents, candle-flame text, herald-gold links",
+      "Chiseled depth — inset wells, hard pressed shadows, etched gold lines, vignettes",
+      "Blackletter display (Chomsky), MedievalSharp functional type, Inter for reading",
+      "Race theming through raceClasses + Mantine themes + --ot-* variables, never hard-coded",
+      "Layered main area: full-bleed key art under a dark readability gradient",
+      "Legacy DarkThrone substrate documented as frozen tech debt"
+    ],
+    "rules": [
+      { "name": "The Four Worlds Rule", "body": "Race palettes tint one shared chassis; they never re-architect it. A feature owns no hue — the world does. Reach for raceClasses and the race Mantine theme, never hard-coded race hexes.", "section": "colors" },
+      { "name": "The Gold is Light Rule", "body": "Golds are illumination on dark stone — text, lines, rings, icon fills — not surface fills. A gold-filled block breaks the metaphor; gilded edges and lettering carry value.", "section": "colors" },
+      { "name": "The Blackletter Threshold", "body": "Chomsky proclaims; it never explains. Blackletter stops at display moments — no body text, no data, no buttons. MedievalSharp carries functional in-world type; Inter carries everything that must be read fast.", "section": "typography" },
+      { "name": "The Chisel Rule", "body": "Depth is carved or forged, never floating. At rest, surfaces are recessed or hard-edged; soft shadow is earned by interaction (hover, focus, drag), never used as default decoration.", "section": "elevation" },
+      { "name": "The Frozen Substrate Rule", "body": "The legacy DarkThrone strata (Book Antiqua nav, #222 Bootstrap-dark cards, gray modals, steel #2F4D6C buttons) are documented for recognition, not reuse.", "section": "dos-and-donts" }
+    ],
+    "dos": [
+      "Do build new surfaces on the stone chassis: .bg-rpg-panel, .rpg-inset, Mantine Paper + rpgComponentOverrides.",
+      "Do theme through raceClasses, the race Mantine themes, and --ot-* variables; every color choice must survive a race switch.",
+      "Do use Chomsky for one proclamation per screen; keep everything else MedievalSharp (in-world) or Inter (data).",
+      "Do keep depth physical: lit top edges, inset wells, hard pressed shadows; reserve soft shadow for hover/focus.",
+      "Do honor prefers-reduced-motion (and the body.reduced-motion class) on every new animation, like .public-rise does.",
+      "Do put focus rings in throne-gold (2px, offset 2) — the system-wide focus language.",
+      "Do keep entrances honest: public-rise (650ms ease-out, 120/220/320ms stagger) is the entrance grammar."
+    ],
+    "donts": [
+      "Don't extend the frozen legacy substrate: Book Antiqua nav, .card-dark/.list-group-item (#222 Bootstrap-dark), .compose-modal gray (#5F5F5F), .profile-action-button steel (#2F4D6C). They are documented for recognition, not reuse.",
+      "Don't hard-code race colors in features; a hard-coded #0B2012 breaks the other three worlds.",
+      "Don't fill surfaces with gold — golds illuminate (text, lines, rings, icons), they don't paint walls.",
+      "Don't apply blackletter to body text, data, or buttons.",
+      "Don't introduce new accent hues per feature; accents come from the race brand ramp or throne-gold (the isolated social gradient pair is the sanctioned exception, not a precedent).",
+      "Don't float soft ambient shadows on resting surfaces — the Chisel Rule."
+    ]
+  }
+}

@@ -1,5 +1,16 @@
+import {
+  Badge,
+  Button,
+  Group,
+  Pagination,
+  Skeleton,
+  Table,
+  Text,
+} from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React from 'react';
-import { Table, Button, Box, Text, Badge, Group, Pagination, UnstyledButton, Skeleton } from '@mantine/core';
+
+import { StyledTable } from './game/StyledTable';
 
 interface UserSummary {
   id: string;
@@ -8,12 +19,16 @@ interface UserSummary {
   status: string;
   lastActive?: Date | string;
   permissions?: string[];
+  staffRoles?: string[];
 }
 
 interface UserListProps {
   users: UserSummary[];
   onEditUser: (userId: string) => void;
+  onImpersonateUser: (userId: string) => void;
+  isAdministrator: boolean;
   isLoading: boolean;
+  isImpersonating: boolean;
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -22,10 +37,23 @@ interface UserListProps {
   onSortChange: (field: string) => void;
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  ACTIVE: 'green',
+  VACATION: 'blue',
+  IDLE: 'orange',
+  INACTIVE: 'gray',
+  SUSPENDED: 'yellow',
+  BANNED: 'red',
+  CLOSED: 'gray',
+};
+
 const UserList: React.FC<UserListProps> = ({
   users,
   onEditUser,
+  onImpersonateUser,
+  isAdministrator,
   isLoading,
+  isImpersonating,
   page,
   totalPages,
   onPageChange,
@@ -33,108 +61,94 @@ const UserList: React.FC<UserListProps> = ({
   sortOrder,
   onSortChange,
 }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE': return 'green';
-      case 'VACATION': return 'blue';
-      case 'SUSPENDED': return 'yellow';
-      case 'BANNED': return 'red';
-      case 'CLOSED': return 'gray';
-      default: return 'gray';
-    }
-  };
-
+  const { t } = useTranslation('admin-users');
   const formatDate = (date: Date | string | undefined) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString();
+    if (!date) return t('fields.unknown');
+    const parsed = new Date(date);
+    return Number.isNaN(parsed.getTime())
+      ? t('fields.unknown')
+      : new Intl.DateTimeFormat(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }).format(parsed);
   };
 
-  const renderSortLabel = (field: string, label: string) => (
-    <UnstyledButton
-      onClick={() => onSortChange(field)}
-      style={{ fontWeight: sortBy === field ? 'bold' : undefined }}
-    >
-      {label}
-      {sortBy === field ? (sortOrder === 'asc' ? ' ▲' : ' ▼') : ''}
-    </UnstyledButton>
-  );
+  if (isLoading)
+    return <Skeleton height={200} aria-label={t('states.loading')} />;
+  if (users.length === 0) return <Text c="dimmed">{t('states.noUsers')}</Text>;
 
+  const sortableHeader = (field: string, label: string) => (
+    <Table.Th key={field}>
+      <Button
+        variant="subtle"
+        size="compact-sm"
+        onClick={() => onSortChange(field)}
+        aria-label={t('actions.sortBy', { field: label })}
+      >
+        {label}
+        {sortBy === field ? (sortOrder === 'asc' ? ' ↑' : ' ↓') : ''}
+      </Button>
+    </Table.Th>
+  );
   const rows = users.map((user) => (
     <Table.Tr key={user.id}>
       <Table.Td>{user.id}</Table.Td>
-      <Table.Td>{user.username}</Table.Td>
-      <Table.Td>{user.email || 'N/A'}</Table.Td>
+      <Table.Td style={{ overflowWrap: 'anywhere' }}>{user.username}</Table.Td>
+      <Table.Td style={{ overflowWrap: 'anywhere' }}>
+        {user.email || t('fields.unknown')}
+      </Table.Td>
       <Table.Td>
-        <Badge color={getStatusColor(user.status)}>
-          {user.status || 'N/A'}
+        <Badge color={STATUS_COLORS[user.status] ?? 'gray'}>
+          {user.status || t('fields.unknown')}
         </Badge>
       </Table.Td>
       <Table.Td>{formatDate(user.lastActive)}</Table.Td>
       <Table.Td>
-        <Group gap="xs">
+        <Group gap="xs" wrap="wrap">
           <Button size="xs" onClick={() => onEditUser(user.id)}>
-            Edit
+            {isAdministrator ? t('actions.edit') : t('actions.inspect')}
           </Button>
+          {isAdministrator && (
+            <Button
+              size="xs"
+              variant="light"
+              color="violet"
+              disabled={isImpersonating}
+              onClick={() => onImpersonateUser(user.id)}
+            >
+              {t('actions.impersonate')}
+            </Button>
+          )}
         </Group>
       </Table.Td>
     </Table.Tr>
   ));
 
   return (
-    <Box>
-      {isLoading ? (
-        <Box>
-          <Table striped withTableBorder>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th><Skeleton height={12} width="5%" radius="sm" /></Table.Th>
-                <Table.Th><Skeleton height={12} width="15%" radius="sm" /></Table.Th>
-                <Table.Th><Skeleton height={12} width="25%" radius="sm" /></Table.Th>
-                <Table.Th><Skeleton height={12} width="10%" radius="sm" /></Table.Th>
-                <Table.Th><Skeleton height={12} width="20%" radius="sm" /></Table.Th>
-                <Table.Th><Skeleton height={12} width="10%" radius="sm" /></Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {Array.from({ length: 10 }).map((_, index) => ( // Show 10 skeleton rows
-                <Table.Tr key={index}>
-                  <Table.Td><Skeleton height={8} radius="sm" /></Table.Td>
-                  <Table.Td><Skeleton height={8} radius="sm" /></Table.Td>
-                  <Table.Td><Skeleton height={8} radius="sm" /></Table.Td>
-                  <Table.Td><Skeleton height={8} radius="sm" /></Table.Td>
-                  <Table.Td><Skeleton height={8} radius="sm" /></Table.Td>
-                  <Table.Td><Skeleton height={8} width="70%" radius="sm" /></Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-          <Group justify="center" mt="md">
-            <Skeleton height={36} width={200} radius="sm" />
-          </Group>
-        </Box>
-      ) : users.length === 0 ? (
-        <Text>No users found matching your search criteria.</Text>
-      ) : (
-        <>
-          <Table striped withTableBorder>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{renderSortLabel('id', 'ID')}</Table.Th>
-                <Table.Th>{renderSortLabel('username', 'Username')}</Table.Th>
-                <Table.Th>{renderSortLabel('email', 'Email')}</Table.Th>
-                <Table.Th>{renderSortLabel('status', 'Status')}</Table.Th>
-                <Table.Th>{renderSortLabel('lastActive', 'Last Active')}</Table.Th>
-                <Table.Th>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>{rows}</Table.Tbody>
-          </Table>
-          <Group justify="center" mt="md">
-            <Pagination value={page} onChange={onPageChange} total={totalPages} />
-          </Group>
-        </>
+    <>
+      <StyledTable
+        headers={[
+          sortableHeader('id', t('columns.id')),
+          sortableHeader('username', t('columns.username')),
+          sortableHeader('email', t('columns.email')),
+          <Table.Th key="status">{t('columns.status')}</Table.Th>,
+          sortableHeader('lastActive', t('columns.lastActive')),
+          <Table.Th key="actions">{t('columns.actions')}</Table.Th>,
+        ]}
+      >
+        {rows}
+      </StyledTable>
+      {totalPages > 1 && (
+        <Group justify="center" mt="md">
+          <Pagination
+            value={page}
+            onChange={onPageChange}
+            total={totalPages}
+            aria-label={t('pagination.label')}
+          />
+        </Group>
       )}
-    </Box>
+    </>
   );
 };
 

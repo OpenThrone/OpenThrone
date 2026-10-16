@@ -1,0 +1,17 @@
+.content { padding-top: 8px; gap: 16px; }
+.sidebar { position: relative; background: transparent; }
+
+@media (min-width: 1280px) {
+  .sidebar::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    pointer-events: none;
+    border: 1px solid var(--ot-border);
+    background: linear-gradient(90deg, var(--ot-inset), var(--ot-brand), var(--ot-inset));
+    box-shadow: 4px 0 8px rgba(0, 0, 0, .4);
+  }
+}

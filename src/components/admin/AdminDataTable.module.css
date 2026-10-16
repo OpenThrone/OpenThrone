@@ -1,0 +1,16 @@
+.table {
+  background: var(--ot-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.table tbody tr {
+  background: var(--ot-surface);
+}
+
+.table tbody tr:nth-of-type(odd) {
+  background: var(--ot-surface-2);
+}
+
+.table tbody tr:hover {
+  background: var(--ot-surface-2);
+}

@@ -1,61 +1,64 @@
-'use server';
-import prisma from "@/lib/prisma";
-import { attackHandler } from '@/app/actions';
+import { z } from 'zod';
+
 import { withAuth } from '@/middleware/auth';
-import { simulateBattle } from "@/utils/attackFunctions";
-import UserModel from "@/models/Users";
-import { stringifyObj } from "@/utils/numberFormatting";
+import { BattleService } from '@/services';
+import { isAdmin } from '@/utils/authorization';
+import { logError } from '@/utils/logger';
+
+const BattleTestSchema = z.object({
+  aId: z.coerce.number().int().optional(),
+  dId: z.coerce.number().int(),
+});
 
 const handler = async (req, res) => {
-  const session = req.session;
+  const { session } = req;
   if (session) {
+    const sessionUserId = parseInt(session.user.id.toString());
+    // Simulation output reveals hidden defender values, so site admins only.
+    if (!(await isAdmin(sessionUserId))) {
+      return res.status(403).json({ status: 'failed', message: 'Forbidden' });
+    }
 
-    let myUser = await prisma?.users.findUnique({
-      where: { id: parseInt(session.user.id) },
-    });
-
-    if ((myUser.id === 1 || myUser.id === 2) && req.query.aId !== undefined) {
-      myUser = await prisma?.users.findUnique({
-        where: { id: parseInt(req.query.aId) },
+    const validatedQuery = BattleTestSchema.safeParse(req.query);
+    if (!validatedQuery.success) {
+      return res.status(400).json({
+        status: 'failed',
+        msg: 'Invalid query parameters',
+        details: validatedQuery.error.flatten().fieldErrors,
       });
     }
-      
 
-    if (!myUser) {
-      return res.status(400).json({ status: 'failed', msg: 'Attacker not found' });
+    let attackerId = sessionUserId;
+
+    // Admins may choose the attacker.
+    if (validatedQuery.data.aId !== undefined) {
+      attackerId = validatedQuery.data.aId;
     }
 
-    if (req.query.dId === undefined) {
-      return res.status(400).json({ status: 'failed', msg: 'Defender ID "dId" not set' });
+    if (validatedQuery.data.dId === undefined) {
+      return res
+        .status(400)
+        .json({ status: 'failed', msg: 'Defender ID "dId" not set' });
     }
 
-    const dUser = await prisma?.users.findUnique({
-      where: { id: parseInt(req.query.dId) },
-    });
+    const defenderId = validatedQuery.data.dId;
 
-    /*if (req.body.turns > myUser.attack_turns) {
-      return res.status(400).json({ status: 'failed' });
-    }*/
+    try {
+      const result = await BattleService.simulateBattle({
+        attackerId,
+        defenderId,
+        turns: 10,
+      });
 
-    const attacker = new UserModel(JSON.parse(JSON.stringify(stringifyObj(myUser))));
-    const defender = new UserModel(JSON.parse(JSON.stringify(stringifyObj(dUser))));
-
-    const results = await simulateBattle(
-      attacker,
-      defender,
-      10
-    );
-
-    return res.status(200).json({
-      'Attacker': results.attacker.displayName, 
-      'Defender': results.defender.displayName,
-      'AttackerResult': results.experienceResult.Result,
-      'AttackerLosses': results.Losses.Attacker.total,
-      'DefenderLosses': results.Losses.Defender.total,
-      'PillagedGold': results.pillagedGold.toString(),
-      'XPEarned': results.experienceResult.Experience,
-      'FortDmg': defender.fortHitpoints - results.fortHitpoints,
-    });
+      return res.status(200).json(result);
+    } catch (error) {
+      logError('Battle test error:', error);
+      return res
+        .status(500)
+        .json({ status: 'failed', message: 'Internal server error' });
+    }
   }
-}
- export default withAuth(handler);
+  return res.status(401).json({ status: 'failed', message: 'Unauthorized' });
+};
+
+export default withAuth(handler);

@@ -1,43 +1,43 @@
 // pages/api/social/remove.ts
-import prisma from "@/lib/prisma";
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
+
+import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
-import { z } from 'zod';
+import { SocialService } from '@/services/Social.service';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
+import { emitSocialCountUpdate } from '@/utils/socialNotifications';
 
-const RemoveSocialSchema = z.object({
-  friendId: z.number().int(),
-  relationshipType: z.enum(['FRIEND', 'ENEMY'])
-});
-
-const removeSocialRelation = async (req: NextApiRequest, res: NextApiResponse) => {
+const removeSocialRelation = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) => {
   if (req.method !== 'POST') {
     return res.status(405).end();
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const parseResult = RemoveSocialSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid request body', details: parseResult.error.flatten().fieldErrors });
-  }
-
-  const { friendId, relationshipType } = parseResult.data;
+  const { friendId, relationshipType } = req.body ?? {};
   const playerId = session.user.id;
 
   try {
-    await prisma.social.deleteMany({
-      where: {
-        playerId,
-        friendId,
-        relationshipType,
-      },
+    const result = await SocialService.removeRelationship(playerId, {
+      friendId,
+      relationshipType,
     });
-    res.status(200).json({ message: 'Relationship removed successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to remove relationship' });
+
+    if (relationshipType === 'FRIEND') {
+      await emitSocialCountUpdate(getSocketIO(), Number(friendId));
+    }
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    logError('Error removing relationship:', error);
+    res.status(400).json({ error: error.message });
   }
 };
 

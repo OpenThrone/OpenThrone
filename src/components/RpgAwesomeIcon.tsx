@@ -1,6 +1,8 @@
-import React from 'react';
+/* eslint-disable tailwindcss/no-custom-classname */
 import clsx from 'clsx';
-import { color } from 'bun';
+import React from 'react';
+
+const EMPTY_STYLE: React.CSSProperties = {};
 
 interface RpgAwesomeIconProps {
   icon: string;
@@ -17,6 +19,7 @@ interface RpgAwesomeIconProps {
   flip?: 'horizontal' | 'vertical' | 'both';
   stack?: '1x' | '2x';
   onClick?: () => void;
+  'aria-hidden'?: boolean;
 }
 
 /**
@@ -27,7 +30,7 @@ const RpgAwesomeIcon: React.FC<RpgAwesomeIconProps> = ({
   icon,
   size,
   className = '',
-  style = {},
+  style = EMPTY_STYLE,
   color,
   fw = false,
   spin = false,
@@ -54,21 +57,14 @@ const RpgAwesomeIcon: React.FC<RpgAwesomeIconProps> = ({
       [`ra-flip-${flip}`]: flip,
       [`ra-stack-${stack}`]: stack,
     },
-    className
+    className,
   );
 
   // Merge style with color if provided
-  const mergedStyle = color
-    ? { ...style, color }
-    : style;
+  const mergedStyle = color ? { ...style, color } : style;
 
   return (
-    <i 
-      className={classes} 
-      style={mergedStyle} 
-      onClick={onClick} 
-      {...rest} 
-    />
+    <i className={classes} style={mergedStyle} onClick={onClick} {...rest} />
   );
 };
 

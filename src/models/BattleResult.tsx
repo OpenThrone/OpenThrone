@@ -1,31 +1,114 @@
-import type { BattleUnits, PlayerUnit } from '@/types/typings';
+import type { BattleUnits } from '@/types/typings';
 
-import BattleSimulationResult from './BattleSimulationResult';
-import type UserModel from './Users';
-import { stringifyObj } from '@/utils/numberFormatting';
-import result from '@/pages/account/password-reset/result';
-import mtRand from '@/utils/mtrand';
+/** Only public combat state may cross the engine's outcome boundary. */
+interface BattleActorInput {
+  id?: number | string;
+  displayName?: string;
+  race?: string;
+  class?: string;
+  experience?: number;
+  level?: number;
+  population?: number;
+  fortLevel?: number;
+  fortHitpoints?: number;
+  houseLevel?: number;
+  gold?: bigint;
+  attackTurns?: number;
+  stamina?: number;
+  offense?: number;
+  defense?: number;
+  spy?: number;
+  sentry?: number;
+  attackBonus?: number;
+  defenseBonus?: number;
+  spyBonus?: number;
+  sentryBonus?: number;
+  units?: BattleUnits[];
+  mercenaries?: BattleUnits[];
+}
 
+interface BattleActorSnapshot extends Omit<
+  BattleActorInput,
+  'gold' | 'units' | 'mercenaries'
+> {
+  gold: string;
+  units: BattleUnits[];
+  mercenaries: BattleUnits[];
+}
+
+function captureBattleActor(user: BattleActorInput): BattleActorSnapshot {
+  return {
+    id: user.id,
+    displayName: user.displayName,
+    race: user.race,
+    class: user.class,
+    experience: user.experience,
+    level: user.level,
+    population: user.population,
+    fortLevel: user.fortLevel,
+    fortHitpoints: user.fortHitpoints,
+    houseLevel: user.houseLevel,
+    gold: (user.gold ?? 0n).toString(),
+    attackTurns: user.attackTurns,
+    stamina: user.stamina,
+    offense: user.offense,
+    defense: user.defense,
+    spy: user.spy,
+    sentry: user.sentry,
+    attackBonus: user.attackBonus,
+    defenseBonus: user.defenseBonus,
+    spyBonus: user.spyBonus,
+    sentryBonus: user.sentryBonus,
+    units: (user.units ?? []).map(
+      ({ id, userId, type, level, quantity, isMercenary, currentHP }) => ({
+        id,
+        userId,
+        type,
+        level,
+        quantity,
+        isMercenary,
+        currentHP,
+      }),
+    ),
+    mercenaries: (user.mercenaries ?? []).map(
+      ({ id, userId, type, level, quantity, isMercenary, currentHP }) => ({
+        id,
+        userId,
+        type,
+        level,
+        quantity,
+        isMercenary,
+        currentHP,
+      }),
+    ),
+  };
+}
+
+/** A group of recovering units of one type/level. */
+interface WoundedUnitGroup {
+  type: string;
+  level: number;
+  quantity: number;
+  isMercenary: boolean;
+}
+
+/** Models battle result behavior and derived game data. */
 class BattleResult {
-  attacker: UserModel;
+  attacker: BattleActorSnapshot;
 
-  defender: UserModel;
+  defender: BattleActorSnapshot;
 
   fortHitpoints: number;
 
   turnsTaken: number;
 
-  experienceResult: BattleSimulationResult;
-
-  pillagedGold: number | BigInt | undefined;
+  pillagedGold: bigint;
 
   experienceGained: { attacker: number; defender: number };
 
   finalFortHP: number;
 
   fortDamaged: boolean;
-
-  strength: any[];
 
   result: 'WIN' | 'LOSS' | 'UNDECIDED';
 
@@ -45,33 +128,115 @@ class BattleResult {
     attackerTotal: number;
     defenderTotal: number;
     fortDamage: number;
+    mitigation?: {
+      averageMultiplier: number;
+      minMultiplier: number;
+      maxMultiplier: number;
+      samples: number;
+    };
+    fortBreached?: boolean;
+    battleStats?: { attacker: any; defender: any };
+    wounded?: {
+      attacker: WoundedUnitGroup[];
+      defender: WoundedUnitGroup[];
+    };
+    routedStacks?: BattleResult['routedStacks'];
   };
+
+  mitigationLog: Array<{
+    turn: number;
+    source: 'ATTACKER' | 'DEFENDER';
+    attackType: 'MELEE' | 'RANGED';
+    rawDamage: number;
+    mitigatedDamage: number;
+    fortSoakMultiplier: number;
+    mitigationMultiplier: number;
+    fortHpStart: number;
+    fortHpEnd: number;
+    fortHpRatio: number;
+    defenderFortLevel?: number;
+    defenderFortMitigationPct?: number;
+    defenderCasualtyBonusPct?: number;
+    defenderStructureMitigationPct?: number;
+    totalMitigationPct?: number;
+    fortBreached: boolean;
+    includeCitz: boolean;
+    includeOffense: boolean;
+  }>;
 
   Losses: {
     Attacker: {
       total: number;
-      units: BattleUnits[]
+      units: BattleUnits[];
     };
     Defender: {
       total: number;
-      units: BattleUnits[]
+      units: BattleUnits[];
     };
-
-    
   };
 
-  constructor(attacker: UserModel, defender: UserModel) {
-    this.attacker = JSON.parse(JSON.stringify(stringifyObj(attacker))); // deep copy but we don't need email, passwordHash, goldInBank, bio, colorScheme
-    this.defender = JSON.parse(JSON.stringify(stringifyObj(defender))); // deep copy but same as above
+  /** Units removed from rosters but recovering: return via daily healing. */
+  wounded: {
+    attacker: WoundedUnitGroup[];
+    defender: WoundedUnitGroup[];
+  };
+
+  /** Stacks that hit the per-battle casualty cap and were forced to withdraw. */
+  routedStacks: Array<{
+    side: 'Attacker' | 'Defender';
+    type: string;
+    level: number;
+    lost: number;
+    initialQuantity: number;
+  }>;
+
+  /** Single source of truth for the raid verdict; result/XP/logs derive from it. */
+  canonicalOutcome?: {
+    winner: 'ATTACKER' | 'DEFENDER';
+    reason:
+      | 'DEFENSE_WIPED'
+      | 'FORT_BREACHED'
+      | 'ASSAULT_SUCCEEDED'
+      | 'ATTACKER_REPELLED'
+      | 'DEFENDER_HELD';
+    attackerValueLost: number;
+    defenderValueLost: number;
+    fortValueDamage: number;
+    pillagedGoldValue: number;
+    netGainValue: number;
+    defenseUnitsBroken: number;
+    assaultSucceeded: boolean;
+  };
+
+  defenderStats: {
+    defenseRemaining: number;
+    meleeAtkPower: number;
+    meleeDefPower: number;
+    rangedAtkPower: number;
+    rangedDefPower: number;
+  };
+
+  attackerStats: {
+    offenseRemaining: number;
+    meleeAtkPower: number;
+    meleeDefPower: number;
+    rangedAtkPower: number;
+    rangedDefPower: number;
+  };
+
+  constructor(attacker: BattleActorInput, defender: BattleActorInput) {
+    this.attacker = captureBattleActor(attacker);
+    this.defender = captureBattleActor(defender);
     this.fortHitpoints = 0;
     this.turnsTaken = 0;
-    this.experienceResult = new BattleSimulationResult();
-    this.pillagedGold = 0;
+    this.pillagedGold = BigInt(0);
     this.experienceGained = { attacker: 0, defender: 0 };
     this.finalFortHP = 0;
     this.fortDamaged = false;
-    this.strength = [];
-    this.result = 'UNDECIDED';
+    this.result = 'UNDECIDED'; // Default value, will be set by calculateAndApplyExperience
+    this.mitigationLog = [];
+    this.wounded = { attacker: [], defender: [] };
+    this.routedStacks = [];
     this.Losses = {
       Attacker: {
         total: 0,
@@ -83,58 +248,6 @@ class BattleResult {
       },
     };
   }
-
-  calculateResult(attacker: UserModel, defender: UserModel): 'WIN' | 'LOSS' | 'UNDECIDED' {
-    //TODO: need to really flesh this out
-    if (attacker.offense > defender.defense) {
-      // Attacker Wins
-      return 'WIN';
-    } else {
-      // Defender Wins
-      return 'LOSS';
-    }
-  }
-
-  distributeCasualties(units: BattleUnits[], casualties: number): BattleUnits[] {
-    let distributedCasualties = 0;
-    const killedUnits: BattleUnits[] = [];
-
-    // Calculate the max number of citizens and workers that can be at risk
-    const totalCitizens = units.filter(unit => unit.type === 'CITIZEN').reduce((sum, unit) => sum + unit.quantity, 0);
-    const totalWorkers = units.filter(unit => unit.type === 'WORKER').reduce((sum, unit) => sum + unit.quantity, 0);
-    const maxRiskCitizens = Math.floor(totalCitizens * 0.25);
-    const maxRiskWorkers = Math.floor(totalWorkers * 0.25);
-
-    for (const unit of units) {
-      let unitCasualties = 0;
-
-      if (unit.type === 'CITIZEN' || unit.type === 'WORKER') {
-        const maxRiskUnits = unit.type === 'CITIZEN' ? maxRiskCitizens : maxRiskWorkers;
-        const riskUnits = Math.min(unit.quantity, maxRiskUnits);
-        unitCasualties = Math.min(riskUnits, casualties - distributedCasualties);
-      } else {
-        unitCasualties = Math.min(unit.quantity, casualties - distributedCasualties);
-      }
-
-      distributedCasualties += unitCasualties;
-      unit.quantity -= unitCasualties;
-
-      if (unitCasualties > 0) {
-        killedUnits.push({
-          level: unit.level,
-          type: unit.type,
-          quantity: unitCasualties,
-        });
-      }
-
-      if (distributedCasualties >= casualties) {
-        break;
-      }
-    }
-
-    return killedUnits;
-  }
-
 }
 
 export default BattleResult;

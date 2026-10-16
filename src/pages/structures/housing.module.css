@@ -1,4 +1,5 @@
 .card {
+  min-width: 0;
   position: relative;
   overflow: visible;
   padding: var(--mantine-spacing-xl);
@@ -13,7 +14,7 @@
 
 .title {
   font-family:
-    Greycliff CF,
-    var(--mantine-font-family);
-  line-height: 1;
+    'MedievalSharp',
+    serif;
+  line-height: 1.3;
 }

@@ -1,0 +1,249 @@
+.input {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.input:focus,
+.input:focus-within {
+  border-color: var(--ot-accent);
+  box-shadow: 0 0 0 1px var(--ot-accent);
+}
+
+.input[data-error] {
+  border-color: var(--mantine-color-error);
+}
+
+.input::placeholder,
+.input input::placeholder {
+  color: var(--ot-muted);
+  opacity: 1;
+}
+
+.button,
+.actionIcon {
+  font-family: MedievalSharp, serif;
+  letter-spacing: 0.035em;
+  flex-shrink: 0;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 60ms ease;
+}
+
+/* Filled = forged metal plate. Mantine supplies the variant-specific
+   background/border for filled vs default; these win on typography,
+   corner treatment, inset highlight and pressed state for both. */
+.button {
+  min-height: 36px;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--ot-heading);
+  text-shadow: 0 1px 0 rgba(4, 3, 1, 0.92);
+}
+
+.button[data-size='xs'] {
+  min-height: 28px;
+  padding-inline: 10px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.button:hover:not([data-disabled]) {
+  transform: translateY(-1px);
+  border-color: var(--ot-heading);
+  box-shadow:
+    inset 0 1px 0 var(--ot-heading),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.65),
+    0 4px 8px rgba(0, 0, 0, 0.7);
+}
+
+.button:active:not([data-disabled]) {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+  text-shadow: none;
+}
+
+.button[data-loading] {
+  /* Mantine wraps the label in .mantine-Button-label; keep the spinner
+     from stretching the 36px min-height and clipping the glow. */
+  box-shadow:
+    inset 0 1px 0 var(--ot-heading),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.65),
+    0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.actionIcon {
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 2px;
+  border-width: 1px;
+  border-style: solid;
+  font-family: MedievalSharp, serif;
+}
+
+.button:focus-visible,
+.actionIcon:focus-visible,
+.navLink:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: 2px;
+}
+
+.button[data-disabled],
+.actionIcon[data-disabled] {
+  opacity: 0.65;
+  box-shadow: none;
+}
+
+.dialogTitle {
+  font-family: MedievalSharp, serif;
+  font-size: var(--mantine-font-size-lg);
+  color: var(--ot-heading);
+  overflow-wrap: anywhere;
+}
+
+.dialogHeader {
+  gap: var(--mantine-spacing-sm);
+}
+
+.navLink {
+  border-radius: var(--mantine-radius-sm);
+  color: var(--ot-body);
+}
+
+.navLink:hover {
+  background: var(--ot-surface-2);
+}
+
+.navLink[data-active] {
+  color: var(--ot-brand-text);
+  background: var(--ot-surface-2);
+  box-shadow: inset 0 0 0 1px var(--ot-brand);
+}
+
+.navLabel {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ---- shared (all Tabs variants) ---- */
+.tabList {
+  flex-wrap: wrap;
+  border-color: var(--ot-line);
+}
+
+.tab {
+  font-family: MedievalSharp, serif;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: var(--ot-muted);
+  min-height: 40px;
+  white-space: normal;
+  border-radius: 2px;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.tab[data-active] {
+  color: var(--ot-heading);
+  border-color: var(--ot-accent);
+}
+
+/* ---- pills only: recessed stone well + inlaid brass plaque ---- */
+.tabList[data-variant='pills'] {
+  /* neutralize Mantine's yellow list fill, build the well */
+  --tabs-color: transparent;
+  --tab-bg: transparent;
+  --tab-hover-color: transparent;
+  --tabs-list-gap: 4px;
+  padding: 5px;
+  gap: 4px;
+  background: var(--ot-inset);
+  border: 1px solid var(--ot-line);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.75),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.tabList[data-variant='pills'] .tab {
+  color: var(--ot-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding-inline: 18px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.85);
+}
+
+.tabList[data-variant='pills'] .tab:hover:not([data-disabled]) {
+  color: var(--ot-heading);
+  background: color-mix(in srgb, var(--ot-brand) 22%, var(--ot-surface-2));
+  border-color: var(--ot-line);
+}
+
+.tabList[data-variant='pills'] .tab[data-active] {
+  color: var(--ot-heading);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ot-accent) 42%, var(--ot-surface-2)),
+    var(--ot-inset)
+  );
+  border: 1px solid var(--ot-accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9);
+}
+
+.tabList[data-variant='pills'] .tab[data-disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.table {
+  color: var(--ot-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.tableHeader {
+  color: var(--ot-heading);
+  background: var(--ot-surface-2);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input {
+    transition: none;
+  }
+}
+
+:global(body.reduced-motion) .input {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .actionIcon,
+  .tab,
+  .tabList {
+    transition: none;
+  }
+  .button:hover:not([data-disabled]),
+  .button:active:not([data-disabled]) {
+    transform: none;
+  }
+}
+:global(body.reduced-motion) :is(.button, .actionIcon, .tab, .tabList) {
+  transition: none;
+}

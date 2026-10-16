@@ -1,52 +1,56 @@
-// pages/battle/history.tsx
-
+import { faScroll } from '@fortawesome/free-solid-svg-icons';
+import { Group, Pagination, useMantineTheme } from '@mantine/core';
+import type { InferGetServerSidePropsType } from 'next';
 import { getSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
+
 import AttackLogTable from '@/components/AttackLog';
-import prisma from '@/lib/prisma';
-import { Pagination } from '@mantine/core';
-import { InferGetServerSidePropsType } from "next";
+import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
+import prisma from '@/lib/prisma';
+import { redactAttackLogForViewer } from '@/services/AttackLogAccess.service';
+import { ensureActiveEra } from '@/services/Era.service';
+import { localePrefix } from '@/utils/localeRedirect';
 
-const ROWS_PER_PAGE = 5; // Match rows per page with Battle Users page
+const ROWS_PER_PAGE = 5;
 
-const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const WarHistory = ({
+  attackLogs,
+  defenseLogs,
+  viewerID,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('battle');
   const [attackPage, setAttackPage] = useState(1);
   const [defensePage, setDefensePage] = useState(1);
+  const theme = useMantineTheme();
 
-  // Calculate total pages
   const totalAttackPages = Math.ceil(attackLogs.length / ROWS_PER_PAGE);
   const totalDefensePages = Math.ceil(defenseLogs.length / ROWS_PER_PAGE);
 
-  // Slice the logs for the current page
   const currentAttackLogs = attackLogs.slice(
     (attackPage - 1) * ROWS_PER_PAGE,
-    attackPage * ROWS_PER_PAGE
+    attackPage * ROWS_PER_PAGE,
   );
 
   const currentDefenseLogs = defenseLogs.slice(
     (defensePage - 1) * ROWS_PER_PAGE,
-    defensePage * ROWS_PER_PAGE
+    defensePage * ROWS_PER_PAGE,
   );
 
   return (
-    <MainArea title="War History">
-
-      {/* Attack Log Section */}
-      <section className="mb-8">
-        <h2 className="mb-2 text-xl">Attack Log</h2>
-        <AttackLogTable logs={currentAttackLogs} type="attack" />
-
-        {/* Pagination for Attack Logs */}
-        <div className="mt-4 flex justify-between">
-          <button
-            type="button"
-            className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-            onClick={() => setAttackPage((prev) => Math.max(prev - 1, 1))}
-            disabled={attackPage === 1}
-          >
-            Previous
-          </button>
+    <MainArea title={t('warHistory.title')}>
+      <GameCard
+        title={t('warHistory.attackLog')}
+        icon={faScroll}
+        style={{ marginBottom: theme.spacing.md }}
+      >
+        <AttackLogTable
+          logs={currentAttackLogs}
+          type="attack"
+          viewerID={viewerID}
+        />
+        <Group justify="center" pt="md">
           <Pagination
             total={totalAttackPages}
             value={attackPage}
@@ -54,34 +58,16 @@ const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typ
             siblings={1}
             boundaries={1}
           />
-          <button
-            type="button"
-            className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-            onClick={() =>
-              setAttackPage((prev) => Math.min(prev + 1, totalAttackPages))
-            }
-            disabled={attackPage === totalAttackPages}
-          >
-            Next
-          </button>
-        </div>
-      </section>
+        </Group>
+      </GameCard>
 
-      {/* Defense Log Section */}
-      <section className="mb-8">
-        <h2 className="mb-2 text-xl">Defense Log</h2>
-        <AttackLogTable logs={currentDefenseLogs} type="defense" />
-
-        {/* Pagination for Defense Logs */}
-        <div className="mt-4 flex justify-between">
-          <button
-            type="button"
-            className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-            onClick={() => setDefensePage((prev) => Math.max(prev - 1, 1))}
-            disabled={defensePage === 1}
-          >
-            Previous
-          </button>
+      <GameCard title={t('warHistory.defenseLog')} icon={faScroll}>
+        <AttackLogTable
+          logs={currentDefenseLogs}
+          type="defense"
+          viewerID={viewerID}
+        />
+        <Group justify="center" pt="md">
           <Pagination
             total={totalDefensePages}
             value={defensePage}
@@ -89,22 +75,11 @@ const WarHistory = ({ attackLogs, defenseLogs }: InferGetServerSidePropsType<typ
             siblings={1}
             boundaries={1}
           />
-          <button
-            type="button"
-            className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-            onClick={() =>
-              setDefensePage((prev) => Math.min(prev + 1, totalDefensePages))
-            }
-            disabled={defensePage === totalDefensePages}
-          >
-            Next
-          </button>
-        </div>
-      </section>
+        </Group>
+      </GameCard>
     </MainArea>
   );
 };
-
 
 export const getServerSideProps = async (context: any) => {
   const session = await getSession(context);
@@ -112,52 +87,55 @@ export const getServerSideProps = async (context: any) => {
   if (!session || !userId) {
     return {
       redirect: {
-        destination: '/login',
+        destination: `${localePrefix(context.locale, context.defaultLocale)}/account/login`,
         permanent: false,
       },
     };
   }
-  // Fetch all attack logs where the user is the attacker
-  const attackLogs = await prisma.attack_log.findMany({
-    where: { attacker_id: userId, type: 'attack' },
-    include: {
-      attackerPlayer: {
-        select: { id: true, display_name: true, avatar: true },
-      },
-      defenderPlayer: {
-        select: { id: true, display_name: true, avatar: true },
-      },
-    },
-    orderBy: { timestamp: 'desc' },
-  });
 
-  // Fetch all defense logs where the user is the defender
-  const defenseLogs = await prisma.attack_log.findMany({
-    where: {
-      defender_id: userId,
-      OR: [{ type: 'attack' }, { winner: userId }],
-    },
-    include: {
-      attackerPlayer: {
-        select: { id: true, display_name: true },
-      },
-      defenderPlayer: {
-        select: { id: true, display_name: true },
-      },
-    },
-    orderBy: { timestamp: 'desc' },
-  });
+  const era = await ensureActiveEra();
 
+  const [attackLogs, defenseLogs] = await Promise.all([
+    prisma.attack_log.findMany({
+      where: {
+        attacker_id: userId,
+        type: 'attack',
+        timestamp: { gte: era.startDate },
+      },
+      include: {
+        attackerPlayer: {
+          select: { id: true, display_name: true, avatar: true },
+        },
+        defenderPlayer: {
+          select: { id: true, display_name: true, avatar: true },
+        },
+      },
+      orderBy: { timestamp: 'desc' },
+    }),
+    prisma.attack_log.findMany({
+      where: {
+        defender_id: userId,
+        timestamp: { gte: era.startDate },
+        OR: [{ type: 'attack' }, { winner: userId }],
+      },
+      include: {
+        attackerPlayer: { select: { id: true, display_name: true } },
+        defenderPlayer: { select: { id: true, display_name: true } },
+      },
+      orderBy: { timestamp: 'desc' },
+    }),
+  ]);
+
+  // Each side only receives its own allowlisted view of the log.
   return {
     props: {
-      attackLogs: attackLogs.map(log => ({
-        ...log,
-        timestamp: log.timestamp.toISOString(), // Convert to ISO string
-      })),
-      defenseLogs: defenseLogs.map(log => ({
-        ...log,
-        timestamp: log.timestamp.toISOString(), // Convert to ISO string
-      })),
+      viewerID: userId,
+      attackLogs: attackLogs.map((log) =>
+        redactAttackLogForViewer(log, 'attacker'),
+      ),
+      defenseLogs: defenseLogs.map((log) =>
+        redactAttackLogForViewer(log, 'defender'),
+      ),
     },
   };
 };

@@ -1,184 +1,306 @@
-/* eslint-disable jsx-a11y/anchor-is-valid */
+import { Badge, UnstyledButton } from '@mantine/core';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { signOut } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import { signOut, useSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import type { ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import Image from '@/components/ArtworkImage';
+import classes from '@/components/navLoggedIn.module.css';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
-import { Indicator } from '@mantine/core';
-
-import { PermissionType } from '@prisma/client';
+import type { PlayerRace } from '@/types/typings';
 import { getAssetPath } from '@/utils/utilities';
-import { PlayerRace } from '@/types/typings';
 
-const parentLinks = [
-  'Home',
-  'Battle',
-  'Structures',
-  //'Social',
-  // 'Alliances',
-  'Community',
-] as const;
+import MobileNavigation from './MobileNavigation';
+import RpgAwesomeIcon from './RpgAwesomeIcon';
 
-const subMenus: {
-  [K in (typeof parentLinks)[number]]?: {
-    text: string;
-    href: string;
-    parent: string;
-    target?: string;
+type NavItem = {
+  key: string;
+  href: string;
+  labelKey: string;
+  target?: string;
+};
 
-  }[];
-} = {
-  Home: [
-    { text: 'Overview', href: '/home/overview', parent: 'Home' },
-    { text: 'Levels', href: '/home/levels', parent: 'Home' },
-    { text: 'Profile', href: '/home/profile', parent: 'Home' },
-    { text: 'Settings', href: '/home/settings', parent: 'Home' },
+const parentLinks: NavItem[] = [
+  { key: 'home', href: '/home/overview', labelKey: 'main.home' },
+  { key: 'battle', href: '/battle/users', labelKey: 'main.battle' },
+  {
+    key: 'structures',
+    href: '/structures/bank/deposit',
+    labelKey: 'main.structures',
+  },
+  { key: 'alliances', href: '/alliances/browse', labelKey: 'main.alliances' },
+  { key: 'community', href: '/community/news', labelKey: 'main.community' },
+  { key: 'about', href: '/about', labelKey: 'main.about' },
+];
+
+const subMenus: Record<string, NavItem[]> = {
+  home: [
+    { key: 'overview', href: '/home/overview', labelKey: 'home.overview' },
+    { key: 'levels', href: '/home/levels', labelKey: 'home.levels' },
+    { key: 'profile', href: '/home/profile', labelKey: 'home.profile' },
+    { key: 'settings', href: '/home/settings', labelKey: 'home.settings' },
   ],
-  Battle: [
-    { text: 'Attack', href: '/battle/users', parent: 'Battle' },
-    { text: 'Training', href: '/battle/training', parent: 'Battle' },
-    { text: 'Upgrades', href: '/battle/upgrades', parent: 'Battle' },
-    { text: 'War History', href: '/battle/history', parent: 'Battle' },
-  ],
-  Social: [
-    { text: 'Friends', href: '/social/friends', parent: 'Social' },
-    { text: 'Enemies', href: '/social/enemies', parent: 'Social' },
-    { text: 'Requests', href: '/social/requests', parent: 'Social' },
-  ],
-  Structures: [
-    { text: 'Bank', href: '/structures/bank', parent: 'Structures' },
-    { text: 'Armory', href: '/structures/armory', parent: 'Structures' },
-    { text: 'Upgrades', href: '/structures/upgrades', parent: 'Structures' },
-    { text: 'Housing', href: '/structures/housing', parent: 'Structures' },
-    { text: 'Repair', href: '/structures/repair', parent: 'Structures' },
-  ],
-  // Alliances: [{ text: 'Test', href: '#' }],
-  Community: [
+  battle: [
+    { key: 'attack', href: '/battle/users', labelKey: 'battle.attack' },
+    { key: 'training', href: '/battle/training', labelKey: 'battle.training' },
+    { key: 'upgrades', href: '/battle/upgrades', labelKey: 'battle.upgrades' },
     {
-      text: 'News',
-      href: '/community/news',
-      parent: 'Community',
+      key: 'warHistory',
+      href: '/battle/history',
+      labelKey: 'battle.warHistory',
+    },
+  ],
+  structures: [
+    {
+      key: 'bank',
+      href: '/structures/bank/deposit',
+      labelKey: 'structures.bank',
     },
     {
-      text: 'Discord',
+      key: 'armory',
+      href: '/structures/armory/offense',
+      labelKey: 'structures.armory',
+    },
+    {
+      key: 'upgrades',
+      href: '/structures/upgrades/fortifications',
+      labelKey: 'structures.upgrades',
+    },
+    {
+      key: 'housing',
+      href: '/structures/housing',
+      labelKey: 'structures.housing',
+    },
+    {
+      key: 'repair',
+      href: '/structures/repair',
+      labelKey: 'structures.repair',
+    },
+  ],
+  community: [
+    { key: 'news', href: '/community/news', labelKey: 'community.news' },
+    {
+      key: 'discord',
       href: 'https://discord.gg/j9NYxmBCjA',
-      parent: 'Community',
+      labelKey: 'community.discord',
     },
-    { text: 'Auto Recruit', href: '/auto-recruit', parent: 'Community' },
-    { text: 'Stats', href: '/community/stats', parent: 'Community' },
+    { key: 'stats', href: '/community/stats', labelKey: 'community.stats' },
     {
-      text: 'Report Issues',
+      key: 'reportIssues',
       href: 'https://github.com/uaktags/OpenThrone/issues',
-      parent: 'Community',
+      labelKey: 'community.reportIssues',
       target: '_blank',
     },
   ],
+  alliances: [
+    { key: 'browse', href: '/alliances/browse', labelKey: 'alliances.browse' },
+    { key: 'create', href: '/alliances/create', labelKey: 'alliances.create' },
+  ],
+  about: [],
 };
 
-export const NavLoggedIn: React.FC = () => {
-  const pathName = usePathname();
-  const searchParms = useSearchParams();
-  const [activeSubMenu, setActiveSubMenu] = useState<
-    { text: string; href: string; parent: string, target?: string }[]
-  >([]);
-  const [activeParentLink, setActiveParentLink] = useState<string>('');
-  const [activeSubLink, setActiveSubLink] = useState<string>('');
+/** WebP heraldry crests available in public/assets/header/nav/. */
+const navCrestKeys: Record<string, true> = {
+  home: true,
+  battle: true,
+  structures: true,
+  alliances: true,
+  community: true,
+  about: true,
+  signout: true,
+};
 
-  const [defaultSubMenu, setDefaultSubMenu] = useState<
-    { text: string; href: string; parent: string }[]
-  >([]);
-  const [defaultParentLink, setDefaultParentLink] = useState<string>('');
+/** Leading RPG-Awesome glyph per submenu row; parent-scoped where keys collide. */
+const subMenuIcons: Record<string, string> = {
+  'home.overview': 'castle-flag',
+  'home.levels': 'ascending-block',
+  'home.profile': 'player',
+  'home.settings': 'gear-hammer',
+  'home.administration': 'rune-stone',
+  'battle.attack': 'crossed-swords',
+  'battle.training': 'muscle-up',
+  'battle.upgrades': 'anvil',
+  'battle.warHistory': 'scroll-unfurled',
+  'structures.bank': 'banknote',
+  'structures.armory': 'spiked-shield',
+  'structures.upgrades': 'hammer',
+  'structures.housing': 'house',
+  'structures.repair': 'hammer-drop',
+  'community.news': 'scroll-quill',
+  'community.discord': 'speech-bubble',
+  'community.stats': 'abacus',
+  'community.reportIssues': 'cracked-shield',
+  'alliances.browse': 'double-team',
+  'alliances.create': 'crown',
+};
+
+interface NavLoggedInProps {
+  sidebarContent?: ReactNode;
+  'data-tour-id'?: string;
+}
+
+/** Nav logged in. */
+export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
+  sidebarContent,
+  'data-tour-id': tourId,
+}) => {
+  const router = useRouter();
+  const pathName = router.asPath?.split('?')[0] ?? '/';
+  const { t: tCommon } = useTranslation('common');
+  const { t: tNav } = useTranslation('navigation');
+  const { data: session } = useSession();
+  const [activeSubMenu, setActiveSubMenu] = useState<NavItem[]>([]);
+  const [activeParentKey, setActiveParentKey] = useState<string>('');
+  const [activeSubKey, setActiveSubKey] = useState<string>('');
+
+  const [defaultSubMenu, setDefaultSubMenu] = useState<NavItem[]>([]);
+  const [defaultParentKey, setDefaultParentKey] = useState<string>('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const layoutCont = useLayout();
-  const { user } = useUser();
+  const [socialNotificationCount, setSocialNotificationCount] =
+    useState<number>(0);
+  const { user, unreadMessagesCount } = useUser();
+  const { raceClasses } = useLayout();
+  const menuRace = raceClasses.race as PlayerRace;
 
-  // Add the administration link only if the user has admin privileges
-  if (
-    user?.permissions?.some((perm) => perm.type === PermissionType.ADMINISTRATOR) &&
-    !subMenus.Home.some((subNav) => subNav.text === 'Administration')
-  ) {
-      subMenus.Home.push({
-        text: 'Administration',
-        href: '/home/admin',
-        parent: 'Home',
-      });
-  }
+  const hasAnyStaffAccess = user?.permissions && user.permissions.length > 0;
 
-  const handleParentClick = (event: React.MouseEvent, link: string) => {
-    event.preventDefault();
-    if (link === activeParentLink) {
-      setActiveParentLink('');
-      setActiveSubMenu([]);
-    } else {
-      setActiveParentLink(link);
-      setActiveSubMenu(subMenus[link as keyof typeof subMenus] || []);
-    }
+  const staffSubMenus = useMemo(() => {
+    if (!hasAnyStaffAccess) return [];
+    return [
+      {
+        key: 'administration',
+        href: '/home/admin/overview',
+        labelKey: 'home.administration',
+      },
+    ];
+  }, [hasAnyStaffAccess]);
 
-    // Close mobile menu
-    // setMobileMenuOpen(false);
-  };
+  const resolvedSubMenus: Record<string, NavItem[]> = useMemo(() => {
+    if (staffSubMenus.length === 0) return subMenus;
+    return {
+      ...subMenus,
+      home: [...subMenus.home, ...staffSubMenus],
+    };
+  }, [staffSubMenus]);
 
   useEffect(() => {
-    let currentPath = pathName?.split('/')[1]; // Extract the base path
-    let secondPath = pathName?.split('/')[2];
-    if (pathName === '/') {
+    const localePrefix = router.locale ? `/${router.locale}` : '';
+    const normalizedPath =
+      pathName.startsWith(localePrefix) && localePrefix !== '/'
+        ? pathName.slice(localePrefix.length) || '/'
+        : pathName;
+    const segments = normalizedPath.split('/').filter(Boolean);
+    let currentPath = segments[0];
+    let secondPath = segments[1];
+    if (normalizedPath === '/') {
       currentPath = 'home';
       secondPath = 'overview';
     }
 
-    if (currentPath === 'userprofile' || (currentPath === 'battle' && secondPath === 'users')) {
-      setActiveParentLink('Battle');
-      const subMenu = subMenus.Battle || [];
+    if (
+      currentPath === 'userprofile' ||
+      (currentPath === 'battle' && secondPath === 'users')
+    ) {
+      setActiveParentKey('battle');
+      const subMenu = resolvedSubMenus.battle || [];
       setActiveSubMenu(subMenu);
-      setActiveSubLink('Attack');
-      setDefaultParentLink('Battle');
-      setDefaultSubMenu(subMenus.Battle || []);
+      setActiveSubKey('attack');
+      setDefaultParentKey('battle');
+      setDefaultSubMenu(resolvedSubMenus.battle || []);
     } else if (secondPath === 'history') {
-      setActiveParentLink('Battle');
-      const subMenu = subMenus.Battle || [];
+      setActiveParentKey('battle');
+      const subMenu = resolvedSubMenus.battle || [];
       setActiveSubMenu(subMenu);
-      setActiveSubLink('War History');
-      setDefaultParentLink('Battle');
-      setDefaultSubMenu(subMenus.Battle || []);
-    } else if(currentPath === 'auto-recruit') {
-      setActiveParentLink('Community');
-      const subMenu = subMenus.Community || [];
+      setActiveSubKey('warHistory');
+      setDefaultParentKey('battle');
+      setDefaultSubMenu(resolvedSubMenus.battle || []);
+    } else if (currentPath === 'auto-recruit') {
+      setActiveParentKey('community');
+      const subMenu = resolvedSubMenus.community || [];
       setActiveSubMenu(subMenu);
-      setActiveSubLink('Auto Recruit');
-      setDefaultParentLink('Community');
-      setDefaultSubMenu(subMenus.Community || []);
+      setActiveSubKey('autoRecruit');
+      setDefaultParentKey('community');
+      setDefaultSubMenu(resolvedSubMenus.community || []);
+    } else if (currentPath === 'alliances') {
+      setActiveParentKey('alliances');
+      const subMenu = resolvedSubMenus.alliances || [];
+      setActiveSubMenu(subMenu);
+      if (secondPath === 'create') setActiveSubKey('create');
+      else setActiveSubKey('browse');
+
+      setDefaultParentKey('alliances');
+      setDefaultSubMenu(resolvedSubMenus.alliances || []);
     } else {
-      const activeLink = parentLinks.find(
-        (link) => link.toLowerCase() === currentPath
-      );
+      const activeLink = parentLinks.find((link) => link.key === currentPath);
       if (activeLink) {
-        setActiveParentLink(activeLink);
-        const subMenu = subMenus[activeLink] || [];
+        setActiveParentKey(activeLink.key);
+        const subMenu = resolvedSubMenus[activeLink.key] || [];
         setActiveSubMenu(subMenu);
 
-        // Find the active sub link
         const activeSubLinkItem = subMenu.find(
-          (item) => item.text.toLowerCase() === secondPath
+          (item) => item.key === secondPath,
         );
         if (activeSubLinkItem) {
-          setActiveSubLink(activeSubLinkItem.text);
+          setActiveSubKey(activeSubLinkItem.key);
         } else {
-          // Reset the active sub link if no match found
-          setActiveSubLink('');
+          setActiveSubKey('');
         }
-        setDefaultParentLink(activeLink);
-        setDefaultSubMenu(subMenus[activeLink] || []);
+        setDefaultParentKey(activeLink.key);
+        setDefaultSubMenu(resolvedSubMenus[activeLink.key] || []);
       }
     }
-  }, [pathName, searchParms]);
+  }, [pathName, router.locale, resolvedSubMenus]);
 
   const [resetTimer, setResetTimer] = useState<number | null>(null);
 
+  const fetchSocialNotifications = useCallback(async () => {
+    if (!user) return;
+    try {
+      const response = await fetch('/api/social/notifications/count');
+      if (!response.ok) return;
+      const data = await response.json();
+      setSocialNotificationCount(Number(data.count) || 0);
+    } catch {
+      // keep existing count on failure
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchSocialNotifications();
+    const focusHandler = () => fetchSocialNotifications();
+    const visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSocialNotifications();
+      }
+    };
+    const intervalId = window.setInterval(
+      fetchSocialNotifications,
+      2 * 60 * 1000,
+    );
+    window.addEventListener('focus', focusHandler);
+    document.addEventListener('visibilitychange', visibilityHandler);
+
+    return () => {
+      window.removeEventListener('focus', focusHandler);
+      document.removeEventListener('visibilitychange', visibilityHandler);
+      window.clearInterval(intervalId);
+    };
+  }, [fetchSocialNotifications]);
+
+  const handleQuickAction = useCallback(
+    (target: string) => () => {
+      setMobileMenuOpen(false);
+      router.push(target);
+    },
+    [router],
+  );
+
   const resetMenu = () => {
     const timer = window.setTimeout(() => {
-      setActiveParentLink(defaultParentLink);
+      setActiveParentKey(defaultParentKey);
       setActiveSubMenu(defaultSubMenu);
     }, 300);
     setResetTimer(timer);
@@ -191,125 +313,259 @@ export const NavLoggedIn: React.FC = () => {
       setResetTimer(null);
     }
   };
+  const allMenuItems: {
+    key: string;
+    label: string;
+    href?: string;
+    onClick?: () => void;
+    icon?: ReactNode;
+    children?: {
+      key: string;
+      label: string;
+      href?: string;
+      onClick?: () => void;
+      icon?: ReactNode;
+    }[];
+  }[] = parentLinks.map((parent) => {
+    const children = resolvedSubMenus[parent.key]?.map((item) => {
+      const subIcon = subMenuIcons[`${parent.key}.${item.key}`];
+      return {
+        key: item.key,
+        label: tNav(item.labelKey),
+        href: item.href,
+        icon: subIcon ? <RpgAwesomeIcon icon={subIcon} fw /> : undefined,
+      };
+    });
+    return {
+      key: parent.key,
+      label: tNav(parent.labelKey),
+      icon: navCrestKeys[parent.key] ? (
+        <Image
+          src={`/assets/header/nav/${parent.key}.webp`}
+          alt=""
+          width={24}
+          height={24}
+        />
+      ) : undefined,
+      children,
+    };
+  });
+
+  allMenuItems.push({
+    key: 'signout',
+    label: tNav('actions.signOut'),
+    onClick: () => signOut({ callbackUrl: '/' }),
+    icon: (
+      <Image
+        src="/assets/header/nav/signout.webp"
+        alt=""
+        width={24}
+        height={24}
+      />
+    ),
+  });
+
+  const notificationSum = unreadMessagesCount + socialNotificationCount;
+  const badgeLabel = notificationSum > 9 ? '9+' : `${notificationSum}`;
+  const isImpersonating = Boolean((session?.user as any)?.impersonatedBy);
+
+  const handleStopImpersonation = useCallback(async () => {
+    try {
+      await fetch('/api/admin/impersonate/stop', {
+        method: 'POST',
+      });
+    } finally {
+      await signOut({ callbackUrl: '/account/login' });
+    }
+  }, []);
+
+  if (isImpersonating) {
+    allMenuItems.push({
+      key: 'endImpersonation',
+      label: 'End Impersonation',
+      onClick: handleStopImpersonation,
+    });
+  }
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="block md:hidden"
+      <div
+        className={`flex justify-end py-0 pr-1 xl:hidden ${raceClasses.menuPrimaryClass}`}
+        style={{
+          backgroundImage: `url('${getAssetPath('top-menu', null, menuRace)}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
       >
-        {mobileMenuOpen ? 'Close' : 'Open'} Menu
-      </button>
-      <nav className={mobileMenuOpen ? 'block md:hidden' : 'hidden md:hidden'}>
-        <ul className="text-center text-xl">
-          {parentLinks.map((link) => (
-            <li className="mr-6" key={link}>
-              <Link
-                href="#"
-                className={`${activeParentLink === link
-                  ? 'bg-orange-gradient text-gradient-orange'
-                  : 'text-elf-link-link'
-                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-md text-shadow-color-black`}
-                onClick={(event) => handleParentClick(event, link)}
-              >
-                {link}
-              </Link>
-              {activeParentLink === link && (
-                <ul>
-                  {activeSubMenu.map((subLink) => (
-                    <li
-                      className="mr-6 pl-4"
-                      key={`${subLink.href}.${subLink.text}`}
-                    >
-                      <Link href={subLink.href} target={subLink.target ? subLink.target : '_self'}
-                        className={`border-none
-                      ${activeSubLink === subLink.text
-                            ? 'text-gradient-orange bg-orange-gradient'
-                            : 'text-elf-link-link'
-                          } bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow-xs
-                    `} >{subLink.text}</Link>                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      </nav>
+        <div className="relative">
+          <UnstyledButton
+            type="button"
+            className={`min-h-[48px] min-w-[48px] rounded-md p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange-400 ${
+              mobileMenuOpen
+                ? 'bg-white/10 text-orange-300'
+                : 'text-white hover:text-gray-200'
+            }`}
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label={tNav('ariaLabels.mobileMenuButton')}
+            aria-expanded={mobileMenuOpen}
+            data-testid="mobile-menu-button"
+          >
+            <svg
+              className={`size-6 transition-transform ${
+                mobileMenuOpen ? 'rotate-90' : ''
+              }`}
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </UnstyledButton>
+          {notificationSum > 0 && (
+            <Badge
+              color="red"
+              variant="filled"
+              size="xs"
+              className="absolute -right-1 -top-1"
+              aria-label={tCommon('ariaLabels.unreadNotifications', {
+                count: notificationSum,
+              })}
+            >
+              {badgeLabel}
+            </Badge>
+          )}
+        </div>
+      </div>
+      <MobileNavigation
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        menuItems={allMenuItems}
+        quickActions={{
+          unreadMessagesCount,
+          socialNotificationCount,
+          onMessagesClick: handleQuickAction('/messaging'),
+          onSocialClick: handleQuickAction('/social/requests'),
+          onSettingsClick: handleQuickAction('/home/settings'),
+        }}
+        sidebarContent={sidebarContent}
+        className="xl:hidden"
+      />
       <div onMouseLeave={resetMenu} onMouseEnter={clearReset}>
         <nav
-          className={`hidden h-10 ${layoutCont.raceClasses.menuPrimaryClass} md:block`}
-          style={{backgroundImage: `url('${getAssetPath('top-menu', null, user?.colorScheme)}')`}}
+          className={`hidden h-10 xl:block ${raceClasses.menuPrimaryClass} ${classes.primary}`}
+          style={{
+            backgroundImage: `url('${getAssetPath('top-menu', null, menuRace)}')`,
+          }}
+          data-tour-id={tourId}
+          aria-label={tNav('ariaLabels.mainNavigation')}
           onMouseEnter={clearReset}
         >
-          <div className="mx-auto max-w-screen-lg md:block justify-center">
-            <ul className="flex flex-wrap items-center justify-center text-center text-lg md:text-xl py-1">
-              {parentLinks.map((link) => {
-                return (
-                  <li className="px-4 lg:px-6 " key={link}>
-                    <Link
-                      href="/"
-                      className={`border-none ${
-                        activeParentLink === link
-                        ? 'bg-orange-gradient text-gradient-orange'
-                          : 'text-elf-link-link'
-                      }  text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-xs`}
-                      onMouseOver={() => {
-                        setActiveSubMenu(subMenus[link] || []);
-                      }}
-                    >
-                        {link}
-                    </Link>
-                  </li>
-                );
-              })}
-              <li className="xs:px-6 px-3" key={'signOut'}>
-                <button
-                  type="button"
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  className={`border-none ${
-                    activeParentLink === 'signout'
-                      ? 'text-elf-link-current'
-                      : 'text-elf-link-link'
-                  } text-uppercase-menu bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-sm`}
+          <ul className={classes.primaryList}>
+            {parentLinks.map((link) => (
+              <li key={link.key}>
+                <Link
+                  href={link.href}
+                  className={classes.navLink}
+                  data-active={activeParentKey === link.key || undefined}
+                  aria-current={
+                    defaultParentKey === link.key ? 'page' : undefined
+                  }
+                  onMouseOver={() =>
+                    setActiveSubMenu(resolvedSubMenus[link.key] || [])
+                  }
+                  onFocus={() =>
+                    setActiveSubMenu(resolvedSubMenus[link.key] || [])
+                  }
+                  onClick={() =>
+                    setActiveSubMenu(resolvedSubMenus[link.key] || [])
+                  }
+                  data-testid={`nav-${link.key}-link`}
                 >
-                  Sign Out
-                </button>
+                  <Image
+                    src={`/assets/header/nav/${link.key}.webp`}
+                    alt=""
+                    width={24}
+                    height={24}
+                    className={classes.icon}
+                  />
+                  <span>{tNav(link.labelKey)}</span>
+                </Link>
               </li>
-            </ul>
-          </div>
+            ))}
+            <li>
+              <UnstyledButton
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className={classes.navLink}
+                data-testid="desktop-sign-out-button"
+              >
+                <Image
+                  src="/assets/header/nav/signout.webp"
+                  alt=""
+                  width={24}
+                  height={24}
+                  className={classes.icon}
+                />
+                <span>{tNav('actions.signOut')}</span>
+              </UnstyledButton>
+            </li>
+            {isImpersonating && (
+              <li>
+                <UnstyledButton
+                  type="button"
+                  onClick={handleStopImpersonation}
+                  className={classes.navLink}
+                  data-testid="desktop-end-impersonation-button"
+                >
+                  End Impersonation
+                </UnstyledButton>
+              </li>
+            )}
+          </ul>
         </nav>
         <nav
-          className={`hidden h-10 ${layoutCont.raceClasses.menuSecondaryClass} md:block`}
-          style={{ backgroundImage: `url('${getAssetPath('bottom-menu', null, user?.colorScheme as PlayerRace)}')` }}
-
+          className={`hidden h-10 xl:block ${raceClasses.menuSecondaryClass} ${classes.secondary}`}
+          style={{
+            backgroundImage: `url('${getAssetPath('bottom-menu', null, menuRace)}')`,
+          }}
           onMouseEnter={clearReset}
+          aria-label={tNav('ariaLabels.subNavigation')}
         >
-          <div className="mx-auto max-w-screen-lg md:block justify-center">
-            <ul className="flex flex-wrap items-center justify-center text-center text-xl py-1">
-              {activeSubMenu.map((item) => (
-                <li
-                  key={`${item.text}.${item.href}`}
-                  className="px-10"
+          <ul className={classes.secondaryList}>
+            {activeSubMenu.map((item) => (
+              <li key={`${item.key}.${item.href}`}>
+                <Link
+                  href={item.href}
+                  className={classes.subLink}
+                  data-active={
+                    (defaultSubMenu === activeSubMenu &&
+                      activeSubKey === item.key) ||
+                    undefined
+                  }
+                  aria-current={
+                    defaultSubMenu === activeSubMenu &&
+                    activeSubKey === item.key
+                      ? 'page'
+                      : undefined
+                  }
+                  target={item.target ?? '_self'}
+                  rel={
+                    item.target === '_blank' ? 'noopener noreferrer' : undefined
+                  }
+                  data-testid="nav-link"
                 >
-                  <Indicator inline offset={-10} position="middle-end" color='brand.2' size={8} processing disabled>
-                    <Link
-                      href={item.href}
-                      className={`border-none
-                      ${
-                        activeSubLink === item.text
-                        ? 'text-gradient-orange bg-orange-gradient'
-                          : 'text-elf-link-link'
-                    } bg-link-gradient text-gradient-link font-bold hover:bg-orange-gradient hover:text-gradient-orange transition duration-200 text-shadow text-shadow-xs
-                    `}
-                      target={item.target ? item.target : '_self'}
-                    >
-                      {item.text}
-                    </Link>
-                  </Indicator>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  {tNav(item.labelKey)}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </nav>
       </div>
     </>

@@ -1,114 +1,98 @@
+import { Badge, Button, Table } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React from 'react';
 
 import { Fortifications, SpyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import type { BattleUpgradeProps, SpyUpgradeType } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
-import toLocale from '@/utils/numberFormatting';
-import { Badge } from '@mantine/core';
+import { toLocale } from '@/utils/numberFormatting';
+
+import { StyledTable } from './game/StyledTable';
 
 const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
   userLevel,
   fortLevel,
   forceUpdate,
 }) => {
-  /* const anyUnits = (level: number) => {
-    return Object.values(UnitTypes).filter(
-      (item) => item.type === 'SPY' && item.fortLevel === level
-    );
-  }; */
+  const { t } = useTranslation(['structures', 'common']);
   const { user } = useUser();
+
   const renderUpgradeAction = (item: SpyUpgradeType, index: number) => {
     if (index === userLevel && item.fortLevelRequirement <= fortLevel) {
       return (
-        <button
-          type="button"
-          className="w-full rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-          disabled={fortLevel < item.fortLevelRequirement}
-          onClick={() => buyUpgrade('spy', index, forceUpdate)}
-        >
-          Buy
-        </button>
+        <Button onClick={() => buyUpgrade('spy', index, forceUpdate)}>
+          {t('labels.buy', { ns: 'common' })}
+        </Button>
       );
     }
-
-    if (item.fortLevelRequirement < fortLevel && index > userLevel) {
-      return (
-        <span>
-          Unlock with Upgrade: <br />
-          {SpyUpgrades[index - 1]?.name}
-        </span>
-      );
-    }
-
     if (item.fortLevelRequirement > fortLevel) {
       return (
         <span>
-          Unlock with Fort: <br />
-          {
-            Fortifications.find(
-              (fort) => fort.level === item.fortLevelRequirement
-            )?.name
-          }
+          {t('upgrades.unlockWithFort', {
+            name: Fortifications.find(
+              (f) => f.level === item.fortLevelRequirement,
+            )?.name,
+          })}
         </span>
       );
     }
-
-    return null; // Default return when none of the conditions are met
-  };
-  const colorScheme = user?.colorScheme;
-  return (
-    <table className="min-w-full table-auto bg-gray-800 text-white">
-      <thead className="bg-gray-900 text-left">
-        <tr>
-          <th className="w-1/6 px-2">Name</th>
-          <th className="w-1/6 px-2">Fort Req.</th>
-          <th className="w-1/6 px-2">Bonus</th>
-          <th className="w-1/6 px-2">Cost</th>
-          <th className="w-1/6 px-2">Action</th>
-        </tr>
-      </thead>
-      <tbody className="">
-        {Object.values(SpyUpgrades)
-          .filter((item) => item.fortLevelRequirement <= fortLevel + 2)
-          .map((item, index) => {
-            // const units = anyUnits(item.level);
-            return (
-              <tr key={`${item.level}_${item.name}`} className="text-md odd:bg-table-odd even:bg-table-even">
-                <td className="px-2 py-1">
-                  {item.name} {item.level === userLevel && (
-                    <Badge color={(colorScheme === "ELF") ?
-                      'green' : (
-                        colorScheme === 'GOBLIN' ? 'red' : (
-                          colorScheme === 'UNDEAD' ? 'dark'
-                            : 'blue'
-                        ))} ml={5}>Owned</Badge>
-                  )}
-                </td>
-                <td className="px-2 py-1">
-                  {
-                    Fortifications.find(
-                      (fort) => fort.level === item.fortLevelRequirement
-                    )?.name
-                  }
-                </td>
-                <td className="px-2 py-1">
-                  Spy Bonus: {item.offenseBonusPercentage}%<br />
-                  Max Infiltrations: {item.maxInfiltrations}
-                  <br />
-                  Max Assassinations: {item.maxAssassinations}
-                </td>
-                <td className="px-2 py-1">
-                  {toLocale(item.cost, user?.locale)} Gold
-                </td>
-                <td className="px-2 py-1">
-                  {renderUpgradeAction(item, index)}
-                </td>
-              </tr>
-            );
+    if (index > userLevel) {
+      return (
+        <span>
+          {t('upgrades.unlockWithUpgrade', {
+            name: SpyUpgrades[index - 1]?.name,
           })}
-      </tbody>
-    </table>
+        </span>
+      );
+    }
+    return null;
+  };
+
+  const rows = Object.values(SpyUpgrades)
+    .filter((item) => item.fortLevelRequirement <= fortLevel + 2)
+    .map((item, index) => (
+      <Table.Tr key={`${item.level}_${item.name}`}>
+        <Table.Td>
+          {item.name}{' '}
+          {item.level === userLevel && (
+            <Badge color="yellow" ml={5}>
+              {t('labels.owned', { ns: 'common' })}
+            </Badge>
+          )}
+        </Table.Td>
+        <Table.Td>
+          {
+            Fortifications.find((f) => f.level === item.fortLevelRequirement)
+              ?.name
+          }
+        </Table.Td>
+        <Table.Td>
+          {t('upgrades.spyBonus')}: {item.offenseBonusPercentage}%<br />
+          {t('upgrades.maxInfiltrations')}: {item.maxInfiltrations}
+          <br />
+          {t('upgrades.maxAssassinations')}: {item.maxAssassinations}
+        </Table.Td>
+        <Table.Td>
+          {toLocale(item.cost, user?.locale)}{' '}
+          {t('currency.gold', { ns: 'common' })}
+        </Table.Td>
+        <Table.Td>{renderUpgradeAction(item, index)}</Table.Td>
+      </Table.Tr>
+    ));
+
+  return (
+    <StyledTable
+      headers={[
+        t('labels.name', { ns: 'common' }),
+        t('upgrades.fortReq'),
+        t('labels.bonus', { ns: 'common' }),
+        t('labels.cost', { ns: 'common' }),
+        t('labels.action', { ns: 'common' }),
+      ]}
+    >
+      {rows}
+    </StyledTable>
   );
 };
 

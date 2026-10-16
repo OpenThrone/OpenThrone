@@ -1,0 +1,111 @@
+.banner {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  margin: 8px auto 24px;
+}
+
+.plate {
+  position: absolute;
+  z-index: -1;
+  inset: 12px 0 12px 58px;
+  border: 1px solid color-mix(in srgb, var(--banner-trim-mid) 70%, var(--ot-inset));
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .07), transparent 24%, rgba(0, 0, 0, .22)),
+    linear-gradient(110deg, var(--banner-cloth-top), var(--banner-cloth-bottom) 75%);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .12), inset 0 -10px 20px rgba(0, 0, 0, .24), 0 8px 16px rgba(0, 0, 0, .4);
+}
+
+.plate::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid color-mix(in srgb, var(--banner-trim-light) 35%, transparent);
+  border-left: 0;
+  pointer-events: none;
+}
+
+.plate::after {
+  content: '';
+  position: absolute;
+  left: 84px;
+  top: 20%;
+  bottom: 20%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--banner-trim-mid), transparent);
+}
+
+.figure {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+}
+
+/* The collar sits behind the crest; the ribbon disappears into its mounting. */
+.figure::before {
+  content: '';
+  position: absolute;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  border: 2px solid var(--banner-trim-mid);
+  background: radial-gradient(circle at 40% 30%, var(--banner-cloth-top), var(--ot-inset) 72%);
+  box-shadow: inset 0 0 0 3px var(--ot-inset), inset 0 0 0 4px color-mix(in srgb, var(--banner-trim-light) 35%, transparent), 4px 5px 10px rgba(0, 0, 0, .5);
+}
+
+.shield {
+  position: relative;
+  width: 144px;
+  height: 144px;
+  object-fit: contain;
+  filter: drop-shadow(3px 5px 3px rgba(0, 0, 0, .65));
+}
+
+/* The code-only crest is an emblem, sized within the artwork's mounting. */
+.shield[data-crest] {
+  width: 96px;
+  height: 120px;
+  font-size: 36px;
+}
+
+.textLayer {
+  min-width: 0;
+  padding: 28px 28px 28px var(--banner-text-inset);
+}
+
+.title {
+  color: var(--ot-heading);
+  font-family: MedievalSharp, serif;
+  font-size: clamp(20px, 2vw, 30px);
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, .6);
+}
+
+.subtitle {
+  margin-top: 10px;
+  color: var(--ot-body);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.subtitle a:focus-visible { outline: 2px solid var(--ot-accent); outline-offset: 3px; }
+
+@media (max-width: 640px) {
+  .banner { grid-template-columns: 88px minmax(0, 1fr); }
+  .figure { min-height: 120px; }
+  .figure::before { width: 64px; height: 64px; }
+  .shield { width: 88px; height: 88px; }
+  .shield[data-crest] { width: 64px; height: 80px; font-size: 24px; }
+  .plate { left: 34px; inset-block: 8px; }
+  .plate::after { left: 54px; }
+  .textLayer { padding: 20px 16px 20px 16px; }
+  .title { font-size: 20px; }
+  .subtitle { font-size: 13px; }
+}

@@ -1,0 +1,139 @@
+{
+  "page": { "title": "Gestión de usuarios" },
+  "nav": { "bots": "Operaciones de bots" },
+  "sections": {
+    "grantPermissions": "Otorgar permisos",
+    "userManagement": "Directorio de usuarios",
+    "profile": "Perfil",
+    "account": "Cuenta",
+    "resources": "Recursos",
+    "progress": "Progreso",
+    "army": "Ejército",
+    "items": "Objetos",
+    "staffRoles": "Roles del personal",
+    "permissions": "Permisos",
+    "addNote": "Añadir nota del personal",
+    "notes": "Notas del personal",
+    "export": "Exportar datos del usuario"
+  },
+  "columns": {
+    "id": "ID",
+    "username": "Usuario",
+    "email": "Correo",
+    "status": "Estado",
+    "lastActive": "Última actividad",
+    "actions": "Acciones"
+  },
+  "filters": {
+    "userId": "ID de usuario",
+    "userIdPlaceholder": "Introduce un ID",
+    "username": "Usuario",
+    "usernamePlaceholder": "Introduce un usuario",
+    "email": "Correo",
+    "emailPlaceholder": "Introduce un correo",
+    "status": "Estado",
+    "anyStatus": "Cualquier estado",
+    "search": "Buscar usuarios",
+    "statuses": {
+      "ACTIVE": "Activo",
+      "IDLE": "Inactivo temporal",
+      "INACTIVE": "Inactivo",
+      "VACATION": "Vacaciones",
+      "SUSPENDED": "Suspendido",
+      "BANNED": "Expulsado",
+      "CLOSED": "Cerrado"
+    }
+  },
+  "tabs": {
+    "profile": "Perfil",
+    "stats": "Recursos y progreso",
+    "army": "Ejército",
+    "items": "Objetos",
+    "staffRoles": "Roles del personal",
+    "permissions": "Permisos",
+    "notes": "Notas",
+    "operations": "Operaciones"
+  },
+  "editor": {
+    "title": "{{username}}",
+    "id": "ID de cuenta: {{id}}",
+    "tabs": "Secciones de detalles del usuario",
+    "modalTitle": "Detalles del usuario"
+  },
+  "notes": {
+    "deleteTitle": "¿Eliminar la nota del personal?",
+    "deleteConfirm": "La nota se eliminará del historial del personal de la cuenta. ¿Quieres continuar?"
+  },
+  "fields": {
+    "username": "Usuario",
+    "email": "Correo",
+    "status": "Estado de la cuenta",
+    "statusHelp": "El estado es de solo lectura aquí. Usa los controles de sanción para cambiarlo.",
+    "accountId": "ID de cuenta",
+    "gold": "Oro disponible",
+    "goldInBank": "Oro en el banco",
+    "experience": "Experiencia",
+    "level": "Nivel",
+    "levelHelp": "El nivel se calcula a partir de la experiencia.",
+    "quantityFor": "Cantidad de {{name}}",
+    "quantity": "Cantidad",
+    "mercenary": "Mercenario",
+    "note": "Nota interna del personal",
+    "unknownAuthor": "Personal desconocido",
+    "pinned": "Fijada",
+    "unknown": "Desconocido",
+    "noteHelp": "Solo visible para el personal autorizado."
+  },
+  "actions": {
+    "edit": "Editar",
+    "inspect": "Inspeccionar",
+    "impersonate": "Suplantar",
+    "save": "Guardar cambios",
+    "close": "Cerrar",
+    "retry": "Reintentar",
+    "addNote": "Añadir nota",
+    "deleteNote": "Eliminar nota",
+    "increaseQuantity": "Aumentar cantidad de {{name}}",
+    "decreaseQuantity": "Reducir cantidad de {{name}}",
+    "sortBy": "Ordenar por {{field}}",
+    "endImpersonation": "Finalizar suplantación",
+    "savePermissions": "Guardar permisos"
+  },
+  "grant": {
+    "userSearch": "Buscar jugador",
+    "searchPlaceholder": "Escribe un usuario",
+    "permissions": "Permisos que se otorgarán",
+    "permissionsHelp": "Se muestran los permisos existentes. Al guardar se añaden los permisos seleccionados.",
+    "permissionsPlaceholder": "Selecciona permisos"
+  },
+  "pagination": { "label": "Páginas de usuarios" },
+  "messages": {
+    "savedTitle": "Cambios guardados",
+    "saved": "Se actualizaron los datos del usuario.",
+    "impersonating": "Estás viendo una cuenta suplantada.",
+    "moderatorReadOnly": "Los moderadores pueden inspeccionar cuentas y añadir notas del personal. La edición, los permisos y la suplantación son solo para administradores.",
+    "permissionsSaved": "Permisos actualizados para {{username}}."
+  },
+  "states": {
+    "loading": "Cargando información del usuario…",
+    "unavailable": "La información del usuario no está disponible.",
+    "noUsers": "Ningún usuario coincide con estos filtros.",
+    "noUnits": "Esta cuenta no tiene unidades.",
+    "noItems": "Esta cuenta no tiene objetos.",
+    "noNotes": "No se han añadido notas del personal."
+  },
+  "errors": {
+    "title": "Error en la solicitud",
+    "list": "No se pudieron cargar los usuarios.",
+    "load": "No se pudieron cargar los datos de este usuario.",
+    "save": "No se pudieron guardar los cambios del usuario.",
+    "notesLoad": "No se pudieron cargar las notas del personal.",
+    "noteSave": "No se pudo añadir la nota del personal.",
+    "noteDelete": "No se pudo eliminar la nota del personal.",
+    "search": "No se pudieron buscar usuarios.",
+    "grant": "No se pudieron actualizar los permisos.",
+    "impersonationTitle": "Error al suplantar",
+    "impersonation": "No se pudo iniciar la suplantación.",
+    "stopImpersonation": "No se pudo finalizar la suplantación."
+  }
+}
