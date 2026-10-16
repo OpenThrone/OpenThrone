@@ -1,0 +1,139 @@
+{
+  "page": { "title": "Benutzerverwaltung" },
+  "nav": { "bots": "Bot-Verwaltung" },
+  "sections": {
+    "grantPermissions": "Berechtigungen vergeben",
+    "userManagement": "Benutzerverzeichnis",
+    "profile": "Profil",
+    "account": "Konto",
+    "resources": "Ressourcen",
+    "progress": "Fortschritt",
+    "army": "Armee",
+    "items": "Gegenstände",
+    "staffRoles": "Mitarbeiterrollen",
+    "permissions": "Berechtigungen",
+    "addNote": "Interne Notiz hinzufügen",
+    "notes": "Mitarbeiternotizen",
+    "export": "Benutzerdaten exportieren"
+  },
+  "columns": {
+    "id": "ID",
+    "username": "Benutzername",
+    "email": "E-Mail",
+    "status": "Status",
+    "lastActive": "Zuletzt aktiv",
+    "actions": "Aktionen"
+  },
+  "filters": {
+    "userId": "Benutzer-ID",
+    "userIdPlaceholder": "ID eingeben",
+    "username": "Benutzername",
+    "usernamePlaceholder": "Benutzernamen eingeben",
+    "email": "E-Mail",
+    "emailPlaceholder": "E-Mail eingeben",
+    "status": "Status",
+    "anyStatus": "Alle Status",
+    "search": "Benutzer suchen",
+    "statuses": {
+      "ACTIVE": "Aktiv",
+      "IDLE": "Untätig",
+      "INACTIVE": "Inaktiv",
+      "VACATION": "Urlaub",
+      "SUSPENDED": "Gesperrt",
+      "BANNED": "Gebannt",
+      "CLOSED": "Geschlossen"
+    }
+  },
+  "tabs": {
+    "profile": "Profil",
+    "stats": "Ressourcen und Fortschritt",
+    "army": "Armee",
+    "items": "Gegenstände",
+    "staffRoles": "Mitarbeiterrollen",
+    "permissions": "Berechtigungen",
+    "notes": "Notizen",
+    "operations": "Aktionen"
+  },
+  "editor": {
+    "title": "{{username}}",
+    "id": "Konto-ID: {{id}}",
+    "tabs": "Bereiche der Benutzerdetails",
+    "modalTitle": "Benutzerdetails"
+  },
+  "notes": {
+    "deleteTitle": "Mitarbeiternotiz löschen?",
+    "deleteConfirm": "Die Notiz wird aus dem Mitarbeiternotizverlauf des Kontos entfernt. Fortfahren?"
+  },
+  "fields": {
+    "username": "Benutzername",
+    "email": "E-Mail",
+    "status": "Kontostatus",
+    "statusHelp": "Der Status ist hier schreibgeschützt. Verwende die Kontosperren für Statusänderungen.",
+    "accountId": "Konto-ID",
+    "gold": "Gold im Besitz",
+    "goldInBank": "Gold auf der Bank",
+    "experience": "Erfahrung",
+    "level": "Stufe",
+    "levelHelp": "Die Stufe wird aus der Erfahrung berechnet.",
+    "quantityFor": "Anzahl: {{name}}",
+    "quantity": "Anzahl",
+    "mercenary": "Söldner",
+    "note": "Interne Mitarbeiternotiz",
+    "unknownAuthor": "Unbekannter Mitarbeiter",
+    "pinned": "Angeheftet",
+    "unknown": "Unbekannt",
+    "noteHelp": "Nur für berechtigte Mitarbeiter sichtbar."
+  },
+  "actions": {
+    "edit": "Bearbeiten",
+    "inspect": "Ansehen",
+    "impersonate": "Identität übernehmen",
+    "save": "Änderungen speichern",
+    "close": "Schließen",
+    "retry": "Erneut versuchen",
+    "addNote": "Notiz hinzufügen",
+    "deleteNote": "Notiz löschen",
+    "increaseQuantity": "Anzahl von {{name}} erhöhen",
+    "decreaseQuantity": "Anzahl von {{name}} verringern",
+    "sortBy": "Nach {{field}} sortieren",
+    "endImpersonation": "Identitätsübernahme beenden",
+    "savePermissions": "Berechtigungen speichern"
+  },
+  "grant": {
+    "userSearch": "Spieler suchen",
+    "searchPlaceholder": "Benutzernamen eingeben",
+    "permissions": "Zu vergebende Berechtigungen",
+    "permissionsHelp": "Bestehende Berechtigungen werden angezeigt. Beim Speichern werden die ausgewählten Berechtigungen hinzugefügt.",
+    "permissionsPlaceholder": "Berechtigungen auswählen"
+  },
+  "pagination": { "label": "Benutzerseiten" },
+  "messages": {
+    "savedTitle": "Änderungen gespeichert",
+    "saved": "Die Benutzerdetails wurden aktualisiert.",
+    "impersonating": "Du siehst ein Konto in einer Identitätsübernahme.",
+    "moderatorReadOnly": "Moderatoren können Konten ansehen und Mitarbeiternotizen hinzufügen. Änderungen, Berechtigungen und Identitätsübernahmen sind Administratoren vorbehalten.",
+    "permissionsSaved": "Berechtigungen für {{username}} aktualisiert."
+  },
+  "states": {
+    "loading": "Benutzerdaten werden geladen…",
+    "unavailable": "Benutzerdaten sind nicht verfügbar.",
+    "noUsers": "Keine Benutzer passen zu diesen Filtern.",
+    "noUnits": "Dieses Konto besitzt keine Einheiten.",
+    "noItems": "Dieses Konto besitzt keine Gegenstände.",
+    "noNotes": "Es wurden noch keine Mitarbeiternotizen hinzugefügt."
+  },
+  "errors": {
+    "title": "Anfrage fehlgeschlagen",
+    "list": "Benutzer konnten nicht geladen werden.",
+    "load": "Die Details dieses Benutzers konnten nicht geladen werden.",
+    "save": "Benutzeränderungen konnten nicht gespeichert werden.",
+    "notesLoad": "Mitarbeiternotizen konnten nicht geladen werden.",
+    "noteSave": "Die Mitarbeiternotiz konnte nicht hinzugefügt werden.",
+    "noteDelete": "Die Mitarbeiternotiz konnte nicht gelöscht werden.",
+    "search": "Benutzer konnten nicht gesucht werden.",
+    "grant": "Berechtigungen konnten nicht aktualisiert werden.",
+    "impersonationTitle": "Identitätsübernahme fehlgeschlagen",
+    "impersonation": "Die Identitätsübernahme konnte nicht gestartet werden.",
+    "stopImpersonation": "Die Identitätsübernahme konnte nicht beendet werden."
+  }
+}

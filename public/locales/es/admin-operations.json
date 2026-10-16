@@ -1,0 +1,89 @@
+{
+  "user": {
+    "title": "Operaciones de cuenta",
+    "description": "Acciones del personal para esta cuenta. Los cambios importantes requieren una segunda confirmación.",
+    "passwordAction": "Enviar restablecimiento de contraseña",
+    "accountResetAction": "Restablecer cuenta",
+    "vacationStartAction": "Iniciar vacaciones",
+    "vacationEndAction": "Finalizar vacaciones",
+    "reasonLabel": "Motivo",
+    "reasonOptional": "Opcional; se guarda en el registro de auditoría del personal.",
+    "vacationDuration": "El modo vacaciones dura 14 días. El motivo se registra como vacaciones iniciadas por un administrador.",
+    "cancel": "Cancelar",
+    "confirmAction": "Confirmar acción",
+    "actionComplete": "Acción completada",
+    "passwordResult": "Se solicitó un correo para restablecer la contraseña. Aquí no se muestra ninguna contraseña.",
+    "accountResetResult": "Cuenta restablecida. Nuevo ID de cuenta: {{newUserId}}.",
+    "vacationStarted": "Se inició el modo vacaciones por 14 días.",
+    "vacationEnded": "Finalizó el modo vacaciones.",
+    "unknown": "no disponible",
+    "invalidTarget": "El ID de cuenta no es válido. Cierra este panel y vuelve a cargar el registro del usuario.",
+    "requestFailed": "La solicitud falló. Comprueba tu acceso e inténtalo de nuevo.",
+    "errorTitle": "No se pudo completar la acción",
+    "confirm": {
+      "password": {
+        "title": "¿Enviar el correo de restablecimiento?",
+        "message": "El titular de la cuenta recibirá un correo para restablecer la contraseña. No se generará ni mostrará una contraseña al personal."
+      },
+      "reset": {
+        "title": "¿Restablecer esta cuenta?",
+        "message": "Esta es una acción administrativa destructiva. Se puede eliminar el progreso de la cuenta. Añade un motivo de auditoría si resulta útil y confirma solo si el restablecimiento es intencional."
+      },
+      "vacation-start": {
+        "title": "¿Iniciar vacaciones durante 14 días?",
+        "message": "La cuenta no podrá iniciar sesión durante las vacaciones. La API actual establece una duración fija de 14 días."
+      },
+      "vacation-end": {
+        "title": "¿Finalizar el modo vacaciones?",
+        "message": "El modo vacaciones de esta cuenta finalizará de inmediato."
+      }
+    }
+  },
+  "export": {
+    "action": "Descargar exportación del usuario (JSON)",
+    "invalidTarget": "El ID de cuenta no es válido.",
+    "failed": "No se pudo descargar la exportación. Comprueba tu acceso e inténtalo de nuevo.",
+    "invalidResponse": "El servidor devolvió una exportación no válida. No se descargó ningún archivo."
+  },
+  "bots": {
+    "title": "Operaciones de bots",
+    "description": "Revisa los bots registrados, previsualiza la provisión y ejecuta un turno programado.",
+    "accessDenied": "Se requiere acceso de administrador",
+    "accessDeniedDescription": "El estado y las operaciones de bots solo están disponibles para administradores.",
+    "refresh": "Actualizar estado",
+    "retry": "Reintentar",
+    "loading": "Cargando estado de bots…",
+    "loadFailed": "No se pudo cargar el estado de bots. Comprueba tu acceso e inténtalo de nuevo.",
+    "errorTitle": "No se pudo completar la operación",
+    "total": "{{count}} bot(s) registrados",
+    "rosterTitle": "Bots registrados",
+    "empty": "No hay bots registrados. Selecciona un manifiesto abajo para previsualizar o aprovisionar bots.",
+    "neverRun": "Nunca",
+    "columns": {
+      "id": "ID",
+      "name": "Nombre",
+      "raceClass": "Raza / clase",
+      "persona": "Perfil",
+      "lastRun": "Última ejecución",
+      "gold": "Oro"
+    },
+    "controlsTitle": "Controles de bots",
+    "manifestLabel": "Manifiesto de aprovisionamiento",
+    "manifestDescription": "Las opciones proceden de los manifiestos registrados en este servidor.",
+    "noManifests": "No se encontraron manifiestos registrados",
+    "dryRun": "Solo previsualizar",
+    "provision": "Aprovisionar bots",
+    "scheduleLabel": "Plan de ejecución",
+    "scheduleDescription": "Las opciones proceden de los planes registrados en este servidor.",
+    "noSchedules": "No se encontraron planes registrados",
+    "runNow": "Ejecutar turno de bots ahora",
+    "confirmProvisionTitle": "¿Aprovisionar bots?",
+    "confirmProvisionMessage": "¿Crear los bots incluidos en el manifiesto {{manifest}}? Esto modifica datos de cuentas.",
+    "confirmRunTitle": "¿Ejecutar el turno ahora?",
+    "confirmRunMessage": "¿Ejecutar ahora el plan {{schedule}} en las cuentas de bot registradas?",
+    "actionFailed": "La operación falló. Comprueba tu acceso e inténtalo de nuevo.",
+    "actionComplete": "Operación de bots completada",
+    "saved": "La operación se completó.",
+    "resultTitle": "Resultado de la operación"
+  }
+}

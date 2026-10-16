@@ -1,0 +1,107 @@
+{
+  "main": {
+    "home": "Inicio",
+    "battle": "Batalla",
+    "social": "Social",
+    "structures": "Estructuras",
+    "community": "Comunidad",
+    "about": "Acerca de",
+    "alliances": "Alianzas"
+  },
+  "home": {
+    "overview": "Resumen",
+    "levels": "Niveles",
+    "profile": "Perfil",
+    "settings": "Configuración",
+    "administration": "Administración",
+    "balanceSim": "Simulador de balance",
+    "staffAdvisorMessages": "Mensajes del consejero",
+    "staffAlliances": "Administración de alianzas",
+    "staffAnalytics": "Análisis de jugadores",
+    "staffAnnouncements": "Anuncios",
+    "staffApiTokens": "Tokens de API",
+    "staffAppeals": "Apelaciones de baneo",
+    "staffAudit": "Registros de auditoría",
+    "staffBans": "Gestión de baneos",
+    "staffChat": "Moderación de chat",
+    "staffCheatSignals": "Señales de trampa",
+    "staffContent": "Blog y noticias",
+    "staffEconomy": "Economía",
+    "staffEras": "Gestión de eras",
+    "staffEvents": "Eventos del juego",
+    "staffFeatureFlags": "Indicadores de funciones",
+    "staffMaintenance": "Modo de mantenimiento",
+    "staffMassMessaging": "Mensajería masiva",
+    "staffMultiAccounts": "Detección de multicuentas",
+    "staffReports": "Cola de reportes",
+    "staffSettings": "Ajustes del servidor",
+    "staffUsers": "Gestión de usuarios",
+    "staffInactiveUsers": "Usuarios inactivos"
+  },
+  "battle": {
+    "attack": "Atacar",
+    "training": "Entrenamiento",
+    "upgrades": "Mejoras",
+    "warHistory": "Historial de guerra",
+    "battleSimulator": "Simulador de batalla"
+  },
+  "social": {
+    "friends": "Amigos",
+    "enemies": "Enemigos",
+    "requests": "Solicitudes"
+  },
+  "structures": {
+    "bank": "Banco",
+    "armory": "Armería",
+    "upgrades": "Mejoras",
+    "housing": "Vivienda",
+    "repair": "Reparación"
+  },
+  "community": {
+    "news": "Noticias",
+    "discord": "Discord",
+    "autoRecruit": "Auto-reclutamiento",
+    "stats": "Estadísticas",
+    "reportIssues": "Reportar problemas"
+  },
+  "loggedOut": {
+    "home": "Inicio",
+    "howToPlay": "Cómo Jugar",
+    "login": "Iniciar sesión",
+    "signup": "Registrarse",
+    "news": "Noticias",
+    "about": "Acerca de",
+    "stats": "Clasificaciones",
+    "discord": "Discord",
+    "github": "GitHub",
+    "faq": "Preguntas"
+  },
+  "actions": {
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
+  },
+  "ariaLabels": {
+    "mobileMenuButton": "Abrir menú de navegación",
+    "desktopMenu": "Menú de navegación principal",
+    "subMenu": "Submenú para {{section}}",
+    "signOut": "Cerrar sesión de tu cuenta",
+    "mainNavigation": "Navegación principal",
+    "subNavigation": "Navegación de sección"
+  },
+  "alliances": {
+    "browse": "Explorar alianzas",
+    "create": "Crear alianza"
+  },
+  "adminCategories": {
+    "analytics": "Analítica",
+    "audit": "Auditoría",
+    "content": "Contenido",
+    "gameManagement": "Gestión del juego",
+    "moderation": "Moderación",
+    "overview": "Resumen",
+    "system": "Sistema",
+    "users": "Usuarios"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "socketTest": {
+    "title": "Prueba de Socket",
+    "connected": "Conectado",
+    "disconnected": "Desconectado",
+    "sendPing": "Enviar Ping",
+    "sendAttackNotification": "Enviar Notificación de Ataque",
+    "enterDefenderId": "Introduce el ID del defensor",
+    "sendFriendRequest": "Enviar Solicitud de Amistad",
+    "enterUserId": "Introduce el ID de usuario para enviar solicitud de amistad:",
+    "declareEnemy": "Declarar Enemigo",
+    "enterUserIdEnemy": "Introduce el ID de usuario para declarar como enemigo:",
+    "sendMessage": "Enviar Mensaje",
+    "enterUserIdMessage": "Introduce el ID de usuario para enviar mensaje:",
+    "triggerAlert": "Activar Alerta",
+    "testAlert": "¡Esta es una alerta de prueba!",
+    "messageLog": "Registro de Mensajes:",
+    "pongReceived": "Pong recibido",
+    "attackNotification": "Notificación de ataque: {{message}}",
+    "friendRequestNotification": "Notificación de solicitud de amistad: {{message}}",
+    "enemyDeclarationNotification": "Notificación de declaración de enemigo: {{message}}",
+    "messageNotification": "Notificación de mensaje: {{message}}",
+    "duplicateAttack": "Notificación de ataque duplicada:",
+    "duplicateFriendRequest": "Notificación de solicitud de amistad duplicada:",
+    "duplicateEnemyDeclaration": "Notificación de declaración de enemigo duplicada:",
+    "duplicateMessage": "Notificación de mensaje duplicada:",
+    "friendRequestSent": "¡{{email}} te ha enviado una solicitud de amistad!",
+    "enemyDeclared": "¡{{email}} te ha declarado como enemigo!",
+    "newMessage": "¡Tienes un nuevo mensaje de {{email}}!"
+  }
+}

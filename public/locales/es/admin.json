@@ -1,0 +1,10 @@
+{
+  "blog": {
+    "title": "Administración del Blog",
+    "postEditor": "Editor de Publicaciones",
+    "livePreview": "Vista Previa en Vivo",
+    "markdownContent": "Contenido Markdown",
+    "submitPost": "Enviar Publicación",
+    "initialContent": "# Bienvenido al editor de texto enriquecido Mantine\n\nEste es un artículo de ejemplo. Puedes dar formato a tu texto, añadir encabezados, listas y más."
+  }
+}

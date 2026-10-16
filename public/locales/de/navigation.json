@@ -1,0 +1,107 @@
+{
+  "main": {
+    "home": "Startseite",
+    "battle": "Kampf",
+    "social": "Sozial",
+    "structures": "Strukturen",
+    "community": "Community",
+    "about": "Über",
+    "alliances": "Allianzen"
+  },
+  "home": {
+    "overview": "Übersicht",
+    "levels": "Stufen",
+    "profile": "Profil",
+    "settings": "Einstellungen",
+    "administration": "Verwaltung",
+    "balanceSim": "Balance-Simulator",
+    "staffAdvisorMessages": "Berater-Nachrichten",
+    "staffAlliances": "Allianzverwaltung",
+    "staffAnalytics": "Spieleranalysen",
+    "staffAnnouncements": "Ankündigungen",
+    "staffApiTokens": "API-Token",
+    "staffAppeals": "Sperrungs-Einsprüche",
+    "staffAudit": "Audit-Protokolle",
+    "staffBans": "Sperrverwaltung",
+    "staffChat": "Chat-Moderation",
+    "staffCheatSignals": "Betrugssignale",
+    "staffContent": "Blog & Neuigkeiten",
+    "staffEconomy": "Wirtschaft",
+    "staffEras": "Ärenverwaltung",
+    "staffEvents": "Spielereignisse",
+    "staffFeatureFlags": "Feature-Flags",
+    "staffMaintenance": "Wartungsmodus",
+    "staffMassMessaging": "Massennachrichten",
+    "staffMultiAccounts": "Multi-Account-Erkennung",
+    "staffReports": "Meldungswarteschlange",
+    "staffSettings": "Servereinstellungen",
+    "staffUsers": "Benutzerverwaltung",
+    "staffInactiveUsers": "Inaktive Benutzer"
+  },
+  "battle": {
+    "attack": "Angreifen",
+    "training": "Training",
+    "upgrades": "Verbesserungen",
+    "warHistory": "Kriegsgeschichte",
+    "battleSimulator": "Kampfsimulator"
+  },
+  "social": {
+    "friends": "Freunde",
+    "enemies": "Feinde",
+    "requests": "Anfragen"
+  },
+  "structures": {
+    "bank": "Bank",
+    "armory": "Waffenkammer",
+    "upgrades": "Verbesserungen",
+    "housing": "Wohnen",
+    "repair": "Reparatur"
+  },
+  "community": {
+    "news": "Neuigkeiten",
+    "discord": "Discord",
+    "autoRecruit": "Auto-Rekrutierung",
+    "stats": "Statistiken",
+    "reportIssues": "Probleme melden"
+  },
+  "loggedOut": {
+    "home": "Startseite",
+    "howToPlay": "Spielanleitung",
+    "login": "Anmelden",
+    "signup": "Registrieren",
+    "news": "Neuigkeiten",
+    "about": "Über",
+    "stats": "Ranglisten",
+    "discord": "Discord",
+    "github": "GitHub",
+    "faq": "FAQ"
+  },
+  "actions": {
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen"
+  },
+  "ariaLabels": {
+    "mobileMenuButton": "Navigationsmenü öffnen",
+    "desktopMenu": "Hauptnavigationsmenü",
+    "subMenu": "Untermenü für {{section}}",
+    "signOut": "Von Ihrem Konto abmelden",
+    "mainNavigation": "Hauptnavigation",
+    "subNavigation": "Bereichsnavigation"
+  },
+  "alliances": {
+    "browse": "Allianzen durchsuchen",
+    "create": "Allianz erstellen"
+  },
+  "adminCategories": {
+    "analytics": "Analysen",
+    "audit": "Audit",
+    "content": "Inhalte",
+    "gameManagement": "Spielverwaltung",
+    "moderation": "Moderation",
+    "overview": "Übersicht",
+    "system": "System",
+    "users": "Benutzer"
+  }
+}
