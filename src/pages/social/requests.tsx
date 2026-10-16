@@ -1,114 +1,279 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Table, Loader, Group, Paper, Title } from '@mantine/core';
-import { useUser } from '@/context/users';
-import MainArea from '@/components/MainArea';
+import {
+  Avatar,
+  Badge,
+  Button,
+  Group,
+  Indicator,
+  Loader,
+  Table,
+  Text,
+} from '@mantine/core';
+import { useTranslation } from 'next-i18next';
+import React, { useEffect, useState } from 'react';
 
-const Requests = (props) => {
-  const [requests, setRequests] = useState([]);
+import ConfirmationModal from '@/components/ConfirmationModal';
+import { GameCard } from '@/components/game/GameCard';
+import { StyledTable } from '@/components/game/StyledTable';
+import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import { usePlayerIdentity } from '@/hooks/usePlayerIdentity';
+import UserModel from '@/models/Users';
+import { alertService } from '@/services/Alert.service';
+import { logError } from '@/utils/logger';
+import { formatDate } from '@/utils/utilities';
+
+type SocialRequest = {
+  id: number;
+  playerId: number;
+  friendId: number;
+  status: string;
+  requestDate: string;
+  friend?: {
+    id: number;
+    display_name?: string;
+    race?: string;
+    class?: string;
+    avatar?: string | null;
+    last_active?: string | null;
+    is_player?: boolean;
+  };
+};
+
+type RequestAction = 'accept' | 'decline' | 'cancel';
+
+const Requests = () => {
+  const { t } = useTranslation('social');
+  const [requests, setRequests] = useState<SocialRequest[]>([]);
+  const { raceName, className } = usePlayerIdentity();
   const [loading, setLoading] = useState(true);
+  const [actionState, setActionState] = useState<{
+    id: number;
+    action: RequestAction;
+  } | null>(null);
+  const [declineTarget, setDeclineTarget] = useState<number | null>(null);
   const { user } = useUser();
 
   useEffect(() => {
     fetch('/api/social/listAll?type=REQUESTS')
-      .then(response => response.json())
-      .then(data => {
-        setRequests(data);
+      .then((response) => response.json())
+      .then((data) => {
+        setRequests(Array.isArray(data) ? data : []);
         setLoading(false);
-      }).catch(error => {
-        logError("Error fetching requests:", error);
-        setLoading(true);
-        
+      })
+      .catch((error) => {
+        logError(t('requests.errorFetchingRequests'), error);
+        setLoading(false);
       });
   }, []);
 
-  const handleResponse = (id, action) => {
-    fetch('/api/social/respond', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, requestId: id }),
-    })
-      .then(response => response.json())
-      .then(() => {
-        // Update the local state to reflect the change
-        setRequests(currentRequests => currentRequests.filter(request => request.id !== id));
-      })
-      .catch(error => {
-        logError("Error responding to request:", error);
-      });
-  };
+  if (loading) {
+    return (
+      <MainArea title={t('requests.title')}>
+        <GameCard title={t('requests.title')}>
+          <Loader />
+        </GameCard>
+      </MainArea>
+    );
+  }
 
-  if (loading) return <Loader />;
-
-  const processedRequests = requests.map(request => ({
+  const userId = user?.id;
+  const processedRequests = requests.map((request) => ({
     ...request,
-    type: request.playerId === user.id ? 'outgoing' : 'incoming',
+    type: userId && request.playerId === userId ? 'outgoing' : 'incoming',
   }));
 
-  const outgoingRequests = processedRequests.filter(request => request.type === 'outgoing');
-  const incomingRequests = processedRequests.filter(request => request.type === 'incoming');
+  const outgoingRequests = processedRequests.filter(
+    (request) => request.type === 'outgoing',
+  );
+  const incomingRequests = processedRequests.filter(
+    (request) => request.type === 'incoming',
+  );
 
+  const removeRequest = (requestId: number) => {
+    setRequests((current) =>
+      current.filter((request) => request.id !== requestId),
+    );
+  };
 
-  const renderRows = (requestsList) => {
-    console.log(requestsList);
+  const handleRespond = async (requestId: number, action: RequestAction) => {
+    setActionState({ id: requestId, action });
+    try {
+      const res = await fetch('/api/social/respond', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || t('requests.errorRespondingToRequest'));
+      }
+
+      alertService.success(
+        action === 'accept'
+          ? t('requests.requestAccepted')
+          : t('requests.requestDeclined'),
+      );
+      removeRequest(requestId);
+    } catch (error) {
+      logError(t('requests.errorRespondingToRequest'), error);
+      alertService.error(t('requests.errorRespondingToRequest'));
+    } finally {
+      setActionState(null);
+    }
+  };
+
+  const handleCancel = async (requestId: number, friendId: number) => {
+    setActionState({ id: requestId, action: 'cancel' });
+    try {
+      const res = await fetch('/api/social/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendId, relationshipType: 'FRIEND' }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || t('requests.errorRespondingToRequest'));
+      }
+
+      alertService.success(t('requests.requestCancelled'));
+      removeRequest(requestId);
+    } catch (error) {
+      logError(t('requests.errorRespondingToRequest'), error);
+      alertService.error(t('requests.errorRespondingToRequest'));
+    } finally {
+      setActionState(null);
+    }
+  };
+
+  const renderRows = (requestsList, requestType: 'incoming' | 'outgoing') => {
     if (requestsList.length === 0) {
       return (
-        <Table.Tr>
-          <Table.Td colSpan={4}>No requests</Table.Td>
+        <Table.Tr style={{ background: '#0f141a' }}>
+          <Table.Td colSpan={4} style={{ borderColor: '#1f2b3b' }}>
+            {t('requests.noRequestsFound')}
+          </Table.Td>
         </Table.Tr>
       );
     }
 
-    return requestsList.map(request => (
-      <Table.Tr key={request.id}>
-        <Table.Td>
-          {request.friend && request.friend.display_name ? request.friend.display_name : "Unknown Player"} {/* Safe access */}
-        </Table.Td>
-        <Table.Td>{new Date(request.requestDate).toLocaleString()}</Table.Td>
-        <Table.Td>{request.status}</Table.Td>
-        <Table.Td>
-          {request.type === 'outgoing' ? 'Pending acceptance' : (
-            <Group>
-              <Button size="xs" color="green" onClick={() => handleResponse(request.id, 'accept')}>Accept</Button>
-              <Button size="xs" color="red" onClick={() => handleResponse(request.id, 'decline')}>Decline</Button>
+    return requestsList.map((request) => {
+      const player = new UserModel(request.friend, true, false);
+      const statusLabel =
+        request.status === 'requested'
+          ? t('requests.pendingAcceptance')
+          : request.status;
+      const isLoading = (action: RequestAction) =>
+        actionState?.id === request.id && actionState?.action === action;
+
+      return (
+        <Table.Tr key={request.id} style={{ background: '#0f141a' }}>
+          <Table.Td style={{ borderColor: '#1f2b3b' }}>
+            <Group gap="sm" className="text-justify">
+              <Indicator color={player.is_online ? 'teal' : 'red'}>
+                <Avatar src={player.avatar} size={40} radius={40} />
+              </Indicator>
+              <div>
+                <Text fz="md" fw={500}>
+                  {player.displayName || t('requests.unknownPlayer')}
+                  {player.is_player && (
+                    <Badge color="blue" ml={5}>
+                      {t('friends.you')}
+                    </Badge>
+                  )}
+                </Text>
+                <Text fz="xs" c="dimmed">
+                  {raceName(player.race)} {className(player.class)}
+                </Text>
+              </div>
             </Group>
-          )}
-        </Table.Td>
-      </Table.Tr>
-    ));
+          </Table.Td>
+          <Table.Td style={{ borderColor: '#1f2b3b' }}>
+            {formatDate(request.requestDate)}
+          </Table.Td>
+          <Table.Td style={{ borderColor: '#1f2b3b' }}>{statusLabel}</Table.Td>
+          <Table.Td style={{ borderColor: '#1f2b3b' }}>
+            {requestType === 'incoming' ? (
+              <Group gap="xs">
+                <Button
+                  size="xs"
+                  color="green"
+                  loading={isLoading('accept')}
+                  onClick={() => handleRespond(request.id, 'accept')}
+                >
+                  {t('requests.accept')}
+                </Button>
+                <Button
+                  size="xs"
+                  color="red"
+                  variant="outline"
+                  loading={isLoading('decline')}
+                  onClick={() => setDeclineTarget(request.id)}
+                >
+                  {t('requests.decline')}
+                </Button>
+              </Group>
+            ) : (
+              <Button
+                size="xs"
+                color="gray"
+                variant="outline"
+                loading={isLoading('cancel')}
+                onClick={() =>
+                  handleCancel(request.id, request.friendId || player.id)
+                }
+              >
+                {t('requests.cancel')}
+              </Button>
+            )}
+          </Table.Td>
+        </Table.Tr>
+      );
+    });
   };
 
   return (
-    <MainArea title="Friend Requests">
-      <Paper shadow="xs" p="md">
-        <Table className="min-w-full border-neutral-500" striped highlightOnHover>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Player</Table.Th>
-              <Table.Th>Date/Time</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{renderRows(incomingRequests)}</Table.Tbody>
-        </Table>
-      </Paper>
+    <MainArea title={t('requests.title')}>
+      <GameCard title={t('requests.incomingRequests')}>
+        <StyledTable
+          headers={[
+            t('requests.player'),
+            t('requests.dateTime'),
+            t('requests.status'),
+            t('requests.actions'),
+          ]}
+        >
+          {renderRows(incomingRequests, 'incoming')}
+        </StyledTable>
+      </GameCard>
 
-      <Title order={2} className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs pl-5">
-        Outgoing Friend Requests
-      </Title>
-      <Paper shadow="xs" p="md">
-        <Table className="min-w-full border-neutral-500" striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Player ID</Table.Th>
-              <Table.Th>Date/Time</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Actions</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>{renderRows(outgoingRequests)}</Table.Tbody>
-        </Table>
-      </Paper>
+      <GameCard title={t('requests.outgoingRequests')} mt="md">
+        <StyledTable
+          headers={[
+            t('requests.player'),
+            t('requests.dateTime'),
+            t('requests.status'),
+            t('requests.actions'),
+          ]}
+        >
+          {renderRows(outgoingRequests, 'outgoing')}
+        </StyledTable>
+      </GameCard>
+      <ConfirmationModal
+        isOpen={declineTarget !== null}
+        onClose={() => setDeclineTarget(null)}
+        onConfirm={() => {
+          if (declineTarget !== null) handleRespond(declineTarget, 'decline');
+          setDeclineTarget(null);
+        }}
+        title={t('requests.declineConfirmTitle')}
+        message={t('requests.declineConfirmMessage')}
+        confirmText={t('requests.decline')}
+        cancelText={t('requests.cancel')}
+        isLoading={Boolean(actionState)}
+        type="remove"
+      />
     </MainArea>
   );
 };

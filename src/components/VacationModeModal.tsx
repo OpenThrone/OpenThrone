@@ -1,6 +1,7 @@
+import { Button, Modal, Text } from '@mantine/core';
 import { useState } from 'react';
-import { Modal, Text, Button } from '@mantine/core';
 import toast from 'react-hot-toast';
+
 import { logError } from '@/utils/logger';
 
 interface VacationModeModalProps {
@@ -10,7 +11,12 @@ interface VacationModeModalProps {
   onVacationEnd: () => void;
 }
 
-const VacationModeModal: React.FC<VacationModeModalProps> = ({ opened, onClose, userId, onVacationEnd }) => {
+const VacationModeModal: React.FC<VacationModeModalProps> = ({
+  opened,
+  onClose,
+  userId,
+  onVacationEnd,
+}) => {
   const [loading, setLoading] = useState(false);
 
   const handleVacationOverride = async () => {
@@ -37,11 +43,22 @@ const VacationModeModal: React.FC<VacationModeModalProps> = ({ opened, onClose, 
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Vacation Mode Active" centered>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title="Vacation Mode Active"
+      centered
+    >
       <Text mb="md">
-        Your account is currently in vacation mode. Do you want to end vacation mode and return to the game?
+        Your account is currently in vacation mode. Do you want to end vacation
+        mode and return to the game?
       </Text>
-      <Button onClick={handleVacationOverride} loading={loading} fullWidth mt="md">
+      <Button
+        onClick={handleVacationOverride}
+        loading={loading}
+        fullWidth
+        mt="md"
+      >
         End Vacation Mode
       </Button>
       <Button onClick={onClose} variant="outline" color="red" fullWidth mt="sm">

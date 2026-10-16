@@ -1,54 +1,173 @@
-import { Card, Avatar, Text, Group, Button, SimpleGrid, Image } from '@mantine/core';
-import classes from './browse.module.css';
-import toLocale from '@/utils/numberFormatting';
+import {
+  Avatar,
+  Box,
+  Button,
+  Group,
+  Image,
+  SimpleGrid,
+  Stack,
+  Text,
+} from '@mantine/core';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
 
-export const UserCardImage = ({ name, members, description, gold, joinText, imgsrc, bannerimgsrc }) => {
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
+import { logError } from '@/utils/logger';
+import { toLocale } from '@/utils/numberFormatting';
+
+/** User card image. */
+export const UserCardImage = ({
+  id,
+  name,
+  members,
+  description,
+  gold,
+  joinText,
+  imgsrc,
+  bannerimgsrc,
+  joinMode,
+  onJoin,
+  userMembership, // Permissions or role if member
+  isLeader,
+}) => {
+  const { t } = useTranslation('alliances');
+  const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
+  const handleJoinClick = async () => {
+    setLoading(true);
+    await onJoin(id);
+    setLoading(false);
+  };
+
+  const handleManageClick = () => {
+    router.push(`/alliances/${id}`);
+  };
+
+  const isInviteOnly = joinMode === 'INVITE_ONLY';
   return (
-    <Card withBorder padding="xl" radius="md" className={classes.card}>
-      <Card.Section>
-        <Image src={bannerimgsrc} alt={name} fit='none' style={{ height: '140px' }} width={'100%'} />
-      </Card.Section>
-      <Avatar
-        src={imgsrc}
-        size={120}
-        radius={120}
-        mx="auto"
-        mt={-30}
-        className={classes.avatar}
-        
-      />
-      <Text ta="center" fz="lg" fw={500} mt="sm">
-        {name}
-      </Text>
-      <Text ta="center" fz="sm" c="dimmed">
-        {description}
-      </Text>
-      <Group mt="md" justify="center" gap={30}>
-        <div>
-          <Text ta="center" fz="lg" fw={500}>
-            {toLocale(gold)}
-          </Text>
-          <Text ta="center" fz="sm" c="dimmed" lh={1}>
-            Gold
-          </Text>
-          <Text ta="center" fz="lg" fw={500}>
-            {toLocale(members)}
-          </Text>
-          <Text ta="center" fz="sm" c="dimmed" lh={1}>
-            Members
-          </Text>
-        </div>
-      </Group>
-      <Button fullWidth radius="md" mt="xl" size="md" variant="default">
-        {joinText || 'Join'}
-      </Button>
-    </Card>
+    <GameCard title={name}>
+      <Stack gap="md">
+        <Box
+          style={{
+            borderRadius: '8px',
+            overflow: 'hidden',
+            border: '1px solid #2f3e52',
+            height: 140,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(180deg, #1f2b3b 0%, #0f141a 100%)',
+          }}
+        >
+          {bannerimgsrc ? (
+            <Image src={bannerimgsrc} alt={name} fit="cover" h={140} />
+          ) : (
+            <Text size="xl" fw={700} c="dimmed" ta="center">
+              {name}
+            </Text>
+          )}
+        </Box>
+        <Group justify="center" mt={-40}>
+          <Avatar
+            src={imgsrc}
+            size={96}
+            radius={96}
+            style={{
+              border: '2px solid #1f2b3b',
+              boxShadow: '0 6px 16px rgba(0,0,0,0.6)',
+            }}
+          />
+        </Group>
+        <Text ta="center" fz="sm" c="dimmed">
+          {description}
+        </Text>
+        <Group
+          justify="space-between"
+          style={{
+            backgroundColor: '#0f141a',
+            borderRadius: '6px',
+            border: '1px solid #1f2b3b',
+            boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+            padding: '12px',
+          }}
+        >
+          <div>
+            <Text size="xs" c="dimmed" tt="uppercase">
+              {t('browse.gold')}
+            </Text>
+            <Text fw={700}>{toLocale(gold)}</Text>
+          </div>
+          <div>
+            <Text size="xs" c="dimmed" tt="uppercase">
+              {t('browse.members')}
+            </Text>
+            <Text fw={700}>{toLocale(members)}</Text>
+          </div>
+        </Group>
+        <Group gap="xs">
+          {userMembership || isLeader ? (
+            <Button
+              fullWidth
+              radius="sm"
+              size="sm"
+              color="blue"
+              onClick={handleManageClick}
+            >
+              {t('browse.manage', 'View Dashboard')}
+            </Button>
+          ) : (
+            <Button
+              fullWidth
+              radius="sm"
+              size="sm"
+              color="yellow"
+              disabled={isInviteOnly}
+              loading={loading}
+              onClick={handleJoinClick}
+            >
+              {isInviteOnly
+                ? t('browse.inviteOnly')
+                : joinMode === 'REQUEST_TO_JOIN'
+                  ? t('browse.requestToJoin')
+                  : joinText || t('browse.join')}
+            </Button>
+          )}
+        </Group>
+      </Stack>
+    </GameCard>
   );
 };
 
-const Browse = (props) => {
+const Browse = () => {
   const [alliances, setAlliances] = useState([]);
+  const { t } = useTranslation('alliances');
+  const { user, forceUpdate } = useUser();
+
+  const handleJoin = async (allianceId: number) => {
+    try {
+      const response = await fetch('/api/alliances/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allianceId }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to join alliance');
+      }
+
+      alertService.success(data.message || t('browse.joinSuccess'));
+      forceUpdate(); // Update user context to reflect membership
+    } catch (error: any) {
+      logError('Error joining alliance:', error);
+      alertService.error(error.message);
+    }
+  };
 
   useEffect(() => {
     const fetchAlliances = async () => {
@@ -60,7 +179,7 @@ const Browse = (props) => {
         const data = await response.json();
         setAlliances(data);
       } catch (error) {
-        logError('Failed to fetch alliances:', error);
+        logError(t('browse.errorFetching'), error);
       }
     };
 
@@ -68,20 +187,41 @@ const Browse = (props) => {
   }, []);
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 3 }}>
-      {alliances.map((alliance) => (
-        <UserCardImage
-          key={alliance.id}
-          name={alliance.name}
-          description={alliance.motto}
-          members={alliance._count.members}
-          gold={0}
-          joinText="Join"
-          imgsrc={alliance.avatar || '/path/to/default/avatar.png'}
-          bannerimgsrc={alliance.bannerimg || '/path/to/default/banner.png'}
-        />
-      ))}
-    </SimpleGrid>
+    <MainArea title={t('browse.title')}>
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 3 }}>
+        {alliances.map((alliance) => {
+          const userMembership = user?.alliance_memberships?.find(
+            (m) => m.alliance_id === alliance.id,
+          );
+          const isLeader = user?.ledAlliances?.some(
+            (a) => a.id === alliance.id,
+          );
+
+          return (
+            <UserCardImage
+              key={alliance.id}
+              name={alliance.name}
+              description={alliance.motto}
+              members={alliance._count.members}
+              gold={
+                alliance.gold_in_bank
+                  ? alliance.gold_in_bank.toString().replace('n', '')
+                  : 0
+              }
+              joinText={t('browse.join')}
+              imgsrc={alliance.avatar || null}
+              bannerimgsrc={alliance.bannerimg || null}
+              joinMode={alliance.join_mode}
+              id={alliance.id}
+              onJoin={handleJoin}
+              // Check if user is member/leader
+              userMembership={userMembership}
+              isLeader={isLeader}
+            />
+          );
+        })}
+      </SimpleGrid>
+    </MainArea>
   );
 };
 

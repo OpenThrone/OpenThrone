@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
-
-import { useLayout } from '../context/LayoutContext';
+import {
+  Anchor,
+  Button,
+  Checkbox,
+  Modal as MantineModal,
+  NumberInput,
+  Text,
+} from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
 import router from 'next/router';
+import { useTranslation } from 'next-i18next';
+import React, { useRef, useState } from 'react';
+
 import { useUser } from '@/context/users';
-import useSocket from '@/hooks/useSocket';
+import { logError } from '@/utils/logger';
 
 /**
  * Props for the attack confirmation Modal component.
@@ -15,18 +24,36 @@ interface ModalProps {
   toggleModal: () => void;
   /** The ID of the user profile being targeted for attack. */
   profileID?: number;
+  targetName?: string;
+  allowNewTab?: boolean;
 }
 
 /**
  * A modal component used to confirm the number of attack turns before initiating an attack.
  * Handles form submission, API interaction, loading state, error display, and redirection to results.
  */
-const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
+const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  toggleModal,
+  profileID,
+  targetName,
+  allowNewTab = false,
+}) => {
+  const { t } = useTranslation('battle');
+  const submittingRef = useRef(false);
+  const [newTab, setNewTab] = useLocalStorage({
+    key: 'battle-report-new-tab',
+    defaultValue: false,
+  });
+  const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [turns, setTurns] = useState(1);
-  const {user, forceUpdate} = useUser();
+  const [turnsInput, setTurnsInput] = useState<string | number>(1);
+  const { forceUpdate } = useUser();
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // Add loading state
-  const { socket } = useSocket(user?.id);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const buildIdempotencyKey = () =>
+    `attack-${profileID ?? 'unknown'}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   /**
    * Handles the submission of the attack confirmation form.
@@ -36,115 +63,127 @@ const Modal: React.FC<ModalProps> = ({ isOpen, toggleModal, profileID }) => {
    */
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!turns || isLoading) return; // Prevent multiple submissions
+    if (submittingRef.current) return;
+    if (!Number.isSafeInteger(turns) || turns < 1) {
+      setError(t('attack.invalidTurns'));
+      return;
+    }
 
+    submittingRef.current = true;
+    const reportTab =
+      allowNewTab && newTab ? window.open('about:blank', '_blank') : null;
+    if (reportTab) reportTab.opener = null;
     setIsLoading(true); // Set loading state
     setError(''); // Clear previous errors
 
-    const res = await fetch(`/api/attack/${profileID}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ turns }),
-    });
-
-    const results = await res.json();
-
-    if (results.status === 'failed') {
-      setError(`Failed to execute attack. ${results?.message}`);
-      setIsLoading(false); // Reset loading state on failure
-    } else {
-      // No need to set error here as it's cleared at the start
-      forceUpdate();
-      if (socket) {
-        socket.emit('notifyAttack', { defenderId: profileID, battleId: results.attack_log });
+    try {
+      const res = await fetch(`/api/attack/${profileID}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': buildIdempotencyKey(),
+        },
+        body: JSON.stringify({ turns }),
+      });
+      const results = await res.json();
+      if (
+        !res.ok ||
+        results?.status === 'failed' ||
+        !results?.attack_log ||
+        Number.isNaN(Number(results.attack_log))
+      ) {
+        reportTab?.close();
+        setError(
+          typeof results?.message === 'string'
+            ? results.message
+            : t('attack.attackFailed'),
+        );
+        return;
       }
-      router.push(`/battle/results/${results.attack_log}`);
-      // No need to toggle modal here, let the redirect handle it
-      // Reset loading state on success (though redirect might make this visually brief)
+      forceUpdate();
+      const url = `/battle/results/${Number(results.attack_log)}`;
+      if (allowNewTab && newTab) {
+        if (reportTab && !reportTab.closed) {
+          reportTab.location.replace(url);
+          toggleModal();
+        } else {
+          setReportUrl(url);
+        }
+      } else {
+        toggleModal();
+        await router.push(url);
+      }
+    } catch (error) {
+      reportTab?.close();
+      logError(error, { profileID }, 'Attack submission failed');
+      setError(t('attack.attackFailed'));
+    } finally {
+      submittingRef.current = false;
       setIsLoading(false);
     }
   };
 
-  const { raceClasses } = useLayout();
   return (
-    <div
-      className={`fixed inset-0 z-10 overflow-y-auto bg-gray-500 bg-opacity-75 transition-opacity ${
-        isOpen ? '' : 'hidden'
-      }`}
-      aria-labelledby="modal-title"
-      role="dialog"
-      aria-modal="true"
+    <MantineModal
+      opened={isOpen}
+      onClose={toggleModal}
+      title={
+        targetName
+          ? t('actions.attackTarget', { name: targetName })
+          : t('attack.turnsQuestion')
+      }
+      centered
+      closeOnClickOutside={!isLoading}
+      closeOnEscape={!isLoading}
+      withCloseButton={!isLoading}
+      data-testid="attack-modal"
     >
-      <div className="flex min-h-screen  items-end justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
-        <span
-          className="hidden sm:inline-block sm:h-screen sm:align-middle"
-          aria-hidden="true"
-        >
-          &#8203;
-        </span>
-        <div className="inline-block overflow-hidden text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-          <div
-            className={`rounded-md px-4 pb-4 pt-5 sm:p-6 sm:pb-4 ${raceClasses.bgClass}`}
+      {reportUrl ? (
+        <Text role="status">
+          {t('actions.reportReady')}{' '}
+          <Anchor href={reportUrl} target="_blank" rel="noopener noreferrer">
+            {t('actions.viewReport')}
+          </Anchor>
+        </Text>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <NumberInput
+            label={t('attack.turnsQuestion')}
+            description={t('attack.turnsDescription')}
+            error={error ? <span role="alert">{error}</span> : undefined}
+            mb="sm"
+            min={1}
+            allowDecimal={false}
+            allowNegative={false}
+            value={turnsInput}
+            disabled={isLoading}
+            onChange={(value) => {
+              setTurnsInput(value);
+              const parsed = Number(value);
+              setTurns(Number.isFinite(parsed) ? parsed : 0);
+            }}
+            data-testid="attack-turns-input"
+          />
+          {allowNewTab && (
+            <Checkbox
+              mb="md"
+              checked={newTab}
+              disabled={isLoading}
+              onChange={(event) => setNewTab(event.currentTarget.checked)}
+              label={t('actions.newTab')}
+            />
+          )}
+          <Button
+            type="submit"
+            loading={isLoading}
+            disabled={isLoading}
+            fullWidth
           >
-            <div className="justify-between sm:flex sm:items-center">
-              <h3 className="text-lg font-medium leading-6" id="modal-title">
-                How many turns?
-              </h3>
-              <button
-                onClick={toggleModal}
-                type="button"
-                className="ml-3 inline-flex rounded-md border border-transparent bg-red-600 p-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:text-sm"
-              >
-                <span className="sr-only">Close</span>
-                <svg
-                  className="size-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {error && <p className="text-red-500">{error}</p>}
-            <form onSubmit={handleSubmit}>
-              <div className="mt-2">
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="1"
-                  value={turns}
-                  onChange={(e) => setTurns(parseInt(e.target.value, 10) || 0)} // Parse value to integer
-                  className="block w-full rounded-md border-gray-300 bg-black p-2.5 leading-6 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                />
-              </div>
-              <div className="mt-4">
-                <button
-                  type="submit"
-                  className={`inline-flex w-full justify-center rounded-md border border-transparent px-4 py-2 text-base font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:text-sm ${
-                    isLoading
-                      ? 'cursor-not-allowed bg-indigo-400'
-                      : 'bg-indigo-600 hover:bg-indigo-700'
-                  }`}
-                  disabled={isLoading} // Disable button when loading
-                >
-                  {isLoading ? 'Submitting...' : 'Submit'} {/* Change text when loading */}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+            {isLoading ? t('attack.submitting') : t('attack.attack')}
+          </Button>
+        </form>
+      )}
+    </MantineModal>
   );
 };
 

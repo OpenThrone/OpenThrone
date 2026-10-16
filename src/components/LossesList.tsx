@@ -1,41 +1,77 @@
-import { BattleUnits } from "@/types/typings";
-import { HoverCard, List } from "@mantine/core";
+import { Stack, Text } from '@mantine/core';
+import { useMemo } from 'react';
+
+import type { BattleUnits } from '@/types/typings';
+import { toLocale } from '@/utils/numberFormatting';
+
+const EMPTY_UNITS: BattleUnits[] = [];
+
+type LossesInput = string | { total?: number; units?: BattleUnits[] };
 
 interface LossesListProps {
-  losses: string; // JSON string containing total and units
+  losses: LossesInput;
+  /** Render the per-unit breakdown under the total when it is available. */
+  showUnits?: boolean;
+  align?: 'center' | 'flex-start';
 }
-const LossesList: React.FC<LossesListProps> = ({ losses }) => {
-  const { total, units = [] } = typeof losses === 'string' ? JSON.parse(losses) : losses;
 
-  if (total === 0 || units.length === 0) {
-    return <span>0 Units</span>;
+const parseLosses = (losses: LossesInput) => {
+  try {
+    return typeof losses === 'string' ? JSON.parse(losses) : losses;
+  } catch {
+    return null;
+  }
+};
+
+const unitLabel = (type: string) =>
+  type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+
+/** Casualty total with the units behind it listed inline (no hover needed). */
+const LossesList: React.FC<LossesListProps> = ({
+  losses,
+  showUnits = true,
+  align = 'center',
+}) => {
+  const parsed = useMemo(() => parseLosses(losses), [losses]);
+  const total = Number(parsed?.total) || 0;
+  const units: BattleUnits[] = parsed?.units ?? EMPTY_UNITS;
+
+  const consolidatedUnits = useMemo(() => {
+    const byKey = units.reduce(
+      (acc, unit) => {
+        const key = `${unit.level}-${unit.type}`;
+        if (acc[key]) {
+          acc[key].quantity += unit.quantity;
+        } else {
+          acc[key] = { ...unit };
+        }
+        return acc;
+      },
+      {} as Record<string, BattleUnits>,
+    );
+    return Object.entries(byKey);
+  }, [units]);
+
+  const totalLabel = (
+    <span>
+      {toLocale(total)} {total === 1 ? 'Unit' : 'Units'}
+    </span>
+  );
+
+  // The opposing side's breakdown is redacted; show the total only.
+  if (!showUnits || !total || consolidatedUnits.length === 0) {
+    return totalLabel;
   }
 
-  const consolidatedUnits = units.reduce((acc, unit) => {
-    const key = `${unit.level}-${unit.type}`;
-    if (!acc[key]) {
-      acc[key] = { ...unit };
-    } else {
-      acc[key].quantity += unit.quantity;
-    }
-    return acc;
-  }, {} as Record<string, BattleUnits>);
-
   return (
-    <HoverCard>
-      <HoverCard.Target>
-        <span>{total} Units</span>
-      </HoverCard.Target>
-      <HoverCard.Dropdown>
-        <List>
-          {Object.values(consolidatedUnits).map((unit, index) => (
-            <List.Item key={index}>
-              {unit.quantity}x Level {unit.level} {unit.type}
-            </List.Item>
-          ))}
-        </List>
-      </HoverCard.Dropdown>
-    </HoverCard>
+    <Stack gap={2} align={align} component="span">
+      {totalLabel}
+      {consolidatedUnits.map(([key, unit]) => (
+        <Text key={key} component="span" size="xs" fw={400} c="dimmed">
+          {toLocale(unit.quantity)}× Lv {unit.level} {unitLabel(unit.type)}
+        </Text>
+      ))}
+    </Stack>
   );
 };
 

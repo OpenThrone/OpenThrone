@@ -1,0 +1,20 @@
+{
+  "capturedAt": "2026-10-04",
+  "method": "Real Chromium viewport screenshots; no generated or mocked product UI",
+  "viewportCssPixels": { "width": 1440, "height": 1000 },
+  "imagePixels": { "width": 1800, "height": 1250 },
+  "images": [
+    {
+      "file": "return-production-home.webp",
+      "sourceUrl": "https://openthrone.dev/",
+      "description": "Official production homepage, logged out",
+      "alterations": "PNG-to-WebP compression only"
+    },
+    {
+      "file": "return-alpha-home.webp",
+      "sourceUrl": "https://alpha.openthrone.dev/",
+      "description": "Current alpha homepage, logged out; not a production deployment",
+      "alterations": "Developer-only React Scan and Next.js debug overlays removed from the capture; product UI unchanged; PNG-to-WebP compression"
+    }
+  ]
+}

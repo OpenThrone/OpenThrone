@@ -1,9 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Button, Table, ScrollArea, Loader, Text, Group, Pagination, Alert } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Group,
+  Loader,
+  Modal,
+  Pagination,
+  ScrollArea,
+  Table,
+  Text,
+} from '@mantine/core';
+import React, { useEffect, useState } from 'react';
+
 import { useUser } from '@/context/users';
+import type { Log } from '@/types/typings';
+import { logDebug, logError } from '@/utils/logger';
 import { formatDate } from '@/utils/utilities';
-import { Log } from '@/types/typings';
-import { logError } from '@/utils/logger';
 
 interface AttackLogShareModalProps {
   opened: boolean;
@@ -13,7 +24,11 @@ interface AttackLogShareModalProps {
 
 const ROWS_PER_PAGE = 5;
 
-const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({ opened, onClose, onShare }) => {
+const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
+  opened,
+  onClose,
+  onShare,
+}) => {
   const { user } = useUser();
   const [attackLogs, setAttackLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,20 +40,17 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({ opened, onClo
     if (opened && user?.id) {
       setLoading(true);
       setError(null);
-      
-      // Debug user
-      console.log('Current user:', user);
-      
+
       // Fetch user's attack logs
       fetch(`/api/attack/logs?limit=${ROWS_PER_PAGE}&page=${activePage - 1}`)
-        .then(res => {
+        .then((res) => {
           if (!res.ok) {
             throw new Error('Failed to fetch attack logs');
           }
           return res.json();
         })
-        .then(data => {
-          console.log('API response:', data); // Log the entire response
+        .then((data) => {
+          logDebug('API response:', data);
           if (data.data && Array.isArray(data.data)) {
             setAttackLogs(data.data);
             setTotalPages(Math.ceil(data.total / ROWS_PER_PAGE));
@@ -47,8 +59,8 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({ opened, onClo
             throw new Error('Invalid data format');
           }
         })
-        .catch(err => {
-          logError("Error fetching attack logs:", err);
+        .catch((err) => {
+          logError('Error fetching attack logs:', err);
           setError(err.message || 'Could not load logs.');
           setAttackLogs([]);
           setTotalPages(0);
@@ -62,38 +74,42 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({ opened, onClo
       setPage(1);
       setTotalPages(0);
     }
-  }, [opened, user?.id, activePage, user]); // Re-fetch when page changes
+  }, [opened, user?.id, activePage]); // Re-fetch when page changes
 
   const handleShareClick = (logId: number) => {
     onShare(logId);
     onClose();
   };
 
-  // Debug attackLogs
-  useEffect(() => {
-    console.log('Attack logs state:', attackLogs);
-  }, [attackLogs]);
-
   const rows = attackLogs.map((log) => {
     const isAttacker = Number(log.attacker_id) === Number(user?.id);
-    
+
     // Format the battle description in "Attacker attacked Defender" style
     let battleDescription: string;
-    const attackerName = isAttacker ? 'You' : (log.attackerPlayer?.display_name || 'Unknown Player');
-    const defenderName = !isAttacker ? 'You' : (log.defenderPlayer?.display_name || 'Unknown Player');
-    
+    const attackerName = isAttacker
+      ? 'You'
+      : log.attackerPlayer?.display_name || 'Unknown Player';
+    const defenderName = !isAttacker
+      ? 'You'
+      : log.defenderPlayer?.display_name || 'Unknown Player';
+
     battleDescription = `${attackerName} attacked ${defenderName}`;
-    
+
     // Determine outcome
-    const outcome = Number(log.winner) === Number(user?.id) ? 'Victory' : 'Defeat';
+    const outcome =
+      Number(log.winner) === Number(user?.id) ? 'Victory' : 'Defeat';
 
     return (
       <Table.Tr key={log.id}>
         <Table.Td>{battleDescription}</Table.Td>
         <Table.Td>{formatDate(log.timestamp)}</Table.Td>
-        <Table.Td c={outcome === 'Victory' ? 'green' : 'red'}>{outcome}</Table.Td>
+        <Table.Td c={outcome === 'Victory' ? 'green' : 'red'}>
+          {outcome}
+        </Table.Td>
         <Table.Td>
-          <Button size="xs" onClick={() => handleShareClick(log.id)}>Share</Button>
+          <Button size="xs" onClick={() => handleShareClick(log.id)}>
+            Share
+          </Button>
         </Table.Td>
       </Table.Tr>
     );
@@ -106,13 +122,19 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({ opened, onClo
           <Loader size="md" />
         </Group>
       )}
-      
-      {error && <Alert color="red" title="Error">{error}</Alert>}
-      
-      {!loading && !error && attackLogs.length === 0 && (
-        <Text ta="center" p="md">No recent attack logs found.</Text>
+
+      {error && (
+        <Alert color="red" title="Error">
+          {error}
+        </Alert>
       )}
-      
+
+      {!loading && !error && attackLogs.length === 0 && (
+        <Text ta="center" p="md">
+          No recent attack logs found.
+        </Text>
+      )}
+
       {!loading && !error && attackLogs.length > 0 && (
         <>
           <ScrollArea h={300}>
@@ -128,22 +150,24 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({ opened, onClo
               <Table.Tbody>{rows}</Table.Tbody>
             </Table>
           </ScrollArea>
-          
+
           {totalPages > 1 && (
             <Group justify="center" mt="md">
-              <Pagination 
-                total={totalPages} 
-                value={activePage} 
-                onChange={setPage} 
-                siblings={1} 
+              <Pagination
+                total={totalPages}
+                value={activePage}
+                onChange={setPage}
+                siblings={1}
               />
             </Group>
           )}
         </>
       )}
-      
+
       <Group justify="flex-end" mt="md">
-        <Button variant="default" onClick={onClose}>Cancel</Button>
+        <Button variant="default" onClick={onClose}>
+          Cancel
+        </Button>
       </Group>
     </Modal>
   );

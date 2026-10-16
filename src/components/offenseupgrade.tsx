@@ -1,88 +1,81 @@
+import { Badge, Button, Table } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React from 'react';
 
 import { Fortifications, OffensiveUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import type { BattleUpgradeProps } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
-import toLocale from '@/utils/numberFormatting';
-import { Badge } from '@mantine/core';
+import { toLocale } from '@/utils/numberFormatting';
+
+import { StyledTable } from './game/StyledTable';
 
 const OffenseUpgrade: React.FC<BattleUpgradeProps> = ({
   userLevel,
   fortLevel,
   forceUpdate,
 }) => {
+  const { t } = useTranslation(['structures', 'common']);
   const { user } = useUser();
 
+  const rows = Object.values(OffensiveUpgrades)
+    .filter((item) => item.level <= fortLevel + 2)
+    .map((item, index) => (
+      <Table.Tr key={`${item.name}_${item.level}`}>
+        <Table.Td>
+          {item.name}{' '}
+          {item.level === userLevel && (
+            <Badge color="yellow" ml={5}>
+              {t('labels.owned', { ns: 'common' })}
+            </Badge>
+          )}
+        </Table.Td>
+        <Table.Td>
+          {
+            Fortifications.find((f) => f.level === item.fortLevelRequirement)
+              ?.name
+          }
+        </Table.Td>
+        <Table.Td>
+          {t('upgrades.offenseBonus')}: {item.offenseBonusPercentage}%
+        </Table.Td>
+        <Table.Td>
+          {toLocale(item.cost, user?.locale)}{' '}
+          {t('currency.gold', { ns: 'common' })}
+        </Table.Td>
+        <Table.Td>
+          {item.level === userLevel + 1 &&
+          item.fortLevelRequirement <= fortLevel ? (
+            <Button onClick={() => buyUpgrade('offense', index, forceUpdate)}>
+              {t('labels.buy', { ns: 'common' })}
+            </Button>
+          ) : (
+            item.fortLevelRequirement > fortLevel && (
+              <span>
+                {t('upgrades.unlockWith', {
+                  name: Fortifications.find(
+                    (f) => f.level === item.fortLevelRequirement,
+                  )?.name,
+                })}
+              </span>
+            )
+          )}
+        </Table.Td>
+      </Table.Tr>
+    ));
+
   return (
-    <table className="min-w-full table-auto bg-gray-900 text-white">
-      <thead className="text-left">
-        <tr>
-          <th className="px-4 py-2">Name</th>
-          <th className="px-4 py-2">Fort Req.</th>
-          <th className="px-4 py-2">Bonus</th>
-          <th className="px-4 py-2">Cost</th>
-          <th className="px-4 py-2">Action</th>
-        </tr>
-      </thead>
-      <tbody className="">
-        {Object.values(OffensiveUpgrades)
-          .filter((item) => item.level <= fortLevel + 2)
-          .map((item, index) => {
-            return (
-              <tr key={`${item.name}_${item.level}`} className='odd:bg-table-odd even:bg-table-even'>
-                <td className="px-2 py-2">
-                  {item.name} {item.level === userLevel && (
-                    <Badge color={(user?.colorScheme === "ELF") ?
-                      'green' : (
-                        user?.colorScheme === 'GOBLIN' ? 'red' : (
-                          user?.colorScheme === 'UNDEAD' ? 'dark'
-                            : 'blue'
-                        ))} ml={5}>Owned</Badge>
-                  )}
-                </td>
-                <td className="px-2 py-2">
-                  {
-                    Fortifications.find(
-                      (fort) => fort.level === item.fortLevelRequirement
-                    )?.name
-                  }
-                </td>
-                <td className="px-2 py-2">
-                  Offense Bonus: {item.offenseBonusPercentage}%
-                </td>
-                <td className="px-2 py-2">
-                  {toLocale(item.cost, user?.locale)} Gold
-                </td>
-                <td className="px-2 py-2">
-                  {item.level === userLevel + 1 &&
-                  item.fortLevelRequirement <= fortLevel ? (
-                    <button
-                      type="button"
-                      className="w-full rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-                      disabled={fortLevel < item.fortLevelRequirement}
-                      onClick={() => buyUpgrade('offense', index, forceUpdate)}
-                    >
-                      Buy
-                    </button>
-                  ) : (
-                    item.fortLevelRequirement > fortLevel && (
-                      <span>
-                        Unlock with: <br />
-                        {
-                          Fortifications.find(
-                            (fort) => fort.level === item.fortLevelRequirement
-                          )?.name
-                        }
-                      </span>
-                    )
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-      </tbody>
-    </table>
+    <StyledTable
+      headers={[
+        t('labels.name', { ns: 'common' }),
+        t('upgrades.fortReq'),
+        t('labels.bonus', { ns: 'common' }),
+        t('labels.cost', { ns: 'common' }),
+        t('labels.action', { ns: 'common' }),
+      ]}
+    >
+      {rows}
+    </StyledTable>
   );
 };
 

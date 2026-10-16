@@ -1,85 +1,185 @@
-import { TextInput, Text, Button, Group, Alert, Loader, Textarea, FileInput, Paper } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Group,
+  Loader,
+  Select,
+  SimpleGrid,
+  Text,
+  Textarea,
+  TextInput,
+} from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useUser } from '@/context/users';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
 
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
+import { logError } from '@/utils/logger';
+
+/** Create alliance. */
 export default function CreateAlliance() {
   const { user } = useUser();
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation('alliances');
 
   const form = useForm({
     initialValues: {
       allianceName: '',
-      description: '',
-      joinText: '',
-      avatar: null,
+      motto: '',
+      comments: '',
+      avatarUrl: '',
+      joinMode: 'OPEN',
+      rosterVisibility: 'PUBLIC',
     },
 
     validate: {
       allianceName: (value) =>
-        value.trim().length >= 3 ? null : 'Alliance name must be at least 3 characters long',
-      description: (value) =>
-        value.trim().length > 10 ? null : 'Description must be at least 10 characters long',
-      joinText: (value) =>
-        value.trim().length > 0 ? null : 'Join text must not be empty',
+        value.trim().length >= 3 ? null : t('create.nameTooShort'),
+      motto: (value) =>
+        value.trim().length === 0 || value.trim().length <= 255
+          ? null
+          : t('create.mottoTooLong'),
+      comments: (value) =>
+        value.trim().length === 0 || value.trim().length <= 1000
+          ? null
+          : t('create.commentsTooLong'),
     },
   });
 
   if (!user) {
-    return <Loader />;
+    return (
+      <MainArea title={t('create.title')}>
+        <Loader />
+      </MainArea>
+    );
   }
 
-  if (user.level < 5) {
-    return <Alert color="red">You must be at least level 10 to create an alliance.</Alert>;
+  if (user.level < 10) {
+    return (
+      <MainArea title={t('create.title')}>
+        <Alert color="red">{t('create.levelRequired', { level: 10 })}</Alert>
+      </MainArea>
+    );
   }
 
   if (user.gold < 100000000) {
-    return <Alert color="red">Creating an alliance costs 100 million gold.</Alert>;
+    return (
+      <MainArea title={t('create.title')}>
+        <Alert color="red">
+          {t('create.goldRequired', { cost: '100 million' })}
+        </Alert>
+      </MainArea>
+    );
   }
 
-  const handleSubmit = async (values) => {
-    const formData = new FormData();
-    formData.append('name', values.allianceName);
-    formData.append('description', values.description);
-    formData.append('joinText', values.joinText);
-    if (values.avatar) {
-      formData.append('avatar', values.avatar);
-    }
+  const handleSubmit = async (values: {
+    allianceName: string;
+    motto: string;
+    comments: string;
+    avatarUrl: string;
+    joinMode: string;
+    rosterVisibility: string;
+  }) => {
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/alliances/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: values.allianceName,
+          motto: values.motto.trim() || undefined,
+          comments: values.comments.trim() || undefined,
+          avatar: values.avatarUrl.trim() || undefined,
+          join_mode: values.joinMode,
+          roster_visibility: values.rosterVisibility,
+        }),
+      });
 
-    // Implement the API call here using formData
-    console.log([...formData]); // Placeholder for API call
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const message = data?.error || t('create.error');
+        alertService.error(message);
+        return;
+      }
+
+      alertService.success(t('create.success'));
+      router.push('/alliances');
+    } catch (error) {
+      logError('Failed to create alliance:', error);
+      alertService.error(t('create.error'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <Paper shadow='2' p="md">
-    <form onSubmit={form.onSubmit(handleSubmit)}>
-      <TextInput
-        label="Alliance Name"
-        placeholder="Enter your alliance name"
-        required
-        {...form.getInputProps('allianceName')}
-      />
-      <Textarea
-        label="Description"
-        placeholder="Enter the alliance description"
-        required
-        {...form.getInputProps('description')}
-      />
-      <TextInput
-        label="Join Text"
-        placeholder="Enter the text shown on the join button"
-        required
-        {...form.getInputProps('joinText')}
-      />
-      <FileInput
-        label="Alliance Avatar"
-        placeholder="Upload an avatar"
-        accept="image/png,image/jpeg"
-        {...form.getInputProps('avatar')}
-      />
-      <Text>Cost: 100 Million Gold</Text>
-      <Group mt="md">
-        <Button type="submit">Create Alliance</Button>
-      </Group>
-      </form>
-    </Paper>
+    <MainArea title={t('create.title')}>
+      <GameCard title={t('create.charter')}>
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <TextInput
+            label={t('create.name')}
+            placeholder={t('create.namePlaceholder')}
+            required
+            {...form.getInputProps('allianceName')}
+          />
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <Select
+              label={t('create.joinMode')}
+              data={[
+                { value: 'OPEN', label: t('create.joinModeOpen') },
+                {
+                  value: 'REQUEST_TO_JOIN',
+                  label: t('create.joinModeRequest'),
+                },
+                {
+                  value: 'INVITE_ONLY',
+                  label: t('create.joinModeInvite'),
+                },
+              ]}
+              {...form.getInputProps('joinMode')}
+            />
+            <Select
+              label={t('create.rosterVisibility')}
+              data={[
+                { value: 'PUBLIC', label: t('create.rosterPublic') },
+                {
+                  value: 'MEMBERS_ONLY',
+                  label: t('create.rosterMembersOnly'),
+                },
+              ]}
+              {...form.getInputProps('rosterVisibility')}
+            />
+          </SimpleGrid>
+          <TextInput
+            label={t('create.avatar')}
+            placeholder={t('create.avatarPlaceholder')}
+            {...form.getInputProps('avatarUrl')}
+          />
+          <TextInput
+            label={t('create.motto')}
+            placeholder={t('create.mottoPlaceholder')}
+            {...form.getInputProps('motto')}
+          />
+          <Textarea
+            label={t('create.comments')}
+            placeholder={t('create.commentsPlaceholder')}
+            minRows={4}
+            {...form.getInputProps('comments')}
+          />
+
+          <Text>{t('create.cost')}</Text>
+          <Group mt="md">
+            <Button type="submit" loading={submitting} color="yellow">
+              {t('create.create')}
+            </Button>
+          </Group>
+        </form>
+      </GameCard>
+    </MainArea>
   );
 }

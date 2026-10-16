@@ -1,232 +1,366 @@
-import React, { forwardRef, useEffect, useState } from 'react';
-import { Space, Group, SimpleGrid, Container, Menu, UnstyledButton, Title, Badge, Text, ScrollArea, Alert } from '@mantine/core'; // Added ScrollArea
-import { alertService } from '../services/alert.service';
-import { faArrowRightFromBracket, faComments, faGear, faIdCard, faSkullCrossbones } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowRightFromBracket,
+  faComments,
+  faGear,
+  faIdCard,
+  faSkullCrossbones,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Badge,
+  Box,
+  Container,
+  Group,
+  Menu,
+  ScrollArea,
+  Space,
+  Text,
+  Title,
+  UnstyledButton,
+} from '@mantine/core';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import React, {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+
+import AnnouncementBanner from '@/components/AnnouncementBanner';
+import frameClasses from '@/components/game/FantasyFrame.module.css';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLayout } from '@/context/LayoutContext';
-import RpgAwesomeIcon from './RpgAwesomeIcon';
 import { useUser } from '@/context/users';
-import { formatLastMessageTime } from '@/utils/timefunctions'; // Import time formatter
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
+import { formatLastMessageTime } from '@/utils/timefunctions';
+
+import HeaderIconButton from './HeaderIconButton';
+import classes from './MainArea.module.css';
+import RpgAwesomeIcon from './RpgAwesomeIcon';
 
 interface MainAreaProps {
   title: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
   paperWidth?: { sm: string; md: string };
 }
 
-const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(
-  function MainArea({ title, children, paperWidth }, ref) {
-    const { authorized } = useLayout();
-    const [userMenuOpened, setUserMenuOpened] = useState(false);
-    // Consume unread messages state and functions from context
-    const { unreadMessages, unreadMessagesCount, markRoomAsRead } = useUser();
-    const [messageMenuOpened, setMessageMenuOpened] = useState(false);
+const MainArea = forwardRef<HTMLDivElement, MainAreaProps>(function MainArea(
+  { title, icon, children, paperWidth: _paperWidth },
+  ref,
+) {
+  const { authorized } = useLayout();
+  const { t } = useTranslation('common');
+  const { unreadMessages, unreadMessagesCount, markRoomAsRead } = useUser();
+  const { config } = useRuntimeConfig();
+  const [isMessageMenuOpened, setMessageMenuOpened] = useState(false);
+  const [isSocialMenuOpened, setSocialMenuOpened] = useState(false);
+  const [isSettingsMenuOpened, setSettingsMenuOpened] = useState(false);
+  const [socialNotificationCount, setSocialNotificationCount] = useState(0);
+  const enableEnemies = config?.enableEnemies === true;
+  const enableSocial = config?.enableSocial === true;
 
-    const handleMessageItemClick = (roomId: number) => {
-      markRoomAsRead(roomId); // Mark room as read when clicking a message from it
-      // Navigation will be handled by the Link component
+  const fetchSocialNotificationCount = useCallback(async () => {
+    if (!authorized || !enableSocial) return;
+    try {
+      const res = await fetch('/api/social/notifications/count');
+      if (!res.ok) return;
+      const data = await res.json();
+      setSocialNotificationCount(Number(data.count) || 0);
+    } catch {
+      // Intentionally silent - fetchSocialNotificationCount errors are non-critical
+    }
+  }, [authorized, enableSocial]);
+
+  const handleMessageItemClick = useCallback(
+    (roomId: number) => {
+      markRoomAsRead(roomId);
+    },
+    [markRoomAsRead],
+  );
+
+  useEffect(() => {
+    fetchSocialNotificationCount();
+    const interval = setInterval(fetchSocialNotificationCount, 2 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchSocialNotificationCount]);
+
+  useEffect(() => {
+    const handleFocus = () => fetchSocialNotificationCount();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSocialNotificationCount();
+      }
     };
 
-    return (
-      <div className="mainArea pb-10 w-full flex flex-col flex-grow overflow-y-auto" ref={ref || null}>
-        <header
-          style={
-            {
-              height: '56px',
-              borderBottom: '1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4))',
-              flexShrink: 0,
-            }
-          }>
-          <Container
-            size="lg"
-            style={
-              {
-                height: '56px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }
-            }
-          >
-            <Title order={2} className="text-gradient-orange bg-orange-gradient text-shadow text-shadow-xs">
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchSocialNotificationCount]);
+
+  return (
+    <div
+      className="mainArea flex w-full grow flex-col overflow-y-auto pb-10 pt-3"
+      ref={ref || null}
+    >
+      <header
+        className={`${classes.titleBar} ${frameClasses.surface} ${frameClasses.ornate}`}
+        style={{
+          minHeight: '56px',
+          flexShrink: 0,
+        }}
+      >
+        <Container
+          fluid
+          style={{
+            minHeight: '56px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '8px',
+            paddingTop: '8px',
+            paddingBottom: '8px',
+            paddingLeft: '24px',
+            paddingRight: '24px',
+          }}
+        >
+          <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+            {icon && (
+              <Box
+                c="var(--ot-accent)"
+                fz={28}
+                aria-hidden="true"
+                style={{ flexShrink: 0 }}
+              >
+                {icon}
+              </Box>
+            )}
+            <Title
+              order={1}
+              size="h2"
+              className="main-header-title"
+              data-testid="page-title"
+            >
               {title}
             </Title>
-            {authorized && (
-              <Group gap={'lg'} visibleFrom='md'>
+          </Group>
+          {authorized && (
+            <Group gap="lg" visibleFrom="md">
+              <Menu
+                width={320}
+                position="bottom-end"
+                transitionProps={{ transition: 'pop-top-right' }}
+                onClose={() => setMessageMenuOpened(false)}
+                onOpen={() => setMessageMenuOpened(true)}
+                opened={isMessageMenuOpened}
+                withinPortal
+                shadow="md"
+              >
+                <Menu.Target>
+                  <HeaderIconButton
+                    label="Messages"
+                    count={unreadMessagesCount}
+                    data-testid="action-button"
+                  >
+                    <FontAwesomeIcon icon={faComments} fixedWidth />
+                  </HeaderIconButton>
+                </Menu.Target>
 
-                <Menu
-                  width={320}
-                  position="bottom-end"
-                  transitionProps={{ transition: 'pop-top-right' }}
-                  onClose={() => setMessageMenuOpened(false)}
-                  onOpen={() => setMessageMenuOpened(true)}
-                  withinPortal
-                  shadow="md"
-                >
-                  <Menu.Target>
-                    <div style={{ position: 'relative', cursor: 'pointer' }}>
-                      <FontAwesomeIcon
-                        icon={faComments}
-                        style={{
-                          color: 'orange'
-                        }}
-                        fixedWidth
-                        size="sm"
-                      />
-                      {unreadMessagesCount > 0 && (
-                        <Badge
-                          color="red"
-                          variant="filled"
-                          size="xs" // Smaller badge
-                          circle // Make it circular
-                          style={{
-                            position: 'absolute',
-                            top: -5, // Adjust position
-                            right: -8, // Adjust position
-                            minWidth: 16, // Ensure minimum size
-                            height: 16,
-                            padding: '0 4px', // Adjust padding
-                            lineHeight: '16px' // Center text vertically
-                          }}
-                        >
-                          {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
-                        </Badge>
-                      )}
-                    </div>
-                  </Menu.Target>
-
-                  <Menu.Dropdown>
-                    <Menu.Label>Recent Unread Messages</Menu.Label>
-                    {unreadMessages.length === 0 ? (
-                      <Menu.Item disabled>No unread messages</Menu.Item>
-                    ) : (
-                      // Scrollable area for messages
-                      <ScrollArea.Autosize mah={300}>
-                        {unreadMessages
-                          // Sort by timestamp descending if needed
-                          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                          .slice(0, 10) // Limit displayed messages
-                          .map((msg) => (
-                            <Menu.Item
-                              key={msg.id}
-                              component={Link}
-                              href={`/messaging?roomId=${msg.chatRoomId}`}
-                              onClick={() => handleMessageItemClick(msg.chatRoomId)} // Use handler
-                              style={{
-                                whiteSpace: 'normal', // Allow text wrapping
-                                height: 'auto', // Adjust height automatically
-                                paddingTop: '8px',
-                                paddingBottom: '8px',
-                              }}
-                            >
-                              <div>
-                                <Group justify="space-between" mb={4}>
-                                  <Text fw={500} size="sm" truncate>{msg.senderName}</Text>
-                                  <Text c="dimmed" size="xs">
-                                    {formatLastMessageTime(msg.timestamp)}
-                                  </Text>
-                                </Group>
-                                <Text size="xs" lineClamp={2}> {/* Allow 2 lines */}
-                                  {msg.content}
+                <Menu.Dropdown>
+                  <Menu.Label>Recent Unread Messages</Menu.Label>
+                  {unreadMessages.length === 0 ? (
+                    <Menu.Item disabled>No unread messages</Menu.Item>
+                  ) : (
+                    <ScrollArea.Autosize mah={300}>
+                      {unreadMessages
+                        .sort(
+                          (a, b) =>
+                            new Date(b.timestamp).getTime() -
+                            new Date(a.timestamp).getTime(),
+                        )
+                        .slice(0, 10)
+                        .map((msg) => (
+                          <Menu.Item
+                            key={msg.id}
+                            component={Link}
+                            href={`/messaging?roomId=${msg.chatRoomId}`}
+                            onClick={() =>
+                              handleMessageItemClick(msg.chatRoomId)
+                            }
+                            style={{
+                              whiteSpace: 'normal',
+                              height: 'auto',
+                              paddingTop: '8px',
+                              paddingBottom: '8px',
+                            }}
+                          >
+                            <div>
+                              <Group justify="space-between" mb={4}>
+                                <Text fw={500} size="sm" truncate>
+                                  {msg.senderName}
                                 </Text>
-                              </div>
-                            </Menu.Item>
-                          ))}
-                      </ScrollArea.Autosize>
-                    )}
-                    <Menu.Divider />
-                    <Menu.Item component={Link} href="/messaging">
-                      See all messages
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
+                                <Text c="dimmed" size="xs">
+                                  {formatLastMessageTime(msg.timestamp)}
+                                </Text>
+                              </Group>
+                              <Text size="xs" lineClamp={2}>
+                                {msg.content}
+                              </Text>
+                            </div>
+                          </Menu.Item>
+                        ))}
+                    </ScrollArea.Autosize>
+                  )}
+                  <Menu.Divider />
+                  <Menu.Item component={Link} href="/messaging">
+                    See all messages
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+              {enableSocial && (
                 <Menu
                   width={260}
                   position="bottom-end"
                   transitionProps={{ transition: 'pop-top-right' }}
-                  onClose={() => setUserMenuOpened(false)}
-                  onOpen={() => setUserMenuOpened(true)}
+                  onClose={() => setSocialMenuOpened(false)}
+                  onOpen={() => setSocialMenuOpened(true)}
+                  opened={isSocialMenuOpened}
                   withinPortal
                 >
                   <Menu.Target>
-                    <RpgAwesomeIcon
-                      icon="double-team"
-                      color="orange"
-                      fw
-                      style={{ cursor: 'pointer' }}
-                    />
+                    <HeaderIconButton
+                      label="Social"
+                      count={socialNotificationCount}
+                    >
+                      <RpgAwesomeIcon icon="double-team" fw />
+                    </HeaderIconButton>
                   </Menu.Target>
 
                   <Menu.Dropdown>
                     <Menu.Label>Social</Menu.Label>
                     <Link href="/social/friends" passHref>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faIdCard} size={'sm'} stroke={'1.5'} />}>
+                      <Menu.Item
+                        leftSection={
+                          <FontAwesomeIcon
+                            icon={faIdCard}
+                            size="sm"
+                            stroke="1.5"
+                          />
+                        }
+                      >
                         Friends
                       </Menu.Item>
                     </Link>
-                    <Link href="/social/enemies" passHref>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faSkullCrossbones} size={'sm'} stroke={'1.5'} />}>
-                        Enemies
-                      </Menu.Item>
-                    </Link>
+                    {enableEnemies && (
+                      <Link href="/social/enemies" passHref>
+                        <Menu.Item
+                          leftSection={
+                            <FontAwesomeIcon
+                              icon={faSkullCrossbones}
+                              size="sm"
+                              stroke="1.5"
+                            />
+                          }
+                        >
+                          Enemies
+                        </Menu.Item>
+                      </Link>
+                    )}
                     <Link href="/social/requests" passHref>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faComments} size={'sm'} stroke={'1.5'} />}>
+                      <Menu.Item
+                        leftSection={
+                          <FontAwesomeIcon
+                            icon={faComments}
+                            size="sm"
+                            stroke="1.5"
+                          />
+                        }
+                        rightSection={
+                          <Badge color="red" variant="filled" size="xs">
+                            {socialNotificationCount > 9
+                              ? '9+'
+                              : socialNotificationCount}
+                          </Badge>
+                        }
+                      >
                         Friend Requests
                       </Menu.Item>
                     </Link>
                   </Menu.Dropdown>
                 </Menu>
-                <Menu
-                  width={260}
-                  position="bottom-end"
-                  transitionProps={{ transition: 'pop-top-right' }}
-                  onClose={() => setUserMenuOpened(false)}
-                  onOpen={() => setUserMenuOpened(true)}
-                  withinPortal
-                >
-                  <Menu.Target>
-                    <RpgAwesomeIcon
-                      icon="player"
-                      color="orange"
-                      fw
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Label>Settings</Menu.Label>
-                    <Link href="/home/settings" passHref>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faGear} size={'sm'} stroke={'1.5'} />}>
-                        <UnstyledButton component="a">
-                          Account settings
-                        </UnstyledButton>
-                      </Menu.Item>
-                    </Link>
-                    <Link href="/home/profile" passHref>
-                      <Menu.Item leftSection={<FontAwesomeIcon icon={faIdCard} size={'sm'} stroke={'1.5'} />}>
-
-                        Profile Settings
-                      </Menu.Item>
-
-                    </Link>
-                    <Menu.Item leftSection={<FontAwesomeIcon icon={faArrowRightFromBracket} size={'sm'} stroke={'1.5'} color={'indianred'} />}>
-                      <span onClick={() => signOut({ callbackUrl: '/' })}>
-                        Logout
-                      </span>
+              )}
+              <Menu
+                width={260}
+                position="bottom-end"
+                transitionProps={{ transition: 'pop-top-right' }}
+                onClose={() => setSettingsMenuOpened(false)}
+                onOpen={() => setSettingsMenuOpened(true)}
+                opened={isSettingsMenuOpened}
+                withinPortal
+              >
+                <Menu.Target>
+                  <HeaderIconButton label="Settings">
+                    <RpgAwesomeIcon icon="player" fw />
+                  </HeaderIconButton>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>Settings</Menu.Label>
+                  <Link href="/home/settings" passHref>
+                    <Menu.Item
+                      leftSection={
+                        <FontAwesomeIcon icon={faGear} size="sm" stroke="1.5" />
+                      }
+                    >
+                      <UnstyledButton component="a">
+                        Account settings
+                      </UnstyledButton>
                     </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
+                  </Link>
+                  <Link href="/home/profile" passHref>
+                    <Menu.Item
+                      leftSection={
+                        <FontAwesomeIcon
+                          icon={faIdCard}
+                          size="sm"
+                          stroke="1.5"
+                        />
+                      }
+                    >
+                      Profile Settings
+                    </Menu.Item>
+                  </Link>
+                  <Menu.Item
+                    leftSection={
+                      <FontAwesomeIcon
+                        icon={faArrowRightFromBracket}
+                        size="sm"
+                        stroke="1.5"
+                        color="indianred"
+                      />
+                    }
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                  >
+                    {t('logout')}
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+              <LanguageSwitcher />
+            </Group>
+          )}
+        </Container>
+      </header>
+      <AnnouncementBanner />
+      <Space h="md" />
+      {children}
+    </div>
+  );
+});
 
-              </Group>
-            )}
-          </Container>
-        </header>
-        <Space h="md" />
-        {children}
-      </div>
-    );
-  }
-);
-
-export default MainArea;
+export default memo(MainArea);

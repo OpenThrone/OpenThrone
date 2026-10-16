@@ -1,0 +1,349 @@
+.panel {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--ot-body);
+  background: var(--ot-panel);
+}
+
+/* Drawer header: accent band with fading gold divider rule (FINDING-43). */
+.drawerHeader {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px 8px 18px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ot-brand) 14%, var(--ot-surface-2)),
+    var(--ot-surface-2)
+  );
+  border-bottom: 1px solid var(--ot-line);
+}
+
+.drawerHeader::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--ot-accent) 55%, transparent) 50%,
+    transparent
+  );
+}
+
+.drawerTitle {
+  margin: 0;
+  font-family: MedievalSharp, serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ot-heading);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+}
+
+/* RPG tab switcher: squared chiselled grid, 2px radius (FINDING-43). */
+.tabSwitcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--ot-inset);
+  border: 1px solid var(--ot-border);
+  border-radius: 2px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.tab {
+  position: relative;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 2px;
+  font-family: MedievalSharp, serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ot-muted);
+  transition: color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.tab:hover {
+  color: var(--ot-heading);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tabActive {
+  color: var(--ot-heading);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ot-brand) 45%, var(--ot-surface-2)),
+    var(--ot-inset)
+  );
+  box-shadow:
+    inset 0 1px 0 var(--ot-heading),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.65);
+}
+
+.tabActive::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  bottom: 3px;
+  left: 8px;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ot-accent),
+    var(--ot-heading),
+    var(--ot-accent),
+    transparent
+  );
+}
+
+/* Scroll region: reserve clearance so list rows never hide behind the
+   pinned utility toolbar (FINDING-47). */
+.scrollRegion {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+  overflow-y: auto;
+  padding: 2px 2px 72px;
+}
+
+.linkList {
+  display: grid;
+  gap: 8px;
+}
+
+.linkItem {
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 2px;
+  border: 1px solid var(--ot-line);
+  border-left: 3px solid transparent;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.005)
+  );
+  color: var(--ot-muted);
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.link:hover {
+  color: var(--ot-heading);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Carved active recess with accent bar, matching desktop nav states (FINDING-43). */
+.linkActive {
+  color: var(--ot-heading);
+  border-color: var(--ot-border);
+  border-left-color: var(--ot-accent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ot-brand) 18%, var(--ot-inset)),
+    var(--ot-inset)
+  );
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.link:active {
+  transform: scale(0.98);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.link:focus-visible,
+.subLink:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: 2px;
+}
+
+/* Painted WebP heraldry crests on parent categories (FINDING-43). */
+.itemIcon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--ot-brand-text);
+  font-size: 18px;
+}
+
+.itemIcon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6));
+}
+
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-family: MedievalSharp, serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.chevron {
+  flex-shrink: 0;
+  opacity: 0.8;
+  color: var(--ot-accent);
+  transition:
+    transform 220ms cubic-bezier(0.46, 0.2, 0.25, 1),
+    opacity 220ms ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Child rows: gold indent border, darker stone, RPG-Awesome leading icons. */
+.subList {
+  margin: 6px 0 2px 12px;
+  display: grid;
+  gap: 6px;
+  padding-left: 8px;
+  border-left: 2px solid color-mix(in srgb, var(--ot-accent) 45%, transparent);
+  list-style: none;
+  animation: submenuSlideDown 220ms cubic-bezier(0.33, 0.04, 0.29, 1) both;
+}
+
+.subItem {
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.subLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 2px;
+  border: 1px solid var(--ot-line);
+  border-left: 2px solid transparent;
+  background: color-mix(in srgb, var(--ot-inset) 80%, transparent);
+  color: var(--ot-body);
+  font-size: 14px;
+  transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+.subLink:hover {
+  color: var(--ot-heading);
+  background: color-mix(in srgb, var(--ot-inset) 60%, transparent);
+}
+
+.subLinkActive {
+  color: var(--ot-heading);
+  border-left-color: var(--ot-accent);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.subIcon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  color: var(--ot-accent);
+  font-size: 15px;
+}
+
+.subLabel {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-family: MedievalSharp, serif;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+}
+
+.sidebarPanel {
+  width: 100%;
+  min-width: 0;
+}
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ot-border);
+}
+
+.quickActions {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@keyframes submenuSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .link,
+  .subLink,
+  .tab,
+  .chevron,
+  .subList {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+:global(body.reduced-motion)
+  :is(.panel, .link, .subLink, .tab, .chevron, .subList) {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}

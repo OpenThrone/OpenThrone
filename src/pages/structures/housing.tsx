@@ -1,27 +1,43 @@
+import {
+  faArrowUp,
+  faBuildingColumns,
+  faCoins,
+  faHome,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Box,
+  Button,
+  Group,
+  SimpleGrid,
+  Space,
+  Stack,
+  Text,
+  Tooltip,
+} from '@mantine/core';
+import { useTranslation } from 'next-i18next';
+import { type ReactNode, useEffect, useState } from 'react';
+
+import { GameCard } from '@/components/game/GameCard';
+import { StatGrid } from '@/components/game/StatGrid';
+import MainArea from '@/components/MainArea';
 import { Fortifications, HouseUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
-import { Group, rem, Text, SimpleGrid, Space, Stack, Button, Tooltip } from '@mantine/core';
-import { BiCoinStack, BiSolidBank, BiHome, BiUpArrowAlt } from 'react-icons/bi';
-import { useEffect, useState } from 'react';
-import toLocale from '@/utils/numberFormatting';
-import MainArea from '@/components/MainArea';
-import ContentCard from '@/components/ContentCard';
-import StatCard from '@/components/StatCard';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { logError } from '@/utils/logger'; // Import logError
+import { toLocale } from '@/utils/numberFormatting';
 
 /**
  * Page component for viewing and upgrading housing structures.
  * Displays current housing level, benefits, next upgrade details, cost, and requirements.
  * Allows users to purchase the next housing upgrade.
  */
-const Housing: React.FC = (props) => { // Removed unused props
+const Housing: React.FC = () => {
+  // Removed unused props
+  const { t } = useTranslation('structures');
   const { user, forceUpdate } = useUser();
   const [mounted, setMounted] = useState(false);
   const [houseLevel, setHouseLevel] = useState(1);
-  const [gold, setGold] = useState(BigInt(0));
-  const [goldInBank, setGoldInBank] = useState(BigInt(0));
-  const [citizens, setCitizens] = useState(0);
   const [citizensDaily, setCitizensDaily] = useState(0);
   const [houseUpgrade, setHouseUpgrade] = useState(HouseUpgrades[houseLevel]);
   const [nextUpgrade, setNextUpgrade] = useState(HouseUpgrades[houseLevel + 1]);
@@ -30,16 +46,12 @@ const Housing: React.FC = (props) => { // Removed unused props
   useEffect(() => {
     setMounted(true);
   }, []);
-
   useEffect(() => {
     if (!user) return;
     const currentLevel = user.houseLevel ?? 0; // Default to 0 if undefined
     setHouseUpgrade(HouseUpgrades[currentLevel]);
     setNextUpgrade(HouseUpgrades[currentLevel + 1]); // Will be undefined if max level
     setHouseLevel(currentLevel);
-    setGold(user.gold ?? BigInt(0)); // Default to BigInt(0)
-    setGoldInBank(user.goldInBank ?? BigInt(0)); // Default to BigInt(0)
-    setCitizens(user.citizens ?? 0); // Default to 0
     setCitizensDaily(HouseUpgrades[currentLevel]?.citizensDaily ?? 0); // Default to 0
   }, [user]);
 
@@ -55,7 +67,7 @@ const Housing: React.FC = (props) => { // Removed unused props
       // Pass correct arguments: page, index (next level), forceUpdate
       await buyUpgrade('house', user.houseLevel + 1, forceUpdate);
       // forceUpdate is called within buyUpgrade on success, no need to call again here
-    } catch (error: any) {
+    } catch (error: unknown) {
       logError('Failed to upgrade housing:', error);
       // alertService might be called within buyUpgrade, otherwise add here
       // alertService.error(error.message || 'Failed to upgrade housing.');
@@ -65,7 +77,12 @@ const Housing: React.FC = (props) => { // Removed unused props
   };
 
   // Avoid rendering until component is mounted (prevents hydration errors)
-  if (!mounted || !user) return <MainArea title='Housing'><Text>Loading...</Text></MainArea>;
+  if (!mounted || !user)
+    return (
+      <MainArea title={t('housing.title')}>
+        <Text>{t('housing.loading')}</Text>
+      </MainArea>
+    );
 
   const nextUpgradeCost = BigInt(nextUpgrade?.cost ?? 0);
   const userGold = BigInt(user.gold ?? 0);
@@ -76,124 +93,159 @@ const Housing: React.FC = (props) => { // Removed unused props
   // Determine tooltip message
   let tooltipMessage = '';
   if (!canUpgrade && nextUpgrade) {
-      const reasons = [];
-      if (needsMoreGold) reasons.push(`Requires ${toLocale(nextUpgradeCost, user.locale)} Gold`);
-      if (needsHigherFort) reasons.push(`Requires Fortification: ${Fortifications[nextUpgrade.fortLevel]?.name ?? 'Unknown'}`);
-      tooltipMessage = reasons.join(' and ');
+    const reasons = [];
+    if (needsMoreGold)
+      reasons.push(
+        t('housing.requiresGold', {
+          gold: toLocale(nextUpgradeCost, user.locale),
+        }),
+      );
+    if (needsHigherFort)
+      reasons.push(
+        t('housing.requiresFortification', {
+          name: Fortifications[nextUpgrade.fortLevel]?.name ?? 'Unknown',
+        }),
+      );
+    tooltipMessage = reasons.join(` ${t('housing.and')} `);
   } else if (!nextUpgrade) {
-      tooltipMessage = 'Max level reached';
+    tooltipMessage = t('housing.maxLevelReached');
   }
 
-  return (
-    <MainArea title='Housing'>
-      {/* Resource Stats */}
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 3 }} className="mb-6">
-        <StatCard
-          title="Gold In Hand"
-          value={toLocale(user.gold ?? 0)}
-          icon={<BiCoinStack size={18} />}
-        />
-        <StatCard
-          title="Banked Gold"
-          value={toLocale(user.goldInBank ?? 0)}
-          icon={<BiSolidBank size={18} />}
-        />
-        <StatCard
-          title="Citizens"
-          value={toLocale(user?.citizens ?? 0)}
-          subtext={`+${citizensDaily} daily`} // Changed subtitle to subtext
-          icon={<BiHome size={18} />}
-        />
-      </SimpleGrid>
+  const statItems = [
+    {
+      label: t('bank.goldInHand'),
+      value: toLocale(user.gold ?? 0, user.locale),
+      icon: <FontAwesomeIcon icon={faCoins} />,
+    },
+    {
+      label: t('bank.goldInBank'),
+      value: toLocale(user.goldInBank ?? 0, user.locale),
+      icon: <FontAwesomeIcon icon={faBuildingColumns} />,
+    },
+    {
+      label: t('housing.citizens'),
+      value: `${toLocale(user?.citizens ?? 0, user.locale)} (+${citizensDaily}/day)`,
+      icon: <FontAwesomeIcon icon={faHome} />,
+    },
+  ];
 
+  const renderSlotRow = (
+    label: string,
+    value: ReactNode,
+    highlight?: boolean,
+  ) => (
+    <Group
+      justify="space-between"
+      style={{
+        backgroundColor: '#0f141a',
+        borderRadius: '6px',
+        border: '1px solid #1f2b3b',
+        boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+        padding: '12px',
+      }}
+    >
+      <Text size="sm" c="dimmed">
+        {label}
+      </Text>
+      <Text fw={600} c={highlight ? 'red' : 'inherit'}>
+        {value}
+      </Text>
+    </Group>
+  );
+
+  return (
+    <MainArea title={t('housing.title')}>
+      <StatGrid title={t('housing.overview')} stats={statItems} columns={3} />
       <Space h="md" />
 
-      {/* Current Housing */}
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl"> {/* Changed gap to spacing */}
-        <ContentCard
-          title="Current Housing"
-          icon={<BiHome size={18} />}
-          variant="default"
-          titlePosition="left"
+      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
+        <GameCard
+          title={t('housing.currentHousing')}
+          icon={<FontAwesomeIcon icon={faHome} />}
         >
-          <Stack gap="md" className="p-2">
-            <Text fw={700} size="xl" className="font-medieval text-center">
+          <Stack gap="md">
+            <Text fw={700} size="xl" className="text-center font-medieval">
               {houseUpgrade?.name ?? 'N/A'}
             </Text>
 
-            <Text size="sm" color="dimmed" className="text-center">
-              Housing brings new citizens to your fortification every day.
+            <Text size="sm" c="dimmed" ta="center">
+              {t('housing.citizensNote')}
             </Text>
 
-            <Group justify="space-between" className="bg-gray-800/30 p-4 rounded">
-              <Text size="sm">New Citizens Per Day:</Text>
-              <Text fw={600}>{houseUpgrade?.citizensDaily ?? 0}</Text>
-            </Group>
+            {renderSlotRow(
+              t('housing.newCitizensPerDay'),
+              houseUpgrade?.citizensDaily ?? 0,
+            )}
 
-            <Text size="xs" color="dimmed" className="italic text-center">
-              You will gain the above citizens every day at midnight OT time.
+            <Text size="xs" c="dimmed" className="text-center italic">
+              {t('housing.midnightNote')}
             </Text>
           </Stack>
-        </ContentCard>
+        </GameCard>
 
-        {/* Next Upgrade - Conditionally render if nextUpgrade exists */}
         {nextUpgrade ? (
-          <ContentCard
-            title="Next Upgrade"
-            icon={<BiUpArrowAlt size={18} />}
-            variant={canUpgrade ? "highlight" : "default"}
-            titlePosition="left"
+          <GameCard
+            title={t('housing.nextUpgrade')}
+            icon={<FontAwesomeIcon icon={faArrowUp} />}
+            goldAccent={canUpgrade}
           >
-            <Stack gap="md" className="p-2">
-              <Text fw={700} size="xl" className="font-medieval text-center">
+            <Stack gap="md">
+              <Text fw={700} size="xl" className="text-center font-medieval">
                 {nextUpgrade.name}
               </Text>
 
-              <Text size="sm" color="dimmed" className="text-center">
-                Upgrade your housing to bring more citizens to your fortification every day.
+              <Text size="sm" c="dimmed" ta="center">
+                {t('housing.upgradeNote')}
               </Text>
 
-              <Group justify="space-between" className="bg-gray-800/30 p-4 rounded">
-                <Text size="sm">New Citizens Per Day:</Text>
-                <Text fw={600}>{nextUpgrade.citizensDaily}</Text>
-              </Group>
+              {renderSlotRow(
+                t('housing.newCitizensPerDay'),
+                nextUpgrade.citizensDaily,
+              )}
+              {renderSlotRow(
+                t('housing.fortificationRequired'),
+                Fortifications[nextUpgrade.fortLevel]?.name ?? 'N/A',
+                needsHigherFort,
+              )}
+              {renderSlotRow(
+                t('housing.cost'),
+                t('housing.costGold', {
+                  amount: toLocale(nextUpgrade.cost, user.locale),
+                }),
+                needsMoreGold,
+              )}
 
-              <Group justify="space-between" className="bg-gray-800/30 p-4 rounded">
-                <Text size="sm">Fortification Required:</Text>
-                <Text fw={600} color={needsHigherFort ? "red" : "inherit"}>
-                  {Fortifications[nextUpgrade.fortLevel]?.name ?? 'N/A'}
-                </Text>
-              </Group>
-
-              <Group justify="space-between" className="bg-gray-800/30 p-4 rounded">
-                <Text size="sm">Cost:</Text>
-                <Text fw={600} color={needsMoreGold ? "red" : "inherit"}>
-                  {toLocale(nextUpgrade.cost, user.locale)} Gold
-                </Text>
-              </Group>
-
-              {/* Wrap Button with Tooltip */}
-              <Tooltip label={tooltipMessage} disabled={canUpgrade || isUpgrading} withArrow position="bottom">
-                 {/* Added div wrapper for Tooltip compatibility when button is disabled */}
-                <div style={{ width: '100%' }}>
-                    <Button
-                      color="brand"
-                      fullWidth
-                      onClick={handleBuyUpgrade}
-                      loading={isUpgrading}
-                      disabled={!canUpgrade || isUpgrading} // Also disable while upgrading
-                      className="mt-2"
-                    >
-                      {canUpgrade ? "Upgrade Now" : "Cannot Upgrade Yet"}
-                    </Button>
-                </div>
+              <Tooltip
+                label={tooltipMessage}
+                disabled={canUpgrade || isUpgrading}
+                withArrow
+                position="bottom"
+              >
+                <Box>
+                  <Button
+                    color="yellow"
+                    fullWidth
+                    onClick={handleBuyUpgrade}
+                    loading={isUpgrading}
+                    disabled={!canUpgrade || isUpgrading}
+                  >
+                    {canUpgrade
+                      ? t('housing.upgradeNow')
+                      : t('housing.cannotUpgradeYet')}
+                  </Button>
+                </Box>
               </Tooltip>
             </Stack>
-          </ContentCard>
+          </GameCard>
         ) : (
-           <ContentCard title="Max Level Reached" icon={<BiHome size={18} />} variant="default" titlePosition="left">
-                <Text ta="center" p="md">You have reached the maximum housing level.</Text>
-           </ContentCard>
+          <GameCard
+            title={t('housing.maxLevelReached')}
+            icon={<FontAwesomeIcon icon={faHome} />}
+          >
+            <Text ta="center" p="md">
+              {t('housing.maxLevelNote')}
+            </Text>
+          </GameCard>
         )}
       </SimpleGrid>
     </MainArea>

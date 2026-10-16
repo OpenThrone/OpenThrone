@@ -1,0 +1,61 @@
+.tableCard { container-type: inline-size; container-name: battle-list; }
+.actions { min-width: max-content; }
+.button.button { width: auto; min-height: 32px; padding: 5px 8px; border-radius: 4px; font-size: var(--mantine-font-size-xs); white-space: nowrap; }
+.actionsCell { width: 1%; white-space: nowrap; }
+.nameCell { min-width: 180px; width: 240px; max-width: 260px; }
+.identity { min-width: 0; text-align: start; }
+.identityAvatar, .identityBadge { flex-shrink: 0; }
+.identityText { min-width: 0; flex: 1; }
+.nameLine { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.displayName { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.identitySubline { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mobileLabel, .mobileSort { display: none; }
+
+/* Keep the six comparison columns aligned; actions get the complete next line. */
+@container battle-list (max-width: 1100px) {
+  .ledger, .ledger thead, .ledger tbody { display: block; width: 100%; }
+  .ledger thead tr, .playerRow {
+    display: grid;
+    grid-template-columns: 64px minmax(180px, 2fr) minmax(96px, 1fr) minmax(108px, 1fr) minmax(116px, 1fr) 88px;
+    align-items: center;
+  }
+  .ledger thead tr { align-items: stretch; }
+  .ledger th { display: flex; align-items: center; padding-inline: 10px; }
+  .ledger th, .ledger td { width: auto !important; min-width: 0; max-width: none; }
+  .ledger thead th:last-child { display: none; }
+  .ledger td { border-bottom: 0; }
+  .playerRow { border-bottom: 1px solid var(--ot-line); }
+  .ledger td.actionsCell { grid-column: 2 / -1; padding-top: 0; padding-bottom: 14px; }
+  .actionsCell:empty { display: none; }
+}
+
+/* The same player row becomes a compact card, with all decision data in view. */
+@container battle-list (max-width: 720px) {
+  .ledger thead { display: none; }
+  .mobileSort { display: flex; }
+  .ledger tbody { display: grid; gap: 12px; }
+  .playerRow {
+    position: relative;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    background: var(--ot-surface-2);
+    border: 1px solid var(--ot-line);
+    border-radius: 4px;
+    padding: 12px;
+    gap: 12px 8px;
+  }
+  .ledger td { padding: 0; }
+  .ledger td.rankCell { position: absolute; right: 12px; top: 14px; }
+  .nameCell { grid-column: 1 / -1; padding-right: 36px !important; }
+  .allianceCell { grid-column: 1 / -1; overflow-wrap: anywhere; }
+  .mobileLabel { display: block; color: var(--ot-muted); font-size: 11px; font-weight: 400; margin-bottom: 4px; }
+  .statCell { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .ledger td.actionsCell { grid-column: 1 / -1; padding: 4px 0 0; }
+  .actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 34px;
+    gap: 8px;
+    min-width: 0;
+  }
+  .button.button { width: 100%; min-height: 38px; padding-inline: 5px; }
+  .actions > :last-child { grid-column: 3; grid-row: 1 / 3; width: 100%; height: 100%; }
+}

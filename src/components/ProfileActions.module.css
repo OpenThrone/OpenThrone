@@ -1,0 +1,63 @@
+/* Joined stack of the theme's filled plates; first/last children round the ends. */
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.action.action {
+  display: flex;
+  width: 100%;
+  height: auto;
+  min-height: 46px;
+  padding: 8px 16px;
+  border-radius: 0;
+  font-size: var(--mantine-font-size-md);
+  font-weight: 400;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.list > .action:first-child { border-radius: 4px 4px 0 0; }
+.list > .action:last-child { border-radius: 0 0 4px 4px; }
+.list > .action:only-child { border-radius: 4px; }
+
+/* The theme's filled plate reads --ot-brand (fill) and --ot-accent (rim), so a
+   tone only swaps those. Untoned actions keep the race colour; hostile tones
+   also recolour the rim so they stay distinct on red (Goblin) themes. */
+.action.action[data-tone='danger'] { --ot-brand: #e0281c; --ot-accent: #e2533b; }
+.action.action[data-tone='ember'] { --ot-brand: #d9661a; --ot-accent: #e88a3a; }
+.action.action[data-tone='arcane'] { --ot-brand: #7a45d6; }
+.action.action[data-tone='gold'] { --ot-brand: #c9971c; }
+
+.action.action:hover:not([data-disabled]) {
+  text-decoration: none;
+}
+
+.action.action[data-disabled] {
+  color: var(--ot-muted);
+  cursor: not-allowed;
+}
+
+.action.action:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: -4px;
+}
+
+.inner {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.section {
+  width: 24px;
+  margin-inline-end: 12px;
+  justify-content: center;
+  color: var(--ot-accent);
+  font-size: 1.25rem;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .8));
+}
+
+.label {
+  white-space: normal;
+  line-height: inherit;
+}

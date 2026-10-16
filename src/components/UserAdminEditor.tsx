@@ -1,558 +1,746 @@
-import React, { useState, useEffect } from 'react';
+import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  Tabs,
-  Button,
-  Group,
-  TextInput,
-  NumberInput,
-  Select,
-  Loader,
-  Stack,
-  Text,
-  Grid,
-  Badge,
-  Paper,
   ActionIcon,
-  Divider
+  Alert,
+  Badge,
+  Button,
+  Grid,
+  Group,
+  Modal,
+  NumberInput,
+  Paper,
+  Stack,
+  Tabs,
+  Text,
+  Textarea,
+  TextInput,
+  Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { PermissionType } from '@prisma/client';
-import { faSync, faSave, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useTranslation } from 'next-i18next';
+import React, { useCallback, useEffect, useState } from 'react';
 
-// Define interfaces for the different sections of user data
+import UserOperations, {
+  AdminUserExport,
+} from '@/components/admin/UserOperations';
+import { GameCard } from '@/components/game/GameCard';
+import { PermissionType } from '@/lib/prisma-browser-exports';
+import type { StaffRole } from '@/lib/prisma-exports';
+import { logError } from '@/utils/logger';
+import { STAFF_ROLE_LABELS } from '@/utils/permissions';
+
+const STAFF_ROLES: StaffRole[] = [
+  'ADMINISTRATOR',
+  'MODERATOR',
+  'COMMUNITY_MANAGER',
+  'GAME_MASTER',
+];
+
 interface UserProfile {
   id: string;
   username: string;
   email: string;
   status: string;
-  lastActive?: string;
-  joinDate?: string;
-  alliance?: string;
 }
 
 interface UserStats {
-  gold: number | bigint | string;
-  goldInBank: number | bigint | string;
+  gold: string;
+  goldInBank: string;
   experience: number;
   level: number;
 }
 
-interface UserArmy {
-  units: Array<{
-    id: string;
-    name: string;
-    quantity: number;
-    level: number;
-  }>;
+interface UserUnit {
+  id: string;
+  type: string;
+  name: string;
+  quantity: number;
+  level: number;
+  isMercenary: boolean;
 }
 
-interface UserItems {
-  items: Array<{
-    id: string;
-    name: string;
-    quantity: number;
-    level?: number;
-  }>;
-}
-
-interface UserPermissions {
-  permissions: PermissionType[];
+interface UserItem {
+  id: string;
+  type: string;
+  usage: string;
+  name: string;
+  quantity: number;
+  level: number;
 }
 
 interface UserData {
   profile: UserProfile;
   stats: UserStats;
-  army: UserArmy;
-  items: UserItems;
-  permissions: UserPermissions;
+  army: { units: UserUnit[] };
+  items: { items: UserItem[] };
+  permissions: { permissions: PermissionType[] };
+  staffRoles: { roles: StaffRole[] };
+}
+
+interface ModeratorNote {
+  id: number;
+  note: string;
+  createdAt: string;
+  isPinned?: boolean;
+  author?: { display_name?: string };
 }
 
 interface UserAdminEditorProps {
   userId: string;
   onClose: () => void;
   onSaved: () => void;
+  isAdministrator: boolean;
 }
 
-const UserAdminEditor: React.FC<UserAdminEditorProps> = ({ userId, onClose, onSaved }) => {
+const safeInteger = (value: number | string | null, fallback: number) => {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : fallback;
+};
+
+const UserAdminEditor: React.FC<UserAdminEditorProps> = ({
+  userId,
+  onClose,
+  onSaved,
+  isAdministrator,
+}) => {
+  const { t } = useTranslation('admin-users');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [activeTab, setActiveTab] = useState<string | null>('profile');
   const [error, setError] = useState<string | null>(null);
+  const [notes, setNotes] = useState<ModeratorNote[]>([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [notesError, setNotesError] = useState<string | null>(null);
+  const [newNote, setNewNote] = useState('');
+  const [notePending, setNotePending] = useState(false);
+  const [deletingNote, setDeletingNote] = useState(false);
+  const [noteDeleteTarget, setNoteDeleteTarget] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<string | null>('profile');
 
-  // Fetch user data when userId changes
-  useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const response = await fetch(`/api/admin/users/${userId}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch user data: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setUserData(data);
-      } catch (err) {
-        console.error('Error fetching user data:', err);
-        setError('Failed to load user data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (userId) {
-      fetchUserData();
+  const loadNotes = useCallback(async () => {
+    setNotesLoading(true);
+    setNotesError(null);
+    try {
+      const response = await fetch(
+        `/api/admin/moderation/users/${encodeURIComponent(userId)}/notes`,
+      );
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || t('errors.notesLoad'));
+      setNotes(Array.isArray(payload) ? payload : []);
+    } catch (requestError) {
+      setNotesError(
+        requestError instanceof Error
+          ? requestError.message
+          : t('errors.notesLoad'),
+      );
+    } finally {
+      setNotesLoading(false);
     }
-  }, [userId]);
+  }, [t, userId]);
 
-  const handleSave = async () => {
-    if (!userData) return;
-    
+  const loadUser = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/admin/users/${encodeURIComponent(userId)}`,
+      );
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || t('errors.load'));
+      setUserData(payload);
+    } catch (requestError) {
+      logError('Failed to load admin user details', requestError);
+      setError(
+        requestError instanceof Error ? requestError.message : t('errors.load'),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [t, userId]);
+
+  useEffect(() => {
+    loadUser();
+    loadNotes();
+  }, [loadNotes, loadUser]);
+
+  const saveUser = async () => {
+    if (!isAdministrator || !userData || saving) return;
     setSaving(true);
     setError(null);
-    
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/admin/users/${encodeURIComponent(userId)}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData),
         },
-        body: JSON.stringify(userData),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to update user: ${response.statusText}`);
-      }
-      
+      );
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || t('errors.save'));
       notifications.show({
-        title: 'Success',
-        message: 'User updated successfully',
+        title: t('messages.savedTitle'),
+        message: t('messages.saved'),
         color: 'green',
       });
-      
-      onSaved(); // Refresh the user list
-    } catch (err) {
-      console.error('Error updating user:', err);
-      setError('Failed to update user data. Please try again.');
-      
-      notifications.show({
-        title: 'Error',
-        message: 'Failed to update user',
-        color: 'red',
-      });
+      onSaved();
+    } catch (requestError) {
+      logError('Failed to save admin user details', requestError);
+      setError(
+        requestError instanceof Error ? requestError.message : t('errors.save'),
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // Profile tab update handlers
-  const updateProfile = (field: keyof UserProfile, value: string) => {
-    if (!userData) return;
-    setUserData({
-      ...userData,
-      profile: {
-        ...userData.profile,
-        [field]: value
-      }
-    });
-  };
-
-  // Stats tab update handlers
-  const updateStat = (field: keyof UserStats, value: number) => {
-    if (!userData) return;
-    setUserData({
-      ...userData,
-      stats: {
-        ...userData.stats,
-        [field]: value
-      }
-    });
-  };
-
-  // Army tab handlers
-  const updateUnit = (unitId: string, field: 'quantity' | 'level', value: number) => {
-    if (!userData) return;
-    const updatedUnits = userData.army.units.map(unit => 
-      unit.id === unitId ? { ...unit, [field]: value } : unit
-    );
-    setUserData({
-      ...userData,
-      army: {
-        ...userData.army,
-        units: updatedUnits
-      }
-    });
-  };
-
-  // Items tab handlers
-  const updateItem = (itemId: string, field: 'quantity' | 'level', value: number) => {
-    if (!userData) return;
-    const updatedItems = userData.items.items.map(item => 
-      item.id === itemId ? { ...item, [field]: value } : item
-    );
-    setUserData({
-      ...userData,
-      items: {
-        ...userData.items,
-        items: updatedItems
-      }
-    });
-  };
-
-  // Permissions tab handlers
-  const togglePermission = (permission: PermissionType) => {
-    if (!userData) return;
-    const currentPermissions = userData.permissions.permissions;
-    let newPermissions: PermissionType[];
-    
-    if (currentPermissions.includes(permission)) {
-      newPermissions = currentPermissions.filter(p => p !== permission);
-    } else {
-      newPermissions = [...currentPermissions, permission];
+  const addNote = async () => {
+    const note = newNote.trim();
+    if (!note || notePending) return;
+    setNotePending(true);
+    setNotesError(null);
+    try {
+      const response = await fetch(
+        `/api/admin/moderation/users/${encodeURIComponent(userId)}/notes`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note, visibility: 'STAFF' }),
+        },
+      );
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || t('errors.noteSave'));
+      setNewNote('');
+      await loadNotes();
+    } catch (requestError) {
+      setNotesError(
+        requestError instanceof Error
+          ? requestError.message
+          : t('errors.noteSave'),
+      );
+    } finally {
+      setNotePending(false);
     }
-    
-    setUserData({
-      ...userData,
-      permissions: {
-        ...userData.permissions,
-        permissions: newPermissions
-      }
-    });
   };
 
-  if (loading) {
+  const updateQuantity = (
+    collection: 'units' | 'items',
+    id: string,
+    value: number | string | null,
+  ) => {
+    if (!userData) return;
+    const current =
+      collection === 'units' ? userData.army.units : userData.items.items;
+    const updated = current.map((entry) =>
+      entry.id === id
+        ? { ...entry, quantity: safeInteger(value, entry.quantity) }
+        : entry,
+    );
+    setUserData(
+      collection === 'units'
+        ? { ...userData, army: { units: updated as UserUnit[] } }
+        : { ...userData, items: { items: updated as UserItem[] } },
+    );
+  };
+
+  const updateMoney = (field: 'gold' | 'goldInBank', value: string) => {
+    if (!userData || !/^\d*$/.test(value)) return;
+    setUserData({ ...userData, stats: { ...userData.stats, [field]: value } });
+  };
+
+  const toggleRole = (role: StaffRole) => {
+    if (!isAdministrator || !userData) return;
+    const roles = userData.staffRoles.roles.includes(role)
+      ? userData.staffRoles.roles.filter((current) => current !== role)
+      : [...userData.staffRoles.roles, role];
+    setUserData({ ...userData, staffRoles: { roles } });
+  };
+
+  const togglePermission = (permission: PermissionType) => {
+    if (!isAdministrator || !userData) return;
+    const permissions = userData.permissions.permissions.includes(permission)
+      ? userData.permissions.permissions.filter(
+          (current) => current !== permission,
+        )
+      : [...userData.permissions.permissions, permission];
+    setUserData({ ...userData, permissions: { permissions } });
+  };
+
+  const removeNote = async () => {
+    const noteId = noteDeleteTarget;
+    if (noteId === null || deletingNote) return;
+    setNoteDeleteTarget(null);
+    setDeletingNote(true);
+    setNotesError(null);
+    try {
+      const response = await fetch(
+        `/api/admin/moderation/users/${encodeURIComponent(userId)}/notes`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ noteId }),
+        },
+      );
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok)
+        throw new Error(payload.error || t('errors.noteDelete'));
+      await loadNotes();
+    } catch (requestError) {
+      setNotesError(
+        requestError instanceof Error
+          ? requestError.message
+          : t('errors.noteDelete'),
+      );
+    } finally {
+      setDeletingNote(false);
+    }
+  };
+
+  if (loading) return <Text role="status">{t('states.loading')}</Text>;
+  if (error && !userData)
     return (
-      <Stack align="center" justify="center" h={400}>
-        <Loader size="xl" />
-        <Text size="sm">Loading user data...</Text>
+      <Stack>
+        <Alert color="red" role="alert" title={t('errors.title')}>
+          {error}
+        </Alert>
+        <Button onClick={loadUser}>{t('actions.retry')}</Button>
       </Stack>
     );
-  }
+  if (!userData) return <Text>{t('states.unavailable')}</Text>;
 
-  if (error) {
-    return (
-      <Stack align="center" justify="center" h={400}>
-        <Text color="red" size="lg">{error}</Text>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
-      </Stack>
-    );
-  }
-
-  if (!userData) {
-    return (
-      <Text>No user data available</Text>
-    );
-  }
+  const isReadOnly = !isAdministrator;
+  const visibleTabs = [
+    'profile',
+    'stats',
+    'army',
+    'items',
+    'notes',
+    'operations',
+    ...(isAdministrator ? ['staffRoles', 'permissions'] : []),
+  ];
+  const safeTab =
+    activeTab && visibleTabs.includes(activeTab) ? activeTab : 'profile';
 
   return (
-    <Stack>
-      <Group justify="space-between" mb="md">
-        <Text size="xl" fw={700}>Editing User: {userData.profile.username}</Text>
+    <Stack gap="md">
+      <Group justify="space-between" align="flex-start">
+        <div style={{ minWidth: 0 }}>
+          <Title order={3} style={{ overflowWrap: 'anywhere' }}>
+            {t('editor.title', { username: userData.profile.username })}
+          </Title>
+          <Text size="sm" c="dimmed">
+            {t('editor.id', { id: userData.profile.id })}
+          </Text>
+        </div>
         <Group>
-          <Button 
-            leftSection={<FontAwesomeIcon icon={faSync} size="sm" />} 
-            variant="outline" 
-            onClick={() => window.location.reload()}
-          >
-            Refresh
+          <Button variant="default" onClick={onClose}>
+            {t('actions.close')}
           </Button>
-          <Button 
-            leftSection={<FontAwesomeIcon icon={faSave} size="sm" />} 
-            onClick={handleSave} 
-            loading={saving} 
-            color="blue"
-          >
-            Save Changes
-          </Button>
+          {isAdministrator && (
+            <Button onClick={saveUser} loading={saving} disabled={saving}>
+              {t('actions.save')}
+            </Button>
+          )}
         </Group>
       </Group>
-
-      <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
-          <Tabs.Tab value="profile">Profile</Tabs.Tab>
-          <Tabs.Tab value="stats">Stats & Resources</Tabs.Tab>
-          <Tabs.Tab value="army">Army</Tabs.Tab>
-          <Tabs.Tab value="items">Items</Tabs.Tab>
-          <Tabs.Tab value="permissions">Permissions</Tabs.Tab>
+      {error && (
+        <Alert color="red" role="alert" title={t('errors.title')}>
+          {error}
+        </Alert>
+      )}
+      <Tabs value={safeTab} onChange={setActiveTab} keepMounted={false}>
+        <Tabs.List aria-label={t('editor.tabs')}>
+          {visibleTabs.map((tab) => (
+            <Tabs.Tab key={tab} value={tab}>
+              {t(`tabs.${tab}`)}
+            </Tabs.Tab>
+          ))}
         </Tabs.List>
-
-        {/* Profile Tab */}
         <Tabs.Panel value="profile" pt="md">
           <Grid>
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <TextInput 
-                label="Username" 
-                value={userData.profile.username || ''} 
-                onChange={(e) => updateProfile('username', e.target.value)}
-                mb="md"
-              />
-              <TextInput 
-                label="Email" 
-                value={userData.profile.email || ''} 
-                onChange={(e) => updateProfile('email', e.target.value)}
-                mb="md"
-              />
-              <Select
-                label="Status"
-                value={userData.profile.status}
-                onChange={(value) => updateProfile('status', value || 'ACTIVE')}
-                data={[
-                  { value: 'ACTIVE', label: 'Active' },
-                  { value: 'VACATION', label: 'Vacation' },
-                  { value: 'SUSPENDED', label: 'Suspended' },
-                  { value: 'BANNED', label: 'Banned' },
-                  { value: 'CLOSED', label: 'Closed' }
-                ]}
-                mb="md"
-              />
+              <GameCard title={t('sections.profile')}>
+                <TextInput
+                  label={t('fields.username')}
+                  value={userData.profile.username}
+                  readOnly={isReadOnly}
+                  onChange={(event) =>
+                    setUserData({
+                      ...userData,
+                      profile: {
+                        ...userData.profile,
+                        username: event.currentTarget.value,
+                      },
+                    })
+                  }
+                />
+                <TextInput
+                  label={t('fields.email')}
+                  value={userData.profile.email}
+                  readOnly={isReadOnly}
+                  onChange={(event) =>
+                    setUserData({
+                      ...userData,
+                      profile: {
+                        ...userData.profile,
+                        email: event.currentTarget.value,
+                      },
+                    })
+                  }
+                  mt="sm"
+                />
+                <TextInput
+                  label={t('fields.status')}
+                  value={userData.profile.status}
+                  readOnly
+                  mt="sm"
+                />
+                <Text size="xs" c="dimmed" mt="xs">
+                  {t('fields.statusHelp')}
+                </Text>
+              </GameCard>
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <Paper withBorder p="md" radius="md">
-                <Text size="sm" fw={500} mb="xs">User Information</Text>
-                <Text size="sm"><b>User ID:</b> {userData.profile.id}</Text>
-                <Text size="sm"><b>Join Date:</b> {userData.profile.joinDate ? new Date(userData.profile.joinDate).toLocaleString() : 'N/A'}</Text>
-                <Text size="sm"><b>Last Active:</b> {userData.profile.lastActive ? new Date(userData.profile.lastActive).toLocaleString() : 'N/A'}</Text>
-                <Text size="sm"><b>Alliance:</b> {userData.profile.alliance || 'None'}</Text>
-              </Paper>
+              <GameCard title={t('sections.account')}>
+                <Text>
+                  {t('fields.accountId')}: {userData.profile.id}
+                </Text>
+                <Badge mt="sm">{userData.profile.status}</Badge>
+              </GameCard>
             </Grid.Col>
           </Grid>
         </Tabs.Panel>
-
-        {/* Stats & Resources Tab */}
         <Tabs.Panel value="stats" pt="md">
           <Grid>
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <Paper withBorder p="md" radius="md" mb="md">
-                <Text size="lg" fw={500} mb="xs">Resources</Text>
-                <Grid>
-                  <Grid.Col span={6}>
-                    <NumberInput
-                      label="Gold"
-                      value={userData.stats.gold.toString()}
-                      onChange={(value) => updateStat('gold', Number(value) || 0)}
-                      min={0}
-                      mb="md"
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <NumberInput
-                      label="Gold In Bank"
-                      value={userData.stats.goldInBank.toString()}
-                      onChange={(value) => updateStat('goldInBank', Number(value) || 0)}
-                      min={0}
-                      mb="md"
-                    />
-                  </Grid.Col>
-                </Grid>
-              </Paper>
+              <GameCard title={t('sections.resources')}>
+                <TextInput
+                  label={t('fields.gold')}
+                  inputMode="numeric"
+                  value={userData.stats.gold}
+                  readOnly={isReadOnly}
+                  onChange={(event) =>
+                    updateMoney('gold', event.currentTarget.value)
+                  }
+                />
+                <TextInput
+                  label={t('fields.goldInBank')}
+                  inputMode="numeric"
+                  value={userData.stats.goldInBank}
+                  readOnly={isReadOnly}
+                  onChange={(event) =>
+                    updateMoney('goldInBank', event.currentTarget.value)
+                  }
+                  mt="sm"
+                />
+              </GameCard>
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 6 }}>
-              <Paper withBorder p="md" radius="md" mb="md">
-                <Text size="lg" fw={500} mb="xs">Progress</Text>
-                <Grid>           
-                  <Grid.Col span={6}>
-                    <NumberInput
-                      label="Experience"
-                      value={userData.stats.experience}
-                      onChange={(value) => updateStat('experience', Number(value) || 0)}
-                      min={0}
-                      mb="md"
-                    />
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <NumberInput
-                      label="Level"
-                      value={userData.stats.level}
-                      onChange={(value) => updateStat('level', Number(value) || 1)}
-                      min={1}
-                      mb="md"
-                    />
-                  </Grid.Col>
-                </Grid>
-              </Paper>
+              <GameCard title={t('sections.progress')}>
+                <NumberInput
+                  label={t('fields.experience')}
+                  value={userData.stats.experience}
+                  min={0}
+                  max={Number.MAX_SAFE_INTEGER}
+                  allowDecimal={false}
+                  readOnly={isReadOnly}
+                  onChange={(value) =>
+                    setUserData({
+                      ...userData,
+                      stats: {
+                        ...userData.stats,
+                        experience: safeInteger(
+                          value,
+                          userData.stats.experience,
+                        ),
+                      },
+                    })
+                  }
+                />
+                <NumberInput
+                  label={t('fields.level')}
+                  value={userData.stats.level}
+                  readOnly
+                  description={t('fields.levelHelp')}
+                  mt="sm"
+                />
+              </GameCard>
             </Grid.Col>
           </Grid>
         </Tabs.Panel>
-
-        {/* Army Tab */}
         <Tabs.Panel value="army" pt="md">
-          <Paper withBorder p="md" radius="md">
-            <Text size="lg" fw={500} mb="md">Units</Text>
+          <GameCard title={t('sections.army')}>
             {userData.army.units.length === 0 ? (
-              <Text color="dimmed" ta="center" py="xl">No units found</Text>
+              <Text c="dimmed">{t('states.noUnits')}</Text>
             ) : (
-              userData.army.units.map((unit) => (
-                <Grid key={unit.id} mb="sm">
-                  <Grid.Col span={4}>
-                    <Text>{unit.name}</Text>
-                  </Grid.Col>
-                  <Grid.Col span={4}>
-                    <Group>
-                      <Text size="sm">Quantity:</Text>
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateUnit(unit.id, 'quantity', Math.max(0, unit.quantity - 1))}
+              <Stack gap="xs">
+                {userData.army.units.map((unit) => (
+                  <Group key={unit.id} justify="space-between" wrap="nowrap">
+                    <Text style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                      {unit.name} · {t('fields.level')} {unit.level}
+                      {unit.isMercenary ? ` · ${t('fields.mercenary')}` : ''}
+                    </Text>
+                    <Group gap="xs" wrap="nowrap">
+                      <ActionIcon
+                        aria-label={t('actions.decreaseQuantity', {
+                          name: unit.name,
+                        })}
+                        disabled={isReadOnly || unit.quantity <= 0}
+                        onClick={() =>
+                          updateQuantity('units', unit.id, unit.quantity - 1)
+                        }
                       >
-                        <FontAwesomeIcon icon={faMinus} size="xs" />
+                        <FontAwesomeIcon icon={faMinus} />
                       </ActionIcon>
                       <NumberInput
+                        aria-label={t('fields.quantityFor', {
+                          name: unit.name,
+                        })}
                         value={unit.quantity}
-                        onChange={(value) => updateUnit(unit.id, 'quantity', Number(value) || 0)}
                         min={0}
-                        size="xs"
-                        w={70}
+                        max={Number.MAX_SAFE_INTEGER}
+                        allowDecimal={false}
                         hideControls
+                        w={96}
+                        readOnly={isReadOnly}
+                        onChange={(value) =>
+                          updateQuantity('units', unit.id, value)
+                        }
                       />
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateUnit(unit.id, 'quantity', unit.quantity + 1)}
+                      <ActionIcon
+                        aria-label={t('actions.increaseQuantity', {
+                          name: unit.name,
+                        })}
+                        disabled={
+                          isReadOnly || unit.quantity >= Number.MAX_SAFE_INTEGER
+                        }
+                        onClick={() =>
+                          updateQuantity('units', unit.id, unit.quantity + 1)
+                        }
                       >
-                        <FontAwesomeIcon icon={faPlus} size="xs" />
+                        <FontAwesomeIcon icon={faPlus} />
                       </ActionIcon>
                     </Group>
-                  </Grid.Col>
-                  <Grid.Col span={4}>
-                    <Group>
-                      <Text size="sm">Level:</Text>
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateUnit(unit.id, 'level', Math.max(1, unit.level - 1))}
-                      >
-                        <FontAwesomeIcon icon={faMinus} size="xs" />
-                      </ActionIcon>
-                      <NumberInput
-                        value={unit.level}
-                        onChange={(value) => updateUnit(unit.id, 'level', Number(value) || 1)}
-                        min={1}
-                        size="xs"
-                        w={70}
-                        hideControls
-                      />
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateUnit(unit.id, 'level', unit.level + 1)}
-                      >
-                        <FontAwesomeIcon icon={faPlus} size="xs" />
-                      </ActionIcon>
-                    </Group>
-                  </Grid.Col>
-                  <Grid.Col span={12}>
-                    <Divider my="xs" />
-                  </Grid.Col>
-                </Grid>
-              ))
-            )}
-          </Paper>
-        </Tabs.Panel>
-
-        {/* Items Tab */}
-        <Tabs.Panel value="items" pt="md">
-          <Paper withBorder p="md" radius="md">
-            <Text size="lg" fw={500} mb="md">Items</Text>
-            {userData.items.items.length === 0 ? (
-              <Text color="dimmed" ta="center" py="xl">No items found</Text>
-            ) : (
-              userData.items.items.map((item) => (
-                <Grid key={item.id} mb="sm">
-                  <Grid.Col span={4}>
-                    <Text>{item.name}</Text>
-                  </Grid.Col>
-                  <Grid.Col span={4}>
-                    <Group>
-                      <Text size="sm">Quantity:</Text>
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateItem(item.id, 'quantity', Math.max(0, item.quantity - 1))}
-                      >
-                        <FontAwesomeIcon icon={faMinus} size="xs" />
-                      </ActionIcon>
-                      <NumberInput
-                        value={item.quantity}
-                        onChange={(value) => updateItem(item.id, 'quantity', Number(value) || 0)}
-                        min={0}
-                        size="xs"
-                        w={70}
-                        hideControls
-                      />
-                      <ActionIcon 
-                        size="sm" 
-                        variant="subtle" 
-                        onClick={() => updateItem(item.id, 'quantity', item.quantity + 1)}
-                      >
-                        <FontAwesomeIcon icon={faPlus} size="xs" />
-                      </ActionIcon>
-                    </Group>
-                  </Grid.Col>
-                  {item.level !== undefined && (
-                    <Grid.Col span={4}>
-                      <Group>
-                        <Text size="sm">Level:</Text>
-                        <ActionIcon 
-                          size="sm" 
-                          variant="subtle" 
-                          onClick={() => updateItem(item.id, 'level', Math.max(1, (item.level || 1) - 1))}
-                        >
-                          <FontAwesomeIcon icon={faMinus} size="xs" />
-                        </ActionIcon>
-                        <NumberInput
-                          value={item.level || 1}
-                          onChange={(value) => updateItem(item.id, 'level', Number(value) || 1)}
-                          min={1}
-                          size="xs"
-                          w={70}
-                          hideControls
-                        />
-                        <ActionIcon 
-                          size="sm" 
-                          variant="subtle" 
-                          onClick={() => updateItem(item.id, 'level', (item.level || 1) + 1)}
-                        >
-                          <FontAwesomeIcon icon={faPlus} size="xs" />
-                        </ActionIcon>
-                      </Group>
-                    </Grid.Col>
-                  )}
-                  <Grid.Col span={12}>
-                    <Divider my="xs" />
-                  </Grid.Col>
-                </Grid>
-              ))
-            )}
-          </Paper>
-        </Tabs.Panel>
-
-        {/* Permissions Tab */}
-        <Tabs.Panel value="permissions" pt="md">
-          <Paper withBorder p="md" radius="md">
-            <Text size="lg" fw={500} mb="md">User Permissions</Text>
-            <Grid>
-              {Object.values(PermissionType).map((permission) => (
-                <Grid.Col key={permission} span={6}>
-                  <Group>
-                    <Button
-                      variant={userData.permissions.permissions.includes(permission) ? "filled" : "outline"}
-                      size="sm"
-                      onClick={() => togglePermission(permission)}
-                      fullWidth
-                    >
-                      {userData.permissions.permissions.includes(permission) ? 'Remove' : 'Grant'} {permission}
-                    </Button>
                   </Group>
-                </Grid.Col>
-              ))}
-            </Grid>
-          </Paper>
+                ))}
+              </Stack>
+            )}
+          </GameCard>
+        </Tabs.Panel>
+        <Tabs.Panel value="items" pt="md">
+          <GameCard title={t('sections.items')}>
+            {userData.items.items.length === 0 ? (
+              <Text c="dimmed">{t('states.noItems')}</Text>
+            ) : (
+              <Stack gap="xs">
+                {userData.items.items.map((item) => (
+                  <Group key={item.id} justify="space-between" wrap="nowrap">
+                    <Text style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                      {item.name} · {item.usage} · {t('fields.level')}{' '}
+                      {item.level}
+                    </Text>
+                    <Group gap="xs" wrap="nowrap">
+                      <ActionIcon
+                        aria-label={t('actions.decreaseQuantity', {
+                          name: item.name,
+                        })}
+                        disabled={isReadOnly || item.quantity <= 0}
+                        onClick={() =>
+                          updateQuantity('items', item.id, item.quantity - 1)
+                        }
+                      >
+                        <FontAwesomeIcon icon={faMinus} />
+                      </ActionIcon>
+                      <NumberInput
+                        aria-label={t('fields.quantityFor', {
+                          name: item.name,
+                        })}
+                        value={item.quantity}
+                        min={0}
+                        max={Number.MAX_SAFE_INTEGER}
+                        allowDecimal={false}
+                        hideControls
+                        w={96}
+                        readOnly={isReadOnly}
+                        onChange={(value) =>
+                          updateQuantity('items', item.id, value)
+                        }
+                      />
+                      <ActionIcon
+                        aria-label={t('actions.increaseQuantity', {
+                          name: item.name,
+                        })}
+                        disabled={
+                          isReadOnly || item.quantity >= Number.MAX_SAFE_INTEGER
+                        }
+                        onClick={() =>
+                          updateQuantity('items', item.id, item.quantity + 1)
+                        }
+                      >
+                        <FontAwesomeIcon icon={faPlus} />
+                      </ActionIcon>
+                    </Group>
+                  </Group>
+                ))}
+              </Stack>
+            )}
+          </GameCard>
+        </Tabs.Panel>
+        {isAdministrator && (
+          <Tabs.Panel value="staffRoles" pt="md">
+            <GameCard title={t('sections.staffRoles')}>
+              <Group wrap="wrap">
+                {STAFF_ROLES.map((role) => (
+                  <Button
+                    key={role}
+                    aria-pressed={userData.staffRoles.roles.includes(role)}
+                    variant={
+                      userData.staffRoles.roles.includes(role)
+                        ? 'filled'
+                        : 'default'
+                    }
+                    onClick={() => toggleRole(role)}
+                  >
+                    {STAFF_ROLE_LABELS[role]}
+                  </Button>
+                ))}
+              </Group>
+            </GameCard>
+          </Tabs.Panel>
+        )}
+        {isAdministrator && (
+          <Tabs.Panel value="permissions" pt="md">
+            <GameCard title={t('sections.permissions')}>
+              <Group wrap="wrap">
+                {Object.values(PermissionType).map((permission) => (
+                  <Button
+                    key={permission}
+                    aria-pressed={userData.permissions.permissions.includes(
+                      permission,
+                    )}
+                    variant={
+                      userData.permissions.permissions.includes(permission)
+                        ? 'filled'
+                        : 'default'
+                    }
+                    onClick={() => togglePermission(permission)}
+                  >
+                    {permission}
+                  </Button>
+                ))}
+              </Group>
+            </GameCard>
+          </Tabs.Panel>
+        )}
+        <Tabs.Panel value="notes" pt="md">
+          <GameCard title={t('sections.addNote')}>
+            <Stack gap="sm">
+              <Textarea
+                label={t('fields.note')}
+                value={newNote}
+                onChange={(event) => setNewNote(event.currentTarget.value)}
+                maxLength={2000}
+                minRows={3}
+                autosize
+              />
+              {notesError && (
+                <Alert role="alert" color="red" title={t('errors.title')}>
+                  {notesError}
+                </Alert>
+              )}
+              <Group justify="flex-end">
+                <Button
+                  onClick={addNote}
+                  loading={notePending}
+                  disabled={!newNote.trim() || notePending}
+                >
+                  {t('actions.addNote')}
+                </Button>
+              </Group>
+            </Stack>
+          </GameCard>
+          <GameCard title={t('sections.notes')} mt="md">
+            {notesLoading ? (
+              <Text role="status">{t('states.loading')}</Text>
+            ) : notes.length === 0 ? (
+              <Text c="dimmed">{t('states.noNotes')}</Text>
+            ) : (
+              <Stack gap="sm">
+                {notes.map((note) => (
+                  <Paper key={note.id} withBorder p="sm">
+                    <Group justify="space-between" align="flex-start">
+                      <div>
+                        <Text fw={700}>
+                          {note.author?.display_name ||
+                            t('fields.unknownAuthor')}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {new Date(note.createdAt).toLocaleString()}
+                          {note.isPinned ? ` · ${t('fields.pinned')}` : ''}
+                        </Text>
+                      </div>
+                      <ActionIcon
+                        aria-label={t('actions.deleteNote')}
+                        color="red"
+                        variant="subtle"
+                        onClick={() => setNoteDeleteTarget(note.id)}
+                      >
+                        <FontAwesomeIcon icon={faMinus} />
+                      </ActionIcon>
+                    </Group>
+                    <Text
+                      style={{
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'anywhere',
+                      }}
+                    >
+                      {note.note}
+                    </Text>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+            {notesError && (
+              <Button mt="sm" variant="default" onClick={loadNotes}>
+                {t('actions.retry')}
+              </Button>
+            )}
+          </GameCard>
+        </Tabs.Panel>
+        <Tabs.Panel value="operations" pt="md">
+          <Stack>
+            <UserOperations
+              userId={userId}
+              onSaved={onSaved}
+              isAdministrator={isAdministrator}
+            />
+            {isAdministrator && (
+              <GameCard title={t('sections.export')}>
+                <AdminUserExport userId={userId} />
+              </GameCard>
+            )}
+          </Stack>
         </Tabs.Panel>
       </Tabs>
+      <Modal
+        opened={noteDeleteTarget !== null}
+        onClose={() => setNoteDeleteTarget(null)}
+        title={t('notes.deleteTitle')}
+        centered
+      >
+        <Stack>
+          <Text>{t('notes.deleteConfirm')}</Text>
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setNoteDeleteTarget(null)}>
+              {t('actions.close')}
+            </Button>
+            <Button color="red" onClick={removeNote} loading={deletingNote}>
+              {t('actions.deleteNote')}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Stack>
   );
 };

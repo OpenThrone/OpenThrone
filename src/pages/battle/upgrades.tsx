@@ -1,19 +1,28 @@
-import BattleUpgradesSection from '@/components/battle-upgrade';
-import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
-import { useUser } from '@/context/users';
-import toLocale from '@/utils/numberFormatting';
+import {
+  faBuildingColumns,
+  faCoins,
+  faShield,
+} from '@fortawesome/free-solid-svg-icons';
+import { Stack, Text } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import { useEffect, useState } from 'react';
-import { SimpleGrid, Group, Text, Space, Tooltip } from '@mantine/core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuildingColumns, faCoins, faShield } from '@fortawesome/free-solid-svg-icons';
+
+import BattleUpgradesSection from '@/components/battle-upgrade';
+import { GameCard } from '@/components/game/GameCard';
+import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
-import StatCard from '@/components/StatCard';
-import ContentCard from '@/components/ContentCard';
-import { BiCoinStack, BiSolidBank } from 'react-icons/bi';
+import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
+import { useUser } from '@/context/users';
+import { toLocale } from '@/utils/numberFormatting';
 
 const useItems = (user) => {
-  const [items, setItems] = useState({ OFFENSE: [], DEFENSE: [], SPY: [], SENTRY: [] });
+  const [items, setItems] = useState({
+    OFFENSE: [],
+    DEFENSE: [],
+    SPY: [],
+    SENTRY: [],
+  });
 
   useEffect(() => {
     if (user) {
@@ -39,92 +48,111 @@ const useItems = (user) => {
 };
 
 const itemMapFunction = (item, itemType, user, siegeLevel) => {
+  const discountedCost = item.cost - (user?.priceBonus / 100) * item.cost;
   return {
     id: `${itemType}_${item.level}`,
     name: item.name,
     bonus: item.bonus,
     ownedItems:
       user?.battle_upgrades.find(
-        (i) =>
-          i.type === item.type &&
-          i.level === item.level 
+        (i) => i.type === item.type && i.level === item.level,
       )?.quantity || 0,
-    cost: toLocale(
-      item.cost - (user?.priceBonus / 100) * item.cost,
-      user?.locale,
-    ),
+    cost: toLocale(discountedCost, user?.locale),
+    baseCost: item.cost,
+    discountedCost,
     enabled: item.SiegeUpgradeLevel <= siegeLevel,
     level: item.level,
     type: item.type,
     SiegeUpgradeLevel: item.SiegeUpgradeLevel,
     unitsCovered: item.unitsCovered,
     minUnitLevel: item.minUnitLevel,
-    SiegeUpgrade: OffensiveUpgrades.find((f) => f.level === item.SiegeUpgradeLevel)?.name,
+    SiegeUpgrade: OffensiveUpgrades.find(
+      (f) => f.level === item.SiegeUpgradeLevel,
+    )?.name,
   };
 };
 
-const Upgrades = (props) => {
+const Upgrades = () => {
+  const { t } = useTranslation('battle');
   const { user } = useUser();
-  
+  const items = useItems(user);
+
   // Calculate total offensive and defensive units (level 2+)
-  const offensiveUnits = user?.units
-    .filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)
-    .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
-    
-  const defensiveUnits = user?.units
-    .filter((unit) => unit.type === 'DEFENSE' && unit.level > 1)
-    .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
-  
+  const offensiveUnits =
+    user?.units
+      .filter((unit) => unit.type === 'OFFENSE' && unit.level > 1)
+      .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
+
+  const defensiveUnits =
+    user?.units
+      .filter((unit) => unit.type === 'DEFENSE' && unit.level > 1)
+      .reduce((acc, unit) => acc + unit.quantity, 0) || 0;
+
   return (
-    <MainArea title="Battle Upgrades">
-      {/* Stats Section */}
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} className="mb-6">
-        <StatCard 
-          title="Gold On Hand"
-          value={toLocale(user?.gold) ?? 0}
-          icon={<BiCoinStack size={18} />}
+    <MainArea title={t('upgrades.title')}>
+      <Stack gap="md">
+        <StatGrid
+          title={t('upgrades.upgradeStatus')}
+          icon={faCoins}
+          columns={4}
+          stats={[
+            {
+              label: t('upgrades.goldOnHand'),
+              value: toLocale(user?.gold) ?? 0,
+              icon: faCoins,
+            },
+            {
+              label: t('upgrades.bankedGold'),
+              value: toLocale(user?.goldInBank) ?? 0,
+              icon: faBuildingColumns,
+            },
+            {
+              label: t('upgrades.offensiveUnits'),
+              value: toLocale(offensiveUnits),
+              icon: <RpgAwesomeIcon icon="crossed-swords" size="lg" />,
+              tooltip: t('upgrades.onlyLevel2Units'),
+              qualifier: t('upgrades.onlyLevel2Units'),
+            },
+            {
+              label: t('upgrades.defensiveUnits'),
+              value: toLocale(defensiveUnits),
+              icon: faShield,
+              tooltip: t('upgrades.onlyLevel2Units'),
+              qualifier: t('upgrades.onlyLevel2Units'),
+            },
+          ]}
         />
-        <StatCard 
-          title="Banked Gold"
-          value={toLocale(user?.goldInBank) ?? 0}
-          icon={<BiSolidBank size={18} />}
+
+        <GameCard
+          title={t('upgrades.battleUpgradeInformation')}
+          goldAccent={false}
+        >
+          <Text size="sm" c="gray.3" lh={1.7}>
+            {t('upgrades.battleUpgradeInfo')}
+          </Text>
+        </GameCard>
+
+        <BattleUpgradesSection
+          heading={t('upgrades.offense')}
+          type="OFFENSE"
+          items={items.OFFENSE}
         />
-        <Tooltip label='Only Level 2+ Units'>
-          <div>
-            <StatCard 
-              title="Offensive Units"
-              value={toLocale(offensiveUnits)}
-              icon={<RpgAwesomeIcon icon="crossed-swords" size="lg" />}
-            />
-          </div>
-        </Tooltip>
-        <Tooltip label='Only Level 2+ Units'>
-          <div>
-            <StatCard 
-              title="Defensive Units"
-              value={toLocale(defensiveUnits)}
-              icon={<FontAwesomeIcon icon={faShield} style={{ width: '18px', height: '18px' }} />}
-            />
-          </div>
-        </Tooltip>
-      </SimpleGrid>
-
-      <ContentCard 
-        title="Battle Upgrade Information"
-        variant="default"
-        titlePosition="left"
-        className="mb-6"
-      >
-        <Text size='md' p="md">
-          Only Level 2 and higher units can use battle upgrades. Battle upgrades provide stat bonuses to your units in combat.
-        </Text>
-      </ContentCard>
-
-      
-        <BattleUpgradesSection heading='Offense' type='OFFENSE' items={useItems(user).OFFENSE} />
-        <BattleUpgradesSection heading='Defense' type='DEFENSE' items={useItems(user).DEFENSE} />     
-        <BattleUpgradesSection heading='Spy' type='SPY' items={useItems(user).SPY} />
-        <BattleUpgradesSection heading='Sentry' type='SENTRY' items={useItems(user).SENTRY} />
+        <BattleUpgradesSection
+          heading={t('upgrades.defense')}
+          type="DEFENSE"
+          items={items.DEFENSE}
+        />
+        <BattleUpgradesSection
+          heading={t('upgrades.spy')}
+          type="SPY"
+          items={items.SPY}
+        />
+        <BattleUpgradesSection
+          heading={t('upgrades.sentry')}
+          type="SENTRY"
+          items={items.SENTRY}
+        />
+      </Stack>
     </MainArea>
   );
 };

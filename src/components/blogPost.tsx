@@ -1,48 +1,136 @@
-import { Flex, Paper, Space, Title, Text, Checkbox, Badge, Divider } from "@mantine/core";
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+/* eslint-disable @next/next/no-img-element */
+import { faShareNodes } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  ActionIcon,
+  Badge,
+  Box,
+  Group,
+  Paper,
+  Stack,
+  Switch,
+  Text,
+  Title,
+} from '@mantine/core';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import { useCallback, useMemo } from 'react';
 
-const BlogPost = ({ post, loggedIn, handleReadChange }) => {
+import frameClasses from '@/components/game/FantasyFrame.module.css';
+import MarkdownArticle from '@/components/news/MarkdownArticle';
+import classes from '@/components/public/PublicPages.module.css';
+import type { BlogPostDTO } from '@/services/Blog.service';
+
+interface BlogPostProps {
+  post: BlogPostDTO & { image?: string; tags?: string[] };
+  loggedIn: boolean;
+  handleReadChange: (id: number) => void;
+}
+
+const BlogPost = ({ post, loggedIn, handleReadChange }: BlogPostProps) => {
+  const { t, i18n } = useTranslation('community');
+  const { locale, defaultLocale } = useRouter();
+  const readMinutes = useMemo(
+    () =>
+      Math.max(
+        1,
+        Math.ceil(
+          post.content
+            .replace(/<[^>]*>/g, '')
+            .split(/\s+/)
+            .filter(Boolean).length / 200,
+        ),
+      ),
+    [post.content],
+  );
+  const date = new Date(post.created_timestamp);
+  const dateLabel = Number.isNaN(date.getTime())
+    ? ''
+    : new Intl.DateTimeFormat(i18n.language, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        timeZone: 'UTC',
+      }).format(date);
+
+  const onShare = useCallback(async () => {
+    const localePrefix = locale && locale !== defaultLocale ? `/${locale}` : '';
+    const url = new URL(
+      `${localePrefix}/community/news/${post.id}`,
+      window.location.origin,
+    ).href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: post.title, url });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {
+      // Dismissing the share sheet needs no error message.
+    }
+  }, [post.id, post.title, locale, defaultLocale]);
 
   return (
-    <>
-      <div key={post.id} className="mx-auto rounded-xl overflow-hidden border border-gray-200">
-        <Paper shadow='lg'>
-          <Flex justify="space-between" className="items-center p-4">
-            <Title size={'md'} ff={'heading'} c={'gray'} className="uppercase tracking-wide font-semibold">
-              {post.title}
-              <br /><span className="text-xs">{new Date(post.created_timestamp).toLocaleString()}</span>
-            </Title>
-            <Divider m={'md'} c='dimmed' size={'xl'} />
-            {loggedIn && (
-              <Badge color='brand'>
-                <Checkbox labelPosition='left' defaultChecked={post.isRead} onChange={handleReadChange} label="Read" />
-              </Badge>
+    <Paper
+      component="article"
+      className={`${classes.newsArticle} ${frameClasses.surface} ${frameClasses.ornate}`}
+    >
+      <Box className={classes.newsHeader}>
+        <Title order={2} className={classes.sectionTitle}>
+          {post.title}
+        </Title>
+        <Stack gap="xs">
+          <Group gap="xs">
+            {post.kind && <Badge variant="light">{post.kind}</Badge>}
+            {post.isPinned && (
+              <Badge variant="outline">{t('news.pinned')}</Badge>
             )}
-          </Flex>
-        </Paper>
-        <Divider />
-        <Paper className="p-4" bg={'!#b5a565'} >
-          <Markdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw]}
-            components={{
-              h1: ({ node, ...props }) => <Title order={1} {...props} />,
-              h3: ({ node, ...props }) => <Title order={3} {...props} />,
-              h4: ({ node, ...props }) => <Title order={4} {...props} />,
-              p: ({ node, ...props }) => <Text component="p" fw={'normal'} size='lg' mb={'xl'} {...props} />, // Use Text with mb for margin-bottom
-            }}
-            className="text-gray-400 font-semibold text-shadow text-shadow-sm shadow-black space-y-100"
-          >
-            {post.content}
-          </Markdown>
-        </Paper>
-      </div>
-
-      <Space h='lg' />
-    </>
+          </Group>
+          <Text size="xs" c="var(--ot-muted)">
+            {post.authorName ? `${post.authorName} · ` : ''}
+            {dateLabel && (
+              <time dateTime={post.created_timestamp}>{dateLabel}</time>
+            )}
+            {' · '}
+            {t('news.minutesToRead', { count: readMinutes })}
+          </Text>
+          <Group gap="md">
+            {loggedIn && (
+              <Switch
+                size="sm"
+                checked={post.isRead}
+                onChange={() => handleReadChange(post.id)}
+                label={t(post.isRead ? 'news.markAsUnread' : 'news.markAsRead')}
+              />
+            )}
+            <ActionIcon
+              variant="outline"
+              size="lg"
+              onClick={onShare}
+              aria-label={t('news.sharePost')}
+            >
+              <FontAwesomeIcon icon={faShareNodes} />
+            </ActionIcon>
+          </Group>
+        </Stack>
+      </Box>
+      <Stack gap="lg">
+        {post.image && (
+          <img src={post.image} alt="" className="h-64 w-full object-cover" />
+        )}
+        <MarkdownArticle content={post.content} />
+        {post.tags?.length ? (
+          <Group gap="xs">
+            {post.tags.map((tag) => (
+              <Badge key={tag} variant="light" radius="sm">
+                {tag}
+              </Badge>
+            ))}
+          </Group>
+        ) : null}
+      </Stack>
+    </Paper>
   );
-}
+};
 
 export default BlogPost;

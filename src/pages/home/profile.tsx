@@ -1,39 +1,69 @@
-import { useEffect, useState } from "react";
-import { RichTextEditor } from "@mantine/tiptap";
-import { useEditor } from "@tiptap/react";
-import { StarterKit } from "@tiptap/starter-kit";
-import { Underline } from "@tiptap/extension-underline";
-import { Link as tiptapLink } from "@tiptap/extension-link";
-import { Superscript } from "@tiptap/extension-superscript";
-import { Subscript } from "@tiptap/extension-subscript";
-import { Highlight } from "@tiptap/extension-highlight";
-import { TextAlign } from "@tiptap/extension-text-align";
-import { Markdown } from "tiptap-markdown";
-import { Table } from "@tiptap/extension-table";
-import { TableRow } from "@tiptap/extension-table-row";
-import { TableHeader } from "@tiptap/extension-table-header";
-import { TableCell } from "@tiptap/extension-table-cell";
-import { useUser } from "@/context/users";
-import { alertService } from "@/services";
 import {
-  Group,
-  Table as MantineTable,
-  Space,
   Avatar,
   Button,
-  Card,
-  Text,
   FileButton,
-  Grid
-} from "@mantine/core";
-import Link from "next/link";
-import MainArea from "@/components/MainArea";
-import { logDebug } from "@/utils/logger";
+  Grid,
+  Group,
+  Space,
+  Stack,
+  Text,
+} from '@mantine/core';
+import { RichTextEditor } from '@mantine/tiptap';
+import { Highlight } from '@tiptap/extension-highlight';
+import { Link as tiptapLink } from '@tiptap/extension-link';
+import { Subscript } from '@tiptap/extension-subscript';
+import { Superscript } from '@tiptap/extension-superscript';
+import { Table } from '@tiptap/extension-table';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
+import { useEditor } from '@tiptap/react';
+import { StarterKit } from '@tiptap/starter-kit';
+import Link from 'next/link';
+import { useTranslation } from 'next-i18next';
+import { useEffect, useMemo, useState } from 'react';
+import { Markdown } from 'tiptap-markdown';
 
-const Profile = (props) => {
+import { GameCard } from '@/components/game/GameCard';
+import MainArea from '@/components/MainArea';
+import { AvatarFramingEditor } from '@/components/profile/AvatarFramingEditor';
+import { ProfilePortrait } from '@/components/profile/ProfilePortrait';
+import { useUser } from '@/context/users';
+import { alertService } from '@/services/Alert.service';
+import type { AvatarFraming } from '@/utils/avatarFraming';
+import { splitAvatarFraming } from '@/utils/avatarFraming';
+import { logDebug } from '@/utils/logger';
+
+const Profile = () => {
+  const { t } = useTranslation('home');
   const [file, setFile] = useState<File | null>(null);
   const { user, forceUpdate } = useUser();
-  const [initialContent, setInitialContent] = useState("This feature is not implemented yet");
+  const [framingOpen, setFramingOpen] = useState(false);
+  const [framingSaving, setFramingSaving] = useState(false);
+  // Framing chosen for a not-yet-uploaded file; sent with the upload.
+  const [pendingFraming, setPendingFraming] = useState<AvatarFraming | null>(
+    null,
+  );
+  const fileUrl = useMemo(
+    () => (file ? URL.createObjectURL(file) : ''),
+    [file],
+  );
+  useEffect(() => {
+    setPendingFraming(null);
+    return () => {
+      if (fileUrl) URL.revokeObjectURL(fileUrl);
+    };
+  }, [fileUrl]);
+  const storedAvatar = splitAvatarFraming(user?.avatar);
+  const hasCustomAvatar =
+    !!storedAvatar.src &&
+    storedAvatar.src !== 'SHIELD' &&
+    !storedAvatar.src.includes('/shields/');
+  const [initialContent, setInitialContent] = useState(
+    'This feature is not implemented yet',
+  );
   const [loading, setLoading] = useState(true);
   const [markdownContent, setMarkdownContent] = useState(initialContent);
   const [contentChanged, setContentChanged] = useState(false);
@@ -49,7 +79,7 @@ const Profile = (props) => {
       Subscript,
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Markdown,  // Include the Markdown extension
+      Markdown, // Include Markdown extension
       Table.configure({
         resizable: true,
       }),
@@ -63,8 +93,8 @@ const Profile = (props) => {
       if (editor) {
         let content = editor.storage.markdown
           .getMarkdown()
-          .replace(/\n\n/g, "\n");
-        
+          .replace(/\n\n/g, '\n');
+
         // Enforce character limit
         if (content.length > maxChars) {
           content = content.substring(0, maxChars);
@@ -79,13 +109,13 @@ const Profile = (props) => {
 
   useEffect(() => {
     if (loading) {
-      logDebug("Loading is true");
+      logDebug('Loading is true');
       return;
     }
     if (!editor) {
       return;
     }
-    if(markdownContent !== initialContent) {
+    if (markdownContent !== initialContent) {
       setContentChanged(true);
     } else {
       setContentChanged(false);
@@ -94,7 +124,7 @@ const Profile = (props) => {
 
   useEffect(() => {
     if (!editor) {
-      return
+      return;
     }
     if (loading && user) {
       setInitialContent(user.bio);
@@ -105,87 +135,150 @@ const Profile = (props) => {
   }, [loading, user, editor]);
 
   const saveProfile = async () => {
-    console.log(editor.storage.markdown.getMarkdown())
-    if (loading)
-      return;
+    if (loading) return;
 
     if (file || contentChanged) {
       const formData = new FormData();
       if (contentChanged) {
-        formData.append("bio", editor.storage.markdown.getMarkdown());
+        formData.append('bio', editor.storage.markdown.getMarkdown());
       }
       if (file) {
-        formData.append("avatar", file);
+        formData.append('avatar', file);
+        if (pendingFraming) {
+          formData.append('avatarFraming', JSON.stringify(pendingFraming));
+        }
       }
 
       try {
-        const response = await fetch("/api/account/profile", {
-          method: "POST",
+        const response = await fetch('/api/account/profile', {
+          method: 'POST',
           body: formData,
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          const msg = (err) => { // TODO: Need to identify different errors that aren't understood well
-            if (err.includes("options.maxTotalFileSize")) {
-              return "File size must be less than 1.5mb.";
+          const msg = (err) => {
+            // TODO: Need to identify different errors that aren't understood well
+            if (err.includes('options.maxTotalFileSize')) {
+              return t('profile.fileSizeLimit');
             }
             return err;
-          }
+          };
           throw new Error(msg(data.error));
         }
 
         setInitialContent(user.bio);
         setMarkdownContent(user.bio);
+        if (file) setFile(null);
 
-        alertService.success("File uploaded successfully.");
+        alertService.success(t('profile.fileUploadedSuccessfully'));
         forceUpdate();
       } catch (error) {
-        alertService.error("Error uploading file. " + error.message);
+        alertService.error(
+          `${t('profile.errorUploadingFile')} ${error.message}`,
+        );
       }
     }
   };
 
+  const saveFraming = async (framing: AvatarFraming) => {
+    if (file) {
+      setPendingFraming(framing);
+      setFramingOpen(false);
+      return;
+    }
+    setFramingSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatarFraming', JSON.stringify(framing));
+      const response = await fetch('/api/account/profile', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error ?? response.statusText);
+      }
+      alertService.success(t('profile.framingSaved'));
+      setFramingOpen(false);
+      forceUpdate();
+    } catch (error) {
+      alertService.error(
+        `${t('profile.framingSaveFailed')} ${error.message ?? ''}`.trim(),
+      );
+    } finally {
+      setFramingSaving(false);
+    }
+  };
+
   return (
-    <MainArea
-      title="My Profile">
+    <MainArea title={t('profile.title')}>
       <Grid gutter="lg">
-        <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw="bolder">
-              Current Avatar
-            </Text>
-            <Space h="lg" />
-            <Group align="center" mt="md">
-              <Avatar src={user?.avatar} size={150} radius="md" />
-            </Group>
-          </Card>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <GameCard title={t('profile.currentAvatar')}>
+            <Stack align="center" gap="md" mt="md">
+              <ProfilePortrait
+                race={user?.race}
+                avatar={user?.avatar}
+                style={{ width: 'min(300px, 100%)' }}
+              />
+              {hasCustomAvatar && !file && (
+                <Button variant="outline" onClick={() => setFramingOpen(true)}>
+                  {t('profile.adjustFraming')}
+                </Button>
+              )}
+            </Stack>
+          </GameCard>
         </Grid.Col>
-        <Grid.Col span={6}>
-          <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
-            <Text size="xl" fw="bolder">
-              New Avatar
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <GameCard title={t('profile.newAvatar')}>
+            <Text size="sm" c="dimmed">
+              {t('profile.limits')}
             </Text>
-            <Text size="sm" color="dimmed">Limits: 450x450 and 1.5mb</Text>
             <Group align="center" mt="md">
-              <Avatar src={file ? URL.createObjectURL(file) : ""} size={150} radius="md" />
-              <FileButton accept="image/jpeg, image/jpg, image/gif, image/png, image/webp" onChange={setFile}>
-                {(props) => <Button {...props}>Upload image</Button>}
+              <Avatar src={fileUrl} size={150} radius="md" />
+              <FileButton
+                accept="image/jpeg, image/jpg, image/gif, image/png, image/webp"
+                onChange={setFile}
+              >
+                {(props) => (
+                  <Button {...props} color="yellow">
+                    {t('profile.uploadImage')}
+                  </Button>
+                )}
               </FileButton>
+              {file && (
+                <Button variant="outline" onClick={() => setFramingOpen(true)}>
+                  {t('profile.adjustFraming')}
+                </Button>
+              )}
             </Group>
-          </Card>
+            {file && pendingFraming && (
+              <Text size="sm" c="dimmed" mt="sm">
+                {t('profile.framingPending')}
+              </Text>
+            )}
+          </GameCard>
         </Grid.Col>
       </Grid>
+      <AvatarFramingEditor
+        opened={framingOpen}
+        onClose={() => setFramingOpen(false)}
+        avatar={file ? fileUrl : storedAvatar.src}
+        race={user?.race}
+        initialFraming={file ? pendingFraming : storedAvatar.framing}
+        saving={framingSaving}
+        onSave={saveFraming}
+      />
       <Space h="md" />
-      <Card shadow="sm" padding="lg" style={{ backgroundColor: '#1A1B1E' }}>
+      <GameCard title={t('profile.profileBiography')}>
         <Space h="md" />
-        <Text size="xl" fw='bolder'>Profile Biography {contentChanged && (
-          <span>
-            <span style={{ color: 'red' }}>*</span>
-            <span style={{ color: 'dimmed' }}>Unsaved changes</span>
-          </span>
-        ) }</Text>
+        {contentChanged && (
+          <Text size="sm" c="red">
+            {t('profile.unsavedChanges')}
+          </Text>
+        )}
         <RichTextEditor editor={editor}>
           <RichTextEditor.Toolbar sticky stickyOffset={60}>
             <RichTextEditor.ControlsGroup>
@@ -236,23 +329,16 @@ const Profile = (props) => {
         </RichTextEditor>
         <Space h="md" />
         <Text size="sm" color="dimmed">
-          Character Count: {charCount}/{maxChars}
+          {t('profile.characterCount', { count: charCount, max: maxChars })}
         </Text>
         <Space h="md" />
         <Group align="right" mt="md">
-          <Button
-            className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-            onClick={saveProfile}
-          >
-            Save Profile
-          </Button>
-          <Link href={'/userprofile/' + user?.id}>
-            <Button className="rounded bg-green-700 px-4 py-2 font-bold text-white hover:bg-blue-700">
-            View Profile
-            </Button>
+          <Button onClick={saveProfile}>{t('profile.saveProfile')}</Button>
+          <Link href={`/userprofile/${user?.id}`}>
+            <Button variant="default">{t('profile.viewProfile')}</Button>
           </Link>
         </Group>
-      </Card>
+      </GameCard>
     </MainArea>
   );
 };

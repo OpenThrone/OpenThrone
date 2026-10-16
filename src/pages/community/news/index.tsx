@@ -1,69 +1,79 @@
-import Markdown from 'react-markdown'
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
-import { useState } from 'react';
+import { Box, Button, Text, Title } from '@mantine/core';
+import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import { getSession } from 'next-auth/react';
-import prisma from '@/lib/prisma';
-import { Button, Modal, Space, Textarea, TextInput } from '@mantine/core';
-import { InferGetServerSidePropsType } from "next";
+import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
+
 import BlogPost from '@/components/blogPost';
-import { serializeDates } from '@/utils/utilities';
 import MainArea from '@/components/MainArea';
+import type { NewsDraft } from '@/components/news/NewsComposer';
+import NewsComposer from '@/components/news/NewsComposer';
+import PublicHero from '@/components/public/PublicHero';
+import classes from '@/components/public/PublicPages.module.css';
+import SeoHead from '@/components/SeoHead';
+import type { BlogPostDTO } from '@/services/Blog.service';
+import { BlogService } from '@/services/Blog.service';
+import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
-const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const [posts, setPosts] = useState(serverPosts.map(post => ({ ...post })).sort((a, b) => b.created_timestamp - a.created_timestamp));
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [newPost, setNewPost] = useState({ title: '', content: '' });
-  console.log('serverPosts: ', serverPosts);
+const News = ({
+  posts: serverPosts,
+  loggedIn,
+  userId = 0,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const { t } = useTranslation('community');
+  const [posts, setPosts] = useState(() =>
+    serverPosts.map((post) => ({ ...post })),
+  );
+  const [composerIsOpen, setComposerIsOpen] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+  const [postError, setPostError] = useState('');
+  const canPost = loggedIn && userId === 1;
+  const [draft, setDraft] = useState<NewsDraft>({ title: '', content: '' });
 
-  const handleReadChange = async (postId) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return { ...post, isRead: !post.isRead };
-      }
-      return post;
-    }));
+  const handleReadChange = async (postId: number) => {
+    if (!loggedIn) return;
+    const postToUpdate = posts.find((p) => p.id === postId);
+    if (!postToUpdate) return;
+    const newReadStatus = !postToUpdate.isRead;
 
-    const postToUpdate = posts.find(post => post.id === postId);
-    const newReadStatus = postToUpdate ? !postToUpdate.isRead : false;
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, isRead: newReadStatus } : p)),
+    );
 
     try {
       const response = await fetch('/api/blog/updateReadStatus', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ postId, isRead: newReadStatus }),
       });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      // Optionally, handle the response data if needed
-      const data = await response.json();
-      console.log('Success:', data);
+      if (!response.ok) throw new Error('Network response was not ok');
+      await response.json();
     } catch (error) {
       logError('Error updating read status:', error);
-
-      // Revert the UI in case of error
-      setPosts(posts.map(post => {
-        if (post.id === postId) {
-          return { ...post, isRead: !post.isRead }; // Revert the isRead status
-        }
-        return post;
-      }));
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId ? { ...p, isRead: !newReadStatus } : p,
+        ),
+      );
     }
   };
 
   const handlePostNew = async () => {
+    if (!canPost || isPosting) return;
+    if (!draft.title.trim() || !draft.content.trim()) return;
+    setIsPosting(true);
+    setPostError('');
     try {
       const response = await fetch('/api/blog/post', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newPost),
+        body: JSON.stringify({
+          title: draft.title.trim(),
+          content: draft.content.trim(),
+        }),
       });
 
       if (!response.ok) {
@@ -71,94 +81,140 @@ const News = ({ posts: serverPosts, loggedIn, userId = 0 }: InferGetServerSidePr
       }
 
       const data = await response.json();
-      setPosts([...posts, data]);
-      setModalIsOpen(false);
-      setNewPost({ title: '', content: '' });
+      setPosts((prev) => [{ ...data, isRead: false }, ...prev]);
+      setDraft({ title: '', content: '' });
+      setComposerIsOpen(false);
     } catch (error) {
       logError('Error creating new post:', error);
+      setPostError(t('news.saveError'));
+    } finally {
+      setIsPosting(false);
     }
   };
 
   return (
-    <MainArea title="News">
-      {loggedIn && userId === 1 && (
-        <Button onClick={() => setModalIsOpen(true)}>
-          Post New
-        </Button>
-      )}
-      <Space h='sm' />
-      {posts.map((post) => (
-        <BlogPost post={post} loggedIn={loggedIn} handleReadChange={handleReadChange} key={'Post_'+post.id} />
-      ))}
-      <Modal
-        opened={modalIsOpen}
-        onClose={() => setModalIsOpen(false)}
-        title="New Post"
-      >
-        <form onSubmit={(e) => { e.preventDefault(); handlePostNew(); }}>
-          <TextInput
-            label="Title"
-            value={newPost.title}
-            onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-            required
+    <>
+      <SeoHead title={t('news.title')} description={t('news.description')} />
+      <MainArea title={t('news.title')}>
+        <Box className={classes.page}>
+          <PublicHero
+            title={t('news.realmDispatches')}
+            description={t('news.officialProclamations')}
           />
-          <Textarea
-            label="Content"
-            value={newPost.content}
-            onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-            required
-          />
-          <Button type="submit" className="mt-4">Submit</Button>
-          <Button type="button" className="mt-2" variant="outline" onClick={() => setModalIsOpen(false)}>Cancel</Button>
-        </form>
-      </Modal>
-    </MainArea>
+          <Box className={classes.newsToolbar}>
+            <Text className={classes.prose}>{t('news.description')}</Text>
+            {canPost && !composerIsOpen && (
+              <Button onClick={() => setComposerIsOpen(true)}>
+                {t('news.postNew')}
+              </Button>
+            )}
+          </Box>
+
+          {canPost && composerIsOpen && (
+            <NewsComposer
+              draft={draft}
+              onDraftChange={setDraft}
+              isSubmitting={isPosting}
+              error={postError}
+              onSubmit={handlePostNew}
+              onClose={() => setComposerIsOpen(false)}
+            />
+          )}
+
+          <Box className={classes.newsFeed}>
+            {posts.length === 0 ? (
+              <Box className={classes.emptyNews}>
+                <Title order={2} className={classes.sectionTitle}>
+                  {t('news.noNewsYet')}
+                </Title>
+                {canPost && (
+                  <Button onClick={() => setComposerIsOpen(true)}>
+                    {t('news.createFirstPost')}
+                  </Button>
+                )}
+              </Box>
+            ) : (
+              [...posts]
+                .sort((a, b) => {
+                  if (a.isPinned && !b.isPinned) return -1;
+                  if (!a.isPinned && b.isPinned) return 1;
+                  return 0;
+                })
+                .map((post) => (
+                  <BlogPost
+                    post={post}
+                    loggedIn={loggedIn}
+                    handleReadChange={handleReadChange}
+                    key={`Post_${post.id}`}
+                  />
+                ))
+            )}
+          </Box>
+        </Box>
+      </MainArea>
+    </>
   );
 };
 
-export const getServerSideProps = async (context) => {
-  const session = await getSession(context);
-  let posts;
-  if (session) {
-    
-    const userId = session?.user?.id;
+type NewsPageProps = {
+  posts: BlogPostDTO[];
+  loggedIn: boolean;
+  userId: number;
+};
 
-    // Fetch posts along with the read status for the current user
-    posts = await prisma.blog_posts.findMany({
-      include: {
-        postReadStatus: {
-          where: {
-            user_id: parseInt(userId.toString()),
-          },
-          select: {
-            last_read_at: true, // Select only the last_read_at field
-          },
-        },
-      },
-      orderBy: {
-        created_timestamp: 'desc',
-      },
-    });
-    // Transform the posts to include a read status boolean
-    const postsWithReadStatus = posts.map((post) => {
-      const readStatus = post.postReadStatus.length > 0; // If there's any read status, the post is considered read
-      console.log('readStatus: ', readStatus);
+/** Returns server side props for callers that need normalized game data. */
+export const getServerSideProps: GetServerSideProps<NewsPageProps> = async (
+  context,
+) => {
+  const session = await getSession(context);
+  const i18nPromise = serverSideTranslations(context.locale ?? 'en', [
+    'common',
+    'navigation',
+    'community',
+  ]);
+  try {
+    if (session) {
+      const userId =
+        typeof session.user.id === 'string'
+          ? parseInt(session.user.id)
+          : session.user.id;
+      const [result, i18nProps] = await Promise.all([
+        BlogService.getPosts(userId, { status: 'PUBLISHED' }),
+        i18nPromise,
+      ]);
       return {
-        ...post,
-        isRead: readStatus,
+        props: {
+          posts: result.posts,
+          loggedIn: true,
+          userId,
+          ...i18nProps,
+        },
       };
-    });
+    }
+
+    const [result, i18nProps] = await Promise.all([
+      BlogService.getPosts(undefined, { status: 'PUBLISHED' }),
+      i18nPromise,
+    ]);
     return {
-      props: { posts: postsWithReadStatus.map(post => serializeDates(post)), loggedIn: true, userId},
+      props: {
+        posts: result.posts,
+        loggedIn: false,
+        userId: 0,
+        ...i18nProps,
+      },
     };
-  } 
-  // Fetch posts without the read status
-  posts = await prisma.blog_posts.findMany();
-  
-  return {
-    props: {
-      posts: posts.map(post => serializeDates(post)), loggedIn: false },
-  };
+  } catch (error) {
+    logError('Error fetching posts for server-side props', error);
+    return {
+      props: {
+        posts: [],
+        loggedIn: false,
+        userId: 0,
+        ...(await i18nPromise),
+      },
+    };
+  }
 };
 
 export default News;

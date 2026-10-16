@@ -1,64 +1,130 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import { useEffect, useState } from 'react';
-import React from 'react';
+import { Alert, Button, Group, Space, Text } from '@mantine/core';
+import type { GetServerSideProps } from 'next';
+import Link from 'next/link';
+import { getSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import React, { useEffect, useState } from 'react';
 
 import Form from '@/components/form';
-import { useLayout } from '@/context/LayoutContext';
 import MainArea from '@/components/MainArea';
-import { Alert, Space } from '@mantine/core';
+import PublicAuthLayout from '@/components/public/PublicAuthLayout';
+import classes from '@/components/public/PublicPages.module.css';
+import SeoHead from '@/components/SeoHead';
 import VacationModeModal from '@/components/VacationModeModal';
+import { useLayout } from '@/context/LayoutContext';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
+import { localePrefix } from '@/utils/localeRedirect';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
-const Login = (props) => {
+const Login = () => {
+  const { t } = useTranslation('account');
+  const { config } = useRuntimeConfig();
   const { setMeta, meta } = useLayout();
-  const [resetEmail, setResetEmail] = useState('');
   const [showVacationModal, setShowVacationModal] = useState(false);
-  const [vacationUserId, setVacationUserId] = useState<string | null>(null);
+  const [vacationUserId, setVacationUserId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
 
   useEffect(() => {
-    if (setMeta && meta && meta.title !== "OpenThrone - Login") {
+    if (setMeta && meta && meta.title !== 'OpenThrone - Login') {
       setMeta({
         title: 'OpenThrone - Login',
-        description: 'Meta Description',
+        description: t('login.metaDescription'),
       });
     }
-  }, [meta, setMeta]);
+  }, [meta, setMeta, t]);
 
   useEffect(() => {
-    if (!searchParams) return;
-    if (searchParams.get('vacation') === '1') {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('vacation') === '1') {
       setShowVacationModal(true);
-      // Optionally set userId if you want to pass it to the modal
-    } else if (searchParams.get('error') === 'account_status') {
-      setErrorMessage('Your account is currently restricted. Please contact support if you believe this is a mistake.');
+      const userIdParam = params.get('userId') ?? params.get('userID');
+      const parsedUserId = userIdParam ? Number(userIdParam) : null;
+      setVacationUserId(
+        typeof parsedUserId === 'number' && Number.isFinite(parsedUserId)
+          ? parsedUserId
+          : null,
+      );
+    } else if (params.get('error') === 'account_status') {
+      setErrorMessage(t('accountRestricted'));
     }
-  }, [searchParams]);
+  }, [t]);
 
   return (
     <>
-      <MainArea
-        title="Login">
-        <div className="mx-auto xs:w-96 md:w-3/4 py-2 md:col-span-9">
-          <div className="advisor my-3 rounded-lg px-4 py-2 shadow-md">
-            {errorMessage && (
-              <div className="mb-4 bg-red-500 p-4 text-white">{errorMessage}</div>
-            )}
-            <div className="flex justify-center">
-              <div className="xs:w-96 md:w-5/12">
-                {(process.env.NEXT_PUBLIC_DISABLE_LOGIN === 'true') && (
-                  <>
-                    <Alert variant='filled' color='red' title='Login is disabled'>Please check Discord or our News for updates.
-                    </Alert>
-                    <Space h="md" />
-                  </>
-                )
-              }
-                <Form type="login" setErrorMessage={setErrorMessage} />
-              </div>
-            </div>
-          </div>
-        </div>
+      <SeoHead
+        title="OpenThrone - Login"
+        description={t('login.metaDescription')}
+      />
+      <MainArea title={t('login.title')}>
+        <PublicAuthLayout
+          title={t('login.returnToWarRoom')}
+          description={t('login.kingdomWaiting')}
+          formTitle={t('login.commanderAccess')}
+          sceneChildren={
+            <>
+              <Text className={classes.prose} mt="lg">
+                {t('login.newToOpenThrone')}
+              </Text>
+              <Group className={classes.actions}>
+                <Button
+                  component={Link}
+                  href="/account/register"
+                  variant="outline"
+                >
+                  {t('login.createCommander')}
+                </Button>
+                <Button
+                  component={Link}
+                  href="/community/news"
+                  variant="outline"
+                >
+                  {t('login.latestNews')}
+                </Button>
+              </Group>
+            </>
+          }
+        >
+          {errorMessage && (
+            <>
+              <Alert
+                variant="filled"
+                color="red"
+                title={t('login.accessDenied')}
+                data-testid="error-message"
+                role="alert"
+              >
+                {errorMessage}
+              </Alert>
+              <Space h="md" />
+            </>
+          )}
+          {config?.disableLogin === true && (
+            <>
+              <Alert
+                variant="filled"
+                color="red"
+                title={t('login.loginDisabled')}
+              >
+                {t('login.checkDiscordNews')}
+              </Alert>
+              <Space h="md" />
+            </>
+          )}
+          <Form type="login" setErrorMessage={setErrorMessage} layout="bare" />
+          <Group mt="md" justify="center">
+            <Button
+              component={Link}
+              href="/account/password-reset"
+              variant="outline"
+              size="xs"
+              color="gray"
+            >
+              {t('login.recoverLostAccount')}
+            </Button>
+          </Group>
+        </PublicAuthLayout>
         <VacationModeModal
           opened={showVacationModal}
           onClose={() => setShowVacationModal(false)}
@@ -68,6 +134,29 @@ const Login = (props) => {
       </MainArea>
     </>
   );
+};
+
+/** Redirects authenticated users to the game; others get the auth funnel. */
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const session = await getSession(context);
+  if (session?.user) {
+    return {
+      redirect: {
+        destination: `${localePrefix(context.locale, context.defaultLocale)}/home/overview`,
+        permanent: false,
+      },
+    };
+  }
+  return {
+    props: {
+      ...(await serverSideTranslations(context.locale ?? 'en', [
+        'common',
+        'navigation',
+        'account',
+        'runtime-controls',
+      ])),
+    },
+  };
 };
 
 export default Login;

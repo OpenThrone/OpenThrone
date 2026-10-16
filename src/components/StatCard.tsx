@@ -1,13 +1,17 @@
-import React, { ReactNode } from 'react';
-import { Paper, Text, ThemeIcon } from '@mantine/core';
+import { Box, Group, Paper, Text, ThemeIcon } from '@mantine/core';
+import Link from 'next/link';
+import type React from 'react';
+
+import classes from '@/components/game/Panels.module.css';
 
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon: ReactNode;
+  icon: React.ReactNode;
   variant?: 'default' | 'highlight' | 'pulse';
   subtext?: string;
   iconPosition?: 'left' | 'right';
+  href?: string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -17,78 +21,64 @@ const StatCard: React.FC<StatCardProps> = ({
   variant = 'default',
   subtext,
   iconPosition = 'right',
+  href,
 }) => {
-  const getCardClasses = () => {
-    const baseClasses = `
-      bg-[#0b0c0c] 
-      border border-[#554813] 
-      rounded-sm 
-      shadow-md 
-      overflow-hidden
-      hover:shadow-lg 
-      hover:scale-[1.02] 
-      transition-all duration-300 ease-in-out
-    `;
-
-    switch (variant) {
-      case 'highlight':
-        return `
-          ${baseClasses}
-          border-2 border-yellow-600
-          ring-2 ring-yellow-500/40
-        `;
-      case 'pulse':
-        return `
-          ${baseClasses}
-          animate-pulse-slow
-          border-yellow-500
-        `;
-      default:
-        return baseClasses;
-    }
-  };
-
-  const iconNode = ( // Create the icon node once
+  const iconNode = (
     <ThemeIcon
-      c="white"
-      variant="outline"
-      className="hover:rotate-12 transition-transform duration-300"
+      c="var(--ot-brand-text)"
+      variant="transparent"
+      aria-hidden="true"
     >
       {icon}
     </ThemeIcon>
   );
 
-  return (
-    <Paper withBorder radius="md" p={0} className={getCardClasses()}>
-      {/* Header */}
-      <div className="bg-[#10100f] relative flex items-center justify-between px-4 py-2 border-b border-[#554813]">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-100/5 to-transparent pointer-events-none" />
+  const card = (
+    <Paper
+      withBorder
+      radius="sm"
+      p={0}
+      style={{
+        borderColor: variant !== 'default' ? 'var(--ot-accent)' : undefined,
+        cursor: href ? 'pointer' : undefined,
+        transition: href
+          ? 'transform 0.15s ease, box-shadow 0.15s ease'
+          : undefined,
+      }}
+      className={`${classes.card} ${variant !== 'default' ? classes.highlight : ''}`}
+    >
+      <Group className={classes.header} wrap="nowrap">
         {iconPosition === 'left' && iconNode}
-        <Text
-          size="lg"
-          fw="bold"
-          c="dimmed"
-          className="font-medieval tracking-wide"
-        >
+        <Text component="h2" size="md" className={classes.title}>
           {title}
         </Text>
         {iconPosition === 'right' && iconNode}
-      </div>
-
-      {/* Body */}
-      <div className="flex flex-col items-center justify-center px-4 py-4 text-[#fbd753]">
-        <Text size="xl" fw="bold">
+      </Group>
+      <Box className={classes.statBody}>
+        <Text size="xl" fw={700} className={classes.statValue}>
           {typeof value === 'number' ? value.toLocaleString() : value}
         </Text>
-
         {subtext && (
-          <Text size="sm" c="dimmed" mt="xs" ta="center">
+          <Text size="sm" c="dimmed" mt="xs">
             {subtext}
           </Text>
         )}
-      </div>
+      </Box>
     </Paper>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+      >
+        {card}
+      </Link>
+    );
+  }
+
+  return card;
 };
 
 export default StatCard;

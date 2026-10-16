@@ -1,190 +1,61 @@
-import { useEffect, useState } from 'react';
-import useSocket from '@/hooks/useSocket';
-import { useUser } from '@/context/users';
-import { alertService } from '@/services';
+import { UnstyledButton } from '@mantine/core';
+import { getSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
+import { useEffect } from 'react';
+
 import MainArea from '@/components/MainArea';
+import { useUser } from '@/context/users';
+import useSocket from '@/hooks/useSocket';
+import { alertService } from '@/services/Alert.service';
+import { localePrefix } from '@/utils/localeRedirect';
 
-const SocketTestPage = (props) => {
+const SocketTestPage = () => {
   const { user } = useUser();
-  const { socket, isConnected, addEventListener, removeEventListener } = useSocket(user?.id);
-  const [messages, setMessages] = useState([]);
-  const [receivedHashes, setReceivedHashes] = useState(new Set());
+  const { socket, isConnected } = useSocket(user?.id);
+  const { t } = useTranslation('test');
 
-  // Handle ping-pong logic
-  const handlePing = () => {
-    if (socket && user) {
-      socket.emit('ping', { userId: user.id });
-    }
-  };
-
-  // Listen for pong response
   useEffect(() => {
-    if (!socket) return;
-
-    const onPong = () => {
-      setMessages(prevMessages => [...prevMessages, 'Pong received']);
-    };
-
-    const onAttackNotification = (data) => {
-      if (receivedHashes.has(data.hash)) {
-        console.log('Duplicate attack notification:', data);
-        return;
-      }
-      setReceivedHashes(prevHashes => {
-        const newHashes = new Set(prevHashes);
-        newHashes.add(data.hash);
-        return newHashes;
-      });
-      setMessages(prevMessages => [...prevMessages, `Attack notification: ${data.message}`]);
-    };
-
-    const onFriendRequestNotification = (data) => {
-       if (receivedHashes.has(data.hash)) {
-        console.log('Duplicate friend request notification:', data);
-        return;
-      }
-      setReceivedHashes(prevHashes => {
-        const newHashes = new Set(prevHashes);
-        newHashes.add(data.hash);
-        return newHashes;
-      });
-      setMessages(prevMessages => [...prevMessages, `Friend request notification: ${data.message}`]);
-    };
-
-    const onEnemyDeclarationNotification = (data) => {
-       if (receivedHashes.has(data.hash)) {
-        console.log('Duplicate enemy declaration notification:', data);
-        return;
-      }
-      setReceivedHashes(prevHashes => {
-        const newHashes = new Set(prevHashes);
-        newHashes.add(data.hash);
-        return newHashes;
-      });
-      setMessages(prevMessages => [...prevMessages, `Enemy declaration notification: ${data.message}`]);
-    };
-
-    const onMessageNotification = (data) => {
-       if (receivedHashes.has(data.hash)) {
-        console.log('Duplicate message notification:', data);
-        return;
-      }
-      setReceivedHashes(prevHashes => {
-        const newHashes = new Set(prevHashes);
-        newHashes.add(data.hash);
-        return newHashes;
-      });
-      setMessages(prevMessages => [...prevMessages, `Message notification: ${data.message}`]);
-    };
-
-    addEventListener('pong', onPong);
-    addEventListener('attackNotification', onAttackNotification);
-    addEventListener('friendRequestNotification', onFriendRequestNotification);
-    addEventListener('enemyDeclarationNotification', onEnemyDeclarationNotification);
-    addEventListener('messageNotification', onMessageNotification);
-
+    if (process.env.NODE_ENV === 'production') return;
+    if (typeof window === 'undefined') return;
+    (window as any).otSocket = socket;
     return () => {
-      removeEventListener('pong', onPong);
-      removeEventListener('attackNotification', onAttackNotification);
-      removeEventListener('friendRequestNotification', onFriendRequestNotification);
-      removeEventListener('enemyDeclarationNotification', onEnemyDeclarationNotification);
-      removeEventListener('messageNotification', onMessageNotification);
+      if ((window as any).otSocket === socket) {
+        delete (window as any).otSocket;
+      }
     };
-  }, [socket, addEventListener, removeEventListener, receivedHashes]);
+  }, [socket]);
 
-  
   return (
-    <MainArea
-      title="Socket Test"
-      >
-      <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
-
-      {/* Ping Pong Test */}
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        onClick={handlePing}>Send Ping</button>
-
-      {/* Attack Notification Test */}
-      <div className="flex items-center space-x-2">
-        <input
-          type="number"
-          id="defenderId"
-          placeholder="Enter defender ID"
-          className="shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-        />
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          onClick={() => {
-            const defenderId = (document.getElementById('defenderId') as HTMLInputElement)?.value;
-            if (socket && defenderId && user) {
-              socket.emit('notifyAttack', { battleId: Number(defenderId), defenderId: 11 });
-            }
-          }}
-        >
-          Send Attack Notification
-        </button>
-      </div>
-
-      {/* Add Friend Notification Test */}
-      <button
-        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        onClick={() => {
-          const userId = prompt('Enter user ID to send friend request:');
-          if (socket && userId && user) {
-            socket.emit('notifyFriendRequest', { userId: parseInt(userId), message: `${user.email} has sent you a friend request!` });
-          }
-        }}
-      >
-        Send Friend Request
-      </button>
-
-      {/* Add Enemy Notification Test */}
-      <button
-        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        onClick={() => {
-          const userId = prompt('Enter user ID to declare as enemy:');
-          if (socket && userId && user) {
-            socket.emit('notifyEnemyDeclaration', { userId: parseInt(userId), message: `${user.email} has declared you as an enemy!` });
-          }
-        }}
-      >
-        Declare Enemy
-      </button>
-
-      {/* Message Notification Test */}
-      <button
-        className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        onClick={() => {
-          const userId = prompt('Enter user ID to send message:');
-          if (socket && userId && user) {
-            socket.emit('notifyMessage', { userId: parseInt(userId), message: `You have a new message from ${user.email}!` });
-          }
-        }}
-      >
-        Send Message
-      </button>
+    <MainArea title={t('socketTest.title')}>
+      <p>
+        Status:{' '}
+        {isConnected ? t('socketTest.connected') : t('socketTest.disconnected')}
+      </p>
 
       {/* Trigger Alert Test */}
-      <button
-        className="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+      <UnstyledButton
+        className="rounded bg-orange-500 px-4 py-2 font-bold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         onClick={() => {
-          alertService.success('This is a test alert!');
+          alertService.success(t('socketTest.testAlert'));
         }}
       >
-        Trigger Alert
-      </button>
-
-      {/* Message Log */}
-      <div>
-        <h3>Message Log:</h3>
-        <ul>
-          {messages.map((message, index) => (
-            <li key={index}>{message}</li>
-          ))}
-        </ul>
-      </div>
+        {t('socketTest.triggerAlert')}
+      </UnstyledButton>
     </MainArea>
   );
+};
+
+export const getServerSideProps = async (context: any) => {
+  const session = await getSession(context);
+  if (!session?.user) {
+    return {
+      redirect: {
+        destination: `${localePrefix(context.locale, context.defaultLocale)}/account/login`,
+        permanent: false,
+      },
+    };
+  }
+  return { props: {} };
 };
 
 export default SocketTestPage;

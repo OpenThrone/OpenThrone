@@ -1,10 +1,12 @@
-import React from 'react';
 import { Chip, Group } from '@mantine/core';
-import { useLocalStorage } from '@mantine/hooks';
+import React from 'react';
 
-
-export default function BankHistoryFilters({ colorScheme, filters, setFilters }) {
-  
+/** Bank history filters. */
+export default function BankHistoryFilters({
+  colorScheme,
+  filters,
+  setFilters,
+}) {
   const toggleFilter = (key) => {
     setFilters({
       ...filters,

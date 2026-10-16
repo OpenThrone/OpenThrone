@@ -1,0 +1,382 @@
+/* Player profile: hero banner, stat tiles and section layout. */
+
+.hero {
+  container: profileHero / inline-size;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--frame-edge);
+  border-radius: 4px;
+  background: var(--ot-inset);
+  box-shadow: var(--frame-shadow);
+}
+
+/* Race throne-room painting, as on the public About hero: the throne sits in the
+   right third and the scrim keeps the portrait and identity column readable. */
+.heroArt {
+  z-index: 0;
+  object-fit: cover;
+  object-position: 100% 50%;
+  pointer-events: none;
+}
+
+.heroScrim {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(6, 8, 11, .95) 0%, rgba(6, 8, 11, .9) 38%, rgba(6, 8, 11, .8) 56%, rgba(6, 8, 11, .38) 76%, rgba(6, 8, 11, .1) 100%),
+    linear-gradient(0deg, rgba(6, 8, 11, .55), transparent 40%);
+  pointer-events: none;
+}
+
+.heroInner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  /* Identity column stops short so the throne stays visible on the right. */
+  grid-template-columns: auto minmax(0, 560px);
+  justify-content: start;
+  gap: 28px;
+  align-items: center;
+  padding: 24px 28px;
+}
+
+/* The race frame art sits on a 1536x1024 canvas with wide transparent margins;
+   crop to its drawn area (x 145-1400, y 0-1010) so the frame fills the box. */
+.portrait {
+  position: relative;
+  width: 340px;
+  aspect-ratio: 1255 / 1010;
+  overflow: hidden;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .55));
+}
+
+.portraitWindow {
+  position: absolute;
+  inset: 13.9% 15.9% 10.9% 14.7%;
+  overflow: hidden;
+  background: var(--ot-inset);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, .75);
+}
+
+/* Uploaded portraits fill the window; keep the upper third (faces) in view. */
+.portraitImage {
+  object-fit: cover;
+  object-position: 50% 30%;
+  user-select: none;
+}
+
+/* Default shields are transparent cut-outs: show them whole, as a crest hung
+   on a race-tinted banner, instead of cropping them to fill the window. */
+.portraitWindow[data-kind='crest'] {
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--crest, var(--ot-brand)) 60%, transparent), transparent 62%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .025) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, color-mix(in srgb, var(--crest, var(--ot-brand)) 30%, var(--ot-inset)), var(--ot-inset));
+}
+
+.portraitWindow[data-kind='crest'] .portraitImage {
+  padding: 6% 9% 4%;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .7));
+}
+
+.portraitWindow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 36px rgba(0, 0, 0, .7);
+  pointer-events: none;
+}
+
+.portraitFrame {
+  position: absolute;
+  top: 0;
+  left: -11.55%;
+  width: 122.4%;
+  max-width: none;
+  height: auto;
+  pointer-events: none;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  font-family: Chomsky, MedievalSharp, serif;
+  font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--ot-heading);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, .65), 0 0 24px color-mix(in srgb, var(--ot-accent) 28%, transparent);
+  overflow-wrap: anywhere;
+}
+
+.lineage {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--ot-border), transparent) 1;
+  color: var(--ot-body);
+  font-family: MedievalSharp, serif;
+  font-size: 1.125rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 4px 18px 4px 0;
+}
+
+.fact + .fact {
+  padding-left: 18px;
+  border-left: 1px solid var(--ot-line);
+}
+
+.fact dt {
+  color: var(--ot-muted);
+  font-size: .8125rem;
+}
+
+.fact dd {
+  margin: 2px 0 0;
+  color: var(--ot-heading);
+  font-family: MedievalSharp, serif;
+  font-size: 1.375rem;
+  line-height: 1.1;
+}
+
+.factIcon {
+  flex-shrink: 0;
+  color: var(--ot-accent);
+  font-size: 1.875rem;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .7));
+}
+
+.presence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 28px;
+  padding: 10px 14px;
+  border: 1px solid var(--ot-line);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ot-inset) 70%, transparent);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ot-heading);
+  font-size: .9375rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6b7280;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, .5);
+}
+
+.dot[data-state='online'] {
+  background: #3ddc6a;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, .5), 0 0 10px #3ddc6a;
+}
+
+.dot[data-state='offline'] {
+  background: #2f9e57;
+}
+
+.lastSeen {
+  display: flex;
+  flex-direction: column;
+  color: var(--ot-muted);
+  font-size: .75rem;
+}
+
+.lastSeen strong {
+  color: var(--ot-body);
+  font-size: .9375rem;
+  font-weight: 500;
+}
+
+@container profileHero (max-width: 620px) {
+  .heroArt {
+    object-position: 82% 30%;
+  }
+
+  .heroScrim {
+    background: linear-gradient(0deg, rgba(6, 8, 11, .97) 0%, rgba(6, 8, 11, .9) 45%, rgba(6, 8, 11, .6) 72%, rgba(6, 8, 11, .3) 100%);
+  }
+
+  .heroInner {
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+    justify-items: center;
+    gap: 12px;
+    padding: 18px 16px 20px;
+  }
+
+  .portrait {
+    width: min(340px, 100%);
+  }
+
+  .identity {
+    width: 100%;
+  }
+
+  .name {
+    text-align: center;
+  }
+
+  .lineage {
+    justify-content: center;
+  }
+}
+
+/* Two-up section grid: wider stats column, narrower actions column. */
+.sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (min-width: 992px) {
+  .sections {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  }
+}
+
+/* Kingdom statistic tiles. */
+.tilesWrap {
+  container: profileTiles / inline-size;
+  height: 100%;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 8px;
+  height: 100%;
+  margin: 0;
+}
+
+.tiles[data-columns='3'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--ot-line);
+  border-radius: 3px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ot-surface-2) 80%, transparent), var(--ot-inset));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), inset 0 -10px 18px rgba(0, 0, 0, .25);
+}
+
+.tileIcon {
+  flex-shrink: 0;
+  width: 36px;
+  color: var(--ot-accent);
+  font-size: 2rem;
+  text-align: center;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .7));
+}
+
+.tile dt {
+  color: var(--ot-muted);
+  font-size: .8125rem;
+}
+
+.tile dd {
+  margin: 2px 0 0;
+  color: var(--ot-heading);
+  font-family: MedievalSharp, serif;
+  font-size: 1.25rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+@container profileTiles (max-width: 520px) {
+  .tiles[data-columns='3'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container profileTiles (max-width: 420px) {
+  .tiles,
+  .tiles[data-columns='3'] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: auto;
+    gap: 0;
+    height: auto;
+  }
+
+  .tile {
+    padding: 8px 4px;
+    border: 0;
+    border-bottom: 1px solid var(--ot-line);
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .tile > div {
+    display: flex;
+    flex: 1;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .tileIcon {
+    font-size: 1.375rem;
+  }
+}
+
+.bio {
+  overflow-wrap: anywhere;
+}
+
+/* Framing editor: the live portrait doubles as the drag surface. */
+.framingStage {
+  width: min(360px, 80vw);
+  cursor: grab;
+  touch-action: none;
+}
+
+.framingStage:active {
+  cursor: grabbing;
+}
+
+.framingStage:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: 4px;
+}

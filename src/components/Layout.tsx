@@ -1,59 +1,110 @@
+import { useMediaQuery } from '@mantine/hooks';
+import Link from 'next/link';
+import router, { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
+import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
+import ArtworkPreviewSelector from '@/components/ArtworkPreviewSelector';
+import EraResetNotice from '@/components/EraResetNotice';
+import { ScrollSidebar as SidebarScroll } from '@/components/game/SidebarScroll';
+import { SidebarDark as SidebarTablet } from '@/components/game/SidebarTablet';
+import MobileSidebarContent from '@/components/MobileSidebarContent';
 import { NavLoggedIn } from '@/components/navLoggedIn';
 import { NavLoggedOut } from '@/components/navLoggedOut';
 import Sidebar from '@/components/Sidebar';
 import { useLayout } from '@/context/LayoutContext';
 import { AppConfig } from '@/utils/AppConfig';
-import { getAssetPath } from '@/utils/utilities';
-import Image from 'next/image';
-import NewsBulletin from './news-bulletin';
+import { resolveArtworkSource } from '@/utils/artwork';
 import { logError } from '@/utils/logger';
-import NavSkeleton from './NavSkeleton';
+
+import ConnectionStatusBanner from './ConnectionStatusBanner';
+import GameHeader from './GameHeader';
+import shellClasses from './GameShell.module.css';
 import MainAreaSkeleton from './MainAreaSkeleton';
+import NavSkeleton from './NavSkeleton';
+import NewPlayerWalkthrough from './NewPlayerWalkthrough';
 import SidebarSkeleton from './SidebarSkeleton';
+
+const publicFooterLinks = [
+  { key: 'home', labelKey: 'loggedOut.home', url: '/' },
+  { key: 'howToPlay', labelKey: 'loggedOut.howToPlay', url: '/how-to-play' },
+  { key: 'faq', labelKey: 'loggedOut.faq', url: '/faq' },
+  { key: 'news', labelKey: 'loggedOut.news', url: '/community/news' },
+  { key: 'stats', labelKey: 'loggedOut.stats', url: '/community/stats' },
+  { key: 'about', labelKey: 'loggedOut.about', url: '/about' },
+  {
+    key: 'discord',
+    labelKey: 'loggedOut.discord',
+    url: 'https://discord.gg/j9NYxmBCjA',
+    external: true,
+  },
+  {
+    key: 'github',
+    labelKey: 'loggedOut.github',
+    url: 'https://github.com/OpenThrone/OpenThrone',
+    external: true,
+  },
+] as const;
 
 interface IMainProps {
   children: ReactNode;
 }
 
 const Layout = (props: IMainProps) => {
+  const { t } = useTranslation('common');
+  const { t: tNav } = useTranslation('navigation');
   const { status } = useSession();
   const { raceClasses, authorized, userLoading: layoutLoading } = useLayout();
-  const [gitInfo, setGitInfo] = useState({ latestCommit: '', latestCommitMessage: '' });
-  const [onlinePlayerInfo, setOnlinePlayerInfo] = useState({ onlinePlayers: 0, totalPlayers: 0, newestPlayer: '', newPlayers: 0 });
-  const [isDevelopment, setIsDevelopment] = useState(false);
-
-  useEffect(() => {
-    setIsDevelopment(process.env.NODE_ENV === 'development');
-  }, []);
+  const nextRouter = useRouter();
+  const isAdminRoute = useMemo(
+    () =>
+      nextRouter.pathname.startsWith('/home/admin') ||
+      nextRouter.pathname.startsWith('/home/moderation'),
+    [nextRouter.pathname],
+  );
+  const isMobileSidebar = useMediaQuery('(max-width: 767px)', false, {
+    getInitialValueInEffect: true,
+  });
+  const [gitInfo, setGitInfo] = useState({
+    latestCommit: '',
+    latestCommitMessage: '',
+  });
+  const [onlinePlayerInfo, setOnlinePlayerInfo] = useState({
+    onlinePlayers: 0,
+    totalPlayers: 0,
+    newestPlayer: '',
+    newPlayers: 0,
+  });
+  const [isDevelopment] = useState(
+    () => process.env.NODE_ENV === 'development',
+  );
 
   useEffect(() => {
     if (isDevelopment) {
       fetch('/api/general/git-info')
-        .then(response => {
+        .then((response) => {
           if (!response.ok) {
-            throw new Error('Failed to fetch git info');
+            throw new Error(t('errors.failedToFetchGitInfo'));
           }
           return response.json();
         })
-        .then(data => {
+        .then((data) => {
           setGitInfo(data);
         })
-        .catch(error => {
-          logError('Failed to fetch git info:', error);
+        .catch((error) => {
+          logError(`${t('errors.failedToFetchGitInfo')}:`, error);
         });
     } else {
       fetch('/api/general/getOnlinePlayers')
-        .then(response => {
+        .then((response) => {
           if (!response.ok) {
-            throw new Error('Failed to fetch online player info');
+            throw new Error(t('errors.failedToFetchOnlinePlayerInfo'));
           }
           return response.json();
         })
-        .then(data => {
+        .then((data) => {
           setOnlinePlayerInfo({
             onlinePlayers: data.onlineUsers,
             totalPlayers: data.allUsersCounted,
@@ -61,105 +112,175 @@ const Layout = (props: IMainProps) => {
             newPlayers: data.newUsers,
           });
         })
-        .catch(error => {
-          logError('Failed to fetch online player info:', error);
+        .catch((error) => {
+          logError(`${t('errors.failedToFetchOnlinePlayerInfo')}:`, error);
         });
     }
   }, [isDevelopment]);
 
-  const [structureReady, setStructureReady] = useState(false);
-
-  useEffect(() => {
-    if (status === 'authenticated' || status === 'unauthenticated') {
-      setStructureReady(true); // Structure is ready as soon as authentication state is known
-    }
-  }, [status]);
+  const structureReady = authorized || status !== 'loading';
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a href="#main-content" className="skip-link">
+        {t('skipToContent')}
+      </a>
       <div
-        className={`w-full grow ${authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
-          } px-1 text-yellow-400 antialiased`}>
-        <div className="mx-auto max-w-screen-2xl">
-          <header
-            className={`mx-auto ${raceClasses.borderBottomClass}`}
-          >
-            <div
-              style={{ backgroundImage: `url('${getAssetPath('wall-header')}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
-              className={`${authorized
-                  ? raceClasses.bgClass
-                  : 'bg-elf-header-bgcolor'
-                } pb-10 pt-2`}
-            >
-              <h1 className="title text-title text-center text-6xl font-medium">
-                <center>
-                  <Image
-                    src={`${getAssetPath('OpenThrone')}`}
-                    alt="OpenThrone"
-                    style={{ height: '150px', filter: 'drop-shadow(0px 3px 0px #000000)' }}
-                    width={'300'}
-                    height={'150'}
-                  />
-                </center>
-              </h1>
-              <h2 className="text-center text-xl" style={{ textShadow: '0 -1px' }}>{AppConfig.description}</h2>
-            </div>
+        className={`w-full grow ${
+          authorized ? raceClasses.bgClass : 'bg-elf-header-bgcolor'
+        } px-1 text-yellow-400 antialiased`}
+      >
+        <div className="mx-auto w-full max-w-screen-2xl">
+          <header className={`${raceClasses.borderBottomClass}`}>
+            <ArtworkPreviewSelector />
+            <GameHeader />
             {status === 'loading' ? (
               <NavSkeleton />
             ) : authorized ? (
-              <NavLoggedIn />
+              <NavLoggedIn
+                sidebarContent={
+                  <MobileSidebarContent isMobile={isMobileSidebar} />
+                }
+                data-tour-id="primary-nav"
+              />
             ) : (
               <NavLoggedOut />
             )}
           </header>
-
-          <main className="lg:container mx-auto h-full grow overflow-y-auto pb-8">
-            <div className="flex h-full flex-wrap">
+          <main
+            className="h-full grow overflow-y-auto px-3 pb-8"
+            id="main-content"
+            tabIndex={-1}
+          >
+            <div
+              className={`flex h-full flex-wrap xl:flex-nowrap ${shellClasses.content}`}
+            >
               {structureReady ? (
                 <>
-                  {/* Conditionally render Sidebar based on authentication status */}
-                  {authorized && (
-                    <div className="w-full px-3 md:w-1/5" style={{ backgroundColor: 'rgba(0,0,0,.5)' }}>
-                      {layoutLoading ? <SidebarSkeleton /> : <Sidebar />}
+                  {authorized && !isAdminRoute && (
+                    <div
+                      data-tour-id="sidebar"
+                      className={`hidden w-full xl:block xl:w-[260px] xl:pr-4 ${shellClasses.sidebar}`}
+                    >
+                      {layoutLoading ? (
+                        <SidebarSkeleton />
+                      ) : router.pathname === '/test' ? (
+                        <>
+                          <SidebarScroll />
+                          <SidebarTablet sidebarData={undefined} />
+                        </>
+                      ) : (
+                        <Sidebar />
+                      )}
                     </div>
                   )}
-                  {/* Adjust main content width based on authentication status */}
-                  <div className={`w-full bg-black ${raceClasses.borderClass} px-3 ${authorized ? 'md:w-4/5' : 'md:w-full'}`}>
-                    <NewsBulletin />
+                  <div
+                    style={
+                      {
+                        '--shell-art': resolveArtworkSource(
+                          '/assets/header/openthrone-bg.png',
+                        )
+                          ? `url("${resolveArtworkSource('/assets/header/openthrone-bg.png')}")`
+                          : 'none',
+                      } as React.CSSProperties
+                    }
+                    data-tour-id="main-area"
+                    className={`w-full ${raceClasses.borderClass} ${authorized ? 'xl:flex-1' : 'xl:w-full'} mainArea-bg min-w-0`}
+                  >
+                    <ConnectionStatusBanner />
+                    <EraResetNotice />
                     {layoutLoading ? <MainAreaSkeleton /> : props.children}
                   </div>
                 </>
               ) : (
-                // Show a minimal placeholder while structure is deciding
-                <div className="w-full bg-black px-3">
-                  <MainAreaSkeleton /> {/* Or a very minimal, full-width placeholder */}
+                <div
+                  className="w-full"
+                  style={{ backgroundColor: 'var(--ot-surface)' }}
+                >
+                  <MainAreaSkeleton />
                 </div>
               )}
             </div>
           </main>
         </div>
       </div>
-      <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-yellow-500">
-        © Copyright {new Date().getFullYear()} {AppConfig.title}.
+      <footer className="shrink-0 border-t border-gray-300 bg-black py-3 text-center text-sm text-[var(--ot-text)]">
+        {!authorized && (
+          <nav
+            className="mb-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs"
+            aria-label="Footer navigation"
+          >
+            {publicFooterLinks.map((link) => {
+              const label = tNav(link.labelKey);
+              if ('external' in link && link.external) {
+                return (
+                  <a
+                    key={link.key}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ot-text)] opacity-70 transition-opacity hover:opacity-100"
+                  >
+                    {label}
+                  </a>
+                );
+              }
+              return (
+                <Link
+                  key={link.key}
+                  href={link.url}
+                  className="text-[var(--ot-text)] opacity-70 transition-opacity hover:opacity-100"
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
+        <p className="mb-2 px-4 text-xs text-[var(--ot-muted)]">
+          {t('footer.operator', {
+            defaultValue:
+              'OpenThrone.dev is operated by AIOXperts IT Solutions LLC.',
+          })}
+        </p>
+        {t('app.copyright', {
+          year: new Date().getFullYear(),
+          title: AppConfig.title,
+        })}
         <br />
         <div className="text-xs">
           {isDevelopment ? (
             <>
-              <p><strong>Latest Commit:</strong> {gitInfo.latestCommit}</p>
-              <p><strong>Latest Commit Message:</strong> {gitInfo.latestCommitMessage}</p>
+              <p>
+                <strong>{t('footer.latestCommit')}</strong>{' '}
+                {gitInfo.latestCommit}
+              </p>
+              <p>
+                <strong>{t('footer.latestCommitMessage')}</strong>{' '}
+                {gitInfo.latestCommitMessage}
+              </p>
             </>
           ) : (
             <>
-              <p><strong>Online Players:</strong> {onlinePlayerInfo.onlinePlayers} / {onlinePlayerInfo.totalPlayers}</p>
-              <p><strong>New Players in last 24hrs:</strong> {onlinePlayerInfo.newPlayers}</p>
-              <p><strong>Newest Player:</strong> {onlinePlayerInfo.newestPlayer}</p>
+              <p>
+                <strong>{t('footer.onlinePlayers')}</strong>{' '}
+                {onlinePlayerInfo.onlinePlayers} /{' '}
+                {onlinePlayerInfo.totalPlayers}
+              </p>
+              <p>
+                <strong>{t('footer.newPlayersLast24hrs')}</strong>{' '}
+                {onlinePlayerInfo.newPlayers}
+              </p>
+              <p>
+                <strong>{t('footer.newestPlayer')}</strong>{' '}
+                {onlinePlayerInfo.newestPlayer}
+              </p>
             </>
           )}
-
         </div>
       </footer>
+      {authorized && <NewPlayerWalkthrough />}
     </div>
   );
 };
-
 export default Layout;

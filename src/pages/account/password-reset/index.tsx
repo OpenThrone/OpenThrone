@@ -1,87 +1,94 @@
-import { TextInput, Button, Container, Title, Paper } from '@mantine/core';
-import router from 'next/router';
+import { Alert, Button, Group, Text, TextInput } from '@mantine/core';
+import type { GetStaticProps } from 'next';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import type { FormEvent } from 'react';
 import { useState } from 'react';
-import { showNotification } from '@mantine/notifications';
-import classes from './floatinginput.module.css';
+
 import MainArea from '@/components/MainArea';
+import PublicAuthLayout from '@/components/public/PublicAuthLayout';
+import classes from '@/components/public/PublicPages.module.css';
+import SeoHead from '@/components/SeoHead';
 import { logError } from '@/utils/logger';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 
-const Index = (props) => {
+const Index = () => {
+  const { t } = useTranslation('account');
+  const router = useRouter();
   const [email, setEmail] = useState('');
-  const [focused, setFocused] = useState(false);
-  const floating = email.trim().length !== 0 || focused || undefined;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submit action
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setErrorMessage('');
     try {
       const response = await fetch('/api/account/reset', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
-      }
-      // Handle success
-      showNotification({
-        title: 'Success',
-        message: 'Account created! Redirecting to login...',
-        color: 'green',
-      });
-      setTimeout(() => {
-        router.push('/account/password-reset/result');
-      }, 2000);
+      if (!response.ok) throw new Error('Password reset request failed');
+      await router.push('/account/password-reset/result');
     } catch (error) {
-      logError('Error:', error);
-      showNotification({
-        title: 'Error',
-        message: error.message,
-        color: 'red',
-      });
+      logError('Password reset request failed', error);
+      setErrorMessage(t('passwordReset.resetLinkFailed'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
   return (
-    <MainArea title="Password Reset">
-      <Container size="sm" className="py-2 md:col-span-9">
-        <Paper withBorder shadow="md" p="lg" className="advisor my-3 rounded-lg" style={{ backgroundColor: '#b5a565'}}>
+    <>
+      <SeoHead
+        title={t('passwordReset.title')}
+        description={t('passwordReset.description')}
+      />
+      <MainArea title={t('passwordReset.title')}>
+        <PublicAuthLayout
+          title={t('passwordReset.title')}
+          description={t('passwordReset.description')}
+          formTitle={t('passwordReset.enterYourEmail')}
+        >
+          <Text className={classes.prose} mb="lg">
+            {t('passwordReset.sendLinkText')}
+          </Text>
+          {errorMessage && (
+            <Alert color="red" role="alert" mb="md">
+              {errorMessage}
+            </Alert>
+          )}
           <form onSubmit={handleSubmit}>
-            <Title order={3}>Enter your Email</Title>
-            <p className="text-gray-800">We will send you a link to reset your password</p>
             <TextInput
-              label="Email Address"
-              placeholder="Enter your email address"
+              label={t('passwordReset.email')}
+              type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.currentTarget.value)}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              classNames={classes}
-              mt="md"
-              autoComplete="nope"
-              data-floating={floating}
-              labelProps={{ 'data-floating': floating }}
-              className="w-full rounded border border-gray-300"
             />
-            <div className="flex justify-end mt-4">
-              <Button
-                type="submit"
-                variant="filled"
-                color="blue"
-                className="inline-flex justify-center py-2 px-4 shadow-sm text-sm font-medium rounded-md text-white"
-              >
-                Submit
+            <Group className={classes.actions}>
+              <Button type="submit" loading={isSubmitting}>
+                {t('passwordReset.sendResetLink')}
               </Button>
-            </div>
+              <Button component={Link} href="/account/login" variant="outline">
+                {t('login.title')}
+              </Button>
+            </Group>
           </form>
-        </Paper>
-      </Container>
-    </MainArea>
+        </PublicAuthLayout>
+      </MainArea>
+    </>
   );
 };
-
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? 'en', [
+      'common',
+      'navigation',
+      'account',
+    ])),
+  },
+});
 export default Index;

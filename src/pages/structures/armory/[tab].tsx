@@ -1,442 +1,354 @@
-// --- File: src/pages/structures/armory/[tab].tsx ---
+import {
+  faCoins,
+  faGavel,
+  faPeopleGroup,
+  faUniversity,
+} from '@fortawesome/free-solid-svg-icons';
+import { Box, Space, Tabs } from '@mantine/core';
+import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-
-import NewItemSection from '@/components/newItemSection';
-import { ArmoryUpgrades, ItemTypes } from '@/constants';
-import { useUser } from '@/context/users';
-import { alertService } from '@/services';
-import toLocale, { stringifyObj } from '@/utils/numberFormatting';
-import { Group, Paper, rem, SimpleGrid, Tabs, ThemeIcon, Text, Space, Button, Box } from '@mantine/core'; // Keep Box
-import UserModel from '@/models/Users';
-import { BiCoinStack, BiSolidBank, BiMoney } from 'react-icons/bi';
-import { faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { ArmoryLoadoutPlanner } from '@/components/game/ArmoryLoadoutPlanner';
+import { OrderSummaryBar } from '@/components/game/OrderSummaryBar';
+import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
-import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
+import NewItemSection from '@/components/newItemSection';
+import { useUser } from '@/context/users';
+import type UserModel from '@/models/Users';
+import { alertService } from '@/services/Alert.service';
+import type { Item } from '@/types/typings';
+import type { ArmoryItem, ArmoryUpgradeConversion } from '@/utils/armoryOrder';
+import { armoryCategoryKeys } from '@/utils/armoryOrder';
+import { discountedItemCost, slotFloorCost } from '@/utils/armoryPricing';
 import { logError } from '@/utils/logger';
-import StatCard from '@/components/StatCard';
-import ContentCard from '@/components/ContentCard';
+import { toLocale } from '@/utils/numberFormatting';
 
-// --- useItems Hook ---
-// ... (useItems hook code remains the same) ...
+/** Share of an item's discounted cost returned on sale (see ArmoryService.unequipItems). */
+const ARMORY_SELL_REFUND_RATE = 0.75;
+
 const useItems = (user: UserModel | null, armoryLevel: number) => {
-  const [items, setItems] = useState<{ [key: string]: { [key: string]: any[] } }>({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
-
+  const [items, setItems] = useState<{
+    [key: string]: { [key: string]: ArmoryItem[] };
+  }>({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
   useEffect(() => {
     if (!user || !user.availableItemTypes) {
       setItems({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
       return;
     }
-
-    const categories = ['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'];
+    const categories = [
+      'WEAPON',
+      'HELM',
+      'BRACERS',
+      'SHIELD',
+      'BOOTS',
+      'ARMOR',
+    ];
     const types = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
-    const newItemsState: { [key: string]: { [key: string]: any[] } } = { OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} };
-
+    const newItemsState: { [key: string]: { [key: string]: ArmoryItem[] } } = {
+      OFFENSE: {},
+      DEFENSE: {},
+      SPY: {},
+      SENTRY: {},
+    };
     types.forEach((type) => {
       categories.forEach((category) => {
-        const filteredAndMapped = user.availableItemTypes
-          .filter((unit: { usage: string; type: string; race: string; }) => unit.usage === type && unit.type === category && (unit.race === 'ALL' || unit.race === user.race))
-          .map((unit: any) => itemMapFunction(unit, type, category, user, armoryLevel))
-          .filter(item => item !== undefined)
+        newItemsState[type][category] = user.availableItemTypes
+          .filter(
+            (unit: Item) =>
+              unit.usage === type &&
+              unit.type === category &&
+              (unit.race === 'ALL' || unit.race === user.race),
+          )
+          .map((unit: Item) => itemMapFunction(unit, type, user, armoryLevel))
+          .filter((item) => item !== undefined)
           .sort((a, b) => (a?.level ?? 0) - (b?.level ?? 0));
-
-        newItemsState[type][category] = filteredAndMapped;
       });
     });
     setItems(newItemsState);
-
   }, [user, armoryLevel]);
-
   return items;
 };
 
-
-// --- itemMapFunction ---
-// ... (itemMapFunction code remains the same) ...
-const itemMapFunction = (item: { id?: string; name?: string; level?: number; bonus?: number; type?: string; usage?: string; cost?: number; armoryLevel?: number; race?: string }, itemType: string, idPrefix: string, user: UserModel, armoryLevel: number) => {
-  if (!item || !item.type || !item.usage || item.level === undefined || item.cost === undefined || item.armoryLevel === undefined) {
+const itemMapFunction = (
+  item: Item,
+  itemType: string,
+  user: UserModel,
+  armoryLevel: number,
+) => {
+  if (
+    !item ||
+    !item.type ||
+    !item.usage ||
+    item.level === undefined ||
+    item.cost === undefined ||
+    item.armoryLevel === undefined
+  )
     return undefined;
-  }
-
-  const userItems = Array.isArray(user?.items) ? user.items : [];
-  const itemId = item.id || item.name?.replace(/\s+/g, '-') || `${itemType}-${item.level}`;
-
+  const userItems = user?.items || [];
   return {
-    id: `${itemType}_${itemId}`,
-    name: item.name || 'Unknown Item',
+    ...item,
+    id: `${itemType}_${item.id || item.name.replace(/\s+/g, '-')}`,
+    name: item.name || 'Unknown',
     bonus: item.bonus || 0,
-    ownedItems: userItems.find(
-      (i: { type: any; level: any; usage: any; }) =>
-        i.type === item.type &&
-        i.level === item.level &&
-        i.usage === item.usage,
-    )?.quantity || 0,
-    cost: (item.cost || 0) - ((user?.priceBonus || 0) / 100) * (item.cost || 0),
-    enabled: item.armoryLevel <= (armoryLevel || 0),
-    level: item.level,
-    type: item.type,
-    usage: item.usage,
-    armoryLevel: item.armoryLevel,
-    fortName: ArmoryUpgrades.find((f) => f.level === item.armoryLevel)?.name,
+    ownedItems:
+      userItems.find(
+        (i) =>
+          i.type === item.type &&
+          i.level === item.level &&
+          i.usage === item.usage,
+      )?.quantity || 0,
+    cost: discountedItemCost(item.cost, user.priceBonus ?? 0),
+    conversionValue: discountedItemCost(
+      slotFloorCost(item),
+      user.priceBonus ?? 0,
+    ),
+    enabled: item.armoryLevel <= armoryLevel,
   };
 };
 
-
-const ArmoryTab = (props) => {
+const ArmoryTab = () => {
+  const { t } = useTranslation('structures');
   const router = useRouter();
-  const tab = usePathname()?.split('/armory/')[1];
-  const [currentPage, setCurrentPage] = useState('offense');
+  const tabParam = Array.isArray(router.query.tab)
+    ? router.query.tab[0]
+    : router.query.tab;
+  const tab = tabParam || 'offense';
   const { user, forceUpdate } = useUser();
   const armoryLevel = user?.armoryLevel || 0;
   const items = useItems(user, armoryLevel);
-
-  const [totalUnits, setTotalUnits] = useState({
-    OFFENSE: 0,
-    DEFENSE: 0,
-    SPY: 0,
-    SENTRY: 0,
-  });
-
   const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
 
-  const grandTotalCost = useMemo(() => {
-    let total = 0;
-    const types = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
-    types.forEach(type => {
-      const typeItems = items[type] || {};
-      Object.values(typeItems).forEach((categoryItems: any[]) => {
-        if (Array.isArray(categoryItems)) {
-          categoryItems.forEach((item: any) => {
-            if (item && item.id && item.cost !== undefined) {
-              const quantity = itemCosts[item.id] || 0;
-              const itemCostValue = Number(String(item.cost).replace(/,/g, '')) || 0;
-              total += quantity * itemCostValue;
-            }
-          });
-        }
-      });
+  const [pendingAction, setPendingAction] = useState<
+    'equip' | 'unequip' | 'upgrade' | null
+  >(null);
+
+  const itemsById = useMemo(() => {
+    const lookup = new Map<string, ArmoryItem>();
+    Object.values(items).forEach((categories) =>
+      Object.values(categories).forEach((categoryItems) =>
+        categoryItems.forEach((item) => {
+          if (!lookup.has(item.id)) lookup.set(item.id, item);
+        }),
+      ),
+    );
+    return lookup;
+  }, [items]);
+
+  /** Pending buys and sells across every tab and section, priced like the API. */
+  const { grandTotalCost, grandTotalRefund } = useMemo(() => {
+    let cost = 0;
+    let refund = 0;
+    Object.entries(itemCosts).forEach(([itemId, quantity]) => {
+      const item = itemsById.get(itemId);
+      if (!item || quantity <= 0) return;
+      const unitCost = Number(item.cost) || 0;
+      cost += quantity * unitCost;
+      const sellable = Math.min(quantity, item.ownedItems || 0);
+      refund += Math.floor(unitCost * sellable * ARMORY_SELL_REFUND_RATE);
     });
-    return total;
-  }, [items, itemCosts]);
+    return { grandTotalCost: cost, grandTotalRefund: refund };
+  }, [itemsById, itemCosts]);
 
-  useEffect(() => {
-    setCurrentPage(tab || 'offense');
-  }, [tab]);
-
-  useEffect(() => {
-    if (user) {
-      setTotalUnits({
-        OFFENSE: user.units?.reduce((acc, unit) => unit.type === 'OFFENSE' ? acc + unit.quantity : acc, 0) || 0,
-        DEFENSE: user.units?.reduce((acc, unit) => unit.type === 'DEFENSE' ? acc + unit.quantity : acc, 0) || 0,
-        SPY: user.units?.reduce((acc, unit) => unit.type === 'SPY' ? acc + unit.quantity : acc, 0) || 0,
-        SENTRY: user.units?.reduce((acc, unit) => unit.type === 'SENTRY' ? acc + unit.quantity : acc, 0) || 0,
-      });
-    } else {
-      setTotalUnits({ OFFENSE: 0, DEFENSE: 0, SPY: 0, SENTRY: 0 });
-    }
-  }, [user]);
-
-  const resetItemCosts = useCallback(() => {
-    setItemCosts({});
-  }, []);
-
-  const handleEquipAll = async () => {
-    // ... (logic unchanged) ...
-    if (!user) {
-      alertService.error('User not found. Please try again.');
-      return;
-    }
-
-    const itemsToEquipList = Object.entries(itemCosts)
+  const handleEquipUnequip = async (action: 'equip' | 'unequip') => {
+    if (!user || pendingAction) return;
+    const itemsToProcess = Object.entries(itemCosts)
       .map(([itemId, quantity]) => {
-        if (quantity <= 0) return null;
-        let itemDetails = null;
-        const types = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
-        const categories = ['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'];
-        for (const type of types) {
-          for (const category of categories) {
-            const found = items[type]?.[category]?.find(i => i.id === itemId);
-            if (found) { itemDetails = found; break; }
-          }
-          if (itemDetails) break;
+        const item = itemsById.get(itemId);
+        if (!item || quantity <= 0) return null;
+        if (action === 'equip') {
+          return item.enabled ? { ...item, quantity } : null;
         }
-        if (!itemDetails || !itemDetails.enabled) return null;
-        return { type: itemDetails.type, quantity, usage: itemDetails.usage, level: itemDetails.level };
+        const sellable = Math.min(quantity, item.ownedItems || 0);
+        return sellable > 0 ? { ...item, quantity: sellable } : null;
       })
-      .filter((item): item is { type: string; quantity: number; usage: string; level: number } => item !== null);
+      .filter(Boolean);
 
-    if (itemsToEquipList.length === 0) {
-      alertService.warn('No items selected to buy.');
+    if (itemsToProcess.length === 0) {
+      alertService.info(
+        t(action === 'equip' ? 'armory.noItemsToBuy' : 'armory.noItemsToSell'),
+      );
       return;
     }
 
+    setPendingAction(action);
     try {
-      const response = await fetch('/api/armory/equip', {
+      const response = await fetch(`/api/armory/${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, items: itemsToEquipList }),
+        body: JSON.stringify({ userId: user.id, items: itemsToProcess }),
       });
       const data = await response.json();
-      if (response.ok) {
-        resetItemCosts();
-        alertService.success(data.message || "Items bought successfully!");
-        forceUpdate();
-      } else {
-        alertService.error(data.error || "Failed to buy items.");
-      }
+      if (!response.ok) throw new Error(data.error);
+      alertService.success(data.message);
+      setItemCosts({});
+      forceUpdate();
     } catch (error) {
-      alertService.error('Failed to buy items. Please try again.');
-      logError('Error while buying from Armory', error);
+      logError('Armory order failed', { action, error });
+      alertService.error((error as Error).message);
+    } finally {
+      setPendingAction(null);
     }
   };
 
-  const handleUnequipAll = async () => {
-    // ... (logic unchanged) ...
-    if (!user) {
-      alertService.error('User not found. Please try again.');
-      return;
-    }
-
-    const itemsToSellList = Object.entries(itemCosts)
-      .map(([itemId, quantity]) => {
-        if (quantity <= 0) return null;
-        let itemDetails = null;
-        const types = ['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'];
-        const categories = ['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'];
-        for (const type of types) {
-          for (const category of categories) {
-            const found = items[type]?.[category]?.find(i => i.id === itemId);
-            if (found) { itemDetails = found; break; }
-          }
-          if (itemDetails) break;
-        }
-        if (!itemDetails || !itemDetails.enabled) return null;
-        const sellQuantity = Math.min(quantity, itemDetails.ownedItems || 0);
-        if (sellQuantity <= 0) return null;
-        return { type: itemDetails.type, quantity: sellQuantity, usage: itemDetails.usage, level: itemDetails.level };
-      })
-      .filter((item): item is { type: string; quantity: number; usage: string; level: number } => item !== null);
-
-
-    if (itemsToSellList.length === 0) {
-      alertService.info('No items selected or available to sell.');
-      return;
-    }
-
+  const handleUpgrade = async (conversions: ArmoryUpgradeConversion[]) => {
+    if (!user || pendingAction || conversions.length === 0) return;
+    setPendingAction('upgrade');
     try {
-      const response = await fetch('/api/armory/unequip', {
+      const response = await fetch('/api/armory/upgrade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, items: itemsToSellList }),
+        body: JSON.stringify({
+          userId: user.id,
+          conversions: conversions.map(
+            ({ fromItem, toItem, conversionAmount }) => ({
+              fromItem,
+              toItem,
+              conversionAmount,
+            }),
+          ),
+        }),
       });
       const data = await response.json();
-      if (response.ok) {
-        resetItemCosts();
-        alertService.success(data.message || "Items sold successfully!");
-        forceUpdate();
-      } else {
-        alertService.error(data.error || "Failed to sell items.");
-      }
+      if (!response.ok)
+        throw new Error(
+          typeof data.error === 'string'
+            ? data.error
+            : t('armory.upgradeFailed'),
+        );
+      alertService.success(t('armory.upgradeSuccess'));
+      forceUpdate();
     } catch (error) {
-      alertService.error('Failed to sell items. Please try again.');
-      logError('Error while selling from Armory', error);
+      logError('Armory upgrade failed', { error });
+      alertService.error(
+        error instanceof Error ? error.message : t('armory.upgradeFailed'),
+      );
+    } finally {
+      setPendingAction(null);
     }
   };
 
+  const hasOrder = Object.values(itemCosts).some((quantity) => quantity > 0);
+  const hasBuyOrder = Object.entries(itemCosts).some(
+    ([id, quantity]) => quantity > 0 && itemsById.get(id)?.enabled,
+  );
+  const hasSellOrder = Object.entries(itemCosts).some(
+    ([id, quantity]) =>
+      quantity > 0 && (itemsById.get(id)?.ownedItems ?? 0) > 0,
+  );
+  const allItems = useMemo(() => Array.from(itemsById.values()), [itemsById]);
+  const categories = items[tab.toUpperCase()] || {};
+  const units =
+    user?.units.reduce(
+      (total, unit) =>
+        unit.type === tab.toUpperCase() ? total + unit.quantity : total,
+      0,
+    ) ?? 0;
 
-  const parentRef = useRef<HTMLDivElement>(null);
-  const footerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const footerElement = footerRef.current;
-    const scrollContainer = parentRef.current;
-
-    if (!footerElement || !scrollContainer) {
-      // logDebug("Footer or Scroll Container ref not found for sticky logic.");
-      return;
-    };
-
-    let lastKnownScrollPosition = 0;
-    let ticking = false;
-    let lastWidth = ''; // Store last calculated width
-
-    const handleScroll = () => {
-      // Prioritize scrollContainer's scroll, fallback to window
-      const currentScrollTop = scrollContainer.scrollTop > 0 ? scrollContainer.scrollTop : window.scrollY;
-      lastKnownScrollPosition = currentScrollTop;
-
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          // Calculate scrollable height based on the container that actually scrolls
-          const scrollHeight = scrollContainer.scrollTop > 0 ? scrollContainer.scrollHeight : document.documentElement.scrollHeight;
-          const clientHeight = scrollContainer.scrollTop > 0 ? scrollContainer.clientHeight : window.innerHeight;
-          const scrollableHeight = scrollHeight - clientHeight;
-          const footerHeight = footerElement.offsetHeight;
-
-          const isNearBottom = lastKnownScrollPosition >= scrollableHeight - (footerHeight + 10); // Added 10px buffer
-
-          if (isNearBottom) {
-            // Use relative positioning when at the bottom
-            if (footerElement.style.position !== 'relative') {
-              footerElement.style.position = 'relative'; // Relative to its normal position
-              footerElement.style.bottom = 'auto'; // Reset bottom
-              footerElement.style.left = 'auto'; // Reset left
-              footerElement.style.width = 'auto'; // Reset width
-              // logDebug("Footer -> Relative");
-            }
-          } else {
-            // Use fixed positioning when scrolling
-            if (footerElement.style.position !== 'fixed') {
-              footerElement.style.position = 'fixed';
-              footerElement.style.bottom = '0'; // Stick to viewport bottom
-              // logDebug("Footer -> Fixed");
-            }
-            // Calculate width based on the scroll container's current dimensions and position
-            const parentRect = scrollContainer.getBoundingClientRect();
-            const newWidth = `${parentRect.width}px`;
-            if (lastWidth !== newWidth) { // Only update width if it changes
-              footerElement.style.left = `${parentRect.left}px`;
-              footerElement.style.width = newWidth;
-              lastWidth = newWidth;
-              // logDebug("Footer -> Fixed Width/Left Updated:", newWidth, parentRect.left);
-            }
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check on mount
-
-    // Optional: ResizeObserver to handle width changes when window resizes
-    const resizeObserver = new ResizeObserver(() => {
-      lastWidth = ''; // Force width recalculation on resize
-      handleScroll();
-    });
-    resizeObserver.observe(scrollContainer);
-
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      resizeObserver.unobserve(scrollContainer); // Clean up observer
-    };
-  }, []);
-
+  const statItems = [
+    {
+      label: t('armory.citizens'),
+      value: toLocale(user?.citizens, user?.locale),
+      icon: faPeopleGroup,
+    },
+    {
+      label: t('armory.goldInHand'),
+      value: toLocale(user?.gold, user?.locale),
+      icon: faCoins,
+    },
+    {
+      label: t('armory.bankedGold'),
+      value: toLocale(user?.goldInBank, user?.locale),
+      icon: faUniversity,
+    },
+    { label: t('armory.armoryLevel'), value: user?.armoryLevel, icon: faGavel },
+  ];
 
   return (
-    <MainArea title='Armory' ref={parentRef}>
-      <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} gap="lg" verticalgap="xl">
-        {/* Stat Cards */}
-        <StatCard
-          title="Citizens"
-          value={toLocale(user?.citizens ?? 0, user?.locale)}
-          icon={<FontAwesomeIcon icon={faPeopleGroup} style={{ width: rem(15), height: rem(15) }} />}
-          iconPosition="right"
-        />
-        <StatCard
-          title="Gold In Hand"
-          value={toLocale(user?.gold ?? 0)}
-          icon={<BiCoinStack style={{ width: rem(15), height: rem(15) }} />}
-          iconPosition="right"
-        />
-        <StatCard
-          title="Banked Gold"
-          value={toLocale(user?.goldInBank ?? 0)}
-          icon={<BiSolidBank style={{ width: rem(15), height: rem(15) }} />}
-        />
-        <StatCard
-          title="Armory Level"
-          value={user?.armoryLevel ?? 0}
-          icon={<RpgAwesomeIcon icon="trophy" fw />}
-          variant="highlight"
-        />
-      </SimpleGrid>
-
+    <MainArea title={t('armory.title')}>
+      <StatGrid title={t('armory.status')} stats={statItems} />
       <Space h="md" />
-
-      <ContentCard title="Armory Options" icon={<RpgAwesomeIcon icon={'gears'} />} iconPosition="title-left">
-        {/* Tabs */}
-        <Tabs variant="pills" value={currentPage} onChange={(value) => {
-          if (value) {
-            setCurrentPage(value);
-            router.push(`/structures/armory/${value}`);
-          }
-        }} c='brand' className="mb-2 font-medieval">
+      <Box className="rpg-inset" p="xs" style={{ borderRadius: '6px' }}>
+        <Tabs
+          value={tab}
+          onChange={(value) => {
+            if (value) {
+              router.push(`/structures/armory/${value}`, undefined, {
+                locale: router.locale,
+              });
+            }
+          }}
+          variant="pills"
+        >
           <Tabs.List grow justify="center">
-            <Tabs.Tab value="offense" color='brand'><span className="text-xl">Offense</span></Tabs.Tab>
-            <Tabs.Tab value="defense" color='brand'><span className="text-xl">Defense</span></Tabs.Tab>
-            <Tabs.Tab value="spy" color='brand'><span className="text-xl">Spy</span></Tabs.Tab>
-            <Tabs.Tab value="sentry" color='brand'><span className="text-xl">Sentry</span></Tabs.Tab>
+            <Tabs.Tab value="offense">{t('armory.offense')}</Tabs.Tab>
+            <Tabs.Tab value="defense">{t('armory.defense')}</Tabs.Tab>
+            <Tabs.Tab value="spy">{t('armory.spy')}</Tabs.Tab>
+            <Tabs.Tab value="sentry">{t('armory.sentry')}</Tabs.Tab>
           </Tabs.List>
         </Tabs>
-      </ContentCard>
-
-      {/* Item Sections */}
-      <Box style={{ paddingBottom: '100px' /* Add padding at the bottom of the content area */ }}>
-        {['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY'].map(
-          (type) =>
-            currentPage === type.toLowerCase() && (
-              <div key={type}>
-                {['WEAPON', 'HELM', 'BRACERS', 'SHIELD', 'BOOTS', 'ARMOR'].map(
-                  (iType) => {
-                    const categoryItems = items[type]?.[iType] || [];
-                    return (
-                      categoryItems.length > 0 && (
-                        <NewItemSection
-                          key={`${type}_${iType}`}
-                          heading={`${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()} ${iType.charAt(0).toUpperCase() + iType.slice(1).toLowerCase()}`}
-                          items={categoryItems}
-                          units={totalUnits[type]}
-                          itemCosts={itemCosts}
-                          setItemCosts={setItemCosts}
-                        />
-                      )
-                    );
-                  },
-                )}
-              </div>
+      </Box>
+      <Space h="md" />
+      <ArmoryLoadoutPlanner
+        key={tab}
+        categories={categories}
+        allItems={allItems}
+        quantities={itemCosts}
+        setQuantities={setItemCosts}
+        onUpgrade={handleUpgrade}
+        upgrading={pendingAction === 'upgrade'}
+        units={units}
+        gold={user?.gold ?? 0n}
+        locale={user?.locale}
+        disabled={Boolean(pendingAction)}
+      />
+      <Space h="md" />
+      <Box data-tour-id="armory-panel">
+        {Object.entries(items[tab.toUpperCase()] || {}).map(
+          ([category, categoryItems]) =>
+            categoryItems.length > 0 && (
+              <Fragment key={category}>
+                <NewItemSection
+                  heading={`${t(`armory.${tab}`)} ${t(`armory.${armoryCategoryKeys[category] ?? 'weapons'}`)}`}
+                  items={categoryItems}
+                  itemCosts={itemCosts}
+                  setItemCosts={setItemCosts}
+                  units={units}
+                  allItems={allItems}
+                  disabled={Boolean(pendingAction)}
+                />
+                <Space h="md" />
+              </Fragment>
             ),
         )}
       </Box>
-
-      {/* Footer Wrapper - Apply ref here */}
-      {/* Start with relative positioning */}
-      <div ref={footerRef} className="bottom-0 z-10 w-full" style={{ position: 'relative' }}>
-        <ContentCard
-          title="Order Summary"
-          variant="highlight"
-          className="border-t-2 border-yellow-600"
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <Text fw={500}>Total Cost: {toLocale(grandTotalCost)}</Text>
-              <Text size="sm" c="dimmed">Total Refund: {toLocale(grandTotalCost * 0.75)}</Text>
-            </div>
-            <Group>
-              <Button
-                color="blue"
-                onClick={handleEquipAll}
-                disabled={grandTotalCost <= 0 || grandTotalCost > Number(user?.gold ?? 0)}
-              >
-                Buy All
-              </Button>
-              <Button
-                color="red"
-                onClick={handleUnequipAll}
-                disabled={grandTotalCost <= 0}
-              >
-                Sell All
-              </Button>
-            </Group>
-          </div>
-        </ContentCard>
-      </div>
+      <OrderSummaryBar
+        visible={hasOrder}
+        title={t('armory.orderSummary')}
+        totalCostLabel={t('armory.totalCost')}
+        totalCost={grandTotalCost}
+        refundLabel={t('armory.refund')}
+        refund={grandTotalRefund}
+        primaryAction={{
+          label: t('armory.buy'),
+          onClick: () => handleEquipUnequip('equip'),
+          disabled:
+            Boolean(pendingAction) ||
+            !hasBuyOrder ||
+            BigInt(Math.ceil(grandTotalCost)) > BigInt(user?.gold ?? 0),
+          loading: pendingAction === 'equip',
+          testId: 'armory-buy-button',
+        }}
+        secondaryAction={{
+          label: t('armory.sell'),
+          onClick: () => handleEquipUnequip('unequip'),
+          disabled: Boolean(pendingAction) || !hasSellOrder,
+          loading: pendingAction === 'unequip',
+          testId: 'armory-sell-button',
+        }}
+        hint={t('armory.sellWarning')}
+        locale={user?.locale}
+      />
     </MainArea>
   );
 };
