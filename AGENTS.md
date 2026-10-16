@@ -290,7 +290,7 @@ A change is complete only if:
 
 ## Environments and deployment
 
-Local, alpha (`alpha.openthrone.dev`) and production (`openthrone.dev`) are described in `docs/environments-and-deploy.md`, including the test-on-alpha-then-deploy workflow, migration checks, production build steps, rollback, and the rules for reading and correcting production data. Read it before touching alpha or production; do not redo that discovery each session. Claude Code users can run `/openthrone-ship` to load the whole workflow.
+Branch model: `master` is production (`openthrone.dev`) and `alpha` is the alpha server (`alpha.openthrone.dev`). Agents work on a feature branch cut from `alpha`, test locally, open a PR into `alpha`, test on the alpha server, then open a release PR from `alpha` into `master`. Never commit directly to `alpha` or `master`. Do not deploy to production without the user's explicit go-ahead. Server hostnames, deploy steps, rollback and production data rules are kept outside this repository; ask the user for them before touching alpha or production.
 
 ## Credential privacy
 

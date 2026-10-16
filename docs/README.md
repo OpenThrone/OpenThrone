@@ -17,7 +17,6 @@
 | [Anti-abuse assessment](anti-abuse-assessment.md) | Verified gaps, corrections and moderation-policy limits |
 | [Issue triage](issue-triage-2026-10-06.md) | Backlog readiness, parallel scope and remaining decisions |
 | [Operations](operations.md) | Cron endpoints and bot setup |
-| [Environments and deployment](environments-and-deploy.md) | Local, alpha and production; test, commit, push and deploy workflow; production data rules |
 | [Battle and spy source guide](battle-spy-workflow-reference.md) | Current implementation entry points |
 | [API v1 compatibility](api-v1-compat-matrix.md) | Wrapper routes and inherited behavior |
 
