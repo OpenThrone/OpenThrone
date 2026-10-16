@@ -20,8 +20,8 @@ status before each delivery, including retries. Existing bounded retries apply.
 SMTP delivery retains the existing worker's at-least-once behavior if a process
 dies after provider acceptance but before recording success.
 
-Before enabling this feature in a deployed environment, follow
-[the deployment workflow](environments-and-deploy.md), apply both additive
+Before enabling this feature in a deployed environment, follow the deployment
+workflow in `AGENTS.md`, apply both additive
 migrations (`20261014010614_add_attack_notification_emails` and
 `20261014120000_battle_alert_outbox`), and regenerate the Prisma client. Use the
 existing SMTP, HTTPS site-root, identity-hashing and unsubscribe-secret
