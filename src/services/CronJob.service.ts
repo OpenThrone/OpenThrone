@@ -674,17 +674,12 @@ export class CronJobService {
     await Promise.all(cleanupPromises);
 
     // Identity retention: purge blocks whose sanction end or deletion
-    // cooldown has elapsed, then expired legacy deletion hashes (idempotency
-    // rows keep their own short-TTL logic and are left alone).
+    // cooldown has elapsed, then expired anti-abuse rows.
     await AccountAnonymizationService.purgeExpiredIdentityBlocks();
+    // Idempotency keys are unique per hash, so an expired key only becomes reusable
+    // once its row is deleted; they are purged here with everything else.
     await prisma.antiAbuseShadow.deleteMany({
-      where: {
-        expiresAt: { lte: new Date() },
-        OR: [
-          { reason: null },
-          { reason: { not: { startsWith: 'IDEMPOTENCY:' } } },
-        ],
-      },
+      where: { expiresAt: { lte: new Date() } },
     });
   }
 }
