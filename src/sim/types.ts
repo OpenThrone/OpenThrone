@@ -1,0 +1,660 @@
+import type { RulesetId } from './scenarioTypes';
+
+/** Describes the unit counts data contract. */
+export interface UnitCounts {
+  soldier: number;
+  knight: number;
+  berserker: number;
+  guard: number;
+  archer: number;
+  royalGuard: number;
+  spy: number;
+  infiltrator: number;
+  assassin: number;
+  sentry: number;
+  sentinel: number;
+  inquisitor: number;
+  citizen: number;
+  worker: number;
+}
+
+/** Describes the item stats data contract. */
+export interface ItemStats {
+  meleeAtk: number;
+  meleeDef: number;
+  rangedAtk: number;
+  rangedDef: number;
+}
+
+interface UpgradeLevels {
+  offense: number;
+  defense: number;
+}
+
+/** Describes the sim player data contract. */
+export interface SimPlayer {
+  id: string;
+  displayName: string;
+  level: number;
+  xp?: number;
+  houseLevel?: number;
+  race?: string;
+  playerClass?: string;
+  gold: number;
+  units: UnitCounts;
+  items: ItemStats;
+  upgrades: UpgradeLevels;
+  fortLevel: number;
+  fortHp: number;
+  stamina?: number;
+  defensePressureToday?: number;
+  bonuses: {
+    attack: number;
+    defense: number;
+  };
+}
+
+/** Describes the battle config data contract. */
+/** Mirrors the production daily tallies that cap what attackers may take from one defender. */
+export interface DefenderDailyLedger {
+  /** Defender units lost to attacks and assassinations today (all attackers). */
+  casualtiesToday: number;
+  /** Assassination kills today keyed by target unit, for the per-type share cap. */
+  typeCasualtiesToday: Record<string, number>;
+  /** Gold taken from this defender today. */
+  goldTakenToday: number;
+}
+
+export interface BattleConfig {
+  /** Casualty budget left for the defender today; omitted means no daily cap. */
+  defenderDailyCasualtyRemaining?: number;
+  /** Gold all attackers may still take from the defender today. */
+  defenderDailyGoldRemaining?: number;
+  attackerMultiplier?: number;
+  defenderCounterMultiplier?: number;
+  maxPillageShare?: number;
+  damageVarianceMin?: number;
+  damageVarianceMax?: number;
+  maxTurns?: number;
+  isDefenderProtected?: boolean;
+  random?: () => number;
+  /**
+   * Comparative ruleset id. When set, `runSingleBattle` maps the ruleset
+   * onto the appropriate primitives (notably `isDefenderProtected` for
+   * low-level mitigation).
+   */
+  rulesetId?: RulesetId;
+  /**
+   * Optional per-defender daily casualty usage tracker. Applied only when
+   * the active ruleset has a non-null `dailyPopulationCap`. When omitted,
+   * no daily cap is enforced even under `candidateSafety`.
+   */
+  dailyCasualtyCapUsage?: import('./rulesets').DailyCasualtyCapUsage;
+  /**
+   * Optional defender start-of-day population. Used as the baseline for
+   * the daily cap when `dailyCasualtyCapUsage` is supplied.
+   */
+  defenderStartOfDayPopulation?: number;
+}
+
+/** Describes the balance parameters data contract. */
+export interface BalanceParameters {
+  attackerDamageMultiplier: number;
+  defenderCounterDamageMultiplier: number;
+  maxPillageSharePerAttack: number;
+  damageVarianceMin: number;
+  damageVarianceMax: number;
+}
+
+/** Describes the battle metrics data contract. */
+export interface BattleMetrics {
+  winner: 'attacker' | 'defender' | 'draw';
+  turns: number;
+  attackerCasualties: UnitCounts;
+  defenderCasualties: UnitCounts;
+  fortDamage: number;
+  loot: number;
+  attackerRoi: number;
+  attackerXp: number;
+  defenderXp: number;
+  attackerUnitsRemaining: UnitCounts;
+  defenderUnitsRemaining: UnitCounts;
+}
+
+/** Describes the simulation results data contract. */
+export interface SimulationResults {
+  gamesPlayed: number;
+  attackerWinRate: number;
+  defenderWinRate: number;
+  drawRate: number;
+  avgAttackerCasualtiesPercent: number;
+  avgDefenderCasualtiesPercent: number;
+  avgFortDamage: number;
+  avgFortDamagePercent: number;
+  avgLoot: number;
+  avgAttackerRoi: number;
+  avgTurns: number;
+}
+
+/** Describes the player config data contract. */
+export interface PlayerConfig {
+  id?: string;
+  displayName?: string;
+  level: number;
+  xp?: number;
+  houseLevel?: number;
+  race?: string;
+  playerClass?: string;
+  gold: number;
+  units?: Partial<UnitCounts>;
+  items?: Partial<ItemStats>;
+  upgrades?: Partial<UpgradeLevels>;
+  fortLevel?: number;
+  fortHp?: number;
+  stamina?: number;
+  defensePressureToday?: number;
+  bonuses?: Partial<SimPlayer['bonuses']>;
+}
+
+// ============================================================
+// Population Simulation Types
+// ============================================================
+
+/** Defines the play style shape used by related workflows. */
+export type PlayStyle =
+  | 'aggressive'
+  | 'defensive'
+  | 'balanced'
+  | 'economist'
+  | 'spy-focused';
+
+/** Defines the turn strategy shape used by related workflows. */
+export type TurnStrategy = 'conservative' | 'balanced' | 'aggressive';
+/** Defines the strategic goal shape used by related workflows. */
+export type StrategicGoal =
+  | 'wealth'
+  | 'dominance'
+  | 'growth'
+  | 'defense'
+  | 'retaliation';
+
+/** Defines the target motivation shape used by related workflows. */
+export type TargetMotivation =
+  | 'loot'
+  | 'retaliation'
+  | 'repeat-farm'
+  | 'dominance'
+  | 'xp'
+  | 'opportunistic';
+
+/** Describes the behavior params data contract. */
+export interface BehaviorParams {
+  aggression: number;
+  riskTolerance: number;
+  activityLevel: number;
+  wealthPreference: number;
+  spyPreference: number;
+  turnStrategy: TurnStrategy;
+  playStyle: PlayStyle;
+  primaryGoal: StrategicGoal;
+}
+
+interface DailyLimits {
+  attacksUsed: number;
+  intelUsed: number;
+  assassinationUsed: number;
+  infiltrationUsed: number;
+}
+
+/** Describes the intel payload data contract. */
+export interface IntelPayload {
+  units?: Partial<UnitCounts>;
+  fortLevel?: number;
+  fortHp?: number;
+  fortMaxHp?: number;
+  gold?: number;
+  defenseBonus?: number;
+  spyLevel?: number;
+  sentryLevel?: number;
+}
+
+/** Describes the intel result data contract. */
+export interface IntelResult {
+  success: boolean;
+  day: number;
+  defenderInfo?: IntelPayload;
+  spyCasualties: number;
+  spiesSent: number;
+  attackerCasualtyDeltas?: Partial<UnitCounts>;
+  defenderCasualtyDeltas?: Partial<UnitCounts>;
+}
+
+/** Describes the spy result data contract. */
+export interface SpyResult {
+  mission: 'intel' | 'assassination' | 'infiltration';
+  success: boolean;
+  turns?: number;
+  intel?: IntelPayload;
+  targetCasualties?: number;
+  fortDamage?: number;
+  spyCasualties: number;
+  spiesSent: number;
+  attackerCasualtyDeltas?: Partial<UnitCounts>;
+  defenderCasualtyDeltas?: Partial<UnitCounts>;
+}
+
+/** Describes the target evaluation data contract. */
+export interface TargetEvaluation {
+  playerId: string;
+  gold: number;
+  intelAvailable: boolean;
+  intel?: IntelResult;
+  estimatedWinRate: number;
+  estimatedLoot: number;
+  riskLevel: 'low' | 'medium' | 'high' | 'unknown';
+  recommendedTurns: number;
+  priority: number;
+  motivation: TargetMotivation;
+  shouldScout: boolean;
+  intelAge?: number;
+  intelFreshness: 'fresh' | 'decaying' | 'expired' | 'none';
+  recentlyAttackedByTarget: boolean;
+  previouslyAttackedTarget: boolean;
+}
+
+interface AttackDecision {
+  target: string;
+  turns: number;
+  reason: string;
+}
+
+/** Describes the agent decision data contract. */
+export interface AgentDecision {
+  intelMissions: { target: string; spyCount: number }[];
+  attacks: AttackDecision[];
+  recruitment: Partial<UnitCounts>;
+  upgradeSpy?: boolean;
+  upgradeSentry?: boolean;
+  upgradeEconomy?: boolean;
+  repairFort?: number;
+  bankGold?: number;
+}
+
+/** Describes the player state data contract. */
+export interface PlayerState {
+  id: string;
+  displayName: string;
+  level: number;
+  xp: number;
+  houseLevel: number;
+  race?: string;
+  playerClass?: string;
+  gold: number;
+  goldInBank: number;
+  attackTurns: number;
+  stamina: number;
+  maxStamina: number;
+  defensePressureToday: number;
+  spyPressureToday: number;
+  units: UnitCounts;
+  items: ItemStats;
+  upgrades: UpgradeLevels;
+  fortLevel: number;
+  fortHp: number;
+  fortMaxHp: number;
+  spyLevel: number;
+  sentryLevel: number;
+  economyLevel: number;
+  bonuses: {
+    attack: number;
+    defense: number;
+    spy: number;
+    sentry: number;
+  };
+  recruitBonus: number;
+  maximumBankDeposits: number;
+  dailyLimits: DailyLimits;
+  /** Defender-side OT-day ledger: battle and assassination losses, gold taken. */
+  defenderLedger?: DefenderDailyLedger;
+  /** Rolling spy mission ticks keyed `${targetId}:${kind}` (24h window). */
+  spyMissionTicks?: Map<string, number[]>;
+  behavior: BehaviorParams;
+  intelCache: Map<string, IntelResult>;
+  attackHistory: Map<string, number[]>;
+  incomingAttackHistory: Map<string, number[]>;
+  targetMemory: Map<
+    string,
+    {
+      attacks: number;
+      wins: number;
+      lastLoot: number;
+      lastAttackTick: number;
+    }
+  >;
+  bankDepositHistory: number[];
+  status: 'active' | 'inactive' | 'defeated';
+}
+
+/** Describes the day result data contract. */
+export interface DayResult {
+  day: number;
+  totalAttacks: number;
+  totalIntelMissions: number;
+  totalAssassinations: number;
+  totalInfiltrations: number;
+  intelSuccessRate: number;
+  attackerWinRate: number;
+  defenderWinRate: number;
+  drawRate: number;
+  avgTurnsPerAttack: number;
+  totalLootTransferred: number;
+  totalAttackerCasualties: number;
+  totalDefenderCasualties: number;
+  levelUps: number;
+  playersDefeated: number;
+  avgFortDamage: number;
+  lowTurnAttacks: number;
+  highTurnAttacks: number;
+  attackTurnsGenerated: number;
+  attackTurnsSpent: number;
+  totalXpAwarded: number;
+  totalTurnIncome: number;
+  totalBankDeposits: number;
+  fortBreaches: number;
+  breachedPlayersEndOfDay: number;
+}
+
+/** Describes the population metrics data contract. */
+export interface PopulationMetrics {
+  dailyResults: DayResult[];
+  attackerWinRateOverTime: number[];
+  defenderWinRateOverTime: number[];
+  intelSuccessRateOverTime: number[];
+  intelToAttackConversionRate: number[];
+  totalGoldInEconomy: number[];
+  wealthGiniCoefficient: number[];
+  levelDistributionOverTime: Map<number, number>[];
+  avgUnitsPerPlayer: number[];
+  powerCreepIndex: number[];
+  avgTurnsPerAttack: number[];
+  attacksPerActivePlayer: number[];
+  lowTurnVsHighTurnRatio: number[];
+  activePlayersPerDay: number[];
+  defeatedPlayersPerDay: number[];
+  breachedPlayersPerDay: number[];
+  attackTurnsHeldPerDay: number[];
+}
+
+/** Describes the simulation config data contract. */
+export interface SimulationConfig {
+  seed?: number;
+  logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'none';
+  metricsInterval?: number;
+  random?: () => number;
+  balance?: Partial<BalanceParameters>;
+  turnIntervalMinutes?: number;
+  attackLevelRange?: number;
+}
+
+/** Describes the balance iteration report data contract. */
+export interface BalanceIterationReport {
+  iteration: number;
+  daysSimulated: number;
+  maxLevelReached: number;
+  avgAttacksPerDay: number;
+  avgIntelSuccessRate: number;
+  avgAttackerWinRate: number;
+  avgLootPerDay: number;
+  staleScore: number;
+  notes: string[];
+  adjustments: Partial<BalanceParameters>;
+  heuristicChanges?: string[];
+  topPlayers?: TopPlayerSnapshot[];
+}
+
+/** Describes the top player snapshot data contract. */
+export interface TopPlayerSnapshot {
+  id: string;
+  displayName: string;
+  level: number;
+  gold: number;
+  goldInBank: number;
+  status: PlayerState['status'];
+  power: number;
+}
+
+/** Describes the top player timeline point data contract. */
+export interface TopPlayerTimelinePoint {
+  iteration: number;
+  level: number;
+  gold: number;
+  goldInBank: number;
+  status: PlayerState['status'];
+  power: number;
+}
+
+/** Describes the persona comparison result data contract. */
+export interface PersonaComparisonResult {
+  persona: string;
+  stopReason: AutonomousRunResult['stopReason'];
+  finalBalance: Partial<BalanceParameters>;
+  finalMaxLevel: number;
+  avgAttacksPerDay: number;
+  avgAttackerWinRate: number;
+  avgIntelSuccessRate: number;
+}
+
+/** Describes the autonomous run artifact data contract. */
+export interface AutonomousRunArtifact {
+  generatedAt: string;
+  persona: string;
+  stopReason: AutonomousRunResult['stopReason'];
+  finalBalance: Partial<BalanceParameters>;
+  reports: BalanceIterationReport[];
+  dailyResults: DayResult[];
+  finalPopulation: TopPlayerSnapshot[];
+  topPlayerTimelines: Record<string, TopPlayerTimelinePoint[]>;
+}
+
+/** Describes the autonomous run result data contract. */
+export interface AutonomousRunResult {
+  finalState: SimulationState;
+  reports: BalanceIterationReport[];
+  stopReason: 'level_100' | 'stale_meta' | 'iteration_limit';
+  finalBalance: Partial<BalanceParameters>;
+  persona?: string;
+  artifact?: AutonomousRunArtifact;
+}
+
+/** Describes the balance objective targets data contract. */
+export interface BalanceObjectiveTargets {
+  attacksPerActivePlayerDay: [number, number];
+  highTurnAttackShare: [number, number];
+  attackerWinRate: [number, number];
+  lootToProductionRatio: [number, number];
+  fortBreachRate: [number, number];
+  goldGini: [number, number];
+  averageHeldTurns: [number, number];
+}
+
+/** Describes the closed loop metrics data contract. */
+export interface ClosedLoopMetrics {
+  daysSimulated: number;
+  activePlayers: number;
+  totalAttacks: number;
+  attacksPerActivePlayerDay: number;
+  highTurnAttackShare: number;
+  attackerWinRate: number;
+  avgTurnsPerAttack: number;
+  avgXpPerDay: number;
+  avgXpPerTurn: number;
+  lootToProductionRatio: number;
+  fortBreachRate: number;
+  avgLootPerAttack: number;
+  avgLootPerDay: number;
+  avgBankDepositsPerDay: number;
+  goldGini: number;
+  averageHeldTurns: number;
+  maxLevel: number;
+  avgLevel: number;
+}
+
+/** Describes the closed loop score component data contract. */
+export interface ClosedLoopScoreComponent {
+  metric: keyof ClosedLoopMetrics;
+  value: number;
+  target: [number, number];
+  weight: number;
+  penalty: number;
+}
+
+/** Describes the closed loop diagnosis data contract. */
+export interface ClosedLoopDiagnosis {
+  severity: 'info' | 'warn' | 'critical';
+  code: string;
+  message: string;
+}
+
+/** Describes the closed loop candidate result data contract. */
+export interface ClosedLoopCandidateResult {
+  label: string;
+  balance: BalanceParameters;
+  metrics: ClosedLoopMetrics;
+  score: number;
+  scoreComponents: ClosedLoopScoreComponent[];
+  diagnoses: ClosedLoopDiagnosis[];
+}
+
+/** Describes the closed loop iteration report data contract. */
+export interface ClosedLoopIterationReport {
+  iteration: number;
+  accepted: boolean;
+  baseline: ClosedLoopCandidateResult;
+  selected: ClosedLoopCandidateResult;
+  candidates: ClosedLoopCandidateResult[];
+  notes: string[];
+}
+
+/** Describes the closed loop balance config data contract. */
+export interface ClosedLoopBalanceConfig {
+  populationSize?: number;
+  levelRange?: [number, number];
+  daysPerIteration?: number;
+  maxIterations?: number;
+  seed?: number;
+  simulation?: SimulationConfig;
+  startingBalance?: Partial<BalanceParameters>;
+  targets?: Partial<BalanceObjectiveTargets>;
+  onProgress?: (event: ClosedLoopProgressEvent) => void;
+}
+
+/** Defines the closed loop progress event shape used by related workflows. */
+export type ClosedLoopProgressEvent =
+  | {
+      type: 'start';
+      totalIterations: number;
+      populationSize: number;
+      daysPerIteration: number;
+      candidateCountEstimate: number;
+      timestamp: string;
+    }
+  | {
+      type: 'iteration_start';
+      iteration: number;
+      totalIterations: number;
+      balance: BalanceParameters;
+      timestamp: string;
+    }
+  | {
+      type: 'candidate_start';
+      iteration: number;
+      totalIterations: number;
+      candidateIndex: number;
+      candidateCount: number;
+      label: string;
+      balance: BalanceParameters;
+      timestamp: string;
+    }
+  | {
+      type: 'candidate_complete';
+      iteration: number;
+      totalIterations: number;
+      candidateIndex: number;
+      candidateCount: number;
+      label: string;
+      elapsedMs: number;
+      score: number;
+      metrics: ClosedLoopMetrics;
+      diagnoses: ClosedLoopDiagnosis[];
+      timestamp: string;
+    }
+  | {
+      type: 'iteration_complete';
+      iteration: number;
+      totalIterations: number;
+      elapsedMs: number;
+      accepted: boolean;
+      selectedLabel: string;
+      baselineScore: number;
+      selectedScore: number;
+      finalScore: number;
+      balance: BalanceParameters;
+      diagnoses: ClosedLoopDiagnosis[];
+      timestamp: string;
+    }
+  | {
+      type: 'complete';
+      elapsedMs: number;
+      finalScore: number;
+      finalBalance: BalanceParameters;
+      finalMetrics: ClosedLoopMetrics;
+      timestamp: string;
+    };
+
+/** Defines the closed loop progress payload shape used by related workflows. */
+export type ClosedLoopProgressPayload =
+  ClosedLoopProgressEvent extends infer Event
+    ? Event extends unknown
+      ? Omit<Event, 'timestamp'>
+      : never
+    : never;
+
+/** Describes the closed loop balance artifact data contract. */
+export interface ClosedLoopBalanceArtifact {
+  generatedAt: string;
+  config: Required<
+    Omit<
+      ClosedLoopBalanceConfig,
+      'simulation' | 'startingBalance' | 'targets' | 'onProgress'
+    >
+  > & {
+    simulation: SimulationConfig;
+    startingBalance: BalanceParameters;
+    targets: BalanceObjectiveTargets;
+  };
+  finalBalance: BalanceParameters;
+  finalMetrics: ClosedLoopMetrics;
+  finalScore: number;
+  iterations: ClosedLoopIterationReport[];
+  finalPopulation: TopPlayerSnapshot[];
+}
+
+/** Describes the closed loop balance result data contract. */
+export interface ClosedLoopBalanceResult {
+  finalState: SimulationState;
+  finalBalance: BalanceParameters;
+  finalMetrics: ClosedLoopMetrics;
+  finalScore: number;
+  iterations: ClosedLoopIterationReport[];
+  artifact: ClosedLoopBalanceArtifact;
+}
+
+/** Describes the simulation state data contract. */
+export interface SimulationState {
+  players: Map<string, PlayerState>;
+  day: number;
+  totalDays: number;
+  history: DayResult[];
+  metrics: PopulationMetrics;
+  config: SimulationConfig;
+}

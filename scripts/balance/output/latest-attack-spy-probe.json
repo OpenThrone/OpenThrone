@@ -1,0 +1,137 @@
+{
+  "generatedAt": "2026-08-27T12:38:39.842Z",
+  "script": "attack-spy-probe",
+  "repeats": 200,
+  "env": {
+    "NODE_ENV": "development",
+    "LOG_LEVEL": "DEBUG",
+    "NEXT_PUBLIC_LOG_LEVEL": "DEBUG",
+    "NEXT_PUBLIC_ATTACK_LEVEL_RANGE": "10",
+    "NEXT_PUBLIC_ENABLE_ATTACKING": "true",
+    "OT_ENABLE_BALANCE_V2": "",
+    "OT_BALANCE_V2_ROLLOUT_PERCENT": "5"
+  },
+  "battleScenarios": {
+    "mirror-lv20 (equal armies)": {
+      "attackerWinRate": 1,
+      "attackerLossPct": 4.700000000000016,
+      "defenderLossPct": 1.6041666666666696,
+      "avgPillage": 426855,
+      "fortBreachRate": 0
+    },
+    "weak-attacker (100 vs 2000 def)": {
+      "attackerWinRate": 1,
+      "attackerLossPct": 5,
+      "defenderLossPct": 0.15597345132743345,
+      "avgPillage": 410085,
+      "fortBreachRate": 0
+    },
+    "goliath-attacker (5000 vs 300 def)": {
+      "attackerWinRate": 1,
+      "attackerLossPct": 1.6004999999999998,
+      "defenderLossPct": 1.3291139240506322,
+      "avgPillage": 4652775,
+      "fortBreachRate": 0
+    },
+    "level-gap (+10 attacker)": {
+      "attackerWinRate": 1,
+      "attackerLossPct": 4.700000000000016,
+      "defenderLossPct": 1.969879518072289,
+      "avgPillage": 411710,
+      "fortBreachRate": 0
+    },
+    "protected-lv8-defender": {
+      "attackerWinRate": 1,
+      "attackerLossPct": 2.6950000000000016,
+      "defenderLossPct": 3.5796052631578936,
+      "avgPillage": 84125,
+      "fortBreachRate": 0
+    },
+    "def-full-fort (750hp)": {
+      "attackerWinRate": 1,
+      "attackerLossPct": 2.1934999999999985,
+      "defenderLossPct": 3.173011363636359,
+      "avgPillage": 410712.5,
+      "fortBreachRate": 0
+    },
+    "def-fort-already-dead (0hp)": {
+      "attackerWinRate": 1,
+      "attackerLossPct": 2.2952500000000025,
+      "defenderLossPct": 5.284090909090902,
+      "avgPillage": 1100000,
+      "fortBreachRate": 1
+    },
+    "mirror-1turn-poke": {
+      "attackerWinRate": 1,
+      "attackerLossPct": 0,
+      "defenderLossPct": 0.2314814814814811,
+      "avgPillage": 175688.245,
+      "fortBreachRate": 0
+    }
+  },
+  "spyProbes": {
+    "v1GateKnifeEdge": {
+      "defenderSentryStat": 5000,
+      "attackerSpyStatAboveParity": 5003,
+      "attackerSpyStatBelowParity": 4978,
+      "successAboveParity": true,
+      "successBelowParity": false
+    },
+    "sentryStat": {
+      "withoutItems": 2500,
+      "withItems": 2515,
+      "expectedItemPower": 7500
+    },
+    "v2Curve": [
+      {
+        "ratio": 0.25,
+        "successProbability": 0.01
+      },
+      {
+        "ratio": 0.5,
+        "successProbability": 0.1593
+      },
+      {
+        "ratio": 0.9,
+        "successProbability": 0.4371
+      },
+      {
+        "ratio": 1,
+        "successProbability": 0.5
+      },
+      {
+        "ratio": 1.1,
+        "successProbability": 0.5569
+      },
+      {
+        "ratio": 2,
+        "successProbability": 0.8407
+      },
+      {
+        "ratio": 4,
+        "successProbability": 0.99
+      }
+    ],
+    "assassination": {
+      "successRate": 1,
+      "avgKills": 0
+    }
+  },
+  "logSummary": {
+    "totalEntries": 202,
+    "groups": [
+      {
+        "level": "DEBUG",
+        "template": "Assassination: # CITIZEN_WORKERS killed | AttackID: # | DefenderID: #",
+        "count": 200,
+        "sample": "Assassination: 0 CITIZEN_WORKERS killed | AttackID: 1 | DefenderID: 1"
+      },
+      {
+        "level": "DEBUG",
+        "template": "simulateIntel debug",
+        "count": 2,
+        "sample": "simulateIntel debug {\"attackerSpy\":5003,\"defenderSentry\":5000}"
+      }
+    ]
+  }
+}

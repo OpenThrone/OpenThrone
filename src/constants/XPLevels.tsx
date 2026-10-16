@@ -4,7 +4,7 @@ interface LevelXP {
 }
 
 export const levelXPArray: LevelXP[] = [
-  { level: 1, xp: 4000 },
+  { level: 1, xp: 0 }, // level 1 starts at zero; 4000 was never a boundary
   { level: 2, xp: 8000 },
   { level: 3, xp: 13000 },
   { level: 4, xp: 19000 },
