@@ -1,4 +1,4 @@
-let userData: any = {
+const userData: any = {
   id: 1,
   display_name: 'TestUser',
   email: 'test@example.com',
@@ -23,7 +23,12 @@ let userData: any = {
   totalDefends: 15,
   won_attacks: 10,
   won_defends: 5,
-  structure_upgrades: [{ "type": "ARMORY", "level": 0 }, { "type": "SPY", "level": 0 }, { "type": "SENTRY", "level": 0 }, { "type": "OFFENSE", "level": 0 }],
+  structure_upgrades: [
+    { type: 'ARMORY', level: 0 },
+    { type: 'SPY', level: 0 },
+    { type: 'SENTRY', level: 0 },
+    { type: 'OFFENSE', level: 0 },
+  ],
   battle_upgrades: [],
   bonus_points: [],
 };

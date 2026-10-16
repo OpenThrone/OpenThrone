@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["cypress", "node"]
+  },
+  "files": ["../test/types/bun-test.d.ts"],
+  "include": ["./**/*.ts", "./**/*.tsx", "../test/types/**/*.d.ts"],
+  "exclude": ["../node_modules/**/*", "../out/**/*", "../.next/**/*"]
+}

@@ -1,354 +1,367 @@
-import UserModel from '@/models/Users';
-import MockUserGenerator from './MockUserGenerator';
-import { CITIZEN_WORKERS_TARGET, computeSpyAmpFactor, simulateAssassination, simulateInfiltration, simulateIntel } from './spyFunctions';
-import { logDebug } from './logger';
+import { describe, expect, it } from 'bun:test';
 
-describe('computeSpyAmpFactor', () => {
-  it('should return the correct amplification factor for target population <= 10', () => {
-    const targetPop = 10;
-    const expectedAmpFactor = 0.4 * 1.6;
-    const result = computeSpyAmpFactor(targetPop);
-    expect(result).toBe(expectedAmpFactor);
+import {
+  computeSpySuccessProbability,
+  resolveSpyMissionSuccess,
+} from '@/utils/balance/effectiveStats';
+import { calculateCombatStrength } from '@/utils/combatStrength';
+import { createSeededRandom } from '@/utils/random';
+import { type SpyMissionUser, type SpyRosterUnit } from '@/utils/spy/results';
+import {
+  CITIZEN_WORKERS_TARGET,
+  simulateAssassination,
+  simulateInfiltration,
+  simulateIntel,
+} from '@/utils/spyFunctions';
+
+function user(
+  units: SpyRosterUnit[],
+  mercenaries: SpyRosterUnit[] = [],
+): SpyMissionUser {
+  return {
+    units,
+    mercenaries,
+    items: [],
+    fortLevel: 16,
+    fortHitpoints: 10000,
+    race: 'ALL',
+    gold: 123456n,
+    goldInBank: 654321n,
+    structure_upgrades: [
+      { type: 'SPY', level: 22 },
+      { type: 'SENTRY', level: 16 },
+    ],
+    spyBonus: 0,
+    sentryBonus: 0,
+  };
+}
+
+function rosterSize(value: SpyMissionUser): number {
+  return [...value.units, ...(value.mercenaries ?? [])].reduce(
+    (sum, unit) => sum + unit.quantity,
+    0,
+  );
+}
+
+const targets = [
+  'CITIZEN',
+  'WORKER',
+  'OFFENSE',
+  'DEFENSE',
+  'SPY',
+  'SENTRY',
+] as const;
+
+describe('unified spy mission gate', () => {
+  it('uses continuous logistic odds around former extreme-ratio discontinuities', () => {
+    for (const ratio of [0.25, 4]) {
+      const before = computeSpySuccessProbability({
+        attackerSpy: (ratio - 0.00001) * 1000,
+        defenderSentry: 1000,
+      });
+      const after = computeSpySuccessProbability({
+        attackerSpy: (ratio + 0.00001) * 1000,
+        defenderSentry: 1000,
+      });
+      expect(after).toBeGreaterThanOrEqual(before);
+      expect(after - before).toBeLessThan(0.0001);
+    }
+    const odds = Math.exp(0.2) * 1.5 ** 2.4;
+    expect(
+      computeSpySuccessProbability({
+        attackerSpy: 1500,
+        defenderSentry: 1000,
+        situationalModifier: 0.2,
+      }),
+    ).toBeCloseTo(odds / (1 + odds), 10);
   });
 
-  it('should return the correct amplification factor for target population <= 9', () => {
-    const targetPop = 9;
-    const expectedAmpFactor = 0.4 * 1.5;
-    const result = computeSpyAmpFactor(targetPop);
-    expect(result).toBe(expectedAmpFactor);
+  it('fails zero capability even when the injected roll is zero', () => {
+    expect(
+      resolveSpyMissionSuccess({
+        attackerSpy: 0,
+        defenderSentry: 0,
+        random: () => 0,
+      }),
+    ).toEqual({ success: false, probability: 0 });
+    const attacker = user([{ type: 'SPY', level: 3, quantity: 50 }]);
+    const result = simulateIntel(attacker, user([]), 1, { random: () => 0 });
+    expect(result.success).toBe(false);
+    expect(result.spiesSent).toBe(0);
+    expect(rosterSize(attacker)).toBe(50);
   });
 
-  it('should return the correct amplification factor for target population <= 7', () => {
-    const targetPop = 7;
-    const expectedAmpFactor = 0.4 * 1.35;
-    const result = computeSpyAmpFactor(targetPop);
-    expect(result).toBe(expectedAmpFactor);
+  it('bounds failed one-agent loss across split regular and mercenary rows', () => {
+    const attacker = user(
+      [
+        { type: 'SPY', level: 3, quantity: 1 },
+        { type: 'SPY', level: 3, quantity: 1 },
+      ],
+      [{ type: 'SPY', level: 3, quantity: 2 }],
+    );
+    const before = rosterSize(attacker);
+    const result = simulateAssassination(
+      attacker,
+      user([{ type: 'SENTRY', level: 3, quantity: 1000 }]),
+      1,
+      'WORKER',
+      { random: () => 0.999, turns: 10 },
+    );
+    expect(result.success).toBe(false);
+    expect(result.spiesLost).toBe(1);
+    expect(before - rosterSize(attacker)).toBe(result.spiesLost);
+    expect(attacker.units.map((unit) => unit.quantity)).toEqual([0, 1]);
+    expect(attacker.mercenaries?.[0]?.quantity).toBe(2);
   });
+});
 
-  it('should return the correct amplification factor for target population <= 5', () => {
-    const targetPop = 5;
-    const expectedAmpFactor = 0.4 * 1.2;
-    const result = computeSpyAmpFactor(targetPop);
-    expect(result).toBe(expectedAmpFactor);
-  });
-
-  it('should return the correct amplification factor for target population <= 3', () => {
-    const targetPop = 3;
-    const expectedAmpFactor = 0.4 * 0.95;
-    const result = computeSpyAmpFactor(targetPop);
-    expect(result).toBe(expectedAmpFactor);
-  });
-
-  it('should return the correct amplification factor for target population <= 1', () => {
-    const targetPop = 1;
-    const expectedAmpFactor = 0.4 * 0.75;
-    const result = computeSpyAmpFactor(targetPop);
-    expect(result).toBe(expectedAmpFactor);
-  });
-
-  describe('Spy Mission Simulations', () => {
-    let attackerGenerator: MockUserGenerator;
-    let defenderGenerator: MockUserGenerator;
-    let baseAttacker: UserModel;
-    let baseDefender: UserModel;
-
-    beforeEach(() => {
-      // Setup base users before each test
-      attackerGenerator = new MockUserGenerator();
-      attackerGenerator.setBasicInfo({ display_name: 'AttackerSpy', race: 'ELF', class: 'ASSASSIN' });
-      attackerGenerator.setSpyUpgrade(5); // Give some base spy structure level
-      attackerGenerator.addUnits([
-        { type: 'SPY', level: 1, quantity: 1000 }, // For Intel
-        { type: 'SPY', level: 2, quantity: 1000 }, // For Infiltration
-        { type: 'SPY', level: 3, quantity: 1000 }, // For Assassination
-      ]);
-      // Add base spy/intel bonus points if needed via generator
-      // attackerGenerator.setBonusPoints([{ type: 'INTEL', level: 10 }]);
-
-      defenderGenerator = new MockUserGenerator();
-      defenderGenerator.setBasicInfo({ display_name: 'DefenderSentry', race: 'HUMAN', class: 'CLERIC' });
-      defenderGenerator.setSentryUpgrade(5); // Give some base sentry structure level
-      defenderGenerator.addUnits([
-        { type: 'SENTRY', level: 1, quantity: 500 },
-        { type: 'SENTRY', level: 2, quantity: 500 },
-        { type: 'DEFENSE', level: 1, quantity: 1000 },
-        { type: 'OFFENSE', level: 1, quantity: 500 },
-        { type: 'CITIZEN', level: 1, quantity: 2000 },
-        { type: 'WORKER', level: 1, quantity: 1000 },
-      ]);
-      defenderGenerator.setFortLevel(5); // Example fort level
-      defenderGenerator.setFortHitpoints(500); // Start with full HP usually
-      // defenderGenerator.setBonusPoints([{ type: 'INTEL', level: 5 }]);
-
-      baseAttacker = new UserModel(attackerGenerator.getUser());
-      baseDefender = new UserModel(defenderGenerator.getUser());
+describe('assassination dispatch and target conservation', () => {
+  for (const target of targets) {
+    it(`damages actual ${target} rosters without killing untargeted sentries`, () => {
+      const attacker = user([{ type: 'SPY', level: 3, quantity: 100 }]);
+      const defender = user(
+        [
+          { type: target, level: 1, quantity: 20 },
+          ...(target === 'SENTRY'
+            ? []
+            : [{ type: 'SENTRY' as const, level: 1, quantity: 1 }]),
+          { type: 'CITIZEN', level: 1, quantity: 10000 },
+        ],
+        [{ type: target, level: 1, quantity: 300 }],
+      );
+      const before = rosterSize(defender);
+      const result = simulateAssassination(attacker, defender, 70, target, {
+        random: () => 0.5,
+        turns: 10,
+      });
+      expect(result.success).toBe(true);
+      expect(result.unitsKilled).toBeGreaterThan(0);
+      expect(before - rosterSize(defender)).toBe(result.unitsKilled);
+      expect(result.targetLosses.every((loss) => loss.type === target)).toBe(
+        true,
+      );
+      if (target !== 'SENTRY')
+        expect(
+          defender.units.find((unit) => unit.type === 'SENTRY')?.quantity,
+        ).toBe(1);
+      expect(
+        [...defender.units, ...(defender.mercenaries ?? [])].every(
+          (unit) => unit.quantity >= 0,
+        ),
+      ).toBe(true);
     });
+  }
 
-    // --- simulateIntel Tests ---
-    describe('simulateIntel', () => {
-      it('should succeed with high intel accuracy/quantity when attacker spy >> defender sentry', () => {
-        // Boost attacker spy significantly, reduce defender sentry
-        baseAttacker.units.find(u => u.type === 'SPY' && u.level === 1)!.quantity = 2000; // More spies
-        logDebug("SentryUnits", baseDefender.units.find(u => u.type === 'SENTRY' && u.level === 1).level)
-        logDebug("Sentry Stats", baseDefender.sentry)
-        baseDefender.units.find(u => u.type === 'SENTRY' && u.level === 1)!.quantity = 100;
-        logDebug("SentryUnits", baseDefender.units.find(u => u.type === 'SENTRY' && u.level === 1).level)
-        logDebug("Sentry Stats", baseDefender.sentry)
-        const spiesSent = 10;
-        const result = simulateIntel(baseAttacker, baseDefender, spiesSent);
+  it('removes civilian targets in actual regular-before-mercenary roster order', () => {
+    const defender = user(
+      [
+        { type: 'CITIZEN', level: 1, quantity: 2 },
+        { type: 'WORKER', level: 1, quantity: 2 },
+      ],
+      [{ type: 'WORKER', level: 1, quantity: 1000 }],
+    );
+    const result = simulateAssassination(
+      user([{ type: 'SPY', level: 3, quantity: 70 }]),
+      defender,
+      70,
+      CITIZEN_WORKERS_TARGET,
+      { random: () => 0.5, turns: 10 },
+    );
+    expect(result.unitsKilled).toBe(40);
+    expect(defender.units.map((unit) => unit.quantity)).toEqual([0, 0]);
+    expect(defender.mercenaries?.[0]?.quantity).toBe(964);
+    expect(result.targetLosses).toEqual([
+      { type: 'CITIZEN', level: 1, quantity: 2, mercenary: false },
+      { type: 'WORKER', level: 1, quantity: 2, mercenary: false },
+      { type: 'WORKER', level: 1, quantity: 36, mercenary: true },
+    ]);
+  });
 
-        expect(result.success).toBe(true);
-        expect(result.spiesLost).toBeLessThanOrEqual(spiesSent * 0.2); // Expect low losses on high advantage
-        expect(result.intelligenceGathered).not.toBeNull();
-        // Check if a good amount of info was gathered (e.g., > 70% based on spies * 10)
-        const intelPercent = (spiesSent - result.spiesLost) * 10;
-        expect(intelPercent).toBeGreaterThan(70);
-        // Optional: Check accuracy if implemented - reported numbers should be close to original
-        // e.g., expect(result.intelligenceGathered.units.find(u=>u.type==='DEFENSE').quantity).toBeCloseTo(1000, -2); // Within ~10%
-      });
+  it('uses matching target tier defense rather than the first catalog tier', () => {
+    const attacker = user([{ type: 'SPY', level: 3, quantity: 1 }]);
+    const low = user([
+      { type: 'DEFENSE', level: 1, quantity: 100 },
+      { type: 'CITIZEN', level: 1, quantity: 10000 },
+    ]);
+    const high = user([
+      { type: 'DEFENSE', level: 3, quantity: 100 },
+      { type: 'CITIZEN', level: 1, quantity: 10000 },
+    ]);
+    const weak = simulateAssassination(
+      structuredClone(attacker),
+      low,
+      1,
+      'DEFENSE',
+      { random: () => 0.5, turns: 10 },
+    );
+    const strong = simulateAssassination(
+      structuredClone(attacker),
+      high,
+      1,
+      'DEFENSE',
+      { random: () => 0.5, turns: 10 },
+    );
+    expect(weak.unitsKilled).toBeGreaterThan(strong.unitsKilled);
+  });
 
-      it('should fail with high spy losses when attacker spy << defender sentry', () => {
-        logDebug("SentryUnits", baseDefender.units.find(u => u.type === 'SENTRY' && u.level === 1).level)
-        logDebug("Sentry Stats", baseDefender.sentry)
-        baseDefender.units.find(u => u.type === 'SENTRY' && u.level === 1)!.quantity = 6000;
-        baseDefender.updateStats()
-        logDebug("SentryUnits", baseDefender.units.find(u => u.type === 'SENTRY' && u.level === 1).level)
-        logDebug("Sentry Stats", baseDefender.sentry)
-        
-        const spiesSent = 10;
-        const initialSpyCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 1)!.quantity;
-        const result = simulateIntel(baseAttacker, baseDefender, spiesSent);
+  it('does not spend unsent network agents on target damage or losses', () => {
+    const small = user([{ type: 'SPY', level: 3, quantity: 1 }]);
+    const large = user([{ type: 'SPY', level: 3, quantity: 1000 }]);
+    const defender = user([{ type: 'WORKER', level: 1, quantity: 1000 }]);
+    const one = simulateAssassination(
+      small,
+      structuredClone(defender),
+      1,
+      'WORKER',
+      { random: () => 0.5, turns: 10 },
+    );
+    const network = simulateAssassination(
+      large,
+      structuredClone(defender),
+      1,
+      'WORKER',
+      { random: () => 0.5, turns: 10 },
+    );
+    expect(one.unitsKilled).toBeGreaterThan(0);
+    expect(network.unitsKilled).toBe(one.unitsKilled);
+    expect(rosterSize(large)).toBe(1000);
+  });
+});
 
-        expect(result.success).toBe(false);
-        expect(result.spiesLost).toBe(spiesSent); // All spies lost on failure
-        expect(result.intelligenceGathered).toBeNull();
-        // Check if attacker's unit count decreased
-        const finalSpyCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 1)!.quantity;
-        expect(finalSpyCount).toBe(initialSpyCount - spiesSent);
-      });
-
-      it('should succeed with moderate intel/accuracy when spy ≈ sentry (attacker advantage)', () => {
-        const spiesSent = 8;
-        const result = simulateIntel(baseAttacker, baseDefender, spiesSent);
-
-        expect(result.success).toBe(true);
-        expect(result.spiesLost).toBeLessThan(spiesSent * 0.5); // Expect moderate losses
-        expect(result.intelligenceGathered).not.toBeNull();
-        const intelPercent = (spiesSent - result.spiesLost) * 10;
-        expect(intelPercent).toBeGreaterThan(30); // Expect at least some info
-      });
-
-      it('should handle defender having zero sentry stat', () => {
-        baseDefender.units = baseDefender.units.filter(u => u.type !== 'SENTRY'); // Remove sentries
-
-        const spiesSent = 5;
-        const result = simulateIntel(baseAttacker, baseDefender, spiesSent);
-
-        expect(result.success).toBe(true); // Should always succeed if sentry is 0
-        expect(result.spiesLost).toBe(0); // No sentries to cause losses
-        expect(result.intelligenceGathered).not.toBeNull();
-        const intelPercent = (spiesSent - result.spiesLost) * 10;
-        expect(intelPercent).toBe(50); // Max possible info for spies sent
-      });
+describe('intel snapshots', () => {
+  it('includes exact fort, treasury, and every roster in a full report without retaining live references', () => {
+    const defender = user(
+      [{ type: 'WORKER', level: 1, quantity: 200 }],
+      [{ type: 'OFFENSE', level: 2, quantity: 17 }],
+    );
+    const result = simulateIntel(
+      user([{ type: 'SPY', level: 1, quantity: 1000 }]),
+      defender,
+      10,
+      { random: createSeededRandom('full-intel') },
+    );
+    expect(result.success).toBe(true);
+    expect(result.intelligenceGathered).toMatchObject({
+      fortLevel: 16,
+      fortHitpoints: 10000,
+      gold: 123456n,
+      goldInBank: 654321n,
     });
+    expect(result.intelligenceGathered?.units).toEqual(defender.units);
+    expect(result.intelligenceGathered?.mercenaries).toEqual(
+      defender.mercenaries,
+    );
+    defender.units[0]!.quantity = 0;
+    expect(result.intelligenceGathered?.units?.[0]?.quantity).toBe(200);
+  });
 
-    // --- simulateAssassination Tests ---
-    describe('simulateAssassination', () => {
-      it('should succeed and kill target units (CITIZEN/WORKERS) with low spy losses when attacker >> defender', () => {
-        
+  it('returns seeded coverage instead of substituting full truth for partial intel', () => {
+    // Odds now weight the 3 dispatched spies at 70%, so a larger network keeps entry certain.
+    const attacker = user([{ type: 'SPY', level: 1, quantity: 10000 }]);
+    const defender = user(
+      targets.map((type) => ({ type, level: 1, quantity: 100 })),
+    );
+    const first = simulateIntel(
+      structuredClone(attacker),
+      structuredClone(defender),
+      3,
+      { random: createSeededRandom('partial-intel') },
+    );
+    const second = simulateIntel(
+      structuredClone(attacker),
+      structuredClone(defender),
+      3,
+      { random: createSeededRandom('partial-intel') },
+    );
+    expect(first.intelligenceGathered).toEqual(second.intelligenceGathered);
+    expect(first.intelPercentage).toBe(30);
+    expect(
+      Object.values(first.intelligenceGathered!).filter(
+        (value) => value !== null,
+      ).length,
+    ).toBeLessThan(Object.keys(first.intelligenceGathered!).length);
+    for (const unit of first.intelligenceGathered?.units ?? [])
+      expect(unit.quantity).toBe(100);
+  });
 
-        const spiesSent = 5; // Using L3 spies (Assassins)
-        const initialAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 3)!.quantity;
-        const initialCitizenCount = baseDefender.units.find(u => u.type === 'CITIZEN')!.quantity;
-        const initialWorkerCount = baseDefender.units.find(u => u.type === 'WORKER')!.quantity;
-
-        const result = simulateAssassination(baseAttacker, baseDefender, spiesSent, CITIZEN_WORKERS_TARGET);
-
-        expect(result.success).toBe(true);
-        expect(result.spiesLost).toBeLessThan(spiesSent * 0.3); // Expect low losses
-        expect(result.unitsKilled).toBeGreaterThan(0);
-
-        // Verify attacker and defender unit counts
-        const finalAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 3)!.quantity;
-        const finalCitizenCount = baseDefender.units.find(u => u.type === 'CITIZEN')!.quantity;
-        const finalWorkerCount = baseDefender.units.find(u => u.type === 'WORKER')!.quantity;
-
-        expect(finalAssassinCount).toBe(initialAssassinCount - result.spiesLost);
-        expect(finalCitizenCount + finalWorkerCount).toBe(initialCitizenCount + initialWorkerCount - result.unitsKilled);
-      });
-
-      it('should fail infiltration with high spy losses when attacker << defender', () => {
-        const spiesSent = 5;
-        const initialAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        const initialDefenderUnits = JSON.stringify(baseDefender.units); // Snapshot
-
-        const result = simulateAssassination(baseAttacker, baseDefender, spiesSent, 'DEFENSE');
-
-        expect(result.success).toBe(false);
-        expect(result.spiesLost).toBeGreaterThanOrEqual(spiesSent * 0.7); // Expect high losses
-        expect(result.unitsKilled).toBe(0);
-
-        const finalAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 3)!.quantity;
-        expect(finalAssassinCount).toBe(initialAssassinCount - result.spiesLost);
-        expect(JSON.stringify(baseDefender.units)).toBe(initialDefenderUnits); // Defender units unchanged
-      });
-
-      it('should succeed but with spy losses when attacker > defender (closer stats)', () => {
-
-        const spiesSent = 4;
-        const initialAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 3)!.quantity;
-        const initialTargetCount = baseDefender.units.find(u => u.type === 'DEFENSE')!.quantity;
-
-        const result = simulateAssassination(baseAttacker, baseDefender, spiesSent, 'DEFENSE');
-
-        expect(result.success).toBe(true); // Target engaged
-        expect(result.spiesLost).toBeGreaterThanOrEqual(0); // Expect some losses from sentries
-        expect(result.spiesLost).toBeLessThan(spiesSent);
-        expect(result.unitsKilled).toBeGreaterThanOrEqual(0);
-
-        const finalAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 3)!.quantity;
-        const finalTargetCount = baseDefender.units.find(u => u.type === 'DEFENSE')!.quantity;
-        expect(finalAssassinCount).toBe(initialAssassinCount - result.spiesLost);
-        expect(finalTargetCount).toBe(initialTargetCount - result.unitsKilled);
-      });
-
-      it('should succeed but kill 0 units if target type has 0 quantity', () => {
-        // Remove all offense units
-        baseDefender.units = baseDefender.units.filter(u => u.type !== 'OFFENSE');
-
-        const spiesSent = 3;
-        const initialAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 3)!.quantity;
-
-        const result = simulateAssassination(baseAttacker, baseDefender, spiesSent, 'OFFENSE');
-
-        expect(result.success).toBe(true); // Infiltration/engagement might succeed
-        // spiesLost could be > 0 depending on sentry fight
-        expect(result.unitsKilled).toBe(0); // No units of target type to kill
-
-        const finalAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 3)!.quantity;
-        expect(finalAssassinCount).toBe(initialAssassinCount - result.spiesLost);
-      });
-
-      it('should handle defender having zero sentry stat', () => {
-        baseAttacker.spy = 5000;
-        baseDefender.sentry = 0;
-        baseDefender.units = baseDefender.units.filter(u => u.type !== 'SENTRY');
-
-        const spiesSent = 4;
-        const initialAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 3)!.quantity;
-        const initialTargetCount = baseDefender.units.find(u => u.type === 'DEFENSE')!.quantity;
-
-        const result = simulateAssassination(baseAttacker, baseDefender, spiesSent, 'DEFENSE');
-
-        expect(result.success).toBe(true);
-        expect(result.spiesLost).toBe(0); // No sentries to fight
-        //expect(result.unitsKilled).toBeGreaterThan(0);
-
-        const finalAssassinCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 3)!.quantity;
-        const finalTargetCount = baseDefender.units.find(u => u.type === 'DEFENSE')!.quantity;
-        expect(finalAssassinCount).toBe(initialAssassinCount);
-        expect(finalTargetCount).toBe(initialTargetCount - result.unitsKilled);
-      });
+  it('applies and reports successful intel casualties across regular and mercenary spies', () => {
+    const attacker = user(
+      [{ type: 'SPY', level: 1, quantity: 1 }],
+      [{ type: 'SPY', level: 1, quantity: 2 }],
+    );
+    const defender = user([{ type: 'SENTRY', level: 1, quantity: 3 }]);
+    let draw = 0;
+    const result = simulateIntel(attacker, defender, 3, {
+      random: () => (draw++ === 0 ? 0 : 0.1),
     });
+    expect(result.success).toBe(true);
+    expect(result.spiesLost).toBe(3);
+    expect(rosterSize(attacker)).toBe(0);
+    expect(result.intelligenceGathered).toBeNull();
+    expect(result.spyLosses.map((loss) => loss.quantity)).toEqual([1, 2]);
+  });
+});
 
-    // --- simulateInfiltration Tests ---
-    describe('simulateInfiltration', () => {
-      it('should succeed and cause fort damage with low spy losses when attacker >> defender', () => {
-        baseAttacker.spy = 15000;
-        baseDefender.sentry = 2000;
+describe('bounded monotone infiltration', () => {
+  it('never loses damage across the previous branch boundary or longer commitment on the same rolls', () => {
+    const attacker = user([{ type: 'SPY', level: 2, quantity: 100 }]);
+    const defender = user([{ type: 'SENTRY', level: 1, quantity: 100 }]);
+    let previous = 0;
+    for (const bonus of [0, 1, 10, 20, 30, 31, 40, 100, 500]) {
+      const current = structuredClone(attacker);
+      current.spyBonus = bonus;
+      const result = simulateInfiltration(
+        current,
+        structuredClone(defender),
+        7,
+        { random: () => 0.5, turns: 2 },
+      );
+      expect(result.fortDmg).toBeGreaterThanOrEqual(previous);
+      previous = result.fortDmg;
+    }
+    previous = 0;
+    for (let turns = 2; turns <= 10; turns += 1) {
+      const result = simulateInfiltration(
+        structuredClone(attacker),
+        structuredClone(defender),
+        7,
+        { random: createSeededRandom('monotone'), turns },
+      );
+      expect(result.fortDmg).toBeGreaterThanOrEqual(previous);
+      expect(result.fortDmg).toBeLessThanOrEqual(1200);
+      previous = result.fortDmg;
+    }
+  });
 
-        const spiesSent = 5; // Using L2 spies (Infiltrators)
-        const initialInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        const initialFortHP = baseDefender.fortHitpoints;
-
-        const result = simulateInfiltration(baseAttacker, baseDefender, spiesSent);
-
-        expect(result.success).toBe(true);
-        expect(result.spiesLost).toBeLessThanOrEqual(spiesSent * 0.3); // Low losses expected
-        expect(result.fortDmg).toBeGreaterThan(0);
-
-        const finalInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        expect(finalInfiltratorCount).toBe(initialInfiltratorCount - result.spiesLost);
-        expect(baseDefender.fortHitpoints).toBe(initialFortHP - result.fortDmg); // Check model was updated
-      });
-
-      it('should fail with high spy losses and no fort damage when attacker << defender', () => {
-        baseAttacker.spy = 2000;
-        baseDefender.sentry = 15000;
-
-        const spiesSent = 5;
-        const initialInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        const initialFortHP = baseDefender.fortHitpoints;
-
-        const result = simulateInfiltration(baseAttacker, baseDefender, spiesSent);
-
-        expect(result.success).toBe(false);
-        expect(result.spiesLost).toBe(spiesSent); // All spies lost
-        expect(result.fortDmg).toBe(0);
-
-        const finalInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        expect(finalInfiltratorCount).toBe(initialInfiltratorCount - result.spiesLost);
-        expect(baseDefender.fortHitpoints).toBe(initialFortHP); // Fort HP unchanged
-      });
-
-      it('should succeed with moderate spy losses and fort damage when attacker > defender (closer stats)', () => {
-        baseAttacker.spy = 7000;
-        baseDefender.sentry = 6000;
-
-        const spiesSent = 4;
-        const initialInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        const initialFortHP = baseDefender.fortHitpoints;
-
-        const result = simulateInfiltration(baseAttacker, baseDefender, spiesSent);
-
-        expect(result.success).toBe(true);
-        expect(result.spiesLost).toBeGreaterThanOrEqual(0); // Some losses expected
-        expect(result.spiesLost).toBeLessThanOrEqual(spiesSent * 0.7); // Moderate losses
-        expect(result.fortDmg).toBeGreaterThanOrEqual(0); // Some damage expected
-
-        const finalInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        expect(finalInfiltratorCount).toBe(initialInfiltratorCount - result.spiesLost);
-        expect(baseDefender.fortHitpoints).toBe(initialFortHP - result.fortDmg);
-      });
-
-      it('should handle defender having zero sentry stat', () => {
-        baseAttacker.spy = 5000;
-        baseDefender.sentry = 0;
-        baseDefender.units = baseDefender.units.filter(u => u.type !== 'SENTRY');
-
-        const spiesSent = 3;
-        const initialInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        const initialFortHP = baseDefender.fortHitpoints;
-
-        const result = simulateInfiltration(baseAttacker, baseDefender, spiesSent);
-
-        expect(result.success).toBe(true);
-        expect(result.spiesLost).toBe(0); // No sentries to cause losses
-        expect(result.fortDmg).toBeGreaterThan(0); // Damage should occur
-
-        const finalInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        expect(finalInfiltratorCount).toBe(initialInfiltratorCount);
-        expect(baseDefender.fortHitpoints).toBe(initialFortHP - result.fortDmg);
-      });
-
-      it('should cause zero damage if defender fort HP is already zero', () => {
-        baseAttacker.spy = 10000;
-        baseDefender.sentry = 1000;
-        baseDefender.fortHitpoints = 0; // Fort already destroyed
-
-        const spiesSent = 3;
-        const initialInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-
-        const result = simulateInfiltration(baseAttacker, baseDefender, spiesSent);
-
-        expect(result.success).toBe(true); // Still successful infiltration
-        // Losses might still occur depending on spy/sentry ratio
-        expect(result.fortDmg).toBe(0); // No further damage
-
-        const finalInfiltratorCount = baseAttacker.units.find(u => u.type === 'SPY' && u.level === 2)!.quantity;
-        expect(finalInfiltratorCount).toBe(initialInfiltratorCount - result.spiesLost);
-        expect(baseDefender.fortHitpoints).toBe(0); // Stays at 0
-      });
+  it('has no forced damage for a zero fort or missing dispatched tier', () => {
+    const zero = user([]);
+    zero.fortHitpoints = 0;
+    expect(
+      simulateInfiltration(
+        user([{ type: 'SPY', level: 2, quantity: 7 }]),
+        zero,
+        7,
+        { random: () => 0.5, turns: 10 },
+      ).fortDmg,
+    ).toBe(0);
+    const wrongTier = user([{ type: 'SPY', level: 3, quantity: 100 }]);
+    const defender = user([]);
+    const result = simulateInfiltration(wrongTier, defender, 7, {
+      random: () => 0,
     });
+    expect(result.success).toBe(false);
+    expect(result.fortDmg).toBe(0);
+    expect(defender.fortHitpoints).toBe(10000);
+  });
+
+  it('honors sparse equipment in network capability and sent force', () => {
+    const attacker = user([{ type: 'SPY', level: 2, quantity: 100 }]);
+    attacker.items = [{ usage: 'SPY', type: 'WEAPON', level: 1, quantity: 1 }];
+    const sparse = calculateCombatStrength(attacker, 'SPY').totalStats
+      .MeleeAtkPower;
+    attacker.items[0]!.quantity = 100;
+    const covered = calculateCombatStrength(attacker, 'SPY').totalStats
+      .MeleeAtkPower;
+    expect(covered).toBeGreaterThan(sparse);
   });
 });
