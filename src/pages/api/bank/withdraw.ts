@@ -1,31 +1,44 @@
-import { NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
+
+import { withApiGuard } from '@/middleware/apiGuard';
+import { enforceIdempotency } from '@/middleware/idempotency';
+import { withdrawGold } from '@/services/Bank.service';
 import type { AuthenticatedRequest } from '@/types/api';
-import { withAuth } from '@/middleware/auth';
-import { withdraw } from '@/services/bank.service';
 import { stringifyObj } from '@/utils/numberFormatting';
 
-const withdrawHandler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
-  if (req.method !== 'POST') {
-    return res.status(405).end();
-  }
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'required',
+  rateLimitProfile: 'bank',
+});
 
-  const session = req.session;
-  if (!session) {
+const withdrawHandler = async (
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+) => {
+  if (!req.session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  const withdrawAmount = BigInt(req.body.withdrawAmount);
-
-  if (!withdrawAmount || withdrawAmount <= 0) {
-    return res.status(400).json({ error: 'Invalid withdraw amount' });
+  const canProceed = await enforceIdempotency(req, res, {
+    scope: `bank-withdraw:${req.body?.amount ?? 'unknown'}`,
+    actorKey: String(req.session.user.id),
+  });
+  if (!canProceed) {
+    return;
   }
 
   try {
-    const updatedUser = await withdraw(Number(session.user.id), withdrawAmount);
-    return res.status(200).json({ message: 'Withdraw successful', data: stringifyObj(updatedUser) });
+    const updatedUser = await withdrawGold(
+      Number(req.session.user.id),
+      req.body?.amount,
+    );
+    return res.status(200).json({
+      message: 'Withdraw successful',
+      data: stringifyObj(updatedUser),
+    });
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
 };
 
-export default withAuth(withdrawHandler);
+export default guardedHandler(withdrawHandler);

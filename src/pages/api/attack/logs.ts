@@ -1,69 +1,56 @@
-'use server';
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
 
-import prisma from '@/lib/prisma';
-import { withAuth } from '@/middleware/auth';
-import { NextApiResponse } from 'next';
+import { withApiGuard } from '@/middleware/apiGuard';
+import { BattleService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
 
-async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
+const AttackLogsQuerySchema = z.object({
+  page: z.coerce.number().int().optional().default(0),
+  limit: z.coerce.number().int().optional().default(10),
+  player: z.string().optional(),
+  minPillage: z.coerce.number().int().optional(),
+  maxPillage: z.coerce.number().int().optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
 
-  const session = req.session;
-  if (!session?.user?.id) {
+const guardedHandler = withApiGuard({
+  methods: ['GET'],
+  authMode: 'required',
+  querySchema: AttackLogsQuerySchema,
+});
+
+async function handler(
+  req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: { query: z.infer<typeof AttackLogsQuerySchema> },
+) {
+  const userId = Number(req.session?.user?.id);
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const {
-    page = 0,
-    limit = 10,
-    player,
-    minPillage,
-    maxPillage,
-    sortBy,
-    sortOrder
-  } = req.query;
+  const { page, limit, player, minPillage, maxPillage, sortBy, sortOrder } =
+    context.query;
 
-  const skip = parseInt(page.toString(), 10) * parseInt(limit.toString(), 10);
+  try {
+    const result = await BattleService.getAttackLogs(userId, {
+      page,
+      limit,
+      player,
+      minPillage,
+      maxPillage,
+      sortBy,
+      sortOrder,
+    });
 
-  const whereClause = {
-    OR: [
-      { attacker_id: session.user.id },
-      { defender_id: session.user.id },
-    ],
-    ...(player ? {
-      OR: [
-        { attackerPlayer: { display_name: { contains: player as string, mode: 'insensitive' } } },
-        { defenderPlayer: { display_name: { contains: player as string, mode: 'insensitive' } } },
-      ],
-    } : {}),
-    ...(minPillage ? { stats: { path: ['pillagedGold'], gt: parseInt(minPillage.toString(), 10) } } : {}),
-    ...(maxPillage ? { stats: { path: ['pillagedGold'], lt: parseInt(maxPillage.toString(), 10) } } : {}),
-  };
-
-  const orderByClause = sortBy && sortOrder ? { [sortBy as string]: sortOrder } : { timestamp: 'desc' };
-  const results = await prisma.attack_log.findMany({
-    where: whereClause,
-    orderBy: orderByClause,
-    skip: skip,
-    take: parseInt(limit.toString(), 10),
-    include: {
-      attackerPlayer: { select: { id: true, display_name: true, avatar: true } },
-      defenderPlayer: { select: { id: true, display_name: true, avatar: true } },
-    },
-  });
-
-  const totalCount = await prisma.attack_log.count({ where: whereClause });
-
-  res.status(200).json({
-    data: results,
-    page,
-    limit,
-    total: totalCount,
-    totalPages: Math.ceil(totalCount / parseInt(limit.toString(), 10)),
-    timestamp: new Date().toISOString()
-  });
+    res.status(200).json(result);
+  } catch (error) {
+    logError('Error getting attack logs:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
 }
 
-export default withAuth(handler)
+export default guardedHandler(handler);

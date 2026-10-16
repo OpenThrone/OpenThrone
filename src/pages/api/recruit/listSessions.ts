@@ -1,8 +1,8 @@
 // pages/api/recruit/listSessions.ts
-import { NextApiResponse } from 'next';
-import prisma from '@/lib/prisma';
+import type { NextApiResponse } from 'next';
+
 import { withAuth } from '@/middleware/auth';
-import { listSessions } from '@/services/sessions.service';
+import { listSessions } from '@/services/Sessions.service';
 import type { AuthenticatedRequest } from '@/types/api';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {

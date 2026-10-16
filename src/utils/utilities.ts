@@ -1,60 +1,20 @@
-import { levelXPArray, UnitTypes } from '@/constants';
+import { levelXPArray } from '@/constants';
 import UserModel from '@/models/Users';
-import type { PlayerRace, UnitType, User } from '@/types/typings';
+import type { PlayerRace } from '@/types/typings';
+import {
+  getArtworkUrl,
+  getPureCrest,
+  PURE_ARTWORK,
+  resolveArtworkSource,
+} from '@/utils/artwork';
+
 import { calculateStrength } from './attackFunctions';
-import { createHash, webcrypto } from 'crypto';
 
 /**
-   * Returns the name of a unit based on its type and level.
-   * @param type - The type of the unit.
-   * @param level - The level of the unit.
-   * @returns The name of the unit.
-   */
-const getUnitName = (type: UnitType, level: number): string => {
-  const unit = UnitTypes.find((u) => u.type === type && u.level === level);
-  return unit ? unit.name : 'Unknown';
-};
-
-/**
-   * Converts a UserModel instance to a user object.
-   * @param user - The UserModel instance to convert.
-   * @returns The converted user object.
-   */
-export const userModelToUser = (user: UserModel): Partial<User> => {
-  return {
-    id: user.id,
-    email: user.email,
-    password_hash: user.passwordHash,
-    display_name: user.displayName,
-    race: user.race,
-    class: user.class,
-    experience: user.experience,
-    gold: BigInt(user.gold),
-    gold_in_bank: BigInt(user.goldInBank || 0),
-    fort_level: user.fortLevel,
-    fort_hitpoints: user.fortHitpoints,
-    house_level: user.houseLevel,
-    economy_level: user.economyLevel,
-    items: user.items,
-    units: user.units,
-    battle_upgrades: (user.battle_upgrades || []).map(upgrade => ({
-      ...upgrade,
-      quantity: upgrade.quantity || 0
-    })),
-    structure_upgrades: user.structure_upgrades,
-    bonus_points: user.bonus_points || [],
-    stats: user.stats || [],
-    offense: user.offense,
-    defense: user.defense,
-    spy: user.spy,
-    sentry: user.sentry,
-  }
-}
-/**
-   * Formats a timestamp into a human-readable date and time string.
-   * @param timestamp - The timestamp to format.
-   * @returns The formatted date and time string.
-   */
+ * Formats a timestamp into a human-readable date and time string.
+ * @param timestamp - The timestamp to format.
+ * @returns The formatted date and time string.
+ */
 const formatDate = (timestamp: string | number | Date) => {
   return new Date(timestamp).toLocaleString('en-US', {
     year: 'numeric',
@@ -67,25 +27,26 @@ const formatDate = (timestamp: string | number | Date) => {
 };
 
 /**
-   * Generates a random string of a given length.
-   * @param length - The length of the random string.
-   * @returns The random string.
-   */
+ * Generates a random string of a given length.
+ * @param length - The length of the random string.
+ * @returns The random string.
+ */
 const generateRandomString = (length: number) => {
-  var result = '';
-  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var charactersLength = characters.length;
-  for (var i = 0; i < length; i++) {
+  let result = '';
+  const characters =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
-}
+};
 
 /**
-   * Calculates the level of a user based on their XP using the levelXPArray.
-   * @param xp - The amount of XP the user has.
-   * @returns The user's level.
-   */
+ * Calculates the level of a user based on their XP using the levelXPArray.
+ * @param xp - The amount of XP the user has.
+ * @returns The user's level.
+ */
 const getLevelFromXP = (xp: number): number => {
   for (let i = 0; i < levelXPArray.length; i++) {
     if (xp < levelXPArray[i].xp) {
@@ -93,7 +54,7 @@ const getLevelFromXP = (xp: number): number => {
     }
   }
   return levelXPArray[levelXPArray.length - 1].level; // Return max level if XP exceeds all defined levels
-}
+};
 
 /**
  * Returns the path for a requested asset, using AWS S3 if configured.
@@ -102,83 +63,77 @@ const getLevelFromXP = (xp: number): number => {
  * @param {string} [race] The race associated with the asset, if applicable
  * @returns {string} The path for the specified asset, fit for use in HTML tags
  */
-const getAssetPath = (name, size?, race: PlayerRace = 'ELF') => {
-  let path = '';
-  if (process.env.NEXT_PUBLIC_USE_AWS) {
-    path += process.env.NEXT_PUBLIC_AWS_S3_ENDPOINT + '/images';
-  } else {
-    path += '/assets';
-  }
-
-  switch (name) {
-    case 'shields':
-      path += '/shields/' +
-        (race || 'ELF') + // TODO: Saner fallback/default
-        '_' + size + '.webp';
-      break;
-    case 'advisor-scroll':
-      if (!process.env.NEXT_PUBLIC_USE_AWS) {
-        path += '/images/';
-      }
-      path += 'advisor-scroll.webp';
-      break;
-    case 'wall-header':
-      path += `/header/${race}-wall-header.webp`;
-      break;
-    case 'top-menu':
-      path += `/header/${race}_nav_top.png`;
-      break;
-    case 'bottom-menu':
-      path += `/header/${race}_nav_bottom.png`;
-      break;
-    case 'OpenThrone':
-      path += '/header/OpenThrone.webp';
-      break;
-    case 'corner-double-border':
-      path += '/background/ELF_top_left_double_border.svg';
-      break;
-    case 'double-border':
-      path += '/background/ELF_top_double_border.svg';
-      break;
-    default:
-  }
-
-  return path;
+const getAssetPath = (
+  name: string,
+  size?: string,
+  race: PlayerRace = 'ELF',
+): string => {
+  const paths: Record<string, string> = {
+    shields: `/assets/shields/${race || 'ELF'}${size ? `_${size}` : ''}.webp`,
+    'advisor-scroll': '/assets/images/advisor-scroll.webp',
+    'wall-header': '/assets/header/Elf-wall-header.webp',
+    OpenThrone: '/assets/header/OpenThrone.webp',
+  };
+  const legacyKeys: Record<string, string> = {
+    'top-menu': `images/header/${race}_nav_top.png`,
+    'bottom-menu': `images/header/${race}_nav_bottom.png`,
+    'corner-double-border': 'images/background/ELF_top_left_double_border.svg',
+    'double-border': 'images/background/ELF_top_double_border.svg',
+    avatarFrame: `images/avatarFrame-${race || 'ELF'}.webp`,
+  };
+  const source = paths[name]
+    ? resolveArtworkSource(paths[name])
+    : getArtworkUrl(legacyKeys[name] ?? '');
+  return source ?? (name === 'shields' ? getPureCrest(race) : PURE_ARTWORK);
 };
 
 /*
-  * Returns the source for the avatar image.
-  * @param avatar - The avatar string
-  * @param race (optional) - the race of the user
-  * @returns The source for the avatar image.
-*/
-const getAvatarSrc = (avatar: string, race?: string) => {
-  if(avatar.startsWith('http')) {
-    return avatar;
+ * Returns the source for the avatar image.
+ * @param avatar - The avatar string
+ * @param race (optional) - the race of the user
+ * @param size (optional) - shield asset size to use when avatar is SHIELD
+ * @returns The source for the avatar image.
+ */
+const getAvatarSrc = (
+  avatar: string,
+  race?: PlayerRace,
+  size: '25x25' | '150x150' = '25x25',
+) => {
+  // Drop any `#frame=` portrait framing; only the profile portrait applies it.
+  const src = avatar.split('#')[0];
+  if (src === 'SHIELD') {
+    return getAssetPath('shields', size, race || 'ELF');
   }
-  if (avatar === 'SHIELD') {
-    if (race) {
-      return getAssetPath('shields', '25x25', race);
-    }
+  if (src.startsWith('/assets/')) {
+    return resolveArtworkSource(src) ?? getPureCrest(race || 'ELF');
   }
-}
+  return src;
+};
 
 const calculateOverallRank = (user) => {
   const unitScore = user.units
     ? user.units.map((unit) => unit.quantity).reduce((a, b) => a + b, 0)
     : 0;
   const itemScore = user.items
-    ? user.items.map((item) => item.quantity * (item.level * 0.1)).reduce((a, b) => a + b, 0)
+    ? user.items
+        .map((item) => item.quantity * (item.level * 0.1))
+        .reduce((a, b) => a + b, 0)
     : 0;
 
-  return 0.7 * user.experience +
+  return (
+    0.7 * user.experience +
     0.2 * user.fort_level +
     0.1 * user.house_level +
     0.004 * unitScore +
-    0.003 * itemScore;
+    0.003 * itemScore
+  );
 };
 
-const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | 'items' | 'battle_upgrades') => {
+const calculateUserStats = (
+  userData: any,
+  updatedData: any[],
+  type: 'units' | 'items' | 'battle_upgrades',
+) => {
   const newUserData = { ...userData };
   if (type === 'units') {
     newUserData.units = updatedData;
@@ -189,7 +144,11 @@ const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | '
   }
 
   const newUModel = new UserModel(newUserData);
-  const { killingStrength, defenseStrength } = calculateStrength(newUModel, 'OFFENSE');
+  const detailed = calculateStrength(newUModel, 'OFFENSE');
+  const killingStrength =
+    detailed.totalStats.MeleeAtkPower + detailed.totalStats.RangedAtkPower;
+  const defenseStrength =
+    detailed.totalStats.MeleeDefPower + detailed.totalStats.RangedDefPower;
 
   return {
     killingStrength,
@@ -202,45 +161,146 @@ const calculateUserStats = (userData: any, updatedData: any[], type: 'units' | '
 };
 
 const serializeDates = (obj) => {
-  return Object.fromEntries(
-    Object.entries(obj).map(([key, value]) => {
-      if (value instanceof Date) {
-        return [key, value.toISOString()];
-      } else if (typeof value === 'object' && value !== null) {
-        return [key, serializeDates(value)]; // Recursively handle nested objects
-      }
-      return [key, value];
-    })
-  );
-}
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
 
-export const idleThresholdDate = (days = 60) => { //60days is default
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+
+  if (typeof obj === 'bigint') {
+    return obj.toString();
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => serializeDates(item));
+  }
+
+  if (typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => [key, serializeDates(value)]),
+    );
+  }
+
+  return obj;
+};
+
+/** Idle threshold date. */
+export const idleThresholdDate = (days = 60) => {
+  // 60days is default
   const now = new Date();
   // if last_active is more than 60 days, set account status to IDLE
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+};
+
+interface HistoryTransaction {
+  from_user_id: number | string;
+  to_user_id: number | string;
+  from_user_account_type: string;
+  to_user_account_type?: string;
+  history_type: string;
+  stats?: unknown;
 }
 
-/**
- * Ensures the result is at least 0.
- * @param {number} value - The input number to check.
- * @returns {number} - The input value if it's 0 or greater, otherwise 0.
- */
-export const atLeastZero = (value: number):number => {
-  return Math.max(0, value);
-}
+const ARMORY_TRANSACTION_LABELS: Record<
+  string,
+  { label: string; key: string }
+> = {
+  ARMORY_EQUIP: { label: 'Armory Purchase', key: 'armoryPurchase' },
+  ARMORY_UNEQUIP: { label: 'Armory Sale', key: 'armorySale' },
+  ARMORY_UPGRADE: { label: 'Armory Upgrade', key: 'armoryUpgrade' },
+  ARMORY_CONVERSION: { label: 'Armory Conversion', key: 'armoryConversion' },
+  HIRE_MERCENARY: { label: 'Mercenary Hire', key: 'mercenaryHire' },
+};
 
-export const getSHA256Key = (secret: string) => {
-  return createHash("sha256").update(secret).digest();
-}
+/** Classify gameplay sales before generic self-transfers, including historical rows. */
+export const getTransactionType = (
+  entry: HistoryTransaction,
+  translate?: (key: string) => string,
+): string => {
+  const {
+    from_user_id,
+    to_user_id,
+    from_user_account_type,
+    history_type,
+    stats,
+  } = entry;
+  const statsType =
+    stats && typeof stats === 'object' && !Array.isArray(stats)
+      ? (stats as { type?: unknown }).type
+      : undefined;
+  if (history_type === 'SALE') {
+    const armoryLabel =
+      typeof statsType === 'string' &&
+      Object.prototype.hasOwnProperty.call(ARMORY_TRANSACTION_LABELS, statsType)
+        ? ARMORY_TRANSACTION_LABELS[statsType]
+        : undefined;
+    if (armoryLabel)
+      return translate
+        ? translate(`bank.transactionTypes.${armoryLabel.key}`)
+        : armoryLabel.label;
+    switch (statsType) {
+      case 'TRAINING_UNTRAIN':
+        return 'Untrain Units';
+      case 'TRAINING_TRAIN':
+        return 'Train Units';
+      case 'TRAINING_CONVERSION':
+        return 'Convert Units';
+      case 'BATTLE_UPGRADES_BUY':
+        return 'Battle Upgrade Purchase';
+      case 'BATTLE_UPGRADES_SELL':
+        return 'Battle Upgrade Sale';
+    }
+  }
+  if (Number(from_user_id) === Number(to_user_id)) {
+    if (from_user_account_type === 'HAND') {
+      if (history_type === 'SALE') return 'Purchase';
+      return statsType === 'CONVERT' ? 'Unit Conversion' : 'Deposit';
+    }
+    return history_type === 'SALE' ? 'Sale' : 'Withdraw';
+  }
+  if (history_type === 'PLAYER_TRANSFER') return 'Player Transfer';
+  if (history_type === 'RECRUITMENT') return 'Recruitment';
+  if (history_type === 'ECONOMY') return 'Income';
+  if (history_type === 'FORT_REPAIR') return 'Fort Repair';
+  if (history_type === 'WAR_SPOILS') return 'War Spoils';
+  if (history_type === 'DAILY_RECRUIT') return 'Daily Reward';
+  return 'UNKNOWN';
+};
 
-export async function importKey(rawKey: Buffer) {
-  return await webcrypto.subtle.importKey(
-    "raw",
-    rawKey,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["decrypt"]
-  );
-}
+/** SALE signs follow the player's gold in hand; deposits/withdrawals retain bank perspective. */
+export const getGoldTxSymbol = (
+  entry: HistoryTransaction,
+  user?: { id: number | string },
+) => {
+  if (entry.history_type === 'SALE') {
+    if (
+      Number(entry.to_user_id) === Number(user?.id) &&
+      entry.to_user_account_type === 'HAND'
+    )
+      return '+';
+    return '-';
+  }
+  const transactionType = getTransactionType(entry);
+  if (transactionType === 'Recruitment' || transactionType === 'Income')
+    return '+';
+  if (
+    transactionType === 'War Spoils' &&
+    Number(entry.to_user_id) === Number(user?.id)
+  )
+    return '+';
+  if (transactionType === 'Deposit') return '+';
+  return '-';
+};
 
-export { formatDate, getUnitName, generateRandomString, getLevelFromXP, getAssetPath, getAvatarSrc, calculateOverallRank, calculateUserStats, serializeDates };
+export {
+  calculateOverallRank,
+  calculateUserStats,
+  formatDate,
+  generateRandomString,
+  getAssetPath,
+  getAvatarSrc,
+  getLevelFromXP,
+  serializeDates,
+};

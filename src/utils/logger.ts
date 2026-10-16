@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Define log levels (higher number means more verbose)
 const LogLevel = {
   ERROR: 0,
@@ -8,7 +9,7 @@ const LogLevel = {
 } as const;
 
 type LogLevelKey = keyof typeof LogLevel;
-type LogLevelValue = typeof LogLevel[LogLevelKey];
+type LogLevelValue = (typeof LogLevel)[LogLevelKey];
 
 // Function to get the numeric level from a string name
 const getLevelFromString = (levelStr: string | undefined): LogLevelValue => {
@@ -21,65 +22,125 @@ let currentLogLevel: LogLevelValue;
 if (typeof window === 'undefined') {
   // Server-side
   currentLogLevel = getLevelFromString(process.env.LOG_LEVEL);
-  // console.log(`[Logger Setup - Server] Log level set to: ${Object.keys(LogLevel).find(key => LogLevel[key as LogLevelKey] === currentLogLevel)} (${currentLogLevel})`);
 } else {
   // Client-side
   currentLogLevel = getLevelFromString(process.env.NEXT_PUBLIC_LOG_LEVEL);
-  // console.log(`[Logger Setup - Client] Log level set to: ${Object.keys(LogLevel).find(key => LogLevel[key as LogLevelKey] === currentLogLevel)} (${currentLogLevel})`);
 }
 
+/** One structured log event, emitted to the active sink or the console. */
+export interface LogEntry {
+  level: LogLevelKey;
+  message: string;
+  params: unknown[];
+  timestamp: string;
+}
 
-// Helper to format messages (optional, but nice)
-const formatMessage = (level: LogLevelKey, message: any, ...optionalParams: any[]): string => {
+/** Receives structured log entries; while active, console output is suppressed. */
+export type LogSink = (entry: LogEntry) => void;
+
+// Sink stack so nested captures route to the innermost sink and restore cleanly.
+const sinkStack: LogSink[] = [];
+
+/** Installs (or clears, with null) a log sink for structured log consumption. */
+export const setLogSink = (sink: LogSink | null): void => {
+  if (sink) {
+    sinkStack.push(sink);
+  } else {
+    sinkStack.pop();
+  }
+};
+
+/** Returns the innermost active sink, if any. */
+export const getLogSink = (): LogSink | null =>
+  sinkStack.length ? sinkStack[sinkStack.length - 1] : null;
+
+/** Overrides the process env log level at runtime (e.g. DEBUG for diagnostics). */
+export const setLogLevel = (level: string): void => {
+  currentLogLevel = getLevelFromString(level);
+};
+
+const consoleFor: Record<LogLevelKey, (...args: unknown[]) => void> = {
+  ERROR: (...args: unknown[]) => console.error(...args),
+  WARN: (...args: unknown[]) => console.warn(...args),
+  INFO: (...args: unknown[]) => console.info(...args),
+  DEBUG: (...args: unknown[]) => console.log(...args),
+  TRACE: (...args: unknown[]) => console.trace(...args),
+};
+
+const formatMessage = (
+  level: LogLevelKey,
+  message: any,
+  ...optionalParams: any[]
+): string => {
   const timestamp = new Date().toISOString();
   let formattedMessage = `[${timestamp}] [${level}] ${message}`;
 
   // Basic handling for additional parameters (stringify objects/arrays)
   if (optionalParams.length > 0) {
-    formattedMessage += ' - ' + optionalParams.map(param => {
-      if (typeof param === 'object' && param !== null) {
-        try {
-          return JSON.stringify(param);
-        } catch (e) {
-          return '[Unserializable Object]';
+    formattedMessage += ` - ${optionalParams
+      .map((param) => {
+        if (param instanceof Error) {
+          // Handle Error objects explicitly for better logging
+          return `{ name: '${param.name}', message: '${param.message}', stack: '${param.stack?.replace(/\n/g, '\\n')}' }`;
         }
-      }
-      return String(param);
-    }).join(' ');
+        if (typeof param === 'object' && param !== null) {
+          try {
+            return JSON.stringify(param);
+          } catch {
+            return '[Unserializable Object]';
+          }
+        }
+        return String(param);
+      })
+      .join(' ')}`;
   }
   return formattedMessage;
 };
 
+const emit = (
+  level: LogLevelKey,
+  message: any,
+  optionalParams: any[],
+): void => {
+  if (currentLogLevel < LogLevel[level]) return;
+
+  const sink = getLogSink();
+  if (sink) {
+    sink({
+      level,
+      message: String(message),
+      params: optionalParams,
+      timestamp: new Date().toISOString(),
+    });
+    return;
+  }
+
+  consoleFor[level](formatMessage(level, message, ...optionalParams));
+};
+
 // Logger functions
+/** Logs error details with optional structured context. */
 export const logError = (message: any, ...optionalParams: any[]) => {
-  if (currentLogLevel >= LogLevel.ERROR) {
-    console.log(formatMessage('ERROR', message, ...optionalParams));
-  }
+  emit('ERROR', message, optionalParams);
 };
 
+/** Logs warning details with optional structured context. */
 export const logWarn = (message: any, ...optionalParams: any[]) => {
-  if (currentLogLevel >= LogLevel.WARN) {
-    console.warn(formatMessage('WARN', message, ...optionalParams));
-  }
+  emit('WARN', message, optionalParams);
 };
 
+/** Logs informational details with optional structured context. */
 export const logInfo = (message: any, ...optionalParams: any[]) => {
-  if (currentLogLevel >= LogLevel.INFO) {
-    console.info(formatMessage('INFO', message, ...optionalParams));
-  }
+  emit('INFO', message, optionalParams);
 };
 
+/** Logs debug details with optional structured context. */
 export const logDebug = (message: any, ...optionalParams: any[]) => {
-  if (currentLogLevel >= LogLevel.DEBUG) {
-    // console.debug uses verbose output in some browsers, use console.log for consistency
-    console.log(formatMessage('DEBUG', message, ...optionalParams));
-  }
+  emit('DEBUG', message, optionalParams);
 };
 
-export const logTrace = (message: any, ...optionalParams: any[]) => {
-  if (currentLogLevel >= LogLevel.TRACE) {
-    console.log(formatMessage('TRACE', message, ...optionalParams)); // Use console.log for TRACE as well
-  }
+const logTrace = (message: any, ...optionalParams: any[]) => {
+  emit('TRACE', message, optionalParams);
 };
 
 const logger = {
@@ -91,3 +152,54 @@ const logger = {
 };
 
 export default logger;
+
+/** Result of a capture run: whatever fn returned plus every emitted entry. */
+export interface CapturedLogs<T> {
+  result: T;
+  logs: LogEntry[];
+}
+
+/**
+ * Runs fn with all log output captured instead of printed.
+ *
+ * Intended for CLI scripts, tests, and other single-owner diagnostics. While a
+ * capture is active, entries that pass the current log level are collected and
+ * the console stays quiet; the previous sink (or console) is restored when fn
+ * settles, including on throw. Nested captures route to the innermost sink.
+ *
+ * Note: capture state is module-global — do not use across concurrently
+ * interleaved async operations where log attribution must stay separated.
+ */
+export const captureLogs = <T>(fn: () => T): CapturedLogs<T> => {
+  const logs: LogEntry[] = [];
+  setLogSink((entry) => logs.push(entry));
+
+  const restore = () => setLogSink(null);
+
+  let result: T;
+  try {
+    result = fn();
+  } catch (error) {
+    restore();
+    throw error;
+  }
+
+  const asPromise = result as unknown as
+    | Promise<Awaited<T>>
+    | { then?: unknown; finally?: unknown };
+
+  if (
+    asPromise &&
+    typeof asPromise === 'object' &&
+    typeof (asPromise as Promise<Awaited<T>>).finally === 'function'
+  ) {
+    return (asPromise as Promise<Awaited<T>>)
+      .finally(restore)
+      .then(
+        (value) => ({ result: value, logs }) as unknown as CapturedLogs<T>,
+      ) as unknown as CapturedLogs<T>;
+  }
+
+  restore();
+  return { result, logs };
+};

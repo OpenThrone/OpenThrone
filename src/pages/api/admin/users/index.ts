@@ -1,122 +1,143 @@
-import { NextApiResponse } from 'next';
+import type { NextApiResponse } from 'next';
+import { z } from 'zod';
+
 import prisma from '@/lib/prisma';
-import { withAuth } from '@/middleware/auth';
-import { isAdmin } from '@/utils/authorization';
-import { logError } from '@/utils/logger';
+import { PermissionType } from '@/lib/prisma-exports';
+import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
+import { deriveAdminUserStatus } from '@/utils/adminStatus';
+import { logError } from '@/utils/logger';
 
-async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
-  const session = req.session;
+const AdminUsersQuerySchema = z.object({
+  id: z.string().optional(),
+  username: z.string().optional(),
+  email: z.string().optional(),
+  status: z.string().optional(),
+  limit: z.coerce.number().int().positive().max(100).optional().default(10),
+  offset: z.coerce.number().int().nonnegative().optional().default(0),
+  sort: z.string().optional().default('id'),
+  order: z.enum(['asc', 'desc']).optional().default('asc'),
+});
 
-  // Check admin authorization (handle potentially undefined session/user/id)
-  if (!session?.user?.id || !(await isAdmin(session.user.id))) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+const guardedHandler = withApiGuard({
+  methods: ['GET'],
+  authMode: 'permission',
+  requiredAnyPermissions: [PermissionType.MANAGE_USERS],
+  rateLimitProfile: 'admin',
+  querySchema: AdminUsersQuerySchema,
+});
 
-  if (req.method === 'GET') {
-    try {
-      // Extract filter, pagination, and sorting parameters from query
-      const {
-        id,
-        username,
-        email,
-        status,
-        limit = '10', // Default limit
-        offset = '0', // Default offset
-        sort = 'id', // Default sort field
-        order = 'asc' // Default sort order
-      } = req.query;
+async function handler(
+  _req: AuthenticatedRequest,
+  res: NextApiResponse,
+  context: { query: z.infer<typeof AdminUsersQuerySchema> },
+) {
+  try {
+    // Extract filter, pagination, and sorting parameters from query
+    const { id, username, email, status, limit, offset, sort, order } =
+      context.query;
 
-      const take = parseInt(limit as string, 10);
-      const skip = parseInt(offset as string, 10);
-      const sortField = sort as string;
-      const sortOrder = order as 'asc' | 'desc';
-      
-      // Build where clause based on provided filters
-      const whereClause: any = {};
-      
-      if (id) whereClause.id = parseInt(id as string, 10);
-      if (username) whereClause.display_name = { contains: username as string, mode: 'insensitive' };
-      if (email) whereClause.email = { contains: email as string, mode: 'insensitive' };
-      
-      // Handle status filter if provided
-      if (status) {
-        whereClause.statusHistories = {
-          some: {
-            status: status as string,
-            end_date: null // Current status has no end date
-          }
-        };
-      }
+    const take = limit;
+    const skip = offset;
+    const sortField = sort;
+    const sortOrder = order;
 
-      // Define mapping for sort fields
-      const sortFieldMapping: { [key: string]: string } = {
-        id: 'id',
-        username: 'display_name',
-        email: 'email',
-        lastActive: 'last_active',
-        // status sorting is complex due to relation, handled separately if needed
+    // Build where clause based on provided filters
+    const whereClause: any = {};
+
+    if (id) whereClause.id = parseInt(id, 10);
+    if (username)
+      whereClause.display_name = {
+        contains: username,
+        mode: 'insensitive',
       };
+    if (email) whereClause.email = { contains: email, mode: 'insensitive' };
 
-      // Build orderBy clause dynamically
-      const orderByClause: any = {};
-      if (sortFieldMapping[sortField]) {
-        orderByClause[sortFieldMapping[sortField]] = sortOrder;
-      } else {
-        // Default sort if field is invalid or status
-        orderByClause['id'] = 'asc';
-      }
+    const activeEra = await prisma.era.findFirst({
+      where: { endDate: null },
+      orderBy: { startDate: 'desc' },
+      select: { id: true },
+    });
+    const activeEraId = activeEra?.id ?? null;
 
-      // Query the database for users and total count in parallel
-      const [users, total] = await Promise.all([
-        prisma.users.findMany({
-          where: whereClause,
-          select: {
-            id: true,
-            display_name: true,
-            email: true,
-            last_active: true,
-            statusHistories: {
-              where: { end_date: null },
-              orderBy: { start_date: 'desc' },
-              take: 1,
-              select: {
-                status: true
-              }
-            },
-            permissions: {
-              select: {
-                type: true
-              }
-            }
-          },
-          orderBy: orderByClause,
-          take: take,
-          skip: skip,
-        }),
-        prisma.users.count({
-          where: whereClause,
-        })
-      ]);
+    // Define mapping for sort fields
+    const sortFieldMapping: { [key: string]: string } = {
+      id: 'id',
+      username: 'display_name',
+      email: 'email',
+      lastActive: 'last_active',
+      // status sorting is complex due to relation, handled separately if needed
+    };
 
-      // Format the response
-      const formattedUsers = users.map(user => ({
+    // Build orderBy clause dynamically
+    const orderByClause: any = {};
+    if (sortFieldMapping[sortField]) {
+      orderByClause[sortFieldMapping[sortField]] = sortOrder;
+    } else {
+      // Default sort if field is invalid or status
+      orderByClause.id = 'asc';
+    }
+
+    const selectClause = {
+      id: true,
+      display_name: true,
+      email: true,
+      last_active: true,
+      currentEraId: true,
+      statusHistories: {
+        where: { end_date: null },
+        orderBy: { start_date: 'desc' as const },
+        take: 1,
+        select: {
+          status: true,
+        },
+      },
+      permissions: {
+        where: { revokedAt: null },
+        select: {
+          type: true,
+        },
+      },
+      staffRoleAssignments: {
+        where: { revokedAt: null },
+        select: { role: true },
+      },
+    };
+
+    const users = await prisma.users.findMany({
+      where: whereClause,
+      select: selectClause,
+      orderBy: orderByClause,
+      ...(status ? {} : { take, skip }),
+    });
+
+    const formattedUsers = users
+      .map((user) => ({
         id: user.id.toString(),
         username: user.display_name,
         email: user.email,
-        status: user.statusHistories[0]?.status || 'ACTIVE', // Default to ACTIVE if no status history
+        status: deriveAdminUserStatus({
+          latestStatus: user.statusHistories?.[0]?.status,
+          lastActive: user.last_active,
+          currentEraId: user.currentEraId,
+          activeEraId,
+        }),
         lastActive: user.last_active,
-        permissions: user.permissions.map(p => p.type)
-      }));
+        permissions: user.permissions.map((p) => p.type),
+        staffRoles: user.staffRoleAssignments.map((a) => a.role),
+      }))
+      .filter((user) => !status || user.status === status);
 
-      res.status(200).json({ users: formattedUsers, total });
-    } catch (error) {
-      logError('Error fetching users in admin panel:', error);
-      res.status(500).json({ error: 'Failed to fetch users' });
-    }
-  } else {
-    res.status(405).json({ error: 'Method not allowed' });
+    res.status(200).json({
+      users: status ? formattedUsers.slice(skip, skip + take) : formattedUsers,
+      total: status
+        ? formattedUsers.length
+        : await prisma.users.count({ where: whereClause }),
+    });
+  } catch (error) {
+    logError('Error fetching users in admin panel:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 }
 
-export default withAuth(handler);
+export default guardedHandler(handler);

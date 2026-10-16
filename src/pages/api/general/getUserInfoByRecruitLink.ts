@@ -1,26 +1,26 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
 
-import prisma from '@/lib/prisma';
+import { withApiGuard } from '@/middleware/apiGuard';
 import UserModel from '@/models/Users';
+import { GeneralService } from '@/services';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
-  const RecruitLinkSchema = z.object({ recruit_link: z.string().min(1) });
+/** Handles general get user info by recruit link API requests. */
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const RecruitLinkSchema = z.object({
+    recruit_link: z.string().min(1).max(100),
+  });
   const parseResult = RecruitLinkSchema.safeParse(req.query);
   if (!parseResult.success) {
-    return res.status(400).json({ error: 'Invalid or missing recruit_link', details: parseResult.error.flatten().fieldErrors });
+    return res.status(400).json({
+      error: 'Invalid or missing recruit_link',
+      details: parseResult.error.flatten().fieldErrors,
+    });
   }
   const { recruit_link } = parseResult.data;
 
   if (req.method === 'GET') {
-    const user = await prisma.users.findUnique({
-      where: {
-        recruit_link: recruit_link as string,
-      },
-    });
+    const user = await GeneralService.getUserInfoByRecruitLink(recruit_link);
 
     if (!user) {
       return res.status(400).json({ error: 'User not found.' });
@@ -41,3 +41,9 @@ export default async function handler(
   res.status(405).json({ error: 'Method not allowed' }); // Send a proper response for unsupported methods
   return null;
 }
+
+export default withApiGuard({
+  methods: ['GET'],
+  authMode: 'none',
+  rateLimitProfile: 'auth',
+})(handler);

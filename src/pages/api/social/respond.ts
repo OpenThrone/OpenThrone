@@ -1,57 +1,45 @@
-import prisma from '@/lib/prisma'; 
-import { withAuth } from '@/middleware/auth';
-import { logError } from '@/utils/logger';
-import { NextApiResponse } from 'next';
-import type { AuthenticatedRequest } from '@/types/api';
+import type { NextApiResponse } from 'next';
 
-const handler = async (req: AuthenticatedRequest,
-  res: NextApiResponse,) => {
+import { getSocketIO } from '@/lib/socket';
+import { withAuth } from '@/middleware/auth';
+import { SocialService } from '@/services/Social.service';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
+import { emitSocialCountUpdate } from '@/utils/socialNotifications';
+
+const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'PUT') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const session = req.session;
+  const { session } = req;
   if (!session) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { requestId, action } = req.body;
-
-  if (!requestId || !action) {
-    return res.status(400).json({ error: 'Missing friendId or action' });
-  }
-
-  if (!['accept', 'decline'].includes(action)) {
-    return res.status(400).json({ error: 'Invalid action' });
-  }
-
-  const newStatus = action === 'accept' ? 'accepted' : 'declined';
-  const acceptanceDate = action === 'accept' ? new Date() : null;
-  const endDate = action === 'decline' ? new Date() : null;
+  const { requestId, action } = req.body ?? {};
+  const userId = session.user.id;
 
   try {
-    const updateResult = await prisma.social.updateMany({
-      where: {
-        id: requestId,
-        friendId: session.user.id,
-        status: 'requested'
-      },
-      data: {
-        status: newStatus,
-        acceptanceDate: acceptanceDate,
-        endDate: endDate
-      }
+    const request = await SocialService.getSocialRequestParticipants(
+      Number(requestId),
+    );
+
+    const result = await SocialService.respondToRequest(userId, {
+      requestId: Number(requestId),
+      action,
     });
 
-    if (updateResult.count === 0) {
-      return res.status(404).json({ error: 'Friend request not found or already processed', id: requestId, user: session.user.id });
+    const io = getSocketIO();
+    await emitSocialCountUpdate(io, userId);
+    if (request?.playerId) {
+      await emitSocialCountUpdate(io, request.playerId);
     }
 
-    const message = action === 'accept' ? 'Friend request accepted successfully' : 'Friend request declined successfully';
-    return res.status(200).json({ message });
+    return res.status(200).json(result);
   } catch (error) {
-    logError("Error processing friend request:", error);
-    return res.status(500).json({ error: 'Failed to process friend request' });
+    logError('Error processing friend request:', error);
+    return res.status(400).json({ error: error.message });
   }
 };
 

@@ -1,60 +1,41 @@
-'use server';
-import prisma from "@/lib/prisma";
-import { simulateBattle } from '@/utils/attackFunctions';
+import { IdQuerySchema } from '@/lib/validation';
 import { withAuth } from '@/middleware/auth';
-import UserModel from "@/models/Users";
-import { stringifyObj } from "@/utils/numberFormatting";
+import { BattleService } from '@/services';
+import { logError } from '@/utils/logger';
 
 const handler = async (req, res) => {
-  const session = req.session;
+  const { session } = req;
   if (session) {
-    
-    if (!req.query.id){
-      return res.status(400).json({ status: 'failed' });
+    const queryParse = IdQuerySchema.safeParse(req.query);
+    if (!queryParse.success) {
+      return res.status(400).json({
+        status: 'failed',
+        details: queryParse.error.flatten().fieldErrors,
+      });
+    }
+    const { id: attackLogId } = queryParse.data;
+    const viewerId = Number(session.user.id);
+    if (!Number.isSafeInteger(viewerId) || viewerId <= 0) {
+      return res.status(401).json({ status: 'failed' });
     }
 
-    const attack = await prisma?.attack_log.findUnique({
-      where: { id: parseInt(req.query.id) },
-    });
-
-    if (!attack) {
-      return res.status(400).json({ status: 'failed, attack not found' });
-    }
-
-    const attacker = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Attacker))), true, false);
-    const defender = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Defender))), true, true);
-
-    const attacker2 = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Attacker))), true, false);
-    const defender2 = new UserModel(JSON.parse(JSON.stringify(stringifyObj(attack.stats.startOfAttack.Defender))),true, false);
-
-    //console.log(attack.stats.startOfAttack.Defender);
-
-    const results2 = await simulateBattle(attacker2, defender2, defender2.fortHitpoints, attack.stats.turns, true);
-    console.log(results2)
-    return res
-      .status(200)
-      .json(
-        stringifyObj({
-          originalAttackerArmy: attack.stats.startOfAttack.Attacker.units.filter((units) => units.type === 'OFFENSE').reduce((total, unit) => total + unit.quantity, 0),
-          originalDefenderArmy: attack.stats.startOfAttack.Defender.units.filter((units) => units.type === 'DEFENSE' || units.type === 'WORKER' || units.type === 'CITIZEN').reduce((total, unit) => total + unit.quantity, 0),
-          originalAttackerLosses: attack.stats.attacker_losses.total,
-          originalDefenderLosses: attack.stats.defender_losses.total,
-          newSimulationAttackerArmy: results2.attacker.units.filter((units) => units.type === 'OFFENSE').reduce((total, unit) => total + unit.quantity, 0),
-          newSimulationDefenderArmy: results2.defender.units.filter((units) => units.type === 'DEFENSE' || units.type === 'WORKER' || units.type === 'CITIZEN').reduce((total, unit) => total + unit.quantity, 0),
-          newSimulationAttackerLossesTotal: results2.Losses.Attacker.total,
-          newSimulationAttackerLossesBreakdown: results2.Losses.Attacker,
-          newSimulationDefenderLossesTotal: results2.Losses.Defender.total,
-          newSimulationDefenderLossesBreakdown: results2.Losses.Defender,
-          fortHPAtEnd: results2.fortHitpoints,
-          attackerWon: results2.result === 'WIN',
-          strength: {attackerOffense: attacker.offense, defenderDefense: defender.defense},
-          originalGold: attack.stats.pillagedGold,
-          newGold: results2.pillagedGold,
-        })
+    try {
+      const result = await BattleService.retestBattleForViewer(
+        attackLogId,
+        viewerId,
       );
+      return res.status(200).json(result);
+    } catch (error) {
+      if (error.message?.startsWith('Forbidden')) {
+        return res.status(403).json({ status: 'failed', message: 'Forbidden' });
+      }
+      logError('Retest battle error:', error);
+      return res
+        .status(500)
+        .json({ status: 'failed', message: 'Internal server error' });
+    }
   }
-  // console.log('failed: ', session);
   return res.status(401).json({ status: 'failed' });
-}
+};
 
 export default withAuth(handler);

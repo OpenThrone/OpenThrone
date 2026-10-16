@@ -4,8 +4,10 @@
  * @param max The maximum value of the range.
  * @returns A random number between the given minimum and maximum values (inclusive).
  */
-export const mtRand = (min: number, max: number): number => {
-  return min + Math.random() * (max - min);
-}
-
-export default mtRand;
+export const mtRand = (
+  min: number,
+  max: number,
+  random: () => number = Math.random,
+): number => {
+  return min + random() * (max - min);
+};

@@ -1,0 +1,107 @@
+export const DEFAULT_DASHBOARD_TEST_ORIGIN =
+  'https://dashboard-test.openthrone.dev';
+
+/** Parse origin list. */
+export function parseOriginList(value?: string): string[] {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+/** Returns cors allowlist for callers that need normalized game data. */
+export function getCorsAllowlist(
+  envValue?: string,
+  includeDefault: boolean = true,
+): string[] {
+  const origins = [...parseOriginList(envValue)];
+  if (includeDefault) origins.push(DEFAULT_DASHBOARD_TEST_ORIGIN);
+  return Array.from(new Set(origins));
+}
+
+/** Returns request origin for callers that need normalized game data. */
+export function getRequestOrigin(
+  req: { headers?: Record<string, any> } | undefined,
+): string | null {
+  const originHeader = req?.headers?.origin;
+  if (typeof originHeader === 'string' && originHeader.trim())
+    return originHeader.trim();
+
+  const refererHeader = req?.headers?.referer ?? req?.headers?.referrer;
+  if (typeof refererHeader === 'string' && refererHeader.trim()) {
+    try {
+      return new URL(refererHeader).origin;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/** Is origin allowed. */
+export function isOriginAllowed(
+  origin: string | null | undefined,
+  allowlist: string[],
+): boolean {
+  if (!origin) return false;
+  if (allowlist.includes('*')) return true;
+  return allowlist.includes(origin);
+}
+
+/** Set cors headers. */
+export function setCorsHeaders(
+  res: {
+    setHeader: (name: string, value: string | string[]) => void;
+    getHeader?: (name: string) => unknown;
+  },
+  reqOrigin: string | null,
+  allowlist: string[],
+) {
+  if (!reqOrigin || !isOriginAllowed(reqOrigin, allowlist)) return;
+
+  res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  const existingVary =
+    typeof res.getHeader === 'function' ? res.getHeader('Vary') : undefined;
+  const varyValue = (() => {
+    if (!existingVary) return 'Origin';
+    if (Array.isArray(existingVary))
+      return Array.from(new Set([...existingVary, 'Origin']));
+    if (typeof existingVary === 'string') {
+      const parts = existingVary
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+      return Array.from(new Set([...parts, 'Origin'])).join(', ');
+    }
+    return 'Origin';
+  })();
+
+  res.setHeader('Vary', varyValue as any);
+}
+
+/** Applies configured CORS headers and handles preflight responses. */
+export function applyCors(
+  req: { headers?: Record<string, any>; method?: string },
+  res: {
+    setHeader: (name: string, value: string | string[]) => void;
+    getHeader?: (name: string) => unknown;
+    status: (code: number) => { end: () => void };
+  },
+  allowlist: string[],
+): boolean {
+  const origin = getRequestOrigin(req);
+  setCorsHeaders(res, origin, allowlist);
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return true;
+  }
+
+  return false;
+}

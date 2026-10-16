@@ -1,47 +1,38 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
 
-import prisma from '@/lib/prisma';
+import { withApiGuard } from '@/middleware/apiGuard';
+import { withCors } from '@/middleware/cors';
+import { AuthService } from '@/services';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed!' });
-  }
-  // handle password reset
-  const { email, verify } = req.body;
+const VerifySchema = z.object({
+  email: z.string().email(),
+  verify: z.string().min(1),
+});
+
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'none',
+  rateLimitProfile: 'password_reset',
+  bodySchema: VerifySchema,
+});
+
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { email, verify } = VerifySchema.parse(req.body);
   try {
-    const user = await prisma.users.findUnique({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    
-    const existingReset = await prisma.passwordReset.findMany({
-      where: {
-        userId: user.id,
-        verificationCode: verify,
-        status: 0,
-        createdAt: {
-           gt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3),
-        },
-      },
-    });
-
-    if (existingReset.length === 0) {
-      return res.status(404).json({ error: 'Invalid verification code' });
-    }
-    
+    const result = await AuthService.verifyPasswordResetCode(email, verify);
     return res.json({
       status: true,
-      verified: true,
+      verified: result.verified,
     });
-  } catch (error: any) {
-    return res.status(500).json({
+  } catch {
+    return res.status(400).json({
       status: false,
-      error: 'Internal server error',
-      message: error.message,
+      error: 'Invalid or expired verification code',
     });
   }
 }
+
+export default withCors(guardedHandler(handler), {
+  envVar: 'OT_AUTH_CORS_ORIGINS',
+});

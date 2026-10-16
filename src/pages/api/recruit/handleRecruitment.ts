@@ -1,102 +1,142 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '@/lib/prisma';
-import { withAuth } from '@/middleware/auth';
-import mtrand from '@/utils/mtrand';
-import { endSession, getSession, validateSession } from '@/services/sessions.service';
-import { createRecruitmentRecord, hasExceededRecruitmentLimit, updateUserAfterRecruitment, createBankHistoryRecord } from '@/services/recruitment.service';
-import { getIpAddress } from '@/utils/ipUtils';
+import type { NextApiResponse } from 'next';
+import { ZodError } from 'zod';
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+import { AUTO_RECRUIT_ENABLED } from '@/constants/AutoRecruit';
+import prisma from '@/lib/prisma';
+import { RecruitSchema } from '@/lib/validation';
+import { withAuth } from '@/middleware/auth';
+import {
+  getRecruitTargetById,
+  getUserByRecruitLink,
+  performRecruitmentWithSessionValidation,
+  recruitmentBlockCodeForError,
+} from '@/services/Recruitment.service';
+import { parseRecruitmentSessionId } from '@/services/recruitmentGuards';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logAction } from '@/utils/auditLogger';
+import { getIpAddress } from '@/utils/ipUtils';
+import { logError } from '@/utils/logger';
+import { mtRand as mtrand } from '@/utils/mtrand';
+
+/** Numeric targets are the auto-recruit form; recruit links are strings. */
+const isNumericTarget = (value: number | string): boolean =>
+  typeof value === 'number' || Number.isInteger(Number(value));
+
+const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
     return res.status(405).end(); // Method not allowed
   }
 
-  const session = req.session;
-  const recruiterUserId = session ? session.user.id : 0;
-  let { recruitedUserId, selfRecruit, sessionId } = req.body;
+  const { session } = req;
+  // Anonymous visits must never credit gold: the reward always goes to the signed-in recruiter.
+  const recruiterUserId = Number(session?.user?.id ?? 0);
+  if (!Number.isSafeInteger(recruiterUserId) || recruiterUserId <= 0) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
 
+  let recruitedUserId: number | string = 0;
+  let selfRecruit: boolean = false;
   try {
-    if (!Number.isInteger(recruitedUserId)) {
-      const recruitedUser = await prisma.users.findFirst({
-        where: { recruit_link: recruitedUserId },
+    const data = RecruitSchema.parse(req.body);
+    recruitedUserId = data.recruitedUserId || 0;
+    selfRecruit = data.selfRecruit || false;
+    if (selfRecruit) {
+      return res.status(400).json({
+        error: 'Self-recruitment is not allowed.',
+        code: 'SELF_RECRUIT_REJECTED',
       });
-      recruitedUserId = recruitedUser?.id || 0;
     }
+    const sessionIdNum = parseRecruitmentSessionId(data.sessionId);
+    if (sessionIdNum !== null && !AUTO_RECRUIT_ENABLED)
+      return res.status(503).json({
+        error: 'Auto-Recruit is currently disabled.',
+        code: 'AUTO_RECRUIT_DISABLED',
+      });
 
-    // Differentiate between manual and auto-clicker sessions
-    if (sessionId) {
-      // Validate the session ID for auto-clicker recruitment
-      const activeSessions = await validateSession(recruiterUserId, sessionId);
-
-      if (!activeSessions) {
-        return res.status(429).json({ error: 'Invalid session ID' });
+    let targetUserId: number;
+    if (isNumericTarget(recruitedUserId)) {
+      // A numeric target is only accepted from a logged-in auto-recruit session,
+      // never for anonymous callers or self-recruit rewards to a different account.
+      if (!recruiterUserId || sessionIdNum === null || selfRecruit) {
+        return res.status(400).json({
+          error: 'A valid recruitment link is required.',
+          code: 'RECRUIT_LINK_REQUIRED',
+        });
       }
-
-      const sessionData = await getSession(recruiterUserId, sessionId);
-
-      if (sessionData.lastActivityAt < new Date(Date.now() - 60000)) { // 1 minute
-        await endSession(recruiterUserId, sessionId);
-        return res.status(429).json({ error: 'Session expired' });
+      targetUserId = Number(recruitedUserId);
+      if (!Number.isSafeInteger(targetUserId) || targetUserId <= 0) {
+        return res.status(400).json({ error: 'Invalid recruitment target.' });
+      }
+      const target = await getRecruitTargetById(targetUserId);
+      if (!target) {
+        return res.status(400).json({ error: 'Recruitment target not found.' });
       }
     } else {
-      // If sessionId is not provided, treat it as a manual recruitment
-      sessionId = null; // Explicitly set sessionId to null for manual
+      const recruitedUser = await getUserByRecruitLink(String(recruitedUserId));
+      if (!recruitedUser) {
+        return res.status(400).json({ error: 'Invalid recruitment link.' });
+      }
+      targetUserId = recruitedUser.id;
     }
 
+    if (targetUserId === recruiterUserId) {
+      return res.status(400).json({
+        error: 'You cannot recruit yourself.',
+        code: 'SELF_RECRUIT_REJECTED',
+      });
+    }
+
+    const ipAddress = getIpAddress(req);
+    // The link owner is the sender; the signed-in recruiter receives the reward.
+    const fromUser = targetUserId;
+    const toUser = recruiterUserId;
+    const userIdToLock = toUser;
+    const delayMs = mtrand(5, 17) * 100;
+
     const result = await prisma.$transaction(
-      async (tx) => {
-        const fromUser = recruiterUserId ? recruitedUserId : recruiterUserId;
-        const toUser = recruiterUserId ? recruiterUserId : recruitedUserId;
-
-        const ipAddress = getIpAddress(req);
-
-        // Check if recruitment limit has been exceeded
-        const exceededLimit = await hasExceededRecruitmentLimit({
+      (tx) =>
+        performRecruitmentWithSessionValidation({
+          tx,
           fromUser,
           toUser,
+          userIdToUpdate: userIdToLock,
           ipAddress,
+          strategy: 'standard',
+          goldReward: 250,
+          delayMs,
+          sessionId: sessionIdNum,
           recruiterUserId,
-        });
-
-        if (exceededLimit) {
-          throw new Error('User has already been recruited 5 times in the last 24 hours.');
-        }
-
-
-        // Save the recruitment record
-        await createRecruitmentRecord({ fromUser, toUser, ipAddress });
-
-        // Wait for a random delay
-        await new Promise((resolve) => setTimeout(resolve, mtrand(5, 17) * 100));
-
-        let userToUpdate = await tx.users.findUnique({
-          where: { id: Number(toUser) },
-        });
-
-        if (selfRecruit) {
-          userToUpdate = await tx.users.findUnique({
-            where: { id: Number(recruitedUserId) },
-          });
-        }
-
-        // Update the number of citizens and gold for the user
-        await updateUserAfterRecruitment(userToUpdate.id, userToUpdate.units);
-
-        await createBankHistoryRecord(userToUpdate.id);
-
-        return { success: true };
-      },
-      { timeout: 15000, maxWait: 5000 },
+        }),
+      { timeout: 15000, maxWait: 5000, isolationLevel: 'ReadCommitted' },
     );
+
+    const ip = getIpAddress(req);
+    await logAction(recruiterUserId || toUser, 'RECRUIT', ip, {
+      recruitedUserId: targetUserId,
+      selfRecruit,
+    });
 
     return res.status(200).json(result);
   } catch (error) {
-    console.log('Error in recruitment:', error.message, "IPAddr: " + getIpAddress(req), 'PlayerID: ' + recruitedUserId, 'RecruiterID: ' + recruiterUserId);
-    const statusCode = error.message.includes('recruited 5 times')
-      ? 400
-      : 500;
+    if (error instanceof ZodError) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid input', details: error.format() });
+    }
+    logError('Error in recruitment', {
+      message: error.message,
+      ipAddress: getIpAddress(req),
+      playerId: recruitedUserId,
+      recruiterId: recruiterUserId,
+    });
+    // Cap and limit refusals carry a code so clients stop instead of retrying.
+    const code = recruitmentBlockCodeForError(error.message);
+    if (code) {
+      return res.status(409).json({ error: error.message, code });
+    }
+    const statusCode = error.message.includes('Session') ? 409 : 500;
     return res.status(statusCode).json({ error: error.message });
   }
 };
 
-export default withAuth(handler, true);
+export default withAuth(handler, { rateLimitProfile: 'game_write' });

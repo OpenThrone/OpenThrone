@@ -1,104 +1,59 @@
-import UserModel from "@/models/Users";
-import { calculateStrength } from "@/utils/attackFunctions";
-import { calculateOverallRank } from "@/utils/utilities";
-import { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/prisma";
+import { timingSafeEqual } from 'crypto';
+import type { NextApiResponse } from 'next';
 
-/**
- * Update a single user for a turn change.
- *
- * @param {Object} currentUser
- * @param {number} rank Current rank (1-indexed) of this user
- * @return {Promise<boolean>}
- */
-const updateUserPerTurn = async (currentUser, rank) => {
+import { withApiGuard } from '@/middleware/apiGuard';
+import { CronJobService } from '@/services';
+import type { AuthenticatedRequest } from '@/types/api';
+import { logError } from '@/utils/logger';
+
+const guardedHandler = withApiGuard({
+  methods: ['POST'],
+  authMode: 'none',
+  rateLimitProfile: 'admin',
+});
+
+const isAuthorizedTaskRequest = (
+  req: AuthenticatedRequest,
+  isEnabled: boolean,
+): boolean => {
+  const taskSecret = process.env.TASK_SECRET;
+  const authorizationHeader = req.headers.authorization;
+
+  if (!isEnabled || !taskSecret || !authorizationHeader) {
+    return false;
+  }
+
+  const provided = Buffer.from(authorizationHeader);
+  const expected = Buffer.from(taskSecret);
+  if (provided.length !== expected.length) {
+    return false;
+  }
+
+  return timingSafeEqual(provided, expected);
+};
+
+const turnCron = async (req: AuthenticatedRequest, res: NextApiResponse) => {
+  if (!isAuthorizedTaskRequest(req, process.env.DO_TURN_UPDATES === 'true')) {
+    return res.status(401).json({ message: 'Unauthorized or Disabled Task' });
+  }
+
   try {
-    const updatedGold = BigInt(currentUser.goldPerTurn.toString()) + BigInt(currentUser.gold);
+    const result = await CronJobService.processTurnUpdates();
 
-    let updateData = {
-      gold: updatedGold,
-      attack_turns: currentUser.attackTurns + 1,
-      rank: rank,
-      offense: currentUser.offense,
-      defense: currentUser.defense,
-      spy: currentUser.spy,
-      sentry: currentUser.sentry,
-    };
-
-    await prisma.$transaction(async (tx) => {
-      await tx.bank_history.create({
-        data: {
-          from_user_id: 0,
-          to_user_id: currentUser.id,
-          to_user_account_type: 'HAND',
-          from_user_account_type: 'BANK',
-          date_time: new Date(),
-          gold_amount: currentUser.goldPerTurn,
-          history_type: 'ECONOMY',
-          stats: {
-            currentGold: currentUser.gold,
-            newGold: updatedGold.toString(),
-            increase: currentUser.goldPerTurn,
-          },
-        },
+    if (result.success) {
+      return res.status(200).json({
+        message: result.message,
+        processed: result.processed,
+        failed: result.failed,
       });
-      await tx.users.update({
-        where: { id: currentUser.id },
-        data: updateData,
-      });
-    });
-
-    return true; // Update was successful
-  } catch (error) {
-    console.log(`Error updating user ${currentUser.id}: ${error}`);
-    return false; // Update failed
-  }
-};
-
-const turnCron = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (process.env.DO_TURN_UPDATES === 'true' && req.headers['authorization'] === process.env.TASK_SECRET) {
-    const allUsers = await prisma.users.findMany();
-
-    const userRanks = allUsers.map((user) => {
-      const newUser = new UserModel(user);
-      const rankScore = calculateOverallRank(user);
-
-      return {
-        id: user.id,
-        rankScore,
-        newUser,
-      };
-    });
-
-    userRanks.sort((a, b) => b.rankScore - a.rankScore);
-
-    let queue = userRanks.map((userRank, index) => ({
-      user: userRank.newUser,
-      rank: index + 1,
-      attempts: 0,
-    }));
-
-    while (queue.length > 0) {
-      const currentTask = queue.shift(); // Get the first user in the queue
-
-      const success = await updateUserPerTurn(currentTask.user, currentTask.rank);
-
-      if (!success) {
-        currentTask.attempts += 1;
-        console.log(`Failed to update user ${currentTask.user.id} on attempt ${currentTask.attempts}.`);
-        if (currentTask.attempts < 3) {
-          // Move the user to the end of the queue for another attempt
-          queue.push(currentTask);
-        } else {
-          console.log(`Failed to update user ${currentTask.user.id} after 3 attempts.`);
-        }
-      }
     }
-    return res.status(200).json({ message: 'Turns cron job executed successfully.' });
-  }
-  else {
-    return res.status(200).json({ message: 'Unauthorized or Disabled Task' });
+    return res.status(500).json({ message: 'Turn cron job failed.' });
+  } catch (error) {
+    logError('Error executing turn cron job:', error);
+    return res
+      .status(500)
+      .json({ message: 'Internal server error during turn cron job.' });
   }
 };
 
-export default turnCron;
+export default guardedHandler(turnCron);
