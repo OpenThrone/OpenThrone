@@ -1,0 +1,284 @@
+[
+  {
+    "key": "artwork/v1/assets/header/ELF-wall-header-v2.webp",
+    "sha256": "ce681b1dd0c3e3696b221413867ae65d7512741b3b3c9cc8844206c635bc4728",
+    "bytes": 494396,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/Elf-wall-header.webp",
+    "sha256": "772b2a5083a89eea6dbbec10efd4e36feef94c709c081d7ae95710245e2d755a",
+    "bytes": 13640,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/GOBLIN-wall-header-v2.webp",
+    "sha256": "4ae56ddd363757d0f9a9a3858c7f860c2023109f22ddf2a1e8efe9a2acc41204",
+    "bytes": 435628,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/HUMAN-wall-header-v2.webp",
+    "sha256": "f28ba785fb109f0ab7505cb29544b624bbe96367651bb7564c01e632ee67310c",
+    "bytes": 495274,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/OpenThrone.webp",
+    "sha256": "197faa4cb3e394b90f4f4153f6c852c8e6664d15aa382816161df71c0c7db5f5",
+    "bytes": 392080,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/UNDEAD-wall-header-v2.webp",
+    "sha256": "524897f87cbe78672cc3f16883f63a6ab215c17337f8bb04ae619daab0ea306b",
+    "bytes": 359390,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/nav/about.webp",
+    "sha256": "b4cfedbfb04111b84bfd92973a8e3ed4d4b80300fc6c203324e99732dbbaa8f8",
+    "bytes": 24568,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/nav/alliances.webp",
+    "sha256": "3ad6fb65dcfdf726c401d3c14fd949c162f9b3b52e92cc8c46982b32619a3a0e",
+    "bytes": 27254,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/nav/battle.webp",
+    "sha256": "94885d40017243f06d191a0c009ba09b5ccff4e1446ff4baa940f62d56dafd8d",
+    "bytes": 22966,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/nav/community.webp",
+    "sha256": "138b5a2392f539f9926b5f4c85c70a122b7bd6d07fe0051c09e49d72ba55f3ff",
+    "bytes": 23424,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/nav/home.webp",
+    "sha256": "c41e31f7092ff3a6106b7265d3912457fa9a42da019e53067cbf2fbf5f632b5f",
+    "bytes": 23646,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/nav/settings.webp",
+    "sha256": "337e3dda0edef07042569b301c773956d1428cc4438de26423396f486c3b5fda",
+    "bytes": 25478,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/nav/signout.webp",
+    "sha256": "a255a9b740939fef0273a6e3e975373eb7c343eb6bdffb9620946eebd967ac43",
+    "bytes": 17986,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/nav/structures.webp",
+    "sha256": "6c55fc0b25b7f76f07c26bf077e6697baaee05ebe9e798e0779031ee78bc4780",
+    "bytes": 20278,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/header/openthrone-bg.png",
+    "sha256": "ff8a8cfbdf6fc6f305916a008275472ca55acf64784fcf23e94eb8c7d3620e45",
+    "bytes": 28788299,
+    "contentType": "image/png"
+  },
+  {
+    "key": "artwork/v1/assets/images/advisor-scroll.webp",
+    "sha256": "02363daeed93251d7b2e8117556340d1315f8f3c93ed4ed8a788c285d59aabc2",
+    "bytes": 58706,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/nextjs-starter-banner.png",
+    "sha256": "b661f97b45a2b33b88e86301255c58777c7bfeeecf2ea8c252110df6fe54f4f9",
+    "bytes": 259601,
+    "contentType": "image/png"
+  },
+  {
+    "key": "artwork/v1/assets/images/santee.webp",
+    "sha256": "d8ffe9546bb6180af9dadecc093132d0a754599b52bfe003bd7ea77c574e091f",
+    "bytes": 243764,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/santee_250x229.webp",
+    "sha256": "9d9b530febed859835c0e79a357d65b49dfada2e248bd0b1c7dee32416ecaae8",
+    "bytes": 8670,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/scroll.webp",
+    "sha256": "1ff8aa024a2a3423c1223b07255407711c63081181a1651d9a5425adc8dea32f",
+    "bytes": 94888,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/battle-report/backgrounds/bg-ledger-brown.webp",
+    "sha256": "19074b9ceabac2d5e25fc8d240d33eaa39daa5962d1e225b20bac390af170018",
+    "bytes": 51788,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/battle-report/backgrounds/bg-stone-blue.webp",
+    "sha256": "8ddc9e49367aba270ed85b898e34fb3a4f2a1a7174a21eff4a4b05732559b9a7",
+    "bytes": 61156,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/battle-report/banners/banner-elf-green.webp",
+    "sha256": "b02a62bb8be3d693fd01dbdc56c4a9a1254beaf77d53153dd057e748ce55e0f3",
+    "bytes": 81720,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/battle-report/banners/banner-goblin-red.webp",
+    "sha256": "e978e5cf7786e6881c766df497403e4e00cc29822e588c8b79cc116f85ecfda4",
+    "bytes": 95518,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/battle-report/banners/banner-human-blue.webp",
+    "sha256": "057637b90f7fbc929ac69c2004adad33e58242c897bf875a441d1ccf3298882a",
+    "bytes": 77676,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/battle-report/banners/banner-undead-gray.webp",
+    "sha256": "70222281e73b2fb8b1886f3c29fe75ed2f620a4cc1cbf629cfd0ef66673e3f54",
+    "bytes": 81974,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/battle-report/panels/panel-frame-blue.webp",
+    "sha256": "b9c265db4c418012412a4257f83bc57d03a2045098d7f1d56c23c3a4bc3b56b0",
+    "bytes": 40130,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/profile/throne-goblin.webp",
+    "sha256": "a7cbe69c61e9adffbfaac7acee3decdc59c10abd065fc7a3a619420425960cce",
+    "bytes": 269694,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/profile/throne-human.webp",
+    "sha256": "452f4595919a2cfe3e6ef62b990d3005a172d0bd665147bd1a43675b414c24ad",
+    "bytes": 301670,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/profile/throne-undead.webp",
+    "sha256": "7383f2c62ffc2a8fb404ff3ec80b2ae051181369cda162c4bdb23665756abf54",
+    "bytes": 226792,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/public/throne-room.webp",
+    "sha256": "cd20e173c8b87db7427c743e042e1ddcbb82fc60583d66b07a0a1bf075c9015c",
+    "bytes": 440296,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/public/war-table.webp",
+    "sha256": "0ccbfea16bf448f0a4ed6cf1bb1459942764dcdd6d663f0d416df0e71f084b26",
+    "bytes": 552512,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/images/ui/shell/announcement-scene.webp",
+    "sha256": "c7adba84e46008ff21d27614f81330af0e5b86f4d9aea73d2db72d3d304bf52b",
+    "bytes": 96576,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/news/return-alpha-home.webp",
+    "sha256": "21440aa2647fa7e1f529168bf26c0be62c7115320375350da4bfc7687a3cffab",
+    "bytes": 245894,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/news/return-production-home.webp",
+    "sha256": "1c2ffea40f083f2f6c3c258901d40d010135a9e294e43f66dcfbebc6ccf3bd3b",
+    "bytes": 84762,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/ELF.webp",
+    "sha256": "a311b927441c34eeaed76fddcb8b0bba1aa6944df0ca29456fa64a094ed03c2c",
+    "bytes": 106900,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/ELF_150x150.webp",
+    "sha256": "f4266ddf818210120b914696b41ec3bed44c796949f57c48be8d2c711d8fc1c6",
+    "bytes": 3834,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/ELF_25x25.webp",
+    "sha256": "39e75adee0a219f11981f948c23ca390eda96fa45541e22759d6f85cd582d5a0",
+    "bytes": 470,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/GOBLIN.webp",
+    "sha256": "9563d03e21e6e7d94fb9dffc86a31ac4984b93d6d22fec530b44fb45a679bf4a",
+    "bytes": 283290,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/GOBLIN_150x150.webp",
+    "sha256": "d5c8e388a79a24066846156ee0b3a4986dc11d6cba12887c1bb24c50a595466b",
+    "bytes": 5980,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/GOBLIN_25x25.webp",
+    "sha256": "3be79d6432b1cf56f5193f404353b92d973afa105f68fc77126b5844b8f45cac",
+    "bytes": 596,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/HUMAN.webp",
+    "sha256": "57cbe0d8b80c40425f23a9086d9567420815b2c1063f9bb72b1ae36ed558759c",
+    "bytes": 116810,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/HUMAN_150x150.webp",
+    "sha256": "6f656c92a02d1a59b26bd6dea5335cf0c4836642bfbb8ab702eb4895376a3652",
+    "bytes": 4200,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/HUMAN_25x25.webp",
+    "sha256": "df4e8b0e35a56290b639c779cf7ec1faf000e8e91610f16418a16b301a6f20c0",
+    "bytes": 514,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/UNDEAD.webp",
+    "sha256": "9936155eaa13a53f711724ce0c365a1bb007143e87d4d96b7b5a0146c750a2e9",
+    "bytes": 156236,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/UNDEAD_150x150.webp",
+    "sha256": "c4380f295fe528b1fe2d8de0debae329c88bc67c2278946a384fbe970740157c",
+    "bytes": 6018,
+    "contentType": "image/webp"
+  },
+  {
+    "key": "artwork/v1/assets/shields/UNDEAD_25x25.webp",
+    "sha256": "414f81544044b212f208f6aba964e49ca6c88cc7d373a51bdce3a3937731a9de",
+    "bytes": 586,
+    "contentType": "image/webp"
+  }
+]
