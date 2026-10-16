@@ -1,0 +1,43 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "OpenThrone Code Documentation",
+  "entryPointStrategy": "expand",
+  "entryPoints": [
+    "src/services",
+    "src/pages/api",
+    "src/utils",
+    "src/sim",
+    "src/hooks",
+    "src/lib",
+    "src/models",
+    "src/middleware",
+    "src/types"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**",
+    "**/*.d.ts",
+    "**/node_modules/**",
+    "**/.next/**",
+    "prisma/generated/**",
+    "src/pages/api/**/__tests__/**"
+  ],
+  "excludeReferences": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "disableSources": true,
+  "includeVersion": true,
+  "out": "docs/api",
+  "plugin": [],
+  "readme": "README.md",
+  "searchInComments": true,
+  "skipErrorChecking": true,
+  "tsconfig": "tsconfig.json",
+  "validation": {
+    "invalidLink": true,
+    "notDocumented": false,
+    "notExported": false
+  }
+}

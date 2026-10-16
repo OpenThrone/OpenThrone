@@ -1,0 +1,11 @@
+{
+  "name": "default",
+  "description": "Default daily schedule — 30% recruit, 50% train (workers/offense/defense), 20% idle",
+  "allocations": {
+    "recruit": 0.30,
+    "trainWorkers": 0.20,
+    "trainOffense": 0.15,
+    "trainDefense": 0.15,
+    "idle": 0.20
+  }
+}

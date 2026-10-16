@@ -1,0 +1,31 @@
+{
+  "name": "default",
+  "description": "Default 35-bot roster for beta testing — even race/class distribution and varied personas",
+  "distribution": {
+    "count": 35,
+    "races": {
+      "ELF": 0.25,
+      "HUMAN": 0.25,
+      "GOBLIN": 0.25,
+      "UNDEAD": 0.25
+    },
+    "classes": {
+      "FIGHTER": 0.25,
+      "CLERIC": 0.25,
+      "ASSASSIN": 0.25,
+      "THIEF": 0.25
+    },
+    "personas": {
+      "FARMER_GREEDY": 0.15,
+      "FARMER_CAUTIOUS": 0.15,
+      "FARMER_ADAPTIVE": 0.15,
+      "AGGRESSIVE": 0.20,
+      "DEFENSIVE": 0.20,
+      "BALANCED": 0.15
+    }
+  },
+  "naming": {
+    "displayPrefix": "Bot",
+    "emailDomain": "bots.openthrone.local"
+  }
+}

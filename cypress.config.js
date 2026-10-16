@@ -1,20 +1,43 @@
 /* eslint-disable import/no-extraneous-dependencies */
 const { defineConfig } = require('cypress');
-require('dotenv').config();
+const getCompareSnapshotsPlugin = require('cypress-visual-regression/dist/plugin');
+
+try {
+  require('dotenv').config();
+} catch {
+  // dotenv is optional; Cypress env can be supplied via shell env vars.
+}
+
+const defaultAppUrl =
+  process.env.CYPRESS_APP_URL || process.env.APP_URL || 'http://localhost:3001';
 
 module.exports = defineConfig({
+  env: {
+    APP_URL: defaultAppUrl,
+  },
+  video: false,
+  screenshotsFolder: './cypress/snapshots/base',
+  trashAssetsBeforeRuns: true,
   e2e: {
-    baseUrl: 'https://OpenThrone.dev',
+    baseUrl: defaultAppUrl,
+    specPattern: 'cypress/e2e/**/*.{cy,spec}.{js,jsx,ts,tsx}',
     setupNodeEvents(on, config) {
-      const { env, ...rest } = config;
-      const modifiedConfig = {
-        ...rest,
-        env: {
-          ...process.env,
-          ...env,
-        },
-      };
-      return modifiedConfig;
+      getCompareSnapshotsPlugin(on, config);
+
+      on('before:browser:launch', (browser = {}, launchOptions) => {
+        if (browser.family === 'chromium' || browser.name === 'electron') {
+          launchOptions.args.push('--no-sandbox');
+          launchOptions.args.push('--disable-dev-shm-usage');
+          launchOptions.args.push('--disable-gpu');
+          launchOptions.args.push('--disable-software-rasterizer');
+          launchOptions.args.push('--disable-extensions');
+          launchOptions.args.push('--disable-background-timer-throttling');
+          launchOptions.args.push('--disable-backgrounding-occluded-windows');
+          launchOptions.args.push('--disable-renderer-backgrounding');
+        }
+
+        return launchOptions;
+      });
     },
   },
 });

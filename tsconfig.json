@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["dom", "dom.iterable", "es2015", "es2020"],
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "removeComments": true,
     "preserveConstEnums": true,
@@ -17,7 +17,8 @@
     "noUnusedParameters": false,
     "allowUnreachableCode": false,
     "noFallthroughCasesInSwitch": true,
-    "target": "es5",
+    "target": "es2020",
+    "downlevelIteration": true,
     "outDir": "out",
     "declaration": true,
     "sourceMap": true,
@@ -26,27 +27,43 @@
     "allowJs": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "noEmit": true,
     "isolatedModules": true,
     "incremental": true,
+    "types": ["node", "jest"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@/public/*": ["./public/*"]
     },
+    "ignoreDeprecations": "5.0",
     "plugins": [
       {
         "name": "next"
       }
     ]
   },
-  "exclude": ["./out/**/*", "./node_modules/**/*", "cypress/**/*.ts"],
+  "exclude": [
+    "./out/**/*",
+    "./node_modules/**/*",
+    "cypress/**/*.ts",
+    "src/pages/api/**/__tests__/**",
+    "src/pages/api/**/__tests__/*",
+    "src/pages/api/__tests__/**",
+    "src/services/**/__tests__/**",
+    "src/**/__tests__/**"
+  ],
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".storybook/*.ts",
-    ".next/types/**/*.ts"
+    "src/pages/api/**/*",
+    "src/middleware/**/*",
+    "src/services/**/*",
+    "src/utils/**/*",
+    "src/models/**/*",
+    "src/types/**/*.d.ts",
+    "test/types/**/*.d.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ]
 }
