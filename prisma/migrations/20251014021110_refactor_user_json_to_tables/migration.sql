@@ -1,3 +1,5 @@
+BEGIN;
+
 /*
   Warnings:
 
@@ -27,19 +29,6 @@ CREATE TYPE "BattleUpgradeType" AS ENUM ('OFFENSE', 'SPY', 'SENTRY', 'DEFENSE');
 -- CreateEnum
 CREATE TYPE "BonusPointsType" AS ENUM ('OFFENSE', 'DEFENSE', 'INCOME', 'INTEL', 'PRICES');
 
--- AlterTable
-ALTER TABLE "users" DROP COLUMN "battle_upgrades",
-DROP COLUMN "bonus_points",
-DROP COLUMN "items",
-DROP COLUMN "mercenaries",
-DROP COLUMN "structure_upgrades",
-DROP COLUMN "units",
-ADD COLUMN     "battle_upgrades_json" JSONB DEFAULT '[{"type": "OFFENSE", "level": 1, "quantity": 0}, {"type": "SPY", "level": 1, "quantity": 0}, {"type": "SENTRY", "level": 1, "quantity": 0}, {"type": "DEFENSE", "level": 1, "quantity": 0}]',
-ADD COLUMN     "bonus_points_json" JSONB DEFAULT '[{"type": "OFFENSE", "level": 0}, {"type": "DEFENSE", "level": 0}, {"type": "INCOME", "level": 0}, {"type": "INTEL", "level": 0}, {"type": "PRICES", "level": 0}]',
-ADD COLUMN     "items_json" JSONB DEFAULT '[{"type": "WEAPON", "level": 1, "usage": "OFFENSE", "quantity": 0}]',
-ADD COLUMN     "mercenaries_json" JSONB NOT NULL DEFAULT '[]',
-ADD COLUMN     "structure_upgrades_json" JSONB DEFAULT '[{"type": "OFFENSE", "level": 1}, {"type": "SPY", "level": 1}, {"type": "SENTRY", "level": 1}, {"type": "ARMORY", "level": 1}]',
-ADD COLUMN     "units_json" JSON DEFAULT '[{"type": "CITIZEN", "level": 1, "quantity": 50}, {"type": "WORKER", "level": 1, "quantity": 0}, {"type": "OFFENSE", "level": 1, "quantity": 0}, {"type": "DEFENSE", "level": 1, "quantity": 0}, {"type": "SPY", "level": 1, "quantity": 0}, {"type": "SENTRY", "level": 1, "quantity": 0}]';
 
 -- CreateTable
 CREATE TABLE "UserUnit" (
@@ -140,3 +129,54 @@ ALTER TABLE "UserBattleUpgrade" ADD CONSTRAINT "UserBattleUpgrade_userId_fkey" F
 
 -- AddForeignKey
 ALTER TABLE "UserBonusPoints" ADD CONSTRAINT "UserBonusPoints_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+-- Copy live player data out of the legacy JSON columns BEFORE they are dropped.
+-- Runs inside the transaction below: any malformed row aborts the whole migration
+-- rather than dropping data. Source rows are read from the legacy columns, which
+-- still exist at this point.
+INSERT INTO "UserUnit" ("userId", "type", "level", "quantity", "isMercenary")
+SELECT u.id, (e->>'type')::"UnitType", (e->>'level')::int, (e->>'quantity')::int, false
+FROM (SELECT id, units::jsonb AS j FROM "users" WHERE jsonb_typeof(units::jsonb) = 'array') u
+CROSS JOIN LATERAL jsonb_array_elements(u.j) e;
+
+INSERT INTO "UserUnit" ("userId", "type", "level", "quantity", "isMercenary")
+SELECT u.id, (e->>'type')::"UnitType", (e->>'level')::int, (e->>'quantity')::int, true
+FROM (SELECT id, mercenaries::jsonb AS j FROM "users" WHERE jsonb_typeof(mercenaries::jsonb) = 'array') u
+CROSS JOIN LATERAL jsonb_array_elements(u.j) e;
+
+INSERT INTO "UserItem" ("userId", "type", "level", "usage", "quantity")
+SELECT u.id, (e->>'type')::"ItemType", (e->>'level')::int, (e->>'usage')::"ItemUsage", (e->>'quantity')::int
+FROM (SELECT id, items::jsonb AS j FROM "users" WHERE jsonb_typeof(items::jsonb) = 'array') u
+CROSS JOIN LATERAL jsonb_array_elements(u.j) e;
+
+INSERT INTO "UserBattleUpgrade" ("userId", "type", "level", "quantity")
+SELECT u.id, (e->>'type')::"BattleUpgradeType", (e->>'level')::int, (e->>'quantity')::int
+FROM (SELECT id, battle_upgrades::jsonb AS j FROM "users" WHERE jsonb_typeof(battle_upgrades::jsonb) = 'array') u
+CROSS JOIN LATERAL jsonb_array_elements(u.j) e;
+
+INSERT INTO "UserStructureUpgrade" ("userId", "type", "level")
+SELECT u.id, (e->>'type')::"StructureUpgradeType", (e->>'level')::int
+FROM (SELECT id, structure_upgrades::jsonb AS j FROM "users" WHERE jsonb_typeof(structure_upgrades::jsonb) = 'array') u
+CROSS JOIN LATERAL jsonb_array_elements(u.j) e;
+
+INSERT INTO "UserBonusPoints" ("userId", "type", "level")
+SELECT u.id, (e->>'type')::"BonusPointsType", (e->>'level')::int
+FROM (SELECT id, bonus_points::jsonb AS j FROM "users" WHERE jsonb_typeof(bonus_points::jsonb) = 'array') u
+CROSS JOIN LATERAL jsonb_array_elements(u.j) e;
+
+-- AlterTable
+ALTER TABLE "users" DROP COLUMN "battle_upgrades",
+DROP COLUMN "bonus_points",
+DROP COLUMN "items",
+DROP COLUMN "mercenaries",
+DROP COLUMN "structure_upgrades",
+DROP COLUMN "units",
+ADD COLUMN     "battle_upgrades_json" JSONB DEFAULT '[{"type": "OFFENSE", "level": 1, "quantity": 0}, {"type": "SPY", "level": 1, "quantity": 0}, {"type": "SENTRY", "level": 1, "quantity": 0}, {"type": "DEFENSE", "level": 1, "quantity": 0}]',
+ADD COLUMN     "bonus_points_json" JSONB DEFAULT '[{"type": "OFFENSE", "level": 0}, {"type": "DEFENSE", "level": 0}, {"type": "INCOME", "level": 0}, {"type": "INTEL", "level": 0}, {"type": "PRICES", "level": 0}]',
+ADD COLUMN     "items_json" JSONB DEFAULT '[{"type": "WEAPON", "level": 1, "usage": "OFFENSE", "quantity": 0}]',
+ADD COLUMN     "mercenaries_json" JSONB NOT NULL DEFAULT '[]',
+ADD COLUMN     "structure_upgrades_json" JSONB DEFAULT '[{"type": "OFFENSE", "level": 1}, {"type": "SPY", "level": 1}, {"type": "SENTRY", "level": 1}, {"type": "ARMORY", "level": 1}]',
+ADD COLUMN     "units_json" JSON DEFAULT '[{"type": "CITIZEN", "level": 1, "quantity": 50}, {"type": "WORKER", "level": 1, "quantity": 0}, {"type": "OFFENSE", "level": 1, "quantity": 0}, {"type": "DEFENSE", "level": 1, "quantity": 0}, {"type": "SPY", "level": 1, "quantity": 0}, {"type": "SENTRY", "level": 1, "quantity": 0}]';
+
+COMMIT;
