@@ -3,6 +3,20 @@
 -- StaffRoleAssignment in the previous migration. No active rows reference them.
 -- The following block recreates the PermissionType enum without those legacy values.
 BEGIN;
+
+-- Convert legacy staff grants into StaffRoleAssignment. The previous migration did not
+-- copy them, so this does it here, before the enum cast that would otherwise fail.
+-- Rows are archived to PermissionGrantLegacy first; nothing is discarded.
+CREATE TABLE "PermissionGrantLegacy" AS
+SELECT "id", "type"::text AS "type", "user_id", "created_at", "grantedByUserId", "note", "revokedAt", "sourceRole"
+FROM "PermissionGrant" WHERE "type"::text IN ('ADMINISTRATOR', 'MODERATOR');
+
+INSERT INTO "StaffRoleAssignment" ("userId", "role", "grantedByUserId", "note", "createdAt", "revokedAt")
+SELECT pg."user_id", pg."type"::text::"StaffRole", pg."grantedByUserId", pg."note", pg."created_at", pg."revokedAt"
+FROM "PermissionGrant" pg
+WHERE pg."type"::text IN ('ADMINISTRATOR', 'MODERATOR') AND pg."sourceRole" IS NULL;
+
+DELETE FROM "PermissionGrant" WHERE "type"::text IN ('ADMINISTRATOR', 'MODERATOR');
 CREATE TYPE "PermissionType_new" AS ENUM (
   'VIEW_STAFF_DASHBOARD',
   'VIEW_AUDIT_LOGS',
