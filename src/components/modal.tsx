@@ -1,7 +1,9 @@
 import {
+  Alert,
   Anchor,
   Button,
   Checkbox,
+  Group,
   Modal as MantineModal,
   NumberInput,
   Text,
@@ -41,6 +43,8 @@ const Modal: React.FC<ModalProps> = ({
 }) => {
   const { t } = useTranslation('battle');
   const submittingRef = useRef(false);
+  const forfeitConfirmedRef = useRef(false);
+  const [forfeitPrompt, setForfeitPrompt] = useState(false);
   const [newTab, setNewTab] = useLocalStorage({
     key: 'battle-report-new-tab',
     defaultValue: false,
@@ -73,6 +77,7 @@ const Modal: React.FC<ModalProps> = ({
     const reportTab =
       allowNewTab && newTab ? window.open('about:blank', '_blank') : null;
     if (reportTab) reportTab.opener = null;
+    setForfeitPrompt(false);
     setIsLoading(true); // Set loading state
     setError(''); // Clear previous errors
 
@@ -83,9 +88,20 @@ const Modal: React.FC<ModalProps> = ({
           'Content-Type': 'application/json',
           'Idempotency-Key': buildIdempotencyKey(),
         },
-        body: JSON.stringify({ turns }),
+        body: JSON.stringify({
+          turns,
+          ...(forfeitConfirmedRef.current
+            ? { confirmProtectionForfeit: true }
+            : {}),
+        }),
       });
       const results = await res.json();
+      if (results?.code === 'PROTECTION_FORFEIT_CONFIRMATION_REQUIRED') {
+        reportTab?.close();
+        forfeitConfirmedRef.current = false;
+        setForfeitPrompt(true);
+        return;
+      }
       if (
         !res.ok ||
         results?.status === 'failed' ||
@@ -118,6 +134,7 @@ const Modal: React.FC<ModalProps> = ({
       logError(error, { profileID }, 'Attack submission failed');
       setError(t('attack.attackFailed'));
     } finally {
+      forfeitConfirmedRef.current = false;
       submittingRef.current = false;
       setIsLoading(false);
     }
@@ -172,6 +189,39 @@ const Modal: React.FC<ModalProps> = ({
               onChange={(event) => setNewTab(event.currentTarget.checked)}
               label={t('actions.newTab')}
             />
+          )}
+          {forfeitPrompt && (
+            <Alert
+              color="yellow"
+              mb="md"
+              role="alert"
+              title={t('attack.protectionForfeitTitle')}
+            >
+              {t('attack.protectionForfeitWarning')}
+              <Group mt="sm" gap="xs">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="xs"
+                  disabled={isLoading}
+                  onClick={() => setForfeitPrompt(false)}
+                >
+                  {t('attack.protectionForfeitCancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  color="red"
+                  size="xs"
+                  loading={isLoading}
+                  disabled={isLoading}
+                  onClick={() => {
+                    forfeitConfirmedRef.current = true;
+                  }}
+                >
+                  {t('attack.protectionForfeitConfirm')}
+                </Button>
+              </Group>
+            </Alert>
           )}
           <Button
             type="submit"

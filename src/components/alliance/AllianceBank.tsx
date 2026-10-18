@@ -1,111 +1,45 @@
-import {
-  Button,
-  Center,
-  Grid,
-  Group,
-  Loader,
-  NumberInput,
-  Paper,
-  Table,
-  Text,
-} from '@mantine/core';
+import { Center, Grid, Group, Loader, Paper, Table, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import useSWR from 'swr';
 
+import { getAllianceStanding } from '@/components/alliance/allianceStanding';
+import { DepositForm } from '@/components/alliance/treasury/DepositForm';
+import { GoldRequestForm } from '@/components/alliance/treasury/GoldRequestForm';
+import { GoldRequestQueue } from '@/components/alliance/treasury/GoldRequestQueue';
+import { LoanSection } from '@/components/alliance/treasury/LoanSection';
+import { TransferForm } from '@/components/alliance/treasury/TransferForm';
 import { GameCard } from '@/components/game/GameCard';
 import { useUser } from '@/context/users';
-import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
 import { toLocale } from '@/utils/numberFormatting';
 
 interface AllianceBankProps {
   alliance: AllianceInfo;
-  isLeader: boolean;
   onUpdate?: () => void;
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 /** Alliance bank. */
-export const AllianceBank = ({
-  alliance,
-  isLeader,
-  onUpdate,
-}: AllianceBankProps) => {
+export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
   const { t } = useTranslation('alliances');
-  const { user, forceUpdate } = useUser();
-  const [depositAmount, setDepositAmount] = useState<string | number>('');
-  const [withdrawAmount, setWithdrawAmount] = useState<string | number>('');
-  const [loading, setLoading] = useState(false);
+  const { user } = useUser();
+  const [requestsKey, setRequestsKey] = useState(0);
+
+  const standing = getAllianceStanding(alliance, user?.id ?? null);
+  const canManageBank = standing.can('manage_bank');
+  const canRequestGold = standing.can('request_gold');
 
   const { data: history, mutate: reloadHistory } = useSWR(
     `/api/alliances/bank/history?allianceId=${alliance.id}`,
     fetcher,
   );
 
-  const handleDeposit = async () => {
-    if (!depositAmount || Number(depositAmount) <= 0) return;
-    setLoading(true);
-    try {
-      const res = await fetch('/api/alliances/bank/deposit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': `alliance-deposit-${alliance.id}-${depositAmount}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        },
-        body: JSON.stringify({
-          allianceId: alliance.id,
-          amount: depositAmount.toString(),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      alertService.success(t('bank.depositSuccess', 'Deposit successful!'));
-      setDepositAmount('');
-      forceUpdate(); // Update user gold
-      reloadHistory(); // Update history
-      if (onUpdate) onUpdate(); // Update alliance balance match
-    } catch (error: any) {
-      alertService.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleWithdraw = async () => {
-    if (!withdrawAmount || Number(withdrawAmount) <= 0) return;
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch('/api/alliances/bank/withdraw', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Idempotency-Key': `alliance-withdraw-${alliance.id}-${withdrawAmount}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        },
-        body: JSON.stringify({
-          allianceId: alliance.id,
-          targetUserId: user.id, // Direct withdraw to self for now
-          amount: withdrawAmount.toString(),
-          notes: 'Withdrawal by Leader',
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      alertService.success(t('bank.withdrawSuccess', 'Withdrawal successful!'));
-      setWithdrawAmount('');
-      forceUpdate();
-      reloadHistory();
-      if (onUpdate) onUpdate();
-    } catch (error: any) {
-      alertService.error(error.message);
-    } finally {
-      setLoading(false);
-    }
+  const refresh = () => {
+    reloadHistory();
+    setRequestsKey((key) => key + 1);
+    if (onUpdate) onUpdate(); // Update alliance balance
   };
 
   return (
@@ -124,51 +58,38 @@ export const AllianceBank = ({
       </Grid.Col>
 
       <Grid.Col span={{ base: 12, md: 6 }}>
-        <GameCard title={t('bank.depositTitle', 'Make a Deposit')}>
-          <NumberInput
-            label={t('bank.amount', 'Amount')}
-            placeholder="0"
-            min={1}
-            value={depositAmount}
-            onChange={setDepositAmount}
-            thousandSeparator=","
-          />
-          <Button
-            fullWidth
-            mt="md"
-            type="button"
-            onClick={handleDeposit}
-            loading={loading}
-            disabled={!depositAmount}
-          >
-            {t('bank.depositButton', 'Deposit Gold')}
-          </Button>
-        </GameCard>
+        <DepositForm allianceId={alliance.id} onDone={refresh} />
       </Grid.Col>
 
-      {isLeader && (
+      {canManageBank && (
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <GameCard title={t('bank.withdrawTitle', 'Make a Withdrawal')}>
-            <NumberInput
-              label={t('bank.amount', 'Amount')}
-              placeholder="0"
-              min={1}
-              value={withdrawAmount}
-              onChange={setWithdrawAmount}
-              thousandSeparator=","
-            />
-            <Button
-              fullWidth
-              type="button"
-              mt="md"
-              color="red"
-              onClick={handleWithdraw}
-              loading={loading}
-              disabled={!withdrawAmount}
-            >
-              {t('bank.withdrawButton', 'Withdraw Gold')}
-            </Button>
-          </GameCard>
+          <TransferForm alliance={alliance} onDone={refresh} />
+        </Grid.Col>
+      )}
+
+      {canRequestGold && (
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <GoldRequestForm allianceId={alliance.id} onDone={refresh} />
+        </Grid.Col>
+      )}
+
+      {(canManageBank || canRequestGold) && (
+        <Grid.Col span={12}>
+          <GoldRequestQueue
+            allianceId={alliance.id}
+            onChanged={refresh}
+            refreshKey={requestsKey}
+          />
+        </Grid.Col>
+      )}
+
+      {(canManageBank || canRequestGold) && (
+        <Grid.Col span={12}>
+          <LoanSection
+            allianceId={alliance.id}
+            onChanged={refresh}
+            refreshKey={requestsKey}
+          />
         </Grid.Col>
       )}
 
@@ -200,7 +121,11 @@ export const AllianceBank = ({
                     <Table.Td>
                       <Text
                         c={
-                          entry.transaction_type === 'DEPOSIT' ? 'green' : 'red'
+                          ['DEPOSIT', 'LOAN_REPAYMENT'].includes(
+                            entry.transaction_type,
+                          )
+                            ? 'green'
+                            : 'red'
                         }
                         fw={500}
                       >

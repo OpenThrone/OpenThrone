@@ -40,7 +40,8 @@
       "account.inactivity.remindersEnabled": "Inaktivitätserinnerungen",
       "account.inactivity.autoAnonymizeEnabled": "Automatische Anonymisierung inaktiver Konten",
       "era.dailyCitizenBonus": "Täglicher Bürgerbonus (zusätzliche Bürger, die jedes Konto beim täglichen Update erhält)",
-      "era.dailyCitizenBonusActivityHours": "Aktivitätsfenster für den täglichen Bürgerbonus in Stunden (nur Konten, die innerhalb dieses Fensters eingezahlt, ausgebildet, Rüstkammer gehandelt, angegriffen, spioniert oder repariert haben, erhalten den Bonus; 0 = alle)"
+      "era.dailyCitizenBonusActivityHours": "Aktivitätsfenster für den täglichen Bürgerbonus in Stunden (nur Konten, die innerhalb dieses Fensters eingezahlt, ausgebildet, Rüstkammer gehandelt, angegriffen, spioniert oder repariert haben, erhalten den Bonus; 0 = alle)",
+      "era.protectionDurationDays": "Dauer des Neulingsschutzes in Tagen (1-60; der Schutz endet außerdem bei Level 10, beim Bevölkerungsschwellenwert oder wenn der Spieler einen ungeschützten Spieler angreift)"
     },
     "resetBeforeLogin": "Aktuelle Ära vor Freigabe der Anmeldung zurücksetzen"
   },

@@ -15,6 +15,7 @@ describe('runtime setting registry', () => {
       'email.outbox.ratePerMinute',
       'era.dailyCitizenBonus',
       'era.dailyCitizenBonusActivityHours',
+      'era.protectionDurationDays',
       'ENABLE_ATTACKING',
       'ATTACK_LEVEL_RANGE',
       'ENABLE_INFILTRATIONS',
@@ -54,5 +55,16 @@ describe('runtime setting registry', () => {
         message: 'x'.repeat(1001),
       }).success,
     ).toBe(false);
+  });
+
+  it('keeps the protection duration to whole days from 1 to 60 (default 14)', () => {
+    const setting = RUNTIME_SETTING_REGISTRY['era.protectionDurationDays'];
+    expect(setting.fallback).toBe(14);
+    expect(setting.schema.safeParse(1).success).toBe(true);
+    expect(setting.schema.safeParse(60).success).toBe(true);
+    expect(setting.schema.safeParse(0).success).toBe(false);
+    expect(setting.schema.safeParse(61).success).toBe(false);
+    expect(setting.schema.safeParse(7.5).success).toBe(false);
+    expect(setting.schema.safeParse('14').success).toBe(false);
   });
 });

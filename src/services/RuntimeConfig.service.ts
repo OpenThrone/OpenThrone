@@ -13,6 +13,8 @@ export interface RuntimeConfig {
   dailyCitizenBonus: number;
   /** Only accounts with gameplay activity within this many hours get the bonus; 0 disables the check. */
   dailyCitizenBonusActivityHours: number;
+  /** Days of new-player battle protection after joining an era (1-60). */
+  protectionDurationDays: number;
   enableAttacking: boolean;
   attackLevelRange: number;
   enableInfiltrations: boolean;
@@ -107,6 +109,7 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
         dailyCitizenBonusActivityHours: values[
           'era.dailyCitizenBonusActivityHours'
         ] as number,
+        protectionDurationDays: values['era.protectionDurationDays'] as number,
         enableAttacking: values.ENABLE_ATTACKING as boolean,
         attackLevelRange: values.ATTACK_LEVEL_RANGE as number,
         enableInfiltrations: values.ENABLE_INFILTRATIONS as boolean,

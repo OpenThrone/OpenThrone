@@ -43,6 +43,7 @@ function runtimeValue(config: RuntimeConfig, key: string): unknown {
     'era.dailyCitizenBonus': config.dailyCitizenBonus ?? 0,
     'era.dailyCitizenBonusActivityHours':
       config.dailyCitizenBonusActivityHours ?? 24,
+    'era.protectionDurationDays': config.protectionDurationDays ?? 14,
     ENABLE_ATTACKING: config.enableAttacking,
     ATTACK_LEVEL_RANGE: config.attackLevelRange,
     ENABLE_INFILTRATIONS: config.enableInfiltrations,

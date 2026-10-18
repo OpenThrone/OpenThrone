@@ -13,7 +13,11 @@ const getAllianceHandler = async (req: any, res: any) => {
   }
 
   try {
-    const alliance = await AllianceService.getAllianceById(Number(id));
+    const viewerId = Number(req.session?.user?.id);
+    const { alliance } = await AllianceService.getAllianceForViewer(
+      Number(id),
+      Number.isSafeInteger(viewerId) ? viewerId : null,
+    );
     return res.status(200).json(alliance);
   } catch (error: any) {
     // If it's a 404-like error

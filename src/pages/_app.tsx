@@ -75,7 +75,7 @@ const namespaceMatchers: Array<{
   },
   {
     matches: (path) => path.startsWith('/battle'),
-    namespaces: ['battle', 'messaging'],
+    namespaces: ['battle', 'messaging', 'allianceIntel'],
   },
   {
     matches: (path) => path.startsWith('/community'),

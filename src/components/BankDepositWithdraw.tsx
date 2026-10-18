@@ -19,7 +19,8 @@ export default function BankDepositWithdraw({ user, forceUpdate }) {
   const [history, setHistory] = useState([]);
   const { t } = useTranslation('structures');
   const maxDeposit = getMaxDeposit(toBigIntSafe(user?.gold));
-  const bankBalance = toBigIntSafe(user?.gold_in_bank);
+  // UserModel exposes the balance as goldInBank; gold_in_bank is the raw column.
+  const bankBalance = toBigIntSafe(user?.goldInBank ?? user?.gold_in_bank);
   useEffect(() => {
     if (user) {
       fetch('/api/bank/history?deposits=true&withdraws=true&limit=10&page=0')

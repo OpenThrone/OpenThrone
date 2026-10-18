@@ -19,10 +19,16 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useState } from 'react';
 import useSWR from 'swr';
 
+import { AllianceAnnouncements } from '@/components/alliance/AllianceAnnouncements';
 import { AllianceBank } from '@/components/alliance/AllianceBank';
+import { AllianceDiplomacy } from '@/components/alliance/AllianceDiplomacy';
+import { AllianceIntel } from '@/components/alliance/AllianceIntel';
+import { AllianceLists } from '@/components/alliance/AllianceLists';
 import { AllianceMembers } from '@/components/alliance/AllianceMembers';
 import { AllianceOverview } from '@/components/alliance/AllianceOverview';
+import { AllianceRanks } from '@/components/alliance/AllianceRanks';
 import { AllianceSettings } from '@/components/alliance/AllianceSettings';
+import { getAllianceStanding } from '@/components/alliance/allianceStanding';
 import { AllianceWar } from '@/components/alliance/AllianceWar';
 import MainArea from '@/components/MainArea';
 import { authOptions } from '@/pages/api/auth/[...nextauth]';
@@ -34,16 +40,25 @@ interface AlliancePageProps {
   initialAlliance: string;
   isMember: boolean;
   isLeader: boolean;
+  viewerId: number | null;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to load alliance (${res.status})`);
+  return res.json();
+};
 
 const AlliancePage = ({
   initialAlliance,
   isMember,
-  isLeader,
+  isLeader: initialIsLeader,
+  viewerId,
 }: AlliancePageProps) => {
   const { t } = useTranslation('alliances');
+  const { t: tLists } = useTranslation('allianceLists');
+  const { t: tAnn } = useTranslation('allianceAnnouncements');
+  const { t: tIntel } = useTranslation('allianceIntel');
   const router = useRouter();
   const { id } = router.query;
   const theme = useMantineTheme();
@@ -61,7 +76,16 @@ const AlliancePage = ({
   const alliance = (allianceData ||
     (initialAlliance ? JSON.parse(initialAlliance) : null)) as AllianceInfo;
 
-  if (error) return <Text c="red">Failed to load alliance</Text>;
+  // Leadership can change while the page is open (transfer-leadership).
+  const isLeader = alliance
+    ? viewerId !== null && alliance.leader_id === viewerId
+    : initialIsLeader;
+  const canEditRanks =
+    isMember &&
+    !!alliance &&
+    getAllianceStanding(alliance, viewerId).can('edit_ranks');
+
+  if (error && !alliance) return <Text c="red">Failed to load alliance</Text>;
   if (!alliance)
     return (
       <Center h={300}>
@@ -117,12 +141,29 @@ const AlliancePage = ({
             <Tabs.Tab value="overview">
               {t('index.overview', 'Overview')}
             </Tabs.Tab>
+            {isMember && (
+              <Tabs.Tab value="announcements">{tAnn('tab')}</Tabs.Tab>
+            )}
             <Tabs.Tab value="members">{t('index.members', 'Members')}</Tabs.Tab>
             {isMember && (
               <Tabs.Tab value="bank">{t('index.bank', 'Bank')}</Tabs.Tab>
             )}
             {isMember && (
               <Tabs.Tab value="war">{t('index.war', 'War Room')}</Tabs.Tab>
+            )}
+            {isMember && (
+              <Tabs.Tab value="lists">{tLists('tabs.lists', 'Lists')}</Tabs.Tab>
+            )}
+            {isMember && (
+              <Tabs.Tab value="diplomacy">
+                {tLists('tabs.diplomacy', 'Diplomacy')}
+              </Tabs.Tab>
+            )}
+            {isMember && (
+              <Tabs.Tab value="intel">{tIntel('tab', 'Intel')}</Tabs.Tab>
+            )}
+            {canEditRanks && (
+              <Tabs.Tab value="ranks">{t('ranks.title', 'Ranks')}</Tabs.Tab>
             )}
             {(isLeader || isMember) && (
               <Tabs.Tab value="settings">
@@ -133,31 +174,67 @@ const AlliancePage = ({
 
           <Box pt="md">
             <Tabs.Panel value="overview">
-              <AllianceOverview alliance={alliance} />
+              <AllianceOverview
+                alliance={alliance}
+                isMember={isMember}
+                onViewAnnouncements={() => setActiveTab('announcements')}
+              />
             </Tabs.Panel>
 
+            {isMember && (
+              <Tabs.Panel value="announcements">
+                <AllianceAnnouncements
+                  allianceId={alliance.id}
+                  viewerId={viewerId}
+                />
+              </Tabs.Panel>
+            )}
+
             <Tabs.Panel value="members">
-              <AllianceMembers alliance={alliance} />
+              <AllianceMembers
+                alliance={alliance}
+                viewerId={isMember ? viewerId : null}
+                onUpdate={mutate}
+              />
             </Tabs.Panel>
 
             {isMember && (
               <>
                 <Tabs.Panel value="bank">
-                  <AllianceBank
-                    alliance={alliance}
-                    isLeader={isLeader}
-                    onUpdate={mutate}
-                  />
+                  <AllianceBank alliance={alliance} onUpdate={mutate} />
                 </Tabs.Panel>
                 <Tabs.Panel value="war">
-                  <AllianceWar alliance={alliance} />
+                  <AllianceWar alliance={alliance} viewerId={viewerId} />
+                </Tabs.Panel>
+                <Tabs.Panel value="lists">
+                  <AllianceLists alliance={alliance} viewerId={viewerId} />
+                </Tabs.Panel>
+                <Tabs.Panel value="diplomacy">
+                  <AllianceDiplomacy alliance={alliance} viewerId={viewerId} />
+                </Tabs.Panel>
+                <Tabs.Panel value="intel">
+                  <AllianceIntel alliance={alliance} />
                 </Tabs.Panel>
               </>
             )}
 
+            {canEditRanks && (
+              <Tabs.Panel value="ranks">
+                <AllianceRanks
+                  alliance={alliance}
+                  viewerId={viewerId}
+                  onUpdate={mutate}
+                />
+              </Tabs.Panel>
+            )}
+
             {(isLeader || isMember) && (
               <Tabs.Panel value="settings">
-                <AllianceSettings alliance={alliance} onUpdate={mutate} />
+                <AllianceSettings
+                  alliance={alliance}
+                  onUpdate={mutate}
+                  isLeader={isLeader}
+                />
               </Tabs.Panel>
             )}
           </Box>
@@ -171,30 +248,30 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const { id } = context.params as { id: string };
 
   try {
-    const [session, allianceData, i18nProps] = await Promise.all([
+    const [session, i18nProps] = await Promise.all([
       getServerSession(context.req, context.res, authOptions),
-      AllianceService.getAllianceById(Number(id)),
       serverSideTranslations(context.locale ?? 'en', [
         'common',
         'alliances',
+        'allianceLists',
+        'allianceTreasury',
+        'allianceAnnouncements',
+        'allianceIntel',
         'navigation',
       ]),
     ]);
+
+    const sessionUserId = Number(session?.user?.id);
+    const viewerId = Number.isSafeInteger(sessionUserId) ? sessionUserId : null;
+    // Signed-out visitors and non-members get the redacted view (ALL-08).
+    const { alliance: allianceData, isMember } =
+      await AllianceService.getAllianceForViewer(Number(id), viewerId);
 
     if (!allianceData) {
       return { notFound: true };
     }
     const alliance = stringifyObj(allianceData) as AllianceInfo;
-
-    const user = session?.user;
-    let isMember = false;
-    let isLeader = false;
-
-    if (user) {
-      isMember =
-        alliance.members?.some((m) => m.user_id === Number(user.id)) ?? false;
-      isLeader = alliance.leader_id === Number(user.id);
-    }
+    const isLeader = viewerId !== null && alliance.leader_id === viewerId;
 
     return {
       props: {
@@ -202,6 +279,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         initialAlliance: JSON.stringify(alliance),
         isMember,
         isLeader,
+        viewerId,
       },
     };
   } catch {

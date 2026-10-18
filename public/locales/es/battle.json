@@ -19,7 +19,11 @@
     "invalidTurns": "Introduce al menos 1 turno.",
     "untrainTitle": "Confirmar desentrenamiento",
     "untrainMessage": "El desentrenamiento solo reembolsa el 75% del oro gastado; perderás {{gold}} de oro. No se puede deshacer.",
-    "confirm": "Confirmar"
+    "confirm": "Confirmar",
+    "protectionForfeitTitle": "Tu protección terminará",
+    "protectionForfeitWarning": "Este jugador no está protegido. Si lo atacas, tu protección de nuevo jugador termina durante el resto de la era.",
+    "protectionForfeitCancel": "Cancelar",
+    "protectionForfeitConfirm": "Atacar y perder la protección"
   },
   "users": {
     "title": "Atacar Usuarios",
@@ -215,7 +219,9 @@
     "attackerVictory": "Victoria del atacante",
     "defenderVictory": "Victoria del defensor",
     "winner": "{{player}} ganó la batalla.",
-    "yourCounterLine": "Tu contraataque mató a {{dead}} atacantes."
+    "yourCounterLine": "Tu contraataque mató a {{dead}} atacantes.",
+    "levelUpLine": "¡{{player}} alcanzó el nivel {{level}}!",
+    "protectionEndedLine": "La protección de principiante de {{player}} terminó."
   },
   "defenseAdvisory": {
     "title": "Defensas del reino superadas",

@@ -197,7 +197,14 @@
     "goldRequestPending_other": "{{count}} Goldanfragen ausstehend",
     "xpToNextLevel": "Sie sind {{xp}} XP vom nächsten Level entfernt",
     "searchPlaceholder": "Zum Suchen eingeben...",
-    "searchUsers": "Benutzer suchen"
+    "searchUsers": "Benutzer suchen",
+    "protection": {
+      "label": "Neulingsschutz",
+      "daysLeft_one": "Geschützt: noch {{count}} Tag",
+      "daysLeft_other": "Geschützt: noch {{count}} Tage",
+      "orUntil": "oder bis Level {{level}} / {{population}} Bevölkerung",
+      "untilOnly": "Geschützt bis Level {{level}} / {{population}} Bevölkerung"
+    }
   },
   "footer": {
     "latestCommit": "Letzter Commit:",
@@ -235,7 +242,14 @@
     "checkingEligibility": "Rekrutierung wird geprüft",
     "forYourKingdom": "Schließe die Verifizierung ab, um 1 Bürger für dein Königreich zu rekrutieren.",
     "signInToRecruit": "Melde dich an, um 1 Bürger für dein Königreich zu rekrutieren.",
-    "linkFrom": "Rekrutierungslink von {{name}}"
+    "linkFrom": "Rekrutierungslink von {{name}}",
+    "pairProgress": "Heute {{used}} von {{limit}} Mal mit {{name}} rekrutiert.",
+    "recruitsLeft_one": "Heute noch {{count}} Rekrut übrig. Zurücksetzung um {{time}}.",
+    "recruitsLeft_other": "Heute noch {{count}} Rekruten übrig. Zurücksetzung um {{time}}.",
+    "again": "Erneut rekrutieren",
+    "blockedPair": "Du hast heute {{used}} von {{limit}} Mal mit {{name}} rekrutiert. Zurücksetzung um {{time}}.",
+    "blockedRecruiter": "Du hast alle {{limit}} täglichen Rekrutierungen verbraucht. Zurücksetzung um {{time}}.",
+    "blockedTarget": "{{name}} hat das tägliche Limit von {{limit}} Rekrutierungen erreicht. Zurücksetzung um {{time}}."
   },
   "ariaLabels": {
     "closeAlert": "Alarm schließen",

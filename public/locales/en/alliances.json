@@ -62,5 +62,78 @@
     "leaveConfirm": "Are you sure you want to leave this alliance?",
     "kickConfirm": "Are you sure you want to kick this member?",
     "noMembers": "No members found"
+  },
+  "mine": {
+    "title": "My Alliances",
+    "count_one": "You belong to {{count}} of {{max}} alliances",
+    "count_other": "You belong to {{count}} of {{max}} alliances",
+    "browse": "Browse alliances",
+    "create": "Create alliance",
+    "createLeading": "You already lead an alliance. Hand over leadership or disband it before creating another.",
+    "createFull": "You are in {{max}} alliances already. Leave one to create another.",
+    "empty": "You are not a member of any alliance yet.",
+    "leader": "Leader",
+    "role": "Rank: {{role}}",
+    "members_one": "{{count}} member",
+    "members_other": "{{count}} members",
+    "open": "Open alliance"
+  },
+  "profile": {
+    "title": "Alliances",
+    "leaderOf": "Leader of {{name}}"
+  },
+  "members": {
+    "rosterHidden": "This alliance shares its roster with members only."
+  },
+  "manage": {
+    "memberActions": "Member actions",
+    "changeRank": "Change rank",
+    "changeRankFor": "Change rank for {{name}}",
+    "rankChanged": "Rank updated",
+    "makeLeader": "Make leader",
+    "makeLeaderConfirm": "Hand leadership to {{name}}? You will keep your current rank and lose all leader rights.",
+    "leaderChanged": "Leadership transferred",
+    "kickConfirm": "Remove {{name}} from the alliance?",
+    "cancel": "Cancel",
+    "typeToConfirm": "Type \"{{text}}\" to confirm",
+    "disbandTitle": "Disband Alliance",
+    "disbandHelp": "Disbanding removes every member, rank and chat room. Any treasury is split evenly among the members (remainder to you), open loans are written off, and no war may be in progress. To step down instead, make another member leader from the Members tab.",
+    "disbandConfirm": "This cannot be undone. Every member is removed from {{name}}, the treasury is split evenly among them and open loans are written off.",
+    "disbanded": "The alliance is disbanded",
+    "leaveHelp": "You will lose access to the treasury, the war room and alliance chat."
+  },
+  "ranks": {
+    "title": "Ranks",
+    "help": "Higher ranks are listed first. You can only edit ranks below your own and grant permissions you hold.",
+    "order": "Order",
+    "name": "Rank",
+    "newRank": "New rank",
+    "add": "Add rank",
+    "delete": "Delete rank",
+    "deleteConfirm": "Delete the rank \"{{name}}\"?",
+    "inUse": "Move its members to another rank first",
+    "moveUp": "Move rank up",
+    "moveDown": "Move rank down",
+    "saved": "Ranks saved",
+    "added": "Rank added",
+    "deleted": "Rank deleted",
+    "perm": {
+      "invite_member": "Accept members",
+      "grant_access": "Assign ranks",
+      "edit_ranks": "Edit ranks",
+      "kick_member": "Kick members",
+      "declare_war": "Declare war",
+      "manage_bank": "Manage bank",
+      "request_gold": "Request gold",
+      "send_messages": "Send messages",
+      "post_announcements": "Post announcements",
+      "edit_profile": "Edit profile",
+      "manage_allies": "Manage allies",
+      "manage_enemies": "Manage enemies",
+      "edit_list": "Edit list",
+      "view_list": "View list",
+      "share_reports": "Share reports",
+      "call_targets": "Call targets"
+    }
   }
 }

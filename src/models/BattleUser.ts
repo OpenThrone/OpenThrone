@@ -2,6 +2,13 @@ import { UnitTypes } from '@/constants';
 import type { users as PrismaUser, UserUnit } from '@/lib/prisma-exports';
 import { UserStatsService } from '@/services/UserStatsService';
 import type { FortHealth } from '@/types/typings';
+import {
+  getProtectionStatus,
+  PROTECTION_LEVEL_LIMIT,
+  type ProtectionEraInput,
+  type ProtectionSettings,
+  type ProtectionStatus,
+} from '@/utils/battleProtection';
 import type { DetailedCalculatedStrength } from '@/utils/combatStrength';
 import { getLevelFromXP } from '@/utils/utilities';
 
@@ -23,8 +30,25 @@ export class BattleUser extends BaseUser {
 
   private readonly allMercenaries: UserUnit[];
 
+  private readonly protectionFields: {
+    eraJoinedAt: Date | string | null;
+    createdAt: Date | string | null;
+    protectionForfeitedEraId: number | null;
+  };
+
+  private protectionContext: {
+    era: ProtectionEraInput | null;
+    settings: ProtectionSettings;
+  } | null = null;
+
   constructor(userData?: PrismaUser | null, relations: BaseUserRelations = {}) {
     super(userData, relations);
+
+    this.protectionFields = {
+      eraJoinedAt: userData?.era_joined_at ?? null,
+      createdAt: userData?.created_at ?? null,
+      protectionForfeitedEraId: userData?.protection_forfeited_era_id ?? null,
+    };
 
     this.allUnits = this.units;
     this.allMercenaries = this.mercenaries;
@@ -56,8 +80,44 @@ export class BattleUser extends BaseUser {
     return getLevelFromXP(this.experience);
   }
 
+  /** Supplies the era and admin settings the shared protection rule needs (see BattleProtection.service). */
+  setProtectionContext(
+    era: ProtectionEraInput | null,
+    settings: ProtectionSettings,
+  ): this {
+    this.protectionContext = { era, settings };
+    return this;
+  }
+
+  /** Shared protection status; null until a protection context is supplied. */
+  getProtectionStatus(now: Date = new Date()): ProtectionStatus | null {
+    if (!this.protectionContext) return null;
+    const allUnits = [...this.allUnits, ...this.allMercenaries];
+    return getProtectionStatus(
+      {
+        experience: this.experience,
+        population: allUnits.reduce(
+          (sum, unit) => sum + (unit.quantity || 0),
+          0,
+        ),
+        houseLevel: this.houseLevel,
+        ...this.protectionFields,
+      },
+      this.protectionContext.era,
+      this.protectionContext.settings,
+      now,
+    );
+  }
+
+  /**
+   * Uses the shared rule when a protection context was supplied; otherwise
+   * (replays, simulators, snapshots) falls back to the level-only rule.
+   */
   isProtected(): boolean {
-    return this.level <= 9;
+    return (
+      this.getProtectionStatus()?.protected ??
+      this.level < PROTECTION_LEVEL_LIMIT
+    );
   }
 
   getFortHealth(): FortHealth {

@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+import { FRIEND_TRANSFER_NOTE_MAX_LENGTH } from '@/constants/FriendTransfer';
+
+const NOTE_TOO_LONG = `must be ${FRIEND_TRANSFER_NOTE_MAX_LENGTH} characters or fewer`;
+
 /** Id query schema. */
 export const IdQuerySchema = z.object({
   id: z.string().pipe(z.coerce.number()),
@@ -30,6 +34,8 @@ export const RegisterSchema = z.object({
 /** Attack schema. */
 export const AttackSchema = z.object({
   turns: z.number().int().positive().max(10, { message: 'Turns must be 1-10' }),
+  /** Acknowledges that attacking an unprotected player ends the attacker's protection. */
+  confirmProtectionForfeit: z.boolean().optional(),
 });
 
 const SpySchema = z.object({
@@ -83,7 +89,7 @@ export const GoldTransferSchema = z.object({
     .transform((val) => val.toString()),
   notes: z
     .string()
-    .max(500, { message: 'Notes must be less than 500 characters' })
+    .max(FRIEND_TRANSFER_NOTE_MAX_LENGTH, { message: `Notes ${NOTE_TOO_LONG}` })
     .optional(),
 });
 
@@ -102,7 +108,9 @@ export const GoldRequestSchema = z.object({
   friendId: z.number().int().positive(),
   notes: z
     .string()
-    .max(500, { message: 'Reason must be less than 500 characters' })
+    .max(FRIEND_TRANSFER_NOTE_MAX_LENGTH, {
+      message: `Reason ${NOTE_TOO_LONG}`,
+    })
     .optional(),
 });
 
@@ -110,6 +118,8 @@ const GoldRequestResponseSchema = z.object({
   action: z.enum(['accept', 'decline']),
   message: z
     .string()
-    .max(500, { message: 'Message must be less than 500 characters' })
+    .max(FRIEND_TRANSFER_NOTE_MAX_LENGTH, {
+      message: `Message ${NOTE_TOO_LONG}`,
+    })
     .optional(),
 });

@@ -400,6 +400,8 @@ export interface UserApiResponse {
     startDate: string;
     endDate: string | null;
   };
+  /** Shared battle-protection status (see utils/battleProtection.ts). */
+  protection?: import('@/utils/battleProtection').ProtectionSummary;
 }
 
 // Define the Prisma User type alias again for internal use if needed

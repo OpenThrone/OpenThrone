@@ -38,7 +38,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import useSWR from 'swr';
 
+import type { AllianceListHit } from '@/components/alliance/AllianceListBadge';
+import { AllianceListBadge } from '@/components/alliance/AllianceListBadge';
 import type { SelectedPlayerAction } from '@/components/battle/PlayerActions';
 import {
   PlayerActionDialogs,
@@ -50,6 +53,7 @@ import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { usePlayerIdentity } from '@/hooks/usePlayerIdentity';
+import { useRecruitmentStatus } from '@/hooks/useRecruitmentStatus';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
@@ -110,6 +114,29 @@ const Users = ({
   const [sortBy, setSortBy] = useState('level');
   const [sortDir, setSortDir] = useState('desc');
   const [players, setPlayers] = useState([]);
+  // One batched alliance-list lookup for the visible page (no per-row requests).
+  const listLookupKey = useMemo(() => {
+    const ids = players
+      .map((p: any) => Number(p.id))
+      .filter((id) => Number.isInteger(id) && id > 0)
+      .slice(0, 100);
+    return ids.length && user
+      ? `/api/alliances/lists/lookup?targetUserIds=${ids.join(',')}`
+      : null;
+  }, [players, user]);
+  const { data: listLookup } = useSWR<Record<string, AllianceListHit[]>>(
+    listLookupKey,
+    async (url: string) => {
+      const res = await fetch(url);
+      return res.ok ? res.json() : {};
+    },
+    { revalidateOnFocus: false },
+  );
+  const { status: recruitStatus, refresh: refreshRecruitStatus } =
+    useRecruitmentStatus(
+      players.map((player: { id: number }) => player.id),
+      !!user,
+    );
   const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const { config: runtimeConfig } = useRuntimeConfig();
@@ -999,8 +1026,8 @@ const Users = ({
               const player = new UserModel(nplayer, true, false);
               if (player.id === user?.id) player.is_player = true;
               const allianceName =
-                Array.isArray(nplayer.alliances) && nplayer.alliances[0]?.name
-                  ? nplayer.alliances[0]?.name
+                Array.isArray(nplayer.alliances) && nplayer.alliances.length > 0
+                  ? nplayer.alliances.map((a) => a.name).join(', ')
                   : '-';
               const actionTarget = {
                 id: player.id,
@@ -1078,6 +1105,12 @@ const Users = ({
                               {player.displayName}
                             </Link>
                           </Tooltip>
+                          {listLookup?.[player.id] && (
+                            <AllianceListBadge
+                              alliances={listLookup[player.id]}
+                              variant="compact"
+                            />
+                          )}
                           {player.is_player && (
                             <Badge
                               color={
@@ -1157,6 +1190,7 @@ const Users = ({
                     <PlayerActions
                       target={actionTarget}
                       onSelect={selectPlayerAction}
+                      recruitStatus={recruitStatus}
                     />
                   </Table.Td>
                 </Table.Tr>
@@ -1170,6 +1204,7 @@ const Users = ({
           key={`${selectedAction.action}-${selectedAction.target.id}`}
           selection={selectedAction}
           onClose={closePlayerAction}
+          onRecruited={() => refreshRecruitStatus()}
           onSocialChange={(target, action) => {
             const update = action === 'friend' ? setFriendIds : setEnemyIds;
             update((current) => {
@@ -1192,6 +1227,7 @@ export const getServerSideProps = async (_context: any) => {
     'navigation',
     'battle',
     'messaging',
+    'allianceLists',
   ]);
   try {
     const activeEra = await prisma.era.findFirst({

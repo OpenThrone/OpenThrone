@@ -5,6 +5,11 @@ import type { Prisma, UnitType } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 import { AccountAnonymizationService } from '@/services/AccountAnonymization.service';
 import { runInactivitySweep } from '@/services/AccountInactivity.service';
+import {
+  AllianceLoanService,
+  divertIncomeToLoans,
+  settleLoanTreasuryCredits,
+} from '@/services/AllianceLoan.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { pruneLoginTelemetry } from '@/services/LoginTelemetry.service';
@@ -307,6 +312,10 @@ export class CronJobService {
         }
       }
 
+      // Move loan repayments diverted from this turn's income into treasuries
+      // under the alliance lock (best effort; daily cleanup sweeps leftovers).
+      await settleLoanTreasuryCredits();
+
       return {
         success: true,
         message: 'Turn updates processed successfully',
@@ -578,8 +587,17 @@ export class CronJobService {
             BigInt(Math.round(goldMultiplier * 10000))) /
           10000n;
         const room = 9223372036854775807n - BigInt(currentUser.gold);
-        const goldPerTurn =
+        const grossGoldPerTurn =
           room > 0n ? (eventIncome < room ? eventIncome : room) : 0n;
+        // Open alliance loans take their share of the income inside this
+        // transaction; the borrower row is already locked above.
+        const loanRepayment = await divertIncomeToLoans(
+          tx,
+          currentUser.id,
+          grossGoldPerTurn,
+          'economy',
+        );
+        const goldPerTurn = grossGoldPerTurn - loanRepayment;
         const updatedGold = goldPerTurn + BigInt(currentUser.gold);
 
         await tx.bank_history.create({
@@ -595,6 +613,9 @@ export class CronJobService {
               currentGold: currentUser.gold,
               newGold: updatedGold.toString(),
               increase: goldPerTurn,
+              ...(loanRepayment > 0n
+                ? { loanRepayment: loanRepayment.toString() }
+                : {}),
             },
           },
         });
@@ -672,6 +693,14 @@ export class CronJobService {
     );
 
     await Promise.all(cleanupPromises);
+
+    // Overdue alliance loans: seize from gold then bank, else mark DEFAULTED.
+    try {
+      await settleLoanTreasuryCredits();
+      await AllianceLoanService.processOverdueLoans();
+    } catch (error) {
+      logError('Error processing overdue alliance loans', { error });
+    }
 
     // Identity retention: purge blocks whose sanction end or deletion
     // cooldown has elapsed, then expired anti-abuse rows.

@@ -48,6 +48,7 @@ const ServerSettingsPage = () => {
   const [emailRateDraft, setEmailRateDraft] = useState(60);
   const [citizenBonusDraft, setCitizenBonusDraft] = useState(0);
   const [bonusWindowDraft, setBonusWindowDraft] = useState(24);
+  const [protectionDaysDraft, setProtectionDaysDraft] = useState(14);
   const [maintenanceDraft, setMaintenanceDraft] = useState({
     enabled: false,
     message: '',
@@ -73,6 +74,12 @@ const ServerSettingsPage = () => {
       );
       setBonusWindowDraft(
         typeof bonusWindow?.value === 'number' ? bonusWindow.value : 24,
+      );
+      const protectionDays = nextRows.find(
+        (row) => row.key === 'era.protectionDurationDays',
+      );
+      setProtectionDaysDraft(
+        typeof protectionDays?.value === 'number' ? protectionDays.value : 14,
       );
       const emailRate = nextRows.find(
         (row) => row.key === 'email.outbox.ratePerMinute',
@@ -269,6 +276,20 @@ const ServerSettingsPage = () => {
                                   setBonusWindowDraft(next);
                               }}
                               onBlur={() => save(key, bonusWindowDraft)}
+                            />
+                          ) : key === 'era.protectionDurationDays' ? (
+                            <NumberInput
+                              aria-label={t(`settings.labels.${key}`)}
+                              min={1}
+                              max={60}
+                              allowDecimal={false}
+                              value={protectionDaysDraft}
+                              disabled={savingKey === key}
+                              onChange={(next) => {
+                                if (typeof next === 'number')
+                                  setProtectionDaysDraft(next);
+                              }}
+                              onBlur={() => save(key, protectionDaysDraft)}
                             />
                           ) : key === 'MAINTENANCE_MODE' ? (
                             <Stack gap="xs">

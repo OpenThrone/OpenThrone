@@ -54,6 +54,14 @@ export const RUNTIME_SETTING_REGISTRY = {
     env: undefined,
     fallback: 24,
   },
+  'era.protectionDurationDays': {
+    type: 'NUMBER',
+    label: 'New-player protection duration (days)',
+    isPublic: false,
+    schema: z.number().int().min(1).max(60),
+    env: undefined,
+    fallback: 14,
+  },
   ENABLE_ATTACKING: {
     type: 'BOOLEAN',
     label: 'Attacking',

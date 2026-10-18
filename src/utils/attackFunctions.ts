@@ -191,6 +191,8 @@ interface BattleState {
   /** Fractional wall damage accrued this battle; fortHP is its rounded view. */
   fortDamageAccrued: number;
   totalTurns: number;
+  /** Turns the attacker committed to; loot coverage derives from it, unlike totalTurns which tracks the turn being played. */
+  committedTurns: number;
   isDefenderProtected: boolean;
   attackerOffenseRemaining: number;
   defenderDefenseRemaining: number;
@@ -310,6 +312,7 @@ export async function simulateBattle(
         ? options.defenderDailyGoldRemaining
         : 0n;
   state.totalTurns = committedTurns;
+  state.committedTurns = committedTurns;
   for (let turn = 1; turn <= committedTurns; turn++) {
     await executeBattleTurn(state, turn);
 
@@ -385,6 +388,7 @@ function initializeBattleState(
     assaultTurnsWon: 0,
     assaultTurnsLost: 0,
     totalTurns: 0,
+    committedTurns: 0,
     isDefenderProtected,
     initialFortHP: resolvedMaxFortHP,
     startFortHP: resolvedStartFortHP,
@@ -403,14 +407,13 @@ function initializeBattleState(
     defenderRangedDefPower: 0, // Will be calculated per turn for defender
     totalPillagedGold: BigInt(0),
     initialDefenderGold: BigInt(defender.gold ?? BigInt(0)),
-    maxPillageGold: bigintShare(
+    maxPillageGold: calculatePillageBudget(
       defender.gold ?? 0n,
-      calculateFortAdjustedPillageCapShare(
-        resolvedMaxFortHP > 0
-          ? clamp(resolvedStartFortHP / resolvedMaxFortHP, 0, 1)
-          : 0,
-        isDefenderProtected,
-      ),
+      resolvedMaxFortHP > 0
+        ? clamp(resolvedStartFortHP / resolvedMaxFortHP, 0, 1)
+        : 0,
+      isDefenderProtected,
+      defender.level ?? 1,
     ),
     defenderDailyGoldRemaining: null,
     random,
@@ -704,7 +707,7 @@ async function executeBattleTurn(state: BattleState, turn: number) {
     // Each won assault turn pillages the share of the cap its pair of turns
     // covers, so loot grows linearly with commitment: a 1-turn raid takes a
     // tenth of what a fully won 10-turn assault takes.
-    const coveredTurns = Math.min(2, state.totalTurns - turn + 1);
+    const coveredTurns = Math.min(2, state.committedTurns - turn + 1);
     const attempted = calculateLoot(
       state.attacker,
       state.defender,
@@ -719,12 +722,11 @@ async function executeBattleTurn(state: BattleState, turn: number) {
         coveredTurns,
       },
     );
-    const dynamicBudget = bigintShare(
+    const dynamicBudget = calculatePillageBudget(
       state.initialDefenderGold,
-      calculateFortAdjustedPillageCapShare(
-        fortHpPercent,
-        state.isDefenderProtected,
-      ),
+      fortHpPercent,
+      state.isDefenderProtected,
+      state.defender.level ?? 1,
     );
     state.maxPillageGold =
       dynamicBudget > state.maxPillageGold
@@ -921,12 +923,24 @@ function calculateDefenderLevelFactor(defenderLevel: number): number {
   if (defenderLevel >= 20) return 1; // Full loot potential at higher levels
 
   if (defenderLevel < 10) {
-    // Scale between 40% at level 1 and 70% at level 9
-    return 0.4 + (defenderLevel - 1) * ((0.7 - 0.4) / 8);
+    // Protected levels pay a flat share of the exposed gold
+    return V5_COMBAT_CONSTANTS.PROTECTED_LEVEL_LOOT_FACTOR;
   }
 
   // Scale between 70% at level 10 and 100% at level 20
   return 0.7 + (defenderLevel - 10) * ((1 - 0.7) / 10);
+}
+
+/**
+ * Loot-cap multiplier on a protected defender's shielded gold. Tapers linearly
+ * with level: 0.1 at level 1 up to 1.0 at level 10 (0.1 + 0.9 * (level - 1) / 9).
+ */
+export function getProtectedLootMultiplier(level = 1): number {
+  const start = V5_COMBAT_CONSTANTS.PROTECTED_LOOT_MULTIPLIER;
+  const end = V5_COMBAT_CONSTANTS.PROTECTED_LOOT_MULTIPLIER_MAX;
+  const span = V5_COMBAT_CONSTANTS.PROTECTION_TAPER_END_LEVEL - 1;
+  const progress = clamp((Number(level) || 1) - 1, 0, span) / span;
+  return start + (end - start) * progress;
 }
 
 /**
@@ -937,13 +951,54 @@ function calculateDefenderLevelFactor(defenderLevel: number): number {
 export function calculateFortAdjustedPillageCapShare(
   fortHpPercent: number,
   isDefenderProtected = false,
+  defenderLevel = 1,
 ): number {
   const fortHp = clamp(fortHpPercent, 0, 1);
   const floorShare = V5_COMBAT_CONSTANTS.FORT_LOOT_CAP_FLOOR_SHARE;
   const share =
     BATTLE_CONSTANTS.MAX_PILLAGE_SHARE_PER_ATTACK *
     (floorShare + (1 - floorShare) * (1 - fortHp));
-  return isDefenderProtected ? share * 0.1 : share;
+  return isDefenderProtected
+    ? share * getProtectedLootMultiplier(defenderLevel)
+    : share;
+}
+
+/**
+ * Splits a treasury into the part a protected defender's shield covers and the
+ * part raiders see at the normal rate. Unprotected defenders have no shield.
+ */
+function splitProtectedGold(
+  gold: bigint,
+  isDefenderProtected: boolean,
+): { shielded: bigint; exposed: bigint } {
+  if (gold <= 0n) return { shielded: 0n, exposed: 0n };
+  if (!isDefenderProtected) return { shielded: 0n, exposed: gold };
+  const allowance = BigInt(V5_COMBAT_CONSTANTS.PROTECTED_GOLD_ALLOWANCE);
+  const shielded = gold < allowance ? gold : allowance;
+  return { shielded, exposed: gold - shielded };
+}
+
+/**
+ * Most gold one battle may take from a treasury: the fort-adjusted cap share,
+ * shrunk only on the protected allowance so a hoard cannot hide behind protection.
+ */
+export function calculatePillageBudget(
+  gold: bigint,
+  fortHpPercent: number,
+  isDefenderProtected = false,
+  defenderLevel = 1,
+): bigint {
+  const { shielded, exposed } = splitProtectedGold(gold, isDefenderProtected);
+  return (
+    bigintShare(
+      shielded,
+      calculateFortAdjustedPillageCapShare(fortHpPercent, true, defenderLevel),
+    ) +
+    bigintShare(
+      exposed,
+      calculateFortAdjustedPillageCapShare(fortHpPercent, false),
+    )
+  );
 }
 
 /** Calculates loot used by combat, economy, or presentation logic. */
@@ -999,27 +1054,34 @@ export function calculateLoot(
   const defenderLevelFactor = calculateDefenderLevelFactor(defender.level ?? 0);
   // Linear in commitment: the fort-adjusted cap is earned over MAX_TURNS, and
   // a won assault turn takes the slice its covered turns represent.
-  const capShare = calculateFortAdjustedPillageCapShare(
-    fortHpPercent,
-    raid.isDefenderProtected,
-  );
   const coveredTurns = clamp(
     raid.coveredTurns ?? safeTurns,
     1,
     BATTLE_CONSTANTS.MAX_TURNS,
   );
-  const lootFactor =
-    capShare *
+  const sharedFactor =
     (coveredTurns / BATTLE_CONSTANTS.MAX_TURNS) *
     calculateGoldLevelModifier(levelDifference) *
     underDefended.rewardMultiplier *
     getRaceIdentity(attacker.race).goldPillageMultiplier *
-    // Protection already shrinks the cap tenfold; do not stack the level ramp.
-    (raid.isDefenderProtected ? 1 : defenderLevelFactor) *
     uniformFactor;
-  const defenderGold = defender.gold ?? 0n;
-  const loot = bigintShare(defenderGold, lootFactor);
-  const cap = bigintShare(defenderGold, capShare);
+  const { shielded, exposed } = splitProtectedGold(
+    defender.gold ?? 0n,
+    raid.isDefenderProtected === true,
+  );
+  const shieldedCap = calculateFortAdjustedPillageCapShare(
+    fortHpPercent,
+    true,
+    defender.level ?? 1,
+  );
+  const exposedCap = calculateFortAdjustedPillageCapShare(fortHpPercent, false);
+  // The level ramp only softens unprotected gold; the shield already shrinks
+  // its own slice (tapering from tenfold at level 1), so the ramp does not stack on it.
+  const loot =
+    bigintShare(shielded, shieldedCap * sharedFactor) +
+    bigintShare(exposed, exposedCap * sharedFactor * defenderLevelFactor);
+  const cap =
+    bigintShare(shielded, shieldedCap) + bigintShare(exposed, exposedCap);
   return loot > cap ? cap : loot;
 }
 

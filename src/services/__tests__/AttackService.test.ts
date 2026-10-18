@@ -115,6 +115,14 @@ beforeEach(() => {
     ]),
   };
   invalidateRuntimeConfigCache();
+  // A just-started era keeps level-protected fixtures inside the time window.
+  mockPrisma.era.findFirst = vi.fn().mockResolvedValue({
+    id: 1,
+    name: 'Era 1',
+    startDate: new Date(),
+    endDate: null,
+    startSettings: null,
+  });
   logs = [];
   transfers = [];
   nextUnitId = 1;
@@ -381,7 +389,55 @@ describe('live combat persistence and replay', () => {
     expect(await BattleService.retestBattle(log.id)).toEqual(retest);
   });
 
-  test('daily gold and casualty exhaustion deny extraction without altering balances', async () => {
+  test('a protected attacker must confirm, then forfeits protection by hitting an unprotected defender', async () => {
+    // Small army: the shared rule also ends protection at the population threshold.
+    players[1].UserUnit = player(1, [
+      { type: 'OFFENSE', quantity: 200 },
+    ]).UserUnit;
+    players[1].experience = 0;
+    players[2].experience = 0;
+    players[2].protection_forfeited_era_id = 1;
+    mockPrisma.users.update.mockClear();
+    const forfeitWrites = () =>
+      mockPrisma.users.update.mock.calls.filter(
+        ([args]: [{ where: { id: number }; data: Record<string, unknown> }]) =>
+          args.where.id === 1 && 'protection_forfeited_era_id' in args.data,
+      );
+
+    const blocked = await AttackService.executeAttack(1, 2, 1);
+    expect(blocked.status).toBe('failed');
+    expect(blocked.code).toBe('PROTECTION_FORFEIT_CONFIRMATION_REQUIRED');
+    expect(logs).toHaveLength(0);
+    expect(forfeitWrites()).toHaveLength(0);
+
+    const confirmed = await AttackService.executeAttack(1, 2, 1, {
+      confirmProtectionForfeit: true,
+    });
+    expect(confirmed.status).toBe('success');
+    expect(forfeitWrites()).toHaveLength(1);
+    expect(forfeitWrites()[0][0].data.protection_forfeited_era_id).toBe(1);
+  });
+
+  test('a protected attacker hitting a protected defender keeps protection', async () => {
+    players[1].experience = 0;
+    players[1].UserUnit = player(1, [
+      { type: 'OFFENSE', quantity: 200 },
+    ]).UserUnit;
+    players[2].experience = 0;
+    mockPrisma.users.update.mockClear();
+    const result = await AttackService.executeAttack(1, 2, 1);
+    expect(result.status).toBe('success');
+    expect(
+      mockPrisma.users.update.mock.calls.some(
+        ([args]: [{ data: Record<string, unknown> }]) =>
+          'protection_forfeited_era_id' in args.data,
+      ),
+    ).toBe(false);
+  });
+
+  test('daily gold and casualty exhaustion deny extraction from a protected defender without altering balances', async () => {
+    players[1].experience = 0;
+    players[2].experience = 0;
     mockPrisma.attack_log.aggregate.mockResolvedValue({
       _sum: { defender_losses_total: 100000, pillaged_gold: 1000000n },
     });
@@ -394,6 +450,19 @@ describe('live combat persistence and replay', () => {
     expect(players[1].gold).toBe(before[1].gold);
     expect(players[2].gold).toBe(before[2].gold);
     expect(transfers).toEqual([]);
+  });
+
+  test('an unprotected defender has no daily gold ceiling, only the casualty budget', async () => {
+    mockPrisma.attack_log.aggregate.mockResolvedValue({
+      _sum: { defender_losses_total: 100000, pillaged_gold: 1000000n },
+    });
+    const before = structuredClone(players);
+    expect((await AttackService.executeAttack(1, 2, 10)).status).toBe(
+      'success',
+    );
+    expect(logs[0].pillaged_gold).toBeGreaterThan(0n);
+    expect(logs[0].defender_losses_total).toBe(0);
+    expect(players[2].gold).toBe(before[2].gold - logs[0].pillaged_gold);
   });
 
   for (const mission of ['INTEL', 'ASSASSINATE', 'INFILTRATE'] as const) {

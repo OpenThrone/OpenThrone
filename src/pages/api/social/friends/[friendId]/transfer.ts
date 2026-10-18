@@ -2,6 +2,10 @@ import md5 from 'md5';
 import type { NextApiResponse } from 'next';
 import { z } from 'zod';
 
+import {
+  FRIEND_TRANSFER_NOTE_MAX_LENGTH,
+  parseFriendTransferAmount,
+} from '@/constants/FriendTransfer';
 import prisma from '@/lib/prisma';
 import { getSocketIO } from '@/lib/socket';
 import { withApiGuard } from '@/middleware/apiGuard';
@@ -15,9 +19,25 @@ const TransferQuerySchema = z.object({
   friendId: z.coerce.number().int().positive(),
 });
 
+// Parsed in the handler so a malformed amount or note answers 400, not a thrown transform.
 const TransferSchema = z.object({
-  amount: z.string().transform((val) => BigInt(val)),
-  notes: z.string().optional(),
+  amount: z.unknown().transform((val, ctx) => {
+    const parsed = parseFriendTransferAmount(val);
+    if (parsed === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Amount must be a positive whole number',
+      });
+      return z.NEVER;
+    }
+    return parsed;
+  }),
+  notes: z
+    .string()
+    .max(FRIEND_TRANSFER_NOTE_MAX_LENGTH, {
+      message: `Notes must be ${FRIEND_TRANSFER_NOTE_MAX_LENGTH} characters or fewer`,
+    })
+    .optional(),
 });
 
 const guardedHandler = withApiGuard({
@@ -25,7 +45,6 @@ const guardedHandler = withApiGuard({
   authMode: 'required',
   rateLimitProfile: 'bank',
   querySchema: TransferQuerySchema,
-  bodySchema: TransferSchema,
 });
 
 const transferHandler = async (
@@ -33,11 +52,16 @@ const transferHandler = async (
   res: NextApiResponse,
   context: {
     query: z.infer<typeof TransferQuerySchema>;
-    body: z.infer<typeof TransferSchema>;
   },
 ) => {
   const friendIdNum = context.query.friendId;
-  const { amount, notes } = context.body;
+  const parsedBody = TransferSchema.safeParse(req.body ?? {});
+  if (!parsedBody.success) {
+    return res.status(400).json({
+      error: parsedBody.error.issues[0]?.message ?? 'Invalid request body',
+    });
+  }
+  const { amount, notes } = parsedBody.data;
   const fromUserId = Number(req.session?.user?.id);
   const canProceed = await enforceIdempotency(req, res, {
     scope: `social-transfer:${friendIdNum}:${amount.toString()}`,

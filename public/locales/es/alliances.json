@@ -62,5 +62,78 @@
     "leaveConfirm": "¿Estás seguro de que quieres abandonar esta alianza?",
     "kickConfirm": "¿Estás seguro de que quieres expulsar a este miembro?",
     "noMembers": "No se encontraron miembros"
+  },
+  "mine": {
+    "title": "Mis alianzas",
+    "count_one": "Perteneces a {{count}} de {{max}} alianzas",
+    "count_other": "Perteneces a {{count}} de {{max}} alianzas",
+    "browse": "Explorar alianzas",
+    "create": "Crear alianza",
+    "createLeading": "Ya lideras una alianza. Cede el liderazgo o disuélvela antes de crear otra.",
+    "createFull": "Ya estás en {{max}} alianzas. Abandona una para crear otra.",
+    "empty": "Aún no eres miembro de ninguna alianza.",
+    "leader": "Líder",
+    "role": "Rango: {{role}}",
+    "members_one": "{{count}} miembro",
+    "members_other": "{{count}} miembros",
+    "open": "Abrir alianza"
+  },
+  "profile": {
+    "title": "Alianzas",
+    "leaderOf": "Líder de {{name}}"
+  },
+  "members": {
+    "rosterHidden": "Esta alianza solo muestra su lista de miembros a sus miembros."
+  },
+  "manage": {
+    "memberActions": "Acciones de miembro",
+    "changeRank": "Cambiar rango",
+    "changeRankFor": "Cambiar el rango de {{name}}",
+    "rankChanged": "Rango actualizado",
+    "makeLeader": "Nombrar líder",
+    "makeLeaderConfirm": "¿Ceder el liderazgo a {{name}}? Conservarás tu rango actual y perderás todos los derechos de líder.",
+    "leaderChanged": "Liderazgo transferido",
+    "kickConfirm": "¿Expulsar a {{name}} de la alianza?",
+    "cancel": "Cancelar",
+    "typeToConfirm": "Escribe \"{{text}}\" para confirmar",
+    "disbandTitle": "Disolver alianza",
+    "disbandHelp": "Disolver elimina a todos los miembros, rangos y salas de chat. El tesoro, si lo hay, se reparte a partes iguales entre los miembros (el resto es para usted), los préstamos abiertos se cancelan y no puede haber ninguna guerra en curso. Para dimitir, nombre líder a otro miembro desde la pestaña Miembros.",
+    "disbandConfirm": "Esto no se puede deshacer. Todos los miembros serán expulsados de {{name}}, el tesoro se repartirá a partes iguales entre ellos y los préstamos abiertos se cancelarán.",
+    "disbanded": "La alianza se ha disuelto",
+    "leaveHelp": "Perderás el acceso al tesoro, la sala de guerra y el chat de la alianza."
+  },
+  "ranks": {
+    "title": "Rangos",
+    "help": "Los rangos superiores aparecen primero. Solo puedes editar rangos inferiores al tuyo y otorgar permisos que tengas.",
+    "order": "Orden",
+    "name": "Rango",
+    "newRank": "Nuevo rango",
+    "add": "Añadir rango",
+    "delete": "Eliminar rango",
+    "deleteConfirm": "¿Eliminar el rango \"{{name}}\"?",
+    "inUse": "Primero mueve a sus miembros a otro rango",
+    "moveUp": "Subir rango",
+    "moveDown": "Bajar rango",
+    "saved": "Rangos guardados",
+    "added": "Rango añadido",
+    "deleted": "Rango eliminado",
+    "perm": {
+      "invite_member": "Aceptar miembros",
+      "grant_access": "Asignar rangos",
+      "edit_ranks": "Editar rangos",
+      "kick_member": "Expulsar miembros",
+      "declare_war": "Declarar guerra",
+      "manage_bank": "Gestionar banco",
+      "request_gold": "Solicitar oro",
+      "send_messages": "Enviar mensajes",
+      "post_announcements": "Publicar anuncios",
+      "edit_profile": "Editar perfil",
+      "manage_allies": "Gestionar aliados",
+      "manage_enemies": "Gestionar enemigos",
+      "edit_list": "Editar lista",
+      "view_list": "Ver lista",
+      "share_reports": "Compartir informes",
+      "call_targets": "Designar objetivos"
+    }
   }
 }

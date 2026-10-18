@@ -56,6 +56,31 @@ const getLevelFromXP = (xp: number): number => {
   return levelXPArray[levelXPArray.length - 1].level; // Return max level if XP exceeds all defined levels
 };
 
+// Matches BattleUser.isProtected(): levels 1-9 are protected.
+const PROTECTION_MAX_LEVEL = 9;
+
+export type LevelChange = {
+  from: number;
+  to: number;
+  endedProtection: boolean;
+};
+
+/** Level before and after a battle's XP is applied, or null when the level held. */
+const getLevelChange = (
+  startXp: number | undefined,
+  earnedXp: number | undefined,
+): LevelChange | null => {
+  if (typeof startXp !== 'number') return null;
+  const from = getLevelFromXP(startXp);
+  const to = getLevelFromXP(startXp + (earnedXp ?? 0));
+  if (to <= from) return null;
+  return {
+    from,
+    to,
+    endedProtection: from <= PROTECTION_MAX_LEVEL && to > PROTECTION_MAX_LEVEL,
+  };
+};
+
 /**
  * Returns the path for a requested asset, using AWS S3 if configured.
  * @param {string} name The name of the asset
@@ -301,6 +326,7 @@ export {
   generateRandomString,
   getAssetPath,
   getAvatarSrc,
+  getLevelChange,
   getLevelFromXP,
   serializeDates,
 };

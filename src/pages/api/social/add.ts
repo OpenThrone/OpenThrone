@@ -48,4 +48,4 @@ const addSocialRelation = async (
   }
 };
 
-export default withAuth(addSocialRelation);
+export default withAuth(addSocialRelation, { rateLimitProfile: 'game_write' });

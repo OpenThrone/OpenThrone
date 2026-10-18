@@ -197,7 +197,14 @@
     "goldRequestPending_other": "{{count}} solicitudes de oro pendientes",
     "xpToNextLevel": "Estás a {{xp}} XP del siguiente nivel",
     "searchPlaceholder": "Escribe para buscar...",
-    "searchUsers": "Buscar usuarios"
+    "searchUsers": "Buscar usuarios",
+    "protection": {
+      "label": "Protección para nuevos jugadores",
+      "daysLeft_one": "Protegido: queda {{count}} día",
+      "daysLeft_other": "Protegido: quedan {{count}} días",
+      "orUntil": "o hasta el nivel {{level}} / {{population}} de población",
+      "untilOnly": "Protegido hasta el nivel {{level}} / {{population}} de población"
+    }
   },
   "footer": {
     "latestCommit": "Último commit:",
@@ -235,7 +242,14 @@
     "checkingEligibility": "Comprobando requisitos de reclutamiento",
     "forYourKingdom": "Completa la verificación para reclutar 1 ciudadano para tu reino.",
     "signInToRecruit": "Inicia sesión para reclutar 1 ciudadano para tu reino.",
-    "linkFrom": "Enlace de reclutamiento de {{name}}"
+    "linkFrom": "Enlace de reclutamiento de {{name}}",
+    "pairProgress": "Hoy has reclutado con {{name}} {{used}} de {{limit}} veces.",
+    "recruitsLeft_one": "Te queda {{count}} reclutamiento hoy. Se restablece a las {{time}}.",
+    "recruitsLeft_other": "Te quedan {{count}} reclutamientos hoy. Se restablece a las {{time}}.",
+    "again": "Reclutar de nuevo",
+    "blockedPair": "Hoy has reclutado con {{name}} {{used}} de {{limit}} veces. Se restablece a las {{time}}.",
+    "blockedRecruiter": "Has usado los {{limit}} reclutamientos diarios. Se restablece a las {{time}}.",
+    "blockedTarget": "{{name}} alcanzó su límite diario de {{limit}} reclutamientos. Se restablece a las {{time}}."
   },
   "ariaLabels": {
     "closeAlert": "Cerrar alerta",

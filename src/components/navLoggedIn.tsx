@@ -31,7 +31,7 @@ const parentLinks: NavItem[] = [
     href: '/structures/bank/deposit',
     labelKey: 'main.structures',
   },
-  { key: 'alliances', href: '/alliances/browse', labelKey: 'main.alliances' },
+  { key: 'alliances', href: '/alliances', labelKey: 'main.alliances' },
   { key: 'community', href: '/community/news', labelKey: 'main.community' },
   { key: 'about', href: '/about', labelKey: 'main.about' },
 ];
@@ -96,6 +96,7 @@ const subMenus: Record<string, NavItem[]> = {
     },
   ],
   alliances: [
+    { key: 'mine', href: '/alliances', labelKey: 'alliances.mine' },
     { key: 'browse', href: '/alliances/browse', labelKey: 'alliances.browse' },
     { key: 'create', href: '/alliances/create', labelKey: 'alliances.create' },
   ],
@@ -133,6 +134,7 @@ const subMenuIcons: Record<string, string> = {
   'community.discord': 'speech-bubble',
   'community.stats': 'abacus',
   'community.reportIssues': 'cracked-shield',
+  'alliances.mine': 'shield',
   'alliances.browse': 'double-team',
   'alliances.create': 'crown',
 };

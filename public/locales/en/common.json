@@ -197,7 +197,14 @@
     "goldRequestPending_other": "{{count}} gold requests pending",
     "xpToNextLevel": "You are {{xp}} XP away from the next level",
     "searchPlaceholder": "Type to search...",
-    "searchUsers": "Search users"
+    "searchUsers": "Search users",
+    "protection": {
+      "label": "New-player protection",
+      "daysLeft_one": "Protected: {{count}} day left",
+      "daysLeft_other": "Protected: {{count}} days left",
+      "orUntil": "or until level {{level}} / {{population}} population",
+      "untilOnly": "Protected until level {{level}} / {{population}} population"
+    }
   },
   "footer": {
     "latestCommit": "Latest Commit:",
@@ -235,7 +242,14 @@
     "checkingEligibility": "Checking recruitment eligibility",
     "forYourKingdom": "Complete verification to recruit 1 citizen into your kingdom.",
     "signInToRecruit": "Sign in to recruit 1 citizen into your kingdom.",
-    "linkFrom": "Recruitment link from {{name}}"
+    "linkFrom": "Recruitment link from {{name}}",
+    "pairProgress": "Recruited with {{name}} {{used}} of {{limit}} times today.",
+    "recruitsLeft_one": "{{count}} recruit left today. Resets at {{time}}.",
+    "recruitsLeft_other": "{{count}} recruits left today. Resets at {{time}}.",
+    "again": "Recruit again",
+    "blockedPair": "You have recruited with {{name}} {{used}} of {{limit}} times today. Resets at {{time}}.",
+    "blockedRecruiter": "You have used all {{limit}} of your daily recruits. Resets at {{time}}.",
+    "blockedTarget": "{{name}} has reached their daily limit of {{limit}} recruits. Resets at {{time}}."
   },
   "ariaLabels": {
     "closeAlert": "Close alert",

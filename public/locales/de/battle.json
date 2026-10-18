@@ -19,7 +19,11 @@
     "invalidTurns": "Gib mindestens 1 Runde ein.",
     "untrainTitle": "Abtraining bestätigen",
     "untrainMessage": "Beim Abtraining werden nur 75% des ausgegebenen Goldes erstattet – du verlierst {{gold}} Gold. Dies kann nicht rückgängig gemacht werden.",
-    "confirm": "Bestätigen"
+    "confirm": "Bestätigen",
+    "protectionForfeitTitle": "Ihr Schutz endet",
+    "protectionForfeitWarning": "Dieser Spieler ist nicht geschützt. Wenn Sie ihn angreifen, endet Ihr Neulingsschutz für den Rest der Ära.",
+    "protectionForfeitCancel": "Abbrechen",
+    "protectionForfeitConfirm": "Angreifen und Schutz verlieren"
   },
   "users": {
     "title": "Benutzer angreifen",
@@ -215,7 +219,9 @@
     "attackerVictory": "Sieg des Angreifers",
     "defenderVictory": "Sieg des Verteidigers",
     "winner": "{{player}} hat den Kampf gewonnen.",
-    "yourCounterLine": "Dein Gegenangriff tötete {{dead}} Angreifer."
+    "yourCounterLine": "Dein Gegenangriff tötete {{dead}} Angreifer.",
+    "levelUpLine": "{{player}} hat Stufe {{level}} erreicht!",
+    "protectionEndedLine": "Der Anfängerschutz von {{player}} ist beendet."
   },
   "defenseAdvisory": {
     "title": "Verteidigung des Königreichs durchbrochen",

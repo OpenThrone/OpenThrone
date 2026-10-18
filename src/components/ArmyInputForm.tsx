@@ -40,6 +40,7 @@ import type {
   UnitType,
   User,
 } from "@/types/typings";
+import { getBattleUpgradeStructure } from "@/utils/battleUpgradeStructure";
 
 type SimulatorUser = User & {
   UserUnit?: PlayerUnit[];
@@ -124,7 +125,7 @@ const isRaceAllowed = (itemRace: PlayerRace, playerRace: PlayerRace) =>
 
 const getRequiredStructureType = (
   type: BattleUpgradeType,
-): StructureUpgrade["type"] => (type === "DEFENSE" ? "OFFENSE" : type);
+): StructureUpgrade["type"] => getBattleUpgradeStructure(type);
 
 const canUseUnit = (
   unit: (typeof UnitTypes)[number],

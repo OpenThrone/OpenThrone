@@ -91,4 +91,4 @@ const handler = async (
   }
 };
 
-export default withAuth(handler);
+export default withAuth(handler, { rateLimitProfile: 'game_write' });

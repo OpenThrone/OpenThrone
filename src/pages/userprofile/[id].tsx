@@ -1,17 +1,22 @@
 import {
+  Badge,
   Button,
+  Group,
   Loader,
   SimpleGrid,
   Text,
+  Tooltip,
   UnstyledButton,
 } from '@mantine/core';
 import type { InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
 import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { AllianceListBadge } from '@/components/alliance/AllianceListBadge';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import FriendCard from '@/components/friendCard';
 import { GameCard } from '@/components/game/GameCard';
@@ -28,16 +33,21 @@ import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import SpyMissionsModal from '@/components/spyMissionsModal';
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
+import { useRecruitmentStatus } from '@/hooks/useRecruitmentStatus';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { alertService } from '@/services/Alert.service';
+import { AllianceService } from '@/services/Alliance.service';
 import {
   hasParticipatedInEra,
   tookPartInArchivedEra,
 } from '@/utils/eraParticipation';
 import { logDebug, logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
+import { recruitBlockMessage } from '@/utils/recruitmentStatus';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 import { serializeDates } from '@/utils/utilities';
 
 const ERA_RECORD_FIELDS = [
@@ -55,15 +65,27 @@ const actionClassNames = {
 
 const Index = ({
   users,
+  visibleAlliances,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { user, forceUpdate } = useUser();
   const { config, error: configError } = useRuntimeConfig();
   const { t } = useTranslation('common');
+  const { t: tAlliances } = useTranslation('alliances');
   const hideSidebar = !user;
   const userStatus = users.status;
 
   const profile = useMemo(() => new UserModel(users, true, false), [users]);
   const isOwnProfile = user?.id === profile.id;
+  const { status: recruitStatus } = useRecruitmentStatus(
+    profile.id ? [profile.id] : [],
+    !!user && !isOwnProfile,
+  );
+  const recruitBlockReason = recruitBlockMessage(
+    t,
+    recruitStatus,
+    profile.id,
+    profile.displayName,
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [lastActive, setLastActive] = useState('Never logged in');
@@ -511,6 +533,34 @@ const Index = ({
       />
 
       <div className={profileClasses.sections}>
+        {visibleAlliances.length > 0 && (
+          <GameCard
+            title={tAlliances('profile.title')}
+            icon={<RpgAwesomeIcon icon="double-team" />}
+          >
+            <Group gap="xs">
+              {visibleAlliances.map((alliance) => (
+                <Badge
+                  key={alliance.id}
+                  component={Link}
+                  href={`/alliances/${alliance.id}`}
+                  variant={alliance.isLeader ? 'filled' : 'light'}
+                  color={alliance.isLeader ? 'yellow' : undefined}
+                  size="lg"
+                  title={
+                    alliance.isLeader
+                      ? tAlliances('profile.leaderOf', { name: alliance.name })
+                      : undefined
+                  }
+                  style={{ cursor: 'pointer' }}
+                >
+                  {alliance.name}
+                </Badge>
+              ))}
+            </Group>
+          </GameCard>
+        )}
+
         <GameCard
           title={t('profileSummary.kingdom', {
             defaultValue: 'Kingdom Statistics',
@@ -582,6 +632,9 @@ const Index = ({
               >
                 Attack this Player
               </Button>
+              {!isOwnProfile && user?.id && (
+                <AllianceListBadge targetUserId={profile.id} />
+              )}
               {attackReason && (
                 <Text
                   id="profile-attack-reason"
@@ -624,14 +677,31 @@ const Index = ({
                 toggleModal={toggleSpyModal}
                 defenderID={profile?.id}
               />
-              <Button
-                component={Link}
-                href={`/recruit/${profile?.recruitingLink}`}
-                classNames={actionClassNames}
-                leftSection={<RpgAwesomeIcon icon="double-team" />}
-              >
-                Recruit this Player
-              </Button>
+              {recruitBlockReason ? (
+                <Tooltip
+                  label={recruitBlockReason}
+                  events={{ hover: true, focus: true, touch: true }}
+                >
+                  <Button
+                    classNames={actionClassNames}
+                    leftSection={<RpgAwesomeIcon icon="double-team" />}
+                    data-disabled
+                    aria-disabled
+                    onClick={(event) => event.preventDefault()}
+                  >
+                    Recruit this Player
+                  </Button>
+                </Tooltip>
+              ) : (
+                <Button
+                  component={Link}
+                  href={`/recruit/${profile?.recruitingLink}`}
+                  classNames={actionClassNames}
+                  leftSection={<RpgAwesomeIcon icon="double-team" />}
+                >
+                  Recruit this Player
+                </Button>
+              )}
               {socialEnabled && (
                 <>
                   {friendStatus === 'pending_incoming' ? (
@@ -976,7 +1046,7 @@ const Index = ({
   );
 };
 
-export const getServerSideProps = async ({ query }) => {
+export const getServerSideProps = async ({ query, locale, req, res }) => {
   let recruitLink = '';
   let id: number | null = null;
 
@@ -1085,7 +1155,28 @@ export const getServerSideProps = async ({ query }) => {
     ),
   };
 
-  return { props: { users: serializeDates(userData) } };
+  const translations = await serverSideTranslations(locale ?? 'en', [
+    'common',
+    'navigation',
+    'allianceLists',
+    'alliances',
+  ]);
+
+  // Only alliances whose roster is PUBLIC, or that the viewer belongs to.
+  const session = await getServerSession(req, res, authOptions);
+  const sessionUserId = Number(session?.user?.id);
+  const visibleAlliances = await AllianceService.getVisibleAlliancesForPlayer(
+    user.id,
+    Number.isSafeInteger(sessionUserId) ? sessionUserId : null,
+  );
+
+  return {
+    props: {
+      ...translations,
+      users: serializeDates(userData),
+      visibleAlliances,
+    },
+  };
 };
 
 export default Index;

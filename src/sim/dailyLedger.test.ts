@@ -71,6 +71,20 @@ describe('defender daily ledger', () => {
     expect(battleDailyBudget(defender).defenderDailyGoldRemaining).toBe(3_000);
   });
 
+  it('leaves unprotected treasuries without a daily gold ceiling', () => {
+    const defender = makeDefender({ gold: 10_000, level: 20 });
+    expect(battleDailyBudget(defender).defenderDailyGoldRemaining).toBe(10_000);
+
+    defender.gold = 4_000;
+    recordBattleOnLedger(defender, {
+      defenderCasualties: {},
+      loot: 6_000,
+      winner: 'attacker',
+    });
+    // Everything still on hand stays raidable, however much was taken today.
+    expect(battleDailyBudget(defender).defenderDailyGoldRemaining).toBe(4_000);
+  });
+
   it('shares assassination kills with the battle budget and the per-type share', () => {
     const defender = makeDefender();
     const before = assassinationDailyCaps(defender, 'OFFENSE' as never);

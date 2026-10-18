@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { getUserById } from '@/services/AttackDataService';
 import { lockRecruitmentRecipient } from '@/services/recruitmentGuards';
+import type { RecruitmentStatus } from '@/utils/recruitmentStatus';
 import { getOTStartDate } from '@/utils/timefunctions';
 
 const CreateRecruitmentRecordSchema = z.object({
@@ -211,6 +212,69 @@ export const getRecruitmentBlock = async ({
   if (targetTotal >= TARGET_DAILY_CAP) return 'TARGET_DAILY_CAP_REACHED';
   if (pairTotal >= RECRUIT_PAIR_DAILY_LIMIT) return 'PAIR_LIMIT_REACHED';
   return null;
+};
+
+/**
+ * Read-only daily allowance for the signed-in recruiter, so the UI can show how
+ * many recruits are left and disable buttons that would be refused. Uses the
+ * same window and counts as getRecruitmentBlock.
+ */
+export const getRecruitmentStatus = async ({
+  db,
+  recruiterId,
+  targetIds,
+}: {
+  db?: PrismaClientOrTx;
+  recruiterId: number;
+  targetIds: number[];
+}): Promise<RecruitmentStatus> => {
+  const client = resolveDb(db);
+  const windowStart = await getRecruitmentWindowStart(client);
+  const timestamp = { gte: windowStart };
+  const [recruiterUsed, pairRows, targetRows] = await Promise.all([
+    client.recruit_history.count({
+      where: { to_user: recruiterId, from_user: { not: 0 }, timestamp },
+    }),
+    targetIds.length
+      ? client.recruit_history.groupBy({
+          by: ['from_user'],
+          where: {
+            from_user: { in: targetIds },
+            to_user: recruiterId,
+            timestamp,
+          },
+          _count: { _all: true },
+        })
+      : [],
+    targetIds.length
+      ? client.recruit_history.groupBy({
+          by: ['from_user'],
+          where: { from_user: { in: targetIds }, timestamp },
+          _count: { _all: true },
+        })
+      : [],
+  ]);
+  const toCounts = (
+    rows: { from_user: number | null; _count: { _all: number } }[],
+  ) => new Map(rows.map((row) => [row.from_user, row._count._all]));
+  const pairUsed = toCounts(pairRows);
+  const targetUsed = toCounts(targetRows);
+  return {
+    pairLimit: RECRUIT_PAIR_DAILY_LIMIT,
+    recruiterCap: RECRUITER_DAILY_CAP,
+    targetCap: TARGET_DAILY_CAP,
+    recruiterUsed,
+    resetsAt: getOTStartDate(1).toISOString(),
+    targets: Object.fromEntries(
+      targetIds.map((id) => [
+        String(id),
+        {
+          pairUsed: pairUsed.get(id) ?? 0,
+          targetUsed: targetUsed.get(id) ?? 0,
+        },
+      ]),
+    ),
+  };
 };
 
 const ensureRecruitmentLimit = async ({

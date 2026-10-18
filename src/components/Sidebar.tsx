@@ -26,6 +26,7 @@ import {
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
 
+import { ProtectionMeter } from '@/components/sidebar/ProtectionMeter';
 import SidebarParchment from '@/components/sidebar/SidebarParchment';
 import { SidebarTimeInfo, StatRow } from '@/components/sidebar/SidebarShared';
 import { useUser } from '@/context/users';
@@ -245,6 +246,7 @@ const Sidebar: React.FC = () => {
                     value={<span id="turns">{sidebar.turns}</span>}
                     icon={<RpgAwesomeIcon icon="clockwork" fw />}
                   />
+                  <ProtectionMeter user={user} />
                   <Divider my="md" c="gray" variant="dashed" />
                   {!userLoading && (
                     <SidebarTimeInfo user={user} userLoading={userLoading} />
@@ -277,7 +279,12 @@ const Sidebar: React.FC = () => {
                   />
                 </center>
                 <center>
-                  <Button type="submit" variant="outline" size="sm" className={classes.searchSubmit}>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    size="sm"
+                    className={classes.searchSubmit}
+                  >
                     {t('sidebar.searchUsers')}
                   </Button>
                 </center>
@@ -448,6 +455,7 @@ const Sidebar: React.FC = () => {
                   value={<span id="turns">{sidebar.turns}</span>}
                   icon={<RpgAwesomeIcon icon="clockwork" fw />}
                 />
+                <ProtectionMeter user={user} />
                 <Divider my="md" c="gray" variant="dashed" />
                 {!userLoading && (
                   <SidebarTimeInfo user={user} userLoading={userLoading} />
@@ -480,7 +488,12 @@ const Sidebar: React.FC = () => {
                 />
               </center>
               <center>
-                <Button type="submit" variant="outline" size="sm" className={classes.searchSubmit}>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  className={classes.searchSubmit}
+                >
                   {t('sidebar.searchUsers')}
                 </Button>
               </center>

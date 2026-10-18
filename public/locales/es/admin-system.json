@@ -40,7 +40,8 @@
       "account.inactivity.remindersEnabled": "Recordatorios de inactividad",
       "account.inactivity.autoAnonymizeEnabled": "Anonimización automática por inactividad",
       "era.dailyCitizenBonus": "Bono diario de ciudadanos (ciudadanos extra que recibe cada cuenta en la actualización diaria)",
-      "era.dailyCitizenBonusActivityHours": "Ventana de actividad del bono diario de ciudadanos en horas (solo las cuentas que depositaron, entrenaron, comerciaron en la armería, atacaron, espiaron o repararon dentro de esta ventana reciben el bono; 0 = todos)"
+      "era.dailyCitizenBonusActivityHours": "Ventana de actividad del bono diario de ciudadanos en horas (solo las cuentas que depositaron, entrenaron, comerciaron en la armería, atacaron, espiaron o repararon dentro de esta ventana reciben el bono; 0 = todos)",
+      "era.protectionDurationDays": "Duración de la protección para nuevos jugadores en días (1-60; la protección también termina en el nivel 10, al alcanzar el umbral de población o cuando el jugador ataca a un jugador sin protección)"
     },
     "resetBeforeLogin": "Reiniciar la era actual antes de habilitar los inicios de sesión"
   },

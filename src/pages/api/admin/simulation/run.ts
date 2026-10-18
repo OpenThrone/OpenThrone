@@ -14,6 +14,7 @@ import type {
   TopPlayerSnapshot,
 } from '@/sim/types';
 import type { AuthenticatedRequest } from '@/types/api';
+import { getRequestIp, logActionStrict } from '@/utils/auditLogger';
 import { logError } from '@/utils/logger';
 
 interface SimulationRequest {
@@ -649,6 +650,13 @@ const guardedHandler = withApiGuard({
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
     const config = validateConfig(req.body);
+    // Recorded before the run so a long or failing simulation is still on file.
+    await logActionStrict({
+      userId: Number(req.session?.user?.id),
+      action: 'ADMIN_SIMULATION_RUN',
+      ip: getRequestIp(req),
+      details: { config },
+    });
     const result = await runSimulation(config);
     return res.status(200).json(result);
   } catch (error) {

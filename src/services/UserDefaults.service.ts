@@ -98,6 +98,9 @@ export const buildDefaultUserUpdate = (
 ) => ({
   ...DEFAULT_USER_SCALARS,
   ...overrides,
+  // Every era join/reset path builds its update here, so this restarts the
+  // new-player protection clock (see utils/battleProtection.ts).
+  era_joined_at: new Date(),
 });
 
 export const buildEraStartOverrides = (settings: EraStartSettings) => ({

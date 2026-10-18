@@ -1,10 +1,17 @@
 import { z } from 'zod';
 
+import { hasAlliancePermission } from '@/constants/alliancePermissions';
+import {
+  ALLIANCE_NOTE_MAX_LENGTH,
+  MEMBER_DAILY_CAP_DEFAULT,
+} from '@/constants/allianceTreasury';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { AllianceTransactionType } from '@/lib/prisma-exports';
 import { ensureActiveEra } from '@/services/Era.service';
+import { DEPOSIT_CAP_PERCENT, getMaxDeposit } from '@/utils/bankLimits';
 import { logError } from '@/utils/logger';
+import { getOTStartDate } from '@/utils/timefunctions';
 
 const DepositSchema = z.object({
   allianceId: z.number().int().positive(),
@@ -12,12 +19,12 @@ const DepositSchema = z.object({
   amount: z.coerce.bigint().min(BigInt(1)),
 });
 
-const WithdrawSchema = z.object({
+const TransferSchema = z.object({
   allianceId: z.number().int().positive(),
   requesterId: z.number().int().positive(),
   targetUserId: z.number().int().positive(),
   amount: z.coerce.bigint().min(BigInt(1)),
-  notes: z.string().optional(),
+  notes: z.string().trim().max(ALLIANCE_NOTE_MAX_LENGTH).optional(),
 });
 
 /** Upper bound for an alliance bank transaction (lock wait + work). */
@@ -42,6 +49,127 @@ export const lockAllianceThenUsers = async (
   for (const userId of orderedIds) {
     await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
   }
+};
+
+/**
+ * Gold a member already received from the treasury since the OT day began:
+ * transfers, approved gold requests (WITHDRAWAL) and loan principal (LOAN).
+ */
+export const getReceivedToday = async (
+  tx: Prisma.TransactionClient,
+  allianceId: number,
+  userId: number,
+): Promise<bigint> => {
+  const sum = await tx.alliance_bank_history.aggregate({
+    where: {
+      alliance_id: allianceId,
+      related_user_id: userId,
+      transaction_type: {
+        in: [AllianceTransactionType.WITHDRAWAL, AllianceTransactionType.LOAN],
+      },
+      created_at: { gte: getOTStartDate() },
+    },
+    _sum: { amount: true },
+  });
+  return BigInt(sum?._sum?.amount ?? 0);
+};
+
+/**
+ * Moves gold from the alliance treasury to a member inside a transaction.
+ * The caller must already hold the alliance and target-user locks (see
+ * lockAllianceThenUsers). Needs the leader or manage_bank; the target must be
+ * a current member; the debit is conditional (gold_in_bank >= amount).
+ */
+export const transferInTx = async (
+  tx: Prisma.TransactionClient,
+  params: {
+    allianceId: number;
+    actorId: number;
+    targetUserId: number;
+    amount: bigint;
+    notes?: string | null;
+    /** WITHDRAWAL for transfers and requests; LOAN for loan disbursement. */
+    transactionType?: AllianceTransactionType;
+  },
+): Promise<void> => {
+  const { allianceId, actorId, targetUserId, amount, notes } = params;
+  const alliance = await tx.alliances.findUnique({
+    where: { id: allianceId },
+    select: { leader_id: true, member_daily_cap: true },
+  });
+  if (!alliance) {
+    throw new Error('Alliance not found');
+  }
+
+  if (alliance.leader_id !== actorId) {
+    const actorMembership = await tx.alliance_memberships.findUnique({
+      where: {
+        unique_alliance_user: { alliance_id: allianceId, user_id: actorId },
+      },
+      include: { role: true },
+    });
+    if (!actorMembership) {
+      throw new Error('You are not a member of this alliance');
+    }
+    if (
+      !hasAlliancePermission(
+        alliance.leader_id,
+        actorId,
+        actorMembership.role,
+        'manage_bank',
+      )
+    ) {
+      throw new Error('You do not have permission to manage the bank');
+    }
+  }
+
+  // Funds may only go to a current member of this alliance.
+  const targetMembership = await tx.alliance_memberships.count({
+    where: { alliance_id: allianceId, user_id: targetUserId },
+  });
+  if (targetMembership === 0) {
+    throw new Error('Target user is not a member of this alliance');
+  }
+
+  // The alliance row is locked, so concurrent payouts cannot both pass.
+  const dailyCap = BigInt(
+    alliance.member_daily_cap ?? MEMBER_DAILY_CAP_DEFAULT,
+  );
+  const receivedToday = await getReceivedToday(tx, allianceId, targetUserId);
+  if (receivedToday + amount > dailyCap) {
+    const left = dailyCap > receivedToday ? dailyCap - receivedToday : 0n;
+    throw new Error(
+      `Daily limit reached: this member can receive at most ${left.toString()} more gold today`,
+    );
+  }
+
+  const debit = await tx.alliances.updateMany({
+    where: { id: allianceId, gold_in_bank: { gte: amount } },
+    data: { gold_in_bank: { decrement: amount } },
+  });
+  if (debit.count !== 1) {
+    throw new Error('Insufficient alliance funds');
+  }
+
+  const credit = await tx.users.updateMany({
+    where: { id: targetUserId },
+    data: { gold: { increment: amount } },
+  });
+  if (credit.count !== 1) {
+    throw new Error('Target user not found');
+  }
+
+  await tx.alliance_bank_history.create({
+    data: {
+      alliance_id: allianceId,
+      transaction_type:
+        params.transactionType ?? AllianceTransactionType.WITHDRAWAL,
+      amount,
+      performed_by_user_id: actorId,
+      related_user_id: targetUserId,
+      notes: notes ?? null,
+    },
+  });
 };
 
 /** Encapsulates alliance bank data access and domain operations. */
@@ -73,6 +201,20 @@ export class AllianceBankService {
         });
         if (membership === 0) {
           throw new Error('You are not a member of this alliance');
+        }
+
+        // The user row is locked, so the cap is evaluated on committed gold.
+        const depositor = await tx.users.findUnique({
+          where: { id: validatedData.userId },
+          select: { gold: true },
+        });
+        if (!depositor) {
+          throw new Error('User not found');
+        }
+        if (validatedData.amount > getMaxDeposit(depositor.gold)) {
+          throw new Error(
+            `You can deposit at most ${DEPOSIT_CAP_PERCENT}% of the gold you hold at once`,
+          );
         }
 
         const debit = await tx.users.updateMany({
@@ -116,12 +258,44 @@ export class AllianceBankService {
   }
 
   /**
-   * Withdraw gold from alliance bank to a member (Direct Deposit).
-   * Locks follow lockAllianceThenUsers (alliance, then target user), so
-   * leadership, membership and balance are all evaluated against committed
-   * state. The debit is conditional
-   * (gold_in_bank >= amount) and must affect exactly one row.
+   * Transfer gold from the alliance treasury to a member. The leader or a
+   * member with manage_bank may do it. Locks follow lockAllianceThenUsers
+   * (alliance, then target user); see transferInTx for the checks.
    */
+  static async transfer(data: {
+    allianceId: number;
+    requesterId: number;
+    targetUserId: number;
+    amount: bigint;
+    notes?: string;
+  }) {
+    const validatedData = TransferSchema.parse(data);
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        await lockAllianceThenUsers(tx, validatedData.allianceId, [
+          validatedData.targetUserId,
+        ]);
+        await transferInTx(tx, {
+          allianceId: validatedData.allianceId,
+          actorId: validatedData.requesterId,
+          targetUserId: validatedData.targetUserId,
+          amount: validatedData.amount,
+          notes: validatedData.notes,
+        });
+      }, ALLIANCE_BANK_TX_OPTIONS);
+
+      return { message: 'Transfer successful' };
+    } catch (error: any) {
+      logError('Error transferring from alliance bank', {
+        ...validatedData,
+        error,
+      });
+      throw error;
+    }
+  }
+
+  /** Legacy name for transfer; kept so existing callers and routes work. */
   static async withdraw(data: {
     allianceId: number;
     requesterId: number;
@@ -129,88 +303,8 @@ export class AllianceBankService {
     amount: bigint;
     notes?: string;
   }) {
-    const validatedData = WithdrawSchema.parse(data);
-
-    try {
-      await prisma.$transaction(async (tx) => {
-        await lockAllianceThenUsers(tx, validatedData.allianceId, [
-          validatedData.targetUserId,
-        ]);
-
-        const alliance = await tx.alliances.findUnique({
-          where: { id: validatedData.allianceId },
-          select: { leader_id: true },
-        });
-        if (!alliance) {
-          throw new Error('Alliance not found');
-        }
-
-        const requesterMembership = await tx.alliance_memberships.count({
-          where: {
-            alliance_id: validatedData.allianceId,
-            user_id: validatedData.requesterId,
-          },
-        });
-        if (requesterMembership === 0) {
-          throw new Error('You are not a member of this alliance');
-        }
-
-        // TODO: Add refined permissions like 'can_withdraw' or 'manage_bank'
-        // For now, only Leader or potentially logic for roles needed
-        if (alliance.leader_id !== validatedData.requesterId) {
-          throw new Error('Only the alliance leader can withdraw funds');
-        }
-
-        // Funds may only go to a member of this alliance.
-        const targetMembership = await tx.alliance_memberships.count({
-          where: {
-            alliance_id: validatedData.allianceId,
-            user_id: validatedData.targetUserId,
-          },
-        });
-        if (targetMembership === 0) {
-          throw new Error('Target user is not a member of this alliance');
-        }
-
-        const debit = await tx.alliances.updateMany({
-          where: {
-            id: validatedData.allianceId,
-            gold_in_bank: { gte: validatedData.amount },
-          },
-          data: { gold_in_bank: { decrement: validatedData.amount } },
-        });
-        if (debit.count !== 1) {
-          throw new Error('Insufficient alliance funds');
-        }
-
-        const credit = await tx.users.updateMany({
-          where: { id: validatedData.targetUserId },
-          data: { gold: { increment: validatedData.amount } },
-        });
-        if (credit.count !== 1) {
-          throw new Error('Target user not found');
-        }
-
-        await tx.alliance_bank_history.create({
-          data: {
-            alliance_id: validatedData.allianceId,
-            transaction_type: AllianceTransactionType.WITHDRAWAL,
-            amount: validatedData.amount,
-            performed_by_user_id: validatedData.requesterId,
-            related_user_id: validatedData.targetUserId,
-            notes: validatedData.notes,
-          },
-        });
-      }, ALLIANCE_BANK_TX_OPTIONS);
-
-      return { message: 'Withdrawal successful' };
-    } catch (error: any) {
-      logError('Error withdrawing from alliance bank', {
-        ...validatedData,
-        error,
-      });
-      throw error;
-    }
+    await AllianceBankService.transfer(data);
+    return { message: 'Withdrawal successful' };
   }
 
   /**

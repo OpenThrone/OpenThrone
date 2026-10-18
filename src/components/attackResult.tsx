@@ -17,7 +17,12 @@ import classes from '@/components/AttackResults.module.css';
 import { DefenseAdvisory } from '@/components/DefenseAdvisory';
 import { PlayerRace } from '@/types/typings';
 import { toLocale } from '@/utils/numberFormatting';
-import { getAssetPath, getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
+import {
+  getAssetPath,
+  getAvatarSrc,
+  getLevelChange,
+  getLevelFromXP,
+} from '@/utils/utilities';
 
 import { BattleLedger } from './BattleLedger';
 import { BattleResultBanner } from './BattleResultBanner';
@@ -67,6 +72,31 @@ const AttackResults = ({ battle, viewerID }) => {
     );
   };
 
+  const xpEarned = JSON.parse(stats.xpEarned);
+  const attackerLevelChange = getLevelChange(
+    stats.startOfAttack.Attacker.experience,
+    xpEarned.attacker,
+  );
+  const defenderLevelChange = getLevelChange(
+    stats.startOfAttack.Defender.experience,
+    xpEarned.defender,
+  );
+  const levelUpLines = (
+    [
+      [attackerLevelChange, attackerPlayer, isViewerAttacker],
+      [defenderLevelChange, defenderPlayer, isViewerDefender],
+    ] as const
+  ).flatMap(([change, player, isViewer]) => {
+    if (!change) return [];
+    const name = isViewer ? t('report.you') : player.display_name;
+    return [
+      t('report.levelUpLine', { player: name, level: change.to }),
+      ...(change.endedProtection
+        ? [t('report.protectionEndedLine', { player: name })]
+        : []),
+    ];
+  });
+
   const summaryLines = [
     `Battle ID: ${battle.id}`,
     `${isViewerAttacker ? 'You' : attackerPlayer.display_name} attacked ${isViewerDefender ? 'You' : defenderPlayer.display_name}`,
@@ -82,6 +112,7 @@ const AttackResults = ({ battle, viewerID }) => {
     `${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} won the battle`,
     `${attackerPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).attacker)} XP`,
     `${defenderPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).defender)} XP`,
+    ...levelUpLines,
     // Loot accrues on the turns the attacker won even when the verdict is a loss.
     `Gold Pillaged: ${toLocale(stats.pillagedGold ?? 0)}`,
     `Fort Damage Dealt by Attacker: ${toLocale(fortDamage)}`,
@@ -211,6 +242,12 @@ const AttackResults = ({ battle, viewerID }) => {
                   <Text size="sm" c="dimmed" tt="uppercase" mt={6}>
                     Lvl{' '}
                     {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
+                    {attackerLevelChange && (
+                      <Text component="span" size="sm" fw={700} c="#f7d98b">
+                        {' '}
+                        → {attackerLevelChange.to}
+                      </Text>
+                    )}
                   </Text>
 
                   <Box
@@ -330,6 +367,12 @@ const AttackResults = ({ battle, viewerID }) => {
                   <Text size="sm" c="dimmed" tt="uppercase" mt={6}>
                     Lvl{' '}
                     {getLevelFromXP(stats.startOfAttack.Defender.experience)}
+                    {defenderLevelChange && (
+                      <Text component="span" size="sm" fw={700} c="#f7d98b">
+                        {' '}
+                        → {defenderLevelChange.to}
+                      </Text>
+                    )}
                   </Text>
 
                   <Box

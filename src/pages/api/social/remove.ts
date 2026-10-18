@@ -41,4 +41,6 @@ const removeSocialRelation = async (
   }
 };
 
-export default withAuth(removeSocialRelation);
+export default withAuth(removeSocialRelation, {
+  rateLimitProfile: 'game_write',
+});

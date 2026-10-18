@@ -1,0 +1,38 @@
+{
+  "tab": "Announcements",
+  "title": "Announcements",
+  "compose": {
+    "heading": "Post an announcement",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Short headline",
+    "bodyLabel": "Message",
+    "bodyPlaceholder": "What should the alliance know?",
+    "counter": "{{count}} / {{max}}",
+    "hint": "Plain text only. Every other member also receives it in their inbox.",
+    "submit": "Post announcement",
+    "posted": "Announcement posted and delivered to {{count}} inbox(es)"
+  },
+  "list": {
+    "empty": "No announcements yet.",
+    "by": "by {{name}}",
+    "unknownAuthor": "Unknown",
+    "pinned": "Pinned",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "delete": "Delete",
+    "pageLabel": "Announcements pagination"
+  },
+  "deleteConfirm": {
+    "title": "Delete announcement",
+    "message": "Delete \"{{title}}\"? Copies already sent to inboxes are not removed.",
+    "confirm": "Delete"
+  },
+  "overview": {
+    "heading": "Latest announcement",
+    "viewAll": "View all announcements"
+  },
+  "pinnedToast": "Announcement pinned",
+  "unpinnedToast": "Announcement unpinned",
+  "deletedToast": "Announcement deleted",
+  "loadError": "Failed to load announcements"
+}

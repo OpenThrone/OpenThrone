@@ -22,6 +22,7 @@ import { useTranslation } from 'next-i18next';
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import classes from '@/components/MobileSidebarContent.module.css';
+import { ProtectionMeter } from '@/components/sidebar/ProtectionMeter';
 import { SidebarTimeInfo } from '@/components/sidebar/SidebarShared';
 import { useUser } from '@/context/users';
 import { useSidebarData } from '@/hooks/useSidebarData';
@@ -213,6 +214,11 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
           action={refreshAction}
           stats={stats}
         />
+      )}
+      {!userLoading && user?.protection?.protected && (
+        <GameCard title={t('sidebar.protection.label')} goldAccent={false}>
+          <ProtectionMeter user={user} />
+        </GameCard>
       )}
 
       {/* Search card (FINDING-44): themed 44px control, heading ink on the

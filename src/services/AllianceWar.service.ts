@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import { WarStatus } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
@@ -45,12 +46,12 @@ export class AllianceWarService {
         throw new Error('You are not a member of the declaring alliance');
       }
 
-      // TODO: Add permission check (e.g., manage_enemies or declare_war permission)
-      // For now, assume Leader or Role with manage_enemies can declare
-      const canDeclare =
-        declarerMembership.alliance.leader_id ===
-          validatedData.declarerUserId ||
-        declarerMembership.role.permissions?.manage_enemies;
+      const canDeclare = hasAlliancePermission(
+        declarerMembership.alliance.leader_id,
+        validatedData.declarerUserId,
+        declarerMembership.role,
+        'declare_war',
+      );
 
       if (!canDeclare) {
         throw new Error('You do not have permission to declare war');

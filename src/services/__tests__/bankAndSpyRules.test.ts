@@ -24,12 +24,30 @@ beforeEach(() => {
     findUnique: vi.fn(async () => ({ leader_id: 10 })),
     updateMany: vi.fn(async () => ({ count: 1 })),
   } as any;
+  const isMember = (userId: number) => userId === 10 || userId === 11;
   mockPrisma.alliance_memberships = {
     count: vi.fn(async ({ where }: { where: { user_id: number } }) =>
-      where.user_id === 10 || where.user_id === 11 ? 1 : 0,
+      isMember(where.user_id) ? 1 : 0,
+    ),
+    // Transfers resolve the actor's role by the composite unique key.
+    findUnique: vi.fn(
+      async ({
+        where,
+      }: {
+        where: { unique_alliance_user: { user_id: number } };
+      }) =>
+        isMember(where.unique_alliance_user.user_id)
+          ? {
+              user_id: where.unique_alliance_user.user_id,
+              role: { permissions: {} },
+            }
+          : null,
     ),
   } as any;
-  mockPrisma.alliance_bank_history = { create: vi.fn(async () => ({})) } as any;
+  mockPrisma.alliance_bank_history = {
+    create: vi.fn(async () => ({})),
+    aggregate: vi.fn(async () => ({ _sum: { amount: null } })),
+  } as any;
   mockPrisma.users = {
     findUnique: vi.fn(async () => ({ id: 1, gold: 1000n, gold_in_bank: 500n })),
     updateMany: vi.fn(async () => ({ count: 1 })),

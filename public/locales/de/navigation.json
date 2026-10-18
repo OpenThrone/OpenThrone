@@ -91,6 +91,7 @@
     "subNavigation": "Bereichsnavigation"
   },
   "alliances": {
+    "mine": "Meine Allianzen",
     "browse": "Allianzen durchsuchen",
     "create": "Allianz erstellen"
   },

@@ -1,20 +1,35 @@
 import { Card, Grid, Group, Text, Title } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 
+import { AllianceLatestAnnouncement } from '@/components/alliance/AllianceLatestAnnouncement';
 import type { AllianceInfo } from '@/services/Alliance.service';
 import { toLocale } from '@/utils/numberFormatting';
 
 interface AllianceOverviewProps {
   alliance: AllianceInfo;
+  isMember?: boolean;
+  onViewAnnouncements?: () => void;
 }
 
 /** Alliance overview. */
-export const AllianceOverview = ({ alliance }: AllianceOverviewProps) => {
+export const AllianceOverview = ({
+  alliance,
+  isMember = false,
+  onViewAnnouncements,
+}: AllianceOverviewProps) => {
   const { t } = useTranslation('alliances');
 
   return (
     <Grid>
       <Grid.Col span={{ base: 12, md: 8 }}>
+        {isMember && onViewAnnouncements && (
+          <div style={{ marginBottom: 'var(--mantine-spacing-md)' }}>
+            <AllianceLatestAnnouncement
+              allianceId={alliance.id}
+              onViewAll={onViewAnnouncements}
+            />
+          </div>
+        )}
         <Card withBorder padding="lg" radius="md">
           <Title order={3} mb="md">
             {t('overview.about', 'About Us')}
@@ -45,12 +60,15 @@ export const AllianceOverview = ({ alliance }: AllianceOverviewProps) => {
               {new Date(alliance.created_at).toLocaleDateString()}
             </Text>
           </Group>
-          <Group justify="space-between" mb="xs">
-            <Text c="dimmed">{t('overview.gold', 'Treasury')}</Text>
-            <Text fw={500} c="yellow">
-              {toLocale(alliance.gold_in_bank)}
-            </Text>
-          </Group>
+          {/* Treasury is only sent to alliance members (ALL-08). */}
+          {alliance.gold_in_bank != null && (
+            <Group justify="space-between" mb="xs">
+              <Text c="dimmed">{t('overview.gold', 'Treasury')}</Text>
+              <Text fw={500} c="yellow">
+                {toLocale(alliance.gold_in_bank)}
+              </Text>
+            </Group>
+          )}
         </Card>
       </Grid.Col>
     </Grid>

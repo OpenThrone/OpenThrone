@@ -96,12 +96,15 @@ export const UserCardImage = ({
             padding: '12px',
           }}
         >
-          <div>
-            <Text size="xs" c="dimmed" tt="uppercase">
-              {t('browse.gold')}
-            </Text>
-            <Text fw={700}>{toLocale(gold)}</Text>
-          </div>
+          {/* Treasury is only sent for the viewer's own alliances (ALL-08). */}
+          {gold != null && (
+            <div>
+              <Text size="xs" c="dimmed" tt="uppercase">
+                {t('browse.gold')}
+              </Text>
+              <Text fw={700}>{toLocale(gold)}</Text>
+            </div>
+          )}
           <div>
             <Text size="xs" c="dimmed" tt="uppercase">
               {t('browse.members')}
@@ -204,9 +207,9 @@ const Browse = () => {
               description={alliance.motto}
               members={alliance._count.members}
               gold={
-                alliance.gold_in_bank
+                alliance.gold_in_bank != null
                   ? alliance.gold_in_bank.toString().replace('n', '')
-                  : 0
+                  : null
               }
               joinText={t('browse.join')}
               imgsrc={alliance.avatar || null}

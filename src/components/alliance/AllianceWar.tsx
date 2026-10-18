@@ -11,6 +11,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
 import useSWR from 'swr';
 
+import { getAllianceStanding } from '@/components/alliance/allianceStanding';
 import type { AllianceInfo } from '@/services/Alliance.service';
 
 import { DeclareWarModal } from './DeclareWarModal';
@@ -18,8 +19,15 @@ import { DeclareWarModal } from './DeclareWarModal';
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 /** Alliance war. */
-export const AllianceWar = ({ alliance }: { alliance: AllianceInfo }) => {
+export const AllianceWar = ({
+  alliance,
+  viewerId = null,
+}: {
+  alliance: AllianceInfo;
+  viewerId?: number | null;
+}) => {
   const { t } = useTranslation('alliances');
+  const canDeclare = getAllianceStanding(alliance, viewerId).can('declare_war');
   const [opened, { open, close }] = useDisclosure(false);
 
   // Correct API endpoint is /api/alliances/wars endpoint (which handles GET at index)
@@ -33,9 +41,11 @@ export const AllianceWar = ({ alliance }: { alliance: AllianceInfo }) => {
     <Paper p="md" radius="md" withBorder>
       <Group justify="space-between" mb="lg">
         <Title order={3}>{t('war.activeWars', 'Active Conflicts')}</Title>
-        <Button color="red" onClick={open}>
-          {t('war.declareWar', 'Declare War')}
-        </Button>
+        {canDeclare && (
+          <Button color="red" onClick={open}>
+            {t('war.declareWar', 'Declare War')}
+          </Button>
+        )}
       </Group>
 
       {!wars && !error ? (

@@ -23,6 +23,10 @@ import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+import {
+  recruitBlockMessage,
+  type RecruitmentStatus,
+} from '@/utils/recruitmentStatus';
 
 import classes from './PlayerActions.module.css';
 
@@ -52,9 +56,11 @@ export interface SelectedPlayerAction {
 export function PlayerActions({
   target,
   onSelect,
+  recruitStatus,
 }: {
   target: ActionTarget;
   onSelect: (selection: SelectedPlayerAction) => void;
+  recruitStatus?: RecruitmentStatus | null;
 }) {
   const { t } = useTranslation('battle');
   const { t: common } = useTranslation('common');
@@ -81,6 +87,9 @@ export function PlayerActions({
       : common('profileActions.spyDisabled'));
   const messageReason =
     user.id !== 1 && user.id !== 2 ? t('actions.messagingUnavailable') : null;
+  const recruitReason = !target.recruitLink
+    ? t('actions.recruitUnavailable')
+    : recruitBlockMessage(common, recruitStatus, target.id, target.name);
   const buttons = [
     {
       action: 'attack',
@@ -93,7 +102,7 @@ export function PlayerActions({
     {
       action: 'recruit',
       icon: 'double-team',
-      reason: target.recruitLink ? null : t('actions.recruitUnavailable'),
+      reason: recruitReason,
     },
   ] as const;
   return (
@@ -172,10 +181,12 @@ export function PlayerActionDialogs({
   selection,
   onClose,
   onSocialChange,
+  onRecruited,
 }: {
   selection: SelectedPlayerAction | null;
   onClose: () => void;
   onSocialChange: (target: ActionTarget, action: 'friend' | 'enemy') => void;
+  onRecruited?: () => void;
 }) {
   const { t } = useTranslation('battle');
   const { forceUpdate } = useUser();
@@ -234,6 +245,9 @@ export function PlayerActionDialogs({
       >
         <RecruitmentFlow
           recruitLink={target.recruitLink}
+          targetId={target.id}
+          targetName={target.name}
+          onRecruited={onRecruited}
           embedded
           onBusyChange={setBusy}
         />

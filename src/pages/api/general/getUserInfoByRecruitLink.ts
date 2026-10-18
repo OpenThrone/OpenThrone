@@ -29,7 +29,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     // Create a new UserModel instance to calculate and access the user's level.
     const userModelInstance = new UserModel(user);
 
-    // Respond with the required data
+    // Links are guessable (md5 of the id), so expose only what the recruit page
+    // renders: no id, avatar, experience or other account fields.
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({
       display_name: user.display_name,
       race: user.race,

@@ -417,6 +417,9 @@ export function redactBattleStatsForViewer(
     return ownSide ? { total, units } : { total };
   };
   const replay = asRecord(stats.replay);
+  // Battles log `defender_protected` (the shared rule's verdict at battle time).
+  // Only legacy rows without it fall back to the level-only rule, since era join
+  // time, population and forfeiture are not reconstructable from the log.
   const defenderProtected =
     typeof stats.defender_protected === 'boolean'
       ? stats.defender_protected

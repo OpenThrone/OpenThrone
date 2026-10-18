@@ -101,6 +101,7 @@
     "fortHitpoints": "Fort hit points",
     "units": "Regular units",
     "mercenaries": "Mercenaries",
+    "items": "Inventory / Armory",
     "turns": "Turns spent",
     "pillagedGold": "Gold pillaged",
     "attackerDamageDealt": "Attacker total damage",
@@ -122,6 +123,7 @@
     "successProbability": "Success probability"
   },
   "noUnits": "Sin unidades activas",
+  "noItems": "Sin objetos de armería",
   "registrationTrends": "Tendencias de registro y actividad",
   "rowsPerPage": "Filas por página",
   "showingRows": "{{from}}–{{to}} de {{total}}",

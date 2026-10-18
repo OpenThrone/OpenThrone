@@ -17,16 +17,21 @@ import {
   Title,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import useSWR from 'swr';
 
+import { allianceRequest } from '@/components/alliance/allianceStanding';
+import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
+import { TreasurySettingsCard } from '@/components/alliance/treasury/TreasurySettingsCard';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
 
 interface AllianceSettingsProps {
   alliance: AllianceInfo;
   onUpdate?: () => void; // Callback to reload main data
+  isLeader?: boolean;
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -35,9 +40,44 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export const AllianceSettings = ({
   alliance,
   onUpdate,
+  isLeader = false,
 }: AllianceSettingsProps) => {
   const { t } = useTranslation('alliances');
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [exitAction, setExitAction] = useState<'leave' | 'disband' | null>(
+    null,
+  );
+  const [exiting, setExiting] = useState(false);
+
+  const handleExit = async () => {
+    if (!exitAction) return;
+    setExiting(true);
+    try {
+      if (exitAction === 'leave') {
+        await allianceRequest('/api/alliances/leave', {
+          allianceId: alliance.id,
+        });
+        alertService.success(
+          t('index.leaveSuccess', 'You have left the alliance'),
+        );
+      } else {
+        await allianceRequest('/api/alliances/disband', {
+          allianceId: alliance.id,
+          confirmName: alliance.name,
+        });
+        alertService.success(
+          t('manage.disbanded', 'The alliance is disbanded'),
+        );
+      }
+      setExitAction(null);
+      await router.push('/alliances');
+    } catch (error: any) {
+      alertService.error(error.message);
+    } finally {
+      setExiting(false);
+    }
+  };
 
   // Settings Form
   const form = useForm({
@@ -231,6 +271,65 @@ export const AllianceSettings = ({
           </Stack>
         </form>
       </Paper>
+
+      {isLeader && (
+        <TreasurySettingsCard alliance={alliance} onUpdate={onUpdate} />
+      )}
+
+      <Paper p="md" radius="md" withBorder>
+        <Title order={4} mb="xs">
+          {isLeader
+            ? t('manage.disbandTitle', 'Disband Alliance')
+            : t('index.leaveAlliance', 'Leave Alliance')}
+        </Title>
+        <Text size="sm" c="dimmed" mb="md">
+          {isLeader
+            ? t(
+                'manage.disbandHelp',
+                'Disbanding removes every member, rank and chat room. Any treasury is split evenly among the members (remainder to you), open loans are written off, and no war may be in progress. To step down instead, make another member leader from the Members tab.',
+              )
+            : t(
+                'manage.leaveHelp',
+                'You will lose access to the treasury, the war room and alliance chat.',
+              )}
+        </Text>
+        <Button
+          color="red"
+          variant="light"
+          onClick={() => setExitAction(isLeader ? 'disband' : 'leave')}
+        >
+          {isLeader
+            ? t('manage.disbandTitle', 'Disband Alliance')
+            : t('index.leaveAlliance', 'Leave Alliance')}
+        </Button>
+      </Paper>
+
+      <ConfirmActionModal
+        opened={exitAction === 'leave'}
+        title={t('index.leaveAlliance', 'Leave Alliance')}
+        message={t(
+          'index.leaveConfirm',
+          'Are you sure you want to leave this alliance?',
+        )}
+        confirmLabel={t('index.leaveAlliance', 'Leave Alliance')}
+        loading={exiting}
+        onClose={() => setExitAction(null)}
+        onConfirm={handleExit}
+      />
+      <ConfirmActionModal
+        opened={exitAction === 'disband'}
+        title={t('manage.disbandTitle', 'Disband Alliance')}
+        message={t(
+          'manage.disbandConfirm',
+          'This cannot be undone. Every member is removed from {{name}}, the treasury is split evenly among them and open loans are written off.',
+          { name: alliance.name },
+        )}
+        confirmLabel={t('manage.disbandTitle', 'Disband Alliance')}
+        requiredText={alliance.name}
+        loading={exiting}
+        onClose={() => setExitAction(null)}
+        onConfirm={handleExit}
+      />
     </Stack>
   );
 };

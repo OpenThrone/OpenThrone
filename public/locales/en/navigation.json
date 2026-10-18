@@ -9,6 +9,7 @@
     "alliances": "Alliances"
   },
   "alliances": {
+    "mine": "My Alliances",
     "browse": "Browse",
     "create": "Create"
   },

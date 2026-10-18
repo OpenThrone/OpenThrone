@@ -19,7 +19,11 @@
     "invalidTurns": "Enter at least 1 turn.",
     "untrainTitle": "Confirm Untrain",
     "untrainMessage": "Untraining refunds only 75% of the gold spent — you will lose {{gold}} gold. This cannot be undone.",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "protectionForfeitTitle": "Your protection will end",
+    "protectionForfeitWarning": "This player is not protected. Attacking them ends your new-player protection for the rest of the era.",
+    "protectionForfeitCancel": "Cancel",
+    "protectionForfeitConfirm": "Attack and lose protection"
   },
   "users": {
     "title": "Attack Users",
@@ -215,7 +219,9 @@
     "attackerVictory": "Attacker victory",
     "defenderVictory": "Defender victory",
     "winner": "{{player}} won the battle.",
-    "yourCounterLine": "Your counter killed {{dead}} attackers."
+    "yourCounterLine": "Your counter killed {{dead}} attackers.",
+    "levelUpLine": "{{player}} reached level {{level}}!",
+    "protectionEndedLine": "Beginner protection ended for {{player}}."
   },
   "defenseAdvisory": {
     "title": "Kingdom Defenses Breached",

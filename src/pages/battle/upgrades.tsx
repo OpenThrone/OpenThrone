@@ -12,8 +12,9 @@ import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
 import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
-import { BattleUpgrades, OffensiveUpgrades } from '@/constants';
+import { BattleUpgrades, OffensiveUpgrades, SpyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
+import { getBattleUpgradeStructure } from '@/utils/battleUpgradeStructure';
 import { toLocale } from '@/utils/numberFormatting';
 
 const useItems = (user) => {
@@ -26,8 +27,7 @@ const useItems = (user) => {
 
   useEffect(() => {
     if (user) {
-      const itemMap = (item, itemType) =>
-        itemMapFunction(item, itemType, user, user.offensiveLevel);
+      const itemMap = (item, itemType) => itemMapFunction(item, itemType, user);
       setItems({
         OFFENSE: BattleUpgrades.filter((i) => i.type === 'OFFENSE').map((i) =>
           itemMap(i, 'OFFENSE'),
@@ -47,7 +47,13 @@ const useItems = (user) => {
   return items;
 };
 
-const itemMapFunction = (item, itemType, user, siegeLevel) => {
+const itemMapFunction = (item, itemType, user) => {
+  // Each upgrade unlocks with the structure the server checks at purchase.
+  const structure = getBattleUpgradeStructure(item.type);
+  const structureLevel =
+    structure === 'SPY' ? user?.spyLevel : user?.offensiveLevel;
+  const structureUpgrades =
+    structure === 'SPY' ? SpyUpgrades : OffensiveUpgrades;
   const discountedCost = item.cost - (user?.priceBonus / 100) * item.cost;
   return {
     id: `${itemType}_${item.level}`,
@@ -60,13 +66,13 @@ const itemMapFunction = (item, itemType, user, siegeLevel) => {
     cost: toLocale(discountedCost, user?.locale),
     baseCost: item.cost,
     discountedCost,
-    enabled: item.SiegeUpgradeLevel <= siegeLevel,
+    enabled: item.SiegeUpgradeLevel <= (structureLevel ?? 1),
     level: item.level,
     type: item.type,
     SiegeUpgradeLevel: item.SiegeUpgradeLevel,
     unitsCovered: item.unitsCovered,
     minUnitLevel: item.minUnitLevel,
-    SiegeUpgrade: OffensiveUpgrades.find(
+    SiegeUpgrade: structureUpgrades.find(
       (f) => f.level === item.SiegeUpgradeLevel,
     )?.name,
   };
