@@ -30,6 +30,12 @@ export interface ProtectionUserInput {
   createdAt?: Date | string | null;
   /** `users.protection_forfeited_era_id`. */
   protectionForfeitedEraId?: number | null;
+  /**
+   * `users.event_citizens_received`: citizens this era from timed citizen
+   * events and citizen multipliers. They raise the population limit so an
+   * admin event never ends protection by itself (#89).
+   */
+  eventCitizensReceived?: number | null;
 }
 
 /** Era fields the rule reads. */
@@ -42,7 +48,8 @@ export interface ProtectionEraInput {
 /** Admin-tunable inputs (see RuntimeConfig). */
 export interface ProtectionSettings {
   durationDays: number;
-  dailyCitizenBonus: number;
+  /** Citizens a player can gain per day by recruiting (admin setting recruit.dailyCap). */
+  recruitDailyCap: number;
 }
 
 export interface ProtectionStatus {
@@ -79,20 +86,21 @@ export function normalizeProtectionDurationDays(value: unknown): number {
 }
 
 /**
- * Population threshold that ends protection.
+ * Population threshold that ends protection (#97):
  *
- * Daily citizen growth is the housing grant for the player's house level
- * (`HouseUpgrades[houseLevel].citizensDaily`, the same value the daily cron
- * reads through `UserEconomyService.getRecruitingBonus`) plus the admin
- * `era.dailyCitizenBonus`, multiplied by the protection duration in days (the
- * same day count as the time limit). The era's starting citizens are added as
- * a baseline: every player starts with them, so without it a fresh account
- * (50 citizens) would already exceed a 14-day threshold of 14-20 citizens and
- * never be protected. Pass `startingPopulation: 0` for the literal formula.
+ *   starting citizens + days x (housing citizens per day + recruiting cap per day)
+ *
+ * Housing growth is `HouseUpgrades[houseLevel].citizensDaily` (the value the
+ * daily cron grants); the recruiting cap is the most a player can gain per day
+ * by recruiting (admin setting recruit.dailyCap). The era's starting citizens
+ * are a baseline every player gets. Citizens handed out by game events are
+ * not part of this formula: getProtectionStatus adds the player's
+ * event_citizens_received on top, so no event can end protection.
+ * Pass `startingPopulation: 0` for the literal formula.
  */
 export function getProtectionPopulationThreshold(params: {
   houseLevel: number;
-  dailyCitizenBonus: number;
+  recruitDailyCap: number;
   durationDays: number;
   startingPopulation?: number;
 }): number {
@@ -104,7 +112,7 @@ export function getProtectionPopulationThreshold(params: {
   const house = HouseUpgrades[houseLevel as keyof typeof HouseUpgrades];
   const dailyGrowth =
     Number(house?.citizensDaily ?? 0) +
-    Math.max(0, Math.floor(Number(params.dailyCitizenBonus) || 0));
+    Math.max(0, Math.floor(Number(params.recruitDailyCap) || 0));
   return (
     Math.max(0, Math.floor(Number(params.startingPopulation) || 0)) +
     dailyGrowth * normalizeProtectionDurationDays(params.durationDays)
@@ -129,14 +137,15 @@ export function getProtectionStatus(
   const durationDays = normalizeProtectionDurationDays(settings.durationDays);
   const level = getLevelFromXP(user.experience ?? 0);
   const population = Math.max(0, Math.floor(Number(user.population) || 0));
-  const populationThreshold = getProtectionPopulationThreshold({
-    houseLevel: user.houseLevel,
-    dailyCitizenBonus: settings.dailyCitizenBonus,
-    durationDays,
-    startingPopulation: era
-      ? resolveEraStartSettings(era.startSettings).citizens
-      : 0,
-  });
+  const populationThreshold =
+    getProtectionPopulationThreshold({
+      houseLevel: user.houseLevel,
+      recruitDailyCap: settings.recruitDailyCap,
+      durationDays,
+      startingPopulation: era
+        ? resolveEraStartSettings(era.startSettings).citizens
+        : 0,
+    }) + Math.max(0, Math.floor(Number(user.eventCitizensReceived) || 0));
   const forfeited =
     !!era &&
     user.protectionForfeitedEraId !== null &&

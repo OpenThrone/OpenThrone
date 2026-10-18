@@ -19,7 +19,8 @@
     "threatHint": "A member reported being targeted by this player.",
     "callThis": "Call {{type}} on target",
     "attachedTo": "Attached to call #{{id}}",
-    "total": "{{count}} shared report(s)"
+    "total_one": "{{count}} shared report",
+    "total_other": "{{count}} shared reports"
   },
   "calls": {
     "title": "Open calls",
@@ -30,11 +31,13 @@
     "targetPlaceholder": "Display name",
     "noteLabel": "Note (optional)",
     "submit": "Open call",
-    "opened": "Call opened; {{count}} member(s) notified",
+    "opened_one": "Call opened; {{count}} member notified",
+    "opened_other": "Call opened; {{count}} members notified",
     "close": "Close",
     "closed": "Call closed",
     "closedBadge": "Closed",
-    "reports": "{{count}} report(s)",
+    "reports_one": "{{count}} report",
+    "reports_other": "{{count}} reports",
     "openedBy": "by {{name}}",
     "details": "Details",
     "detailTitle": "{{type}} call on {{name}}",

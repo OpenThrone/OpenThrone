@@ -5,6 +5,7 @@ import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
@@ -24,7 +25,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
     logError('Error fetching gold request count:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: publicErrorMessage(error) });
   }
 };
 

@@ -58,7 +58,12 @@ const itemMapFunction = (item, itemType, user) => {
   return {
     id: `${itemType}_${item.level}`,
     name: item.name,
-    bonus: item.bonus,
+    // Upgrades carry several powers; show the one that matters for the type.
+    bonus:
+      item.bonus ??
+      (item.type === 'DEFENSE' || item.type === 'SENTRY'
+        ? Math.max(item.MeleeDefPower ?? 0, item.RangedDefPower ?? 0)
+        : Math.max(item.MeleeAtkPower ?? 0, item.RangedAtkPower ?? 0)),
     ownedItems:
       user?.battle_upgrades.find(
         (i) => i.type === item.type && i.level === item.level,
@@ -104,24 +109,24 @@ const Upgrades = () => {
           stats={[
             {
               label: t('upgrades.goldOnHand'),
-              value: toLocale(user?.gold) ?? 0,
+              value: toLocale(user?.gold ?? 0, user?.locale),
               icon: faCoins,
             },
             {
               label: t('upgrades.bankedGold'),
-              value: toLocale(user?.goldInBank) ?? 0,
+              value: toLocale(user?.goldInBank ?? 0, user?.locale),
               icon: faBuildingColumns,
             },
             {
               label: t('upgrades.offensiveUnits'),
-              value: toLocale(offensiveUnits),
+              value: toLocale(offensiveUnits, user?.locale),
               icon: <RpgAwesomeIcon icon="crossed-swords" size="lg" />,
               tooltip: t('upgrades.onlyLevel2Units'),
               qualifier: t('upgrades.onlyLevel2Units'),
             },
             {
               label: t('upgrades.defensiveUnits'),
-              value: toLocale(defensiveUnits),
+              value: toLocale(defensiveUnits, user?.locale),
               icon: faShield,
               tooltip: t('upgrades.onlyLevel2Units'),
               qualifier: t('upgrades.onlyLevel2Units'),

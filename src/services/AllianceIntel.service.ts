@@ -4,6 +4,7 @@ import type { AlliancePermissionKey } from '@/constants/alliancePermissions';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { postToAllianceRoom } from '@/services/AllianceRoom.service';
 import { getAttackLogViewerRole } from '@/services/AttackLogAccess.service';
 import { getLevelFromXP } from '@/utils/utilities';
 
@@ -408,14 +409,8 @@ export class AllianceIntelService {
         ]
           .filter(Boolean)
           .join('\n\n');
-        await tx.messages.createMany({
-          data: recipients.map((toUserId) => ({
-            from_user_id: userId,
-            to_user_id: toUserId,
-            subject: subject.slice(0, 200),
-            body,
-          })),
-        });
+        // Delivered to the alliance's conversation in /messaging.
+        await postToAllianceRoom(tx, alliance, userId, `${subject}\n\n${body}`);
       }
 
       return { call, notified: recipients.length };

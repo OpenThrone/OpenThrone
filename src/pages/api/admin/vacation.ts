@@ -125,6 +125,11 @@ async function handler(
     }
     return res.status(200).json({ message: 'Vacation mode ended for user' });
   } catch (error) {
+    // State refusals ("not in vacation mode") are the admin's to see.
+    const message = (error as Error)?.message ?? '';
+    if (/vacation mode|already/i.test(message)) {
+      return res.status(409).json({ error: message });
+    }
     logError(`Error during admin vacation ${action}:`, error);
     return res.status(500).json({
       error:

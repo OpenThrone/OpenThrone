@@ -7,6 +7,7 @@ import {
   AllianceDiplomacyService,
 } from '@/services/AllianceDiplomacy.service';
 import type { AuthenticatedRequest } from '@/types/api';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const QuerySchema = z.object({
   q: z.string().trim().min(ALLIANCE_SEARCH_MIN).max(50),
@@ -30,7 +31,7 @@ const handler = async (
     const result = await AllianceDiplomacyService.searchByName(context.query);
     return res.status(200).json(result);
   } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

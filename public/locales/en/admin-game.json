@@ -107,5 +107,57 @@
     "preview": "Era will reset on {{utc}} ({{local}} on your own clock).",
     "time": "Reset time (OT Time, 24-hour)",
     "timeInvalid": "Enter a 24-hour time such as 18:30 or 18:30:00."
+  },
+  "eventsForm": {
+    "intro": "Schedule bonuses such as a 2× XP weekend or a daily citizen bonus that lasts all era. An event applies while it is active and inside its time window. Overlapping events stack: multipliers multiply (0.1×–10×), flat bonuses add, discounts compound up to 25%.",
+    "fromPreset": "New from preset",
+    "presets": {
+      "xpWeekend": "2× XP weekend",
+      "citizenWeekend": "2× citizens weekend",
+      "dailyCitizens": "+100 citizens per day (until era ends)",
+      "turnsWeekend": "Bonus turns weekend",
+      "trainingSale": "Training & armory sale"
+    },
+    "effectsHeading": "Effects",
+    "effects": {
+      "xpMultiplier": "XP multiplier",
+      "goldMultiplier": "Gold income multiplier",
+      "dailyCitizenBonus": "Daily citizen bonus",
+      "dailyCitizenActivityHours": "Activity window (hours)",
+      "citizenMultiplier": "Citizen multiplier",
+      "citizenMultiplierScope": "Applies to",
+      "extraTurnsPerTick": "Bonus turns every turn",
+      "unitCostDiscountPercent": "Training discount",
+      "armoryCostDiscountPercent": "Armory discount"
+    },
+    "effectHints": {
+      "xpMultiplier": "Multiplies XP from battles.",
+      "goldMultiplier": "Multiplies the gold players earn each turn.",
+      "dailyCitizenBonus": "Extra citizens each player gets from the daily update.",
+      "dailyCitizenActivityHours": "Only players active within this many hours get the bonus. 0 = everyone.",
+      "citizenMultiplier": "Multiplies citizens from daily growth, from recruiting, or both.",
+      "extraTurnsPerTick": "Turns added on top of the normal one every turn.",
+      "unitCostDiscountPercent": "Percent off training units (max 25%, so untraining can't turn a profit).",
+      "armoryCostDiscountPercent": "Percent off armory purchases (max 25%, so selling can't turn a profit)."
+    },
+    "scope": {
+      "DAILY": "Daily growth",
+      "RECRUITING": "Recruiting",
+      "BOTH": "Both"
+    },
+    "untilEraEnd": "Run until the era ends",
+    "untilEraEndHint": "No end time: the event stops automatically when the current era ends.",
+    "untilEraEndOf": "Until {{era}} ends",
+    "keyHint": "Optional. Generated from the name when left empty.",
+    "activateNow": "Activate when saved (it still waits for its start time)",
+    "endNow": "End now",
+    "nameAndStartRequired": "Enter a name and a start time.",
+    "effectRequired": "Turn on at least one effect.",
+    "phase": {
+      "draft": "Draft",
+      "scheduled": "Scheduled",
+      "running": "Running",
+      "ended": "Ended"
+    }
   }
 }

@@ -71,7 +71,9 @@
     "fortPageLink": "Fort Page",
     "repairSuccess": "Fortification repaired successfully!",
     "notEnoughGoldToRepair": "Not enough gold to repair",
-    "repairMaxTooltip": "Repair {{hp}} HP for {{cost}} gold"
+    "repairMaxTooltip": "Repair {{hp}} HP for {{cost}} gold",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied"
   },
   "levels": {
     "title": "Levels",
@@ -81,7 +83,8 @@
     "totalXP": "Total XP",
     "bonus": "Bonus",
     "proficiencyPoints": "Proficiency Points",
-    "proficiencyPointsAvailable": "You have {{count}} proficiency points available.",
+    "proficiencyPointsAvailable_one": "You have {{count}} proficiency point available.",
+    "proficiencyPointsAvailable_other": "You have {{count}} proficiency points available.",
     "maximumBonus": "Maximum bonus is 75%",
     "currentBonus": "Current Bonus",
     "strength": "Strength (Offense)",
@@ -229,7 +232,8 @@
       "export": "Download my data",
       "exportError": "Unable to download your data. Please try again.",
       "attackAlerts": "Battle alerts when your kingdom is attacked (opt-in)"
-    }
+    },
+    "cancel": "Cancel"
   },
   "admin": {
     "title": "Admin",

@@ -46,9 +46,8 @@ const ServerSettingsPage = () => {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [rangeDraft, setRangeDraft] = useState(5);
   const [emailRateDraft, setEmailRateDraft] = useState(60);
-  const [citizenBonusDraft, setCitizenBonusDraft] = useState(0);
-  const [bonusWindowDraft, setBonusWindowDraft] = useState(24);
   const [protectionDaysDraft, setProtectionDaysDraft] = useState(14);
+  const [recruitCapDraft, setRecruitCapDraft] = useState(25);
   const [maintenanceDraft, setMaintenanceDraft] = useState({
     enabled: false,
     message: '',
@@ -63,23 +62,15 @@ const ServerSettingsPage = () => {
       setRows(nextRows);
       const range = nextRows.find((row) => row.key === 'ATTACK_LEVEL_RANGE');
       setRangeDraft(typeof range?.value === 'number' ? range.value : 5);
-      const citizenBonus = nextRows.find(
-        (row) => row.key === 'era.dailyCitizenBonus',
-      );
-      setCitizenBonusDraft(
-        typeof citizenBonus?.value === 'number' ? citizenBonus.value : 0,
-      );
-      const bonusWindow = nextRows.find(
-        (row) => row.key === 'era.dailyCitizenBonusActivityHours',
-      );
-      setBonusWindowDraft(
-        typeof bonusWindow?.value === 'number' ? bonusWindow.value : 24,
-      );
       const protectionDays = nextRows.find(
         (row) => row.key === 'era.protectionDurationDays',
       );
       setProtectionDaysDraft(
         typeof protectionDays?.value === 'number' ? protectionDays.value : 14,
+      );
+      const recruitCap = nextRows.find((row) => row.key === 'recruit.dailyCap');
+      setRecruitCapDraft(
+        typeof recruitCap?.value === 'number' ? recruitCap.value : 25,
       );
       const emailRate = nextRows.find(
         (row) => row.key === 'email.outbox.ratePerMinute',
@@ -249,34 +240,6 @@ const ServerSettingsPage = () => {
                               }}
                               onBlur={() => save(key, emailRateDraft)}
                             />
-                          ) : key === 'era.dailyCitizenBonus' ? (
-                            <NumberInput
-                              aria-label={t(`settings.labels.${key}`)}
-                              min={0}
-                              max={100000}
-                              step={10}
-                              thousandSeparator=","
-                              value={citizenBonusDraft}
-                              disabled={savingKey === key}
-                              onChange={(next) => {
-                                if (typeof next === 'number')
-                                  setCitizenBonusDraft(next);
-                              }}
-                              onBlur={() => save(key, citizenBonusDraft)}
-                            />
-                          ) : key === 'era.dailyCitizenBonusActivityHours' ? (
-                            <NumberInput
-                              aria-label={t(`settings.labels.${key}`)}
-                              min={0}
-                              max={720}
-                              value={bonusWindowDraft}
-                              disabled={savingKey === key}
-                              onChange={(next) => {
-                                if (typeof next === 'number')
-                                  setBonusWindowDraft(next);
-                              }}
-                              onBlur={() => save(key, bonusWindowDraft)}
-                            />
                           ) : key === 'era.protectionDurationDays' ? (
                             <NumberInput
                               aria-label={t(`settings.labels.${key}`)}
@@ -290,6 +253,20 @@ const ServerSettingsPage = () => {
                                   setProtectionDaysDraft(next);
                               }}
                               onBlur={() => save(key, protectionDaysDraft)}
+                            />
+                          ) : key === 'recruit.dailyCap' ? (
+                            <NumberInput
+                              aria-label={t(`settings.labels.${key}`)}
+                              min={0}
+                              max={1000}
+                              allowDecimal={false}
+                              value={recruitCapDraft}
+                              disabled={savingKey === key}
+                              onChange={(next) => {
+                                if (typeof next === 'number')
+                                  setRecruitCapDraft(next);
+                              }}
+                              onBlur={() => save(key, recruitCapDraft)}
                             />
                           ) : key === 'MAINTENANCE_MODE' ? (
                             <Stack gap="xs">

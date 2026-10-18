@@ -5,6 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 import { emitSocialCountUpdate } from '@/utils/socialNotifications';
 
 const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
@@ -39,7 +40,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     return res.status(200).json(result);
   } catch (error) {
     logError('Error processing friend request:', error);
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

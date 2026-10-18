@@ -203,12 +203,28 @@ beforeEach(() => {
     findFirst: vi.fn(async () => null),
     deleteMany: vi.fn(async () => ({ count: 0 })),
   };
+  let allianceRoomId: number | null = null;
   mockPrisma.chatRoom = {
     findMany: vi.fn(async () => []),
+    findFirst: vi.fn(async () =>
+      allianceRoomId ? { id: allianceRoomId } : null,
+    ),
+    create: vi.fn(async () => {
+      allianceRoomId = 1;
+      return { id: allianceRoomId };
+    }),
     deleteMany: vi.fn(async () => ({ count: 0 })),
   };
   mockPrisma.chatRoomParticipant = {
     deleteMany: vi.fn(async () => ({ count: 0 })),
+    createMany: vi.fn(async ({ data }: any) => ({ count: data.length })),
+  };
+  // Notices are posted to the alliance's conversation in /messaging.
+  mockPrisma.chatMessage = {
+    create: vi.fn(async ({ data }: any) => {
+      messages.push(data);
+      return { id: messages.length, ...data };
+    }),
   };
   mockPrisma.attack_log_acl = { deleteMany: vi.fn(async () => ({ count: 0 })) };
   mockPrisma.alliance_gold_requests = {
@@ -330,15 +346,16 @@ describe('requesting and approving', () => {
     expect(await reason(request(MEMBER, 1_001n))).toContain('limited to 1000');
   });
 
-  it('approval disburses once with the alliance terms snapshotted', async () => {
+  it('approval keeps the quoted interest and starts the term on approval', async () => {
     const created = await request(MEMBER, 1_000n);
     alliance.loan_interest_pct = 20; // changes after the request, before approval
     alliance.loan_term_days = 3;
     await decide(created.id);
     const loan = loans[0];
     expect(loan.status).toBe('ACTIVE');
-    expect(loan.amount_owed).toBe(1_200n);
-    expect(loan.interest_pct).toBe(20);
+    // The borrower was quoted 10% when asking; the later 20% does not apply.
+    expect(loan.amount_owed).toBe(1_100n);
+    expect(loan.interest_pct).toBe(10);
     expect(loan.due_at.getTime() - Date.now()).toBeGreaterThan(
       2.9 * 86_400_000,
     );
@@ -359,6 +376,37 @@ describe('requesting and approving', () => {
     expect(await reason(decide(created.id, MEMBER_2))).toBe(
       'You do not have permission to manage the bank',
     );
+  });
+
+  it('refuses a banker approving their own loan without approve_own_requests', async () => {
+    const created = await request(BANKER, 1_000n);
+    expect(await reason(decide(created.id, BANKER))).toBe(
+      'You do not have permission to approve your own requests',
+    );
+    expect(loans[0].status).toBe('REQUESTED');
+    expect(alliance.gold_in_bank).toBe(100_000n);
+    // Declining (withdrawing) their own request stays possible.
+    await decide(created.id, BANKER, 'decline');
+    expect(loans[0].status).toBe('DECLINED');
+  });
+
+  it('lets a banker with approve_own_requests approve their own loan', async () => {
+    const previous = ROLES[BANKER].permissions;
+    ROLES[BANKER].permissions = { ...previous, approve_own_requests: true };
+    try {
+      const created = await request(BANKER, 1_000n);
+      await decide(created.id, BANKER);
+      expect(loans[0].status).toBe('ACTIVE');
+      expect(alliance.gold_in_bank).toBe(99_000n);
+    } finally {
+      ROLES[BANKER].permissions = previous;
+    }
+  });
+
+  it('always lets the leader approve their own loan', async () => {
+    const created = await request(LEADER, 1_000n);
+    await decide(created.id, LEADER);
+    expect(loans[0].status).toBe('ACTIVE');
   });
 
   it('refuses a second active loan', async () => {
@@ -547,7 +595,8 @@ describe('default', () => {
     expect(loan.status).toBe('DEFAULTED');
     expect(loan.amount_repaid).toBe(500n);
     expect(userRows[MEMBER]).toEqual({ gold: 0n, gold_in_bank: 0n });
-    expect(messages.map((m) => m.to_user_id).sort()).toEqual([LEADER, BANKER]);
+    expect(messages).toHaveLength(1);
+    expect(messages[0].content).toContain('defaulted on a treasury loan');
 
     userRows[MEMBER].gold = 1_000n;
     expect(await reason(depositGold(MEMBER, 100n))).toContain(
@@ -568,7 +617,7 @@ describe('default', () => {
     userRows[MEMBER].gold = 100n;
     await AllianceLoanService.processOverdueLoans();
     expect(loan.amount_repaid).toBe(600n);
-    expect(messages).toHaveLength(2);
+    expect(messages).toHaveLength(1);
 
     // Paying it off lifts the restrictions.
     userRows[MEMBER].gold = 5_000n;

@@ -41,6 +41,8 @@ export interface OrderSummaryBarProps {
   refund?: number;
   primaryAction: OrderSummaryAction;
   secondaryAction: OrderSummaryAction;
+  /** Optional low-emphasis action that discards the order (e.g. Clear all). */
+  clearAction?: OrderSummaryAction;
   hint?: string;
   locale?: Locales;
 }
@@ -59,6 +61,7 @@ export const OrderSummaryBar: React.FC<OrderSummaryBarProps> = ({
   refund,
   primaryAction,
   secondaryAction,
+  clearAction,
   hint,
   locale,
 }) => {
@@ -157,6 +160,17 @@ export const OrderSummaryBar: React.FC<OrderSummaryBarProps> = ({
                   )}
                 </Group>
                 <Group gap="sm">
+                  {clearAction && (
+                    <Button
+                      variant="subtle"
+                      color="gray"
+                      onClick={clearAction.onClick}
+                      disabled={clearAction.disabled || anyLoading}
+                      data-testid={clearAction.testId}
+                    >
+                      {clearAction.label}
+                    </Button>
+                  )}
                   <Button
                     color="yellow"
                     onClick={primaryAction.onClick}

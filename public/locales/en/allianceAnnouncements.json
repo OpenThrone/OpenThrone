@@ -10,7 +10,8 @@
     "counter": "{{count}} / {{max}}",
     "hint": "Plain text only. Every other member also receives it in their inbox.",
     "submit": "Post announcement",
-    "posted": "Announcement posted and delivered to {{count}} inbox(es)"
+    "posted_one": "Announcement posted and delivered to {{count}} inbox",
+    "posted_other": "Announcement posted and delivered to {{count}} inboxes"
   },
   "list": {
     "empty": "No announcements yet.",

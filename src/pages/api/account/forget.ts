@@ -5,6 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import { AccountService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const ForgetRequestSchema = z.object({
   password: z.string().min(1, { message: 'Password is required.' }),
@@ -54,7 +55,7 @@ const handler = async (
     logError(error, logContext, 'API Error: /api/account/forget');
 
     if (error.message === 'Invalid password.') {
-      return res.status(401).json({ error: error.message });
+      return res.status(401).json({ error: publicErrorMessage(error) });
     }
     if (error.message === 'User not found or password hash missing.') {
       return res

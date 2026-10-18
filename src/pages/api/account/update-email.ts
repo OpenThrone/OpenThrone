@@ -9,6 +9,7 @@ import { AccountAnonymizationService } from '@/services/AccountAnonymization.ser
 import type { AuthenticatedRequest } from '@/types/api';
 import { verifyStoredPassword } from '@/utils/credentialGuards';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 // Removed getSession and stringifyObj imports
 
 // Zod schema for the request body
@@ -151,13 +152,13 @@ export const handler = async (
 
     // Handle specific errors
     if (error.message === 'Email is already in use by another account.') {
-      return res.status(409).json({ error: error.message }); // 409 Conflict
+      return res.status(409).json({ error: publicErrorMessage(error) }); // 409 Conflict
     }
     if (error.message === 'Invalid or expired verification code.') {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: publicErrorMessage(error) });
     }
     if (error.message === 'Invalid password.') {
-      return res.status(401).json({ error: error.message }); // 401 Unauthorized
+      return res.status(401).json({ error: publicErrorMessage(error) }); // 401 Unauthorized
     }
     if (error.message === 'User account not found or password hash missing.') {
       return res.status(404).json({ error: 'User account issue.' });

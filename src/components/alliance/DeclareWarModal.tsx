@@ -27,7 +27,9 @@ export const DeclareWarModal = ({
     },
     validate: {
       targetAllianceId: (value) =>
-        value ? null : 'Target Alliance ID is required',
+        value
+          ? null
+          : t('war.targetRequired', 'Target Alliance ID is required'),
     },
   });
 
@@ -68,7 +70,7 @@ export const DeclareWarModal = ({
         <Stack>
           <NumberInput
             label={t('war.targetAllianceId', 'Target Alliance ID')}
-            placeholder="Enter ID"
+            placeholder={t('war.targetAllianceIdPlaceholder', 'Enter ID')}
             required
             min={1}
             {...form.getInputProps('targetAllianceId')}

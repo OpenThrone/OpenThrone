@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const CreateAllianceSchema = z.object({
   allianceName: z.string().optional(),
@@ -54,7 +55,7 @@ const createAlliance = async (req, res) => {
     });
     return res.status(200).json(stringifyObj(alliance));
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

@@ -6,7 +6,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Box, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { OrderSummaryBar } from '@/components/game/OrderSummaryBar';
@@ -14,7 +20,12 @@ import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
 import NewUnitSection from '@/components/newUnitSection';
 import { EconomyUpgrades, Fortifications } from '@/constants';
+import {
+  applyEventDiscount,
+  refundFromDiscountedCost,
+} from '@/constants/gameEvents';
 import { useUser } from '@/context/users';
+import { useActiveGameEvents } from '@/hooks/useActiveGameEvents';
 import { alertService } from '@/services/Alert.service';
 import type { PlayerUnit, UnitType, User } from '@/types/typings'; // Assuming User type is defined elsewhere or use specific type from context
 import { logDebug, logError, logWarn } from '@/utils/logger'; // Added logError
@@ -29,7 +40,8 @@ interface UnitData {
   bonus: number;
   ownedUnits: number;
   requirement: string; // Fortification name required
-  cost: number; // Adjusted cost including price bonus
+  cost: number; // Adjusted cost including price bonus and any discount event
+  fullCost: number; // Price bonus only; refunds and conversions use it
   enabled: boolean; // Whether user meets requirements
   level: number;
   usage: UnitType; // Should be UnitType, but usage might be legacy? Verify type.
@@ -54,6 +66,9 @@ interface UnitTypeIndex {
  */
 const Training: React.FC = () => {
   const { t } = useTranslation('battle');
+  const {
+    modifiers: { unitCostDiscountPercent: unitDiscount },
+  } = useActiveGameEvents();
   const { user, forceUpdate } = useUser();
   const [totalCost, setTotalCost] = useState(0);
   const [showUntrainConfirm, setShowUntrainConfirm] = useState(false);
@@ -168,7 +183,10 @@ const Training: React.FC = () => {
       const baseCost = Number(String(unit.cost || '0').replace(/,/g, '')) || 0;
       const userPriceBonus = user?.priceBonus ?? 0; // e.g. 10 means 10%
       const discountAmount = Math.ceil((userPriceBonus / 100) * baseCost);
-      const adjustedCost = Math.max(0, baseCost - discountAmount);
+      // A running training discount event (#86) applies on top, exactly as
+      // the server charges it.
+      const fullCost = Math.max(0, baseCost - discountAmount);
+      const adjustedCost = applyEventDiscount(fullCost, unitDiscount);
       return {
         id: unitId,
         name: unit.name,
@@ -176,6 +194,7 @@ const Training: React.FC = () => {
         ownedUnits: ownedUnit?.quantity || 0,
         requirement: requirementFort?.name || 'Unknown',
         cost: adjustedCost,
+        fullCost,
         enabled:
           user.fortLevel !== undefined && unit.fortLevel <= user.fortLevel,
         level: unit.level,
@@ -183,8 +202,8 @@ const Training: React.FC = () => {
         fortLevel: unit.fortLevel,
       };
     },
-    [user],
-  ); // Depends on user object
+    [user, unitDiscount],
+  );
 
   // Effect to populate unit section states when user data is available or changes
   useEffect(() => {
@@ -247,7 +266,11 @@ const Training: React.FC = () => {
       units: { type: UnitType; quantity: number; level: number }[],
     ) => {
       if (units.length === 0) {
-        alertService.warn(t('training.noUnitsSelected', { action: endpoint }));
+        alertService.warn(
+          endpoint === 'train'
+            ? t('training.enterQuantityTrain')
+            : t('training.enterQuantityUntrain'),
+        );
         return null;
       }
       try {
@@ -265,19 +288,17 @@ const Training: React.FC = () => {
         }
         alertService.success(
           data.message ||
-            t('training.trainingSuccessful', {
-              action: endpoint.charAt(0).toUpperCase() + endpoint.slice(1),
-            }),
+            (endpoint === 'train'
+              ? t('training.trainSuccessful')
+              : t('training.untrainSuccessful')),
         );
         return data;
       } catch (error: any) {
         logError(`Error calling ${endpoint} API:`, error); // Use logError
-        throw new Error(
-          error.message || `An unexpected error occurred during ${endpoint}.`,
-        );
+        throw new Error(error.message || t('training.unexpectedError'));
       }
     },
-    [],
+    [t],
   );
 
   /**
@@ -327,8 +348,15 @@ const Training: React.FC = () => {
    * Validates input, checks gold/citizens, calls API, and updates local state.
    * @param submitType - Whether to 'train' or 'untrain'.
    */
+  // One train/untrain request at a time: a double-click must not charge twice.
+  const submittingRef = useRef(false);
+  const [submitting, setSubmitting] = useState<'train' | 'untrain' | null>(
+    null,
+  );
+
   const handleFormSubmit = useCallback(
     async (submitType: 'train' | 'untrain') => {
+      if (submittingRef.current) return;
       if (!user) {
         alertService.error(t('training.userNotFound'));
         return;
@@ -337,7 +365,9 @@ const Training: React.FC = () => {
 
       if (unitsToModify.length === 0) {
         alertService.warn(
-          `Please enter quantity of units you wish to ${submitType}.`,
+          submitType === 'train'
+            ? t('training.enterQuantityTrain')
+            : t('training.enterQuantityUntrain'),
         );
         return;
       }
@@ -374,6 +404,8 @@ const Training: React.FC = () => {
       // Validation for untraining (already partially handled in getUnitQuantities, but double-check here if needed)
       // Could add a check here to ensure untrain quantity doesn't exceed owned for each unit type again if necessary
 
+      submittingRef.current = true;
+      setSubmitting(submitType);
       try {
         const data = await callTrainingApi(submitType, user, unitsToModify);
         if (data) {
@@ -381,8 +413,14 @@ const Training: React.FC = () => {
         }
       } catch (error: any) {
         alertService.error(
-          error.message || t('training.failedToTrain', { action: submitType }),
+          error.message ||
+            (submitType === 'train'
+              ? t('training.failedToTrainUnits')
+              : t('training.failedToUntrainUnits')),
         );
+      } finally {
+        submittingRef.current = false;
+        setSubmitting(null);
       }
     },
     [user, getUnitQuantities, totalCost, updateLocalUnits, callTrainingApi, t],
@@ -453,6 +491,7 @@ const Training: React.FC = () => {
               unitCosts={unitCosts}
               setUnitCosts={setUnitCosts}
               unitType={unitType.type}
+              pageTotalCost={totalCost}
               key={unitType.type}
             />
           ))}
@@ -463,10 +502,11 @@ const Training: React.FC = () => {
         totalCostLabel={t('training.totalCost')}
         totalCost={totalCost}
         refundLabel={t('training.refund')}
-        refund={Math.floor(totalCost * 0.75)}
+        refund={refundFromDiscountedCost(totalCost, unitDiscount)}
         primaryAction={{
           label: t('training.train'),
           onClick: handleTrainAll,
+          loading: submitting === 'train',
           disabled:
             totalCost <= 0 || BigInt(Math.ceil(totalCost)) > (user.gold ?? 0),
           testId: 'train-button',
@@ -474,7 +514,14 @@ const Training: React.FC = () => {
         secondaryAction={{
           label: t('training.untrain'),
           onClick: () => setShowUntrainConfirm(true),
+          loading: submitting === 'untrain',
           disabled: totalCost <= 0,
+        }}
+        clearAction={{
+          label: t('training.clearAll'),
+          onClick: resetUnitCosts,
+          disabled: totalCost <= 0,
+          testId: 'clear-all-button',
         }}
         hint={t('training.untrainWarning')}
         locale={user.locale}
@@ -485,7 +532,16 @@ const Training: React.FC = () => {
         onConfirm={confirmUntrain}
         title={t('attack.untrainTitle')}
         message={t('attack.untrainMessage', {
-          gold: toLocale(Math.ceil(totalCost * 0.25), user.locale),
+          // What the player paid minus what untraining refunds (75% of the
+          // full price, even during a training discount event).
+          gold: toLocale(
+            Math.max(
+              0,
+              Math.ceil(totalCost) -
+                refundFromDiscountedCost(totalCost, unitDiscount),
+            ),
+            user.locale,
+          ),
         })}
         confirmText={t('attack.confirm')}
         cancelText={t('training.cancel')}

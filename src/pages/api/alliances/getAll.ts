@@ -4,6 +4,7 @@ import type { NextApiResponse } from 'next';
 import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const getAll = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   if (req.method !== 'GET') {
@@ -18,7 +19,7 @@ const getAll = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     );
     return res.status(200).json(alliances);
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: publicErrorMessage(error) });
   }
 };
 

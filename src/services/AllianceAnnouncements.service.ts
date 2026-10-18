@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
+import { postToAllianceRoom } from '@/services/AllianceRoom.service';
 import { logError } from '@/utils/logger';
 
 export const ANNOUNCEMENT_TITLE_MAX = 120;
@@ -130,24 +131,13 @@ export class AllianceAnnouncementsService {
           data: { alliance_id: alliance.id, author_id: userId, title, body },
         });
 
-        const members = await tx.alliance_memberships.findMany({
-          where: { alliance_id: alliance.id },
-          select: { user_id: true },
-        });
-        const recipients = [
-          ...new Set(members.map((m: { user_id: number }) => m.user_id)),
-        ].filter((id) => id !== userId);
-
-        if (recipients.length > 0) {
-          await tx.messages.createMany({
-            data: recipients.map((toUserId) => ({
-              from_user_id: userId,
-              to_user_id: toUserId,
-              subject: `[${alliance.name}] ${title}`.slice(0, 200),
-              body,
-            })),
-          });
-        }
+        // Members receive it in /messaging, in the alliance's conversation.
+        const { recipients } = await postToAllianceRoom(
+          tx,
+          alliance,
+          userId,
+          `📢 ${title}\n\n${body}`,
+        );
 
         return { announcement, delivered: recipients.length };
       });

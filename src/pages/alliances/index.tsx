@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
 
+import { MyAllianceInvites } from '@/components/alliance/AllianceInvites';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { MAX_ALLIANCE_MEMBERSHIPS } from '@/constants/alliances';
@@ -103,6 +104,8 @@ export default function AlliancesIndex({
           </Text>
         )}
 
+        <MyAllianceInvites />
+
         {myAlliances.length === 0 ? (
           <Text>{t('mine.empty')}</Text>
         ) : (
@@ -116,9 +119,12 @@ export default function AlliancesIndex({
                         {t('mine.leader')}
                       </Badge>
                     )}
-                    <Badge variant="light">
-                      {t('mine.role', { role: alliance.roleName })}
-                    </Badge>
+                    {/* The leader holds the alliance itself, not a rank. */}
+                    {!alliance.isLeader && (
+                      <Badge variant="light">
+                        {t('mine.role', { role: alliance.roleName })}
+                      </Badge>
+                    )}
                   </Group>
                   <Text size="sm">
                     {t('mine.members', { count: alliance.memberCount })}

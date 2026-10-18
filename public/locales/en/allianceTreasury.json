@@ -18,7 +18,8 @@
   "requestReason": "Reason (optional)",
   "requestButton": "Send Request",
   "requestSuccess": "Request sent.",
-  "requestLimit": "You can have up to {{count}} pending requests.",
+  "requestLimit_one": "You can have up to {{count}} pending request.",
+  "requestLimit_other": "You can have up to {{count}} pending requests.",
   "queueTitle": "Gold Requests",
   "queueEmpty": "No gold requests.",
   "queueMember": "Member",
@@ -26,6 +27,7 @@
   "queueStatus": "Status",
   "queueActions": "Actions",
   "approve": "Approve",
+  "approveOwnBlocked": "You cannot approve your own request. Your rank needs the \"Approve own gold and loan requests\" permission.",
   "decline": "Decline",
   "cancel": "Cancel",
   "approved": "Request approved.",
@@ -60,7 +62,8 @@
     "queueEmpty": "No open or pending loans.",
     "principal": "Principal",
     "balance": "Left / owed",
-    "closedCount": "{{count}} closed loans are not shown.",
+    "closedCount_one": "{{count}} closed loan is not shown.",
+    "closedCount_other": "{{count}} closed loans are not shown.",
     "approved": "Loan approved.",
     "declined": "Loan declined.",
     "cancelled": "Loan request cancelled.",
@@ -73,7 +76,8 @@
       "WRITTEN_OFF": "Written off",
       "DECLINED": "Declined",
       "CANCELLED": "Cancelled"
-    }
+    },
+    "overCap": "Loans are limited to {{cap}} gold."
   },
   "settings": {
     "title": "Treasury Rules",

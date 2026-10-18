@@ -1,7 +1,7 @@
 import { Badge, UnstyledButton } from '@mantine/core';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { signOut, useSession } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -10,6 +10,11 @@ import Image from '@/components/ArtworkImage';
 import classes from '@/components/navLoggedIn.module.css';
 import { useLayout } from '@/context/LayoutContext';
 import { useUser } from '@/context/users';
+import {
+  formatImpersonationTimeLeft,
+  useImpersonation,
+} from '@/hooks/useImpersonation';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import type { PlayerRace } from '@/types/typings';
 import { getAssetPath } from '@/utils/utilities';
 
@@ -84,7 +89,7 @@ const subMenus: Record<string, NavItem[]> = {
     { key: 'news', href: '/community/news', labelKey: 'community.news' },
     {
       key: 'discord',
-      href: 'https://discord.gg/j9NYxmBCjA',
+      href: 'https://discord.com/invite/j9NYxmBCjA',
       labelKey: 'community.discord',
     },
     { key: 'stats', href: '/community/stats', labelKey: 'community.stats' },
@@ -153,7 +158,6 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
   const pathName = router.asPath?.split('?')[0] ?? '/';
   const { t: tCommon } = useTranslation('common');
   const { t: tNav } = useTranslation('navigation');
-  const { data: session } = useSession();
   const [activeSubMenu, setActiveSubMenu] = useState<NavItem[]>([]);
   const [activeParentKey, setActiveParentKey] = useState<string>('');
   const [activeSubKey, setActiveSubKey] = useState<string>('');
@@ -258,8 +262,12 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
 
   const [resetTimer, setResetTimer] = useState<number | null>(null);
 
+  const { config: runtimeConfig } = useRuntimeConfig();
+  const socialEnabled = runtimeConfig?.enableSocial === true;
+
   const fetchSocialNotifications = useCallback(async () => {
-    if (!user) return;
+    // Social endpoints answer 503 while the feature is off; don't poll them.
+    if (!user || !socialEnabled) return;
     try {
       const response = await fetch('/api/social/notifications/count');
       if (!response.ok) return;
@@ -268,7 +276,7 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
     } catch {
       // keep existing count on failure
     }
-  }, [user]);
+  }, [user, socialEnabled]);
 
   useEffect(() => {
     fetchSocialNotifications();
@@ -369,22 +377,19 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
 
   const notificationSum = unreadMessagesCount + socialNotificationCount;
   const badgeLabel = notificationSum > 9 ? '9+' : `${notificationSum}`;
-  const isImpersonating = Boolean((session?.user as any)?.impersonatedBy);
-
-  const handleStopImpersonation = useCallback(async () => {
-    try {
-      await fetch('/api/admin/impersonate/stop', {
-        method: 'POST',
-      });
-    } finally {
-      await signOut({ callbackUrl: '/account/login' });
-    }
-  }, []);
+  const {
+    isImpersonating,
+    msLeft: impersonationMsLeft,
+    end: handleStopImpersonation,
+  } = useImpersonation();
+  const endImpersonationLabel = tNav('actions.endImpersonation', {
+    time: formatImpersonationTimeLeft(impersonationMsLeft ?? 0),
+  });
 
   if (isImpersonating) {
     allMenuItems.push({
       key: 'endImpersonation',
-      label: 'End Impersonation',
+      label: endImpersonationLabel,
       onClick: handleStopImpersonation,
     });
   }
@@ -525,8 +530,13 @@ export const NavLoggedIn: React.FC<NavLoggedInProps> = ({
                   onClick={handleStopImpersonation}
                   className={classes.navLink}
                   data-testid="desktop-end-impersonation-button"
+                  title={endImpersonationLabel}
+                  aria-label={endImpersonationLabel}
+                  style={{ whiteSpace: 'nowrap' }}
                 >
-                  End Impersonation
+                  {tNav('actions.endImpersonationShort', {
+                    time: formatImpersonationTimeLeft(impersonationMsLeft ?? 0),
+                  })}
                 </UnstyledButton>
               </li>
             )}

@@ -12,6 +12,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 
 import { allianceRequest } from '@/components/alliance/allianceStanding';
+import { ApproveRequestButton } from '@/components/alliance/treasury/ApproveRequestButton';
 import { GameCard } from '@/components/game/GameCard';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
@@ -131,14 +132,11 @@ export const GoldRequestQueue = ({
                         <Group gap="xs" wrap="nowrap">
                           {data.canManage && (
                             <>
-                              <Button
-                                size="compact-xs"
-                                color="green"
+                              <ApproveRequestButton
+                                blockedAsOwn={own && !data.canApproveOwn}
                                 loading={busyId === request.id}
-                                onClick={() => act(request.id, 'approve')}
-                              >
-                                {t('approve')}
-                              </Button>
+                                onApprove={() => act(request.id, 'approve')}
+                              />
                               <Button
                                 size="compact-xs"
                                 color="red"

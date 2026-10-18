@@ -92,6 +92,13 @@ export class AllianceGoldRequestService {
         membership.role,
         'manage_bank',
       ),
+      // Bank managers need this extra key to approve their own requests.
+      canApproveOwn: hasAlliancePermission(
+        alliance.leader_id,
+        userId,
+        membership.role,
+        'approve_own_requests',
+      ),
     };
   }
 
@@ -175,7 +182,11 @@ export class AllianceGoldRequestService {
           include,
         }),
       ]);
-      return { canManage: true, requests: [...pending, ...history] };
+      return {
+        canManage: true,
+        canApproveOwn: standing.canApproveOwn,
+        requests: [...pending, ...history],
+      };
     }
     const requests = await prisma.alliance_gold_requests.findMany({
       where: { alliance_id: allianceId, requester_id: userId },
@@ -183,7 +194,7 @@ export class AllianceGoldRequestService {
       take: 25,
       include,
     });
-    return { canManage: false, requests };
+    return { canManage: false, canApproveOwn: false, requests };
   }
 
   /**
@@ -224,6 +235,15 @@ export class AllianceGoldRequestService {
         }
         if (request.status !== AllianceGoldRequestStatus.PENDING) {
           throw new Error('This request has already been decided');
+        }
+        if (
+          v.decision === 'approve' &&
+          request.requester_id === v.actorId &&
+          !standing.canApproveOwn
+        ) {
+          throw new Error(
+            'You do not have permission to approve your own requests',
+          );
         }
 
         const status =

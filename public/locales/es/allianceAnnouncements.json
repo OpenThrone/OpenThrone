@@ -10,7 +10,8 @@
     "counter": "{{count}} / {{max}}",
     "hint": "Solo texto sin formato. Los demás miembros también lo reciben en su buzón.",
     "submit": "Publicar anuncio",
-    "posted": "Anuncio publicado y entregado en {{count}} buzón(es)"
+    "posted_one": "Anuncio publicado y entregado en {{count}} buzón",
+    "posted_other": "Anuncio publicado y entregado en {{count}} buzones"
   },
   "list": {
     "empty": "Todavía no hay anuncios.",

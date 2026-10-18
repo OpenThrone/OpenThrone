@@ -6,6 +6,7 @@ import { withApiGuard } from '@/middleware/apiGuard';
 import { ModerationService } from '@/services/Moderation.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp } from '@/utils/auditLogger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const Schema = z.object({
   status: z.enum(['OPEN', 'IN_REVIEW', 'ACCEPTED', 'DENIED', 'WITHDRAWN']),
@@ -51,7 +52,9 @@ async function handler(
       'status' in error &&
       typeof error.status === 'number'
     ) {
-      return res.status(error.status).json({ error: error.message });
+      return res
+        .status(error.status)
+        .json({ error: publicErrorMessage(error) });
     }
     throw error;
   }

@@ -21,7 +21,6 @@
   "liftReason": "Sanción retirada por moderación",
   "confirmAccountAction": "Confirmar acción de cuenta",
   "confirmLift": "¿Retirar la sanción actual de la cuenta {{userId}}?",
-  "confirmPenalty": "¿Aplicar {{action}} a la cuenta {{userId}} durante {{duration}} días?",
   "banAppeals": "Moderación: apelaciones de bloqueo",
   "filterByStatus": "Filtrar apelaciones por estado",
   "allStatuses": "Todos los estados",
@@ -34,5 +33,7 @@
   "reportForbidden": "No tienes permiso para revisar este informe.",
   "reportNotFound": "No se encontró este informe.",
   "reportLoadFailed": "No se pudo cargar el informe.",
-  "reportUnavailable": "Los detalles del informe no están disponibles."
+  "reportUnavailable": "Los detalles del informe no están disponibles.",
+  "confirmPenalty_one": "¿Aplicar {{action}} a la cuenta {{userId}} durante {{duration}} día?",
+  "confirmPenalty_other": "¿Aplicar {{action}} a la cuenta {{userId}} durante {{duration}} días?"
 }

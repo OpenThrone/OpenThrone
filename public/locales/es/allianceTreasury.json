@@ -18,7 +18,8 @@
   "requestReason": "Motivo (opcional)",
   "requestButton": "Enviar solicitud",
   "requestSuccess": "Solicitud enviada.",
-  "requestLimit": "Puedes tener hasta {{count}} solicitudes pendientes.",
+  "requestLimit_one": "Puedes tener hasta {{count}} solicitud pendiente.",
+  "requestLimit_other": "Puedes tener hasta {{count}} solicitudes pendientes.",
   "queueTitle": "Solicitudes de oro",
   "queueEmpty": "No hay solicitudes de oro.",
   "queueMember": "Miembro",
@@ -26,6 +27,7 @@
   "queueStatus": "Estado",
   "queueActions": "Acciones",
   "approve": "Aprobar",
+  "approveOwnBlocked": "No puedes aprobar tu propia solicitud. Tu rango necesita el permiso «Aprobar solicitudes propias de oro y préstamos».",
   "decline": "Rechazar",
   "cancel": "Cancelar",
   "approved": "Solicitud aprobada.",
@@ -60,7 +62,8 @@
     "queueEmpty": "No hay préstamos abiertos ni pendientes.",
     "principal": "Capital",
     "balance": "Pendiente / adeudado",
-    "closedCount": "No se muestran {{count}} préstamos cerrados.",
+    "closedCount_one": "No se muestra {{count}} préstamo cerrado.",
+    "closedCount_other": "No se muestran {{count}} préstamos cerrados.",
     "approved": "Préstamo aprobado.",
     "declined": "Préstamo rechazado.",
     "cancelled": "Solicitud de préstamo cancelada.",
@@ -73,7 +76,8 @@
       "WRITTEN_OFF": "Cancelado",
       "DECLINED": "Rechazado",
       "CANCELLED": "Anulado"
-    }
+    },
+    "overCap": "Los préstamos están limitados a {{cap}} de oro."
   },
   "settings": {
     "title": "Reglas del tesoro",

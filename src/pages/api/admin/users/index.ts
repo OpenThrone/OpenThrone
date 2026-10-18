@@ -46,7 +46,11 @@ async function handler(
     // Build where clause based on provided filters
     const whereClause: any = {};
 
-    if (id) whereClause.id = parseInt(id, 10);
+    if (id) {
+      // A non-numeric id matches nobody instead of failing the query.
+      const parsedId = Number.parseInt(String(id), 10);
+      whereClause.id = Number.isSafeInteger(parsedId) ? parsedId : -1;
+    }
     if (username)
       whereClause.display_name = {
         contains: username,

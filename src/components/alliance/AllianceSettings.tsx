@@ -22,16 +22,24 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import useSWR from 'swr';
 
+import { AllianceInvitePanel } from '@/components/alliance/AllianceInvites';
+import { classLabel, raceLabel } from '@/components/alliance/allianceLabels';
 import { allianceRequest } from '@/components/alliance/allianceStanding';
 import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
 import { TreasurySettingsCard } from '@/components/alliance/treasury/TreasurySettingsCard';
+import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
+import { toLocale } from '@/utils/numberFormatting';
 
 interface AllianceSettingsProps {
   alliance: AllianceInfo;
   onUpdate?: () => void; // Callback to reload main data
   isLeader?: boolean;
+  /** Rank may accept or reject join requests (invite_member). */
+  canManageRequests?: boolean;
+  /** Rank may edit the public profile (edit_profile). */
+  canEditProfile?: boolean;
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -41,8 +49,13 @@ export const AllianceSettings = ({
   alliance,
   onUpdate,
   isLeader = false,
+  canManageRequests = false,
+  canEditProfile = false,
 }: AllianceSettingsProps) => {
+  const canManage = isLeader || canManageRequests;
+  const canEdit = isLeader || canEditProfile;
   const { t } = useTranslation('alliances');
+  const { user } = useUser();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [exitAction, setExitAction] = useState<'leave' | 'disband' | null>(
@@ -90,8 +103,10 @@ export const AllianceSettings = ({
       roster_visibility: (alliance as any).roster_visibility || 'PUBLIC',
     },
     validate: {
-      motto: (val) => (val && val.length > 255 ? 'Too long' : null),
-      comments: (val) => (val && val.length > 1000 ? 'Too long' : null),
+      motto: (val) =>
+        val && val.length > 255 ? t('create.mottoTooLong') : null,
+      comments: (val) =>
+        val && val.length > 1000 ? t('create.commentsTooLong') : null,
     },
   });
 
@@ -103,7 +118,10 @@ export const AllianceSettings = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           allianceId: alliance.id,
-          ...values,
+          // Join mode and roster visibility are the leader's call.
+          ...(isLeader
+            ? values
+            : { motto: values.motto, comments: values.comments }),
         }),
       });
       const data = await res.json();
@@ -122,7 +140,7 @@ export const AllianceSettings = ({
 
   // Join Requests
   const { data: requests, mutate: reloadRequests } = useSWR(
-    `/api/alliances/requests?allianceId=${alliance.id}`,
+    canManage ? `/api/alliances/requests?allianceId=${alliance.id}` : null,
     fetcher,
   );
 
@@ -140,7 +158,9 @@ export const AllianceSettings = ({
       if (!res.ok) throw new Error(data.error);
 
       alertService.success(
-        t(`settings.${action}Success`, `${action}ed successfully`),
+        action === 'accept'
+          ? t('settings.acceptSuccess', 'Join request accepted')
+          : t('settings.rejectSuccess', 'Join request rejected'),
       );
       reloadRequests();
       if (action === 'accept' && onUpdate) onUpdate(); // Refresh member count
@@ -151,126 +171,139 @@ export const AllianceSettings = ({
 
   return (
     <Stack gap="lg">
+      {canManage && <AllianceInvitePanel allianceId={alliance.id} />}
+
       {/* Join Requests Section */}
-      <Paper p="md" radius="md" withBorder>
-        <Title order={4} mb="md">
-          {t('settings.requestsTitle', 'Join Requests')}
-        </Title>
-        {!requests ? (
-          <Loader size="sm" />
-        ) : !Array.isArray(requests) || requests.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t('settings.noRequests', 'No pending requests')}
-          </Text>
-        ) : (
-          <Table>
-            <Table.Tbody>
-              {requests.map((req: any) => (
-                <Table.Tr key={req.id}>
-                  <Table.Td>
-                    <Group gap="sm">
-                      {/* Avatar if we had it in join request include, but we only selected user... */}
-                      {/* <Avatar size="sm" /> */}
-                      <Text size="sm" fw={500}>
-                        {req.user.display_name}
+      {canManage && (
+        <Paper p="md" radius="md" withBorder>
+          <Title order={4} mb="md">
+            {t('settings.requestsTitle', 'Join Requests')}
+          </Title>
+          {!requests ? (
+            <Loader size="sm" />
+          ) : !Array.isArray(requests) || requests.length === 0 ? (
+            <Text c="dimmed" size="sm">
+              {t('settings.noRequests', 'No pending requests')}
+            </Text>
+          ) : (
+            <Table>
+              <Table.Tbody>
+                {requests.map((req: any) => (
+                  <Table.Tr key={req.id}>
+                    <Table.Td>
+                      <Group gap="sm">
+                        {/* Avatar if we had it in join request include, but we only selected user... */}
+                        {/* <Avatar size="sm" /> */}
+                        <Text size="sm" fw={500}>
+                          {req.user.display_name}
+                        </Text>
+                      </Group>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge variant="outline" size="sm">
+                        {raceLabel(t, req.user.race)}
+                      </Badge>
+                      <Badge variant="outline" size="sm" ml="xs">
+                        {classLabel(t, req.user.class)}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="xs" c="dimmed">
+                        {t('settings.level', 'Lvl {{level}}', {
+                          level: toLocale(req.user.level ?? 0, user?.locale),
+                        })}
                       </Text>
-                    </Group>
-                  </Table.Td>
-                  <Table.Td>
-                    <Badge variant="outline" size="sm">
-                      {req.user.race}
-                    </Badge>
-                    <Badge variant="outline" size="sm" ml="xs">
-                      {req.user.class}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="xs" c="dimmed">
-                      Lvl {req.user.level}
-                    </Text>
-                  </Table.Td>
-                  <Table.Td align="right">
-                    <Group gap="xs" justify="flex-end">
-                      <ActionIcon
-                        color="green"
-                        variant="subtle"
-                        onClick={() => handleRequest(req.id, 'accept')}
-                        title={t('settings.accept', 'Accept')}
-                      >
-                        <FontAwesomeIcon icon={faCheck} />
-                      </ActionIcon>
-                      <ActionIcon
-                        color="red"
-                        variant="subtle"
-                        onClick={() => handleRequest(req.id, 'reject')}
-                        title={t('settings.reject', 'Reject')}
-                      >
-                        <FontAwesomeIcon icon={faXmark} />
-                      </ActionIcon>
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        )}
-      </Paper>
+                    </Table.Td>
+                    <Table.Td align="right">
+                      <Group gap="xs" justify="flex-end">
+                        <ActionIcon
+                          color="green"
+                          variant="subtle"
+                          onClick={() => handleRequest(req.id, 'accept')}
+                          title={t('settings.accept', 'Accept')}
+                        >
+                          <FontAwesomeIcon icon={faCheck} />
+                        </ActionIcon>
+                        <ActionIcon
+                          color="red"
+                          variant="subtle"
+                          onClick={() => handleRequest(req.id, 'reject')}
+                          title={t('settings.reject', 'Reject')}
+                        >
+                          <FontAwesomeIcon icon={faXmark} />
+                        </ActionIcon>
+                      </Group>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+        </Paper>
+      )}
 
       {/* General Settings Section */}
-      <Paper p="md" radius="md" withBorder>
-        <Title order={4} mb="md">
-          {t('settings.generalTitle', 'General Settings')}
-        </Title>
-        <form onSubmit={form.onSubmit(handleUpdate)}>
-          <Stack gap="sm">
-            <Group grow>
-              <TextInput
-                label={t('create.motto', 'Motto')}
-                {...form.getInputProps('motto')}
+      {canEdit && (
+        <Paper p="md" radius="md" withBorder>
+          <Title order={4} mb="md">
+            {t('settings.generalTitle', 'General Settings')}
+          </Title>
+          <form onSubmit={form.onSubmit(handleUpdate)}>
+            <Stack gap="sm">
+              <Group grow>
+                <TextInput
+                  label={t('create.motto', 'Motto')}
+                  {...form.getInputProps('motto')}
+                />
+              </Group>
+              <Textarea
+                label={t('create.comments', 'Description')}
+                minRows={3}
+                {...form.getInputProps('comments')}
               />
-            </Group>
-            <Textarea
-              label={t('create.comments', 'Description')}
-              minRows={3}
-              {...form.getInputProps('comments')}
-            />
-            <SimpleGrid cols={{ base: 1, sm: 2 }}>
-              <Select
-                label={t('create.joinMode', 'Join Mode')}
-                data={[
-                  { value: 'OPEN', label: t('create.joinModeOpen', 'Open') },
-                  {
-                    value: 'REQUEST_TO_JOIN',
-                    label: t('create.joinModeRequest', 'Request to Join'),
-                  },
-                  {
-                    value: 'INVITE_ONLY',
-                    label: t('create.joinModeInvite', 'Invite Only'),
-                  },
-                ]}
-                {...form.getInputProps('join_mode')}
-              />
-              <Select
-                label={t('create.rosterVisibility', 'Roster Visibility')}
-                data={[
-                  {
-                    value: 'PUBLIC',
-                    label: t('create.rosterPublic', 'Public'),
-                  },
-                  {
-                    value: 'MEMBERS_ONLY',
-                    label: t('create.rosterMembersOnly', 'Members Only'),
-                  },
-                ]}
-                {...form.getInputProps('roster_visibility')}
-              />
-            </SimpleGrid>
-            <Button type="submit" mt="md" loading={loading}>
-              {t('settings.save', 'Save Changes')}
-            </Button>
-          </Stack>
-        </form>
-      </Paper>
+              {isLeader && (
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <Select
+                    label={t('create.joinMode', 'Join Mode')}
+                    data={[
+                      {
+                        value: 'OPEN',
+                        label: t('create.joinModeOpen', 'Open'),
+                      },
+                      {
+                        value: 'REQUEST_TO_JOIN',
+                        label: t('create.joinModeRequest', 'Request to Join'),
+                      },
+                      {
+                        value: 'INVITE_ONLY',
+                        label: t('create.joinModeInvite', 'Invite Only'),
+                      },
+                    ]}
+                    {...form.getInputProps('join_mode')}
+                  />
+                  <Select
+                    label={t('create.rosterVisibility', 'Roster Visibility')}
+                    data={[
+                      {
+                        value: 'PUBLIC',
+                        label: t('create.rosterPublic', 'Public'),
+                      },
+                      {
+                        value: 'MEMBERS_ONLY',
+                        label: t('create.rosterMembersOnly', 'Members Only'),
+                      },
+                    ]}
+                    {...form.getInputProps('roster_visibility')}
+                  />
+                </SimpleGrid>
+              )}
+              <Button type="submit" mt="md" loading={loading}>
+                {t('settings.save', 'Save Changes')}
+              </Button>
+            </Stack>
+          </form>
+        </Paper>
+      )}
 
       {isLeader && (
         <TreasurySettingsCard alliance={alliance} onUpdate={onUpdate} />

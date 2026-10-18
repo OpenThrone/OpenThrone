@@ -107,5 +107,57 @@
     "preview": "La era se reiniciará el {{local}} hora OT ({{utc}}).",
     "time": "Hora del reinicio (hora OT, 24 horas)",
     "timeInvalid": "Introduce una hora en formato de 24 horas, por ejemplo 18:30 o 18:30:00."
+  },
+  "eventsForm": {
+    "intro": "Programa bonificaciones como un fin de semana de XP doble o una bonificación diaria de ciudadanos para toda la era. Un evento se aplica mientras está activo y dentro de su periodo. Los eventos que coinciden se combinan: los multiplicadores se multiplican (0,1×–10×), las bonificaciones fijas se suman y los descuentos se acumulan hasta un 25 %.",
+    "fromPreset": "Nuevo desde plantilla",
+    "presets": {
+      "xpWeekend": "Fin de semana de XP doble",
+      "citizenWeekend": "Fin de semana de ciudadanos dobles",
+      "dailyCitizens": "+100 ciudadanos al día (hasta el fin de la era)",
+      "turnsWeekend": "Fin de semana de turnos extra",
+      "trainingSale": "Rebajas de entrenamiento y armería"
+    },
+    "effectsHeading": "Efectos",
+    "effects": {
+      "xpMultiplier": "Multiplicador de XP",
+      "goldMultiplier": "Multiplicador de ingresos de oro",
+      "dailyCitizenBonus": "Bonificación diaria de ciudadanos",
+      "dailyCitizenActivityHours": "Periodo de actividad (horas)",
+      "citizenMultiplier": "Multiplicador de ciudadanos",
+      "citizenMultiplierScope": "Se aplica a",
+      "extraTurnsPerTick": "Turnos extra por turno",
+      "unitCostDiscountPercent": "Descuento de entrenamiento",
+      "armoryCostDiscountPercent": "Descuento de armería"
+    },
+    "effectHints": {
+      "xpMultiplier": "Multiplica la XP de las batallas.",
+      "goldMultiplier": "Multiplica el oro que ganan los jugadores cada turno.",
+      "dailyCitizenBonus": "Ciudadanos extra que recibe cada jugador en la actualización diaria.",
+      "dailyCitizenActivityHours": "Solo los jugadores activos en este periodo reciben la bonificación. 0 = todos.",
+      "citizenMultiplier": "Multiplica los ciudadanos del crecimiento diario, del reclutamiento o de ambos.",
+      "extraTurnsPerTick": "Turnos que se suman al normal en cada turno.",
+      "unitCostDiscountPercent": "Porcentaje de descuento al entrenar unidades (máx. 25 %, para que desentrenar no dé beneficio).",
+      "armoryCostDiscountPercent": "Porcentaje de descuento en compras de la armería (máx. 25 %, para que vender no dé beneficio)."
+    },
+    "scope": {
+      "DAILY": "Crecimiento diario",
+      "RECRUITING": "Reclutamiento",
+      "BOTH": "Ambos"
+    },
+    "untilEraEnd": "Mantener hasta el fin de la era",
+    "untilEraEndHint": "Sin hora de fin: el evento termina automáticamente cuando acaba la era actual.",
+    "untilEraEndOf": "Hasta que termine {{era}}",
+    "keyHint": "Opcional. Se genera a partir del nombre si se deja vacío.",
+    "activateNow": "Activar al guardar (igualmente espera a su hora de inicio)",
+    "endNow": "Terminar ahora",
+    "nameAndStartRequired": "Introduce un nombre y una hora de inicio.",
+    "effectRequired": "Activa al menos un efecto.",
+    "phase": {
+      "draft": "Borrador",
+      "scheduled": "Programado",
+      "running": "En curso",
+      "ended": "Terminado"
+    }
   }
 }

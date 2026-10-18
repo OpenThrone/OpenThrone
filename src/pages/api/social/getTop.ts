@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const GetTopSocialQuerySchema = z.object({
   type: z.enum(['FRIEND', 'ENEMY']),
@@ -39,7 +40,7 @@ const getTopSocialRelations = async (
     });
     res.status(200).json(relations);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: publicErrorMessage(error) });
   }
 };
 

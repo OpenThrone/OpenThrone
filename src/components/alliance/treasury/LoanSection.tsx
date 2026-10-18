@@ -16,6 +16,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 
 import { allianceRequest } from '@/components/alliance/allianceStanding';
+import { ApproveRequestButton } from '@/components/alliance/treasury/ApproveRequestButton';
 import { GameCard } from '@/components/game/GameCard';
 import { ALLIANCE_NOTE_MAX_LENGTH } from '@/constants/allianceTreasury';
 import { useUser } from '@/context/users';
@@ -268,6 +269,11 @@ export const LoanSection = ({
               value={amount.toString()}
               onChange={(val) => setAmount(toBigIntSafe(val))}
               thousandSeparator=","
+              error={
+                amount > toBigIntSafe(terms.dailyCap)
+                  ? t('loan.overCap', { cap: toLocale(terms.dailyCap) })
+                  : undefined
+              }
             />
             <TextInput
               label={t('requestReason')}
@@ -278,7 +284,7 @@ export const LoanSection = ({
             <Button
               type="button"
               loading={busy === 'request'}
-              disabled={amount <= 0n}
+              disabled={amount <= 0n || amount > toBigIntSafe(terms.dailyCap)}
               onClick={submitRequest}
             >
               {t('loan.requestButton')}
@@ -328,14 +334,14 @@ export const LoanSection = ({
                       <Table.Td>
                         {loan.status === 'REQUESTED' && (
                           <Group gap="xs" wrap="nowrap">
-                            <Button
-                              size="compact-xs"
-                              color="green"
+                            <ApproveRequestButton
+                              blockedAsOwn={
+                                loan.borrower_id === user?.id &&
+                                !data.canApproveOwn
+                              }
                               loading={busy === `approve-${loan.id}`}
-                              onClick={() => decide(loan.id, 'approve')}
-                            >
-                              {t('approve')}
-                            </Button>
+                              onApprove={() => decide(loan.id, 'approve')}
+                            />
                             <Button
                               size="compact-xs"
                               color="red"

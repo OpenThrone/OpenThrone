@@ -16,7 +16,7 @@ const ERA = {
   startDate: new Date(NOW.getTime() - 40 * DAY),
   startSettings: { citizens: 50 },
 };
-const SETTINGS = { durationDays: 14, dailyCitizenBonus: 0 };
+const SETTINGS = { durationDays: 14, recruitDailyCap: 0 };
 const xpForLevel = (level: number) =>
   levelXPArray.find((entry) => entry.level === level)?.xp ?? 0;
 
@@ -31,6 +31,23 @@ const fresh = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe('getProtectionStatus', () => {
+  it('raises the population limit by citizens received from timed events (#89)', () => {
+    const base = getProtectionStatus(fresh(), ERA, SETTINGS, NOW);
+    const over = base.populationThreshold + 50;
+    expect(
+      getProtectionStatus(fresh({ population: over }), ERA, SETTINGS, NOW)
+        .protected,
+    ).toBe(false);
+    const status = getProtectionStatus(
+      fresh({ population: over, eventCitizensReceived: 100 }),
+      ERA,
+      SETTINGS,
+      NOW,
+    );
+    expect(status.protected).toBe(true);
+    expect(status.populationThreshold).toBe(base.populationThreshold + 100);
+  });
+
   it('protects a fresh player and reports the time limit', () => {
     const status = getProtectionStatus(fresh(), ERA, SETTINGS, NOW);
     expect(status.protected).toBe(true);
@@ -62,7 +79,7 @@ describe('getProtectionStatus', () => {
 
   it('ends when population reaches the threshold', () => {
     // Housing level 1 grants 20/day; (20 + 5 bonus) * 14 + 50 starting citizens.
-    const settings = { durationDays: 14, dailyCitizenBonus: 5 };
+    const settings = { durationDays: 14, recruitDailyCap: 5 };
     const threshold = (20 + 5) * 14 + 50;
     expect(
       getProtectionStatus(
@@ -155,7 +172,7 @@ describe('population threshold and settings', () => {
     expect(
       getProtectionPopulationThreshold({
         houseLevel: 1,
-        dailyCitizenBonus: 10,
+        recruitDailyCap: 10,
         durationDays: 14,
         startingPopulation: 0,
       }),
@@ -163,7 +180,7 @@ describe('population threshold and settings', () => {
     expect(
       getProtectionPopulationThreshold({
         houseLevel: 0,
-        dailyCitizenBonus: 0,
+        recruitDailyCap: 0,
         durationDays: 30,
         startingPopulation: 50,
       }),

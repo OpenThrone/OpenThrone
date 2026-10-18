@@ -19,7 +19,8 @@
     "threatHint": "Ein Mitglied hat gemeldet, von diesem Spieler angegriffen zu werden.",
     "callThis": "{{type}}-Befehl auf Ziel ausgeben",
     "attachedTo": "Angehängt an Befehl #{{id}}",
-    "total": "{{count}} geteilte(r) Bericht(e)"
+    "total_one": "{{count}} geteilter Bericht",
+    "total_other": "{{count}} geteilte Berichte"
   },
   "calls": {
     "title": "Offene Befehle",
@@ -30,11 +31,13 @@
     "targetPlaceholder": "Anzeigename",
     "noteLabel": "Notiz (optional)",
     "submit": "Befehl eröffnen",
-    "opened": "Befehl eröffnet; {{count}} Mitglied(er) benachrichtigt",
+    "opened_one": "Befehl eröffnet; {{count}} Mitglied benachrichtigt",
+    "opened_other": "Befehl eröffnet; {{count}} Mitglieder benachrichtigt",
     "close": "Schließen",
     "closed": "Befehl geschlossen",
     "closedBadge": "Geschlossen",
-    "reports": "{{count}} Bericht(e)",
+    "reports_one": "{{count}} Bericht",
+    "reports_other": "{{count}} Berichte",
     "openedBy": "von {{name}}",
     "details": "Details",
     "detailTitle": "{{type}}-Befehl gegen {{name}}",

@@ -1,7 +1,6 @@
 import { Avatar, Badge, Box, Group, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React from 'react';
-
-import { formatLastMessageTime } from '@/utils/timefunctions';
 
 interface RoomListItem {
   id: number;
@@ -20,11 +19,21 @@ interface ChatRoomListProps {
   onRoomSelect: (roomId: number) => void;
 }
 
+const formatRoomTime = (value: string, locale: string) => {
+  const date = new Date(value);
+  const isToday = date.toDateString() === new Date().toDateString();
+  return isToday
+    ? date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+    : date.toLocaleDateString(locale);
+};
+
 const ChatRoomList: React.FC<ChatRoomListProps> = ({
   rooms,
   selectedRoomId = null,
   onRoomSelect,
 }) => {
+  const { t, i18n } = useTranslation('messaging');
+
   return (
     <Stack gap="xs">
       {rooms.map((room) => (
@@ -55,23 +64,31 @@ const ChatRoomList: React.FC<ChatRoomListProps> = ({
             <div style={{ flex: 1 }}>
               <Group justify="space-between">
                 <Text size="sm" fw={500}>
-                  {room.name || `Direct Message`}
+                  {room.name || t('rooms.directMessage')}
                 </Text>
                 {room.lastMessageTime && (
                   <Text size="xs" c="dimmed">
-                    {formatLastMessageTime(room.lastMessageTime)}
+                    {formatRoomTime(room.lastMessageTime, i18n.language)}
                   </Text>
                 )}
               </Group>
               <Text size="xs" c="dimmed" truncate>
                 {room.lastMessageSender
-                  ? `${room.lastMessageSender}: ${room.lastMessage}`
-                  : 'No messages yet'}
+                  ? t('rooms.lastMessage', {
+                      sender: room.lastMessageSender,
+                      message: room.lastMessage,
+                    })
+                  : t('rooms.noMessagesYet')}
               </Text>
             </div>
             {room.unreadCount > 0 && (
-              <Badge color="yellow" variant="filled" size="sm">
-                {room.unreadCount}
+              <Badge
+                color="yellow"
+                variant="filled"
+                size="sm"
+                aria-label={t('rooms.unread', { count: room.unreadCount })}
+              >
+                {room.unreadCount.toLocaleString(i18n.language)}
               </Badge>
             )}
           </Group>

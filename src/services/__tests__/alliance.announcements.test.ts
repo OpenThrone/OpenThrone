@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'bun:test';
+import { installAllianceRoomMocks } from 'test/utils/allianceRoomMocks';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 import { silenceLogger } from 'test/utils/silenceLogger';
 
@@ -29,7 +30,7 @@ const MEMBERSHIPS: Record<number, keyof typeof ROLES> = {
 };
 
 let rows: any[];
-let sentMessages: any[];
+let roomState: ReturnType<typeof installAllianceRoomMocks>;
 let nextId: number;
 
 const alliance = { id: ALLIANCE_ID, name: 'Synthetic Pact', leader_id: LEADER };
@@ -57,7 +58,6 @@ const matches = (row: any, where: any) =>
 
 beforeEach(() => {
   rows = [];
-  sentMessages = [];
   nextId = 1;
   mockPrisma.$transaction = vi.fn(async (operation: any) =>
     operation(mockPrisma),
@@ -78,12 +78,7 @@ beforeEach(() => {
       Object.keys(MEMBERSHIPS).map((id) => ({ user_id: Number(id) })),
     ),
   };
-  mockPrisma.messages = {
-    createMany: vi.fn(async ({ data }: any) => {
-      sentMessages.push(...data);
-      return { count: data.length };
-    }),
-  };
+  roomState = installAllianceRoomMocks(mockPrisma, vi);
   mockPrisma.alliance_announcements = {
     count: vi.fn(
       async ({ where }: any) => rows.filter((r) => matches(r, where)).length,
@@ -157,15 +152,17 @@ describe('posting announcements', () => {
     expect(await reason(post(LEADER))).toMatch(/Daily announcement limit/);
   });
 
-  it('delivers one inbox message per member except the author', async () => {
+  it("posts to the alliance's conversation, which every member is in", async () => {
     const result = await post(OFFICER, 'Muster', 'At dawn.');
     expect(result.delivered).toBe(3);
-    expect(sentMessages.map((m) => m.to_user_id).sort()).toEqual(
-      [LEADER, MEMBER, MEMBER_2].sort(),
+    expect(roomState.rooms).toHaveLength(1);
+    expect(roomState.participants.map((p) => p.userId).sort()).toEqual(
+      [LEADER, OFFICER, MEMBER, MEMBER_2].sort(),
     );
-    expect(sentMessages.every((m) => m.from_user_id === OFFICER)).toBe(true);
-    expect(sentMessages[0].subject).toBe('[Synthetic Pact] Muster');
-    expect(sentMessages[0].body).toBe('At dawn.');
+    expect(roomState.chatMessages).toHaveLength(1);
+    expect(roomState.chatMessages[0].senderId).toBe(OFFICER);
+    expect(roomState.chatMessages[0].content).toContain('Muster');
+    expect(roomState.chatMessages[0].content).toContain('At dawn.');
   });
 });
 

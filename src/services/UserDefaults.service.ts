@@ -101,6 +101,7 @@ export const buildDefaultUserUpdate = (
   // Every era join/reset path builds its update here, so this restarts the
   // new-player protection clock (see utils/battleProtection.ts).
   era_joined_at: new Date(),
+  event_citizens_received: 0,
 });
 
 export const buildEraStartOverrides = (settings: EraStartSettings) => ({

@@ -212,7 +212,9 @@ const ApiTokensPage = () => {
           </Paper>
         )}
 
-        <GameCard title={`Active Tokens (${tokens.length})`}>
+        <GameCard
+          title={`Active Tokens (${tokens.filter((token) => !token.revokedAt).length})`}
+        >
           {loading ? (
             <Group justify="center" py="xl">
               <Loader />

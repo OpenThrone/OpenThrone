@@ -71,7 +71,9 @@
     "fortPageLink": "Pág. de fortaleza",
     "repairSuccess": "¡Fortificación reparada con éxito!",
     "notEnoughGoldToRepair": "No hay suficiente oro para reparar",
-    "repairMaxTooltip": "Reparar {{hp}} PV por {{cost}} oro"
+    "repairMaxTooltip": "Reparar {{hp}} PV por {{cost}} oro",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado"
   },
   "levels": {
     "title": "Niveles",
@@ -81,7 +83,8 @@
     "totalXP": "XP Total",
     "bonus": "Bonificación",
     "proficiencyPoints": "Puntos de Competencia",
-    "proficiencyPointsAvailable": "Tienes {{count}} puntos de competencia disponibles.",
+    "proficiencyPointsAvailable_one": "Tienes {{count}} punto de competencia disponible.",
+    "proficiencyPointsAvailable_other": "Tienes {{count}} puntos de competencia disponibles.",
     "maximumBonus": "La bonificación máxima es del 75%",
     "currentBonus": "Bonificación Actual",
     "strength": "Fuerza (Ofensiva)",
@@ -229,7 +232,8 @@
       "export": "Descargar mis datos",
       "exportError": "No se pudieron descargar tus datos. Inténtalo de nuevo.",
       "attackAlerts": "Alertas de batalla cuando tu reino sea atacado (opcional)"
-    }
+    },
+    "cancel": "Cancelar"
   },
   "admin": {
     "title": "Administración",

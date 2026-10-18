@@ -15,7 +15,7 @@ export interface ProtectionContext {
   settings: ProtectionSettings;
 }
 
-/** Loads the active era and admin settings that feed the shared protection rule. */
+/** Loads the active era, admin settings and era-long events that feed the shared protection rule. */
 export async function loadProtectionContext(
   db: Db = prisma,
 ): Promise<ProtectionContext> {
@@ -33,7 +33,10 @@ export async function loadProtectionContext(
       durationDays: normalizeProtectionDurationDays(
         config.protectionDurationDays,
       ),
-      dailyCitizenBonus: config.dailyCitizenBonus ?? 0,
+      recruitDailyCap: Math.max(
+        0,
+        Math.floor(Number(config.recruitDailyCap ?? 25)),
+      ),
     },
   };
 }

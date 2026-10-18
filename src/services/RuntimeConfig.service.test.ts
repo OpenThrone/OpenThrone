@@ -29,7 +29,6 @@ describe('runtime config snapshot', () => {
     resetMockPrisma();
     resetRuntimeConfigCache();
     mockPrisma.serverSetting.findMany = vi.fn().mockResolvedValue([]);
-    mockPrisma.featureFlag.findMany = vi.fn().mockResolvedValue([]);
     for (const key of ENV_KEYS) delete process.env[key];
   });
 
@@ -44,7 +43,7 @@ describe('runtime config snapshot', () => {
     resetRuntimeConfigCache();
   });
 
-  it('layers validated database values, environment fallbacks and allowlisted feature flags', async () => {
+  it('layers validated database values over environment fallbacks and ignores feature flag rows', async () => {
     process.env.NEXT_PUBLIC_ATTACK_LEVEL_RANGE = '8';
     process.env.NEXT_PUBLIC_DISABLE_LOGIN = 'true';
     mockPrisma.serverSetting.findMany.mockResolvedValue([
@@ -53,17 +52,16 @@ describe('runtime config snapshot', () => {
       { key: 'MAINTENANCE_MODE', value: { enabled: true, message: 'Planned' } },
       { key: 'DATABASE_URL', value: 'must not be projected' },
     ]);
-    mockPrisma.featureFlag.findMany.mockResolvedValue([
-      { key: 'ENABLE_SOCIAL', enabled: true },
-      { key: 'DATABASE_URL', enabled: false },
-    ]);
+    mockPrisma.featureFlag.findMany = vi
+      .fn()
+      .mockResolvedValue([{ key: 'ENABLE_ATTACKING', enabled: true }]);
 
     const config = await getRuntimeConfig();
 
     expect(config.enableAttacking).toBe(false);
     expect(config.attackLevelRange).toBe(8);
     expect(config.disableLogin).toBe(true);
-    expect(config.enableSocial).toBe(true);
+    expect(mockPrisma.featureFlag.findMany).not.toHaveBeenCalled();
     expect(config.maintenance).toEqual({ enabled: true, message: 'Planned' });
     expect(config).not.toHaveProperty('DATABASE_URL');
   });
@@ -96,9 +94,6 @@ describe('runtime config snapshot', () => {
     mockPrisma.serverSetting.findMany.mockRejectedValue(
       new Error('synthetic database error'),
     );
-    mockPrisma.featureFlag.findMany.mockRejectedValue(
-      new Error('synthetic database error'),
-    );
     await expect(getRuntimeConfig()).rejects.toThrow(
       'Runtime configuration unavailable',
     );
@@ -107,7 +102,6 @@ describe('runtime config snapshot', () => {
     mockPrisma.serverSetting.findMany.mockResolvedValue([
       { key: 'ENABLE_ATTACKING', value: false },
     ]);
-    mockPrisma.featureFlag.findMany.mockResolvedValue([]);
     await getRuntimeConfig();
     invalidateRuntimeConfigCache();
     mockPrisma.serverSetting.findMany.mockRejectedValue(
@@ -157,6 +151,6 @@ describe('runtime config snapshot', () => {
     expect(mockPrisma.serverSetting.findMany).toHaveBeenCalledTimes(1);
     resolveRows([{ key: 'ENABLE_ATTACKING', value: false }]);
     expect(await first).toEqual(await second);
-    expect(mockPrisma.featureFlag.findMany).toHaveBeenCalledTimes(1);
+    expect(mockPrisma.serverSetting.findMany).toHaveBeenCalledTimes(1);
   });
 });

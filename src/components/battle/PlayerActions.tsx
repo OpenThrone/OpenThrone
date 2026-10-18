@@ -23,6 +23,7 @@ import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+import { canMessage } from '@/utils/messagingAccess';
 import {
   recruitBlockMessage,
   type RecruitmentStatus,
@@ -85,8 +86,10 @@ export function PlayerActions({
     config?.enableAssassinations
       ? null
       : common('profileActions.spyDisabled'));
-  const messageReason =
-    user.id !== 1 && user.id !== 2 ? t('actions.messagingUnavailable') : null;
+  // Player messaging is an admin switch; admins and moderators always may.
+  const messageReason = canMessage(config, user)
+    ? null
+    : t('actions.messagingUnavailable');
   const recruitReason = !target.recruitLink
     ? t('actions.recruitUnavailable')
     : recruitBlockMessage(common, recruitStatus, target.id, target.name);
@@ -147,6 +150,12 @@ export function PlayerActions({
         <Menu.Dropdown>
           <Menu.Item component={Link} href={`/userprofile/${target.id}`}>
             {t('actions.viewProfile')}
+          </Menu.Item>
+          <Menu.Item
+            component={Link}
+            href={`/report?userId=${target.id}&username=${encodeURIComponent(target.name)}`}
+          >
+            {t('actions.reportPlayer')}
           </Menu.Item>
           {config?.enableSocial && (
             <>

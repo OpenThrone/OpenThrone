@@ -657,18 +657,58 @@ export class AllianceService {
     const validatedData = UpdateAllianceSchema.parse(data);
 
     try {
-      // Verify the user is the leader of the alliance
-      const alliance = await prisma.alliances.findFirst({
-        where: { id: allianceId, leader_id: leaderId },
+      const alliance = await prisma.alliances.findUnique({
+        where: { id: allianceId },
+        select: { id: true, leader_id: true },
       });
+      if (!alliance) throw new Error('Alliance not found');
 
-      if (!alliance) {
-        throw new Error('Alliance not found or you are not the leader');
+      // The leader edits everything; a rank with edit_profile may edit the
+      // public profile (motto, description, avatar, banner) only.
+      const isLeader = alliance.leader_id === leaderId;
+      if (!isLeader) {
+        const membership = await prisma.alliance_memberships.findFirst({
+          where: { alliance_id: allianceId, user_id: leaderId },
+          include: { role: true },
+        });
+        if (
+          !membership ||
+          !hasAlliancePermission(
+            alliance.leader_id,
+            leaderId,
+            membership.role,
+            'edit_profile',
+          )
+        ) {
+          throw new Error('You do not have permission to edit this alliance');
+        }
+        const leaderOnly = (
+          ['name', 'slug', 'join_mode', 'roster_visibility'] as const
+        ).filter((key) => validatedData[key] !== undefined);
+        if (leaderOnly.length) {
+          throw new Error(
+            'Only the leader can change the name, join mode or roster visibility',
+          );
+        }
       }
 
       const updatedAlliance = await prisma.alliances.update({
         where: { id: allianceId },
-        data: validatedData,
+        data: {
+          ...validatedData,
+          // Keep the legacy flags in step with join_mode (they were only set
+          // at creation, so a later switch to Open still refused joins).
+          ...(validatedData.join_mode
+            ? {
+                is_public:
+                  validatedData.join_mode !== AllianceJoinMode.INVITE_ONLY,
+                closed_enrollment:
+                  validatedData.join_mode === AllianceJoinMode.INVITE_ONLY,
+                require_auth:
+                  validatedData.join_mode === AllianceJoinMode.REQUEST_TO_JOIN,
+              }
+            : {}),
+        },
         include: {
           leader: {
             select: { display_name: true },
@@ -734,6 +774,110 @@ export class AllianceService {
   }
 
   /**
+   * Shared teardown for a disband (leader) or a dissolve (admin), inside the
+   * caller's transaction with the alliance row locked: pays out the treasury
+   * (remainder to `payoutLeaderId`), writes off loans and removes chat rooms,
+   * war records, shared logs, memberships and roles before the alliance row.
+   */
+  private static async teardownAlliance(
+    tx: Prisma.TransactionClient,
+    allianceId: number,
+    payoutLeaderId: number,
+  ) {
+    // Repayments still parked on loans belong in the treasury first; then
+    // the treasury is split among the members and loans are written off.
+    await settleLoanCreditsInTx(tx, allianceId);
+    const settled = await tx.alliances.findUnique({
+      where: { id: allianceId },
+      select: { gold_in_bank: true },
+    });
+    await distributeTreasuryOnDisband(
+      tx,
+      allianceId,
+      payoutLeaderId,
+      BigInt(settled?.gold_in_bank ?? 0),
+    );
+    await writeOffAllianceLoans(tx, allianceId);
+
+    const [members, rooms] = await Promise.all([
+      tx.alliance_memberships.findMany({
+        where: { alliance_id: allianceId },
+        select: { user_id: true },
+      }),
+      tx.chatRoom.findMany({
+        where: { allianceId },
+        select: { id: true },
+      }),
+    ]);
+    const chatRoomIds = rooms.map((room) => room.id);
+
+    // Children without ON DELETE CASCADE go first.
+    if (chatRoomIds.length > 0) {
+      await tx.chatRoomParticipant.deleteMany({
+        where: { roomId: { in: chatRoomIds } },
+      });
+      await tx.chatRoom.deleteMany({ where: { id: { in: chatRoomIds } } });
+    }
+    await tx.attack_log_acl.deleteMany({
+      where: { shared_with_alliance_id: allianceId },
+    });
+    await tx.alliance_wars.deleteMany({
+      where: {
+        OR: [
+          { attacker_alliance_id: allianceId },
+          { defender_alliance_id: allianceId },
+        ],
+      },
+    });
+    await tx.alliance_memberships.deleteMany({
+      where: { alliance_id: allianceId },
+    });
+    await tx.alliance_roles.deleteMany({
+      where: { alliance_id: allianceId },
+    });
+    await tx.alliances.delete({ where: { id: allianceId } });
+
+    return {
+      memberIds: members.map((member) => member.user_id),
+      roomIds: chatRoomIds,
+    };
+  }
+
+  /**
+   * Dissolves an alliance as an administrator: the same teardown as a
+   * disband, without the leader, name and war checks. `audit` runs inside the
+   * transaction so the deletion and its audit record commit together.
+   */
+  static async adminDissolveAlliance(
+    allianceId: number,
+    audit: (
+      tx: Prisma.TransactionClient,
+      alliance: { id: number; name: string; leader_id: number | null },
+    ) => Promise<void>,
+  ) {
+    const { memberIds, roomIds } = await prisma.$transaction(async (tx) => {
+      await lockAllianceChatRooms(tx, allianceId);
+      await tx.$queryRaw`SELECT id FROM alliances WHERE id = ${allianceId} FOR UPDATE`;
+      const alliance = await tx.alliances.findUnique({
+        where: { id: allianceId },
+        select: { id: true, name: true, leader_id: true },
+      });
+      if (!alliance) throw new Error('Alliance not found');
+      const result = await AllianceService.teardownAlliance(
+        tx,
+        allianceId,
+        alliance.leader_id ?? 0,
+      );
+      await audit(tx, alliance);
+      return result;
+    }, ALLIANCE_BANK_TX_OPTIONS);
+    memberIds.forEach((userId) =>
+      roomIds.forEach((roomId) => evictUserFromChatRoom(userId, roomId)),
+    );
+    return { message: 'Alliance dissolved' };
+  }
+
+  /**
    * Disbands an alliance (leader only). The leader must type the alliance
    * name and no war may be in progress. Any treasury is split evenly among
    * the members (remainder to the leader) and open loans are written off. Chat
@@ -773,63 +917,7 @@ export class AllianceService {
           throw new Error('Wars must end before the alliance can disband');
         }
 
-        // Repayments still parked on loans belong in the treasury first; then
-        // the treasury is split among the members and loans are written off.
-        await settleLoanCreditsInTx(tx, allianceId);
-        const settled = await tx.alliances.findUnique({
-          where: { id: allianceId },
-          select: { gold_in_bank: true },
-        });
-        await distributeTreasuryOnDisband(
-          tx,
-          allianceId,
-          leaderId,
-          BigInt(settled?.gold_in_bank ?? 0),
-        );
-        await writeOffAllianceLoans(tx, allianceId);
-
-        const [members, rooms] = await Promise.all([
-          tx.alliance_memberships.findMany({
-            where: { alliance_id: allianceId },
-            select: { user_id: true },
-          }),
-          tx.chatRoom.findMany({
-            where: { allianceId },
-            select: { id: true },
-          }),
-        ]);
-        const chatRoomIds = rooms.map((room) => room.id);
-
-        // Children without ON DELETE CASCADE go first.
-        if (chatRoomIds.length > 0) {
-          await tx.chatRoomParticipant.deleteMany({
-            where: { roomId: { in: chatRoomIds } },
-          });
-          await tx.chatRoom.deleteMany({ where: { id: { in: chatRoomIds } } });
-        }
-        await tx.attack_log_acl.deleteMany({
-          where: { shared_with_alliance_id: allianceId },
-        });
-        await tx.alliance_wars.deleteMany({
-          where: {
-            OR: [
-              { attacker_alliance_id: allianceId },
-              { defender_alliance_id: allianceId },
-            ],
-          },
-        });
-        await tx.alliance_memberships.deleteMany({
-          where: { alliance_id: allianceId },
-        });
-        await tx.alliance_roles.deleteMany({
-          where: { alliance_id: allianceId },
-        });
-        await tx.alliances.delete({ where: { id: allianceId } });
-
-        return {
-          memberIds: members.map((member) => member.user_id),
-          roomIds: chatRoomIds,
-        };
+        return AllianceService.teardownAlliance(tx, allianceId, leaderId);
       }, ALLIANCE_BANK_TX_OPTIONS);
 
       memberIds.forEach((userId) =>
@@ -1755,7 +1843,11 @@ export class AllianceService {
       });
 
       if (existingRequest) {
-        throw new Error('You already have a pending request for this alliance');
+        throw new Error(
+          existingRequest.kind === 'INVITE'
+            ? 'This alliance has already invited you. Accept the invitation on My Alliances.'
+            : 'You already have a pending request for this alliance',
+        );
       }
 
       // Create request
@@ -1803,6 +1895,7 @@ export class AllianceService {
         if (
           !request ||
           request.status !== 'PENDING' ||
+          request.kind !== 'REQUEST' ||
           request.alliance_id !== target.alliance_id ||
           request.user_id !== target.user_id
         ) {
@@ -1908,7 +2001,11 @@ export class AllianceService {
         where: { id: requestId },
       });
 
-      if (!request || request.status !== 'PENDING') {
+      if (
+        !request ||
+        request.status !== 'PENDING' ||
+        request.kind !== 'REQUEST'
+      ) {
         throw new Error('Request not found or already processed');
       }
 
@@ -1960,6 +2057,209 @@ export class AllianceService {
     }
   }
 
+  /** Whether `userId` holds invite_member in the alliance (the leader always does). */
+  private static async canInvite(
+    db: Prisma.TransactionClient | typeof prisma,
+    allianceId: number,
+    userId: number,
+  ) {
+    const membership = await db.alliance_memberships.findFirst({
+      where: { alliance_id: allianceId, user_id: userId },
+      include: { role: true, alliance: { select: { leader_id: true } } },
+    });
+    return (
+      !!membership &&
+      hasAlliancePermission(
+        membership.alliance.leader_id,
+        userId,
+        membership.role,
+        'invite_member',
+      )
+    );
+  }
+
+  /**
+   * Invites a player by display name. Needs invite_member. The player must
+   * not already be a member, must have room for another membership, and
+   * must not have a pending request or invitation for this alliance.
+   */
+  static async invitePlayer(
+    inviterId: number,
+    allianceId: number,
+    displayName: string,
+  ) {
+    if (!(await this.canInvite(prisma, allianceId, inviterId))) {
+      throw new Error('You do not have permission to invite players');
+    }
+    const target = await prisma.users.findFirst({
+      where: {
+        display_name: { equals: displayName.trim(), mode: 'insensitive' },
+        id: { gt: 0 },
+      },
+      select: { id: true, display_name: true },
+    });
+    if (!target) throw new Error('No player with that name');
+    const [isMember, membershipCount, pending] = await Promise.all([
+      prisma.alliance_memberships.findFirst({
+        where: { alliance_id: allianceId, user_id: target.id },
+        select: { id: true },
+      }),
+      prisma.alliance_memberships.count({ where: { user_id: target.id } }),
+      prisma.alliance_join_requests.findFirst({
+        where: {
+          alliance_id: allianceId,
+          user_id: target.id,
+          status: 'PENDING',
+        },
+        select: { kind: true },
+      }),
+    ]);
+    if (isMember) throw new Error(`${target.display_name} is already a member`);
+    if (membershipCount >= MAX_ALLIANCE_MEMBERSHIPS) {
+      throw new Error(
+        `${target.display_name} is already in ${MAX_ALLIANCE_MEMBERSHIPS} alliances`,
+      );
+    }
+    if (pending) {
+      throw new Error(
+        pending.kind === 'INVITE'
+          ? `${target.display_name} has already been invited`
+          : `${target.display_name} has already asked to join; accept their request instead`,
+      );
+    }
+    await prisma.alliance_join_requests.create({
+      data: {
+        alliance_id: allianceId,
+        user_id: target.id,
+        status: 'PENDING',
+        kind: 'INVITE',
+        invited_by: inviterId,
+      },
+    });
+    return { message: `Invitation sent to ${target.display_name}` };
+  }
+
+  /** The alliance's pending invitations (invite_member holders only). */
+  static async getAllianceInvites(allianceId: number, userId: number) {
+    if (!(await this.canInvite(prisma, allianceId, userId))) {
+      throw new Error('No permission');
+    }
+    const invites = await prisma.alliance_join_requests.findMany({
+      where: { alliance_id: allianceId, status: 'PENDING', kind: 'INVITE' },
+      include: { user: { select: { id: true, display_name: true } } },
+      orderBy: { created_at: 'desc' },
+    });
+    return invites.map((invite) => ({
+      id: invite.id,
+      created_at: invite.created_at,
+      user: invite.user,
+    }));
+  }
+
+  /** Withdraws a pending invitation (invite_member holders only). */
+  static async cancelInvite(inviteId: number, userId: number) {
+    const invite = await prisma.alliance_join_requests.findUnique({
+      where: { id: inviteId },
+      select: { alliance_id: true, kind: true, status: true },
+    });
+    if (!invite || invite.kind !== 'INVITE' || invite.status !== 'PENDING') {
+      throw new Error('Invitation not found or already answered');
+    }
+    if (!(await this.canInvite(prisma, invite.alliance_id, userId))) {
+      throw new Error('You do not have permission to cancel invitations');
+    }
+    await prisma.alliance_join_requests.updateMany({
+      where: { id: inviteId, status: 'PENDING' },
+      data: { status: 'CANCELLED', moderated_by: userId },
+    });
+    return { message: 'Invitation cancelled' };
+  }
+
+  /** Invitations waiting for this player. */
+  static async getMyInvites(userId: number) {
+    const invites = await prisma.alliance_join_requests.findMany({
+      where: { user_id: userId, status: 'PENDING', kind: 'INVITE' },
+      include: {
+        alliance: { select: { id: true, name: true, motto: true } },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+    return invites.map((invite) => ({
+      id: invite.id,
+      created_at: invite.created_at,
+      alliance: invite.alliance,
+    }));
+  }
+
+  /**
+   * The invited player accepts or declines. Accepting locks the alliance and
+   * the player, re-checks the invitation and the membership limit, and joins
+   * with the Member rank.
+   */
+  static async respondToInvite(
+    inviteId: number,
+    userId: number,
+    accept: boolean,
+  ) {
+    const invite = await prisma.alliance_join_requests.findUnique({
+      where: { id: inviteId },
+      select: { alliance_id: true, user_id: true, kind: true, status: true },
+    });
+    if (
+      !invite ||
+      invite.user_id !== userId ||
+      invite.kind !== 'INVITE' ||
+      invite.status !== 'PENDING'
+    ) {
+      throw new Error('Invitation not found or already answered');
+    }
+    if (!accept) {
+      await prisma.alliance_join_requests.updateMany({
+        where: { id: inviteId, status: 'PENDING' },
+        data: { status: 'REJECTED', moderated_by: userId },
+      });
+      return { message: 'Invitation declined' };
+    }
+    await prisma.$transaction(async (tx) => {
+      await lockAllianceThenUsers(tx, invite.alliance_id, [userId]);
+      const updated = await tx.alliance_join_requests.updateMany({
+        where: { id: inviteId, status: 'PENDING', kind: 'INVITE' },
+        data: { status: 'APPROVED', moderated_by: userId },
+      });
+      if (updated.count !== 1) {
+        throw new Error('Invitation not found or already answered');
+      }
+      const alreadyMember = await tx.alliance_memberships.findFirst({
+        where: { alliance_id: invite.alliance_id, user_id: userId },
+        select: { id: true },
+      });
+      if (alreadyMember) {
+        throw new Error('You are already a member of this alliance');
+      }
+      const membershipCount = await tx.alliance_memberships.count({
+        where: { user_id: userId },
+      });
+      if (membershipCount >= MAX_ALLIANCE_MEMBERSHIPS) {
+        throw new Error(
+          `You can only be a member of ${MAX_ALLIANCE_MEMBERSHIPS} alliances`,
+        );
+      }
+      const memberRole = await tx.alliance_roles.findFirst({
+        where: { alliance_id: invite.alliance_id, name: 'Member' },
+        select: { id: true },
+      });
+      if (!memberRole) throw new Error('Default role not found');
+      await tx.alliance_memberships.create({
+        data: {
+          alliance_id: invite.alliance_id,
+          user_id: userId,
+          role_id: memberRole.id,
+        },
+      });
+    }, ALLIANCE_BANK_TX_OPTIONS);
+    return { message: 'Invitation accepted' };
+  }
+
   /**
    * Gets pending join requests for an alliance
    */
@@ -1989,12 +2289,13 @@ export class AllianceService {
         where: {
           alliance_id: allianceId,
           status: 'PENDING',
+          kind: 'REQUEST',
         },
         include: {
           user: {
             select: {
               display_name: true,
-              level: true,
+              experience: true,
               race: true,
               class: true,
             },
@@ -2003,7 +2304,16 @@ export class AllianceService {
         orderBy: { created_at: 'asc' },
       });
 
-      return requests;
+      // users has no level column; level is derived from experience.
+      return requests.map(({ user, ...request }) => ({
+        ...request,
+        user: user && {
+          display_name: user.display_name,
+          race: user.race,
+          class: user.class,
+          level: getLevelFromXP(user.experience ?? 0),
+        },
+      }));
     } catch (error: any) {
       logError('Error getting join requests', { allianceId, error });
       throw error;

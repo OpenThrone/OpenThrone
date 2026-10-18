@@ -9,10 +9,8 @@ export interface RuntimeConfig {
   inactivityAutoAnonymizeEnabled?: boolean;
   emailOutboxEnabled?: boolean;
   emailOutboxRatePerMinute?: number;
-  /** Extra citizens every account receives from the daily update. */
-  dailyCitizenBonus: number;
-  /** Only accounts with gameplay activity within this many hours get the bonus; 0 disables the check. */
-  dailyCitizenBonusActivityHours: number;
+  /** Citizens a player can gain per day by recruiting (one per recruit). */
+  recruitDailyCap: number;
   /** Days of new-player battle protection after joining an era (1-60). */
   protectionDurationDays: number;
   enableAttacking: boolean;
@@ -21,6 +19,8 @@ export interface RuntimeConfig {
   enableAssassinations: boolean;
   enableIntel: boolean;
   enableSocial: boolean;
+  /** Players may message each other; when off only admins and moderators can. */
+  enableMessaging: boolean;
   enableEnemies: boolean;
   disableLogin: boolean;
   disableRegistration: boolean;
@@ -62,17 +62,13 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
   let request: Promise<RuntimeConfig>;
   request = (async () => {
     try {
-      const [rows, flags] = await Promise.all([
-        prisma.serverSetting.findMany({
-          where: {
-            key: { in: [...RUNTIME_SETTING_KEYS, 'ERA_RESET_SCHEDULE'] },
-          },
-        }),
-        prisma.featureFlag.findMany({
-          where: { key: { in: RUNTIME_SETTING_KEYS } },
-          select: { key: true, enabled: true },
-        }),
-      ]);
+      // Server settings are the only stored source; feature flag rows were
+      // folded into them (migration 20261019010000_feature_flags_into_settings).
+      const rows = await prisma.serverSetting.findMany({
+        where: {
+          key: { in: [...RUNTIME_SETTING_KEYS, 'ERA_RESET_SCHEDULE'] },
+        },
+      });
       const values: Record<string, unknown> = {};
       for (const key of RUNTIME_SETTING_KEYS) {
         const { schema } = RUNTIME_SETTING_REGISTRY[key];
@@ -105,10 +101,7 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
         emailOutboxRatePerMinute: values[
           'email.outbox.ratePerMinute'
         ] as number,
-        dailyCitizenBonus: values['era.dailyCitizenBonus'] as number,
-        dailyCitizenBonusActivityHours: values[
-          'era.dailyCitizenBonusActivityHours'
-        ] as number,
+        recruitDailyCap: values['recruit.dailyCap'] as number,
         protectionDurationDays: values['era.protectionDurationDays'] as number,
         enableAttacking: values.ENABLE_ATTACKING as boolean,
         attackLevelRange: values.ATTACK_LEVEL_RANGE as number,
@@ -116,15 +109,12 @@ export async function getRuntimeConfig(): Promise<RuntimeConfig> {
         enableAssassinations: values.ENABLE_ASSASSINATIONS as boolean,
         enableIntel: values.ENABLE_INTEL as boolean,
         enableSocial: values.ENABLE_SOCIAL as boolean,
+        enableMessaging: values.ENABLE_MESSAGING as boolean,
         enableEnemies: values.ENABLE_ENEMIES as boolean,
         disableLogin: values.DISABLE_LOGIN as boolean,
         disableRegistration: values.DISABLE_REGISTRATION as boolean,
         maintenance: values.MAINTENANCE_MODE as RuntimeConfig['maintenance'],
       };
-      for (const flag of flags) {
-        if (!isRuntimeBooleanKey(flag.key)) continue;
-        assignFeatureFlag(value, flag.key, flag.enabled);
-      }
       if (requestEpoch === cacheEpoch) {
         const loadedAt = Date.now();
         lastGood = { value, loadedAt };
@@ -154,53 +144,4 @@ export function resetRuntimeConfigCache() {
   lastGood = null;
   pending = null;
   pendingEpoch = -1;
-}
-
-function isRuntimeBooleanKey(
-  key: string,
-): key is
-  | 'account.inactivity.remindersEnabled'
-  | 'account.inactivity.autoAnonymizeEnabled'
-  | 'ENABLE_ATTACKING'
-  | 'ENABLE_INFILTRATIONS'
-  | 'ENABLE_ASSASSINATIONS'
-  | 'ENABLE_INTEL'
-  | 'ENABLE_SOCIAL'
-  | 'ENABLE_ENEMIES'
-  | 'DISABLE_LOGIN'
-  | 'DISABLE_REGISTRATION' {
-  return [
-    'account.inactivity.remindersEnabled',
-    'account.inactivity.autoAnonymizeEnabled',
-    'ENABLE_ATTACKING',
-    'ENABLE_INFILTRATIONS',
-    'ENABLE_ASSASSINATIONS',
-    'ENABLE_INTEL',
-    'ENABLE_SOCIAL',
-    'ENABLE_ENEMIES',
-    'DISABLE_LOGIN',
-    'DISABLE_REGISTRATION',
-  ].includes(key);
-}
-
-function assignFeatureFlag(
-  config: RuntimeConfig,
-  key: string,
-  enabled: boolean,
-) {
-  const map: Record<string, keyof RuntimeConfig> = {
-    'account.inactivity.remindersEnabled': 'inactivityRemindersEnabled',
-    'account.inactivity.autoAnonymizeEnabled': 'inactivityAutoAnonymizeEnabled',
-    ENABLE_ATTACKING: 'enableAttacking',
-    ENABLE_INFILTRATIONS: 'enableInfiltrations',
-    ENABLE_ASSASSINATIONS: 'enableAssassinations',
-    ENABLE_INTEL: 'enableIntel',
-    ENABLE_SOCIAL: 'enableSocial',
-    ENABLE_ENEMIES: 'enableEnemies',
-    DISABLE_LOGIN: 'disableLogin',
-    DISABLE_REGISTRATION: 'disableRegistration',
-  };
-  const configKey = map[key];
-  if (configKey)
-    (config as unknown as Record<string, unknown>)[configKey] = enabled;
 }

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
+import { publicErrorMessage } from '@/utils/publicError';
 // Adjust import if needed, usually we just cast req
 
 const JoinAllianceSchema = z.object({
@@ -53,7 +54,7 @@ const joinAlliance = async (req: any, res: any) => {
     });
     return res.status(200).json(result);
   } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

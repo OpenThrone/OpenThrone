@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const EndRelationshipSchema = z.object({
   friendId: z.number().int(),
@@ -34,7 +35,7 @@ const handler = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     logError('Error ending friendship:', error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: publicErrorMessage(error) });
   }
 };
 

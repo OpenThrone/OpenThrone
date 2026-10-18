@@ -6,7 +6,12 @@
     "join": "Unirse",
     "motto": "Lema",
     "noAlliances": "No se encontraron alianzas",
-    "errorFetching": "Error al obtener alianzas"
+    "errorFetching": "Error al obtener alianzas",
+    "inviteOnly": "Solo por invitación",
+    "requestToJoin": "Solicitar unirse",
+    "joinSuccess": "Te has unido a la alianza.",
+    "manage": "Ver panel",
+    "joinError": "No se pudo unir a la alianza"
   },
   "create": {
     "title": "Crear Alianza",
@@ -59,9 +64,17 @@
     "kickError": "Error al expulsar miembro",
     "leaveSuccess": "Has abandonado la alianza",
     "leaveError": "Error al abandonar la alianza",
-    "leaveConfirm": "¿Estás seguro de que quieres abandonar esta alianza?",
+    "leaveConfirm": "¿Estás seguro de que quieres abandonar esta alianza? Cualquier préstamo pendiente del tesoro se cobra de tu oro y tu banco al salir.",
     "kickConfirm": "¿Estás seguro de que quieres expulsar a este miembro?",
-    "noMembers": "No se encontraron miembros"
+    "noMembers": "No se encontraron miembros",
+    "overview": "Resumen",
+    "members": "Miembros",
+    "bank": "Banco",
+    "war": "Sala de guerra",
+    "settings": "Ajustes",
+    "loadError": "No se pudo cargar la alianza",
+    "bannerAlt": "Estandarte de la alianza",
+    "infighting": "Luchas internas"
   },
   "mine": {
     "title": "Mis alianzas",
@@ -83,7 +96,13 @@
     "leaderOf": "Líder de {{name}}"
   },
   "members": {
-    "rosterHidden": "Esta alianza solo muestra su lista de miembros a sus miembros."
+    "rosterHidden": "Esta alianza solo muestra su lista de miembros a sus miembros.",
+    "noMembers": "No hay miembros que mostrar.",
+    "name": "Nombre",
+    "role": "Rango",
+    "raceClass": "Raza / Clase",
+    "raceClassValue": "{{race}} / {{class}}",
+    "lastActive": "Última actividad"
   },
   "manage": {
     "memberActions": "Acciones de miembro",
@@ -124,6 +143,7 @@
       "kick_member": "Expulsar miembros",
       "declare_war": "Declarar guerra",
       "manage_bank": "Gestionar banco",
+      "approve_own_requests": "Aprobar solicitudes propias",
       "request_gold": "Solicitar oro",
       "send_messages": "Enviar mensajes",
       "post_announcements": "Publicar anuncios",
@@ -135,5 +155,111 @@
       "share_reports": "Compartir informes",
       "call_targets": "Designar objetivos"
     }
+  },
+  "invites": {
+    "title": "Invitar jugadores",
+    "playerName": "Nombre del jugador",
+    "send": "Invitar",
+    "sent": "Invitación enviada a {{name}}.",
+    "pending": "Invitaciones pendientes",
+    "cancel": "Retirar",
+    "mineTitle": "Invitaciones de alianza",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "accepted": "Te has unido a la alianza.",
+    "declined": "Invitación rechazada."
+  },
+  "war": {
+    "end": "Terminar guerra",
+    "ended": "Guerra terminada.",
+    "none": "No hay guerras activas",
+    "statuses": {
+      "WARMUP": "Preparación",
+      "ACTIVE": "Activa",
+      "COOLDOWN": "Enfriamiento",
+      "ENDED": "Terminada"
+    },
+    "activeWars": "Conflictos activos",
+    "declareWar": "Declarar guerra",
+    "attacker": "Atacante",
+    "defender": "Defensor",
+    "status": "Estado",
+    "unknown": "Desconocido",
+    "declareTitle": "Declarar guerra",
+    "targetAllianceId": "ID de la alianza objetivo",
+    "targetAllianceIdPlaceholder": "Introduce el ID",
+    "targetRequired": "El ID de la alianza objetivo es obligatorio",
+    "declareButton": "Declarar guerra",
+    "declareSuccess": "¡Guerra declarada!"
+  },
+  "overview": {
+    "about": "Sobre nosotros",
+    "noDescription": "No hay descripción.",
+    "stats": "Estadísticas",
+    "leader": "Líder",
+    "members": "Miembros",
+    "created": "Fundada",
+    "gold": "Tesoro"
+  },
+  "player": {
+    "races": {
+      "ELF": "Elfo",
+      "HUMAN": "Humano",
+      "UNDEAD": "No muerto",
+      "GOBLIN": "Goblin"
+    },
+    "classes": {
+      "FIGHTER": "Luchador",
+      "CLERIC": "Clérigo",
+      "THIEF": "Ladrón",
+      "ASSASSIN": "Asesino"
+    }
+  },
+  "bank": {
+    "totalBalance": "Tesoro total de la alianza",
+    "goldAmount": "{{amount}} de oro",
+    "historyTitle": "Historial de transacciones",
+    "date": "Fecha",
+    "user": "Miembro",
+    "type": "Tipo",
+    "amount": "Cantidad",
+    "unknownUser": "Desconocido",
+    "noTransactions": "No hay transacciones",
+    "types": {
+      "DEPOSIT": "Depósito",
+      "WITHDRAWAL": "Retiro",
+      "TAX": "Impuesto",
+      "FEE": "Comisión",
+      "LOAN": "Préstamo",
+      "LOAN_REPAYMENT": "Pago de préstamo"
+    }
+  },
+  "settings": {
+    "requestsTitle": "Solicitudes de ingreso",
+    "noRequests": "No hay solicitudes pendientes",
+    "accept": "Aceptar",
+    "reject": "Rechazar",
+    "acceptSuccess": "Solicitud de ingreso aceptada",
+    "rejectSuccess": "Solicitud de ingreso rechazada",
+    "level": "Nv. {{level}}",
+    "generalTitle": "Ajustes generales",
+    "save": "Guardar cambios",
+    "updateSuccess": "Ajustes guardados correctamente"
+  },
+  "internalBattles": {
+    "title": "Ataques entre miembros",
+    "description": "Batallas de esta era en las que el atacante y el defensor son miembros actuales de esta alianza.",
+    "empty": "No hay ataques entre miembros en esta era.",
+    "loadError": "No se pudieron cargar los ataques entre miembros.",
+    "date": "Fecha",
+    "attacker": "Atacante",
+    "defender": "Defensor",
+    "winner": "Ganador",
+    "gold": "Oro saqueado",
+    "report": "Informe de batalla",
+    "viewReport": "Ver informe",
+    "attackerWon": "Atacante",
+    "defenderWon": "Defensor",
+    "pagination": "Páginas de ataques entre miembros"
   }
 }

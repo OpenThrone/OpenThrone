@@ -6,6 +6,7 @@ import { trainUnits } from '@/services';
 import { markGameplayActivity } from '@/services/GameplayActivity.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 import { findUnitDefinition } from '@/utils/units';
 
 // Zod schema for individual unit training request (unknown unit types/levels are rejected)
@@ -116,7 +117,7 @@ const handler = async (
       error.message?.startsWith('Invalid unit definition') ||
       error.message?.startsWith('Cannot train')
     ) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: publicErrorMessage(error) });
     }
     if (error.message === 'User not found within transaction') {
       return res

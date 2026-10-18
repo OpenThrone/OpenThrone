@@ -10,7 +10,8 @@
     "counter": "{{count}} / {{max}}",
     "hint": "Nur Klartext. Alle anderen Mitglieder erhalten sie zusätzlich in ihrem Posteingang.",
     "submit": "Ankündigung veröffentlichen",
-    "posted": "Ankündigung veröffentlicht und an {{count}} Posteingänge zugestellt"
+    "posted_one": "Ankündigung veröffentlicht und an {{count}} Posteingang zugestellt",
+    "posted_other": "Ankündigung veröffentlicht und an {{count}} Posteingänge zugestellt"
   },
   "list": {
     "empty": "Noch keine Ankündigungen.",

@@ -332,11 +332,11 @@ describe('joinAlliance re-checks inside a locked transaction (ALL-04)', () => {
 });
 
 describe('acceptJoinRequest re-checks inside a locked transaction (ALL-04)', () => {
-  let request: { status: string };
+  let request: { status: string; kind?: string };
   let tx: any;
 
   beforeEach(() => {
-    request = { status: 'PENDING' };
+    request = { status: 'PENDING', kind: 'REQUEST' };
     mockPrisma.alliance_join_requests = {
       // The only unlocked read: which rows to lock.
       findUnique: vi.fn(async () => ({

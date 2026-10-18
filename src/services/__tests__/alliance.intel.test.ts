@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'bun:test';
+import { installAllianceRoomMocks } from 'test/utils/allianceRoomMocks';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 import { silenceLogger } from 'test/utils/silenceLogger';
 
@@ -31,6 +32,7 @@ const reason = (promise: Promise<unknown>) =>
     (error: Error) => error.message,
   );
 
+let roomState: ReturnType<typeof installAllianceRoomMocks>;
 let shares: any[];
 let aclRows: any[];
 let listEntries: any[];
@@ -136,7 +138,7 @@ beforeEach(() => {
       return data;
     }),
   };
-  mockPrisma.messages = { createMany: vi.fn(async () => ({ count: 0 })) };
+  roomState = installAllianceRoomMocks(mockPrisma, vi);
 });
 
 describe('sharing reports with an alliance', () => {
@@ -287,20 +289,20 @@ describe('target calls', () => {
     expect(await call(CALLER, { callType: 'FARM' })).toBeNull();
     expect(listEntries).toHaveLength(2);
 
-    const sent = mockPrisma.messages.createMany.mock.calls[0][0].data;
-    expect(sent.map((m: any) => m.to_user_id).sort()).toEqual(
-      [LEADER, SHARER, PLAIN].sort(),
+    // Each call is posted once to the alliance's conversation.
+    expect(roomState.chatMessages).toHaveLength(3);
+    expect(roomState.chatMessages[0].senderId).toBe(CALLER);
+    expect(roomState.chatMessages[0].content).toContain(
+      '[Alliance] Hit call: P77',
     );
-    expect(sent[0].subject).toBe('[Alliance] Hit call: P77');
-    expect(mockPrisma.messages.createMany).toHaveBeenCalledTimes(3);
   });
 
   it('keeps Recon off the lists', async () => {
     expect(await call(CALLER, { callType: 'RECON' })).toBeNull();
     expect(listEntries).toHaveLength(0);
-    expect(
-      mockPrisma.messages.createMany.mock.calls[0][0].data[0].subject,
-    ).toBe('[Alliance] Recon call: P77');
+    expect(roomState.chatMessages[0].content).toContain(
+      '[Alliance] Recon call: P77',
+    );
   });
 
   it('cannot target members or unknown players', async () => {

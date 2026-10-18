@@ -2,6 +2,7 @@ import { Card, Grid, Group, Text, Title } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 
 import { AllianceLatestAnnouncement } from '@/components/alliance/AllianceLatestAnnouncement';
+import { useUser } from '@/context/users';
 import type { AllianceInfo } from '@/services/Alliance.service';
 import { toLocale } from '@/utils/numberFormatting';
 
@@ -17,7 +18,8 @@ export const AllianceOverview = ({
   isMember = false,
   onViewAnnouncements,
 }: AllianceOverviewProps) => {
-  const { t } = useTranslation('alliances');
+  const { t, i18n } = useTranslation('alliances');
+  const { user } = useUser();
 
   return (
     <Grid>
@@ -52,12 +54,14 @@ export const AllianceOverview = ({
           </Group>
           <Group justify="space-between" mb="xs">
             <Text c="dimmed">{t('overview.members', 'Members')}</Text>
-            <Text fw={500}>{toLocale(alliance._count?.members || 0)}</Text>
+            <Text fw={500}>
+              {toLocale(alliance._count?.members || 0, user?.locale)}
+            </Text>
           </Group>
           <Group justify="space-between" mb="xs">
             <Text c="dimmed">{t('overview.created', 'Founded')}</Text>
             <Text fw={500}>
-              {new Date(alliance.created_at).toLocaleDateString()}
+              {new Date(alliance.created_at).toLocaleDateString(i18n.language)}
             </Text>
           </Group>
           {/* Treasury is only sent to alliance members (ALL-08). */}
@@ -65,7 +69,7 @@ export const AllianceOverview = ({
             <Group justify="space-between" mb="xs">
               <Text c="dimmed">{t('overview.gold', 'Treasury')}</Text>
               <Text fw={500} c="yellow">
-                {toLocale(alliance.gold_in_bank)}
+                {toLocale(alliance.gold_in_bank, user?.locale)}
               </Text>
             </Group>
           )}

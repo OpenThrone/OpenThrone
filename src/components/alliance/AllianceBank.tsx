@@ -3,6 +3,7 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import useSWR from 'swr';
 
+import { transactionTypeLabel } from '@/components/alliance/allianceLabels';
 import { getAllianceStanding } from '@/components/alliance/allianceStanding';
 import { DepositForm } from '@/components/alliance/treasury/DepositForm';
 import { GoldRequestForm } from '@/components/alliance/treasury/GoldRequestForm';
@@ -23,7 +24,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 /** Alliance bank. */
 export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
-  const { t } = useTranslation('alliances');
+  const { t, i18n } = useTranslation('alliances');
   const { user } = useUser();
   const [requestsKey, setRequestsKey] = useState(0);
 
@@ -51,7 +52,9 @@ export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
               {t('bank.totalBalance', 'Total Alliance Treasury')}
             </Text>
             <Text size="xl" fw={700} c="yellow">
-              {toLocale(alliance.gold_in_bank)} Gold
+              {t('bank.goldAmount', '{{amount}} Gold', {
+                amount: toLocale(alliance.gold_in_bank, user?.locale),
+              })}
             </Text>
           </Group>
         </Paper>
@@ -113,10 +116,11 @@ export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
                 {history.map((entry: any) => (
                   <Table.Tr key={entry.id}>
                     <Table.Td>
-                      {new Date(entry.created_at).toLocaleString()}
+                      {new Date(entry.created_at).toLocaleString(i18n.language)}
                     </Table.Td>
                     <Table.Td>
-                      {entry.performed_by_user?.display_name || 'Unknown'}
+                      {entry.performed_by_user?.display_name ||
+                        t('bank.unknownUser', 'Unknown')}
                     </Table.Td>
                     <Table.Td>
                       <Text
@@ -129,16 +133,18 @@ export const AllianceBank = ({ alliance, onUpdate }: AllianceBankProps) => {
                         }
                         fw={500}
                       >
-                        {entry.transaction_type}
+                        {transactionTypeLabel(t, entry.transaction_type)}
                       </Text>
                     </Table.Td>
-                    <Table.Td>{toLocale(entry.amount)}</Table.Td>
+                    <Table.Td>{toLocale(entry.amount, user?.locale)}</Table.Td>
                   </Table.Tr>
                 ))}
                 {history.length === 0 && (
                   <Table.Tr>
                     <Table.Td colSpan={4} align="center">
-                      <Text c="dimmed">No transactions found</Text>
+                      <Text c="dimmed">
+                        {t('bank.noTransactions', 'No transactions found')}
+                      </Text>
                     </Table.Td>
                   </Table.Tr>
                 )}

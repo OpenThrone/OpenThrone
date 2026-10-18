@@ -280,6 +280,8 @@ export type UnitProps = {
   ownedUnits?: number;
   ownedItems?: number;
   cost: string;
+  /** Price before any discount event; untrain refunds and conversions use it. */
+  fullCost?: number;
   enabled: boolean;
   level?: number;
   type: string;

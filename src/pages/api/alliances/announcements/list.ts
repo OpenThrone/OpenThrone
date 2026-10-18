@@ -1,6 +1,7 @@
 import { withAuth } from '@/middleware/auth';
 import { AllianceAnnouncementsService } from '@/services/AllianceAnnouncements.service';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const toInt = (value: string | string[] | undefined): number | undefined => {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -22,7 +23,7 @@ const handler = async (req: any, res: any) => {
     });
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

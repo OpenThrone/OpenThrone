@@ -28,17 +28,17 @@
     "basicMechanics": "Wir konzentrieren uns darauf, die grundlegenden Mechaniken perfekt funktionieren zu lassen.",
     "faqIsGameStillBeingDeveloped": "Wird das Spiel noch entwickelt?",
     "faqActive": "Ja. OpenThrone wird von DasTacoMann aktiv entwickelt und von AIOXperts IT Solutions LLC betrieben.",
-    "faqHelp": "Melde Fehler über den Issue-Tracker oder kontaktiere uns auf Discord. Beschreibe das Problem, das erwartete Verhalten und die Schritte zur Reproduktion.",
+    "faqHelp": "Melden Sie Fehler über den Issue-Tracker oder kontaktieren Sie uns auf Discord. Beschreiben Sie das Problem, das erwartete Verhalten und die Schritte zur Reproduktion.",
     "howCanIHelp": "Wie kann ich ein Problem melden?",
-    "faqIdeas": "Du kannst Vorschläge über den Issue-Tracker einreichen. Sie werden anhand der Entwicklungsprioritäten geprüft; nicht jeder Vorschlag wird umgesetzt.",
+    "faqIdeas": "Sie können Vorschläge über den Issue-Tracker einreichen. Sie werden anhand der Entwicklungsprioritäten geprüft; nicht jeder Vorschlag wird umgesetzt.",
     "canSuggestIdeas": "Kann ich Ideen vorschlagen?",
-    "shareIdeasGitHub": "Du kannst Vorschläge über den Issue-Tracker einreichen. Sie werden anhand der Entwicklungsprioritäten geprüft; nicht jeder Vorschlag wird umgesetzt.",
+    "shareIdeasGitHub": "Sie können Vorschläge über den Issue-Tracker einreichen. Sie werden anhand der Entwicklungsprioritäten geprüft; nicht jeder Vorschlag wird umgesetzt.",
     "joinDiscord": "Treten Sie unserem Discord bei",
     "viewGitHub": "Auf GitHub ansehen",
     "licensed": "OpenThrone ist unter der MIT-Lizenz lizenziert. Copyright © 2023.",
     "development": "Entwicklung",
     "developmentInfo": "OpenThrone wird von DasTacoMann entwickelt und von AIOXperts IT Solutions LLC betrieben. Das Unternehmen finanziert die Entwicklung und stellt das Hosting bereit.",
-    "beginYourReign": "Beginne deine Herrschaft",
+    "beginYourReign": "Beginnen Sie Ihre Herrschaft",
     "learnToPlay": "Spielanleitung"
   },
   "buttons": {
@@ -190,7 +190,7 @@
     "timeUntilNextTurn": "Zeit bis zum nächsten Zug",
     "otTime": "OT-Zeit:",
     "levelAbbrev": "Stf",
-    "refreshStats": "Statistiken aktualisieren",
+    "refreshStats": "Werte aktualisieren",
     "previousAdvisorMessage": "Vorherige Beraternachricht",
     "nextAdvisorMessage": "Nächste Beraternachricht",
     "goldRequestPending_one": "{{count}} Goldanfrage ausstehend",
@@ -204,6 +204,16 @@
       "daysLeft_other": "Geschützt: noch {{count}} Tage",
       "orUntil": "oder bis Level {{level}} / {{population}} Bevölkerung",
       "untilOnly": "Geschützt bis Level {{level}} / {{population}} Bevölkerung"
+    },
+    "previousTip": "Vorheriger Tipp",
+    "nextTip": "Nächster Tipp",
+    "advisorTips": {
+      "strongerWeapons": "Es ist besser, wenige stärkere Waffen zu kaufen als viele schwächere.",
+      "attackTurns": "Je mehr Angriffszüge Sie bei einem Angriff einsetzen, desto mehr Erfahrung und Gold erhalten Sie.",
+      "moreWorkers": "Je mehr Arbeiter Sie haben, desto mehr Gold verdienen Sie pro Zug.",
+      "recruitDaily": "Wenn Sie jeden Tag die maximale Anzahl rekrutieren, wächst Ihr Königreich stetig weiter.",
+      "wellEquipped": "Eine Einheit ist nur so stark wie ihre Ausrüstung. Sorgen Sie dafür, dass Ihre Armee gut ausgerüstet ist.",
+      "fortDefense": "Wenn Ihre Verteidigung weniger als 25 % Ihrer nicht kämpfenden Bevölkerung beträgt, können Sie bei einem Angriff Bürger und Arbeiter verlieren. Halten Sie Ihre Festung instand."
     }
   },
   "footer": {
@@ -212,7 +222,8 @@
     "onlinePlayers": "Online-Spieler:",
     "newPlayersLast24hrs": "Neue Spieler in den letzten 24h:",
     "newestPlayer": "Neuester Spieler:",
-    "operator": "OpenThrone.dev wird von AIOXperts IT Solutions LLC betrieben."
+    "operator": "OpenThrone.dev wird von AIOXperts IT Solutions LLC betrieben.",
+    "version": "Version {{version}}"
   },
   "errors": {
     "failedToFetchGitInfo": "Fehler beim Abrufen von Git-Informationen",
@@ -235,20 +246,20 @@
     "noMoreTargets": "Es gibt heute keine Spieler mehr, die Sie rekrutieren können.",
     "autoRecruitStopped": "Auto-Rekrutierung gestoppt: {{reason}}",
     "temporaryError": "Rekrutieren ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.",
-    "completed": "Rekrutierung erfolgreich. Dein Königreich hat 1 Bürger erhalten.",
+    "completed": "Rekrutierung erfolgreich. Ihr Königreich hat 1 Bürger erhalten.",
     "retry": "Erneut versuchen",
     "verificationExpired": "Verifizierung abgelaufen. Bitte erneut versuchen.",
     "verificationFailed": "Verifizierung fehlgeschlagen. Bitte erneut versuchen.",
     "checkingEligibility": "Rekrutierung wird geprüft",
-    "forYourKingdom": "Schließe die Verifizierung ab, um 1 Bürger für dein Königreich zu rekrutieren.",
-    "signInToRecruit": "Melde dich an, um 1 Bürger für dein Königreich zu rekrutieren.",
+    "forYourKingdom": "Schließen Sie die Verifizierung ab, um 1 Bürger für Ihr Königreich zu rekrutieren.",
+    "signInToRecruit": "Melden Sie sich an, um 1 Bürger für Ihr Königreich zu rekrutieren.",
     "linkFrom": "Rekrutierungslink von {{name}}",
     "pairProgress": "Heute {{used}} von {{limit}} Mal mit {{name}} rekrutiert.",
     "recruitsLeft_one": "Heute noch {{count}} Rekrut übrig. Zurücksetzung um {{time}}.",
     "recruitsLeft_other": "Heute noch {{count}} Rekruten übrig. Zurücksetzung um {{time}}.",
     "again": "Erneut rekrutieren",
-    "blockedPair": "Du hast heute {{used}} von {{limit}} Mal mit {{name}} rekrutiert. Zurücksetzung um {{time}}.",
-    "blockedRecruiter": "Du hast alle {{limit}} täglichen Rekrutierungen verbraucht. Zurücksetzung um {{time}}.",
+    "blockedPair": "Sie haben heute {{used}} von {{limit}} Mal mit {{name}} rekrutiert. Zurücksetzung um {{time}}.",
+    "blockedRecruiter": "Sie haben alle {{limit}} täglichen Rekrutierungen verbraucht. Zurücksetzung um {{time}}.",
     "blockedTarget": "{{name}} hat das tägliche Limit von {{limit}} Rekrutierungen erreicht. Zurücksetzung um {{time}}."
   },
   "ariaLabels": {
@@ -291,15 +302,15 @@
     "errorFetchingNewUser": "Fehler beim Laden eines neuen Benutzers.",
     "failedToCleanlyEndServerSession": "Server-Sitzung konnte nicht sauber beendet werden.",
     "errorHandlingRecruitment": "Fehler bei der Verarbeitung der Rekrutierung.",
-    "networkErrorDuringRecruitment": "Netzwerkfehler während der Rekrutierung. Bitte versuche es erneut.",
+    "networkErrorDuringRecruitment": "Netzwerkfehler während der Rekrutierung. Bitte versuchen Sie es erneut.",
     "errorVerifyingSession": "Fehler beim Überprüfen der Sitzung.",
     "errorStartingSession": "Fehler beim Starten der Rekrutierungssitzung.",
-    "sessionInvalid": "Ungültige Sitzung. Bitte starte eine neue Sitzung."
+    "sessionInvalid": "Ungültige Sitzung. Bitte starten Sie eine neue Sitzung."
   },
   "connection": {
     "banner": {
       "title": "Echtzeitverbindung verloren",
-      "body": "Live-Updates sind pausiert. Verbinde dich erneut, um Sofortnachrichten und Benachrichtigungen fortzusetzen.",
+      "body": "Live-Updates sind pausiert. Verbinden Sie sich erneut, um Sofortnachrichten und Benachrichtigungen fortzusetzen.",
       "retry": "Erneut versuchen",
       "dismiss": "Schließen"
     }
@@ -308,7 +319,39 @@
     "observedPopulation": "Beobachtete Bevölkerung",
     "observedTotal": "Beobachtet: {{count}}",
     "unobservedPopulation": "Die unbeobachtete Bevölkerung ist unbekannt.",
-    "observedRoleUnits": "Beobachtete {{type}}: {{count}}"
+    "observedRoleUnits": "Beobachtete {{type}}: {{count}}",
+    "title": "Geheimdienstbericht",
+    "missionSuccess": "Mission erfolgreich",
+    "missionFailed": "Mission gescheitert",
+    "spiesRepelled": "Spione abgewehrt",
+    "spiesGotThrough": "Spione sind durchgekommen",
+    "subtitle": "{{attacker}} hat Spione gegen {{defender}} ausgesandt",
+    "reportId": "Berichts-ID",
+    "spymaster": "Spionagemeister",
+    "target": "Ziel",
+    "level": "Stufe",
+    "sendMoreSpies": "Weitere Spione senden",
+    "attack": "Angreifen",
+    "viewProfile": "Profil von {{player}} ansehen",
+    "attackerAvatar": "Avatar des Spionagemeisters",
+    "defenderAvatar": "Avatar des Ziels",
+    "armoryTitle": "Waffenkammer: {{type}}",
+    "unitTypes": {
+      "CITIZEN": "Bürger",
+      "WORKER": "Arbeiter",
+      "OFFENSE": "Angriff",
+      "DEFENSE": "Verteidigung",
+      "SPY": "Spion",
+      "SENTRY": "Wächter"
+    },
+    "itemTypes": {
+      "HELM": "Helm",
+      "ARMOR": "Rüstung",
+      "BOOTS": "Stiefel",
+      "BRACERS": "Armschienen",
+      "SHIELD": "Schild",
+      "WEAPON": "Waffe"
+    }
   },
   "skipToContent": "Zum Hauptinhalt springen",
   "logout": "Abmelden",
@@ -316,7 +359,7 @@
   "saved": "Erfolgreich gespeichert",
   "interface": {
     "permissionDenied": "Zugriff verweigert",
-    "permissionDescription": "Du hast nicht die erforderlichen Berechtigungen, um auf diese Seite zuzugreifen.",
+    "permissionDescription": "Sie haben nicht die erforderlichen Berechtigungen, um auf diese Seite zuzugreifen.",
     "adminNavigation": "Administrationsnavigation",
     "menu": "Menü",
     "kingdom": "Königreich",
@@ -332,14 +375,16 @@
   "importantAnnouncement": "Wichtige Ankündigung",
   "announcementLearnMore": "Mehr erfahren",
   "profileActions": {
-    "signIn": "Melde dich an, um mit diesem Spieler zu interagieren.",
-    "selfTarget": "Du kannst dein eigenes Königreich nicht angreifen.",
+    "signIn": "Melden Sie sich an, um mit diesem Spieler zu interagieren.",
+    "selfTarget": "Sie können Ihr eigenes Königreich nicht angreifen.",
     "configError": "Die Missionseinstellungen konnten nicht geladen werden. Erneuter Versuch…",
     "loading": "Missionseinstellungen werden geladen…",
     "targetUnavailable": "Dieser Spieler ist für Missionen nicht verfügbar oder seit Beginn dieser Ära nicht zurückgekehrt.",
-    "outOfRange": "Dieser Spieler liegt außerhalb deiner Missionsreichweite (höchstens {{range}} Stufen Unterschied).",
+    "outOfRange": "Dieser Spieler liegt außerhalb Ihrer Missionsreichweite (höchstens {{range}} Stufen Unterschied).",
     "attackingDisabled": "Angriffe sind derzeit vom Server deaktiviert.",
-    "spyDisabled": "Alle Spionagemissionen sind derzeit vom Server deaktiviert."
+    "spyDisabled": "Alle Spionagemissionen sind derzeit vom Server deaktiviert.",
+    "report": "Spieler melden",
+    "message": "Diesem Spieler schreiben"
   },
   "profileSummary": {
     "level": "Stufe",
@@ -365,7 +410,7 @@
   "walkthrough": {
     "offer": {
       "title": "Die erste Runde kennenlernen?",
-      "body": "Eine kurze, optionale Einführung zeigt dir Menü, Berater, Statistiken, Ausbildung, Waffenkammer und Bank – und lässt dich bei Angriff loslegen."
+      "body": "Eine kurze, optionale Einführung zeigt Ihnen Menü, Berater, Statistiken, Ausbildung, Waffenkammer und Bank – und lässt Sie bei Angriff loslegen."
     },
     "skip": "Überspringen",
     "start": "Rundgang starten",
@@ -375,31 +420,31 @@
     "finish": "Fertig",
     "menu": {
       "title": "Das Befehlsmenü",
-      "body": "Mit dieser Leiste wechselst du zwischen Startseite, Kampf, Strukturen, Allianzen und dem übrigen Reich."
+      "body": "Mit dieser Leiste wechseln Sie zwischen Startseite, Kampf, Strukturen, Allianzen und dem übrigen Reich."
     },
     "sidebar": {
-      "title": "Dein Königreichs-Buch",
+      "title": "Ihr Königreichs-Buch",
       "body": "Die Seitenleiste hält Gold, Bürger, Level, Runden, den Berater, die Spielersuche und den Runden-Timer griffbereit."
     },
     "overview": {
       "title": "Das Reich auf einen Blick",
-      "body": "Die Übersicht ist dein Pulscheck: Vermögen, Bevölkerung, Heeresgröße, Bankguthaben und Fortschritt zum nächsten Level."
+      "body": "Die Übersicht ist Ihr Pulscheck: Vermögen, Bevölkerung, Heeresgröße, Bankguthaben und Fortschritt zum nächsten Level."
     },
     "training": {
       "title": "Bürger gezielt ausbilden",
-      "body": "Arbeiter erzeugen Gold, Offensiv-Einheiten gewinnen Angriffe, Defensiv-Einheiten schützen dein Volk, und Spione kontrollieren Informationen."
+      "body": "Arbeiter erzeugen Gold, Offensiv-Einheiten gewinnen Angriffe, Defensiv-Einheiten schützen Ihr Volk, und Spione kontrollieren Informationen."
     },
     "armory": {
       "title": "Ausrüsten vor dem Marsch",
-      "body": "Die Waffenkammer macht ausgebildete Einheiten zu echter Stärke. Kaufe Offensive für härtere Schläge und Verteidigung, um zu bestehen."
+      "body": "Die Waffenkammer macht ausgebildete Einheiten zu echter Stärke. Kaufen Sie Offensive für härtere Schläge und Verteidigung, um zu bestehen."
     },
     "bank": {
-      "title": "Einlagern, was du nicht verteidigen kannst",
-      "body": "Gold auf der Hand ist nützlich, aber ungeschützt. Einlagen sichern dein Vermögen, während Arbeiter und Strukturen für Einkommen sorgen."
+      "title": "Einlagern, was Sie nicht verteidigen können",
+      "body": "Gold auf der Hand ist nützlich, aber ungeschützt. Einlagen sichern Ihr Vermögen, während Arbeiter und Strukturen für Einkommen sorgen."
     },
     "attack": {
-      "title": "Wähle dein erstes Ziel",
-      "body": "Du bist bereit, das Schlachtfeld zu erkunden. Vergleiche Level, Gold und Risiko, bevor du Angriffsrunden ausgibst."
+      "title": "Wählen Sie Ihr erstes Ziel",
+      "body": "Sie sind bereit, das Schlachtfeld zu erkunden. Vergleichen Sie Level, Gold und Risiko, bevor Sie Angriffsrunden ausgeben."
     }
   },
   "classes": {
@@ -411,7 +456,7 @@
   "eraResetNotice": {
     "scheduled": "Die Epoche wird am {{local}} OT-Zeit ({{utc}}) zurückgesetzt",
     "started": "Epochenreset läuft",
-    "scope": "Der Spielfortschritt wird auf die Startwerte der Epoche zurückgesetzt. Dein Konto bleibt erhalten.",
+    "scope": "Der Spielfortschritt wird auf die Startwerte der Epoche zurückgesetzt. Ihr Konto bleibt erhalten.",
     "closed": "Spieleranmeldungen sind bis zum Abschluss des Resets vorübergehend geschlossen."
   },
   "artworkPreview": {
@@ -420,5 +465,111 @@
     "default": "Konfigurierter Standard",
     "r2": "R2-Grafiken",
     "pure": "Reine Oberfläche / Ersatz"
+  },
+  "events": {
+    "label": "Aktive Events",
+    "untilEraEnd": "Bis zum Ende der Ära",
+    "endsInDays": "noch {{days}} T. {{hours}} Std.",
+    "endsInHours": "noch {{hours}} Std. {{minutes}} Min.",
+    "endsInMinutes": "noch {{minutes}} Min.",
+    "effects": {
+      "xp": "{{value}} EP",
+      "gold": "{{value}} Goldeinkommen",
+      "dailyCitizens": "+{{value}} Bürger/Tag",
+      "citizensBOTH": "{{value}} Bürger",
+      "citizensDAILY": "{{value}} tägliche Bürger",
+      "citizensRECRUITING": "{{value}} rekrutierte Bürger",
+      "turns_one": "+{{count}} Bonuszug pro Zug",
+      "turns_other": "+{{count}} Bonuszüge pro Zug",
+      "unitDiscount": "{{value}} % Rabatt auf Ausbildung",
+      "armoryDiscount": "{{value}} % Rabatt in der Waffenkammer"
+    }
+  },
+  "spyReport": {
+    "assassinationTitle": "Attentatsbericht",
+    "infiltrationTitle": "Infiltrationsbericht",
+    "assassinationSubtitle": "{{attacker}} hat Attentäter gegen {{defender}} geschickt",
+    "infiltrationSubtitle": "{{attacker}} hat Infiltratoren gegen die Festung von {{defender}} geschickt",
+    "assassinsStruck": "Attentäter haben zugeschlagen",
+    "assassinsRepelled": "Attentäter abgewehrt",
+    "infiltratorsBreached": "Festung durchbrochen",
+    "infiltratorsRepelled": "Infiltratoren abgewehrt",
+    "attackBack": "Zurückschlagen",
+    "generated": "Bericht erstellt: {{date}}",
+    "missionLog": "Einsatzprotokoll",
+    "targets": {
+      "citizens": "Bürger und Arbeiter",
+      "offense": "Angriffseinheiten",
+      "defense": "Verteidigungseinheiten",
+      "units": "Einheiten"
+    },
+    "attackerSpiesLost_one": "{{count}} Ihrer Spione ging verloren.",
+    "attackerSpiesLost_other": "{{count}} Ihrer Spione gingen verloren.",
+    "attackerNoSpiesLost": "Alle Ihre Spione sind sicher zurückgekehrt.",
+    "defenderSpiesLost_one": "Ihre Wachen haben {{count}} feindlichen Spion getötet.",
+    "defenderSpiesLost_other": "Ihre Wachen haben {{count}} feindliche Spione getötet.",
+    "defenderNoSpiesLost": "Alle feindlichen Spione sind entkommen.",
+    "assassination": {
+      "attacker": {
+        "sent_one": "Sie haben {{count}} Attentäter auf die {{target}} von {{defender}} angesetzt.",
+        "sent_other": "Sie haben {{count}} Attentäter auf die {{target}} von {{defender}} angesetzt.",
+        "killed_one": "Sie haben {{count}} der {{target}} getötet.",
+        "killed_other": "Sie haben {{count}} der {{target}} getötet.",
+        "noKills": "Es wurden keine {{target}} getötet."
+      },
+      "defender": {
+        "sent_one": "{{attacker}} hat {{count}} Attentäter auf Ihre {{target}} angesetzt.",
+        "sent_other": "{{attacker}} hat {{count}} Attentäter auf Ihre {{target}} angesetzt.",
+        "killed_one": "Sie haben {{count}} Ihrer {{target}} verloren.",
+        "killed_other": "Sie haben {{count}} Ihrer {{target}} verloren.",
+        "noKills": "Keine Ihrer {{target}} wurden verletzt."
+      }
+    },
+    "infiltration": {
+      "attacker": {
+        "sent_one": "Sie haben {{count}} Infiltrator gegen die Festung von {{defender}} geschickt.",
+        "sent_other": "Sie haben {{count}} Infiltratoren gegen die Festung von {{defender}} geschickt.",
+        "damage": "Sie haben der Festung {{damage}} Schaden zugefügt.",
+        "caught": "Sie wurden gefasst, bevor sie die Festung erreichten."
+      },
+      "defender": {
+        "sent_one": "{{attacker}} hat {{count}} Infiltrator gegen Ihre Festung geschickt.",
+        "sent_other": "{{attacker}} hat {{count}} Infiltratoren gegen Ihre Festung geschickt.",
+        "damage": "Ihre Festung hat {{damage}} Schaden erlitten.",
+        "caught": "Ihre Wachen haben sie gefasst, bevor sie die Festung erreichten."
+      }
+    }
+  },
+  "report": {
+    "title": "Meldung erstellen",
+    "formTitle": "Spieler melden",
+    "reportedUser": "Spieler",
+    "searchUsers": "Spielernamen eingeben…",
+    "category": "Grund",
+    "categoryPlaceholder": "Grund auswählen",
+    "subject": "Betreff (optional)",
+    "subjectPlaceholder": "Kurze Zusammenfassung",
+    "description": "Was ist passiert?",
+    "descriptionPlaceholder": "Beschreiben Sie, was passiert ist (mindestens 10 Zeichen).",
+    "cancel": "Abbrechen",
+    "submit": "Meldung senden",
+    "errorTitle": "Meldung nicht gesendet",
+    "selectUser": "Wählen Sie den Spieler aus, den Sie melden möchten.",
+    "selectCategory": "Wählen Sie einen Grund aus.",
+    "descriptionTooShort": "Beschreiben Sie den Vorfall mit mindestens 10 Zeichen.",
+    "successTitle": "Meldung gesendet",
+    "submitted": "Vielen Dank. Die Moderatoren prüfen Ihre Meldung.",
+    "submitFailed": "Ihre Meldung konnte nicht gesendet werden. Bitte versuchen Sie es später erneut.",
+    "categories": {
+      "HARASSMENT": "Belästigung",
+      "SPAM": "Spam",
+      "CHEATING": "Schummeln",
+      "MULTI_ACCOUNT": "Mehrere Konten",
+      "BUG_EXPLOIT": "Ausnutzen von Fehlern",
+      "INAPPROPRIATE_NAME": "Unangemessener Name",
+      "CHAT_ABUSE": "Missbrauch im Chat",
+      "ALLIANCE_ABUSE": "Missbrauch in einer Allianz",
+      "OTHER": "Sonstiges"
+    }
   }
 }

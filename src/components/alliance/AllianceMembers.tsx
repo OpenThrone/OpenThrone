@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 
+import { classLabel, raceLabel } from '@/components/alliance/allianceLabels';
 import {
   allianceRequest,
   getAllianceStanding,
@@ -23,6 +24,8 @@ import {
 import { ConfirmActionModal } from '@/components/alliance/ConfirmActionModal';
 import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo, AllianceMember } from '@/services/Alliance.service';
+import type { PlayerRace } from '@/types/typings';
+import { getAvatarSrc } from '@/utils/utilities';
 
 interface AllianceMembersProps {
   alliance: AllianceInfo;
@@ -41,7 +44,7 @@ export const AllianceMembers = ({
   viewerId = null,
   onUpdate,
 }: AllianceMembersProps) => {
-  const { t } = useTranslation('alliances');
+  const { t, i18n } = useTranslation('alliances');
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [loading, setLoading] = useState(false);
   const standing = getAllianceStanding(alliance, viewerId);
@@ -116,9 +119,17 @@ export const AllianceMembers = ({
       <Table.Tr key={member.id}>
         <Table.Td>
           <Group gap="sm">
-            <Avatar src={member.user.avatar} size={30} radius={30} />
+            <Avatar
+              src={getAvatarSrc(
+                member.user.avatar || 'SHIELD',
+                (member.user as { race?: PlayerRace }).race,
+                '150x150',
+              )}
+              size={30}
+              radius={30}
+            />
             <Link
-              href={`/user/${member.user.id}`}
+              href={`/userprofile/${member.user.id}`}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <Text fz="sm" fw={500}>
@@ -139,13 +150,18 @@ export const AllianceMembers = ({
         </Table.Td>
         <Table.Td>
           <Text fz="sm">
-            {member.user.race} / {member.user.class}
+            {t('members.raceClassValue', '{{race}} / {{class}}', {
+              race: raceLabel(t, member.user.race),
+              class: classLabel(t, member.user.class),
+            })}
           </Text>
         </Table.Td>
         <Table.Td>
           <Text fz="sm" c="dimmed">
             {member.user.last_active
-              ? new Date(member.user.last_active).toLocaleDateString()
+              ? new Date(member.user.last_active).toLocaleDateString(
+                  i18n.language,
+                )
               : '-'}
           </Text>
         </Table.Td>

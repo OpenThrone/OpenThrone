@@ -120,7 +120,10 @@ export const AttackService = {
     attackerId: number,
     defenderId: number,
     attack_turns: number,
-    options: { confirmProtectionForfeit?: boolean } = {},
+    options: {
+      confirmProtectionForfeit?: boolean;
+      confirmAllianceAttack?: boolean;
+    } = {},
   ) {
     logDebug('Attack initiated', { attackerId, defenderId, attack_turns });
 
@@ -191,20 +194,6 @@ export const AttackService = {
             const protectionContext = await loadProtectionContext(tx);
             applyProtectionContext(protectionContext, attacker, defender);
             const attackerWasProtected = attacker.isProtected();
-            if (
-              shouldForfeitProtection(
-                attackerWasProtected,
-                defender.isProtected(),
-              ) &&
-              !options.confirmProtectionForfeit
-            ) {
-              return {
-                status: 'failed',
-                message:
-                  'Attacking a player who is not protected ends your protection for the rest of the era. Confirm to continue.',
-                code: 'PROTECTION_FORFEIT_CONFIRMATION_REQUIRED',
-              };
-            }
 
             if (attacker.attackTurns < committedTurns) {
               return {
@@ -288,6 +277,49 @@ export const AttackService = {
                   'You have attacked this player too many times in the last 24 hours.',
                 code: 'TOO_MANY_ATTACKS',
               };
+            }
+
+            // Ask a protected attacker to give up protection only once every
+            // other check has passed, so they never confirm an attack that is
+            // then refused anyway (range, turns, pair cap...).
+            if (
+              shouldForfeitProtection(
+                attackerWasProtected,
+                defender.isProtected(),
+              ) &&
+              !options.confirmProtectionForfeit
+            ) {
+              return {
+                status: 'failed',
+                message:
+                  'Attacking a player who is not protected ends your protection for the rest of the era. Confirm to continue.',
+                code: 'PROTECTION_FORFEIT_CONFIRMATION_REQUIRED',
+              };
+            }
+
+            // Friendly fire stays allowed but must be acknowledged. Checked
+            // after every refusal for the same reason as the forfeit prompt.
+            if (!options.confirmAllianceAttack) {
+              const sharedMembership = await tx.alliance_memberships.findFirst({
+                where: {
+                  user_id: attackerId,
+                  alliance: { members: { some: { user_id: defenderId } } },
+                },
+                orderBy: { alliance_id: 'asc' },
+                select: { alliance: { select: { id: true, name: true } } },
+              });
+              if (sharedMembership?.alliance) {
+                const allianceName = sharedMembership.alliance.name;
+                return {
+                  status: 'failed',
+                  message: `This player is a fellow member of your alliance "${allianceName}". Confirm to attack them anyway.`,
+                  code: 'ALLIANCE_MEMBER_CONFIRMATION_REQUIRED',
+                  extra_variables: {
+                    allianceId: sharedMembership.alliance.id,
+                    allianceName,
+                  },
+                };
+              }
             }
 
             // Dogpile protection: the defender can only lose DAILY_CASUALTY_RECOVERY

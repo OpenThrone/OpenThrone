@@ -11,6 +11,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp } from '@/utils/auditLogger';
 import { eraStartSettingsSchema } from '@/utils/eraStartSettings';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const bodySchema = z
   .object({
@@ -53,12 +54,12 @@ export default withApiGuard({
     return res.status(202).json({ success: true, ...result });
   } catch (error) {
     if (error instanceof EraResetScheduleConflict)
-      return res.status(409).json({ error: error.message });
+      return res.status(409).json({ error: publicErrorMessage(error) });
     if (error instanceof CurrentEraResetError) {
       const status = error.code === 'ERA_NOT_FOUND' ? 404 : 409;
       return res
         .status(status)
-        .json({ error: error.message, code: error.code });
+        .json({ error: publicErrorMessage(error), code: error.code });
     }
     logError('Current era reset failed', error);
     return res.status(500).json({ error: 'Internal server error' });

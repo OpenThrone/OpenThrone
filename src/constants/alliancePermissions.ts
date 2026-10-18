@@ -9,6 +9,7 @@ export const ALLIANCE_PERMISSION_KEYS = [
   'kick_member',
   'declare_war',
   'manage_bank',
+  'approve_own_requests',
   'request_gold',
   'send_messages',
   'post_announcements',
@@ -41,6 +42,10 @@ export const ALLIANCE_PERMISSION_LABELS: Record<
   kick_member: { key: 'ranks.perm.kick_member', fallback: 'Kick members' },
   declare_war: { key: 'ranks.perm.declare_war', fallback: 'Declare war' },
   manage_bank: { key: 'ranks.perm.manage_bank', fallback: 'Manage bank' },
+  approve_own_requests: {
+    key: 'ranks.perm.approve_own_requests',
+    fallback: 'Approve own gold and loan requests',
+  },
   request_gold: {
     key: 'ranks.perm.request_gold',
     fallback: 'Request gold from the treasury',

@@ -16,6 +16,7 @@ import { NavLoggedOut } from '@/components/navLoggedOut';
 import Sidebar from '@/components/Sidebar';
 import { useLayout } from '@/context/LayoutContext';
 import { AppConfig } from '@/utils/AppConfig';
+import { APP_VERSION_LABEL } from '@/utils/appVersion';
 import { resolveArtworkSource } from '@/utils/artwork';
 import { logError } from '@/utils/logger';
 
@@ -37,7 +38,7 @@ const publicFooterLinks = [
   {
     key: 'discord',
     labelKey: 'loggedOut.discord',
-    url: 'https://discord.gg/j9NYxmBCjA',
+    url: 'https://discord.com/invite/j9NYxmBCjA',
     external: true,
   },
   {
@@ -276,6 +277,11 @@ const Layout = (props: IMainProps) => {
                 {onlinePlayerInfo.newestPlayer}
               </p>
             </>
+          )}
+          {APP_VERSION_LABEL && (
+            <p className="opacity-70">
+              {t('footer.version', { version: APP_VERSION_LABEL })}
+            </p>
           )}
         </div>
       </footer>

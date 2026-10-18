@@ -17,15 +17,24 @@ import {
   Tooltip,
   useMantineTheme,
 } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import ImageWithFallback from '@/components/ArtworkImage';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import { refundFromDiscountedCost } from '@/constants/gameEvents';
 import { useUser } from '@/context/users';
+import { useActiveGameEvents } from '@/hooks/useActiveGameEvents';
 import { alertService } from '@/services/Alert.service';
 import type { UnitProps, UnitType } from '@/types/typings';
 import { getArtworkUrl, PURE_ARTWORK } from '@/utils/artwork';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
+import { getMaxTrainableQuantity } from '@/utils/trainingMax';
+import {
+  translateFortName,
+  translateUnitName,
+} from '@/utils/translateGameNames';
 
 import { GameCard } from './game/GameCard';
 
@@ -61,6 +70,8 @@ type NewUnitSectionProps = {
   setUnitCosts: React.Dispatch<React.SetStateAction<{ [key: string]: number }>>;
   /** The type of units in this section (e.g., 'OFFENSE', 'DEFENSE'). */
   unitType: UnitType;
+  /** Gold queued across every section on the page; MAX leaves room for it. */
+  pageTotalCost?: number;
 };
 
 /**
@@ -75,12 +86,26 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
   unitCosts,
   setUnitCosts,
   unitType,
+  pageTotalCost,
 }) => {
   const { user, forceUpdate } = useUser();
   const theme = useMantineTheme();
   const [conversionAmount, setConversionAmount] = useState<number>(0);
   const [fromUnitId, setFromUnitId] = useState<string | null>(null);
   const [toUnitId, setToUnitId] = useState<string | null>(null);
+  const { t } = useTranslation('battle');
+  const unitName = useCallback(
+    (name: string) => translateUnitName(t, name),
+    [t],
+  );
+  const fortName = useCallback(
+    (name: string) => translateFortName(t, name),
+    [t],
+  );
+  const [confirmUntrainOpen, setConfirmUntrainOpen] = useState(false);
+  const {
+    modifiers: { unitCostDiscountPercent: unitDiscount },
+  } = useActiveGameEvents();
   const [conversionCost, setConversionCost] = useState(0);
   const [toLower, setToLower] = useState(false);
   const [collapsedItems, setCollapsedItems] = useState<Record<string, boolean>>(
@@ -116,9 +141,13 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     const isLower = fromUnitData.level > toUnitData.level;
     setToLower(isLower);
 
+    // Conversions are never discounted by events, so preview at full price.
     const fromCostNum =
-      Number(String(fromUnitData.cost).replace(/,/g, '')) || 0;
-    const toCostNum = Number(String(toUnitData.cost).replace(/,/g, '')) || 0;
+      fromUnitData.fullCost ??
+      (Number(String(fromUnitData.cost).replace(/,/g, '')) || 0);
+    const toCostNum =
+      toUnitData.fullCost ??
+      (Number(String(toUnitData.cost).replace(/,/g, '')) || 0);
 
     const costDifference = toCostNum - fromCostNum;
     const multiplier = isLower ? 0.75 : 1.0; // 75% refund factor when converting down, 100% cost when converting up
@@ -217,7 +246,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     setTrainUntrainError(null);
 
     if (!user) {
-      setTrainUntrainError('User data not available.');
+      setTrainUntrainError(t('training.errors.userUnavailable'));
       setIsProcessingTrain(false);
       return;
     }
@@ -229,7 +258,9 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       .filter((unit) => unit.quantity > 0 && unit.enabled);
 
     if (unitsToTrain.length === 0) {
-      setTrainUntrainError(`No ${heading} units selected to train.`);
+      setTrainUntrainError(
+        t('training.errors.noneSelectedTrain', { section: heading }),
+      );
       setIsProcessingTrain(false);
       return;
     }
@@ -242,7 +273,9 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     const userGold = BigInt(user.gold?.toString() ?? '0');
     if (BigInt(currentSectionCost) > userGold) {
       setTrainUntrainError(
-        `Insufficient gold. Needs ${toLocale(currentSectionCost, user.locale)}.`,
+        t('training.errors.insufficientGoldNeeds', {
+          cost: toLocale(currentSectionCost, user.locale),
+        }),
       );
       setIsProcessingTrain(false);
       return;
@@ -258,7 +291,10 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
         ?.quantity ?? 0;
     if (citizensRequired > availableCitizens) {
       setTrainUntrainError(
-        `Insufficient citizens. Needs ${toLocale(citizensRequired, user.locale)}, have ${toLocale(availableCitizens, user.locale)}.`,
+        t('training.insufficientCitizens', {
+          needed: toLocale(citizensRequired, user.locale),
+          have: toLocale(availableCitizens, user.locale),
+        }),
       );
       setIsProcessingTrain(false);
       return;
@@ -278,17 +314,19 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || `Training ${heading} units failed.`);
+        throw new Error(
+          data?.error || t('training.errors.trainFailed', { section: heading }),
+        );
       }
       alertService.success(
-        data.message || `${heading} units trained successfully!`,
+        data.message || t('training.success.trained', { section: heading }),
       );
       resetSectionCosts();
       forceUpdate();
     } catch (error: any) {
       logError(`Error training ${heading} units:`, error);
       setTrainUntrainError(
-        error.message || `Failed to train ${heading} units.`,
+        error.message || t('training.errors.trainFailed', { section: heading }),
       );
     } finally {
       setIsProcessingTrain(false);
@@ -304,6 +342,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     isProcessingConvert,
     isProcessingTrain,
     isProcessingUntrain,
+    t,
   ]);
 
   /**
@@ -317,7 +356,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     setTrainUntrainError(null);
 
     if (!user) {
-      setTrainUntrainError('User data not available.');
+      setTrainUntrainError(t('training.errors.userUnavailable'));
       setIsProcessingUntrain(false);
       return;
     }
@@ -329,7 +368,9 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       .filter((unit) => unit.quantity > 0 && unit.enabled);
 
     if (unitsToUntrain.length === 0) {
-      setTrainUntrainError(`No ${heading} units selected to untrain.`);
+      setTrainUntrainError(
+        t('training.errors.noneSelectedUntrain', { section: heading }),
+      );
       setIsProcessingUntrain(false);
       return;
     }
@@ -339,7 +380,10 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       const owned = unit.ownedUnits || 0;
       if (unit.quantity > owned) {
         setTrainUntrainError(
-          `Not enough ${unit.name} to untrain (Own: ${toLocale(owned, user.locale)}).`,
+          t('training.errors.notEnoughToUntrain', {
+            unit: unitName(unit.name),
+            owned: toLocale(owned, user.locale),
+          }),
         );
         setIsProcessingUntrain(false);
         return;
@@ -360,17 +404,21 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || `Untraining ${heading} units failed.`);
+        throw new Error(
+          data?.error ||
+            t('training.errors.untrainFailed', { section: heading }),
+        );
       }
       alertService.success(
-        data.message || `${heading} units untrained successfully!`,
+        data.message || t('training.success.untrained', { section: heading }),
       );
       resetSectionCosts();
       forceUpdate();
     } catch (error: any) {
       logError(`Error untraining ${heading} units:`, error);
       setTrainUntrainError(
-        error.message || `Failed to untrain ${heading} units.`,
+        error.message ||
+          t('training.errors.untrainFailed', { section: heading }),
       );
     } finally {
       setIsProcessingUntrain(false);
@@ -386,6 +434,8 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     isProcessingConvert,
     isProcessingTrain,
     isProcessingUntrain,
+    t,
+    unitName,
   ]);
 
   // Get memoized list of units (no filtering needed here as collapsing handles visibility)
@@ -421,25 +471,28 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       !conversionAmount ||
       conversionAmount <= 0
     ) {
-      setConvertError('Select units and enter quantity > 0.');
+      setConvertError(t('training.convert.selectAndQuantity'));
       setIsProcessingConvert(false);
       return;
     }
     if (!user) {
-      setConvertError('User data not available.');
+      setConvertError(t('training.errors.userUnavailable'));
       setIsProcessingConvert(false);
       return;
     }
 
     const fromUnitData = getUnits.find((item) => item.id === fromUnitId);
     if (!fromUnitData) {
-      setConvertError('Invalid "from" unit selected.');
+      setConvertError(t('training.convert.invalidSource'));
       setIsProcessingConvert(false);
       return;
     }
     if ((fromUnitData.ownedUnits || 0) < conversionAmount) {
       setConvertError(
-        `Not enough ${fromUnitData.name} to convert (Own: ${toLocale(fromUnitData.ownedUnits || 0, user.locale)}).`,
+        t('training.convert.notEnoughToConvert', {
+          unit: unitName(fromUnitData.name),
+          owned: toLocale(fromUnitData.ownedUnits || 0, user.locale),
+        }),
       );
       setIsProcessingConvert(false);
       return;
@@ -448,7 +501,9 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     const userGold = BigInt(user.gold?.toString() ?? '0');
     if (!toLower && BigInt(Math.ceil(conversionCost)) > userGold) {
       setConvertError(
-        `Insufficient gold (Cost: ${toLocale(conversionCost, user.locale)}).`,
+        t('training.convert.insufficientGold', {
+          cost: toLocale(conversionCost, user.locale),
+        }),
       );
       setIsProcessingConvert(false);
       return;
@@ -471,15 +526,15 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Unit conversion failed.');
+        throw new Error(data.error || t('training.convert.failed'));
       }
 
-      alertService.success(data.message || 'Conversion successful!');
+      alertService.success(data.message || t('training.convert.success'));
       resetConversion();
       forceUpdate(); // Update user context to reflect changes
     } catch (error: any) {
       logError('Failed to convert units:', error);
-      setConvertError(error.message || 'Conversion failed. Please try again.');
+      setConvertError(error.message || t('training.convert.failedRetry'));
     } finally {
       setIsProcessingConvert(false);
     }
@@ -496,6 +551,8 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     isProcessingConvert,
     isProcessingTrain,
     isProcessingUntrain,
+    t,
+    unitName,
   ]);
 
   // Filter units for conversion dropdowns
@@ -503,16 +560,16 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
     () =>
       getUnits
         .filter((unit) => unit.enabled)
-        .map((unit) => ({ value: unit.id, label: unit.name })),
-    [getUnits],
+        .map((unit) => ({ value: unit.id, label: unitName(unit.name) })),
+    [getUnits, unitName],
   );
 
   const availableFromUnits = useMemo(
     () =>
       getUnits
         .filter((unit) => unit.enabled && (unit.ownedUnits || 0) > 0)
-        .map((unit) => ({ value: unit.id, label: unit.name })),
-    [getUnits],
+        .map((unit) => ({ value: unit.id, label: unitName(unit.name) })),
+    [getUnits, unitName],
   );
 
   const availableToUnits = useMemo(
@@ -568,12 +625,14 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
 
   const trainTooltip =
     sectionTotalCost <= 0
-      ? 'Enter quantities to train.'
+      ? t('training.section.enterTrainQuantities')
       : BigInt(Math.ceil(sectionTotalCost)) > userGold
-        ? `Not enough gold (Cost: ${toLocale(sectionTotalCost, user?.locale)})`
+        ? t('training.section.notEnoughGold', {
+            cost: toLocale(sectionTotalCost, user?.locale),
+          })
         : '';
   const untrainTooltip =
-    sectionTotalCost <= 0 ? 'Enter quantities to untrain.' : '';
+    sectionTotalCost <= 0 ? t('training.section.enterUntrainQuantities') : '';
   const accent = theme.colors.secondary?.[1] ?? '#e5c55a';
   const slotBorder = 'var(--ot-line)';
   const slotBg = 'var(--ot-inset)';
@@ -597,20 +656,15 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       0,
     );
     const currentQty = unitCosts[unit.id] || 0;
-    const availableCitizens = Math.max(
-      0,
-      citizenCount - (totalQueuedAll - currentQty),
-    );
-
-    const currentUnitCostTotal = currentQty * unitCost;
-    const remainingGold =
-      BigInt(userGold) -
-      BigInt(Math.max(0, sectionTotalCost - currentUnitCostTotal));
-    const maxByGold =
-      unitCost > 0 ? Number(remainingGold / BigInt(unitCost)) : 0;
-
-    const maxTrainable = Math.max(0, Math.min(availableCitizens, maxByGold));
-    return Number.isFinite(maxTrainable) ? maxTrainable : 0;
+    // Gold queued anywhere on the page, not just this section (#88).
+    const queuedGold = pageTotalCost ?? sectionTotalCost;
+    return getMaxTrainableQuantity({
+      citizens: citizenCount,
+      citizensQueuedElsewhere: totalQueuedAll - currentQty,
+      gold: BigInt(userGold),
+      goldQueuedElsewhere: queuedGold - currentQty * unitCost,
+      unitCost,
+    });
   };
 
   const footerContent =
@@ -624,14 +678,37 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
         <Flex justify="space-between" align="center" p="xs">
           <Stack gap="xs">
             <Text size="sm">
-              Section Cost: {toLocale(sectionTotalCost, user?.locale)}
+              {t('training.section.cost', {
+                amount: toLocale(sectionTotalCost, user?.locale),
+              })}
             </Text>
             <Text size="sm" c="dimmed">
-              Section Refund:{' '}
-              {toLocale(Math.floor(sectionTotalCost * 0.75), user?.locale)}
+              {t('training.section.refund', {
+                amount: toLocale(
+                  refundFromDiscountedCost(sectionTotalCost, unitDiscount),
+                  user?.locale,
+                ),
+              })}
             </Text>
           </Stack>
           <Group gap="sm">
+            <Button
+              variant="subtle"
+              color="gray"
+              size="xs"
+              onClick={() => {
+                resetSectionCosts();
+                setTrainUntrainError(null);
+              }}
+              disabled={
+                sectionTotalCost <= 0 ||
+                isProcessingTrain ||
+                isProcessingUntrain
+              }
+              data-testid="clear-section-button"
+            >
+              {t('training.clearSection')}
+            </Button>
             <Tooltip
               label={trainTooltip}
               disabled={!trainDisabled || isProcessingTrain}
@@ -651,7 +728,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                     boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
                   }}
                 >
-                  Train Section
+                  {t('training.section.train')}
                 </Button>
               </div>
             </Tooltip>
@@ -663,7 +740,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
               <div style={{ width: 'auto' }}>
                 <Button
                   color="gray"
-                  onClick={handleUntrainSection}
+                  onClick={() => setConfirmUntrainOpen(true)}
                   disabled={untrainDisabled}
                   loading={isProcessingUntrain}
                   size="xs"
@@ -674,7 +751,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                     boxShadow: '0 2px 0 var(--ot-inset)',
                   }}
                 >
-                  Untrain Section
+                  {t('training.section.untrain')}
                 </Button>
               </div>
             </Tooltip>
@@ -711,6 +788,15 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                       textAlign: 'center',
                     }}
                     aria-expanded={!isCollapsed}
+                    aria-label={
+                      isCollapsed
+                        ? t('training.unitCard.showDetails', {
+                            unit: unitName(unit.name),
+                          })
+                        : t('training.unitCard.hideDetails', {
+                            unit: unitName(unit.name),
+                          })
+                    }
                     role="tab"
                     data-testid="tab-button"
                   >
@@ -737,7 +823,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                       <ImageWithFallback
                         fallback={<FontAwesomeIcon icon={faQuestionCircle} />}
                         src={getCharacterImage(unit)}
-                        alt={unit.name}
+                        alt={unitName(unit.name)}
                         width={48}
                         height={48}
                       />
@@ -755,7 +841,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                       style={{ letterSpacing: '0.5px' }}
                       data-testid="unit-name"
                     >
-                      {unit.name}
+                      {unitName(unit.name)}
                     </Text>
                     {!isCollapsed && (
                       <>
@@ -766,19 +852,24 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                             tt="uppercase"
                             style={{ letterSpacing: '0.3em' }}
                           >
-                            Level {unit.level}
+                            {t('training.unitCard.level', {
+                              level: unit.level,
+                            })}
                           </Text>
                           {unit.bonus > 0 && (
                             <Text size="xs" c="dimmed">
                               (+{toLocale(unit.bonus)}{' '}
-                              {heading === 'Economy' ? 'Gold/t' : heading})
+                              {unitType === 'WORKER'
+                                ? t('training.unitCard.goldPerTurn')
+                                : heading}
+                              )
                             </Text>
                           )}
                         </Group>
                         {unit.enabled ? (
                           <Group gap="xs" mt={4} data-testid="unit-stats">
                             <Text size="xs" c="dimmed">
-                              Cost:{' '}
+                              {t('training.unitCard.cost')}{' '}
                               <span
                                 style={{ color: accent }}
                                 data-testid="unit-cost"
@@ -790,7 +881,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                               |
                             </Text>
                             <Text size="xs" c="dimmed">
-                              Owned:{' '}
+                              {t('training.unitCard.owned')}{' '}
                               <span id={`${unit.id}_owned`}>
                                 {toLocale(unit.ownedUnits || 0, user?.locale)}
                               </span>
@@ -799,11 +890,13 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                               |
                             </Text>
                             <Text size="xs" c="dimmed">
-                              Sale:{' '}
+                              {t('training.unitCard.sale')}{' '}
                               {toLocale(
                                 Math.floor(
-                                  Number(String(unit.cost).replace(/,/g, '')) *
-                                    0.75,
+                                  (unit.fullCost ??
+                                    Number(
+                                      String(unit.cost).replace(/,/g, ''),
+                                    )) * 0.75,
                                 ),
                                 user?.locale,
                               )}
@@ -811,7 +904,9 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                           </Group>
                         ) : (
                           <Text size="xs" c="dimmed" mt={4}>
-                            Requires: {unit.requirement}
+                            {t('training.unitCard.requires', {
+                              requirement: fortName(unit.requirement),
+                            })}
                           </Text>
                         )}
                       </>
@@ -824,7 +919,9 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                   className="w-full justify-end sm:w-auto sm:justify-start"
                 >
                   <NumberInput
-                    aria-label={`Quantity for ${unit.name}`}
+                    aria-label={t('training.unitCard.quantityFor', {
+                      unit: unitName(unit.name),
+                    })}
                     name={unit.id}
                     value={unitCosts[unit.id] || 0}
                     onChange={(value) => handleInputChange(unit.id, value)}
@@ -855,7 +952,9 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                       handleInputChange(unit.id, getMaxTrainable(unit))
                     }
                     data-testid="train-button"
-                    aria-label={`Set max ${unit.name}`}
+                    aria-label={t('training.unitCard.setMax', {
+                      unit: unitName(unit.name),
+                    })}
                     role="button"
                     style={{
                       backgroundImage:
@@ -867,7 +966,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                       boxShadow: '0 2px 0 var(--ot-inset)',
                     }}
                   >
-                    MAX
+                    {t('training.unitCard.max')}
                   </Button>
                 </Group>
               </Group>
@@ -889,10 +988,12 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                 tt="uppercase"
                 style={{ letterSpacing: '0.3em' }}
               >
-                Convert Units
+                {t('training.convert.title')}
               </Text>
               <Text size="xs" c="dimmed">
-                {toLower ? 'Refund' : 'Cost'}:{' '}
+                {toLower
+                  ? t('training.convert.refund')
+                  : t('training.convert.cost')}{' '}
                 <span style={{ color: accent }}>
                   {toLocale(
                     toLower
@@ -911,15 +1012,15 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                 min={0}
                 step={100}
                 allowNegative={false}
-                label="Amount"
+                label={t('training.convert.amount')}
               />
               <Select
                 size="sm"
                 data={availableFromUnits}
                 value={fromUnitId}
                 onChange={setFromUnitId}
-                label="Owned Unit"
-                placeholder="Owned Unit"
+                label={t('training.convert.ownedUnit')}
+                placeholder={t('training.convert.ownedUnit')}
                 searchable
                 clearable
               />
@@ -928,8 +1029,8 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                 data={availableToUnits}
                 value={toUnitId}
                 onChange={setToUnitId}
-                label="Target Unit"
-                placeholder="Target Unit"
+                label={t('training.convert.targetUnit')}
+                placeholder={t('training.convert.targetUnit')}
                 searchable
                 clearable
                 disabled={!fromUnitId}
@@ -938,11 +1039,11 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                 label={
                   convertError ||
                   (!fromUnitId || !toUnitId
-                    ? 'Select units'
+                    ? t('training.convert.selectUnits')
                     : conversionAmount <= 0
-                      ? 'Enter quantity'
+                      ? t('training.convert.enterQuantity')
                       : !toLower && BigInt(Math.ceil(conversionCost)) > userGold
-                        ? 'Not enough gold'
+                        ? t('training.convert.notEnoughGold')
                         : '')
                 }
                 disabled={
@@ -980,7 +1081,7 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
                       width: '100%',
                     }}
                   >
-                    Convert
+                    {t('training.convert.convert')}
                   </Button>
                 </div>
               </Tooltip>
@@ -996,6 +1097,28 @@ const NewUnitSection: React.FC<NewUnitSectionProps> = ({
       <Box mt="md" pt="sm" style={{ borderTop: '1px solid var(--ot-line)' }}>
         {footerContent}
       </Box>
+      <ConfirmationModal
+        isOpen={confirmUntrainOpen}
+        onClose={() => setConfirmUntrainOpen(false)}
+        onConfirm={() => {
+          setConfirmUntrainOpen(false);
+          handleUntrainSection();
+        }}
+        title={t('attack.untrainTitle')}
+        message={t('attack.untrainMessage', {
+          gold: toLocale(
+            Math.max(
+              0,
+              Math.ceil(sectionTotalCost) -
+                refundFromDiscountedCost(sectionTotalCost, unitDiscount),
+            ),
+            user?.locale,
+          ),
+        })}
+        confirmText={t('attack.confirm')}
+        cancelText={t('training.cancel')}
+        type="remove"
+      />
     </GameCard>
   );
 };

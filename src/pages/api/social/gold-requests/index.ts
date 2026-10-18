@@ -12,6 +12,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { getIpAddress } from '@/utils/ipUtils';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 import {
   emitGoldRequestCountUpdate,
   emitGoldRequestNotification,
@@ -71,7 +72,7 @@ const requestHandler = async (
     return res.status(201).json(stringifyObj(result));
   } catch (error: any) {
     logError('Error creating gold request:', error);
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

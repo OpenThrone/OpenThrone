@@ -36,6 +36,8 @@ export const AttackSchema = z.object({
   turns: z.number().int().positive().max(10, { message: 'Turns must be 1-10' }),
   /** Acknowledges that attacking an unprotected player ends the attacker's protection. */
   confirmProtectionForfeit: z.boolean().optional(),
+  /** Acknowledges that the target is a fellow member of one of the attacker's alliances. */
+  confirmAllianceAttack: z.boolean().optional(),
 });
 
 const SpySchema = z.object({

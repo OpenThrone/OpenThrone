@@ -39,19 +39,11 @@
       "email.outbox.ratePerMinute": "Correos por minuto",
       "account.inactivity.remindersEnabled": "Recordatorios de inactividad",
       "account.inactivity.autoAnonymizeEnabled": "Anonimización automática por inactividad",
-      "era.dailyCitizenBonus": "Bono diario de ciudadanos (ciudadanos extra que recibe cada cuenta en la actualización diaria)",
-      "era.dailyCitizenBonusActivityHours": "Ventana de actividad del bono diario de ciudadanos en horas (solo las cuentas que depositaron, entrenaron, comerciaron en la armería, atacaron, espiaron o repararon dentro de esta ventana reciben el bono; 0 = todos)",
-      "era.protectionDurationDays": "Duración de la protección para nuevos jugadores en días (1-60; la protección también termina en el nivel 10, al alcanzar el umbral de población o cuando el jugador ataca a un jugador sin protección)"
+      "era.protectionDurationDays": "Duración de la protección para nuevos jugadores en días (1-60; la protección también termina en el nivel 10, al alcanzar el umbral de población o cuando el jugador ataca a un jugador sin protección)",
+      "ENABLE_MESSAGING": "Mensajes entre jugadores (si está desactivado, solo los administradores y moderadores pueden enviar mensajes)",
+      "recruit.dailyCap": "Límite diario de reclutamiento (ciudadanos que un jugador puede ganar al día reclutando; también fija el límite de población de la protección de novato)"
     },
     "resetBeforeLogin": "Reiniciar la era actual antes de habilitar los inicios de sesión"
-  },
-  "flags": {
-    "title": "Sistema: Indicadores de funciones",
-    "intro": "Administra los interruptores de ejecución permitidos. Las reglas aún no son compatibles.",
-    "saved": "Indicador actualizado.",
-    "saveError": "No se pudo guardar el indicador.",
-    "loadError": "No se pudieron cargar los indicadores.",
-    "deleteError": "No se pudo borrar el indicador."
   },
   "maintenance": {
     "title": "Sistema: Modo de mantenimiento",

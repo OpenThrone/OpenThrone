@@ -27,6 +27,7 @@ import {
   lockAllianceThenUsers,
   transferInTx,
 } from '@/services/AllianceBank.service';
+import { postToAllianceRoom } from '@/services/AllianceRoom.service';
 import { logError } from '@/utils/logger';
 
 const OPEN_STATUSES = [AllianceLoanStatus.ACTIVE, AllianceLoanStatus.DEFAULTED];
@@ -402,12 +403,16 @@ export class AllianceLoanService {
     if (!membership) {
       throw new Error('You are not a member of this alliance');
     }
-    const can = (key: 'manage_bank' | 'request_gold') =>
+    const can = (
+      key: 'manage_bank' | 'request_gold' | 'approve_own_requests',
+    ) =>
       hasAlliancePermission(alliance.leader_id, userId, membership.role, key);
     return {
       alliance,
       canManageBank: can('manage_bank'),
       canRequest: can('request_gold'),
+      // Bank managers need this extra key to approve their own loan requests.
+      canApproveOwn: can('approve_own_requests'),
     };
   }
 
@@ -536,6 +541,7 @@ export class AllianceLoanService {
       remainingCap,
       canManage: standing.canManageBank,
       canRequest: standing.canRequest,
+      canApproveOwn: standing.canManageBank && standing.canApproveOwn,
     };
     if (standing.canManageBank) {
       const [live, history] = await Promise.all([
@@ -626,6 +632,12 @@ export class AllianceLoanService {
           return { message: 'Loan declined', status: 'DECLINED' as const };
         }
 
+        if (loan.borrower_id === v.actorId && !standing.canApproveOwn) {
+          throw new Error(
+            'You do not have permission to approve your own requests',
+          );
+        }
+
         await assertNoDefaultedLoan(
           tx,
           loan.borrower_id,
@@ -650,11 +662,10 @@ export class AllianceLoanService {
             decided_by: v.actorId,
             approved_at: now,
             due_at: new Date(now.getTime() + terms.termDays * DAY_MS),
-            interest_pct: terms.interestPct,
-            amount_owed: computeLoanOwed(
-              BigInt(loan.principal),
-              terms.interestPct,
-            ),
+            // The borrower was quoted the interest when they asked; a later
+            // change to the alliance's rate does not apply to this loan.
+            interest_pct: loan.interest_pct,
+            amount_owed: BigInt(loan.amount_owed),
           },
         });
         if (flipped.count !== 1) {
@@ -816,7 +827,7 @@ export class AllianceLoanService {
     const [alliance, borrower, members] = await Promise.all([
       tx.alliances.findUnique({
         where: { id: loan.alliance_id },
-        select: { name: true, leader_id: true },
+        select: { id: true, name: true, leader_id: true },
       }),
       tx.users.findUnique({
         where: { id: loan.borrower_id },
@@ -844,14 +855,14 @@ export class AllianceLoanService {
     recipients.delete(loan.borrower_id);
     if (recipients.size === 0) return;
     const name = borrower?.display_name ?? `#${loan.borrower_id}`;
-    await tx.messages.createMany({
-      data: [...recipients].map((toUserId) => ({
-        from_user_id: loan.borrower_id,
-        to_user_id: toUserId,
-        subject: `[${alliance.name}] Loan defaulted: ${name}`.slice(0, 200),
-        body: `${name} defaulted on a treasury loan. ${outstanding.toString()} gold is still outstanding after seizing their gold on hand and bank. Their income keeps repaying it until it is cleared.`,
-      })),
-    });
+    // Posted to the alliance's conversation in /messaging, where the
+    // treasury managers (and the rest of the alliance) will see it.
+    await postToAllianceRoom(
+      tx,
+      alliance,
+      loan.borrower_id,
+      `[${alliance.name}] Loan defaulted: ${name}\n\n${name} defaulted on a treasury loan. ${outstanding.toString()} gold is still outstanding after seizing their gold on hand and bank. Their income keeps repaying it until it is cleared.`,
+    );
   }
 }
 

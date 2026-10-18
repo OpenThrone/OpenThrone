@@ -22,9 +22,10 @@ import MainArea from '@/components/MainArea';
 import { EconomyUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
 import classes from '@/pages/structures/bank/[tab].module.css';
+import type { Locales } from '@/types/typings';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
-import { getGoldTxSymbol, getTransactionType } from '@/utils/utilities';
+import { structureName } from '@/utils/structureNames';
 
 const defaultFilters = {
   deposits: true,
@@ -75,7 +76,8 @@ function EconomyRow({
 
 /** Bank. */
 export default function Bank() {
-  const { t } = useTranslation('structures');
+  const { t, i18n } = useTranslation('structures');
+  const locale = i18n.language as Locales;
   const router = useRouter();
   const tabParam = Array.isArray(router.query.tab)
     ? router.query.tab[0]
@@ -117,7 +119,7 @@ export default function Bank() {
     (typeof amount === 'string'
       ? BigInt(amount)
       : (amount ?? 0)
-    ).toLocaleString(user?.locale);
+    ).toLocaleString(locale);
   const perTurn = (amount: number | bigint | string | undefined) =>
     t('bank.incomePerTurn', { amount: formatGold(amount) });
   const nextDeposit = user?.nextDepositAvailable;
@@ -125,12 +127,12 @@ export default function Bank() {
   const statItems = [
     {
       label: t('bank.goldOnHand'),
-      value: toLocale(user?.gold, user?.locale),
+      value: toLocale(user?.gold, locale),
       icon: <FontAwesomeIcon icon={faCoins} />,
     },
     {
       label: t('bank.bankedGold'),
-      value: toLocale(user?.goldInBank, user?.locale),
+      value: toLocale(user?.goldInBank, locale),
       icon: <FontAwesomeIcon icon={faBuildingColumns} />,
     },
     {
@@ -212,10 +214,6 @@ export default function Bank() {
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
-            getTransactionType={(entry) =>
-              getTransactionType(entry, (key) => t(key))
-            }
-            getGoldTxSymbol={getGoldTxSymbol}
           />
         </GameCard>
       )}
@@ -252,9 +250,14 @@ export default function Bank() {
             >
               <Stack component="dl" gap="xs" m={0}>
                 <EconomyRow label={t('bank.incomeUpgrade')}>
-                  {EconomyUpgrades.find(
-                    (upgrade) => upgrade.index === user?.economyLevel,
-                  )?.name ?? '—'}
+                  {structureName(
+                    t,
+                    'economy',
+                    user?.economyLevel,
+                    EconomyUpgrades.find(
+                      (upgrade) => upgrade.index === user?.economyLevel,
+                    )?.name,
+                  ) ?? '—'}
                 </EconomyRow>
                 <EconomyRow label={t('bank.fortIncome')} accent>
                   +{perTurn(user?.fortificationGoldPerTurn)}

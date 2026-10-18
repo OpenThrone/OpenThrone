@@ -39,19 +39,11 @@
       "email.outbox.ratePerMinute": "Emails per minute",
       "account.inactivity.remindersEnabled": "Inactivity reminders",
       "account.inactivity.autoAnonymizeEnabled": "Automatic inactivity anonymization",
-      "era.dailyCitizenBonus": "Daily citizen bonus (extra citizens every account gets from the daily update)",
-      "era.dailyCitizenBonusActivityHours": "Daily citizen bonus activity window in hours (only accounts that deposited, trained, traded armory, attacked, spied, or repaired within this window get the bonus; 0 = everyone)",
-      "era.protectionDurationDays": "New-player protection duration in days (1-60; protection also ends at level 10, at the population threshold, or when the player attacks an unprotected player)"
+      "era.protectionDurationDays": "New-player protection duration in days (1-60; protection also ends at level 10, at the population threshold, or when the player attacks an unprotected player)",
+      "ENABLE_MESSAGING": "Player messaging (when off, only administrators and moderators can send messages)",
+      "recruit.dailyCap": "Daily recruiting cap (citizens a player can gain per day by recruiting; also sets the new-player protection population limit)"
     },
     "resetBeforeLogin": "Reset current era before opening logins"
-  },
-  "flags": {
-    "title": "System: Feature Flags",
-    "intro": "Manage the allowlisted runtime feature switches. Rule expressions are currently unsupported.",
-    "saved": "Feature flag updated.",
-    "saveError": "Could not save this feature flag.",
-    "loadError": "Could not load feature flags.",
-    "deleteError": "Could not clear this feature flag."
   },
   "maintenance": {
     "title": "System: Maintenance Mode",

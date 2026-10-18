@@ -6,6 +6,7 @@ import { withAuth } from '@/middleware/auth';
 import { AllianceDiplomacyService } from '@/services/AllianceDiplomacy.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const BodySchema = z.object({
   allianceId: z.number().int().positive(),
@@ -31,7 +32,7 @@ const handler = async (
     );
     return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

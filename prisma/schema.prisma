@@ -331,6 +331,8 @@ model users {
   /// When the player entered (or last reset into) their current era; starts the new-player protection clock. Null on legacy rows.
   era_joined_at                         DateTime?                @db.Timestamptz(3)
   /// Era in which the player forfeited protection by attacking a non-protected player.
+  /// Citizens this era from timed citizen events and citizen multipliers (#89); added to the protection population limit.
+  event_citizens_received Int @default(0)
   protection_forfeited_era_id           Int?
   achievements                         Json?                    @default("{}")
   currentEra                            Era?                     @relation("CurrentUserEra", fields: [currentEraId], references: [id])
@@ -907,6 +909,7 @@ model Era {
   startSettings Json?
   users         users[]   @relation("CurrentUserEra")
   userEras      UserEra[] @relation("UserEraEras")
+  gameEvents    GameEvent[]
 
   @@index([startDate])
 }
@@ -1106,7 +1109,10 @@ model alliance_join_requests {
   id           Int      @id @default(autoincrement())
   alliance_id  Int
   user_id      Int
-  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  /// REQUEST: the player asked to join. INVITE: the alliance invited them.
+  kind         String   @default("REQUEST")
+  invited_by   Int?
   created_at   DateTime @default(now()) @db.Timestamptz(3)
   updated_at   DateTime @updatedAt @db.Timestamptz(3)
   moderated_by Int?
@@ -1114,7 +1120,8 @@ model alliance_join_requests {
   alliance alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
   user     users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@unique([alliance_id, user_id, status]) // Prevent duplicate pending requests? Maybe just checking code is better.
+  // One PENDING row per (alliance, user): partial unique index in SQL
+  // (alliance_join_requests_one_pending), which Prisma cannot express.
   @@index([alliance_id])
   @@index([user_id])
 }
@@ -1193,7 +1200,7 @@ model alliance_gold_requests {
   @@index([requester_id, status])
 }
 
-/// Treasury loans to members (#66 phase 3). amount_owed is fixed at approval.
+/// Treasury loans to members (#66 phase 3). interest_pct and amount_owed are fixed when the loan is requested (the quoted terms).
 model alliance_loans {
   id            Int                @id @default(autoincrement())
   alliance_id   Int
@@ -1355,7 +1362,10 @@ model GameEvent {
   type            GameEventType
   status          GameEventStatus @default(DRAFT)
   startsAt        DateTime        @db.Timestamptz(3)
-  endsAt          DateTime        @db.Timestamptz(3)
+  /// Null for events that last until their era ends (eraId is then set).
+  endsAt          DateTime?       @db.Timestamptz(3)
+  /// When set, the event only runs while this era is open.
+  eraId           Int?
   config          Json
   createdByUserId Int
   updatedByUserId Int?
@@ -1366,8 +1376,10 @@ model GameEvent {
 
   createdBy users  @relation("GameEventsCreated", fields: [createdByUserId], references: [id], onDelete: Cascade)
   updatedBy users? @relation("GameEventsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  era       Era?   @relation(fields: [eraId], references: [id], onDelete: SetNull)
 
   @@index([status, startsAt, endsAt])
+  @@index([eraId])
 }
 
 model BanAppeal {

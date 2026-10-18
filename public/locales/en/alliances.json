@@ -6,7 +6,12 @@
     "join": "Join",
     "motto": "Motto",
     "noAlliances": "No alliances found",
-    "errorFetching": "Failed to fetch alliances"
+    "errorFetching": "Failed to fetch alliances",
+    "inviteOnly": "Invite only",
+    "requestToJoin": "Request to join",
+    "joinSuccess": "You joined the alliance.",
+    "manage": "View Dashboard",
+    "joinError": "Failed to join alliance"
   },
   "create": {
     "title": "Create Alliance",
@@ -59,9 +64,17 @@
     "kickError": "Failed to kick member",
     "leaveSuccess": "You have left the alliance",
     "leaveError": "Failed to leave alliance",
-    "leaveConfirm": "Are you sure you want to leave this alliance?",
+    "leaveConfirm": "Are you sure you want to leave this alliance? Any unpaid treasury loan is collected from your gold and bank when you leave.",
     "kickConfirm": "Are you sure you want to kick this member?",
-    "noMembers": "No members found"
+    "noMembers": "No members found",
+    "overview": "Overview",
+    "members": "Members",
+    "bank": "Bank",
+    "war": "War Room",
+    "settings": "Settings",
+    "loadError": "Failed to load alliance",
+    "bannerAlt": "Alliance banner",
+    "infighting": "Infighting"
   },
   "mine": {
     "title": "My Alliances",
@@ -83,7 +96,13 @@
     "leaderOf": "Leader of {{name}}"
   },
   "members": {
-    "rosterHidden": "This alliance shares its roster with members only."
+    "rosterHidden": "This alliance shares its roster with members only.",
+    "noMembers": "No members to display.",
+    "name": "Name",
+    "role": "Role",
+    "raceClass": "Race / Class",
+    "raceClassValue": "{{race}} / {{class}}",
+    "lastActive": "Last Active"
   },
   "manage": {
     "memberActions": "Member actions",
@@ -124,6 +143,7 @@
       "kick_member": "Kick members",
       "declare_war": "Declare war",
       "manage_bank": "Manage bank",
+      "approve_own_requests": "Approve own requests",
       "request_gold": "Request gold",
       "send_messages": "Send messages",
       "post_announcements": "Post announcements",
@@ -135,5 +155,111 @@
       "share_reports": "Share reports",
       "call_targets": "Call targets"
     }
+  },
+  "invites": {
+    "title": "Invite players",
+    "playerName": "Player name",
+    "send": "Invite",
+    "sent": "Invitation sent to {{name}}.",
+    "pending": "Pending invitations",
+    "cancel": "Withdraw",
+    "mineTitle": "Alliance invitations",
+    "accept": "Accept",
+    "decline": "Decline",
+    "accepted": "You joined the alliance.",
+    "declined": "Invitation declined."
+  },
+  "war": {
+    "end": "End war",
+    "ended": "War ended.",
+    "none": "No active wars",
+    "statuses": {
+      "WARMUP": "Warm-up",
+      "ACTIVE": "Active",
+      "COOLDOWN": "Cooldown",
+      "ENDED": "Ended"
+    },
+    "activeWars": "Active Conflicts",
+    "declareWar": "Declare War",
+    "attacker": "Attacker",
+    "defender": "Defender",
+    "status": "Status",
+    "unknown": "Unknown",
+    "declareTitle": "Declare War",
+    "targetAllianceId": "Target Alliance ID",
+    "targetAllianceIdPlaceholder": "Enter ID",
+    "targetRequired": "Target Alliance ID is required",
+    "declareButton": "Declare War",
+    "declareSuccess": "War declared successfully!"
+  },
+  "overview": {
+    "about": "About Us",
+    "noDescription": "No description provided.",
+    "stats": "Stats",
+    "leader": "Leader",
+    "members": "Members",
+    "created": "Founded",
+    "gold": "Treasury"
+  },
+  "player": {
+    "races": {
+      "ELF": "Elf",
+      "HUMAN": "Human",
+      "UNDEAD": "Undead",
+      "GOBLIN": "Goblin"
+    },
+    "classes": {
+      "FIGHTER": "Fighter",
+      "CLERIC": "Cleric",
+      "THIEF": "Thief",
+      "ASSASSIN": "Assassin"
+    }
+  },
+  "bank": {
+    "totalBalance": "Total Alliance Treasury",
+    "goldAmount": "{{amount}} Gold",
+    "historyTitle": "Transaction History",
+    "date": "Date",
+    "user": "User",
+    "type": "Type",
+    "amount": "Amount",
+    "unknownUser": "Unknown",
+    "noTransactions": "No transactions found",
+    "types": {
+      "DEPOSIT": "Deposit",
+      "WITHDRAWAL": "Withdrawal",
+      "TAX": "Tax",
+      "FEE": "Fee",
+      "LOAN": "Loan",
+      "LOAN_REPAYMENT": "Loan repayment"
+    }
+  },
+  "settings": {
+    "requestsTitle": "Join Requests",
+    "noRequests": "No pending requests",
+    "accept": "Accept",
+    "reject": "Reject",
+    "acceptSuccess": "Join request accepted",
+    "rejectSuccess": "Join request rejected",
+    "level": "Lvl {{level}}",
+    "generalTitle": "General Settings",
+    "save": "Save Changes",
+    "updateSuccess": "Settings updated successfully"
+  },
+  "internalBattles": {
+    "title": "Attacks between members",
+    "description": "Battles this era where both the attacker and the defender are current members of this alliance.",
+    "empty": "No attacks between members this era.",
+    "loadError": "Could not load the attacks between members.",
+    "date": "Date",
+    "attacker": "Attacker",
+    "defender": "Defender",
+    "winner": "Winner",
+    "gold": "Gold pillaged",
+    "report": "Battle report",
+    "viewReport": "View report",
+    "attackerWon": "Attacker",
+    "defenderWon": "Defender",
+    "pagination": "Pages of attacks between members"
   }
 }

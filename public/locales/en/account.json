@@ -25,7 +25,9 @@
     "loginDisabled": "Login is disabled",
     "checkDiscordNews": "Open Throne is currently undergoing maintenance and migration to Era 2.",
     "recoverLostAccount": "Recover a Lost Account",
-    "accountRestricted": "Your account is currently restricted. Please contact support if you believe this is a mistake."
+    "accountRestricted": "Your account is currently restricted. Please contact support if you believe this is a mistake.",
+    "vacationNoticeTitle": "Vacation mode",
+    "vacationNotice": "Your account is in vacation mode. Log in to end vacation mode and return to the game."
   },
   "register": {
     "title": "Create Account",
@@ -114,7 +116,9 @@
     "enterNewPassword": "Enter your new password",
     "setNewPassword": "Set New Password",
     "verificationSuccessful": "Verification successful!",
-    "passwordUpdated": "Password updated! Login with it now"
+    "passwordUpdated": "Password updated! Login with it now",
+    "requestNewCode": "Request a new code",
+    "checkEmail": "Check your email"
   },
   "profile": {
     "title": "Profile Settings",
@@ -254,7 +258,8 @@
       "DENIED": "Denied",
       "WITHDRAWN": "Withdrawn"
     },
-    "errorDisplayNameTaken": "That display name is unavailable."
+    "errorDisplayNameTaken": "That display name is unavailable.",
+    "displayNameMax": "Display name must be at most 50 characters."
   },
   "deleteRequest": {
     "title": "Delete Your Account",

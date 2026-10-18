@@ -5,6 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import { SocialService } from '@/services/Social.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 import {
   emitFriendRequestNotification,
   emitSocialCountUpdate,
@@ -44,7 +45,7 @@ const addSocialRelation = async (
     res.status(200).json(result);
   } catch (error: any) {
     logError('Error adding relationship:', error);
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

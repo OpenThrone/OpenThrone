@@ -1,8 +1,7 @@
 import { Avatar, Group, Text } from '@mantine/core';
 import clsx from 'clsx';
+import { useTranslation } from 'next-i18next';
 import React from 'react';
-
-import { formatLastMessageTime } from '@/utils/timefunctions';
 
 import styles from './ChatThemed.module.css';
 
@@ -24,18 +23,28 @@ interface ChatRoomListThemedProps {
   title?: string;
 }
 
+const formatRoomTime = (value: string, locale: string) => {
+  const date = new Date(value);
+  const isToday = date.toDateString() === new Date().toDateString();
+  return isToday
+    ? date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+    : date.toLocaleDateString(locale);
+};
+
 const ChatRoomListThemed: React.FC<ChatRoomListThemedProps> = ({
   rooms,
   selectedRoomId = null,
   onRoomSelect,
-  title = 'Conversations',
+  title,
 }) => {
+  const { t, i18n } = useTranslation('messaging');
+
   return (
     <div className={styles.panel}>
       <div className={styles.panelHeader}>
-        <Text className={styles.panelTitle}>{title}</Text>
+        <Text className={styles.panelTitle}>{title ?? t('rooms.heading')}</Text>
         <Text size="xs" className={styles.roomMeta}>
-          {rooms.length} rooms
+          {t('rooms.count', { count: rooms.length })}
         </Text>
       </div>
       <div className={styles.roomList}>
@@ -66,22 +75,30 @@ const ChatRoomListThemed: React.FC<ChatRoomListThemedProps> = ({
             <div className={styles.roomContent}>
               <Group justify="space-between" gap="xs" wrap="nowrap">
                 <Text size="sm" className={styles.roomTitle} truncate>
-                  {room.name || 'Direct Message'}
+                  {room.name || t('rooms.directMessage')}
                 </Text>
                 {room.lastMessageTime && (
                   <Text size="xs" className={styles.roomMeta}>
-                    {formatLastMessageTime(room.lastMessageTime)}
+                    {formatRoomTime(room.lastMessageTime, i18n.language)}
                   </Text>
                 )}
               </Group>
               <Text size="xs" className={styles.roomMeta} truncate>
                 {room.lastMessageSender
-                  ? `${room.lastMessageSender}: ${room.lastMessage}`
-                  : 'No messages yet'}
+                  ? t('rooms.lastMessage', {
+                      sender: room.lastMessageSender,
+                      message: room.lastMessage,
+                    })
+                  : t('rooms.noMessagesYet')}
               </Text>
             </div>
             {room.unreadCount > 0 && (
-              <div className={styles.roomUnread}>{room.unreadCount}</div>
+              <div
+                className={styles.roomUnread}
+                aria-label={t('rooms.unread', { count: room.unreadCount })}
+              >
+                {room.unreadCount.toLocaleString(i18n.language)}
+              </div>
             )}
           </div>
         ))}

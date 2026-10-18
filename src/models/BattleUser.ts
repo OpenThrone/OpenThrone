@@ -34,6 +34,7 @@ export class BattleUser extends BaseUser {
     eraJoinedAt: Date | string | null;
     createdAt: Date | string | null;
     protectionForfeitedEraId: number | null;
+    eventCitizensReceived: number;
   };
 
   private protectionContext: {
@@ -48,6 +49,7 @@ export class BattleUser extends BaseUser {
       eraJoinedAt: userData?.era_joined_at ?? null,
       createdAt: userData?.created_at ?? null,
       protectionForfeitedEraId: userData?.protection_forfeited_era_id ?? null,
+      eventCitizensReceived: userData?.event_citizens_received ?? 0,
     };
 
     this.allUnits = this.units;

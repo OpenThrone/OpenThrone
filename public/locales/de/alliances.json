@@ -6,7 +6,12 @@
     "join": "Beitreten",
     "motto": "Motto",
     "noAlliances": "Keine Allianzen gefunden",
-    "errorFetching": "Fehler beim Abrufen von Allianzen"
+    "errorFetching": "Fehler beim Abrufen von Allianzen",
+    "inviteOnly": "Nur auf Einladung",
+    "requestToJoin": "Beitritt anfragen",
+    "joinSuccess": "Sie sind der Allianz beigetreten.",
+    "manage": "Übersicht öffnen",
+    "joinError": "Beitritt zur Allianz fehlgeschlagen"
   },
   "create": {
     "title": "Allianz erstellen",
@@ -59,9 +64,17 @@
     "kickError": "Fehler beim Entfernen des Mitglieds",
     "leaveSuccess": "Sie haben die Allianz verlassen",
     "leaveError": "Fehler beim Verlassen der Allianz",
-    "leaveConfirm": "Sind Sie sicher, dass Sie diese Allianz verlassen möchten?",
+    "leaveConfirm": "Sind Sie sicher, dass Sie diese Allianz verlassen möchten? Ein offener Kredit aus der Schatzkammer wird beim Austritt von Ihrem Gold und Ihrer Bank eingezogen.",
     "kickConfirm": "Sind Sie sicher, dass Sie dieses Mitglied entfernen möchten?",
-    "noMembers": "Keine Mitglieder gefunden"
+    "noMembers": "Keine Mitglieder gefunden",
+    "overview": "Übersicht",
+    "members": "Mitglieder",
+    "bank": "Bank",
+    "war": "Kriegsraum",
+    "settings": "Einstellungen",
+    "loadError": "Allianz konnte nicht geladen werden",
+    "bannerAlt": "Allianzbanner",
+    "infighting": "Bruderkämpfe"
   },
   "mine": {
     "title": "Meine Allianzen",
@@ -83,7 +96,13 @@
     "leaderOf": "Anführer von {{name}}"
   },
   "members": {
-    "rosterHidden": "Diese Allianz zeigt ihre Mitgliederliste nur Mitgliedern."
+    "rosterHidden": "Diese Allianz zeigt ihre Mitgliederliste nur Mitgliedern.",
+    "noMembers": "Keine Mitglieder vorhanden.",
+    "name": "Name",
+    "role": "Rang",
+    "raceClass": "Rasse / Klasse",
+    "raceClassValue": "{{race}} / {{class}}",
+    "lastActive": "Zuletzt aktiv"
   },
   "manage": {
     "memberActions": "Mitgliederaktionen",
@@ -91,27 +110,27 @@
     "changeRankFor": "Rang von {{name}} ändern",
     "rankChanged": "Rang aktualisiert",
     "makeLeader": "Zum Anführer machen",
-    "makeLeaderConfirm": "Die Führung an {{name}} übergeben? Du behältst deinen aktuellen Rang und verlierst alle Anführerrechte.",
+    "makeLeaderConfirm": "Die Führung an {{name}} übergeben? Sie behalten Ihren aktuellen Rang und verlieren alle Anführerrechte.",
     "leaderChanged": "Führung übergeben",
     "kickConfirm": "{{name}} aus der Allianz entfernen?",
     "cancel": "Abbrechen",
-    "typeToConfirm": "Gib „{{text}}“ zur Bestätigung ein",
+    "typeToConfirm": "Geben Sie „{{text}}“ zur Bestätigung ein",
     "disbandTitle": "Allianz auflösen",
     "disbandHelp": "Beim Auflösen werden alle Mitglieder, Ränge und Chaträume entfernt. Eine vorhandene Schatzkammer wird gleichmäßig auf die Mitglieder verteilt (der Rest geht an Sie), offene Darlehen werden abgeschrieben und es darf kein Krieg laufen. Um stattdessen zurückzutreten, machen Sie im Reiter Mitglieder ein anderes Mitglied zum Anführer.",
     "disbandConfirm": "Dies kann nicht rückgängig gemacht werden. Alle Mitglieder werden aus {{name}} entfernt, die Schatzkammer wird gleichmäßig auf sie verteilt und offene Darlehen werden abgeschrieben.",
     "disbanded": "Die Allianz wurde aufgelöst",
-    "leaveHelp": "Du verlierst den Zugriff auf die Schatzkammer, den Kriegsraum und den Allianzchat."
+    "leaveHelp": "Sie verlieren den Zugriff auf die Schatzkammer, den Kriegsraum und den Allianzchat."
   },
   "ranks": {
     "title": "Ränge",
-    "help": "Höhere Ränge stehen oben. Du kannst nur Ränge unter deinem eigenen bearbeiten und nur Rechte vergeben, die du selbst hast.",
+    "help": "Höhere Ränge stehen oben. Sie können nur Ränge unter Ihrem eigenen bearbeiten und nur Rechte vergeben, die Sie selbst haben.",
     "order": "Reihenfolge",
     "name": "Rang",
     "newRank": "Neuer Rang",
     "add": "Rang hinzufügen",
     "delete": "Rang löschen",
     "deleteConfirm": "Den Rang „{{name}}“ löschen?",
-    "inUse": "Verschiebe zuerst seine Mitglieder in einen anderen Rang",
+    "inUse": "Verschieben Sie zuerst seine Mitglieder in einen anderen Rang",
     "moveUp": "Rang nach oben",
     "moveDown": "Rang nach unten",
     "saved": "Ränge gespeichert",
@@ -124,6 +143,7 @@
       "kick_member": "Mitglieder entfernen",
       "declare_war": "Krieg erklären",
       "manage_bank": "Bank verwalten",
+      "approve_own_requests": "Eigene Anfragen genehmigen",
       "request_gold": "Gold anfordern",
       "send_messages": "Nachrichten senden",
       "post_announcements": "Ankündigungen veröffentlichen",
@@ -135,5 +155,111 @@
       "share_reports": "Berichte teilen",
       "call_targets": "Ziele ausrufen"
     }
+  },
+  "invites": {
+    "title": "Spieler einladen",
+    "playerName": "Spielername",
+    "send": "Einladen",
+    "sent": "Einladung an {{name}} gesendet.",
+    "pending": "Offene Einladungen",
+    "cancel": "Zurückziehen",
+    "mineTitle": "Allianz-Einladungen",
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "accepted": "Sie sind der Allianz beigetreten.",
+    "declined": "Einladung abgelehnt."
+  },
+  "war": {
+    "end": "Krieg beenden",
+    "ended": "Krieg beendet.",
+    "none": "Keine aktiven Kriege",
+    "statuses": {
+      "WARMUP": "Vorbereitung",
+      "ACTIVE": "Aktiv",
+      "COOLDOWN": "Abklingzeit",
+      "ENDED": "Beendet"
+    },
+    "activeWars": "Aktive Konflikte",
+    "declareWar": "Krieg erklären",
+    "attacker": "Angreifer",
+    "defender": "Verteidiger",
+    "status": "Status",
+    "unknown": "Unbekannt",
+    "declareTitle": "Krieg erklären",
+    "targetAllianceId": "ID der Zielallianz",
+    "targetAllianceIdPlaceholder": "ID eingeben",
+    "targetRequired": "Bitte geben Sie die ID der Zielallianz ein",
+    "declareButton": "Krieg erklären",
+    "declareSuccess": "Krieg erfolgreich erklärt!"
+  },
+  "overview": {
+    "about": "Über uns",
+    "noDescription": "Keine Beschreibung vorhanden.",
+    "stats": "Statistiken",
+    "leader": "Anführer",
+    "members": "Mitglieder",
+    "created": "Gegründet",
+    "gold": "Schatzkammer"
+  },
+  "player": {
+    "races": {
+      "ELF": "Elf",
+      "HUMAN": "Mensch",
+      "UNDEAD": "Untoter",
+      "GOBLIN": "Goblin"
+    },
+    "classes": {
+      "FIGHTER": "Kämpfer",
+      "CLERIC": "Kleriker",
+      "THIEF": "Dieb",
+      "ASSASSIN": "Assassine"
+    }
+  },
+  "bank": {
+    "totalBalance": "Gesamte Allianz-Schatzkammer",
+    "goldAmount": "{{amount}} Gold",
+    "historyTitle": "Transaktionsverlauf",
+    "date": "Datum",
+    "user": "Mitglied",
+    "type": "Art",
+    "amount": "Betrag",
+    "unknownUser": "Unbekannt",
+    "noTransactions": "Keine Transaktionen gefunden",
+    "types": {
+      "DEPOSIT": "Einzahlung",
+      "WITHDRAWAL": "Auszahlung",
+      "TAX": "Steuer",
+      "FEE": "Gebühr",
+      "LOAN": "Darlehen",
+      "LOAN_REPAYMENT": "Darlehenstilgung"
+    }
+  },
+  "settings": {
+    "requestsTitle": "Beitrittsanfragen",
+    "noRequests": "Keine offenen Anfragen",
+    "accept": "Annehmen",
+    "reject": "Ablehnen",
+    "acceptSuccess": "Beitrittsanfrage angenommen",
+    "rejectSuccess": "Beitrittsanfrage abgelehnt",
+    "level": "Stufe {{level}}",
+    "generalTitle": "Allgemeine Einstellungen",
+    "save": "Änderungen speichern",
+    "updateSuccess": "Einstellungen erfolgreich gespeichert"
+  },
+  "internalBattles": {
+    "title": "Angriffe unter Mitgliedern",
+    "description": "Schlachten dieser Ära, in denen Angreifer und Verteidiger beide aktuelle Mitglieder dieser Allianz sind.",
+    "empty": "In dieser Ära gab es keine Angriffe unter Mitgliedern.",
+    "loadError": "Die Angriffe unter Mitgliedern konnten nicht geladen werden.",
+    "date": "Datum",
+    "attacker": "Angreifer",
+    "defender": "Verteidiger",
+    "winner": "Sieger",
+    "gold": "Geplündertes Gold",
+    "report": "Schlachtbericht",
+    "viewReport": "Bericht ansehen",
+    "attackerWon": "Angreifer",
+    "defenderWon": "Verteidiger",
+    "pagination": "Seiten der Angriffe unter Mitgliedern"
   }
 }

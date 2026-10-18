@@ -38,10 +38,11 @@
     "staffMultiAccounts": "Multi-Account Detection",
     "staffCheatSignals": "Cheat Signals",
     "staffSettings": "Server Settings",
-    "staffFeatureFlags": "Feature Flags",
     "staffApiTokens": "API Tokens",
     "staffMaintenance": "Maintenance Mode",
-    "staffInactiveUsers": "Inactive users"
+    "staffInactiveUsers": "Inactive users",
+    "staffAttackLedger": "Attack ledger",
+    "staffBots": "Bot operations"
   },
   "battle": {
     "attack": "Attack",
@@ -85,7 +86,9 @@
     "signIn": "Sign In",
     "signOut": "Sign Out",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "endImpersonation": "End impersonation ({{time}})",
+    "endImpersonationShort": "End ({{time}})"
   },
   "ariaLabels": {
     "mobileMenuButton": "Open navigation menu",

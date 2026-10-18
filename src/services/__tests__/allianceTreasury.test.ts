@@ -305,6 +305,57 @@ describe('gold requests', () => {
     expect(requests[0].status).toBe('PENDING');
   });
 
+  describe('approving your own request (approve_own_requests)', () => {
+    const decideAs = (
+      requestId: number,
+      actorId: number,
+      decision = 'approve',
+    ) =>
+      AllianceGoldRequestService.decide({
+        allianceId: ALLIANCE_ID,
+        requestId,
+        actorId,
+        decision: decision as 'approve' | 'decline',
+      });
+
+    it('refuses a banker approving their own request without the key', async () => {
+      const request = await create(BANKER, 100n);
+      await expect(decideAs(request.id, BANKER)).rejects.toThrow(
+        /approve your own requests/,
+      );
+      expect(requests[0].status).toBe('PENDING');
+      expect(allianceGold).toBe(1_000n);
+      expect(userGold[BANKER]).toBe(100n);
+    });
+
+    it('still lets the banker decline their own request', async () => {
+      const request = await create(BANKER, 100n);
+      await decideAs(request.id, BANKER, 'decline');
+      expect(requests[0].status).toBe('DECLINED');
+    });
+
+    it('allows it with approve_own_requests', async () => {
+      const previous = ROLES[BANKER].permissions;
+      ROLES[BANKER].permissions = { ...previous, approve_own_requests: true };
+      try {
+        const request = await create(BANKER, 100n);
+        await decideAs(request.id, BANKER);
+        expect(requests[0].status).toBe('APPROVED');
+        expect(allianceGold).toBe(900n);
+        expect(userGold[BANKER]).toBe(200n);
+      } finally {
+        ROLES[BANKER].permissions = previous;
+      }
+    });
+
+    it('always allows the leader', async () => {
+      const request = await create(LEADER, 100n);
+      await decideAs(request.id, LEADER);
+      expect(requests[0].status).toBe('APPROVED');
+      expect(userGold[LEADER]).toBe(200n);
+    });
+  });
+
   it('lets the requester cancel their own pending request only', async () => {
     const request = await create();
     await expect(

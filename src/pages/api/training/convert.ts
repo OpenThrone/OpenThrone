@@ -5,6 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import { convertUnits } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Zod schema for parsing "TYPE_LEVEL" strings
 const UnitIdentifierSchema = z
@@ -120,7 +121,7 @@ const handler = async (
       error.message?.startsWith('Invalid quantity format') ||
       error.message?.startsWith('Cannot convert')
     ) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: publicErrorMessage(error) });
     }
     if (error.message === 'User not found within transaction') {
       return res

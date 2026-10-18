@@ -45,6 +45,7 @@ import {
   tookPartInArchivedEra,
 } from '@/utils/eraParticipation';
 import { logDebug, logError } from '@/utils/logger';
+import { canMessage } from '@/utils/messagingAccess';
 import { toLocale } from '@/utils/numberFormatting';
 import { recruitBlockMessage } from '@/utils/recruitmentStatus';
 import { serverSideTranslations } from '@/utils/serverTranslations';
@@ -473,13 +474,13 @@ const Index = ({
     {
       key: 'population',
       label: t('profileSummary.population', { defaultValue: 'Population' }),
-      value: toLocale(profile?.population ?? 0),
+      value: toLocale(users?.populationTotal ?? profile?.population ?? 0),
       icon: 'double-team',
     },
     {
       key: 'armySize',
       label: t('profileSummary.armySize', { defaultValue: 'Army Size' }),
-      value: toLocale(profile?.armySize ?? 0),
+      value: toLocale(users?.armySizeTotal ?? profile?.armySize ?? 0),
       icon: 'crossed-swords',
     },
     {
@@ -492,12 +493,17 @@ const Index = ({
           ?.name ?? '—',
       icon: 'tower',
     },
-    {
-      key: 'gold',
-      label: t('profileSummary.gold', { defaultValue: 'Gold' }),
-      value: toLocale(profile?.gold),
-      icon: 'gold-bar',
-    },
+    // Hidden from logged-out visitors (the server does not send it).
+    ...(users?.gold == null
+      ? []
+      : [
+          {
+            key: 'gold',
+            label: t('profileSummary.gold', { defaultValue: 'Gold' }),
+            value: toLocale(profile?.gold),
+            icon: 'gold-bar',
+          },
+        ]),
   ];
   const eraRecord = users.latestUserEra;
   const tookPartInEra = tookPartInArchivedEra(eraRecord?.achievements);
@@ -612,12 +618,14 @@ const Index = ({
                 }}
                 classNames={actionClassNames}
                 leftSection={<RpgAwesomeIcon icon="quill-ink" />}
-                disabled={user?.id !== 1 && user?.id !== 2}
+                disabled={!canMessage(config, user)}
                 onClick={(event) => {
-                  if (user?.id !== 1 && user?.id !== 2) event.preventDefault();
+                  if (!canMessage(config, user)) event.preventDefault();
                 }}
               >
-                Message this Player
+                {t('profileActions.message', {
+                  defaultValue: 'Message this player',
+                })}
               </Button>
               <Button
                 type="button"
@@ -632,6 +640,19 @@ const Index = ({
               >
                 Attack this Player
               </Button>
+              {!isOwnProfile && user?.id && (
+                <Button
+                  component={Link}
+                  href={`/report?userId=${profile?.id}&username=${encodeURIComponent(profile?.display_name ?? '')}`}
+                  classNames={actionClassNames}
+                  variant="subtle"
+                  leftSection={<RpgAwesomeIcon icon="flag" />}
+                >
+                  {t('profileActions.report', {
+                    defaultValue: 'Report player',
+                  })}
+                </Button>
+              )}
               {!isOwnProfile && user?.id && (
                 <AllianceListBadge targetUserId={profile.id} />
               )}
@@ -1136,14 +1157,25 @@ export const getServerSideProps = async ({ query, locale, req, res }) => {
     orderBy: { startDate: 'desc' },
     select: { startDate: true },
   });
+  // Population and army size are public (the attack list shows them), but the
+  // per-unit breakdown is spy intel, so only the totals reach the client.
+  const units = await prisma.userUnit.findMany({
+    where: { userId: user.id },
+    select: { type: true, level: true, quantity: true, isMercenary: true },
+  });
+  const totalsModel = new UserModel({ ...user, UserUnit: units } as any);
   const userData = {
+    populationTotal: totalsModel.population,
+    armySizeTotal: totalsModel.armySize,
     attackEligible:
       ['ACTIVE', 'IDLE'].includes(status) &&
       hasParticipatedInEra(user.last_active, activeEra?.startDate),
     ...userWithoutPassword,
     bionew: serializedBio,
-    gold: user.gold.toString(),
-    gold_in_bank: user.gold_in_bank.toString(),
+    // Gold on hand is shown to signed-in players only; banked gold to nobody
+    // but the owner (filled in below once the session is known).
+    gold: null as string | null,
+    gold_in_bank: null as string | null,
     last_active: lastActiveStr,
     created_at: createdAtStr,
     updated_at: updatedAtStr,
@@ -1165,6 +1197,12 @@ export const getServerSideProps = async ({ query, locale, req, res }) => {
   // Only alliances whose roster is PUBLIC, or that the viewer belongs to.
   const session = await getServerSession(req, res, authOptions);
   const sessionUserId = Number(session?.user?.id);
+  if (Number.isSafeInteger(sessionUserId) && sessionUserId > 0) {
+    userData.gold = user.gold.toString();
+    if (sessionUserId === user.id) {
+      userData.gold_in_bank = user.gold_in_bank.toString();
+    }
+  }
   const visibleAlliances = await AllianceService.getVisibleAlliancesForPlayer(
     user.id,
     Number.isSafeInteger(sessionUserId) ? sessionUserId : null,

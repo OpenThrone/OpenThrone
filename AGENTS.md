@@ -292,6 +292,18 @@ A change is complete only if:
 
 Branch model: `master` is production (`openthrone.dev`) and `alpha` is the alpha server (`alpha.openthrone.dev`). Agents work on a feature branch cut from `alpha`, test locally, open a PR into `alpha`, test on the alpha server, then open a release PR from `alpha` into `master`. Never commit directly to `alpha` or `master`. Do not deploy to production without the user's explicit go-ahead. Server hostnames, deploy steps, rollback and production data rules are kept outside this repository; ask the user for them before touching alpha or production.
 
+## Versioning and releases
+
+OpenThrone uses Semantic Versioning on the 0.x line (`CHANGELOG.md` explains the rules). For each production release:
+
+1. On a feature branch into `alpha`, set `package.json` `version` to the release version (for example `0.5.0`, dropping `-alpha`) and add its player-facing `CHANGELOG.md` entry.
+2. Merge the release PR (`alpha` into `master`) and deploy, as above.
+3. Tag the release merge commit `vX.Y.Z` and push the tag.
+4. Publish the GitHub release (one squashed commit per release on GitHub `master`), tag it there too, and create a GitHub Release with the changelog entry.
+5. Bump `alpha` to the next pre-release (for example `0.6.0-alpha`).
+
+The footer shows the version and build commit, so bug reports can name the exact build.
+
 ## Credential privacy
 
 - Do not read or print `.env*` contents (including samples), credential stores, tokens, private keys, database dumps, or authentication headers into model-visible output. Inspect variable names in source code instead.

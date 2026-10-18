@@ -38,21 +38,14 @@ export const RUNTIME_SETTING_REGISTRY = {
     env: undefined,
     fallback: 60,
   },
-  'era.dailyCitizenBonus': {
+  'recruit.dailyCap': {
     type: 'NUMBER',
-    label: 'Daily citizen bonus',
+    label: 'Daily recruiting cap',
     isPublic: true,
-    schema: z.number().int().min(0).max(100000),
+    schema: z.number().int().min(0).max(1000),
     env: undefined,
-    fallback: 0,
-  },
-  'era.dailyCitizenBonusActivityHours': {
-    type: 'NUMBER',
-    label: 'Daily citizen bonus activity window (hours)',
-    isPublic: false,
-    schema: z.number().int().min(0).max(720),
-    env: undefined,
-    fallback: 24,
+    // Citizens a player can gain per day by recruiting (one per recruit).
+    fallback: 25,
   },
   'era.protectionDurationDays': {
     type: 'NUMBER',
@@ -108,6 +101,15 @@ export const RUNTIME_SETTING_REGISTRY = {
     isPublic: true,
     schema: z.boolean(),
     env: 'NEXT_PUBLIC_ENABLE_SOCIAL',
+    fallback: false,
+  },
+  ENABLE_MESSAGING: {
+    type: 'BOOLEAN',
+    label: 'Player messaging',
+    isPublic: true,
+    schema: z.boolean(),
+    env: undefined,
+    // Off: only administrators and moderators may start or send messages.
     fallback: false,
   },
   ENABLE_ENEMIES: {

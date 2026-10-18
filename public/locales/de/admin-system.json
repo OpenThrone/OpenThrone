@@ -14,7 +14,7 @@
     "title": "System: Laufzeiteinstellungen",
     "intro": "Änderungen gelten für die Laufzeitkonfiguration und werden innerhalb von fünf Sekunden auf Prozesse übertragen.",
     "saved": "Laufzeiteinstellung aktualisiert.",
-    "saveError": "Einstellung konnte nicht gespeichert werden. Prüfe den Wert und versuche es erneut.",
+    "saveError": "Einstellung konnte nicht gespeichert werden. Prüfen Sie den Wert und versuchen Sie es erneut.",
     "loadError": "Laufzeiteinstellungen konnten nicht geladen werden.",
     "history": "Verlauf",
     "historyError": "Einstellungsverlauf konnte nicht geladen werden.",
@@ -39,19 +39,11 @@
       "email.outbox.ratePerMinute": "E-Mails pro Minute",
       "account.inactivity.remindersEnabled": "Inaktivitätserinnerungen",
       "account.inactivity.autoAnonymizeEnabled": "Automatische Anonymisierung inaktiver Konten",
-      "era.dailyCitizenBonus": "Täglicher Bürgerbonus (zusätzliche Bürger, die jedes Konto beim täglichen Update erhält)",
-      "era.dailyCitizenBonusActivityHours": "Aktivitätsfenster für den täglichen Bürgerbonus in Stunden (nur Konten, die innerhalb dieses Fensters eingezahlt, ausgebildet, Rüstkammer gehandelt, angegriffen, spioniert oder repariert haben, erhalten den Bonus; 0 = alle)",
-      "era.protectionDurationDays": "Dauer des Neulingsschutzes in Tagen (1-60; der Schutz endet außerdem bei Level 10, beim Bevölkerungsschwellenwert oder wenn der Spieler einen ungeschützten Spieler angreift)"
+      "era.protectionDurationDays": "Dauer des Neulingsschutzes in Tagen (1-60; der Schutz endet außerdem bei Level 10, beim Bevölkerungsschwellenwert oder wenn der Spieler einen ungeschützten Spieler angreift)",
+      "ENABLE_MESSAGING": "Spielernachrichten (wenn deaktiviert, können nur Administratoren und Moderatoren Nachrichten senden)",
+      "recruit.dailyCap": "Tägliches Rekrutierungslimit (Bürger, die ein Spieler pro Tag durch Rekrutieren gewinnen kann; bestimmt auch die Bevölkerungsgrenze des Neuspielerschutzes)"
     },
     "resetBeforeLogin": "Aktuelle Ära vor Freigabe der Anmeldung zurücksetzen"
-  },
-  "flags": {
-    "title": "System: Funktionsschalter",
-    "intro": "Verwalte die freigegebenen Laufzeit-Funktionsschalter. Regel-Ausdrücke werden derzeit nicht unterstützt.",
-    "saved": "Funktionsschalter aktualisiert.",
-    "saveError": "Funktionsschalter konnte nicht gespeichert werden.",
-    "loadError": "Funktionsschalter konnten nicht geladen werden.",
-    "deleteError": "Funktionsschalter konnte nicht entfernt werden."
   },
   "maintenance": {
     "title": "System: Wartungsmodus",

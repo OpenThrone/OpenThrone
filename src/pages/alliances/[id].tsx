@@ -23,6 +23,7 @@ import { AllianceAnnouncements } from '@/components/alliance/AllianceAnnouncemen
 import { AllianceBank } from '@/components/alliance/AllianceBank';
 import { AllianceDiplomacy } from '@/components/alliance/AllianceDiplomacy';
 import { AllianceIntel } from '@/components/alliance/AllianceIntel';
+import { AllianceInternalBattles } from '@/components/alliance/AllianceInternalBattles';
 import { AllianceLists } from '@/components/alliance/AllianceLists';
 import { AllianceMembers } from '@/components/alliance/AllianceMembers';
 import { AllianceOverview } from '@/components/alliance/AllianceOverview';
@@ -85,7 +86,10 @@ const AlliancePage = ({
     !!alliance &&
     getAllianceStanding(alliance, viewerId).can('edit_ranks');
 
-  if (error && !alliance) return <Text c="red">Failed to load alliance</Text>;
+  if (error && !alliance)
+    return (
+      <Text c="red">{t('index.loadError', 'Failed to load alliance')}</Text>
+    );
   if (!alliance)
     return (
       <Center h={300}>
@@ -106,7 +110,7 @@ const AlliancePage = ({
             {alliance.bannerimg ? (
               <img
                 src={alliance.bannerimg}
-                alt="Banner"
+                alt={t('index.bannerAlt', 'Alliance banner')}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
@@ -162,6 +166,11 @@ const AlliancePage = ({
             {isMember && (
               <Tabs.Tab value="intel">{tIntel('tab', 'Intel')}</Tabs.Tab>
             )}
+            {isMember && (
+              <Tabs.Tab value="infighting">
+                {t('index.infighting', 'Infighting')}
+              </Tabs.Tab>
+            )}
             {canEditRanks && (
               <Tabs.Tab value="ranks">{t('ranks.title', 'Ranks')}</Tabs.Tab>
             )}
@@ -213,7 +222,10 @@ const AlliancePage = ({
                   <AllianceDiplomacy alliance={alliance} viewerId={viewerId} />
                 </Tabs.Panel>
                 <Tabs.Panel value="intel">
-                  <AllianceIntel alliance={alliance} />
+                  <AllianceIntel alliance={alliance} viewerId={viewerId} />
+                </Tabs.Panel>
+                <Tabs.Panel value="infighting">
+                  <AllianceInternalBattles allianceId={alliance.id} />
                 </Tabs.Panel>
               </>
             )}
@@ -234,6 +246,14 @@ const AlliancePage = ({
                   alliance={alliance}
                   onUpdate={mutate}
                   isLeader={isLeader}
+                  canManageRequests={
+                    isMember &&
+                    getAllianceStanding(alliance, viewerId).can('invite_member')
+                  }
+                  canEditProfile={
+                    isMember &&
+                    getAllianceStanding(alliance, viewerId).can('edit_profile')
+                  }
                 />
               </Tabs.Panel>
             )}

@@ -122,6 +122,7 @@ export class GeneralService {
           era_joined_at: true,
           created_at: true,
           protection_forfeited_era_id: true,
+          event_citizens_received: true,
           currentEra: {
             select: {
               id: true,
@@ -266,6 +267,7 @@ export class GeneralService {
             era_joined_at: true,
             created_at: true,
             protection_forfeited_era_id: true,
+            event_citizens_received: true,
             currentEra: {
               select: {
                 id: true,
@@ -403,6 +405,7 @@ export class GeneralService {
             eraJoinedAt: user.era_joined_at,
             createdAt: user.created_at,
             protectionForfeitedEraId: user.protection_forfeited_era_id,
+            eventCitizensReceived: user.event_citizens_received,
           },
           protectionContext.era,
           protectionContext.settings,

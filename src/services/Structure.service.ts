@@ -220,7 +220,7 @@ export class StructureService {
         // Check gold
         if (user.gold < upgradeCost) {
           throw new Error(
-            `Not enough gold. Required: ${upgradeCost}, Available: ${user.gold}`,
+            `Not enough gold. You need ${BigInt(upgradeCost).toLocaleString('en-US')} but have ${BigInt(user.gold).toLocaleString('en-US')}.`,
           );
         }
 

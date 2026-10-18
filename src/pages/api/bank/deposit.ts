@@ -6,6 +6,7 @@ import { depositGold } from '@/services/Bank.service';
 import { markGameplayActivity } from '@/services/GameplayActivity.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const guardedHandler = withApiGuard({
   methods: ['POST'],
@@ -34,11 +35,15 @@ const depositHandler = async (
       req.body?.amount,
     );
     await markGameplayActivity(Number(req.session.user.id));
-    return res
-      .status(200)
-      .json({ message: 'Deposit successful', data: stringifyObj(updatedUser) });
+    return res.status(200).json({
+      message: 'Deposit successful', // Only the balances; the full user row leaked internal fields.
+      data: stringifyObj({
+        gold: updatedUser?.gold,
+        gold_in_bank: updatedUser?.gold_in_bank,
+      }),
+    });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

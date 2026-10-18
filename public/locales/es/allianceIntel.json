@@ -19,7 +19,8 @@
     "threatHint": "Un miembro ha informado de que este jugador lo tiene como objetivo.",
     "callThis": "Emitir {{type}} sobre el objetivo",
     "attachedTo": "Adjunto a la orden #{{id}}",
-    "total": "{{count}} informe(s) compartido(s)"
+    "total_one": "{{count}} informe compartido",
+    "total_other": "{{count}} informes compartidos"
   },
   "calls": {
     "title": "Órdenes abiertas",
@@ -30,11 +31,13 @@
     "targetPlaceholder": "Nombre visible",
     "noteLabel": "Nota (opcional)",
     "submit": "Abrir orden",
-    "opened": "Orden abierta; {{count}} miembro(s) notificado(s)",
+    "opened_one": "Orden abierta; {{count}} miembro notificado",
+    "opened_other": "Orden abierta; {{count}} miembros notificados",
     "close": "Cerrar",
     "closed": "Orden cerrada",
     "closedBadge": "Cerrada",
-    "reports": "{{count}} informe(s)",
+    "reports_one": "{{count}} informe",
+    "reports_other": "{{count}} informes",
     "openedBy": "por {{name}}",
     "details": "Detalles",
     "detailTitle": "Orden de {{type}} sobre {{name}}",

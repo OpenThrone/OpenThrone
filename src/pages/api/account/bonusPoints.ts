@@ -6,6 +6,7 @@ import { withAuth } from '@/middleware/auth';
 import { AccountService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Define BonusType enum using Zod based on DefaultLevelBonus
 const BonusTypeEnum = z.enum(
@@ -82,7 +83,7 @@ const handler = async (
       error.message?.startsWith('Cannot reduce level') ||
       error.message?.startsWith('Cannot increase level')
     ) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: publicErrorMessage(error) });
     }
     // Generic error
     return res.status(500).json({

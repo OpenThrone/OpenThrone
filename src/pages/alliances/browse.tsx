@@ -35,6 +35,7 @@ export const UserCardImage = ({
   isLeader,
 }) => {
   const { t } = useTranslation('alliances');
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
@@ -102,14 +103,14 @@ export const UserCardImage = ({
               <Text size="xs" c="dimmed" tt="uppercase">
                 {t('browse.gold')}
               </Text>
-              <Text fw={700}>{toLocale(gold)}</Text>
+              <Text fw={700}>{toLocale(gold, user?.locale)}</Text>
             </div>
           )}
           <div>
             <Text size="xs" c="dimmed" tt="uppercase">
               {t('browse.members')}
             </Text>
-            <Text fw={700}>{toLocale(members)}</Text>
+            <Text fw={700}>{toLocale(members, user?.locale)}</Text>
           </div>
         </Group>
         <Group gap="xs">
@@ -161,7 +162,7 @@ const Browse = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to join alliance');
+        throw new Error(data.error || t('browse.joinError'));
       }
 
       alertService.success(data.message || t('browse.joinSuccess'));

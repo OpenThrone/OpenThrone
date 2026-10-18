@@ -186,7 +186,13 @@ const IntelItemCard = ({
 };
 
 /** Intel tab: shared reports feed plus Hit / Farm / Recon calls. */
-export const AllianceIntel = ({ alliance }: { alliance: AllianceInfo }) => {
+export const AllianceIntel = ({
+  alliance,
+  viewerId = null,
+}: {
+  alliance: AllianceInfo;
+  viewerId?: number | null;
+}) => {
   const { t } = useTranslation('allianceIntel');
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<string>('all');
@@ -464,15 +470,18 @@ export const AllianceIntel = ({ alliance }: { alliance: AllianceInfo }) => {
                         >
                           {t('calls.details', 'Details')}
                         </Button>
-                        <Button
-                          size="compact-xs"
-                          color="gray"
-                          variant="light"
-                          disabled={busy}
-                          onClick={() => closeCall(call)}
-                        >
-                          {t('calls.close', 'Close')}
-                        </Button>
+                        {/* call_targets holders or the call's creator may close it. */}
+                        {(canCall || call.created_by === viewerId) && (
+                          <Button
+                            size="compact-xs"
+                            color="gray"
+                            variant="light"
+                            disabled={busy}
+                            onClick={() => closeCall(call)}
+                          >
+                            {t('calls.close', 'Close')}
+                          </Button>
+                        )}
                       </Group>
                     </Group>
                   </Stack>

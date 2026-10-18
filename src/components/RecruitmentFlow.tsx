@@ -369,9 +369,11 @@ export default function RecruitmentFlow({
             <Text size="xl">
               {t('recruit.linkFrom', { name: userInfo.display_name })}
             </Text>
-            <Text mb="sm">
-              {t(user ? 'recruit.forYourKingdom' : 'recruit.signInToRecruit')}
-            </Text>
+            {!error && (
+              <Text mb="sm">
+                {t(user ? 'recruit.forYourKingdom' : 'recruit.signInToRecruit')}
+              </Text>
+            )}
             {t('recruit.level', { level: userInfo.level })}{' '}
             {t('recruit.race', { race: userInfo.race, class: userInfo.class })}.
             <Group justify="center" mt="md">
@@ -386,7 +388,10 @@ export default function RecruitmentFlow({
                 alt=""
               />
             </Group>
-            <Text size="md">{t('recruit.pleaseWaitCaptcha')}</Text>
+            {/* Only while the captcha is actually pending (not next to a refusal). */}
+            {showCaptcha && !error && (
+              <Text size="md">{t('recruit.pleaseWaitCaptcha')}</Text>
+            )}
           </div>
         </div>
       )}

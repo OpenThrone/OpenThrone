@@ -121,7 +121,7 @@ describe('getUserInfoByRecruitLink minimal response', () => {
   it('stays rate-limited', () => {
     expect(guardOptions[1]).toMatchObject({
       authMode: 'none',
-      rateLimitProfile: 'auth',
+      rateLimitProfile: 'public_read',
     });
   });
 

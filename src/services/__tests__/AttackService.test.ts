@@ -51,6 +51,8 @@ let players: Record<number, GameRow>;
 let logs: TestLog[];
 let transfers: Array<{ gold_amount: bigint }>;
 let nextUnitId: number;
+// alliance_id -> { name, member user ids }
+let alliances: Record<number, { name: string; members: number[] }>;
 const priorSecret = process.env.NEXTAUTH_SECRET;
 const priorEnabled = process.env.NEXT_PUBLIC_ENABLE_ATTACKING;
 
@@ -102,17 +104,18 @@ beforeEach(() => {
   process.env.NEXTAUTH_SECRET = 'isolated-combat-replay-test-secret';
   process.env.NEXT_PUBLIC_ENABLE_ATTACKING = 'true';
   mockPrisma.serverSetting = {
-    findMany: vi.fn().mockResolvedValue([]),
-  };
-  mockPrisma.featureFlag = {
-    findMany: vi.fn().mockResolvedValue([
-      { key: 'ENABLE_ATTACKING', enabled: true },
-      { key: 'ENABLE_INFILTRATIONS', enabled: true },
-      { key: 'ENABLE_ASSASSINATIONS', enabled: true },
-      { key: 'ENABLE_INTEL', enabled: true },
-      { key: 'ENABLE_SOCIAL', enabled: true },
-      { key: 'ENABLE_ENEMIES', enabled: true },
-    ]),
+    findMany: vi
+      .fn()
+      .mockResolvedValue(
+        [
+          'ENABLE_ATTACKING',
+          'ENABLE_INFILTRATIONS',
+          'ENABLE_ASSASSINATIONS',
+          'ENABLE_INTEL',
+          'ENABLE_SOCIAL',
+          'ENABLE_ENEMIES',
+        ].map((key) => ({ key, value: true })),
+      ),
   };
   invalidateRuntimeConfigCache();
   // A just-started era keeps level-protected fixtures inside the time window.
@@ -245,6 +248,30 @@ beforeEach(() => {
             (unit: UserUnit) => !where.id.in.includes(unit.id),
           );
         }
+      },
+    ),
+  };
+  alliances = {};
+  mockPrisma.alliance_memberships = {
+    findFirst: vi.fn(
+      async ({
+        where,
+      }: {
+        where: {
+          user_id: number;
+          alliance: { members: { some: { user_id: number } } };
+        };
+      }) => {
+        const otherId = where.alliance.members.some.user_id;
+        const match = Object.entries(alliances)
+          .map(([id, row]) => ({ id: Number(id), ...row }))
+          .sort((a, b) => a.id - b.id)
+          .find(
+            (row) =>
+              row.members.includes(where.user_id) &&
+              row.members.includes(otherId),
+          );
+        return match ? { alliance: { id: match.id, name: match.name } } : null;
       },
     ),
   };
@@ -416,6 +443,47 @@ describe('live combat persistence and replay', () => {
     expect(confirmed.status).toBe('success');
     expect(forfeitWrites()).toHaveLength(1);
     expect(forfeitWrites()[0][0].data.protection_forfeited_era_id).toBe(1);
+  });
+
+  test('attacking a fellow alliance member requires confirmation, then proceeds', async () => {
+    alliances = {
+      7: { name: 'Iron Pact', members: [1, 2] },
+      8: { name: 'Lone Wolves', members: [1] },
+    };
+
+    const blocked = await AttackService.executeAttack(1, 2, 1);
+    expect(blocked.status).toBe('failed');
+    expect(blocked.code).toBe('ALLIANCE_MEMBER_CONFIRMATION_REQUIRED');
+    expect(blocked.message).toContain('Iron Pact');
+    expect(blocked.extra_variables).toEqual({
+      allianceId: 7,
+      allianceName: 'Iron Pact',
+    });
+    expect(logs).toHaveLength(0);
+    expect(transfers).toHaveLength(0);
+
+    const confirmed = await AttackService.executeAttack(1, 2, 1, {
+      confirmAllianceAttack: true,
+    });
+    expect(confirmed.status).toBe('success');
+    expect(logs).toHaveLength(1);
+  });
+
+  test('players in different alliances attack without an alliance prompt', async () => {
+    alliances = {
+      7: { name: 'Iron Pact', members: [1] },
+      8: { name: 'Lone Wolves', members: [2] },
+    };
+    const result = await AttackService.executeAttack(1, 2, 1);
+    expect(result.status).toBe('success');
+    expect(result.code).toBeUndefined();
+  });
+
+  test('the alliance prompt never precedes another refusal', async () => {
+    alliances = { 7: { name: 'Iron Pact', members: [1, 2] } };
+    mockPrisma.attack_log.count = vi.fn(async () => 99);
+    const result = await AttackService.executeAttack(1, 2, 1);
+    expect(result.code).toBe('TOO_MANY_ATTACKS');
   });
 
   test('a protected attacker hitting a protected defender keeps protection', async () => {

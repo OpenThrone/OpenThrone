@@ -18,7 +18,8 @@
   "requestReason": "Begründung (optional)",
   "requestButton": "Anfrage senden",
   "requestSuccess": "Anfrage gesendet.",
-  "requestLimit": "Sie können bis zu {{count}} offene Anfragen haben.",
+  "requestLimit_one": "Sie können bis zu {{count}} offene Anfrage haben.",
+  "requestLimit_other": "Sie können bis zu {{count}} offene Anfragen haben.",
   "queueTitle": "Goldanfragen",
   "queueEmpty": "Keine Goldanfragen.",
   "queueMember": "Mitglied",
@@ -26,6 +27,7 @@
   "queueStatus": "Status",
   "queueActions": "Aktionen",
   "approve": "Genehmigen",
+  "approveOwnBlocked": "Sie können Ihre eigene Anfrage nicht genehmigen. Ihr Rang benötigt die Berechtigung „Eigene Gold- und Kreditanfragen genehmigen“.",
   "decline": "Ablehnen",
   "cancel": "Abbrechen",
   "approved": "Anfrage genehmigt.",
@@ -60,7 +62,8 @@
     "queueEmpty": "Keine offenen oder ausstehenden Darlehen.",
     "principal": "Darlehensbetrag",
     "balance": "Offen / geschuldet",
-    "closedCount": "{{count}} abgeschlossene Darlehen werden nicht angezeigt.",
+    "closedCount_one": "{{count}} abgeschlossenes Darlehen wird nicht angezeigt.",
+    "closedCount_other": "{{count}} abgeschlossene Darlehen werden nicht angezeigt.",
     "approved": "Darlehen genehmigt.",
     "declined": "Darlehen abgelehnt.",
     "cancelled": "Darlehensanfrage zurückgezogen.",
@@ -73,7 +76,8 @@
       "WRITTEN_OFF": "Abgeschrieben",
       "DECLINED": "Abgelehnt",
       "CANCELLED": "Zurückgezogen"
-    }
+    },
+    "overCap": "Kredite sind auf {{cap}} Gold begrenzt."
   },
   "settings": {
     "title": "Regeln der Schatzkammer",

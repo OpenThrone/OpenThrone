@@ -1,5 +1,6 @@
 import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const getAllianceHandler = async (req: any, res: any) => {
   if (req.method !== 'GET') {
@@ -24,7 +25,7 @@ const getAllianceHandler = async (req: any, res: any) => {
     if (error.message.includes('not found')) {
       return res.status(404).json({ error: 'Alliance not found' });
     }
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

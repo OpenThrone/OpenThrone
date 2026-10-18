@@ -64,6 +64,8 @@ export interface AttackExecutionData {
   defenderId: number;
   attackTurns: number;
   confirmProtectionForfeit?: boolean;
+  /** Acknowledges that the defender shares one of the attacker's alliances. */
+  confirmAllianceAttack?: boolean;
 }
 
 /** Describes the battle test data contract. */
@@ -129,6 +131,7 @@ const AttackExecutionSchema = z.object({
     .positive()
     .max(V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS),
   confirmProtectionForfeit: z.boolean().optional(),
+  confirmAllianceAttack: z.boolean().optional(),
 });
 
 const BattleTestSchema = z.object({
@@ -478,7 +481,10 @@ export class BattleService {
         });
 
         return {
-          message: 'Items equipped successfully',
+          message:
+            operation === 'buy'
+              ? 'Upgrades bought successfully'
+              : 'Upgrades sold successfully',
           data: updatedItems,
           totalCost: Math.abs(totalCost),
         };
@@ -500,8 +506,13 @@ export class BattleService {
     data: AttackExecutionData,
   ): Promise<AttackExecutionResult> {
     const validatedData = AttackExecutionSchema.parse(data);
-    const { attackerId, defenderId, attackTurns, confirmProtectionForfeit } =
-      validatedData;
+    const {
+      attackerId,
+      defenderId,
+      attackTurns,
+      confirmProtectionForfeit,
+      confirmAllianceAttack,
+    } = validatedData;
 
     try {
       // Validate that users can't attack themselves
@@ -585,7 +596,7 @@ export class BattleService {
         attackerId,
         defenderId,
         attackTurns,
-        { confirmProtectionForfeit },
+        { confirmProtectionForfeit, confirmAllianceAttack },
       );
 
       return result as AttackExecutionResult;

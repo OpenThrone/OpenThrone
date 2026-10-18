@@ -1,5 +1,7 @@
 import {
+  faCheck,
   faCoins,
+  faCopy,
   faCrown,
   faEye,
   faLevelUpAlt,
@@ -17,8 +19,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
+  ActionIcon,
   Anchor,
   Center,
+  CopyButton,
   Group,
   Loader,
   Popover,
@@ -27,6 +31,7 @@ import {
   Table,
   Text,
   ThemeIcon,
+  Tooltip,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import Link from 'next/link';
@@ -70,6 +75,12 @@ const Overview = () => {
 
   const { user, forceUpdate } = useUser();
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const [siteOrigin, setSiteOrigin] = useState(
+    process.env.NEXT_PUBLIC_URL_ROOT ?? '',
+  );
+  useEffect(() => {
+    setSiteOrigin(window.location.origin);
+  }, []);
 
   const newsItems = useMemo(
     () =>
@@ -97,9 +108,45 @@ const Overview = () => {
     );
   }
 
+  // The site this page is served from (alpha, production), not a build-time
+  // root that can point elsewhere.
   const recruitLink = user.recruitingLink
-    ? `${process.env.NEXT_PUBLIC_URL_ROOT}/recruit/${user.recruitingLink}`
+    ? `${siteOrigin}/recruit/${user.recruitingLink}`
     : '';
+  const recruitLinkNode = recruitLink ? (
+    <Group
+      gap={6}
+      wrap="nowrap"
+      component="span"
+      style={{ display: 'inline-flex' }}
+    >
+      <Anchor
+        href={recruitLink}
+        inherit
+        underline="hover"
+        style={{ overflowWrap: 'anywhere' }}
+      >
+        {recruitLink.replace(/^https?:\/\//, '')}
+      </Anchor>
+      <CopyButton value={recruitLink} timeout={2000}>
+        {({ copied, copy }) => (
+          <Tooltip
+            label={t(copied ? 'overview.linkCopied' : 'overview.copyLink')}
+            withArrow
+          >
+            <ActionIcon
+              variant="subtle"
+              size="sm"
+              onClick={copy}
+              aria-label={t('overview.copyLink')}
+            >
+              <FontAwesomeIcon icon={copied ? faCheck : faCopy} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+      </CopyButton>
+    </Group>
+  ) : null;
 
   const kingdomStats = [
     {
@@ -183,10 +230,7 @@ const Overview = () => {
           subtitle={
             recruitLink ? (
               <>
-                {t('overview.shareRecruitLink')}{' '}
-                <Anchor href={recruitLink} inherit underline="hover">
-                  {user.recruitingLink}
-                </Anchor>
+                {t('overview.shareRecruitLink')} {recruitLinkNode}
               </>
             ) : undefined
           }
@@ -221,10 +265,7 @@ const Overview = () => {
             </Text>
             {recruitLink ? (
               <Text size="sm" c="var(--ot-muted)" mt="sm">
-                {t('overview.shareRecruitLink')}{' '}
-                <Anchor href={recruitLink} inherit underline="hover">
-                  {user.recruitingLink}
-                </Anchor>
+                {t('overview.shareRecruitLink')} {recruitLinkNode}
               </Text>
             ) : null}
           </GameCard>
