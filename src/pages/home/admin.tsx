@@ -2,7 +2,7 @@ import { faUserPlus, faUsersCog } from '@fortawesome/free-solid-svg-icons';
 import { Alert, Button, Grid, Group, Modal, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import type { GetServerSideProps } from 'next';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -14,6 +14,7 @@ import UserAdminEditor from '@/components/UserAdminEditor';
 import UserList from '@/components/UserList';
 import UserSearchFilter from '@/components/UserSearchFilter';
 import { useUser } from '@/context/users';
+import { endImpersonation } from '@/hooks/useImpersonation';
 import { PermissionType } from '@/lib/prisma-browser-exports';
 import { logError } from '@/utils/logger';
 
@@ -134,7 +135,7 @@ const AdminUsersPage = () => {
           impersonationTicket: payload?.signInPayload?.impersonationTicket,
         });
         if (signInResult?.error) throw new Error(signInResult.error);
-        window.location.href = `/userprofile/${encodeURIComponent(userId)}`;
+        window.location.href = '/home/overview';
       } catch (requestError) {
         notifications.show({
           title: t('errors.impersonationTitle'),
@@ -154,24 +155,8 @@ const AdminUsersPage = () => {
   const handleStopImpersonation = useCallback(async () => {
     if (isImpersonationLoading) return;
     setIsImpersonationLoading(true);
-    try {
-      const response = await fetch('/api/admin/impersonate/stop', {
-        method: 'POST',
-      });
-      if (!response.ok) throw new Error(t('errors.stopImpersonation'));
-      await signOut({ callbackUrl: '/account/login' });
-    } catch (requestError) {
-      notifications.show({
-        title: t('errors.title'),
-        message:
-          requestError instanceof Error
-            ? requestError.message
-            : t('errors.stopImpersonation'),
-        color: 'red',
-      });
-      setIsImpersonationLoading(false);
-    }
-  }, [isImpersonationLoading, t]);
+    await endImpersonation();
+  }, [isImpersonationLoading]);
 
   const isImpersonating = Boolean(
     (session?.user as { impersonatedBy?: number } | undefined)?.impersonatedBy,

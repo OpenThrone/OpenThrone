@@ -26,6 +26,7 @@ import { useUser } from '@/context/users';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { alertService } from '@/services/Alert.service';
 import { logError } from '@/utils/logger';
+import { CITIZEN_WORKERS_TARGET } from '@/utils/spy/results';
 
 interface ModalProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ const CustomModal: FC<ModalProps> = ({
       <Modal.Overlay />
       <Modal.Content>
         <Modal.Header>
-          <Modal.Title>{title ?? 'Spy Mission'}</Modal.Title>
+          <Modal.Title>{title}</Modal.Title>
           <Modal.CloseButton
             size="lg"
             disabled={busy}
@@ -154,7 +155,9 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
   const [currentPanel, setCurrentPanel] = useState<MissionPanelKey | ''>('');
   const [intelSpies, setIntelSpies] = useState(1);
   const [missionTurns, setMissionTurns] = useState(1);
-  const [assassinateUnit, setAssassinateUnit] = useState('CITIZEN/WORKERS'); // Target for assassination
+  const [assassinateUnit, setAssassinateUnit] = useState(
+    CITIZEN_WORKERS_TARGET,
+  ); // Target for assassination
 
   const { user, forceUpdate } = useUser();
   const { config } = useRuntimeConfig();
@@ -200,10 +203,13 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
     user?.spyMissions?.intel?.enabled && config?.enableIntel === true
   );
 
-  const getUpgradeInfo = useCallback((level = 1): string => {
-    const validLevel = Math.max(0, Math.min(level, SpyUpgrades.length - 1));
-    return SpyUpgrades[validLevel]?.name ?? 'Unknown Upgrade';
-  }, []);
+  const getUpgradeInfo = useCallback(
+    (level = 1): string => {
+      const validLevel = Math.max(0, Math.min(level, SpyUpgrades.length - 1));
+      return SpyUpgrades[validLevel]?.name ?? t('spyMissions.unknownUpgrade');
+    },
+    [t],
+  );
 
   const handleSpyMission = useCallback(async () => {
     const missionEnabled =
@@ -212,7 +218,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         config?.enableAssassinations === true) ||
       (currentPanel === 'infiltration' && config?.enableInfiltrations === true);
     if (!missionEnabled) {
-      alertService.error('This spy mission is currently unavailable.');
+      alertService.error(t('spyMissions.unavailable'));
       return;
     }
 
@@ -262,7 +268,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         Number.isNaN(Number(results.attack_log))
       ) {
         reportTab?.close();
-        alertService.error(results?.message ?? 'Unable to run spy mission.');
+        alertService.error(results?.message ?? t('actions.spyFailed'));
         return;
       }
       forceUpdate();
@@ -278,7 +284,11 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       }
 
       alertService.success(
-        `You have sent ${intelSpies} ${currentPanel === 'assassination' ? 'assassins' : currentPanel === 'infiltration' ? 'infiltrators' : 'spies'}.`,
+        currentPanel === 'assassination'
+          ? t('spyMissions.sentAssassins', { count: intelSpies })
+          : currentPanel === 'infiltration'
+            ? t('spyMissions.sentInfiltrators', { count: intelSpies })
+            : t('spyMissions.sentSpies', { count: intelSpies }),
       );
     } catch (error) {
       reportTab?.close();
@@ -328,8 +338,8 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
   const turnInput = useCallback(
     (panel: MissionPanelKey) => (
       <NumberInput
-        label="Turns committed"
-        description="More turns increase mission depth and risk."
+        label={t('spyMissions.turnsCommitted')}
+        description={t('spyMissions.turnsDescription')}
         max={MISSION_TURN_LIMITS[panel].max}
         min={MISSION_TURN_LIMITS[panel].min}
         value={missionTurns}
@@ -337,7 +347,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
         mt="md"
       />
     ),
-    [missionTurns],
+    [missionTurns, t],
   );
 
   /** JSX elements for each specific mission panel within the modal. */
@@ -346,23 +356,24 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       intelligence: (
         <div>
           <Title ta="center" order={3} fw={700} mb="md">
-            Intelligence Gathering
+            {t('spyMissions.intel.title')}
           </Title>
-          <Text>How many spies would you like to send?</Text>
+          <Text>{t('spyMissions.intel.howMany')}</Text>
           <Group mt="md">
             <NumberInput
               max={10}
               min={1}
               value={intelSpies}
               onChange={(value) => setIntelSpies(Number(value))}
+              aria-label={t('spyMissions.intel.howMany')}
             />
             <Tooltip
               label={
                 !hasEnoughUnits()
-                  ? `You need at least ${intelSpies} spies`
+                  ? t('spyMissions.needSpies', { count: intelSpies })
                   : !hasEnoughTurns()
-                    ? `You need at least ${missionTurns} turns`
-                    : 'Send spies on an intelligence mission'
+                    ? t('spyMissions.needTurns', { count: missionTurns })
+                    : t('spyMissions.intel.tooltip')
               }
               disabled={hasEnoughUnits() && hasEnoughTurns()}
             >
@@ -372,7 +383,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
                   loading={busy}
                   disabled={busy || !hasEnoughUnits() || !hasEnoughTurns()}
                 >
-                  Send Spies
+                  {t('spyMissions.intel.send')}
                 </Button>
               </span>
             </Tooltip>
@@ -380,24 +391,24 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           {turnInput('intelligence')}
           <div className="mt-4">
             <Title ta="center" order={3} fw={700}>
-              Intelligence Information
+              {t('spyMissions.intel.infoTitle')}
             </Title>
-            <Text mt="md">Spies Trained: {units.SPY}</Text>
-            <Text>You can send a maximum of 10 spies per mission.</Text>
-            <Text>
-              Intelligence missions use 1 to 5 attack turns. More turns improve
-              report quality.
+            <Text mt="md">
+              {t('spyMissions.intel.trained', { count: units.SPY })}
             </Text>
+            <Text>{t('spyMissions.intel.maxPerMission', { count: 10 })}</Text>
+            <Text>{t('spyMissions.intel.turnsInfo')}</Text>
           </div>
         </div>
       ),
       assassination: (
         <div>
           <Text ta="center" size="lg" fw={700} mb="md">
-            Assassination
+            {t('spyMissions.assassination.title')}
           </Text>
-          <Text mt="md">How many assassins would you like to send?</Text>
+          <Text mt="md">{t('spyMissions.assassination.howMany')}</Text>
           <NumberInput
+            aria-label={t('spyMissions.assassination.howMany')}
             max={spyLimits.ASSASS.perMission}
             min={1}
             value={intelSpies}
@@ -405,23 +416,35 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             mt="md"
           />
           {turnInput('assassination')}
-          <Text>What Unit Type would you like to target?</Text>
+          <Text>{t('spyMissions.assassination.targetQuestion')}</Text>
           <Select
+            aria-label={t('spyMissions.assassination.targetQuestion')}
             value={assassinateUnit}
-            onChange={(value) => setAssassinateUnit(value ?? 'CITIZEN/WORKERS')}
+            onChange={(value) =>
+              setAssassinateUnit(value ?? CITIZEN_WORKERS_TARGET)
+            }
             data={[
-              { value: 'CITIZEN/WORKERS', label: 'Citizen/Workers' },
-              { value: 'OFFENSE', label: 'Offense' },
-              { value: 'DEFENSE', label: 'Defense' },
+              {
+                value: CITIZEN_WORKERS_TARGET,
+                label: t('spyMissions.assassination.targets.citizens'),
+              },
+              {
+                value: 'OFFENSE',
+                label: t('spyMissions.assassination.targets.offense'),
+              },
+              {
+                value: 'DEFENSE',
+                label: t('spyMissions.assassination.targets.defense'),
+              },
             ]}
           />
           <Tooltip
             label={
               !hasEnoughUnits()
-                ? `You need at least ${intelSpies} assassins`
+                ? t('spyMissions.needAssassins', { count: intelSpies })
                 : !hasEnoughTurns()
-                  ? `You need at least ${missionTurns} turns`
-                  : 'Send assassins on a mission'
+                  ? t('spyMissions.needTurns', { count: missionTurns })
+                  : t('spyMissions.assassination.tooltip')
             }
             disabled={hasEnoughUnits() && hasEnoughTurns()}
           >
@@ -433,43 +456,46 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
                 fullWidth
                 mt="md"
               >
-                Assassinate
+                {t('spyMissions.assassination.send')}
               </Button>
             </span>
           </Tooltip>
           <div className="mt-4">
             <Text ta="center" size="lg" fw={700}>
-              Assassination Information
-            </Text>
-            <Text mt="md">Total Assassins: {units.ASSASSIN}</Text>
-            <Text>
-              You can send a maximum of {spyLimits.ASSASS.perMission} assassins
-              per mission.
+              {t('spyMissions.assassination.infoTitle')}
             </Text>
             <Text mt="md">
-              Assassination Attempts Available: {spyLimits.ASSASS.perUser} /{' '}
-              {spyLimits.ASSASS.perDay} today
+              {t('spyMissions.assassination.total', { count: units.ASSASSIN })}
             </Text>
             <Text>
-              You can only send {spyLimits.ASSASS.perDay} assassination
-              attempt(s) per 24 hours. To increase the number of attempts per
-              day, upgrade your spy structure!
+              {t('spyMissions.assassination.maxPerMission', {
+                count: spyLimits.ASSASS.perMission,
+              })}
+            </Text>
+            <Text mt="md">
+              {t('spyMissions.assassination.attemptsAvailable', {
+                available: spyLimits.ASSASS.perUser,
+                perDay: spyLimits.ASSASS.perDay,
+              })}
             </Text>
             <Text>
-              Assassinations use 3 to 10 attack turns. More turns increase
-              mission depth and exposure.
+              {t('spyMissions.assassination.dailyLimit', {
+                count: spyLimits.ASSASS.perDay,
+              })}
             </Text>
+            <Text>{t('spyMissions.assassination.turnsInfo')}</Text>
           </div>
         </div>
       ),
       infiltration: (
         <div>
           <Text ta="center" size="lg" fw={700} mb="md">
-            Infiltration
+            {t('spyMissions.infiltration.title')}
           </Text>
-          <Text>How many spies would you like to send to infiltrate?</Text>
+          <Text>{t('spyMissions.infiltration.howMany')}</Text>
           <Group mt="md">
             <NumberInput
+              aria-label={t('spyMissions.infiltration.howMany')}
               max={spyLimits.INFIL.perMission}
               min={1}
               value={intelSpies}
@@ -478,10 +504,10 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
             <Tooltip
               label={
                 !hasEnoughUnits()
-                  ? `You need at least ${intelSpies} infiltrators`
+                  ? t('spyMissions.needInfiltrators', { count: intelSpies })
                   : !hasEnoughTurns()
-                    ? `You need at least ${missionTurns} turns`
-                    : 'Send infiltrators on a mission'
+                    ? t('spyMissions.needTurns', { count: missionTurns })
+                    : t('spyMissions.infiltration.tooltip')
               }
               disabled={hasEnoughUnits() && hasEnoughTurns()}
             >
@@ -491,7 +517,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
                   loading={busy}
                   disabled={busy || !hasEnoughUnits() || !hasEnoughTurns()}
                 >
-                  Infiltrate
+                  {t('spyMissions.infiltration.send')}
                 </Button>
               </span>
             </Tooltip>
@@ -499,26 +525,30 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
           {turnInput('infiltration')}
           <div className="mt-4">
             <Text ta="center" size="lg" fw={700}>
-              Infiltration Information
-            </Text>
-            <Text mt="md">Total Infiltrators: {units.INFILTRATOR}</Text>
-            <Text>
-              You can send a maximum of {spyLimits.INFIL.perMission} spies per
-              infiltration mission.
+              {t('spyMissions.infiltration.infoTitle')}
             </Text>
             <Text mt="md">
-              Infiltration Attempts Available: {spyLimits.INFIL.perUser} /{' '}
-              {spyLimits.INFIL.perDay} today
+              {t('spyMissions.infiltration.total', {
+                count: units.INFILTRATOR,
+              })}
             </Text>
             <Text>
-              You can only send {spyLimits.INFIL.perDay} infiltration attempt(s)
-              per 24 hours. To increase the number of attempts per day, upgrade
-              your spy structure!
+              {t('spyMissions.infiltration.maxPerMission', {
+                count: spyLimits.INFIL.perMission,
+              })}
+            </Text>
+            <Text mt="md">
+              {t('spyMissions.infiltration.attemptsAvailable', {
+                available: spyLimits.INFIL.perUser,
+                perDay: spyLimits.INFIL.perDay,
+              })}
             </Text>
             <Text>
-              Infiltrations use 2 to 10 attack turns. More turns increase
-              sabotage depth and exposure.
+              {t('spyMissions.infiltration.dailyLimit', {
+                count: spyLimits.INFIL.perDay,
+              })}
             </Text>
+            <Text>{t('spyMissions.infiltration.turnsInfo')}</Text>
           </div>
         </div>
       ),
@@ -534,6 +564,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       hasEnoughUnits,
       hasEnoughTurns,
       turnInput,
+      t,
     ],
   );
 
@@ -543,7 +574,9 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
       toggleModal={toggleModal}
       busy={busy}
       title={
-        targetName ? t('actions.spyTarget', { name: targetName }) : undefined
+        targetName
+          ? t('actions.spyTarget', { name: targetName })
+          : t('spyMissions.title')
       }
     >
       {reportUrl ? (
@@ -574,29 +607,30 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
                   onClick={() => selectPanel('intelligence')}
                   disabled={isIntelDisabled}
                 >
-                  <span>🔍 Intelligence Gathering</span>
-                  <small>Send up to 10 Spies to collect Intel</small>
+                  <span>🔍 {t('spyMissions.intel.title')}</span>
+                  <small>{t('spyMissions.intel.menuDescription')}</small>
                 </CustomButton>
                 <CustomButton
                   onClick={() => selectPanel('infiltration')}
                   disabled={isInfiltrationDisabled}
                 >
-                  <span>🚧 Infiltration</span>
-                  <small>Infiltrate and Destroy the Fort</small>
+                  <span>🚧 {t('spyMissions.infiltration.title')}</span>
+                  <small>{t('spyMissions.infiltration.menuDescription')}</small>
                   {isInfiltrationDisabled && (
                     <b>
                       {config?.enableInfiltrations === true ? (
                         <small className="text-slate-300">
                           {' '}
-                          Requires Upgrade:{' '}
-                          {getUpgradeInfo(
-                            user?.spyMissions?.infil?.requiredLevel,
-                          )}
+                          {t('spyMissions.requiresUpgrade', {
+                            upgrade: getUpgradeInfo(
+                              user?.spyMissions?.infil?.requiredLevel,
+                            ),
+                          })}
                         </small>
                       ) : (
                         <small className="text-slate-300">
                           {' '}
-                          This mission is disabled by the Administrators
+                          {t('spyMissions.disabledByAdmins')}
                         </small>
                       )}
                     </b>
@@ -606,22 +640,25 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
                   onClick={() => selectPanel('assassination')}
                   disabled={isAssassinateDisabled}
                 >
-                  <span>🗡️ Assassination</span>
-                  <small>Attempt to assassinate player&apos;s Defenders</small>
+                  <span>🗡️ {t('spyMissions.assassination.title')}</span>
+                  <small>
+                    {t('spyMissions.assassination.menuDescription')}
+                  </small>
                   {isAssassinateDisabled && (
                     <b>
                       {config?.enableAssassinations === true ? (
                         <small className="text-slate-300">
                           {' '}
-                          Requires Upgrade:{' '}
-                          {getUpgradeInfo(
-                            user?.spyMissions?.assass?.requiredLevel,
-                          )}
+                          {t('spyMissions.requiresUpgrade', {
+                            upgrade: getUpgradeInfo(
+                              user?.spyMissions?.assass?.requiredLevel,
+                            ),
+                          })}
                         </small>
                       ) : (
                         <small className="text-slate-300">
                           {' '}
-                          This mission is disabled by the Administrators
+                          {t('spyMissions.disabledByAdmins')}
                         </small>
                       )}
                     </b>
@@ -637,7 +674,7 @@ const SpyMissionsModal: FC<SpyMissionProps> = ({
                   onClick={() => setCurrentPanel('')}
                   mb="md"
                 >
-                  Back
+                  {t('spyMissions.back')}
                 </Button>
                 {MissionPanels[currentPanel]}
               </>

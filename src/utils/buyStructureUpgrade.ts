@@ -2,8 +2,7 @@ import { alertService } from '@/services/Alert.service';
 
 import { logError } from './logger';
 
-// utils/buyStructureUpgrade.js
-const buyUpgrade = async (
+const purchase = async (
   currentPage: string,
   index: number,
   forceUpdate: () => void,
@@ -28,6 +27,23 @@ const buyUpgrade = async (
     // Handle errors
     logError('Error Buying Upgrade', data.error);
     alertService.error(data?.error);
+  }
+};
+
+// One purchase at a time: a double-click must not buy twice.
+let inFlight = false;
+
+const buyUpgrade = async (
+  currentPage: string,
+  index: number,
+  forceUpdate: () => void,
+) => {
+  if (inFlight) return;
+  inFlight = true;
+  try {
+    await purchase(currentPage, index, forceUpdate);
+  } finally {
+    inFlight = false;
   }
 };
 

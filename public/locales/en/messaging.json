@@ -13,5 +13,116 @@
   "errorRefetchingRooms": "Error refetching rooms after modal",
   "unknown": "Unknown",
   "reader": "Reader",
-  "errorGeneric": "Something went wrong. Please try again."
+  "errorGeneric": "Something went wrong. Please try again.",
+  "rooms": {
+    "heading": "Conversations",
+    "count_one": "{{count, number}} room",
+    "count_other": "{{count, number}} rooms",
+    "directMessage": "Direct Message",
+    "noMessagesYet": "No messages yet",
+    "lastMessage": "{{sender}}: {{message}}",
+    "unread_one": "{{count, number}} unread message",
+    "unread_other": "{{count, number}} unread messages"
+  },
+  "conversation": {
+    "selectPrompt": "Select a conversation",
+    "fallbackName": "Chat",
+    "empty": "No messages yet.",
+    "online": "Online",
+    "offline": "Offline",
+    "members_one": "{{count, number}} member",
+    "members_other": "{{count, number}} members",
+    "private": "Private",
+    "public": "Public",
+    "summary": "{{members}} · {{visibility}}",
+    "createGroup": "Create group chat",
+    "addMembers": "Add members",
+    "options": "Conversation options",
+    "menu": {
+      "admin": "Admin",
+      "adminControls": "Admin Controls",
+      "manageMembers": "Manage members",
+      "editGroupInfo": "Edit group info",
+      "searchMessages": "Search messages",
+      "muteNotifications": "Mute notifications",
+      "deleteGroup": "Delete group",
+      "deleteConversation": "Delete conversation"
+    }
+  },
+  "message": {
+    "replyingTo": "Replying to {{name}}",
+    "reply": "Reply",
+    "addReaction": "Add reaction",
+    "reactWith": "React with {{emoji}}",
+    "you": "You",
+    "unknownUser": "Unknown User",
+    "readBy": "Read by: {{names}}",
+    "readByMore_one": "Read by: {{names}} and {{count, number}} more",
+    "readByMore_other": "Read by: {{names}} and {{count, number}} more",
+    "sent": "Sent",
+    "viewAttackLog": "View Attack Log #{{id}}"
+  },
+  "input": {
+    "placeholder": "Type your message...",
+    "replyPlaceholder": "Type your reply...",
+    "shareAttackLog": "Share Attack Log",
+    "send": "Send message",
+    "cancelReply": "Cancel reply"
+  },
+  "members": {
+    "title": "Manage Group Members",
+    "member": "Member",
+    "role": "Role",
+    "canWrite": "Can Write",
+    "actions": "Actions",
+    "youSuffix": "(You)",
+    "roles": {
+      "ADMIN": "Admin",
+      "MEMBER": "Member"
+    },
+    "makeAdmin": "Make admin",
+    "removeAdmin": "Remove admin",
+    "removeFromGroup": "Remove from group",
+    "toggleWrite": "Allow {{name}} to write",
+    "actionSuccess": {
+      "promote": "Member promoted to admin.",
+      "demote": "Admin rights removed.",
+      "remove": "Member removed from the group.",
+      "toggleWrite": "Write permission updated."
+    },
+    "actionFailed": "Failed: {{message}}",
+    "unknownError": "Unknown error",
+    "actionError": "Could not update the member. Please try again."
+  },
+  "share": {
+    "title": "Share Attack Log",
+    "cannotShare": "Cannot share log.",
+    "error": "Error",
+    "loadFailed": "Could not load logs.",
+    "empty": "No recent attack logs found.",
+    "battle": "Battle",
+    "date": "Date",
+    "outcome": "Outcome",
+    "action": "Action",
+    "attacked": "{{attacker}} attacked {{defender}}",
+    "unknownPlayer": "Unknown Player",
+    "victory": "Victory",
+    "defeat": "Defeat",
+    "share": "Share",
+    "cancel": "Cancel"
+  },
+  "newMessageModal": {
+    "titleCreateGroup": "Create Group Chat",
+    "titleAddPeople": "Add People to Chat",
+    "searchPlaceholder": "Search for users...",
+    "recipients": "Recipients",
+    "noUsersFound": "No users found",
+    "groupName": "Group Name",
+    "groupNamePlaceholder": "Enter a name for this group",
+    "message": "Message",
+    "cancel": "Cancel",
+    "createGroup": "Create Group",
+    "addPeople": "Add People",
+    "send": "Send Message"
+  }
 }

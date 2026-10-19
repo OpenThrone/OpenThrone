@@ -147,6 +147,7 @@ async function handler(
       defenderUser.fortHitpoints,
       turns ?? 10,
       true,
+      // Simulator payloads carry no era/join data: level-only rule by design.
       defenderUser.level <= 9,
       { random: createSeededRandom(seed) },
     );

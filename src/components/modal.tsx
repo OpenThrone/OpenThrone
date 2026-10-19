@@ -1,7 +1,9 @@
 import {
+  Alert,
   Anchor,
   Button,
   Checkbox,
+  Group,
   Modal as MantineModal,
   NumberInput,
   Text,
@@ -12,6 +14,7 @@ import { useTranslation } from 'next-i18next';
 import React, { useRef, useState } from 'react';
 
 import { useUser } from '@/context/users';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logError } from '@/utils/logger';
 
 /**
@@ -32,6 +35,8 @@ interface ModalProps {
  * A modal component used to confirm the number of attack turns before initiating an attack.
  * Handles form submission, API interaction, loading state, error display, and redirection to results.
  */
+const { MAX_ATTACK_TURNS } = V5_COMBAT_CONSTANTS;
+
 const Modal: React.FC<ModalProps> = ({
   isOpen,
   toggleModal,
@@ -41,6 +46,11 @@ const Modal: React.FC<ModalProps> = ({
 }) => {
   const { t } = useTranslation('battle');
   const submittingRef = useRef(false);
+  // Confirmations survive a follow-up prompt so a player who must accept both
+  // the protection forfeit and the friendly-fire warning can do so in turn.
+  const confirmationsRef = useRef({ forfeit: false, alliance: false });
+  const [forfeitPrompt, setForfeitPrompt] = useState(false);
+  const [alliancePrompt, setAlliancePrompt] = useState<string | null>(null);
   const [newTab, setNewTab] = useLocalStorage({
     key: 'battle-report-new-tab',
     defaultValue: false,
@@ -48,9 +58,21 @@ const Modal: React.FC<ModalProps> = ({
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [turns, setTurns] = useState(1);
   const [turnsInput, setTurnsInput] = useState<string | number>(1);
-  const { forceUpdate } = useUser();
+  const { user, forceUpdate } = useUser();
+  const availableTurns =
+    typeof user?.attackTurns === 'number' ? user.attackTurns : null;
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const resetConfirmations = () => {
+    confirmationsRef.current = { forfeit: false, alliance: false };
+  };
+
+  const cancelConfirmation = () => {
+    resetConfirmations();
+    setForfeitPrompt(false);
+    setAlliancePrompt(null);
+  };
 
   const buildIdempotencyKey = () =>
     `attack-${profileID ?? 'unknown'}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -64,8 +86,12 @@ const Modal: React.FC<ModalProps> = ({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submittingRef.current) return;
-    if (!Number.isSafeInteger(turns) || turns < 1) {
-      setError(t('attack.invalidTurns'));
+    if (!Number.isSafeInteger(turns) || turns < 1 || turns > MAX_ATTACK_TURNS) {
+      setError(t('attack.invalidTurns', { max: MAX_ATTACK_TURNS }));
+      return;
+    }
+    if (availableTurns !== null && turns > availableTurns) {
+      setError(t('attack.notEnoughTurns', { count: availableTurns }));
       return;
     }
 
@@ -73,6 +99,8 @@ const Modal: React.FC<ModalProps> = ({
     const reportTab =
       allowNewTab && newTab ? window.open('about:blank', '_blank') : null;
     if (reportTab) reportTab.opener = null;
+    setForfeitPrompt(false);
+    setAlliancePrompt(null);
     setIsLoading(true); // Set loading state
     setError(''); // Clear previous errors
 
@@ -83,9 +111,35 @@ const Modal: React.FC<ModalProps> = ({
           'Content-Type': 'application/json',
           'Idempotency-Key': buildIdempotencyKey(),
         },
-        body: JSON.stringify({ turns }),
+        body: JSON.stringify({
+          turns,
+          ...(confirmationsRef.current.forfeit
+            ? { confirmProtectionForfeit: true }
+            : {}),
+          ...(confirmationsRef.current.alliance
+            ? { confirmAllianceAttack: true }
+            : {}),
+        }),
       });
       const results = await res.json();
+      if (results?.code === 'PROTECTION_FORFEIT_CONFIRMATION_REQUIRED') {
+        reportTab?.close();
+        confirmationsRef.current.forfeit = false;
+        setForfeitPrompt(true);
+        return;
+      }
+      if (results?.code === 'ALLIANCE_MEMBER_CONFIRMATION_REQUIRED') {
+        reportTab?.close();
+        confirmationsRef.current.alliance = false;
+        const allianceName = results?.extra_variables?.allianceName;
+        setAlliancePrompt(
+          typeof allianceName === 'string' && allianceName
+            ? allianceName
+            : t('attack.allianceAttackFallbackName'),
+        );
+        return;
+      }
+      resetConfirmations();
       if (
         !res.ok ||
         results?.status === 'failed' ||
@@ -114,6 +168,7 @@ const Modal: React.FC<ModalProps> = ({
         await router.push(url);
       }
     } catch (error) {
+      resetConfirmations();
       reportTab?.close();
       logError(error, { profileID }, 'Attack submission failed');
       setError(t('attack.attackFailed'));
@@ -126,7 +181,10 @@ const Modal: React.FC<ModalProps> = ({
   return (
     <MantineModal
       opened={isOpen}
-      onClose={toggleModal}
+      onClose={() => {
+        cancelConfirmation();
+        toggleModal();
+      }}
       title={
         targetName
           ? t('actions.attackTarget', { name: targetName })
@@ -149,10 +207,19 @@ const Modal: React.FC<ModalProps> = ({
         <form onSubmit={handleSubmit}>
           <NumberInput
             label={t('attack.turnsQuestion')}
-            description={t('attack.turnsDescription')}
+            description={
+              availableTurns !== null
+                ? t('attack.turnsAvailable', {
+                    count: availableTurns,
+                    max: MAX_ATTACK_TURNS,
+                  })
+                : t('attack.turnsDescription')
+            }
             error={error ? <span role="alert">{error}</span> : undefined}
             mb="sm"
             min={1}
+            max={MAX_ATTACK_TURNS}
+            clampBehavior="none"
             allowDecimal={false}
             allowNegative={false}
             value={turnsInput}
@@ -173,10 +240,76 @@ const Modal: React.FC<ModalProps> = ({
               label={t('actions.newTab')}
             />
           )}
+          {forfeitPrompt && (
+            <Alert
+              color="yellow"
+              mb="md"
+              role="alert"
+              title={t('attack.protectionForfeitTitle')}
+            >
+              {t('attack.protectionForfeitWarning')}
+              <Group mt="sm" gap="xs">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="xs"
+                  disabled={isLoading}
+                  onClick={cancelConfirmation}
+                >
+                  {t('attack.protectionForfeitCancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  color="red"
+                  size="xs"
+                  loading={isLoading}
+                  disabled={isLoading}
+                  onClick={() => {
+                    confirmationsRef.current.forfeit = true;
+                  }}
+                >
+                  {t('attack.protectionForfeitConfirm')}
+                </Button>
+              </Group>
+            </Alert>
+          )}
+          {alliancePrompt !== null && (
+            <Alert
+              color="orange"
+              mb="md"
+              role="alert"
+              title={t('attack.allianceAttackTitle')}
+            >
+              {t('attack.allianceAttackWarning', { alliance: alliancePrompt })}
+              <Group mt="sm" gap="xs">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="xs"
+                  disabled={isLoading}
+                  onClick={cancelConfirmation}
+                >
+                  {t('attack.allianceAttackCancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  color="red"
+                  size="xs"
+                  loading={isLoading}
+                  disabled={isLoading}
+                  onClick={() => {
+                    confirmationsRef.current.alliance = true;
+                  }}
+                >
+                  {t('attack.allianceAttackConfirm')}
+                </Button>
+              </Group>
+            </Alert>
+          )}
           <Button
             type="submit"
             loading={isLoading}
-            disabled={isLoading}
+            disabled={isLoading || forfeitPrompt || alliancePrompt !== null}
             fullWidth
           >
             {isLoading ? t('attack.submitting') : t('attack.attack')}

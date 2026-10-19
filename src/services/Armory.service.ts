@@ -1,10 +1,12 @@
 import { z } from 'zod';
 
 import { ItemTypes } from '@/constants';
+import { applyEventDiscount } from '@/constants/gameEvents';
 import { UnitTypes } from '@/constants/Units';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
+import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { updateUserAndBankHistory } from '@/services/User.service';
 import type { Item } from '@/types/typings';
 import { discountedItemCost, slotFloorCost } from '@/utils/armoryPricing';
@@ -184,6 +186,7 @@ export class ArmoryService {
 
         const uModel = new UserModel(currentUser);
         const { armoryLevel, race } = uModel;
+        const { armoryCostDiscountPercent } = await getGameEventModifiers();
         let totalCost = 0;
 
         // Validate items (existence, race, armory level gate) and calculate total cost
@@ -219,15 +222,18 @@ export class ArmoryService {
             );
           }
 
-          const itemBaseCost =
-            itemDefinition.cost -
-            Math.ceil(((uModel.priceBonus ?? 0) / 100) * itemDefinition.cost);
+          // Same per-item price the Armory page shows, including any
+          // running armory discount event (#86).
+          const itemBaseCost = applyEventDiscount(
+            discountedItemCost(itemDefinition.cost, uModel.priceBonus ?? 0),
+            armoryCostDiscountPercent,
+          );
           totalCost += Math.ceil(itemBaseCost * itemData.quantity);
         }
 
         if (BigInt(currentUser.gold) < BigInt(totalCost)) {
           throw new Error(
-            `Not enough gold. Required: ${totalCost}, Available: ${currentUser.gold}`,
+            `Not enough gold. You need ${BigInt(totalCost).toLocaleString('en-US')} but have ${BigInt(currentUser.gold).toLocaleString('en-US')}.`,
           );
         }
 

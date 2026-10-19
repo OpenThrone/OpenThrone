@@ -167,9 +167,9 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
       switch (sortColumn) {
         case 'outcome': {
           const aWon =
-            a.winner === (type === 'offense' ? a.attacker_id : a.defender_id);
+            a.winner === (type === 'defense' ? a.defender_id : a.attacker_id);
           const bWon =
-            b.winner === (type === 'offense' ? b.attacker_id : b.defender_id);
+            b.winner === (type === 'defense' ? b.defender_id : b.attacker_id);
           return sortDirection === 'asc'
             ? Number(aWon) - Number(bWon)
             : Number(bWon) - Number(aWon);
@@ -288,7 +288,9 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
                 const profileId =
                   type === 'defense' ? log.attacker_id : log.defender_id;
                 const modalLabel =
-                  type === 'defense' ? 'Attack Back' : 'Attack Again';
+                  type === 'defense'
+                    ? t('battleReport.attackBack')
+                    : t('battleReport.attackAgain');
                 const yourLosses =
                   type === 'defense'
                     ? log.stats.defender_losses
@@ -315,6 +317,11 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
                         <UnstyledButton
                           onClick={() => toggleCollapse(log.id.toString())}
                           aria-expanded={!(collapsedLogs[log.id] ?? true)}
+                          aria-label={
+                            (collapsedLogs[log.id] ?? true)
+                              ? t('warHistory.showDetails')
+                              : t('warHistory.hideDetails')
+                          }
                           className="focus:outline-none"
                         >
                           <FontAwesomeIcon
@@ -387,12 +394,12 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
                             },
                             {
                               icon: faEye,
-                              label: 'View Battle',
+                              label: t('warHistory.viewBattle'),
                               onClick: () =>
                                 router.push(`/battle/results/${log.id}`),
                               color: 'teal',
-                              tooltip: 'View battle details',
-                              ariaLabel: 'View Battle',
+                              tooltip: t('warHistory.viewBattleDetails'),
+                              ariaLabel: t('warHistory.viewBattle'),
                             },
                           ]}
                           orientation="vertical"
@@ -402,6 +409,11 @@ const AttackLogTable: React.FC<AttackLogTableProps> = ({
                           isOpen={openModalId === profileId.toString()}
                           toggleModal={() => toggleModal(profileId.toString())}
                           profileID={profileId}
+                          targetName={
+                            type === 'defense'
+                              ? log.attackerPlayer?.display_name
+                              : log.defenderPlayer?.display_name
+                          }
                         />
                       </Table.Td>
                     </Table.Tr>

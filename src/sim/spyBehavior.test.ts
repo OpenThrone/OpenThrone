@@ -755,7 +755,11 @@ describe('executeSpyMission', () => {
 
   it('attacker spy casualties are reported as negative deltas', async () => {
     const attacker = makeSpyAttacker();
-    const defender = makeSentryDefender();
+    // Far more sentries than the spy force (#97), so the mission fails and the
+    // dispatched spies are lost.
+    const defender = makeSentryDefender({
+      units: { ...makeSentryDefender().units, sentry: 100_000 },
+    });
     const result = await executeSpyMission({
       attacker,
       defender,

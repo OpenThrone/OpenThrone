@@ -235,7 +235,7 @@ const Index = () => {
                 </Button>
                 <Button
                   component="a"
-                  href="https://discord.gg/J2gw2xvh3R"
+                  href="https://discord.com/invite/j9NYxmBCjA"
                   size="sm"
                   variant="outline"
                   color="gray"

@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
+import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const UpdateAllianceSchema = z.object({
   allianceId: z.number().int().positive(),
@@ -34,9 +36,10 @@ const updateAllianceHandler = async (req: any, res: any) => {
       user.id,
       updateData,
     );
-    return res.status(200).json(result);
+    // Alliance rows carry BigInt treasury columns (#66).
+    return res.status(200).json(stringifyObj(result));
   } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

@@ -11,7 +11,8 @@ import {
   assertAllianceChatMembership,
   withLockedChatRoom,
 } from '@/services/chatRoomGuards';
-import { isAdmin } from '@/utils/authorization';
+import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
+import { isAdmin, isModerator } from '@/utils/authorization';
 import { logError, logInfo } from '@/utils/logger';
 
 // Type definitions for messaging operations
@@ -120,6 +121,25 @@ const ReadStatusSchema = z.object({
 });
 
 /** Encapsulates messaging data access and domain operations. */
+/**
+ * Player messaging is an admin switch (ENABLE_MESSAGING). When it is off only
+ * administrators and moderators may start conversations or send messages.
+ * Alliance conversations stay open to their members either way.
+ */
+export async function assertMessagingAllowed(userId: number, roomId?: number) {
+  if (roomId !== undefined) {
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: roomId },
+      select: { allianceId: true },
+    });
+    if (room?.allianceId) return;
+  }
+  const config = await getRuntimeConfig();
+  if (config.enableMessaging) return;
+  if ((await isAdmin(userId)) || (await isModerator(userId))) return;
+  throw new Error('Messaging is currently disabled');
+}
+
 export class MessagingService {
   /** Anyone who can read a log may share it; see canReadAttackLog. */
   private static async checkLogSharePermission(
@@ -274,6 +294,7 @@ export class MessagingService {
    */
   static async createOrFindRoom(userId: number, data: CreateRoomData) {
     const validatedData = CreateRoomSchema.parse(data);
+    await assertMessagingAllowed(userId);
     const isDirect =
       validatedData.recipients.length === 1 && !validatedData.name;
     const uniqueRecipients = Array.from(
@@ -845,6 +866,7 @@ export class MessagingService {
    */
   static async sendMessage(userId: number, roomId: number, data: MessageData) {
     const validatedData = MessageSchema.parse(data);
+    await assertMessagingAllowed(userId, roomId);
 
     try {
       return await withLockedChatRoom(roomId, async (tx) => {
@@ -992,6 +1014,7 @@ export class MessagingService {
     }>
   > {
     const validatedData = SendMessageSchema.parse(data);
+    await assertMessagingAllowed(userId, validatedData.roomId);
     const {
       roomId,
       content,

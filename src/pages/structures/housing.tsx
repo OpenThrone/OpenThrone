@@ -21,11 +21,13 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
-import { Fortifications, HouseUpgrades } from '@/constants';
+import { HouseUpgrades } from '@/constants';
 import { useUser } from '@/context/users';
+import type { Locales } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { logError } from '@/utils/logger'; // Import logError
 import { toLocale } from '@/utils/numberFormatting';
+import { fortificationName, structureName } from '@/utils/structureNames';
 
 /**
  * Page component for viewing and upgrading housing structures.
@@ -34,7 +36,8 @@ import { toLocale } from '@/utils/numberFormatting';
  */
 const Housing: React.FC = () => {
   // Removed unused props
-  const { t } = useTranslation('structures');
+  const { t, i18n } = useTranslation('structures');
+  const locale = i18n.language as Locales;
   const { user, forceUpdate } = useUser();
   const [mounted, setMounted] = useState(false);
   const [houseLevel, setHouseLevel] = useState(1);
@@ -65,7 +68,7 @@ const Housing: React.FC = () => {
 
     try {
       // Pass correct arguments: page, index (next level), forceUpdate
-      await buyUpgrade('house', user.houseLevel + 1, forceUpdate);
+      await buyUpgrade('houses', user.houseLevel + 1, forceUpdate);
       // forceUpdate is called within buyUpgrade on success, no need to call again here
     } catch (error: unknown) {
       logError('Failed to upgrade housing:', error);
@@ -97,13 +100,14 @@ const Housing: React.FC = () => {
     if (needsMoreGold)
       reasons.push(
         t('housing.requiresGold', {
-          gold: toLocale(nextUpgradeCost, user.locale),
+          gold: toLocale(nextUpgradeCost, locale),
         }),
       );
     if (needsHigherFort)
       reasons.push(
         t('housing.requiresFortification', {
-          name: Fortifications[nextUpgrade.fortLevel]?.name ?? 'Unknown',
+          name:
+            fortificationName(t, nextUpgrade.fortLevel) ?? t('housing.unknown'),
         }),
       );
     tooltipMessage = reasons.join(` ${t('housing.and')} `);
@@ -114,17 +118,20 @@ const Housing: React.FC = () => {
   const statItems = [
     {
       label: t('bank.goldInHand'),
-      value: toLocale(user.gold ?? 0, user.locale),
+      value: toLocale(user.gold ?? 0, locale),
       icon: <FontAwesomeIcon icon={faCoins} />,
     },
     {
       label: t('bank.goldInBank'),
-      value: toLocale(user.goldInBank ?? 0, user.locale),
+      value: toLocale(user.goldInBank ?? 0, locale),
       icon: <FontAwesomeIcon icon={faBuildingColumns} />,
     },
     {
       label: t('housing.citizens'),
-      value: `${toLocale(user?.citizens ?? 0, user.locale)} (+${citizensDaily}/day)`,
+      value: t('housing.citizensWithDaily', {
+        citizens: toLocale(user?.citizens ?? 0, locale),
+        daily: toLocale(citizensDaily, locale),
+      }),
       icon: <FontAwesomeIcon icon={faHome} />,
     },
   ];
@@ -165,7 +172,12 @@ const Housing: React.FC = () => {
         >
           <Stack gap="md">
             <Text fw={700} size="xl" className="text-center font-medieval">
-              {houseUpgrade?.name ?? 'N/A'}
+              {structureName(
+                t,
+                'housing',
+                houseUpgrade?.index,
+                houseUpgrade?.name,
+              ) ?? t('housing.notAvailable')}
             </Text>
 
             <Text size="sm" c="dimmed" ta="center">
@@ -174,7 +186,7 @@ const Housing: React.FC = () => {
 
             {renderSlotRow(
               t('housing.newCitizensPerDay'),
-              houseUpgrade?.citizensDaily ?? 0,
+              toLocale(houseUpgrade?.citizensDaily ?? 0, locale),
             )}
 
             <Text size="xs" c="dimmed" className="text-center italic">
@@ -191,7 +203,12 @@ const Housing: React.FC = () => {
           >
             <Stack gap="md">
               <Text fw={700} size="xl" className="text-center font-medieval">
-                {nextUpgrade.name}
+                {structureName(
+                  t,
+                  'housing',
+                  nextUpgrade.index,
+                  nextUpgrade.name,
+                )}
               </Text>
 
               <Text size="sm" c="dimmed" ta="center">
@@ -200,17 +217,18 @@ const Housing: React.FC = () => {
 
               {renderSlotRow(
                 t('housing.newCitizensPerDay'),
-                nextUpgrade.citizensDaily,
+                toLocale(nextUpgrade.citizensDaily, locale),
               )}
               {renderSlotRow(
                 t('housing.fortificationRequired'),
-                Fortifications[nextUpgrade.fortLevel]?.name ?? 'N/A',
+                fortificationName(t, nextUpgrade.fortLevel) ??
+                  t('housing.notAvailable'),
                 needsHigherFort,
               )}
               {renderSlotRow(
                 t('housing.cost'),
                 t('housing.costGold', {
-                  amount: toLocale(nextUpgrade.cost, user.locale),
+                  amount: toLocale(nextUpgrade.cost, locale),
                 }),
                 needsMoreGold,
               )}

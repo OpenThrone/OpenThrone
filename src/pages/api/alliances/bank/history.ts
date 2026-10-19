@@ -1,6 +1,7 @@
 import { withAuth } from '@/middleware/auth';
 import { AllianceBankService } from '@/services';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const historyHandler = async (req: any, res: any) => {
   if (req.method !== 'GET') {
@@ -28,7 +29,7 @@ const historyHandler = async (req: any, res: any) => {
     if (error.message?.startsWith('Forbidden')) {
       return res.status(403).json({ error: 'Forbidden' });
     }
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

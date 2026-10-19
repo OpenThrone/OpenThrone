@@ -11,6 +11,7 @@ import {
   TWO_FACTOR_DISABLE_LIMIT,
 } from '@/utils/credentialGuards';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 import { authOptions } from '../auth/[...nextauth]';
 
@@ -69,7 +70,9 @@ export default async function handler(
     res.status(200).json(result);
   } catch (error) {
     if (error instanceof TwoFactorSetupError)
-      return res.status(error.status).json({ error: error.message });
+      return res
+        .status(error.status)
+        .json({ error: publicErrorMessage(error) });
     logError('Disable 2FA error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }

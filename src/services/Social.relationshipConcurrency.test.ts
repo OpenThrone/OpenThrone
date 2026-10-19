@@ -80,9 +80,8 @@ it('does not accept a queued enemy request after the enemy feature is disabled',
   const { resetRuntimeConfigCache } =
     await import('@/services/RuntimeConfig.service');
   resetRuntimeConfigCache();
-  mockPrisma.serverSetting.findMany.mockResolvedValue([]);
-  mockPrisma.featureFlag.findMany.mockResolvedValue([
-    { key: 'ENABLE_ENEMIES', enabled: false },
+  mockPrisma.serverSetting.findMany.mockResolvedValue([
+    { key: 'ENABLE_ENEMIES', value: false },
   ]);
   const request = {
     id: 9,

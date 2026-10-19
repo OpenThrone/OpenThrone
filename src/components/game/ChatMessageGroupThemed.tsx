@@ -18,10 +18,10 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React from 'react';
 
 import type { ChatMessage } from '@/types/typings';
-import { formatLastMessageTime } from '@/utils/timefunctions';
 
 import styles from './ChatThemed.module.css';
 
@@ -46,7 +46,19 @@ const ChatMessageGroupThemedComponent: React.FC<
   renderMessageContent,
   messageElementRefs,
 }) => {
+  const { t, i18n } = useTranslation('messaging');
   const lastMessageInGroup = group[group.length - 1];
+  const formatMessageTime = (value: string | Date | undefined) => {
+    if (!value) return '';
+    const date = new Date(value);
+    const isToday = date.toDateString() === new Date().toDateString();
+    return isToday
+      ? date.toLocaleTimeString(i18n.language, {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : date.toLocaleDateString(i18n.language);
+  };
 
   return (
     <Group
@@ -67,7 +79,7 @@ const ChatMessageGroupThemedComponent: React.FC<
             src={group[0].sender?.avatar}
             size="md"
             radius="xl"
-            alt={group[0].sender?.display_name || 'User'}
+            alt={group[0].sender?.display_name || t('message.unknownUser')}
           >
             {(group[0].sender?.display_name || '?').charAt(0).toUpperCase()}
           </Avatar>
@@ -82,7 +94,7 @@ const ChatMessageGroupThemedComponent: React.FC<
       >
         {!isCurrentUser && (
           <Text size="sm" mb={4} className={styles.messageSender}>
-            {group[0]?.sender?.display_name || 'Unknown User'}
+            {group[0]?.sender?.display_name || t('message.unknownUser')}
           </Text>
         )}
         <Stack gap={6}>
@@ -108,7 +120,9 @@ const ChatMessageGroupThemedComponent: React.FC<
                     className={styles.replyBlock}
                   >
                     <Text size="xs" c="dimmed">
-                      Replying to {message.replyToMessage.sender.display_name}
+                      {t('message.replyingTo', {
+                        name: message.replyToMessage.sender.display_name,
+                      })}
                     </Text>
                     <Text size="sm" lineClamp={2} fs="italic">
                       {message.replyToMessage.content}
@@ -131,7 +145,7 @@ const ChatMessageGroupThemedComponent: React.FC<
                         .filter((r) => r.reaction === reaction)
                         .map((r) =>
                           r.userId === currentUserId
-                            ? 'You'
+                            ? t('message.you')
                             : r.userDisplayName,
                         )
                         .join(', ');
@@ -156,7 +170,7 @@ const ChatMessageGroupThemedComponent: React.FC<
                             }
                             style={{ cursor: 'pointer' }}
                           >
-                            {reaction} {count}
+                            {reaction} {count.toLocaleString(i18n.language)}
                           </Badge>
                         </Tooltip>
                       );
@@ -170,17 +184,23 @@ const ChatMessageGroupThemedComponent: React.FC<
         <Group justify="space-between" align="center" mt={6} gap="xs">
           <Group gap={4} align="center">
             <Text size="xs" className={styles.messageTime}>
-              {formatLastMessageTime(lastMessageInGroup?.sentAt)}
+              {formatMessageTime(lastMessageInGroup?.sentAt)}
             </Text>
             {isCurrentUser &&
               (() => {
                 const readers = (lastMessageInGroup.readBy || [])
                   .filter((r) => r.userId !== currentUserId)
-                  .map((r) => r.userDisplayName || `User ${r.userId}`);
+                  .map((r) => r.userDisplayName || t('user', { id: r.userId }));
                 const isReadByOthers = readers.length > 0;
+                const readerNames = readers.slice(0, 3).join(', ');
                 const readTooltipLabel = isReadByOthers
-                  ? `Read by: ${readers.slice(0, 3).join(', ')}${readers.length > 3 ? ` and ${readers.length - 3} more` : ''}`
-                  : 'Sent';
+                  ? readers.length > 3
+                    ? t('message.readByMore', {
+                        names: readerNames,
+                        count: readers.length - 3,
+                      })
+                    : t('message.readBy', { names: readerNames })
+                  : t('message.sent');
                 return (
                   <Tooltip label={readTooltipLabel} position="top" withArrow>
                     <span>
@@ -195,18 +215,23 @@ const ChatMessageGroupThemedComponent: React.FC<
               })()}
           </Group>
           <Group gap={2} align="center" className={styles.messageActions}>
-            <Tooltip label="Reply" position="top" withArrow>
+            <Tooltip label={t('message.reply')} position="top" withArrow>
               <ActionIcon
                 size="xs"
                 variant="subtle"
                 onClick={() => setReplyingToMessage(lastMessageInGroup)}
+                aria-label={t('message.reply')}
               >
                 <FontAwesomeIcon icon={faComment} />
               </ActionIcon>
             </Tooltip>
             <Popover width={200} position="bottom-end" withArrow shadow="md">
               <Popover.Target>
-                <ActionIcon size="xs" variant="subtle">
+                <ActionIcon
+                  size="xs"
+                  variant="subtle"
+                  aria-label={t('message.addReaction')}
+                >
                   <FontAwesomeIcon icon={faSmile} />
                 </ActionIcon>
               </Popover.Target>
@@ -223,6 +248,8 @@ const ChatMessageGroupThemedComponent: React.FC<
                         key={emoji}
                         variant={isSelected ? 'light' : 'subtle'}
                         color={isSelected ? 'yellow' : 'gray'}
+                        aria-label={t('message.reactWith', { emoji })}
+                        aria-pressed={isSelected}
                         onClick={() =>
                           handleToggleReaction(lastMessageInGroup.id, emoji)
                         }
@@ -245,7 +272,12 @@ const ChatMessageGroupThemedComponent: React.FC<
           position="bottom-end"
           withBorder
         >
-          <Avatar src={group[0].sender?.avatar} size="md" radius="xl" alt="You">
+          <Avatar
+            src={group[0].sender?.avatar}
+            size="md"
+            radius="xl"
+            alt={t('message.you')}
+          >
             {(group[0].sender?.display_name || 'Y').charAt(0).toUpperCase()}
           </Avatar>
         </Indicator>

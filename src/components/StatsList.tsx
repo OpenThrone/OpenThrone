@@ -1,4 +1,5 @@
 import { Badge, Group, Stack } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 
 import type { Loss } from '@/types/typings';
@@ -29,41 +30,54 @@ const StatsList: React.FC<StatsListProps> = ({
   subType,
   collapsed,
 }) => {
+  const { t } = useTranslation('battle');
+  // Spy logs carry no XP (and defenders see a redacted copy), so parse
+  // defensively instead of crashing the whole War History page.
   const xp = useMemo(() => {
-    if (type === 'defense') {
-      return typeof stats.xpEarned === 'object'
-        ? stats.xpEarned.defender
-        : JSON.parse(stats.xpEarned).defender;
+    const raw = stats?.xpEarned;
+    let parsed: { attacker?: number; defender?: number } | null = null;
+    if (raw && typeof raw === 'object') parsed = raw;
+    else if (typeof raw === 'string') {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = null;
+      }
     }
-    return typeof stats.xpEarned === 'object'
-      ? stats.xpEarned.attacker
-      : JSON.parse(stats.xpEarned).attacker;
-  }, [stats.xpEarned, type]);
+    return (type === 'defense' ? parsed?.defender : parsed?.attacker) ?? 0;
+  }, [stats?.xpEarned, type]);
 
   if (subType !== 'attack') return null;
 
   return collapsed ? (
     <Group align="center" justify="center">
       <Badge size="lg" variant="light" color="gray" tt="none">
-        <RpgAwesomeIcon icon="gold-bar" fw /> Gold:{' '}
-        {toLocale(stats.pillagedGold.toLocaleString())}
+        <RpgAwesomeIcon icon="gold-bar" fw />{' '}
+        {t('warHistory.goldBadge', {
+          gold: toLocale(Number(stats.pillagedGold ?? 0)),
+        })}
       </Badge>
       <Badge size="lg" variant="light" color="gray" tt="none">
-        XP: {xp}
+        {t('warHistory.xpBadge', { xp: toLocale(xp) })}
       </Badge>
     </Group>
   ) : (
     <Stack align="center" justify="center" gap="xs">
       <Badge size="lg" variant="light" color="gray" tt="none">
-        <RpgAwesomeIcon icon="gold-bar" fw /> Gold:{' '}
-        {toLocale(stats.pillagedGold.toLocaleString())}
+        <RpgAwesomeIcon icon="gold-bar" fw />{' '}
+        {t('warHistory.goldBadge', {
+          gold: toLocale(Number(stats.pillagedGold ?? 0)),
+        })}
       </Badge>
       <Badge size="lg" variant="light" color="gray" tt="none">
-        XP: {xp}
+        {t('warHistory.xpBadge', { xp: toLocale(xp) })}
       </Badge>
-      <Badge size="lg" variant="light" color="gray" tt="none">
-        Turns: {stats.turns ?? 0}
-      </Badge>
+      {/* Defenders get a redacted log without the attacker's turns. */}
+      {stats.turns != null && (
+        <Badge size="lg" variant="light" color="gray" tt="none">
+          {t('warHistory.turnsBadge', { turns: toLocale(stats.turns) })}
+        </Badge>
+      )}
     </Stack>
   );
 };

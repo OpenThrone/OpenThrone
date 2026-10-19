@@ -8,6 +8,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { AutocompleteProps } from '@mantine/core';
 import {
+  ActionIcon,
   Autocomplete,
   Avatar,
   Badge,
@@ -26,6 +27,8 @@ import {
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
 
+import { ActiveEventsBanner } from '@/components/sidebar/ActiveEventsBanner';
+import { ProtectionMeter } from '@/components/sidebar/ProtectionMeter';
 import SidebarParchment from '@/components/sidebar/SidebarParchment';
 import { SidebarTimeInfo, StatRow } from '@/components/sidebar/SidebarShared';
 import { useUser } from '@/context/users';
@@ -115,12 +118,16 @@ const Sidebar: React.FC = () => {
                 className="mt-2 text-center font-bold text-shadow text-shadow-xs"
               >
                 {t('sidebar.stats')}{' '}
-                <FontAwesomeIcon
-                  icon={faRefresh}
-                  className="cursor-pointer"
-                  style={{ fontSize: 15, padding: '3px 0' }}
+                <ActionIcon
+                  variant="transparent"
+                  color="inherit"
+                  size="sm"
                   onClick={forceUpdate}
-                />
+                  aria-label={t('sidebar.refreshStats')}
+                  style={{ verticalAlign: 'middle' }}
+                >
+                  <FontAwesomeIcon icon={faRefresh} style={{ fontSize: 15 }} />
+                </ActionIcon>
               </Title>
               {userLoading ? (
                 <List
@@ -245,6 +252,9 @@ const Sidebar: React.FC = () => {
                     value={<span id="turns">{sidebar.turns}</span>}
                     icon={<RpgAwesomeIcon icon="clockwork" fw />}
                   />
+                  <ProtectionMeter user={user} />
+                  <ActiveEventsBanner />
+                  <ActiveEventsBanner />
                   <Divider my="md" c="gray" variant="dashed" />
                   {!userLoading && (
                     <SidebarTimeInfo user={user} userLoading={userLoading} />
@@ -269,6 +279,7 @@ const Sidebar: React.FC = () => {
                     data={usersData}
                     maxDropdownHeight={300}
                     placeholder={t('sidebar.searchPlaceholder')}
+                    aria-label={t('sidebar.searchPlaceholder')}
                     style={{ width: '95%' }}
                     className="mb-2"
                     comboboxProps={{ width: '250px' }}
@@ -277,7 +288,12 @@ const Sidebar: React.FC = () => {
                   />
                 </center>
                 <center>
-                  <Button type="submit" variant="outline" size="sm" className={classes.searchSubmit}>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    size="sm"
+                    className={classes.searchSubmit}
+                  >
                     {t('sidebar.searchUsers')}
                   </Button>
                 </center>
@@ -292,17 +308,27 @@ const Sidebar: React.FC = () => {
               order={2}
               className="advisor-title text-center font-bold text-shadow text-shadow-xs"
             >
-              <FontAwesomeIcon
-                icon={faArrowLeft}
-                style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }}
+              <ActionIcon
+                variant="transparent"
+                color="inherit"
+                size="sm"
                 onClick={handlePrevAdvisor}
-              />
+                aria-label={t('sidebar.previousTip')}
+                style={{ verticalAlign: 'middle' }}
+              >
+                <FontAwesomeIcon icon={faArrowLeft} style={{ fontSize: 15 }} />
+              </ActionIcon>
               {t('sidebar.advisor')}
-              <FontAwesomeIcon
-                icon={faArrowRight}
-                style={{ fontSize: 15, padding: '3px', cursor: 'pointer' }}
+              <ActionIcon
+                variant="transparent"
+                color="inherit"
+                size="sm"
                 onClick={handleNextAdvisor}
-              />
+                aria-label={t('sidebar.nextTip')}
+                style={{ verticalAlign: 'middle' }}
+              >
+                <FontAwesomeIcon icon={faArrowRight} style={{ fontSize: 15 }} />
+              </ActionIcon>
             </Title>
             <Text
               size={isMobile ? 'xl' : 'sm'}
@@ -318,12 +344,16 @@ const Sidebar: React.FC = () => {
               className="mt-2 text-center font-bold text-shadow text-shadow-xs"
             >
               {t('sidebar.stats')}{' '}
-              <FontAwesomeIcon
-                icon={faRefresh}
-                className="cursor-pointer"
-                style={{ fontSize: 15, padding: '3px 0' }}
+              <ActionIcon
+                variant="transparent"
+                color="inherit"
+                size="sm"
                 onClick={forceUpdate}
-              />
+                aria-label={t('sidebar.refreshStats')}
+                style={{ verticalAlign: 'middle' }}
+              >
+                <FontAwesomeIcon icon={faRefresh} style={{ fontSize: 15 }} />
+              </ActionIcon>
             </Title>
             {userLoading ? (
               <List
@@ -448,6 +478,8 @@ const Sidebar: React.FC = () => {
                   value={<span id="turns">{sidebar.turns}</span>}
                   icon={<RpgAwesomeIcon icon="clockwork" fw />}
                 />
+                <ProtectionMeter user={user} />
+                <ActiveEventsBanner />
                 <Divider my="md" c="gray" variant="dashed" />
                 {!userLoading && (
                   <SidebarTimeInfo user={user} userLoading={userLoading} />
@@ -472,6 +504,7 @@ const Sidebar: React.FC = () => {
                   data={usersData}
                   maxDropdownHeight={300}
                   placeholder={t('sidebar.searchPlaceholder')}
+                  aria-label={t('sidebar.searchPlaceholder')}
                   style={{ width: '95%' }}
                   className="mb-2"
                   comboboxProps={{ width: '250px' }}
@@ -480,7 +513,12 @@ const Sidebar: React.FC = () => {
                 />
               </center>
               <center>
-                <Button type="submit" variant="outline" size="sm" className={classes.searchSubmit}>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  className={classes.searchSubmit}
+                >
                   {t('sidebar.searchUsers')}
                 </Button>
               </center>

@@ -4,7 +4,10 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { z } from 'zod';
 
-import { consumeImpersonationTicket } from '@/lib/impersonationTickets';
+import {
+  consumeImpersonationTicket,
+  IMPERSONATION_MAX_MS,
+} from '@/lib/impersonationTickets';
 import prisma from '@/lib/prisma';
 import { isSessionAccountCurrent } from '@/lib/sessionAccount';
 import { AccountService } from '@/services/Account.service';
@@ -79,6 +82,17 @@ const buildSessionUser = (user: any) => {
 };
 
 const INVALID_CREDENTIALS = 'Invalid username or password';
+
+/** True for an impersonated session past its limit, or one without a limit (legacy tokens). */
+export const isImpersonationExpired = (user: unknown, now = Date.now()) => {
+  const session = user as
+    | { impersonatedBy?: unknown; impersonationExpiresAt?: unknown }
+    | null
+    | undefined;
+  if (!session || !(Number(session.impersonatedBy) > 0)) return false;
+  const expiresAt = Number(session.impersonationExpiresAt);
+  return !Number.isFinite(expiresAt) || now >= expiresAt;
+};
 
 /** Account-state refusals the login form acts on (shown only after the password matched). */
 type LoginRefusalCode = 'closed' | 'vacation' | 'restricted';
@@ -209,12 +223,16 @@ const CredentialsSchema = z
     totpToken: z.string().optional(),
     impersonateUserId: z.coerce.number().int().positive().optional(),
     impersonationTicket: z.string().min(1).optional(),
+    // Ends an impersonation by switching back to the admin (#92).
+    returnToAdmin: z.enum(['true']).optional(),
     // Set by the login form after a vacation refusal; honoured only once the
     // password (and TOTP when enabled) verify.
     endVacation: z.enum(['true', 'false']).optional(),
   })
   .superRefine((data, ctx) => {
-    const isImpersonation = typeof data.impersonateUserId === 'number';
+    const isImpersonation =
+      typeof data.impersonateUserId === 'number' ||
+      data.returnToAdmin === 'true';
     if (isImpersonation) {
       if (!data.impersonationTicket) {
         ctx.addIssue({
@@ -268,8 +286,10 @@ const buildCredentialsProvider = (clientIp?: string, userAgent?: string) =>
         turnstileToken,
         impersonateUserId,
         impersonationTicket,
+        returnToAdmin,
         endVacation,
       } = validatedCredentials.data;
+      const isReturn = returnToAdmin === 'true';
 
       const ip = clientIp ?? 'No IP address detected.';
 
@@ -278,21 +298,57 @@ const buildCredentialsProvider = (clientIp?: string, userAgent?: string) =>
       // failure budget. Only server-side env flags disable it (see
       // isLoginCaptchaEnforced); request headers (Origin/Referer) never bypass
       // it. Impersonation is admin-initiated and carries its own single-use ticket.
-      if (!impersonateUserId) {
+      if (!impersonateUserId && !isReturn) {
         await verifyLoginCaptcha(turnstileToken);
       }
-      if (!impersonateUserId && (!email || !password)) {
+      if (!impersonateUserId && !isReturn && (!email || !password)) {
         throw new Error('Missing username or password');
       }
 
       let result;
-      if (impersonateUserId) {
+      if (isReturn) {
+        // The ticket is only minted by /api/admin/impersonate/stop from a
+        // server-verified impersonated session; the admin is re-checked here.
+        const ticketRecord = impersonationTicket
+          ? consumeImpersonationTicket(impersonationTicket)
+          : null;
+        if (
+          !ticketRecord ||
+          ticketRecord.kind !== 'return' ||
+          !(await isAdmin(ticketRecord.adminUserId))
+        ) {
+          throw new Error('Unauthorized impersonation request');
+        }
+        const adminUser = await prisma.users.findUnique({
+          where: { id: ticketRecord.adminUserId },
+          include: {
+            alliance_memberships: {
+              include: {
+                alliance: { select: { name: true } },
+                role: { select: { name: true } },
+              },
+            },
+          },
+        });
+        if (
+          !adminUser ||
+          (await getLoginBlockingStatus(adminUser.id)) ||
+          !(await canAccessGame(adminUser.id))
+        ) {
+          throw new Error('Unauthorized impersonation request');
+        }
+        result = buildSessionUser(adminUser);
+        await logAction(adminUser.id, 'ADMIN_IMPERSONATE_RETURN', ip, {
+          targetUserId: ticketRecord.targetUserId,
+        });
+      } else if (impersonateUserId) {
         if (!impersonationTicket) {
           throw new Error('Missing impersonation ticket');
         }
         const ticketRecord = consumeImpersonationTicket(impersonationTicket);
         if (
           !ticketRecord ||
+          ticketRecord.kind !== 'start' ||
           ticketRecord.targetUserId !== impersonateUserId ||
           !(await isAdmin(ticketRecord.adminUserId))
         ) {
@@ -372,7 +428,7 @@ const buildCredentialsProvider = (clientIp?: string, userAgent?: string) =>
 
       // Both credential and impersonation paths have passed the access policy.
       await logAction(user.id, 'LOGIN', ip, { method: 'credentials' });
-      if (!impersonateUserId) {
+      if (!impersonateUserId && !isReturn) {
         await recordSuccessfulLogin({
           userId: user.id,
           ip: clientIp,
@@ -394,7 +450,8 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 1 day
+    // 30 days; impersonated sessions end after IMPERSONATION_MAX_MS (#92).
+    maxAge: 30 * 24 * 60 * 60,
   },
 
   secret: AUTH_SECRET,
@@ -429,7 +486,13 @@ export const authOptions: NextAuthOptions = {
             alliance_id: (user as any).alliance_id,
             alliances: (user as any).alliances,
             impersonatedBy: (user as any).impersonatedBy,
+            // Impersonated sessions end after IMPERSONATION_MAX_MS (#92).
+            ...((user as any).impersonatedBy
+              ? { impersonationExpiresAt: Date.now() + IMPERSONATION_MAX_MS }
+              : {}),
           };
+        } else if (isImpersonationExpired(token.user)) {
+          throw new InvalidSessionAccountError('Impersonation has expired');
         } else if (
           !(await isSessionAccountCurrent(token.user)) ||
           (await getLoginBlockingStatus(

@@ -57,6 +57,24 @@ export function computeSpySuccessProbability(params: {
   );
 }
 
+/**
+ * Spy missions are a contest of forces (#97): the attacker's spy force beats
+ * the defender's sentry force when it is greater; equal or weaker fails.
+ */
+export function resolveSpyForceContest(params: {
+  attackerSpy: number;
+  defenderSentry: number;
+}) {
+  const spy = Number.isFinite(params.attackerSpy)
+    ? Math.max(0, params.attackerSpy)
+    : 0;
+  const sentry = Number.isFinite(params.defenderSentry)
+    ? Math.max(0, params.defenderSentry)
+    : 0;
+  const success = spy > 0 && spy > sentry;
+  return { success, probability: success ? 1 : 0 };
+}
+
 /** A single injected roll resolves every spy mission's sentry entry check. */
 export function resolveSpyMissionSuccess(params: {
   attackerSpy: number;

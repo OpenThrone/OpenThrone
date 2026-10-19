@@ -8,11 +8,11 @@
     "readStatusSaved": "Lese-Status gespeichert.",
     "postNew": "Neu posten",
     "warCouncilNotes": "Anmerkungen des Kriegsrats",
-    "followOngoingStoryArc": "Verfolge den laufenden Handlungsbogen und Lore-Aktualisierungen.",
+    "followOngoingStoryArc": "Verfolgen Sie den laufenden Handlungsbogen und Lore-Aktualisierungen.",
     "proTip": "Tipp",
-    "subscribeDiscord": "Abonniere unseren Discord für Echtzeit-Updates.",
+    "subscribeDiscord": "Abonnieren Sie unseren Discord für Echtzeit-Updates.",
     "noNewsYet": "Es wurden noch keine Nachrichten veröffentlicht.",
-    "createFirstPost": "Erstelle den ersten Beitrag",
+    "createFirstPost": "Erstellen Sie den ersten Beitrag",
     "submit": "Absenden",
     "readMore": "Mehr lesen",
     "noNews": "Keine Nachrichtenartikel gefunden",
@@ -63,10 +63,10 @@
     "writeTab": "Schreiben",
     "previewTab": "Vorschau",
     "previewLabel": "Vorschau",
-    "previewEmpty": "Beginne zu schreiben, um die Botschaft zu sehen.",
+    "previewEmpty": "Beginnen Sie zu schreiben, um die Botschaft zu sehen.",
     "untitledPreview": "Botschaft ohne Titel",
-    "titlePlaceholder": "Das Reich wartet auf deine Worte",
-    "contentPlaceholder": "Verfasse die Botschaft in Markdown. Nutze ## für Überschriften, **fett** und - für Listen.",
+    "titlePlaceholder": "Das Reich wartet auf Ihre Worte",
+    "contentPlaceholder": "Verfassen Sie die Botschaft in Markdown. Nutzen Sie ## für Überschriften, **fett** und - für Listen.",
     "markdownHint": "Markdown wird unterstützt: ## Überschriften, **fett**, *kursiv*, - Listen, > Zitate, [Links](url) und Codeblöcke.",
     "draftRetained": "Beim Schließen des Editors bleibt der Entwurf erhalten.",
     "sharePost": "Beitrag teilen",
@@ -109,7 +109,7 @@
     "actionColumn": "Aktion",
     "viewProfile": "Profil ansehen",
     "tableDescription": "Über {{title}}",
-    "unavailable": "Die Ranglistendaten sind vorübergehend nicht verfügbar. Bitte versuche es später erneut."
+    "unavailable": "Die Ranglistendaten sind vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut."
   },
   "autoRecruit": {
     "title": "Auto Recruiter",
@@ -136,10 +136,10 @@
     "errorFetchingNewUser": "Fehler beim Laden eines neuen Benutzers.",
     "failedToCleanlyEndServerSession": "Server-Sitzung konnte nicht sauber beendet werden.",
     "errorHandlingRecruitment": "Fehler bei der Verarbeitung der Rekrutierung.",
-    "networkErrorDuringRecruitment": "Netzwerkfehler während der Rekrutierung. Bitte versuche es erneut.",
+    "networkErrorDuringRecruitment": "Netzwerkfehler während der Rekrutierung. Bitte versuchen Sie es erneut.",
     "errorVerifyingSession": "Fehler beim Überprüfen der Sitzung.",
     "errorStartingSession": "Fehler beim Starten der Rekrutierungssitzung.",
-    "sessionInvalid": "Ungültige Sitzung. Bitte starte eine neue Sitzung.",
+    "sessionInvalid": "Ungültige Sitzung. Bitte starten Sie eine neue Sitzung.",
     "disabled": "Automatische Rekrutierung ist derzeit deaktiviert."
   }
 }

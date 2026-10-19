@@ -75,7 +75,8 @@ const namespaceMatchers: Array<{
   },
   {
     matches: (path) => path.startsWith('/battle'),
-    namespaces: ['battle', 'messaging'],
+    // 'structures' supplies translated fort/structure names on battle pages.
+    namespaces: ['battle', 'messaging', 'allianceIntel', 'structures'],
   },
   {
     matches: (path) => path.startsWith('/community'),

@@ -6,6 +6,7 @@ import { AccountService } from '@/services';
 import { markGameplayActivity } from '@/services/GameplayActivity.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Zod schema for the request body
 const RepairRequestSchema = z.object({
@@ -78,7 +79,7 @@ const handler = async (
       error.message?.startsWith('Invalid fortification level') ||
       error.message?.startsWith('Calculated repair amount')
     ) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: publicErrorMessage(error) });
     }
     if (error.message === 'User not found within transaction') {
       return res

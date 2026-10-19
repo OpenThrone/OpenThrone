@@ -5,6 +5,7 @@ import { enforceIdempotency } from '@/middleware/idempotency';
 import { withdrawGold } from '@/services/Bank.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const guardedHandler = withApiGuard({
   methods: ['POST'],
@@ -34,10 +35,14 @@ const withdrawHandler = async (
     );
     return res.status(200).json({
       message: 'Withdraw successful',
-      data: stringifyObj(updatedUser),
+      // Only the balances; the full user row leaked internal fields.
+      data: stringifyObj({
+        gold: updatedUser?.gold,
+        gold_in_bank: updatedUser?.gold_in_bank,
+      }),
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

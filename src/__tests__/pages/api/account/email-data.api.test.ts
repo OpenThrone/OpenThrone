@@ -64,7 +64,7 @@ describe('self-service email preferences and data export', () => {
     expect(options).toEqual([
       expect.objectContaining({
         authMode: 'required',
-        rateLimitProfile: 'auth',
+        rateLimitProfile: 'public_read',
         methods: ['GET', 'PUT'],
       }),
       expect.objectContaining({

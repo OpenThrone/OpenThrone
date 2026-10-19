@@ -1,5 +1,9 @@
 import type { NextApiResponse } from 'next';
 
+import {
+  FRIEND_TRANSFER_NOTE_MAX_LENGTH,
+  parseFriendTransferAmount,
+} from '@/constants/FriendTransfer';
 import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { highRiskLimiter } from '@/middleware/rateLimit';
@@ -8,6 +12,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { getIpAddress } from '@/utils/ipUtils';
 import { stringifyObj } from '@/utils/jsonHelpers';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 import {
   emitGoldRequestCountUpdate,
   emitGoldRequestNotification,
@@ -27,8 +32,27 @@ const requestHandler = async (
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { friendId, amount, notes } = req.body ?? {};
+  const { friendId, amount: rawAmount, notes } = req.body ?? {};
   const fromUserId = session.user.id;
+
+  if (!Number.isSafeInteger(friendId) || friendId <= 0) {
+    return res.status(400).json({ error: 'Invalid friend' });
+  }
+  const amount = parseFriendTransferAmount(rawAmount);
+  if (amount === null) {
+    return res
+      .status(400)
+      .json({ error: 'Amount must be a positive whole number' });
+  }
+  if (
+    notes !== undefined &&
+    (typeof notes !== 'string' ||
+      notes.length > FRIEND_TRANSFER_NOTE_MAX_LENGTH)
+  ) {
+    return res.status(400).json({
+      error: `Notes must be ${FRIEND_TRANSFER_NOTE_MAX_LENGTH} characters or fewer`,
+    });
+  }
 
   try {
     const result = await SocialService.createGoldRequest(fromUserId, {
@@ -48,7 +72,7 @@ const requestHandler = async (
     return res.status(201).json(stringifyObj(result));
   } catch (error: any) {
     logError('Error creating gold request:', error);
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

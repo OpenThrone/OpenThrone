@@ -13,6 +13,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp, logAction, logActionStrict } from '@/utils/auditLogger';
 import { checkStaffTargetAction, isAdmin } from '@/utils/authorization';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const AccountActionSchema = z
   .object({
@@ -153,7 +154,7 @@ export const handler = async (
     res.status(200).json({ message: `User has been ${action.toLowerCase()}` });
   } catch (error) {
     if (error instanceof AnonymizedAccountConflict)
-      return res.status(409).json({ error: error.message });
+      return res.status(409).json({ error: publicErrorMessage(error) });
     logError(`Error performing ${action} on user:`, error);
     res.status(500).json({ error: `Failed to perform action ${action}` });
   }

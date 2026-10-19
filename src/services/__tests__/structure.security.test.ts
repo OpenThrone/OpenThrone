@@ -168,7 +168,7 @@ const defineGateTests = (c: (typeof cases)[number]) => {
         upgradeType: c.upgradeType,
         index: 1,
       }),
-    ).rejects.toThrow('Cannot purchase level');
+    ).rejects.toThrow(/Requires fort level \d+/);
     expect(db.gold).toBe(1_000_000_000n);
     expect(calls).not.toContain('update');
   });
@@ -186,6 +186,31 @@ const defineGateTests = (c: (typeof cases)[number]) => {
 
 describe('StructureService.upgradeStructure server-side gates (F-06)', () => {
   cases.forEach(defineGateTests);
+
+  it('still enforces the sequential level order', async () => {
+    db = freshDb({ fort_level: 30, experience: 1_000_000_000 });
+    // Level 3 of a track that is still at level 0 must be bought in order.
+    await expect(
+      StructureService.upgradeStructure(7, {
+        upgradeType: 'offense',
+        index: 3,
+      }),
+    ).rejects.toThrow('Cannot purchase level');
+    expect(db.gold).toBe(1_000_000_000n);
+    expect(calls).not.toContain('update');
+  });
+
+  it('still rejects a purchase the player cannot afford', async () => {
+    db = freshDb({ fort_level: 30, experience: 1_000_000_000, gold: 1n });
+    await expect(
+      StructureService.upgradeStructure(7, {
+        upgradeType: 'offense',
+        index: 1,
+      }),
+    ).rejects.toThrow('Not enough gold');
+    expect(db.gold).toBe(1n);
+    expect(calls).not.toContain('update');
+  });
 
   it('locks the user row before reading gold', async () => {
     db = freshDb({ fort_level: 2, experience: 1_000_000_000 });

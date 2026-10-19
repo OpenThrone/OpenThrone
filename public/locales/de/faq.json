@@ -2,7 +2,7 @@
   "metaTitle": "Spieler-FAQ - OpenThrone",
   "metaDescription": "Antworten zu Königreichen, Ausbildung, Bank, Kämpfen, Kontozugang und Hilfe in OpenThrone.",
   "title": "Spieler-FAQ",
-  "intro": "Praktische Antworten für deine ersten Entscheidungen im Königreich und Hilfe bei Problemen.",
+  "intro": "Praktische Antworten für Ihre ersten Entscheidungen im Königreich und Hilfe bei Problemen.",
   "sections": {
     "starting": "Erste Schritte",
     "strategy": "Entscheidungen im Königreich",
@@ -18,39 +18,39 @@
   "questions": {
     "game": {
       "title": "Was für ein Spiel ist OpenThrone?",
-      "answer": "OpenThrone ist ein browserbasiertes Textstrategie-MMORPG, inspiriert von DarkThrone. Du verwaltest ein Königreich, investierst in Armee und Wirtschaft und interagierst mit anderen Herrschern. Es ist ein unabhängiges Projekt ohne Verbindung zum ursprünglichen DarkThrone."
+      "answer": "OpenThrone ist ein browserbasiertes Textstrategie-MMORPG, inspiriert von DarkThrone. Sie verwalten ein Königreich, investieren in Armee und Wirtschaft und interagieren mit anderen Herrschern. Es ist ein unabhängiges Projekt ohne Verbindung zum ursprünglichen DarkThrone."
     },
     "race": {
       "title": "Was sollte ich vor der Wahl eines Volkes wissen?",
-      "answer": "Die vier Völker sind Elfen, Menschen, Goblins und Untote. Sie haben unterschiedliche Boni; vergleiche ihre Beschreibungen in der Spielanleitung. Kein Volk gewinnt automatisch: Auch Zusammensetzung und Ausrüstung der Armee zählen."
+      "answer": "Die vier Völker sind Elfen, Menschen, Goblins und Untote. Sie haben unterschiedliche Boni; vergleichen Sie ihre Beschreibungen in der Spielanleitung. Kein Volk gewinnt automatisch: Auch Zusammensetzung und Ausrüstung der Armee zählen."
     },
     "firstSteps": {
       "title": "Was prüfe ich vor meiner ersten Investition?",
-      "answer": "Prüfe in der Übersicht dein Gold, deine Bürger und deine Armee. Lies die Ausbildungskosten, bevor du Bürger einer Rolle zuweist, und vergleiche dann Ausrüstung und Gebäudeausbauten. Halte genug Gold für deine nächste geplante Aktion zurück; eine Verbesserung kann eine andere verzögern."
+      "answer": "Prüfen Sie in der Übersicht Ihr Gold, Ihre Bürger und Ihre Armee. Lesen Sie die Ausbildungskosten, bevor Sie Bürger einer Rolle zuweisen, und vergleichen Sie dann Ausrüstung und Gebäudeausbauten. Halten Sie genug Gold für Ihre nächste geplante Aktion zurück; eine Verbesserung kann eine andere verzögern."
     },
     "training": {
       "title": "Wie unterscheiden sich Ausbildung und Ausrüstung?",
-      "answer": "Ausbildung weist Bürgern militärische oder wirtschaftliche Rollen zu. Arbeiter unterstützen die Wirtschaft, Angriffssoldaten die Überfälle, Verteidigungssoldaten schützen das Königreich und Spione sammeln Informationen. Ausrüstung kaufst du separat in der Waffenkammer. Prüfe Mengen und Gesamtkosten vor dem Kauf."
+      "answer": "Ausbildung weist Bürgern militärische oder wirtschaftliche Rollen zu. Arbeiter unterstützen die Wirtschaft, Angriffssoldaten die Überfälle, Verteidigungssoldaten schützen das Königreich und Spione sammeln Informationen. Ausrüstung kaufen Sie separat in der Waffenkammer. Prüfen Sie Mengen und Gesamtkosten vor dem Kauf."
     },
     "bank": {
       "title": "Warum kann ich nicht mein ganzes Gold auf einmal einzahlen?",
-      "answer": "Bankeinzahlungen sind begrenzt. Eine einzelne Einzahlung darf höchstens 80 % deines derzeit verfügbaren Goldes betragen. Auch die Anzahl der Einzahlungen ist begrenzt. Die Bank zeigt Einzahlungsinformationen und den Transaktionsverlauf. Prüfe beides, bevor du mehrere Käufe oder Einzahlungen planst."
+      "answer": "Bankeinzahlungen sind begrenzt. Eine einzelne Einzahlung darf höchstens 80 % Ihres derzeit verfügbaren Goldes betragen. Auch die Anzahl der Einzahlungen ist begrenzt. Die Bank zeigt Einzahlungsinformationen und den Transaktionsverlauf. Prüfen Sie beides, bevor Sie mehrere Käufe oder Einzahlungen planen."
     },
     "combat": {
       "title": "Was prüfe ich vor einem Angriff?",
-      "answer": "Prüfe das Ziel, deine Angriffsstärke und die geplanten Angriffszüge. Spionageinformationen helfen bei der Einschätzung, doch Kämpfe können Verluste verursachen. Lies anschließend den Bericht und die Kriegshistorie, bevor du weitere Ressourcen einsetzt."
+      "answer": "Prüfen Sie das Ziel, Ihre Angriffsstärke und die geplanten Angriffszüge. Spionageinformationen helfen bei der Einschätzung, doch Kämpfe können Verluste verursachen. Lesen Sie anschließend den Bericht und die Kriegshistorie, bevor Sie weitere Ressourcen einsetzen."
     },
     "access": {
       "title": "Warum kann ich mich möglicherweise nicht anmelden?",
-      "answer": "Lies die Meldung auf der Anmeldeseite. Bei deaktivierter Anmeldung kann der Zugang eingeschränkt sein; ein registriertes Konto garantiert nicht, dass Spielen gerade möglich ist. Prüfe öffentliche Neuigkeiten. Wenn die Meldung dein Problem nicht erklärt, bitte um Hilfe, ohne Passwort oder Anmeldecodes weiterzugeben."
+      "answer": "Lesen Sie die Meldung auf der Anmeldeseite. Bei deaktivierter Anmeldung kann der Zugang eingeschränkt sein; ein registriertes Konto garantiert nicht, dass Spielen gerade möglich ist. Prüfen Sie öffentliche Neuigkeiten. Wenn die Meldung Ihr Problem nicht erklärt, bitten Sie um Hilfe, ohne Passwort oder Anmeldecodes weiterzugeben."
     },
     "password": {
       "title": "Wie stelle ich ein vergessenes Passwort wieder her?",
-      "answer": "Nutze die Seite zum Zurücksetzen des Passworts und folge den E-Mail-Anweisungen. Prüfe den Spamordner, wenn keine Nachricht ankommt. Veröffentliche niemals einen Reset-Link, ein Passwort oder einen Zwei-Faktor-Code. Beschreibe dem Support das Problem ohne diese Geheimnisse, falls die Wiederherstellung weiterhin scheitert."
+      "answer": "Nutzen Sie die Seite zum Zurücksetzen des Passworts und folgen Sie den E-Mail-Anweisungen. Prüfen Sie den Spamordner, wenn keine Nachricht ankommt. Veröffentlichen Sie niemals einen Reset-Link, ein Passwort oder einen Zwei-Faktor-Code. Beschreiben Sie dem Support das Problem ohne diese Geheimnisse, falls die Wiederherstellung weiterhin scheitert."
     },
     "report": {
       "title": "Welche Angaben helfen bei einem Fehlerbericht?",
-      "answer": "Nenne die Seite, deine Aktion, das erwartete Ergebnis und das tatsächliche Verhalten. Füge die ungefähre Uhrzeit und gegebenenfalls einen Screenshot hinzu, nachdem du private Nachrichten, E-Mail-Adressen und andere sensible Angaben entfernt hast. Der Community-Discord und der Issue-Tracker des Repositorys sind die vom Projekt genannten Supportkanäle."
+      "answer": "Nennen Sie die Seite, Ihre Aktion, das erwartete Ergebnis und das tatsächliche Verhalten. Fügen Sie die ungefähre Uhrzeit und gegebenenfalls einen Screenshot hinzu, nachdem Sie private Nachrichten, E-Mail-Adressen und andere sensible Angaben entfernt haben. Der Community-Discord und der Issue-Tracker des Repositorys sind die vom Projekt genannten Supportkanäle."
     }
   }
 }

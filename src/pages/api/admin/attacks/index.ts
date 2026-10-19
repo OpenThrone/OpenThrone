@@ -7,6 +7,7 @@ import { PermissionType } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api';
 import { adminCombatDetails } from '@/utils/adminCombat';
+import { getRequestIp, logActionStrict } from '@/utils/auditLogger';
 import { logError } from '@/utils/logger';
 
 const QuerySchema = z.object({
@@ -26,13 +27,15 @@ const guard = withApiGuard({
 });
 
 async function handler(
-  _req: AuthenticatedRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse,
   context: { query: z.infer<typeof QuerySchema> },
 ) {
   res.setHeader('Cache-Control', 'private, no-store');
   try {
     const { id, playerId, page, type, from, to } = context.query;
+    const actorId = Number(req.session?.user?.id);
+    const ip = getRequestIp(req);
     if (from && to && new Date(from).getTime() > new Date(to).getTime())
       return res.status(400).json({ error: 'Start must precede end' });
     const select = {
@@ -52,6 +55,18 @@ async function handler(
         select: { ...select, stats: true },
       });
       if (!log) return res.status(404).json({ error: 'Attack not found' });
+      await logActionStrict({
+        userId: actorId,
+        action: 'ADMIN_ATTACK_READ',
+        ip,
+        targetUserId: log.defenderPlayer?.id ?? null,
+        entityType: 'attack_log',
+        entityId: id,
+        details: {
+          attackerId: log.attackerPlayer?.id ?? null,
+          defenderId: log.defenderPlayer?.id ?? null,
+        },
+      });
       const { stats, ...summary } = log;
       return res.status(200).json({
         ...summary,
@@ -83,6 +98,21 @@ async function handler(
         skip: (page - 1) * 50,
       }),
     ]);
+    await logActionStrict({
+      userId: actorId,
+      action: 'ADMIN_ATTACKS_LIST_READ',
+      ip,
+      targetUserId: playerId ?? null,
+      details: {
+        playerId: playerId ?? null,
+        type: type ?? null,
+        from: from ?? null,
+        to: to ?? null,
+        page,
+        resultCount: logs.length,
+        total,
+      },
+    });
     return res.status(200).json({
       total,
       page,

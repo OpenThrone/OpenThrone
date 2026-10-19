@@ -4,6 +4,7 @@ import { withApiGuard } from '@/middleware/apiGuard';
 import { enforceIdempotency } from '@/middleware/idempotency';
 import { AllianceBankService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const DepositDetailsSchema = z.object({
   allianceId: z.number().int().positive(),
@@ -40,7 +41,7 @@ const depositHandler = async (
     });
     return res.status(200).json(result);
   } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

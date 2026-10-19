@@ -1,6 +1,6 @@
 {
   "eventsTitle": "Spielereignisse verwalten",
-  "eventsIntro": "Erstelle zeitlich begrenzte Gold- und EP-Modifikatoren. Ein Ereignis wirkt nur im aktiven Status und innerhalb seines Zeitraums.",
+  "eventsIntro": "Erstellen Sie zeitlich begrenzte Gold- und EP-Modifikatoren. Ein Ereignis wirkt nur im aktiven Status und innerhalb seines Zeitraums.",
   "newEvent": "Neues Ereignis",
   "editEvent": "Ereignis bearbeiten",
   "eventKey": "Eindeutiger Schlüssel",
@@ -30,7 +30,7 @@
   "emptyEvents": "Noch keine Spielereignisse vorhanden.",
   "loadError": "Ereignisse konnten nicht geladen werden.",
   "retry": "Erneut versuchen",
-  "saveError": "Das Ereignis konnte nicht gespeichert werden. Prüfe Schlüssel, Zeitraum und Modifikatoren.",
+  "saveError": "Das Ereignis konnte nicht gespeichert werden. Prüfen Sie Schlüssel, Zeitraum und Modifikatoren.",
   "deleteConfirm": "Dieses Ereignis dauerhaft löschen?",
   "deleteError": "Das Ereignis konnte nicht gelöscht werden.",
   "actionError": "Der Ereignisstatus konnte nicht geändert werden.",
@@ -66,7 +66,7 @@
   "statusCode": "Anfrage fehlgeschlagen ({{status}}).",
   "analyticsCaveat": "Registrierungen und Angriffe basieren auf vorhandenen Datensätzen. Die Aktivität gruppiert Spieler nach ihrer letzten Aktivität und zeigt keine historischen täglich aktiven Nutzer. Ältere Angriffe können gelöscht worden sein.",
   "eraReset": {
-    "description": "Setzt die aktuelle Ära {{name}} zurück. Die Startwerte wählst du im Bestätigungsschritt.",
+    "description": "Setzt die aktuelle Ära {{name}} zurück. Die Startwerte wählen Sie im Bestätigungsschritt.",
     "openButton": "Aktuelle Ära jetzt zurücksetzen",
     "modalTitle": "Aktuelle Ära zurücksetzen",
     "losses": "Dadurch wird der Fortschritt aller Spieler in der aktuellen Ära dauerhaft zurückgesetzt, einschließlich des Personals: Gold, Einheiten, Gegenstände, Gebäude, EP, Rang, Testdaten, Allianzschatz, Allianz-EP und Verbesserungen sowie Chroniken der aktuellen Ära.",
@@ -91,21 +91,73 @@
   },
   "eraSchedule": {
     "title": "Epochenreset planen",
-    "description": "Kündige allen einen Reset an. Zum geplanten Zeitpunkt werden Spieleranmeldungen geschlossen, die aktuelle Epoche auf ihre gespeicherten Startwerte zurückgesetzt und Anmeldungen auf Wunsch wieder geöffnet.",
+    "description": "Kündigen Sie allen einen Reset an. Zum geplanten Zeitpunkt werden Spieleranmeldungen geschlossen, die aktuelle Epoche auf ihre gespeicherten Startwerte zurückgesetzt und Anmeldungen auf Wunsch wieder geöffnet.",
     "date": "Reset-Datum (OT-Zeit)",
-    "dateHelp": "OT-Zeit ist die Uhr in der Seitenleiste; gib die Zeit so ein, wie sie dort angezeigt wird. Sie wird automatisch in UTC umgerechnet. Mindestens eine Minute im Voraus.",
+    "dateHelp": "OT-Zeit ist die Uhr in der Seitenleiste; geben Sie die Zeit so ein, wie sie dort angezeigt wird. Sie wird automatisch in UTC umgerechnet. Mindestens eine Minute im Voraus.",
     "current": "Die Epoche wird am {{time}} zurückgesetzt.",
     "started": "Der Epochenreset hat begonnen. Spieleranmeldungen bleiben bis zum Abschluss geschlossen.",
     "open": "Reset planen",
     "change": "Resetzeit ändern",
     "cancelSchedule": "Geplanten Reset abbrechen",
     "confirm": "Geplanten Reset bestätigen",
-    "requestError": "Der Zeitplan konnte nicht aktualisiert werden. Lade die Seite neu und versuche es erneut.",
+    "requestError": "Der Zeitplan konnte nicht aktualisiert werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
     "loadError": "Der Resetzeitplan konnte nicht geladen werden.",
     "datePlaceholder": "Datum wählen",
-    "dateTooSoon": "Wähle eine Zeit mindestens eine Minute im Voraus.",
+    "dateTooSoon": "Wählen Sie eine Zeit mindestens eine Minute im Voraus.",
     "preview": "Die Ära wird am {{local}} OT-Zeit ({{utc}}) zurückgesetzt.",
     "time": "Reset-Uhrzeit (OT-Zeit, 24 Stunden)",
-    "timeInvalid": "Gib eine 24-Stunden-Uhrzeit ein, z. B. 18:30 oder 18:30:00."
+    "timeInvalid": "Geben Sie eine 24-Stunden-Uhrzeit ein, z. B. 18:30 oder 18:30:00."
+  },
+  "eventsForm": {
+    "intro": "Planen Sie Boni wie ein Wochenende mit doppelten EP oder einen täglichen Bürgerbonus für die ganze Ära. Ein Event wirkt, solange es aktiv ist und sein Zeitfenster läuft. Überschneidende Events werden kombiniert: Multiplikatoren werden multipliziert (0,1×–10×), feste Boni addiert, Rabatte bis höchstens 25 % verrechnet.",
+    "fromPreset": "Aus Vorlage",
+    "presets": {
+      "xpWeekend": "Wochenende mit doppelten EP",
+      "citizenWeekend": "Wochenende mit doppelten Bürgern",
+      "dailyCitizens": "+100 Bürger pro Tag (bis Ära-Ende)",
+      "turnsWeekend": "Wochenende mit Bonuszügen",
+      "trainingSale": "Rabatt auf Ausbildung & Waffenkammer"
+    },
+    "effectsHeading": "Effekte",
+    "effects": {
+      "xpMultiplier": "EP-Multiplikator",
+      "goldMultiplier": "Goldeinkommen-Multiplikator",
+      "dailyCitizenBonus": "Täglicher Bürgerbonus",
+      "dailyCitizenActivityHours": "Aktivitätsfenster (Stunden)",
+      "citizenMultiplier": "Bürger-Multiplikator",
+      "citizenMultiplierScope": "Gilt für",
+      "extraTurnsPerTick": "Bonuszüge pro Zug",
+      "unitCostDiscountPercent": "Ausbildungsrabatt",
+      "armoryCostDiscountPercent": "Waffenkammerrabatt"
+    },
+    "effectHints": {
+      "xpMultiplier": "Multipliziert EP aus Kämpfen.",
+      "goldMultiplier": "Multipliziert das Gold, das Spieler pro Zug verdienen.",
+      "dailyCitizenBonus": "Zusätzliche Bürger, die jeder Spieler bei der täglichen Aktualisierung erhält.",
+      "dailyCitizenActivityHours": "Nur Spieler, die in diesem Zeitraum aktiv waren, erhalten den Bonus. 0 = alle.",
+      "citizenMultiplier": "Multipliziert Bürger aus dem täglichen Wachstum, aus der Rekrutierung oder beidem.",
+      "extraTurnsPerTick": "Züge, die bei jedem Zug zusätzlich zum normalen vergeben werden.",
+      "unitCostDiscountPercent": "Prozent Rabatt auf die Ausbildung (max. 25 %, damit Abtrainieren keinen Gewinn bringt).",
+      "armoryCostDiscountPercent": "Prozent Rabatt auf Käufe in der Waffenkammer (max. 25 %, damit Verkaufen keinen Gewinn bringt)."
+    },
+    "scope": {
+      "DAILY": "Tägliches Wachstum",
+      "RECRUITING": "Rekrutierung",
+      "BOTH": "Beides"
+    },
+    "untilEraEnd": "Bis zum Ende der Ära laufen lassen",
+    "untilEraEndHint": "Keine Endzeit: Das Event endet automatisch mit der aktuellen Ära.",
+    "untilEraEndOf": "Bis {{era}} endet",
+    "keyHint": "Optional. Wird aus dem Namen erzeugt, wenn das Feld leer bleibt.",
+    "activateNow": "Beim Speichern aktivieren (wartet trotzdem auf die Startzeit)",
+    "endNow": "Jetzt beenden",
+    "nameAndStartRequired": "Geben Sie einen Namen und eine Startzeit ein.",
+    "effectRequired": "Aktivieren Sie mindestens einen Effekt.",
+    "phase": {
+      "draft": "Entwurf",
+      "scheduled": "Geplant",
+      "running": "Läuft",
+      "ended": "Beendet"
+    }
   }
 }

@@ -5,10 +5,29 @@ const path = require('path');
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
+const { execSync } = require('child_process');
 const { i18n } = require('./next-i18next.config');
+const { version } = require('./package.json');
+
+/** Short commit of the build, shown next to the version in the footer. */
+const gitSha = (() => {
+  try {
+    return execSync('git rev-parse --short HEAD', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim();
+  } catch {
+    return '';
+  }
+})();
 
 module.exports = withBundleAnalyzer({
   i18n,
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+    NEXT_PUBLIC_GIT_SHA: gitSha,
+  },
   allowedDevOrigins: [
     'ot.aioxhost.com',
     'alpha.openthrone.dev',
@@ -83,7 +102,8 @@ module.exports = withBundleAnalyzer({
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: process.env.NEXT_PUBLIC_ASSETS_HOSTNAME || 'assets.openthrone.dev',
+        hostname:
+          process.env.NEXT_PUBLIC_ASSETS_HOSTNAME || 'assets.openthrone.dev',
         pathname: '/**',
       },
       {

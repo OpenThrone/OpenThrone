@@ -64,9 +64,9 @@ const NewMessageModal = ({
   // Title changes based on context
   const modalTitle = isAddingToExistingChat
     ? isDirectMessage
-      ? 'Create Group Chat'
-      : 'Add People to Chat'
-    : 'New Message';
+      ? t('newMessageModal.titleCreateGroup')
+      : t('newMessageModal.titleAddPeople')
+    : t('newMessage');
 
   // Wrap fetchUsers in useCallback
   const fetchUsers = useCallback(
@@ -107,7 +107,7 @@ const NewMessageModal = ({
         setLoading(false);
       }
     },
-    [existingUsers],
+    [existingUsers, t],
   );
 
   useEffect(() => {
@@ -127,7 +127,7 @@ const NewMessageModal = ({
       return [
         {
           value: idStr,
-          label: prefillRecipient.label || `User ${idStr}`,
+          label: prefillRecipient.label || t('user', { id: idStr }),
           image: prefillRecipient.image || null,
           race: prefillRecipient.race,
           class: prefillRecipient.class,
@@ -135,7 +135,7 @@ const NewMessageModal = ({
         ...prev,
       ];
     });
-  }, [opened, prefillRecipient]);
+  }, [opened, prefillRecipient, t]);
 
   const handleSubmit = async () => {
     // Validate inputs
@@ -301,12 +301,12 @@ const NewMessageModal = ({
           onChange={setSelectedUsers}
           searchValue={searchValue}
           onSearchChange={setSearchValue}
-          placeholder="Search for users..."
-          label="Recipients"
+          placeholder={t('newMessageModal.searchPlaceholder')}
+          label={t('newMessageModal.recipients')}
           searchable
           clearable
           nothingFoundMessage={
-            loading ? <Loader size="xs" /> : 'No users found'
+            loading ? <Loader size="xs" /> : t('newMessageModal.noUsersFound')
           }
           maxDropdownHeight={200}
           renderOption={renderOption}
@@ -322,8 +322,8 @@ const NewMessageModal = ({
         {(isAddingToExistingChat && isDirectMessage) ||
         (!isAddingToExistingChat && selectedUsers.length > 1) ? (
           <TextInput
-            label="Group Name"
-            placeholder="Enter a name for this group"
+            label={t('newMessageModal.groupName')}
+            placeholder={t('newMessageModal.groupNamePlaceholder')}
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
             required={isDirectMessage || selectedUsers.length > 1}
@@ -333,8 +333,8 @@ const NewMessageModal = ({
 
         {!isAddingToExistingChat || (isDirectMessage && message.trim()) ? (
           <Textarea
-            label="Message"
-            placeholder="Type your message..."
+            label={t('newMessageModal.message')}
+            placeholder={t('input.placeholder')}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             minRows={3}
@@ -354,7 +354,7 @@ const NewMessageModal = ({
             }}
             leftSection={<FontAwesomeIcon icon={faTimes} />}
           >
-            Cancel
+            {t('newMessageModal.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -367,9 +367,9 @@ const NewMessageModal = ({
           >
             {isAddingToExistingChat
               ? isDirectMessage
-                ? 'Create Group'
-                : 'Add People'
-              : 'Send Message'}
+                ? t('newMessageModal.createGroup')
+                : t('newMessageModal.addPeople')
+              : t('newMessageModal.send')}
           </Button>
         </Group>
       </Stack>

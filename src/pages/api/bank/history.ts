@@ -6,6 +6,7 @@ import { getBankHistory } from '@/services/Bank.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { stringifyObj } from '@/utils/jsonHelpers';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const HistoryQuerySchema = z.object({
   deposits: z.string().optional(),
@@ -207,7 +208,7 @@ const historyHandler = async (
       limit: Number(limit),
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

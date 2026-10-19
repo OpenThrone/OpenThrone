@@ -13,5 +13,116 @@
   "errorRefetchingRooms": "Error al volver a obtener salas después del modal",
   "unknown": "Desconocido",
   "reader": "Lector",
-  "errorGeneric": "Algo salió mal. Inténtalo de nuevo."
+  "errorGeneric": "Algo salió mal. Inténtalo de nuevo.",
+  "rooms": {
+    "heading": "Conversaciones",
+    "count_one": "{{count, number}} sala",
+    "count_other": "{{count, number}} salas",
+    "directMessage": "Mensaje directo",
+    "noMessagesYet": "Aún no hay mensajes",
+    "lastMessage": "{{sender}}: {{message}}",
+    "unread_one": "{{count, number}} mensaje sin leer",
+    "unread_other": "{{count, number}} mensajes sin leer"
+  },
+  "conversation": {
+    "selectPrompt": "Selecciona una conversación",
+    "fallbackName": "Chat",
+    "empty": "Aún no hay mensajes.",
+    "online": "En línea",
+    "offline": "Desconectado",
+    "members_one": "{{count, number}} miembro",
+    "members_other": "{{count, number}} miembros",
+    "private": "Privado",
+    "public": "Público",
+    "summary": "{{members}} · {{visibility}}",
+    "createGroup": "Crear chat grupal",
+    "addMembers": "Añadir miembros",
+    "options": "Opciones de la conversación",
+    "menu": {
+      "admin": "Admin",
+      "adminControls": "Controles de administrador",
+      "manageMembers": "Gestionar miembros",
+      "editGroupInfo": "Editar información del grupo",
+      "searchMessages": "Buscar mensajes",
+      "muteNotifications": "Silenciar notificaciones",
+      "deleteGroup": "Eliminar grupo",
+      "deleteConversation": "Eliminar conversación"
+    }
+  },
+  "message": {
+    "replyingTo": "Respondiendo a {{name}}",
+    "reply": "Responder",
+    "addReaction": "Añadir reacción",
+    "reactWith": "Reaccionar con {{emoji}}",
+    "you": "Tú",
+    "unknownUser": "Usuario desconocido",
+    "readBy": "Leído por: {{names}}",
+    "readByMore_one": "Leído por: {{names}} y {{count, number}} más",
+    "readByMore_other": "Leído por: {{names}} y {{count, number}} más",
+    "sent": "Enviado",
+    "viewAttackLog": "Ver registro de ataque #{{id}}"
+  },
+  "input": {
+    "placeholder": "Escribe tu mensaje...",
+    "replyPlaceholder": "Escribe tu respuesta...",
+    "shareAttackLog": "Compartir registro de ataque",
+    "send": "Enviar mensaje",
+    "cancelReply": "Cancelar respuesta"
+  },
+  "members": {
+    "title": "Gestionar miembros del grupo",
+    "member": "Miembro",
+    "role": "Rol",
+    "canWrite": "Puede escribir",
+    "actions": "Acciones",
+    "youSuffix": "(Tú)",
+    "roles": {
+      "ADMIN": "Admin",
+      "MEMBER": "Miembro"
+    },
+    "makeAdmin": "Hacer admin",
+    "removeAdmin": "Quitar admin",
+    "removeFromGroup": "Eliminar del grupo",
+    "toggleWrite": "Permitir escribir a {{name}}",
+    "actionSuccess": {
+      "promote": "Miembro ascendido a admin.",
+      "demote": "Permisos de admin retirados.",
+      "remove": "Miembro eliminado del grupo.",
+      "toggleWrite": "Permiso de escritura actualizado."
+    },
+    "actionFailed": "Error: {{message}}",
+    "unknownError": "Error desconocido",
+    "actionError": "No se pudo actualizar al miembro. Inténtalo de nuevo."
+  },
+  "share": {
+    "title": "Compartir registro de ataque",
+    "cannotShare": "No se puede compartir el registro.",
+    "error": "Error",
+    "loadFailed": "No se pudieron cargar los registros.",
+    "empty": "No se encontraron registros de ataque recientes.",
+    "battle": "Batalla",
+    "date": "Fecha",
+    "outcome": "Resultado",
+    "action": "Acción",
+    "attacked": "{{attacker}} atacó a {{defender}}",
+    "unknownPlayer": "Jugador desconocido",
+    "victory": "Victoria",
+    "defeat": "Derrota",
+    "share": "Compartir",
+    "cancel": "Cancelar"
+  },
+  "newMessageModal": {
+    "titleCreateGroup": "Crear chat grupal",
+    "titleAddPeople": "Añadir personas al chat",
+    "searchPlaceholder": "Buscar usuarios...",
+    "recipients": "Destinatarios",
+    "noUsersFound": "No se encontraron usuarios",
+    "groupName": "Nombre del grupo",
+    "groupNamePlaceholder": "Introduce un nombre para este grupo",
+    "message": "Mensaje",
+    "cancel": "Cancelar",
+    "createGroup": "Crear grupo",
+    "addPeople": "Añadir personas",
+    "send": "Enviar mensaje"
+  }
 }

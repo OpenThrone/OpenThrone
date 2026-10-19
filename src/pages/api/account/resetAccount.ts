@@ -5,6 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import { AccountService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Zod schema for the request body
 const ResetRequestSchema = z.object({
@@ -55,7 +56,7 @@ const handler = async (
 
     // Handle specific errors
     if (error.message === 'Invalid password.') {
-      return res.status(401).json({ error: error.message }); // Use 401 for invalid password
+      return res.status(401).json({ error: publicErrorMessage(error) }); // Use 401 for invalid password
     }
     if (error.message === 'User not found or password hash missing.') {
       return res

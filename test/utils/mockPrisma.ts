@@ -86,6 +86,7 @@ export function installMockPrisma(vi: any) {
     update: vi.fn(),
     findMany: vi.fn(),
     count: vi.fn(),
+    aggregate: vi.fn(async () => ({ _sum: { gold_amount: null } })),
   };
 
   mockPrisma.attack_log = {

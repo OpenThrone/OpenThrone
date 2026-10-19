@@ -90,7 +90,7 @@ const About = () => {
               <Group className={classes.actions}>
                 <Button
                   component="a"
-                  href="https://discord.gg/j9NYxmBCjA"
+                  href="https://discord.com/invite/j9NYxmBCjA"
                   target="_blank"
                   rel="noopener noreferrer"
                   variant="outline"

@@ -25,6 +25,7 @@ import MainArea from '@/components/MainArea';
 import { DefaultLevelBonus } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
+import { readUpdatedBonusPoints } from '@/utils/bonusPointsResponse';
 
 const StatCard = ({
   title,
@@ -34,48 +35,51 @@ const StatCard = ({
   canAdd,
   canReduce,
   icon,
-}) => (
-  <GameCard title={title} icon={icon}>
-    <Box
-      style={{
-        backgroundColor: '#0f141a',
-        borderRadius: '6px',
-        border: '1px solid #1f2b3b',
-        boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
-        padding: '12px',
-      }}
-    >
-      <Group justify="space-between">
-        <Text size="xs" c="dimmed" fw={700} tt="uppercase">
-          Current Bonus
-        </Text>
-        <Text
-          size="lg"
-          fw={800}
-          style={{
-            fontFamily: 'var(--mantine-font-family)',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {currentLevel}%
-        </Text>
-      </Group>
-    </Box>
-    <Group justify="center" mt="md" gap="xs">
-      <Button
-        onClick={onReduce}
-        disabled={!canReduce}
-        variant="outline"
-        size="xs"
+}) => {
+  const { t } = useTranslation('home');
+  return (
+    <GameCard title={title} icon={icon}>
+      <Box
+        style={{
+          backgroundColor: '#0f141a',
+          borderRadius: '6px',
+          border: '1px solid #1f2b3b',
+          boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.6)',
+          padding: '12px',
+        }}
       >
-        <FontAwesomeIcon icon={faMinus} />
-      </Button>
-      <Button onClick={onAdd} disabled={!canAdd} size="xs" color="yellow">
-        <FontAwesomeIcon icon={faPlus} />
-      </Button>
-    </Group>
-  </GameCard>
-);
+        <Group justify="space-between">
+          <Text size="xs" c="dimmed" fw={700} tt="uppercase">
+            {t('levels.currentBonus')}
+          </Text>
+          <Text
+            size="lg"
+            fw={800}
+            style={{
+              fontFamily: 'var(--mantine-font-family)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {currentLevel}%
+          </Text>
+        </Group>
+      </Box>
+      <Group justify="center" mt="md" gap="xs">
+        <Button
+          onClick={onReduce}
+          disabled={!canReduce}
+          variant="outline"
+          size="xs"
+        >
+          <FontAwesomeIcon icon={faMinus} />
+        </Button>
+        <Button onClick={onAdd} disabled={!canAdd} size="xs" color="yellow">
+          <FontAwesomeIcon icon={faPlus} />
+        </Button>
+      </Group>
+    </GameCard>
+  );
+};
 
 const Levels = () => {
   const { t } = useTranslation('home');
@@ -142,7 +146,8 @@ const Levels = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save changes');
 
-      setLevels(data.updatedBonusPoints);
+      const updated = readUpdatedBonusPoints(data);
+      if (updated) setLevels(updated);
       setChangeQueue({
         OFFENSE: { change: 0 },
         DEFENSE: { change: 0 },

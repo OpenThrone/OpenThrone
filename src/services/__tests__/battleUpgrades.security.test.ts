@@ -257,6 +257,38 @@ describe('BattleService.manageBattleUpgrades buy unlock gates (F-09)', () => {
   });
 });
 
+describe('BattleService.manageBattleUpgrades SENTRY gate (#18)', () => {
+  // Guard Dog: SENTRY level 1, SiegeUpgradeLevel 6, minUnitLevel 2
+  const guardDog = { type: 'SENTRY', level: 1, quantity: 1 };
+
+  it('SENTRY upgrades unlock with the SPY structure level', async () => {
+    db.structure = [{ type: 'SPY', level: 6 }];
+    db.units = [{ type: 'SENTRY', level: 2, quantity: 4 }];
+    const result = await BattleService.manageBattleUpgrades({
+      userId: 7,
+      operation: 'buy',
+      items: [guardDog],
+    });
+    expect(result.totalCost).toBeGreaterThan(0);
+    expect(db.battle).toEqual([{ type: 'SENTRY', level: 1, quantity: 1 }]);
+  });
+
+  it('refuses SENTRY upgrades below the SPY structure level', async () => {
+    db.structure = [{ type: 'SPY', level: 5 }];
+    db.units = [{ type: 'SENTRY', level: 2, quantity: 4 }];
+    await expect(
+      BattleService.manageBattleUpgrades({
+        userId: 7,
+        operation: 'buy',
+        items: [guardDog],
+      }),
+    ).rejects.toThrow(
+      'Cannot purchase Guard Dog: requires SPY structure level 6.',
+    );
+    expect(db.battle).toEqual([]);
+  });
+});
+
 describe('BattleService.manageBattleUpgrades keeps one row per level', () => {
   // War Elephant: OFFENSE level 2, cost 5000000 (src/constants/Battle_Upgrades.tsx)
   const warElephant = { type: 'OFFENSE', level: 2, quantity: 1 };
