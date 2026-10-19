@@ -202,8 +202,15 @@
       "label": "Neulingsschutz",
       "daysLeft_one": "Geschützt: noch {{count}} Tag",
       "daysLeft_other": "Geschützt: noch {{count}} Tage",
-      "orUntil": "oder bis Level {{level}} / {{population}} Bevölkerung",
-      "untilOnly": "Geschützt bis Level {{level}} / {{population}} Bevölkerung"
+      "active": "Geschützt",
+      "population": "Bevölkerung {{population}} / {{threshold}}",
+      "level": "Level {{level}} / {{limit}}",
+      "progress": "Schutz zu {{percent}} % verbraucht ({{limit}})",
+      "limits": {
+        "TIME": "Zeit",
+        "POPULATION": "Bevölkerung",
+        "LEVEL": "Level"
+      }
     },
     "previousTip": "Vorheriger Tipp",
     "nextTip": "Nächster Tipp",

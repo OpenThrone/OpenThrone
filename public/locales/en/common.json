@@ -202,8 +202,15 @@
       "label": "New-player protection",
       "daysLeft_one": "Protected: {{count}} day left",
       "daysLeft_other": "Protected: {{count}} days left",
-      "orUntil": "or until level {{level}} / {{population}} population",
-      "untilOnly": "Protected until level {{level}} / {{population}} population"
+      "active": "Protected",
+      "population": "Population {{population}} / {{threshold}}",
+      "level": "Level {{level}} / {{limit}}",
+      "progress": "Protection {{percent}}% used ({{limit}})",
+      "limits": {
+        "TIME": "time",
+        "POPULATION": "population",
+        "LEVEL": "level"
+      }
     },
     "previousTip": "Previous tip",
     "nextTip": "Next tip",

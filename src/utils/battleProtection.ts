@@ -210,3 +210,39 @@ export function shouldForfeitProtection(
 ): boolean {
   return attackerProtected && !defenderProtected;
 }
+
+/**
+ * How close protection is to ending, 0-1: the furthest along of the three
+ * limits (time used, population vs. its threshold, level vs. the level
+ * limit), since whichever is reached first ends protection.
+ */
+export function getProtectionProgress(
+  status: Pick<
+    ProtectionStatus,
+    | 'level'
+    | 'levelLimit'
+    | 'population'
+    | 'populationThreshold'
+    | 'timeRemainingShare'
+  >,
+): { share: number; limit: 'TIME' | 'POPULATION' | 'LEVEL' } {
+  const ratio = (value: number, max: number) =>
+    max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
+  const candidates = [
+    {
+      limit: 'TIME' as const,
+      share:
+        status.timeRemainingShare === null
+          ? 0
+          : 1 - Math.min(1, Math.max(0, status.timeRemainingShare)),
+    },
+    {
+      limit: 'POPULATION' as const,
+      share: ratio(status.population, status.populationThreshold),
+    },
+    { limit: 'LEVEL' as const, share: ratio(status.level, status.levelLimit) },
+  ];
+  return candidates.reduce((best, next) =>
+    next.share > best.share ? next : best,
+  );
+}

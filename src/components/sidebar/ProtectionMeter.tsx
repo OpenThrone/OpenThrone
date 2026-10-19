@@ -3,6 +3,7 @@ import { useTranslation } from 'next-i18next';
 import React from 'react';
 
 import type UserModel from '@/models/Users';
+import { getProtectionProgress } from '@/utils/battleProtection';
 import { toLocale } from '@/utils/numberFormatting';
 
 /**
@@ -21,31 +22,44 @@ export const ProtectionMeter = React.memo(function ProtectionMeter({
 
   const days =
     protection.daysLeft === null ? null : Math.ceil(protection.daysLeft);
-  const limits = t('sidebar.protection.orUntil', {
-    level: protection.levelLimit,
-    population: toLocale(protection.populationThreshold, user.locale),
-  });
   const headline =
     days === null
-      ? t('sidebar.protection.untilOnly', {
-          level: protection.levelLimit,
-          population: toLocale(protection.populationThreshold, user.locale),
-        })
-      : `${t('sidebar.protection.daysLeft', { count: days })} · ${limits}`;
+      ? t('sidebar.protection.active')
+      : t('sidebar.protection.daysLeft', { count: days });
+  // The bar fills toward whichever limit ends protection first.
+  const progress = getProtectionProgress(protection);
+  const percent = Math.round(progress.share * 100);
 
   return (
     <Stack gap={4} role="group" aria-label={t('sidebar.protection.label')}>
       <Text size="xs" fw={600} lh={1.3}>
         {headline}
       </Text>
-      {protection.timeRemainingShare !== null && (
-        <Progress
-          size="sm"
-          color="teal"
-          value={Math.round(protection.timeRemainingShare * 100)}
-          aria-label={t('sidebar.protection.label')}
-        />
-      )}
+      <Text size="xs" lh={1.3}>
+        {/* Each figure stays on one line; a narrow sidebar wraps at the dot. */}
+        <span className="whitespace-nowrap">
+          {t('sidebar.protection.population', {
+            population: toLocale(protection.population, user.locale),
+            threshold: toLocale(protection.populationThreshold, user.locale),
+          })}
+        </span>{' '}
+        ·{' '}
+        <span className="whitespace-nowrap">
+          {t('sidebar.protection.level', {
+            level: protection.level,
+            limit: protection.levelLimit,
+          })}
+        </span>
+      </Text>
+      <Progress
+        size="sm"
+        color={progress.share >= 0.8 ? 'orange' : 'teal'}
+        value={percent}
+        aria-label={t('sidebar.protection.progress', {
+          percent,
+          limit: t(`sidebar.protection.limits.${progress.limit}`),
+        })}
+      />
     </Stack>
   );
 });

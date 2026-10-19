@@ -202,8 +202,15 @@
       "label": "Protección para nuevos jugadores",
       "daysLeft_one": "Protegido: queda {{count}} día",
       "daysLeft_other": "Protegido: quedan {{count}} días",
-      "orUntil": "o hasta el nivel {{level}} / {{population}} de población",
-      "untilOnly": "Protegido hasta el nivel {{level}} / {{population}} de población"
+      "active": "Protegido",
+      "population": "Población {{population}} / {{threshold}}",
+      "level": "Nivel {{level}} / {{limit}}",
+      "progress": "Protección usada al {{percent}} % ({{limit}})",
+      "limits": {
+        "TIME": "tiempo",
+        "POPULATION": "población",
+        "LEVEL": "nivel"
+      }
     },
     "previousTip": "Consejo anterior",
     "nextTip": "Consejo siguiente",

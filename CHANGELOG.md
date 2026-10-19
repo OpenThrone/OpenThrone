@@ -4,6 +4,13 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.4.1 (2026-10-18)
+
+### Fixed
+- The new-player protection meter fills toward whichever limit ends
+  protection first (time, population or level) instead of showing only the
+  days left, and shows the population and level against their limits.
+
 ## v0.4.0 (2026-10-18)
 
 ### New

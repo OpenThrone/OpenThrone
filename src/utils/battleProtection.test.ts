@@ -3,6 +3,7 @@ import { describe, expect, it } from 'bun:test';
 import { levelXPArray } from '@/constants/XPLevels';
 import {
   getProtectionPopulationThreshold,
+  getProtectionProgress,
   getProtectionStatus,
   normalizeProtectionDurationDays,
   PROTECTION_LEVEL_LIMIT,
@@ -201,5 +202,43 @@ describe('shouldForfeitProtection', () => {
     expect(shouldForfeitProtection(true, true)).toBe(false);
     expect(shouldForfeitProtection(false, false)).toBe(false);
     expect(shouldForfeitProtection(false, true)).toBe(false);
+  });
+});
+
+describe('getProtectionProgress', () => {
+  const base = { level: 3, levelLimit: 10, timeRemainingShare: 0.5 };
+
+  it('follows the limit that is furthest along', () => {
+    // 668 of 914 population is further along than half the time window.
+    const progress = getProtectionProgress({
+      ...base,
+      population: 668,
+      populationThreshold: 914,
+    });
+    expect(progress.limit).toBe('POPULATION');
+    expect(progress.share).toBeCloseTo(668 / 914, 5);
+  });
+
+  it('fills up as the time window runs out', () => {
+    const progress = getProtectionProgress({
+      ...base,
+      timeRemainingShare: 1 / 14,
+      population: 100,
+      populationThreshold: 914,
+    });
+    expect(progress.limit).toBe('TIME');
+    expect(progress.share).toBeCloseTo(13 / 14, 5);
+  });
+
+  it('clamps and tolerates a missing era', () => {
+    expect(
+      getProtectionProgress({
+        level: 12,
+        levelLimit: 10,
+        timeRemainingShare: null,
+        population: 0,
+        populationThreshold: 0,
+      }),
+    ).toEqual({ share: 1, limit: 'LEVEL' });
   });
 });
