@@ -587,7 +587,7 @@ export class AccountService {
           BigInt(fortification.costPerRepairPoint);
         if (user.gold < totalCost) {
           throw new Error(
-            `Not enough gold. Required: ${totalCost}, Available: ${user.gold}`,
+            `Not enough gold. You need ${BigInt(totalCost).toLocaleString('en-US')} but have ${BigInt(user.gold).toLocaleString('en-US')}.`,
           );
         }
 

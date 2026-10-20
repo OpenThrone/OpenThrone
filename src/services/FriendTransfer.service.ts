@@ -1,8 +1,13 @@
 import { z } from 'zod';
 
+import {
+  FRIEND_TRANSFER_DAILY_RECEIVED_CAP,
+  FRIEND_TRANSFER_NOTE_MAX_LENGTH,
+} from '@/constants/FriendTransfer';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { ensureActiveEra } from '@/services/Era.service';
+import { getActiveAccountStatus } from '@/services/User.service';
 import { createApiError } from '@/utils/api-error';
 
 import {
@@ -50,11 +55,20 @@ interface FriendTransferRequest {
   };
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const NoteSchema = z
+  .string()
+  .max(FRIEND_TRANSFER_NOTE_MAX_LENGTH, {
+    message: `Notes must be ${FRIEND_TRANSFER_NOTE_MAX_LENGTH} characters or fewer`,
+  })
+  .optional();
+
 const TransferParamsSchema = z.object({
   fromUserId: z.number().int().positive(),
   toUserId: z.number().int().positive(),
   amount: z.bigint().positive(),
-  notes: z.string().optional(),
+  notes: NoteSchema,
   friendshipId: z.number().int().positive().optional(),
 });
 
@@ -62,14 +76,14 @@ const GoldRequestParamsSchema = z.object({
   fromUserId: z.number().int().positive(),
   toUserId: z.number().int().positive(),
   amount: z.bigint().positive(),
-  notes: z.string().optional(),
+  notes: NoteSchema,
 });
 
 const RespondToGoldRequestParamsSchema = z.object({
   actorUserId: z.number().int().positive(),
   requestId: z.number().int().positive(),
   action: z.enum(['accept', 'decline']),
-  message: z.string().optional(),
+  message: NoteSchema,
 });
 
 const FriendTransferHistoryParamsSchema = z.object({
@@ -255,6 +269,36 @@ const transferGoldWithinTransaction = async (
   )) as any;
   if (!validation.valid) {
     throw { message: validation.error } as any;
+  }
+
+  // Recipients who cannot play (banned, suspended, on vacation, closed) cannot receive gifts.
+  const recipientStatus = await getActiveAccountStatus(
+    validatedParams.toUserId,
+    tx,
+  );
+  if (recipientStatus) {
+    throw createApiError('This player cannot receive gold right now');
+  }
+
+  // Per-recipient rolling daily cap across all senders. The recipient row is
+  // locked above, so concurrent gifts to the same player serialize here.
+  const received = await tx.bank_history.aggregate({
+    _sum: { gold_amount: true },
+    where: {
+      to_user_id: validatedParams.toUserId,
+      to_user_account_type: 'HAND',
+      history_type: 'FRIEND_TRANSFER',
+      date_time: { gte: new Date(Date.now() - DAY_MS) },
+    },
+  });
+  const receivedToday = BigInt(received?._sum?.gold_amount ?? 0);
+  if (
+    receivedToday + validatedParams.amount >
+    FRIEND_TRANSFER_DAILY_RECEIVED_CAP
+  ) {
+    throw createApiError(
+      'This player has reached the daily limit for receiving gold',
+    );
   }
 
   // Check sender's gold balance
@@ -483,7 +527,12 @@ export const respondToGoldRequest = async (params: {
             fromUserId: request.to_user_id,
             toUserId: request.from_user_id,
             amount: request.gold_amount,
-            notes: `Accepted request: ${request.stats && typeof request.stats === 'object' && 'senderNote' in request.stats ? request.stats.senderNote : ''}`,
+            // Older requests may predate the note limit; keep the stored note bounded.
+            notes:
+              `Accepted request: ${request.stats && typeof request.stats === 'object' && 'senderNote' in request.stats ? request.stats.senderNote : ''}`.slice(
+                0,
+                FRIEND_TRANSFER_NOTE_MAX_LENGTH,
+              ),
             friendshipId:
               request.stats &&
               typeof request.stats === 'object' &&

@@ -4,6 +4,7 @@ import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 import { levelXPArray, UnitTypes } from '@/constants';
 import type { UserUnit } from '@/lib/prisma-exports';
 import BattleResult from '@/models/BattleResult';
+import { BattleUser } from '@/models/BattleUser';
 import type { CombatReplayEnvelope } from '@/utils/combatReplay';
 
 installMockPrisma(vi);
@@ -51,6 +52,8 @@ let players: Record<number, GameRow>;
 let logs: TestLog[];
 let transfers: Array<{ gold_amount: bigint }>;
 let nextUnitId: number;
+// alliance_id -> { name, member user ids }
+let alliances: Record<number, { name: string; members: number[] }>;
 const priorSecret = process.env.NEXTAUTH_SECRET;
 const priorEnabled = process.env.NEXT_PUBLIC_ENABLE_ATTACKING;
 
@@ -102,19 +105,28 @@ beforeEach(() => {
   process.env.NEXTAUTH_SECRET = 'isolated-combat-replay-test-secret';
   process.env.NEXT_PUBLIC_ENABLE_ATTACKING = 'true';
   mockPrisma.serverSetting = {
-    findMany: vi.fn().mockResolvedValue([]),
-  };
-  mockPrisma.featureFlag = {
-    findMany: vi.fn().mockResolvedValue([
-      { key: 'ENABLE_ATTACKING', enabled: true },
-      { key: 'ENABLE_INFILTRATIONS', enabled: true },
-      { key: 'ENABLE_ASSASSINATIONS', enabled: true },
-      { key: 'ENABLE_INTEL', enabled: true },
-      { key: 'ENABLE_SOCIAL', enabled: true },
-      { key: 'ENABLE_ENEMIES', enabled: true },
-    ]),
+    findMany: vi
+      .fn()
+      .mockResolvedValue(
+        [
+          'ENABLE_ATTACKING',
+          'ENABLE_INFILTRATIONS',
+          'ENABLE_ASSASSINATIONS',
+          'ENABLE_INTEL',
+          'ENABLE_SOCIAL',
+          'ENABLE_ENEMIES',
+        ].map((key) => ({ key, value: true })),
+      ),
   };
   invalidateRuntimeConfigCache();
+  // A just-started era keeps level-protected fixtures inside the time window.
+  mockPrisma.era.findFirst = vi.fn().mockResolvedValue({
+    id: 1,
+    name: 'Era 1',
+    startDate: new Date(),
+    endDate: null,
+    startSettings: null,
+  });
   logs = [];
   transfers = [];
   nextUnitId = 1;
@@ -237,6 +249,30 @@ beforeEach(() => {
             (unit: UserUnit) => !where.id.in.includes(unit.id),
           );
         }
+      },
+    ),
+  };
+  alliances = {};
+  mockPrisma.alliance_memberships = {
+    findFirst: vi.fn(
+      async ({
+        where,
+      }: {
+        where: {
+          user_id: number;
+          alliance: { members: { some: { user_id: number } } };
+        };
+      }) => {
+        const otherId = where.alliance.members.some.user_id;
+        const match = Object.entries(alliances)
+          .map(([id, row]) => ({ id: Number(id), ...row }))
+          .sort((a, b) => a.id - b.id)
+          .find(
+            (row) =>
+              row.members.includes(where.user_id) &&
+              row.members.includes(otherId),
+          );
+        return match ? { alliance: { id: match.id, name: match.name } } : null;
       },
     ),
   };
@@ -381,7 +417,100 @@ describe('live combat persistence and replay', () => {
     expect(await BattleService.retestBattle(log.id)).toEqual(retest);
   });
 
-  test('daily gold and casualty exhaustion deny extraction without altering balances', async () => {
+  test('a protected attacker earns XP against an unprotected defender without forfeiting protection', async () => {
+    players[1].UserUnit = player(1, [
+      { type: 'OFFENSE', quantity: 200 },
+    ]).UserUnit;
+    players[1].experience = 0;
+    // Remain in level range but exceed the defender's population protection limit.
+    players[2].experience = 0;
+    players[2].UserUnit.find((unit) => unit.type === 'WORKER')!.quantity =
+      1000000;
+    const era = { id: 1, startDate: new Date() };
+    const settings = { durationDays: 14, recruitDailyCap: 25 };
+    const protection = (id: number) => {
+      const user = new BattleUser(players[id]);
+      user.setProtectionContext(era, settings);
+      return user.isProtected();
+    };
+    expect(protection(1)).toBe(true);
+    expect(protection(2)).toBe(false);
+    mockPrisma.users.update.mockClear();
+
+    const result = await AttackService.executeAttack(1, 2, 1);
+    expect(result.status).toBe('success');
+    expect(logs).toHaveLength(1);
+    expect(players[1].experience).toBeGreaterThan(0);
+    expect(protection(1)).toBe(true);
+    expect(
+      mockPrisma.users.update.mock.calls.some(
+        ([args]: [{ data: Record<string, unknown> }]) =>
+          'protection_forfeited_era_id' in args.data,
+      ),
+    ).toBe(false);
+  });
+
+  test('attacking a fellow alliance member requires confirmation, then proceeds', async () => {
+    alliances = {
+      7: { name: 'Iron Pact', members: [1, 2] },
+      8: { name: 'Lone Wolves', members: [1] },
+    };
+
+    const blocked = await AttackService.executeAttack(1, 2, 1);
+    expect(blocked.status).toBe('failed');
+    expect(blocked.code).toBe('ALLIANCE_MEMBER_CONFIRMATION_REQUIRED');
+    expect(blocked.message).toContain('Iron Pact');
+    expect(blocked.extra_variables).toEqual({
+      allianceId: 7,
+      allianceName: 'Iron Pact',
+    });
+    expect(logs).toHaveLength(0);
+    expect(transfers).toHaveLength(0);
+
+    const confirmed = await AttackService.executeAttack(1, 2, 1, {
+      confirmAllianceAttack: true,
+    });
+    expect(confirmed.status).toBe('success');
+    expect(logs).toHaveLength(1);
+  });
+
+  test('players in different alliances attack without an alliance prompt', async () => {
+    alliances = {
+      7: { name: 'Iron Pact', members: [1] },
+      8: { name: 'Lone Wolves', members: [2] },
+    };
+    const result = await AttackService.executeAttack(1, 2, 1);
+    expect(result.status).toBe('success');
+    expect(result.code).toBeUndefined();
+  });
+
+  test('the alliance prompt never precedes another refusal', async () => {
+    alliances = { 7: { name: 'Iron Pact', members: [1, 2] } };
+    mockPrisma.attack_log.count = vi.fn(async () => 99);
+    const result = await AttackService.executeAttack(1, 2, 1);
+    expect(result.code).toBe('TOO_MANY_ATTACKS');
+  });
+
+  test('a protected attacker hitting a protected defender keeps protection', async () => {
+    players[1].experience = 0;
+    players[1].UserUnit = player(1, [
+      { type: 'OFFENSE', quantity: 200 },
+    ]).UserUnit;
+    players[2].experience = 0;
+    mockPrisma.users.update.mockClear();
+    const result = await AttackService.executeAttack(1, 2, 1);
+    expect(result.status).toBe('success');
+    expect(
+      mockPrisma.users.update.mock.calls.some(
+        ([args]: [{ data: Record<string, unknown> }]) =>
+          'protection_forfeited_era_id' in args.data,
+      ),
+    ).toBe(false);
+  });
+
+  test('daily gold and casualty exhaustion deny extraction from a protected defender without altering balances', async () => {
+    players[1].experience = 0;
+    players[2].experience = 0;
     mockPrisma.attack_log.aggregate.mockResolvedValue({
       _sum: { defender_losses_total: 100000, pillaged_gold: 1000000n },
     });
@@ -394,6 +523,19 @@ describe('live combat persistence and replay', () => {
     expect(players[1].gold).toBe(before[1].gold);
     expect(players[2].gold).toBe(before[2].gold);
     expect(transfers).toEqual([]);
+  });
+
+  test('an unprotected defender has no daily gold ceiling, only the casualty budget', async () => {
+    mockPrisma.attack_log.aggregate.mockResolvedValue({
+      _sum: { defender_losses_total: 100000, pillaged_gold: 1000000n },
+    });
+    const before = structuredClone(players);
+    expect((await AttackService.executeAttack(1, 2, 10)).status).toBe(
+      'success',
+    );
+    expect(logs[0].pillaged_gold).toBeGreaterThan(0n);
+    expect(logs[0].defender_losses_total).toBe(0);
+    expect(players[2].gold).toBe(before[2].gold - logs[0].pillaged_gold);
   });
 
   for (const mission of ['INTEL', 'ASSASSINATE', 'INFILTRATE'] as const) {

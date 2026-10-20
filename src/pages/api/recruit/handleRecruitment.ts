@@ -17,6 +17,7 @@ import { logAction } from '@/utils/auditLogger';
 import { getIpAddress } from '@/utils/ipUtils';
 import { logError } from '@/utils/logger';
 import { mtRand as mtrand } from '@/utils/mtrand';
+import { publicErrorMessage } from '@/utils/publicError';
 
 /** Numeric targets are the auto-recruit form; recruit links are strings. */
 const isNumericTarget = (value: number | string): boolean =>
@@ -124,7 +125,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
         .json({ error: 'Invalid input', details: error.format() });
     }
     logError('Error in recruitment', {
-      message: error.message,
+      message: publicErrorMessage(error),
       ipAddress: getIpAddress(req),
       playerId: recruitedUserId,
       recruiterId: recruiterUserId,
@@ -132,10 +133,10 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     // Cap and limit refusals carry a code so clients stop instead of retrying.
     const code = recruitmentBlockCodeForError(error.message);
     if (code) {
-      return res.status(409).json({ error: error.message, code });
+      return res.status(409).json({ error: publicErrorMessage(error), code });
     }
     const statusCode = error.message.includes('Session') ? 409 : 500;
-    return res.status(statusCode).json({ error: error.message });
+    return res.status(statusCode).json({ error: publicErrorMessage(error) });
   }
 };
 

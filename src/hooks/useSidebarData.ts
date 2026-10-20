@@ -1,8 +1,10 @@
 import { useDebouncedCallback } from '@mantine/hooks';
 import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { levelXPArray } from '@/constants/XPLevels';
+import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import type UserModel from '@/models/Users';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
@@ -12,13 +14,15 @@ const GOLD_REQUEST_FALLBACK_POLL_MS = 15 * 60 * 1000;
 const ADVISOR_ROTATE_MS = 15_000;
 const ADVISOR_REFRESH_MS = 5 * 60 * 1000;
 
-const ADVISOR_FALLBACK_MESSAGES = [
-  'It is better to buy a few stronger weapons than many weaker ones.',
-  'The more attack turns you use in an attack, the more experience and gold you will gain.',
-  "The more workers you have, the more gold you'll earn per turn.",
-  'Recruiting your max amount every day will ensure your kingdom continues to grow.',
-  'A unit is only as strong as the equipment they wield. Make sure your army is well equipped.',
-  'If your defense is less than 25% of your non-combatant population, you may lose citizens and workers in an attack. Keep your fort repaired.',
+// Translation keys (common namespace) for the built-in advisor tips shown
+// until/unless the server supplies its own advisor messages.
+const ADVISOR_FALLBACK_MESSAGE_KEYS = [
+  'sidebar.advisorTips.strongerWeapons',
+  'sidebar.advisorTips.attackTurns',
+  'sidebar.advisorTips.moreWorkers',
+  'sidebar.advisorTips.recruitDaily',
+  'sidebar.advisorTips.wellEquipped',
+  'sidebar.advisorTips.fortDefense',
 ];
 
 interface SidebarStatsState {
@@ -33,8 +37,15 @@ interface SidebarStatsState {
 
 export function useSidebarData(user: UserModel | null, userLoading: boolean) {
   const router = useRouter();
-  const [advisorMessages, setAdvisorMessages] = useState<string[]>(
-    ADVISOR_FALLBACK_MESSAGES,
+  const { t } = useTranslation('common');
+  const [serverAdvisorMessages, setServerAdvisorMessages] = useState<
+    string[] | null
+  >(null);
+  const advisorMessages = useMemo<string[]>(
+    () =>
+      serverAdvisorMessages ??
+      ADVISOR_FALLBACK_MESSAGE_KEYS.map((key) => t(key)),
+    [serverAdvisorMessages, t],
   );
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const advisorIntervalIdRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -86,8 +97,12 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
   const [usersData, setUsersData] = useState<any[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
 
+  const { config: runtimeConfig } = useRuntimeConfig();
+  const socialEnabled = runtimeConfig?.enableSocial === true;
+
   const refreshGoldRequestCount = useCallback(async () => {
-    if (!user || userLoading) return;
+    // Social endpoints answer 503 while the feature is off; don't poll them.
+    if (!user || userLoading || !socialEnabled) return;
     try {
       const response = await fetch('/api/social/gold-requests/count');
       if (response.ok) {
@@ -97,7 +112,7 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
     } catch (error) {
       logError('Failed to fetch gold request count:', error);
     }
-  }, [user, userLoading]);
+  }, [user, userLoading, socialEnabled]);
 
   const refreshAdvisorMessages = useCallback(async () => {
     try {
@@ -106,7 +121,7 @@ export function useSidebarData(user: UserModel | null, userLoading: boolean) {
         const data = await response.json();
         const msgs = data.messages?.map((m: { message: string }) => m.message);
         if (msgs && msgs.length > 0) {
-          setAdvisorMessages(msgs);
+          setServerAdvisorMessages(msgs);
           setCurrentMessageIndex((prev) => Math.min(prev, msgs.length - 1));
         }
       }

@@ -1,9 +1,12 @@
 import {
+  Alert,
   Anchor,
   Button,
   Checkbox,
+  Divider,
+  Group,
   Modal as MantineModal,
-  NumberInput,
+  Stack,
   Text,
 } from '@mantine/core';
 import { useLocalStorage } from '@mantine/hooks';
@@ -11,8 +14,12 @@ import router from 'next/router';
 import { useTranslation } from 'next-i18next';
 import React, { useRef, useState } from 'react';
 
+import AttackRecommendation from '@/components/battle/AttackRecommendation';
+import QuantitySlider from '@/components/battle/QuantitySlider';
 import { useUser } from '@/context/users';
+import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logError } from '@/utils/logger';
+import { clampMissionQuantity } from '@/utils/missionQuantity';
 
 /**
  * Props for the attack confirmation Modal component.
@@ -32,6 +39,8 @@ interface ModalProps {
  * A modal component used to confirm the number of attack turns before initiating an attack.
  * Handles form submission, API interaction, loading state, error display, and redirection to results.
  */
+const { MAX_ATTACK_TURNS } = V5_COMBAT_CONSTANTS;
+
 const Modal: React.FC<ModalProps> = ({
   isOpen,
   toggleModal,
@@ -41,16 +50,33 @@ const Modal: React.FC<ModalProps> = ({
 }) => {
   const { t } = useTranslation('battle');
   const submittingRef = useRef(false);
+  const confirmationsRef = useRef({ alliance: false });
+  const [alliancePrompt, setAlliancePrompt] = useState<string | null>(null);
   const [newTab, setNewTab] = useLocalStorage({
     key: 'battle-report-new-tab',
     defaultValue: false,
   });
   const [reportUrl, setReportUrl] = useState<string | null>(null);
-  const [turns, setTurns] = useState(1);
-  const [turnsInput, setTurnsInput] = useState<string | number>(1);
-  const { forceUpdate } = useUser();
+  const [requestedTurns, setTurns] = useState(1);
+  const { user, forceUpdate } = useUser();
+  const availableTurns =
+    typeof user?.attackTurns === 'number' ? user.attackTurns : null;
+  const maxTurns = Math.min(
+    MAX_ATTACK_TURNS,
+    availableTurns ?? MAX_ATTACK_TURNS,
+  );
+  const turns = clampMissionQuantity(requestedTurns, 1, maxTurns);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const resetConfirmations = () => {
+    confirmationsRef.current = { alliance: false };
+  };
+
+  const cancelConfirmation = () => {
+    resetConfirmations();
+    setAlliancePrompt(null);
+  };
 
   const buildIdempotencyKey = () =>
     `attack-${profileID ?? 'unknown'}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -64,8 +90,12 @@ const Modal: React.FC<ModalProps> = ({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submittingRef.current) return;
-    if (!Number.isSafeInteger(turns) || turns < 1) {
-      setError(t('attack.invalidTurns'));
+    if (!Number.isSafeInteger(turns) || turns < 1 || turns > MAX_ATTACK_TURNS) {
+      setError(t('attack.invalidTurns', { max: MAX_ATTACK_TURNS }));
+      return;
+    }
+    if (availableTurns !== null && turns > availableTurns) {
+      setError(t('attack.notEnoughTurns', { count: availableTurns }));
       return;
     }
 
@@ -73,6 +103,7 @@ const Modal: React.FC<ModalProps> = ({
     const reportTab =
       allowNewTab && newTab ? window.open('about:blank', '_blank') : null;
     if (reportTab) reportTab.opener = null;
+    setAlliancePrompt(null);
     setIsLoading(true); // Set loading state
     setError(''); // Clear previous errors
 
@@ -83,9 +114,26 @@ const Modal: React.FC<ModalProps> = ({
           'Content-Type': 'application/json',
           'Idempotency-Key': buildIdempotencyKey(),
         },
-        body: JSON.stringify({ turns }),
+        body: JSON.stringify({
+          turns,
+          ...(confirmationsRef.current.alliance
+            ? { confirmAllianceAttack: true }
+            : {}),
+        }),
       });
       const results = await res.json();
+      if (results?.code === 'ALLIANCE_MEMBER_CONFIRMATION_REQUIRED') {
+        reportTab?.close();
+        confirmationsRef.current.alliance = false;
+        const allianceName = results?.extra_variables?.allianceName;
+        setAlliancePrompt(
+          typeof allianceName === 'string' && allianceName
+            ? allianceName
+            : t('attack.allianceAttackFallbackName'),
+        );
+        return;
+      }
+      resetConfirmations();
       if (
         !res.ok ||
         results?.status === 'failed' ||
@@ -114,6 +162,7 @@ const Modal: React.FC<ModalProps> = ({
         await router.push(url);
       }
     } catch (error) {
+      resetConfirmations();
       reportTab?.close();
       logError(error, { profileID }, 'Attack submission failed');
       setError(t('attack.attackFailed'));
@@ -125,14 +174,27 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <MantineModal
+      size={560}
+      padding="lg"
       opened={isOpen}
-      onClose={toggleModal}
+      onClose={() => {
+        cancelConfirmation();
+        toggleModal();
+      }}
       title={
         targetName
           ? t('actions.attackTarget', { name: targetName })
           : t('attack.turnsQuestion')
       }
-      centered
+      yOffset="5vh"
+      styles={{
+        body: { scrollbarGutter: 'stable' },
+        content: {
+          maxHeight: '90dvh',
+          overflowY: 'auto',
+          scrollbarGutter: 'stable',
+        },
+      }}
       closeOnClickOutside={!isLoading}
       closeOnEscape={!isLoading}
       withCloseButton={!isLoading}
@@ -147,23 +209,35 @@ const Modal: React.FC<ModalProps> = ({
         </Text>
       ) : (
         <form onSubmit={handleSubmit}>
-          <NumberInput
-            label={t('attack.turnsQuestion')}
-            description={t('attack.turnsDescription')}
-            error={error ? <span role="alert">{error}</span> : undefined}
-            mb="sm"
-            min={1}
-            allowDecimal={false}
-            allowNegative={false}
-            value={turnsInput}
-            disabled={isLoading}
-            onChange={(value) => {
-              setTurnsInput(value);
-              const parsed = Number(value);
-              setTurns(Number.isFinite(parsed) ? parsed : 0);
-            }}
-            data-testid="attack-turns-input"
-          />
+          <Stack gap="lg" mb="lg">
+            <Text size="sm" c="var(--ot-muted)">
+              {availableTurns !== null
+                ? t('attack.turnsAvailable', {
+                    count: availableTurns,
+                    max: MAX_ATTACK_TURNS,
+                  })
+                : t('attack.turnsDescription')}
+            </Text>
+            <QuantitySlider
+              label={t('commitment.turnsLabel')}
+              description={maxTurns < 1 ? t('commitment.noTurns') : undefined}
+              min={1}
+              max={maxTurns}
+              value={turns}
+              disabled={isLoading}
+              onChange={(value) => {
+                setTurns(value);
+                setError('');
+                cancelConfirmation();
+              }}
+              inputTestId="attack-turns-input"
+            />
+            {error && (
+              <Text size="sm" c="red" role="alert">
+                {error}
+              </Text>
+            )}
+          </Stack>
           {allowNewTab && (
             <Checkbox
               mb="md"
@@ -173,14 +247,77 @@ const Modal: React.FC<ModalProps> = ({
               label={t('actions.newTab')}
             />
           )}
+          {alliancePrompt !== null && (
+            <Alert
+              color="orange"
+              mb="md"
+              role="alert"
+              title={t('attack.allianceAttackTitle')}
+            >
+              {t('attack.allianceAttackWarning', { alliance: alliancePrompt })}
+              <Group mt="sm" gap="xs">
+                <Button
+                  type="button"
+                  variant="default"
+                  size="xs"
+                  disabled={isLoading || !turns}
+                  onClick={cancelConfirmation}
+                >
+                  {t('attack.allianceAttackCancel')}
+                </Button>
+                <Button
+                  type="submit"
+                  color="red"
+                  size="xs"
+                  loading={isLoading}
+                  disabled={isLoading || !turns}
+                  onClick={() => {
+                    confirmationsRef.current.alliance = true;
+                  }}
+                >
+                  {t('attack.allianceAttackConfirm')}
+                </Button>
+              </Group>
+            </Alert>
+          )}
+          <Divider my="lg" />
+          <Stack gap="sm" mb="sm">
+            <Group justify="space-between" gap="xs">
+              <Text size="sm" c="var(--ot-muted)">
+                {t('commitment.attack')}
+              </Text>
+              <Text size="sm" fw={600} c="var(--ot-heading)">
+                {t('commitment.turnCount', { count: turns })}
+              </Text>
+            </Group>
+            {availableTurns !== null && (
+              <Group justify="space-between" gap="xs">
+                <Text size="xs" c="var(--ot-muted)">
+                  {t('commitment.remainingTurns')}
+                </Text>
+                <Text size="xs" c="var(--ot-muted)">
+                  {Math.max(0, availableTurns - turns)}
+                </Text>
+              </Group>
+            )}
+          </Stack>
           <Button
             type="submit"
             loading={isLoading}
-            disabled={isLoading}
+            disabled={isLoading || !turns || alliancePrompt !== null}
             fullWidth
+            styles={{
+              root: { height: 'auto', minHeight: 42 },
+              label: { whiteSpace: 'normal', height: 'auto', paddingBlock: 10 },
+            }}
           >
             {isLoading ? t('attack.submitting') : t('attack.attack')}
           </Button>
+          <AttackRecommendation
+            targetId={profileID}
+            viewerId={user?.id}
+            opened={isOpen}
+          />
         </form>
       )}
     </MantineModal>

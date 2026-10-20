@@ -1,0 +1,58 @@
+.control {
+  min-width: 0;
+}
+
+.label {
+  flex: 1;
+  font-weight: 600;
+}
+
+.number {
+  flex-shrink: 0;
+}
+
+.input {
+  padding-inline-start: 8px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.slider {
+  margin-inline: 10px;
+  margin-bottom: 23px;
+}
+
+.bar {
+  background: var(--ot-accent);
+}
+
+.thumb {
+  border: 2px solid var(--ot-accent);
+  background: var(--ot-inset);
+  box-shadow: inset 0 0 0 3px var(--ot-surface-2);
+}
+
+.thumb:focus-visible {
+  outline: 2px solid var(--ot-accent);
+  outline-offset: 4px;
+}
+
+.mark {
+  border-color: var(--ot-muted);
+  background: var(--ot-surface-2);
+}
+
+.markLabel {
+  margin-top: 8px;
+  font-size: var(--mantine-font-size-xs);
+  color: var(--ot-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.slider[data-disabled] .bar {
+  background: var(--mantine-color-disabled);
+}
+
+.slider[data-disabled] .thumb {
+  border-color: var(--mantine-color-disabled-color);
+}

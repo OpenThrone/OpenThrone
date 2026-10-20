@@ -237,8 +237,9 @@ describe('resetCurrentEra', () => {
     expect(tx.users.update).not.toHaveBeenCalled();
   });
 
-  it('honors a registered login flag over the setting value', async () => {
-    tx.featureFlag.findUnique.mockResolvedValue({ enabled: false });
+  it('ignores a leftover feature flag row and refuses while the login setting is on', async () => {
+    tx.featureFlag.findUnique.mockResolvedValue({ enabled: true });
+    tx.serverSetting.findUnique.mockResolvedValue({ value: false });
 
     await expect(
       resetCurrentEra({
@@ -279,13 +280,12 @@ describe('resetCurrentEra', () => {
     });
   });
 
-  it('opens logins by writing both overrides after the reset succeeds', async () => {
+  it('opens logins by writing the setting after the reset succeeds', async () => {
     const order: string[] = [];
     tx.era.update.mockImplementation(async () => order.push('reset'));
     tx.serverSetting.upsert.mockImplementation(async () =>
       order.push('setting'),
     );
-    tx.featureFlag.upsert.mockImplementation(async () => order.push('flag'));
     auditSpy.mockImplementation(async () => {
       order.push('audit');
     });
@@ -300,19 +300,15 @@ describe('resetCurrentEra', () => {
     });
 
     expect(result.loginEnabled).toBe(true);
-    expect(order).toEqual(['reset', 'setting', 'flag', 'audit']);
+    expect(order).toEqual(['reset', 'setting', 'audit']);
     expect(tx.serverSetting.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ update: { value: false, updatedByUserId: 1 } }),
     );
-    expect(tx.featureFlag.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        update: { enabled: false, updatedByUserId: 1 },
-      }),
-    );
+    expect(tx.featureFlag.upsert).not.toHaveBeenCalled();
   });
 
-  it('fails the transaction if either login override write fails', async () => {
-    tx.featureFlag.upsert.mockRejectedValue(new Error('write failed'));
+  it('fails the transaction if the login setting write fails', async () => {
+    tx.serverSetting.upsert.mockRejectedValue(new Error('write failed'));
 
     await expect(
       resetCurrentEra({

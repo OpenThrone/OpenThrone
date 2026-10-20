@@ -215,3 +215,9 @@ export default function GameTableDemo() {
     </MainArea>
   );
 }
+
+/** Developer page: not served by production builds. */
+export const getServerSideProps = async () =>
+  process.env.NODE_ENV === 'production'
+    ? { notFound: true as const }
+    : { props: {} };

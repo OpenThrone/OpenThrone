@@ -2,11 +2,15 @@ import { Badge, Button, Table } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React from 'react';
 
-import { Fortifications, SpyUpgrades } from '@/constants';
-import { useUser } from '@/context/users';
-import type { BattleUpgradeProps, SpyUpgradeType } from '@/types/typings';
+import { SpyUpgrades } from '@/constants';
+import type {
+  BattleUpgradeProps,
+  Locales,
+  SpyUpgradeType,
+} from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { toLocale } from '@/utils/numberFormatting';
+import { fortificationName, structureName } from '@/utils/structureNames';
 
 import { StyledTable } from './game/StyledTable';
 
@@ -15,8 +19,8 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
   fortLevel,
   forceUpdate,
 }) => {
-  const { t } = useTranslation(['structures', 'common']);
-  const { user } = useUser();
+  const { t, i18n } = useTranslation(['structures', 'common']);
+  const locale = i18n.language as Locales;
 
   const renderUpgradeAction = (item: SpyUpgradeType, index: number) => {
     if (index === userLevel && item.fortLevelRequirement <= fortLevel) {
@@ -30,9 +34,7 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
       return (
         <span>
           {t('upgrades.unlockWithFort', {
-            name: Fortifications.find(
-              (f) => f.level === item.fortLevelRequirement,
-            )?.name,
+            name: fortificationName(t, item.fortLevelRequirement),
           })}
         </span>
       );
@@ -41,7 +43,12 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
       return (
         <span>
           {t('upgrades.unlockWithUpgrade', {
-            name: SpyUpgrades[index - 1]?.name,
+            name: structureName(
+              t,
+              'spy',
+              SpyUpgrades[index - 1]?.level,
+              SpyUpgrades[index - 1]?.name,
+            ),
           })}
         </span>
       );
@@ -54,19 +61,14 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
     .map((item, index) => (
       <Table.Tr key={`${item.level}_${item.name}`}>
         <Table.Td>
-          {item.name}{' '}
+          {structureName(t, 'spy', item.level, item.name)}{' '}
           {item.level === userLevel && (
             <Badge color="yellow" ml={5}>
               {t('labels.owned', { ns: 'common' })}
             </Badge>
           )}
         </Table.Td>
-        <Table.Td>
-          {
-            Fortifications.find((f) => f.level === item.fortLevelRequirement)
-              ?.name
-          }
-        </Table.Td>
+        <Table.Td>{fortificationName(t, item.fortLevelRequirement)}</Table.Td>
         <Table.Td>
           {t('upgrades.spyBonus')}: {item.offenseBonusPercentage}%<br />
           {t('upgrades.maxInfiltrations')}: {item.maxInfiltrations}
@@ -74,8 +76,7 @@ const ClandestineUpgrade: React.FC<BattleUpgradeProps> = ({
           {t('upgrades.maxAssassinations')}: {item.maxAssassinations}
         </Table.Td>
         <Table.Td>
-          {toLocale(item.cost, user?.locale)}{' '}
-          {t('currency.gold', { ns: 'common' })}
+          {toLocale(item.cost, locale)} {t('currency.gold', { ns: 'common' })}
         </Table.Td>
         <Table.Td>{renderUpgradeAction(item, index)}</Table.Td>
       </Table.Tr>

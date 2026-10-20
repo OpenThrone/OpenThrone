@@ -6,7 +6,12 @@
     "join": "Unirse",
     "motto": "Lema",
     "noAlliances": "No se encontraron alianzas",
-    "errorFetching": "Error al obtener alianzas"
+    "errorFetching": "Error al obtener alianzas",
+    "inviteOnly": "Solo por invitación",
+    "requestToJoin": "Solicitar unirse",
+    "joinSuccess": "Te has unido a la alianza.",
+    "manage": "Ver panel",
+    "joinError": "No se pudo unir a la alianza"
   },
   "create": {
     "title": "Crear Alianza",
@@ -59,8 +64,202 @@
     "kickError": "Error al expulsar miembro",
     "leaveSuccess": "Has abandonado la alianza",
     "leaveError": "Error al abandonar la alianza",
-    "leaveConfirm": "¿Estás seguro de que quieres abandonar esta alianza?",
+    "leaveConfirm": "¿Estás seguro de que quieres abandonar esta alianza? Cualquier préstamo pendiente del tesoro se cobra de tu oro y tu banco al salir.",
     "kickConfirm": "¿Estás seguro de que quieres expulsar a este miembro?",
-    "noMembers": "No se encontraron miembros"
+    "noMembers": "No se encontraron miembros",
+    "overview": "Resumen",
+    "members": "Miembros",
+    "bank": "Banco",
+    "war": "Sala de guerra",
+    "settings": "Ajustes",
+    "loadError": "No se pudo cargar la alianza",
+    "bannerAlt": "Estandarte de la alianza",
+    "infighting": "Luchas internas"
+  },
+  "mine": {
+    "title": "Mis alianzas",
+    "count_one": "Perteneces a {{count}} de {{max}} alianzas",
+    "count_other": "Perteneces a {{count}} de {{max}} alianzas",
+    "browse": "Explorar alianzas",
+    "create": "Crear alianza",
+    "createLeading": "Ya lideras una alianza. Cede el liderazgo o disuélvela antes de crear otra.",
+    "createFull": "Ya estás en {{max}} alianzas. Abandona una para crear otra.",
+    "empty": "Aún no eres miembro de ninguna alianza.",
+    "leader": "Líder",
+    "role": "Rango: {{role}}",
+    "members_one": "{{count}} miembro",
+    "members_other": "{{count}} miembros",
+    "open": "Abrir alianza"
+  },
+  "profile": {
+    "title": "Alianzas",
+    "leaderOf": "Líder de {{name}}"
+  },
+  "members": {
+    "rosterHidden": "Esta alianza solo muestra su lista de miembros a sus miembros.",
+    "noMembers": "No hay miembros que mostrar.",
+    "name": "Nombre",
+    "role": "Rango",
+    "raceClass": "Raza / Clase",
+    "raceClassValue": "{{race}} / {{class}}",
+    "lastActive": "Última actividad"
+  },
+  "manage": {
+    "memberActions": "Acciones de miembro",
+    "changeRank": "Cambiar rango",
+    "changeRankFor": "Cambiar el rango de {{name}}",
+    "rankChanged": "Rango actualizado",
+    "makeLeader": "Nombrar líder",
+    "makeLeaderConfirm": "¿Ceder el liderazgo a {{name}}? Conservarás tu rango actual y perderás todos los derechos de líder.",
+    "leaderChanged": "Liderazgo transferido",
+    "kickConfirm": "¿Expulsar a {{name}} de la alianza?",
+    "cancel": "Cancelar",
+    "typeToConfirm": "Escribe \"{{text}}\" para confirmar",
+    "disbandTitle": "Disolver alianza",
+    "disbandHelp": "Disolver elimina a todos los miembros, rangos y salas de chat. El tesoro, si lo hay, se reparte a partes iguales entre los miembros (el resto es para usted), los préstamos abiertos se cancelan y no puede haber ninguna guerra en curso. Para dimitir, nombre líder a otro miembro desde la pestaña Miembros.",
+    "disbandConfirm": "Esto no se puede deshacer. Todos los miembros serán expulsados de {{name}}, el tesoro se repartirá a partes iguales entre ellos y los préstamos abiertos se cancelarán.",
+    "disbanded": "La alianza se ha disuelto",
+    "leaveHelp": "Perderás el acceso al tesoro, la sala de guerra y el chat de la alianza."
+  },
+  "ranks": {
+    "title": "Rangos",
+    "help": "Los rangos superiores aparecen primero. Solo puedes editar rangos inferiores al tuyo y otorgar permisos que tengas.",
+    "order": "Orden",
+    "name": "Rango",
+    "newRank": "Nuevo rango",
+    "add": "Añadir rango",
+    "delete": "Eliminar rango",
+    "deleteConfirm": "¿Eliminar el rango \"{{name}}\"?",
+    "inUse": "Primero mueve a sus miembros a otro rango",
+    "moveUp": "Subir rango",
+    "moveDown": "Bajar rango",
+    "saved": "Rangos guardados",
+    "added": "Rango añadido",
+    "deleted": "Rango eliminado",
+    "perm": {
+      "invite_member": "Aceptar miembros",
+      "grant_access": "Asignar rangos",
+      "edit_ranks": "Editar rangos",
+      "kick_member": "Expulsar miembros",
+      "declare_war": "Declarar guerra",
+      "manage_bank": "Gestionar banco",
+      "approve_own_requests": "Aprobar solicitudes propias",
+      "request_gold": "Solicitar oro",
+      "send_messages": "Enviar mensajes",
+      "post_announcements": "Publicar anuncios",
+      "edit_profile": "Editar perfil",
+      "manage_allies": "Gestionar aliados",
+      "manage_enemies": "Gestionar enemigos",
+      "edit_list": "Editar lista",
+      "view_list": "Ver lista",
+      "share_reports": "Compartir informes",
+      "call_targets": "Designar objetivos"
+    }
+  },
+  "invites": {
+    "title": "Invitar jugadores",
+    "playerName": "Nombre del jugador",
+    "send": "Invitar",
+    "sent": "Invitación enviada a {{name}}.",
+    "pending": "Invitaciones pendientes",
+    "cancel": "Retirar",
+    "mineTitle": "Invitaciones de alianza",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "accepted": "Te has unido a la alianza.",
+    "declined": "Invitación rechazada."
+  },
+  "war": {
+    "end": "Terminar guerra",
+    "ended": "Guerra terminada.",
+    "none": "No hay guerras activas",
+    "statuses": {
+      "WARMUP": "Preparación",
+      "ACTIVE": "Activa",
+      "COOLDOWN": "Enfriamiento",
+      "ENDED": "Terminada"
+    },
+    "activeWars": "Conflictos activos",
+    "declareWar": "Declarar guerra",
+    "attacker": "Atacante",
+    "defender": "Defensor",
+    "status": "Estado",
+    "unknown": "Desconocido",
+    "declareTitle": "Declarar guerra",
+    "targetAllianceId": "ID de la alianza objetivo",
+    "targetAllianceIdPlaceholder": "Introduce el ID",
+    "targetRequired": "El ID de la alianza objetivo es obligatorio",
+    "declareButton": "Declarar guerra",
+    "declareSuccess": "¡Guerra declarada!"
+  },
+  "overview": {
+    "about": "Sobre nosotros",
+    "noDescription": "No hay descripción.",
+    "stats": "Estadísticas",
+    "leader": "Líder",
+    "members": "Miembros",
+    "created": "Fundada",
+    "gold": "Tesoro"
+  },
+  "player": {
+    "races": {
+      "ELF": "Elfo",
+      "HUMAN": "Humano",
+      "UNDEAD": "No muerto",
+      "GOBLIN": "Goblin"
+    },
+    "classes": {
+      "FIGHTER": "Luchador",
+      "CLERIC": "Clérigo",
+      "THIEF": "Ladrón",
+      "ASSASSIN": "Asesino"
+    }
+  },
+  "bank": {
+    "totalBalance": "Tesoro total de la alianza",
+    "goldAmount": "{{amount}} de oro",
+    "historyTitle": "Historial de transacciones",
+    "date": "Fecha",
+    "user": "Miembro",
+    "type": "Tipo",
+    "amount": "Cantidad",
+    "unknownUser": "Desconocido",
+    "noTransactions": "No hay transacciones",
+    "types": {
+      "DEPOSIT": "Depósito",
+      "WITHDRAWAL": "Retiro",
+      "TAX": "Impuesto",
+      "FEE": "Comisión",
+      "LOAN": "Préstamo",
+      "LOAN_REPAYMENT": "Pago de préstamo"
+    }
+  },
+  "settings": {
+    "requestsTitle": "Solicitudes de ingreso",
+    "noRequests": "No hay solicitudes pendientes",
+    "accept": "Aceptar",
+    "reject": "Rechazar",
+    "acceptSuccess": "Solicitud de ingreso aceptada",
+    "rejectSuccess": "Solicitud de ingreso rechazada",
+    "level": "Nv. {{level}}",
+    "generalTitle": "Ajustes generales",
+    "save": "Guardar cambios",
+    "updateSuccess": "Ajustes guardados correctamente"
+  },
+  "internalBattles": {
+    "title": "Ataques entre miembros",
+    "description": "Batallas de esta era en las que el atacante y el defensor son miembros actuales de esta alianza.",
+    "empty": "No hay ataques entre miembros en esta era.",
+    "loadError": "No se pudieron cargar los ataques entre miembros.",
+    "date": "Fecha",
+    "attacker": "Atacante",
+    "defender": "Defensor",
+    "winner": "Ganador",
+    "gold": "Oro saqueado",
+    "report": "Informe de batalla",
+    "viewReport": "Ver informe",
+    "attackerWon": "Atacante",
+    "defenderWon": "Defensor",
+    "pagination": "Páginas de ataques entre miembros"
   }
 }

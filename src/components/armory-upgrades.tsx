@@ -2,11 +2,11 @@ import { Badge, Button, Table } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 import React from 'react';
 
-import { ArmoryUpgrades, Fortifications } from '@/constants';
-import { useUser } from '@/context/users';
-import type { BattleUpgradeProps } from '@/types/typings';
+import { ArmoryUpgrades } from '@/constants';
+import type { BattleUpgradeProps, Locales } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { toLocale } from '@/utils/numberFormatting';
+import { fortificationName, structureName } from '@/utils/structureNames';
 
 import { StyledTable } from './game/StyledTable';
 
@@ -15,15 +15,15 @@ const ArmoryUpgradesTab: React.FC<BattleUpgradeProps> = ({
   fortLevel,
   forceUpdate,
 }) => {
-  const { t } = useTranslation(['structures', 'common']);
-  const { user } = useUser();
+  const { t, i18n } = useTranslation(['structures', 'common']);
+  const locale = i18n.language as Locales;
 
   const rows = Object.values(ArmoryUpgrades)
     .filter((item) => item.level <= fortLevel + 2)
     .map((item, index) => (
       <Table.Tr key={`${item.name}_${item.level}`}>
         <Table.Td>
-          {item.name}{' '}
+          {structureName(t, 'armory', item.level, item.name)}{' '}
           {item.level === userLevel && (
             <Badge color="yellow" ml={5}>
               {t('labels.owned', { ns: 'common' })}
@@ -32,8 +32,7 @@ const ArmoryUpgradesTab: React.FC<BattleUpgradeProps> = ({
         </Table.Td>
         <Table.Td>{t('upgrades.armoryItems', { level: item.level })}</Table.Td>
         <Table.Td>
-          {toLocale(item.cost, user?.locale)}{' '}
-          {t('currency.gold', { ns: 'common' })}
+          {toLocale(item.cost, locale)} {t('currency.gold', { ns: 'common' })}
         </Table.Td>
         <Table.Td>
           {item.level > userLevel && item.fortLevel <= fortLevel ? (
@@ -44,8 +43,7 @@ const ArmoryUpgradesTab: React.FC<BattleUpgradeProps> = ({
             item.level > userLevel && (
               <span>
                 {t('upgrades.unlockWithFort', {
-                  name: Fortifications.find((f) => f.level === item.fortLevel)
-                    ?.name,
+                  name: fortificationName(t, item.fortLevel),
                 })}
               </span>
             )

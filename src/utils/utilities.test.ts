@@ -7,6 +7,7 @@ import {
   generateRandomString,
   getAvatarSrc,
   getGoldTxSymbol,
+  getLevelChange,
   getTransactionType,
 } from '@/utils/utilities';
 
@@ -151,5 +152,37 @@ describe('bank history gameplay labels and signs (issue 30)', () => {
       for (const type of types)
         expect(getTransactionType(saleEntry(type))).not.toBe('UNKNOWN');
     }
+  });
+});
+
+describe('getLevelChange', () => {
+  it('reports nothing when the level holds', () => {
+    expect(getLevelChange(2917, 2025)).toBeNull();
+    expect(getLevelChange(0, 0)).toBeNull();
+  });
+
+  it('reports the new level when earned XP crosses a threshold', () => {
+    expect(getLevelChange(7000, 2025)).toEqual({
+      from: 1,
+      to: 2,
+      endedProtection: false,
+    });
+  });
+
+  it('flags the level 9 to 10 crossing as the end of protection', () => {
+    expect(getLevelChange(75_000, 2025)).toEqual({
+      from: 9,
+      to: 10,
+      endedProtection: true,
+    });
+  });
+
+  it('does not flag protection when already past level 9', () => {
+    expect(getLevelChange(76_000, 100_000)?.endedProtection).toBe(false);
+  });
+
+  it('ignores reports without a starting XP and tolerates missing earned XP', () => {
+    expect(getLevelChange(undefined, 5000)).toBeNull();
+    expect(getLevelChange(7999, undefined)).toBeNull();
   });
 });

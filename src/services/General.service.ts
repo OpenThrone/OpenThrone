@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import type { AccountStatus, PermissionType } from '@/lib/prisma-exports';
 import { getDepositHistory } from '@/services/Bank.service';
+import { loadProtectionContext } from '@/services/BattleProtection.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getUpdatedStatus } from '@/services/User.service';
 import { UserEconomyService } from '@/services/UserEconomyService';
@@ -12,9 +13,17 @@ import type {
   PlayerRace,
   UserApiResponse,
 } from '@/types/typings';
+import {
+  getProtectionStatus,
+  toProtectionSummary,
+} from '@/utils/battleProtection';
 import { resolveEraStartSettings } from '@/utils/eraStartSettings';
 import { logError } from '@/utils/logger';
-import { canAccessGame, getEraParticipantWhere } from '@/utils/loginPolicy';
+import {
+  canAccessGame,
+  getEraParticipantWhere,
+  NOT_CLOSED_WHERE,
+} from '@/utils/loginPolicy';
 import { expandPermissions } from '@/utils/permissions';
 
 import {
@@ -60,6 +69,9 @@ export interface RankBreakdown {
 const SearchUsersSchema = z.object({
   searchTerm: z.string().min(1),
 });
+
+/** Shortest query accepted by the signed-in display-name substring search. */
+export const DISPLAY_NAME_SEARCH_MIN_LENGTH = 3;
 
 const CheckDisplayNameSchema = z.object({
   displayName: z.string().trim().min(1).max(100),
@@ -107,6 +119,10 @@ export class GeneralService {
           stats: true,
           achievements: true,
           currentEraId: true,
+          era_joined_at: true,
+          created_at: true,
+          protection_forfeited_era_id: true,
+          event_citizens_received: true,
           currentEra: {
             select: {
               id: true,
@@ -248,6 +264,10 @@ export class GeneralService {
             stats: true,
             achievements: true,
             currentEraId: true,
+            era_joined_at: true,
+            created_at: true,
+            protection_forfeited_era_id: true,
+            event_citizens_received: true,
             currentEra: {
               select: {
                 id: true,
@@ -371,6 +391,27 @@ export class GeneralService {
       const expandedFromRoles = expandPermissions(roles, individualPermissions);
       const permissions = expandedFromRoles.map((type) => ({ type }));
 
+      // Shared protection rule: served here so the sidebar needs no extra polling.
+      const protectionContext = await loadProtectionContext();
+      const protection = toProtectionSummary(
+        getProtectionStatus(
+          {
+            experience: user.experience,
+            population: user.UserUnit.reduce(
+              (sum, unit) => sum + (unit.quantity || 0),
+              0,
+            ),
+            houseLevel: user.house_level,
+            eraJoinedAt: user.era_joined_at,
+            createdAt: user.created_at,
+            protectionForfeitedEraId: user.protection_forfeited_era_id,
+            eventCitizensReceived: user.event_citizens_received,
+          },
+          protectionContext.era,
+          protectionContext.settings,
+        ),
+      );
+
       // Construct the DTO
       const responseDto: UserApiResponse = {
         id: user.id,
@@ -410,6 +451,7 @@ export class GeneralService {
               endDate: user.currentEra.endDate?.toISOString() ?? null,
             }
           : undefined,
+        protection,
         beenAttacked,
         detectedSpy,
         won_attacks: wonAttacks,
@@ -480,6 +522,7 @@ export class GeneralService {
         },
       });
       const newestUser = await prisma.users.findFirst({
+        where: { id: { gt: 0 }, ...NOT_CLOSED_WHERE },
         orderBy: { created_at: 'desc' },
       });
 
@@ -496,12 +539,42 @@ export class GeneralService {
   }
 
   /**
-   * Checks if a display name exists and returns possible matches
+   * Exact, case-insensitive availability check (matches registration's
+   * uniqueness rule). Reveals only whether this one name is taken.
+   */
+  static async isDisplayNameTaken(displayName: string): Promise<boolean> {
+    const validatedData = CheckDisplayNameSchema.parse({ displayName });
+
+    try {
+      const count = await prisma.users.count({
+        where: {
+          display_name: {
+            equals: validatedData.displayName,
+            mode: 'insensitive',
+          },
+        },
+      });
+      return count > 0;
+    } catch (error: any) {
+      logError('Error checking display name', { displayName, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Substring search over display names. Callers must require a session;
+   * anonymous callers get only isDisplayNameTaken so the player list cannot
+   * be enumerated.
    */
   static async checkDisplayName(
     displayName: string,
   ): Promise<DisplayNameCheckResult> {
     const validatedData = CheckDisplayNameSchema.parse({ displayName });
+    if (validatedData.displayName.length < DISPLAY_NAME_SEARCH_MIN_LENGTH) {
+      throw new Error(
+        `Search needs at least ${DISPLAY_NAME_SEARCH_MIN_LENGTH} characters`,
+      );
+    }
 
     try {
       const users = await prisma.users.findMany({
@@ -519,7 +592,10 @@ export class GeneralService {
 
       const displayNames = users.map((user) => user.display_name);
       return {
-        exists: displayNames.length > 0,
+        exists: displayNames.some(
+          (name) =>
+            name.toLowerCase() === validatedData.displayName.toLowerCase(),
+        ),
         possibleMatches: displayNames,
       };
     } catch (error: any) {
@@ -535,13 +611,13 @@ export class GeneralService {
     try {
       const user = await prisma.users.findFirst({
         where: { recruit_link: recruitLink },
+        // Only what the public recruit page renders (name, race, class, level).
         select: {
           id: true,
           display_name: true,
           race: true,
           class: true,
           experience: true,
-          avatar: true,
         },
       });
 

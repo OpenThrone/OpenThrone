@@ -284,17 +284,18 @@ describe('intel snapshots', () => {
       expect(unit.quantity).toBe(100);
   });
 
-  it('applies and reports successful intel casualties across regular and mercenary spies', () => {
+  it('applies and reports intel casualties across regular and mercenary spies', () => {
     const attacker = user(
       [{ type: 'SPY', level: 1, quantity: 1 }],
       [{ type: 'SPY', level: 1, quantity: 2 }],
     );
-    const defender = user([{ type: 'SENTRY', level: 1, quantity: 3 }]);
-    let draw = 0;
+    // Outmatched by the sentries (#97): the mission fails and every spy sent
+    // is lost, regular and mercenary alike.
+    const defender = user([{ type: 'SENTRY', level: 1, quantity: 50 }]);
     const result = simulateIntel(attacker, defender, 3, {
-      random: () => (draw++ === 0 ? 0 : 0.1),
+      random: () => 0.1,
     });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
     expect(result.spiesLost).toBe(3);
     expect(rosterSize(attacker)).toBe(0);
     expect(result.intelligenceGathered).toBeNull();

@@ -6,6 +6,8 @@ installMockPrisma(vi);
 silenceLogger();
 const { MessagingService } = await import('@/services/Messaging.service');
 const { lockAllianceChatRooms } = await import('@/services/chatRoomGuards');
+const { invalidateRuntimeConfigCache } =
+  await import('@/services/RuntimeConfig.service');
 
 const deferred = () => {
   let resolve!: () => void;
@@ -17,6 +19,11 @@ const deferred = () => {
 
 describe('room authorization concurrency', () => {
   beforeEach(() => {
+    // Player messaging is switched on, so the send reaches the room checks.
+    mockPrisma.serverSetting.findMany = vi
+      .fn()
+      .mockResolvedValue([{ key: 'ENABLE_MESSAGING', value: true }]);
+    invalidateRuntimeConfigCache();
     mockPrisma.chatRoom = {
       findUnique: vi.fn().mockResolvedValue({ allianceId: null }),
       update: vi.fn().mockResolvedValue({}),

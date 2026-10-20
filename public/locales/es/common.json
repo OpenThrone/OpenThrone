@@ -197,7 +197,31 @@
     "goldRequestPending_other": "{{count}} solicitudes de oro pendientes",
     "xpToNextLevel": "Estás a {{xp}} XP del siguiente nivel",
     "searchPlaceholder": "Escribe para buscar...",
-    "searchUsers": "Buscar usuarios"
+    "searchUsers": "Buscar usuarios",
+    "protection": {
+      "label": "Protección para nuevos jugadores",
+      "daysLeft_one": "Protegido: queda {{count}} día",
+      "daysLeft_other": "Protegido: quedan {{count}} días",
+      "active": "Protegido",
+      "population": "Población {{population}} / {{threshold}}",
+      "level": "Nivel {{level}} / {{limit}}",
+      "progress": "Protección usada al {{percent}} % ({{limit}})",
+      "limits": {
+        "TIME": "tiempo",
+        "POPULATION": "población",
+        "LEVEL": "nivel"
+      }
+    },
+    "previousTip": "Consejo anterior",
+    "nextTip": "Consejo siguiente",
+    "advisorTips": {
+      "strongerWeapons": "Es mejor comprar unas pocas armas más fuertes que muchas más débiles.",
+      "attackTurns": "Cuantos más turnos de ataque uses en un ataque, más experiencia y oro obtendrás.",
+      "moreWorkers": "Cuantos más trabajadores tengas, más oro ganarás por turno.",
+      "recruitDaily": "Reclutar tu máximo cada día asegurará que tu reino siga creciendo.",
+      "wellEquipped": "Una unidad es tan fuerte como el equipo que porta. Asegúrate de que tu ejército esté bien equipado.",
+      "fortDefense": "Si tu defensa es inferior al 25 % de tu población no combatiente, podrías perder ciudadanos y trabajadores en un ataque. Mantén tu fortaleza reparada."
+    }
   },
   "footer": {
     "latestCommit": "Último commit:",
@@ -205,7 +229,8 @@
     "onlinePlayers": "Jugadores en línea:",
     "newPlayersLast24hrs": "Nuevos jugadores en las últimas 24h:",
     "newestPlayer": "Jugador más reciente:",
-    "operator": "AIOXperts IT Solutions LLC opera OpenThrone.dev."
+    "operator": "AIOXperts IT Solutions LLC opera OpenThrone.dev.",
+    "version": "Versión {{version}}"
   },
   "errors": {
     "failedToFetchGitInfo": "Error al obtener información de git",
@@ -235,7 +260,14 @@
     "checkingEligibility": "Comprobando requisitos de reclutamiento",
     "forYourKingdom": "Completa la verificación para reclutar 1 ciudadano para tu reino.",
     "signInToRecruit": "Inicia sesión para reclutar 1 ciudadano para tu reino.",
-    "linkFrom": "Enlace de reclutamiento de {{name}}"
+    "linkFrom": "Enlace de reclutamiento de {{name}}",
+    "pairProgress": "Hoy has reclutado con {{name}} {{used}} de {{limit}} veces.",
+    "recruitsLeft_one": "Te queda {{count}} reclutamiento hoy. Se restablece a las {{time}}.",
+    "recruitsLeft_other": "Te quedan {{count}} reclutamientos hoy. Se restablece a las {{time}}.",
+    "again": "Reclutar de nuevo",
+    "blockedPair": "Hoy has reclutado con {{name}} {{used}} de {{limit}} veces. Se restablece a las {{time}}.",
+    "blockedRecruiter": "Has usado los {{limit}} reclutamientos diarios. Se restablece a las {{time}}.",
+    "blockedTarget": "{{name}} alcanzó su límite diario de {{limit}} reclutamientos. Se restablece a las {{time}}."
   },
   "ariaLabels": {
     "closeAlert": "Cerrar alerta",
@@ -294,7 +326,39 @@
     "observedPopulation": "Población observada",
     "observedTotal": "Observados: {{count}}",
     "unobservedPopulation": "La población no observada es desconocida.",
-    "observedRoleUnits": "{{type}} observados: {{count}}"
+    "observedRoleUnits": "{{type}} observados: {{count}}",
+    "title": "Informe de inteligencia",
+    "missionSuccess": "Misión cumplida",
+    "missionFailed": "Misión fallida",
+    "spiesRepelled": "Espías repelidos",
+    "spiesGotThrough": "Los espías se infiltraron",
+    "subtitle": "{{attacker}} envió espías contra {{defender}}",
+    "reportId": "ID del informe",
+    "spymaster": "Maestro espía",
+    "target": "Objetivo",
+    "level": "Nv.",
+    "sendMoreSpies": "Enviar más espías",
+    "attack": "Atacar",
+    "viewProfile": "Ver el perfil de {{player}}",
+    "attackerAvatar": "Avatar del maestro espía",
+    "defenderAvatar": "Avatar del objetivo",
+    "armoryTitle": "Armería: {{type}}",
+    "unitTypes": {
+      "CITIZEN": "Ciudadanos",
+      "WORKER": "Trabajadores",
+      "OFFENSE": "Ofensiva",
+      "DEFENSE": "Defensa",
+      "SPY": "Espía",
+      "SENTRY": "Centinela"
+    },
+    "itemTypes": {
+      "HELM": "Casco",
+      "ARMOR": "Armadura",
+      "BOOTS": "Botas",
+      "BRACERS": "Brazales",
+      "SHIELD": "Escudo",
+      "WEAPON": "Arma"
+    }
   },
   "skipToContent": "Saltar al contenido principal",
   "logout": "Cerrar sesión",
@@ -325,7 +389,9 @@
     "targetUnavailable": "Este jugador no está disponible para misiones o no ha regresado desde el inicio de esta era.",
     "outOfRange": "Este jugador está fuera de tu alcance de misiones (dentro de {{range}} niveles del tuyo).",
     "attackingDisabled": "El servidor ha desactivado los ataques.",
-    "spyDisabled": "El servidor ha desactivado todos los tipos de misiones de espionaje."
+    "spyDisabled": "El servidor ha desactivado todos los tipos de misiones de espionaje.",
+    "report": "Denunciar jugador",
+    "message": "Enviar mensaje a este jugador"
   },
   "profileSummary": {
     "level": "Nivel",
@@ -406,5 +472,111 @@
     "default": "Predeterminado configurado",
     "r2": "Gráficos R2",
     "pure": "Interfaz pura / alternativa"
+  },
+  "events": {
+    "label": "Eventos activos",
+    "untilEraEnd": "Hasta el fin de la era",
+    "endsInDays": "quedan {{days}} d {{hours}} h",
+    "endsInHours": "quedan {{hours}} h {{minutes}} min",
+    "endsInMinutes": "quedan {{minutes}} min",
+    "effects": {
+      "xp": "{{value}} XP",
+      "gold": "{{value}} ingresos de oro",
+      "dailyCitizens": "+{{value}} ciudadanos/día",
+      "citizensBOTH": "{{value}} ciudadanos",
+      "citizensDAILY": "{{value}} ciudadanos diarios",
+      "citizensRECRUITING": "{{value}} ciudadanos reclutados",
+      "turns_one": "+{{count}} turno extra por turno",
+      "turns_other": "+{{count}} turnos extra por turno",
+      "unitDiscount": "{{value}} % de descuento en entrenamiento",
+      "armoryDiscount": "{{value}} % de descuento en la armería"
+    }
+  },
+  "spyReport": {
+    "assassinationTitle": "Informe de asesinato",
+    "infiltrationTitle": "Informe de infiltración",
+    "assassinationSubtitle": "{{attacker}} envió asesinos contra {{defender}}",
+    "infiltrationSubtitle": "{{attacker}} envió infiltrados contra la fortaleza de {{defender}}",
+    "assassinsStruck": "Los asesinos golpearon",
+    "assassinsRepelled": "Asesinos repelidos",
+    "infiltratorsBreached": "Fortaleza vulnerada",
+    "infiltratorsRepelled": "Infiltrados repelidos",
+    "attackBack": "Contraatacar",
+    "generated": "Informe generado: {{date}}",
+    "missionLog": "Registro de la misión",
+    "targets": {
+      "citizens": "ciudadanos y trabajadores",
+      "offense": "unidades ofensivas",
+      "defense": "unidades defensivas",
+      "units": "unidades"
+    },
+    "attackerSpiesLost_one": "Se perdió {{count}} de tus espías.",
+    "attackerSpiesLost_other": "Se perdieron {{count}} de tus espías.",
+    "attackerNoSpiesLost": "Todos tus espías regresaron a salvo.",
+    "defenderSpiesLost_one": "Tus centinelas mataron a {{count}} espía enemigo.",
+    "defenderSpiesLost_other": "Tus centinelas mataron a {{count}} espías enemigos.",
+    "defenderNoSpiesLost": "Todos los espías enemigos escaparon.",
+    "assassination": {
+      "attacker": {
+        "sent_one": "Enviaste {{count}} asesino contra los {{target}} de {{defender}}.",
+        "sent_other": "Enviaste {{count}} asesinos contra los {{target}} de {{defender}}.",
+        "killed_one": "Mataron a {{count}} de los {{target}}.",
+        "killed_other": "Mataron a {{count}} de los {{target}}.",
+        "noKills": "No lograron matar a ningún objetivo ({{target}})."
+      },
+      "defender": {
+        "sent_one": "{{attacker}} envió {{count}} asesino contra tus {{target}}.",
+        "sent_other": "{{attacker}} envió {{count}} asesinos contra tus {{target}}.",
+        "killed_one": "Perdiste {{count}} de tus {{target}}.",
+        "killed_other": "Perdiste {{count}} de tus {{target}}.",
+        "noKills": "Ninguno de tus {{target}} resultó herido."
+      }
+    },
+    "infiltration": {
+      "attacker": {
+        "sent_one": "Enviaste {{count}} infiltrado contra la fortaleza de {{defender}}.",
+        "sent_other": "Enviaste {{count}} infiltrados contra la fortaleza de {{defender}}.",
+        "damage": "Causaron {{damage}} de daño a la fortaleza.",
+        "caught": "Fueron capturados antes de llegar a la fortaleza."
+      },
+      "defender": {
+        "sent_one": "{{attacker}} envió {{count}} infiltrado contra tu fortaleza.",
+        "sent_other": "{{attacker}} envió {{count}} infiltrados contra tu fortaleza.",
+        "damage": "Tu fortaleza recibió {{damage}} de daño.",
+        "caught": "Tus centinelas los capturaron antes de que llegaran a la fortaleza."
+      }
+    }
+  },
+  "report": {
+    "title": "Enviar una denuncia",
+    "formTitle": "Denunciar a un jugador",
+    "reportedUser": "Jugador",
+    "searchUsers": "Escribe el nombre de un jugador…",
+    "category": "Motivo",
+    "categoryPlaceholder": "Elige un motivo",
+    "subject": "Asunto (opcional)",
+    "subjectPlaceholder": "Un breve resumen",
+    "description": "¿Qué ha pasado?",
+    "descriptionPlaceholder": "Describe lo que pasó (al menos 10 caracteres).",
+    "cancel": "Cancelar",
+    "submit": "Enviar denuncia",
+    "errorTitle": "Denuncia no enviada",
+    "selectUser": "Elige al jugador que quieres denunciar.",
+    "selectCategory": "Elige un motivo.",
+    "descriptionTooShort": "Describe lo que pasó con al menos 10 caracteres.",
+    "successTitle": "Denuncia enviada",
+    "submitted": "Gracias. Los moderadores revisarán tu denuncia.",
+    "submitFailed": "No se pudo enviar tu denuncia. Inténtalo más tarde.",
+    "categories": {
+      "HARASSMENT": "Acoso",
+      "SPAM": "Spam",
+      "CHEATING": "Trampas",
+      "MULTI_ACCOUNT": "Varias cuentas",
+      "BUG_EXPLOIT": "Abuso de errores",
+      "INAPPROPRIATE_NAME": "Nombre inapropiado",
+      "CHAT_ABUSE": "Abuso en el chat",
+      "ALLIANCE_ABUSE": "Abuso en una alianza",
+      "OTHER": "Otro"
+    }
   }
 }

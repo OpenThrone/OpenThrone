@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { withAuth } from '@/middleware/auth';
 import { MessagingService } from '@/services/Messaging.service';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Define a custom request type that includes the session injected by withAuth
 interface AuthenticatedRequest extends NextApiRequest {
@@ -40,7 +41,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     } catch (error) {
       logError('GET /api/messages/[chatRoomId] Error:', error);
       if (error.message.includes('Forbidden')) {
-        return res.status(403).json({ message: error.message });
+        return res.status(403).json({ message: publicErrorMessage(error) });
       }
       res.status(500).json({ message: 'Failed to fetch messages' });
     }

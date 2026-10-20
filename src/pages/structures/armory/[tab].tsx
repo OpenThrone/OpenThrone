@@ -14,7 +14,9 @@ import { OrderSummaryBar } from '@/components/game/OrderSummaryBar';
 import { StatGrid } from '@/components/game/StatGrid';
 import MainArea from '@/components/MainArea';
 import NewItemSection from '@/components/newItemSection';
+import { applyEventDiscount } from '@/constants/gameEvents';
 import { useUser } from '@/context/users';
+import { useActiveGameEvents } from '@/hooks/useActiveGameEvents';
 import type UserModel from '@/models/Users';
 import { alertService } from '@/services/Alert.service';
 import type { Item } from '@/types/typings';
@@ -27,7 +29,11 @@ import { toLocale } from '@/utils/numberFormatting';
 /** Share of an item's discounted cost returned on sale (see ArmoryService.unequipItems). */
 const ARMORY_SELL_REFUND_RATE = 0.75;
 
-const useItems = (user: UserModel | null, armoryLevel: number) => {
+const useItems = (
+  user: UserModel | null,
+  armoryLevel: number,
+  armoryDiscount: number,
+) => {
   const [items, setItems] = useState<{
     [key: string]: { [key: string]: ArmoryItem[] };
   }>({ OFFENSE: {}, DEFENSE: {}, SPY: {}, SENTRY: {} });
@@ -60,13 +66,15 @@ const useItems = (user: UserModel | null, armoryLevel: number) => {
               unit.type === category &&
               (unit.race === 'ALL' || unit.race === user.race),
           )
-          .map((unit: Item) => itemMapFunction(unit, type, user, armoryLevel))
+          .map((unit: Item) =>
+            itemMapFunction(unit, type, user, armoryLevel, armoryDiscount),
+          )
           .filter((item) => item !== undefined)
           .sort((a, b) => (a?.level ?? 0) - (b?.level ?? 0));
       });
     });
     setItems(newItemsState);
-  }, [user, armoryLevel]);
+  }, [user, armoryLevel, armoryDiscount]);
   return items;
 };
 
@@ -75,6 +83,7 @@ const itemMapFunction = (
   itemType: string,
   user: UserModel,
   armoryLevel: number,
+  armoryDiscount: number,
 ) => {
   if (
     !item ||
@@ -98,7 +107,12 @@ const itemMapFunction = (
           i.level === item.level &&
           i.usage === item.usage,
       )?.quantity || 0,
-    cost: discountedItemCost(item.cost, user.priceBonus ?? 0),
+    // A running armory discount event (#86) applies to purchases only.
+    cost: applyEventDiscount(
+      discountedItemCost(item.cost, user.priceBonus ?? 0),
+      armoryDiscount,
+    ),
+    refundBaseCost: discountedItemCost(item.cost, user.priceBonus ?? 0),
     conversionValue: discountedItemCost(
       slotFloorCost(item),
       user.priceBonus ?? 0,
@@ -116,7 +130,10 @@ const ArmoryTab = () => {
   const tab = tabParam || 'offense';
   const { user, forceUpdate } = useUser();
   const armoryLevel = user?.armoryLevel || 0;
-  const items = useItems(user, armoryLevel);
+  const {
+    modifiers: { armoryCostDiscountPercent },
+  } = useActiveGameEvents();
+  const items = useItems(user, armoryLevel, armoryCostDiscountPercent);
   const [itemCosts, setItemCosts] = useState<{ [key: string]: number }>({});
 
   const [pendingAction, setPendingAction] = useState<
@@ -145,7 +162,9 @@ const ArmoryTab = () => {
       const unitCost = Number(item.cost) || 0;
       cost += quantity * unitCost;
       const sellable = Math.min(quantity, item.ownedItems || 0);
-      refund += Math.floor(unitCost * sellable * ARMORY_SELL_REFUND_RATE);
+      refund += Math.floor(
+        (item.refundBaseCost ?? unitCost) * sellable * ARMORY_SELL_REFUND_RATE,
+      );
     });
     return { grandTotalCost: cost, grandTotalRefund: refund };
   }, [itemsById, itemCosts]);

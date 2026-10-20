@@ -280,6 +280,8 @@ export type UnitProps = {
   ownedUnits?: number;
   ownedItems?: number;
   cost: string;
+  /** Price before any discount event; untrain refunds and conversions use it. */
+  fullCost?: number;
   enabled: boolean;
   level?: number;
   type: string;
@@ -400,6 +402,8 @@ export interface UserApiResponse {
     startDate: string;
     endDate: string | null;
   };
+  /** Shared battle-protection status (see utils/battleProtection.ts). */
+  protection?: import('@/utils/battleProtection').ProtectionSummary;
 }
 
 // Define the Prisma User type alias again for internal use if needed

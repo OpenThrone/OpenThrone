@@ -11,6 +11,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp } from '@/utils/auditLogger';
 import { eraStartSettingsSchema } from '@/utils/eraStartSettings';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const schema = z.discriminatedUnion('action', [
   z
@@ -57,7 +58,7 @@ export default withApiGuard({
     return res.status(200).json({ success: true });
   } catch (error) {
     if (error instanceof EraResetScheduleConflict)
-      return res.status(409).json({ error: error.message });
+      return res.status(409).json({ error: publicErrorMessage(error) });
     logError('Era reset schedule update failed', error);
     return res
       .status(500)

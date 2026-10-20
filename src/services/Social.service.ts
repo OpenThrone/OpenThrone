@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { FRIEND_TRANSFER_NOTE_MAX_LENGTH } from '@/constants/FriendTransfer';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
@@ -133,20 +134,20 @@ const GetTopSocialSchema = z.object({
 const GoldRequestSchema = z.object({
   friendId: z.number().int(),
   amount: z.preprocess((val) => parseBigInt(val), z.bigint().positive()),
-  notes: z.string().optional(),
+  notes: z.string().max(FRIEND_TRANSFER_NOTE_MAX_LENGTH).optional(),
 });
 
 const TransferGoldSchema = z.object({
   fromUserId: z.number().int().positive(),
   toUserId: z.number().int().positive(),
   amount: z.preprocess((val) => parseBigInt(val), z.bigint().positive()),
-  notes: z.string().optional(),
+  notes: z.string().max(FRIEND_TRANSFER_NOTE_MAX_LENGTH).optional(),
 });
 
 const GoldRequestResponseSchema = z.object({
   requestId: z.number().int(),
   action: z.enum(['accept', 'decline']),
-  message: z.string().optional(),
+  message: z.string().max(FRIEND_TRANSFER_NOTE_MAX_LENGTH).optional(),
 });
 
 /** Encapsulates social data access and domain operations. */
@@ -212,6 +213,14 @@ export class SocialService {
     const validatedData = AddSocialSchema.parse(data);
 
     try {
+      // Defense in depth behind getRuntimeFeatureBlock: enemy requests only exist while enemies are enabled.
+      if (validatedData.relationshipType === 'ENEMY') {
+        const runtime = await getRuntimeConfig();
+        if (!runtime.enableEnemies) {
+          throw new Error('Enemy relationships are currently disabled.');
+        }
+      }
+
       return await prisma.$transaction(async (tx) => {
         // Both directions share the same lock order before checking for a row.
         const lowerId = Math.min(playerId, validatedData.friendId);

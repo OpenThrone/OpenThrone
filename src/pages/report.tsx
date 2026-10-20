@@ -13,6 +13,7 @@ import {
 import { useDebouncedCallback } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useEffect, useState } from 'react';
 
@@ -23,6 +24,7 @@ import { logError } from '@/utils/logger';
 
 const ReportPage = () => {
   const router = useRouter();
+  const { t } = useTranslation('common');
   const { userId: queryUserId, username: queryUsername } = router.query;
 
   const [selectedUser, setSelectedUser] = useState<string>('');
@@ -39,7 +41,7 @@ const ReportPage = () => {
     setSearchLoading(true);
     try {
       const response = await fetch(
-        `/api/general/searchUsers?name=${searchTerm}`,
+        `/api/general/searchUsers?name=${encodeURIComponent(searchTerm.trim())}`,
       );
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
@@ -75,36 +77,41 @@ const ReportPage = () => {
     }
   }, [queryUsername, queryUserId]);
 
+  // The selected id follows the name: a search match, the player passed in
+  // the link (?username=&userId=), or nothing. Both effects used to run in the
+  // same commit and this one cleared the prefilled id, so Submit stayed off.
   useEffect(() => {
     const matched = usersData.find((u) => u.value === selectedUser);
     if (matched) {
       setSelectedUserId(matched.id);
-    } else if (selectedUser !== queryUsername) {
+    } else if (queryUsername && queryUserId && selectedUser === queryUsername) {
+      setSelectedUserId(Number(queryUserId));
+    } else {
       setSelectedUserId(null);
     }
-  }, [selectedUser, usersData, queryUsername]);
+  }, [selectedUser, usersData, queryUsername, queryUserId]);
 
   const handleSubmit = async () => {
     if (!selectedUserId) {
       notifications.show({
-        title: 'Error',
-        message: 'Please select a valid user to report.',
+        title: t('report.errorTitle'),
+        message: t('report.selectUser'),
         color: 'red',
       });
       return;
     }
     if (!category) {
       notifications.show({
-        title: 'Error',
-        message: 'Please select a category.',
+        title: t('report.errorTitle'),
+        message: t('report.selectCategory'),
         color: 'red',
       });
       return;
     }
     if (description.length < 10) {
       notifications.show({
-        title: 'Error',
-        message: 'Description must be at least 10 characters.',
+        title: t('report.errorTitle'),
+        message: t('report.descriptionTooShort'),
         color: 'red',
       });
       return;
@@ -128,8 +135,8 @@ const ReportPage = () => {
       }
 
       notifications.show({
-        title: 'Success',
-        message: 'Your report has been successfully submitted.',
+        title: t('report.successTitle'),
+        message: t('report.submitted'),
         color: 'green',
       });
 
@@ -137,8 +144,8 @@ const ReportPage = () => {
     } catch (error) {
       logError('Failed to submit report:', error);
       notifications.show({
-        title: 'Error',
-        message: 'Failed to submit report. Please try again later.',
+        title: t('report.errorTitle'),
+        message: t('report.submitFailed'),
         color: 'red',
       });
     } finally {
@@ -159,12 +166,12 @@ const ReportPage = () => {
   );
 
   return (
-    <MainArea title="File a Report">
-      <GameCard title="Report Form">
+    <MainArea title={t('report.title')}>
+      <GameCard title={t('report.formTitle')}>
         <Stack gap="md">
           <Autocomplete
-            label="Reported User"
-            placeholder="Type to search users..."
+            label={t('report.reportedUser')}
+            placeholder={t('report.searchUsers')}
             value={selectedUser}
             onChange={(val) => {
               setSelectedUser(val);
@@ -178,26 +185,26 @@ const ReportPage = () => {
           />
 
           <Select
-            label="Category"
-            placeholder="Select reason for report"
+            label={t('report.category')}
+            placeholder={t('report.categoryPlaceholder')}
             data={Object.values(ReportCategory).map((cat) => ({
               value: cat,
-              label: cat.replace('_', ' '),
+              label: t(`report.categories.${cat}`),
             }))}
             value={category}
             onChange={setCategory}
           />
 
           <TextInput
-            label="Subject (Optional)"
-            placeholder="Brief summary of the issue"
+            label={t('report.subject')}
+            placeholder={t('report.subjectPlaceholder')}
             value={subject}
             onChange={(e) => setSubject(e.currentTarget.value)}
           />
 
           <Textarea
-            label="Description"
-            placeholder="Please describe the incident in detail (min 10 characters)"
+            label={t('report.description')}
+            placeholder={t('report.descriptionPlaceholder')}
             minRows={4}
             value={description}
             onChange={(e) => setDescription(e.currentTarget.value)}
@@ -210,7 +217,7 @@ const ReportPage = () => {
               onClick={() => router.back()}
               disabled={submitting}
             >
-              Cancel
+              {t('report.cancel')}
             </Button>
             <Button
               color="red"
@@ -218,7 +225,7 @@ const ReportPage = () => {
               loading={submitting}
               disabled={!selectedUserId || !category || description.length < 10}
             >
-              Submit Report
+              {t('report.submit')}
             </Button>
           </Group>
         </Stack>

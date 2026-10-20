@@ -146,6 +146,14 @@ export const startNewEra = async (settings?: EraStartSettings) => {
         data: { endDate: new Date() },
       });
       previousEraId = currentEra.id;
+      // Events that ran "until the era ends" end with it (#86).
+      await tx.gameEvent.updateMany({
+        where: {
+          eraId: validatedEraId,
+          status: { in: ['ACTIVE', 'SCHEDULED', 'PAUSED'] },
+        },
+        data: { status: 'COMPLETED', deactivatedAt: new Date() },
+      });
     }
 
     const newEra = await tx.era.create({

@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
+import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { updateUserAndBankHistory } from '@/services/User.service';
 import type { PlayerUnit } from '@/types/typings';
 import { logDebug, logError } from '@/utils/logger';
@@ -157,13 +158,18 @@ export const trainUnits = async (
 
       // Calculate total cost using validated unitsToTrain
       const unitList = unitsToTrain as PlayerUnit[];
-      let totalCost = calculateTotalCost(unitList, uModel);
+      const { unitCostDiscountPercent } = await getGameEventModifiers();
+      let totalCost = calculateTotalCost(
+        unitList,
+        uModel,
+        unitCostDiscountPercent,
+      );
       totalCost = Math.ceil(totalCost); // Ensure integer for BigInt
 
       // Check gold within transaction
       if (user.gold < BigInt(totalCost)) {
         throw new Error(
-          `Not enough gold. Required: ${totalCost}, Available: ${user.gold}`,
+          `Not enough gold. You need ${BigInt(totalCost).toLocaleString('en-US')} but have ${BigInt(user.gold).toLocaleString('en-US')}.`,
         );
       }
 
@@ -704,7 +710,12 @@ const validateTrainingRequest = async (request: TrainingRequest) => {
 
     // Calculate total cost
     const unitList = unitsToTrain as PlayerUnit[];
-    let totalCost = calculateTotalCost(unitList, uModel);
+    const { unitCostDiscountPercent } = await getGameEventModifiers();
+    let totalCost = calculateTotalCost(
+      unitList,
+      uModel,
+      unitCostDiscountPercent,
+    );
     totalCost = Math.ceil(totalCost);
 
     // Check citizens requirement

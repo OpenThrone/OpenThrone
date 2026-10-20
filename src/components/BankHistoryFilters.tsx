@@ -1,5 +1,20 @@
 import { Chip, Group } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React from 'react';
+
+/** Filter keys sent to /api/bank/history mapped to `bank.filters` label keys. */
+const FILTERS: { key: string; label: string }[] = [
+  { key: 'war_spoils', label: 'warSpoils' },
+  { key: 'deposits', label: 'deposits' },
+  { key: 'withdraws', label: 'withdraws' },
+  { key: 'transfers', label: 'transfers' },
+  { key: 'sale', label: 'sale' },
+  { key: 'training', label: 'training' },
+  { key: 'recruitment', label: 'recruitment' },
+  { key: 'economy', label: 'income' },
+  { key: 'fortification', label: 'fortRepairs' },
+  { key: 'daily', label: 'dailyRewards' },
+];
 
 /** Bank history filters. */
 export default function BankHistoryFilters({
@@ -7,6 +22,7 @@ export default function BankHistoryFilters({
   filters,
   setFilters,
 }) {
+  const { t } = useTranslation('structures');
   const toggleFilter = (key) => {
     setFilters({
       ...filters,
@@ -14,168 +30,28 @@ export default function BankHistoryFilters({
     });
   };
 
+  const color =
+    colorScheme === 'ELF'
+      ? 'green'
+      : colorScheme === 'GOBLIN'
+        ? 'red'
+        : colorScheme === 'UNDEAD'
+          ? 'gray'
+          : 'blue';
+
   return (
     <Group>
-      <Chip
-        variant="filled"
-        checked={filters.war_spoils}
-        onChange={() => toggleFilter('war_spoils')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        War Spoils
-      </Chip>
-      <Chip
-        variant="filled"
-        checked={filters.deposits}
-        onChange={() => toggleFilter('deposits')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        Deposits
-      </Chip>
-      <Chip
-        variant="filled"
-        checked={filters.withdraws}
-        onChange={() => toggleFilter('withdraws')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        Withdraws
-      </Chip>
-      <Chip
-        variant="filled"
-        checked={filters.transfers}
-        onChange={() => toggleFilter('transfers')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        Transfers
-      </Chip>
-      <Chip
-        variant="filled"
-        checked={filters.sale}
-        onChange={() => toggleFilter('sale')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        Sale
-      </Chip>
-      <Chip
-        variant="filled"
-        checked={filters.training}
-        onChange={() => toggleFilter('training')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        Training
-      </Chip>
-      <Chip
-        variant="filled"
-        checked={filters.recruitment}
-        onChange={() => toggleFilter('recruitment')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        Recruitment
-      </Chip>
-      <Chip
-        variant="filled"
-        checked={filters.economy}
-        onChange={() => toggleFilter('economy')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        Income
-      </Chip>
-      <Chip
-        variant="filled"
-        checked={filters.fortification}
-        onChange={() => toggleFilter('fortification')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        Fort Repairs
-      </Chip>
-      <Chip
-        variant="filled"
-        checked={filters.daily}
-        onChange={() => toggleFilter('daily')}
-        color={
-          colorScheme === 'ELF'
-            ? 'green'
-            : colorScheme === 'GOBLIN'
-              ? 'red'
-              : colorScheme === 'UNDEAD'
-                ? 'gray'
-                : 'blue'
-        }
-      >
-        Daily Rewards
-      </Chip>
+      {FILTERS.map(({ key, label }) => (
+        <Chip
+          key={key}
+          variant="filled"
+          checked={filters[key]}
+          onChange={() => toggleFilter(key)}
+          color={color}
+        >
+          {t(`bank.filters.${label}`)}
+        </Chip>
+      ))}
     </Group>
   );
 }

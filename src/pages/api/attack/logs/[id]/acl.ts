@@ -5,6 +5,7 @@ import { withApiGuard } from '@/middleware/apiGuard';
 import { BattleService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const IdQuerySchema = z.object({
   id: z.string().pipe(z.coerce.number()),
@@ -54,7 +55,7 @@ async function handler(
       error.message?.includes('not a participant') ||
       error.message?.includes('Chat room not found')
     ) {
-      return res.status(403).json({ message: error.message });
+      return res.status(403).json({ message: publicErrorMessage(error) });
     }
     logError('Error sharing attack log:', error);
     return res.status(500).json({

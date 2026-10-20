@@ -6,10 +6,20 @@ export const V5_COMBAT_CONSTANTS = {
   RANGED_DEFENSE_ASSAULT_WEIGHT: 0.5,
   MORALE_EXHAUSTION_PER_TURN: 0.025,
   MAX_GOLD_PILLAGE_SHARE: 0.22,
-  /** All attackers combined may take at most this share of a defender's on-hand gold per day. */
+  /** All attackers combined may take at most this share of a protected defender's on-hand gold per day; unprotected treasuries have no daily ceiling. */
   DAILY_GOLD_PILLAGE_SHARE_CAP: 0.5,
   /** A standing fort shields the treasury: the loot cap scales from this floor up to the full cap once breached. */
   FORT_LOOT_CAP_FLOOR_SHARE: 0.25,
+  /** Loot-cap multiplier on a protected defender's shielded gold at level 1; it tapers linearly to PROTECTED_LOOT_MULTIPLIER_MAX at PROTECTION_TAPER_END_LEVEL. */
+  PROTECTED_LOOT_MULTIPLIER: 0.1,
+  /** Shield multiplier reached at PROTECTION_TAPER_END_LEVEL (no shielding). */
+  PROTECTED_LOOT_MULTIPLIER_MAX: 1,
+  /** Level at which the protected-gold shield has fully tapered away. */
+  PROTECTION_TAPER_END_LEVEL: 10,
+  /** Only this much on-hand gold is shielded for a protected defender; the excess is raided at the normal rate. */
+  PROTECTED_GOLD_ALLOWANCE: 100_000,
+  /** Share of the exposed (unshielded) gold a protected (level 9 or below) defender still pays out. */
+  PROTECTED_LEVEL_LOOT_FACTOR: 0.8,
   DEFENSE_COVERAGE_THRESHOLD: 0.25,
   SINGLE_ATTACK_POPULATION_LOSS_CAP: 0.08,
   /** No single battle may destroy more than this many days of rebuild throughput. */
@@ -295,14 +305,19 @@ export function calculateDefenderDailyCasualtyRemaining(params: {
 }
 
 /**
- * Gold all attackers may still take from a defender today. The ceiling is
- * anchored to the start-of-day balance (gold on hand plus gold already taken),
- * so earlier raids do not shrink it.
+ * Gold all attackers may still take from a defender today. A protected
+ * defender's ceiling is anchored to the start-of-day balance (gold on hand plus
+ * gold already taken), so earlier raids do not shrink it. An unprotected
+ * defender has no daily ceiling: sustained raiding may take everything on hand.
  */
 export function calculateDefenderDailyGoldRemaining(params: {
   goldOnHand: bigint;
   goldTakenToday: bigint;
+  isDefenderProtected?: boolean;
 }): bigint {
+  if (params.isDefenderProtected === false) {
+    return params.goldOnHand > 0n ? params.goldOnHand : 0n;
+  }
   const ceiling =
     ((params.goldOnHand + params.goldTakenToday) *
       BigInt(

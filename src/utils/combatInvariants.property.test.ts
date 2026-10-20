@@ -528,15 +528,24 @@ describe('battle engine invariant gates (fuzzed)', () => {
           const out: string[] = [];
           const loot = result.pillagedGold;
           const start = s.defender.gold;
-          const shareCap = s.isDefenderProtected
-            ? (start * 22n) / 1000n
-            : (start * 22n) / 100n;
+          // Protection shields only the allowance at 2.2%; the rest of the
+          // treasury is raidable at the full 22% share.
+          const allowance = BigInt(
+            V5_COMBAT_CONSTANTS.PROTECTED_GOLD_ALLOWANCE,
+          );
+          const shielded = s.isDefenderProtected
+            ? start < allowance
+              ? start
+              : allowance
+            : 0n;
+          const shareCap =
+            (shielded * 22n) / 1000n + ((start - shielded) * 22n) / 100n;
           if (typeof loot !== 'bigint') out.push(`pillagedGold ${typeof loot}`);
           if (loot < 0n) out.push(`pillagedGold ${loot} negative`);
           if (loot > start) out.push(`pillaged ${loot} > treasury ${start}`);
           if (loot > shareCap)
             out.push(
-              `pillaged ${loot} > ${s.isDefenderProtected ? '2.2' : '22'}% cap ${shareCap}`,
+              `pillaged ${loot} > cap ${shareCap} (shielded ${shielded} of ${start})`,
             );
           // Loot accrues per won assault turn; a majority-rule LOSS may keep
           // it, but a battle with no won turn takes nothing.

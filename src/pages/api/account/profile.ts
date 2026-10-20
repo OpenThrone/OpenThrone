@@ -20,6 +20,7 @@ import {
 } from '@/utils/avatarStorage';
 import { logError, logInfo } from '@/utils/logger';
 import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Function to save the uploaded file to the local file system.
 // fileName is server-generated; the client filename is never used for storage.
@@ -116,7 +117,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
     form.parse(req, async (err, fields, files) => {
       if (err) {
         logError('Error parsing the form: ', err);
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: publicErrorMessage(err) });
       }
 
       const normalizedFields: Record<string, unknown> = {};

@@ -1,8 +1,13 @@
 // utils/units.ts
 
 import { UnitTypes } from '@/constants';
+import { applyEventDiscount } from '@/constants/gameEvents';
 import type UserModel from '@/models/Users';
 import type { PlayerUnit } from '@/types/typings';
+
+/** A unit's price after the player's price bonus, as the Training page shows it. */
+export const getDiscountedUnitPrice = (cost: number, priceBonus: number) =>
+  Math.max(0, cost - Math.ceil((priceBonus / 100) * cost));
 
 /** Looks up a unit definition by type and level. Returns undefined for unknown units. */
 export const findUnitDefinition = (type: string, level: number) =>
@@ -15,6 +20,7 @@ export const findUnitDefinition = (type: string, level: number) =>
 export const calculateTotalCost = (
   units: PlayerUnit[],
   uModel: UserModel,
+  eventDiscountPercent = 0,
 ): number => {
   let totalCost = 0;
   units.forEach((unitData) => {
@@ -23,6 +29,15 @@ export const calculateTotalCost = (
       throw new Error(
         `Invalid unit definition: ${unitData.type}_${unitData.level}`,
       );
+    }
+    if (eventDiscountPercent > 0) {
+      // Same per-unit price the Training page shows during a discount event.
+      totalCost +=
+        applyEventDiscount(
+          getDiscountedUnitPrice(unitType.cost, uModel.priceBonus || 0),
+          eventDiscountPercent,
+        ) * unitData.quantity;
+      return;
     }
     totalCost +=
       (unitType.cost - ((uModel.priceBonus || 0) / 100) * unitType.cost) *

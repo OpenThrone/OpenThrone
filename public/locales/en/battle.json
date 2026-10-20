@@ -16,10 +16,43 @@
     "turnsQuestion": "How many turns?",
     "turnsDescription": "Choose how many attack turns to spend.",
     "submitting": "Submitting…",
-    "invalidTurns": "Enter at least 1 turn.",
+    "invalidTurns": "Enter between 1 and {{max}} turns.",
     "untrainTitle": "Confirm Untrain",
     "untrainMessage": "Untraining refunds only 75% of the gold spent — you will lose {{gold}} gold. This cannot be undone.",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "allianceAttackTitle": "This player is your ally",
+    "allianceAttackWarning": "This player is a fellow member of your alliance \"{{alliance}}\". Do you really want to attack them?",
+    "allianceAttackFallbackName": "your alliance",
+    "allianceAttackCancel": "Cancel",
+    "allianceAttackConfirm": "Attack ally anyway",
+    "notEnoughTurns_one": "You only have {{count}} attack turn.",
+    "notEnoughTurns_other": "You only have {{count}} attack turns.",
+    "turnsAvailable_one": "You have {{count}} attack turn. Up to {{max}} per attack.",
+    "turnsAvailable_other": "You have {{count}} attack turns. Up to {{max}} per attack."
+  },
+  "commitment": {
+    "turnsLabel": "Turns committed",
+    "attack": "Attack commitment",
+    "mission": "Mission commitment",
+    "remainingTurns": "Turns remaining after action",
+    "missionDescription": "Choose your units and the turns to commit.",
+    "spiesLabel": "Spies to send",
+    "infiltratorsLabel": "Infiltrators to send",
+    "assassinsLabel": "Assassins to send",
+    "availableUnits": "{{count}} trained · maximum {{max}} per mission.",
+    "noUnits": "No trained units are available for this mission.",
+    "noTurns": "You have no attack turns available.",
+    "notEnoughTurns_one": "This mission requires at least {{count}} attack turn.",
+    "notEnoughTurns_other": "This mission requires at least {{count}} attack turns.",
+    "unitsAndTurns": "{{units}} · {{turns}}",
+    "turnCount_one": "{{count}} turn",
+    "turnCount_other": "{{count}} turns",
+    "spyCount_one": "{{count}} spy",
+    "spyCount_other": "{{count}} spies",
+    "infiltratorCount_one": "{{count}} infiltrator",
+    "infiltratorCount_other": "{{count}} infiltrators",
+    "assassinCount_one": "{{count}} assassin",
+    "assassinCount_other": "{{count}} assassins"
   },
   "users": {
     "title": "Attack Users",
@@ -75,7 +108,10 @@
     "offensiveUnits": "Offensive Units",
     "defensiveUnits": "Defensive Units",
     "loadingUserData": "Loading user data...",
-    "you": "You"
+    "you": "You",
+    "attackRangeSentence": "You can attack players from levels <strong>{{min}}</strong> to <strong>{{max}}</strong>.",
+    "protected": "Protected",
+    "protectedHint": "New-player protection: attacks only take a small share of their gold."
   },
   "warHistory": {
     "title": "War History",
@@ -99,7 +135,14 @@
     "yourLosses": "Your losses",
     "enemyLosses": "Enemy losses",
     "fortDamage": "Fort damage",
-    "action": "Action"
+    "action": "Action",
+    "viewBattleDetails": "View battle details",
+    "showDetails": "Show battle details",
+    "hideDetails": "Hide battle details",
+    "goldBadge": "Gold: {{gold}}",
+    "xpBadge": "XP: {{xp}}",
+    "turnsBadge": "Turns: {{turns}}",
+    "unknownPlayer": "Unknown"
   },
   "battleSimulator": {
     "title": "Battle Simulator",
@@ -183,7 +226,71 @@
     "loadingUserData": "Loading user data...",
     "userNotFound": "User not found. Please try again.",
     "untrainWarning": "Untraining refunds only 75% of spent gold.",
-    "cancel": "Cancel"
+    "clearSection": "Clear",
+    "clearAll": "Clear all",
+    "cancel": "Cancel",
+    "enterQuantityTrain": "Please enter the quantity of units you wish to train.",
+    "enterQuantityUntrain": "Please enter the quantity of units you wish to untrain.",
+    "trainSuccessful": "Training successful!",
+    "untrainSuccessful": "Untraining successful!",
+    "failedToTrainUnits": "Failed to train units. Please try again.",
+    "failedToUntrainUnits": "Failed to untrain units. Please try again.",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "unitCard": {
+      "level": "Level {{level}}",
+      "goldPerTurn": "Gold/turn",
+      "cost": "Cost:",
+      "owned": "Owned:",
+      "sale": "Sale:",
+      "requires": "Requires: {{requirement}}",
+      "quantityFor": "Quantity for {{unit}}",
+      "setMax": "Set maximum for {{unit}}",
+      "max": "MAX",
+      "showDetails": "Show details for {{unit}}",
+      "hideDetails": "Hide details for {{unit}}",
+      "unknownRequirement": "Unknown"
+    },
+    "section": {
+      "cost": "Section Cost: {{amount}}",
+      "refund": "Section Refund: {{amount}}",
+      "train": "Train Section",
+      "untrain": "Untrain Section",
+      "enterTrainQuantities": "Enter quantities to train.",
+      "enterUntrainQuantities": "Enter quantities to untrain.",
+      "notEnoughGold": "Not enough gold (cost: {{cost}})"
+    },
+    "errors": {
+      "userUnavailable": "User data not available.",
+      "noneSelectedTrain": "No {{section}} units selected to train.",
+      "noneSelectedUntrain": "No {{section}} units selected to untrain.",
+      "insufficientGoldNeeds": "Insufficient gold. Needs {{cost}}.",
+      "trainFailed": "Failed to train {{section}} units.",
+      "untrainFailed": "Failed to untrain {{section}} units.",
+      "notEnoughToUntrain": "Not enough {{unit}} to untrain (owned: {{owned}})."
+    },
+    "success": {
+      "trained": "{{section}} units trained successfully!",
+      "untrained": "{{section}} units untrained successfully!"
+    },
+    "convert": {
+      "title": "Convert Units",
+      "cost": "Cost:",
+      "refund": "Refund:",
+      "amount": "Amount",
+      "ownedUnit": "Owned Unit",
+      "targetUnit": "Target Unit",
+      "convert": "Convert",
+      "selectUnits": "Select units",
+      "enterQuantity": "Enter quantity",
+      "notEnoughGold": "Not enough gold",
+      "selectAndQuantity": "Select units and enter a quantity above 0.",
+      "invalidSource": "Invalid source unit selected.",
+      "notEnoughToConvert": "Not enough {{unit}} to convert (owned: {{owned}}).",
+      "insufficientGold": "Insufficient gold (cost: {{cost}}).",
+      "failed": "Unit conversion failed.",
+      "success": "Conversion successful!",
+      "failedRetry": "Conversion failed. Please try again."
+    }
   },
   "upgrades": {
     "title": "Battle Upgrades",
@@ -198,7 +305,18 @@
     "offensiveUnits": "Offensive Units",
     "defensiveUnits": "Defensive Units",
     "onlyLevel2Units": "Only Level 2+ Units",
-    "battleUpgradeInformation": "Battle Upgrade Information"
+    "battleUpgradeInformation": "Battle Upgrade Information",
+    "unlockedWith": "{{item}} - Unlocked with {{upgrade}}",
+    "cost": "Cost:",
+    "goldAmount": "{{amount}} Gold",
+    "saleValue": "Sale value: {{amount}} Gold",
+    "owned": "Owned: {{count}}",
+    "quantityFor": "Quantity for {{item}}",
+    "totalCost": "Total Cost:",
+    "buy": "Buy",
+    "sell": "Sell",
+    "selectItems": "Please select items to equip.",
+    "equipFailed": "Failed to equip items. Please try again."
   },
   "report": {
     "you": "You",
@@ -215,7 +333,9 @@
     "attackerVictory": "Attacker victory",
     "defenderVictory": "Defender victory",
     "winner": "{{player}} won the battle.",
-    "yourCounterLine": "Your counter killed {{dead}} attackers."
+    "yourCounterLine": "Your counter killed {{dead}} attackers.",
+    "levelUpLine": "{{player}} reached level {{level}}!",
+    "protectionEndedLine": "Beginner protection ended for {{player}}."
   },
   "defenseAdvisory": {
     "title": "Kingdom Defenses Breached",
@@ -251,6 +371,196 @@
     "socialFailed": "Unable to update this relationship. Please try again.",
     "socialUpdated": "Relationship updated.",
     "messageSent": "Message sent.",
-    "reverseSort": "Reverse sort order"
+    "reverseSort": "Reverse sort order",
+    "reportPlayer": "Report player"
+  },
+  "battleReport": {
+    "title": "Battle Report",
+    "level": "Lvl {{level}}",
+    "attacker": "Attacker",
+    "defender": "Defender",
+    "battleId": "Battle ID",
+    "attackAgain": "Attack Again",
+    "attackBack": "Attack Back",
+    "viewProfile": "View {{player}}'s profile",
+    "attackerAvatar": "Attacker avatar",
+    "defenderAvatar": "Defender avatar",
+    "goldPillaged": "Gold Pillaged",
+    "fortDamage": "Fort Damage",
+    "timeline": "Battle Timeline",
+    "spoilsOfWar": "Spoils of War",
+    "gold": "Gold",
+    "attackerXp": "Attacker XP",
+    "defenderXp": "Defender XP",
+    "casualties": "Casualties"
+  },
+  "timeline": {
+    "battleId": "Battle ID: {{id}}",
+    "youAttacked": "You attacked {{defender}}.",
+    "attackedYou": "{{attacker}} attacked you.",
+    "playerAttacked": "{{attacker}} attacked {{defender}}.",
+    "attackingForce_one": "Attacking force: {{soldiers}} soldier.",
+    "attackingForce_other": "Attacking force: {{soldiers}} soldiers.",
+    "counterKilled_one": "{{player}}'s counterattack killed {{dead}} attacker.",
+    "counterKilled_other": "{{player}}'s counterattack killed {{dead}} attackers.",
+    "yourCounterKilled_one": "Your counterattack killed {{dead}} attacker.",
+    "yourCounterKilled_other": "Your counterattack killed {{dead}} attackers.",
+    "youWon": "You won the battle.",
+    "youEarnedXp": "You earned {{xp}} XP.",
+    "playerEarnedXp": "{{player}} earned {{xp}} XP.",
+    "goldPillaged": "Gold pillaged: {{gold}}",
+    "fortDamage": "Fort damage dealt by the attacker: {{damage}}",
+    "youLostSoldiers_one": "You lost {{dead}} soldier.",
+    "youLostSoldiers_other": "You lost {{dead}} soldiers.",
+    "playerLostSoldiers_one": "{{player}} lost {{dead}} soldier.",
+    "playerLostSoldiers_other": "{{player}} lost {{dead}} soldiers."
+  },
+  "losses": {
+    "units_one": "{{total}} Unit",
+    "units_other": "{{total}} Units",
+    "unitLine": "{{quantity}}× Lv {{level}} {{unit}}"
+  },
+  "unitTypes": {
+    "CITIZEN": "Citizen",
+    "WORKER": "Worker",
+    "OFFENSE": "Offense",
+    "DEFENSE": "Defense",
+    "SPY": "Spy",
+    "SENTRY": "Sentry"
+  },
+  "spyMissions": {
+    "title": "Spy Mission",
+    "back": "Back",
+    "unknownUpgrade": "Unknown upgrade",
+    "unavailable": "This spy mission is currently unavailable.",
+    "requiresUpgrade": "Requires upgrade: {{upgrade}}",
+    "disabledByAdmins": "This mission has been disabled by the administrators.",
+    "turnsCommitted": "Turns committed",
+    "turnsDescription": "More turns increase mission depth and risk.",
+    "needTurns_one": "You need at least {{count}} turn",
+    "needTurns_other": "You need at least {{count}} turns",
+    "needSpies_one": "You need at least {{count}} spy",
+    "needSpies_other": "You need at least {{count}} spies",
+    "needAssassins_one": "You need at least {{count}} assassin",
+    "needAssassins_other": "You need at least {{count}} assassins",
+    "needInfiltrators_one": "You need at least {{count}} infiltrator",
+    "needInfiltrators_other": "You need at least {{count}} infiltrators",
+    "sentSpies_one": "You have sent {{count}} spy.",
+    "sentSpies_other": "You have sent {{count}} spies.",
+    "sentAssassins_one": "You have sent {{count}} assassin.",
+    "sentAssassins_other": "You have sent {{count}} assassins.",
+    "sentInfiltrators_one": "You have sent {{count}} infiltrator.",
+    "sentInfiltrators_other": "You have sent {{count}} infiltrators.",
+    "intel": {
+      "title": "Intelligence Gathering",
+      "menuDescription": "Send up to 10 spies to gather intel",
+      "howMany": "How many spies would you like to send?",
+      "tooltip": "Send spies on an intelligence mission",
+      "send": "Send Spies",
+      "infoTitle": "Intelligence Information",
+      "trained": "Spies trained: {{count}}",
+      "maxPerMission": "You can send a maximum of {{count}} spies per mission.",
+      "turnsInfo": "Intelligence missions use 1 to 5 attack turns. More turns improve report quality."
+    },
+    "assassination": {
+      "title": "Assassination",
+      "menuDescription": "Attempt to assassinate the player's citizens and workers, offense or defense",
+      "howMany": "How many assassins would you like to send?",
+      "targetQuestion": "Which unit type would you like to target?",
+      "targets": {
+        "citizens": "Citizens/Workers",
+        "offense": "Offense",
+        "defense": "Defense"
+      },
+      "tooltip": "Send assassins on a mission",
+      "send": "Assassinate",
+      "infoTitle": "Assassination Information",
+      "total": "Total assassins: {{count}}",
+      "maxPerMission": "You can send a maximum of {{count}} assassins per mission.",
+      "attemptsAvailable": "Limits: up to {{available}} attempts on the same player and {{perDay}} in total per day.",
+      "dailyLimit_one": "You can only send {{count}} assassination attempt per 24 hours. Upgrade your spy structure to increase the number of attempts per day!",
+      "dailyLimit_other": "You can only send {{count}} assassination attempts per 24 hours. Upgrade your spy structure to increase the number of attempts per day!",
+      "turnsInfo": "Assassinations use 3 to 10 attack turns. More turns increase mission depth and exposure."
+    },
+    "infiltration": {
+      "title": "Infiltration",
+      "menuDescription": "Infiltrate and damage the fort",
+      "howMany": "How many spies would you like to send to infiltrate?",
+      "tooltip": "Send infiltrators on a mission",
+      "send": "Infiltrate",
+      "infoTitle": "Infiltration Information",
+      "total": "Total infiltrators: {{count}}",
+      "maxPerMission": "You can send a maximum of {{count}} spies per infiltration mission.",
+      "attemptsAvailable": "Limits: up to {{available}} attempts on the same player and {{perDay}} in total per day.",
+      "dailyLimit_one": "You can only send {{count}} infiltration attempt per 24 hours. Upgrade your spy structure to increase the number of attempts per day!",
+      "dailyLimit_other": "You can only send {{count}} infiltration attempts per 24 hours. Upgrade your spy structure to increase the number of attempts per day!",
+      "turnsInfo": "Infiltrations use 2 to 10 attack turns. More turns increase sabotage depth and exposure."
+    }
+  },
+  "battleUpgradeNames": {
+    "steeds": "Steeds",
+    "warElephant": "War Elephant",
+    "guardTower": "Guard Tower",
+    "catapult": "Catapult",
+    "disguiseClothes": "Disguise Clothes",
+    "informant": "Informant",
+    "guardDog": "Guard Dog",
+    "watchTower": "Watch Tower"
+  },
+  "recommendation": {
+    "title": "Attack recommendation",
+    "recentEvidence": "Recent evidence",
+    "limitedEvidence": "Limited evidence",
+    "verdict": {
+      "limited": "A limited attack looks reasonable",
+      "caution": "Approach this target with caution",
+      "conflicting": "Recent evidence is conflicting",
+      "stale": "Gather fresh intelligence first",
+      "insufficient": "Not enough evidence for a recommendation",
+      "loading": "Reviewing readable reports…",
+      "unavailable": "Recommendation temporarily unavailable",
+      "favorable": "Conditions look favorable for another attack"
+    },
+    "detail": {
+      "limited": "Recent readable reports offer a favorable signal. Keep your commitment limited and review the result before spending more turns.",
+      "caution": "Recent readable reports suggest resistance or a previous defeat. Gather more intelligence before committing heavily.",
+      "conflicting": "Recent reports point in different directions. Review the sources before deciding.",
+      "stale": "The available reports have lost too much confidence to support a current assessment. Gather fresh intelligence.",
+      "insufficient": "No usable recent defense estimate or personal battle outcome supports an assessment.",
+      "favorable": "A recent convincing battle result, or supporting intel and battle evidence, favors another attack. Review the sources and choose your commitment."
+    },
+    "caveat": "Evidence loses confidence with time: faster while the defender is active. We use up to five readable reports from the last 24 hours. Armies, equipment, forts and protection can change. Guidance is not a win probability or a turn recommendation.",
+    "source": {
+      "intel": "Spy intel report #{{id}}",
+      "battle": "Your battle report #{{id}}"
+    },
+    "observedDefense": "Reported defense: {{value}}",
+    "outcome": {
+      "won": "You won this attack",
+      "lost": "You lost this attack",
+      "unknown": "Outcome inconclusive"
+    },
+    "gatherIntel": "Gather new spy intelligence or review your recent battle reports. You can still choose your attack manually.",
+    "age": {
+      "intel": "Intel · {{count}} min ago",
+      "battle": "Battle · {{count}} min ago"
+    },
+    "activity": {
+      "online": "Defender is online. Evidence confidence declines faster.",
+      "recent": "Defender was recently active. Evidence confidence declines at an elevated rate.",
+      "offline": "Defender is offline. Evidence still ages; earlier activity continues to count.",
+      "unknown": "Defender activity is unavailable. Evidence ages conservatively."
+    },
+    "confidence": {
+      "fresh": "Fresh evidence",
+      "aging": "Aging evidence",
+      "expired": "Historical evidence only"
+    },
+    "quality": {
+      "decisive": "Low own casualties with a strong damage exchange",
+      "costly": "Costly battle result",
+      "ordinary": "Battle result supports only limited confidence",
+      "unknown": "Not enough battle detail to judge casualty efficiency"
+    }
   }
 }

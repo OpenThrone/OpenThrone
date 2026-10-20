@@ -189,6 +189,14 @@ async function handler(
         },
       };
 
+      // The detail view carries the account email; fail closed without a record.
+      await logActionStrict({
+        userId: Number(req.session?.user?.id),
+        action: 'ADMIN_USER_DETAIL_READ',
+        ip: getRequestIp(req),
+        targetUserId: user.id,
+      });
+
       res.status(200).json(formattedResponse);
     } catch (error) {
       logError('Error fetching user details:', error);

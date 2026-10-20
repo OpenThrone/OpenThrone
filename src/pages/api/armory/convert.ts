@@ -6,6 +6,7 @@ import { withAuth } from '@/middleware/auth';
 import { ArmoryService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api'; // Import AuthenticatedRequest
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const ConvertSchema = z.object({
   userId: z.number().int(),
@@ -53,7 +54,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       error?.message?.startsWith('Invalid item types') ||
       error?.message?.startsWith('Source item not found')
     ) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: publicErrorMessage(error) });
     }
     if (error?.message === 'User not found') {
       return res.status(404).json({ error: 'User not found' });

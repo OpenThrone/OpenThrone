@@ -8,6 +8,7 @@ import {
 } from '@/services/Messaging.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const ChatRoomQuerySchema = z.object({
   chatRoomId: z.string().pipe(z.coerce.number()),
@@ -54,13 +55,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     } catch (error) {
       logError('Error adding participants:', error);
       if (error.message.includes('Forbidden')) {
-        return res.status(403).json({ message: error.message });
+        return res.status(403).json({ message: publicErrorMessage(error) });
       }
       if (error.message.includes('Chat room not found')) {
-        return res.status(404).json({ message: error.message });
+        return res.status(404).json({ message: publicErrorMessage(error) });
       }
       if (error.message.includes('No valid users')) {
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: publicErrorMessage(error) });
       }
       res.status(500).json({ message: 'Failed to add participants.' });
     }

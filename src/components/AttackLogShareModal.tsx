@@ -9,12 +9,12 @@ import {
   Table,
   Text,
 } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
 
 import { useUser } from '@/context/users';
 import type { Log } from '@/types/typings';
 import { logDebug, logError } from '@/utils/logger';
-import { formatDate } from '@/utils/utilities';
 
 interface AttackLogShareModalProps {
   opened: boolean;
@@ -29,6 +29,7 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
   onClose,
   onShare,
 }) => {
+  const { t, i18n } = useTranslation('messaging');
   const { user } = useUser();
   const [attackLogs, setAttackLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(false);
@@ -61,7 +62,7 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
         })
         .catch((err) => {
           logError('Error fetching attack logs:', err);
-          setError(err.message || 'Could not load logs.');
+          setError(t('share.loadFailed'));
           setAttackLogs([]);
           setTotalPages(0);
         })
@@ -74,7 +75,7 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
       setPage(1);
       setTotalPages(0);
     }
-  }, [opened, user?.id, activePage]); // Re-fetch when page changes
+  }, [opened, user?.id, activePage, t]); // Re-fetch when page changes
 
   const handleShareClick = (logId: number) => {
     onShare(logId);
@@ -85,30 +86,40 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
     const isAttacker = Number(log.attacker_id) === Number(user?.id);
 
     // Format the battle description in "Attacker attacked Defender" style
-    let battleDescription: string;
     const attackerName = isAttacker
-      ? 'You'
-      : log.attackerPlayer?.display_name || 'Unknown Player';
+      ? t('message.you')
+      : log.attackerPlayer?.display_name || t('share.unknownPlayer');
     const defenderName = !isAttacker
-      ? 'You'
-      : log.defenderPlayer?.display_name || 'Unknown Player';
+      ? t('message.you')
+      : log.defenderPlayer?.display_name || t('share.unknownPlayer');
 
-    battleDescription = `${attackerName} attacked ${defenderName}`;
+    const battleDescription = t('share.attacked', {
+      attacker: attackerName,
+      defender: defenderName,
+    });
 
     // Determine outcome
-    const outcome =
-      Number(log.winner) === Number(user?.id) ? 'Victory' : 'Defeat';
+    const isVictory = Number(log.winner) === Number(user?.id);
 
     return (
       <Table.Tr key={log.id}>
         <Table.Td>{battleDescription}</Table.Td>
-        <Table.Td>{formatDate(log.timestamp)}</Table.Td>
-        <Table.Td c={outcome === 'Victory' ? 'green' : 'red'}>
-          {outcome}
+        <Table.Td>
+          {new Date(log.timestamp).toLocaleString(i18n.language, {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })}
+        </Table.Td>
+        <Table.Td c={isVictory ? 'green' : 'red'}>
+          {isVictory ? t('share.victory') : t('share.defeat')}
         </Table.Td>
         <Table.Td>
           <Button size="xs" onClick={() => handleShareClick(log.id)}>
-            Share
+            {t('share.share')}
           </Button>
         </Table.Td>
       </Table.Tr>
@@ -116,7 +127,7 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
   });
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Share Attack Log" size="lg">
+    <Modal opened={opened} onClose={onClose} title={t('share.title')} size="lg">
       {loading && (
         <Group justify="center" p="xl">
           <Loader size="md" />
@@ -124,14 +135,14 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
       )}
 
       {error && (
-        <Alert color="red" title="Error">
+        <Alert color="red" title={t('share.error')} role="alert">
           {error}
         </Alert>
       )}
 
       {!loading && !error && attackLogs.length === 0 && (
         <Text ta="center" p="md">
-          No recent attack logs found.
+          {t('share.empty')}
         </Text>
       )}
 
@@ -141,10 +152,10 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
             <Table striped highlightOnHover withTableBorder>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Battle</Table.Th>
-                  <Table.Th>Date</Table.Th>
-                  <Table.Th>Outcome</Table.Th>
-                  <Table.Th>Action</Table.Th>
+                  <Table.Th>{t('share.battle')}</Table.Th>
+                  <Table.Th>{t('share.date')}</Table.Th>
+                  <Table.Th>{t('share.outcome')}</Table.Th>
+                  <Table.Th>{t('share.action')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>{rows}</Table.Tbody>
@@ -166,7 +177,7 @@ const AttackLogShareModal: React.FC<AttackLogShareModalProps> = ({
 
       <Group justify="flex-end" mt="md">
         <Button variant="default" onClick={onClose}>
-          Cancel
+          {t('share.cancel')}
         </Button>
       </Group>
     </Modal>

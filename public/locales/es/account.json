@@ -25,7 +25,9 @@
     "loginDisabled": "El inicio de sesión está deshabilitado",
     "checkDiscordNews": "Open Throne está actualmente en mantenimiento y migración a la Era 2.",
     "recoverLostAccount": "Recuperar una Cuenta Perdida",
-    "accountRestricted": "Tu cuenta está actualmente restringida. Por favor, contacta a soporte si crees que esto es un error."
+    "accountRestricted": "Tu cuenta está actualmente restringida. Por favor, contacta a soporte si crees que esto es un error.",
+    "vacationNoticeTitle": "Modo vacaciones",
+    "vacationNotice": "Tu cuenta está en modo vacaciones. Inicia sesión para terminar el modo vacaciones y volver al juego."
   },
   "register": {
     "title": "Crear Cuenta",
@@ -114,7 +116,9 @@
     "enterNewPassword": "Introduce tu nueva contraseña",
     "setNewPassword": "Establecer Nueva Contraseña",
     "verificationSuccessful": "¡Verificación exitosa!",
-    "passwordUpdated": "¡Contraseña actualizada! Inicia sesión ahora"
+    "passwordUpdated": "¡Contraseña actualizada! Inicia sesión ahora",
+    "requestNewCode": "Solicitar un nuevo código",
+    "checkEmail": "Revisa tu correo"
   },
   "profile": {
     "title": "Configuración del Perfil",
@@ -254,7 +258,8 @@
       "DENIED": "Rechazada",
       "WITHDRAWN": "Retirada"
     },
-    "errorDisplayNameTaken": "Ese nombre no está disponible."
+    "errorDisplayNameTaken": "Ese nombre no está disponible.",
+    "displayNameMax": "El nombre visible puede tener como máximo 50 caracteres."
   },
   "deleteRequest": {
     "title": "Elimina tu cuenta",

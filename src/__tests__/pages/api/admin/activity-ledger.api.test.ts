@@ -12,6 +12,8 @@ import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 import { silenceLogger } from 'test/utils/silenceLogger';
 
 installMockPrisma(vi);
+// Staff reads of attacks and investigations now write a required audit row.
+mockPrisma.auditLog = { create: vi.fn(async () => ({})) };
 silenceLogger();
 const guards: Record<string, unknown>[] = [];
 mock.module('@/middleware/apiGuard', () => ({

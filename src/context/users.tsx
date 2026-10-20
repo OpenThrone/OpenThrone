@@ -128,14 +128,16 @@ export const UserProvider: React.FC<UsersProviderProps> = ({ children }) => {
         if ('currentStatus' in userData) {
           const status =
             (userData as { currentStatus?: string }).currentStatus || '';
+          // Sign out first: the login page sends signed-in players back to
+          // the game, so redirecting with a live session looped.
           if (['BANNED', 'SUSPENDED', 'CLOSED', 'TIMEOUT'].includes(status)) {
-            router.push('/account/login?error=account_status');
+            signOut({ callbackUrl: '/account/login?error=account_status' });
             setUser(null);
             setLoading(false);
             return false;
           }
           if (status === 'VACATION') {
-            router.push('/account/login?vacation=1');
+            signOut({ callbackUrl: '/account/login?vacation=1' });
             setUser(null);
             setLoading(false);
             return false;

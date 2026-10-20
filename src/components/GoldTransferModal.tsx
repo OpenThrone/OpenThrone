@@ -12,6 +12,7 @@ import {
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { FRIEND_TRANSFER_NOTE_MAX_LENGTH } from '@/constants/FriendTransfer';
 import { useUser } from '@/context/users';
 import { GoldTransferSchema } from '@/lib/validation';
 import {
@@ -192,7 +193,7 @@ export function GoldTransferModal({
             {...register('notes')}
             minRows={2}
             maxRows={3}
-            maxLength={500}
+            maxLength={FRIEND_TRANSFER_NOTE_MAX_LENGTH}
             resize="vertical"
           />
           {errors.notes && (

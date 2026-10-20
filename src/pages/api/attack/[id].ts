@@ -30,7 +30,7 @@ const handler = async (
 ) => {
   try {
     const { id } = context.query;
-    const { turns } = context.body;
+    const { turns, confirmAllianceAttack } = context.body;
     if (typeof id !== 'number' || typeof turns !== 'number') {
       return res
         .status(400)
@@ -57,6 +57,7 @@ const handler = async (
       attackerId: sessionUserId,
       defenderId: id,
       attackTurns: turns,
+      confirmAllianceAttack,
     });
 
     if (results?.status === 'success') {

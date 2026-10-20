@@ -3,26 +3,16 @@ import {
   faChartPie,
   faWarehouse,
 } from '@fortawesome/free-solid-svg-icons';
-import {
-  Box,
-  Button,
-  Grid,
-  Group,
-  RingProgress,
-  Space,
-  Stack,
-  Text,
-} from '@mantine/core';
+import { Box, Grid, Group, RingProgress, Text } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
-import Image from '@/components/ArtworkImage';
+import { useUser } from '@/context/users';
 import type { PlayerItem, PlayerUnit } from '@/types/typings';
-import { getAssetPath, getLevelFromXP } from '@/utils/utilities';
+import { toLocale } from '@/utils/numberFormatting';
 
 import { GameCard } from './game/GameCard';
-import Modal from './modal';
-import SpyMissionsModal from './spyMissionsModal';
+import { MissionLog, SpyReportShell } from './SpyReportShell';
 
 const itemColors = {
   HELM: 'grey',
@@ -35,16 +25,11 @@ const itemColors = {
 
 const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   const { t } = useTranslation('common');
-  const [isSpyModalOpen, setIsSpyModalOpen] = useState(false);
-  const [isAttackModalOpen, setIsAttackModalOpen] = useState(false);
+  const { user } = useUser();
+  const locale = user?.locale;
   const { attackerPlayer, defenderPlayer, winner, stats } = battle;
-  const isViewerAttacker = viewerID === attackerPlayer.id;
   const isAttackerWinner = winner === attackerPlayer.id;
-  const toggleSpyModal = useCallback(() => setIsSpyModalOpen((v) => !v), []);
-  const toggleAttackModal = useCallback(
-    () => setIsAttackModalOpen((v) => !v),
-    [],
-  );
+  const isViewerDefender = viewerID === defenderPlayer.id;
 
   const observedUnits = useMemo<PlayerUnit[]>(() => {
     const intel = stats.spyResults.intelligenceGathered;
@@ -132,66 +117,28 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
   }, [stats, observedUnits, hasFullIntel]);
 
   return (
-    <GameCard title="Intelligence Report" icon={faBinoculars}>
-      <Grid grow gutter="lg">
-        <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Text size="xl" fw={700}>
-            {attackerPlayer?.display_name}
-          </Text>
-          <Text c="dimmed">
-            Level:{' '}
-            {stats.spyResults.attackerLevel ??
-              getLevelFromXP(attackerPlayer?.experience ?? 0)}
-          </Text>
-          <Image
-            src={getAssetPath('shields', '150x150', attackerPlayer?.race)}
-            alt="attacker avatar"
-            width={150}
-            height={150}
-            style={{ margin: 'auto' }}
-          />
-        </Grid.Col>
-        <Grid.Col
-          span={{ base: 12, md: 2 }}
-          style={{ textAlign: 'center', alignSelf: 'center' }}
-        >
-          <Text size="lg" fw="bold" color={isAttackerWinner ? 'green' : 'red'}>
-            {isAttackerWinner ? 'Success' : 'Failure'}
-          </Text>
-          <Text size="xs" c="dimmed">
-            Battle ID: {battle.id}
-          </Text>
-          <Space h="md" />
-          {(isViewerAttacker || viewerID === 1) && (
-            <Stack align="center" gap="xs">
-              <Button size="xs" onClick={toggleSpyModal}>
-                Send More Spies
-              </Button>
-              <Button size="xs" onClick={toggleAttackModal}>
-                Attack
-              </Button>
-            </Stack>
-          )}
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 5 }} style={{ textAlign: 'center' }}>
-          <Text size="xl" fw={700}>
-            {defenderPlayer?.display_name}
-          </Text>
-          <Text c="dimmed">
-            Level:{' '}
-            {stats.spyResults.defenderLevel ??
-              getLevelFromXP(defenderPlayer?.experience ?? 0)}
-          </Text>
-          <Image
-            src={getAssetPath('shields', '150x150', defenderPlayer?.race)}
-            alt="defender avatar"
-            width={150}
-            height={150}
-            style={{ margin: 'auto' }}
-          />
-        </Grid.Col>
-      </Grid>
-
+    <SpyReportShell
+      battle={battle}
+      viewerID={viewerID}
+      mission="intel"
+      icon={faBinoculars}
+      lastGenerated={lastGenerated}
+    >
+      {!isAttackerWinner && (
+        <MissionLog
+          title={t('spyReport.missionLog')}
+          lines={[
+            Number(stats.spyResults.spiesLost ?? 0) > 0
+              ? t(
+                  `spyReport.${isViewerDefender ? 'defender' : 'attacker'}SpiesLost`,
+                  { count: Number(stats.spyResults.spiesLost) },
+                )
+              : t(
+                  `spyReport.${isViewerDefender ? 'defender' : 'attacker'}NoSpiesLost`,
+                ),
+          ]}
+        />
+      )}
       {isAttackerWinner && (
         <Grid grow gutter="md" mt="xl">
           <Grid.Col span={{ base: 12, md: 6 }}>
@@ -206,14 +153,14 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                   label={
                     <Text size="xs" ta="center">
                       {t('intelReport.observedTotal', {
-                        count: totalPopulation,
+                        replace: { count: toLocale(totalPopulation, locale) },
                       })}
                     </Text>
                   }
                   sections={unitSegments.map((s) => ({
                     value: s.part,
                     color: s.color,
-                    tooltip: `${s.quantity} ${s.label}`,
+                    tooltip: `${toLocale(s.quantity, locale)} ${t(`intelReport.unitTypes.${s.label}`, { defaultValue: s.label })}`,
                   }))}
                 />
               </Group>
@@ -236,9 +183,11 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                       }}
                     >
                       <Text tt="uppercase" fz="xs" c="dimmed">
-                        {segment.label}
+                        {t(`intelReport.unitTypes.${segment.label}`, {
+                          defaultValue: segment.label,
+                        })}
                       </Text>
-                      <Text fw={700}>{segment.quantity}</Text>
+                      <Text fw={700}>{toLocale(segment.quantity, locale)}</Text>
                     </Box>
                   </Grid.Col>
                 ))}
@@ -250,7 +199,9 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
               category.itemsBreakdown.length > 0 && (
                 <Grid.Col span={{ base: 12, md: 6 }} key={index}>
                   <GameCard
-                    title={`${category.name} Armory`}
+                    title={t('intelReport.armoryTitle', {
+                      type: t(`intelReport.unitTypes.${category.name}`),
+                    })}
                     icon={faWarehouse}
                   >
                     <Group justify="center">
@@ -260,15 +211,19 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                         label={
                           <Text size="xs" ta="center">
                             {t('intelReport.observedRoleUnits', {
-                              type: category.name,
-                              count: category.total,
+                              replace: {
+                                type: t(
+                                  `intelReport.unitTypes.${category.name}`,
+                                ),
+                                count: toLocale(category.total, locale),
+                              },
                             })}
                           </Text>
                         }
                         sections={category.itemsBreakdown.map((item) => ({
                           value: item.percentage || 0,
                           color: itemColors[item.type],
-                          tooltip: `${item.quantity} ${item.type}`,
+                          tooltip: `${toLocale(item.quantity, locale)} ${t(`intelReport.itemTypes.${item.type}`, { defaultValue: item.type })}`,
                         }))}
                       />
                     </Group>
@@ -286,12 +241,14 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                             }}
                           >
                             <Text tt="uppercase" fz="xs" c="dimmed">
-                              {item.type}
+                              {t(`intelReport.itemTypes.${item.type}`, {
+                                defaultValue: item.type,
+                              })}
                             </Text>
                             <Text fw={700}>
-                              {item.quantity}
+                              {toLocale(item.quantity, locale)}
                               {item.percentage !== null &&
-                                ` (${item.percentage.toFixed(1)}%)`}
+                                ` (${item.percentage.toLocaleString(locale || undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%)`}
                             </Text>
                           </Box>
                         </Grid.Col>
@@ -303,20 +260,7 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
           )}
         </Grid>
       )}
-      <SpyMissionsModal
-        isOpen={isSpyModalOpen}
-        toggleModal={toggleSpyModal}
-        defenderID={defenderPlayer?.id}
-      />
-      <Modal
-        isOpen={isAttackModalOpen}
-        toggleModal={toggleAttackModal}
-        profileID={defenderPlayer.id}
-      />
-      <Text size="xs" c="dimmed" ta="center" mt="md">
-        Report generated: {new Date(lastGenerated).toLocaleString()}
-      </Text>
-    </GameCard>
+    </SpyReportShell>
   );
 };
 

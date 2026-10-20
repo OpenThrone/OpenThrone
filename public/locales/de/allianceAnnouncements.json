@@ -1,0 +1,39 @@
+{
+  "tab": "Ankündigungen",
+  "title": "Ankündigungen",
+  "compose": {
+    "heading": "Ankündigung veröffentlichen",
+    "titleLabel": "Titel",
+    "titlePlaceholder": "Kurze Überschrift",
+    "bodyLabel": "Nachricht",
+    "bodyPlaceholder": "Was soll die Allianz wissen?",
+    "counter": "{{count}} / {{max}}",
+    "hint": "Nur Klartext. Alle anderen Mitglieder erhalten sie zusätzlich in ihrem Posteingang.",
+    "submit": "Ankündigung veröffentlichen",
+    "posted_one": "Ankündigung veröffentlicht und an {{count}} Posteingang zugestellt",
+    "posted_other": "Ankündigung veröffentlicht und an {{count}} Posteingänge zugestellt"
+  },
+  "list": {
+    "empty": "Noch keine Ankündigungen.",
+    "by": "von {{name}}",
+    "unknownAuthor": "Unbekannt",
+    "pinned": "Angeheftet",
+    "pin": "Anheften",
+    "unpin": "Lösen",
+    "delete": "Löschen",
+    "pageLabel": "Seitennavigation der Ankündigungen"
+  },
+  "deleteConfirm": {
+    "title": "Ankündigung löschen",
+    "message": "\"{{title}}\" löschen? Bereits an Posteingänge gesendete Kopien werden nicht entfernt.",
+    "confirm": "Löschen"
+  },
+  "overview": {
+    "heading": "Neueste Ankündigung",
+    "viewAll": "Alle Ankündigungen ansehen"
+  },
+  "pinnedToast": "Ankündigung angeheftet",
+  "unpinnedToast": "Ankündigung gelöst",
+  "deletedToast": "Ankündigung gelöscht",
+  "loadError": "Ankündigungen konnten nicht geladen werden"
+}

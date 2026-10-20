@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { AuthService } from '@/services';
 import { TwoFactorSetupError } from '@/services/TwoFactor.service';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 import { authOptions } from '../auth/[...nextauth]';
 
@@ -32,7 +33,9 @@ export default async function handler(
     res.status(200).json(result);
   } catch (error) {
     if (error instanceof TwoFactorSetupError)
-      return res.status(error.status).json({ error: error.message });
+      return res
+        .status(error.status)
+        .json({ error: publicErrorMessage(error) });
     logError('Enable 2FA error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }

@@ -24,7 +24,6 @@ import {
   faScaleBalanced,
   faScrewdriverWrench,
   faShieldHalved,
-  faToggleOn,
   faUserClock,
   faUsers,
   faUserSecret,
@@ -180,7 +179,7 @@ export const adminNavCategories: AdminNavCategory[] = [
       {
         key: 'bots',
         icon: faRobot,
-        labelKey: 'admin-users:nav.bots',
+        labelKey: 'navigation.home.staffBots',
         href: '/home/admin/bots',
         administratorOnly: true,
       },
@@ -229,7 +228,7 @@ export const adminNavCategories: AdminNavCategory[] = [
       {
         key: 'attack-ledger',
         icon: faClipboardList,
-        labelKey: 'admin-activity:attackLedger',
+        labelKey: 'navigation.home.staffAttackLedger',
         href: '/home/admin/attacks',
         permissions: [PermissionType.VIEW_ANALYTICS],
       },
@@ -260,13 +259,6 @@ export const adminNavCategories: AdminNavCategory[] = [
         labelKey: 'navigation.home.staffSettings',
         href: '/home/admin/settings',
         permissions: [PermissionType.MANAGE_SERVER_SETTINGS],
-      },
-      {
-        key: 'feature-flags',
-        icon: faToggleOn,
-        labelKey: 'navigation.home.staffFeatureFlags',
-        href: '/home/admin/feature-flags',
-        permissions: [PermissionType.MANAGE_FEATURE_FLAGS],
       },
       {
         key: 'api-tokens',

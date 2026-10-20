@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
+import { assertNoDefaultedLoan } from '@/services/AllianceLoan.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getMaxDeposit } from '@/utils/bankLimits';
 import { parseBigInt } from '@/utils/jsonHelpers';
@@ -76,6 +77,13 @@ const deposit = async (userId: number, depositAmount: bigint) => {
     });
 
     if (!user) throw new Error('User not found');
+
+    // A defaulted alliance loan blocks sheltering gold in the personal bank.
+    await assertNoDefaultedLoan(
+      tx,
+      validatedData.userId,
+      'You cannot deposit into your bank while you have a defaulted alliance loan',
+    );
 
     const history = await getDepositHistory(validatedData.userId, tx);
     const uModel = new UserModel(user);

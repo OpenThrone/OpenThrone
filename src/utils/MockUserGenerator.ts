@@ -93,6 +93,9 @@ export default class MockUserGenerator {
       spy: 0, // From schema
       sentry: 0, // From schema
       currentEraId: null, // From schema
+      era_joined_at: null,
+      protection_forfeited_era_id: null,
+      event_citizens_received: 0,
       achievements: '{}', // From schema
       isBot: false,
       botPersona: null,

@@ -29,9 +29,11 @@ type RateLimitProfile =
   | 'auth'
   | 'password_reset'
   | 'attack'
+  | 'attack_read'
   | 'spy'
   | 'bank'
-  | 'admin';
+  | 'admin'
+  | 'public_read';
 
 const RATE_LIMIT_PROFILES: Record<
   RateLimitProfile,
@@ -40,9 +42,16 @@ const RATE_LIMIT_PROFILES: Record<
   auth: { windowMs: 60_000, max: 12 },
   password_reset: { windowMs: 60_000, max: 6 },
   attack: { windowMs: 60_000, max: 20 },
+  // Attack-modal reads must never spend the attack submission budget.
+  attack_read: { windowMs: 60_000, max: 60 },
   spy: { windowMs: 60_000, max: 20 },
   bank: { windowMs: 60_000, max: 15 },
-  admin: { windowMs: 60_000, max: 30 },
+  // Staff pages make several requests each; 30/min tripped normal browsing.
+  admin: { windowMs: 60_000, max: 120 },
+  // Cheap reads a page makes on every load (footer stats, recruit link info,
+  // settings preferences). They shared the 12/min login budget, so normal
+  // browsing blanked the footer and broke email preferences.
+  public_read: { windowMs: 60_000, max: 120 },
 };
 
 /** Account restrictions that may still reach routes opting in via `allowRestrictedAccount`. */

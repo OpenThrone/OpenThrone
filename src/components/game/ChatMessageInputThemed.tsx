@@ -10,6 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React, { useCallback, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 
@@ -41,6 +42,7 @@ const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
   setIsShareModalOpen,
   canWrite,
 }) => {
+  const { t } = useTranslation('messaging');
   const [newMessage, setNewMessage] = useState('');
 
   const handleSendMessage = useCallback(
@@ -105,7 +107,9 @@ const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
           <Group justify="space-between">
             <div>
               <Text size="xs" c="dimmed">
-                Replying to {replyingToMessage.sender.display_name}
+                {t('message.replyingTo', {
+                  name: replyingToMessage.sender.display_name,
+                })}
               </Text>
               <Text size="sm" lineClamp={1}>
                 {replyingToMessage.content}
@@ -114,25 +118,34 @@ const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
             <CloseButton
               size="sm"
               onClick={() => setReplyingToMessage(null)}
-              title="Cancel reply"
+              title={t('input.cancelReply')}
+              aria-label={t('input.cancelReply')}
             />
           </Group>
         </Box>
       )}
       <Group gap="xs" wrap="nowrap">
-        <Tooltip label="Share Attack Log">
+        <Tooltip label={t('input.shareAttackLog')}>
           <ActionIcon
             variant="subtle"
             onClick={() => setIsShareModalOpen(true)}
             size="lg"
             disabled={!canWrite}
+            aria-label={t('input.shareAttackLog')}
           >
             <FontAwesomeIcon icon={faPaperclip} />
           </ActionIcon>
         </Tooltip>
         <TextInput
           placeholder={
-            replyingToMessage ? 'Type your reply...' : 'Type your message...'
+            replyingToMessage
+              ? t('input.replyPlaceholder')
+              : t('input.placeholder')
+          }
+          aria-label={
+            replyingToMessage
+              ? t('input.replyPlaceholder')
+              : t('input.placeholder')
           }
           value={newMessage}
           onChange={(event) => setNewMessage(event.target.value)}
@@ -144,6 +157,7 @@ const ChatMessageInputThemed: React.FC<ChatMessageInputThemedProps> = ({
               size="lg"
               disabled={!newMessage.trim() || !canWrite}
               className={styles.sendButton}
+              aria-label={t('input.send')}
             >
               <FontAwesomeIcon icon={faPaperPlane} />
             </ActionIcon>

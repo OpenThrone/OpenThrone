@@ -1,0 +1,39 @@
+{
+  "tab": "Anuncios",
+  "title": "Anuncios",
+  "compose": {
+    "heading": "Publicar un anuncio",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Titular breve",
+    "bodyLabel": "Mensaje",
+    "bodyPlaceholder": "¿Qué debe saber la alianza?",
+    "counter": "{{count}} / {{max}}",
+    "hint": "Solo texto sin formato. Los demás miembros también lo reciben en su buzón.",
+    "submit": "Publicar anuncio",
+    "posted_one": "Anuncio publicado y entregado en {{count}} buzón",
+    "posted_other": "Anuncio publicado y entregado en {{count}} buzones"
+  },
+  "list": {
+    "empty": "Todavía no hay anuncios.",
+    "by": "por {{name}}",
+    "unknownAuthor": "Desconocido",
+    "pinned": "Fijado",
+    "pin": "Fijar",
+    "unpin": "Desfijar",
+    "delete": "Eliminar",
+    "pageLabel": "Paginación de anuncios"
+  },
+  "deleteConfirm": {
+    "title": "Eliminar anuncio",
+    "message": "¿Eliminar \"{{title}}\"? Las copias ya enviadas a los buzones no se eliminarán.",
+    "confirm": "Eliminar"
+  },
+  "overview": {
+    "heading": "Último anuncio",
+    "viewAll": "Ver todos los anuncios"
+  },
+  "pinnedToast": "Anuncio fijado",
+  "unpinnedToast": "Anuncio desfijado",
+  "deletedToast": "Anuncio eliminado",
+  "loadError": "No se pudieron cargar los anuncios"
+}

@@ -27,6 +27,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import Link from 'next/link';
+import { useTranslation } from 'next-i18next';
 import React, {
   useCallback,
   useEffect,
@@ -65,6 +66,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
   roomInfo,
   isLoading,
 }) => {
+  const { t } = useTranslation('messaging');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(messages);
   const [prevMessages, setPrevMessages] = useState(messages);
   if (messages !== prevMessages) {
@@ -177,7 +179,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
 
   const handleShareAttackLog = async (logId: number) => {
     if (!selectedRoomId || !socket || !isConnected || !currentUserId) {
-      alertService.error('Cannot share log.');
+      alertService.error(t('share.cannotShare'));
       return;
     }
     logInfo(
@@ -309,15 +311,19 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
         },
       );
       if (response.ok) {
-        alertService.success(`Action '${action}' completed.`);
+        alertService.success(t(`members.actionSuccess.${action}`));
         setIsManageMembersModalOpen(false);
       } else {
         const errorData = await response.json();
-        alertService.error(`Failed: ${errorData.message || 'Unknown error'}`);
+        alertService.error(
+          t('members.actionFailed', {
+            message: errorData.message || t('members.unknownError'),
+          }),
+        );
       }
     } catch (error: any) {
       logError('Error managing member:', error);
-      alertService.error(`Error: ${action} member.`);
+      alertService.error(t('members.actionError'));
     } finally {
       setIsMemberActionLoading(false);
     }
@@ -325,25 +331,31 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
 
   // Stable function reference for rendering specific message types (e.g., attack logs)
   // Wrapped in useCallback to prevent breaking memoization of renderedMessageArea.
-  const renderMessageContent = useCallback((message: ChatMessage) => {
-    if (message.messageType === 'ATTACK_LOG_SHARE' && message.sharedAttackLog) {
-      const logId = message.sharedAttackLog.id;
-      return (
-        <Link href={`/battle/results/${logId}`} passHref legacyBehavior>
-          <Button
-            variant="outline"
-            size="xs"
-            component="a"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View Attack Log #{logId}
-          </Button>
-        </Link>
-      );
-    }
-    return message.content;
-  }, []); // No dependencies, this function is stable
+  const renderMessageContent = useCallback(
+    (message: ChatMessage) => {
+      if (
+        message.messageType === 'ATTACK_LOG_SHARE' &&
+        message.sharedAttackLog
+      ) {
+        const logId = message.sharedAttackLog.id;
+        return (
+          <Link href={`/battle/results/${logId}`} passHref legacyBehavior>
+            <Button
+              variant="outline"
+              size="xs"
+              component="a"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('message.viewAttackLog', { id: logId })}
+            </Button>
+          </Link>
+        );
+      }
+      return message.content;
+    },
+    [t],
+  ); // Only changes with the active language
 
   const renderedMessageArea = useMemo(() => {
     if (isLoading) {
@@ -368,7 +380,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
         <Center className="h-full flex-col">
           <FontAwesomeIcon icon={faCommentSlash} size="3x" color="gray" />
           <Text color="dimmed" mt="md">
-            No messages yet.
+            {t('conversation.empty')}
           </Text>
         </Center>
       );
@@ -398,6 +410,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
     handleToggleReaction,
     setReplyingToMessage,
     renderMessageContent,
+    t,
   ]);
 
   if (!selectedRoomId) {
@@ -405,7 +418,7 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
       <Center className="h-full flex-col bg-gray-800">
         <FontAwesomeIcon icon={faComment} size="4x" color="gray" />
         <Title order={3} c="dimmed" mt="md">
-          Select a conversation
+          {t('conversation.selectPrompt')}
         </Title>
       </Center>
     );
@@ -413,7 +426,11 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <GameCard title={roomInfo?.name || 'Chat'} goldAccent={false} p="sm">
+      <GameCard
+        title={roomInfo?.name || t('conversation.fallbackName')}
+        goldAccent={false}
+        p="sm"
+      >
         <Group justify="space-between">
           <Group>
             {roomInfo?.isDirect ? (
@@ -438,22 +455,25 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
             )}
             <div>
               <Text fw={600} size="lg">
-                {roomInfo?.name || 'Chat'}
+                {roomInfo?.name || t('conversation.fallbackName')}
               </Text>
             </div>
           </Group>
           <Menu shadow="md" width={200}>
             <Menu.Target>
-              <ActionIcon variant="subtle">
+              <ActionIcon
+                variant="subtle"
+                aria-label={t('conversation.options')}
+              >
                 <FontAwesomeIcon icon={faEllipsisV} />
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
               {roomInfo?.isAdmin && !roomInfo.isDirect && (
                 <>
-                  <Menu.Label>Admin</Menu.Label>
+                  <Menu.Label>{t('conversation.menu.admin')}</Menu.Label>
                   <Menu.Item onClick={() => setIsManageMembersModalOpen(true)}>
-                    Manage members
+                    {t('conversation.menu.manageMembers')}
                   </Menu.Item>
                 </>
               )}
@@ -503,16 +523,16 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
       <Modal
         opened={isManageMembersModalOpen}
         onClose={() => setIsManageMembersModalOpen(false)}
-        title="Manage Group Members"
+        title={t('members.title')}
         size="lg"
       >
         <Table>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>Member</Table.Th>
-              <Table.Th>Role</Table.Th>
-              <Table.Th>Can Write</Table.Th>
-              <Table.Th>Actions</Table.Th>
+              <Table.Th>{t('members.member')}</Table.Th>
+              <Table.Th>{t('members.role')}</Table.Th>
+              <Table.Th>{t('members.canWrite')}</Table.Th>
+              <Table.Th>{t('members.actions')}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -527,17 +547,24 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                     </Avatar>
                     <Text>
                       {participant.display_name}{' '}
-                      {participant.id === currentUserId ? '(You)' : ''}
+                      {participant.id === currentUserId
+                        ? t('members.youSuffix')
+                        : ''}
                     </Text>
                   </Group>
                 </Table.Td>
                 <Table.Td>
                   <Badge color={participant.role === 'ADMIN' ? 'pink' : 'gray'}>
-                    {participant.role}
+                    {t(`members.roles.${participant.role}`, {
+                      defaultValue: participant.role,
+                    })}
                   </Badge>
                 </Table.Td>
                 <Table.Td>
                   <Switch
+                    aria-label={t('members.toggleWrite', {
+                      name: participant.display_name,
+                    })}
                     checked={participant.canWrite}
                     disabled={
                       participant.id === currentUserId || isMemberActionLoading
@@ -553,8 +580,9 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                       participant.id !== roomInfo?.createdById && (
                         <>
                           {participant.role === 'MEMBER' ? (
-                            <Tooltip label="Make admin">
+                            <Tooltip label={t('members.makeAdmin')}>
                               <ActionIcon
+                                aria-label={t('members.makeAdmin')}
                                 color="green"
                                 onClick={() =>
                                   handleMemberAction(participant.id, 'promote')
@@ -565,8 +593,9 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                               </ActionIcon>
                             </Tooltip>
                           ) : (
-                            <Tooltip label="Remove admin">
+                            <Tooltip label={t('members.removeAdmin')}>
                               <ActionIcon
+                                aria-label={t('members.removeAdmin')}
                                 color="orange"
                                 onClick={() =>
                                   handleMemberAction(participant.id, 'demote')
@@ -577,8 +606,9 @@ const ChatMessageList: React.FC<ChatMessageListProps> = ({
                               </ActionIcon>
                             </Tooltip>
                           )}
-                          <Tooltip label="Remove from group">
+                          <Tooltip label={t('members.removeFromGroup')}>
                             <ActionIcon
+                              aria-label={t('members.removeFromGroup')}
                               color="red"
                               onClick={() =>
                                 handleMemberAction(participant.id, 'remove')

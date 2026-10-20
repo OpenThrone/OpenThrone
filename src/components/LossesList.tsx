@@ -1,4 +1,5 @@
 import { Stack, Text } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 
 import type { BattleUnits } from '@/types/typings';
@@ -23,7 +24,7 @@ const parseLosses = (losses: LossesInput) => {
   }
 };
 
-const unitLabel = (type: string) =>
+const fallbackUnitLabel = (type: string) =>
   type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 
 /** Casualty total with the units behind it listed inline (no hover needed). */
@@ -32,6 +33,7 @@ const LossesList: React.FC<LossesListProps> = ({
   showUnits = true,
   align = 'center',
 }) => {
+  const { t } = useTranslation('battle');
   const parsed = useMemo(() => parseLosses(losses), [losses]);
   const total = Number(parsed?.total) || 0;
   const units: BattleUnits[] = parsed?.units ?? EMPTY_UNITS;
@@ -53,9 +55,7 @@ const LossesList: React.FC<LossesListProps> = ({
   }, [units]);
 
   const totalLabel = (
-    <span>
-      {toLocale(total)} {total === 1 ? 'Unit' : 'Units'}
-    </span>
+    <span>{t('losses.units', { count: total, total: toLocale(total) })}</span>
   );
 
   // The opposing side's breakdown is redacted; show the total only.
@@ -68,7 +68,13 @@ const LossesList: React.FC<LossesListProps> = ({
       {totalLabel}
       {consolidatedUnits.map(([key, unit]) => (
         <Text key={key} component="span" size="xs" fw={400} c="dimmed">
-          {toLocale(unit.quantity)}× Lv {unit.level} {unitLabel(unit.type)}
+          {t('losses.unitLine', {
+            quantity: toLocale(unit.quantity),
+            level: unit.level,
+            unit: t(`unitTypes.${unit.type}`, {
+              defaultValue: fallbackUnitLabel(unit.type),
+            }),
+          })}
         </Text>
       ))}
     </Stack>

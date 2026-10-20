@@ -8,6 +8,7 @@ import type { AuthenticatedRequest } from '@/types/api';
 import { getRequestIp, logAction, logActionStrict } from '@/utils/auditLogger';
 import { parseStartEraBody } from '@/utils/eraStartSettings';
 import { logError } from '@/utils/logger';
+import { getEraParticipantWhere } from '@/utils/loginPolicy';
 
 // Read-only era listing stays open to MANAGE_ERAS holders.
 const guardedGet = withApiGuard({
@@ -20,7 +21,19 @@ const guardedGet = withApiGuard({
     orderBy: { startDate: 'desc' },
     include: { _count: { select: { userEras: true } } },
   });
-  return res.status(200).json(eras);
+  // Ended eras are counted from their UserEra snapshots, which are written
+  // when an era ends; the open era counts its current participants instead.
+  const withPlayers = await Promise.all(
+    eras.map(async (era) => ({
+      ...era,
+      players: era.endDate
+        ? era._count.userEras
+        : await prisma.users.count({
+            where: await getEraParticipantWhere(era),
+          }),
+    })),
+  );
+  return res.status(200).json(withPlayers);
 });
 
 // Starting an era resets every account, so it is admin-only (matches start-era.ts).

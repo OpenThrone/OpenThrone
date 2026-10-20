@@ -8,12 +8,16 @@ import {
   Text,
   useMantineTheme,
 } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React, { useEffect, useState } from 'react';
 
 import { alertService } from '@/services/Alert.service';
 import type { UnitProps, UnitSectionProps } from '@/types/typings';
+import { getBattleUpgradeStructure } from '@/utils/battleUpgradeStructure';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
+import { structureName } from '@/utils/structureNames';
+import { translateBattleUpgradeName } from '@/utils/translateGameNames';
 
 import { useUser } from '../context/users';
 import DiscountSummary from './DiscountSummary';
@@ -22,6 +26,7 @@ import { GameCard } from './game/GameCard';
 type UpgradeSlotItem = UnitProps & {
   baseCost?: number;
   discountedCost?: number;
+  SiegeUpgradeLevel?: number;
 };
 
 const UpgradeSlot = ({
@@ -37,9 +42,11 @@ const UpgradeSlot = ({
   handleInputChange: (unitId: string, value: number | undefined) => void;
   user: any;
 }) => {
+  const { t } = useTranslation('battle');
   const theme = useMantineTheme();
   const secondary = theme.colors.secondary ?? theme.colors.yellow;
   const accent = secondary[1] ?? '#e5c55a';
+  const itemName = translateBattleUpgradeName(t, item.name);
   const showDiscountSummary =
     user &&
     item.baseCost !== item.discountedCost &&
@@ -62,7 +69,17 @@ const UpgradeSlot = ({
         }}
       >
         <Text c="dimmed">
-          {item.name} - Unlocked with {item.SiegeUpgrade}
+          {t('upgrades.unlockedWith', {
+            item: itemName,
+            upgrade: structureName(
+              t,
+              getBattleUpgradeStructure(item.type) === 'SPY'
+                ? 'spy'
+                : 'offense',
+              item.SiegeUpgradeLevel,
+              item.SiegeUpgrade,
+            ),
+          })}
         </Text>
       </Box>
     );
@@ -87,16 +104,20 @@ const UpgradeSlot = ({
           c="gray.3"
           style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}
         >
-          {item.name}
-          <span className="font-medieval text-xs">
-            {' '}
-            (+{item.bonus} {heading})
-          </span>
+          {itemName}
+          {Number(item.bonus) > 0 && (
+            <span className="font-medieval text-xs">
+              {' '}
+              (+{toLocale(Number(item.bonus))} {heading})
+            </span>
+          )}
         </Text>
         <Group gap={6}>
           <Text size="xs" c="dimmed">
-            Cost:{' '}
-            <span style={{ color: accent }}>{toLocale(item.cost)} Gold</span>
+            {t('upgrades.cost')}{' '}
+            <span style={{ color: accent }}>
+              {t('upgrades.goldAmount', { amount: item.cost })}
+            </span>
           </Text>
           {showDiscountSummary && (
             <DiscountSummary
@@ -109,20 +130,26 @@ const UpgradeSlot = ({
             |
           </Text>
           <Text size="xs" c="dimmed">
-            Sale Value:{' '}
-            {toLocale(Number(String(item.cost).replace(/,/g, '')) * 0.75)} Gold
+            {t('upgrades.saleValue', {
+              amount: toLocale(
+                Number(String(item.cost).replace(/,/g, '')) * 0.75,
+                user?.locale,
+              ),
+            })}
           </Text>
           <Text size="xs" c="dimmed">
             |
           </Text>
           <Text size="xs" c="dimmed">
-            Owned: {toLocale(item.ownedItems)}
+            {t('upgrades.owned', {
+              replace: { count: toLocale(item.ownedItems, user?.locale) },
+            })}
           </Text>
         </Group>
       </Box>
       <Group gap="xs">
         <NumberInput
-          aria-labelledby={item.id}
+          aria-label={t('upgrades.quantityFor', { item: itemName })}
           name={`${item.type}_${item.level}`}
           min={0}
           styles={{
@@ -153,6 +180,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
   heading,
   items,
 }) => {
+  const { t } = useTranslation('battle');
   const { user, forceUpdate } = useUser();
   const [getItems, setItems] = useState<UpgradeSlotItem[]>(items || []);
   const [sectionEnabled, setSectionEnabled] = useState(false);
@@ -229,11 +257,11 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
       .filter((item) => item.quantity > 0);
 
     if (!user) {
-      alertService.error('User not found');
+      alertService.error(t('training.userNotFound'));
       return;
     }
     if (itemsToEquipList.length === 0) {
-      alertService.error('Please select items to equip');
+      alertService.error(t('upgrades.selectItems'));
       return;
     }
     try {
@@ -277,7 +305,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
         alertService.error(data.error);
       }
     } catch (error) {
-      alertService.error('Failed to equip items. Please try again.');
+      alertService.error(t('upgrades.equipFailed'));
       logError(error);
     }
   };
@@ -303,9 +331,11 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
       >
         <Group justify="space-between">
           <Text c="dimmed">
-            Total Cost:{' '}
+            {t('upgrades.totalCost')}{' '}
             <span style={{ color: accent }}>
-              {toLocale(getSectionTotalCost(), user?.locale)} Gold
+              {t('upgrades.goldAmount', {
+                amount: toLocale(getSectionTotalCost(), user?.locale),
+              })}
             </span>
           </Text>
           <Group>
@@ -322,7 +352,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
               disabled={!sectionEnabled}
               onClick={async () => handleEquip('buy')}
             >
-              Buy
+              {t('upgrades.buy')}
             </Button>
             <Button
               variant="default"
@@ -335,7 +365,7 @@ const BattleUpgradesSection: React.FC<UnitSectionProps> = ({
               disabled={!sectionEnabled}
               onClick={async () => handleEquip('sell')}
             >
-              Sell
+              {t('upgrades.sell')}
             </Button>
           </Group>
         </Group>

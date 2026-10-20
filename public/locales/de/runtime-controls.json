@@ -1,10 +1,10 @@
 {
   "config": {
-    "unavailable": "Die Registrierung ist nicht verfügbar, solange die Servereinstellungen nicht erreichbar sind. Bitte versuche es später erneut."
+    "unavailable": "Die Registrierung ist nicht verfügbar, solange die Servereinstellungen nicht erreichbar sind. Bitte versuchen Sie es später erneut."
   },
   "maintenance": {
     "title": "Das Reich wird gewartet",
-    "message": "Das Reich ist vorübergehend nicht verfügbar, während wir Verbesserungen vornehmen. Bitte schau bald wieder vorbei.",
+    "message": "Das Reich ist vorübergehend nicht verfügbar, während wir Verbesserungen vornehmen. Bitte schauen Sie bald wieder vorbei.",
     "signIn": "Mitarbeiter-Anmeldung",
     "retry": "Erneut prüfen"
   }

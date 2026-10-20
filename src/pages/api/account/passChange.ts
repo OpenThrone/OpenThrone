@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { withApiGuard } from '@/middleware/apiGuard';
 import { withCors } from '@/middleware/cors';
 import { AccountService } from '@/services';
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Logged-out recovery flow: the emailed reset token is the only credential.
 const guardedHandler = withApiGuard({
@@ -46,7 +47,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(500).json({
       status: false,
       error: 'Internal server error',
-      message: error.message,
+      message: publicErrorMessage(error),
     });
   }
 }

@@ -38,6 +38,16 @@ export function combatSnapshot(value: unknown) {
         };
       });
   }
+  if (Array.isArray(source.items))
+    result.items = source.items.map((item) => {
+      const row = asRecord(item);
+      return {
+        usage: String(row.usage ?? ''),
+        type: String(row.type ?? ''),
+        level: Number(row.level ?? 0),
+        quantity: Number(row.quantity ?? 0),
+      };
+    });
   return result;
 }
 

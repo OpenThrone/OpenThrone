@@ -40,8 +40,12 @@ beforeEach(() => {
     }),
   };
   mockPrisma.alliance_memberships = { count: vi.fn(async () => 1) };
-  mockPrisma.alliance_bank_history = { create: vi.fn(async () => ({})) };
+  mockPrisma.alliance_bank_history = {
+    create: vi.fn(async () => ({})),
+    aggregate: vi.fn(async () => ({ _sum: { amount: null } })),
+  };
   mockPrisma.users = {
+    findUnique: vi.fn(async () => ({ gold: 1_000n })),
     updateMany: vi.fn(async () => {
       events.push('write:users');
       return { count: 1 };

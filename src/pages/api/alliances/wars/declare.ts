@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { AllianceWarService } from '@/services';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const DeclareWarApiSchema = z.object({
   allianceId: z.number().int().positive(),
@@ -34,7 +35,7 @@ const declareWarHandler = async (req: any, res: any) => {
     });
     return res.status(200).json(war);
   } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

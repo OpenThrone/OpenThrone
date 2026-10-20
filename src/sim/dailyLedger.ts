@@ -62,6 +62,7 @@ export function battleDailyBudget(defender: PlayerState): {
       calculateDefenderDailyGoldRemaining({
         goldOnHand: BigInt(Math.max(0, Math.floor(defender.gold))),
         goldTakenToday: BigInt(Math.max(0, Math.floor(ledger.goldTakenToday))),
+        isDefenderProtected: defender.level <= 9,
       }),
     ),
   };

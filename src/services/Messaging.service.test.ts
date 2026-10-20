@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'bun:test';
 import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
-const { MessagingService } = await import('@/services/Messaging.service');
+const { MessagingService, assertMessagingAllowed } =
+  await import('@/services/Messaging.service');
+const { invalidateRuntimeConfigCache } =
+  await import('@/services/RuntimeConfig.service');
 
 beforeEach(() => {
   mockPrisma.$queryRaw = vi.fn().mockResolvedValue([]);
@@ -14,6 +17,44 @@ beforeEach(() => {
   mockPrisma.chatRoom = {
     findUnique: vi.fn().mockResolvedValue({ allianceId: null }),
   };
+  // Player messaging switched on (ENABLE_MESSAGING).
+  mockPrisma.serverSetting = {
+    findMany: vi
+      .fn()
+      .mockResolvedValue([{ key: 'ENABLE_MESSAGING', value: true }]),
+  };
+  invalidateRuntimeConfigCache();
+});
+
+describe('messaging switch (ENABLE_MESSAGING)', () => {
+  it('refuses players when messaging is off', async () => {
+    mockPrisma.serverSetting.findMany.mockResolvedValue([
+      { key: 'ENABLE_MESSAGING', value: false },
+    ]);
+    invalidateRuntimeConfigCache();
+    mockPrisma.staffRoleAssignment = {
+      findFirst: vi.fn().mockResolvedValue(null),
+    };
+    await expect(assertMessagingAllowed(7)).rejects.toThrow(
+      'Messaging is currently disabled',
+    );
+  });
+
+  it('lets staff through and keeps alliance rooms open when it is off', async () => {
+    mockPrisma.serverSetting.findMany.mockResolvedValue([
+      { key: 'ENABLE_MESSAGING', value: false },
+    ]);
+    invalidateRuntimeConfigCache();
+    mockPrisma.staffRoleAssignment = {
+      findFirst: vi.fn().mockResolvedValue({ role: 'MODERATOR' }),
+    };
+    await expect(assertMessagingAllowed(7)).resolves.toBeUndefined();
+    mockPrisma.staffRoleAssignment = {
+      findFirst: vi.fn().mockResolvedValue(null),
+    };
+    mockPrisma.chatRoom.findUnique.mockResolvedValue({ allianceId: 3 });
+    await expect(assertMessagingAllowed(7, 42)).resolves.toBeUndefined();
+  });
 });
 
 describe('message unread receipts', () => {

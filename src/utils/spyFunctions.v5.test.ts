@@ -17,69 +17,73 @@ function network(spies: number, sentries: number): SpyMissionUser {
 }
 
 describe('spy commitment and mission boundaries', () => {
-  it('committed intel overcomes a slight sentry advantage on the same entry roll', () => {
-    const attacker = network(1000, 0);
-    // Blended odds (70% squad, 30% network) put a 1000-spy network near 220 sentries.
-    const defender = network(0, 220);
-    const shallow = simulateIntel(
+  // #97: a mission succeeds when the attacker's spy force is greater than the
+  // defender's sentry force; equal or weaker fails. No dice roll decides it.
+  const intel = (
+    attacker: SpyMissionUser,
+    defender: SpyMissionUser,
+    options: { turns?: number; spyPressureToday?: number; sent?: number } = {},
+  ) =>
+    simulateIntel(
       structuredClone(attacker),
       structuredClone(defender),
-      5,
-      { random: () => 0.5, turns: 1 },
+      options.sent ?? 5,
+      {
+        random: () => 0.5,
+        turns: options.turns ?? 1,
+        spyPressureToday: options.spyPressureToday ?? 0,
+      },
     );
-    const committed = simulateIntel(
-      structuredClone(attacker),
-      structuredClone(defender),
-      5,
-      { random: () => 0.5, turns: 5 },
-    );
-    expect(shallow.success).toBe(false);
+  /** Smallest sentry count that stops `attacker` under `options`. */
+  const firstStoppingSentries = (
+    attacker: SpyMissionUser,
+    options: { turns?: number; spyPressureToday?: number } = {},
+  ) => {
+    for (let sentries = 1; sentries <= 5000; sentries++) {
+      if (!intel(attacker, network(0, sentries), options).success)
+        return sentries;
+    }
+    return Infinity;
+  };
+
+  it('the greater spy force wins and the weaker one fails', () => {
+    expect(intel(network(1000, 0), network(0, 10)).success).toBe(true);
+    expect(intel(network(10, 0), network(0, 1000)).success).toBe(false);
+    const stop = firstStoppingSentries(network(200, 0));
+    expect(stop).toBeGreaterThan(1);
+    expect(intel(network(200, 0), network(0, stop - 1)).success).toBe(true);
+    expect(intel(network(200, 0), network(0, stop)).success).toBe(false);
+  });
+
+  it('committing more turns adds force', () => {
+    const attacker = network(200, 0);
+    const stop = firstStoppingSentries(attacker, { turns: 1 });
+    const committed = intel(attacker, network(0, stop), { turns: 5 });
     expect(committed.success).toBe(true);
-    expect(committed.intelPercentage).toBeGreaterThan(50);
+    expect(committed.intelPercentage).toBeGreaterThan(0);
   });
 
-  it('defender pressure lowers success odds rather than resampling a favorable verdict', () => {
-    const attacker = network(1000, 0);
-    // Rescaled for blended odds: 100 sentries is beatable unpressured, not at pressure 64.
-    const defender = network(0, 100);
-    const first = simulateIntel(
-      structuredClone(attacker),
-      structuredClone(defender),
-      5,
-      { random: () => 0.5, turns: 1, spyPressureToday: 0 },
-    );
-    const pressured = simulateIntel(
-      structuredClone(attacker),
-      structuredClone(defender),
-      5,
-      { random: () => 0.5, turns: 1, spyPressureToday: 64 },
-    );
-    expect(first.success).toBe(true);
-    expect(pressured.success).toBe(false);
-    expect(pressured.successProbability).toBeLessThan(first.successProbability);
+  it('the whole spy force counts, however many are dispatched', () => {
+    const attacker = network(200, 0);
+    const stop = firstStoppingSentries(attacker);
+    for (const sent of [1, 5, 10]) {
+      expect(intel(attacker, network(0, stop - 1), { sent }).success).toBe(
+        true,
+      );
+    }
   });
 
-  it('a larger dispatched squad beats the same sentries more often than a single spy', () => {
-    const odds = (sent: number) =>
-      simulateIntel(network(10, 0), network(0, 5), sent, {
-        random: () => 0.5,
-        turns: 1,
-      }).successProbability;
-    expect(odds(10)).toBeGreaterThan(odds(5));
-    expect(odds(5)).toBeGreaterThan(odds(1));
-  });
-
-  it('spy pressure hardens a sentry-less target through phantom sentries', () => {
-    const odds = (spyPressureToday: number) =>
-      simulateIntel(network(5, 0), network(0, 0), 5, {
-        random: () => 0.5,
-        turns: 1,
-        spyPressureToday,
-      }).successProbability;
-    expect(odds(10)).toBeLessThan(odds(0));
-    expect(odds(30)).toBeLessThan(odds(10));
-    expect(odds(30)).toBeGreaterThan(0.4);
-    expect(odds(30)).toBeLessThan(0.6);
+  it("today's spy pressure hardens a target, including a sentry-less one", () => {
+    const attacker = network(200, 0);
+    const stop = firstStoppingSentries(attacker);
+    expect(intel(attacker, network(0, stop - 1)).success).toBe(true);
+    expect(
+      intel(attacker, network(0, stop - 1), { spyPressureToday: 64 }).success,
+    ).toBe(false);
+    expect(intel(network(5, 0), network(0, 0)).success).toBe(true);
+    expect(
+      intel(network(5, 0), network(0, 0), { spyPressureToday: 10_000 }).success,
+    ).toBe(false);
   });
 
   it('does not force one civilian death when the population share budget is below one', () => {

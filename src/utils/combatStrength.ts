@@ -369,3 +369,81 @@ export function calculateCombatStrength(
     result.totalStats[key] = Math.ceil(result.totalStats[key]);
   return result;
 }
+
+export interface CombatBreakdownUnit {
+  name: string;
+  level: number;
+  isMercenary: boolean;
+  quantity: number;
+  /** Base power each unit contributes, before items, upgrades and bonuses. */
+  bonus: number;
+  subtotal: number;
+}
+
+export interface CombatBreakdown {
+  units: CombatBreakdownUnit[];
+  unitsTotal: number;
+  itemsTotal: number;
+  upgradesTotal: number;
+  /** Race and bonus-point multiplier applied to units, items and upgrades. */
+  multiplier: number;
+  bonusAmount: number;
+  /** Matches the headline army stat. */
+  finalTotal: number;
+}
+
+const POWER_KEYS = {
+  OFFENSE: ['MeleeAtkPower', 'RangedAtkPower'],
+  DEFENSE: ['MeleeDefPower', 'RangedDefPower'],
+} as const;
+
+/** Explains an army stat as units + items + upgrades + bonuses, from the same allocation as the headline number. */
+export function calculateCombatBreakdown(
+  user: CombatStrengthUser,
+  unitType: 'OFFENSE' | 'DEFENSE',
+  options: CombatStrengthOptions = {},
+): CombatBreakdown {
+  const keys = POWER_KEYS[unitType];
+  const power = (stats: CalculatedStrength) =>
+    keys.reduce((sum, key) => sum + stats[key], 0);
+  const rows = new Map<string, CombatBreakdownUnit>();
+  let itemsTotal = 0;
+  let upgradesTotal = 0;
+  for (const group of allocate(user, unitType, options)) {
+    const info = UnitTypes.find(
+      (entry) => entry.type === group.type && entry.level === group.level,
+    );
+    const base = power(group.baseStats);
+    const key = `${group.level}:${group.isMercenary}`;
+    const row = rows.get(key) ?? {
+      name: info?.name ?? `${group.type} ${group.level}`,
+      level: group.level,
+      isMercenary: group.isMercenary,
+      quantity: 0,
+      bonus: base,
+      subtotal: 0,
+    };
+    row.quantity += group.quantity;
+    row.subtotal += base * group.quantity;
+    rows.set(key, row);
+    itemsTotal += power(group.itemStats) * group.quantity;
+    upgradesTotal += power(group.upgradeStats) * group.quantity;
+  }
+  const units = [...rows.values()].sort(
+    (a, b) =>
+      b.level - a.level || Number(a.isMercenary) - Number(b.isMercenary),
+  );
+  const unitsTotal = units.reduce((sum, row) => sum + row.subtotal, 0);
+  const total = calculateCombatStrength(user, unitType, options).totalStats;
+  const finalTotal = power(total);
+  const rawBase = unitsTotal + itemsTotal + upgradesTotal;
+  return {
+    units,
+    unitsTotal,
+    itemsTotal,
+    upgradesTotal,
+    multiplier: rawBase > 0 ? finalTotal / rawBase : 1,
+    bonusAmount: finalTotal - rawBase,
+    finalTotal,
+  };
+}

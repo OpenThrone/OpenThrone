@@ -1,17 +1,22 @@
 import {
+  Badge,
   Button,
+  Group,
   Loader,
   SimpleGrid,
   Text,
+  Tooltip,
   UnstyledButton,
 } from '@mantine/core';
 import type { InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
 import { useTranslation } from 'next-i18next';
 import { MDXRemote } from 'next-mdx-remote';
 import { serialize } from 'next-mdx-remote/serialize';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { AllianceListBadge } from '@/components/alliance/AllianceListBadge';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import FriendCard from '@/components/friendCard';
 import { GameCard } from '@/components/game/GameCard';
@@ -28,16 +33,22 @@ import RpgAwesomeIcon from '@/components/RpgAwesomeIcon';
 import SpyMissionsModal from '@/components/spyMissionsModal';
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
+import { useRecruitmentStatus } from '@/hooks/useRecruitmentStatus';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
+import { authOptions } from '@/pages/api/auth/[...nextauth]';
 import { alertService } from '@/services/Alert.service';
+import { AllianceService } from '@/services/Alliance.service';
 import {
   hasParticipatedInEra,
   tookPartInArchivedEra,
 } from '@/utils/eraParticipation';
 import { logDebug, logError } from '@/utils/logger';
+import { canMessage } from '@/utils/messagingAccess';
 import { toLocale } from '@/utils/numberFormatting';
+import { recruitBlockMessage } from '@/utils/recruitmentStatus';
+import { serverSideTranslations } from '@/utils/serverTranslations';
 import { serializeDates } from '@/utils/utilities';
 
 const ERA_RECORD_FIELDS = [
@@ -55,15 +66,27 @@ const actionClassNames = {
 
 const Index = ({
   users,
+  visibleAlliances,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const { user, forceUpdate } = useUser();
   const { config, error: configError } = useRuntimeConfig();
   const { t } = useTranslation('common');
+  const { t: tAlliances } = useTranslation('alliances');
   const hideSidebar = !user;
   const userStatus = users.status;
 
   const profile = useMemo(() => new UserModel(users, true, false), [users]);
   const isOwnProfile = user?.id === profile.id;
+  const { status: recruitStatus } = useRecruitmentStatus(
+    profile.id ? [profile.id] : [],
+    !!user && !isOwnProfile,
+  );
+  const recruitBlockReason = recruitBlockMessage(
+    t,
+    recruitStatus,
+    profile.id,
+    profile.displayName,
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [lastActive, setLastActive] = useState('Never logged in');
@@ -451,13 +474,13 @@ const Index = ({
     {
       key: 'population',
       label: t('profileSummary.population', { defaultValue: 'Population' }),
-      value: toLocale(profile?.population ?? 0),
+      value: toLocale(users?.populationTotal ?? profile?.population ?? 0),
       icon: 'double-team',
     },
     {
       key: 'armySize',
       label: t('profileSummary.armySize', { defaultValue: 'Army Size' }),
-      value: toLocale(profile?.armySize ?? 0),
+      value: toLocale(users?.armySizeTotal ?? profile?.armySize ?? 0),
       icon: 'crossed-swords',
     },
     {
@@ -470,12 +493,17 @@ const Index = ({
           ?.name ?? '—',
       icon: 'tower',
     },
-    {
-      key: 'gold',
-      label: t('profileSummary.gold', { defaultValue: 'Gold' }),
-      value: toLocale(profile?.gold),
-      icon: 'gold-bar',
-    },
+    // Hidden from logged-out visitors (the server does not send it).
+    ...(users?.gold == null
+      ? []
+      : [
+          {
+            key: 'gold',
+            label: t('profileSummary.gold', { defaultValue: 'Gold' }),
+            value: toLocale(profile?.gold),
+            icon: 'gold-bar',
+          },
+        ]),
   ];
   const eraRecord = users.latestUserEra;
   const tookPartInEra = tookPartInArchivedEra(eraRecord?.achievements);
@@ -511,6 +539,34 @@ const Index = ({
       />
 
       <div className={profileClasses.sections}>
+        {visibleAlliances.length > 0 && (
+          <GameCard
+            title={tAlliances('profile.title')}
+            icon={<RpgAwesomeIcon icon="double-team" />}
+          >
+            <Group gap="xs">
+              {visibleAlliances.map((alliance) => (
+                <Badge
+                  key={alliance.id}
+                  component={Link}
+                  href={`/alliances/${alliance.id}`}
+                  variant={alliance.isLeader ? 'filled' : 'light'}
+                  color={alliance.isLeader ? 'yellow' : undefined}
+                  size="lg"
+                  title={
+                    alliance.isLeader
+                      ? tAlliances('profile.leaderOf', { name: alliance.name })
+                      : undefined
+                  }
+                  style={{ cursor: 'pointer' }}
+                >
+                  {alliance.name}
+                </Badge>
+              ))}
+            </Group>
+          </GameCard>
+        )}
+
         <GameCard
           title={t('profileSummary.kingdom', {
             defaultValue: 'Kingdom Statistics',
@@ -562,12 +618,14 @@ const Index = ({
                 }}
                 classNames={actionClassNames}
                 leftSection={<RpgAwesomeIcon icon="quill-ink" />}
-                disabled={user?.id !== 1 && user?.id !== 2}
+                disabled={!canMessage(config, user)}
                 onClick={(event) => {
-                  if (user?.id !== 1 && user?.id !== 2) event.preventDefault();
+                  if (!canMessage(config, user)) event.preventDefault();
                 }}
               >
-                Message this Player
+                {t('profileActions.message', {
+                  defaultValue: 'Message this player',
+                })}
               </Button>
               <Button
                 type="button"
@@ -582,6 +640,22 @@ const Index = ({
               >
                 Attack this Player
               </Button>
+              {!isOwnProfile && user?.id && (
+                <Button
+                  component={Link}
+                  href={`/report?userId=${profile?.id}&username=${encodeURIComponent(profile?.display_name ?? '')}`}
+                  classNames={actionClassNames}
+                  variant="subtle"
+                  leftSection={<RpgAwesomeIcon icon="flag" />}
+                >
+                  {t('profileActions.report', {
+                    defaultValue: 'Report player',
+                  })}
+                </Button>
+              )}
+              {!isOwnProfile && user?.id && (
+                <AllianceListBadge targetUserId={profile.id} />
+              )}
               {attackReason && (
                 <Text
                   id="profile-attack-reason"
@@ -624,14 +698,31 @@ const Index = ({
                 toggleModal={toggleSpyModal}
                 defenderID={profile?.id}
               />
-              <Button
-                component={Link}
-                href={`/recruit/${profile?.recruitingLink}`}
-                classNames={actionClassNames}
-                leftSection={<RpgAwesomeIcon icon="double-team" />}
-              >
-                Recruit this Player
-              </Button>
+              {recruitBlockReason ? (
+                <Tooltip
+                  label={recruitBlockReason}
+                  events={{ hover: true, focus: true, touch: true }}
+                >
+                  <Button
+                    classNames={actionClassNames}
+                    leftSection={<RpgAwesomeIcon icon="double-team" />}
+                    data-disabled
+                    aria-disabled
+                    onClick={(event) => event.preventDefault()}
+                  >
+                    Recruit this Player
+                  </Button>
+                </Tooltip>
+              ) : (
+                <Button
+                  component={Link}
+                  href={`/recruit/${profile?.recruitingLink}`}
+                  classNames={actionClassNames}
+                  leftSection={<RpgAwesomeIcon icon="double-team" />}
+                >
+                  Recruit this Player
+                </Button>
+              )}
               {socialEnabled && (
                 <>
                   {friendStatus === 'pending_incoming' ? (
@@ -976,7 +1067,7 @@ const Index = ({
   );
 };
 
-export const getServerSideProps = async ({ query }) => {
+export const getServerSideProps = async ({ query, locale, req, res }) => {
   let recruitLink = '';
   let id: number | null = null;
 
@@ -1066,14 +1157,25 @@ export const getServerSideProps = async ({ query }) => {
     orderBy: { startDate: 'desc' },
     select: { startDate: true },
   });
+  // Population and army size are public (the attack list shows them), but the
+  // per-unit breakdown is spy intel, so only the totals reach the client.
+  const units = await prisma.userUnit.findMany({
+    where: { userId: user.id },
+    select: { type: true, level: true, quantity: true, isMercenary: true },
+  });
+  const totalsModel = new UserModel({ ...user, UserUnit: units } as any);
   const userData = {
+    populationTotal: totalsModel.population,
+    armySizeTotal: totalsModel.armySize,
     attackEligible:
       ['ACTIVE', 'IDLE'].includes(status) &&
       hasParticipatedInEra(user.last_active, activeEra?.startDate),
     ...userWithoutPassword,
     bionew: serializedBio,
-    gold: user.gold.toString(),
-    gold_in_bank: user.gold_in_bank.toString(),
+    // Gold on hand is shown to signed-in players only; banked gold to nobody
+    // but the owner (filled in below once the session is known).
+    gold: null as string | null,
+    gold_in_bank: null as string | null,
     last_active: lastActiveStr,
     created_at: createdAtStr,
     updated_at: updatedAtStr,
@@ -1085,7 +1187,34 @@ export const getServerSideProps = async ({ query }) => {
     ),
   };
 
-  return { props: { users: serializeDates(userData) } };
+  const translations = await serverSideTranslations(locale ?? 'en', [
+    'common',
+    'navigation',
+    'allianceLists',
+    'alliances',
+  ]);
+
+  // Only alliances whose roster is PUBLIC, or that the viewer belongs to.
+  const session = await getServerSession(req, res, authOptions);
+  const sessionUserId = Number(session?.user?.id);
+  if (Number.isSafeInteger(sessionUserId) && sessionUserId > 0) {
+    userData.gold = user.gold.toString();
+    if (sessionUserId === user.id) {
+      userData.gold_in_bank = user.gold_in_bank.toString();
+    }
+  }
+  const visibleAlliances = await AllianceService.getVisibleAlliancesForPlayer(
+    user.id,
+    Number.isSafeInteger(sessionUserId) ? sessionUserId : null,
+  );
+
+  return {
+    props: {
+      ...translations,
+      users: serializeDates(userData),
+      visibleAlliances,
+    },
+  };
 };
 
 export default Index;

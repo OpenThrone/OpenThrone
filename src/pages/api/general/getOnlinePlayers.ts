@@ -17,5 +17,5 @@ const getOnlinePlayers = async (req: NextApiRequest, res: NextApiResponse) => {
 export default withApiGuard({
   methods: ['GET'],
   authMode: 'none',
-  rateLimitProfile: 'auth',
+  rateLimitProfile: 'public_read',
 })(getOnlinePlayers);

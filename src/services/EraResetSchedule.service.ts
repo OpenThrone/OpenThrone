@@ -222,15 +222,6 @@ async function closeEraReset(
     },
     update: { value: true, updatedByUserId: schedule.adminUserId },
   });
-  await tx.featureFlag.upsert({
-    where: { key: 'DISABLE_LOGIN' },
-    create: {
-      key: 'DISABLE_LOGIN',
-      enabled: true,
-      updatedByUserId: schedule.adminUserId,
-    },
-    update: { enabled: true, updatedByUserId: schedule.adminUserId },
-  });
   await writeSchedule(tx, {
     ...schedule,
     state: 'closing',

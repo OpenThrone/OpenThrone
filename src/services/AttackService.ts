@@ -3,6 +3,10 @@ import prisma from '@/lib/prisma';
 import type { Prisma } from '@/lib/prisma-exports';
 import { BattleUser } from '@/models/BattleUser';
 import {
+  divertIncomeToLoans,
+  settleLoanTreasuryCredits,
+} from '@/services/AllianceLoan.service';
+import {
   createAttackLog,
   createBankHistory,
   getUserById,
@@ -11,6 +15,10 @@ import {
   updateUserUnits,
 } from '@/services/AttackDataService';
 import { enqueueBattleAlert } from '@/services/BattleNotification.service';
+import {
+  applyProtectionContext,
+  loadProtectionContext,
+} from '@/services/BattleProtection.service';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { combatSnapshot } from '@/utils/adminCombat';
@@ -111,6 +119,9 @@ export const AttackService = {
     attackerId: number,
     defenderId: number,
     attack_turns: number,
+    options: {
+      confirmAllianceAttack?: boolean;
+    } = {},
   ) {
     logDebug('Attack initiated', { attackerId, defenderId, attack_turns });
 
@@ -147,7 +158,7 @@ export const AttackService = {
       }
 
       try {
-        return await prisma.$transaction(
+        const outcome = await prisma.$transaction(
           async (tx) => {
             // Lock both rows in id order so opposing missions cannot deadlock.
             const firstId = Math.min(attackerId, defenderId);
@@ -177,6 +188,9 @@ export const AttackService = {
 
             const attacker = new BattleUser(attackerUser);
             const defender = new BattleUser(defenderUser);
+            // One shared protection rule (utils/battleProtection.ts) for both sides.
+            const protectionContext = await loadProtectionContext(tx);
+            applyProtectionContext(protectionContext, attacker, defender);
 
             if (attacker.attackTurns < committedTurns) {
               return {
@@ -262,6 +276,31 @@ export const AttackService = {
               };
             }
 
+            // Friendly fire stays allowed but must be acknowledged after
+            // the other refusal checks have passed.
+            if (!options.confirmAllianceAttack) {
+              const sharedMembership = await tx.alliance_memberships.findFirst({
+                where: {
+                  user_id: attackerId,
+                  alliance: { members: { some: { user_id: defenderId } } },
+                },
+                orderBy: { alliance_id: 'asc' },
+                select: { alliance: { select: { id: true, name: true } } },
+              });
+              if (sharedMembership?.alliance) {
+                const allianceName = sharedMembership.alliance.name;
+                return {
+                  status: 'failed',
+                  message: `This player is a fellow member of your alliance "${allianceName}". Confirm to attack them anyway.`,
+                  code: 'ALLIANCE_MEMBER_CONFIRMATION_REQUIRED',
+                  extra_variables: {
+                    allianceId: sharedMembership.alliance.id,
+                    allianceName,
+                  },
+                };
+              }
+            }
+
             // Dogpile protection: the defender can only lose DAILY_CASUALTY_RECOVERY
             // days of rebuild throughput across ALL attackers today. Reduce that
             // allowance by what earlier attackers already took.
@@ -314,8 +353,9 @@ export const AttackService = {
               AttackPlayer.defensePressureToday = 0;
             }
 
-            // Treasury dogpile protection: all attackers combined may take at most
-            // DAILY_GOLD_PILLAGE_SHARE_CAP of the defender's on-hand gold per day.
+            // Treasury dogpile protection for protected defenders only: all attackers
+            // combined may take at most DAILY_GOLD_PILLAGE_SHARE_CAP of their on-hand
+            // gold per day. Unprotected treasuries have no daily ceiling.
             const todayGoldTaken = BigInt(
               todayLossesAgg._sum.pillaged_gold ?? 0,
             );
@@ -323,6 +363,7 @@ export const AttackService = {
               calculateDefenderDailyGoldRemaining({
                 goldOnHand: BigInt(DefensePlayer.gold),
                 goldTakenToday: todayGoldTaken,
+                isDefenderProtected: DefensePlayer.isProtected(),
               });
 
             const defenderGoldAtStart = BigInt(DefensePlayer.gold);
@@ -693,11 +734,20 @@ export const AttackService = {
             const newDefSpying = DefensePlayer.getDetailedArmyStat('SPY');
             const newDefSentry = DefensePlayer.getDetailedArmyStat('SENTRY');
 
+            // An attacker with an open alliance loan sends a share of the
+            // pillage to the treasury; the attacker row is locked above.
+            const loanRepayment = await divertIncomeToLoans(
+              tx,
+              attackerId,
+              pillage,
+              'pillage',
+            );
+
             // Gold, turns and stamina are relative to the locked row, never absolute.
             await updateUser(
               attackerId,
               {
-                gold: { increment: pillage },
+                gold: { increment: pillage - loanRepayment },
                 attack_turns: { decrement: committedTurns },
                 stamina: { decrement: committedTurns },
                 experience: Math.ceil(AttackPlayer.experience),
@@ -745,6 +795,10 @@ export const AttackService = {
           },
           { timeout: ATTACK_TX_TIMEOUT_MS, maxWait: ATTACK_TX_TIMEOUT_MS },
         );
+        // Pillage diverted to a loan is parked on the loan; move it into the
+        // treasury now under the alliance lock (logs and swallows its errors).
+        await settleLoanTreasuryCredits();
+        return outcome;
       } catch (error) {
         logError('Transaction failed: ', error);
         return {

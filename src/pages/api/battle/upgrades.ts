@@ -5,6 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import { BattleService } from '@/services/Battle.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const BattleUpgradeItemSchema = z.object({
   type: z.string(),
@@ -65,7 +66,7 @@ const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
       typeof error?.message === 'string' &&
       CLIENT_ERROR_PREFIXES.some((prefix) => error.message.startsWith(prefix))
     ) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: publicErrorMessage(error) });
     }
     return res.status(500).json({
       error: 'Failed to manage battle upgrades',
