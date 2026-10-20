@@ -13,6 +13,8 @@ export interface RecommendationEvidence {
   timestamp: string;
   kind: 'intel' | 'battle';
   defense: number | null;
+  /** Observed defensive units (units plus mercenaries) on an intel report. */
+  defenseUnits?: number | null;
   won: boolean | null;
   battle?: BattleRecommendationFacts;
 }

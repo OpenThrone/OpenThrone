@@ -534,7 +534,9 @@
       "intel": "Spionagebericht #{{id}}",
       "battle": "Dein Kampfbericht #{{id}}"
     },
-    "observedDefense": "Gemeldete Verteidigung: {{value}}",
+    "observedDefense": "Gemeldete Verteidigungsstärke: {{value}}",
+    "observedDefenseUnits_one": "Beobachtete Verteidigungseinheit: {{value}}",
+    "observedDefenseUnits_other": "Beobachtete Verteidigungseinheiten: {{value}}",
     "outcome": {
       "won": "Du hast diesen Angriff gewonnen",
       "lost": "Du hast diesen Angriff verloren",

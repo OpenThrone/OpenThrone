@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import { getAntiAbuseHash } from '@/utils/antiAbuse';
+import { getTrustedProxyAddresses } from '@/utils/ipUtils';
 import { logError } from '@/utils/logger';
 
 const RETENTION_DAYS = 30;
@@ -18,6 +19,21 @@ const hashValue = (kind: string, value?: string | null): string | null => {
   return normalized ? getAntiAbuseHash(`${kind}:${normalized}`) : null;
 };
 
+/** Login IP hash as stored on login events. */
+export const loginIpHash = (ip?: string | null): string | null =>
+  hashValue('login-ip', ip);
+
+/**
+ * IP hashes of our own proxies. Logins that resolved to a proxy (a missing
+ * or misconfigured TRUSTED_PROXY_IPS) share them without sharing a network.
+ */
+export const proxyLoginIpHashes = (): Set<string> =>
+  new Set(
+    getTrustedProxyAddresses()
+      .map((ip) => loginIpHash(ip))
+      .filter((hash): hash is string => hash !== null),
+  );
+
 /** Stores only salted hashes for login network and client identifiers. */
 export async function recordSuccessfulLogin(
   input: LoginTelemetryInput,
@@ -31,8 +47,10 @@ export async function recordSuccessfulLogin(
     const normalizedUserAgent = input.userAgent?.trim();
     // A User-Agent identifies a browser family, not a device. Use the
     // combination only as a shared network/browser pattern for staff review.
+    const viaProxyOnly =
+      !!normalizedIp && getTrustedProxyAddresses().includes(normalizedIp);
     const deviceHash =
-      normalizedIp && normalizedUserAgent
+      normalizedIp && normalizedUserAgent && !viaProxyOnly
         ? getAntiAbuseHash(
             `device-pattern:${normalizedIp}:${normalizedUserAgent}`,
           )

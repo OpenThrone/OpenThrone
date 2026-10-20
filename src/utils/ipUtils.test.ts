@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import type { NextApiRequest } from 'next';
 
-import { getIpAddress, resolveClientIp } from './ipUtils';
+import {
+  getIpAddress,
+  getTrustedProxyAddresses,
+  resolveClientIp,
+} from './ipUtils';
 
 type FakeRequest = {
   headers: Record<string, string | string[] | undefined>;
@@ -114,12 +118,56 @@ describe('client IP resolution for rate limits and audit logs', () => {
     ).toBe('11.0.0.1');
   });
 
-  it('prefers cf-connecting-ip over X-Forwarded-For', () => {
+  it('prefers the X-Forwarded-For chain over cf-connecting-ip', () => {
     const req = makeRequest('127.0.0.1', {
       'cf-connecting-ip': '198.51.100.7',
       'x-forwarded-for': '198.51.100.8',
     });
+    expect(resolveClientIp(req)).toBe('198.51.100.8');
+  });
+
+  it('resolves Cloudflare -> reverse proxy -> app to the real client', () => {
+    process.env.TRUSTED_PROXY_IPS = '10.0.0.21, cloudflare';
+    // Cloudflare appends the client, the LAN proxy appends the edge it saw.
+    const req = makeRequest('::ffff:10.0.0.21', {
+      'cf-connecting-ip': '198.51.100.7',
+      'x-forwarded-for': '198.51.100.7, 172.70.1.2',
+    });
     expect(resolveClientIp(req)).toBe('198.51.100.7');
+  });
+
+  it('ignores cf-connecting-ip on requests that bypass Cloudflare', () => {
+    process.env.TRUSTED_PROXY_IPS = '10.0.0.21, cloudflare';
+    // A direct hit on the proxy: the forged headers sit left of the real peer.
+    const req = makeRequest('10.0.0.21', {
+      'cf-connecting-ip': '198.51.100.7',
+      'x-forwarded-for': '198.51.100.7, 203.0.113.50',
+    });
+    expect(resolveClientIp(req)).toBe('203.0.113.50');
+  });
+
+  it('expands the cloudflare keyword to edge ranges, IPv4 and IPv6', () => {
+    process.env.TRUSTED_PROXY_IPS = 'Cloudflare';
+    expect(
+      resolveClientIp(
+        makeRequest('104.16.0.1', { 'x-forwarded-for': '198.51.100.7' }),
+      ),
+    ).toBe('198.51.100.7');
+    expect(
+      resolveClientIp(
+        makeRequest('2606:4700::1', { 'x-forwarded-for': '198.51.100.8' }),
+      ),
+    ).toBe('198.51.100.8');
+    expect(resolveClientIp(makeRequest('11.0.0.1'))).toBe('11.0.0.1');
+  });
+
+  it('lists exact proxy addresses but not ranges', () => {
+    process.env.TRUSTED_PROXY_IPS = '10.0.0.21, 10.0.0.0/8, cloudflare';
+    expect(getTrustedProxyAddresses()).toEqual([
+      '127.0.0.1',
+      '::1',
+      '10.0.0.21',
+    ]);
   });
 
   it('strips ports and brackets from forwarded hops', () => {

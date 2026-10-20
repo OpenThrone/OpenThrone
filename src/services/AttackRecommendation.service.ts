@@ -106,11 +106,28 @@ export async function getAttackRecommendation(
         intel.defense < 0
       )
         continue;
+      // Same count as the intel report's armory ring; null when unobserved.
+      const observed = [intel.units, intel.mercenaries].filter(Array.isArray);
+      const defenseUnits = observed.length
+        ? observed
+            .flat()
+            .map(record)
+            .filter((unit) => unit.type === 'DEFENSE')
+            .reduce(
+              (sum, unit) =>
+                sum +
+                (typeof unit.quantity === 'number' && unit.quantity > 0
+                  ? unit.quantity
+                  : 0),
+              0,
+            )
+        : null;
       evidence.push({
         id: visible.id,
         timestamp: visible.timestamp,
         kind: 'intel',
         defense: intel.defense,
+        defenseUnits,
         won: null,
       });
     }
