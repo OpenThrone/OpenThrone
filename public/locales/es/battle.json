@@ -534,7 +534,9 @@
       "intel": "Informe de espionaje #{{id}}",
       "battle": "Tu informe de batalla #{{id}}"
     },
-    "observedDefense": "Defensa informada: {{value}}",
+    "observedDefense": "Fuerza defensiva informada: {{value}}",
+    "observedDefenseUnits_one": "Unidad defensiva observada: {{value}}",
+    "observedDefenseUnits_other": "Unidades defensivas observadas: {{value}}",
     "outcome": {
       "won": "Ganaste este ataque",
       "lost": "Perdiste este ataque",

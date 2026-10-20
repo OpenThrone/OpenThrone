@@ -326,7 +326,12 @@
     "observedPopulation": "Beobachtete Bevölkerung",
     "observedTotal": "Beobachtet: {{count}}",
     "unobservedPopulation": "Die unbeobachtete Bevölkerung ist unbekannt.",
-    "observedRoleUnits": "Beobachtete {{type}}: {{count}}",
+    "observedRoleUnits": {
+      "OFFENSE": "Beobachtete Angriffseinheiten: {{count}}",
+      "DEFENSE": "Beobachtete Verteidigungseinheiten: {{count}}",
+      "SPY": "Beobachtete Spione: {{count}}",
+      "SENTRY": "Beobachtete Wächter: {{count}}"
+    },
     "title": "Geheimdienstbericht",
     "missionSuccess": "Mission erfolgreich",
     "missionFailed": "Mission gescheitert",

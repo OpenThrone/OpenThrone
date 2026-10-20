@@ -3,6 +3,8 @@ import { installMockPrisma, mockPrisma } from 'test/utils/mockPrisma';
 
 installMockPrisma(vi);
 const {
+  loginIpHash,
+  proxyLoginIpHashes,
   pruneLoginTelemetry,
   recordSuccessfulLogin,
 } = require('../LoginTelemetry.service');
@@ -41,6 +43,26 @@ describe('privacy-preserving login telemetry', () => {
     expect(stored.deviceHash).not.toContain('Synthetic Browser/1.0');
     expect(stored.ipHash).toMatch(/^[a-f0-9]{64}$/);
     expect(stored.userAgentHash).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('never links accounts by a login that resolved to our own proxy', async () => {
+    const original = process.env.TRUSTED_PROXY_IPS;
+    process.env.TRUSTED_PROXY_IPS = '10.0.0.21';
+    try {
+      await recordSuccessfulLogin({
+        userId: 7,
+        ip: '10.0.0.21',
+        userAgent: 'Synthetic Browser',
+      });
+      const stored = mockPrisma.loginEvent.create.mock.calls[0][0].data;
+      expect(stored.deviceHash).toBeNull();
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+      expect(proxyLoginIpHashes().has(stored.ipHash)).toBe(true);
+      expect(proxyLoginIpHashes().has(loginIpHash('203.0.113.9'))).toBe(false);
+    } finally {
+      if (original === undefined) delete process.env.TRUSTED_PROXY_IPS;
+      else process.env.TRUSTED_PROXY_IPS = original;
+    }
   });
 
   it('creates review-only signals only after three distinct accounts share a network/browser pattern', async () => {

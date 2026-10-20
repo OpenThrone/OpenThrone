@@ -210,14 +210,14 @@ const IntelResult = ({ battle, viewerID, lastGenerated }) => {
                         thickness={16}
                         label={
                           <Text size="xs" ta="center">
-                            {t('intelReport.observedRoleUnits', {
-                              replace: {
-                                type: t(
-                                  `intelReport.unitTypes.${category.name}`,
-                                ),
-                                count: toLocale(category.total, locale),
+                            {t(
+                              `intelReport.observedRoleUnits.${category.name}`,
+                              {
+                                replace: {
+                                  count: toLocale(category.total, locale),
+                                },
                               },
-                            })}
+                            )}
                           </Text>
                         }
                         sections={category.itemsBreakdown.map((item) => ({

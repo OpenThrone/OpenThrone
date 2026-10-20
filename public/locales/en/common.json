@@ -326,7 +326,12 @@
     "observedPopulation": "Observed population",
     "observedTotal": "Observed: {{count}}",
     "unobservedPopulation": "Unobserved population is unknown.",
-    "observedRoleUnits": "Observed {{type}}: {{count}}",
+    "observedRoleUnits": {
+      "OFFENSE": "Observed offensive units: {{count}}",
+      "DEFENSE": "Observed defensive units: {{count}}",
+      "SPY": "Observed spies: {{count}}",
+      "SENTRY": "Observed sentries: {{count}}"
+    },
     "title": "Intelligence Report",
     "missionSuccess": "Mission Success",
     "missionFailed": "Mission Failed",

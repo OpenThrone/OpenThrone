@@ -4,6 +4,17 @@ OpenThrone follows [Semantic Versioning](https://semver.org/) on the 0.x line:
 each production release raises the minor version and hotfixes raise the patch
 version. Alpha builds carry the next version with an `-alpha` suffix.
 
+## v0.5.1 (2026-10-20)
+
+### Fixed
+- Rate limits now count each player's own connection. Before, every player
+  shared one limit, so busy moments could block attacks and logins for
+  everyone.
+- Staff multi-account checks no longer group every player together.
+- The attack recommendation shows reported defense strength and the observed
+  number of defensive units separately, and intel reports label their armory
+  rings by unit type (offensive units, defensive units, spies, sentries).
+
 ## v0.5.0 (2026-10-19)
 
 ### New

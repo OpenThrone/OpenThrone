@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import { InvestigationStatus, SignalSeverity } from '@/lib/prisma-exports';
+import { proxyLoginIpHashes } from '@/services/LoginTelemetry.service';
 import { logActionStrict } from '@/utils/auditLogger';
 
 /** Encapsulates cheat detection data access and domain operations. */
@@ -100,7 +101,10 @@ export class CheatDetectionService {
       map.set(key, users);
     };
 
+    // Our own proxy's address is everyone's address, not a shared network.
+    const proxyHashes = proxyLoginIpHashes();
     for (const login of recentLogins) {
+      if (login.ipHash && proxyHashes.has(login.ipHash)) continue;
       if (login.ipHash) {
         addUser(ipToUsers, login.ipHash, login.userId);
       }

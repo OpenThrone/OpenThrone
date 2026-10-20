@@ -148,9 +148,22 @@ export default function AttackRecommendation({
                     {new Date(report.timestamp).toLocaleString(i18n.language)}
                     {' · '}
                     {report.kind === 'intel'
-                      ? t('recommendation.observedDefense', {
-                          value: report.defense,
-                        })
+                      ? [
+                          t('recommendation.observedDefense', {
+                            value: (report.defense ?? 0).toLocaleString(
+                              i18n.language,
+                            ),
+                          }),
+                          typeof report.defenseUnits === 'number' &&
+                            t('recommendation.observedDefenseUnits', {
+                              count: report.defenseUnits,
+                              value: report.defenseUnits.toLocaleString(
+                                i18n.language,
+                              ),
+                            }),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')
                       : t(
                           `recommendation.outcome.${report.won === null ? 'unknown' : report.won ? 'won' : 'lost'}`,
                         )}

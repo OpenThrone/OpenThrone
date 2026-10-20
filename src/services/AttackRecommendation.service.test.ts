@@ -76,6 +76,35 @@ describe('recommendation report visibility', () => {
     expect(JSON.stringify(result)).not.toContain('secret');
     expect(JSON.stringify(result)).not.toContain('gold');
   });
+  it('counts observed defensive units like the intel report ring', async () => {
+    const shared = {
+      acl: [{ shared_with_user_id: 1, shared_with_alliance_id: null }],
+    };
+    mockPrisma.attack_log.findMany.mockResolvedValue([
+      report({
+        ...shared,
+        stats: {
+          spyResults: {
+            success: true,
+            intelPercentage: 100,
+            intelligenceGathered: {
+              defense: 2968,
+              units: [
+                { type: 'DEFENSE', level: 1, quantity: 150 },
+                { type: 'OFFENSE', level: 1, quantity: 40 },
+              ],
+              mercenaries: [{ type: 'DEFENSE', level: 1, quantity: 43 }],
+            },
+          },
+        },
+      }),
+      report({ id: 49, ...shared }),
+    ]);
+    const { evidence } = await getAttackRecommendation(1, 2);
+    const byId = (id: number) => evidence.find((row) => row.id === id);
+    expect(byId(50)).toMatchObject({ defense: 2968, defenseUnits: 193 });
+    expect(byId(49)?.defenseUnits).toBeNull();
+  });
   it('revokes alliance evidence immediately after leaving', async () => {
     mockPrisma.attack_log.findMany.mockResolvedValue([
       report({
