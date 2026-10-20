@@ -29,14 +29,15 @@
     "staffEconomy": "Economía",
     "staffEras": "Gestión de eras",
     "staffEvents": "Eventos del juego",
-    "staffFeatureFlags": "Indicadores de funciones",
     "staffMaintenance": "Modo de mantenimiento",
     "staffMassMessaging": "Mensajería masiva",
     "staffMultiAccounts": "Detección de multicuentas",
     "staffReports": "Cola de reportes",
     "staffSettings": "Ajustes del servidor",
     "staffUsers": "Gestión de usuarios",
-    "staffInactiveUsers": "Usuarios inactivos"
+    "staffInactiveUsers": "Usuarios inactivos",
+    "staffAttackLedger": "Registro de ataques",
+    "staffBots": "Gestión de bots"
   },
   "battle": {
     "attack": "Atacar",
@@ -80,7 +81,9 @@
     "signIn": "Iniciar sesión",
     "signOut": "Cerrar sesión",
     "openMenu": "Abrir menú",
-    "closeMenu": "Cerrar menú"
+    "closeMenu": "Cerrar menú",
+    "endImpersonation": "Terminar suplantación ({{time}})",
+    "endImpersonationShort": "Terminar ({{time}})"
   },
   "ariaLabels": {
     "mobileMenuButton": "Abrir menú de navegación",
@@ -91,6 +94,7 @@
     "subNavigation": "Navegación de sección"
   },
   "alliances": {
+    "mine": "Mis alianzas",
     "browse": "Explorar alianzas",
     "create": "Crear alianza"
   },

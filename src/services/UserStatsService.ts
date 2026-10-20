@@ -13,7 +13,10 @@ import {
   getBonusPointLevel,
 } from '@/utils/balance/v5Combat';
 import {
+  calculateCombatBreakdown,
   calculateCombatStrength,
+  type CombatBreakdown,
+  type CombatStrengthUser,
   type DetailedCalculatedStrength,
 } from '@/utils/combatStrength';
 import { getLevelFromXP } from '@/utils/utilities';
@@ -248,24 +251,32 @@ export class UserStatsService {
     );
   }
 
+  private combatUser(): CombatStrengthUser {
+    return {
+      units: this.units,
+      mercenaries: this.mercenaries,
+      items: this.items,
+      battle_upgrades: this.battle_upgrades,
+      structure_upgrades: this.structure_upgrades,
+      fortLevel: this.fortLevel,
+      race: this.race,
+      attackBonus: this.getAttackBonus(),
+      defenseBonus: this.getDefenseBonus(),
+      spyBonus: this.getSpyBonus(),
+      sentryBonus: this.getSentryBonus(),
+    };
+  }
+
   calculateArmyStat(type: UnitType): DetailedCalculatedStrength {
-    return calculateCombatStrength(
-      {
-        units: this.units,
-        mercenaries: this.mercenaries,
-        items: this.items,
-        battle_upgrades: this.battle_upgrades,
-        structure_upgrades: this.structure_upgrades,
-        fortLevel: this.fortLevel,
-        race: this.race,
-        attackBonus: this.getAttackBonus(),
-        defenseBonus: this.getDefenseBonus(),
-        spyBonus: this.getSpyBonus(),
-        sentryBonus: this.getSentryBonus(),
-      },
-      type,
-      { collateralFallback: true },
-    );
+    return calculateCombatStrength(this.combatUser(), type, {
+      collateralFallback: true,
+    });
+  }
+
+  calculateArmyStatBreakdown(type: 'OFFENSE' | 'DEFENSE'): CombatBreakdown {
+    return calculateCombatBreakdown(this.combatUser(), type, {
+      collateralFallback: true,
+    });
   }
 
   updateStats(): {

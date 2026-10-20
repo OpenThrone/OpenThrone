@@ -8,6 +8,7 @@ import {
   Stack,
   Table,
   Text,
+  TextInput,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import type { GetServerSideProps } from 'next';
@@ -36,6 +37,7 @@ interface EraManagementPageProps {
 const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
   const { t } = useTranslation('admin-game');
   const [eras, setEras] = useState<any[]>([]);
+  const [confirmText, setConfirmText] = useState('');
   const [starting, setStarting] = useState(false);
   const [modalOpened, setModalOpened] = useState(false);
   const [gold, setGold] = useState<string>(DEFAULT_ERA_START_SETTINGS.gold);
@@ -69,6 +71,7 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
   }, []);
 
   const startNewEra = async () => {
+    if (!current || confirmText.trim() !== current.name) return;
     setStarting(true);
     try {
       const res = await fetch('/api/admin/game/eras', {
@@ -130,6 +133,15 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
           player&apos;s gold, units, structures and upgrades (messages, friends,
           enemies and alliances are kept).
         </Text>
+        {/* Same safeguard as the other reset: type the era's name. */}
+        <TextInput
+          mb="lg"
+          label={`Type "${current?.name ?? ''}" to confirm`}
+          value={confirmText}
+          onChange={(event) => setConfirmText(event.currentTarget.value)}
+          autoComplete="off"
+          data-autofocus
+        />
         <Group justify="flex-end">
           <Button
             variant="default"
@@ -142,7 +154,9 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
             color="orange"
             onClick={startNewEra}
             loading={starting}
-            disabled={starting}
+            disabled={
+              starting || !current || confirmText.trim() !== current.name
+            }
           >
             Confirm & Start Era
           </Button>
@@ -162,7 +176,8 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
                     Started: {new Date(current.startDate).toLocaleString()}
                   </Text>
                   <Text size="sm" c="dimmed">
-                    Players: {current._count?.userEras ?? '—'}
+                    Players:{' '}
+                    {current.players ?? current._count?.userEras ?? '—'}
                   </Text>
                 </div>
                 <Badge color="green" size="lg">
@@ -231,7 +246,10 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
               <Group mt="md" justify="flex-end">
                 <Button
                   color="orange"
-                  onClick={() => setModalOpened(true)}
+                  onClick={() => {
+                    setConfirmText('');
+                    setModalOpened(true);
+                  }}
                   disabled={!current || starting}
                 >
                   End Current Era & Start New
@@ -261,7 +279,7 @@ const EraManagementPage = ({ canStartEra }: EraManagementPageProps) => {
                   <Table.Td>
                     {e.endDate ? new Date(e.endDate).toLocaleDateString() : '—'}
                   </Table.Td>
-                  <Table.Td>{e._count?.userEras ?? '—'}</Table.Td>
+                  <Table.Td>{e.players ?? e._count?.userEras ?? '—'}</Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>

@@ -29,6 +29,28 @@ describe('administration combat reports', () => {
     expect(details.after.attacker.gold).toBe('90071992547409940');
     expect(JSON.stringify(details)).not.toContain('never-return');
   });
+  test('records the armory inventory without row ids or owners', () => {
+    const snapshot = combatSnapshot({
+      items: [
+        {
+          id: 'row-1',
+          userId: 7,
+          usage: 'OFFENSE',
+          type: 'WEAPON',
+          level: 2,
+          quantity: 40,
+        },
+      ],
+    });
+    expect(snapshot.items).toEqual([
+      { usage: 'OFFENSE', type: 'WEAPON', level: 2, quantity: 40 },
+    ]);
+    const details = adminCombatDetails({
+      adminSnapshots: { version: 1, before: { attacker: snapshot } },
+    });
+    expect(details.before.attacker.items).toEqual(snapshot.items);
+    expect(adminCombatDetails({}).before.attacker.items).toBeUndefined();
+  });
   test('uses recorded legacy values without inventing missing balances', () => {
     const details = adminCombatDetails({
       startOfAttack: {

@@ -6,6 +6,7 @@ import { withAuth } from '@/middleware/auth';
 import { ArmoryService } from '@/services';
 import { getRequestIp, logAction } from '@/utils/auditLogger';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const HireMercenarySchema = z.object({
   unitType: z.enum(['OFFENSE', 'DEFENSE', 'SPY', 'SENTRY']),
@@ -55,7 +56,9 @@ const handler = async (req, res) => {
         error.message.includes('Fort level') ||
         error.message.includes('User not found'))
     ) {
-      return res.status(400).json({ status: 'failed', message: error.message });
+      return res
+        .status(400)
+        .json({ status: 'failed', message: publicErrorMessage(error) });
     }
     logError(error);
     return res

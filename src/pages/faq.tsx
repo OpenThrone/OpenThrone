@@ -77,7 +77,7 @@ export default function Faq() {
                           <Group className={classes.actions}>
                             <Button
                               component="a"
-                              href="https://discord.gg/j9NYxmBCjA"
+                              href="https://discord.com/invite/j9NYxmBCjA"
                               variant="outline"
                             >
                               {t('links.discord')}

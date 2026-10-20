@@ -11,31 +11,53 @@ import { useDisclosure } from '@mantine/hooks';
 import { useTranslation } from 'next-i18next';
 import useSWR from 'swr';
 
+import { getAllianceStanding } from '@/components/alliance/allianceStanding';
+import { alertService } from '@/services/Alert.service';
 import type { AllianceInfo } from '@/services/Alliance.service';
 
 import { DeclareWarModal } from './DeclareWarModal';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+async function endWar(warId: number) {
+  const res = await fetch('/api/alliances/wars/end', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ warId }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+}
+
 /** Alliance war. */
-export const AllianceWar = ({ alliance }: { alliance: AllianceInfo }) => {
+export const AllianceWar = ({
+  alliance,
+  viewerId = null,
+}: {
+  alliance: AllianceInfo;
+  viewerId?: number | null;
+}) => {
   const { t } = useTranslation('alliances');
+  const canDeclare = getAllianceStanding(alliance, viewerId).can('declare_war');
   const [opened, { open, close }] = useDisclosure(false);
 
   // Correct API endpoint is /api/alliances/wars endpoint (which handles GET at index)
   // I created /api/alliances/wars/index.ts so endpoint is /api/alliances/wars
-  const { data: wars, error } = useSWR(
-    `/api/alliances/wars?allianceId=${alliance.id}`,
-    fetcher,
-  );
+  const {
+    data: wars,
+    error,
+    mutate,
+  } = useSWR(`/api/alliances/wars?allianceId=${alliance.id}`, fetcher);
 
   return (
     <Paper p="md" radius="md" withBorder>
       <Group justify="space-between" mb="lg">
         <Title order={3}>{t('war.activeWars', 'Active Conflicts')}</Title>
-        <Button color="red" onClick={open}>
-          {t('war.declareWar', 'Declare War')}
-        </Button>
+        {canDeclare && (
+          <Button color="red" onClick={open}>
+            {t('war.declareWar', 'Declare War')}
+          </Button>
+        )}
       </Group>
 
       {!wars && !error ? (
@@ -47,32 +69,54 @@ export const AllianceWar = ({ alliance }: { alliance: AllianceInfo }) => {
               <Table.Th>{t('war.attacker', 'Attacker')}</Table.Th>
               <Table.Th>{t('war.defender', 'Defender')}</Table.Th>
               <Table.Th>{t('war.status', 'Status')}</Table.Th>
+              {canDeclare && <Table.Th />}
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {wars && wars.length > 0 ? (
+            {Array.isArray(wars) && wars.length > 0 ? (
               wars.map((war: any) => (
                 <Table.Tr key={war.id}>
                   <Table.Td>{war.attacker_alliance.name}</Table.Td>
                   <Table.Td>
                     {war.defender_alliance?.name ||
                       war.defender_user?.display_name ||
-                      'Unknown'}
+                      t('war.unknown', 'Unknown')}
                   </Table.Td>
                   <Table.Td>
                     <Text
                       c={war.status === 'ACTIVE' ? 'red' : 'orange'}
                       fw={700}
                     >
-                      {war.status}
+                      {t(`war.statuses.${war.status}`, {
+                        defaultValue: war.status,
+                      })}
                     </Text>
                   </Table.Td>
+                  {canDeclare && (
+                    <Table.Td>
+                      <Button
+                        size="compact-xs"
+                        variant="default"
+                        onClick={async () => {
+                          try {
+                            await endWar(war.id);
+                            alertService.success(t('war.ended', 'War ended.'));
+                            mutate();
+                          } catch (err) {
+                            alertService.error((err as Error).message);
+                          }
+                        }}
+                      >
+                        {t('war.end', 'End war')}
+                      </Button>
+                    </Table.Td>
+                  )}
                 </Table.Tr>
               ))
             ) : (
               <Table.Tr>
-                <Table.Td colSpan={3} align="center">
-                  <Text c="dimmed">No active wars</Text>
+                <Table.Td colSpan={canDeclare ? 4 : 3} align="center">
+                  <Text c="dimmed">{t('war.none', 'No active wars')}</Text>
                 </Table.Td>
               </Table.Tr>
             )}

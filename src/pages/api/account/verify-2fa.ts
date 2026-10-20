@@ -8,6 +8,7 @@ import {
   TwoFactorSetupError,
 } from '@/services/TwoFactor.service';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const Verify2faSchema = z.object({
   token: z.string().regex(/^\d{6}$/),
@@ -38,7 +39,9 @@ export default async function handler(
     return res.status(200).json(result);
   } catch (error) {
     if (error instanceof TwoFactorSetupError)
-      return res.status(error.status).json({ error: error.message });
+      return res
+        .status(error.status)
+        .json({ error: publicErrorMessage(error) });
     logError('Verify 2FA error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }

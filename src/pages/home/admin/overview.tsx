@@ -164,7 +164,7 @@ const OverviewDashboardPage = () => {
 
         <GameCard title="Moderation Queue">
           <Grid>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
               <StatCard
                 label="Open Reports"
                 value={stats.openReports}
@@ -172,7 +172,7 @@ const OverviewDashboardPage = () => {
                 color="#f59e0b"
               />
             </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
               <StatCard
                 label="Open Appeals"
                 value={stats.openAppeals}
@@ -180,20 +180,12 @@ const OverviewDashboardPage = () => {
                 color="#a855f7"
               />
             </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
               <StatCard
                 label="Cheat Signals"
                 value={stats.openCheatSignals}
                 icon={faShieldAlt}
                 color="#dc2626"
-              />
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-              <StatCard
-                label="Attacks (24h)"
-                value={stats.recentAttacks}
-                icon={faCrosshairs}
-                color="#6366f1"
               />
             </Grid.Col>
           </Grid>
@@ -207,6 +199,14 @@ const OverviewDashboardPage = () => {
                 value={stats.totalAlliances}
                 icon={faScroll}
                 color="#a855f7"
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <StatCard
+                label="Attacks (24h)"
+                value={stats.recentAttacks}
+                icon={faCrosshairs}
+                color="#6366f1"
               />
             </Grid.Col>
           </Grid>

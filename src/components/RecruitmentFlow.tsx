@@ -8,9 +8,11 @@ import Image from '@/components/ArtworkImage';
 import { GameCard } from '@/components/game/GameCard';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
+import { useRecruitmentStatus } from '@/hooks/useRecruitmentStatus';
 import { alertService } from '@/services/Alert.service';
 import type { PlayerRace } from '@/types/typings';
 import { logError } from '@/utils/logger';
+import { formatResetTime, recruitsLeftFor } from '@/utils/recruitmentStatus';
 import { getAssetPath } from '@/utils/utilities';
 
 interface RecruitProps {
@@ -69,10 +71,17 @@ export default function RecruitmentFlow({
   recruitLink,
   embedded = false,
   onBusyChange,
+  targetId,
+  targetName,
+  onRecruited,
 }: {
   recruitLink?: string;
   embedded?: boolean;
   onBusyChange?: (busy: boolean) => void;
+  /** Player behind the link; enables the daily recruit counter after a success. */
+  targetId?: number;
+  targetName?: string;
+  onRecruited?: () => void;
 } = {}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +97,8 @@ export default function RecruitmentFlow({
   const [userInfo, setUserInfo] = useState<RecruitProps | null>(null);
   const { user, forceUpdate } = useUser();
   const { t } = useTranslation('common');
+  const { status: recruitStatus, refresh: refreshStatus } =
+    useRecruitmentStatus(targetId ? [targetId] : [], embedded);
 
   /** Localized message for an API refusal, falling back to the server text. */
   const messageFor = useCallback(
@@ -252,6 +263,13 @@ export default function RecruitmentFlow({
         alertService.success(t('recruit.completed'), true);
         // Reload user data like the sidebar refresh button
         forceUpdate();
+        if (embedded) {
+          // Show the updated daily count, not the one from before this recruit.
+          await refreshStatus().catch((statusError) =>
+            logError('Error refreshing recruitment status:', statusError),
+          );
+          onRecruited?.();
+        }
         setShowCaptcha(false);
         setSucceeded(true);
         if (isAutoRecruit) {
@@ -273,13 +291,43 @@ export default function RecruitmentFlow({
   if (embedded) {
     return (
       <div>
-        <Text mb="md">
-          {t(user ? 'recruit.forYourKingdom' : 'recruit.signInToRecruit')}
-        </Text>
-        {succeeded ? (
-          <Text role="status" c="teal.3">
-            {t('recruit.completed')}
+        {!succeeded && (
+          <Text mb="md">
+            {t(user ? 'recruit.forYourKingdom' : 'recruit.signInToRecruit')}
           </Text>
+        )}
+        {succeeded ? (
+          <>
+            <Text role="status" c="teal.3">
+              {t('recruit.completed')}
+            </Text>
+            {targetId && recruitStatus ? (
+              <>
+                <Text size="sm" mt="xs">
+                  {t('recruit.pairProgress', {
+                    name: targetName ?? '',
+                    used:
+                      recruitStatus.targets[String(targetId)]?.pairUsed ?? 0,
+                    limit: recruitStatus.pairLimit,
+                  })}
+                </Text>
+                <Text size="sm" c="dimmed" data-testid="recruits-left">
+                  {t('recruit.recruitsLeft', {
+                    count: recruitsLeftFor(recruitStatus, targetId) ?? 0,
+                    time: formatResetTime(recruitStatus.resetsAt),
+                  })}
+                </Text>
+                {(recruitsLeftFor(recruitStatus, targetId) ?? 0) > 0 && (
+                  <Button
+                    mt="md"
+                    onClick={() => setRetry((value) => value + 1)}
+                  >
+                    {t('recruit.again')}
+                  </Button>
+                )}
+              </>
+            ) : null}
+          </>
         ) : error ? (
           <>
             <Text role="alert" mb="md">
@@ -321,9 +369,11 @@ export default function RecruitmentFlow({
             <Text size="xl">
               {t('recruit.linkFrom', { name: userInfo.display_name })}
             </Text>
-            <Text mb="sm">
-              {t(user ? 'recruit.forYourKingdom' : 'recruit.signInToRecruit')}
-            </Text>
+            {!error && (
+              <Text mb="sm">
+                {t(user ? 'recruit.forYourKingdom' : 'recruit.signInToRecruit')}
+              </Text>
+            )}
             {t('recruit.level', { level: userInfo.level })}{' '}
             {t('recruit.race', { race: userInfo.race, class: userInfo.class })}.
             <Group justify="center" mt="md">
@@ -338,7 +388,10 @@ export default function RecruitmentFlow({
                 alt=""
               />
             </Group>
-            <Text size="md">{t('recruit.pleaseWaitCaptcha')}</Text>
+            {/* Only while the captcha is actually pending (not next to a refusal). */}
+            {showCaptcha && !error && (
+              <Text size="md">{t('recruit.pleaseWaitCaptcha')}</Text>
+            )}
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 {
   "title": "OpenThrone",
-  "metaDescription": "Wähle eine Rasse, schmiede deine Klasse und befehlige ein aufstrebendes Imperium in einer persistenten Strategiewelt. Kostenlos spielbar ohne Paywalls.",
+  "metaDescription": "Wählen Sie eine Rasse, schmieden Sie Ihre Klasse und befehligen Sie ein aufstrebendes Imperium in einer persistenten Strategiewelt. Kostenlos spielbar ohne Paywalls.",
   "worldStats": {
     "title": "Weltstatistiken",
     "totalPlayers": "Gesamtspieler",
@@ -9,7 +9,7 @@
     "era": "Ära"
   },
   "races": {
-    "title": "Wähle deine Seite",
+    "title": "Wählen Sie Ihre Seite",
     "elf": "Elf — Aufklärung & Wachen",
     "human": "Mensch — Flexible Armeen",
     "goblin": "Goblin — Verteidigung & Plünderung",
@@ -61,6 +61,6 @@
   "footer": {
     "aboutProject": "Über das Projekt",
     "github": "GitHub",
-    "gameTagline": "OpenThrone — baue dein Königreich auf, führe deine Armee und kämpfe um den Thron."
+    "gameTagline": "OpenThrone — bauen Sie Ihr Königreich auf, führen Sie Ihre Armee und kämpfen Sie um den Thron."
   }
 }

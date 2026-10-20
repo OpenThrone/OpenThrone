@@ -12,6 +12,11 @@ let stored: Record<string, unknown> | null;
 let tx: any;
 let resetSpy: ReturnType<typeof vi.spyOn>;
 let auditSpy: ReturnType<typeof vi.spyOn>;
+/** DISABLE_LOGIN writes (the schedule itself is also stored as a setting). */
+const loginWrites = () =>
+  tx.serverSetting.upsert.mock.calls.filter(
+    ([args]: any[]) => args.where.key === 'DISABLE_LOGIN',
+  ).length;
 
 const pendingSchedule = () => ({
   id: ID,
@@ -50,7 +55,6 @@ beforeEach(() => {
           stored = stored ? update.value : create.value;
       }),
     },
-    featureFlag: { upsert: vi.fn() },
   };
   mockPrisma.serverSetting = tx.serverSetting;
   mockPrisma.era = tx.era;
@@ -83,9 +87,10 @@ describe('scheduled current-era reset', () => {
     });
     expect(result).toMatchObject({ eraId: 7, state: 'closing' });
     expect(stored).toMatchObject({ state: 'closing', enableLogins: true });
-    expect(tx.featureFlag.upsert).toHaveBeenCalledWith(
+    expect(tx.serverSetting.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        update: { enabled: true, updatedByUserId: 1 },
+        where: { key: 'DISABLE_LOGIN' },
+        update: { value: true, updatedByUserId: 1 },
       }),
     );
     expect(resetSpy).not.toHaveBeenCalled();
@@ -114,12 +119,12 @@ describe('scheduled current-era reset', () => {
         expectedEraStartDate: new Date('2026-01-03T00:00:00Z'),
       }),
     ).rejects.toThrow('era changed');
-    expect(tx.featureFlag.upsert).not.toHaveBeenCalled();
+    expect(loginWrites()).toBe(0);
     await service.startImmediateEraReset(request);
     await expect(service.startImmediateEraReset(request)).rejects.toThrow(
       'already in progress',
     );
-    expect(tx.featureFlag.upsert).toHaveBeenCalledTimes(1);
+    expect(loginWrites()).toBe(1);
   });
   it('replaces a pending timed reset with the confirmed immediate reset', async () => {
     stored = pendingSchedule();
@@ -135,7 +140,15 @@ describe('scheduled current-era reset', () => {
     expect(stored).toMatchObject({ state: 'closing', enableLogins: false });
   });
   it('does not persist a started immediate reset if closing access or auditing fails', async () => {
-    tx.featureFlag.upsert.mockRejectedValueOnce(new Error('closure failed'));
+    const upsert = tx.serverSetting.upsert.getMockImplementation();
+    let failed = false;
+    tx.serverSetting.upsert.mockImplementation(async (args: any) => {
+      if (args.where.key === 'DISABLE_LOGIN' && !failed) {
+        failed = true;
+        throw new Error('closure failed');
+      }
+      return upsert?.(args);
+    });
     const request = {
       eraId: 7,
       expectedEraStartDate: startDate,
@@ -216,15 +229,10 @@ describe('scheduled current-era reset', () => {
     await service.processScheduledEraReset();
     expect(mockPrisma.$transaction).not.toHaveBeenCalled();
   });
-  it('closes both login overrides before reset and waits for access caches', async () => {
+  it('closes logins before reset and waits for access caches', async () => {
     stored = pendingSchedule();
     await service.processScheduledEraReset();
     expect(stored?.state).toBe('closing');
-    expect(tx.featureFlag.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        update: { enabled: true, updatedByUserId: 1 },
-      }),
-    );
     expect(tx.serverSetting.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { key: 'DISABLE_LOGIN' },
@@ -262,7 +270,7 @@ describe('scheduled current-era reset', () => {
     });
     await service.processScheduledEraReset();
     expect(resetSpy).not.toHaveBeenCalled();
-    expect(tx.featureFlag.upsert).not.toHaveBeenCalled();
+    expect(loginWrites()).toBe(0);
   });
   it('cancels stale-era schedules without changing login settings', async () => {
     stored = pendingSchedule();
@@ -273,7 +281,7 @@ describe('scheduled current-era reset', () => {
     expect(await service.getEraResetSchedule()).toBeNull();
     await service.processScheduledEraReset();
     expect(stored?.state).toBe('cancelled');
-    expect(tx.featureFlag.upsert).not.toHaveBeenCalled();
+    expect(loginWrites()).toBe(0);
     expect(resetSpy).not.toHaveBeenCalled();
   });
   it('keeps a failed reset in the closing state for safe retry', async () => {

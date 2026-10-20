@@ -1,8 +1,10 @@
 import {
   faCrosshairs,
   faFilter,
+  faShieldHalved,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Avatar,
   Badge,
@@ -30,7 +32,7 @@ import { usePagination } from '@mantine/hooks';
 import type { InferGetServerSidePropsType } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useTranslation } from 'next-i18next';
+import { Trans, useTranslation } from 'next-i18next';
 import React, {
   useCallback,
   useEffect,
@@ -38,7 +40,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import useSWR from 'swr';
 
+import type { AllianceListHit } from '@/components/alliance/AllianceListBadge';
+import { AllianceListBadge } from '@/components/alliance/AllianceListBadge';
 import type { SelectedPlayerAction } from '@/components/battle/PlayerActions';
 import {
   PlayerActionDialogs,
@@ -50,9 +55,12 @@ import { StyledTable } from '@/components/game/StyledTable';
 import MainArea from '@/components/MainArea';
 import { useUser } from '@/context/users';
 import { usePlayerIdentity } from '@/hooks/usePlayerIdentity';
+import { useRecruitmentStatus } from '@/hooks/useRecruitmentStatus';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import prisma from '@/lib/prisma';
 import UserModel from '@/models/Users';
+import { loadProtectionContext } from '@/services/BattleProtection.service';
+import { getProtectionStatus } from '@/utils/battleProtection';
 import { hasParticipatedInEra } from '@/utils/eraParticipation';
 import { logError, logInfo } from '@/utils/logger';
 import { getEraParticipantWhere } from '@/utils/loginPolicy';
@@ -110,6 +118,29 @@ const Users = ({
   const [sortBy, setSortBy] = useState('level');
   const [sortDir, setSortDir] = useState('desc');
   const [players, setPlayers] = useState([]);
+  // One batched alliance-list lookup for the visible page (no per-row requests).
+  const listLookupKey = useMemo(() => {
+    const ids = players
+      .map((p: any) => Number(p.id))
+      .filter((id) => Number.isInteger(id) && id > 0)
+      .slice(0, 100);
+    return ids.length && user
+      ? `/api/alliances/lists/lookup?targetUserIds=${ids.join(',')}`
+      : null;
+  }, [players, user]);
+  const { data: listLookup } = useSWR<Record<string, AllianceListHit[]>>(
+    listLookupKey,
+    async (url: string) => {
+      const res = await fetch(url);
+      return res.ok ? res.json() : {};
+    },
+    { revalidateOnFocus: false },
+  );
+  const { status: recruitStatus, refresh: refreshRecruitStatus } =
+    useRecruitmentStatus(
+      players.map((player: { id: number }) => player.id),
+      !!user,
+    );
   const [formattedGolds, setFormattedGolds] = useState<string[]>([]);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const { config: runtimeConfig } = useRuntimeConfig();
@@ -172,8 +203,11 @@ const Users = ({
     }
   };
 
+  const socialEnabled = runtimeConfig?.enableSocial === true;
+
   useEffect(() => {
-    if (!user) return;
+    // Social endpoints answer 503 while the feature is off.
+    if (!user || !socialEnabled) return;
 
     const fetchSocial = async () => {
       try {
@@ -208,7 +242,7 @@ const Users = ({
     };
 
     fetchSocial();
-  }, [user]);
+  }, [user, socialEnabled]);
 
   const fetchMeta = useCallback(async () => {
     if (!user) return;
@@ -436,17 +470,22 @@ const Users = ({
     const playerPage = Math.floor(loggedInPlayerIndex / rowsPerPage) + 1;
 
     const paginatedPlayers = sortedPlayers.slice(start, end);
-    paginatedPlayers.forEach(
-      (player: any, index) =>
-        (player.overallrank =
-          sortDir === 'asc'
+    // Show each player's real overall rank, not their position in this
+    // filtered/sorted view (which changed with every filter and direction).
+    paginatedPlayers.forEach((player: any, index) => {
+      const realRank = Number(player.rank);
+      player.overallrank =
+        Number.isFinite(realRank) && realRank > 0
+          ? realRank
+          : sortDir === 'asc'
             ? filteredUsers.length - start - index
-            : start + index + 1),
-    );
+            : start + index + 1;
+    });
 
     setPlayers(paginatedPlayers);
 
-    setMyPage(playerPage);
+    // 0 means you are filtered out of this view.
+    setMyPage(loggedInPlayerIndex >= 0 ? playerPage : 0);
     setMyRank(loggedInPlayerIndex + 1);
   }, [page, sortBy, sortDir, filteredUsers, rowsPerPage, user]);
 
@@ -549,15 +588,14 @@ const Users = ({
           goldAccent={false}
         >
           <Text size="sm" c="gray.3">
-            {t('users.attackRange')}{' '}
-            <Text component="span" fw={700} c="gray.1">
-              {attackRangeMin}
-            </Text>{' '}
-            {t('users.to')}{' '}
-            <Text component="span" fw={700} c="gray.1">
-              {attackRangeMax}
-            </Text>
-            .
+            <Trans
+              t={t}
+              i18nKey="users.attackRangeSentence"
+              values={{ min: attackRangeMin, max: attackRangeMax }}
+              components={{
+                strong: <Text component="span" fw={700} c="gray.1" />,
+              }}
+            />
           </Text>
           <Text size="xs" c="dimmed" mt="sm">
             {t('users.showingTargets', {
@@ -612,38 +650,42 @@ const Users = ({
                       {t('users.reset')}
                     </Button>
                   </Group>
-                  <Text
-                    size="xs"
-                    fw={700}
-                    c="dimmed"
-                    tt="uppercase"
-                    style={{ letterSpacing: '0.3em' }}
-                  >
-                    {t('users.social')}
-                  </Text>
-                  <Group>
-                    <Checkbox
-                      checked={includeFriends}
-                      onChange={(e) =>
-                        setIncludeFriends(e.currentTarget.checked)
-                      }
-                      label={t('users.friends')}
-                    />
-                    <Checkbox
-                      checked={includeEnemies}
-                      onChange={(e) =>
-                        setIncludeEnemies(e.currentTarget.checked)
-                      }
-                      label={t('users.enemies')}
-                    />
-                    <Checkbox
-                      checked={includeOthers}
-                      onChange={(e) =>
-                        setIncludeOthers(e.currentTarget.checked)
-                      }
-                      label={t('users.others')}
-                    />
-                  </Group>
+                  {socialEnabled && (
+                    <>
+                      <Text
+                        size="xs"
+                        fw={700}
+                        c="dimmed"
+                        tt="uppercase"
+                        style={{ letterSpacing: '0.3em' }}
+                      >
+                        {t('users.social')}
+                      </Text>
+                      <Group>
+                        <Checkbox
+                          checked={includeFriends}
+                          onChange={(e) =>
+                            setIncludeFriends(e.currentTarget.checked)
+                          }
+                          label={t('users.friends')}
+                        />
+                        <Checkbox
+                          checked={includeEnemies}
+                          onChange={(e) =>
+                            setIncludeEnemies(e.currentTarget.checked)
+                          }
+                          label={t('users.enemies')}
+                        />
+                        <Checkbox
+                          checked={includeOthers}
+                          onChange={(e) =>
+                            setIncludeOthers(e.currentTarget.checked)
+                          }
+                          label={t('users.others')}
+                        />
+                      </Group>
+                    </>
+                  )}
 
                   <Text
                     size="xs"
@@ -692,14 +734,14 @@ const Users = ({
                   <Group grow>
                     <NumberInput
                       label={t('users.minGold')}
-                      value={minGold}
+                      value={minGold ?? ''}
                       onChange={(v) => setMinGold(toNumberOrNull(v))}
                       min={0}
                       thousandSeparator=","
                     />
                     <NumberInput
                       label={t('users.maxGold')}
-                      value={maxGold}
+                      value={maxGold ?? ''}
                       onChange={(v) => setMaxGold(toNumberOrNull(v))}
                       min={0}
                       thousandSeparator=","
@@ -708,13 +750,13 @@ const Users = ({
                   <Group grow>
                     <NumberInput
                       label={t('users.minLevel')}
-                      value={minLevel}
+                      value={minLevel ?? ''}
                       onChange={(v) => setMinLevel(toNumberOrNull(v))}
                       min={1}
                     />
                     <NumberInput
                       label={t('users.maxLevel')}
-                      value={maxLevel}
+                      value={maxLevel ?? ''}
                       onChange={(v) => setMaxLevel(toNumberOrNull(v))}
                       min={1}
                     />
@@ -817,27 +859,24 @@ const Users = ({
           <Group>
             <Pill size="lg">
               <Text>
-                {t('users.sortedBy')}:{' '}
-                {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
+                {t('users.sortedBy')}: {t(`users.${sortBy}`)}
               </Text>
             </Pill>
-            <Pill size="lg">
-              <Text>
-                {t('users.your')} {getRankLabel()}: {myRank}
-              </Text>
-            </Pill>
-            <Pill
+            {myRank > 0 && (
+              <Pill size="lg">
+                <Text>
+                  {t('users.your')} {getRankLabel()}: {myRank}
+                </Text>
+              </Pill>
+            )}
+            <Button
+              size="xs"
+              variant={myPage === page ? 'default' : 'light'}
               onClick={() => setPage(myPage)}
-              disabled={myPage === page}
-              size="lg"
-              color={myPage === page ? 'gray' : 'brand'}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.cursor =
-                  myPage !== page ? 'pointer' : 'default')
-              }
+              disabled={myPage === 0 || myPage === page}
             >
               {t('users.goToMyRank')}
-            </Pill>
+            </Button>
           </Group>
         </Group>
 
@@ -999,8 +1038,8 @@ const Users = ({
               const player = new UserModel(nplayer, true, false);
               if (player.id === user?.id) player.is_player = true;
               const allianceName =
-                Array.isArray(nplayer.alliances) && nplayer.alliances[0]?.name
-                  ? nplayer.alliances[0]?.name
+                Array.isArray(nplayer.alliances) && nplayer.alliances.length > 0
+                  ? nplayer.alliances.map((a) => a.name).join(', ')
                   : '-';
               const actionTarget = {
                 id: player.id,
@@ -1078,6 +1117,27 @@ const Users = ({
                               {player.displayName}
                             </Link>
                           </Tooltip>
+                          {nplayer.isProtected && (
+                            <Tooltip label={t('users.protectedHint')} withArrow>
+                              <Badge
+                                size="sm"
+                                variant="light"
+                                color="teal"
+                                className={actionClasses.identityBadge}
+                                leftSection={
+                                  <FontAwesomeIcon icon={faShieldHalved} />
+                                }
+                              >
+                                {t('users.protected')}
+                              </Badge>
+                            </Tooltip>
+                          )}
+                          {listLookup?.[player.id] && (
+                            <AllianceListBadge
+                              alliances={listLookup[player.id]}
+                              variant="compact"
+                            />
+                          )}
                           {player.is_player && (
                             <Badge
                               color={
@@ -1157,6 +1217,7 @@ const Users = ({
                     <PlayerActions
                       target={actionTarget}
                       onSelect={selectPlayerAction}
+                      recruitStatus={recruitStatus}
                     />
                   </Table.Td>
                 </Table.Tr>
@@ -1170,6 +1231,7 @@ const Users = ({
           key={`${selectedAction.action}-${selectedAction.target.id}`}
           selection={selectedAction}
           onClose={closePlayerAction}
+          onRecruited={() => refreshRecruitStatus()}
           onSocialChange={(target, action) => {
             const update = action === 'friend' ? setFriendIds : setEnemyIds;
             update((current) => {
@@ -1192,6 +1254,7 @@ export const getServerSideProps = async (_context: any) => {
     'navigation',
     'battle',
     'messaging',
+    'allianceLists',
   ]);
   try {
     const activeEra = await prisma.era.findFirst({
@@ -1221,12 +1284,19 @@ export const getServerSideProps = async (_context: any) => {
         race: true,
         class: true,
         experience: true,
+        house_level: true,
+        era_joined_at: true,
+        created_at: true,
+        protection_forfeited_era_id: true,
+        event_citizens_received: true,
         statusHistories: {
           orderBy: { created_at: 'desc' },
           take: 1, // Take only most recent status
         },
       },
     });
+    // Same protection rule the attack itself applies (utils/battleProtection).
+    const protectionContext = await loadProtectionContext();
     logInfo(`Fetched ${allUsers.length} users from database.`);
     const sanitizedUsers = allUsers
       .filter(
@@ -1265,6 +1335,19 @@ export const getServerSideProps = async (_context: any) => {
           experience: user.experience,
           population,
           isOnline,
+          isProtected: getProtectionStatus(
+            {
+              experience: user.experience,
+              population,
+              houseLevel: user.house_level,
+              eraJoinedAt: user.era_joined_at,
+              createdAt: user.created_at,
+              protectionForfeitedEraId: user.protection_forfeited_era_id,
+              eventCitizensReceived: user.event_citizens_received,
+            },
+            protectionContext.era,
+            protectionContext.settings,
+          ).protected,
           alliances: (user.alliance_memberships || []).map((m) => ({
             id: m.alliance.id,
             name: m.alliance.name,

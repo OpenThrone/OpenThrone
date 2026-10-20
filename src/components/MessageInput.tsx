@@ -9,6 +9,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
+import { useTranslation } from 'next-i18next';
 import React, { useCallback, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 
@@ -34,6 +35,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   setIsShareModalOpen,
   canWrite,
 }) => {
+  const { t } = useTranslation('messaging');
   const [newMessage, setNewMessage] = useState('');
   const { markRoomAsRead } = useUser();
 
@@ -81,29 +83,37 @@ const MessageInput: React.FC<MessageInputProps> = ({
           <Group justify="space-between">
             <div>
               <Text size="xs" c="dimmed">
-                Replying to {replyingToMessage.sender.display_name}
+                {t('message.replyingTo', {
+                  name: replyingToMessage.sender.display_name,
+                })}
               </Text>
               <Text size="sm" lineClamp={1}>
                 {replyingToMessage.content}
               </Text>
             </div>
-            <CloseButton size="sm" onClick={() => setReplyingToMessage(null)} />
+            <CloseButton
+              size="sm"
+              onClick={() => setReplyingToMessage(null)}
+              aria-label={t('input.cancelReply')}
+            />
           </Group>
         </Box>
       )}
       <Group gap="xs" wrap="nowrap">
-        <Tooltip label="Share Attack Log">
+        <Tooltip label={t('input.shareAttackLog')}>
           <ActionIcon
             variant="subtle"
             onClick={() => setIsShareModalOpen(true)}
             size="lg"
             disabled={!canWrite}
+            aria-label={t('input.shareAttackLog')}
           >
             <FontAwesomeIcon icon={faPaperclip} />
           </ActionIcon>
         </Tooltip>
         <TextInput
-          placeholder="Type your message..."
+          placeholder={t('input.placeholder')}
+          aria-label={t('input.placeholder')}
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           style={{ flex: 1 }}
@@ -115,6 +125,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
               color="blue"
               size="lg"
               disabled={!newMessage.trim() || !canWrite}
+              aria-label={t('input.send')}
             >
               <FontAwesomeIcon icon={faPaperPlane} />
             </ActionIcon>

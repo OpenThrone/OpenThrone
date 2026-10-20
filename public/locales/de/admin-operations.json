@@ -17,8 +17,8 @@
     "vacationStarted": "Der Urlaubsmodus wurde für 14 Tage gestartet.",
     "vacationEnded": "Der Urlaubsmodus wurde beendet.",
     "unknown": "nicht verfügbar",
-    "invalidTarget": "Die Konto-ID ist ungültig. Schließe diesen Bereich und lade den Benutzerdatensatz neu.",
-    "requestFailed": "Die Anfrage ist fehlgeschlagen. Prüfe deine Berechtigung und versuche es erneut.",
+    "invalidTarget": "Die Konto-ID ist ungültig. Schließen Sie diesen Bereich und laden Sie den Benutzerdatensatz neu.",
+    "requestFailed": "Die Anfrage ist fehlgeschlagen. Prüfen Sie Ihre Berechtigung und versuchen Sie es erneut.",
     "errorTitle": "Aktion konnte nicht abgeschlossen werden",
     "confirm": {
       "password": {
@@ -27,7 +27,7 @@
       },
       "reset": {
         "title": "Dieses Konto zurücksetzen?",
-        "message": "Dies ist eine folgenreiche Administratoraktion. Kontofortschritt kann entfernt werden. Füge bei Bedarf einen Auditgrund hinzu und bestätige nur, wenn das Zurücksetzen beabsichtigt ist."
+        "message": "Dies ist eine folgenreiche Administratoraktion. Kontofortschritt kann entfernt werden. Fügen Sie bei Bedarf einen Auditgrund hinzu und bestätigen Sie nur, wenn das Zurücksetzen beabsichtigt ist."
       },
       "vacation-start": {
         "title": "14-tägigen Urlaubsmodus starten?",
@@ -42,7 +42,7 @@
   "export": {
     "action": "Benutzerexport herunterladen (JSON)",
     "invalidTarget": "Die Konto-ID ist ungültig.",
-    "failed": "Der Export konnte nicht heruntergeladen werden. Prüfe deine Berechtigung und versuche es erneut.",
+    "failed": "Der Export konnte nicht heruntergeladen werden. Prüfen Sie Ihre Berechtigung und versuchen Sie es erneut.",
     "invalidResponse": "Der Server hat einen ungültigen Export zurückgegeben. Es wurde keine Datei heruntergeladen."
   },
   "bots": {
@@ -53,11 +53,11 @@
     "refresh": "Status aktualisieren",
     "retry": "Erneut versuchen",
     "loading": "Botstatus wird geladen…",
-    "loadFailed": "Der Botstatus konnte nicht geladen werden. Prüfe deine Berechtigung und versuche es erneut.",
+    "loadFailed": "Der Botstatus konnte nicht geladen werden. Prüfen Sie Ihre Berechtigung und versuchen Sie es erneut.",
     "errorTitle": "Aktion konnte nicht abgeschlossen werden",
     "total": "{{count}} Bot(s) registriert",
     "rosterTitle": "Registrierte Bots",
-    "empty": "Es sind keine Bots registriert. Wähle unten ein Manifest zur Vorschau oder Bereitstellung aus.",
+    "empty": "Es sind keine Bots registriert. Wählen Sie unten ein Manifest zur Vorschau oder Bereitstellung aus.",
     "neverRun": "Nie",
     "columns": {
       "id": "ID",
@@ -81,7 +81,7 @@
     "confirmProvisionMessage": "Die im Manifest {{manifest}} aufgeführten Bots erstellen? Dadurch werden Kontodaten geändert.",
     "confirmRunTitle": "Botlauf jetzt starten?",
     "confirmRunMessage": "Den Laufplan {{schedule}} jetzt für die registrierten Botkonten ausführen?",
-    "actionFailed": "Die Aktion ist fehlgeschlagen. Prüfe deine Berechtigung und versuche es erneut.",
+    "actionFailed": "Die Aktion ist fehlgeschlagen. Prüfen Sie Ihre Berechtigung und versuchen Sie es erneut.",
     "actionComplete": "Botaktion abgeschlossen",
     "saved": "Die Aktion wurde abgeschlossen.",
     "resultTitle": "Aktionsergebnis"

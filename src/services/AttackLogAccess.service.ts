@@ -53,12 +53,14 @@ export async function getCurrentAllianceIds(userId: number): Promise<number[]> {
 
 /**
  * Resolves the viewer's role for an attack log, or null when the viewer may not
- * read it. Alliance shares require current membership of that alliance.
+ * read it. Alliance shares require current membership of that alliance; batch
+ * callers may pass memberships already read via getCurrentAllianceIds.
  */
 export async function getAttackLogViewerRole(
   userId: number,
   log: AttackLogAccessSubject | null | undefined,
   client: Prisma.TransactionClient = prisma,
+  currentAllianceIds?: number[],
 ): Promise<AttackLogViewerRole | null> {
   if (!log || !isPositiveId(userId)) return null;
   if (log.attacker_id === userId) return 'attacker';
@@ -83,6 +85,11 @@ export async function getAttackLogViewerRole(
     ),
   ];
   if (sharedAllianceIds.length === 0) return null;
+  if (currentAllianceIds) {
+    return sharedAllianceIds.some((id) => currentAllianceIds.includes(id))
+      ? 'shared'
+      : null;
+  }
 
   const membership = await client.alliance_memberships.findFirst({
     where: { user_id: userId, alliance_id: { in: sharedAllianceIds } },
@@ -417,6 +424,9 @@ export function redactBattleStatsForViewer(
     return ownSide ? { total, units } : { total };
   };
   const replay = asRecord(stats.replay);
+  // Battles log `defender_protected` (the shared rule's verdict at battle time).
+  // Only legacy rows without it fall back to the level-only rule, since era join
+  // time, population and forfeiture are not reconstructable from the log.
   const defenderProtected =
     typeof stats.defender_protected === 'boolean'
       ? stats.defender_protected
@@ -471,6 +481,29 @@ export function redactBattleStatsForViewer(
   };
 
   if (role === 'attacker') {
+    // Nullable facts preserve missing legacy data instead of inventing zero losses.
+    const nonnegative = (value: unknown): number | null => {
+      if (value === null || value === undefined || value === '') return null;
+      const number = typeof value === 'string' ? Number(value) : value;
+      return typeof number === 'number' &&
+        Number.isFinite(number) &&
+        number >= 0
+        ? number
+        : null;
+    };
+    out.recommendation_facts = {
+      army:
+        Array.isArray(parseJsonish(startAttacker.units)) &&
+        attackerUnits.length > 0
+          ? attackerUnits.reduce((sum, unit) => sum + unit.quantity, 0)
+          : null,
+      deaths: nonnegative(asRecord(stats.attacker_losses).total),
+      wounded: nonnegative(asRecord(woundsFor('attacker', true)).total),
+      enemyDeaths: nonnegative(asRecord(stats.defender_losses).total),
+      damageDealt: damageFor('ATTACKER'),
+      damageReceived: damageFor('DEFENDER'),
+      turns: nonnegative(stats.turns),
+    };
     out.turns = toNumber(stats.turns);
   }
   if (role === 'defender') {

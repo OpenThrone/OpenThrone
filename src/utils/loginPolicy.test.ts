@@ -72,6 +72,7 @@ describe('disabled-login access and participation', () => {
       id: { gt: 0 },
       currentEraId: 3,
       last_active: { gte: era.startDate },
+      statusHistories: { none: { status: 'CLOSED', end_date: null } },
       staffRoleAssignments: {
         some: { role: { in: ['ADMINISTRATOR', 'MODERATOR'] }, revokedAt: null },
       },
@@ -83,6 +84,7 @@ describe('disabled-login access and participation', () => {
       id: { gt: 0 },
       currentEraId: 3,
       last_active: { gte: era.startDate },
+      statusHistories: { none: { status: 'CLOSED', end_date: null } },
     });
   });
   it('fails closed when the staff lookup is unavailable', async () => {

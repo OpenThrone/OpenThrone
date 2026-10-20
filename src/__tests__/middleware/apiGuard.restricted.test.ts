@@ -51,7 +51,9 @@ const run = async (
   const session = await sessionRequestFields(authOptions, {
     id: USER_ID,
     email: 'restricted@example.com',
-    ...(impersonatedBy ? { impersonatedBy } : {}),
+    ...(impersonatedBy
+      ? { impersonatedBy, impersonationExpiresAt: Date.now() + 60_000 }
+      : {}),
   });
   await withApiGuard({ methods: ['GET'], ...options })(inner)(
     {

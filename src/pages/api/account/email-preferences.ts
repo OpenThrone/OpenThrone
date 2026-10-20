@@ -15,7 +15,7 @@ export const EmailPreferencesSchema = z
 export default withApiGuard({
   methods: ['GET', 'PUT'],
   authMode: 'required',
-  rateLimitProfile: 'auth',
+  rateLimitProfile: 'public_read',
   bodySchema: EmailPreferencesSchema,
 })(async (req, res, context) => {
   const userId = Number(req.session.user.id);

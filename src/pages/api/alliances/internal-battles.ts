@@ -1,0 +1,29 @@
+import { withAuth } from '@/middleware/auth';
+import { AllianceInternalBattlesService } from '@/services/AllianceInternalBattles.service';
+import { stringifyObj } from '@/utils/numberFormatting';
+import { publicErrorMessage } from '@/utils/publicError';
+
+const toInt = (value: string | string[] | undefined): number | undefined => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw === undefined || raw === '' ? undefined : Number(raw);
+};
+
+/** Attacks between members of the alliance this era; alliance members only. */
+const handler = async (req: any, res: any) => {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  const sessionUserId = Number(req.session?.user?.id);
+
+  try {
+    const result = await AllianceInternalBattlesService.list(sessionUserId, {
+      allianceId: toInt(req.query.allianceId),
+      page: toInt(req.query.page),
+    });
+    return res.status(200).json(stringifyObj(result));
+  } catch (error: any) {
+    return res.status(400).json({ error: publicErrorMessage(error) });
+  }
+};
+
+export default withAuth(handler);

@@ -21,7 +21,7 @@ const Result = () => {
         <PublicAuthLayout
           title={t('passwordReset.title')}
           description={t('passwordReset.description')}
-          formTitle={t('passwordReset.sendResetLink')}
+          formTitle={t('passwordReset.checkEmail')}
         >
           <Text className={classes.prose}>{t('passwordReset.resultText')}</Text>
           <Button

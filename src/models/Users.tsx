@@ -24,7 +24,11 @@ import type {
   UnitTotalsType,
   UnitType,
 } from '@/types/typings';
-import type { DetailedCalculatedStrength } from '@/utils/combatStrength';
+import type { ProtectionSummary } from '@/utils/battleProtection';
+import type {
+  CombatBreakdown,
+  DetailedCalculatedStrength,
+} from '@/utils/combatStrength';
 import { logWarn } from '@/utils/logger';
 import { getAssetPath } from '@/utils/utilities';
 
@@ -216,6 +220,9 @@ class UserModel {
     startDate?: string | Date | null;
     endDate?: string | Date | null;
   };
+
+  /** Battle-protection status from the player's own data API; absent elsewhere. */
+  public protection?: ProtectionSummary;
 
   /** User's alliance memberships */
   public alliances: {
@@ -486,6 +493,9 @@ class UserModel {
     if ((safeUserData as any).currentEra) {
       this.currentEra = (safeUserData as any).currentEra;
     }
+    if ((safeUserData as any).protection) {
+      this.protection = (safeUserData as any).protection;
+    }
 
     // Populate alliances
     this.alliance_memberships =
@@ -603,9 +613,8 @@ class UserModel {
     return this.statsService.calculateArmyStat(type);
   }
 
-  // Return type intentionally 'any' to avoid exporting internal service types from this facade
-  getArmyStatBreakdown(_type: UnitType): any {
-    return {}; // This method is deprecated
+  getArmyStatBreakdown(type: 'OFFENSE' | 'DEFENSE'): CombatBreakdown {
+    return this.statsService.calculateArmyStatBreakdown(type);
   }
 
   // Bonuses / points

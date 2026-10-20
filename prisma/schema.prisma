@@ -218,6 +218,24 @@ enum AllianceTransactionType {
   TAX
   FEE
   LOAN
+  LOAN_REPAYMENT
+}
+
+enum AllianceLoanStatus {
+  REQUESTED
+  ACTIVE
+  REPAID
+  DEFAULTED
+  WRITTEN_OFF
+  DECLINED
+  CANCELLED
+}
+
+enum AllianceGoldRequestStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
 }
 
 enum Frequency {
@@ -238,135 +256,148 @@ enum ApiClientStatus {
 }
 
 model users {
-  id                                    Int                    @id @default(autoincrement())
-  email                                 String                 @unique
-  display_name                          String                 @unique
+  id                                    Int                      @id @default(autoincrement())
+  email                                 String                   @unique
+  display_name                          String                   @unique
   password_hash                         String
-  twoFactorSecret                        String?
+  twoFactorSecret                       String?
   race                                  String
   class                                 String
-  experience                            Int                    @default(0)
-  gold                                  BigInt                 @default(25000)
-  gold_in_bank                          BigInt                 @default(0)
-  fort_level                            Int                    @default(1)
-  fort_hitpoints                        Int                    @default(50)
-  attack_turns                          Int                    @default(50)
-  stamina                               Int                    @default(100)
-  maxStamina                            Int                    @default(100)
-  defense_pressure_today                Int                    @default(0)
-  defense_pressure_date                 DateTime?              @db.Timestamptz(3)
-  spy_pressure_today                    Int                    @default(0)
-  spy_pressure_date                     DateTime?              @db.Timestamptz(3)
-  wounded_units                         Json                   @default("[]")
-  last_active                           DateTime?              @db.Timestamptz(3)
-  last_gameplay_at                      DateTime?              @db.Timestamptz(3)
-  rank                                  Int                    @default(0)
-  house_level                           Int                    @default(0)
-  bio                                   String                 @default("")
+  experience                            Int                      @default(0)
+  gold                                  BigInt                   @default(25000)
+  gold_in_bank                          BigInt                   @default(0)
+  fort_level                            Int                      @default(1)
+  fort_hitpoints                        Int                      @default(50)
+  attack_turns                          Int                      @default(50)
+  stamina                               Int                      @default(100)
+  maxStamina                            Int                      @default(100)
+  defense_pressure_today                Int                      @default(0)
+  defense_pressure_date                 DateTime?                @db.Timestamptz(3)
+  spy_pressure_today                    Int                      @default(0)
+  spy_pressure_date                     DateTime?                @db.Timestamptz(3)
+  wounded_units                         Json                     @default("[]")
+  last_active                           DateTime?                @db.Timestamptz(3)
+  last_gameplay_at                      DateTime?                @db.Timestamptz(3)
+  rank                                  Int                      @default(0)
+  house_level                           Int                      @default(0)
+  bio                                   String                   @default("")
   colorScheme                           String?
-  recruit_link                          String                 @unique @default("")
+  recruit_link                          String                   @unique @default("")
   locale                                String
-  economy_level                         Int                    @default(0)
-  avatar                                String?                @default("SHIELD")
-  created_at                            DateTime?              @default(now()) @db.Timestamp(6)
-  updated_at                            DateTime?              @default(now()) @updatedAt @db.Timestamp(6)
+  economy_level                         Int                      @default(0)
+  avatar                                String?                  @default("SHIELD")
+  created_at                            DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at                            DateTime?                @default(now()) @updatedAt @db.Timestamp(6)
   stats                                 Json?
-  killing_str                           Int?                   @default(1)
-  defense_str                           Int?                   @default(1)
-  spying_str                            Int?                   @default(1)
-  sentry_str                            Int?                   @default(1)
-  offense                               Int?                   @default(0)
-  defense                               Int?                   @default(0)
-  spy                                   Int?                   @default(0)
-  sentry                                Int?                   @default(0)
-  accountResetsAsNewUser                AccountResetHistory[]  @relation("NewUserAfterReset")
+  killing_str                           Int?                     @default(1)
+  defense_str                           Int?                     @default(1)
+  spying_str                            Int?                     @default(1)
+  sentry_str                            Int?                     @default(1)
+  offense                               Int?                     @default(0)
+  defense                               Int?                     @default(0)
+  spy                                   Int?                     @default(0)
+  sentry                                Int?                     @default(0)
+  accountResetsAsNewUser                AccountResetHistory[]    @relation("NewUserAfterReset")
   resetHistories                        AccountResetHistory[]
-  enforcedStatusChanges                 AccountStatusHistory[] @relation("AccountStatusAdmin")
+  enforcedStatusChanges                 AccountStatusHistory[]   @relation("AccountStatusAdmin")
   statusHistories                       AccountStatusHistory[]
   AutoRecruitSession                    AutoRecruitSession[]
   passwordResets                        PasswordReset[]
-  permissions                           PermissionGrant[]      @relation("PermissionGrants")
+  permissions                           PermissionGrant[]        @relation("PermissionGrants")
   alliance_memberships                  alliance_memberships[]
-  ledAlliances                          alliances[]            @relation("AllianceLeader")
-  attacksMade                           attack_log[]           @relation("AttackLogs")
-  attacksDefended                       attack_log[]           @relation("DefenseLogs")
-  sharedAttackLogs                      attack_log_acl[]       @relation("SharedAttackLogs")
+  alliance_announcements                alliance_announcements[] @relation("AllianceAnnouncementAuthor")
+  ledAlliances                          alliances[]              @relation("AllianceLeader")
+  attacksMade                           attack_log[]             @relation("AttackLogs")
+  attacksDefended                       attack_log[]             @relation("DefenseLogs")
+  sharedAttackLogs                      attack_log_acl[]         @relation("SharedAttackLogs")
   blogPosts                             blog_posts[]
   advisorMessages                       advisor_messages[]
-  messages_messages_from_user_idTousers messages[]             @relation("messages_from_user_idTousers")
-  messages_messages_to_user_idTousers   messages[]             @relation("messages_to_user_idTousers")
+  messages_messages_from_user_idTousers messages[]               @relation("messages_from_user_idTousers")
+  messages_messages_to_user_idTousers   messages[]               @relation("messages_to_user_idTousers")
   postReadStatuses                      post_read_status[]
-  recruitHistoriesFrom                  recruit_history[]      @relation("FromUserRelation")
-  recruitHistoriesTo                    recruit_history[]      @relation("ToUserRelation")
+  recruitHistoriesFrom                  recruit_history[]        @relation("FromUserRelation")
+  recruitHistoriesTo                    recruit_history[]        @relation("ToUserRelation")
   recruitHistories                      recruit_history[]
-  socialRelationsAsFriend               social[]               @relation("FriendRelations")
-  socialRelationsAsPlayer               social[]               @relation("PlayerRelations")
+  socialRelationsAsFriend               social[]                 @relation("FriendRelations")
+  socialRelationsAsPlayer               social[]                 @relation("PlayerRelations")
   ChatRoom                              ChatRoom[]
   ChatRoomParticipant                   ChatRoomParticipant[]
   ChatMessage                           ChatMessage[]
   messageReactions                      ChatMessageReaction[] // Added for reactions
   readMessages                          ChatMessageReadStatus[] // Added for read receipts
-  auditLogs                             AuditLog[]             @relation("AuditLogs")
-  userEras                              UserEra[]              @relation("UserEraUsers")
+  auditLogs                             AuditLog[]               @relation("AuditLogs")
+  userEras                              UserEra[]                @relation("UserEraUsers")
   currentEraId                          Int?
-  achievements                          Json?                  @default("{}")
-  currentEra                            Era?                   @relation("CurrentUserEra", fields: [currentEraId], references: [id])
+  /// When the player entered (or last reset into) their current era; starts the new-player protection clock. Null on legacy rows.
+  era_joined_at                         DateTime?                @db.Timestamptz(3)
+  /// Era in which the player forfeited protection by attacking a non-protected player.
+  /// Citizens this era from timed citizen events and citizen multipliers (#89); added to the protection population limit.
+  event_citizens_received Int @default(0)
+  protection_forfeited_era_id           Int?
+  achievements                         Json?                    @default("{}")
+  currentEra                            Era?                     @relation("CurrentUserEra", fields: [currentEraId], references: [id])
 
   // New relations to structured data
-  UserUnit                              UserUnit[]
-  UserItem                              UserItem[]
-  UserStructureUpgrade                  UserStructureUpgrade[]
-  UserBattleUpgrade                     UserBattleUpgrade[]
-  UserBonusPoints                       UserBonusPoints[]
-  apiClients                            ApiClient[]
-  
+  UserUnit             UserUnit[]
+  UserItem             UserItem[]
+  UserStructureUpgrade UserStructureUpgrade[]
+  UserBattleUpgrade    UserBattleUpgrade[]
+  UserBonusPoints      UserBonusPoints[]
+  apiClients           ApiClient[]
+
   // Alliance System Relations
-  allianceJoinRequests                  alliance_join_requests[]
-  allianceCooldowns                     alliance_cooldowns[]
-  declaredAllianceWars                  alliance_wars[]        @relation("DeclaredWars")
-  targetedInOneUserWars                 alliance_wars[]        @relation("WarTargetUser") // War where user is the specific target
-  targetedInWars                        war_targets[]          // Specific targets within a war
-  bankHistoryPerformed                  alliance_bank_history[] @relation("PerformedBy")
-  bankHistoryRelated                    alliance_bank_history[] @relation("RelatedUser")
+  allianceJoinRequests        alliance_join_requests[]
+  allianceCooldowns           alliance_cooldowns[]
+  declaredAllianceWars        alliance_wars[]          @relation("DeclaredWars")
+  allianceListEntriesTargeted alliance_list_entries[]  @relation("AllianceListTarget")
+  allianceTargetCalls         alliance_target_calls[]  @relation("AllianceCallTarget")
+  targetedInOneUserWars       alliance_wars[]          @relation("WarTargetUser") // War where user is the specific target
+  targetedInWars              war_targets[] // Specific targets within a war
+  bankHistoryPerformed        alliance_bank_history[]  @relation("PerformedBy")
+  bankHistoryRelated          alliance_bank_history[]  @relation("RelatedUser")
+  allianceGoldRequests        alliance_gold_requests[] @relation("GoldRequester")
+  allianceGoldRequestsDecided alliance_gold_requests[] @relation("GoldRequestDecider")
+  allianceLoansBorrowed       alliance_loans[]         @relation("LoanBorrower")
+  allianceLoansDecided        alliance_loans[]         @relation("LoanDecider")
 
   // Staff & Moderation Relations
-  staffRoleAssignments                  StaffRoleAssignment[]   @relation("StaffRoleAssignments")
-  staffRoleGrantedBy                    StaffRoleAssignment[]   @relation("StaffRoleGrantedBy")
-  permissionGrantedBy                   PermissionGrant[]       @relation("PermissionGrantedBy")
-  reportsFiled                          Report[]                @relation("ReportsFiled")
-  reportsAgainst                        Report[]                @relation("ReportsAgainst")
-  reportsAssigned                       Report[]                @relation("ReportsAssigned")
-  reportsResolved                       Report[]                @relation("ReportsResolved")
-  reportActions                         ReportAction[]          @relation("ReportActions")
-  moderatorNotesOnUser                  ModeratorNote[]         @relation("ModeratorNotesOnUser")
-  moderatorNotesByUser                  ModeratorNote[]         @relation("ModeratorNotesByUser")
-  banAppealsFiled                       BanAppeal[]             @relation("BanAppealsFiled")
-  banAppealsAssigned                    BanAppeal[]             @relation("BanAppealsAssigned")
-  banAppealsDecided                     BanAppeal[]             @relation("BanAppealsDecided")
-  announcementsCreated                  Announcement[]          @relation("AnnouncementsCreated")
-  announcementsUpdated                  Announcement[]          @relation("AnnouncementsUpdated")
-  gameEventsCreated                     GameEvent[]             @relation("GameEventsCreated")
-  gameEventsUpdated                     GameEvent[]             @relation("GameEventsUpdated")
-  chatMutesOnUser                       ChatMute[]              @relation("ChatMutesOnUser")
-  chatMutesCreatedBy                    ChatMute[]              @relation("ChatMutesCreatedBy")
-  chatMutesRevokedBy                    ChatMute[]              @relation("ChatMutesRevokedBy")
-  loginEvents                           LoginEvent[]            @relation("LoginEventsOnUser")
-  cheatSignalsOnUser                    CheatSignal[]           @relation("CheatSignalsOnUser")
-  cheatSignalsRelatedUser               CheatSignal[]           @relation("CheatSignalsRelatedUser")
-  cheatSignalsAssigned                  CheatSignal[]           @relation("CheatSignalsAssigned")
-  cheatSignalsResolved                  CheatSignal[]           @relation("CheatSignalsResolved")
-  featureFlagsCreated                   FeatureFlag[]           @relation("FeatureFlagsCreated")
-  featureFlagsUpdated                   FeatureFlag[]           @relation("FeatureFlagsUpdated")
-  serverSettingsUpdated                 ServerSetting[]         @relation("ServerSettingsUpdated")
+  staffRoleAssignments    StaffRoleAssignment[] @relation("StaffRoleAssignments")
+  staffRoleGrantedBy      StaffRoleAssignment[] @relation("StaffRoleGrantedBy")
+  permissionGrantedBy     PermissionGrant[]     @relation("PermissionGrantedBy")
+  reportsFiled            Report[]              @relation("ReportsFiled")
+  reportsAgainst          Report[]              @relation("ReportsAgainst")
+  reportsAssigned         Report[]              @relation("ReportsAssigned")
+  reportsResolved         Report[]              @relation("ReportsResolved")
+  reportActions           ReportAction[]        @relation("ReportActions")
+  moderatorNotesOnUser    ModeratorNote[]       @relation("ModeratorNotesOnUser")
+  moderatorNotesByUser    ModeratorNote[]       @relation("ModeratorNotesByUser")
+  banAppealsFiled         BanAppeal[]           @relation("BanAppealsFiled")
+  banAppealsAssigned      BanAppeal[]           @relation("BanAppealsAssigned")
+  banAppealsDecided       BanAppeal[]           @relation("BanAppealsDecided")
+  announcementsCreated    Announcement[]        @relation("AnnouncementsCreated")
+  announcementsUpdated    Announcement[]        @relation("AnnouncementsUpdated")
+  gameEventsCreated       GameEvent[]           @relation("GameEventsCreated")
+  gameEventsUpdated       GameEvent[]           @relation("GameEventsUpdated")
+  chatMutesOnUser         ChatMute[]            @relation("ChatMutesOnUser")
+  chatMutesCreatedBy      ChatMute[]            @relation("ChatMutesCreatedBy")
+  chatMutesRevokedBy      ChatMute[]            @relation("ChatMutesRevokedBy")
+  loginEvents             LoginEvent[]          @relation("LoginEventsOnUser")
+  cheatSignalsOnUser      CheatSignal[]         @relation("CheatSignalsOnUser")
+  cheatSignalsRelatedUser CheatSignal[]         @relation("CheatSignalsRelatedUser")
+  cheatSignalsAssigned    CheatSignal[]         @relation("CheatSignalsAssigned")
+  cheatSignalsResolved    CheatSignal[]         @relation("CheatSignalsResolved")
+  featureFlagsCreated     FeatureFlag[]         @relation("FeatureFlagsCreated")
+  featureFlagsUpdated     FeatureFlag[]         @relation("FeatureFlagsUpdated")
+  serverSettingsUpdated   ServerSetting[]       @relation("ServerSettingsUpdated")
 
   // Email and identity lifecycle relations
-  emailPreference                       EmailPreference?
-  emailCampaignsCreated                 EmailCampaign[]          @relation("EmailCampaignsCreated")
-  emailOutbox                           EmailOutbox[]
-  emailSuppressionsCreated              EmailSuppression[]       @relation("EmailSuppressionsCreated")
-  accountInactivityNotice               AccountInactivityNotice? @relation("InactivityNoticeOnUser")
-  inactivityNoticesCreated              AccountInactivityNotice[] @relation("InactivityNoticesCreated")
-  identityBlocks                        IdentityBlock[]          @relation("IdentityBlocksSource")
+  emailPreference          EmailPreference?
+  emailCampaignsCreated    EmailCampaign[]           @relation("EmailCampaignsCreated")
+  emailOutbox              EmailOutbox[]
+  emailSuppressionsCreated EmailSuppression[]        @relation("EmailSuppressionsCreated")
+  accountInactivityNotice  AccountInactivityNotice?  @relation("InactivityNoticeOnUser")
+  inactivityNoticesCreated AccountInactivityNotice[] @relation("InactivityNoticesCreated")
+  identityBlocks           IdentityBlock[]           @relation("IdentityBlocksSource")
 
   //Migration step
   units              Json? // Don't delete yet
@@ -377,12 +408,12 @@ model users {
 
   // Bot user system fields (see .sisyphus/plans/bot-users-system.md)
   // isBot is non-null with default false so scheduler queries can use WHERE isBot = true efficiently.
-  isBot              Boolean    @default(false)
-  botPersona         String?
-  botConfig          Json?
-  botCreatedAt       DateTime?  @db.Timestamptz(3)
-  botLastRunAt       DateTime?  @db.Timestamptz(3)
-  botStats           Json?
+  isBot        Boolean   @default(false)
+  botPersona   String?
+  botConfig    Json?
+  botCreatedAt DateTime? @db.Timestamptz(3)
+  botLastRunAt DateTime? @db.Timestamptz(3)
+  botStats     Json?
 
   @@index([created_at])
   @@index([currentEraId])
@@ -456,20 +487,21 @@ model PasswordReset {
 }
 
 model attack_log {
-  id             Int              @id @default(autoincrement())
-  attacker_id    Int
-  defender_id    Int
-  timestamp      DateTime?        @db.Timestamptz(3)
-  winner         Int
-  stats          Json
-  type           String           @default("attack")
-  pillaged_gold  BigInt?
+  id                    Int                     @id @default(autoincrement())
+  attacker_id           Int
+  defender_id           Int
+  timestamp             DateTime?               @db.Timestamptz(3)
+  winner                Int
+  stats                 Json
+  type                  String                  @default("attack")
+  pillaged_gold         BigInt?
   attacker_losses_total Int?
   defender_losses_total Int?
-  attackerPlayer users            @relation("AttackLogs", fields: [attacker_id], references: [id])
-  defenderPlayer users            @relation("DefenseLogs", fields: [defender_id], references: [id])
-  acl            attack_log_acl[]
-  chatMessages   ChatMessage[] // Added for shared logs relation
+  attackerPlayer        users                   @relation("AttackLogs", fields: [attacker_id], references: [id])
+  defenderPlayer        users                   @relation("DefenseLogs", fields: [defender_id], references: [id])
+  acl                   attack_log_acl[]
+  chatMessages          ChatMessage[] // Added for shared logs relation
+  intelShares           alliance_intel_shares[]
 
   @@index([attacker_id, defender_id, timestamp])
   @@index([attacker_id])
@@ -537,14 +569,14 @@ model post_read_status {
 }
 
 model advisor_messages {
-  id          Int      @id @default(autoincrement())
-  message     String
-  is_active   Boolean  @default(true)
-  sort_order  Int      @default(0)
-  created_at  DateTime @default(now()) @db.Timestamptz(3)
-  updated_at  DateTime @updatedAt @db.Timestamptz(3)
-  created_by  Int
-  createdBy   users    @relation(fields: [created_by], references: [id])
+  id         Int      @id @default(autoincrement())
+  message    String
+  is_active  Boolean  @default(true)
+  sort_order Int      @default(0)
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  updated_at DateTime @updatedAt @db.Timestamptz(3)
+  created_by Int
+  createdBy  users    @relation(fields: [created_by], references: [id])
 
   @@index([is_active, sort_order])
 }
@@ -582,24 +614,53 @@ model alliances {
   leader            users                  @relation("AllianceLeader", fields: [leader_id], references: [id])
   sharedAttackLogs  attack_log_acl[]
   chatRooms         ChatRoom[] // Added for alliance chat relation
-  
+
   // New Fields
-  join_mode         AllianceJoinMode       @default(OPEN)
-  roster_visibility AllianceRosterVisibility @default(PUBLIC)
-  war_tax_mode      String                 @default("ALLIANCE") // ALLIANCE or ROLE (Keep flexible as string for now or Enum if strict)
-  war_tax_rate_default Int                 @default(0) // 0-25
+  join_mode            AllianceJoinMode         @default(OPEN)
+  roster_visibility    AllianceRosterVisibility @default(PUBLIC)
+  war_tax_mode         String                   @default("ALLIANCE") // ALLIANCE or ROLE (Keep flexible as string for now or Enum if strict)
+  war_tax_rate_default Int                      @default(0) // 0-25
+
+  // Treasury loan terms and per-member daily outflow cap (#66 phase 3)
+  loan_term_days    Int    @default(7)
+  loan_interest_pct Int    @default(10)
+  member_daily_cap  BigInt @default(5000000)
 
   // New Relations
-  join_requests     alliance_join_requests[]
-  cooldowns         alliance_cooldowns[] // Global cooldowns might not have alliance_id, but alliance-specific ones will
-  declared_wars     alliance_wars[]        @relation("AttackerAlliance")
-  defending_wars    alliance_wars[]        @relation("DefenderAlliance")
-  bank_history      alliance_bank_history[]
-  fees              alliance_fees[]
-  xp_record         alliance_xp?
-  upgrades          alliance_upgrades[]
+  join_requests  alliance_join_requests[]
+  cooldowns      alliance_cooldowns[] // Global cooldowns might not have alliance_id, but alliance-specific ones will
+  declared_wars  alliance_wars[]          @relation("AttackerAlliance")
+  defending_wars alliance_wars[]          @relation("DefenderAlliance")
+  bank_history   alliance_bank_history[]
+  gold_requests  alliance_gold_requests[]
+  loans          alliance_loans[]
+  fees           alliance_fees[]
+  xp_record      alliance_xp?
+  upgrades       alliance_upgrades[]
+  list_entries   alliance_list_entries[]
+  relations_out  alliance_relations[]     @relation("RelationOwner")
+  relations_in   alliance_relations[]     @relation("RelationOther")
+  announcements  alliance_announcements[]
+  target_calls   alliance_target_calls[]
+  intel_shares   alliance_intel_shares[]
 
   @@index([leader_id], map: "idx_alliance_leader")
+}
+
+model alliance_announcements {
+  id          Int       @id @default(autoincrement())
+  alliance_id Int
+  author_id   Int
+  title       String    @db.VarChar(120)
+  body        String    @db.VarChar(4000)
+  pinned      Boolean   @default(false)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deleted_at  DateTime? @db.Timestamptz(6)
+  alliance    alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  author      users     @relation("AllianceAnnouncementAuthor", fields: [author_id], references: [id])
+
+  @@index([alliance_id, created_at], map: "idx_alliance_announcements_alliance_created")
 }
 
 model alliance_memberships {
@@ -626,6 +687,8 @@ model alliance_roles {
   created_at  DateTime?              @default(now()) @db.Timestamptz(6)
   updated_at  DateTime?              @default(now()) @updatedAt @db.Timestamptz(6)
   permissions Json?                  @default("{\"invite_member\": false, \"grant_access\": false, \"edit_ranks\": false, \"send_messages\": false, \"edit_profile\": false, \"manage_allies\": false, \"manage_enemies\": false, \"edit_list\": false, \"view_list\": false}") @db.Json
+  /// Rank position within the alliance; lower is higher. The default role is last.
+  rank_order  Int                    @default(0)
   members     alliance_memberships[]
   alliance    alliances              @relation(fields: [alliance_id], references: [id])
 
@@ -642,8 +705,8 @@ model PermissionGrant {
   created_at      DateTime       @default(now()) @db.Timestamptz(3)
   revokedAt       DateTime?      @db.Timestamptz(3)
 
-  user            users          @relation("PermissionGrants", fields: [user_id], references: [id], onDelete: Cascade)
-  grantedBy       users?         @relation("PermissionGrantedBy", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+  user      users  @relation("PermissionGrants", fields: [user_id], references: [id], onDelete: Cascade)
+  grantedBy users? @relation("PermissionGrantedBy", fields: [grantedByUserId], references: [id], onDelete: SetNull)
 
   @@index([user_id, revokedAt])
   @@index([type, revokedAt])
@@ -684,7 +747,7 @@ model ChatRoom {
   messages     ChatMessage[]
   creator      users                 @relation(fields: [createdById], references: [id])
   allianceId   Int? // Added for alliance specific rooms
-  alliance     alliances? @relation(fields: [allianceId], references: [id], onDelete: Cascade) // Added for alliance specific rooms
+  alliance     alliances?            @relation(fields: [allianceId], references: [id], onDelete: Cascade) // Added for alliance specific rooms
   reports      Report[]
   chatMutes    ChatMute[]
 
@@ -711,25 +774,25 @@ model ChatMessage {
   content           String // Message content
   sentAt            DateTime @default(now())
   messageType       String   @default("TEXT") // Added: e.g., TEXT, ATTACK_LOG_SHARE
-  replyToMessageId  Int?                      // Added for replies
-  sharedAttackLogId Int?                      // Added for sharing attack logs
+  replyToMessageId  Int? // Added for replies
+  sharedAttackLogId Int? // Added for sharing attack logs
 
   // Moderation fields
-  deletedAt        DateTime? @db.Timestamptz(3)
-  deletedByUserId  Int?
+  deletedAt         DateTime? @db.Timestamptz(3)
+  deletedByUserId   Int?
   moderatedByUserId Int?
-  editReason       String?
-  originalContent  String?
+  editReason        String?
+  originalContent   String?
 
-  room              ChatRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade) // Added onDelete Cascade
-  sender            users         @relation(fields: [senderId], references: [id], onDelete: Cascade) // Added onDelete Cascade
-  replyToMessage    ChatMessage?  @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction) // Added for replies
-  sharedAttackLog   attack_log?   @relation(fields: [sharedAttackLogId], references: [id], onDelete: SetNull) // Added for sharing attack logs
+  room            ChatRoom     @relation(fields: [roomId], references: [id], onDelete: Cascade) // Added onDelete Cascade
+  sender          users        @relation(fields: [senderId], references: [id], onDelete: Cascade) // Added onDelete Cascade
+  replyToMessage  ChatMessage? @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction) // Added for replies
+  sharedAttackLog attack_log?  @relation(fields: [sharedAttackLogId], references: [id], onDelete: SetNull) // Added for sharing attack logs
 
-  replies           ChatMessage[] @relation("MessageReplies") // Added for replies
-  reactions         ChatMessageReaction[]   // Added for reactions
-  readBy            ChatMessageReadStatus[] // Added for read receipts
-  reports           Report[]
+  replies   ChatMessage[]           @relation("MessageReplies") // Added for replies
+  reactions ChatMessageReaction[] // Added for reactions
+  readBy    ChatMessageReadStatus[] // Added for read receipts
+  reports   Report[]
 
   @@index([roomId, sentAt])
   @@index([replyToMessageId]) // Added index
@@ -740,11 +803,11 @@ model ChatMessageReaction {
   id        Int      @id @default(autoincrement())
   messageId Int
   userId    Int
-  reaction  String   // Consider using an enum if the set of reactions is fixed
+  reaction  String // Consider using an enum if the set of reactions is fixed
   createdAt DateTime @default(now())
 
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user      users       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    users       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([messageId, userId, reaction]) // Prevent duplicate reactions per user per message
   @@index([messageId])
@@ -756,8 +819,8 @@ model ChatMessageReadStatus {
   userId    Int
   readAt    DateTime @updatedAt // Use @updatedAt to track the latest read time
 
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user      users       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    users       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([messageId, userId]) // Composite primary key ensures one read status per user per message
   @@index([userId]) // Index for querying user's read statuses quickly
@@ -788,34 +851,34 @@ model AuditLog {
 }
 
 model ApiClient {
-  id         Int             @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
   ownerUserId Int?
-  name       String
-  clientType ApiClientType   @default(USER)
-  status     ApiClientStatus @default(ACTIVE)
-  createdAt  DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt  DateTime        @updatedAt @db.Timestamptz(3)
-  lastUsedAt DateTime?       @db.Timestamptz(3)
-  ownerUser  users?          @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
-  tokens     ApiToken[]
+  name        String
+  clientType  ApiClientType   @default(USER)
+  status      ApiClientStatus @default(ACTIVE)
+  createdAt   DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime        @updatedAt @db.Timestamptz(3)
+  lastUsedAt  DateTime?       @db.Timestamptz(3)
+  ownerUser   users?          @relation(fields: [ownerUserId], references: [id], onDelete: SetNull)
+  tokens      ApiToken[]
 
   @@index([ownerUserId])
   @@index([status])
 }
 
 model ApiToken {
-  id         Int            @id @default(autoincrement())
-  clientId   Int
-  tokenPrefix String        @unique
-  tokenHash  String
-  scopes     String[]
-  expiresAt  DateTime?      @db.Timestamptz(3)
-  revokedAt  DateTime?      @db.Timestamptz(3)
-  lastUsedAt DateTime?      @db.Timestamptz(3)
-  lastIpHash String?
-  createdAt  DateTime       @default(now()) @db.Timestamptz(3)
-  client     ApiClient      @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  audits     ApiTokenAudit[]
+  id          Int             @id @default(autoincrement())
+  clientId    Int
+  tokenPrefix String          @unique
+  tokenHash   String
+  scopes      String[]
+  expiresAt   DateTime?       @db.Timestamptz(3)
+  revokedAt   DateTime?       @db.Timestamptz(3)
+  lastUsedAt  DateTime?       @db.Timestamptz(3)
+  lastIpHash  String?
+  createdAt   DateTime        @default(now()) @db.Timestamptz(3)
+  client      ApiClient       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  audits      ApiTokenAudit[]
 
   @@index([clientId])
   @@index([revokedAt])
@@ -823,7 +886,7 @@ model ApiToken {
 }
 
 model ApiTokenAudit {
-  id         Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   tokenId    Int
   action     String
   route      String
@@ -831,36 +894,37 @@ model ApiTokenAudit {
   statusCode Int
   ipHash     String?
   uaHash     String?
-  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
-  token      ApiToken  @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  token      ApiToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
 
   @@index([tokenId, createdAt])
   @@index([route, createdAt])
 }
 
 model Era {
-  id        Int      @id @default(autoincrement())
-  name      String
-  startDate DateTime @default(now()) @db.Timestamptz(3)
-  endDate   DateTime? @db.Timestamptz(3)
+  id            Int       @id @default(autoincrement())
+  name          String
+  startDate     DateTime  @default(now()) @db.Timestamptz(3)
+  endDate       DateTime? @db.Timestamptz(3)
   startSettings Json?
-  users     users[]  @relation("CurrentUserEra")
-  userEras  UserEra[] @relation("UserEraEras")
+  users         users[]   @relation("CurrentUserEra")
+  userEras      UserEra[] @relation("UserEraEras")
+  gameEvents    GameEvent[]
 
   @@index([startDate])
 }
 
 model UserEra {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  eraId         Int
-  levelAtStart  Int      @default(1)
-  unitsAtStart  Json     @default("[]")
-  achievements  Json     @default("{}")
-  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  eraId             Int
+  levelAtStart      Int      @default(1)
+  unitsAtStart      Json     @default("[]")
+  achievements      Json     @default("{}")
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
   rankAtEnd         Int?
-  goldAtEnd         BigInt?   @db.BigInt
-  goldInBankAtEnd   BigInt?   @db.BigInt
+  goldAtEnd         BigInt?  @db.BigInt
+  goldInBankAtEnd   BigInt?  @db.BigInt
   offenseAtEnd      Int?
   defenseAtEnd      Int?
   spyAtEnd          Int?
@@ -870,8 +934,8 @@ model UserEra {
   economyLevelAtEnd Int?
   levelAtEnd        Int?
   snapshotAtEnd     Json?
-  user          users    @relation("UserEraUsers", fields: [userId], references: [id], onDelete: Cascade)
-  era           Era      @relation("UserEraEras", fields: [eraId], references: [id], onDelete: Cascade)
+  user              users    @relation("UserEraUsers", fields: [userId], references: [id], onDelete: Cascade)
+  era               Era      @relation("UserEraEras", fields: [eraId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eraId])
   @@index([userId])
@@ -884,13 +948,13 @@ model UserEra {
 // Units and Mercenaries
 // ---------------------------
 model UserUnit {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  type      UnitType // ENUM for 'CITIZEN', 'WORKER', etc.
-  level     Int
-  quantity  Int
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  type        UnitType // ENUM for 'CITIZEN', 'WORKER', etc.
+  level       Int
+  quantity    Int
   isMercenary Boolean  @default(false)
-  user      users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type, level, isMercenary])
   @@index([userId])
@@ -909,13 +973,13 @@ enum UnitType {
 // Items
 // ---------------------------
 model UserItem {
-  id       Int      @id @default(autoincrement())
+  id       Int       @id @default(autoincrement())
   userId   Int
   type     ItemType // ENUM for 'WEAPON', 'HELM', etc.
   level    Int
   usage    ItemUsage
   quantity Int
-  user     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     users     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type, usage, level])
   @@index([userId])
@@ -941,11 +1005,11 @@ enum ItemUsage {
 // Upgrades
 // ---------------------------
 model UserStructureUpgrade {
-  id     Int                @id @default(autoincrement())
+  id     Int                  @id @default(autoincrement())
   userId Int
   type   StructureUpgradeType // ENUM for 'OFFENSE', 'ARMORY', etc.
   level  Int
-  user   users              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   users                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type])
   @@index([userId])
@@ -959,12 +1023,12 @@ enum StructureUpgradeType {
 }
 
 model UserBattleUpgrade {
-  id       Int              @id @default(autoincrement())
+  id       Int               @id @default(autoincrement())
   userId   Int
   type     BattleUpgradeType // ENUM for 'OFFENSE', 'SPY', 'SENTRY', 'DEFENSE'
   level    Int
   quantity Int
-  user     users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     users             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // One row per owned level: combat (utils/combatStrength.ts) and the upgrades page read every level of a type
   @@unique([userId, type, level])
@@ -1005,23 +1069,23 @@ enum BonusPointsType {
 // ---------------------------
 
 model alliance_wars {
-  id                    Int       @id @default(autoincrement())
-  attacker_alliance_id  Int
-  defender_alliance_id  Int?      // Nullable if target is a user
-  defender_user_id      Int?      // Nullable if target is an alliance
-  status                WarStatus @default(WARMUP)
-  declared_by_user_id   Int
-  start_at              DateTime  @db.Timestamptz(3)
-  end_at                DateTime? @db.Timestamptz(3)
-  created_at            DateTime  @default(now()) @db.Timestamptz(3)
-  updated_at            DateTime  @updatedAt @db.Timestamptz(3)
+  id                   Int       @id @default(autoincrement())
+  attacker_alliance_id Int
+  defender_alliance_id Int? // Nullable if target is a user
+  defender_user_id     Int? // Nullable if target is an alliance
+  status               WarStatus @default(WARMUP)
+  declared_by_user_id  Int
+  start_at             DateTime  @db.Timestamptz(3)
+  end_at               DateTime? @db.Timestamptz(3)
+  created_at           DateTime  @default(now()) @db.Timestamptz(3)
+  updated_at           DateTime  @updatedAt @db.Timestamptz(3)
 
-  attacker_alliance     alliances @relation("AttackerAlliance", fields: [attacker_alliance_id], references: [id])
-  defender_alliance     alliances? @relation("DefenderAlliance", fields: [defender_alliance_id], references: [id])
-  defender_user         users?     @relation("WarTargetUser", fields: [defender_user_id], references: [id])
-  declared_by_user      users      @relation("DeclaredWars", fields: [declared_by_user_id], references: [id])
-  
-  targets               war_targets[]
+  attacker_alliance alliances  @relation("AttackerAlliance", fields: [attacker_alliance_id], references: [id])
+  defender_alliance alliances? @relation("DefenderAlliance", fields: [defender_alliance_id], references: [id])
+  defender_user     users?     @relation("WarTargetUser", fields: [defender_user_id], references: [id])
+  declared_by_user  users      @relation("DeclaredWars", fields: [declared_by_user_id], references: [id])
+
+  targets war_targets[]
 
   @@index([attacker_alliance_id])
   @@index([defender_alliance_id])
@@ -1029,45 +1093,49 @@ model alliance_wars {
 }
 
 model war_targets {
-  id             Int           @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   war_id         Int
   target_user_id Int
-  created_at     DateTime      @default(now()) @db.Timestamptz(3)
+  created_at     DateTime @default(now()) @db.Timestamptz(3)
 
-  war            alliance_wars @relation(fields: [war_id], references: [id], onDelete: Cascade)
-  target_user    users         @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
+  war         alliance_wars @relation(fields: [war_id], references: [id], onDelete: Cascade)
+  target_user users         @relation(fields: [target_user_id], references: [id], onDelete: Cascade)
 
   @@index([war_id])
   @@index([target_user_id])
 }
 
 model alliance_join_requests {
-  id           Int       @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   alliance_id  Int
   user_id      Int
-  status       String    @default("PENDING") // PENDING, APPROVED, REJECTED
-  created_at   DateTime  @default(now()) @db.Timestamptz(3)
-  updated_at   DateTime  @updatedAt @db.Timestamptz(3)
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  /// REQUEST: the player asked to join. INVITE: the alliance invited them.
+  kind         String   @default("REQUEST")
+  invited_by   Int?
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime @updatedAt @db.Timestamptz(3)
   moderated_by Int?
 
-  alliance     alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
-  user         users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  alliance alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  user     users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  // One PENDING row per (alliance, user): partial unique index in SQL
+  // (alliance_join_requests_one_pending), which Prisma cannot express.
   @@index([alliance_id])
   @@index([user_id])
-  @@unique([alliance_id, user_id, status]) // Prevent duplicate pending requests? Maybe just checking code is better.
 }
 
 model alliance_cooldowns {
   id          Int                  @id @default(autoincrement())
   user_id     Int
-  alliance_id Int?                 // Optional if global cooldown, but typically per alliance for kicks?
+  alliance_id Int? // Optional if global cooldown, but typically per alliance for kicks?
   type        AllianceCooldownType
   expires_at  DateTime             @db.Timestamptz(3)
   created_at  DateTime             @default(now()) @db.Timestamptz(3)
 
-  user        users                @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  alliance    alliances?           @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  user     users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  alliance alliances? @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
   @@index([alliance_id])
@@ -1079,17 +1147,17 @@ model alliance_xp {
   tier        Int      @default(1)
   updated_at  DateTime @updatedAt @db.Timestamptz(3)
 
-  alliance    alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  alliance alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
 }
 
 model alliance_upgrades {
-  id          Int      @id @default(autoincrement())
-  alliance_id Int
-  upgrade_key String
-  tier        Int
+  id           Int      @id @default(autoincrement())
+  alliance_id  Int
+  upgrade_key  String
+  tier         Int
   purchased_at DateTime @default(now()) @db.Timestamptz(3)
 
-  alliance    alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  alliance alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
 
   @@index([alliance_id])
 }
@@ -1104,12 +1172,58 @@ model alliance_bank_history {
   notes                String?
   created_at           DateTime                @default(now()) @db.Timestamptz(3)
 
-  alliance             alliances               @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
-  related_user         users?                  @relation("RelatedUser", fields: [related_user_id], references: [id], onDelete: SetNull)
-  performed_by_user    users                   @relation("PerformedBy", fields: [performed_by_user_id], references: [id], onDelete: Cascade)
+  alliance          alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  related_user      users?    @relation("RelatedUser", fields: [related_user_id], references: [id], onDelete: SetNull)
+  performed_by_user users     @relation("PerformedBy", fields: [performed_by_user_id], references: [id], onDelete: Cascade)
 
   @@index([alliance_id])
   @@index([created_at])
+}
+
+/// Member requests for gold from the alliance treasury (#66 phase 2).
+model alliance_gold_requests {
+  id           Int                       @id @default(autoincrement())
+  alliance_id  Int
+  requester_id Int
+  amount       BigInt
+  reason       String?                   @db.VarChar(200)
+  status       AllianceGoldRequestStatus @default(PENDING)
+  decided_by   Int?
+  decided_at   DateTime?                 @db.Timestamptz(3)
+  created_at   DateTime                  @default(now()) @db.Timestamptz(3)
+
+  alliance  alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  requester users     @relation("GoldRequester", fields: [requester_id], references: [id], onDelete: Cascade)
+  decider   users?    @relation("GoldRequestDecider", fields: [decided_by], references: [id], onDelete: SetNull)
+
+  @@index([alliance_id, status])
+  @@index([requester_id, status])
+}
+
+/// Treasury loans to members (#66 phase 3). interest_pct and amount_owed are fixed when the loan is requested (the quoted terms).
+model alliance_loans {
+  id            Int                @id @default(autoincrement())
+  alliance_id   Int
+  borrower_id   Int
+  principal     BigInt
+  interest_pct  Int
+  amount_owed   BigInt
+  amount_repaid BigInt             @default(0)
+  pending_treasury_credit BigInt @default(0)
+  status        AllianceLoanStatus @default(REQUESTED)
+  reason        String?            @db.VarChar(200)
+  decided_by    Int?
+  approved_at   DateTime?          @db.Timestamptz(3)
+  due_at        DateTime?          @db.Timestamptz(3)
+  closed_at     DateTime?          @db.Timestamptz(3)
+  created_at    DateTime           @default(now()) @db.Timestamptz(3)
+
+  alliance alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  borrower users     @relation("LoanBorrower", fields: [borrower_id], references: [id], onDelete: Cascade)
+  decider  users?    @relation("LoanDecider", fields: [decided_by], references: [id], onDelete: SetNull)
+
+  @@index([alliance_id, status])
+  @@index([borrower_id, status])
 }
 
 model alliance_fees {
@@ -1120,7 +1234,7 @@ model alliance_fees {
   exempt_role_ids Json?     @default("[]")
   next_run_at     DateTime? @db.Timestamptz(3)
 
-  alliance        alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  alliance alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
 
   @@index([alliance_id])
 }
@@ -1138,20 +1252,20 @@ model StaffRoleAssignment {
   createdAt       DateTime  @default(now()) @db.Timestamptz(3)
   revokedAt       DateTime? @db.Timestamptz(3)
 
-  user            users     @relation("StaffRoleAssignments", fields: [userId], references: [id], onDelete: Cascade)
-  grantedBy       users?    @relation("StaffRoleGrantedBy", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+  user      users  @relation("StaffRoleAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy users? @relation("StaffRoleGrantedBy", fields: [grantedByUserId], references: [id], onDelete: SetNull)
 
   @@index([userId, revokedAt])
   @@index([role, revokedAt])
 }
 
 model Report {
-  id                Int              @id @default(autoincrement())
+  id                Int               @id @default(autoincrement())
   reporterUserId    Int
   reportedUserId    Int
   category          ReportCategory
-  priority          ReportPriority   @default(NORMAL)
-  status            ReportStatus     @default(OPEN)
+  priority          ReportPriority    @default(NORMAL)
+  status            ReportStatus      @default(OPEN)
   subject           String?
   description       String
   roomId            Int?
@@ -1160,20 +1274,20 @@ model Report {
   resolution        ReportResolution?
   resolutionSummary String?
   resolvedByUserId  Int?
-  resolvedAt        DateTime?        @db.Timestamptz(3)
+  resolvedAt        DateTime?         @db.Timestamptz(3)
   metadata          Json?
-  createdAt         DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime         @updatedAt @db.Timestamptz(3)
+  createdAt         DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime          @updatedAt @db.Timestamptz(3)
 
-  reporter          users            @relation("ReportsFiled", fields: [reporterUserId], references: [id], onDelete: Cascade)
-  reportedUser      users            @relation("ReportsAgainst", fields: [reportedUserId], references: [id], onDelete: Cascade)
-  assignedTo        users?           @relation("ReportsAssigned", fields: [assignedToUserId], references: [id], onDelete: SetNull)
-  resolvedBy        users?           @relation("ReportsResolved", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
-  room              ChatRoom?        @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  chatMessage       ChatMessage?     @relation(fields: [chatMessageId], references: [id], onDelete: SetNull)
-  actions           ReportAction[]
-  banAppeals        BanAppeal[]
-  moderatorNotes    ModeratorNote[]
+  reporter       users           @relation("ReportsFiled", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  reportedUser   users           @relation("ReportsAgainst", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  assignedTo     users?          @relation("ReportsAssigned", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  resolvedBy     users?          @relation("ReportsResolved", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+  room           ChatRoom?       @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  chatMessage    ChatMessage?    @relation(fields: [chatMessageId], references: [id], onDelete: SetNull)
+  actions        ReportAction[]
+  banAppeals     BanAppeal[]
+  moderatorNotes ModeratorNote[]
 
   @@index([status, priority, createdAt])
   @@index([assignedToUserId, status])
@@ -1192,27 +1306,27 @@ model ReportAction {
   metadata    Json?
   createdAt   DateTime         @default(now()) @db.Timestamptz(3)
 
-  report      Report           @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  actor       users            @relation("ReportActions", fields: [actorUserId], references: [id], onDelete: Cascade)
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  actor  users  @relation("ReportActions", fields: [actorUserId], references: [id], onDelete: Cascade)
 
   @@index([reportId, createdAt])
 }
 
 model ModeratorNote {
-  id              Int                    @id @default(autoincrement())
+  id              Int                     @id @default(autoincrement())
   userId          Int
   authorUserId    Int
   relatedReportId Int?
   visibility      ModeratorNoteVisibility @default(STAFF)
   note            String
-  isPinned        Boolean                @default(false)
-  createdAt       DateTime               @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime               @updatedAt @db.Timestamptz(3)
-  deletedAt       DateTime?              @db.Timestamptz(3)
+  isPinned        Boolean                 @default(false)
+  createdAt       DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                @updatedAt @db.Timestamptz(3)
+  deletedAt       DateTime?               @db.Timestamptz(3)
 
-  user            users                  @relation("ModeratorNotesOnUser", fields: [userId], references: [id], onDelete: Cascade)
-  author          users                  @relation("ModeratorNotesByUser", fields: [authorUserId], references: [id], onDelete: Cascade)
-  relatedReport   Report?                @relation(fields: [relatedReportId], references: [id], onDelete: SetNull)
+  user          users   @relation("ModeratorNotesOnUser", fields: [userId], references: [id], onDelete: Cascade)
+  author        users   @relation("ModeratorNotesByUser", fields: [authorUserId], references: [id], onDelete: Cascade)
+  relatedReport Report? @relation(fields: [relatedReportId], references: [id], onDelete: SetNull)
 
   @@index([userId, deletedAt, createdAt])
   @@index([authorUserId, createdAt])
@@ -1234,8 +1348,8 @@ model Announcement {
   createdAt       DateTime             @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime             @updatedAt @db.Timestamptz(3)
 
-  createdBy       users                @relation("AnnouncementsCreated", fields: [createdByUserId], references: [id], onDelete: Cascade)
-  updatedBy       users?               @relation("AnnouncementsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  createdBy users  @relation("AnnouncementsCreated", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  updatedBy users? @relation("AnnouncementsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
 
   @@index([isActive, startsAt, endsAt])
 }
@@ -1248,7 +1362,10 @@ model GameEvent {
   type            GameEventType
   status          GameEventStatus @default(DRAFT)
   startsAt        DateTime        @db.Timestamptz(3)
-  endsAt          DateTime        @db.Timestamptz(3)
+  /// Null for events that last until their era ends (eraId is then set).
+  endsAt          DateTime?       @db.Timestamptz(3)
+  /// When set, the event only runs while this era is open.
+  eraId           Int?
   config          Json
   createdByUserId Int
   updatedByUserId Int?
@@ -1257,32 +1374,34 @@ model GameEvent {
   createdAt       DateTime        @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime        @updatedAt @db.Timestamptz(3)
 
-  createdBy       users           @relation("GameEventsCreated", fields: [createdByUserId], references: [id], onDelete: Cascade)
-  updatedBy       users?          @relation("GameEventsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  createdBy users  @relation("GameEventsCreated", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  updatedBy users? @relation("GameEventsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  era       Era?   @relation(fields: [eraId], references: [id], onDelete: SetNull)
 
   @@index([status, startsAt, endsAt])
+  @@index([eraId])
 }
 
 model BanAppeal {
-  id                     Int              @id @default(autoincrement())
+  id                     Int             @id @default(autoincrement())
   userId                 Int
   accountStatusHistoryId Int
   reportId               Int?
-  status                 BanAppealStatus  @default(OPEN)
+  status                 BanAppealStatus @default(OPEN)
   subject                String?
   body                   String
   assignedToUserId       Int?
   decisionSummary        String?
   decidedByUserId        Int?
-  decidedAt              DateTime?        @db.Timestamptz(3)
-  createdAt              DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime         @updatedAt @db.Timestamptz(3)
+  decidedAt              DateTime?       @db.Timestamptz(3)
+  createdAt              DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime        @updatedAt @db.Timestamptz(3)
 
-  user                   users               @relation("BanAppealsFiled", fields: [userId], references: [id], onDelete: Cascade)
-  accountStatusHistory   AccountStatusHistory @relation(fields: [accountStatusHistoryId], references: [id], onDelete: Cascade)
-  report                 Report?              @relation(fields: [reportId], references: [id], onDelete: SetNull)
-  assignedTo             users?               @relation("BanAppealsAssigned", fields: [assignedToUserId], references: [id], onDelete: SetNull)
-  decidedBy              users?               @relation("BanAppealsDecided", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  user                 users                @relation("BanAppealsFiled", fields: [userId], references: [id], onDelete: Cascade)
+  accountStatusHistory AccountStatusHistory @relation(fields: [accountStatusHistoryId], references: [id], onDelete: Cascade)
+  report               Report?              @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  assignedTo           users?               @relation("BanAppealsAssigned", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  decidedBy            users?               @relation("BanAppealsDecided", fields: [decidedByUserId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
   @@index([userId, createdAt])
@@ -1299,8 +1418,8 @@ model FeatureFlag {
   createdAt       DateTime @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime @updatedAt @db.Timestamptz(3)
 
-  createdBy       users?   @relation("FeatureFlagsCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  updatedBy       users?   @relation("FeatureFlagsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  createdBy users? @relation("FeatureFlagsCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedBy users? @relation("FeatureFlagsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
 }
 
 model ServerSetting {
@@ -1317,7 +1436,7 @@ model ServerSetting {
   createdAt         DateTime          @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime          @updatedAt @db.Timestamptz(3)
 
-  updatedBy         users?            @relation("ServerSettingsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  updatedBy users? @relation("ServerSettingsUpdated", fields: [updatedByUserId], references: [id], onDelete: SetNull)
 }
 
 model ChatMute {
@@ -1331,10 +1450,10 @@ model ChatMute {
   revokedAt       DateTime? @db.Timestamptz(3)
   revokedByUserId Int?
 
-  user            users     @relation("ChatMutesOnUser", fields: [userId], references: [id], onDelete: Cascade)
-  room            ChatRoom? @relation(fields: [roomId], references: [id], onDelete: SetNull)
-  createdBy       users     @relation("ChatMutesCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
-  revokedBy       users?    @relation("ChatMutesRevokedBy", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+  user      users     @relation("ChatMutesOnUser", fields: [userId], references: [id], onDelete: Cascade)
+  room      ChatRoom? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  createdBy users     @relation("ChatMutesCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  revokedBy users?    @relation("ChatMutesRevokedBy", fields: [revokedByUserId], references: [id], onDelete: SetNull)
 
   @@index([userId, endsAt, revokedAt])
   @@index([roomId, endsAt, revokedAt])
@@ -1349,7 +1468,7 @@ model LoginEvent {
   userAgentHash String?
   occurredAt    DateTime @default(now()) @db.Timestamptz(3)
 
-  user          users    @relation("LoginEventsOnUser", fields: [userId], references: [id], onDelete: Cascade)
+  user users @relation("LoginEventsOnUser", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, occurredAt])
   @@index([ipHash, occurredAt])
@@ -1375,10 +1494,10 @@ model CheatSignal {
   createdAt        DateTime            @default(now()) @db.Timestamptz(3)
   updatedAt        DateTime            @updatedAt @db.Timestamptz(3)
 
-  user             users               @relation("CheatSignalsOnUser", fields: [userId], references: [id], onDelete: Cascade)
-  relatedUser      users?              @relation("CheatSignalsRelatedUser", fields: [relatedUserId], references: [id], onDelete: SetNull)
-  assignedTo       users?              @relation("CheatSignalsAssigned", fields: [assignedToUserId], references: [id], onDelete: SetNull)
-  resolvedBy       users?              @relation("CheatSignalsResolved", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+  user        users  @relation("CheatSignalsOnUser", fields: [userId], references: [id], onDelete: Cascade)
+  relatedUser users? @relation("CheatSignalsRelatedUser", fields: [relatedUserId], references: [id], onDelete: SetNull)
+  assignedTo  users? @relation("CheatSignalsAssigned", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  resolvedBy  users? @relation("CheatSignalsResolved", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
 
   @@index([status, severity, createdAt])
   @@index([userId, status])
@@ -1462,9 +1581,9 @@ model EmailPreference {
   announcementEmails       Boolean   @default(true)
   attackNotificationEmails Boolean   @default(false)
   unsubscribedAllAt        DateTime? @db.Timestamptz(3)
-  updatedAt          DateTime  @updatedAt @db.Timestamptz(3)
+  updatedAt                DateTime  @updatedAt @db.Timestamptz(3)
 
-  user               users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model EmailCampaign {
@@ -1483,8 +1602,8 @@ model EmailCampaign {
   createdAt       DateTime            @default(now()) @db.Timestamptz(3)
   completedAt     DateTime?           @db.Timestamptz(3)
 
-  createdBy       users?              @relation("EmailCampaignsCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  outbox          EmailOutbox[]
+  createdBy users?        @relation("EmailCampaignsCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  outbox    EmailOutbox[]
 
   @@unique([kind, blogPostId])
 }
@@ -1509,11 +1628,11 @@ model EmailOutbox {
   lastError     String?
   createdAt     DateTime          @default(now()) @db.Timestamptz(3)
 
-  campaign      EmailCampaign?    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  user          users?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  campaign EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user     users?         @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@index([status, nextAttemptAt])
   @@unique([campaignId, userId])
+  @@index([status, nextAttemptAt])
 }
 
 model EmailSuppression {
@@ -1523,7 +1642,7 @@ model EmailSuppression {
   createdAt       DateTime               @default(now()) @db.Timestamptz(3)
   createdByUserId Int?
 
-  createdBy       users?                 @relation("EmailSuppressionsCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdBy users? @relation("EmailSuppressionsCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
 }
 
 model AccountInactivityNotice {
@@ -1537,8 +1656,8 @@ model AccountInactivityNotice {
   lastActiveAtWarning DateTime? @db.Timestamptz(3)
   createdByUserId     Int?
 
-  user                users     @relation("InactivityNoticeOnUser", fields: [userId], references: [id], onDelete: Cascade)
-  createdBy           users?    @relation("InactivityNoticesCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  user      users  @relation("InactivityNoticeOnUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdBy users? @relation("InactivityNoticesCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@index([scheduledDeletionAt])
 }
@@ -1552,7 +1671,104 @@ model IdentityBlock {
   expiresAt    DateTime?           @db.Timestamptz(3)
   createdAt    DateTime            @default(now()) @db.Timestamptz(3)
 
-  sourceUser   users?              @relation("IdentityBlocksSource", fields: [sourceUserId], references: [id], onDelete: SetNull)
+  sourceUser users? @relation("IdentityBlocksSource", fields: [sourceUserId], references: [id], onDelete: SetNull)
 
   @@unique([kind, hash])
+}
+
+enum AllianceListType {
+  FARM
+  HIT
+  BLOCK
+}
+
+enum AllianceRelationStatus {
+  PENDING
+  ACTIVE
+}
+
+/// Shared Farm / Hit / Block target lists kept by an alliance (#66).
+model alliance_list_entries {
+  id             Int              @id @default(autoincrement())
+  alliance_id    Int
+  list_type      AllianceListType
+  target_user_id Int
+  note           String?          @db.VarChar(200)
+  added_by       Int
+  created_at     DateTime         @default(now()) @db.Timestamptz(3)
+
+  alliance    alliances @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  target_user users     @relation("AllianceListTarget", fields: [target_user_id], references: [id], onDelete: Cascade)
+
+  @@unique([alliance_id, list_type, target_user_id], name: "unique_alliance_list_target")
+  @@index([alliance_id, list_type], map: "idx_alliance_list_entries_list")
+  @@index([target_user_id], map: "idx_alliance_list_entries_target")
+}
+
+/// Ally relation between two alliances; alliance_id is the requester (#66).
+model alliance_relations {
+  id                Int                    @id @default(autoincrement())
+  alliance_id       Int
+  other_alliance_id Int
+  status            AllianceRelationStatus @default(PENDING)
+  requested_by      Int
+  created_at        DateTime               @default(now()) @db.Timestamptz(3)
+  accepted_at       DateTime?              @db.Timestamptz(3)
+
+  alliance       alliances @relation("RelationOwner", fields: [alliance_id], references: [id], onDelete: Cascade)
+  other_alliance alliances @relation("RelationOther", fields: [other_alliance_id], references: [id], onDelete: Cascade)
+
+  @@unique([alliance_id, other_alliance_id], name: "unique_alliance_relation")
+  @@index([other_alliance_id], map: "idx_alliance_relations_other")
+}
+
+enum AllianceCallType {
+  HIT
+  FARM
+  RECON
+}
+
+enum AllianceCallStatus {
+  OPEN
+  CLOSED
+}
+
+/// Hit / Farm / Recon calls raised against a non-member target (#66).
+model alliance_target_calls {
+  id             Int                @id @default(autoincrement())
+  alliance_id    Int
+  target_user_id Int
+  call_type      AllianceCallType
+  status         AllianceCallStatus @default(OPEN)
+  note           String?            @db.VarChar(200)
+  created_by     Int
+  created_at     DateTime           @default(now()) @db.Timestamptz(3)
+  closed_at      DateTime?          @db.Timestamptz(3)
+
+  alliance    alliances               @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  target_user users                   @relation("AllianceCallTarget", fields: [target_user_id], references: [id], onDelete: Cascade)
+  shares      alliance_intel_shares[]
+
+  @@index([alliance_id, status, created_at], map: "idx_alliance_calls_status")
+  @@index([target_user_id], map: "idx_alliance_calls_target")
+}
+
+/// A battle or spy report shared with an alliance, optionally attached to a call (#66).
+model alliance_intel_shares {
+  id            Int      @id @default(autoincrement())
+  alliance_id   Int
+  attack_log_id Int
+  shared_by     Int
+  note          String?  @db.VarChar(200)
+  call_id       Int?
+  is_threat     Boolean  @default(false)
+  created_at    DateTime @default(now()) @db.Timestamptz(3)
+
+  alliance   alliances              @relation(fields: [alliance_id], references: [id], onDelete: Cascade)
+  attack_log attack_log             @relation(fields: [attack_log_id], references: [id], onDelete: Cascade)
+  call       alliance_target_calls? @relation(fields: [call_id], references: [id], onDelete: SetNull)
+
+  @@unique([alliance_id, attack_log_id], name: "unique_alliance_intel_share")
+  @@index([alliance_id, created_at], map: "idx_alliance_intel_feed")
+  @@index([call_id], map: "idx_alliance_intel_call")
 }

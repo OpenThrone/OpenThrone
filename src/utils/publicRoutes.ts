@@ -17,6 +17,8 @@ const PUBLIC_PATH_PATTERNS = [
   /^\/auto-recruit$/,
   /^\/battle\/battleSimulator$/,
   /^\/about$/,
+  // Linked from emails; the token on the link is the authorization.
+  /^\/email\/unsubscribe$/,
 ] as const;
 
 export const isPublicPath = (path: string | null) => {

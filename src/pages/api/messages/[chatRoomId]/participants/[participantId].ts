@@ -6,6 +6,7 @@ import { withAuth } from '@/middleware/auth';
 import { MessagingService } from '@/services/Messaging.service';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const ParticipantQuerySchema = z.object({
   chatRoomId: z.string().pipe(z.coerce.number()),
@@ -71,13 +72,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   } catch (error) {
     logError('Error managing participant:', error);
     if (error.message.includes('Forbidden')) {
-      return res.status(403).json({ message: error.message });
+      return res.status(403).json({ message: publicErrorMessage(error) });
     }
     if (
       error.message.includes('not in this room') ||
       error.message.includes('Target user')
     ) {
-      return res.status(404).json({ message: error.message });
+      return res.status(404).json({ message: publicErrorMessage(error) });
     }
     if (
       error.message.includes('manage your own') ||
@@ -86,7 +87,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       error.message.includes('No changes') ||
       error.message.includes('Cannot remove')
     ) {
-      return res.status(400).json({ message: error.message });
+      return res.status(400).json({ message: publicErrorMessage(error) });
     }
     res.status(500).json({ message: 'Failed to manage participant.' });
   }

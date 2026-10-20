@@ -22,8 +22,11 @@ import { useTranslation } from 'next-i18next';
 import { GameCard } from '@/components/game/GameCard';
 import { StatGrid } from '@/components/game/StatGrid';
 import classes from '@/components/MobileSidebarContent.module.css';
+import { ActiveEventsBanner } from '@/components/sidebar/ActiveEventsBanner';
+import { ProtectionMeter } from '@/components/sidebar/ProtectionMeter';
 import { SidebarTimeInfo } from '@/components/sidebar/SidebarShared';
 import { useUser } from '@/context/users';
+import { useActiveGameEvents } from '@/hooks/useActiveGameEvents';
 import { useSidebarData } from '@/hooks/useSidebarData';
 import { getAvatarSrc } from '@/utils/utilities';
 
@@ -39,6 +42,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
   isMobile,
 }) => {
   const { t } = useTranslation('common');
+  const { events: activeEvents } = useActiveGameEvents();
   const { user, forceUpdate, loading: userLoading } = useUser();
 
   const {
@@ -214,6 +218,16 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
           stats={stats}
         />
       )}
+      {!userLoading && user?.protection?.protected && (
+        <GameCard title={t('sidebar.protection.label')} goldAccent={false}>
+          <ProtectionMeter user={user} />
+        </GameCard>
+      )}
+      {activeEvents.length > 0 && (
+        <GameCard title={t('events.label')} goldAccent={false}>
+          <ActiveEventsBanner showHeading={false} />
+        </GameCard>
+      )}
 
       {/* Search card (FINDING-44): themed 44px control, heading ink on the
           inset chassis. */}
@@ -227,6 +241,7 @@ const MobileSidebarContent: React.FC<MobileSidebarContentProps> = ({
             data={usersData}
             maxDropdownHeight={300}
             placeholder={t('sidebar.searchPlaceholder')}
+            aria-label={t('sidebar.searchPlaceholder')}
             comboboxProps={{ width: 280 }}
             className={classes.searchField}
             styles={{

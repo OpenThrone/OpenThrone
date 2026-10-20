@@ -35,7 +35,10 @@ import { logError } from '@/utils/logger';
 const registerSchema = z
   .object({
     /** User's chosen display name (min 3 characters). */
-    display_name: z.string().min(3, 'auth.displayNameMin'),
+    display_name: z
+      .string()
+      .min(3, 'auth.displayNameMin')
+      .max(50, 'auth.displayNameMax'),
     /** User's email address. */
     email: z.string().email('auth.invalidEmail'),
     /** User's password (min 8 characters). */
@@ -518,7 +521,8 @@ const Form: React.FC<FormProps> = ({
           {type === 'login' ? t('auth.signIn') : t('auth.signUp')}
         </Title>
       )}
-      <form onSubmit={handleSubmit(onSubmit, handleInvalid)}>
+      {/* noValidate: show the translated messages instead of the browser's. */}
+      <form noValidate onSubmit={handleSubmit(onSubmit, handleInvalid)}>
         <Flex direction="column" gap="md">
           {validationMessage ? (
             <Text

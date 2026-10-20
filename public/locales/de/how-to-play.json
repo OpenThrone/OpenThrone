@@ -1,14 +1,14 @@
 {
   "metaTitle": "Spielanleitung - OpenThrone",
-  "metaDescription": "Lerne die Kernmechaniken von OpenThrone: Rassen, Züge, Kampf, Wirtschaft und Allianzen. Dein Leitfaden zur Beherrschung des Reiches.",
+  "metaDescription": "Lernen Sie die Kernmechaniken von OpenThrone: Rassen, Züge, Kampf, Wirtschaft und Allianzen. Ihr Leitfaden zur Beherrschung des Reiches.",
   "hero": {
     "badge": "Kommandanten-Briefing",
     "title": "Spielanleitung",
-    "subtitle": "Meistere den Kernzyklus. Züge werden im Laufe der Zeit generiert. Setze sie klug ein, um anzugreifen, zu plündern und aufzusteigen."
+    "subtitle": "Meistern Sie den Kernzyklus. Züge werden im Laufe der Zeit generiert. Setzen Sie sie klug ein, um anzugreifen, zu plündern und aufzusteigen."
   },
   "coreLoop": {
     "title": "Der Kernzyklus",
-    "description": "OpenThrone läuft in einem dauerhaften Zyklus. Alle 30 Minuten erhältst du Angriffszüge. Gib Züge aus, um andere Spieler zu überfallen für Gold und Erfahrung. Nutze Gold, um deine Armee zu vergrößern und dein Königreich zu befestigen.",
+    "description": "OpenThrone läuft in einem dauerhaften Zyklus. Alle 30 Minuten erhalten Sie Angriffszüge. Geben Sie Züge aus, um andere Spieler zu überfallen für Gold und Erfahrung. Nutzen Sie Gold, um Ihre Armee zu vergrößern und Ihr Königreich zu befestigen.",
     "steps": {
       "earn": {
         "title": "Züge verdienen",
@@ -16,21 +16,21 @@
       },
       "attack": {
         "title": "Angreifen & Plündern",
-        "text": "Gib Züge aus, um andere Kommandanten zu überfallen. Stehle Gold und verdiene Erfahrung."
+        "text": "Geben Sie Züge aus, um andere Kommandanten zu überfallen. Stehlen Sie Gold und verdienen Sie Erfahrung."
       },
       "build": {
         "title": "Aufbauen & Ausrüsten",
-        "text": "Investiere Gold in Soldaten, Waffen, Rüstung und Befestigungen."
+        "text": "Investieren Sie Gold in Soldaten, Waffen, Rüstung und Befestigungen."
       },
       "dominate": {
         "title": "Dominieren",
-        "text": "Steige in den Ranglisten auf. Bilde Allianzen. Beherrsche das Reich."
+        "text": "Steigen Sie in den Ranglisten auf. Bilden Sie Allianzen. Beherrschen Sie das Reich."
       }
     }
   },
   "races": {
-    "title": "Wähle deine Rasse",
-    "description": "Vier unterschiedliche Rassen mit jeweils einzigartigen Stärken. Deine Wahl bestimmt deine Strategie von Tag eins an.",
+    "title": "Wählen Sie Ihre Rasse",
+    "description": "Vier unterschiedliche Rassen mit jeweils einzigartigen Stärken. Ihre Wahl bestimmt Ihre Strategie von Tag eins an.",
     "elf": {
       "name": "Elf",
       "description": "5% Verteidigungsbonus. Elfische Spione erhalten einen Stärkemultiplikator von 5%; Wachen erhalten ebenfalls 5% sowie einen weiteren Multiplikator von 4%."
@@ -41,73 +41,73 @@
     },
     "goblin": {
       "name": "Goblin",
-      "description": "5% Verteidigungsbonus und einen Plünderbonus von 3% vor der Beuteobergrenze. Schütze dein Reich und profitiere von erfolgreichen Überfällen."
+      "description": "5% Verteidigungsbonus und einen Plünderbonus von 3% vor der Beuteobergrenze. Schützen Sie Ihr Reich und profitieren Sie von erfolgreichen Überfällen."
     },
     "undead": {
       "name": "Untot",
       "description": "5% Angriffsbonus. Spionageoperationen verwenden einen um 5% niedrigeren Ausdauerkostenmultiplikator, pro Operation aufgerundet."
     },
-    "matchups": "Rassenboni prägen deine Armee; keine Rasse besiegt automatisch eine andere. Nahkampfangriffe treffen auf Nahkampfverteidigung, Fernkampfangriffe auf Fernkampfverteidigung. Erkunde den Gegner und rüste deine Truppen für den erwarteten Angriff aus."
+    "matchups": "Rassenboni prägen Ihre Armee; keine Rasse besiegt automatisch eine andere. Nahkampfangriffe treffen auf Nahkampfverteidigung, Fernkampfangriffe auf Fernkampfverteidigung. Erkunden Sie den Gegner und rüsten Sie Ihre Truppen für den erwarteten Angriff aus."
   },
   "army": {
-    "title": "Baue deine Armee auf",
-    "description": "Bürger kommen täglich an. Entscheide, wie du jeden ausbildest — deine Armezusammensetzung definiert deine Strategie.",
+    "title": "Bauen Sie Ihre Armee auf",
+    "description": "Bürger kommen täglich an. Entscheiden Sie, wie Sie jeden ausbilden — Ihre Armeezusammensetzung definiert Ihre Strategie.",
     "workers": {
       "title": "Arbeiter",
-      "text": "Generieren passiv Gold. Das Rückgrat deiner Wirtschaft."
+      "text": "Generieren passiv Gold. Das Rückgrat Ihrer Wirtschaft."
     },
     "attack": {
       "title": "Angriffssoldaten",
-      "text": "Deine offensive Streitmacht. Rüste sie mit Waffen aus, um Beute zu maximieren."
+      "text": "Ihre offensive Streitmacht. Rüsten Sie sie mit Waffen aus, um Beute zu maximieren."
     },
     "defense": {
       "title": "Verteidigungssoldaten",
-      "text": "Schütze dein Königreich vor Überfällen. Rüste sie mit Rüstung aus."
+      "text": "Schützen Sie Ihr Königreich vor Überfällen. Rüsten Sie sie mit Rüstung aus."
     },
     "spies": {
       "title": "Spione",
-      "text": "Spähe feindliche Verteidigung aus, bevor du angreifst. Sabotiere aus den Schatten."
+      "text": "Spähen Sie feindliche Verteidigung aus, bevor Sie angreifen. Sabotieren Sie aus den Schatten."
     }
   },
   "economy": {
     "title": "Wirtschaft & Gebäude",
-    "description": "Gold ist das Lebensblut deines Imperiums. Verwalte es klug — was du nicht schützt, wird jemand anderes nehmen.",
+    "description": "Gold ist das Lebensblut Ihres Imperiums. Verwalten Sie es klug — was Sie nicht schützen, wird jemand anderes nehmen.",
     "bank": {
       "title": "Bank",
-      "text": "Bewahre Gold sicher vor Plünderern auf. Upgrade für höhere Kapazität."
+      "text": "Bewahren Sie Gold sicher vor Plünderern auf. Upgrade für höhere Kapazität."
     },
     "armory": {
       "title": "Waffenkammer",
-      "text": "Kaufe Waffen und Rüstung für deine Truppen. Upgrade für bessere Ausrüstung."
+      "text": "Kaufen Sie Waffen und Rüstung für Ihre Truppen. Verbessern Sie für bessere Ausrüstung."
     },
     "fortifications": {
       "title": "Befestigungen",
-      "text": "Stärke deine Verteidigung. Höhere Mauern bedeuten weniger Verluste bei Angriffen."
+      "text": "Stärken Sie Ihre Verteidigung. Höhere Mauern bedeuten weniger Verluste bei Angriffen."
     },
     "mines": {
       "title": "Minen",
-      "text": "Erhöhe passive Goldgenerierung. Unverzichtbar für langfristiges Wachstum."
+      "text": "Erhöhen Sie die passive Goldgenerierung. Unverzichtbar für langfristiges Wachstum."
     }
   },
   "combat": {
     "title": "Kampf & Spionage",
-    "description": "Sieg ist nicht nur eine Frage der Zahlen. Spähe deine Ziele aus, nutze Schwächen aus und tim deine Schläge.",
+    "description": "Sieg ist nicht nur eine Frage der Zahlen. Spähen Sie Ihre Ziele aus, nutzen Sie Schwächen aus und timen Sie Ihre Schläge.",
     "attack": {
       "title": "Angreifen",
-      "text": "Wähle ein Ziel, setze Angriffszüge ein und plündere Gold. Stärkere Armeen verursachen mehr Schaden."
+      "text": "Wählen Sie ein Ziel, setzen Sie Angriffszüge ein und plündern Sie Gold. Stärkere Armeen verursachen mehr Schaden."
     },
     "defense": {
       "title": "Verteidigen",
-      "text": "Wenn du angegriffen wirst, bestimmen deine Verteidigungssoldaten und Befestigungen deine Verluste."
+      "text": "Wenn Sie angegriffen werden, bestimmen Ihre Verteidigungssoldaten und Befestigungen Ihre Verluste."
     },
     "spy": {
       "title": "Spionageoperationen",
-      "text": "Sende Spione, um feindliche Truppenstärken vor einem Angriff auszukundschaften."
+      "text": "Senden Sie Spione, um feindliche Truppenstärken vor einem Angriff auszukundschaften."
     }
   },
   "alliances": {
     "title": "Allianzen",
-    "description": "Kein Kommandant herrscht allein. Tritt einer Allianz bei oder gründe eine für gegenseitigen Schutz, koordinierte Angriffe und geteilten Ruhm."
+    "description": "Kein Kommandant herrscht allein. Treten Sie einer Allianz bei oder gründen Sie eine für gegenseitigen Schutz, koordinierte Angriffe und geteilten Ruhm."
   },
   "cta": {
     "createCommander": "Kommandant erstellen",

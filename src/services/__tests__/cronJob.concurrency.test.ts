@@ -18,6 +18,25 @@ const { CronJobService, CRON_USER_TX_OPTIONS, computeWoundedHealing } =
   await import('../CronJob.service');
 const { invalidateRuntimeConfigCache } =
   await import('../RuntimeConfig.service');
+const { invalidateGameEventModifiers } =
+  await import('../GameEventRuntime.service');
+
+/** A running era-long event row as the runtime query selects it. */
+const eventRow = (config: Record<string, unknown>, id = 1) => ({
+  id,
+  name: `Event ${id}`,
+  description: null,
+  startsAt: new Date(Date.now() - 60_000),
+  endsAt: null,
+  eraId: 1,
+  config,
+});
+const runEvents = (...configs: Array<Record<string, unknown>>) => {
+  mockPrisma.gameEvent = {
+    findMany: vi.fn(async () => configs.map((c, i) => eventRow(c, i + 1))),
+  };
+  invalidateGameEventModifiers();
+};
 
 type Row = Record<string, any>;
 
@@ -48,6 +67,7 @@ const makeRow = (overrides: Row): Row => ({
   house_level: 0,
   economy_level: 0,
   attack_turns: 50,
+  event_citizens_received: 0,
   stamina: 100,
   maxStamina: 100,
   wounded_units: [],
@@ -148,6 +168,8 @@ beforeEach(() => {
     endDate: null,
   };
   invalidateRuntimeConfigCache();
+  mockPrisma.gameEvent = { findMany: vi.fn(async () => []) };
+  invalidateGameEventModifiers();
 
   mockPrisma.$transaction = vi.fn(
     async (callback: (tx: typeof mockPrisma) => Promise<unknown>, options) => {
@@ -193,9 +215,6 @@ beforeEach(() => {
     findMany: vi
       .fn()
       .mockResolvedValue([{ key: 'DISABLE_LOGIN', value: false }]),
-  };
-  mockPrisma.featureFlag = {
-    findMany: vi.fn().mockResolvedValue([]),
   };
   mockPrisma.userUnit = {
     upsert: vi.fn(async ({ where, update, create }: Row) => {
@@ -383,6 +402,18 @@ describe('turn cron', () => {
     }
   });
 
+  test('a bonus turns event adds its turns on top of the normal one', async () => {
+    seed(representativeRows());
+    runEvents({ extraTurnsPerTick: 1 }, { extraTurnsPerTick: 2 });
+
+    await CronJobService.processTurnUpdates();
+
+    expect(mockPrisma.users.update.mock.calls.length).toBeGreaterThan(0);
+    for (const call of mockPrisma.users.update.mock.calls) {
+      expect(call[0].data.attack_turns).toEqual({ increment: 4 });
+    }
+  });
+
   test('a user deleted after the snapshot is skipped without writes', async () => {
     seed(representativeRows());
     onLock = (userId) => {
@@ -478,18 +509,14 @@ describe('daily cron', () => {
     ).toBeGreaterThan(80);
   });
 
-  test('the admin daily citizen bonus goes only to accounts with recent gameplay activity', async () => {
+  test('a daily citizen bonus event goes only to accounts with recent gameplay activity', async () => {
     const rows = representativeRows();
     // Row 3 acted an hour ago, row 1 two days ago, row 2 never.
     rows[0].last_gameplay_at = new Date(Date.now() - 60 * 60 * 1000);
     rows[1].last_gameplay_at = new Date(Date.now() - 48 * 60 * 60 * 1000);
     rows[2].last_gameplay_at = null;
     seed(rows);
-    mockPrisma.serverSetting.findMany.mockResolvedValue([
-      { key: 'DISABLE_LOGIN', value: false },
-      { key: 'era.dailyCitizenBonus', value: 100 },
-    ]);
-    invalidateRuntimeConfigCache();
+    runEvents({ dailyCitizenBonus: 100 });
 
     const result = await CronJobService.processDailyUpdates();
 
@@ -520,18 +547,79 @@ describe('daily cron', () => {
   test('an activity window of 0 hours grants the bonus to every era participant', async () => {
     const rows = representativeRows();
     seed(rows);
-    mockPrisma.serverSetting.findMany.mockResolvedValue([
-      { key: 'DISABLE_LOGIN', value: false },
-      { key: 'era.dailyCitizenBonus', value: 100 },
-      { key: 'era.dailyCitizenBonusActivityHours', value: 0 },
-    ]);
-    invalidateRuntimeConfigCache();
+    runEvents({ dailyCitizenBonus: 100, dailyCitizenActivityHours: 0 });
 
     await CronJobService.processDailyUpdates();
 
     for (const row of rows) {
       expect(history.find((h) => h.to_user_id === row.id)).toMatchObject({
         stats: { dailyCitizenBonus: 100 },
+      });
+    }
+  });
+
+  test('a daily citizen multiplier doubles housing growth plus flat bonuses; a recruiting-only one does not', async () => {
+    const citizens = (r: Row) =>
+      r.UserUnit.filter((u: Row) => u.type === 'CITIZEN').reduce(
+        (sum: number, u: Row) => sum + u.quantity,
+        0,
+      );
+    for (const [scope, factor] of [
+      ['DAILY', 2],
+      ['RECRUITING', 1],
+    ] as const) {
+      const rows = representativeRows();
+      seed(rows);
+      runEvents(
+        { dailyCitizenBonus: 10, dailyCitizenActivityHours: 0 },
+        { citizenMultiplier: 2, citizenMultiplierScope: scope },
+      );
+
+      await CronJobService.processDailyUpdates();
+
+      for (const row of rows) {
+        const m = new UserModel(row as any);
+        const growth = (Number(m.recruitBonus ?? 0) || 0) + 10;
+        expect(citizens(store.get(row.id)!)).toBe(
+          citizens(row) + growth * factor,
+        );
+        // Every event citizen counts toward the protection limit (#97):
+        // the flat bonus and the multiplier's extra, not housing growth.
+        const housing = Number(m.recruitBonus ?? 0) || 0;
+        expect(store.get(row.id)!.event_citizens_received ?? 0).toBe(
+          (row.event_citizens_received ?? 0) + growth * factor - housing,
+        );
+      }
+      history.length = 0;
+    }
+  });
+
+  test('citizens from timed and era-long bonus events both count toward the protection limit', async () => {
+    const rows = representativeRows();
+    seed(rows);
+    mockPrisma.gameEvent = {
+      findMany: vi.fn(async () => [
+        {
+          ...eventRow(
+            { dailyCitizenBonus: 100, dailyCitizenActivityHours: 0 },
+            1,
+          ),
+          eraId: null,
+          endsAt: new Date(Date.now() + 86_400_000),
+        },
+        eventRow({ dailyCitizenBonus: 40, dailyCitizenActivityHours: 0 }, 2),
+      ]),
+    };
+    invalidateGameEventModifiers();
+
+    await CronJobService.processDailyUpdates();
+
+    for (const row of rows) {
+      expect(store.get(row.id)!.event_citizens_received).toBe(
+        (row.event_citizens_received ?? 0) + 140,
+      );
+      expect(history.find((h) => h.to_user_id === row.id)).toMatchObject({
+        stats: { dailyCitizenBonus: 140, eventCitizens: 140 },
       });
     }
   });

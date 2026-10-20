@@ -1,6 +1,10 @@
 {
-  "page": { "title": "Benutzerverwaltung" },
-  "nav": { "bots": "Bot-Verwaltung" },
+  "page": {
+    "title": "Benutzerverwaltung"
+  },
+  "nav": {
+    "bots": "Bot-Verwaltung"
+  },
   "sections": {
     "grantPermissions": "Berechtigungen vergeben",
     "userManagement": "Benutzerverzeichnis",
@@ -68,7 +72,7 @@
     "username": "Benutzername",
     "email": "E-Mail",
     "status": "Kontostatus",
-    "statusHelp": "Der Status ist hier schreibgeschützt. Verwende die Kontosperren für Statusänderungen.",
+    "statusHelp": "Der Status ist hier schreibgeschützt. Verwenden Sie die Kontosperren für Statusänderungen.",
     "accountId": "Konto-ID",
     "gold": "Gold im Besitz",
     "goldInBank": "Gold auf der Bank",
@@ -106,11 +110,13 @@
     "permissionsHelp": "Bestehende Berechtigungen werden angezeigt. Beim Speichern werden die ausgewählten Berechtigungen hinzugefügt.",
     "permissionsPlaceholder": "Berechtigungen auswählen"
   },
-  "pagination": { "label": "Benutzerseiten" },
+  "pagination": {
+    "label": "Benutzerseiten"
+  },
   "messages": {
     "savedTitle": "Änderungen gespeichert",
     "saved": "Die Benutzerdetails wurden aktualisiert.",
-    "impersonating": "Du siehst ein Konto in einer Identitätsübernahme.",
+    "impersonating": "Sie sehen ein Konto in einer Identitätsübernahme.",
     "moderatorReadOnly": "Moderatoren können Konten ansehen und Mitarbeiternotizen hinzufügen. Änderungen, Berechtigungen und Identitätsübernahmen sind Administratoren vorbehalten.",
     "permissionsSaved": "Berechtigungen für {{username}} aktualisiert."
   },

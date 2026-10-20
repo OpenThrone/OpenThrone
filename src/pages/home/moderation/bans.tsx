@@ -278,6 +278,7 @@ const BansDashboardPage = () => {
                   action: pendingAction?.action,
                   userId: pendingAction?.userId,
                   duration: pendingAction?.duration,
+                  count: Number(pendingAction?.duration) || 0,
                 })}
           </Text>
           <Group justify="flex-end">

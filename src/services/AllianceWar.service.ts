@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { hasAlliancePermission } from '@/constants/alliancePermissions';
 import prisma from '@/lib/prisma';
 import { WarStatus } from '@/lib/prisma-exports';
 import { logError } from '@/utils/logger';
@@ -45,12 +46,12 @@ export class AllianceWarService {
         throw new Error('You are not a member of the declaring alliance');
       }
 
-      // TODO: Add permission check (e.g., manage_enemies or declare_war permission)
-      // For now, assume Leader or Role with manage_enemies can declare
-      const canDeclare =
-        declarerMembership.alliance.leader_id ===
-          validatedData.declarerUserId ||
-        declarerMembership.role.permissions?.manage_enemies;
+      const canDeclare = hasAlliancePermission(
+        declarerMembership.alliance.leader_id,
+        validatedData.declarerUserId,
+        declarerMembership.role,
+        'declare_war',
+      );
 
       if (!canDeclare) {
         throw new Error('You do not have permission to declare war');
@@ -94,6 +95,16 @@ export class AllianceWarService {
           throw new Error(
             'Cannot declare war on a member of your own alliance',
           );
+        const existingUserWar = await prisma.alliance_wars.findFirst({
+          where: {
+            attacker_alliance_id: validatedData.allianceId,
+            defender_user_id: validatedData.defenderUserId,
+            status: { in: [WarStatus.WARMUP, WarStatus.ACTIVE] },
+          },
+          select: { id: true },
+        });
+        if (existingUserWar)
+          throw new Error('War already declared against this player');
       }
 
       // 3. Create War Record
@@ -113,6 +124,50 @@ export class AllianceWarService {
       logError('Error declaring war', { ...validatedData, error });
       throw error;
     }
+  }
+
+  /**
+   * Ends a war. Needs declare_war in either alliance taking part (the
+   * declaring alliance, or the alliance at war with it). Nothing else ends a
+   * war, and an alliance at war cannot disband.
+   */
+  static async endWar(warId: number, userId: number) {
+    const war = await prisma.alliance_wars.findUnique({
+      where: { id: warId },
+      select: {
+        id: true,
+        status: true,
+        attacker_alliance_id: true,
+        defender_alliance_id: true,
+      },
+    });
+    if (!war || war.status === WarStatus.ENDED) {
+      throw new Error('War not found or already over');
+    }
+    const allianceIds = [
+      war.attacker_alliance_id,
+      war.defender_alliance_id,
+    ].filter((id): id is number => typeof id === 'number');
+    const memberships = await prisma.alliance_memberships.findMany({
+      where: { user_id: userId, alliance_id: { in: allianceIds } },
+      include: { role: true, alliance: { select: { leader_id: true } } },
+    });
+    const allowed = memberships.some((m) =>
+      hasAlliancePermission(
+        m.alliance.leader_id,
+        userId,
+        m.role,
+        'declare_war',
+      ),
+    );
+    if (!allowed) {
+      throw new Error('You do not have permission to end this war');
+    }
+    await prisma.alliance_wars.updateMany({
+      where: { id: warId, status: { not: WarStatus.ENDED } },
+      data: { status: WarStatus.ENDED, end_at: new Date() },
+    });
+    return { message: 'War ended' };
   }
 
   /**

@@ -6,6 +6,7 @@ import { PermissionType } from '@/lib/prisma-exports';
 import { withApiGuard } from '@/middleware/apiGuard';
 import type { AuthenticatedRequest } from '@/types/api'; // Import the shared type
 import { deriveAdminUserStatus } from '@/utils/adminStatus';
+import { getRequestIp, logActionStrict } from '@/utils/auditLogger';
 import { logError } from '@/utils/logger';
 
 const AdminUsersQuerySchema = z.object({
@@ -28,7 +29,7 @@ const guardedHandler = withApiGuard({
 });
 
 async function handler(
-  _req: AuthenticatedRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse,
   context: { query: z.infer<typeof AdminUsersQuerySchema> },
 ) {
@@ -45,7 +46,11 @@ async function handler(
     // Build where clause based on provided filters
     const whereClause: any = {};
 
-    if (id) whereClause.id = parseInt(id, 10);
+    if (id) {
+      // A non-numeric id matches nobody instead of failing the query.
+      const parsedId = Number.parseInt(String(id), 10);
+      whereClause.id = Number.isSafeInteger(parsedId) ? parsedId : -1;
+    }
     if (username)
       whereClause.display_name = {
         contains: username,
@@ -128,12 +133,37 @@ async function handler(
       }))
       .filter((user) => !status || user.status === status);
 
-    res.status(200).json({
-      users: status ? formattedUsers.slice(skip, skip + take) : formattedUsers,
-      total: status
-        ? formattedUsers.length
-        : await prisma.users.count({ where: whereClause }),
+    const pageUsers = status
+      ? formattedUsers.slice(skip, skip + take)
+      : formattedUsers;
+    const total = status
+      ? formattedUsers.length
+      : await prisma.users.count({ where: whereClause });
+
+    // The list carries account emails, so it is never returned off the record.
+    // The email search term itself is not copied into the audit log.
+    await logActionStrict({
+      userId: Number(req.session?.user?.id),
+      action: 'ADMIN_USERS_LIST_READ',
+      ip: getRequestIp(req),
+      details: {
+        filters: {
+          id: id ?? null,
+          username: username ?? null,
+          emailFilter: Boolean(email),
+          status: status ?? null,
+        },
+        limit: take,
+        offset: skip,
+        sort: sortField,
+        order: sortOrder,
+        resultCount: pageUsers.length,
+        total,
+        userIds: pageUsers.map((user) => Number(user.id)),
+      },
     });
+
+    res.status(200).json({ users: pageUsers, total });
   } catch (error) {
     logError('Error fetching users in admin panel:', error);
     res.status(500).json({ error: 'Failed to fetch users' });

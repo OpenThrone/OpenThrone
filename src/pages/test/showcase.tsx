@@ -48,6 +48,8 @@ const SECTIONS = [
 /** Component showcase. */
 
 export const getServerSideProps = async (context: any) => {
+  // Developer page: not served by production builds.
+  if (process.env.NODE_ENV === 'production') return { notFound: true };
   const session = await getSession(context);
   if (!session?.user) {
     return {

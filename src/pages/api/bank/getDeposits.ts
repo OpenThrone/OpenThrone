@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { withAuth } from '@/middleware/auth';
 import UserModel from '@/models/Users';
 import { getDepositHistory } from '@/services/Bank.service';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const getDeposits = async (req: NextApiRequest, res: NextApiResponse) => {
   const { session } = req;
@@ -41,7 +42,7 @@ const getDeposits = async (req: NextApiRequest, res: NextApiResponse) => {
         history.length > 0 ? getCountdown(history[0].date_time.toString()) : 0,
     });
   } catch (error) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

@@ -467,3 +467,27 @@ describe('defender-only defense advisories', () => {
     ).toEqual({ fortBreached: null, civilianLosses: 0, offensiveLosses: 0 });
   });
 });
+
+describe('recommendation battle facts', () => {
+  it('keeps missing casualties unknown and only returns own quality facts', () => {
+    const log = attackLog();
+    const visible = redactAttackLogForViewer(log, 'attacker');
+    expect(visible.stats.recommendation_facts).toBeDefined();
+    expect(
+      redactAttackLogForViewer(log, 'shared').stats.recommendation_facts,
+    ).toBeUndefined();
+    expect(
+      redactAttackLogForViewer(log, 'defender').stats.recommendation_facts,
+    ).toBeUndefined();
+    const legacy = redactAttackLogForViewer(
+      { ...log, stats: { startOfAttack: log.stats.startOfAttack, turns: 10 } },
+      'attacker',
+    );
+    expect(legacy.stats.recommendation_facts).toMatchObject({
+      deaths: null,
+      wounded: null,
+      enemyDeaths: null,
+      damageDealt: null,
+    });
+  });
+});

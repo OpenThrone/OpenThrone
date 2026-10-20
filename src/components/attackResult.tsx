@@ -17,7 +17,12 @@ import classes from '@/components/AttackResults.module.css';
 import { DefenseAdvisory } from '@/components/DefenseAdvisory';
 import { PlayerRace } from '@/types/typings';
 import { toLocale } from '@/utils/numberFormatting';
-import { getAssetPath, getAvatarSrc, getLevelFromXP } from '@/utils/utilities';
+import {
+  getAssetPath,
+  getAvatarSrc,
+  getLevelChange,
+  getLevelFromXP,
+} from '@/utils/utilities';
 
 import { BattleLedger } from './BattleLedger';
 import { BattleResultBanner } from './BattleResultBanner';
@@ -60,39 +65,95 @@ const AttackResults = ({ battle, viewerID }) => {
 
   const countUnitsOfType = (units, type) => {
     const unitsArray = Array.isArray(units) ? units : Object.values(units);
-    return toLocale(
-      unitsArray
-        .filter((unit) => unit.type === type)
-        .reduce((acc, curr) => acc + curr.quantity, 0),
-    );
+    const count = unitsArray
+      .filter((unit) => unit.type === type)
+      .reduce((acc, curr) => acc + curr.quantity, 0);
+    return { count, label: toLocale(count) };
   };
 
+  const xpEarned = JSON.parse(stats.xpEarned);
+  const attackerLevelChange = getLevelChange(
+    stats.startOfAttack.Attacker.experience,
+    xpEarned.attacker,
+  );
+  const defenderLevelChange = getLevelChange(
+    stats.startOfAttack.Defender.experience,
+    xpEarned.defender,
+  );
+  const levelUpLines = (
+    [
+      [attackerLevelChange, attackerPlayer, isViewerAttacker],
+      [defenderLevelChange, defenderPlayer, isViewerDefender],
+    ] as const
+  ).flatMap(([change, player, isViewer]) => {
+    if (!change) return [];
+    const name = isViewer ? t('report.you') : player.display_name;
+    return [
+      t('report.levelUpLine', { player: name, level: change.to }),
+      ...(change.endedProtection
+        ? [t('report.protectionEndedLine', { player: name })]
+        : []),
+    ];
+  });
+
+  const attackingSoldiers = countUnitsOfType(
+    stats.startOfAttack.Attacker.units,
+    'OFFENSE',
+  );
+  const attackerLossCount = totalLosses(stats.attacker_losses);
+  const defenderLossCount = totalLosses(stats.defender_losses);
+  const xpLine = (isViewer: boolean, playerName: string, xp: number) =>
+    isViewer
+      ? t('timeline.youEarnedXp', { xp: toLocale(xp) })
+      : t('timeline.playerEarnedXp', { player: playerName, xp: toLocale(xp) });
+  const lossLine = (isViewer: boolean, playerName: string, count: number) =>
+    isViewer
+      ? t('timeline.youLostSoldiers', { count, dead: toLocale(count) })
+      : t('timeline.playerLostSoldiers', {
+          count,
+          player: playerName,
+          dead: toLocale(count),
+        });
+
   const summaryLines = [
-    `Battle ID: ${battle.id}`,
-    `${isViewerAttacker ? 'You' : attackerPlayer.display_name} attacked ${isViewerDefender ? 'You' : defenderPlayer.display_name}`,
-    t('report.attackLine', {
-      soldiers: countUnitsOfType(stats.startOfAttack.Attacker.units, 'OFFENSE'),
+    t('timeline.battleId', { id: battle.id }),
+    isViewerAttacker
+      ? t('timeline.youAttacked', { defender: defenderPlayer.display_name })
+      : isViewerDefender
+        ? t('timeline.attackedYou', { attacker: attackerPlayer.display_name })
+        : t('timeline.playerAttacked', {
+            attacker: attackerPlayer.display_name,
+            defender: defenderPlayer.display_name,
+          }),
+    t('timeline.attackingForce', {
+      count: attackingSoldiers.count,
+      soldiers: attackingSoldiers.label,
     }),
     isViewerDefender
-      ? t('report.yourCounterLine', { dead: attackerTotalLosses })
-      : t('report.counterLine', {
+      ? t('timeline.yourCounterKilled', {
+          count: attackerLossCount,
+          dead: attackerTotalLosses,
+        })
+      : t('timeline.counterKilled', {
+          count: attackerLossCount,
           player: defenderPlayer.display_name,
           dead: attackerTotalLosses,
         }),
-    `${isPlayerWinner ? 'You' : isAttackerWinner ? attackerPlayer.display_name : defenderPlayer.display_name} won the battle`,
-    `${attackerPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).attacker)} XP`,
-    `${defenderPlayer.display_name} earned ${toLocale(JSON.parse(stats.xpEarned).defender)} XP`,
+    isPlayerWinner
+      ? t('timeline.youWon')
+      : t('report.winner', {
+          player: isAttackerWinner
+            ? attackerPlayer.display_name
+            : defenderPlayer.display_name,
+        }),
+    xpLine(isViewerAttacker, attackerPlayer.display_name, xpEarned.attacker),
+    xpLine(isViewerDefender, defenderPlayer.display_name, xpEarned.defender),
+    ...levelUpLines,
     // Loot accrues on the turns the attacker won even when the verdict is a loss.
-    `Gold Pillaged: ${toLocale(stats.pillagedGold ?? 0)}`,
-    `Fort Damage Dealt by Attacker: ${toLocale(fortDamage)}`,
-    t('report.lossLine', {
-      player: isViewerAttacker ? t('report.you') : attackerPlayer.display_name,
-      dead: attackerTotalLosses,
-    }),
-    t('report.lossLine', {
-      player: isViewerDefender ? t('report.you') : defenderPlayer.display_name,
-      dead: defenderTotalLosses,
-    }),
+    t('timeline.goldPillaged', { gold: toLocale(stats.pillagedGold ?? 0) }),
+    t('timeline.fortDamage', { damage: toLocale(fortDamage) }),
+    lossLine(isViewerAttacker, attackerPlayer.display_name, attackerLossCount),
+    lossLine(isViewerDefender, defenderPlayer.display_name, defenderLossCount),
   ];
 
   const sentence = {
@@ -133,7 +194,7 @@ const AttackResults = ({ battle, viewerID }) => {
   const defenderProfileHref = `/userprofile/${defenderPlayer?.id}`;
 
   return (
-    <GameCard title="Battle Report" icon={faScroll}>
+    <GameCard title={t('battleReport.title')} icon={faScroll}>
       <Box
         className="battle-report-page"
         style={{
@@ -182,7 +243,9 @@ const AttackResults = ({ battle, viewerID }) => {
                 href={allowAttackerProfile ? attackerProfileHref : undefined}
                 aria-label={
                   allowAttackerProfile
-                    ? `View ${attackerPlayer?.display_name} profile`
+                    ? t('battleReport.viewProfile', {
+                        player: attackerPlayer?.display_name,
+                      })
                     : undefined
                 }
                 style={{
@@ -195,7 +258,7 @@ const AttackResults = ({ battle, viewerID }) => {
                   <FramedAvatar
                     frameSrc={attackerFrameSrc}
                     src={attackerAvatarSrc}
-                    alt="attacker avatar"
+                    alt={t('battleReport.attackerAvatar')}
                     size={240}
                     insetX={40}
                     insetY={58}
@@ -209,8 +272,17 @@ const AttackResults = ({ battle, viewerID }) => {
                   </Text>
 
                   <Text size="sm" c="dimmed" tt="uppercase" mt={6}>
-                    Lvl{' '}
-                    {getLevelFromXP(stats.startOfAttack.Attacker.experience)}
+                    {t('battleReport.level', {
+                      level: getLevelFromXP(
+                        stats.startOfAttack.Attacker.experience,
+                      ),
+                    })}
+                    {attackerLevelChange && (
+                      <Text component="span" size="sm" fw={700} c="#f7d98b">
+                        {' '}
+                        → {attackerLevelChange.to}
+                      </Text>
+                    )}
                   </Text>
 
                   <Box
@@ -231,7 +303,7 @@ const AttackResults = ({ battle, viewerID }) => {
                       color: 'rgba(236,229,211,0.78)',
                     }}
                   >
-                    Attacker
+                    {t('battleReport.attacker')}
                   </Text>
                 </Box>
               </Box>
@@ -259,7 +331,7 @@ const AttackResults = ({ battle, viewerID }) => {
                   c="dimmed"
                   style={{ letterSpacing: '0.12em' }}
                 >
-                  Battle ID
+                  {t('battleReport.battleId')}
                 </Text>
 
                 <Text
@@ -274,32 +346,43 @@ const AttackResults = ({ battle, viewerID }) => {
                   {battle.id}
                 </Text>
 
-                <Button
-                  onClick={toggleModal}
-                  variant="filled"
-                  size="md"
-                  fullWidth
-                  px="xs"
-                  style={{
-                    marginTop: 8,
-                    background:
-                      'linear-gradient(180deg, rgba(37,85,124,1), rgba(12,36,59,1))',
-                    border: '1px solid rgba(201,166,89,0.42)',
-                    boxShadow:
-                      'inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 18px rgba(0,0,0,0.35)',
-                    fontFamily: 'MedievalSharp, serif',
-                  }}
-                >
-                  {isViewerAttacker ? 'Attack Again' : 'Attack Back'}
-                </Button>
+                {(isViewerAttacker || isViewerDefender) && (
+                  <Button
+                    onClick={toggleModal}
+                    variant="filled"
+                    size="md"
+                    fullWidth
+                    px="xs"
+                    style={{
+                      marginTop: 8,
+                      background:
+                        'linear-gradient(180deg, rgba(37,85,124,1), rgba(12,36,59,1))',
+                      border: '1px solid rgba(201,166,89,0.42)',
+                      boxShadow:
+                        'inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 18px rgba(0,0,0,0.35)',
+                      fontFamily: 'MedievalSharp, serif',
+                    }}
+                  >
+                    {isViewerAttacker
+                      ? t('battleReport.attackAgain')
+                      : t('battleReport.attackBack')}
+                  </Button>
+                )}
 
-                <Modal
-                  isOpen={isOpen}
-                  toggleModal={toggleModal}
-                  profileID={
-                    isViewerAttacker ? defenderPlayer.id : attackerPlayer.id
-                  }
-                />
+                {(isViewerAttacker || isViewerDefender) && (
+                  <Modal
+                    isOpen={isOpen}
+                    toggleModal={toggleModal}
+                    profileID={
+                      isViewerAttacker ? defenderPlayer.id : attackerPlayer.id
+                    }
+                    targetName={
+                      isViewerAttacker
+                        ? defenderPlayer.display_name
+                        : attackerPlayer.display_name
+                    }
+                  />
+                )}
               </Stack>
             </Grid.Col>
 
@@ -313,7 +396,9 @@ const AttackResults = ({ battle, viewerID }) => {
                 href={allowDefenderProfile ? defenderProfileHref : undefined}
                 aria-label={
                   allowDefenderProfile
-                    ? `View ${defenderPlayer?.display_name} profile`
+                    ? t('battleReport.viewProfile', {
+                        player: defenderPlayer?.display_name,
+                      })
                     : undefined
                 }
                 style={{
@@ -328,8 +413,17 @@ const AttackResults = ({ battle, viewerID }) => {
                   </Text>
 
                   <Text size="sm" c="dimmed" tt="uppercase" mt={6}>
-                    Lvl{' '}
-                    {getLevelFromXP(stats.startOfAttack.Defender.experience)}
+                    {t('battleReport.level', {
+                      level: getLevelFromXP(
+                        stats.startOfAttack.Defender.experience,
+                      ),
+                    })}
+                    {defenderLevelChange && (
+                      <Text component="span" size="sm" fw={700} c="#f7d98b">
+                        {' '}
+                        → {defenderLevelChange.to}
+                      </Text>
+                    )}
                   </Text>
 
                   <Box
@@ -350,7 +444,7 @@ const AttackResults = ({ battle, viewerID }) => {
                       color: 'rgba(236,229,211,0.78)',
                     }}
                   >
-                    Defender
+                    {t('battleReport.defender')}
                   </Text>
                 </Box>
 
@@ -360,7 +454,7 @@ const AttackResults = ({ battle, viewerID }) => {
                   <FramedAvatar
                     frameSrc={frameSrc}
                     src={defenderAvatarSrc}
-                    alt="defender avatar"
+                    alt={t('battleReport.defenderAvatar')}
                     size={240}
                     insetX={40}
                     insetY={58}
@@ -375,12 +469,12 @@ const AttackResults = ({ battle, viewerID }) => {
         <BattleStatStrip
           stats={[
             {
-              label: 'Gold Pillaged',
+              label: t('battleReport.goldPillaged'),
               value: isAttackerWinner ? toLocale(stats.pillagedGold) : '0',
               tone: 'gold',
             },
             {
-              label: 'Fort Damage',
+              label: t('battleReport.fortDamage'),
               value: toLocale(fortDamage),
               tone: 'bad',
             },
@@ -419,7 +513,7 @@ const AttackResults = ({ battle, viewerID }) => {
                       textTransform: 'uppercase',
                     }}
                   >
-                    Battle Timeline
+                    {t('battleReport.timeline')}
                   </Text>
 
                   <AnimatePresence>
@@ -491,13 +585,13 @@ const AttackResults = ({ battle, viewerID }) => {
                         textTransform: 'uppercase',
                       }}
                     >
-                      Spoils of War
+                      {t('battleReport.spoilsOfWar')}
                     </Text>
 
                     <SimpleGrid cols={2} spacing="xs" mt="sm">
                       <Box>
                         <Text size="xs" c="dimmed" tt="uppercase">
-                          Gold
+                          {t('battleReport.gold')}
                         </Text>
                         <Text fw={700} c="#f7d98b">
                           {isAttackerWinner
@@ -508,7 +602,7 @@ const AttackResults = ({ battle, viewerID }) => {
 
                       <Box>
                         <Text size="xs" c="dimmed" tt="uppercase">
-                          Fort Damage
+                          {t('battleReport.fortDamage')}
                         </Text>
                         <Text fw={700} c="red.4">
                           {toLocale(fortDamage)}
@@ -517,20 +611,16 @@ const AttackResults = ({ battle, viewerID }) => {
 
                       <Box>
                         <Text size="xs" c="dimmed" tt="uppercase">
-                          Attacker XP
+                          {t('battleReport.attackerXp')}
                         </Text>
-                        <Text fw={700}>
-                          {toLocale(JSON.parse(stats.xpEarned).attacker)}
-                        </Text>
+                        <Text fw={700}>{toLocale(xpEarned.attacker)}</Text>
                       </Box>
 
                       <Box>
                         <Text size="xs" c="dimmed" tt="uppercase">
-                          Defender XP
+                          {t('battleReport.defenderXp')}
                         </Text>
-                        <Text fw={700}>
-                          {toLocale(JSON.parse(stats.xpEarned).defender)}
-                        </Text>
+                        <Text fw={700}>{toLocale(xpEarned.defender)}</Text>
                       </Box>
                     </SimpleGrid>
                   </Box>
@@ -552,7 +642,7 @@ const AttackResults = ({ battle, viewerID }) => {
                         textTransform: 'uppercase',
                       }}
                     >
-                      Casualties
+                      {t('battleReport.casualties')}
                     </Text>
 
                     <SimpleGrid cols={2} spacing="xs" mt="sm">

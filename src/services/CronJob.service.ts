@@ -1,14 +1,19 @@
 import { z } from 'zod';
 
+import { multiplyCount } from '@/constants/gameEvents';
 import prisma from '@/lib/prisma';
 import type { Prisma, UnitType } from '@/lib/prisma-exports';
 import UserModel from '@/models/Users';
 import { AccountAnonymizationService } from '@/services/AccountAnonymization.service';
 import { runInactivitySweep } from '@/services/AccountInactivity.service';
+import {
+  AllianceLoanService,
+  divertIncomeToLoans,
+  settleLoanTreasuryCredits,
+} from '@/services/AllianceLoan.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { getGameEventModifiers } from '@/services/GameEventRuntime.service';
 import { pruneLoginTelemetry } from '@/services/LoginTelemetry.service';
-import { getRuntimeConfig } from '@/services/RuntimeConfig.service';
 import { getUpdatedStatus } from '@/services/User.service';
 import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
 import { logError } from '@/utils/logger';
@@ -54,6 +59,12 @@ type HealedUnit = {
 
 type EraCronToken = { id: number; startDate: Date };
 type UserCronOutcome = 'success' | 'stale' | 'failed';
+/** Daily citizen bonuses from running game events (#86). */
+type DailyEventBonuses = {
+  grants: Array<{ amount: number; cutoff: Date | null }>;
+  multiplier: number;
+};
+const NO_DAILY_EVENT_BONUSES: DailyEventBonuses = { grants: [], multiplier: 1 };
 
 /**
  * Daily wounded-unit healing math: each group returns
@@ -148,23 +159,22 @@ export class CronJobService {
         id: activeEra.id,
         startDate: new Date(activeEra.startDate),
       };
-      // Admin-configured flat bonus (Administration → Server settings),
-      // read once so every account in this run receives the same amount.
-      const runtimeConfig = await getRuntimeConfig();
-      const dailyCitizenBonus = Math.max(
-        0,
-        Math.floor(Number(runtimeConfig.dailyCitizenBonus) || 0),
-      );
-      // Accounts must have taken a gameplay action within this window to
-      // receive the bonus; 0 hours means every era participant qualifies.
-      const activityHours = Math.max(
-        0,
-        Number(runtimeConfig.dailyCitizenBonusActivityHours) || 0,
-      );
-      const bonusActivityCutoff =
-        activityHours > 0
-          ? new Date(Date.now() - activityHours * 60 * 60 * 1000)
-          : null;
+      // Running game events (#86), read once so every account in this run
+      // receives the same bonuses. Each flat citizen bonus only reaches
+      // accounts that took a gameplay action within its activity window
+      // (0 hours means every era participant qualifies).
+      const { dailyCitizenGrants, dailyCitizenMultiplier } =
+        await getGameEventModifiers();
+      const dailyEvents: DailyEventBonuses = {
+        grants: dailyCitizenGrants.map((grant) => ({
+          amount: grant.amount,
+          cutoff:
+            grant.activityHours > 0
+              ? new Date(Date.now() - grant.activityHours * 60 * 60 * 1000)
+              : null,
+        })),
+        multiplier: dailyCitizenMultiplier,
+      };
       // Only ids are read up front; every per-user write re-reads that user
       // under a row lock so concurrent player actions are never overwritten.
       const allUsers = await prisma.users.findMany({
@@ -200,8 +210,7 @@ export class CronJobService {
         const outcome = await this.updateUserPerDay(
           currentTask.userId,
           eraToken,
-          dailyCitizenBonus,
-          bonusActivityCutoff,
+          dailyEvents,
         );
 
         if (outcome === 'stale') continue;
@@ -307,6 +316,10 @@ export class CronJobService {
         }
       }
 
+      // Move loan repayments diverted from this turn's income into treasuries
+      // under the alliance lock (best effort; daily cleanup sweeps leftovers).
+      await settleLoanTreasuryCredits();
+
       return {
         success: true,
         message: 'Turn updates processed successfully',
@@ -389,15 +402,14 @@ export class CronJobService {
   }
 
   /**
-   * Updates a single user for daily changes (recruiting bonus plus the
-   * era-wide daily citizen bonus). Runs under the user row lock; citizens are
-   * added with a relative increment.
+   * Updates a single user for daily changes (housing growth plus any game
+   * event citizen bonuses and multiplier). Runs under the user row lock;
+   * citizens are added with a relative increment.
    */
   private static async updateUserPerDay(
     userId: number,
     eraToken: EraCronToken,
-    dailyCitizenBonus = 0,
-    bonusActivityCutoff: Date | null = null,
+    dailyEvents: DailyEventBonuses = NO_DAILY_EVENT_BONUSES,
   ): Promise<UserCronOutcome> {
     try {
       return await prisma.$transaction(async (tx) => {
@@ -428,12 +440,30 @@ export class CronJobService {
         const lastGameplayAt = row.last_gameplay_at
           ? new Date(row.last_gameplay_at).getTime()
           : null;
-        const recentlyActive =
-          !bonusActivityCutoff ||
-          (lastGameplayAt !== null &&
-            lastGameplayAt >= bonusActivityCutoff.getTime());
-        const appliedDailyBonus = recentlyActive ? dailyCitizenBonus : 0;
-        const grantedCitizens = recruitingBonus + appliedDailyBonus;
+        const qualifyingGrants = dailyEvents.grants.filter(
+          (grant) =>
+            !grant.cutoff ||
+            (lastGameplayAt !== null &&
+              lastGameplayAt >= grant.cutoff.getTime()),
+        );
+        const appliedDailyBonus = qualifyingGrants.reduce(
+          (sum, grant) => sum + grant.amount,
+          0,
+        );
+        const grantedCitizens = multiplyCount(
+          recruitingBonus + appliedDailyBonus,
+          dailyEvents.multiplier,
+        );
+        // Every citizen an event adds (flat bonuses and the multiplier's
+        // extra) raises this player's protection population limit (#89, #97);
+        // the limit itself only counts housing growth and recruiting.
+        const eventCitizens = Math.max(0, grantedCitizens - recruitingBonus);
+        if (eventCitizens > 0) {
+          await tx.users.update({
+            where: { id: userId },
+            data: { event_citizens_received: { increment: eventCitizens } },
+          });
+        }
         const newCitizens = originalCitizens + grantedCitizens;
 
         await tx.userUnit.upsert({
@@ -473,6 +503,10 @@ export class CronJobService {
               newCitizens,
               recruitingBonus: currentUser.recruitBonus,
               dailyCitizenBonus: appliedDailyBonus,
+              ...(eventCitizens > 0 ? { eventCitizens } : {}),
+              ...(dailyEvents.multiplier !== 1
+                ? { eventCitizenMultiplier: dailyEvents.multiplier }
+                : {}),
               lastGameplayAt: row.last_gameplay_at ?? null,
             },
           },
@@ -562,7 +596,8 @@ export class CronJobService {
     eraToken: EraCronToken,
   ): Promise<UserCronOutcome> {
     try {
-      const { goldMultiplier } = await getGameEventModifiers();
+      const { goldMultiplier, extraTurnsPerTick } =
+        await getGameEventModifiers();
       return await prisma.$transaction(async (tx) => {
         await this.lockUser(tx, userId);
         if (!(await this.isEraTokenCurrent(tx, eraToken))) return 'stale';
@@ -578,8 +613,17 @@ export class CronJobService {
             BigInt(Math.round(goldMultiplier * 10000))) /
           10000n;
         const room = 9223372036854775807n - BigInt(currentUser.gold);
-        const goldPerTurn =
+        const grossGoldPerTurn =
           room > 0n ? (eventIncome < room ? eventIncome : room) : 0n;
+        // Open alliance loans take their share of the income inside this
+        // transaction; the borrower row is already locked above.
+        const loanRepayment = await divertIncomeToLoans(
+          tx,
+          currentUser.id,
+          grossGoldPerTurn,
+          'economy',
+        );
+        const goldPerTurn = grossGoldPerTurn - loanRepayment;
         const updatedGold = goldPerTurn + BigInt(currentUser.gold);
 
         await tx.bank_history.create({
@@ -595,6 +639,9 @@ export class CronJobService {
               currentGold: currentUser.gold,
               newGold: updatedGold.toString(),
               increase: goldPerTurn,
+              ...(loanRepayment > 0n
+                ? { loanRepayment: loanRepayment.toString() }
+                : {}),
             },
           },
         });
@@ -602,7 +649,7 @@ export class CronJobService {
           where: { id: currentUser.id },
           data: {
             gold: { increment: goldPerTurn },
-            attack_turns: { increment: 1 },
+            attack_turns: { increment: 1 + extraTurnsPerTick },
             stamina: Math.min(currentUser.maxStamina, currentUser.stamina + 1),
             rank,
             offense: currentUser.offense,
@@ -672,6 +719,14 @@ export class CronJobService {
     );
 
     await Promise.all(cleanupPromises);
+
+    // Overdue alliance loans: seize from gold then bank, else mark DEFAULTED.
+    try {
+      await settleLoanTreasuryCredits();
+      await AllianceLoanService.processOverdueLoans();
+    } catch (error) {
+      logError('Error processing overdue alliance loans', { error });
+    }
 
     // Identity retention: purge blocks whose sanction end or deletion
     // cooldown has elapsed, then expired anti-abuse rows.

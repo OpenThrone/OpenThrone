@@ -11,7 +11,6 @@ import MainArea from '@/components/MainArea';
 import PublicAuthLayout from '@/components/public/PublicAuthLayout';
 import classes from '@/components/public/PublicPages.module.css';
 import SeoHead from '@/components/SeoHead';
-import VacationModeModal from '@/components/VacationModeModal';
 import { useLayout } from '@/context/LayoutContext';
 import { useRuntimeConfig } from '@/hooks/useRuntimeConfig';
 import { localePrefix } from '@/utils/localeRedirect';
@@ -21,8 +20,7 @@ const Login = () => {
   const { t } = useTranslation('account');
   const { config } = useRuntimeConfig();
   const { setMeta, meta } = useLayout();
-  const [showVacationModal, setShowVacationModal] = useState(false);
-  const [vacationUserId, setVacationUserId] = useState<number | null>(null);
+  const [vacationNotice, setVacationNotice] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
@@ -38,16 +36,9 @@ const Login = () => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('vacation') === '1') {
-      setShowVacationModal(true);
-      const userIdParam = params.get('userId') ?? params.get('userID');
-      const parsedUserId = userIdParam ? Number(userIdParam) : null;
-      setVacationUserId(
-        typeof parsedUserId === 'number' && Number.isFinite(parsedUserId)
-          ? parsedUserId
-          : null,
-      );
+      setVacationNotice(true);
     } else if (params.get('error') === 'account_status') {
-      setErrorMessage(t('accountRestricted'));
+      setErrorMessage(t('login.accountRestricted'));
     }
   }, [t]);
 
@@ -86,6 +77,19 @@ const Login = () => {
             </>
           }
         >
+          {vacationNotice && (
+            <>
+              <Alert
+                variant="light"
+                color="blue"
+                title={t('login.vacationNoticeTitle')}
+                role="status"
+              >
+                {t('login.vacationNotice')}
+              </Alert>
+              <Space h="md" />
+            </>
+          )}
           {errorMessage && (
             <>
               <Alert
@@ -125,12 +129,7 @@ const Login = () => {
             </Button>
           </Group>
         </PublicAuthLayout>
-        <VacationModeModal
-          opened={showVacationModal}
-          onClose={() => setShowVacationModal(false)}
-          userId={vacationUserId}
-          onVacationEnd={() => setShowVacationModal(false)}
-        />
+
       </MainArea>
     </>
   );

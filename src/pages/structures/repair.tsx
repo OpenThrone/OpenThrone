@@ -29,11 +29,14 @@ import MainArea from '@/components/MainArea';
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
 import { alertService } from '@/services/Alert.service';
+import type { Locales } from '@/types/typings';
 import { logError } from '@/utils/logger';
 import { toLocale } from '@/utils/numberFormatting';
+import { fortificationName } from '@/utils/structureNames';
 
 const Repair = () => {
-  const { t } = useTranslation('structures');
+  const { t, i18n } = useTranslation('structures');
+  const locale = i18n.language as Locales;
   const { user, forceUpdate } = useUser();
   const [fortification, setFortification] = useState(null);
   const [repairPoints, setRepairPoints] = useState(0);
@@ -64,8 +67,8 @@ const Repair = () => {
         body: JSON.stringify({ repairPoints: amount }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Repair failed');
-      alertService.success(data.message || 'Repair successful!');
+      if (!response.ok) throw new Error(data.error || t('repair.repairFailed'));
+      alertService.success(data.message || t('repair.repairSuccess'));
       forceUpdate();
       setRepairPoints(0);
     } catch (error: unknown) {
@@ -93,25 +96,28 @@ const Repair = () => {
   const statItems = [
     {
       label: t('bank.goldInHand'),
-      value: toLocale(user.gold, user.locale),
+      value: toLocale(user.gold, locale),
       icon: <FontAwesomeIcon icon={faCoins} />,
     },
     {
       label: t('bank.goldInBank'),
-      value: toLocale(user.goldInBank, user.locale),
+      value: toLocale(user.goldInBank, locale),
       icon: faUniversity,
     },
   ];
 
   const historyRows = history.map((entry) => (
     <Table.Tr key={entry.id}>
-      <Table.Td>{new Date(entry.date_time).toLocaleString()}</Table.Td>
-      <Table.Td>+{entry.stats.actualRepairAmount}</Table.Td>
+      <Table.Td>{new Date(entry.date_time).toLocaleString(locale)}</Table.Td>
       <Table.Td>
-        {entry.stats.currentFortHP} <FontAwesomeIcon icon={faArrowRight} />{' '}
-        {entry.stats.newFortHP}
+        +{toLocale(entry.stats.actualRepairAmount ?? 0, locale)}
       </Table.Td>
-      <Table.Td>-{toLocale(entry.gold_amount, user.locale)}</Table.Td>
+      <Table.Td>
+        {toLocale(entry.stats.currentFortHP ?? 0, locale)}{' '}
+        <FontAwesomeIcon icon={faArrowRight} />{' '}
+        {toLocale(entry.stats.newFortHP ?? 0, locale)}
+      </Table.Td>
+      <Table.Td>-{toLocale(entry.gold_amount, locale)}</Table.Td>
     </Table.Tr>
   ));
 
@@ -128,7 +134,8 @@ const Repair = () => {
           <Group justify="space-between">
             <Stack gap="xs">
               <Text size="xl" fw={700}>
-                {fortification.name}
+                {fortificationName(t, fortification.level) ??
+                  fortification.name}
               </Text>
               <Badge color={remainingHitpoints > 0 ? 'red' : 'green'}>
                 {remainingHitpoints > 0
@@ -151,12 +158,14 @@ const Repair = () => {
             />
           </Group>
           <Text mt="md">
-            HP: {user.fortHitpoints.toLocaleString()} /{' '}
-            {fortification.hitpoints.toLocaleString()}
+            {t('repair.hitpoints', {
+              current: toLocale(user.fortHitpoints, locale),
+              max: toLocale(fortification.hitpoints, locale),
+            })}
           </Text>
         </GameCard>
         <GameCard
-          title="Repair"
+          title={t('repair.repair')}
           icon={<FontAwesomeIcon icon={faScrewdriverWrench} />}
         >
           <NumberInput
@@ -173,7 +182,7 @@ const Repair = () => {
             {t('repair.costGold', {
               amount: toLocale(
                 repairPoints * fortification.costPerRepairPoint,
-                user.locale,
+                locale,
               ),
             })}
           </Text>

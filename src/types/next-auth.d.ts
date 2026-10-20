@@ -17,6 +17,8 @@ declare module 'next-auth' {
       alliance_role_id?: number;
     }[];
     impersonatedBy?: number;
+    /** Epoch ms when an impersonated session is signed out (#92). */
+    impersonationExpiresAt?: number;
     twoFactorEnabled?: boolean;
     twoFactorSetupRecommended?: boolean;
   }

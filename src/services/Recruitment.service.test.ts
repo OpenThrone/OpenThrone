@@ -9,6 +9,7 @@ installMockPrisma(vi);
 
 const {
   getRecruitmentBlock,
+  getRecruitmentStatus,
   performRecruitment,
   performRecruitmentWithSessionValidation,
 } = await import('@/services/Recruitment.service');
@@ -216,5 +217,57 @@ describe('recruitment history transaction ordering', () => {
     expect(
       seenWindows.every((date) => date.getTime() === todayStart.getTime()),
     ).toBe(true);
+  });
+});
+
+describe('getRecruitmentStatus', () => {
+  it('reports daily use per target and when the day resets', async () => {
+    const seen: unknown[] = [];
+    const db = {
+      era: { findFirst: async () => null },
+      recruit_history: {
+        count: async () => 7,
+        groupBy: async ({ where }: any) => {
+          seen.push(where);
+          return where.to_user !== undefined
+            ? [{ from_user: 42, _count: { _all: 5 } }]
+            : [
+                { from_user: 42, _count: { _all: 9 } },
+                { from_user: 43, _count: { _all: 2 } },
+              ];
+        },
+      },
+    } as any;
+
+    const status = await getRecruitmentStatus({
+      db,
+      recruiterId: 17,
+      targetIds: [42, 43],
+    });
+
+    expect(status.recruiterUsed).toBe(7);
+    expect(status.pairLimit).toBe(5);
+    expect(status.targets['42']).toEqual({ pairUsed: 5, targetUsed: 9 });
+    expect(status.targets['43']).toEqual({ pairUsed: 0, targetUsed: 2 });
+    expect(status.resetsAt).toBe(getOTStartDate(1).toISOString());
+    expect(seen).toHaveLength(2);
+  });
+
+  it('skips the grouped queries when no targets are requested', async () => {
+    const db = {
+      era: { findFirst: async () => null },
+      recruit_history: {
+        count: async () => 0,
+        groupBy: async () => {
+          throw new Error('should not query');
+        },
+      },
+    } as any;
+    const status = await getRecruitmentStatus({
+      db,
+      recruiterId: 17,
+      targetIds: [],
+    });
+    expect(status.targets).toEqual({});
   });
 });

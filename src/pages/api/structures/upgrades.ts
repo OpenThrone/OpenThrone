@@ -5,6 +5,7 @@ import { withAuth } from '@/middleware/auth';
 import { StructureService } from '@/services';
 import type { AuthenticatedRequest } from '@/types/api';
 import { logError } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Define allowed upgrade types
 const UpgradeTypeEnum = z.enum([
@@ -89,7 +90,7 @@ const handler = async (
       error.message?.startsWith('Not enough gold') ||
       error.message?.startsWith('Invalid structure_upgrades format')
     ) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: publicErrorMessage(error) });
     }
     if (error.message === 'User not found within transaction') {
       return res

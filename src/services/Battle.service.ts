@@ -7,9 +7,14 @@ import { BattleUser } from '@/models/BattleUser';
 import UserModel from '@/models/Users';
 import { getUserById } from '@/services/AttackDataService';
 import { getTargetAvailability } from '@/services/AttackValidationService';
+import {
+  applyProtectionContext,
+  loadProtectionContext,
+} from '@/services/BattleProtection.service';
 import { ensureActiveEra } from '@/services/Era.service';
 import { simulateBattle } from '@/utils/attackFunctions';
 import { V5_COMBAT_CONSTANTS } from '@/utils/balance/v5Combat';
+import { getBattleUpgradeStructure } from '@/utils/battleUpgradeStructure';
 import {
   parseCombatReplay,
   restoreBattleUser,
@@ -58,6 +63,8 @@ export interface AttackExecutionData {
   attackerId: number;
   defenderId: number;
   attackTurns: number;
+  /** Acknowledges that the defender shares one of the attacker's alliances. */
+  confirmAllianceAttack?: boolean;
 }
 
 /** Describes the battle test data contract. */
@@ -122,6 +129,7 @@ const AttackExecutionSchema = z.object({
     .int()
     .positive()
     .max(V5_COMBAT_CONSTANTS.MAX_ATTACK_TURNS),
+  confirmAllianceAttack: z.boolean().optional(),
 });
 
 const BattleTestSchema = z.object({
@@ -314,8 +322,7 @@ export class BattleService {
 
       if (operation === 'buy') {
         // Unlock gates: mirrors ArmyInputForm.canUseBattleUpgrade and pages/battle/upgrades.tsx
-        const requiredStructureType =
-          item.type === 'DEFENSE' ? 'OFFENSE' : item.type;
+        const requiredStructureType = getBattleUpgradeStructure(item.type);
         const structureLevel =
           structureUpgrades.find((s) => s.type === requiredStructureType)
             ?.level ?? 1;
@@ -472,7 +479,10 @@ export class BattleService {
         });
 
         return {
-          message: 'Items equipped successfully',
+          message:
+            operation === 'buy'
+              ? 'Upgrades bought successfully'
+              : 'Upgrades sold successfully',
           data: updatedItems,
           totalCost: Math.abs(totalCost),
         };
@@ -494,7 +504,8 @@ export class BattleService {
     data: AttackExecutionData,
   ): Promise<AttackExecutionResult> {
     const validatedData = AttackExecutionSchema.parse(data);
-    const { attackerId, defenderId, attackTurns } = validatedData;
+    const { attackerId, defenderId, attackTurns, confirmAllianceAttack } =
+      validatedData;
 
     try {
       // Validate that users can't attack themselves
@@ -578,6 +589,7 @@ export class BattleService {
         attackerId,
         defenderId,
         attackTurns,
+        { confirmAllianceAttack },
       );
 
       return result as AttackExecutionResult;
@@ -650,6 +662,7 @@ export class BattleService {
 
       const attacker = new BattleUser(attackerUser);
       const defender = new BattleUser(defenderUser);
+      applyProtectionContext(await loadProtectionContext(), attacker, defender);
       const results = await simulateBattle(
         attacker,
         defender,

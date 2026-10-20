@@ -21,7 +21,6 @@
   "liftReason": "Penalty lifted by moderator",
   "confirmAccountAction": "Confirm account action",
   "confirmLift": "Lift the current penalty for user {{userId}}?",
-  "confirmPenalty": "Apply {{action}} to user {{userId}} for {{duration}} days?",
   "banAppeals": "Moderation: Ban Appeals",
   "filterByStatus": "Filter appeals by status",
   "allStatuses": "All statuses",
@@ -34,5 +33,7 @@
   "reportForbidden": "You do not have permission to review this report.",
   "reportNotFound": "This report could not be found.",
   "reportLoadFailed": "The report could not be loaded.",
-  "reportUnavailable": "Report details are unavailable."
+  "reportUnavailable": "Report details are unavailable.",
+  "confirmPenalty_one": "Apply {{action}} to user {{userId}} for {{duration}} day?",
+  "confirmPenalty_other": "Apply {{action}} to user {{userId}} for {{duration}} days?"
 }

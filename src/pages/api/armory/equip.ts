@@ -7,6 +7,7 @@ import { ArmoryService } from '@/services';
 import { markGameplayActivity } from '@/services/GameplayActivity.service';
 import type { AuthenticatedRequest } from '@/types/api'; // Import AuthenticatedRequest
 import { logError } from '@/utils/logger'; // Added logError import
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Define Zod schema for request body validation
 const EquipItemSchema = z.object({
@@ -108,7 +109,7 @@ const handler = async (
       error.message?.startsWith('Cannot equip') ||
       error.message?.startsWith('Invalid item configuration')
     ) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: publicErrorMessage(error) });
     }
     if (error.message === 'User not found') {
       return res.status(404).json({ error: 'User not found' });

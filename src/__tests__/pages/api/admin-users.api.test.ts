@@ -1,4 +1,14 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, mock, spyOn, vi } from 'bun:test';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+  vi,
+} from 'bun:test';
 import {
   installMockPrisma,
   mockPrisma,
@@ -31,7 +41,11 @@ describe('API admin/users', () => {
   afterAll(() => {
     mock.restore();
   });
-  beforeEach(() => resetMockPrisma());
+  beforeEach(() => {
+    resetMockPrisma();
+    // The detail read now writes a required audit row.
+    mockPrisma.auditLog = { create: vi.fn(async () => ({})) };
+  });
 
   it('GET returns formatted user response', async () => {
     const req: any = {

@@ -74,6 +74,11 @@ describe('FriendTransferService', () => {
     mockTx = mockPrisma;
     mockPrisma.$queryRaw = vi.fn().mockResolvedValue([]);
     mockPrisma.bank_history.findFirst.mockResolvedValue(null);
+    mockPrisma.bank_history.aggregate = vi
+      .fn()
+      .mockResolvedValue({ _sum: { gold_amount: null } });
+    mockPrisma.accountStatusHistory.findFirst = vi.fn().mockResolvedValue(null);
+    mockPrisma.users.update = vi.fn();
 
     // Default $transaction implementation: call the callback with the mockPrisma as the tx
     mockPrisma.$transaction.mockImplementation(async (cb: any) => {
@@ -238,6 +243,111 @@ describe('FriendTransferService', () => {
         where: { id: 1 },
         data: { gold: { decrement: BigInt(1000) } },
       });
+    });
+
+    it('rejects a note longer than the limit (GIFT-01)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+
+      await expect(
+        transferGoldToFriend({ ...transferParams, notes: 'x'.repeat(201) }),
+      ).rejects.toThrow();
+      expect(mockPrisma.$queryRaw).not.toHaveBeenCalled();
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('accepts a note at exactly the limit', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.users.findUnique
+        .mockResolvedValueOnce({ id: 1, gold: BigInt(5000) })
+        .mockResolvedValueOnce({ id: 2, gold: BigInt(0) });
+      mockPrisma.bank_history.create.mockResolvedValue({ id: 456 });
+
+      const result = await transferGoldToFriend({
+        ...transferParams,
+        notes: 'x'.repeat(200),
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it.each(['BANNED', 'SUSPENDED', 'VACATION', 'CLOSED'])(
+      'rejects a %s recipient inside the locked transaction (GIFT-02)',
+      async (status) => {
+        mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+        mockPrisma.accountStatusHistory.findFirst.mockResolvedValue({
+          status,
+          end_date: null,
+        });
+        mockPrisma.users.findUnique.mockResolvedValue({
+          id: 1,
+          gold: BigInt(5000),
+        });
+
+        await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+          'This player cannot receive gold right now',
+        );
+        expect(mockPrisma.accountStatusHistory.findFirst).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: expect.objectContaining({ user_id: 2 }),
+          }),
+        );
+        expect(mockPrisma.$queryRaw).toHaveBeenCalled();
+        expect(mockPrisma.users.update).not.toHaveBeenCalled();
+      },
+    );
+
+    it('allows a recipient whose suspension has ended', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.accountStatusHistory.findFirst.mockResolvedValue({
+        status: 'SUSPENDED',
+        end_date: new Date(Date.now() - 1000),
+      });
+      mockPrisma.users.findUnique
+        .mockResolvedValueOnce({ id: 1, gold: BigInt(5000) })
+        .mockResolvedValueOnce({ id: 2, gold: BigInt(0) });
+      mockPrisma.bank_history.create.mockResolvedValue({ id: 456 });
+
+      const result = await transferGoldToFriend(transferParams);
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects a gift that would push the recipient over the daily received cap (GIFT-03)', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.bank_history.aggregate.mockResolvedValue({
+        _sum: { gold_amount: BigInt(2_999_500) },
+      });
+      mockPrisma.users.findUnique.mockResolvedValue({
+        id: 1,
+        gold: BigInt(5000),
+      });
+
+      await expect(transferGoldToFriend(transferParams)).rejects.toThrow(
+        'This player has reached the daily limit for receiving gold',
+      );
+      const { where } = mockPrisma.bank_history.aggregate.mock.calls[0][0];
+      expect(where).toMatchObject({
+        to_user_id: 2,
+        to_user_account_type: 'HAND',
+        history_type: 'FRIEND_TRANSFER',
+      });
+      // The cap is read only after both user rows are locked.
+      expect(mockPrisma.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+        mockPrisma.bank_history.aggregate.mock.invocationCallOrder[0],
+      );
+      expect(mockPrisma.users.update).not.toHaveBeenCalled();
+    });
+
+    it('allows a gift that lands exactly on the daily received cap', async () => {
+      mockPrisma.social.findFirst.mockResolvedValue({ id: 123 });
+      mockPrisma.bank_history.aggregate.mockResolvedValue({
+        _sum: { gold_amount: BigInt(2_999_000) },
+      });
+      mockPrisma.users.findUnique
+        .mockResolvedValueOnce({ id: 1, gold: BigInt(5000) })
+        .mockResolvedValueOnce({ id: 2, gold: BigInt(0) });
+      mockPrisma.bank_history.create.mockResolvedValue({ id: 456 });
+
+      const result = await transferGoldToFriend(transferParams);
+      expect(result.success).toBe(true);
     });
   });
 

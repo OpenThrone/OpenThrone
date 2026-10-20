@@ -112,7 +112,7 @@ const Index = () => {
                 href="/account/password-reset"
                 variant="outline"
               >
-                {t('passwordReset.sendResetLink')}
+                {t('passwordReset.requestNewCode')}
               </Button>
               <Button type="submit" loading={isSubmitting}>
                 {t(

@@ -28,6 +28,11 @@ export async function canAccessGame(userId: number): Promise<boolean> {
   return !!assignment;
 }
 
+/** Accounts whose current status is CLOSED are no longer players. */
+export const NOT_CLOSED_WHERE: Prisma.usersWhereInput = {
+  statusHistories: { none: { status: 'CLOSED', end_date: null } },
+};
+
 /** Registration or era assignment alone does not establish participation. */
 export async function getEraParticipantWhere(era: {
   id: number;
@@ -37,6 +42,7 @@ export async function getEraParticipantWhere(era: {
     id: { gt: 0 },
     currentEraId: era.id,
     last_active: { gte: era.startDate },
+    ...NOT_CLOSED_WHERE,
     ...((await isLoginDisabled()) ? ACTIVE_STAFF_WHERE : {}),
   };
 }

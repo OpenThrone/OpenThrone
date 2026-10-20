@@ -29,21 +29,15 @@ const booleanValue = (value: unknown): boolean | null =>
   typeof value === 'boolean' ? value : null;
 
 const isLoginDisabled = async (tx: Tx) => {
-  const [setting, flag] = await Promise.all([
-    tx.serverSetting.findUnique({
-      where: { key: 'DISABLE_LOGIN' },
-      select: { value: true },
-    }),
-    tx.featureFlag.findUnique({
-      where: { key: 'DISABLE_LOGIN' },
-      select: { enabled: true },
-    }),
-  ]);
+  const setting = await tx.serverSetting.findUnique({
+    where: { key: 'DISABLE_LOGIN' },
+    select: { value: true },
+  });
   const fromDb = booleanValue(setting?.value);
   const rawEnv = process.env.NEXT_PUBLIC_DISABLE_LOGIN;
   const fromEnv =
     rawEnv === undefined ? false : rawEnv.toLowerCase() === 'true';
-  return flag?.enabled ?? fromDb ?? fromEnv;
+  return fromDb ?? fromEnv;
 };
 
 const enableLogins = async (tx: Tx, adminId: number) => {
@@ -58,11 +52,6 @@ const enableLogins = async (tx: Tx, adminId: number) => {
       updatedByUserId: adminId,
     },
     update: { value: false, updatedByUserId: adminId },
-  });
-  await tx.featureFlag.upsert({
-    where: { key: 'DISABLE_LOGIN' },
-    create: { key: 'DISABLE_LOGIN', enabled: false, updatedByUserId: adminId },
-    update: { enabled: false, updatedByUserId: adminId },
   });
 };
 

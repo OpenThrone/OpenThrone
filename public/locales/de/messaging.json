@@ -13,5 +13,116 @@
   "errorRefetchingRooms": "Fehler beim erneuten Abrufen von Räumen nach dem Modal",
   "unknown": "Unbekannt",
   "reader": "Leser",
-  "errorGeneric": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+  "errorGeneric": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+  "rooms": {
+    "heading": "Unterhaltungen",
+    "count_one": "{{count, number}} Raum",
+    "count_other": "{{count, number}} Räume",
+    "directMessage": "Direktnachricht",
+    "noMessagesYet": "Noch keine Nachrichten",
+    "lastMessage": "{{sender}}: {{message}}",
+    "unread_one": "{{count, number}} ungelesene Nachricht",
+    "unread_other": "{{count, number}} ungelesene Nachrichten"
+  },
+  "conversation": {
+    "selectPrompt": "Wählen Sie eine Unterhaltung aus",
+    "fallbackName": "Chat",
+    "empty": "Noch keine Nachrichten.",
+    "online": "Online",
+    "offline": "Offline",
+    "members_one": "{{count, number}} Mitglied",
+    "members_other": "{{count, number}} Mitglieder",
+    "private": "Privat",
+    "public": "Öffentlich",
+    "summary": "{{members}} · {{visibility}}",
+    "createGroup": "Gruppenchat erstellen",
+    "addMembers": "Mitglieder hinzufügen",
+    "options": "Unterhaltungsoptionen",
+    "menu": {
+      "admin": "Admin",
+      "adminControls": "Admin-Steuerung",
+      "manageMembers": "Mitglieder verwalten",
+      "editGroupInfo": "Gruppeninfo bearbeiten",
+      "searchMessages": "Nachrichten durchsuchen",
+      "muteNotifications": "Benachrichtigungen stummschalten",
+      "deleteGroup": "Gruppe löschen",
+      "deleteConversation": "Unterhaltung löschen"
+    }
+  },
+  "message": {
+    "replyingTo": "Antwort an {{name}}",
+    "reply": "Antworten",
+    "addReaction": "Reaktion hinzufügen",
+    "reactWith": "Mit {{emoji}} reagieren",
+    "you": "Sie",
+    "unknownUser": "Unbekannter Benutzer",
+    "readBy": "Gelesen von: {{names}}",
+    "readByMore_one": "Gelesen von: {{names}} und {{count, number}} weiteren Person",
+    "readByMore_other": "Gelesen von: {{names}} und {{count, number}} weiteren Personen",
+    "sent": "Gesendet",
+    "viewAttackLog": "Angriffsbericht #{{id}} ansehen"
+  },
+  "input": {
+    "placeholder": "Geben Sie Ihre Nachricht ein...",
+    "replyPlaceholder": "Geben Sie Ihre Antwort ein...",
+    "shareAttackLog": "Angriffsbericht teilen",
+    "send": "Nachricht senden",
+    "cancelReply": "Antwort abbrechen"
+  },
+  "members": {
+    "title": "Gruppenmitglieder verwalten",
+    "member": "Mitglied",
+    "role": "Rolle",
+    "canWrite": "Darf schreiben",
+    "actions": "Aktionen",
+    "youSuffix": "(Sie)",
+    "roles": {
+      "ADMIN": "Admin",
+      "MEMBER": "Mitglied"
+    },
+    "makeAdmin": "Zum Admin machen",
+    "removeAdmin": "Admin-Rechte entziehen",
+    "removeFromGroup": "Aus der Gruppe entfernen",
+    "toggleWrite": "{{name}} das Schreiben erlauben",
+    "actionSuccess": {
+      "promote": "Das Mitglied wurde zum Admin befördert.",
+      "demote": "Die Admin-Rechte wurden entzogen.",
+      "remove": "Das Mitglied wurde aus der Gruppe entfernt.",
+      "toggleWrite": "Das Schreibrecht wurde aktualisiert."
+    },
+    "actionFailed": "Fehlgeschlagen: {{message}}",
+    "unknownError": "Unbekannter Fehler",
+    "actionError": "Das Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+  },
+  "share": {
+    "title": "Angriffsbericht teilen",
+    "cannotShare": "Der Bericht kann nicht geteilt werden.",
+    "error": "Fehler",
+    "loadFailed": "Die Berichte konnten nicht geladen werden.",
+    "empty": "Keine aktuellen Angriffsberichte gefunden.",
+    "battle": "Kampf",
+    "date": "Datum",
+    "outcome": "Ergebnis",
+    "action": "Aktion",
+    "attacked": "{{attacker}} hat {{defender}} angegriffen",
+    "unknownPlayer": "Unbekannter Spieler",
+    "victory": "Sieg",
+    "defeat": "Niederlage",
+    "share": "Teilen",
+    "cancel": "Abbrechen"
+  },
+  "newMessageModal": {
+    "titleCreateGroup": "Gruppenchat erstellen",
+    "titleAddPeople": "Personen zum Chat hinzufügen",
+    "searchPlaceholder": "Nach Benutzern suchen...",
+    "recipients": "Empfänger",
+    "noUsersFound": "Keine Benutzer gefunden",
+    "groupName": "Gruppenname",
+    "groupNamePlaceholder": "Geben Sie einen Namen für diese Gruppe ein",
+    "message": "Nachricht",
+    "cancel": "Abbrechen",
+    "createGroup": "Gruppe erstellen",
+    "addPeople": "Personen hinzufügen",
+    "send": "Nachricht senden"
+  }
 }

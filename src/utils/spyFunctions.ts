@@ -1,6 +1,6 @@
 import { SpyUpgrades, UnitTypes } from '@/constants';
 import type { UnitType } from '@/types/typings';
-import { resolveSpyMissionSuccess } from '@/utils/balance/effectiveStats';
+import { resolveSpyForceContest } from '@/utils/balance/effectiveStats';
 import {
   calculateIntelQualityMultiplier,
   calculateSpyMissionPower,
@@ -79,34 +79,26 @@ function dispatchedCount(
 }
 
 /**
- * Entry odds weigh the dispatched squad (SPY_SENT_WEIGHT) against the whole
- * network (SPY_NETWORK_WEIGHT). Today's spy pressure scales real sentries and
- * also adds phantom sentry strength, so a sentry-less target still hardens.
+ * Entry check (#97): the attacker's whole spy force, scaled by the turns
+ * spent, against the defender's sentry force. Today's spy pressure scales the
+ * real sentries and adds phantom sentry strength, so repeated missions on the
+ * same target harden it (and a sentry-less target is not free forever).
+ * The dispatched squad still decides losses and how much is achieved.
  */
 function entry(
   user: SpyMissionUser,
   defender: SpyMissionUser,
   sent: number,
-  tier: number,
+  _tier: number,
   turns: number,
-  modifier: number,
+  _modifier: number,
   options: SpySimulationOptions,
 ) {
-  const squad =
-    sent > 0
-      ? calculateCombatStrength(user, 'SPY', {
-          unitLevels: [tier],
-          limit: sent,
-        }).totalStats.MeleeAtkPower
-      : 0;
   const network =
     sent > 0
       ? calculateCombatStrength(user, 'SPY').totalStats.MeleeAtkPower
       : 0;
-  const spy =
-    (squad * V5_COMBAT_CONSTANTS.SPY_SENT_WEIGHT +
-      network * V5_COMBAT_CONSTANTS.SPY_NETWORK_WEIGHT) *
-    calculateSpyMissionPower(turns);
+  const spy = network * calculateSpyMissionPower(turns);
   const sentry = calculateCombatStrength(defender, 'SENTRY').totalStats
     .MeleeDefPower;
   const pressure = Math.max(
@@ -118,11 +110,9 @@ function entry(
     Math.max(1, sentry / Math.max(0.35, protection)) +
     pressure * V5_COMBAT_CONSTANTS.SPY_PRESSURE_PHANTOM_SENTRY_PER_TURN;
   return {
-    ...resolveSpyMissionSuccess({
+    ...resolveSpyForceContest({
       attackerSpy: spy,
       defenderSentry: adjustedSentry,
-      situationalModifier: modifier,
-      random: options.random,
     }),
     ratio: spy / adjustedSentry,
   };

@@ -6,9 +6,13 @@ import { AppConfig } from '@/utils/AppConfig';
 
 /** Document. */
 export default function Document(props) {
-  const { locale } = props.__NEXT_DATA__?.pageProps || {
-    locale: AppConfig.locale,
-  };
+  // Next passes the request locale to the document (and in __NEXT_DATA__);
+  // pageProps never carried it, so every page used to say lang="en".
+  const locale =
+    props.locale ??
+    props.__NEXT_DATA__?.locale ??
+    props.__NEXT_DATA__?.pageProps?.locale ??
+    AppConfig.locale;
 
   return (
     <Html lang={locale || AppConfig.locale}>

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/middleware/auth';
 import { AllianceService } from '@/services';
+import { publicErrorMessage } from '@/utils/publicError';
 
 const ProcessRequestSchema = z.object({
   requestId: z.number().int().positive(),
@@ -27,7 +28,7 @@ const rejectRequestHandler = async (req: any, res: any) => {
     const result = await AllianceService.rejectJoinRequest(requestId, user.id);
     return res.status(200).json(result);
   } catch (error: any) {
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: publicErrorMessage(error) });
   }
 };
 

@@ -7,6 +7,7 @@ import { getSocketIO } from '@/lib/socket';
 import { withAuth } from '@/middleware/auth';
 import { MessagingService } from '@/services/Messaging.service';
 import { logDebug, logError, logInfo } from '@/utils/logger';
+import { publicErrorMessage } from '@/utils/publicError';
 
 // Define a custom request type that includes the session injected by withAuth
 interface AuthenticatedRequest extends NextApiRequest {
@@ -106,11 +107,14 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         data: req.body,
         error,
       });
+      if (error.message === 'Messaging is currently disabled') {
+        return res.status(403).json({ message: error.message });
+      }
       if (
         error.message.includes('Conflict') ||
         error.message.includes('could not create')
       ) {
-        return res.status(409).json({ message: error.message });
+        return res.status(409).json({ message: publicErrorMessage(error) });
       }
       return res.status(500).json({ message: 'Failed to create conversation' });
     }

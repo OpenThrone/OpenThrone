@@ -4,6 +4,8 @@ export type ArmoryItem = Item & {
   ownedItems: number;
   enabled: boolean;
   conversionValue?: number;
+  /** Price before any armory discount event; sell refunds are based on it. */
+  refundBaseCost?: number;
 };
 export type ArmoryQuantities = Record<string, number>;
 

@@ -3,9 +3,10 @@ import { useTranslation } from 'next-i18next';
 
 import { Fortifications } from '@/constants';
 import { useUser } from '@/context/users';
-import type { BattleUpgradeProps } from '@/types/typings';
+import type { BattleUpgradeProps, Locales } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { toLocale } from '@/utils/numberFormatting';
+import { structureName } from '@/utils/structureNames';
 
 import { StyledTable } from './game/StyledTable';
 
@@ -13,15 +14,16 @@ const FortificationsTab: React.FC<BattleUpgradeProps> = ({
   userLevel,
   fortLevel,
 }) => {
-  const { t } = useTranslation(['structures', 'common']);
-  const { forceUpdate, user } = useUser();
+  const { t, i18n } = useTranslation(['structures', 'common']);
+  const locale = i18n.language as Locales;
+  const { forceUpdate } = useUser();
 
   const rows = Object.values(Fortifications)
     .filter((item) => item.level <= fortLevel + 2)
     .map((item, index) => (
       <Table.Tr key={`${item.level}_${item.name}`}>
         <Table.Td>
-          {item.name}{' '}
+          {structureName(t, 'fortifications', item.level, item.name)}{' '}
           {item.level === fortLevel && (
             <Badge color="yellow" ml={5}>
               {t('labels.owned', { ns: 'common' })}
@@ -31,15 +33,14 @@ const FortificationsTab: React.FC<BattleUpgradeProps> = ({
         <Table.Td>{item.levelRequirement}</Table.Td>
         <Table.Td>
           {t('fortifications.goldPerTurn')}:{' '}
-          {toLocale(item.goldPerTurn, user?.locale)}
+          {toLocale(item.goldPerTurn, locale)}
           <br />
           {t('fortifications.defenseBonus')}: {item.defenseBonusPercentage}%
           <br />
-          {t('upgrades.maxHp')}: {toLocale(item.hitpoints, user?.locale)}
+          {t('upgrades.maxHp')}: {toLocale(item.hitpoints, locale)}
         </Table.Td>
         <Table.Td>
-          {toLocale(item.cost, user?.locale)}{' '}
-          {t('currency.gold', { ns: 'common' })}
+          {toLocale(item.cost, locale)} {t('currency.gold', { ns: 'common' })}
         </Table.Td>
         <Table.Td>
           {item.level === fortLevel + 1 &&

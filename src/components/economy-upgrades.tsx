@@ -1,10 +1,11 @@
 import { Badge, Button, Table } from '@mantine/core';
 import { useTranslation } from 'next-i18next';
 
-import { EconomyUpgrades, Fortifications } from '@/constants';
-import type { BattleUpgradeProps } from '@/types/typings';
+import { EconomyUpgrades } from '@/constants';
+import type { BattleUpgradeProps, Locales } from '@/types/typings';
 import buyUpgrade from '@/utils/buyStructureUpgrade';
 import { toLocale } from '@/utils/numberFormatting';
+import { fortificationName, structureName } from '@/utils/structureNames';
 
 import { StyledTable } from './game/StyledTable';
 
@@ -13,14 +14,15 @@ const EconomyTab: React.FC<BattleUpgradeProps> = ({
   forceUpdate,
   fortLevel,
 }) => {
-  const { t } = useTranslation(['structures', 'common']);
+  const { t, i18n } = useTranslation(['structures', 'common']);
+  const locale = i18n.language as Locales;
 
   const rows = Object.values(EconomyUpgrades)
     .filter((item) => item.index <= userLevel + 2)
     .map((item, index) => (
       <Table.Tr key={item.index}>
         <Table.Td>
-          {item.name}{' '}
+          {structureName(t, 'economy', item.index, item.name)}{' '}
           {index === userLevel && (
             <Badge color="yellow" ml={5}>
               {t('labels.owned', { ns: 'common' })}
@@ -28,15 +30,15 @@ const EconomyTab: React.FC<BattleUpgradeProps> = ({
           )}
         </Table.Td>
         <Table.Td>
-          {Fortifications.find((fort) => fort.level === item.fortLevel)?.name ||
-            t('upgrades.manor')}
+          {fortificationName(t, item.fortLevel) || t('upgrades.manor')}
         </Table.Td>
         <Table.Td>{item.goldPerWorker}</Table.Td>
         <Table.Td>{item.depositsPerDay}</Table.Td>
         <Table.Td>
-          {toLocale(item.goldTransferTx)}/{toLocale(item.goldTransferRec)}
+          {toLocale(item.goldTransferTx, locale)}/
+          {toLocale(item.goldTransferRec, locale)}
         </Table.Td>
-        <Table.Td>{toLocale(item.cost)}</Table.Td>
+        <Table.Td>{toLocale(item.cost, locale)}</Table.Td>
         <Table.Td>
           {item.index === userLevel + 1 && item.fortLevel <= fortLevel ? (
             <Button onClick={() => buyUpgrade('economy', index, forceUpdate)}>
@@ -46,8 +48,7 @@ const EconomyTab: React.FC<BattleUpgradeProps> = ({
             item.index > userLevel && (
               <span>
                 {t('upgrades.unlockWithFort', {
-                  name: Fortifications.find((f) => f.level === item.fortLevel)
-                    ?.name,
+                  name: fortificationName(t, item.fortLevel),
                 })}
               </span>
             )

@@ -86,6 +86,7 @@ describe('API stats', () => {
         id: { gt: 0 },
         currentEraId: 1,
         last_active: { gte: mockStartDate },
+        statusHistories: { none: { status: 'CLOSED', end_date: null } },
       },
     });
     expect(mockPrisma.attack_log.count).toHaveBeenCalledWith({
